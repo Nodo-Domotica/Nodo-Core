@@ -48,6 +48,11 @@
                        - Geen 'leeg' event of lege actie meer mogelijk in de eventlist.
                        - Issue #92: E.TypePrevious aanpassing.
                         
+                        
+                        
+  01-06-2010: Lokale bestanden en versienummering met SVN ondergebracht in GoogleCode.
+  
+  
   Todo                : - Issue #52: "EventlistWrite ;0xF000001F; BreakOnVarNEqu 1,0;". doet het niet. 
                           "EventlistWrite; 0xF000001F; BreakOnVarNEqu" 1,0; wel !
                           Doet zich alleen voor als er tussen de Off en de puntkomma een spatie staat. Relatie met issue #52?
