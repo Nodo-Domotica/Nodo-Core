@@ -101,7 +101,7 @@ unsigned long str2val(char *string)
         }
       else
         {
-        if(string[x]!='x') 
+        if(x<1 || string[x-1]!='0' || string[x]!='x')
           {
           x=false; // geen geldig HEX getal
           break;
