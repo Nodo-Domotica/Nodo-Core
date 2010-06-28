@@ -181,16 +181,17 @@ unsigned long SerialReadEvent()
   else
     y=Event; 
 
-  if(y==CMD_KAKU)
+  if(y==CMD_KAKU || y==CMD_KAKU_NEW || y==CMD_X10)
     {// de string is een KAKU commando. Haal bij het commando behorende parameters op.
     if(x)
       {
       x=SerialReadBlock(SerialBuffer);
-      Par1=KAKUString2address(SerialBuffer); // Parameter-1 bevat [A1..P16]. Omzetten naar absolote waarde.
+      Par1=HA2address(SerialBuffer); // Parameter-1 bevat [A1..P16]. Omzetten naar absolote waarde.
       if(x)
         {
         x=SerialReadBlock(SerialBuffer);
-        Par2=str2val(SerialBuffer);
+        Par2=DL2par(SerialBuffer); // Parameter-2 bevat [Dim1..Dim16]. Omzetten naar code.
+        if (!Par2) { Par2=str2val(SerialBuffer); }
         }
       }
     Event=command2event(y,Par1,Par2);

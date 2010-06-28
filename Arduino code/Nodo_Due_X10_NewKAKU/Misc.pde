@@ -300,6 +300,8 @@ byte EventType(unsigned long Code)
          return CMD_KAKU;
       case CMD_KAKU_NEW:
          return CMD_KAKU_NEW;
+      case CMD_X10:
+         return CMD_X10;
       default:
         return CMD_TYPE_COMMAND;
       }
@@ -376,3 +378,39 @@ boolean VariableClear(byte Variable)
   return false;
   }
   
+/**********************************************************************************************\
+ * Converteert een string volgens formaat "<Home><address>" naar een absoluut adres [0..255]
+ \*********************************************************************************************/
+byte HA2address(char* HA)
+  {
+  byte x=0,y=false; // teller die wijst naar het het te behandelen teken
+  byte c;   // teken uit de string die behandeld wordt
+  byte Home=0,Address=0;
+ 
+  while((c=HA[x++])!=0)
+    {
+    if(c>='0' && c<='9'){Address=Address*10;Address=Address+c-'0';}// KAKU adres 1 is intern 0
+    if(c>='a' && c<='p'){Home=c-'a';y=true;} // KAKU home A is intern 0
+    }
+
+  if(y)// notatie [A1..P16] 
+    return (Home<<4) | (Address-1);
+  else // absoluut adres [0..255]
+    return Address-1;      
+  }
+
+/**********************************************************************************************\
+ * Converteert een string volgens formaat "Dim<level>" naar een parameter code
+ \*********************************************************************************************/
+byte DL2par(char* DL)
+{
+  byte c;   // teken uit de string die behandeld wordt
+  byte x=3, par=0;
+  
+  if (DL[0] != 'd' || DL[1] != 'i' || DL[2] != 'm' || DL[3] == 0) { return 0; }
+  while((c=DL[x++])!=0) {
+    if(c>='0' && c<='9') { par = par*10; par = par + c - '0'; }
+  }
+  return ((par-1) << 4 | CMD_DIMLEVEL);      
+}
+
