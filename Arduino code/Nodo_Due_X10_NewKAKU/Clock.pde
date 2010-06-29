@@ -135,7 +135,7 @@ unsigned long SimulateDay(byte days)
         PrintCode(Time.Minutes);
 
         PrintTerm();
-        ExecuteEventlist(SimulatedClockEvent,CMD_SOURCE_SYSTEM,EventType(SimulatedClockEvent),0,0,0);
+        ExecuteEventlist(SimulatedClockEvent,CMD_SOURCE_CLOCK,EventType(SimulatedClockEvent),0,0,0);
         }
       Time.Minutes++;
       x=false;
