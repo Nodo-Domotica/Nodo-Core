@@ -336,6 +336,7 @@ void ResetFactory(void)
   S.IRRepeatSuppress   =true;
   S.Unit               =UNIT;
   S.Home               =HOME;
+  S.BaseCode           =BASECODE;
   
   for(byte x=0;x<4;x++)
     {

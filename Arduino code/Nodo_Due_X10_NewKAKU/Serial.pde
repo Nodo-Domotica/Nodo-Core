@@ -106,8 +106,21 @@ unsigned long Receive_Serial(void)
          }
        else
            error=true;
-       break;    
+       break;
    
+     case CMD_BASECODE:
+       x=SerialReadBlock(SerialBuffer);
+       y=str2val(SerialBuffer);
+       if(y)
+         {
+         S.BaseCode = y;
+         SaveSettings();
+         FactoryEventlist();
+         }
+       else
+           error=true;
+       break;
+
      case CMD_RESET_FACTORY:
         ResetFactory();
         
@@ -117,7 +130,7 @@ unsigned long Receive_Serial(void)
           {
           x=SerialReadBlock(SerialBuffer);
           PrintTerm();
-          RawSignal[y++]=str2val(SerialBuffer);          
+          RawSignal[y++]=str2val(SerialBuffer);
           }while(x && y<RAW_BUFFER_SIZE);
         RawSignal[0]=y-1;
         break;

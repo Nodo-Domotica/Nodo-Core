@@ -16,7 +16,7 @@
     along with Nodo Due.  If not, see <http://www.gnu.org/licenses/>.
 
 \**************************************************************************/
-#define HomeBaseCode 2650502
+//#define BaseCode 2650502
 
 /*
 
@@ -153,7 +153,7 @@ void NewKAKU_2_RawSignal(unsigned long Code)
   boolean b0, b1;
 
   // CMD_NewKAKU = NNxxHULC, NN=Nodo unit, xx=CMD_NewKAKU, H=Home, U=Unit, L=Level, C=Commando
-  Home    = ((Code >> 12) & 0xF) + HomeBaseCode; // 2650514; //(Code >> 12) & 0xF | (Code >> 20) & 0xFF0 ; // 26 bit, nu 8 bit nodo unit code + 4 bit home code
+  Home    = ((Code >> 12) & 0xF) + S.BaseCode + (S.Home << 8) + (S.Unit << 4); // 26 bit, nu basecode + 8 bit nodo home unit code + 4 bit home code
   Unit    =  (Code >>  8) & 0xF;
   Level   =  (Code >>  4) & 0xF;
   Command =  (Code      ) & 0x3;
@@ -229,7 +229,7 @@ unsigned long RawSignal_2_NewKAKU(void)
     }
   }
 
-  Home =    ((y >> 6) - HomeBaseCode) & 0xF; //(y >> 6) & 0x0F;
+  Home =    ((y >> 6) - (S.BaseCode + (S.Home << 8) + (S.Unit << 4))) & 0xF; //(y >> 6) & 0x0F;
   Unit =    (y     ) & 0x0F;
   if (Dim) { Command = CMD_DIMLEVEL; } else { Command = (y >> 4) & 0x03; }
   return command2event(CMD_KAKU_NEW, (Home << 4 | Unit), (Level << 4 | Command));
