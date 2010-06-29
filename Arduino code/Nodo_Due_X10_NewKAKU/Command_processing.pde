@@ -58,10 +58,15 @@ boolean ExecuteCommand(unsigned long Content, int Src, int Type, unsigned long P
 
     case CMD_SEND_RF:
       if(PreviousSrc==CMD_PORT_RF)break;           // geen RF verzenden als herkomst ook RF was. Dit leidt tot vervuiling van de 433 band.
-      if(IsCommand(PreviousContent)==CMD_KAKU)        // als vorige event een KAKU commando was, dan verzenden
-        OLDKAKU_2_RawSignal(PreviousContent); 
-      else
-        RawCodeCreate(PreviousContent); 
+      if(IsCommand(PreviousContent)==CMD_KAKU_NEW) {        // als vorige event een NewKAKU commando was, dan verzenden
+        NewKAKU_2_RawSignal(PreviousContent);
+      } else if(IsCommand(PreviousContent)==CMD_KAKU) {     // als vorige event een KAKU commando was, dan verzenden
+        KAKU_2_RawSignal(PreviousContent);
+      } else if(IsCommand(PreviousContent)==CMD_X10) {      // als vorige event een X10 commando was, dan verzenden
+        X10_2_RawSignal(PreviousContent);
+      } else {
+        RawCodeCreate(PreviousContent);
+      }
       if(Par2)WaitForFreeRF();              // wacht tot de ether vrij is
       RawCodeSend_RF(Par1==0?5:Par1);      
       PrintEvent(DIRECTION_OUT,CMD_PORT_RF,PreviousType,PreviousContent);

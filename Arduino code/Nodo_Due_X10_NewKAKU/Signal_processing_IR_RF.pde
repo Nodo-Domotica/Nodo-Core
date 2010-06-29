@@ -57,18 +57,26 @@ unsigned long AnalyzeSignal(void)
   unsigned long Code=0L;
 
   // check of het een KAKU signaal is volgens de conventionele KAKU codering.
-  Code=RawSignal_2_OLDKAKU();
+  Code=RawSignal_2_KAKU();
   if(Code!=0L)
     {
     E.Type=CMD_KAKU;
     return Code;
     }
-
+  
   // check of het een KAKU signaal is volgens de nieuwe KAKU codering.
-  Code=RawSignal_2_NEWKAKU();
+  Code=RawSignal_2_NewKAKU();
   if(Code!=0L)
     {
     E.Type=CMD_KAKU_NEW;
+    return Code;
+    }
+  
+  // check of het een X10 signaal is
+  Code=RawSignal_2_X10();
+  if(Code!=0L)
+    {
+    E.Type=CMD_X10;
     return Code;
     }
  
