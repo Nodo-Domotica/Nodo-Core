@@ -18,6 +18,7 @@
 \**************************************************************************/
 
 
+#define Loop_INTERVAL_0            50  // tijdsinterval in ms. voor achtergrondtaken.
 #define Loop_INTERVAL_1           500  // tijdsinterval in ms. voor achtergrondtaken.
 #define Loop_INTERVAL_2          5000  // tijdsinterval in ms. voor achtergrondtaken.
 
@@ -26,6 +27,7 @@ void EventScan(void)
   byte x,y,z, WiredCounter=0, VariableCounter;
   static unsigned long PauseTimerRF;
   static unsigned long PauseTimerIR;
+  unsigned long LoopIntervalTimer_0=millis();
   unsigned long LoopIntervalTimer_1=millis();// millis() maakt dat de intervallen van 1 en 2 niet op zelfde moment vallen => 1 en 2 nu asynchroon
   unsigned long LoopIntervalTimer_2=0L;
   static unsigned long Checksum;
@@ -72,28 +74,30 @@ void EventScan(void)
 
 
     // RF: *************** kijk of er data start op RF en genereer event als er een code ontvangen is **********************
-    if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
-      {      
-      if(RFFetchSignal())// Als het een duidelijk signaal was en geen stoorpuls
+    if(LoopIntervalTimer_0<millis()) {
+      if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
         {
-        if(E.Content=AnalyzeSignal())// Bereken uit de tabel met de pulstijden de 32-bit code
+        if(RFFetchSignal())// Als het een duidelijk signaal was en geen stoorpuls
           {
-          if((E.Content==Checksum || !S.RFRepeatChecksum) && (!S.RFRepeatSuppress || E.ContentPrevious!=E.Content || millis()>(PauseTimerRF+RF_ENDSIGNAL_TIME)))
-             {
-             E.Port=CMD_PORT_RF;
-             E.Direction=DIRECTION_IN;
-             PauseTimerRF=millis(); // huidige tijd voor detecteren van zelfde code zodat herhalingen niet opnieuw opgepikt worden
-             return;// dan terugkeren en afhandelen als Nodo event
-             }
-          Checksum=E.Content;
+          if(E.Content=AnalyzeSignal())// Bereken uit de tabel met de pulstijden de 32-bit code
+            {
+            if((E.Content==Checksum || !S.RFRepeatChecksum) && (!S.RFRepeatSuppress || E.ContentPrevious!=E.Content || millis()>(PauseTimerRF+RF_ENDSIGNAL_TIME)))
+               {
+               E.Port=CMD_PORT_RF;
+               E.Direction=DIRECTION_IN;
+               PauseTimerRF=millis(); // huidige tijd voor detecteren van zelfde code zodat herhalingen niet opnieuw opgepikt worden
+               return;// dan terugkeren en afhandelen als Nodo event
+               }
+            Checksum=E.Content;
+            }
           }
         }
-      }
-    digitalWrite(MonitorLedPin,LOW);
+    }
  
     // IR: *************** kijk of er data start op IR en genereer event als er een code ontvangen is **********************
-    if((*portInputRegister(IRport)&IRbit)==0)// Kijk if er iets op de IR poort binnenkomt. (Pin=LAAG als signaal in de ether). 
+    if((*portInputRegister(IRport)&IRbit)==0)// Kijk if er iets op de IR poort binnenkomt. (Pin=LAAG als signaal in de ether).
       {
+      LoopIntervalTimer_0=millis()+Loop_INTERVAL_0; // reset de timer (schakelt RF ontvangst tijdelijk uit)
       if(IRFetchSignal())// Als het een duidelijk signaal was en geen stoorpuls
         {
         if(E.Content=AnalyzeSignal())// Bereken uit de tabel met de pulstijden de 32-bit code
@@ -198,6 +202,4 @@ void EventScan(void)
       }
     }
   }
-
-
 
