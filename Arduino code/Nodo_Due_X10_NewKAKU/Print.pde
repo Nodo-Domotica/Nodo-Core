@@ -90,13 +90,29 @@ void PrintCode(unsigned long Code)
       switch(cmd)
         {
         case CMD_KAKU:
-          Serial.print('A'+((par1&0xf0)>>4),BYTE);
+        case CMD_X10:
+        case CMD_KAKU_NEW:
+          Serial.print('A'+((par1&0xf0)>>4),BYTE); // NewKAKU ook als A1..P1 printen...
+//          if (cmd == CMD_KAKU_NEW) {
+//            Serial.print(par1+1,DEC);
+//          } else {
           Serial.print((par1&0xF)+1,DEC);
-          Serial.print(",");            
-          if(par2)
-            Serial.print("on");
-          else
-            Serial.print("off");
+//          }
+          Serial.print(",");
+          Serial.print(cmd2str(par2 & 0xF)); // laat cmd2str het oplossen ipv hardcoded
+          if ((par2 & 0xF) == CMD_DIMLEVEL) { Serial.print((par2 >> 4)+1,DEC); } // als dimlevel commando dan hoogste nibble als getal printen
+//          if        ((par2 & 0xE) == CMD_DIMLEVEL) {
+//                          Serial.print("Dim"); Serial.print(par2 >> 4);
+//          } else if ((par2 & 0xE) == CMD_DIM) {
+//            if (par2 & 1) Serial.print("Bright");
+//            else          Serial.print("Dim");
+//          } else if ((par2 & 0xE) == CMD_ALLOFF) {
+//            if (par2 & 1) Serial.print("AllOn");
+//            else          Serial.print("AllOff");
+//          } else {
+//            if (par2 & 1) Serial.print("On");
+//            else          Serial.print("Off");
+//          }
           break;
 
         case CMD_WILDCARD_EVENT:
