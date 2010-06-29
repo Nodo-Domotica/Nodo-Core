@@ -31,7 +31,7 @@
 #define RF_MIN_PULSE                  100   // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 
 // verzenden van IR codes
-#define IR_REPEAT_DELAY                15   // aantal milliseconden wachttijd tussen herhalingen bij verzenden IR
+#define IR_REPEAT_DELAY                 0   // aantal milliseconden wachttijd tussen herhalingen bij verzenden IR (zit nu in sync pulsen)
 #define IR_FINISHED_DELAY               0   // tijd in milliseconden dat gewacht moet worden na verzenden van één complete code van -n- herhalingen 
 
 // ontvangen van IR codes
@@ -55,6 +55,9 @@ unsigned long AnalyzeSignal(void)
   int x,y,z,SPT, SST, P, S;
   boolean monster[16];
   unsigned long Code=0L;
+
+  // Als het signaal een volle buffer beslaat is het zeer waarschijnlijk ruis.
+  if (RawSignal[0]==RAW_BUFFER_SIZE) { return 0; }
 
   // check of het een KAKU signaal is volgens de conventionele KAKU codering.
   Code=RawSignal_2_KAKU();
