@@ -18,7 +18,7 @@
 \**************************************************************************/
 
 // verzenden van RF codes:
-#define RF_REPEAT_DELAY                10   // aantal milliseconden wachttijd tussen herhalingen bij verzenden RF
+#define RF_REPEAT_DELAY                 0   // aantal milliseconden wachttijd tussen herhalingen bij verzenden RF (zit nu in sync pulsen)
 #define RF_FINISHED_DELAY               0   // tijd in milliseconden dat gewacht moet worden na verzenden van één complete code van -n- herhalingen 
 
 // Parameters voor check op vrije 433 ether alvorens verzenden signalen:
@@ -37,7 +37,7 @@
 // ontvangen van IR codes
 #define IR_TIMEOUT                   5000   // na deze tijd (uSec.) geen IR siglaal meer ontvangen te hebben, wordt aangenomen dat verzenden van één code gereed is.
 #define IR_MIN_PULSE                  100   // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
-#define IR_MIN_RAW_PULSES              24   // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
+#define IR_MIN_RAW_PULSES              16   // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
 #define IR_ANALYSE_SHARPNESS            2   // 2=50%, 3=33% 4=25% 5=20% let op: >0 !!! scherpte bij analyse. Hoe lager deze waarde, hoe meer variate in signaal mag zitten
 
 // creatie van IR signalen
@@ -431,8 +431,8 @@ void RawCodeCreate(unsigned long Code)
 
 boolean IRFetchSignal(void)
   {
-  int IR_RawCodeLength=1;
-  unsigned long PulseLength; 
+  int IR_RawCodeLength=3; //first two sync pulses are skipped by detection;
+  unsigned long PulseLength;
 
   do{// lees de pulsen in microseconden en plaats deze in een tijdelijke buffer
     PulseLength=WaitForChangeState(IR_ReceiveDataPin, LOW,IR_TIMEOUT); // meet hoe lang signaal LOW (= PULSE van IR signaal)
@@ -445,6 +445,8 @@ boolean IRFetchSignal(void)
   if(IR_RawCodeLength>=IR_MIN_RAW_PULSES)
     {
     RawSignal[0]=IR_RawCodeLength-1;
+    RawSignal[1]=0;
+    RawSignal[2]=0;
     return true;
     }
   RawSignal[0]=0;
@@ -459,7 +461,7 @@ boolean IRFetchSignal(void)
  \*********************************************************************************************/
 boolean RFFetchSignal(void)
   {
-  int RF_RawCodeLength=1;
+  int RF_RawCodeLength=3; //first two sync pulses are skipped by detection
   unsigned long PulseLength;
 
   do{// lees de pulsen in microseconden en plaats deze in een tijdelijke buffer
@@ -474,11 +476,10 @@ boolean RFFetchSignal(void)
   if(RF_RawCodeLength>=RF_MIN_RAW_PULSES)
     {
     RawSignal[0]=RF_RawCodeLength-1;// -1 omdat de teller RF_RawCodeLength++ altijd met één teveel uit de loop komt.
+    RawSignal[1]=0;
+    RawSignal[2]=0;
     return true;
     }
   RawSignal[0]=0;
   return false;
   }
-
- 
-
