@@ -102,7 +102,7 @@ void FactoryEventlist(void)
   {
   unsigned long Event;
   
-  Eventlist_Write(0,0L,0L); // maak de eventlist leeg.
+  Eventlist_Write(1,0L,0L); // maak de eventlist leeg.
   Event=command2event(CMD_BOOT_EVENT,0,0);
   Eventlist_Write(0,Event,command2event(CMD_SOUND,7,0)); // Kort geluidssignaal bij ieder binnenkomend event
   Event=command2event(CMD_WILDCARD_EVENT,0,0);
