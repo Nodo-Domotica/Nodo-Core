@@ -135,7 +135,10 @@ boolean GetStatus(int *Command, int *Par1, int *Par2)
       *Par1=S.Home;
       break;
       
-    case CMD_BUILD: 
+    case CMD_BASECODE:
+      break;
+      
+    case CMD_BUILD:
       *Par1=BUILD;
       break;
       
