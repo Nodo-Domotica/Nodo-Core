@@ -52,7 +52,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, int Type, unsigned long P
         PrintEvent(DIRECTION_OUT,CMD_PORT_IR,PreviousType,PreviousContent);
         PrintTerm();
         RawCodeCreate(PreviousContent); 
-        RawCodeSend_IR(Par1==0?5:Par1);
+        RawCodeSend_IR(Par1==0?7:Par1);
         }
       break;
 
@@ -68,7 +68,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, int Type, unsigned long P
         RawCodeCreate(PreviousContent);
       }
       if(Par2)WaitForFreeRF();              // wacht tot de ether vrij is
-      RawCodeSend_RF(Par1==0?5:Par1);      
+      RawCodeSend_RF(Par1==0?7:Par1);      
       PrintEvent(DIRECTION_OUT,CMD_PORT_RF,PreviousType,PreviousContent);
       PrintTerm();
       break;
@@ -221,7 +221,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, int Type, unsigned long P
     PrintEvent(DIRECTION_OUT,CMD_PORT_IR,0,0);
     PrintRawSignal();
     PrintTerm();
-    RawCodeSend_IR(Par1==0?5:Par1);
+    RawCodeSend_IR(Par1==0?7:Par1);
     break;        
 
   case CMD_SEND_RAW_RF:
@@ -229,7 +229,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, int Type, unsigned long P
     PrintEvent(DIRECTION_OUT,CMD_PORT_RF,0,0);
     PrintRawSignal();
     PrintTerm();
-    RawCodeSend_RF(Par1==0?5:Par1);
+    RawCodeSend_RF(Par1==0?7:Par1);
     break;              
 
   case CMD_CLOCK_DLS: 

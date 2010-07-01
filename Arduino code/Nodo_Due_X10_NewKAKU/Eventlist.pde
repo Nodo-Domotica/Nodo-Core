@@ -107,8 +107,8 @@ void FactoryEventlist(void)
   Eventlist_Write(0,Event,command2event(CMD_SOUND,7,0)); // Kort geluidssignaal bij ieder binnenkomend event
   Event=command2event(CMD_WILDCARD_EVENT,0,0);
   Eventlist_Write(0,Event,command2event(CMD_SOUND,0,0)); // Kort geluidssignaal bij ieder binnenkomend event
-  Eventlist_Write(0,Event,command2event(CMD_SEND_RF,5,0)); // Alle KAKU events doorsturen naar RF
-  Eventlist_Write(0,Event,command2event(CMD_SEND_IR,5,0)); // Alle events doorsturen naar IR
+  Eventlist_Write(0,Event,command2event(CMD_SEND_RF,7,0)); // Alle KAKU events doorsturen naar RF
+  Eventlist_Write(0,Event,command2event(CMD_SEND_IR,7,0)); // Alle events doorsturen naar IR
   }
 
  /**********************************************************************************************\
