@@ -24,11 +24,9 @@
 // Parameters voor check op vrije 433 ether alvorens verzenden signalen:
 
 // ontvangen van RF-codes:
-#define RF_TIMEOUT                   3000   // na deze tijd in uSec. wordt een signaal als beëindigd beschouwd
-#define RF_MIN_RAW_PULSES              32   // =16 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
-#define RF_FREE_TIMEOUT             10000   // tijd in milliseconden waarna wachten op vrije RF-ether wordt afgebroken 
-#define RF_FREE_FRAME              250000   // aantal microseconden dat de band vrij van signalen moet zijn voordat verzonden mag worden
+#define RF_TIMEOUT                   2000   // na deze tijd in uSec. wordt een signaal als beëindigd beschouwd (NewKAKU sync pulse is maar 2450).
 #define RF_MIN_PULSE                  100   // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
+#define RF_MIN_RAW_PULSES              32   // =16 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
 
 // verzenden van IR codes
 #define IR_REPEAT_DELAY                 0   // aantal milliseconden wachttijd tussen herhalingen bij verzenden IR (zit nu in sync pulsen)
@@ -246,10 +244,9 @@ static void IR38Khz_set()
   OCR2A=top;
   TCCR2A=(_BV(WGM21)|(enabled?_BV(COM2A0):0));
   TCCR2B=pre;
-  }  
+  }
 
 
- 
  /**********************************************************************************************\
  * Deze functie wacht totdat de 433 band vrij is of er een timeout heeft plaats gevonden 
  * De volgende methode wordt toegepast:
@@ -259,7 +256,7 @@ static void IR38Khz_set()
  * Deze routine werkt goed voor de Aurel ontvangers, maar niet voor de ontvangers die ruis doorgeven bij geen signaal
  \*********************************************************************************************/
 
-  #define RF_MIN_PULSE                  350   // pulsen korter dan deze tijd microseconden worden als onbelangrijke stoorpulsen beschouwd.
+//  #define RF_MIN_PULSE                  350   // pulsen korter dan deze tijd microseconden worden als onbelangrijke stoorpulsen beschouwd.
   #define RF_FREE_FRAME                 500   // aantal milliseconden dat geluisterd moet worden of de 433 band vrij is
   #define RF_FREE_WAIT                  500   // wachttijd in milliseconden alvorens de volgende poging wordt gedaan
   #define RF_FREE_TRY                    10   // aantal pogingen dat wordt gekeken of de ether vrij is.
@@ -299,6 +296,10 @@ static void IR38Khz_set()
 // * Deze functie wacht totdat de 433 band vrij is of er een timeout heeft plaats gevonden 
 // * Dit is de versie uit Build 66. 
 // \*********************************************************************************************/
+//
+//  #define RF_FREE_TIMEOUT             10000   // tijd in milliseconden waarna wachten op vrije RF-ether wordt afgebroken
+//  #define RF_FREE_FRAME              250000   // aantal microseconden dat de band vrij van signalen moet zijn voordat verzonden mag worden
+//
 //  void WaitForFreeRF(void)
 //    {
 //    unsigned long PulseLength;  // meet of tijdsbestek waarin de ether vrij moet zijn in milliseconden
@@ -366,8 +367,9 @@ void RawCodeSend_RF(byte repeats)
       delayMicroseconds(RawSignal[x++]); 
       }
     }
+  delay(RF_FINISHED_DELAY); // pauze na verzenden code
   digitalWrite(RF_TransmitPowerPin,LOW); // zet de 433Mhz zender weer uit
-  digitalWrite(RF_ReceivePowerPin,HIGH); // Spanning naar de RF ontvanger weer aan. 
+  digitalWrite(RF_ReceivePowerPin,HIGH); // Spanning naar de RF ontvanger weer aan.
   }
 
 
@@ -486,3 +488,4 @@ boolean RFFetchSignal(void)
   RawSignal[0]=0;
   return false;
   }
+
