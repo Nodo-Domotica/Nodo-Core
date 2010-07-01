@@ -289,9 +289,9 @@ byte EventType(unsigned long Code)
   
   x=(Code>>16)&0xff; // 8-bits commando
   
-  if(x>=RANGE_EVENT)
+  if(x<RANGE_EVENT)
     {
-    return CMD_TYPE_EVENT;
+    return CMD_TYPE_COMMAND;
     }
   else
     {
@@ -306,7 +306,7 @@ byte EventType(unsigned long Code)
       case CMD_X10:
          return CMD_X10;
       default:
-        return CMD_TYPE_COMMAND;
+         return CMD_TYPE_EVENT;
       }
     }
   }

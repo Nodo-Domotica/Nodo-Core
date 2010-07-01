@@ -136,8 +136,8 @@ prog_char PROGMEM Text_99[] = "*** under construction ***";
 #define CMD_BRIGHT 5
 #define CMD_DIMLEVEL 6
 // Vanaf hier de rest van de lijst +5
-#define CMD_TYPE_EVENT 7
-#define CMD_TYPE_UNKNOWN 8
+#define CMD_TYPE_UNKNOWN 7
+#define CMD_TYPE_EVENT 8
 #define CMD_PORT_IR 9
 #define CMD_PORT_RF 10
 #define CMD_SOURCE_CLOCK 11
