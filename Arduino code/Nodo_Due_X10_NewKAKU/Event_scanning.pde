@@ -72,6 +72,25 @@ void EventScan(void)
         SerialHold(false);      
       }
 
+    // IR: *************** kijk of er data start op IR en genereer event als er een code ontvangen is **********************
+    if((*portInputRegister(IRport)&IRbit)==0)// Kijk if er iets op de IR poort binnenkomt. (Pin=LAAG als signaal in de ether).
+      {
+      LoopIntervalTimer_0=millis()+Loop_INTERVAL_0; // reset de timer (schakelt RF ontvangst tijdelijk uit)
+      if(IRFetchSignal())// Als het een duidelijk signaal was en geen stoorpuls
+        {
+        if(E.Content=AnalyzeSignal())// Bereken uit de tabel met de pulstijden de 32-bit code
+          {
+          if((E.Content==Checksum || !S.IRRepeatChecksum) && (S.IRRepeatSuppress ||E.ContentPrevious!=E.Content || millis()>(PauseTimerIR+IR_ENDSIGNAL_TIME)))
+             {
+             E.Port=CMD_PORT_IR;
+             E.Direction=DIRECTION_IN;
+             PauseTimerIR=millis(); // huidige tijd voor detecteren van zelfde code zodat herhalingen niet opnieuw opgepikt worden
+             return;// dan terugkeren en afhandelen als Nodo event
+             }
+          Checksum=E.Content;
+          }
+        }
+      }
 
     // RF: *************** kijk of er data start op RF en genereer event als er een code ontvangen is **********************
     if(LoopIntervalTimer_0<millis()) {
@@ -93,26 +112,7 @@ void EventScan(void)
           }
         }
     }
- 
-    // IR: *************** kijk of er data start op IR en genereer event als er een code ontvangen is **********************
-    if((*portInputRegister(IRport)&IRbit)==0)// Kijk if er iets op de IR poort binnenkomt. (Pin=LAAG als signaal in de ether).
-      {
-      LoopIntervalTimer_0=millis()+Loop_INTERVAL_0; // reset de timer (schakelt RF ontvangst tijdelijk uit)
-      if(IRFetchSignal())// Als het een duidelijk signaal was en geen stoorpuls
-        {
-        if(E.Content=AnalyzeSignal())// Bereken uit de tabel met de pulstijden de 32-bit code
-          {
-          if((E.Content==Checksum || !S.IRRepeatChecksum) && (S.IRRepeatSuppress ||E.ContentPrevious!=E.Content || millis()>(PauseTimerIR+IR_ENDSIGNAL_TIME)))
-             {
-             E.Port=CMD_PORT_IR;
-             E.Direction=DIRECTION_IN;
-             PauseTimerIR=millis(); // huidige tijd voor detecteren van zelfde code zodat herhalingen niet opnieuw opgepikt worden
-             return;// dan terugkeren en afhandelen als Nodo event
-             }
-          Checksum=E.Content;
-          }
-        }
-      }
+
     
     // 2: niet tijdkritische processen die periodiek uitgevoerd moeten worden
     if(LoopIntervalTimer_2<millis())
