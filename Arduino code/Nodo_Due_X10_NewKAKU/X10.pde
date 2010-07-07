@@ -60,29 +60,22 @@ void X10_2_RawSignal(unsigned long Code)
   Home    = (Code >> 12) & 0xF;
   Unit    = (Code >>  8) & 0xF;
   Level   = (Code >>  4) & 0xF;
-//  Command = (Code      ) & 0xF;
   Command = (Code      ) & 0x6;
   On      = (Code      ) & 0x1;
   Off     = (~Code     ) & 0x1;
 
   if ((Home & 4) == 0) { X10Address = (Home ^ 0x6) << 4; } else { X10Address = (Home ^ 0xC) << 4; }
   if (Command == CMD_OFF) { // On/Off
-//  if ((Command & 0xE) == CMD_OFF) { // On/Off
       X10Address |= (Unit & 8) >> 1;
       X10Data =
             (Unit & 1) << 4
           | (Unit & 2) << 2
           | (Unit & 4) << 4
           | (Off     ) << 5;
-//          | (~Command & 1) << 5;
   } else if (Command == CMD_ALLOFF) { // AllOn/AllOff
     X10Data = (8 | On) << 4;
   } else if (Command == CMD_DIM) { // Bright/Dim
     X10Data = ((8 | Off) << 4) | 8;
-//  } else if ((Command & 0xE) == CMD_ALLOFF) { // AllOn/AllOff
-//    X10Data = (8 | (Command & 1)) << 4;
-//  } else if ((Command & 0xE) == CMD_DIM) { // Bright/Dim
-//    X10Data = ((8 | (~Command & 1)) << 4) | 8;
   } else {
     X10Data = 0;
   }
@@ -143,4 +136,3 @@ unsigned long RawSignal_2_X10(void)
   
   return command2event(CMD_X10, (Home << 4 | Unit), Command);
 }
-

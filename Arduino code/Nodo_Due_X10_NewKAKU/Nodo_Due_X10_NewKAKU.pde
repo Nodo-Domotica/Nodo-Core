@@ -52,7 +52,6 @@
                        - AllOn/AllOff, Bright/Dim, Dim<level> en X10 commando's toegevoegd.
                        - Nieuwe KAKU group, NewKAKU dim en X10 code toegevoegd.
                        - Uitschakelen RF bij IR ontvangst.
-                       - BaseCode naar settings
                         
   01-06-2010: Lokale bestanden en versienummering met SVN ondergebracht in GoogleCode.
   
@@ -164,59 +163,58 @@ prog_char PROGMEM Text_99[] = "*** under construction ***";
 #define CMD_TRACE 32
 #define CMD_UNIT 33
 #define CMD_HOME 34
-#define CMD_BASECODE 35
-#define CMD_BUILD 36
-#define CMD_SOUND 37
-#define CMD_USER 38
-#define CMD_BREAK_ON_VAR_EQU 39
-#define CMD_BREAK_ON_VAR_LESS 40
-#define CMD_BREAK_ON_VAR_MORE 41
-#define CMD_BREAK_ON_VAR_NEQU 42
-#define CMD_CLOCK_DATE 43
-#define CMD_CLOCK_YEAR 44
-#define CMD_CLOCK_TIME 45
-#define CMD_CLOCK_DLS 46
-#define CMD_DELAY 47
-#define CMD_RECEIVE_REPEATS_IR 48
-#define CMD_RECEIVE_REPEATS_RF 49
-#define CMD_SEND_IR 50
-#define CMD_SEND_RAW_IR 51
-#define CMD_SEND_RF 52
-#define CMD_SEND_RAW_RF 53
-#define CMD_SIMULATE_DAY 54
-#define CMD_TIMER_SET 55
-#define CMD_TIMER_RANDOM 56
-#define CMD_TIMER_RESET 57
-#define CMD_VARIABLE_SET 58
-#define CMD_VARIABLE_CLEAR 59
-#define CMD_VARIABLE_DAYLIGHT 60
-#define CMD_VARIABLE_DEC 61
-#define CMD_VARIABLE_INC 62
-#define CMD_VARIABLE_VARIABLE 63
-#define CMD_VARIABLE_WIRED_ANALOG 64
-#define CMD_WIRED_ANALOG 65
-#define CMD_WIRED_OUT 66
-#define CMD_WIRED_PULLUP 67
-#define CMD_WIRED_SMITTTRIGGER 68
-#define CMD_WIRED_THRESHOLD 69
-#define CMD_CLOCK_EVENT_DAYLIGHT 70
-#define CMD_EVENT_STATUS 71
-#define CMD_TIMER_EVENT 72
-#define CMD_VARIABLE_EVENT 73
-#define CMD_WIRED_IN_EVENT 74
-#define CMD_CLOCK_EVENT_ALL 75
-#define CMD_CLOCK_EVENT_MON 76
-#define CMD_CLOCK_EVENT_TUE 77
-#define CMD_CLOCK_EVENT_WED 78
-#define CMD_CLOCK_EVENT_THU 79
-#define CMD_CLOCK_EVENT_FRI 80
-#define CMD_CLOCK_EVENT_SAT 81
-#define CMD_CLOCK_EVENT_SUN 82
-#define CMD_KAKU 83
-#define CMD_KAKU_NEW 84
-#define CMD_X10 85
-#define CMD_BOOT_EVENT 86
-#define CMD_WILDCARD_EVENT 87
+#define CMD_BUILD 35
+#define CMD_SOUND 36
+#define CMD_USER 37
+#define CMD_BREAK_ON_VAR_EQU 38
+#define CMD_BREAK_ON_VAR_LESS 39
+#define CMD_BREAK_ON_VAR_MORE 40
+#define CMD_BREAK_ON_VAR_NEQU 41
+#define CMD_CLOCK_DATE 42
+#define CMD_CLOCK_YEAR 43
+#define CMD_CLOCK_TIME 44
+#define CMD_CLOCK_DLS 45
+#define CMD_DELAY 46
+#define CMD_RECEIVE_REPEATS_IR 47
+#define CMD_RECEIVE_REPEATS_RF 48
+#define CMD_SEND_IR 49
+#define CMD_SEND_RAW_IR 50
+#define CMD_SEND_RF 51
+#define CMD_SEND_RAW_RF 52
+#define CMD_SIMULATE_DAY 53
+#define CMD_TIMER_SET 54
+#define CMD_TIMER_RANDOM 55
+#define CMD_TIMER_RESET 56
+#define CMD_VARIABLE_SET 57
+#define CMD_VARIABLE_CLEAR 58
+#define CMD_VARIABLE_DAYLIGHT 59
+#define CMD_VARIABLE_DEC 60
+#define CMD_VARIABLE_INC 61
+#define CMD_VARIABLE_VARIABLE 62
+#define CMD_VARIABLE_WIRED_ANALOG 63
+#define CMD_WIRED_ANALOG 64
+#define CMD_WIRED_OUT 65
+#define CMD_WIRED_PULLUP 66
+#define CMD_WIRED_SMITTTRIGGER 67
+#define CMD_WIRED_THRESHOLD 68
+#define CMD_CLOCK_EVENT_DAYLIGHT 69
+#define CMD_EVENT_STATUS 70
+#define CMD_TIMER_EVENT 71
+#define CMD_VARIABLE_EVENT 72
+#define CMD_WIRED_IN_EVENT 73
+#define CMD_CLOCK_EVENT_ALL 74
+#define CMD_CLOCK_EVENT_MON 75
+#define CMD_CLOCK_EVENT_TUE 76
+#define CMD_CLOCK_EVENT_WED 77
+#define CMD_CLOCK_EVENT_THU 78
+#define CMD_CLOCK_EVENT_FRI 79
+#define CMD_CLOCK_EVENT_SAT 80
+#define CMD_CLOCK_EVENT_SUN 81
+#define CMD_KAKU 82
+#define CMD_KAKU_NEW 83
+#define CMD_X10 84
+#define CMD_BOOT_EVENT 85
+#define CMD_WILDCARD_EVENT 86
 
 prog_char PROGMEM Cmd_0[]="Off";
 prog_char PROGMEM Cmd_1[]="On";
@@ -253,62 +251,61 @@ prog_char PROGMEM Cmd_31[]="StatusEvent";
 prog_char PROGMEM Cmd_32[]="Trace";
 prog_char PROGMEM Cmd_33[]="Unit";
 prog_char PROGMEM Cmd_34[]="Home";
-prog_char PROGMEM Cmd_35[]="BaseCode";
-prog_char PROGMEM Cmd_36[]="Build";
-prog_char PROGMEM Cmd_37[]="Sound";
-prog_char PROGMEM Cmd_38[]="UserCmd";
-prog_char PROGMEM Cmd_39[]="BreakOnVarEqu";
-prog_char PROGMEM Cmd_40[]="BreakOnVarLess";
-prog_char PROGMEM Cmd_41[]="BreakOnVarMore";
-prog_char PROGMEM Cmd_42[]="BreakOnVarNEqu";
-prog_char PROGMEM Cmd_43[]="ClockDate";
-prog_char PROGMEM Cmd_44[]="ClockYear";
-prog_char PROGMEM Cmd_45[]="ClockTime";
-prog_char PROGMEM Cmd_46[]="ClockDLS";
-prog_char PROGMEM Cmd_47[]="Delay";
-prog_char PROGMEM Cmd_48[]="ReceiveRepeatsIR";
-prog_char PROGMEM Cmd_49[]="ReceiveRepeatsRF";
-prog_char PROGMEM Cmd_50[]="SendIR";
-prog_char PROGMEM Cmd_51[]="SendRawIR";
-prog_char PROGMEM Cmd_52[]="SendRF";
-prog_char PROGMEM Cmd_53[]="SendRawRF";
-prog_char PROGMEM Cmd_54[]="SimulateDay";
-prog_char PROGMEM Cmd_55[]="TimerSet";
-prog_char PROGMEM Cmd_56[]="TimerRandom";
-prog_char PROGMEM Cmd_57[]="TimerReset";
-prog_char PROGMEM Cmd_58[]="VariableSet";
-prog_char PROGMEM Cmd_59[]="VariableClear";
-prog_char PROGMEM Cmd_60[]="VariableDaylight";
-prog_char PROGMEM Cmd_61[]="VariableDec";
-prog_char PROGMEM Cmd_62[]="VariableInc";
-prog_char PROGMEM Cmd_63[]="VariableVariable";
-prog_char PROGMEM Cmd_64[]="VariableWiredAnalog";
-prog_char PROGMEM Cmd_65[]="WiredAnalog";
-prog_char PROGMEM Cmd_66[]="WiredOut";
-prog_char PROGMEM Cmd_67[]="WiredPullup";
-prog_char PROGMEM Cmd_68[]="WiredSmittTrigger";
-prog_char PROGMEM Cmd_69[]="WiredThreshold";
-prog_char PROGMEM Cmd_70[]="ClockDaylight";
-prog_char PROGMEM Cmd_71[]="EventStatus";
-prog_char PROGMEM Cmd_72[]="Timer";
-prog_char PROGMEM Cmd_73[]="Variable";
-prog_char PROGMEM Cmd_74[]="WiredIn";
-prog_char PROGMEM Cmd_75[]="ClockAll";
-prog_char PROGMEM Cmd_76[]="ClockMon";
-prog_char PROGMEM Cmd_77[]="ClockTue";
-prog_char PROGMEM Cmd_78[]="ClockWed";
-prog_char PROGMEM Cmd_79[]="ClockThu";
-prog_char PROGMEM Cmd_80[]="ClockFri";
-prog_char PROGMEM Cmd_81[]="ClockSat";
-prog_char PROGMEM Cmd_82[]="ClockSun";
-prog_char PROGMEM Cmd_83[]="KAKU";
-prog_char PROGMEM Cmd_84[]="NewKAKU";
-prog_char PROGMEM Cmd_85[]="X10";
-prog_char PROGMEM Cmd_86[]="Boot";
-prog_char PROGMEM Cmd_87[]="Wildcard";
+prog_char PROGMEM Cmd_35[]="Build";
+prog_char PROGMEM Cmd_36[]="Sound";
+prog_char PROGMEM Cmd_37[]="UserCmd";
+prog_char PROGMEM Cmd_38[]="BreakOnVarEqu";
+prog_char PROGMEM Cmd_39[]="BreakOnVarLess";
+prog_char PROGMEM Cmd_40[]="BreakOnVarMore";
+prog_char PROGMEM Cmd_41[]="BreakOnVarNEqu";
+prog_char PROGMEM Cmd_42[]="ClockDate";
+prog_char PROGMEM Cmd_43[]="ClockYear";
+prog_char PROGMEM Cmd_44[]="ClockTime";
+prog_char PROGMEM Cmd_45[]="ClockDLS";
+prog_char PROGMEM Cmd_46[]="Delay";
+prog_char PROGMEM Cmd_47[]="ReceiveRepeatsIR";
+prog_char PROGMEM Cmd_48[]="ReceiveRepeatsRF";
+prog_char PROGMEM Cmd_49[]="SendIR";
+prog_char PROGMEM Cmd_50[]="SendRawIR";
+prog_char PROGMEM Cmd_51[]="SendRF";
+prog_char PROGMEM Cmd_52[]="SendRawRF";
+prog_char PROGMEM Cmd_53[]="SimulateDay";
+prog_char PROGMEM Cmd_54[]="TimerSet";
+prog_char PROGMEM Cmd_55[]="TimerRandom";
+prog_char PROGMEM Cmd_56[]="TimerReset";
+prog_char PROGMEM Cmd_57[]="VariableSet";
+prog_char PROGMEM Cmd_58[]="VariableClear";
+prog_char PROGMEM Cmd_59[]="VariableDaylight";
+prog_char PROGMEM Cmd_60[]="VariableDec";
+prog_char PROGMEM Cmd_61[]="VariableInc";
+prog_char PROGMEM Cmd_62[]="VariableVariable";
+prog_char PROGMEM Cmd_63[]="VariableWiredAnalog";
+prog_char PROGMEM Cmd_64[]="WiredAnalog";
+prog_char PROGMEM Cmd_65[]="WiredOut";
+prog_char PROGMEM Cmd_66[]="WiredPullup";
+prog_char PROGMEM Cmd_67[]="WiredSmittTrigger";
+prog_char PROGMEM Cmd_68[]="WiredThreshold";
+prog_char PROGMEM Cmd_69[]="ClockDaylight";
+prog_char PROGMEM Cmd_70[]="EventStatus";
+prog_char PROGMEM Cmd_71[]="Timer";
+prog_char PROGMEM Cmd_72[]="Variable";
+prog_char PROGMEM Cmd_73[]="WiredIn";
+prog_char PROGMEM Cmd_74[]="ClockAll";
+prog_char PROGMEM Cmd_75[]="ClockMon";
+prog_char PROGMEM Cmd_76[]="ClockTue";
+prog_char PROGMEM Cmd_77[]="ClockWed";
+prog_char PROGMEM Cmd_78[]="ClockThu";
+prog_char PROGMEM Cmd_79[]="ClockFri";
+prog_char PROGMEM Cmd_80[]="ClockSat";
+prog_char PROGMEM Cmd_81[]="ClockSun";
+prog_char PROGMEM Cmd_82[]="KAKU";
+prog_char PROGMEM Cmd_83[]="NewKAKU";
+prog_char PROGMEM Cmd_84[]="X10";
+prog_char PROGMEM Cmd_85[]="Boot";
+prog_char PROGMEM Cmd_86[]="Wildcard";
 
-#define RANGE_EVENT 70 // alle codes groter of gelijk aan deze waarde zijn een event.
-#define COMMAND_MAX 88 // aantal commando's
+#define RANGE_EVENT 69 // alle codes groter of gelijk aan deze waarde zijn een event.
+#define COMMAND_MAX 87 // aantal commando's
 
 // tabel die refereert aan de commando strings
 PROGMEM const char *CommandText_tabel[]={Cmd_0 ,
@@ -320,7 +317,7 @@ PROGMEM const char *CommandText_tabel[]={Cmd_0 ,
     Cmd_51,Cmd_52,Cmd_53,Cmd_54,Cmd_55,Cmd_56,Cmd_57,Cmd_58,Cmd_59,Cmd_60,
     Cmd_61,Cmd_62,Cmd_63,Cmd_64,Cmd_65,Cmd_66,Cmd_67,Cmd_68,Cmd_69,Cmd_70,
     Cmd_71,Cmd_72,Cmd_73,Cmd_74,Cmd_75,Cmd_76,Cmd_77,Cmd_78,Cmd_79,Cmd_80,
-    Cmd_81,Cmd_82,Cmd_83,Cmd_84,Cmd_85,Cmd_86,Cmd_87};
+    Cmd_81,Cmd_82,Cmd_83,Cmd_84,Cmd_85,Cmd_86};
           
 PROGMEM prog_uint16_t Sunrise[]={         
     528,525,516,503,487,467,446,424,401,378,355,333,313,295,279,268,261,259,263,271,283,297,312,329,
@@ -381,7 +378,6 @@ struct Settings
   byte UserVar[USER_VARIABLES_MAX];
   byte Unit;
   byte Home;
-  unsigned long BaseCode;
   }S;
 
 struct EventStruct

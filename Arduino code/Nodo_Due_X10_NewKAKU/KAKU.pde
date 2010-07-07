@@ -16,7 +16,14 @@
     along with Nodo Due.  If not, see <http://www.gnu.org/licenses/>.
 
 \**************************************************************************/
-//#define BaseCode 2650502
+
+// BaseCode
+// Hierbij word de huiscode opgeteld voor het genereren van de nieuwe 26-bits KAKU code.
+// Bij ontvangst of decoderen wordt de basecode er juist afgehaald.
+// Voor het achterhalen van de basecode van een afstandsbediening: uncomment de print 
+// regel bij Rawsignal2NewKAKU
+#define BaseCode 0
+
 
 /*
 
@@ -68,7 +75,6 @@ void KAKU_2_RawSignal(unsigned long Code)
   Command = (Code      ) & 0x1;
   Group   = (Code & CMD_ALLOFF) == CMD_ALLOFF;
   Code = Home | Unit << 4 | (0x600 | (Command << 11));
-//  Code = ((unsigned long) Home) | ((unsigned long) Unit) << 4 | (0x600 | (Command << 11));
 
   RawSignal[0] = 4+(KAKU_CodeLength*4);
   RawSignal[1] = 0; //KAKU_T;  // no start sync
@@ -79,12 +85,6 @@ void KAKU_2_RawSignal(unsigned long Code)
     b = (Code >> i) & 1;
     if (Group && i>=4 && i<8) { b = 0; n = KAKU_nS; } // short 0
     encodePWDM(2*i+2, KAKU_T, KAKU_nP, KAKU_nS, n, b);
-//      encodePWDM(2*i+1, KAKU_T, KAKU_nP, KAKU_nS, KAKU_nL, 0);
-//    if (Group && i>=4 && i<8) {
-//      encodePWDM(2*i+2, KAKU_T, KAKU_nP, KAKU_nS, KAKU_nS, 0); // short 0
-//    } else {
-//      encodePWDM(2*i+2, KAKU_T, KAKU_nP, KAKU_nS, KAKU_nL, (Code >> i) & 1);
-//    }
   }
   RawSignal[3+(KAKU_CodeLength*4)] = KAKU_T;
   RawSignal[4+(KAKU_CodeLength*4)] = 32*KAKU_T; // stop sync pulse
@@ -153,7 +153,7 @@ void NewKAKU_2_RawSignal(unsigned long Code)
   boolean b0, b1;
 
   // CMD_NewKAKU = NNxxHULC, NN=Nodo unit, xx=CMD_NewKAKU, H=Home, U=Unit, L=Level, C=Commando
-  Home    = ((Code >> 12) & 0xF) + S.BaseCode + (S.Home << 8) + (S.Unit << 4); // 26 bit, nu basecode + 8 bit nodo home unit code + 4 bit home code
+  Home    = ((Code >> 12) & 0xF) + BaseCode; // 26 bit, nu basecode + 4 bit home code
   Unit    =  (Code >>  8) & 0xF;
   Level   =  (Code >>  4) & 0xF;
   Command =  (Code      ) & 0x3;
@@ -161,8 +161,6 @@ void NewKAKU_2_RawSignal(unsigned long Code)
 
   if (Dim) { Command = 0; l = 4+((NewKAKU_CodeLength+4)*4); } else { l = 4+(NewKAKU_CodeLength*4); }
   Code = Home << 6 | Command << 4 | Unit;
-//  Code = ((unsigned long) Home) << 6 | ((unsigned long) Command) << 4 | ((unsigned long) (Unit));
-//  if (Dim) { Code ^= 0x20; l = 4+((NewKAKU_CodeLength+4)*4); } else { l = 4+(NewKAKU_CodeLength*4); }
 
   RawSignal[0] = l;
   RawSignal[1] = NewKAKU_T;
@@ -174,13 +172,6 @@ void NewKAKU_2_RawSignal(unsigned long Code)
     if ((i == 4) && (Dim)) { b0 = 0; b1 = 0; }       // dim
     encodePDM(2*(NewKAKU_CodeLength-1-i)+1, NewKAKU_T, NewKAKU_nP, NewKAKU_nS, NewKAKU_nL, b0);
     encodePDM(2*(NewKAKU_CodeLength-1-i)+2, NewKAKU_T, NewKAKU_nP, NewKAKU_nS, NewKAKU_nL, b1);
-//    if ((i == 4) && (Dim)) {       // dim
-//      encodePDM(2*(NewKAKU_CodeLength-1-i)+1, NewKAKU_T, NewKAKU_nP, NewKAKU_nS, NewKAKU_nL, 0);
-//      encodePDM(2*(NewKAKU_CodeLength-1-i)+2, NewKAKU_T, NewKAKU_nP, NewKAKU_nS, NewKAKU_nL, 0);
-//    } else {
-//      encodePDM(2*(NewKAKU_CodeLength-1-i)+1, NewKAKU_T, NewKAKU_nP, NewKAKU_nS, NewKAKU_nL, ( (Code >> i)) & 1);
-//      encodePDM(2*(NewKAKU_CodeLength-1-i)+2, NewKAKU_T, NewKAKU_nP, NewKAKU_nS, NewKAKU_nL, (~(Code >> i)) & 1);
-//    }
   }
   if (Dim) {
     for (i=3; i>=0; i--) {
@@ -229,9 +220,10 @@ unsigned long RawSignal_2_NewKAKU(void)
     }
   }
 
-  Home =    ((y >> 6) - (S.BaseCode + (S.Home << 8) + (S.Unit << 4))) & 0xF; //(y >> 6) & 0x0F;
-  Unit =    (y     ) & 0x0F;
+// Serial.print("BaseCode: ");
+// Serial.println(y >> 6, DEC);
+  Home =    ((y >> 6) - BaseCode) & 0xF;
+  Unit =    ( y     ) & 0x0F;
   if (Dim) { Command = CMD_DIMLEVEL; } else { Command = (y >> 4) & 0x03; }
   return command2event(CMD_KAKU_NEW, (Home << 4 | Unit), (Level << 4 | Command));
 }
-

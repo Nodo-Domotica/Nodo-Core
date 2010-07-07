@@ -31,24 +31,18 @@ void encodePWM(byte i, unsigned int T, byte nP, byte nS, byte nL, boolean y) { /
   byte n;
   if (y==0) { n = nS; } else { n = nL; }
   encodePulse(2*i, T, n); encodePulse(2*i+1, T, nP);
-//  if (y==0) { encodePulse(2*i, T, nS); encodePulse(2*i+1, T, nP); }
-//  else      { encodePulse(2*i, T, nL); encodePulse(2*i+1, T, nP); }
 }
 
 void encodePDM(byte i, unsigned int T, byte nP, byte nS, byte nL, boolean y) { // pulse distance modulation / space coded
   byte n;
   if (y==0) { n = nS; } else { n = nL; }
   encodePulse(2*i, T, nP); encodePulse(2*i+1, T, n);
-//  if (y==0) { encodePulse(2*i, T, nP); encodePulse(2*i+1, T, nS); }
-//  else      { encodePulse(2*i, T, nP); encodePulse(2*i+1, T, nL); }
 }
 
 void encodePWDM(byte i, unsigned int T, byte nP, byte nS, byte nL, boolean y) { // pulse width distance modulation
   byte n0, n1;
   if (y==0) { n0 = nS; n1 = nL; } else { n0 = nL; n1 = nS; }
   encodePulse(2*i, T, n0); encodePulse((2*i)+1, T, n1);
-//  if (y==0) { encodePulse(2*i, T, nS); encodePulse(2*i+1, T, nL); }
-//  else      { encodePulse(2*i, T, nL); encodePulse(2*i+1, T, nS); }
 }
 
 byte decodePWM(byte i, unsigned int T, byte nP, byte nS, byte nL) { // pulse width modulation
@@ -67,8 +61,6 @@ byte decodePDM(byte i, unsigned int T, byte nP, byte nS, byte nL) { // pulse dis
 
 byte decodePWDM(byte i, unsigned int T, byte nP, byte nS, byte nL) { // pulse width distance modulation
   byte y = (decodePulse(2*i, T, nS, nL) << 1 | decodePulse(2*i+1, T, nS, nL));
-//  if (y==0) { return 2; } // short 0
-//  return --y;
   if (y==0) { return 2; } // short 0
   if (y==1) { return 0; }
   if (y==2) { return 1; }
@@ -77,8 +69,6 @@ byte decodePWDM(byte i, unsigned int T, byte nP, byte nS, byte nL) { // pulse wi
 
 void encodePulse(byte i, unsigned int T, byte n) {
   RawSignal[i+1] = n*T;
-//  if (y == 0) { RawSignal[i+1] = n0*T; } // 0
-//  else        { RawSignal[i+1] = n1*T; } // 1
 }
 
 byte decodePulse(byte i, unsigned int T, byte n0, byte n1) {
@@ -86,12 +76,5 @@ byte decodePulse(byte i, unsigned int T, byte n0, byte n1) {
   t = RawSignal[i+1];
   if ((t > ((n0-1)*T)) && (t < ((n0+1)*T))) { return 0; }
   if ((t > ((n1-1)*T)) && (t < ((n1+1)*T))) { return 1; }
-//  t0 = (2*n0-1)*T/2;
-//  t1 = n1*T;
-//  if ((t > t0) && (t < (t0+T))) { return 0; }
-//  if ((t > (t1-T)) && (t < (t1+T))) { return 1; }
-//  if ((RawSignal[i+1] > (2*n0-1)*T/2) && (RawSignal[i+1] < (2*n0+1)*T/2)) { return 0; }
-//  if ((RawSignal[i+1] > (2*n1-2)*T/2) && (RawSignal[i+1] < (2*n1+2)*T/2)) { return 1; }
   return 0xFF;
 }
-

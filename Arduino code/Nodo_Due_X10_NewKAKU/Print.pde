@@ -85,13 +85,13 @@ void PrintCode(unsigned long Code)
         }
       Serial.print("("); 
       Serial.print(cmd2str(cmd));
+      Serial.print(" ");
 
       switch(cmd)
         {
         case CMD_KAKU:
         case CMD_X10:
         case CMD_KAKU_NEW:
-          Serial.print(" ");
           Serial.print('A'+((par1&0xf0)>>4),BYTE); // NewKAKU ook als A1..P1 printen...
 //          if (cmd == CMD_KAKU_NEW) {
 //            Serial.print(par1+1,DEC);
@@ -101,22 +101,9 @@ void PrintCode(unsigned long Code)
           Serial.print(",");
           Serial.print(cmd2str(par2 & 0xF)); // laat cmd2str het oplossen ipv hardcoded
           if ((par2 & 0xF) == CMD_DIMLEVEL) { Serial.print((par2 >> 4)+1,DEC); } // als dimlevel commando dan hoogste nibble als getal printen
-//          if        ((par2 & 0xE) == CMD_DIMLEVEL) {
-//                          Serial.print("Dim"); Serial.print(par2 >> 4);
-//          } else if ((par2 & 0xE) == CMD_DIM) {
-//            if (par2 & 1) Serial.print("Bright");
-//            else          Serial.print("Dim");
-//          } else if ((par2 & 0xE) == CMD_ALLOFF) {
-//            if (par2 & 1) Serial.print("AllOn");
-//            else          Serial.print("AllOff");
-//          } else {
-//            if (par2 & 1) Serial.print("On");
-//            else          Serial.print("Off");
-//          }
           break;
 
         case CMD_WILDCARD_EVENT:
-          Serial.print(" ");
           if(par1!=0)
             Serial.print(cmd2str(par1));
           else
@@ -129,7 +116,6 @@ void PrintCode(unsigned long Code)
           break;
 
         case CMD_STATUS_EVENT:
-          Serial.print(" ");
           if(par1!=0)
             Serial.print(cmd2str(par1));
           else
@@ -138,13 +124,7 @@ void PrintCode(unsigned long Code)
           Serial.print(par2,DEC);
           break;
 
-        case CMD_BASECODE:
-          Serial.print("; ");
-          Serial.print(S.BaseCode,DEC);
-          break;
-
         default:
-          Serial.print(" ");
           Serial.print(par1,DEC);
           Serial.print(","); 
           Serial.print(par2,DEC);

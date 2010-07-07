@@ -135,9 +135,6 @@ boolean GetStatus(int *Command, int *Par1, int *Par2)
       *Par1=S.Home;
       break;
       
-    case CMD_BASECODE:
-      break;
-      
     case CMD_BUILD:
       *Par1=BUILD;
       break;
@@ -339,7 +336,6 @@ void ResetFactory(void)
   S.IRRepeatSuppress   =true;
   S.Unit               =UNIT;
   S.Home               =HOME;
-  S.BaseCode           =BASECODE;
   
   for(byte x=0;x<4;x++)
     {

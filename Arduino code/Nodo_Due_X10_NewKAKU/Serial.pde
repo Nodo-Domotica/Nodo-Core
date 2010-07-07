@@ -108,12 +108,6 @@ unsigned long Receive_Serial(void)
            error=true;
        break;
    
-     case CMD_BASECODE:
-       x=SerialReadBlock(SerialBuffer);
-       S.BaseCode=str2val(SerialBuffer);
-       SaveSettings();
-       break;
-
      case CMD_RESET_FACTORY:
         ResetFactory();
         
