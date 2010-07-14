@@ -52,6 +52,7 @@
                        - AllOn/AllOff, Bright/Dim, Dim<level> en X10 commando's toegevoegd.
                        - Nieuwe KAKU group, NewKAKU dim en X10 code toegevoegd.
                        - Uitschakelen RF bij IR ontvangst.
+                       - Sync gefixed
                         
   01-06-2010: Lokale bestanden en versienummering met SVN ondergebracht in GoogleCode.
   

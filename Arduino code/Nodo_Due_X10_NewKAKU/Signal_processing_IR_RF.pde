@@ -18,19 +18,17 @@
 \**************************************************************************/
 
 // verzenden van RF codes:
-#define RF_REPEAT_DELAY                 0   // aantal milliseconden wachttijd tussen herhalingen bij verzenden RF (zit nu in sync pulsen)
-#define RF_FINISHED_DELAY               0   // tijd in milliseconden dat gewacht moet worden na verzenden van één complete code van -n- herhalingen 
-
-// Parameters voor check op vrije 433 ether alvorens verzenden signalen:
+//#define RF_LEADER_HIGH               8800   // high pulse voor leader, om the AGC voor de ontvanger in te stellen
+//#define RF_LEADER_LOW                4400   // low pulse voor leoder
 
 // ontvangen van RF-codes:
-#define RF_TIMEOUT                   2000   // na deze tijd in uSec. wordt een signaal als beëindigd beschouwd (NewKAKU sync pulse is maar 2450).
+#define RF_TIMEOUT                   5000   // na deze tijd in uSec. wordt een signaal als beëindigd beschouwd (de start sync van X10 is 8800, de eerste 5000 geeft een time-out, maar er wordt nog steeds gelocked op de overige 3000)
 #define RF_MIN_PULSE                  100   // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define RF_MIN_RAW_PULSES              32   // =16 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
 
 // verzenden van IR codes
-#define IR_REPEAT_DELAY                 0   // aantal milliseconden wachttijd tussen herhalingen bij verzenden IR (zit nu in sync pulsen)
-#define IR_FINISHED_DELAY               0   // tijd in milliseconden dat gewacht moet worden na verzenden van één complete code van -n- herhalingen 
+//#define IR_LEADER_HIGH               8800   // high pulse voor leader, om the AGC voor de ontvanger in te stellen
+//#define IR_LEADER_LOW                4400   // low pulse voor leoder
 
 // ontvangen van IR codes
 #define IR_TIMEOUT                   5000   // na deze tijd (uSec.) geen IR siglaal meer ontvangen te hebben, wordt aangenomen dat verzenden van één code gereed is.
@@ -39,9 +37,9 @@
 #define IR_ANALYSE_SHARPNESS            2   // 2=50%, 3=33% 4=25% 5=20% let op: >0 !!! scherpte bij analyse. Hoe lager deze waarde, hoe meer variate in signaal mag zitten
 
 // creatie van IR signalen
-#define IR_PULSE_0                     500   // PWM: Tijdsduur van de puls bij verzenden van een '0' in uSec.
-#define IR_PULSE_1                    1500   // PWM: Tijdsduur van de puls bij verzenden van een '1' in uSec.
-#define IR_SPACE                       500   // PWM: Tijdsduur van de space tussen de bitspuls bij verzenden van een '1' in uSec.    
+#define IR_PULSE_0                    500   // PWM: Tijdsduur van de puls bij verzenden van een '0' in uSec.
+#define IR_PULSE_1                   1500   // PWM: Tijdsduur van de puls bij verzenden van een '1' in uSec.
+#define IR_SPACE                      500   // PWM: Tijdsduur van de space tussen de bitspuls bij verzenden van een '1' in uSec.    
 
 
 unsigned long RF_ReadyTimer;
@@ -256,6 +254,7 @@ static void IR38Khz_set()
  * Deze routine werkt goed voor de Aurel ontvangers, maar niet voor de ontvangers die ruis doorgeven bij geen signaal
  \*********************************************************************************************/
 
+// Parameters voor check op vrije 433 ether alvorens verzenden signalen:
 //  #define RF_MIN_PULSE                  350   // pulsen korter dan deze tijd microseconden worden als onbelangrijke stoorpulsen beschouwd.
   #define RF_FREE_FRAME                 500   // aantal milliseconden dat geluisterd moet worden of de 433 band vrij is
   #define RF_FREE_WAIT                  500   // wachttijd in milliseconden alvorens de volgende poging wordt gedaan
@@ -327,17 +326,17 @@ static void IR38Khz_set()
  \*********************************************************************************************/
 unsigned long WaitForChangeState(uint8_t pin, uint8_t state, unsigned long timeout)
 	{
-        uint8_t bit=digitalPinToBitMask(pin);
-        uint8_t port=digitalPinToPort(pin);
-	uint8_t stateMask=(state?bit:0);
-	unsigned long width = 0; // keep initialization out of time critical area
-	unsigned long maxloops = microsecondsToClockCycles(timeout) / 16;
+        uint8_t bit = digitalPinToBitMask(pin);
+        uint8_t port = digitalPinToPort(pin);
+	uint8_t stateMask = (state ? bit : 0);
+	unsigned long numloops = 0; // keep initialization out of time critical area
+	unsigned long maxloops = microsecondsToClockCycles(timeout) / 19;
 	
-	// wait for the pulse to stop. One loop takes 16 clock-cycles
-	while((*portInputRegister(port)&bit)==stateMask)
-		if (width++==maxloops)
-			return 0L;//timeout opgetreden
-	return clockCyclesToMicroseconds(width*19+16); 
+	// wait for the pulse to stop. One loop takes 19 clock-cycles
+	while((*portInputRegister(port) & bit) == stateMask)
+		if (numloops++ == maxloops)
+			return 0;//timeout opgetreden
+	return clockCyclesToMicroseconds(numloops * 19 + 16); 
 	}
 
 
@@ -354,20 +353,22 @@ void RawCodeSend_RF(byte repeats)
   if(Simulate)return;
   digitalWrite(RF_ReceivePowerPin,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
   digitalWrite(RF_TransmitPowerPin,HIGH); // zet de 433Mhz zender aan   
+//  digitalWrite(RF_TransmitDataPin,HIGH); // 1
+//  delayMicroseconds(RF_LEADER_HIGH);
+//  digitalWrite(RF_TransmitDataPin,LOW); // 0
+//  delayMicroseconds(RF_LEADER_LOW);
   
-  for(byte y=0; y<repeats; y++) // herhaal verzenden IR code
+  for(byte y=0; y<repeats; y++) // herhaal verzenden RF code
     {
     x=1;
-    delay(RF_REPEAT_DELAY); // pauze tussen herhalingen.
     while(x<=RawSignal[0])
       {
       digitalWrite(RF_TransmitDataPin,HIGH); // 1
       delayMicroseconds(RawSignal[x++]); 
-      digitalWrite(RF_TransmitDataPin,LOW);// 0
+      digitalWrite(RF_TransmitDataPin,LOW); // 0
       delayMicroseconds(RawSignal[x++]); 
       }
     }
-  delay(RF_FINISHED_DELAY); // pauze na verzenden code
   digitalWrite(RF_TransmitPowerPin,LOW); // zet de 433Mhz zender weer uit
   digitalWrite(RF_ReceivePowerPin,HIGH); // Spanning naar de RF ontvanger weer aan.
   }
@@ -384,20 +385,22 @@ void RawCodeSend_IR(byte repeats)
   {
   int x;
   if(Simulate)return;
+//  TCCR2A|=_BV(COM2A0); // zet IR-modulatie AAN
+//  delay(IR_LEADER_HIGH);
+//  TCCR2A&=~_BV(COM2A0); // zet IR-modulatie UIT
+//  delay(IR_LEADER_LOW);
   
   for(byte y=0; y<repeats; y++) // herhaal verzenden IR code
     {
     x=1;
     while(x<=RawSignal[0])
       {
-      TCCR2A|=_BV(COM2A0);// zet IR-modulatie AAN
+      TCCR2A|=_BV(COM2A0); // zet IR-modulatie AAN
       delayMicroseconds(RawSignal[x++]); 
-      TCCR2A&=~_BV(COM2A0);// zet IR-modulatie UIT
+      TCCR2A&=~_BV(COM2A0); // zet IR-modulatie UIT
       delayMicroseconds(RawSignal[x++]); 
       }
-    delay(IR_REPEAT_DELAY); // pauze tussen herhalingen
     }
-  delay(IR_FINISHED_DELAY); // pauze na verzenden code
   }
 
  /*********************************************************************************************\
@@ -436,22 +439,20 @@ void RawCodeCreate(unsigned long Code)
 
 boolean IRFetchSignal(void)
   {
-  int IR_RawCodeLength=3; //first two sync pulses are skipped by detection;
+  int IR_RawCodeLength=1;
   unsigned long PulseLength;
 
   do{// lees de pulsen in microseconden en plaats deze in een tijdelijke buffer
-    PulseLength=WaitForChangeState(IR_ReceiveDataPin, LOW,IR_TIMEOUT); // meet hoe lang signaal LOW (= PULSE van IR signaal)
+    PulseLength=WaitForChangeState(IR_ReceiveDataPin, LOW, IR_TIMEOUT); // meet hoe lang signaal LOW (= PULSE van IR signaal)
     if(PulseLength<IR_MIN_PULSE)return false;
     RawSignal[IR_RawCodeLength++]=PulseLength;
-    PulseLength=WaitForChangeState(IR_ReceiveDataPin, HIGH,IR_TIMEOUT); // meet hoe lang signaal HIGH (= SPACE van IR signaal)
+    PulseLength=WaitForChangeState(IR_ReceiveDataPin, HIGH, IR_TIMEOUT); // meet hoe lang signaal HIGH (= SPACE van IR signaal)
     RawSignal[IR_RawCodeLength++]=PulseLength;
     }while(IR_RawCodeLength<RAW_BUFFER_SIZE && PulseLength!=0);// Zolang nog niet alle bits ontvangen en er niet vroegtijdig een timeout plaats vindt
 
   if(IR_RawCodeLength>=IR_MIN_RAW_PULSES)
     {
     RawSignal[0]=IR_RawCodeLength-1;
-    RawSignal[1]=0;
-    RawSignal[2]=0;
     return true;
     }
   RawSignal[0]=0;
@@ -466,23 +467,21 @@ boolean IRFetchSignal(void)
  \*********************************************************************************************/
 boolean RFFetchSignal(void)
   {
-  int RF_RawCodeLength=3; //first two sync pulses are skipped by detection
+  int RF_RawCodeLength=1;
   unsigned long PulseLength;
 
   do{// lees de pulsen in microseconden en plaats deze in een tijdelijke buffer
-    PulseLength=WaitForChangeState(RF_ReceiveDataPin, HIGH,RF_TIMEOUT); // meet hoe lang signaal HIGH (= PULSE van RF signaal)
+    PulseLength=WaitForChangeState(RF_ReceiveDataPin, HIGH, RF_TIMEOUT); // meet hoe lang signaal HIGH (= PULSE van RF signaal)
     if(PulseLength<RF_MIN_PULSE)return false; // gelijk weer terug als het alleen maar een korte stoorpuls was.
 
     RawSignal[RF_RawCodeLength++]=PulseLength;
-    PulseLength=WaitForChangeState(RF_ReceiveDataPin, LOW,RF_TIMEOUT); // meet hoe lang signaal LOW (= SPACE van RF signaal)
+    PulseLength=WaitForChangeState(RF_ReceiveDataPin, LOW, RF_TIMEOUT); // meet hoe lang signaal LOW (= SPACE van RF signaal)
     RawSignal[RF_RawCodeLength++]=PulseLength;
     }while(RF_RawCodeLength<RAW_BUFFER_SIZE && PulseLength!=0);// Zolang nog niet alle bits ontvangen en er niet vroegtijdig een timeout plaats vindt
 
   if(RF_RawCodeLength>=RF_MIN_RAW_PULSES)
     {
     RawSignal[0]=RF_RawCodeLength-1;// -1 omdat de teller RF_RawCodeLength++ altijd met één teveel uit de loop komt.
-    RawSignal[1]=0;
-    RawSignal[2]=0;
     return true;
     }
   RawSignal[0]=0;

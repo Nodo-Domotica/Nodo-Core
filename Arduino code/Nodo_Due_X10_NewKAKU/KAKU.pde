@@ -76,18 +76,16 @@ void KAKU_2_RawSignal(unsigned long Code)
   Group   = (Code & CMD_ALLOFF) == CMD_ALLOFF;
   Code = Home | Unit << 4 | (0x600 | (Command << 11));
 
-  RawSignal[0] = 4+(KAKU_CodeLength*4);
-  RawSignal[1] = 0; //KAKU_T;  // no start sync
-  RawSignal[2] = 0; //10*KAKU_T;
+  RawSignal[0] = (KAKU_CodeLength*4)+2;
   for (i=0; i<KAKU_CodeLength; i++) {
-    encodePWDM(2*i+1, KAKU_T, KAKU_nP, KAKU_nS, KAKU_nL, 0);
+    encodePWDM(2*i, KAKU_T, KAKU_nP, KAKU_nS, KAKU_nL, 0);
     n = KAKU_nL;
     b = (Code >> i) & 1;
     if (Group && i>=4 && i<8) { b = 0; n = KAKU_nS; } // short 0
-    encodePWDM(2*i+2, KAKU_T, KAKU_nP, KAKU_nS, n, b);
+    encodePWDM(2*i+1, KAKU_T, KAKU_nP, KAKU_nS, n, b);
   }
-  RawSignal[3+(KAKU_CodeLength*4)] = KAKU_T;
-  RawSignal[4+(KAKU_CodeLength*4)] = 32*KAKU_T; // stop sync pulse
+  RawSignal[(KAKU_CodeLength*4)+1] = KAKU_T;
+  RawSignal[(KAKU_CodeLength*4)+2] = 32*KAKU_T; // stop sync pulse
 }
 
 /*********************************************************************************************\
@@ -102,12 +100,12 @@ unsigned long RawSignal_2_KAKU(void)
   unsigned long y=0;
 
   // conventionele KAKU bestaat altijd uit 12 data bits plus stop. Ongelijk, dan geen KAKU
-  if (RawSignal[0] != 4+(KAKU_CodeLength*4)) { return false; }
+  if (RawSignal[0] != (KAKU_CodeLength*4)+2) { return false; }
 
   // omzetten naar bitstream als timing correct is
   Command = CMD_OFF;
   for (i=0; i<KAKU_CodeLength; i++) {
-    x = decodePWDM(2*i+1, KAKU_T, KAKU_nP, KAKU_nS, KAKU_nL) << 1 | decodePWDM(2*i+2, KAKU_T, KAKU_nP, KAKU_nS, KAKU_nL);
+    x = decodePWDM(2*i, KAKU_T, KAKU_nP, KAKU_nS, KAKU_nL) << 1 | decodePWDM(2*i+1, KAKU_T, KAKU_nP, KAKU_nS, KAKU_nL);
     if      (x>=3) { return false; }
     else if (x==0) { y = (y >> 1); }
     else if (x==1) { y = (y >> 1 | (1 << (KAKU_CodeLength-1))); }
@@ -159,11 +157,11 @@ void NewKAKU_2_RawSignal(unsigned long Code)
   Command =  (Code      ) & 0x3;
   Dim     =  (Code & 0xE) == CMD_DIMLEVEL;
 
-  if (Dim) { Command = 0; l = 4+((NewKAKU_CodeLength+4)*4); } else { l = 4+(NewKAKU_CodeLength*4); }
+  if (Dim) { Command = 0; l = 2+((NewKAKU_CodeLength+4)*4)+2; } else { l = 2+(NewKAKU_CodeLength*4)+2; }
   Code = Home << 6 | Command << 4 | Unit;
 
   RawSignal[0] = l;
-  RawSignal[1] = NewKAKU_T;
+  RawSignal[1] = NewKAKU_nP*NewKAKU_T;
   RawSignal[2] = 2*NewKAKU_nL*NewKAKU_T;
   
   for (i=NewKAKU_CodeLength-1; i>=0; i--) {
@@ -180,7 +178,7 @@ void NewKAKU_2_RawSignal(unsigned long Code)
     }
   }
 
-  RawSignal[l-1] = NewKAKU_T;
+  RawSignal[l-1] = NewKAKU_nP*NewKAKU_T;
   RawSignal[l  ] = 10*NewKAKU_nL*NewKAKU_T;
 }
 
@@ -198,7 +196,7 @@ unsigned long RawSignal_2_NewKAKU(void)
   unsigned long y=0;
 
   // nieuwe KAKU bestaat altijd uit start bit + 32 bits + evt 4 dim bits. Ongelijk, dan geen NewKAKU
-  if ((RawSignal[0] != 4+(NewKAKU_CodeLength*4)) && (RawSignal[0] != 4+(NewKAKU_CodeLength*4)+4)) { return false; }
+  if ((RawSignal[0] != 2+(NewKAKU_CodeLength*4)+2) && (RawSignal[0] != 2+((NewKAKU_CodeLength+4)*4)+2)) { return false; }
 
   // omzetten naar bitstream als timing correct is
   Level = 0;
@@ -223,7 +221,8 @@ unsigned long RawSignal_2_NewKAKU(void)
 // Serial.print("BaseCode: ");
 // Serial.println(y >> 6, DEC);
   Home =    ((y >> 6) - BaseCode) & 0xF;
-  Unit =    ( y     ) & 0x0F;
+  Unit =    ( y                 ) & 0xF;
   if (Dim) { Command = CMD_DIMLEVEL; } else { Command = (y >> 4) & 0x03; }
   return command2event(CMD_KAKU_NEW, (Home << 4 | Unit), (Level << 4 | Command));
 }
+

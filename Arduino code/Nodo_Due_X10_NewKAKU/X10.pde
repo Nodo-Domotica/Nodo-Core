@@ -83,11 +83,11 @@ void X10_2_RawSignal(unsigned long Code)
   RawSignal[0]=4+(X10_CodeLength*2);
   RawSignal[1]=40*X10_T; // start sync
   RawSignal[2]=20*X10_T;
-  for (i=X10_CodeLength-1; i>=0; i--) {
-    encodePDM((X10_CodeLength-1-i)+1, X10_T, X10_nP, X10_nS, X10_nL, (Code >> i) & 1);
+  for (i=0; i<X10_CodeLength; i++) {
+    encodePDM(i+1, X10_T, X10_nP, X10_nS, X10_nL, (Code >> (X10_CodeLength-1-i)) & 1);
   }
-  RawSignal[3+(X10_CodeLength*2)]=3*X10_T;  // stop sync
-  RawSignal[4+(X10_CodeLength*2)]=80*X10_T; // moet 160* zijn volgens specs, maar dit is sneller en werkt hier ook
+  RawSignal[2+(X10_CodeLength*2)+1]=3*X10_T;  // stop sync
+  RawSignal[2+(X10_CodeLength*2)+2]=160*X10_T;
 }
 
 
@@ -104,7 +104,7 @@ unsigned long RawSignal_2_X10(void)
   unsigned long y=0;
   
   // conventionele X10 bestaat altijd uit 32 bits plus stop bit. Ongelijk, dan geen X10
-  if (RawSignal[0] != 4+(X10_CodeLength*2)) { return false; }
+  if (RawSignal[0] != 2+(X10_CodeLength*2)+2) { return false; }
 
   // omzetten naar bitstream als timing correct is
   for (i=0; i<X10_CodeLength; i++) {
@@ -136,3 +136,4 @@ unsigned long RawSignal_2_X10(void)
   
   return command2event(CMD_X10, (Home << 4 | Unit), Command);
 }
+

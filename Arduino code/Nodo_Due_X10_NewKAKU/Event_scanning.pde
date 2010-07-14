@@ -72,12 +72,12 @@ void EventScan(void)
         SerialHold(false);      
       }
 
-    // IR: *************** kijk of er data start op IR en genereer event als er een code ontvangen is **********************
+    // IR: *************** kijk of er data staat op IR en genereer event als er een code ontvangen is **********************
     if((*portInputRegister(IRport)&IRbit)==0)// Kijk if er iets op de IR poort binnenkomt. (Pin=LAAG als signaal in de ether).
       {
-      LoopIntervalTimer_0=millis()+Loop_INTERVAL_0; // reset de timer (schakelt RF ontvangst tijdelijk uit)
       if(IRFetchSignal())// Als het een duidelijk signaal was en geen stoorpuls
         {
+        LoopIntervalTimer_0=millis()+Loop_INTERVAL_0; // reset de timer (schakelt RF ontvangst tijdelijk uit)
         if(E.Content=AnalyzeSignal())// Bereken uit de tabel met de pulstijden de 32-bit code
           {
           if((E.Content==Checksum || !S.IRRepeatChecksum) && (S.IRRepeatSuppress ||E.ContentPrevious!=E.Content || millis()>(PauseTimerIR+IR_ENDSIGNAL_TIME)))
@@ -112,8 +112,7 @@ void EventScan(void)
           }
         }
     }
-
-    
+ 
     // 2: niet tijdkritische processen die periodiek uitgevoerd moeten worden
     if(LoopIntervalTimer_2<millis())
       {
@@ -153,34 +152,34 @@ void EventScan(void)
       LoopIntervalTimer_1=millis()+Loop_INTERVAL_1; // reset de timer 
       
       // WIRED: *************** kijk of statussen gewijzigd zijn op WIRED **********************
-      if(WiredCounter<3)
-        WiredCounter++;
-      else
-        WiredCounter=0;
+     if(WiredCounter<3)
+       WiredCounter++;
+     else
+       WiredCounter=0;
 
-      // als de huidige waarde groter dan threshold EN de vorige keer was dat nog niet zo DAN verstuur code
-      z=false; // vlag om te kijken of er een wijziging is die verzonden moet worden.
-      y=analogRead(WiredAnalogInputPin_1+WiredCounter)>>2;
-      
-      if(y>S.WiredInputThreshold[WiredCounter]+S.WiredInputSmittTrigger[WiredCounter] && !WiredInputStatus[WiredCounter])
-        {
-        WiredInputStatus[WiredCounter]=true;
-        z=true;
-        }
-      if(y<S.WiredInputThreshold[WiredCounter]-S.WiredInputSmittTrigger[WiredCounter] && WiredInputStatus[WiredCounter])
-        {
-        WiredInputStatus[WiredCounter]=false;
-        z=true;
-        }
-    
-      if(z)// er is een verandering van status op de ingang. 
-        {    
-        E.Content=command2event(CMD_WIRED_IN_EVENT,WiredCounter+1,WiredInputStatus[WiredCounter]);
-        E.Port=CMD_PORT_WIRED;
-        E.Type=CMD_TYPE_EVENT;
-        E.Direction=DIRECTION_IN;
-        return;
-        }
+     // als de huidige waarde groter dan threshold EN de vorige keer was dat nog niet zo DAN verstuur code
+     z=false; // vlag om te kijken of er een wijziging is die verzonden moet worden.
+     y=analogRead(WiredAnalogInputPin_1+WiredCounter)>>2;
+     
+     if(y>S.WiredInputThreshold[WiredCounter]+S.WiredInputSmittTrigger[WiredCounter] && !WiredInputStatus[WiredCounter])
+       {
+       WiredInputStatus[WiredCounter]=true;
+       z=true;
+       }
+     if(y<S.WiredInputThreshold[WiredCounter]-S.WiredInputSmittTrigger[WiredCounter] && WiredInputStatus[WiredCounter])
+       {
+       WiredInputStatus[WiredCounter]=false;
+       z=true;
+       }
+   
+     if(z)// er is een verandering van status op de ingang. 
+       {    
+       E.Content=command2event(CMD_WIRED_IN_EVENT,WiredCounter+1,WiredInputStatus[WiredCounter]);
+       E.Port=CMD_PORT_WIRED;
+       E.Type=CMD_TYPE_EVENT;
+       E.Direction=DIRECTION_IN;
+       return;
+       }
 
     // TIMER: **************** Genereer event als één van de Timers voor de gebruiker afgelopen is ***********************
     if(TimerCounter<USER_TIMER_MAX-1)
