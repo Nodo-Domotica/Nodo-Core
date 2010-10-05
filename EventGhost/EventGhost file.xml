@@ -1,0 +1,493 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<EventGhost Name="Configuration Tree" Expanded="True" Version="1194" Guid="{F5601EDF-A927-4E06-AB17-446CFF735B73}" Time="1286312317.31">
+    <Autostart Name="Autostart">
+        <Plugin File="Serial" Identifier="Serial">
+            gAIoSwdNAEtLA0sASwBLAYhYAgAAAFxucQBYBAAAAE5vZG9xAUsAdHECLg==
+        </Plugin>
+        <Action Name="Even wachten, Nodo moet settings laden.">
+            EventGhost.Wait(3.0)
+        </Action>
+        <Action Name="Simulate=on" Enabled="False">
+            Serial.Write(u'Simulate on;')
+        </Action>
+    </Autostart>
+    <Folder Name="Nodo">
+        <Folder Name="Status">
+            <Macro Name="Status Events">
+                <Action Name="Unit">
+                    Serial.Write(u'StatusEvent Unit;')
+                </Action>
+                <Action Name="DATE">
+                    Serial.Write(u'StatusEvent ClockDate;')
+                </Action>
+                <Action Name="TIME">
+                    Serial.Write(u'StatusEvent ClockTime;')
+                </Action>
+            </Macro>
+            <Macro Name="Timers">
+                <Action Name="TimerSet 1">
+                    Serial.Write(u'Status TimerSet 1;')
+                </Action>
+                <Action Name="TimerSet 2">
+                    Serial.Write(u'Status TimerSet 2;')
+                </Action>
+                <Action Name="TimerSet 3">
+                    Serial.Write(u'Status TimerSet 3;')
+                </Action>
+                <Action Name="TimerSet 4">
+                    Serial.Write(u'Status TimerSet 4;')
+                </Action>
+                <Action Name="TimerSet 5">
+                    Serial.Write(u'Status TimerSet 5;')
+                </Action>
+                <Action Name="TimerSet 6">
+                    Serial.Write(u'Status TimerSet 6;')
+                </Action>
+                <Action Name="TimerSet 7">
+                    Serial.Write(u'Status TimerSet 7;')
+                </Action>
+                <Action Name="TimerSet 8">
+                    Serial.Write(u'Status TimerSet 8;')
+                </Action>
+                <Action Name="TimerSet 9">
+                    Serial.Write(u'Status TimerSet 9;')
+                </Action>
+                <Action Name="TimerSet 10">
+                    Serial.Write(u'Status TimerSet 10;')
+                </Action>
+                <Action Name="TimerSet 11">
+                    Serial.Write(u'Status TimerSet 11;')
+                </Action>
+                <Action Name="TimerSet 12">
+                    Serial.Write(u'Status TimerSet 12;')
+                </Action>
+                <Action Name="TimerSet 13">
+                    Serial.Write(u'Status TimerSet 13;')
+                </Action>
+                <Action Name="TimerSet 14">
+                    Serial.Write(u'Status TimerSet 14;')
+                </Action>
+                <Action Name="TimerSet 15">
+                    Serial.Write(u'Status TimerSet 15;')
+                </Action>
+            </Macro>
+            <Macro Name="Variabelen">
+                <Action Name="VariableSet 1">
+                    Serial.Write(u'Status VariableSet 1;')
+                </Action>
+                <Action Name="VariableSet 2">
+                    Serial.Write(u'Status VariableSet 2;')
+                </Action>
+                <Action Name="VariableSet 3">
+                    Serial.Write(u'Status VariableSet 3;')
+                </Action>
+                <Action Name="VariableSet 4">
+                    Serial.Write(u'Status VariableSet 4;')
+                </Action>
+                <Action Name="VariableSet 5">
+                    Serial.Write(u'Status VariableSet 5;')
+                </Action>
+                <Action Name="VariableSet 6">
+                    Serial.Write(u'Status VariableSet 6;')
+                </Action>
+                <Action Name="VariableSet 7">
+                    Serial.Write(u'Status VariableSet 7;')
+                </Action>
+                <Action Name="VariableSet 8">
+                    Serial.Write(u'Status VariableSet 8;')
+                </Action>
+                <Action Name="VariableSet 9">
+                    Serial.Write(u'Status VariableSet 9;')
+                </Action>
+                <Action Name="VariableSet 10">
+                    Serial.Write(u'Status VariableSet 10;')
+                </Action>
+                <Action Name="VariableSet 11">
+                    Serial.Write(u'Status VariableSet 11;')
+                </Action>
+                <Action Name="VariableSet 12">
+                    Serial.Write(u'Status VariableSet 12;')
+                </Action>
+                <Action Name="VariableSet 13">
+                    Serial.Write(u'Status VariableSet 13;')
+                </Action>
+                <Action Name="VariableSet 14">
+                    Serial.Write(u'Status VariableSet 14;')
+                </Action>
+                <Action Name="VariableSet 15">
+                    Serial.Write(u'Status VariableSet 15;')
+                </Action>
+            </Macro>
+            <Macro Name="Settings">
+                <Action Name="Home">
+                    Serial.Write(u'Status Home;')
+                </Action>
+                <Action Name="Unit">
+                    Serial.Write(u'Status Unit;')
+                </Action>
+                <Action Name="Simulate">
+                    Serial.Write(u'Status Simulate;')
+                </Action>
+                <Action Name="Trace">
+                    Serial.Write(u'Status Trace;')
+                </Action>
+                <Action Name="YEAR">
+                    Serial.Write(u'Status ClockYear;')
+                </Action>
+                <Action Name="DATE">
+                    Serial.Write(u'Status ClockDate;')
+                </Action>
+                <Action Name="TIME">
+                    Serial.Write(u'Status ClockTime;')
+                </Action>
+                <Action Name="ClockDaylight">
+                    Serial.Write(u'Status ClockDaylight;')
+                </Action>
+                <Action Name="ClockDLS">
+                    Serial.Write(u'Status ClockDLS;')
+                </Action>
+                <Action Name="AnalyseSettings">
+                    Serial.Write(u'Status AnalyseSettings;')
+                </Action>
+            </Macro>
+            <Macro Name="Wired">
+                <Action Name="WiredOut">
+                    Serial.Write(u'Status WiredOut 1;')
+                </Action>
+                <Action Name="WiredOut">
+                    Serial.Write(u'Status WiredOut 2;')
+                </Action>
+                <Action Name="WiredOut">
+                    Serial.Write(u'Status WiredOut 3;')
+                </Action>
+                <Action Name="WiredOut">
+                    Serial.Write(u'Status WiredOut 4;')
+                </Action>
+                <Action Name="WiredIn">
+                    Serial.Write(u'Status WiredIn 1;')
+                </Action>
+                <Action Name="WiredIn">
+                    Serial.Write(u'Status WiredIn 2;')
+                </Action>
+                <Action Name="WiredIn">
+                    Serial.Write(u'Status WiredIn 3;')
+                </Action>
+                <Action Name="WiredIn">
+                    Serial.Write(u'Status WiredIn 4;')
+                </Action>
+                <Action Name="WiredAnalog">
+                    Serial.Write(u'Status WiredAnalog 1;')
+                </Action>
+                <Action Name="WiredAnalog">
+                    Serial.Write(u'Status WiredAnalog 2;')
+                </Action>
+                <Action Name="WiredAnalog">
+                    Serial.Write(u'Status WiredAnalog 3;')
+                </Action>
+                <Action Name="WiredAnalog">
+                    Serial.Write(u'Status WiredAnalog 4;')
+                </Action>
+                <Action Name="WiredThreshold">
+                    Serial.Write(u'Status WiredThreshold 1;')
+                </Action>
+                <Action Name="WiredThreshold">
+                    Serial.Write(u'Status WiredThreshold 2;')
+                </Action>
+                <Action Name="WiredThreshold">
+                    Serial.Write(u'Status WiredThreshold 3;')
+                </Action>
+                <Action Name="WiredThreshold">
+                    Serial.Write(u'Status WiredThreshold 4;')
+                </Action>
+                <Action Name="WiredSmittTrigger">
+                    Serial.Write(u'Status WiredSmittTrigger 1;')
+                </Action>
+                <Action Name="WiredSmittTrigger">
+                    Serial.Write(u'Status WiredSmittTrigger 2;')
+                </Action>
+                <Action Name="WiredSmittTrigger">
+                    Serial.Write(u'Status WiredSmittTrigger 3;')
+                </Action>
+                <Action Name="WiredSmittTrigger">
+                    Serial.Write(u'Status WiredSmittTrigger 4;')
+                </Action>
+                <Action Name="WiredPullUp">
+                    Serial.Write(u'Status WiredPullUp 1;')
+                </Action>
+                <Action Name="WiredPullUp">
+                    Serial.Write(u'Status WiredPullUp 2;')
+                </Action>
+                <Action Name="WiredPullUp">
+                    Serial.Write(u'Status WiredPullUp 3;')
+                </Action>
+                <Action Name="WiredPullUp">
+                    Serial.Write(u'Status WiredPullUp 4;')
+                </Action>
+            </Macro>
+            <Macro Name="Eventlist">
+                <Action Name="EventlistShow">
+                    Serial.Write(u'EventlistShow;')
+                </Action>
+            </Macro>
+        </Folder>
+        <Folder Name="Commando's">
+            <Macro Name="Besturing">
+                <Action Name="ResetFactory">
+                    Serial.Write(u'ResetFactory ResetFactory ResetFactory ;')
+                </Action>
+                <Action Name="Reset">
+                    Serial.Write(u'reset;')
+                </Action>
+                <Action Name="Simulate=On">
+                    Serial.Write(u'Simulate 1;')
+                </Action>
+                <Action Name="Simulate=Off">
+                    Serial.Write(u'Simulate 0;')
+                </Action>
+                <Action Name="Trace Off">
+                    Serial.Write(u'Trace Off;')
+                </Action>
+                <Action Name="Trace On">
+                    Serial.Write(u'Trace On;')
+                </Action>
+            </Macro>
+            <Macro Name="Multi Nodo">
+                <Action Name="Home 1">
+                    Serial.Write(u'Home 1;')
+                </Action>
+                <Action Name="Unit 1">
+                    Serial.Write(u'Unit 1;')
+                </Action>
+                <Action Name="Unit 2">
+                    Serial.Write(u'Unit 2;')
+                </Action>
+                <Action Name="Divert 1;">
+                    Serial.Write(u'Divert 1;')
+                </Action>
+                <Action Name="Divert 2;">
+                    Serial.Write(u'Divert 2;')
+                </Action>
+                <Action Name="Divert 3;">
+                    Serial.Write(u'Divert 3;')
+                </Action>
+                <Action Name="Forward alleen UserEvent">
+                    Serial.Write(u'ForwardSettings 0,0;')
+                </Action>
+                <Action Name="Forward alle events">
+                    Serial.Write(u'ForwardSettings 1,0;')
+                </Action>
+                <Action Name="Forward alle events en commando's">
+                    Serial.Write(u'ForwardSettings 2,0;')
+                </Action>
+                <Action Name="EventlistWrite;WildCard 0,0;Forward 0;">
+                    Serial.Write(u'EventlistWrite;WildCard 0,0;Forward 2;')
+                </Action>
+                <Action Name="WaitFreeRF">
+                    Serial.Write(u'WaitFreeRF;')
+                </Action>
+            </Macro>
+            <Macro Name="Wired">
+                <Action Name="WiredOut 1,On">
+                    Serial.Write(u'WiredOut 1,On;')
+                </Action>
+                <Action Name="WiredOut 1,Off">
+                    Serial.Write(u'WiredOut 1,Off;')
+                </Action>
+                <Action Name="WiredOut 2,On">
+                    Serial.Write(u'WiredOut 2,On;')
+                </Action>
+                <Action Name="WiredOut 2,Off">
+                    Serial.Write(u'WiredOut 2,Off;')
+                </Action>
+                <Action Name="WiredOut 3,On">
+                    Serial.Write(u'WiredOut 3,On;')
+                </Action>
+                <Action Name="WiredOut 3,Off">
+                    Serial.Write(u'WiredOut 3,Off;')
+                </Action>
+                <Action Name="WiredOut 4,On">
+                    Serial.Write(u'WiredOut 4,On;')
+                </Action>
+                <Action Name="WiredOut 4,Off">
+                    Serial.Write(u'WiredOut 4,Off;')
+                </Action>
+            </Macro>
+            <Macro Name="IR/RF overige commando's">
+                <Action Name="RawsignalGet">
+                    Serial.Write(u'RawsignalGet;')
+                </Action>
+            </Macro>
+            <Macro Name="Eventlist">
+                <Action Name="EventlistErase">
+                    Serial.Write(u'EventlistErase;')
+                </Action>
+                <Action Name="EventlistShow">
+                    Serial.Write(u'EventlistShow;')
+                </Action>
+            </Macro>
+            <Macro Name="Alarm">
+                <Action Name="Alarm beep">
+                    Serial.Write(u'Sound;')
+                </Action>
+                <Action Name="Alarm four beeps">
+                    Serial.Write(u'sound 1 3;')
+                </Action>
+                <Action Name="Alarm Whoop Up">
+                    Serial.Write(u'sound 02;')
+                </Action>
+                <Action Name="Alarm Whoop Down">
+                    Serial.Write(u'Sound 03;')
+                </Action>
+                <Action Name="Alarm s.o.s.">
+                    Serial.Write(u'Sound 04;')
+                </Action>
+                <Action Name="Alarm ding-dong">
+                    Serial.Write(u'Sound 05;')
+                </Action>
+                <Action Name="Alarm phone">
+                    Serial.Write(u'Sound 6;')
+                </Action>
+            </Macro>
+            <Macro Name="Variabelen">
+                <Action Name="Variabele_1 = 0">
+                    Serial.Write(u'VariableSet 1,0;')
+                </Action>
+                <Action Name="Variabele_1 = 1">
+                    Serial.Write(u'VariableSet 1,1;')
+                </Action>
+                <Action Name="Variabele_1 = FF">
+                    Serial.Write(u'VariableSet 1,0xFF;')
+                </Action>
+                <Action Name="Variabele_2 = 3">
+                    Serial.Write(u'VariableSet 2,3;')
+                </Action>
+                <Action Name="Variabele_F = 0">
+                    Serial.Write(u'VariableSet 0xF,0;')
+                </Action>
+                <Action Name="Variabele_F = FF">
+                    Serial.Write(u'VariableSet 0xF,0xFF;')
+                </Action>
+            </Macro>
+            <Macro Name="Klok">
+                <Action Name="Delay=5 sec.">
+                    Serial.Write(u'Delay 5;')
+                </Action>
+                <Action Name="ClockTime &lt;time&gt;">
+                    Serial.Write(u'ClockTime 22 47;')
+                </Action>
+                <Action Name="ClockDate &lt;datum&gt;">
+                    Serial.Write(u'ClockDate 4 10 ;')
+                </Action>
+                <Action Name="ClockYear &lt;jaar&gt;">
+                    Serial.Write(u'ClockYear 20 10;')
+                </Action>
+                <Action Name="Zomertijd = AAN">
+                    Serial.Write(u'ClockDLS On;')
+                </Action>
+                <Action Name="Zomertijd = UIT">
+                    Serial.Write(u'ClockDLS Off;')
+                </Action>
+                <Action Name="SimulateDay">
+                    Serial.Write(u'SimulateDay;')
+                </Action>
+            </Macro>
+            <Macro Name="Timers">
+                <Action Name="TimerRandom met maximaal 60 min.">
+                    Serial.Write(u'TimerRandom 1 60 ;')
+                </Action>
+                <Action Name="TimerReset allemaal">
+                    Serial.Write(u'TimerReset;')
+                </Action>
+                <Action Name="TimerReset 1">
+                    Serial.Write(u'TimerReset 1;')
+                </Action>
+                <Action Name="TimerReset 15">
+                    Serial.Write(u'TimerReset 15;')
+                </Action>
+                <Action Name="Timer 1, 0 minuut">
+                    Serial.Write(u'TimerSet 1,0;')
+                </Action>
+                <Action Name="Timer 1, 1 minuut">
+                    Serial.Write(u'TimerSet 1,1;')
+                </Action>
+                <Action Name="Timer 15, 15 minuut">
+                    Serial.Write(u'TimerSet 15,15;')
+                </Action>
+            </Macro>
+        </Folder>
+        <Folder Name="Events">
+            <Macro Name="KAKU">
+                <Action Name="KAKU P0,On">
+                    Serial.Write(u'SendKAKU P0,On;')
+                </Action>
+                <Action Name="KAKU P0,Off">
+                    Serial.Write(u'SendKAKU P0,Off;')
+                </Action>
+                <Action Name="SendNewKAKU 255,On;">
+                    Serial.Write(u'SendNewKAKU 255,On;')
+                </Action>
+                <Action Name="SendNewKAKU 255,Off;">
+                    Serial.Write(u'SendNewKAKU 255,Off;')
+                </Action>
+                <Action Name="SendNewKAKU 1,On;">
+                    Serial.Write(u'SendNewKAKU 1,On;')
+                </Action>
+                <Action Name="SendNewKAKU 1,Off;">
+                    Serial.Write(u'SendNewKAKU 1,Off;')
+                </Action>
+            </Macro>
+            <Macro Name="UserEvent">
+                <Action Name="UserEvent 1">
+                    Serial.Write(u'UserEvent 1;')
+                </Action>
+                <Action Name="UserEvent 2">
+                    Serial.Write(u'UserEvent 2;')
+                </Action>
+                <Action Name="UserEvent 255">
+                    Serial.Write(u'UserEvent 255;')
+                </Action>
+            </Macro>
+            <Macro Name="Overig">
+                <Action Name="Event: Zon onder">
+                    Serial.Write(u'ClockDaylight 4,0;')
+                </Action>
+                <Action Name="Boot">
+                    Serial.Write(u'Boot;')
+                </Action>
+            </Macro>
+        </Folder>
+        <Folder Name="Voorbeelden">
+            <Macro Name="Voorbeeld-0: SendKAKU ontvanger A3 uit en weer aan">
+                <Action Name="A3 Uit">
+                    Serial.Write(u'SendKAKU A3,off;')
+                </Action>
+                <Action Name="A3 Aan">
+                    Serial.Write(u'SendKAKU A3,on;')
+                </Action>
+            </Macro>
+            <Macro Name="Voorbeeld-3: Nesting error">
+                <Action Name="Loop test: 12345678 verwijst naar 12345678">
+                    Serial.Write(u'EventlistWrite; 12345678; 12345678;')
+                </Action>
+                <Action Name="Event 12345678">
+                    Serial.Write(u'12345678;')
+                </Action>
+            </Macro>
+            <Macro Name="Voorbeeld-4: SendKAKU A3 geleerd van YCT-100 en verzonden als Rawsignal">
+                <Action Name="KAKU A3 uit commando met RAWSIGNAL (geleerd van YCT-100)">
+                    Serial.Write(u'RawsignalPut;320,2400,288,160,288,1120,288,160,256,1152,256,192,256,1152,256,192,224,1184,256,192,224,1184,256,192,256,1152,256,192,224,1184,224,224,224,1184,224,1184,224,224,224,224,224,1184,224,1184,224,224,224,1184,224,224,224,224,224,1184,224,1184,224,224,224,1184,224,224,224,224,224,1184,224,224,224,1184,224,1184,224,224,224,224,224,1184,224,1184,224,224,224,1184,224,224,224,224,224,1184,224,1184,224,224,224,1184,224,224,224,1184,224,224,224,224,224,1184,224,224,224,1184,224,224,224,1184,224,1184,224,224,224,224,224,1184,224,1184,224,224,224,224,224,1184,224,0);SendRaw;')
+                </Action>
+            </Macro>
+            <Macro Name="Voorbeeld-5: Alarm bij tijdstip bereikt">
+                <Action Name="Alarm bij tijdstip bereikt">
+                    Serial.Write(u'EventlistWrite; ClockAll 11,59;Alarm 2;')
+                </Action>
+            </Macro>
+            <Macro Name="Voorbeeld-6: Alarm als zon onder">
+                <Action Name="Alarm als zon onder">
+                    Serial.Write(u'EventlistWrite; ClockDaylight 4; Alarm 2;')
+                </Action>
+            </Macro>
+        </Folder>
+    </Folder>
+</EventGhost>
