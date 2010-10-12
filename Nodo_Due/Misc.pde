@@ -171,9 +171,8 @@ boolean GetStatus(int *Command, int *Par1, int *Par2)
       *Par2=Time.Minutes;
       break;
 
-    case CMD_CLOCK_YEAR:
-      *Par1=Time.Year/100;
-      *Par2=Time.Year-2000;
+    case CMD_CLOCK_DOW:
+      *Par1=Time.Day;
       break;
 
     case CMD_TIMER_SET:

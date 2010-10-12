@@ -4,6 +4,19 @@
  \*********************************************************************************************/
 void PrintEvent(unsigned long Content, byte Port, byte Type, boolean Direction)
   {
+  if(S.Trace)
+    {
+    Serial.print("Day ");
+    Serial.print(Time.Day,DEC);
+    Serial.print(", ");      
+    if(Time.Hour<10)Serial.print("0");
+    Serial.print(Time.Hour,DEC);
+    Serial.print(":");
+    if(Time.Minutes<10)Serial.print("0");
+    Serial.print(Time.Minutes,DEC);
+    Serial.print(", ");
+    }
+
   switch(Direction)
     {
     case DIRECTION_IN:

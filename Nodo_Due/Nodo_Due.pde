@@ -1,3 +1,12 @@
+// Nesting error bij simulate clock
+
+// Done:
+// ClockYear vervangen door ClockDOW
+// trace geeft de tijden en de dag weer bij afdrukken van een event.
+// aanpassing simulate
+
+
+
 
  /*****************************************************************************************************\
 
@@ -49,10 +58,10 @@
 
 // ********alle strings naar PROGMEM om hiermee RAM-geheugen te sparen ***********************************************
 prog_char PROGMEM Text_01[] = "NODO-Due (Beta) V0.";
+prog_char PROGMEM Text_02[] = "SUNMONTHUWEDTHUFRISAT";
 prog_char PROGMEM Text_03[] = ", Home ";
 prog_char PROGMEM Text_05[] = "Dim";
 prog_char PROGMEM Text_06[] = "SYSTEM: Unknown command!";
-prog_char PROGMEM Text_07[] = " ,Simulated @";
 prog_char PROGMEM Text_09[] = "SYSTEM: Break!";
 prog_char PROGMEM Text_10[] = "INPUT: ";
 prog_char PROGMEM Text_11[] = "OUTPUT: ";
@@ -60,7 +69,7 @@ prog_char PROGMEM Text_12[] = "SYSTEM: ";
 prog_char PROGMEM Text_13[] = "EXECUTE: ";
 prog_char PROGMEM Text_14[] = ", Unit ";
 prog_char PROGMEM Text_15[] = "EVENTLIST: ";
-prog_char PROGMEM Text_21[] = "************************************************************";
+prog_char PROGMEM Text_21[] = "****************************************";
 prog_char PROGMEM Text_26[] = "SYSTEM: Waiting for RF/IR event...";
 prog_char PROGMEM Text_30[] = ", Rawsignal=(";
 prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
@@ -95,7 +104,7 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 #define CMD_CLOCK_DATE 23
 #define CMD_CLOCK_DLS 24
 #define CMD_CLOCK_TIME 25
-#define CMD_CLOCK_YEAR 26
+#define CMD_CLOCK_DOW 26
 #define CMD_DELAY 27
 #define CMD_DIVERT 28
 #define CMD_EVENTLIST_ERASE 29
@@ -138,15 +147,15 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 #define CMD_COMMAND_RES2 66
 #define CMD_COMMAND_RES3 67
 #define CMD_BOOT_EVENT 68
-#define CMD_CLOCK_EVENT_ALL 69
-#define CMD_CLOCK_EVENT_DAYLIGHT 70
-#define CMD_CLOCK_EVENT_FRI 71
+#define CMD_CLOCK_EVENT_DAYLIGHT 69
+#define CMD_CLOCK_EVENT_ALL 70
+#define CMD_CLOCK_EVENT_SUN 71
 #define CMD_CLOCK_EVENT_MON 72
-#define CMD_CLOCK_EVENT_SAT 73
-#define CMD_CLOCK_EVENT_SUN 74
+#define CMD_CLOCK_EVENT_TUE 73
+#define CMD_CLOCK_EVENT_WED 74
 #define CMD_CLOCK_EVENT_THU 75
-#define CMD_CLOCK_EVENT_TUE 76
-#define CMD_CLOCK_EVENT_WED 77
+#define CMD_CLOCK_EVENT_FRI 76
+#define CMD_CLOCK_EVENT_SAT 77
 #define CMD_EVENT_STATUS 78
 #define CMD_KAKU 79
 #define CMD_KAKU_NEW 80
@@ -185,7 +194,7 @@ prog_char PROGMEM Cmd_22[]="BreakOnVarNEqu";
 prog_char PROGMEM Cmd_23[]="ClockDate";
 prog_char PROGMEM Cmd_24[]="ClockDLS";
 prog_char PROGMEM Cmd_25[]="ClockTime";
-prog_char PROGMEM Cmd_26[]="ClockYear";
+prog_char PROGMEM Cmd_26[]="ClockDOW";
 prog_char PROGMEM Cmd_27[]="Delay";
 prog_char PROGMEM Cmd_28[]="Divert";
 prog_char PROGMEM Cmd_29[]="EventlistErase";
@@ -228,15 +237,15 @@ prog_char PROGMEM Cmd_65[]="";
 prog_char PROGMEM Cmd_66[]="";
 prog_char PROGMEM Cmd_67[]="";
 prog_char PROGMEM Cmd_68[]="Boot";
-prog_char PROGMEM Cmd_69[]="ClockAll";
-prog_char PROGMEM Cmd_70[]="ClockDaylight";
-prog_char PROGMEM Cmd_71[]="ClockFri";
+prog_char PROGMEM Cmd_69[]="ClockDaylight";
+prog_char PROGMEM Cmd_70[]="ClockAll";
+prog_char PROGMEM Cmd_71[]="ClockSun";
 prog_char PROGMEM Cmd_72[]="ClockMon";
-prog_char PROGMEM Cmd_73[]="ClockSat";
-prog_char PROGMEM Cmd_74[]="ClockSun";
+prog_char PROGMEM Cmd_73[]="ClockTue";
+prog_char PROGMEM Cmd_74[]="ClockWed";
 prog_char PROGMEM Cmd_75[]="ClockThu";
-prog_char PROGMEM Cmd_76[]="ClockTue";
-prog_char PROGMEM Cmd_77[]="ClockWed";
+prog_char PROGMEM Cmd_76[]="ClockFri";
+prog_char PROGMEM Cmd_77[]="ClockSat";
 prog_char PROGMEM Cmd_78[]="EventStatus";
 prog_char PROGMEM Cmd_79[]="KAKU";
 prog_char PROGMEM Cmd_80[]="NewKAKU";

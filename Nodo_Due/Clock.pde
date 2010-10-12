@@ -6,13 +6,13 @@ boolean CheckDaylight()
   // Geldig voor in Nederland (gemiddelde voor midden Nederland op 52.00 graden NB en 5.00 graden OL) 
   // Eerste dag is 01 januari, tweede is 10, januari, derde is 20 januari, etc.
   // tussenliggende dagen worden berekend aan de hand van lineaire interpolatie tussen de tabelwaarden. 
-  // Afwijking t.o.v. KNMI-tabel is +/-1 min.
+  // Afwijking t.o.v. KNMI-tabel is beperkt tot +/-1 min.
   // met de offset kan worden getoetst op uren +/- de momenten. +60 levert dus een uur na zonsondergang een event.
   
   int DOY,index,now,up,down;
   int u0,u1,d0,d1;
   
-  DOY=((Time.Month-1)*304)/10+Time.Date;// schrikkeljaar berekening niet nodig, levert slechts naukeurigheidsafwijking van één minuut
+  DOY=((Time.Month-1)*304)/10+Time.Date;// schrikokeljaar berekening niet nodig, levert slechts naukeurigheidsafwijking van één minuut
   index=(DOY/10);
   now=Time.Hour*60+Time.Minutes;
 
@@ -67,7 +67,7 @@ int rtc[7];
  \*********************************************************************************************/
 void ClockSet(void) 
   {
-  Time.Day=dow(Time.Year,Time.Month,Time.Date)+1;// Day wordt berekend. 1=zondag.
+  // ??? niet berekenen maar gewoon door user opgegeven. Time.Day=dow(Time.Year,Time.Month,Time.Date)+1;// Day wordt berekend. 1=zondag.
   rtc[DS1307_SEC]=DS1307_CLOCKHALT;  // Stop the clock. Set the ClockHalt bit high to stop the rtc. This bit is part of the seconds byte
   DS1307_save();
   rtc[DS1307_MIN]=((Time.Minutes/10)<<4)+(Time.Minutes%10);
@@ -75,7 +75,7 @@ void ClockSet(void)
   rtc[DS1307_DOW]=Time.Day;
   rtc[DS1307_DATE]=((Time.Date/10)<<4)+(Time.Date%10);
   rtc[DS1307_MTH]=((Time.Month/10)<<4)+(Time.Month%10);
-  rtc[DS1307_YR]=(((Time.Year-DS1307_BASE_YR)/10)<<4)+(Time.Year%10);
+  // rtc[DS1307_YR]=(((Time.Year-DS1307_BASE_YR)/10)<<4)+(Time.Year%10); //??? jaar niet relevant voor de Nodo.
   rtc[DS1307_SEC]=((Time.Seconds/10)<<4)+(Time.Seconds% 10); // and start the clock again...
   DS1307_save();
   }
@@ -105,7 +105,6 @@ unsigned long SimulateDay(byte days)
         {
         Time.Hour=0;
         Time.Day++;
-        Serial.print(Text(Text_21));PrintTerm();
         }
       if(Time.Day==8)Time.Day=1;
   
@@ -122,19 +121,7 @@ unsigned long SimulateDay(byte days)
 
       if(x)
         {
-        PrintEvent(SimulatedClockEvent,CMD_SOURCE_CLOCK,EventType(SimulatedClockEvent),DIRECTION_INTERNAL);
-
-        Serial.print(Text(Text_07));
-        Serial.print("Day ");
-        Serial.print(Time.Day,DEC);
-        Serial.print(", ");      
-        if(Time.Hour<10)Serial.print("0");
-        Serial.print(Time.Hour,DEC);
-        Serial.print(":");
-        if(Time.Minutes<10)Serial.print("0");
-        Serial.print(Time.Minutes,DEC);
-
-        PrintTerm();
+        // PrintEvent(SimulatedClockEvent,CMD_SOURCE_CLOCK,EventType(SimulatedClockEvent),DIRECTION_INTERNAL);
         ProcessEvent(SimulatedClockEvent,CMD_SOURCE_CLOCK,EventType(SimulatedClockEvent),0,0,0);
         }
       Time.Minutes++;
@@ -142,6 +129,7 @@ unsigned long SimulateDay(byte days)
       }
     }
   Serial.print(Text(Text_21));PrintTerm();
+  
   ClockRead();// klok weer op de juiste tijd zetten.
   CheckDaylight();// dagligt status weer terug op de juiste stand zetten
   DaylightPrevious=Time.Daylight;
@@ -163,7 +151,7 @@ unsigned long ClockRead(void)   // Aquire data from buffer and convert to int, r
   Time.Day=rtc[DS1307_DOW] & DS1307_LO_DOW;
   Time.Date=(10*((rtc[DS1307_DATE] & DS1307_HI_DATE)>>4))+(rtc[DS1307_DATE] & DS1307_LO_BCD);
   Time.Month=(10*((rtc[DS1307_MTH] & DS1307_HI_MTH)>>4))+(rtc[DS1307_MTH] & DS1307_LO_BCD);
-  Time.Year=(10*((rtc[DS1307_YR] & DS1307_HI_YR)>>4))+(rtc[DS1307_YR] & DS1307_LO_BCD)+DS1307_BASE_YR;
+  //??? jaar niet relevant voor de Nodo. Time.Year=(10*((rtc[DS1307_YR] & DS1307_HI_YR)>>4))+(rtc[DS1307_YR] & DS1307_LO_BCD)+DS1307_BASE_YR;
   
   return ((unsigned long)(S.Home))<<28 |
          ((unsigned long)(S.Unit))<<24 | 
@@ -191,31 +179,4 @@ void DS1307_read(void)
   for(byte i=0; i<7; i++)rtc[i]=Wire.receive();// store data in raw bcd format
   }
   
-/**********************************************************************************************\
- * Berekent de dag van de week. Zondag=1 (Doomsday methode)
- * Revision 01, 13-02-2010, P.K.Tonkes@gmail.com
- \*********************************************************************************************/
- byte dow(int yyyy, byte mm, byte dd)
-    {
-    int days;
-  
-    days=((yyyy-1)*365+(yyyy-1)/4-(yyyy-1)/100+(yyyy-1)/400)%7;/* Calculate the day for Dec 31 of the previous year */
-    switch(mm)
-      {
-      case 12:dd += 30;
-      case 11:dd += 31;
-      case 10:dd += 30;
-      case 9:dd += 31;
-      case 8:dd += 31;
-      case 7:dd += 30;
-      case 6:dd += 31;
-      case 5:dd += 30;
-      case 4:dd += 31;
-      case 3:dd += 28;
-      case 2:dd += 31;
-      }
-    if ((!(yyyy%4)&&(yyyy%100)||!(yyyy%400))&&mm>2)days++; // dag erbij als schrikkeljaar en datum na feb.
-    days = (dd+days)%7;
-    return days;
-    }
 

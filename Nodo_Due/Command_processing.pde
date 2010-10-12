@@ -275,9 +275,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, int Type, unsigned long P
      ClockSet();
      break;
 
-  case CMD_CLOCK_YEAR:
-     x=Par1*100+Par2;
-     Time.Year=x;
+  case CMD_CLOCK_DOW:
+     Time.Day=Par1;
      ClockSet();
      break;
        
