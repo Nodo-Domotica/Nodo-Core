@@ -12,7 +12,7 @@ boolean CheckDaylight()
   int DOY,index,now,up,down;
   int u0,u1,d0,d1;
   
-  DOY=((Time.Month-1)*304)/10+Time.Date;// schrikokeljaar berekening niet nodig, levert slechts naukeurigheidsafwijking van één minuut
+  DOY=((Time.Month-1)*304)/10+Time.Date;// schrikkeljaar berekening niet nodig, levert slechts naukeurigheidsafwijking van één minuut
   index=(DOY/10);
   now=Time.Hour*60+Time.Minutes;
 
@@ -80,7 +80,7 @@ void ClockSet(void)
   }
 
 /**********************************************************************************************\
- * Leest de reltime clock en plaatst actuele waarden in de struct Time. 
+ * Leest de realtime clock en plaatst actuele waarden in de struct Time. 
  * Eveneens wordt de Event code terug gegevens
  * Revision 01, 09-01-2010, P.K.Tonkes@gmail.com
  \*********************************************************************************************/
@@ -119,10 +119,7 @@ unsigned long SimulateDay(byte days)
         }
 
       if(x)
-        {
-        // PrintEvent(SimulatedClockEvent,CMD_SOURCE_CLOCK,EventType(SimulatedClockEvent),DIRECTION_INTERNAL);
         ProcessEvent(SimulatedClockEvent,CMD_SOURCE_CLOCK,EventType(SimulatedClockEvent),0,0,0);
-        }
       Time.Minutes++;
       x=false;
       }

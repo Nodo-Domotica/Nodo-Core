@@ -36,10 +36,9 @@ boolean ExecuteCommand(unsigned long Content, int Src, int Type, unsigned long P
 
   if(Command) // is de ontvangen code een uitvoerbaar commando?
     {
-    if(S.Trace)
+    if(Trace&1)
       {
       PrintEvent(Content,Src,Type,DIRECTION_EXECUTE);
-      PrintTerm();
       }
       
     switch(Command)
@@ -62,7 +61,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, int Type, unsigned long P
             {
             PrintEvent(PreviousContent,CMD_PORT_IR,PreviousType,DIRECTION_OUT);
             RawSendIR();
-            PrintTerm();
             } 
 
           if(PreviousSrc!=CMD_PORT_RF && (Par2==FORWARD_RF || Par2==FORWARD_IR_RF))
@@ -84,7 +82,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, int Type, unsigned long P
 
             PrintEvent(PreviousContent,CMD_PORT_RF,PreviousType,DIRECTION_OUT);
             RawSendRF();      
-            PrintTerm();
             }
           }
         break;
@@ -94,14 +91,12 @@ boolean ExecuteCommand(unsigned long Content, int Src, int Type, unsigned long P
       KAKU_2_RawSignal(Content);
       PrintEvent(command2event(CMD_KAKU,Par1,Par2), CMD_PORT_RF, CMD_TYPE_EVENT,DIRECTION_OUT);
       RawSendRF();      
-      PrintTerm();
       break;
       
     case CMD_SEND_KAKU_NEW:
       NewKAKU_2_RawSignal(Content);
       PrintEvent(command2event(CMD_KAKU_NEW,Par1,Par2), CMD_PORT_RF, CMD_TYPE_EVENT,DIRECTION_OUT);
       RawSendRF();      
-      PrintTerm();
       break;
       
     case CMD_VARIABLE_INC: 
@@ -157,10 +152,9 @@ boolean ExecuteCommand(unsigned long Content, int Src, int Type, unsigned long P
         {
         if(S.UserVar[Par1-1]==Par2)
           {
-          if(S.Trace)
+          if(Trace&1)
             {
-            Serial.print((Text_09));
-            PrintTerm();
+            Serial.print((Text_09));PrintTerm();
             }
           return false;
           }
@@ -172,10 +166,9 @@ boolean ExecuteCommand(unsigned long Content, int Src, int Type, unsigned long P
         {
         if(S.UserVar[Par1-1]!=Par2)
           {
-          if(S.Trace)
+          if(Trace&1)
             {
-            Serial.print(Text(Text_09));
-            PrintTerm();
+            Serial.print(Text(Text_09));PrintTerm();
             }
           return false;
           }
@@ -187,10 +180,9 @@ boolean ExecuteCommand(unsigned long Content, int Src, int Type, unsigned long P
         {
         if(S.UserVar[Par1-1]>Par2)
           {
-          if(S.Trace)
+          if(Trace&1)
             {
-            Serial.print(Text(Text_09));
-            PrintTerm();
+            Serial.print(Text(Text_09));PrintTerm();
             }
           return false;
           }
@@ -202,10 +194,9 @@ boolean ExecuteCommand(unsigned long Content, int Src, int Type, unsigned long P
         {
         if(S.UserVar[Par1-1]<Par2)
           {
-          if(S.Trace)
+          if(Trace&1)
             {
-            Serial.print(Text(Text_09));
-            PrintTerm();
+            Serial.print(Text(Text_09));PrintTerm();
             }
           return false;
           }
@@ -230,17 +221,14 @@ boolean ExecuteCommand(unsigned long Content, int Src, int Type, unsigned long P
       {
       PrintEvent(0,CMD_PORT_IR,0,DIRECTION_OUT);
       RawSendIR();
-      PrintTerm();
       }
 
     if(PreviousSrc!=CMD_PORT_RF && (Par1==2 || Par1==0))
       {
       PrintEvent(0,CMD_PORT_RF,0,DIRECTION_OUT);
       RawSendRF();      
-      PrintTerm();
       }
-    PrintRawSignal();
-    PrintTerm();
+    PrintRawSignal();PrintTerm();
     break;        
 
   case CMD_CLOCK_YEAR:
@@ -371,7 +359,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, int Type, unsigned long P
       {
       Event=command2event(x,Par1,Par2);
       PrintEvent(Event, CMD_SOURCE_SYSTEM, CMD_TYPE_COMMAND,DIRECTION_INTERNAL);
-      PrintTerm();
       ProcessEvent(Event,CMD_SOURCE_SYSTEM,CMD_TYPE_COMMAND,PreviousContent,PreviousSrc,PreviousType);
       }
     break;    
@@ -388,8 +375,7 @@ else
 if(error)
   {
   Serial.print(Text(Text_06));
-  PrintEventCode(Content,Type);
-  PrintTerm();
+  PrintEventCode(Content,Type);PrintTerm();
   return false;
   }
 return true;

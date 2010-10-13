@@ -3,12 +3,12 @@
 // trace geeft de tijden en de dag weer bij afdrukken van een event.
 // aanpassing simulate
 // Niet meer dan 10 home adressen tevens aanpassing EVENT_UNKNOWN afgekapt tot 28-bit
+// extra parameter bij trace commando
 
 
  /*****************************************************************************************************\
 
   Compiler            : 0019  
-
   Hardware            : - Arduino ATMeg328 processor @16Mhz.
                         - Hardware en Arduino penbezetting volgens schema Nodo Due Rev.003
 
@@ -319,7 +319,7 @@ unsigned int RawSignal[RAW_BUFFER_SIZE];            // Tabel met de gemeten puls
 unsigned long EventTimeCodePrevious;                // t.b.v. voorkomen herhaald ontvangen van dezelfde code binnen ingestelde tijd
 byte DaylightPrevious;                              // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet
 byte DivertUnit,DivertForward;
-boolean Simulate;
+byte Simulate,Trace;
 void(*Reset)(void)=0; //declare reset function @ address 0
 uint8_t RFbit,RFport,IRbit,IRport;
 
@@ -327,7 +327,6 @@ struct Settings
   {
   int MinorVersion;
   boolean DaylightSaving;
-  boolean Trace;
   byte WiredInputThreshold[4], WiredInputSmittTrigger[4], WiredInputPullUp[4];
   byte AnalyseSharpness;
   int AnalyseTimeOut;
@@ -384,19 +383,14 @@ void setup()
   for(byte x=0;x<4;x++){WiredInputStatus[x]=true;}
 
   // Print Welkomsttekst
-  PrintTerm();
-  Serial.print(Text(Text_21));
-  PrintTerm();
-
+  PrintTerm();Serial.print(Text(Text_21));PrintTerm();
   Serial.print(Text(Text_01));
   Serial.print(S.MinorVersion,DEC);
   Serial.print(Text(Text_03));
   Serial.print(S.Home,DEC);
   Serial.print(Text(Text_14));
-  Serial.print(S.Unit,DEC);
-  PrintTerm();
-  Serial.print(Text(Text_21));
-  PrintTerm();
+  Serial.print(S.Unit,DEC);PrintTerm();
+  Serial.print(Text(Text_21));PrintTerm();
  
   ProcessEvent(command2event(CMD_BOOT_EVENT,0,0),CMD_SOURCE_SYSTEM,0,0,0,0);  // Voor het 'Boot' event uit.
   }

@@ -37,8 +37,7 @@ boolean ProcessEvent(unsigned long Event, byte Port, byte Type, unsigned long Pr
   
   if(depth++>=MACRO_EXECUTION_DEPTH)
     {
-    Serial.print(Text(Text_50));
-    PrintTerm();
+    Serial.print(Text(Text_50));PrintTerm();
     depth=0;
     return false; // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
     }
@@ -76,7 +75,7 @@ boolean ProcessEvent(unsigned long Event, byte Port, byte Type, unsigned long Pr
       
       if(y)
         {
-        if(S.Trace)PrintEventlistEntry(x,depth);
+        if(Trace&1)PrintEventlistEntry(x,depth);
         
         if(CommandCode(MacroAction)) // is de ontvangen code een uitvoerbaar commando?
           {
@@ -90,10 +89,9 @@ boolean ProcessEvent(unsigned long Event, byte Port, byte Type, unsigned long Pr
           {// het is een ander soort event;
           if(MacroEvent!=command2event(CMD_WILDCARD_EVENT,0,0))
             {
-            if(S.Trace)
+            if(Trace&1)
               {
               PrintEvent(MacroAction,CMD_SOURCE_MACRO,EventType(MacroAction),DIRECTION_IN);
-              PrintTerm();
               }
   
             if(!ProcessEvent(MacroAction,CMD_SOURCE_MACRO,EventType(MacroAction),Event,Port,Type))

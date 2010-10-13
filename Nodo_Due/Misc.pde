@@ -158,7 +158,8 @@ boolean GetStatus(int *Command, int *Par1, int *Par2)
       break;
 
     case CMD_TRACE:
-      *Par1=S.Trace;
+      *Par1=Trace&1;
+      *Par2=Trace&2>0;      
       break;
 
     case CMD_CLOCK_DATE:
@@ -317,7 +318,7 @@ void ResetFactory(void)
   S.MinorVersion       =MINORVERSION;
   S.Unit               =UNIT;
   S.Home               =HOME;
-  S.Trace              =false;
+  Trace                =0;
   S.AnalyseSharpness   =50;
   S.AnalyseTimeOut     =10000;
   

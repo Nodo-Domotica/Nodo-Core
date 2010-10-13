@@ -42,8 +42,7 @@ unsigned long Receive_Serial(void)
       Serial.print(Text(Text_21));PrintTerm();
       for(x=1;x<=Eventlist_MAX && Eventlist_Read(x,&Event,&Action);x++)
         {
-        PrintEventlistEntry(x,0);
-        PrintTerm();
+        PrintEventlistEntry(x,0);PrintTerm();
         }   
       Serial.print(Text(Text_21));PrintTerm();
       break;
@@ -81,13 +80,11 @@ unsigned long Receive_Serial(void)
       }
 
     case CMD_TRACE: 
-      S.Trace=Par1;
-      SaveSettings();
+      Trace=Par1&1 | (Par2&1)<<1;
       break;        
   
     case CMD_RAWSIGNAL_GET:
-      Serial.print(Text(Text_26));
-      PrintTerm();
+      Serial.print(Text(Text_26));PrintTerm();
       while(true)
         {            
         if((*portInputRegister(RFport)&RFbit)==RFbit)if(RFFetchSignal())break; // Kijk of er data start op RF binnenkomt
@@ -142,8 +139,7 @@ unsigned long Receive_Serial(void)
  
   if(error)
     {
-    Serial.print(Text(Text_06));
-    PrintTerm();
+    Serial.print(Text(Text_06));PrintTerm();
     }
  return 0L;
  }
