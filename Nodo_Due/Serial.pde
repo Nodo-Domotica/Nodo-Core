@@ -108,9 +108,12 @@ unsigned long Receive_Serial(void)
        break;    
  
      case CMD_HOME:
-       S.Home=Par1&0xf; // Par1 &0xf omdat alleen waarden van 0..15 geldig zijn.
-       SaveSettings();
-       FactoryEventlist();
+       if(Par1>=0 && Par1<10) // 0xf is gereserveerd voor onbekende events.
+         {
+         S.Home=Par1;
+         SaveSettings();
+         FactoryEventlist();
+         }
        break;
    
      case CMD_RESET_FACTORY:
@@ -130,7 +133,6 @@ unsigned long Receive_Serial(void)
       case CMD_EVENTLIST_ERASE: 
          Eventlist_Write(1,0L,0L); // maak de eventlist leeg.
          break;        
-    
           
       default:// alle andere commando's hebben max. twee parameters. 
         {
@@ -164,7 +166,7 @@ unsigned long SerialReadEvent()
 
   // is het gewoon een getal dat als event moet worden verwerkt? Deze zijn altijd groter dan 255 want 0..255 zijn commando's
   Event=str2val(SerialBuffer);
-  if(Event>0xff)return Event; // alle waarden groter dan 255 mogen gelijk verwerkt worden als een event.
+  if(Event>0xff)return Event & 0x0fffffff; // alle waarden groter dan 255 mogen gelijk verwerkt worden als een event.
 
   if(Event==0)
     y=str2cmd(SerialBuffer);  // invoer was geen getal. Haal uit de invoer de code van het tekst commando

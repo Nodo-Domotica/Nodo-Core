@@ -1,11 +1,8 @@
-// Nesting error bij simulate clock
 
 // Done:
-// ClockYear vervangen door ClockDOW
 // trace geeft de tijden en de dag weer bij afdrukken van een event.
 // aanpassing simulate
-
-
+// Niet meer dan 10 home adressen tevens aanpassing EVENT_UNKNOWN afgekapt tot 28-bit
 
 
  /*****************************************************************************************************\
@@ -41,7 +38,7 @@
  *
  ********************************************************************************************************/
 
-#define MINORVERSION              85 // Nodo Version nummer
+#define MINORVERSION              87 // Nodo Version nummer
 #define BAUD                   19200 // Baudrate voor seriële communicatie.
 #define SERIAL_TERMINATOR_1     0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>, default voor EventGhost
 #define SERIAL_TERMINATOR_2     0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
@@ -75,8 +72,8 @@ prog_char PROGMEM Text_30[] = ", Rawsignal=(";
 prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 
 #define RANGE_VALUE 17 // alle codes kleiner of gelijk aan deze waarde zijn vaste Nodo waarden.
-#define RANGE_EVENT 68 // alle codes groter of gelijk aan deze waarde zijn een event.
-#define COMMAND_MAX 89 // aantal commando's (geteld vanaf 0)
+#define RANGE_EVENT 69 // alle codes groter of gelijk aan deze waarde zijn een event.
+#define COMMAND_MAX 90 // aantal commando's (geteld vanaf 0)
 
 #define CMD_OFF 0
 #define CMD_ON 1
@@ -102,71 +99,72 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 #define CMD_BREAK_ON_VAR_MORE 21
 #define CMD_BREAK_ON_VAR_NEQU 22
 #define CMD_CLOCK_DATE 23
-#define CMD_CLOCK_DLS 24
-#define CMD_CLOCK_TIME 25
-#define CMD_CLOCK_DOW 26
-#define CMD_DELAY 27
-#define CMD_DIVERT 28
-#define CMD_EVENTLIST_ERASE 29
-#define CMD_EVENTLIST_SHOW 30
-#define CMD_EVENTLIST_WRITE 31
-#define CMD_FORWARD 32
-#define CMD_HOME 33
-#define CMD_RAWSIGNAL_GET 34
-#define CMD_RAWSIGNAL_PUT 35
-#define CMD_RESET 36
-#define CMD_RESET_FACTORY 37
-#define CMD_SEND_KAKU 38
-#define CMD_SEND_KAKU_NEW 39
-#define CMD_SEND_RAW 40
-#define CMD_SIMULATE 41
-#define CMD_SIMULATE_DAY 42
-#define CMD_SOUND 43
-#define CMD_STATUS 44
-#define CMD_STATUS_EVENT 45
-#define CMD_STATUS_LIST 46
-#define CMD_TIMER_RANDOM 47
-#define CMD_TIMER_RESET 48
-#define CMD_TIMER_SET 49
-#define CMD_TRACE 50
-#define CMD_UNIT 51
-#define CMD_VARIABLE_CLEAR 52
-#define CMD_VARIABLE_DAYLIGHT 53
-#define CMD_VARIABLE_DEC 54
-#define CMD_VARIABLE_INC 55
-#define CMD_VARIABLE_SET 56
-#define CMD_VARIABLE_VARIABLE 57
-#define CMD_VARIABLE_WIRED_ANALOG 58
-#define CMD_WAITFREERF 59
-#define CMD_WIRED_ANALOG 60
-#define CMD_WIRED_OUT 61
-#define CMD_WIRED_PULLUP 62
-#define CMD_WIRED_SMITTTRIGGER 63
-#define CMD_WIRED_THRESHOLD 64
-#define CMD_COMMAND_RES1 65
-#define CMD_COMMAND_RES2 66
-#define CMD_COMMAND_RES3 67
-#define CMD_BOOT_EVENT 68
-#define CMD_CLOCK_EVENT_DAYLIGHT 69
-#define CMD_CLOCK_EVENT_ALL 70
-#define CMD_CLOCK_EVENT_SUN 71
-#define CMD_CLOCK_EVENT_MON 72
-#define CMD_CLOCK_EVENT_TUE 73
-#define CMD_CLOCK_EVENT_WED 74
-#define CMD_CLOCK_EVENT_THU 75
-#define CMD_CLOCK_EVENT_FRI 76
-#define CMD_CLOCK_EVENT_SAT 77
-#define CMD_EVENT_STATUS 78
-#define CMD_KAKU 79
-#define CMD_KAKU_NEW 80
-#define CMD_TIMER_EVENT 81
-#define CMD_USER 82
-#define CMD_VARIABLE_EVENT 83
-#define CMD_WILDCARD_EVENT 84
-#define CMD_WIRED_IN_EVENT 85
-#define CMD_EVENT_RES1 86
-#define CMD_EVENT_RES2 87
-#define CMD_EVENT_RES3 88
+#define CMD_CLOCK_YEAR 24
+#define CMD_CLOCK_DLS 25
+#define CMD_CLOCK_TIME 26
+#define CMD_CLOCK_DOW 27
+#define CMD_DELAY 28
+#define CMD_DIVERT 29
+#define CMD_EVENTLIST_ERASE 30
+#define CMD_EVENTLIST_SHOW 31
+#define CMD_EVENTLIST_WRITE 32
+#define CMD_FORWARD 33
+#define CMD_HOME 34
+#define CMD_RAWSIGNAL_GET 35
+#define CMD_RAWSIGNAL_PUT 36
+#define CMD_RESET 37
+#define CMD_RESET_FACTORY 38
+#define CMD_SEND_KAKU 39
+#define CMD_SEND_KAKU_NEW 40
+#define CMD_SEND_RAW 41
+#define CMD_SIMULATE 42
+#define CMD_SIMULATE_DAY 43
+#define CMD_SOUND 44
+#define CMD_STATUS 45
+#define CMD_STATUS_EVENT 46
+#define CMD_STATUS_LIST 47
+#define CMD_TIMER_RANDOM 48
+#define CMD_TIMER_RESET 49
+#define CMD_TIMER_SET 50
+#define CMD_TRACE 51
+#define CMD_UNIT 52
+#define CMD_VARIABLE_CLEAR 53
+#define CMD_VARIABLE_DAYLIGHT 54
+#define CMD_VARIABLE_DEC 55
+#define CMD_VARIABLE_INC 56
+#define CMD_VARIABLE_SET 57
+#define CMD_VARIABLE_VARIABLE 58
+#define CMD_VARIABLE_WIRED_ANALOG 59
+#define CMD_WAITFREERF 60
+#define CMD_WIRED_ANALOG 61
+#define CMD_WIRED_OUT 62
+#define CMD_WIRED_PULLUP 63
+#define CMD_WIRED_SMITTTRIGGER 64
+#define CMD_WIRED_THRESHOLD 65
+#define CMD_COMMAND_RES1 66
+#define CMD_COMMAND_RES2 67
+#define CMD_COMMAND_RES3 68
+#define CMD_BOOT_EVENT 69
+#define CMD_CLOCK_EVENT_DAYLIGHT 70
+#define CMD_CLOCK_EVENT_ALL 71
+#define CMD_CLOCK_EVENT_SUN 72
+#define CMD_CLOCK_EVENT_MON 73
+#define CMD_CLOCK_EVENT_TUE 74
+#define CMD_CLOCK_EVENT_WED 75
+#define CMD_CLOCK_EVENT_THU 76
+#define CMD_CLOCK_EVENT_FRI 77
+#define CMD_CLOCK_EVENT_SAT 78
+#define CMD_EVENT_STATUS 79
+#define CMD_KAKU 80
+#define CMD_KAKU_NEW 81
+#define CMD_TIMER_EVENT 82
+#define CMD_USER 83
+#define CMD_VARIABLE_EVENT 84
+#define CMD_WILDCARD_EVENT 85
+#define CMD_WIRED_IN_EVENT 86
+#define CMD_EVENT_RES1 87
+#define CMD_EVENT_RES2 88
+#define CMD_EVENT_RES3 89
 
 prog_char PROGMEM Cmd_0[]="Off";
 prog_char PROGMEM Cmd_1[]="On";
@@ -192,71 +190,72 @@ prog_char PROGMEM Cmd_20[]="BreakOnVarLess";
 prog_char PROGMEM Cmd_21[]="BreakOnVarMore";
 prog_char PROGMEM Cmd_22[]="BreakOnVarNEqu";
 prog_char PROGMEM Cmd_23[]="ClockDate";
-prog_char PROGMEM Cmd_24[]="ClockDLS";
-prog_char PROGMEM Cmd_25[]="ClockTime";
-prog_char PROGMEM Cmd_26[]="ClockDOW";
-prog_char PROGMEM Cmd_27[]="Delay";
-prog_char PROGMEM Cmd_28[]="Divert";
-prog_char PROGMEM Cmd_29[]="EventlistErase";
-prog_char PROGMEM Cmd_30[]="EventlistShow";
-prog_char PROGMEM Cmd_31[]="EventlistWrite";
-prog_char PROGMEM Cmd_32[]="Forward";
-prog_char PROGMEM Cmd_33[]="Home";
-prog_char PROGMEM Cmd_34[]="RawsignalGet";
-prog_char PROGMEM Cmd_35[]="RawsignalPut";
-prog_char PROGMEM Cmd_36[]="Reset";
-prog_char PROGMEM Cmd_37[]="ResetFactory";
-prog_char PROGMEM Cmd_38[]="SendKAKU";
-prog_char PROGMEM Cmd_39[]="SendNewKAKU";
-prog_char PROGMEM Cmd_40[]="SendRaw";
-prog_char PROGMEM Cmd_41[]="Simulate";
-prog_char PROGMEM Cmd_42[]="SimulateDay";
-prog_char PROGMEM Cmd_43[]="Sound";
-prog_char PROGMEM Cmd_44[]="Status";
-prog_char PROGMEM Cmd_45[]="StatusEvent";
-prog_char PROGMEM Cmd_46[]="StatusList";
-prog_char PROGMEM Cmd_47[]="TimerRandom";
-prog_char PROGMEM Cmd_48[]="TimerReset";
-prog_char PROGMEM Cmd_49[]="TimerSet";
-prog_char PROGMEM Cmd_50[]="Trace";
-prog_char PROGMEM Cmd_51[]="Unit";
-prog_char PROGMEM Cmd_52[]="VariableClear";
-prog_char PROGMEM Cmd_53[]="VariableDaylight";
-prog_char PROGMEM Cmd_54[]="VariableDec";
-prog_char PROGMEM Cmd_55[]="VariableInc";
-prog_char PROGMEM Cmd_56[]="VariableSet";
-prog_char PROGMEM Cmd_57[]="VariableVariable";
-prog_char PROGMEM Cmd_58[]="VariableWiredAnalog";
-prog_char PROGMEM Cmd_59[]="WaitFreeRF";
-prog_char PROGMEM Cmd_60[]="WiredAnalog";
-prog_char PROGMEM Cmd_61[]="WiredOut";
-prog_char PROGMEM Cmd_62[]="WiredPullup";
-prog_char PROGMEM Cmd_63[]="WiredSmittTrigger";
-prog_char PROGMEM Cmd_64[]="WiredThreshold";
-prog_char PROGMEM Cmd_65[]="";
+prog_char PROGMEM Cmd_24[]="ClockYear";
+prog_char PROGMEM Cmd_25[]="ClockDLS";
+prog_char PROGMEM Cmd_26[]="ClockTime";
+prog_char PROGMEM Cmd_27[]="ClockDOW";
+prog_char PROGMEM Cmd_28[]="Delay";
+prog_char PROGMEM Cmd_29[]="Divert";
+prog_char PROGMEM Cmd_30[]="EventlistErase";
+prog_char PROGMEM Cmd_31[]="EventlistShow";
+prog_char PROGMEM Cmd_32[]="EventlistWrite";
+prog_char PROGMEM Cmd_33[]="Forward";
+prog_char PROGMEM Cmd_34[]="Home";
+prog_char PROGMEM Cmd_35[]="RawsignalGet";
+prog_char PROGMEM Cmd_36[]="RawsignalPut";
+prog_char PROGMEM Cmd_37[]="Reset";
+prog_char PROGMEM Cmd_38[]="ResetFactory";
+prog_char PROGMEM Cmd_39[]="SendKAKU";
+prog_char PROGMEM Cmd_40[]="SendNewKAKU";
+prog_char PROGMEM Cmd_41[]="SendRaw";
+prog_char PROGMEM Cmd_42[]="Simulate";
+prog_char PROGMEM Cmd_43[]="SimulateDay";
+prog_char PROGMEM Cmd_44[]="Sound";
+prog_char PROGMEM Cmd_45[]="Status";
+prog_char PROGMEM Cmd_46[]="StatusEvent";
+prog_char PROGMEM Cmd_47[]="StatusList";
+prog_char PROGMEM Cmd_48[]="TimerRandom";
+prog_char PROGMEM Cmd_49[]="TimerReset";
+prog_char PROGMEM Cmd_50[]="TimerSet";
+prog_char PROGMEM Cmd_51[]="Trace";
+prog_char PROGMEM Cmd_52[]="Unit";
+prog_char PROGMEM Cmd_53[]="VariableClear";
+prog_char PROGMEM Cmd_54[]="VariableDaylight";
+prog_char PROGMEM Cmd_55[]="VariableDec";
+prog_char PROGMEM Cmd_56[]="VariableInc";
+prog_char PROGMEM Cmd_57[]="VariableSet";
+prog_char PROGMEM Cmd_58[]="VariableVariable";
+prog_char PROGMEM Cmd_59[]="VariableWiredAnalog";
+prog_char PROGMEM Cmd_60[]="WaitFreeRF";
+prog_char PROGMEM Cmd_61[]="WiredAnalog";
+prog_char PROGMEM Cmd_62[]="WiredOut";
+prog_char PROGMEM Cmd_63[]="WiredPullup";
+prog_char PROGMEM Cmd_64[]="WiredSmittTrigger";
+prog_char PROGMEM Cmd_65[]="WiredThreshold";
 prog_char PROGMEM Cmd_66[]="";
 prog_char PROGMEM Cmd_67[]="";
-prog_char PROGMEM Cmd_68[]="Boot";
-prog_char PROGMEM Cmd_69[]="ClockDaylight";
-prog_char PROGMEM Cmd_70[]="ClockAll";
-prog_char PROGMEM Cmd_71[]="ClockSun";
-prog_char PROGMEM Cmd_72[]="ClockMon";
-prog_char PROGMEM Cmd_73[]="ClockTue";
-prog_char PROGMEM Cmd_74[]="ClockWed";
-prog_char PROGMEM Cmd_75[]="ClockThu";
-prog_char PROGMEM Cmd_76[]="ClockFri";
-prog_char PROGMEM Cmd_77[]="ClockSat";
-prog_char PROGMEM Cmd_78[]="EventStatus";
-prog_char PROGMEM Cmd_79[]="KAKU";
-prog_char PROGMEM Cmd_80[]="NewKAKU";
-prog_char PROGMEM Cmd_81[]="Timer";
-prog_char PROGMEM Cmd_82[]="UserEvent";
-prog_char PROGMEM Cmd_83[]="Variable";
-prog_char PROGMEM Cmd_84[]="Wildcard";
-prog_char PROGMEM Cmd_85[]="WiredIn";
-prog_char PROGMEM Cmd_86[]="";
+prog_char PROGMEM Cmd_68[]="";
+prog_char PROGMEM Cmd_69[]="Boot";
+prog_char PROGMEM Cmd_70[]="ClockDaylight";
+prog_char PROGMEM Cmd_71[]="ClockAll";
+prog_char PROGMEM Cmd_72[]="ClockSun";
+prog_char PROGMEM Cmd_73[]="ClockMon";
+prog_char PROGMEM Cmd_74[]="ClockTue";
+prog_char PROGMEM Cmd_75[]="ClockWed";
+prog_char PROGMEM Cmd_76[]="ClockThu";
+prog_char PROGMEM Cmd_77[]="ClockFri";
+prog_char PROGMEM Cmd_78[]="ClockSat";
+prog_char PROGMEM Cmd_79[]="EventStatus";
+prog_char PROGMEM Cmd_80[]="KAKU";
+prog_char PROGMEM Cmd_81[]="NewKAKU";
+prog_char PROGMEM Cmd_82[]="Timer";
+prog_char PROGMEM Cmd_83[]="UserEvent";
+prog_char PROGMEM Cmd_84[]="Variable";
+prog_char PROGMEM Cmd_85[]="Wildcard";
+prog_char PROGMEM Cmd_86[]="WiredIn";
 prog_char PROGMEM Cmd_87[]="";
 prog_char PROGMEM Cmd_88[]="";
+prog_char PROGMEM Cmd_89[]="";
 
 // tabel die refereert aan de commando strings
 PROGMEM const char *CommandText_tabel[]={
@@ -388,6 +387,7 @@ void setup()
   PrintTerm();
   Serial.print(Text(Text_21));
   PrintTerm();
+
   Serial.print(Text(Text_01));
   Serial.print(S.MinorVersion,DEC);
   Serial.print(Text(Text_03));

@@ -159,7 +159,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, int Type, unsigned long P
           {
           if(S.Trace)
             {
-            Serial.print(Text(Text_09));
+            Serial.print((Text_09));
             PrintTerm();
             }
           return false;
@@ -242,6 +242,15 @@ boolean ExecuteCommand(unsigned long Content, int Src, int Type, unsigned long P
     PrintRawSignal();
     PrintTerm();
     break;        
+
+  case CMD_CLOCK_YEAR:
+     x=Par1*100+Par2;
+     if(x>=2000 && x<=2090)// nieuwe millenium bug, maar dan ben ik al 130 jaar ;-)
+       {
+       Time.Year=x;
+       ClockSet();
+       break;
+       }
 
   case CMD_CLOCK_DLS: 
      if(S.DaylightSaving!=Par1)// alleen verzetten als de setting veranderd, anders wordt de klok twee uur verzet!

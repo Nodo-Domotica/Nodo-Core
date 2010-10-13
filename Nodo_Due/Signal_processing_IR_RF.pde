@@ -70,7 +70,7 @@ unsigned long AnalyzeRawSignal(byte *Type)
 
  /**********************************************************************************************\
  * Deze functie genereert uit een willekeurig gevulde RawSignal afkomstig van de meeste 
- * afstandsbedieningen een (vrijwel) unieke 32-bit code.
+ * afstandsbedieningen een (vrijwel) unieke bit code.
  * Zowel breedte van de pulsen als de afstand tussen de pulsen worden in de berekening
  * meegenomen zodat deze functie geschikt is voor PWM, PDM en Bi-Pase modulatie.
  * LET OP: Het betreft een unieke hash-waarde zonder betekenis van waarde.
@@ -127,9 +127,10 @@ unsigned long RawSignal_2_32bit(void)
     z++;
     }while(x<RawSignal[0]);
  
- if(Counter_pulse>=1 && Counter_space<=1)return CodeP; // data zat in de pulsbreedte
- if(Counter_pulse<=1 && Counter_space>=1)return CodeS; // data zat in de pulse afstand
- return CodeS^CodeP; // data zat in beide = bi-phase, maak er een leuke mix van.
+ // geef code terug,maar maak zet de msb nibble (=home) op een niet bestaand Home 0x0F zodat deze niet abusievelijk als commando worden verwerkt.
+ if(Counter_pulse>=1 && Counter_space<=1)return CodeP & 0x0fffffff; // data zat in de pulsbreedte
+ if(Counter_pulse<=1 && Counter_space>=1)return CodeS & 0x0fffffff; // data zat in de pulse afstand
+ return (CodeS^CodeP)& 0x0fffffff; // data zat in beide = bi-phase, maak er een leuke mix van.
  }
 
  

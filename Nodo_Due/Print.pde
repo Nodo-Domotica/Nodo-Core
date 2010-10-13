@@ -4,14 +4,19 @@
  \*********************************************************************************************/
 void PrintEvent(unsigned long Content, byte Port, byte Type, boolean Direction)
   {
-  if(S.Trace)
+  if(S.Trace && Time.Day) // alleen als Time.Day <>0 want dan is er geen RTC aanwezig
     {
-    Serial.print("Day ");
-    Serial.print(Time.Day,DEC);
-    Serial.print(", ");      
+    // print weekdag.
+    for(byte x=0;x<=2;x++)Serial.print(*(Text(Text_02)+(Time.Day-1)*3+x),BYTE); // in Time.Day staat één gelijk aan zondag.
+    Serial.print(" ");
+
+    // print uren.    
     if(Time.Hour<10)Serial.print("0");
     Serial.print(Time.Hour,DEC);
+
     Serial.print(":");
+
+    // print minuten.
     if(Time.Minutes<10)Serial.print("0");
     Serial.print(Time.Minutes,DEC);
     Serial.print(", ");
@@ -86,7 +91,7 @@ void PrintEventCode(unsigned long Code,byte Type)
   byte par1=(Code>>8)&0xff;
   byte par2=(Code)&0xff;
 
-  if(Type==CMD_TYPE_UNKNOWN)
+  if(Type==CMD_TYPE_UNKNOWN || NodoHome!=S.Home)
     {
     Serial.print("0x"); 
     Serial.print(Code,HEX);
@@ -166,6 +171,8 @@ void PrintTerm()
   if(SERIAL_TERMINATOR_2)Serial.print(SERIAL_TERMINATOR_2,BYTE);
   }
 
+
+  
  /**********************************************************************************************\
  * Print een regel uit de Eventlist.
  \*********************************************************************************************/

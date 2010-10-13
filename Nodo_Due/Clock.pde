@@ -67,7 +67,6 @@ int rtc[7];
  \*********************************************************************************************/
 void ClockSet(void) 
   {
-  // ??? niet berekenen maar gewoon door user opgegeven. Time.Day=dow(Time.Year,Time.Month,Time.Date)+1;// Day wordt berekend. 1=zondag.
   rtc[DS1307_SEC]=DS1307_CLOCKHALT;  // Stop the clock. Set the ClockHalt bit high to stop the rtc. This bit is part of the seconds byte
   DS1307_save();
   rtc[DS1307_MIN]=((Time.Minutes/10)<<4)+(Time.Minutes%10);
@@ -75,7 +74,7 @@ void ClockSet(void)
   rtc[DS1307_DOW]=Time.Day;
   rtc[DS1307_DATE]=((Time.Date/10)<<4)+(Time.Date%10);
   rtc[DS1307_MTH]=((Time.Month/10)<<4)+(Time.Month%10);
-  // rtc[DS1307_YR]=(((Time.Year-DS1307_BASE_YR)/10)<<4)+(Time.Year%10); //??? jaar niet relevant voor de Nodo.
+  rtc[DS1307_YR]=(((Time.Year-DS1307_BASE_YR)/10)<<4)+(Time.Year%10); 
   rtc[DS1307_SEC]=((Time.Seconds/10)<<4)+(Time.Seconds% 10); // and start the clock again...
   DS1307_save();
   }
@@ -151,7 +150,7 @@ unsigned long ClockRead(void)   // Aquire data from buffer and convert to int, r
   Time.Day=rtc[DS1307_DOW] & DS1307_LO_DOW;
   Time.Date=(10*((rtc[DS1307_DATE] & DS1307_HI_DATE)>>4))+(rtc[DS1307_DATE] & DS1307_LO_BCD);
   Time.Month=(10*((rtc[DS1307_MTH] & DS1307_HI_MTH)>>4))+(rtc[DS1307_MTH] & DS1307_LO_BCD);
-  //??? jaar niet relevant voor de Nodo. Time.Year=(10*((rtc[DS1307_YR] & DS1307_HI_YR)>>4))+(rtc[DS1307_YR] & DS1307_LO_BCD)+DS1307_BASE_YR;
+  Time.Year=(10*((rtc[DS1307_YR] & DS1307_HI_YR)>>4))+(rtc[DS1307_YR] & DS1307_LO_BCD)+DS1307_BASE_YR;
   
   return ((unsigned long)(S.Home))<<28 |
          ((unsigned long)(S.Unit))<<24 | 
