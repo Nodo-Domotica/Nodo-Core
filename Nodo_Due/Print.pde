@@ -2,9 +2,11 @@
  /*********************************************************************************************\
  * Print een event volgens formaat:  'EVENT/ACTION: <port>, <type>, <content>
  \*********************************************************************************************/
-void PrintEvent(unsigned long Content, byte Port, byte Type, boolean Direction)
+void PrintEvent(unsigned long Content, byte Port, boolean Direction)
   {
-  if(Trace&2 && Time.Day) // Time.Day=true want dan is er een RTC aanwezig
+  byte Type=EventType(Content);
+
+  if(S.Trace&2 && Time.Day) // Time.Day=true want dan is er een RTC aanwezig
     {   
     // Print de dag. 1=zondag, 0=geen RTC aanwezig
     for(byte x=0;x<=2;x++)Serial.print(*(Text(Text_02)+(Time.Day-1)*3+x),BYTE);
@@ -19,7 +21,7 @@ void PrintEvent(unsigned long Content, byte Port, byte Type, boolean Direction)
     // print minuten.
     if(Time.Minutes<10)Serial.print("0");
     Serial.print(Time.Minutes,DEC);
-    Serial.print(", ");
+    PrintComma();
     }
 
   switch(Direction)
@@ -44,20 +46,20 @@ void PrintEvent(unsigned long Content, byte Port, byte Type, boolean Direction)
   if(Port)
     Serial.print(cmd2str(Port));
     
-  if(Trace&1)
+  if(S.Trace&1)
     {
     // Type event
     if(Type)
       {
-      if(Port)Serial.print(", ");    
+      if(Port)PrintComma();   
       Serial.print(cmd2str(Type));
       }
     }
 
   if(Content)
     {
-    if(Port | (Type && Trace&1))Serial.print(", ");
-    PrintEventCode(Content,Type);
+    if(Port | (Type && S.Trace&1))PrintComma();
+    PrintEventCode(Content);
     }
   PrintTerm();
   }  
@@ -69,94 +71,114 @@ void PrintEvent(unsigned long Content, byte Port, byte Type, boolean Direction)
 void PrintRawSignal(void)
   {
   byte x;
-  PrintEventCode(AnalyzeRawSignal(&x),0);
+  PrintEventCode(AnalyzeRawSignal());
   Serial.print(Text(Text_30));
   for(int x=1;x<=RawSignal[0];x++)
      {
-     if(x>1)Serial.print(",");
+     if(x>1)PrintComma();
      Serial.print(RawSignal[x],DEC);
      }
   Serial.print(")");
+  }
+
+ /*********************************************************************************************\
+ * Serial.Print neemt veel progmem in beslag. 
+ * Print een lijn met het teken '*' 
+ \*********************************************************************************************/
+void PrintLine(void)
+  {
+  for(byte x=1;x<=40;x++)Serial.print("*");
+  PrintTerm();
+  }
+
+ /*********************************************************************************************\
+ * Serial.Print neemt veel progmem in beslag. 
+ * Print het teken ',' 
+ \*********************************************************************************************/
+void PrintComma(void)
+  {
+  Serial.print(", ");
   }
 
 
  /*********************************************************************************************\
  * Print een EventCode. 
  \*********************************************************************************************/
-void PrintEventCode(unsigned long Code,byte Type)
+void PrintEventCode(unsigned long Code)
   {
-  byte NodoUnit=(Code>>24)&0xf;
-  byte NodoHome=(Code>>28)&0xf;
-  byte cmd=(Code>>16)&0xff;
-  byte par1=(Code>>8)&0xff;
-  byte par2=(Code)&0xff;
+  byte Unit     = EventPart(Code,EVENT_PART_UNIT);
+  byte Home     = EventPart(Code,EVENT_PART_HOME);
+  byte Command  = EventPart(Code,EVENT_PART_COMMAND);
+  byte Par1     = EventPart(Code,EVENT_PART_PAR1);
+  byte Par2     = EventPart(Code,EVENT_PART_PAR2);
+  byte Type     = EventType(Code);
 
-  if(Type==CMD_TYPE_UNKNOWN || NodoHome!=S.Home)
+  if(Type==CMD_TYPE_UNKNOWN || Home!=S.Home)
     {
     Serial.print("0x"); 
     Serial.print(Code,HEX);
     return;
     }
 
-  if(NodoUnit!=S.Unit && NodoUnit!=0)
+  if(Unit!=S.Unit && Unit!=0)
     {
     Serial.print("Unit-"); 
-    Serial.print(NodoUnit,DEC); 
-    Serial.print(", "); 
+    Serial.print(Unit,DEC); 
+    PrintComma();
     }
     
   Serial.print("("); 
-  Serial.print(cmd2str(cmd));
+  Serial.print(cmd2str(Command));
   Serial.print(" ");
 
-  switch(cmd)
+  switch(Command)
     {
     case CMD_KAKU:
     case CMD_SEND_KAKU:
-      Serial.print('A'+((par1&0xf0)>>4),BYTE); //  A1..P1 printen...
-      Serial.print(par2&0x2?0:(par1&0xF)+1,DEC);// als 2e bit in par2 staat, dan is het een groep commando en moet adres '0' zijn.
-      Serial.print(",");
-      Serial.print(cmd2str(par2 & 0x1)); // Print 'On' of 'Off'. laat cmd2str dit oplossen
+      Serial.print('A'+((Par1&0xf0)>>4),BYTE); //  A1..P1 printen...
+      Serial.print(Par2&0x2?0:(Par1&0xF)+1,DEC);// als 2e bit in Par2 staat, dan is het een groep commando en moet adres '0' zijn.
+      PrintComma();
+      Serial.print(cmd2str(Par2 & 0x1)); // Print 'On' of 'Off'. laat cmd2str dit oplossen
       break;
     
     case CMD_KAKU_NEW:
     case CMD_SEND_KAKU_NEW:
-      Serial.print(par1,DEC);
-      Serial.print(",");
-      if ((par2 & 0xF) == KAKU_DIMLEVEL)
+      Serial.print(Par1,DEC);
+      PrintComma();
+      if ((Par2 & 0xF) == KAKU_DIMLEVEL)
         {// als dimlevel commando dan 'Dim' met daarna het hoogste nibble als getal printen
         Serial.print(Text(Text_05));
-        Serial.print((par2 >> 4)+1,DEC);
+        Serial.print((Par2 >> 4)+1,DEC);
         } 
       else
-        Serial.print(cmd2str(par2 & 0x1)); // Print 'On' of 'Off'. laat cmd2str dit oplossen
+        Serial.print(cmd2str(Par2 & 0x1)); // Print 'On' of 'Off'. laat cmd2str dit oplossen
       break;
 
     case CMD_WILDCARD_EVENT:
-      if(par1!=0)
-        Serial.print(cmd2str(par1));
+      if(Par1!=0)
+        Serial.print(cmd2str(Par1));
       else
         Serial.print("0");
-      Serial.print(","); 
-      if(par2)
-        Serial.print(cmd2str(par2));
+      PrintComma();
+      if(Par2)
+        Serial.print(cmd2str(Par2));
       else
         Serial.print("0");
       break;
 
     case CMD_STATUS_EVENT:
-      if(par1)
-        Serial.print(cmd2str(par1));
+      if(Par1)
+        Serial.print(cmd2str(Par1));
       else
         Serial.print("0");
-      Serial.print(","); 
-      Serial.print(par2,DEC);
+      PrintComma(); 
+      Serial.print(Par2,DEC);
       break;
 
     default:
-      Serial.print(par1,DEC);
-      Serial.print(","); 
-      Serial.print(par2,DEC);
+      Serial.print(Par1,DEC);
+      PrintComma();
+      Serial.print(Par2,DEC);
     }
   Serial.print(")"); 
   }
@@ -191,8 +213,8 @@ void PrintEventlistEntry(int entry, byte d)
     }
   Serial.print(entry,DEC);
   Serial.print(": ");
-  PrintEventCode(Event,EventType(Event));
+  PrintEventCode(Event);
   Serial.print("; ");
-  PrintEventCode(Action,EventType(Action));
+  PrintEventCode(Action);
   PrintTerm();
   }

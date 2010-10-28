@@ -107,6 +107,7 @@ void KAKU_2_RawSignal(unsigned long Code)
 * Geeft een false retour als geen geldig KAKU commando uit het signaal te destilleren
 \*********************************************************************************************/
 
+
 unsigned long RawSignal_2_KAKU(void)
   {
   byte Home, Unit, Level, Command;
@@ -136,7 +137,6 @@ unsigned long RawSignal_2_KAKU(void)
 
   return command2event(CMD_KAKU, (Home << 4 | Unit), Command);
   }
-
 
 /*********************************************************************************************\
 * NewKAKU
@@ -276,7 +276,7 @@ unsigned long RawSignal_2_NewKAKU(void)
     return command2event(CMD_KAKU_NEW, user_address, (Level << 4 | Command));
     }
   else// De KAKU code is niet verzonden door een Nodo met hetzelfde home
-    return y & 0x0fffffff; // maak de positie van home leeg zodat de nodo niet denkt dat het een commando is.
+    return y;
   }
 
 

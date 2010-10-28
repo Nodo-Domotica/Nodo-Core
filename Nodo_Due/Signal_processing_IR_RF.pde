@@ -38,33 +38,19 @@
 #define NODO_PULSE_1                   1500   // PWM: Tijdsduur van de puls bij verzenden van een '1' in uSec. (3x NODO_PULSE_0)
 #define NODO_SPACE                      500   // PWM: Tijdsduur van de space tussen de bitspuls bij verzenden van een '1' in uSec.    
 
-unsigned long AnalyzeRawSignal(byte *Type)
+unsigned long AnalyzeRawSignal(void)
   {
   unsigned long Code=0L;
   
-  if(RawSignal[0]==RAW_BUFFER_SIZE)   
-    return 0L;     // Als het signaal een volle buffer beslaat is het zeer waarschijnlijk ruis.
+  if(RawSignal[0]==RAW_BUFFER_SIZE)return 0L;     // Als het signaal een volle buffer beslaat is het zeer waarschijnlijk ruis.
 
   Code=RawSignal_2_KAKU();    
-  if(Code)
-    {
-    *Type=CMD_TYPE_EVENT;
-    return Code;   // check of het een KAKU signaal is volgens de conventionele KAKU codering.
-    }
+  if(Code)return Code;   // check of het een KAKU signaal is volgens de conventionele KAKU codering.
 
   Code=RawSignal_2_NewKAKU();
-  if(Code)
-    {
-    *Type=EventType(Code);
-    return Code;   // check of het een KAKU signaal is volgens de nieuwe KAKU codering.
-    }
+  if(Code)return Code;   // check of het een KAKU signaal is volgens de nieuwe KAKU codering.
 
   Code=RawSignal_2_32bit();
-
-  if(((Code>>28)&0xf)==S.Home)
-    *Type=EventType(Code);
-  else
-    *Type=CMD_TYPE_UNKNOWN;  
   return Code;   // Geen Nodo, KAKU of NewKAKU code. Genereer uit het onbekende signaal een (vrijwel) unieke 32-bit waarde uit.  
   }
 
@@ -128,9 +114,9 @@ unsigned long RawSignal_2_32bit(void)
     }while(x<RawSignal[0]);
  
  // geef code terug,maar maak zet de msb nibble (=home) op een niet bestaand Home 0x0F zodat deze niet abusievelijk als commando worden verwerkt.
- if(Counter_pulse>=1 && Counter_space<=1)return CodeP & 0x0fffffff; // data zat in de pulsbreedte
- if(Counter_pulse<=1 && Counter_space>=1)return CodeS & 0x0fffffff; // data zat in de pulse afstand
- return (CodeS^CodeP)& 0x0fffffff; // data zat in beide = bi-phase, maak er een leuke mix van.
+ if(Counter_pulse>=1 && Counter_space<=1)return CodeP; // data zat in de pulsbreedte
+ if(Counter_pulse<=1 && Counter_space>=1)return CodeS; // data zat in de pulse afstand
+ return (CodeS^CodeP); // data zat in beide = bi-phase, maak er een leuke mix van.
  }
 
  
@@ -163,10 +149,12 @@ static void IR38Khz_set()
 
 // Parameters voor check op vrije 433 ether alvorens verzenden signalen:
 
-boolean WaitForFreeRF(byte seconds)
+void WaitForFreeRF(void)
   {
-  int x=seconds?seconds*1000:S.Unit*1000;
+  int x=S.WaitForFreeRF_Time?S.WaitForFreeRF_Time*1000:S.Unit*1000;
   unsigned long FreeTimer;  // meet of de time-out waarde gepasseerd is in milliseconden
+
+  if(Simulate)return;
   
   FreeTimer=millis()+x; // reset de timer.  
   while(FreeTimer>millis())
@@ -212,7 +200,8 @@ void RawSendRF(void)
   int x;
     
   if(Simulate)return;
-  
+  if(S.WaitForFreeRF==WAITFREERF_ALL)WaitForFreeRF();
+
   digitalWrite(RF_ReceivePowerPin,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
   digitalWrite(RF_TransmitPowerPin,HIGH); // zet de 433Mhz zender aan   
   

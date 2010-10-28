@@ -48,7 +48,11 @@ int str2cmd(char *command)
  \*********************************************************************************************/
 unsigned long command2event(int Command, byte Par1, byte Par2)
     {
-    return ((unsigned long)S.Home)<<28 | ((unsigned long)S.Unit)<<24 | ((unsigned long)Command)<<16 | ((unsigned long)Par1)<<8 | (unsigned long)Par2;
+    return ((unsigned long)S.Home)<<28  | 
+           ((unsigned long)S.Unit)<<24  | 
+           ((unsigned long)Command)<<16 | 
+           ((unsigned long)Par1)<<8     | 
+            (unsigned long)Par2;
     }
 
 
@@ -127,10 +131,12 @@ boolean GetStatus(int *Command, int *Par1, int *Par2)
   *Par2=0;
   switch (*Command)
     {
+    //??? divertsettings opnemen
+  
     case CMD_UNIT: 
       *Par1=S.Unit;
       break;
-      
+        
     case CMD_HOME: 
       *Par1=S.Home;
       break;
@@ -142,6 +148,11 @@ boolean GetStatus(int *Command, int *Par1, int *Par2)
     case CMD_ANALYSE_SETTINGS:
       *Par1=S.AnalyseTimeOut/1000;
       *Par2=S.AnalyseSharpness;
+      break;
+
+    case CMD_DIVERT_SETTINGS:
+      *Par1=S.DivertType;
+      *Par2=S.DivertPort;
       break;
 
     case CMD_CLOCK_EVENT_DAYLIGHT:
@@ -158,8 +169,8 @@ boolean GetStatus(int *Command, int *Par1, int *Par2)
       break;
 
     case CMD_TRACE:
-      *Par1=Trace&1;
-      *Par2=Trace&2>0;      
+      *Par1=S.Trace&1;
+      *Par2=S.Trace&2>0;      
       break;
 
     case CMD_CLOCK_DATE:
@@ -174,6 +185,11 @@ boolean GetStatus(int *Command, int *Par1, int *Par2)
 
     case CMD_CLOCK_DOW:
       *Par1=Time.Day;
+      break;
+
+    case CMD_CLOCK_YEAR:
+      *Par1=Time.Year/100;
+      *Par2=Time.Year-2000;
       break;
 
     case CMD_TIMER_SET:
@@ -209,6 +225,11 @@ boolean GetStatus(int *Command, int *Par1, int *Par2)
       *Par2=analogRead(WiredAnalogInputPin_1+xPar1-1)>>2;
       break;
 
+    case CMD_WAITFREERF:
+      *Par1=S.WaitForFreeRF;
+      *Par2=S.WaitForFreeRF_Time;
+      break;
+      
     case CMD_WIRED_OUT:
       *Par1=xPar1;
       *Par2=WiredOutputStatus[xPar1];
@@ -263,49 +284,7 @@ boolean LoadSettings()
     pointerToByteToRead++;// volgende byte uit de struct
     }
   }
-
-    
- /**********************************************************************************************\
- * Bepaal wat voor een type Event het is.
- \*********************************************************************************************/
-byte EventType(unsigned long Code)
-  {
-  byte Command,Home,Unit;
-
-  Home=(Code>>28)&0xf;
-  Unit=(Code>>24)&0xf;
-  Command=(Code>>16)&0xff;
-  
-  if(Unit!=S.Unit  && Command!=CMD_USER && Unit!=0)  return CMD_TYPE_OTHERUNIT; // andere unit, dus niet voor deze nodo bestemd.. Behalve CMD_USER, die is voor alle units    }
-
-  if(Command<=RANGE_VALUE)                           return CMD_TYPE_UNKNOWN;
-  if(Command<RANGE_EVENT)                            return CMD_TYPE_COMMAND;
-  if(Command<=COMMAND_MAX)                           return CMD_TYPE_EVENT;
-  return CMD_TYPE_UNKNOWN;  
-  }
-    
-    
- /*********************************************************************************************\
- * geeft commando deel uit de code terug.
- * false indien geen geldig commando
- * er wordt geen rekening gehouden met juidtehome of unit adressering.
- * Mag zowel wet een Event als een Nodo commando code worden aangeroepen.
- \*********************************************************************************************/
-int CommandCode(unsigned long Code)
-  {
-  int x;
-
-  if(Code<=0xff)
-    x=Code;
-  else
-    x=(Code>>16)&0xff;// als groter 255 dan is het een 32-bit Event. Filter het commando er uit.
-  
-  if(x<=RANGE_VALUE || x>=RANGE_EVENT)
-    return false;
-  else
-    return x;
-  }
-  
+ 
   
  /*********************************************************************************************\
  * Alle settings van de Nodo weer op default.
@@ -314,14 +293,18 @@ void ResetFactory(void)
   {
   Beep(2000,2000);
   
-  S.DaylightSaving     =false;
-  S.MinorVersion       =MINORVERSION;
-  S.Unit               =UNIT;
-  S.Home               =HOME;
-  Trace                =0;
-  S.AnalyseSharpness   =50;
-  S.AnalyseTimeOut     =10000;
-  
+  S.DaylightSaving     = false;
+  S.Version            = VERSION;
+  S.Unit               = UNIT;
+  S.Home               = HOME;
+  S.Trace              = 0;
+  S.AnalyseSharpness   = 50;
+  S.AnalyseTimeOut     = 10000;
+  S.WaitForFreeRF      = 0;
+  S.WaitForFreeRF_Time = 0;
+  S.DivertPort         = DIVERT_PORT_IR_RF;
+  S.DivertType         = DIVERT_TYPE_USEREVENT;
+    
   for(byte x=0;x<4;x++)
     {
     S.WiredInputThreshold[x]=0x80; 
@@ -343,7 +326,6 @@ void FactoryEventlist(void)
   Eventlist_Write(1,0L,0L); // maak de eventlist leeg.
   Eventlist_Write(0,command2event(CMD_BOOT_EVENT,0,0),command2event(CMD_SOUND,7,0)); // geluidssignaal na opstarten Nodo
   Eventlist_Write(0,command2event(CMD_WILDCARD_EVENT,0,0),command2event(CMD_SOUND,0,0)); // Kort geluidssignaal bij ieder binnenkomend event
-  Eventlist_Write(0,command2event(CMD_WILDCARD_EVENT,0,0),command2event(CMD_FORWARD,FORWARD_ALL,0)); // Forwarding naar unit=0;
   }
 
  /*********************************************************************************************\
@@ -419,3 +401,53 @@ byte DL2par(char* DL)
   return ((par-1) << 4 | KAKU_DIMLEVEL);      
 }
 
+ /*********************************************************************************************\
+ * geeft een deel uit de code terug.
+ * er wordt geen rekening gehouden met juiste home of unit adressering.
+ \*********************************************************************************************/
+byte EventPart(unsigned long Code, byte Part)
+  {
+  int x;
+
+  switch(Part)
+    {
+    case EVENT_PART_HOME:
+      return (Code>>28)&0xf;
+
+    case EVENT_PART_UNIT:
+      return (Code>>24)&0xf;
+
+    case EVENT_PART_COMMAND:
+      return (Code>>16)&0xff;
+      
+    case EVENT_PART_PAR1:
+      return (Code>>8)&0xff;
+
+    case EVENT_PART_PAR2:
+      return Code&0xff;
+
+    default:
+      return 0;
+    }
+  }
+
+ /**********************************************************************************************\
+ * Bepaal wat voor een type Event het is.
+ \*********************************************************************************************/
+byte EventType(unsigned long Code)
+  {
+  byte Command,Unit;
+  
+  Unit=   EventPart(Code,EVENT_PART_UNIT);
+  Command=EventPart(Code,EVENT_PART_COMMAND);
+  
+  if(EventPart(Code,EVENT_PART_HOME)!=S.Home) return CMD_TYPE_UNKNOWN; 
+  if(Unit!=S.Unit && Unit!=0)                 return CMD_TYPE_OTHERUNIT; // andere unit, dus niet voor deze nodo bestemd. Behalve unit=0, die is voor alle units    }
+  if(Command<=RANGE_VALUE)                    return CMD_TYPE_UNKNOWN;
+  if(Command<RANGE_EVENT)                     return CMD_TYPE_COMMAND;
+  if(Command<=COMMAND_MAX)                    return CMD_TYPE_EVENT;
+  /* in andere gevallen */                    return CMD_TYPE_UNKNOWN;  
+  }
+    
+
+  

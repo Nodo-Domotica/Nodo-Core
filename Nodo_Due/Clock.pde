@@ -1,6 +1,6 @@
 #define offset 60
  
-boolean CheckDaylight()
+void SetDaylight()
   {
   // Tabel Sunset & Sunrise: om de 10 dagen de tijden van zonsopkomst en zonsondergang in minuten na middernacht. 
   // Geldig voor in Nederland (gemiddelde voor midden Nederland op 52.00 graden NB en 5.00 graden OL) 
@@ -31,7 +31,7 @@ boolean CheckDaylight()
   up  =u0+((u1-u0)*(DOY%10))/10;// Zon op in minuten na middernacht
   down=d0+((d1-d0)*(DOY%10))/10;// Zon onder in minuten na middernacht
 
-  Time.Daylight=0;                        // na middernacht 
+  Time.Daylight=0;                        // astronomische start van de dag 
   if(now>=(up-offset))   Time.Daylight=1; // <offset> minuten voor zonsopkomst 
   if(now>=up)            Time.Daylight=2; // zonsopkomst
   if(now>=(down-offset)) Time.Daylight=3; // <offset> minuten voor zonsondergang
@@ -81,63 +81,58 @@ void ClockSet(void)
 
 /**********************************************************************************************\
  * Leest de realtime clock en plaatst actuele waarden in de struct Time. 
- * Eveneens wordt de Event code terug gegevens
  * Revision 01, 09-01-2010, P.K.Tonkes@gmail.com
  \*********************************************************************************************/
 
-unsigned long SimulateDay(byte days) 
+void SimulateDay(byte days) 
   {
   unsigned long SimulatedClockEvent, Event, Action;
-  byte x;
   
   Time.Seconds=0;
   Time.Minutes=0;
   Time.Hour=0;
+  DaylightPrevious=4;// vullen met 4, dan wordt in de zomertijd 4 niet tweemaal per etmaal weergegeven
   
-  Serial.print(Text(Text_21));PrintTerm();
+  PrintLine();
   for(int d=1;d<=days;d++)
     {
     for(int m=0;m<=1439;m++)  // loop alle minuten van één etmaal door
       {
-      if(Time.Minutes==60){Time.Minutes=0;Time.Hour++;}
-      if(Time.Hour==24)
-        {
-        Time.Hour=0;
-        Time.Day++;
-        }
-      if(Time.Day==8)Time.Day=1;
-  
-      SimulatedClockEvent=command2event(CMD_CLOCK_EVENT_ALL+Time.Day,Time.Hour,Time.Minutes); 
-      if(x=CheckEventlist(SimulatedClockEvent));
+      // Simuleer alle menuten van een etmaal
+      if(Time.Minutes==60){Time.Minutes=0;Time.Hour++;}  // roll-over naar volgende uur
+      if(Time.Hour==24)   {Time.Hour=0;Time.Day++;}      // roll-over naar volgende etmaal
+      if(Time.Day==8)     {Time.Day=1;}                  // roll-over naar volgende week
 
-      CheckDaylight();
+      // Kijk of er op het gesimuleerde tijdstip een hit is in de EventList
+      SimulatedClockEvent=command2event(CMD_CLOCK_EVENT_ALL+Time.Day,Time.Hour,Time.Minutes);
+      if(CheckEventlist(SimulatedClockEvent)) // kijk of er een hit is in de EventList
+        ProcessEvent(SimulatedClockEvent,CMD_SOURCE_CLOCK,0,0);
+        
+      // Kijk of er op het gesimuleerde tijdstip een zonsondergang of zonsopkomst wisseling heeft voorgedaan
+      SetDaylight(); // Zet in de struct ook de Time.DayLight status behorend bij de tijd
       if(Time.Daylight!=DaylightPrevious)// er heeft een zonsondergang of zonsopkomst wisseling voorgedaan
         {
         SimulatedClockEvent=command2event(CMD_CLOCK_EVENT_DAYLIGHT,Time.Daylight,0L);
-        x=true;
         DaylightPrevious=Time.Daylight;
+        ProcessEvent(SimulatedClockEvent,CMD_SOURCE_CLOCK,0,0);
         }
-
-      if(x)
-        ProcessEvent(SimulatedClockEvent,CMD_SOURCE_CLOCK,EventType(SimulatedClockEvent),0,0,0);
       Time.Minutes++;
-      x=false;
       }
     }
-  Serial.print(Text(Text_21));PrintTerm();
+  PrintLine();
   
   ClockRead();// klok weer op de juiste tijd zetten.
-  CheckDaylight();// dagligt status weer terug op de juiste stand zetten
+  SetDaylight();// dagligt status weer terug op de juiste stand zetten
   DaylightPrevious=Time.Daylight;
   }
 
 /**********************************************************************************************\
- * Leest de reltime clock en plaatst actuele waarden in de struct Time. 
+ * Leest de realtime clock en plaatst actuele waarden in de struct Time. 
  * Eveneens wordt de Event code terug gegeven
  * Revision 01, 09-01-2010, P.K.Tonkes@gmail.com
  \*********************************************************************************************/
 
-unsigned long ClockRead(void)   // Aquire data from buffer and convert to int, refresh buffer if required
+unsigned long ClockRead(void)
   {
   byte i=0;
   DS1307_read();

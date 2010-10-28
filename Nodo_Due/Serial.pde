@@ -31,20 +31,20 @@ unsigned long Receive_Serial(void)
   int Par1,Par2,Cmd;
 
   Event=SerialReadEvent();
-  Cmd=(Event>>16)&0xff;
-  Par1=(Event>>8)&0xff;
-  Par2=Event&0xff;
+  Cmd=EventPart(Event,EVENT_PART_COMMAND);
+  Par1=EventPart(Event,EVENT_PART_PAR1);
+  Par2=EventPart(Event,EVENT_PART_PAR2);
   error=false;
   
-  switch(CommandCode(Cmd))
+  switch(Cmd)
     {
     case CMD_EVENTLIST_SHOW:
-      Serial.print(Text(Text_21));PrintTerm();
+      PrintLine();
       for(x=1;x<=Eventlist_MAX && Eventlist_Read(x,&Event,&Action);x++)
         {
         PrintEventlistEntry(x,0);PrintTerm();
         }   
-      Serial.print(Text(Text_21));PrintTerm();
+      PrintLine();
       break;
 
     case CMD_STATUS:
@@ -53,13 +53,12 @@ unsigned long Receive_Serial(void)
        if(GetStatus(&Cmd,&Par1,&Par2)) // let op: call by reference !
          {
          Event=command2event(Cmd,Par1,Par2);// event wordt samengesteld...
-         PrintEventCode(Event,0);// ...maar alleen weergegeven.
+         PrintEventCode(Event);// ...maar alleen weergegeven.
          PrintTerm();
          }
        else
          error=true;
        break;
-
  
     case CMD_EVENTLIST_WRITE:
       Event=SerialReadEvent();
@@ -70,17 +69,41 @@ unsigned long Receive_Serial(void)
 
     case CMD_DIVERT:   
       DivertUnit=Par1&0xf;
-      DivertForward=Par2;
       break;
 
-    case CMD_WAITFREERF: // ook in ExecuteCommand()!
+    case CMD_DIVERT_SETTINGS:
       {
-      WaitForFreeRF(Par1);
+      S.DivertType=Par1;
+      S.DivertPort=Par2;
+      SaveSettings();
+      break;
+      }
+
+    case CMD_RESET:
+       VariableClear(0);// wis alle variabelen
+       delay(500);// kleine pauze, anders kans fout bij seriële communicatie
+       Reset();
+       break;        
+
+    case CMD_ANALYSE_SETTINGS:
+      {
+      S.AnalyseTimeOut=Par1;
+      S.AnalyseSharpness=Par2*1000;
+      SaveSettings();
+      break;
+      }
+
+    case CMD_WAITFREERF: // ook in Receive_Serial() zodat hij ook vanuit serial gebruikt kan worden als er een Divert actief is!
+      {
+      S.WaitForFreeRF=Par1;
+      S.WaitForFreeRF_Time=Par2;
+      SaveSettings();
       break;
       }
 
     case CMD_TRACE: 
-      Trace=Par1&1 | (Par2&1)<<1;
+      S.Trace=Par1&1 | (Par2&1)<<1;
+      SaveSettings();
       break;        
   
     case CMD_RAWSIGNAL_GET:
@@ -99,6 +122,7 @@ unsigned long Receive_Serial(void)
 
      case CMD_UNIT:
        S.Unit=Par1&0xf; // Par1 &0xf omdat alleen waarden van 0..15 geldig zijn.
+       DivertUnit=S.Unit;   // Alle commando's en events zijn voor de Nodo zelf.
        SaveSettings();
        FactoryEventlist();
        Reset();
@@ -132,9 +156,7 @@ unsigned long Receive_Serial(void)
          break;        
           
       default:// alle andere commando's hebben max. twee parameters. 
-        {
         return Event;       
-        }
       }
  
   if(error)
@@ -162,7 +184,7 @@ unsigned long SerialReadEvent()
 
   // is het gewoon een getal dat als event moet worden verwerkt? Deze zijn altijd groter dan 255 want 0..255 zijn commando's
   Event=str2val(SerialBuffer);
-  if(Event>0xff)return Event & 0x0fffffff; // alle waarden groter dan 255 mogen gelijk verwerkt worden als een event.
+  if(Event>0xff)return Event; // alle waarden groter dan 255 mogen gelijk verwerkt worden als een event.
 
   if(Event==0)
     y=str2cmd(SerialBuffer);  // invoer was geen getal. Haal uit de invoer de code van het tekst commando
@@ -174,8 +196,8 @@ unsigned long SerialReadEvent()
     if(x)
       {
       x=SerialReadBlock(SerialBuffer);
-      Par1=HA2address(SerialBuffer,&z); // Parameter-1 bevat [A1..P16]. Omzetten naar absolute waarde. z = Groep opdracht
-
+      z=0;
+      Par1=HA2address(SerialBuffer,&z); // Parameter-1 bevat [A1..P16]. Omzetten naar absolute waarde.
       if(x)
         {
         x=SerialReadBlock(SerialBuffer);
@@ -192,12 +214,11 @@ unsigned long SerialReadEvent()
       {
       x=SerialReadBlock(SerialBuffer);
       Par1=HA2address(SerialBuffer,&z); // Parameter-1 bevat adres als tekst. // omzetten met andere functie
-
       if(x)
         {
         x=SerialReadBlock(SerialBuffer);
         Par2=DL2par(SerialBuffer); // Parameter-2 bevat [Dim1..Dim16]. Omzetten naar code.
-        if (!Par2) { Par2=str2val(SerialBuffer); }
+        if(!Par2)Par2=str2val(SerialBuffer);
         }
       }
     Event=command2event(y,Par1,Par2);
