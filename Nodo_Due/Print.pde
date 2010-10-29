@@ -87,7 +87,7 @@ void PrintRawSignal(void)
  \*********************************************************************************************/
 void PrintLine(void)
   {
-  for(byte x=1;x<=40;x++)Serial.print("*");
+  for(byte x=1;x<=50;x++)Serial.print("*");
   PrintTerm();
   }
 

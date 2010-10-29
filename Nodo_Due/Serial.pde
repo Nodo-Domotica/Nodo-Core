@@ -213,6 +213,7 @@ unsigned long SerialReadEvent()
     if(x)
       {
       x=SerialReadBlock(SerialBuffer);
+      z=0;
       Par1=HA2address(SerialBuffer,&z); // Parameter-1 bevat adres als tekst. // omzetten met andere functie
       if(x)
         {
