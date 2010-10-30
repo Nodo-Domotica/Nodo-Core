@@ -1,5 +1,6 @@
 
 // Todo:
+// Timeout van d waitfreerf
 // Testen groepcommando's verzenden met KAKU: ook daadwerkelijk door KAKU ontvanger te ontvangen?
 // uitvragen AnalyeSettings geeft een hex-code
 // StatusEvent werkt nog niet;

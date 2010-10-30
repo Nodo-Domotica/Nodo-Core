@@ -124,7 +124,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
         RawSendRF();
         }
   
-      if(DivertUnit!=0)// als event alleen maar voor een andere Nodo was.
+      if(DivertUnit!=0)// als event alleen maar voor een andere Nodo was.//??? klopt dit
         {
         depth--;
         return true;

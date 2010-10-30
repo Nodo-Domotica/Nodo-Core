@@ -49,7 +49,7 @@ int str2cmd(char *command)
 unsigned long command2event(int Command, byte Par1, byte Par2)
     {
     return ((unsigned long)S.Home)<<28  | 
-           ((unsigned long)DivertUnit)<<24  | // Divertunit i.p.v. unit: anders worden serieel ontvangen codes met een divert toch zelf uitgevoerd.
+           ((unsigned long)DivertUnit)<<24  | // ??? Divertunit i.p.v. unit: anders worden serieel ontvangen codes met een divert toch zelf uitgevoerd.
            ((unsigned long)Command)<<16 | 
            ((unsigned long)Par1)<<8     | 
             (unsigned long)Par2;

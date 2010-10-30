@@ -305,7 +305,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
        
     case CMD_WAITFREERF: // ook in Receive_Serial() zodat hij ook vanuit serial gebruikt kan worden als er een Divert actief is!
       {
-      WaitForFreeRF(Par1*100,Par2*100);
+      x=Par1==0?S.Unit*250:Par1*100;
+      WaitForFreeRF(x);
       break;
       }
 

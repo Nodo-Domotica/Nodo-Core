@@ -147,18 +147,16 @@ static void IR38Khz_set()
  *
  \*********************************************************************************************/
 
-// Parameters voor check op vrije 433 ether alvorens verzenden signalen:
-
-void WaitForFreeRF(int Window, int TimeOut)
+void WaitForFreeRF(int Window)
   {
   unsigned long WindowTimer, TimeOutTimer;  // meet of de time-out waarde gepasseerd is in milliseconden
 
   if(Simulate)return;
   
   WindowTimer=millis()+Window; // reset de timer.  
-  TimeOutTimer=millis()+TimeOut; // reset de timer.  
+  TimeOutTimer=millis()+10000; // tijd waarna de routine wordt afgebroken
 
-  while(WindowTimer>millis())
+  while(WindowTimer>millis() && TimeOutTimer>millis())
     {
     if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
       {
@@ -166,7 +164,6 @@ void WaitForFreeRF(int Window, int TimeOut)
         WindowTimer=millis()+Window; // reset de timer weer.
       }
     digitalWrite(MonitorLedPin,(millis()>>7)&0x01);
-    if(TimeOut!=0 && TimeOutTimer>millis())return;
     }
   }
 
