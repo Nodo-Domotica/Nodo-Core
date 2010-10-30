@@ -49,7 +49,7 @@ int str2cmd(char *command)
 unsigned long command2event(int Command, byte Par1, byte Par2)
     {
     return ((unsigned long)S.Home)<<28  | 
-           ((unsigned long)S.Unit)<<24  | 
+           ((unsigned long)DivertUnit)<<24  | // Divertunit i.p.v. unit: anders worden serieel ontvangen codes met een divert toch zelf uitgevoerd.
            ((unsigned long)Command)<<16 | 
            ((unsigned long)Par1)<<8     | 
             (unsigned long)Par2;
@@ -224,11 +224,6 @@ boolean GetStatus(int *Command, int *Par1, int *Par2)
       *Par1=xPar1;
       *Par2=analogRead(WiredAnalogInputPin_1+xPar1-1)>>2;
       break;
-
-    case CMD_WAITFREERF:
-      *Par1=S.WaitForFreeRF;
-      *Par2=S.WaitForFreeRF_Time;
-      break;
       
     case CMD_WIRED_OUT:
       *Par1=xPar1;
@@ -300,8 +295,6 @@ void ResetFactory(void)
   S.Trace              = 0;
   S.AnalyseSharpness   = 50;
   S.AnalyseTimeOut     = 10000;
-  S.WaitForFreeRF      = 0;
-  S.WaitForFreeRF_Time = 0;
   S.DivertPort         = DIVERT_PORT_IR_RF;
   S.DivertType         = DIVERT_TYPE_USEREVENT;
     

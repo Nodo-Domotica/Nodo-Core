@@ -1,22 +1,9 @@
 
 // Todo:
 // Testen groepcommando's verzenden met KAKU: ook daadwerkelijk door KAKU ontvanger te ontvangen?
+// uitvragen AnalyeSettings geeft een hex-code
+// StatusEvent werkt nog niet;
 
-
-// Done:
-// Bug: bij een divert wordt ook een KAKU event voorzien van unitnummer.
-// Bug: PrintTerm om de 5 sec.
-// bug in Simulatie Als een Clock event en een daglgt event tegelijk optreden wordt er maar één opgepakt.
-// trace geeft optioneel de tijden en de dag weer bij afdrukken van een event.
-// aanpassing simulate notatie
-// Niet meer dan 10 home adressen
-// Afkaping EventUnknown op 28-bits leidde tot dubbele events bij nieuwe KAKU zenders. Teruggezet naar 32-bit.
-// scheidingsregel bij trace commanco geprint
-// in Beta 0.86 geïnroduceerde bug met verwerken van events in de EventList opgelost.
-// Bug: EventlistWrite;Kaku P0,on;SendKAKU P5,On; komt niet altijd juist in de Eventlist als P0 voorkomt in event
-// Bug: Nesting error na 10 maal ontvangen KAKU event via RF als divert actief.
-// Bug: Nodo.INPUT: Serial, 0x123456 levert Nodo.OUTPUT: IR, 0x2123456 bij een Divert 2
-// Bug: KAKU events niet opgepikt door EventList 
 
 
  /*****************************************************************************************************\
@@ -51,7 +38,7 @@
  *
  ********************************************************************************************************/
 
-#define VERSION                   93 // Nodo Version nummer
+#define VERSION                   94 // Nodo Version nummer
 #define BAUD                   19200 // Baudrate voor seriële communicatie.
 #define SERIAL_TERMINATOR_1     0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>, default voor EventGhost
 #define SERIAL_TERMINATOR_2     0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
@@ -84,7 +71,7 @@ prog_char PROGMEM Text_26[] = "SYSTEM: Waiting for RF/IR event...";
 prog_char PROGMEM Text_30[] = ", Rawsignal=(";
 prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 
-#define RANGE_VALUE 21 // alle codes kleiner of gelijk aan deze waarde zijn vaste Nodo waarden.
+#define RANGE_VALUE 19 // alle codes kleiner of gelijk aan deze waarde zijn vaste Nodo waarden.
 #define RANGE_EVENT 72 // alle codes groter of gelijk aan deze waarde zijn een event.
 #define COMMAND_MAX 92 // aantal commando's (geteld vanaf 0)
 
@@ -364,7 +351,6 @@ struct Settings
   byte Unit;
   byte Home;
   byte Trace;
-  byte WaitForFreeRF_Time,WaitForFreeRF;
   byte DivertPort,DivertType;
   }S;
   

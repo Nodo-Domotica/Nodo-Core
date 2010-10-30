@@ -67,10 +67,6 @@ unsigned long Receive_Serial(void)
         error=true;
       break;        
 
-    case CMD_DIVERT:   
-      DivertUnit=Par1&0xf;
-      break;
-
     case CMD_DIVERT_SETTINGS:
       {
       S.DivertType=Par1;
@@ -89,14 +85,6 @@ unsigned long Receive_Serial(void)
       {
       S.AnalyseTimeOut=Par1;
       S.AnalyseSharpness=Par2*1000;
-      SaveSettings();
-      break;
-      }
-
-    case CMD_WAITFREERF: // ook in Receive_Serial() zodat hij ook vanuit serial gebruikt kan worden als er een Divert actief is!
-      {
-      S.WaitForFreeRF=Par1;
-      S.WaitForFreeRF_Time=Par2;
       SaveSettings();
       break;
       }

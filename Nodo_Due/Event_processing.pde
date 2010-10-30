@@ -34,11 +34,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
   static byte depth=0;  // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's
 
   // Uitvoeren voorafgaand aan een reeks
-  if(depth==0)
-   {
-   if(S.WaitForFreeRF==WAITFREERF_SERIES)WaitForFreeRF();
-   if(S.Trace&1)PrintLine();
-   }
+  if(depth==0 && S.Trace&1)PrintLine();
 
 //  debugging:
 //    Serial.print("??? ProcessEvent(): IncommingEvent=");

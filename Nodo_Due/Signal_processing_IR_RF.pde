@@ -149,22 +149,24 @@ static void IR38Khz_set()
 
 // Parameters voor check op vrije 433 ether alvorens verzenden signalen:
 
-void WaitForFreeRF(void)
+void WaitForFreeRF(int Window, int TimeOut)
   {
-  int x=S.WaitForFreeRF_Time?S.WaitForFreeRF_Time*1000:S.Unit*1000;
-  unsigned long FreeTimer;  // meet of de time-out waarde gepasseerd is in milliseconden
+  unsigned long WindowTimer, TimeOutTimer;  // meet of de time-out waarde gepasseerd is in milliseconden
 
   if(Simulate)return;
   
-  FreeTimer=millis()+x; // reset de timer.  
-  while(FreeTimer>millis())
+  WindowTimer=millis()+Window; // reset de timer.  
+  TimeOutTimer=millis()+TimeOut; // reset de timer.  
+
+  while(WindowTimer>millis())
     {
     if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
       {
       if(RFFetchSignal())// Als het een duidelijk signaal was
-        FreeTimer=millis()+x; // reset de timer weer.
+        WindowTimer=millis()+Window; // reset de timer weer.
       }
     digitalWrite(MonitorLedPin,(millis()>>7)&0x01);
+    if(TimeOut!=0 && TimeOutTimer>millis())return;
     }
   }
 
@@ -200,7 +202,6 @@ void RawSendRF(void)
   int x;
     
   if(Simulate)return;
-  if(S.WaitForFreeRF==WAITFREERF_ALL)WaitForFreeRF();
 
   digitalWrite(RF_ReceivePowerPin,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
   digitalWrite(RF_TransmitPowerPin,HIGH); // zet de 433Mhz zender aan   

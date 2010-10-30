@@ -302,8 +302,18 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
          SaveSettings();
          }
        break;
+       
+    case CMD_WAITFREERF: // ook in Receive_Serial() zodat hij ook vanuit serial gebruikt kan worden als er een Divert actief is!
+      {
+      WaitForFreeRF(Par1*100,Par2*100);
+      break;
+      }
+
+    case CMD_DIVERT:   
+      DivertUnit=Par1&0xf;
+      break;
   
-//    case CMD_STATUS_EVENT:  ??? nog nader uitwerken i.r.t. nieuwe forward.
+//    case CMD_STATUS_EVENT: ???
 //      x=Par1;// bevat het commando waarvoor de status opgehaald moet worden
 //      Par1=Par2;
 //      if(GetStatus(&x,&Par1,&Par2))// let op: call by reference. Gegevens komen terug in Par1 en Par2
