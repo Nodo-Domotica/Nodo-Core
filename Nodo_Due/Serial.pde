@@ -69,7 +69,7 @@ unsigned long Receive_Serial(void)
 
     case CMD_DIVERT_SETTINGS:
       {
-      S.DivertType=Par1;
+      S.DivertWaitFreeRF=Par1&1;
       S.DivertPort=Par2;
       SaveSettings();
       break;

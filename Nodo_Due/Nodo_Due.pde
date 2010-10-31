@@ -3,12 +3,16 @@
 // Commando 'SendStatus' toegevoegd als vervanger van 'StatusEvent'. T.b.v. uitvragen status van een Nodo via IR/RF.
 // Testen groepcommando's verzenden met KAKU: ook daadwerkelijk door KAKU ontvanger te ontvangen?
 // uitvragen AnalyeSettings geeft een hex-code
-// Testen: Na een SendUserEvent wordt het event nu ook door de Nodo zelf uitgevoerd.
+
+
+
 
 // Done:
-// Na een SendUserEvent wordt het event nu ook door de Nodo zelf uitgevoerd. (nog testen !)
-// Issue 115: Terugzetten van een Divert na uitvoer van een Divert.
-
+// issue 86
+// issue 109
+// Call binnen Eventlist met UserEvents werkt nu
+// Na SendUserEvent wordt dit event nu NIET meer ook zelf uitgevoerd. (zie ook issue 109
+// Parameters van Divert en DivertSettings aangepast. Nu ook mogelijkheid om de WaitFreeRF in een Divert te gebruiken. LET OP dat de waarden van de parameter 'Type' ook een andere betekenis hebben gekregen.
 
  /*****************************************************************************************************\
 
@@ -42,7 +46,7 @@
  *
  ********************************************************************************************************/
 
-#define VERSION                   95 // Nodo Version nummer
+#define VERSION                   96 // Nodo Version nummer
 #define BAUD                   19200 // Baudrate voor seriële communicatie.
 #define SERIAL_TERMINATOR_1     0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>, default voor EventGhost
 #define SERIAL_TERMINATOR_2     0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
@@ -315,9 +319,9 @@ PROGMEM prog_uint16_t Sunset[]={
 #define DIRECTION_INTERNAL           3
 #define DIRECTION_EXECUTE            4
 
-#define DIVERT_TYPE_USEREVENT        0 
+#define DIVERT_TYPE_ALL              0 
 #define DIVERT_TYPE_EVENTS           1 
-#define DIVERT_TYPE_ALL              2 
+#define DIVERT_TYPE_USEREVENT        2 
 #define DIVERT_PORT_IR_RF            0
 #define DIVERT_PORT_IR               1
 #define DIVERT_PORT_RF               2 
@@ -339,23 +343,23 @@ boolean WiredInputStatus[4],WiredOutputStatus[4];   // Wired variabelen
 unsigned int RawSignal[RAW_BUFFER_SIZE];            // Tabel met de gemeten pulsen in microseconden. eerste waarde is het aantal bits*2
 unsigned long EventTimeCodePrevious;                // t.b.v. voorkomen herhaald ontvangen van dezelfde code binnen ingestelde tijd
 byte DaylightPrevious;                              // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet
-byte Simulate,DivertUnit;
+byte Simulate,DivertUnit,DivertType;
 void(*Reset)(void)=0; //declare reset function @ address 0
 uint8_t RFbit,RFport,IRbit,IRport;
 struct RealTimeClock {int Hour,Minutes,Seconds,Date,Month,Day,Daylight,Year;} Time;
 
 struct Settings
   {
-  int Version;
+  int     Version;
   boolean DaylightSaving;
-  byte WiredInputThreshold[4], WiredInputSmittTrigger[4], WiredInputPullUp[4];
-  byte AnalyseSharpness;
-  int AnalyseTimeOut;
-  byte UserVar[USER_VARIABLES_MAX];
-  byte Unit;
-  byte Home;
-  byte Trace;
-  byte DivertPort,DivertType;
+  byte    WiredInputThreshold[4], WiredInputSmittTrigger[4], WiredInputPullUp[4];
+  byte    AnalyseSharpness;
+  int     AnalyseTimeOut;
+  byte    UserVar[USER_VARIABLES_MAX];
+  byte    Unit;
+  byte    Home;
+  byte    Trace;
+  byte    DivertPort,DivertWaitFreeRF;
   }S;
   
 

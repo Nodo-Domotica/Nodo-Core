@@ -173,21 +173,9 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;
   
     case CMD_SEND_USEREVENT:
-      Event=command2event(CMD_USER_EVENT,Par1,Par2)&0x00ffffff | ((unsigned long)S.Home)<<28; // Voeg Home toe en Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
-      Nodo_2_RawSignal(Event);
-      if(PreviousSrc!=CMD_PORT_IR && (S.DivertPort==DIVERT_PORT_IR || S.DivertPort==DIVERT_PORT_IR_RF))
-        {
-        PrintEvent(Event,CMD_PORT_IR,DIRECTION_OUT);
-        RawSendIR();
-        } 
-      if(PreviousSrc!=CMD_PORT_RF && (S.DivertPort==DIVERT_PORT_RF || S.DivertPort==DIVERT_PORT_IR_RF))
-        {
-        PrintEvent(Event,CMD_PORT_RF,DIRECTION_OUT);
-        RawSendRF();
-        }
-      ProcessEvent(Event,0,0,0);// voer deze ook zelf uit ???
-      break;
-      
+      // Voeg Home toe en Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
+      ForwardEvent(command2event(CMD_USER_EVENT,Par1,Par2)&0x00ffffff | ((unsigned long)S.Home)<<28,Src);
+      break;      
 
     case CMD_SIMULATE_DAY:
        if(Par1==0)Par1=1;
@@ -290,10 +278,10 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
        break;
   
     case CMD_WIRED_OUT:
-       if(Par1>=1 && Par1<=4 && Par2>=0 && Par2<=1)
+       if(Par1>=1 && Par1<=4)
           {
-          digitalWrite(WiredDigitalOutputPin_1+Par1-1,Par2);
-          WiredOutputStatus[Par1-1]=Par2;
+          digitalWrite(WiredDigitalOutputPin_1+Par1-1,Par2&1);
+          WiredOutputStatus[Par1-1]=Par2&1;
           }
        break;
                     
@@ -312,12 +300,13 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       else
         Par1*=100;
         
-      WaitForFreeRF(x);
+      WaitFreeRF(x);
       break;
       }
 
     case CMD_DIVERT:   
       DivertUnit=Par1&0xf;
+      DivertType=Par2;      
       break;
   
     case CMD_RESET:
@@ -332,18 +321,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       if(GetStatus(&x,&Par1,&Par2))// let op: call by reference. Gegevens komen terug in Par1 en Par2
         {
         Event=command2event(x,Par1,Par2);
-        Nodo_2_RawSignal(Event);
-        if(S.DivertPort==DIVERT_PORT_IR || S.DivertPort==DIVERT_PORT_IR_RF)
-          {
-          PrintEvent(Event,CMD_PORT_IR,DIRECTION_OUT);
-          RawSendIR();
-          } 
-        if(S.DivertPort==DIVERT_PORT_RF || S.DivertPort==DIVERT_PORT_IR_RF)
-          {
-          PrintEvent(Event,CMD_PORT_RF,DIRECTION_OUT);
-          WaitForFreeRF(0);//???
-          RawSendRF();
-          }
+        ForwardEvent(Event,0);
         }
       break;
         

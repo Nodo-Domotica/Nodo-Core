@@ -47,14 +47,12 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
     }
 
     // ############# Divert event ################  
-
     // Check of het type binnengekomen event geforward moet worden
     x=false;       
     if(DivertUnit!=S.Unit)
       {
-      if(S.DivertType==DIVERT_TYPE_USEREVENT && Command==CMD_USER_EVENT)x=true;
-      if(S.DivertType==DIVERT_TYPE_EVENTS && (Type==CMD_TYPE_EVENT || Type==CMD_TYPE_UNKNOWN))x=true;
-      if(S.DivertType==DIVERT_TYPE_ALL)x=true;
+      if(DivertType==DIVERT_TYPE_EVENTS && (Type==CMD_TYPE_EVENT || Type==CMD_TYPE_UNKNOWN))x=true;
+      if(DivertType==DIVERT_TYPE_ALL)x=true;
       }
        
     if(x)
@@ -101,19 +99,8 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
         Serial.print(Text(Text_07));
         Serial.print(DivertUnit,DEC);
         PrintTerm();
-        }
-  
-      if(Port!=CMD_PORT_IR && (S.DivertPort==DIVERT_PORT_IR || S.DivertPort==DIVERT_PORT_IR_RF))
-        {
-        PrintEvent(Event_1,CMD_PORT_IR,DIRECTION_OUT);
-        RawSendIR();
-        } 
-        
-      if(Port!=CMD_PORT_RF && (S.DivertPort==DIVERT_PORT_RF || S.DivertPort==DIVERT_PORT_IR_RF))
-        {
-        PrintEvent(Event_1,CMD_PORT_RF,DIRECTION_OUT);
-        RawSendRF();
-        }
+        }  
+      ForwardEvent(Event_1,Port);
         
       if(DivertUnit!=0)// als event alleen maar voor een andere Nodo was.
         {
@@ -124,14 +111,14 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
       DivertUnit=S.Unit; // zet DivertUnit weer terug naar huidige Unit, zodat de Divert slechts voor één commando geldt.
       }// DivertUnit!=S.Unit ==> in aanmerking voor forwarding
 
-  // ############# Verwerk event ################  
 
-  // als het een Unitnummer nul dan is deze voor ALLE Nodo's en moet deze OOK worden behandeld.
+  // ############# Verwerk event ################  
+  // als het een Unitnummer nul dan is deze voor ALLE Nodo's en dus ook deze. Unit-nummer vervangen door eigen nummer.
   if(EventPart(IncommingEvent,EVENT_PART_UNIT)==0 && (Type==CMD_TYPE_COMMAND || Type==CMD_TYPE_EVENT))
-    IncommingEvent=(IncommingEvent&0xf0ffffff) | (((unsigned long)S.Unit)<<24); // Unitnummer van verzendende Nodo vervangen voor interne verwerking door eigen unitnummer.
+    IncommingEvent=(IncommingEvent&0xf0ffffff) | (((unsigned long)S.Unit)<<24); 
 
   // Verwerk binnengekomen event.  
-  if(Type==CMD_TYPE_COMMAND && EventPart(IncommingEvent,EVENT_PART_UNIT)==S.Unit) // Is het ee commando voor deze unit?
+  if(Type==CMD_TYPE_COMMAND && EventPart(IncommingEvent,EVENT_PART_UNIT)==S.Unit) // Is het een commando voor deze unit?
     { // Er is een Commando binnengekomen 
     ExecuteCommand(IncommingEvent,Port,PreviousContent,PreviousPort);
     }
@@ -140,10 +127,10 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
     // loop de gehele eventlist langs om te kijken of er een treffer is.    
     for(x=1; x<=Eventlist_MAX && Eventlist_Read(x,&Event_1,&Event_2); x++)
       {
-      // kijk of deze regel een match heeft, zo ja, dan uitvoeren
+      // kijk of deze regel een match heeft, zo ja, dan set y=vlag voor uitvoeren
       y=CheckEvent(IncommingEvent,Event_1);
   
-      // als de Eventlist regel een wildcard is
+      // als de Eventlist regel een wildcard is, zo ja, dan set y=vlag voor uitvoeren
       if(((Event_1>>16)&0xff)==CMD_WILDCARD_EVENT)
         {
         y=true; 
@@ -158,7 +145,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
         if(S.Trace&1)
           PrintEventlistEntry(x,depth);
         
-        if(EventPart(Event_2,EVENT_PART_COMMAND)) // is de ontvangen code een uitvoerbaar commando?
+        if(EventPart(Event_2,EVENT_PART_COMMAND)==EVENT_PART_COMMAND) // is de ontvangen code een uitvoerbaar commando?
           {
           if(!ExecuteCommand(Event_2,CMD_SOURCE_MACRO,IncommingEvent,Port))
             {
@@ -283,3 +270,22 @@ boolean Eventlist_Read(int address, unsigned long *Event, unsigned long *Action)
     return(true);
   }
 
+ /**********************************************************************************************\
+ * Stuurt een event naar IR, RF en doet een melding naar Serial, uitgezonderd voor de 
+ * opgegeven poort Exclude
+ \*********************************************************************************************/
+ void ForwardEvent(unsigned long Event, byte Exclude)
+   {
+   Nodo_2_RawSignal(Event);
+   if(Exclude!=CMD_PORT_IR && (S.DivertPort==DIVERT_PORT_IR || S.DivertPort==DIVERT_PORT_IR_RF))
+     {
+     PrintEvent(Event,CMD_PORT_IR,DIRECTION_OUT);
+     RawSendIR();
+     } 
+   if(Exclude!=CMD_PORT_RF && (S.DivertPort==DIVERT_PORT_RF || S.DivertPort==DIVERT_PORT_IR_RF))
+     {
+     PrintEvent(Event,CMD_PORT_RF,DIRECTION_OUT);
+     if(S.DivertWaitFreeRF)WaitFreeRF(0);
+     RawSendRF();
+     }
+   }

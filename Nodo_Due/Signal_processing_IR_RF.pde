@@ -147,7 +147,7 @@ static void IR38Khz_set()
  *
  \*********************************************************************************************/
 
-void WaitForFreeRF(int Window)
+void WaitFreeRF(int Window)
   {
   unsigned long WindowTimer, TimeOutTimer;  // meet of de time-out waarde gepasseerd is in milliseconden
 

@@ -49,7 +49,8 @@ int str2cmd(char *command)
 unsigned long command2event(int Command, byte Par1, byte Par2)
     {
     return ((unsigned long)S.Home)<<28  | 
-           ((unsigned long)DivertUnit)<<24  | // ??? Divertunit i.p.v. unit: anders worden serieel ontvangen codes met een divert toch zelf uitgevoerd.
+           ((unsigned long)S.Unit)<<24  | 
+//           ((unsigned long)DivertUnit)<<24  | // ??? Divertunit i.p.v. unit: anders worden serieel ontvangen codes met een divert toch zelf uitgevoerd.
            ((unsigned long)Command)<<16 | 
            ((unsigned long)Par1)<<8     | 
             (unsigned long)Par2;
@@ -151,7 +152,7 @@ boolean GetStatus(int *Command, int *Par1, int *Par2)
       break;
 
     case CMD_DIVERT_SETTINGS:
-      *Par1=S.DivertType;
+      *Par1=S.DivertWaitFreeRF;
       *Par2=S.DivertPort;
       break;
 
@@ -227,7 +228,7 @@ boolean GetStatus(int *Command, int *Par1, int *Par2)
       
     case CMD_WIRED_OUT:
       *Par1=xPar1;
-      *Par2=WiredOutputStatus[xPar1];
+      *Par2=WiredOutputStatus[xPar1-1];
       break;
       
     default:
@@ -287,7 +288,7 @@ boolean LoadSettings()
 void ResetFactory(void)
   {
   Beep(2000,2000);
-  
+
   S.DaylightSaving     = false;
   S.Version            = VERSION;
   S.Unit               = UNIT;
@@ -296,7 +297,8 @@ void ResetFactory(void)
   S.AnalyseSharpness   = 50;
   S.AnalyseTimeOut     = 10000;
   S.DivertPort         = DIVERT_PORT_IR_RF;
-  S.DivertType         = DIVERT_TYPE_USEREVENT;
+  S.DivertWaitFreeRF   = true;
+
     
   for(byte x=0;x<4;x++)
     {
