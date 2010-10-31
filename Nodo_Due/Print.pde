@@ -166,7 +166,7 @@ void PrintEventCode(unsigned long Code)
         Serial.print("0");
       break;
 
-    case CMD_STATUS_EVENT:
+    case CMD_SEND_STATUS:
       if(Par1)
         Serial.print(cmd2str(Par1));
       else

@@ -75,11 +75,6 @@ unsigned long Receive_Serial(void)
       break;
       }
 
-    case CMD_RESET:
-       VariableClear(0);// wis alle variabelen
-       delay(500);// kleine pauze, anders kans fout bij seriële communicatie
-       Reset();
-       break;        
 
     case CMD_ANALYSE_SETTINGS:
       {

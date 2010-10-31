@@ -185,7 +185,9 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         PrintEvent(Event,CMD_PORT_RF,DIRECTION_OUT);
         RawSendRF();
         }
+      ProcessEvent(Event,0,0,0);// voer deze ook zelf uit ???
       break;
+      
 
     case CMD_SIMULATE_DAY:
        if(Par1==0)Par1=1;
@@ -305,7 +307,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
        
     case CMD_WAITFREERF: // ook in Receive_Serial() zodat hij ook vanuit serial gebruikt kan worden als er een Divert actief is!
       {
-      x=Par1==0?S.Unit*250:Par1*100;
+      if(Par1==0)
+        x=S.Unit*100;
+      else
+        Par1*=100;
+        
       WaitForFreeRF(x);
       break;
       }
@@ -314,15 +320,32 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       DivertUnit=Par1&0xf;
       break;
   
-//    case CMD_STATUS_EVENT: ???
-//      x=Par1;// bevat het commando waarvoor de status opgehaald moet worden
-//      Par1=Par2;
-//      if(GetStatus(&x,&Par1,&Par2))// let op: call by reference. Gegevens komen terug in Par1 en Par2
-//        {
-//        Event=command2event(x,Par1,Par2);
-//        ExecuteCommand(command2event(CMD_FORWARD,FORWARD_ALL,FORWARD_IR_RF),DIRECTION_EXECUTE,Event,0);
-//        }
-//      break;    
+    case CMD_RESET:
+       VariableClear(0);// wis alle variabelen
+       delay(500);// kleine pauze, anders kans fout bij seriële communicatie
+       Reset();
+       break;        
+
+    case CMD_SEND_STATUS:
+      x=Par1;// bevat het commando waarvoor de status opgehaald moet worden
+      Par1=Par2;
+      if(GetStatus(&x,&Par1,&Par2))// let op: call by reference. Gegevens komen terug in Par1 en Par2
+        {
+        Event=command2event(x,Par1,Par2);
+        Nodo_2_RawSignal(Event);
+        if(S.DivertPort==DIVERT_PORT_IR || S.DivertPort==DIVERT_PORT_IR_RF)
+          {
+          PrintEvent(Event,CMD_PORT_IR,DIRECTION_OUT);
+          RawSendIR();
+          } 
+        if(S.DivertPort==DIVERT_PORT_RF || S.DivertPort==DIVERT_PORT_IR_RF)
+          {
+          PrintEvent(Event,CMD_PORT_RF,DIRECTION_OUT);
+          WaitForFreeRF(0);//???
+          RawSendRF();
+          }
+        }
+      break;
         
       default:
         error=true;

@@ -36,15 +36,6 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
   // Uitvoeren voorafgaand aan een reeks
   if(depth==0 && S.Trace&1)PrintLine();
 
-//  debugging:
-//    Serial.print("??? ProcessEvent(): IncommingEvent=");
-//    Serial.print(IncommingEvent,HEX);
-//    Serial.print(", Command=");
-//    Serial.print(Command,HEX);
-//    Serial.print(", Type=");
-//    Serial.print(Type,HEX);
-//    PrintTerm();
-
   PrintEvent(IncommingEvent,Port,DIRECTION_IN);  // geef event weer op Serial
   digitalWrite(MonitorLedPin,HIGH);          // LED aan om aan te geven dat er wat ontvangen is en verwerkt wordt
   
@@ -57,7 +48,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
 
     // ############# Divert event ################  
 
-    // Check of het type binnengekomen event in aanmerking moet komen voor forwarding
+    // Check of het type binnengekomen event geforward moet worden
     x=false;       
     if(DivertUnit!=S.Unit)
       {
@@ -123,13 +114,15 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
         PrintEvent(Event_1,CMD_PORT_RF,DIRECTION_OUT);
         RawSendRF();
         }
-  
-      if(DivertUnit!=0)// als event alleen maar voor een andere Nodo was.//??? klopt dit
+        
+      if(DivertUnit!=0)// als event alleen maar voor een andere Nodo was.
         {
         depth--;
+        DivertUnit=S.Unit; // zet DivertUnit weer terug naar huidige Unit, zodat de Divert slechts voor één commando geldt.
         return true;
         }
-      }// in aanmerking voor forwarding
+      DivertUnit=S.Unit; // zet DivertUnit weer terug naar huidige Unit, zodat de Divert slechts voor één commando geldt.
+      }// DivertUnit!=S.Unit ==> in aanmerking voor forwarding
 
   // ############# Verwerk event ################  
 
@@ -138,7 +131,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
     IncommingEvent=(IncommingEvent&0xf0ffffff) | (((unsigned long)S.Unit)<<24); // Unitnummer van verzendende Nodo vervangen voor interne verwerking door eigen unitnummer.
 
   // Verwerk binnengekomen event.  
-  if(Type==CMD_TYPE_COMMAND)
+  if(Type==CMD_TYPE_COMMAND && EventPart(IncommingEvent,EVENT_PART_UNIT)==S.Unit) // Is het ee commando voor deze unit?
     { // Er is een Commando binnengekomen 
     ExecuteCommand(IncommingEvent,Port,PreviousContent,PreviousPort);
     }

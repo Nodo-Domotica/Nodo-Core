@@ -1,10 +1,13 @@
 
 // Todo:
-// Timeout van d waitfreerf
+// Commando 'SendStatus' toegevoegd als vervanger van 'StatusEvent'. T.b.v. uitvragen status van een Nodo via IR/RF.
 // Testen groepcommando's verzenden met KAKU: ook daadwerkelijk door KAKU ontvanger te ontvangen?
 // uitvragen AnalyeSettings geeft een hex-code
-// StatusEvent werkt nog niet;
+// Testen: Na een SendUserEvent wordt het event nu ook door de Nodo zelf uitgevoerd.
 
+// Done:
+// Na een SendUserEvent wordt het event nu ook door de Nodo zelf uitgevoerd. (nog testen !)
+// Issue 115: Terugzetten van een Divert na uitvoer van een Divert.
 
 
  /*****************************************************************************************************\
@@ -39,7 +42,7 @@
  *
  ********************************************************************************************************/
 
-#define VERSION                   94 // Nodo Version nummer
+#define VERSION                   95 // Nodo Version nummer
 #define BAUD                   19200 // Baudrate voor seriële communicatie.
 #define SERIAL_TERMINATOR_1     0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>, default voor EventGhost
 #define SERIAL_TERMINATOR_2     0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
@@ -124,7 +127,7 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 #define CMD_SIMULATE_DAY 45
 #define CMD_SOUND 46
 #define CMD_STATUS 47
-#define CMD_STATUS_EVENT 48
+#define CMD_SEND_STATUS 48
 #define CMD_STATUS_LIST 49
 #define CMD_TIMER_RANDOM 50
 #define CMD_TIMER_RESET 51
@@ -160,7 +163,7 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 #define CMD_CLOCK_EVENT_THU 81
 #define CMD_CLOCK_EVENT_FRI 82
 #define CMD_CLOCK_EVENT_SAT 83
-#define CMD_EVENT_STATUS 84
+#define CMD_STATUS_EVENT 84
 #define CMD_KAKU 85
 #define CMD_KAKU_NEW 86
 #define CMD_TIMER_EVENT 87
@@ -217,7 +220,7 @@ prog_char PROGMEM Cmd_44[]="Simulate";
 prog_char PROGMEM Cmd_45[]="SimulateDay";
 prog_char PROGMEM Cmd_46[]="Sound";
 prog_char PROGMEM Cmd_47[]="Status";
-prog_char PROGMEM Cmd_48[]="StatusEvent";
+prog_char PROGMEM Cmd_48[]="SendStatus";
 prog_char PROGMEM Cmd_49[]="StatusList";
 prog_char PROGMEM Cmd_50[]="TimerRandom";
 prog_char PROGMEM Cmd_51[]="TimerReset";
@@ -253,7 +256,7 @@ prog_char PROGMEM Cmd_80[]="ClockWed";
 prog_char PROGMEM Cmd_81[]="ClockThu";
 prog_char PROGMEM Cmd_82[]="ClockFri";
 prog_char PROGMEM Cmd_83[]="ClockSat";
-prog_char PROGMEM Cmd_84[]="EventStatus";
+prog_char PROGMEM Cmd_84[]="StatusEvent";
 prog_char PROGMEM Cmd_85[]="KAKU";
 prog_char PROGMEM Cmd_86[]="NewKAKU";
 prog_char PROGMEM Cmd_87[]="Timer";
