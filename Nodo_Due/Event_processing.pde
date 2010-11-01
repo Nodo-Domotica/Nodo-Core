@@ -33,8 +33,12 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
   byte x,y,z;
   static byte depth=0;  // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's
 
-  // Uitvoeren voorafgaand aan een reeks
-  if(depth==0 && S.Trace&1)PrintLine();
+  // Uitvoeren voorafgaand aan een reeks uitvoeren
+  if(depth==0)
+   {
+   if(S.Trace&1)PrintLine();  
+   if(S.WaitFreeRFAction==WAITFREERF_SERIES)WaitFreeRF(S.WaitFreeRFWindow);
+   }
 
   PrintEvent(IncommingEvent,Port,DIRECTION_IN);  // geef event weer op Serial
   digitalWrite(MonitorLedPin,HIGH);          // LED aan om aan te geven dat er wat ontvangen is en verwerkt wordt
@@ -51,8 +55,8 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
     x=false;       
     if(DivertUnit!=S.Unit)
       {
-      if(DivertType==DIVERT_TYPE_EVENTS && (Type==CMD_TYPE_EVENT || Type==CMD_TYPE_UNKNOWN))x=true;
-      if(DivertType==DIVERT_TYPE_ALL)x=true;
+      if(S.DivertType==DIVERT_TYPE_EVENTS && (Type==CMD_TYPE_EVENT || Type==CMD_TYPE_UNKNOWN))x=true;
+      if(S.DivertType==DIVERT_TYPE_ALL)x=true;
       }
        
     if(x)
@@ -100,7 +104,17 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
         Serial.print(DivertUnit,DEC);
         PrintTerm();
         }  
-      ForwardEvent(Event_1,Port);
+      
+      if(Port!=CMD_PORT_IR && (S.DivertPort==DIVERT_PORT_IR || S.DivertPort==DIVERT_PORT_IR_RF))
+        {
+        PrintEvent(Event_1,CMD_PORT_IR,DIRECTION_OUT);
+        RawSendIR();
+        } 
+      if(Port!=CMD_PORT_RF && (S.DivertPort==DIVERT_PORT_RF || S.DivertPort==DIVERT_PORT_IR_RF))
+        {
+        PrintEvent(Event_1,CMD_PORT_RF,DIRECTION_OUT);
+        RawSendRF();
+        }
         
       if(DivertUnit!=0)// als event alleen maar voor een andere Nodo was.
         {
@@ -270,22 +284,5 @@ boolean Eventlist_Read(int address, unsigned long *Event, unsigned long *Action)
     return(true);
   }
 
- /**********************************************************************************************\
- * Stuurt een event naar IR, RF en doet een melding naar Serial, uitgezonderd voor de 
- * opgegeven poort Exclude
- \*********************************************************************************************/
- void ForwardEvent(unsigned long Event, byte Exclude)
-   {
-   Nodo_2_RawSignal(Event);
-   if(Exclude!=CMD_PORT_IR && (S.DivertPort==DIVERT_PORT_IR || S.DivertPort==DIVERT_PORT_IR_RF))
-     {
-     PrintEvent(Event,CMD_PORT_IR,DIRECTION_OUT);
-     RawSendIR();
-     } 
-   if(Exclude!=CMD_PORT_RF && (S.DivertPort==DIVERT_PORT_RF || S.DivertPort==DIVERT_PORT_IR_RF))
-     {
-     PrintEvent(Event,CMD_PORT_RF,DIRECTION_OUT);
-     if(S.DivertWaitFreeRF)WaitFreeRF(0);
-     RawSendRF();
-     }
-   }
+
+ 

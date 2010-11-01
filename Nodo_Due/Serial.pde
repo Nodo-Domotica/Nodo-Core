@@ -63,13 +63,13 @@ unsigned long Receive_Serial(void)
     case CMD_EVENTLIST_WRITE:
       Event=SerialReadEvent();
       Action=SerialReadEvent();
-      if(Event==0 || Action==0 || !Eventlist_Write(0,Event,Action))
+      if(Event==0 || Action==0 || !Eventlist_Write(0,Event&0x00ffffff,Action&0x00ffffff)) // Home en unit er uit filteren
         error=true;
       break;        
 
     case CMD_DIVERT_SETTINGS:
       {
-      S.DivertWaitFreeRF=Par1&1;
+      S.DivertType=Par1;
       S.DivertPort=Par2;
       SaveSettings();
       break;

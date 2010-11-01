@@ -144,7 +144,7 @@ static void IR38Khz_set()
 
  /**********************************************************************************************\
  * Deze functie wacht totdat de 433 band vrij is of er een timeout heeft plaats gevonden 
- *
+ * Window tijd in ms.
  \*********************************************************************************************/
 
 void WaitFreeRF(int Window)
@@ -154,7 +154,7 @@ void WaitFreeRF(int Window)
   if(Simulate)return;
   
   WindowTimer=millis()+Window; // reset de timer.  
-  TimeOutTimer=millis()+10000; // tijd waarna de routine wordt afgebroken
+  TimeOutTimer=millis()+15000; // tijd waarna de routine wordt afgebroken
 
   while(WindowTimer>millis() && TimeOutTimer>millis())
     {
@@ -199,7 +199,8 @@ void RawSendRF(void)
   int x;
     
   if(Simulate)return;
-
+  if(S.WaitFreeRFAction==WAITFREERF_ALL)WaitFreeRF(S.WaitFreeRFWindow);
+    
   digitalWrite(RF_ReceivePowerPin,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
   digitalWrite(RF_TransmitPowerPin,HIGH); // zet de 433Mhz zender aan   
   
@@ -252,9 +253,7 @@ void RawSendIR(void)
  \*********************************************************************************************/
 void Nodo_2_RawSignal(unsigned long Code)
   {
-  byte BitCounter,y;
-
-  y=1;
+  byte BitCounter,y=1;
   
   // begin met een startbit. 
   RawSignal[y++]=NODO_PULSE_1*2; 
@@ -330,5 +329,47 @@ boolean RFFetchSignal(void)
     }
   RawSignal[0]=0;
   return false;
+  }
+
+
+/**********************************************************************************************\
+* Deze functie zendt gedurende Window seconden de RF ontvangst direct door naar IR
+* Window tijd in seconden.
+* ??? deze funktie werkt niet.
+\*********************************************************************************************/
+void CopySignalRF2IR(byte Window)
+  {
+  unsigned long WindowTimer=millis()+Window*1000; // reset de timer.  
+
+  while(WindowTimer>millis())
+    {
+    if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
+      digitalWrite(MonitorLedPin,HIGH);
+//      TCCR2A|=_BV(COM2A0);  // zet IR-modulatie AAN
+    else
+      digitalWrite(MonitorLedPin,LOW);
+//      TCCR2A&=~_BV(COM2A0); // zet IR-modulatie UIT
+//    digitalWrite(MonitorLedPin,(millis()>>7)&0x01);
+    }
+  }
+
+
+/**********************************************************************************************\
+* Deze functie zendt gedurende Window seconden de IR ontvangst direct door naar RF
+* Window tijd in seconden.
+\*********************************************************************************************/
+void CopySignalIR2RF(byte Window)
+  {
+  unsigned long WindowTimer=millis()+Window*1000; // reset de timer.  
+
+  digitalWrite(RF_ReceivePowerPin,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
+  digitalWrite(RF_TransmitPowerPin,HIGH); // zet de 433Mhz zender aan   
+  while(WindowTimer>millis())
+    {
+    digitalWrite(RF_TransmitDataPin,(*portInputRegister(IRport)&IRbit)==0);// Kijk if er iets op de IR poort binnenkomt. (Pin=LAAG als signaal in de ether). 
+    digitalWrite(MonitorLedPin,(millis()>>7)&0x01);
+    }
+  digitalWrite(RF_TransmitPowerPin,LOW); // zet de 433Mhz zender weer uit
+  digitalWrite(RF_ReceivePowerPin,HIGH); // Spanning naar de RF ontvanger weer aan.
   }
 

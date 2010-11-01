@@ -49,8 +49,8 @@ int str2cmd(char *command)
 unsigned long command2event(int Command, byte Par1, byte Par2)
     {
     return ((unsigned long)S.Home)<<28  | 
-           ((unsigned long)S.Unit)<<24  | 
-//           ((unsigned long)DivertUnit)<<24  | // ??? Divertunit i.p.v. unit: anders worden serieel ontvangen codes met een divert toch zelf uitgevoerd.
+//         ((unsigned long)S.Unit)<<24  | 
+           ((unsigned long)DivertUnit)<<24  | // ??? Divertunit i.p.v. unit: anders worden serieel ontvangen codes met een divert toch zelf uitgevoerd.
            ((unsigned long)Command)<<16 | 
            ((unsigned long)Par1)<<8     | 
             (unsigned long)Par2;
@@ -132,8 +132,6 @@ boolean GetStatus(int *Command, int *Par1, int *Par2)
   *Par2=0;
   switch (*Command)
     {
-    //??? divertsettings opnemen
-  
     case CMD_UNIT: 
       *Par1=S.Unit;
       break;
@@ -152,8 +150,8 @@ boolean GetStatus(int *Command, int *Par1, int *Par2)
       break;
 
     case CMD_DIVERT_SETTINGS:
-      *Par1=S.DivertWaitFreeRF;
-      *Par2=S.DivertPort;
+//   ???   *Par1=S.DivertWaitFreeRF;
+//      *Par2=S.DivertPort;
       break;
 
     case CMD_CLOCK_EVENT_DAYLIGHT:
@@ -297,8 +295,8 @@ void ResetFactory(void)
   S.AnalyseSharpness   = 50;
   S.AnalyseTimeOut     = 10000;
   S.DivertPort         = DIVERT_PORT_IR_RF;
-  S.DivertWaitFreeRF   = true;
-
+  S.DivertType         = DIVERT_TYPE_ALL;
+  S.WaitFreeRFAction   = WAITFREERF_OFF;
     
   for(byte x=0;x<4;x++)
     {

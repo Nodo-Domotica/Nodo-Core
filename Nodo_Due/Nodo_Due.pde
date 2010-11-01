@@ -1,18 +1,17 @@
+ /*****************************************************************************************************\
 
-// Todo:
-// Commando 'SendStatus' toegevoegd als vervanger van 'StatusEvent'. T.b.v. uitvragen status van een Nodo via IR/RF.
-// Testen groepcommando's verzenden met KAKU: ook daadwerkelijk door KAKU ontvanger te ontvangen?
-// uitvragen AnalyeSettings geeft een hex-code
+Todo:
+- Commando 'SendStatus' toegevoegd als vervanger van 'StatusEvent'. T.b.v. uitvragen status van een Nodo via IR/RF.
+- Testen groepcommando's verzenden met KAKU: ook daadwerkelijk door KAKU ontvanger te ontvangen?
+- uitvragen AnalyeSettings geeft een hex-code
 
+Done:
+- Voorbereidingen voor RawsignalCopy commando toegevoegd. RF naar IR werkt nog niet!!!
+- (wederom) aanpassing WaitFreeRF. (Nu alleen als Setting)
+- Aanpassing t.b.v. Divert bug.
 
+ \*****************************************************************************************************/
 
-
-// Done:
-// issue 86
-// issue 109
-// Call binnen Eventlist met UserEvents werkt nu
-// Na SendUserEvent wordt dit event nu NIET meer ook zelf uitgevoerd. (zie ook issue 109
-// Parameters van Divert en DivertSettings aangepast. Nu ook mogelijkheid om de WaitFreeRF in een Divert te gebruiken. LET OP dat de waarden van de parameter 'Type' ook een andere betekenis hebben gekregen.
 
  /*****************************************************************************************************\
 
@@ -152,7 +151,7 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 #define CMD_WIRED_SMITTTRIGGER 66
 #define CMD_WIRED_THRESHOLD 67
 #define CMD_SEND_USEREVENT 68
-#define CMD_COMMAND_RES2 69
+#define CMD_COPYSIGNAL 69
 #define CMD_COMMAND_RES3 70
 #define CMD_COMMAND_RES3 71
 #define CMD_COMMAND_RES3 72
@@ -245,7 +244,7 @@ prog_char PROGMEM Cmd_65[]="WiredPullup";
 prog_char PROGMEM Cmd_66[]="WiredSmittTrigger";
 prog_char PROGMEM Cmd_67[]="WiredThreshold";
 prog_char PROGMEM Cmd_68[]="SendUserEvent";
-prog_char PROGMEM Cmd_69[]="";
+prog_char PROGMEM Cmd_69[]="RawsignalCopy";
 prog_char PROGMEM Cmd_70[]="";
 prog_char PROGMEM Cmd_71[]="";
 prog_char PROGMEM Cmd_72[]="";
@@ -343,7 +342,7 @@ boolean WiredInputStatus[4],WiredOutputStatus[4];   // Wired variabelen
 unsigned int RawSignal[RAW_BUFFER_SIZE];            // Tabel met de gemeten pulsen in microseconden. eerste waarde is het aantal bits*2
 unsigned long EventTimeCodePrevious;                // t.b.v. voorkomen herhaald ontvangen van dezelfde code binnen ingestelde tijd
 byte DaylightPrevious;                              // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet
-byte Simulate,DivertUnit,DivertType;
+byte Simulate,DivertUnit;
 void(*Reset)(void)=0; //declare reset function @ address 0
 uint8_t RFbit,RFport,IRbit,IRport;
 struct RealTimeClock {int Hour,Minutes,Seconds,Date,Month,Day,Daylight,Year;} Time;
@@ -359,7 +358,9 @@ struct Settings
   byte    Unit;
   byte    Home;
   byte    Trace;
-  byte    DivertPort,DivertWaitFreeRF;
+  byte    DivertType,DivertPort;
+  int     WaitFreeRFWindow;
+  byte    WaitFreeRFAction;
   }S;
   
 

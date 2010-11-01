@@ -1,4 +1,4 @@
-/**************************************************************************\
+  /**************************************************************************\
 
     This file is part of Nodo Due, © Copyright Paul Tonkes
 
@@ -174,7 +174,18 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   
     case CMD_SEND_USEREVENT:
       // Voeg Home toe en Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
-      ForwardEvent(command2event(CMD_USER_EVENT,Par1,Par2)&0x00ffffff | ((unsigned long)S.Home)<<28,Src);
+      Event=command2event(CMD_USER_EVENT,Par1,Par2)&0x00ffffff | ((unsigned long)S.Home)<<28; // Voeg Home toe en Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
+      Nodo_2_RawSignal(Event);
+      if(PreviousSrc!=CMD_PORT_IR && (S.DivertPort==DIVERT_PORT_IR || S.DivertPort==DIVERT_PORT_IR_RF))
+        {
+        PrintEvent(Event,CMD_PORT_IR,DIRECTION_OUT);
+        RawSendIR();
+        } 
+      if(PreviousSrc!=CMD_PORT_RF && (S.DivertPort==DIVERT_PORT_RF || S.DivertPort==DIVERT_PORT_IR_RF))
+        {
+        PrintEvent(Event,CMD_PORT_RF,DIRECTION_OUT);
+        RawSendRF();
+        }
       break;      
 
     case CMD_SIMULATE_DAY:
@@ -293,20 +304,16 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
          }
        break;
        
-    case CMD_WAITFREERF: // ook in Receive_Serial() zodat hij ook vanuit serial gebruikt kan worden als er een Divert actief is!
+    case CMD_WAITFREERF: 
       {
-      if(Par1==0)
-        x=S.Unit*100;
-      else
-        Par1*=100;
-        
-      WaitFreeRF(x);
+      S.WaitFreeRFAction=Par1;
+      S.WaitFreeRFWindow=Par2==0?S.Unit*500:Par2*100;
+      SaveSettings();
       break;
       }
 
     case CMD_DIVERT:   
       DivertUnit=Par1&0xf;
-      DivertType=Par2;      
       break;
   
     case CMD_RESET:
@@ -315,15 +322,33 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
        Reset();
        break;        
 
+    case CMD_COPYSIGNAL:
+       if(Par1)
+         CopySignalRF2IR(Par2);      
+       else
+         CopySignalIR2RF(Par2);
+       break;        
+
     case CMD_SEND_STATUS:
       x=Par1;// bevat het commando waarvoor de status opgehaald moet worden
       Par1=Par2;
       if(GetStatus(&x,&Par1,&Par2))// let op: call by reference. Gegevens komen terug in Par1 en Par2
         {
         Event=command2event(x,Par1,Par2);
-        ForwardEvent(Event,0);
+        Nodo_2_RawSignal(Event);
+        if(S.DivertPort==DIVERT_PORT_IR || S.DivertPort==DIVERT_PORT_IR_RF)
+          {
+          PrintEvent(Event,CMD_PORT_IR,DIRECTION_OUT);
+          RawSendIR();
+          } 
+        if(S.DivertPort==DIVERT_PORT_RF || S.DivertPort==DIVERT_PORT_IR_RF)
+          {
+          PrintEvent(Event,CMD_PORT_RF,DIRECTION_OUT);
+          RawSendRF();
+          }
         }
       break;
+        
         
       default:
         error=true;
