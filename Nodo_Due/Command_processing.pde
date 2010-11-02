@@ -315,7 +315,13 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     case CMD_DIVERT:   
       DivertUnit=Par1&0xf;
       break;
-  
+
+    case CMD_UNIT:
+      S.Unit=Par1&0xf; // Par1 &0xf omdat alleen waarden van 0..15 geldig zijn.
+      DivertUnit=S.Unit;   // Alle commando's en events zijn voor de Nodo zelf.
+      SaveSettings();
+      break;    
+
     case CMD_RESET:
        VariableClear(0);// wis alle variabelen
        delay(500);// kleine pauze, anders kans fout bij seriële communicatie

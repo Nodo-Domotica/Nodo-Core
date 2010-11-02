@@ -149,10 +149,7 @@ boolean GetStatus(int *Command, int *Par1, int *Par2)
       *Par2=S.AnalyseSharpness;
       break;
 
-    case CMD_DIVERT_SETTINGS:
-//   ???   *Par1=S.DivertWaitFreeRF;
-//      *Par2=S.DivertPort;
-      break;
+//    case CMD_DIVERT_SETTINGS: ???
 
     case CMD_CLOCK_EVENT_DAYLIGHT:
       *Par1=Time.Daylight;
@@ -308,6 +305,7 @@ void ResetFactory(void)
   VariableClear(0); // alle variabelen op nul zetten
   SaveSettings();  
   FactoryEventlist();
+  delay(500);// kleine pauze, anders kans fout bij seriële communicatie
   Reset();
   }
   

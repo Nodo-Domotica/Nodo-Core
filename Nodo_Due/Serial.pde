@@ -63,7 +63,7 @@ unsigned long Receive_Serial(void)
     case CMD_EVENTLIST_WRITE:
       Event=SerialReadEvent();
       Action=SerialReadEvent();
-      if(Event==0 || Action==0 || !Eventlist_Write(0,Event&0x00ffffff,Action&0x00ffffff)) // Home en unit er uit filteren
+      if(Event==0 || Action==0 || !Eventlist_Write(0,Event&0xf0ffffff,Action&0xf0ffffff)) // Unit er uit filteren, anders na wijzigen unit geen geldige eventlist.
         error=true;
       break;        
 
@@ -102,17 +102,9 @@ unsigned long Receive_Serial(void)
      case CMD_SIMULATE: 
         Simulate=Par1;
         break;        
-
-     case CMD_UNIT:
-       S.Unit=Par1&0xf; // Par1 &0xf omdat alleen waarden van 0..15 geldig zijn.
-       DivertUnit=S.Unit;   // Alle commando's en events zijn voor de Nodo zelf.
-       SaveSettings();
-       FactoryEventlist();
-       Reset();
-       break;    
  
      case CMD_HOME:
-       if(Par1>=0 && Par1<10) // 0xf is gereserveerd voor onbekende events.
+       if(Par1>0 && Par1<=10) // 0xf is gereserveerd voor onbekende events.
          {
          S.Home=Par1;
          SaveSettings();

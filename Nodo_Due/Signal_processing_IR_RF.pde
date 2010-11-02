@@ -333,28 +333,6 @@ boolean RFFetchSignal(void)
 
 
 /**********************************************************************************************\
-* Deze functie zendt gedurende Window seconden de RF ontvangst direct door naar IR
-* Window tijd in seconden.
-* ??? deze funktie werkt niet.
-\*********************************************************************************************/
-void CopySignalRF2IR(byte Window)
-  {
-  unsigned long WindowTimer=millis()+Window*1000; // reset de timer.  
-
-  while(WindowTimer>millis())
-    {
-    if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
-      digitalWrite(MonitorLedPin,HIGH);
-//      TCCR2A|=_BV(COM2A0);  // zet IR-modulatie AAN
-    else
-      digitalWrite(MonitorLedPin,LOW);
-//      TCCR2A&=~_BV(COM2A0); // zet IR-modulatie UIT
-//    digitalWrite(MonitorLedPin,(millis()>>7)&0x01);
-    }
-  }
-
-
-/**********************************************************************************************\
 * Deze functie zendt gedurende Window seconden de IR ontvangst direct door naar RF
 * Window tijd in seconden.
 \*********************************************************************************************/
@@ -373,3 +351,28 @@ void CopySignalIR2RF(byte Window)
   digitalWrite(RF_ReceivePowerPin,HIGH); // Spanning naar de RF ontvanger weer aan.
   }
 
+/**********************************************************************************************\
+* Deze functie zendt gedurende Window seconden de RF ontvangst direct door naar IR
+* Window tijd in seconden.
+* ??? deze funktie werkt nog niet!
+\*********************************************************************************************/
+#define MAXPULSETIME 10 // maximale zendtijd van de IR-LED in mSec. Ter voorkoming van overbelasting
+void CopySignalRF2IR(byte Window)
+  {
+  unsigned long WindowTimer=millis()+Window*1000; // reset de timer.  
+  unsigned long PulseTimer;
+  
+  while(WindowTimer>millis())// voor de duur van het opgegeven tijdframe
+    {
+    while((*portInputRegister(RFport)&RFbit)==RFbit)// Zolang de RF-pulse duurt. (Pin=HOOG bij puls, laag bij SPACE). 
+      {      
+      if(PulseTimer>millis())// als de maximale zendtijd van IR nog niet verstreken
+        digitalWrite(MonitorLedPin,HIGH);// TCCR2A|=_BV(COM2A0);  // zet IR-modulatie AAN
+      else // zendtijd IR voorbij, zet IR uit.
+        digitalWrite(MonitorLedPin,LOW);// TCCR2A&=~_BV(COM2A0); // zet IR-modulatie UIT
+      }
+    PulseTimer=millis()+MAXPULSETIME;
+    digitalWrite(MonitorLedPin,LOW); //  TCCR2A&=~_BV(COM2A0); // zet IR-modulatie UIT // RF ontvangt SPACE, dus IR uit.
+//   digitalWrite(MonitorLedPin,(millis()>>7)&0x01); // LED laten knipperen.
+    }
+  }

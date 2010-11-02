@@ -1,14 +1,17 @@
+
  /*****************************************************************************************************\
 
 Todo:
 - Commando 'SendStatus' toegevoegd als vervanger van 'StatusEvent'. T.b.v. uitvragen status van een Nodo via IR/RF.
 - Testen groepcommando's verzenden met KAKU: ook daadwerkelijk door KAKU ontvanger te ontvangen?
 - uitvragen AnalyeSettings geeft een hex-code
+- Aanpassing RawsignalCopy commando toegevoegd. RF naar IR werkt nog niet!!!
 
 Done:
-- Voorbereidingen voor RawsignalCopy commando toegevoegd. RF naar IR werkt nog niet!!!
-- (wederom) aanpassing WaitFreeRF. (Nu alleen als Setting)
-- Aanpassing t.b.v. Divert bug.
+- commando Unit zonder reset en mag nu ook vanuit de eventlist worden gebruikt.
+- commando SendRaw renamed naar RawsignalSend
+- AnalyseSettings renamed naar ReceiveSettings (voorbereiding op komst TransmitSettings)
+- 
 
  \*****************************************************************************************************/
 
@@ -45,7 +48,7 @@ Done:
  *
  ********************************************************************************************************/
 
-#define VERSION                   96 // Nodo Version nummer
+#define VERSION                   97 // Nodo Version nummer
 #define BAUD                   19200 // Baudrate voor seriële communicatie.
 #define SERIAL_TERMINATOR_1     0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>, default voor EventGhost
 #define SERIAL_TERMINATOR_2     0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
@@ -195,7 +198,7 @@ prog_char PROGMEM Cmd_16[]="";
 prog_char PROGMEM Cmd_17[]="";
 prog_char PROGMEM Cmd_18[]="";
 prog_char PROGMEM Cmd_19[]="";
-prog_char PROGMEM Cmd_20[]="AnalyseSettings";
+prog_char PROGMEM Cmd_20[]="ReceiveSettings";
 prog_char PROGMEM Cmd_21[]="BreakOnVarEqu";
 prog_char PROGMEM Cmd_22[]="BreakOnVarLess";
 prog_char PROGMEM Cmd_23[]="BreakOnVarMore";
@@ -218,7 +221,7 @@ prog_char PROGMEM Cmd_39[]="Reset";
 prog_char PROGMEM Cmd_40[]="ResetFactory";
 prog_char PROGMEM Cmd_41[]="SendKAKU";
 prog_char PROGMEM Cmd_42[]="SendNewKAKU";
-prog_char PROGMEM Cmd_43[]="SendRaw";
+prog_char PROGMEM Cmd_43[]="RawsignalSend";
 prog_char PROGMEM Cmd_44[]="Simulate";
 prog_char PROGMEM Cmd_45[]="SimulateDay";
 prog_char PROGMEM Cmd_46[]="Sound";
