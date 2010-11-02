@@ -113,7 +113,7 @@ void PrintEventCode(unsigned long Code)
   byte Par2     = EventPart(Code,EVENT_PART_PAR2);
   byte Type     = EventType(Code);
 
-  if(Type==CMD_TYPE_UNKNOWN || Home!=S.Home)
+  if(Type==CMD_TYPE_UNKNOWN)
     {
     Serial.print("0x"); 
     Serial.print(Code,HEX);

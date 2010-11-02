@@ -338,7 +338,7 @@ boolean RFFetchSignal(void)
 \*********************************************************************************************/
 void CopySignalIR2RF(byte Window)
   {
-  unsigned long WindowTimer=millis()+Window*1000; // reset de timer.  
+  unsigned long WindowTimer=millis()+((unsigned long)Window)*1000; // reset de timer.  
 
   digitalWrite(RF_ReceivePowerPin,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
   digitalWrite(RF_TransmitPowerPin,HIGH); // zet de 433Mhz zender aan   
@@ -359,7 +359,7 @@ void CopySignalIR2RF(byte Window)
 #define MAXPULSETIME 10 // maximale zendtijd van de IR-LED in mSec. Ter voorkoming van overbelasting
 void CopySignalRF2IR(byte Window)
   {
-  unsigned long WindowTimer=millis()+Window*1000; // reset de timer.  
+  unsigned long WindowTimer=millis()+((unsigned long)Window)*1000; // reset de timer.  
   unsigned long PulseTimer;
   
   while(WindowTimer>millis())// voor de duur van het opgegeven tijdframe

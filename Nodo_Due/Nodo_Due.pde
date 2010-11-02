@@ -8,10 +8,10 @@ Todo:
 - Aanpassing RawsignalCopy commando toegevoegd. RF naar IR werkt nog niet!!!
 
 Done:
-- commando Unit zonder reset en mag nu ook vanuit de eventlist worden gebruikt.
+- commando Home vervallen. Home nu optioneel instelbaar met Par2 van het commando Unit.
 - commando SendRaw renamed naar RawsignalSend
 - AnalyseSettings renamed naar ReceiveSettings (voorbereiding op komst TransmitSettings)
-- 
+
 
  \*****************************************************************************************************/
 
@@ -65,7 +65,7 @@ Done:
 
 // ********alle strings naar PROGMEM om hiermee RAM-geheugen te sparen ***********************************************
 prog_char PROGMEM Text_01[] = "NODO-Due (Beta) V0.";
-prog_char PROGMEM Text_02[] = "SUNMONTHUWEDTHUFRISAT";
+prog_char PROGMEM Text_02[] = "SunMonThuWedThuFriSat";
 prog_char PROGMEM Text_03[] = ", Home ";
 prog_char PROGMEM Text_05[] = "Dim";
 prog_char PROGMEM Text_06[] = "SYSTEM: Unknown command!";
@@ -121,7 +121,7 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 #define CMD_EVENTLIST_SHOW 33
 #define CMD_EVENTLIST_WRITE 34
 #define CMD_DIVERT_SETTINGS 35
-#define CMD_HOME 36
+#define CMD_COMMAND_RES 36
 #define CMD_RAWSIGNAL_GET 37
 #define CMD_RAWSIGNAL_PUT 38
 #define CMD_RESET 39
@@ -155,10 +155,10 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 #define CMD_WIRED_THRESHOLD 67
 #define CMD_SEND_USEREVENT 68
 #define CMD_COPYSIGNAL 69
-#define CMD_COMMAND_RES3 70
-#define CMD_COMMAND_RES3 71
-#define CMD_COMMAND_RES3 72
-#define CMD_COMMAND_RES3 73
+#define CMD_COMMAND_RES 70
+#define CMD_COMMAND_RES 71
+#define CMD_COMMAND_RES 72
+#define CMD_COMMAND_RES 73
 #define CMD_BOOT_EVENT 74
 #define CMD_CLOCK_EVENT_DAYLIGHT 75
 #define CMD_CLOCK_EVENT_ALL 76
@@ -214,7 +214,7 @@ prog_char PROGMEM Cmd_32[]="EventlistErase";
 prog_char PROGMEM Cmd_33[]="EventlistShow";
 prog_char PROGMEM Cmd_34[]="EventlistWrite";
 prog_char PROGMEM Cmd_35[]="DivertSettings";
-prog_char PROGMEM Cmd_36[]="Home";
+prog_char PROGMEM Cmd_36[]="";
 prog_char PROGMEM Cmd_37[]="RawsignalGet";
 prog_char PROGMEM Cmd_38[]="RawsignalPut";
 prog_char PROGMEM Cmd_39[]="Reset";

@@ -49,8 +49,7 @@ int str2cmd(char *command)
 unsigned long command2event(int Command, byte Par1, byte Par2)
     {
     return ((unsigned long)S.Home)<<28  | 
-//         ((unsigned long)S.Unit)<<24  | 
-           ((unsigned long)DivertUnit)<<24  | // ??? Divertunit i.p.v. unit: anders worden serieel ontvangen codes met een divert toch zelf uitgevoerd.
+           ((unsigned long)S.Unit)<<24  | 
            ((unsigned long)Command)<<16 | 
            ((unsigned long)Par1)<<8     | 
             (unsigned long)Par2;
@@ -132,13 +131,15 @@ boolean GetStatus(int *Command, int *Par1, int *Par2)
   *Par2=0;
   switch (*Command)
     {
+    case CMD_WAITFREERF: 
+      *Par1=S.WaitFreeRFAction;
+      *Par2=S.WaitFreeRFWindow/100;
+      break;
+  
     case CMD_UNIT: 
       *Par1=S.Unit;
-      break;
-        
-    case CMD_HOME: 
-      *Par1=S.Home;
-      break;
+      *Par2=S.Home;
+      break;        
       
     case CMD_SIMULATE:
       *Par1=Simulate;
