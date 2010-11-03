@@ -1,0 +1,473 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<EventGhost Name="Configuration Tree" Expanded="True" Version="1462" Guid="{9904D3E5-CF32-4D1D-A606-A6E68BD3D302}" Time="1288808234.49">
+    <Autostart Name="Autostart" Expanded="True">
+        <Action>
+            EventGhost.ShowOSD(u'EventGhost with \nstandard testcases \nfor Nodo Due', u'0;-64;0;0;0;400;255;0;0;0;3;2;1;34;Arial', (0, 0, 255), None, 4, (0, 0), 0, 5.0, False)
+        </Action>
+        <Plugin File="Serial" Identifier="Serial">
+            gAIoSwZNAEtLA0sASwBLAYhYAgAAAFxucQBYBQAAAFVuaXQ1cQFLAHRxAi4=
+        </Plugin>
+        <Plugin Enabled="False" File="Serial" Identifier="Serial2">
+            gAIoSwdNAEtLA0sASwBLAYhYAgAAAFxucQBYBQAAAFVuaXQ2cQFLAHRxAi4=
+        </Plugin>
+        <Plugin File="Timer" Identifier="Timer">
+            gAIpLg==
+        </Plugin>
+        <Plugin File="Scheduler" Identifier="Scheduler">
+            gAJYIgAAADAxMDEsMDUwMSwwNjA2LDEyMjQsMTIyNSwxMjI2LDEyMzFxAFgAAAAAcQGJh3ECLg==
+        </Plugin>
+    </Autostart>
+    <Folder Name="Standard test cases" Expanded="True">
+        <Folder Name="Test case 1: Set 8 UserEvents to generate sounds">
+            <Macro Name="Test case 1: Set 8 UserEvents to generate sounds" Expanded="True">
+                <Action Name="Install EventList">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistErase ;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,1; Sound 1;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,2; Sound 2;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,3; Sound 3;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,4; Sound 4;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,5; Sound 5;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,6; Sound 6;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,7; Sound 7;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,8; Sound 8;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,0; Delay 1;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,0; UserEvent 1,1;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,0; Delay 1;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,0; UserEvent 1,2;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,0; Delay 1;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,0; UserEvent 1,3;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,0; Delay 1;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,0; UserEvent 1,4;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,0; Delay 1;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,0; UserEvent 1,5;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,0; Delay 1;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,0; UserEvent 1,6;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,0; Delay 1;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,0; UserEvent 1,7;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,0; Delay 1;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,0; UserEvent 1,8;')
+                </Action>
+                <Action Name="Show EventList">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'EventListShow;')
+                </Action>
+                <Action Name="Test individual sounds">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'UserEvent 1,1;')
+                </Action>
+                <Action>
+                    Serial.Write(u'UserEvent 1,2;')
+                </Action>
+                <Action>
+                    Serial.Write(u'UserEvent 1,3;')
+                </Action>
+                <Action>
+                    Serial.Write(u'UserEvent 1,4;')
+                </Action>
+                <Action>
+                    Serial.Write(u'UserEvent 1,5;')
+                </Action>
+                <Action>
+                    Serial.Write(u'UserEvent 1,6;')
+                </Action>
+                <Action>
+                    Serial.Write(u'UserEvent 1,7;')
+                </Action>
+                <Action>
+                    Serial.Write(u'UserEvent 1,8;')
+                </Action>
+                <Action Name="Auto-generate all sounds">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'UserEvent 1,0;')
+                </Action>
+            </Macro>
+        </Folder>
+        <Folder Name="Test case 2: test WiredIn and WiredOut">
+            <Macro Name="Test case 2: test WiredIn and WiredOut">
+                <Action Name="Install EventList">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistErase ;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite;WiredIn 1,1; WiredOut 1,1;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite;WiredIn 2,1; WiredOut 2,1;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite;WiredIn 3,1; WiredOut 3,1;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite;WiredIn 4,1; WiredOut 4,1;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite;WiredIn 1,1; Sound 2;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite;WiredIn 2,1; Sound 2;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite;WiredIn 3,1; Sound 2;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite;WiredIn 4,1; Sound 2;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite;WiredIn 1,0; WiredOut 1,0;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite;WiredIn 2,0; WiredOut 2,0;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite;WiredIn 3,0; WiredOut 3,0;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite;WiredIn 4,0; WiredOut 4,0;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite;WiredIn 1,0; Sound 3;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite;WiredIn 2,0; Sound 3;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite;WiredIn 3,0; Sound 3;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite;WiredIn 4,0; Sound 3;')
+                </Action>
+                <Action Name="Test individual sounds">
+                    EventGhost.Comment()
+                </Action>
+            </Macro>
+        </Folder>
+        <Folder Name="Test case 3: set and show clock on serially connected Nodo">
+            <Macro Name="Test case 3: set and show clock on serially connected Nodo">
+                <Action Name="Set clock to Sunday 10-07-2005, 15.30, DLS on">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'ClockDate 10,07;')
+                </Action>
+                <Action>
+                    Serial.Write(u'ClockYear 20,05;')
+                </Action>
+                <Action>
+                    Serial.Write(u'ClockDOW 1;')
+                </Action>
+                <Action>
+                    Serial.Write(u'ClockTime 15, 30;')
+                </Action>
+                <Action>
+                    Serial.Write(u'ClockDLS On;')
+                </Action>
+                <Action Name="Now show current clock setting">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'Status ClockYear;')
+                </Action>
+                <Action>
+                    Serial.Write(u'Status ClockDate;')
+                </Action>
+                <Action>
+                    Serial.Write(u'Status ClockTime;')
+                </Action>
+                <Action>
+                    Serial.Write(u'Status ClockDOW;')
+                </Action>
+                <Action>
+                    Serial.Write(u'Status ClockDLS;')
+                </Action>
+                <Action Name="Switch to DLS off">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'ClockDLS Off;')
+                </Action>
+                <Action Name="Now show current clock setting">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'Status ClockTime;')
+                </Action>
+            </Macro>
+        </Folder>
+        <Folder Name='Test case 4: send and receive "old" KAKU signals'>
+            <Macro Name='Test case 4: send and receive "old" KAKU signals' Expanded="True">
+                <Action Name="Install EventList">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistErase ;')
+                </Action>
+                <Action Name="Send KAKU A1 on and off">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; KAKU A2, ON; SendKAKU J16, ON;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; KAKU A2, ON; SendKAKU A1, ON;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; KAKU A2, ON; Delay 1;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; KAKU A2, ON; SendKAKU A1, off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; KAKU A2, ON; Delay 1;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; KAKU A2, ON; SendKAKU A1, ON;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; KAKU A2, OFF; SendKAKU A1, Off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; KAKU A2, OFF; SendKAKU J16, Off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; KAKU A2, Off; Delay 1;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; KAKU A2, OFF; SendKAKU A1, On;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; KAKU A2, Off; Delay 1;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; KAKU A2, OFF; SendKAKU A1, Off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; KAKU A2, OFF; SendUserEvent 99,99;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 10,10; SendUserEvent 99,99;')
+                </Action>
+                <Action>
+                    Serial.Write(u'trace on;')
+                </Action>
+                <Action Name="Now press A2 on and off to test">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    EventGhost.ShowOSD(u'Press A2 ON to test "ON" sequence\nPress A2 OFF to test "OFF" sequence', u'0;-48;0;0;0;700;0;0;0;0;3;2;1;34;Arial', (0, 0, 255), None, 4, (0, 0), 0, 5.0, False)
+                </Action>
+                <Action>
+                    EventGhost.TriggerEvent(u'SwitchTraceOff', 60.0)
+                </Action>
+            </Macro>
+            <Macro Name="Turn trace on" Expanded="True">
+                <Event Name="Unit5.OUTPUT: RF, (KAKU J16, On)" />
+                <Action Enabled="False">
+                    Serial.Write(u'trace on;')
+                </Action>
+            </Macro>
+            <Macro Name="Turn trace off" Expanded="True">
+                <Event Name="Main.SwitchTraceOff" />
+                <Event Name="Unit5.OUTPUT: RF, (KAKU J16, Off)" />
+                <Action Enabled="False">
+                    Serial.Write(u'trace off;')
+                </Action>
+            </Macro>
+        </Folder>
+        <Folder Name="Test case 5: test timers">
+            <Macro Name="Test case 5: test timers" Expanded="True">
+                <Action Name="Install EventList">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistErase ;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,0; TimerSet 1, 1;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,0; TimerSet 2, 2;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; UserEvent 1,0; TimerSet 3, 3;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; Timer 1; Sound 1, 1;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; Timer 2; Sound 1, 2;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite; Timer 3; Sound 1, 3;')
+                </Action>
+                <Action Name="Now trigger the timer sequence">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'UserEvent 1,0;')
+                </Action>
+                <Action Name="Please wait 3 seconds for all timers to expire">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    EventGhost.ShowOSD(u'Please wait for all timers to expire', u'0;-48;0;0;0;700;0;0;0;0;3;2;1;34;Arial', (0, 0, 255), None, 4, (0, 0), 0, 3.0, False)
+                </Action>
+                <Action>
+                    EventGhost.TriggerEvent(u'ShowTimerSet', 0.0)
+                </Action>
+                <Action>
+                    EventGhost.TriggerEvent(u'ResetTimer2', 50.0)
+                </Action>
+                <Action>
+                    EventGhost.TriggerEvent(u'ShowTimerSet', 60.0)
+                </Action>
+                <Action>
+                    EventGhost.TriggerEvent(u'ShowTimerSet', 120.0)
+                </Action>
+                <Action>
+                    EventGhost.ShowOSD(u'Please wait until you see text "DONE"', u'0;-48;0;0;0;700;0;0;0;0;3;2;1;34;Arial', (0, 0, 255), None, 4, (0, 0), 0, 3.0, False)
+                </Action>
+            </Macro>
+            <Macro Name="Show TimerSet" Expanded="True">
+                <Event Name="Main.ShowTimerSet" />
+                <Action>
+                    EventGhost.ShowOSD(u'Current Timer Settings:', u'0;-48;0;0;0;700;0;0;0;0;3;2;1;34;Arial', (0, 0, 255), None, 4, (0, 0), 0, 3.0, False)
+                </Action>
+                <Action>
+                    Serial.Write(u'Status TimerSet 1;Status TimerSet 2;Status TimerSet 3;')
+                </Action>
+            </Macro>
+            <Macro Name="Reset timer2" Expanded="True">
+                <Event Name="Main.ResetTimer2" />
+                <Action>
+                    EventGhost.ShowOSD(u'Cancelling timer2!', u'0;-48;0;0;0;700;0;0;0;0;3;2;1;34;Arial', (0, 0, 255), None, 4, (0, 0), 0, 3.0, False)
+                </Action>
+                <Action>
+                    Serial.Write(u'TimerReset 2;')
+                </Action>
+            </Macro>
+            <Macro Name="Timer 1 expires" Expanded="True">
+                <Event Name="Unit5.INPUT: Timers, Event, (Timer 1, 0)" />
+                <Action>
+                    EventGhost.ShowOSD(u'Timer 1 has expired!', u'0;-48;0;0;0;700;0;0;0;0;3;2;1;34;Arial', (0, 0, 255), None, 4, (0, 0), 0, 3.0, False)
+                </Action>
+            </Macro>
+            <Macro Name="Timer 3 expires" Expanded="True">
+                <Event Name="Unit5.INPUT: Timers, Event, (Timer 3, 0)" />
+                <Action>
+                    EventGhost.ShowOSD(u'Timer 3 has expired!', u'0;-48;0;0;0;700;0;0;0;0;3;2;1;34;Arial', (0, 0, 255), None, 4, (0, 0), 0, 3.0, False)
+                </Action>
+                <Action>
+                    EventGhost.TriggerEvent(u'ShowRandomTimerSet', 0.0)
+                </Action>
+            </Macro>
+            <Macro Name="Show RandomTimerSettings" Expanded="True">
+                <Event Name="Main.ShowRandomTimerSet" />
+                <Action>
+                    EventGhost.ShowOSD(u'Demonstrate random timer settings', u'0;-48;0;0;0;700;0;0;0;0;3;2;1;34;Arial', (0, 0, 255), None, 4, (0, 0), 0, 3.0, False)
+                </Action>
+                <Action>
+                    Serial.Write(u'TimerRandom 1, 5;TimerRandom 2, 50;TimerRandom 3, 500;')
+                </Action>
+                <Action>
+                    Serial.Write(u'Status TimerSet 1;Status TimerSet 2;Status TimerSet 3;')
+                </Action>
+                <Action>
+                    Serial.Write(u'TimerRandom 1, 5;TimerRandom 2, 50;TimerRandom 3, 500;')
+                </Action>
+                <Action>
+                    Serial.Write(u'Status TimerSet 1;Status TimerSet 2;Status TimerSet 3;')
+                </Action>
+                <Action>
+                    Serial.Write(u'TimerRandom 1, 5;TimerRandom 2, 50;TimerRandom 3, 500;')
+                </Action>
+                <Action>
+                    Serial.Write(u'Status TimerSet 1;Status TimerSet 2;Status TimerSet 3;')
+                </Action>
+                <Action>
+                    Serial.Write(u'TimerReset 1;TimerReset 2;TimerReset 3;')
+                </Action>
+                <Action>
+                    Serial.Write(u'Status TimerSet 1;Status TimerSet 2;Status TimerSet 3;')
+                </Action>
+                <Action>
+                    EventGhost.ShowOSD(u'DONE', u'0;-96;0;0;0;700;0;1;0;0;3;2;1;34;Arial', (0, 0, 255), None, 4, (0, 0), 0, 5.0, False)
+                </Action>
+            </Macro>
+        </Folder>
+    </Folder>
+    <Folder Name="work area">
+        <Macro Name="Serial Port: Write Data: DivertSettings 2,2;" Expanded="True">
+            <Action>
+                Serial.Write(u'DivertSettings 2,2;')
+            </Action>
+            <Action>
+                Serial.Write(u'UserEvent 10,10;')
+            </Action>
+        </Macro>
+        <Macro Name="Serial Port: Write Data: DivertSettings 2,2;" Expanded="True">
+            <Event Name="Unit5.OUTPUT: RF, (UserEvent 99, 99)" />
+            <Action>
+                EventGhost.ShowOSD(u'YESSSS', u'0;-24;0;0;0;700;0;0;0;1;0;0;2;32;Arial', (255, 255, 255), (0, 0, 0), 0, (0, 0), 0, 3.0, False)
+            </Action>
+        </Macro>
+    </Folder>
+</EventGhost>
