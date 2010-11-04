@@ -150,14 +150,13 @@ boolean GetStatus(int *Command, int *Par1, int *Par2)
       *Par2=S.AnalyseSharpness;
       break;
 
-//    case CMD_DIVERT_SETTINGS: ???
+    case CMD_DIVERT_SETTINGS:
+      *Par1=S.DivertType;
+      *Par2=S.DivertPort;
+      break;
 
     case CMD_CLOCK_EVENT_DAYLIGHT:
       *Par1=Time.Daylight;
-      break;
-
-    case CMD_CLOCK_DLS:
-      *Par1=S.DaylightSaving;
       break;
 
     case CMD_VARIABLE_SET:
@@ -285,17 +284,17 @@ void ResetFactory(void)
   {
   Beep(2000,2000);
 
-  S.DaylightSaving     = false;
   S.Version            = VERSION;
   S.Unit               = UNIT;
   S.Home               = HOME;
   S.Trace              = 0;
   S.AnalyseSharpness   = 50;
   S.AnalyseTimeOut     = 10000;
-  S.DivertPort         = DIVERT_PORT_IR_RF;
-  S.DivertType         = DIVERT_TYPE_ALL;
-  S.WaitFreeRFAction   = WAITFREERF_OFF;
-    
+  S.DivertPort         = VALUE_PORT_IR_RF;
+  S.DivertType         = CMD_USER_EVENT;
+  S.WaitFreeRFAction   = VALUE_OFF;
+  S.DaylightSaving     = DLS();
+  
   for(byte x=0;x<4;x++)
     {
     S.WiredInputThreshold[x]=0x80; 
@@ -317,7 +316,7 @@ void FactoryEventlist(void)
   {
   Eventlist_Write(1,0L,0L); // maak de eventlist leeg.
   Eventlist_Write(0,command2event(CMD_BOOT_EVENT,0,0),command2event(CMD_SOUND,7,0)); // geluidssignaal na opstarten Nodo
-  Eventlist_Write(0,command2event(CMD_WILDCARD_EVENT,0,0),command2event(CMD_SOUND,0,0)); // Kort geluidssignaal bij ieder binnenkomend event
+  Eventlist_Write(0,command2event(CMD_WILDCARD_EVENT,VALUE_ALL,VALUE_ALL),command2event(CMD_SOUND,0,0)); // Kort geluidssignaal bij ieder binnenkomend event
   }
 
  /*********************************************************************************************\
@@ -433,12 +432,12 @@ byte EventType(unsigned long Code)
   Unit=   EventPart(Code,EVENT_PART_UNIT);
   Command=EventPart(Code,EVENT_PART_COMMAND);
   
-  if(EventPart(Code,EVENT_PART_HOME)!=S.Home) return CMD_TYPE_UNKNOWN; 
-  if(Unit!=S.Unit && Unit!=0)                 return CMD_TYPE_OTHERUNIT; // andere unit, dus niet voor deze nodo bestemd. Behalve unit=0, die is voor alle units    }
-  if(Command<=RANGE_VALUE)                    return CMD_TYPE_UNKNOWN;
-  if(Command<RANGE_EVENT)                     return CMD_TYPE_COMMAND;
-  if(Command<=COMMAND_MAX)                    return CMD_TYPE_EVENT;
-  /* in andere gevallen */                    return CMD_TYPE_UNKNOWN;  
+  if(EventPart(Code,EVENT_PART_HOME)!=S.Home) return VALUE_TYPE_UNKNOWN; 
+  if(Unit!=S.Unit && Unit!=0)                 return VALUE_TYPE_OTHERUNIT; // andere unit, dus niet voor deze nodo bestemd. Behalve unit=0, die is voor alle units    }
+  if(Command<=RANGE_VALUE)                    return VALUE_TYPE_UNKNOWN;
+  if(Command<RANGE_EVENT)                     return VALUE_TYPE_COMMAND;
+  if(Command<=COMMAND_MAX)                    return VALUE_TYPE_EVENT;
+  /* in andere gevallen */                    return VALUE_TYPE_UNKNOWN;  
   }
     
 

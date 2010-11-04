@@ -37,15 +37,16 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
   if(depth==0)
    {
    if(S.Trace&1)PrintLine();  
-   if(S.WaitFreeRFAction==WAITFREERF_SERIES)WaitFreeRF(S.WaitFreeRFWindow);
+   if(S.WaitFreeRFAction==VALUE_SERIES)WaitFreeRF(S.WaitFreeRFWindow);
    }
 
-  if(depth==0 || S.Trace&1)PrintEvent(IncommingEvent,Port,DIRECTION_IN);  // geef event weer op Serial
+  //??? issue 123 if(depth==0 || S.Trace&1)PrintEvent(IncommingEvent,Port,DIRECTION_IN);  // geef event weer op Serial
+  PrintEvent(IncommingEvent,Port,DIRECTION_IN);  // geef event weer op Serial
   digitalWrite(MonitorLedPin,HIGH);          // LED aan om aan te geven dat er wat ontvangen is en verwerkt wordt
   
   if(depth++>=MACRO_EXECUTION_DEPTH)
     {
-    Serial.print(Text(Text_50));PrintTerm();
+    PrintText(Text_50,true);
     depth=0;
     return false; // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
     }
@@ -55,8 +56,9 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
     x=false;       
     if(DivertUnit!=S.Unit)
       {
-      if(S.DivertType==DIVERT_TYPE_EVENTS && (Type==CMD_TYPE_EVENT || Type==CMD_TYPE_UNKNOWN))x=true;
-      if(S.DivertType==DIVERT_TYPE_ALL)x=true;
+      if(S.DivertType==CMD_USER_EVENT && Command==CMD_USER_EVENT && Type==VALUE_TYPE_EVENT)x=true;
+      if(S.DivertType==VALUE_TYPE_EVENT && (Type==VALUE_TYPE_EVENT || Type==VALUE_TYPE_UNKNOWN))x=true;
+      if(S.DivertType==VALUE_ALL)x=true;
       }
        
     if(x)
@@ -100,19 +102,19 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
       // RawSignal buffer is gevuld en kan worden verzonden.      
       if(S.Trace&1)
         {
-        Serial.print(Text(Text_07));
+        PrintText(Text_07,false);
         Serial.print(DivertUnit,DEC);
         PrintTerm();
         }  
       
-      if(Port!=CMD_PORT_IR && (S.DivertPort==DIVERT_PORT_IR || S.DivertPort==DIVERT_PORT_IR_RF))
+      if(Port!=VALUE_PORT_IR && (S.DivertPort==VALUE_PORT_IR || S.DivertPort==VALUE_PORT_IR_RF))
         {
-        PrintEvent(Event_1,CMD_PORT_IR,DIRECTION_OUT);
+        PrintEvent(Event_1,VALUE_PORT_IR,DIRECTION_OUT);
         RawSendIR();
         } 
-      if(Port!=CMD_PORT_RF && (S.DivertPort==DIVERT_PORT_RF || S.DivertPort==DIVERT_PORT_IR_RF))
+      if(Port!=VALUE_PORT_RF && (S.DivertPort==VALUE_PORT_RF || S.DivertPort==VALUE_PORT_IR_RF))
         {
-        PrintEvent(Event_1,CMD_PORT_RF,DIRECTION_OUT);
+        PrintEvent(Event_1,VALUE_PORT_RF,DIRECTION_OUT);
         RawSendRF();
         }
         
@@ -127,11 +129,8 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
 
 
   // ############# Verwerk event ################  
-
   // als het een commando of event is voor deze unit, dan t.b.v. interne verwerking unit op 0 zetten.
-
-  // Verwerk binnengekomen event.  
-  if(Type==CMD_TYPE_COMMAND)
+  if(Type==VALUE_TYPE_COMMAND)
     { // Er is een Commando binnengekomen 
     ExecuteCommand(IncommingEvent,Port,PreviousContent,PreviousPort);
     }
@@ -142,15 +141,14 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
       {
       // kijk of deze regel een match heeft, zo ja, dan set y=vlag voor uitvoeren
       
-  
       // als de Eventlist regel een wildcard is, zo ja, dan set y=vlag voor uitvoeren
-      if(((Event_1>>16)&0xff)==CMD_WILDCARD_EVENT)
+      if(((Event_1>>16)&0xff)==CMD_WILDCARD_EVENT) // commando deel van het event.
         {
         y=true; 
-        z=(Event_1>>8)&0xff;
-        if(z>0 && z!=Port)y=false;
-        z=Event_1&0xff;
-        if(z>0 && z!=Type)y=false;
+        z=(Event_1>>8)&0xff; // Par1 deel bevat de poort
+        if(z!=VALUE_ALL && z!=Port)y=false;
+        z=Event_1&0xff; // Par2 deel bevat type event
+        if(z!=VALUE_ALL && z!=Type)y=false;
         }
       else
         y=CheckEvent(IncommingEvent,Event_1);      
@@ -162,7 +160,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
           
         if(EventPart(Event_2,EVENT_PART_COMMAND)==EVENT_PART_COMMAND) // is de ontvangen code een uitvoerbaar commando?
           {
-          if(!ExecuteCommand(Event_2,CMD_SOURCE_MACRO,IncommingEvent,Port))
+          if(!ExecuteCommand(Event_2,VALUE_SOURCE_MACRO,IncommingEvent,Port))
             {
             depth--;
             return true;
@@ -173,9 +171,9 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
           if(Event_1!=command2event(CMD_WILDCARD_EVENT,0,0))
             {
             if(S.Trace&1)
-              PrintEvent(Event_2,CMD_SOURCE_MACRO,DIRECTION_IN);
+              PrintEvent(Event_2,VALUE_SOURCE_MACRO,DIRECTION_IN);
   
-            if(!ProcessEvent(Event_2,CMD_SOURCE_MACRO,IncommingEvent,Port))
+            if(!ProcessEvent(Event_2,VALUE_SOURCE_MACRO,IncommingEvent,Port))
               {
               depth--;
               return true;

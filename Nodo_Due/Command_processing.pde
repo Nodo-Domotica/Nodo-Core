@@ -45,19 +45,20 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       {   
       case CMD_SEND_KAKU:
         KAKU_2_RawSignal(Content);
-        PrintEvent(command2event(CMD_KAKU,Par1,Par2),CMD_PORT_RF,DIRECTION_OUT);
+        PrintEvent(command2event(CMD_KAKU,Par1,Par2),VALUE_PORT_RF,DIRECTION_OUT);
         RawSendRF();      
         break;
         
       case CMD_SEND_KAKU_NEW:
         NewKAKU_2_RawSignal(Content);
-        PrintEvent(command2event(CMD_KAKU_NEW,Par1,Par2),CMD_PORT_RF, DIRECTION_OUT);
+        PrintEvent(command2event(CMD_KAKU_NEW,Par1,Par2),VALUE_PORT_RF, DIRECTION_OUT);
         RawSendRF();      
         break;
         
       case CMD_VARIABLE_INC: 
         if(Par1<=USER_VARIABLES_MAX && (S.UserVar[Par1-1]+Par2)<=255) // alleen ophogen als variabele nog niet de maximale waarde heeft
-          {      
+          {
+          if(!Par2)Par2=1;      
           S.UserVar[Par1-1]+=Par2;
           SaveSettings();
           }
@@ -66,6 +67,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       case CMD_VARIABLE_DEC: 
         if(Par1<=USER_VARIABLES_MAX && (S.UserVar[Par1-1]-Par2)>=0) // alleen decrement als variabele hierdoor niet negatief wordt
           {
+          if(!Par2)Par2=1;      
           S.UserVar[Par1-1]-=Par2;
           SaveSettings();
           }
@@ -78,15 +80,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
          SaveSettings();
          }
         break;        
-  
-      case CMD_VARIABLE_DAYLIGHT: // alleen een geldige variabele setten.
-        if(Par1>0 && Par1<=USER_VARIABLES_MAX)
-          {
-          S.UserVar[Par1-1]=Time.Daylight;
-          SaveSettings();
-          }
-        break;        
-  
+    
       case CMD_VARIABLE_VARIABLE: // alleen een geldige variabele setten.
         if(Par1>=1 && Par1<=USER_VARIABLES_MAX && Par2>=1 && Par2<=USER_VARIABLES_MAX) 
           {
@@ -109,9 +103,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           if(S.UserVar[Par1-1]==Par2)
             {
             if(S.Trace&1)
-              {
-              Serial.print((Text_09));PrintTerm();
-              }
+              PrintText(Text_09,true);
             return false;
             }
           }
@@ -123,9 +115,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           if(S.UserVar[Par1-1]!=Par2)
             {
             if(S.Trace&1)
-              {
-              Serial.print(Text(Text_09));PrintTerm();
-              }
+              PrintText(Text_09,true);
             return false;
             }
           }
@@ -137,9 +127,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           if(S.UserVar[Par1-1]>Par2)
             {
             if(S.Trace&1)
-              {
-              Serial.print(Text(Text_09));PrintTerm();
-              }
+              PrintText(Text_09,true);
             return false;
             }
           }
@@ -151,9 +139,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           if(S.UserVar[Par1-1]<Par2)
             {
             if(S.Trace&1)
-              {
-              Serial.print(Text(Text_09));PrintTerm();
-              }
+              PrintText(Text_09,true);
             return false;
             }
           }
@@ -176,14 +162,14 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       // Voeg Home toe en Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
       Event=command2event(CMD_USER_EVENT,Par1,Par2)&0x00ffffff | ((unsigned long)S.Home)<<28; // Voeg Home toe en Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
       Nodo_2_RawSignal(Event);
-      if(PreviousSrc!=CMD_PORT_IR && (S.DivertPort==DIVERT_PORT_IR || S.DivertPort==DIVERT_PORT_IR_RF))
+      if(PreviousSrc!=VALUE_PORT_IR && (S.DivertPort==VALUE_PORT_IR || S.DivertPort==VALUE_PORT_IR_RF))
         {
-        PrintEvent(Event,CMD_PORT_IR,DIRECTION_OUT);
+        PrintEvent(Event,VALUE_PORT_IR,DIRECTION_OUT);
         RawSendIR();
         } 
-      if(PreviousSrc!=CMD_PORT_RF && (S.DivertPort==DIVERT_PORT_RF || S.DivertPort==DIVERT_PORT_IR_RF))
+      if(PreviousSrc!=VALUE_PORT_RF && (S.DivertPort==VALUE_PORT_RF || S.DivertPort==VALUE_PORT_IR_RF))
         {
-        PrintEvent(Event,CMD_PORT_RF,DIRECTION_OUT);
+        PrintEvent(Event,VALUE_PORT_RF,DIRECTION_OUT);
         RawSendRF();
         }
       break;      
@@ -195,15 +181,15 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
        break;     
 
     case CMD_SEND_RAW:
-      if(PreviousSrc!=CMD_PORT_IR && (Par1==1 || Par1==0))
+      if(PreviousSrc!=VALUE_PORT_IR && (Par1==VALUE_PORT_IR || Par1==VALUE_PORT_IR_RF))
         {
-        PrintEvent(0,CMD_PORT_IR,DIRECTION_OUT);
+        PrintEvent(0,VALUE_PORT_IR,DIRECTION_OUT);
         RawSendIR();
         }
   
-      if(PreviousSrc!=CMD_PORT_RF && (Par1==2 || Par1==0))
+      if(PreviousSrc!=VALUE_PORT_RF && (Par1==VALUE_PORT_RF || Par1==VALUE_PORT_IR_RF))
         {
-        PrintEvent(0,CMD_PORT_RF,DIRECTION_OUT);
+        PrintEvent(0,VALUE_PORT_RF,DIRECTION_OUT);
         RawSendRF();      
         }
       PrintRawSignal();PrintTerm();
@@ -211,26 +197,13 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   
     case CMD_CLOCK_YEAR:
        x=Par1*100+Par2;
-       if(x>=2000 && x<=2090)// nieuwe millenium bug, maar dan ben ik al 130 jaar ;-)
+       if(x>=2000 && x<=2090)// nieuwe millenium bug, maar dan ben ik 130 jaar ;-)
          {
          Time.Year=x;
          ClockSet();
          break;
          }
-  
-    case CMD_CLOCK_DLS: 
-       if(S.DaylightSaving!=Par1)// alleen verzetten als de setting veranderd, anders wordt de klok twee uur verzet!
-          {
-          S.DaylightSaving=Par1;
-          if(S.DaylightSaving==1)
-            Time.Hour=Time.Hour<23?Time.Hour+1:0;
-          else
-            Time.Hour=Time.Hour==0?23:Time.Hour-1;
-          ClockSet();
-          SaveSettings();
-          }
-       break;        
-    
+      
     case CMD_CLOCK_TIME:
        Time.Hour=Par1;
        Time.Minutes=Par2;
@@ -316,17 +289,10 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       DivertUnit=Par1&0xf;
       break;
 
-
-    case CMD_RESET:
-       VariableClear(0);// wis alle variabelen
-       delay(500);// kleine pauze, anders kans fout bij seriële communicatie
-       Reset();
-       break;        
-
     case CMD_COPYSIGNAL:
-       if(Par1)
+       if(Par1==VALUE_RF_2_IR)
          CopySignalRF2IR(Par2);      
-       else
+       if(Par1==VALUE_IR_2_RF)
          CopySignalIR2RF(Par2);
        break;        
 
@@ -337,20 +303,19 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         {
         Event=command2event(x,Par1,Par2);
         Nodo_2_RawSignal(Event);
-        if(S.DivertPort==DIVERT_PORT_IR || S.DivertPort==DIVERT_PORT_IR_RF)
+        if(S.DivertPort==VALUE_PORT_IR || S.DivertPort==VALUE_PORT_IR_RF)
           {
-          PrintEvent(Event,CMD_PORT_IR,DIRECTION_OUT);
+          PrintEvent(Event,VALUE_PORT_IR,DIRECTION_OUT);
           RawSendIR();
           } 
-        if(S.DivertPort==DIVERT_PORT_RF || S.DivertPort==DIVERT_PORT_IR_RF)
+        if(S.DivertPort==VALUE_PORT_RF || S.DivertPort==VALUE_PORT_IR_RF)
           {
-          PrintEvent(Event,CMD_PORT_RF,DIRECTION_OUT);
+          PrintEvent(Event,VALUE_PORT_RF,DIRECTION_OUT);
           RawSendRF();
           }
         }
       break;
-        
-        
+                
       default:
         error=true;
       }
@@ -362,7 +327,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   
   if(error)
     {
-    Serial.print(Text(Text_06));
+    PrintText(Text_06,false);
     PrintEventCode(Content);PrintTerm();
     return false;
     }

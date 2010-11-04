@@ -67,9 +67,9 @@ unsigned long Receive_Serial(void)
       
       // als het een commando of een event is, dan unit er uitfilteren alvorens weg te schrijven
       x=EventType(Event);
-      if(x==CMD_TYPE_COMMAND || x==CMD_TYPE_EVENT)Event&=0xf0ffffff;
+      if(x==VALUE_TYPE_COMMAND || x==VALUE_TYPE_EVENT)Event&=0xf0ffffff;
       x=EventType(Action);
-      if(x==CMD_TYPE_COMMAND || x==CMD_TYPE_EVENT)Action&=0xf0ffffff;
+      if(x==VALUE_TYPE_COMMAND || x==VALUE_TYPE_EVENT)Action&=0xf0ffffff;
       
       // schrijf weg in eventlist
       if(Event==0 || Action==0 || !Eventlist_Write(0,Event,Action)) // Unit er uit filteren, anders na wijzigen unit geen geldige eventlist.
@@ -83,7 +83,6 @@ unsigned long Receive_Serial(void)
       SaveSettings();
       break;
       }
-
 
     case CMD_ANALYSE_SETTINGS:
       {
@@ -99,7 +98,7 @@ unsigned long Receive_Serial(void)
       break;        
   
     case CMD_RAWSIGNAL_GET:
-      Serial.print(Text(Text_26));PrintTerm();
+      PrintText(Text_26,true);
       while(true)
         {            
         if((*portInputRegister(RFport)&RFbit)==RFbit)if(RFFetchSignal())break; // Kijk of er data start op RF binnenkomt
@@ -146,7 +145,7 @@ unsigned long Receive_Serial(void)
  
   if(error)
     {
-    Serial.print(Text(Text_06));PrintTerm();
+    PrintText(Text_06,true);
     }
  return 0L;
  }
@@ -232,10 +231,8 @@ unsigned long SerialReadEvent()
     error=true;
 
   if(error && strlen(SerialBuffer)!=0)
-    {
-    Serial.print(Text(Text_06));
-    PrintTerm();
-    }
+    PrintText(Text_06,true);
+
   return 0L;
   }
    

@@ -117,7 +117,7 @@ unsigned long RawSignal_2_KAKU(void)
   // conventionele KAKU bestaat altijd uit 12 data bits plus stop. Ongelijk, dan geen KAKU
   if (RawSignal[0]!=(KAKU_CodeLength*4)+2)return false;
 
-  Command = CMD_OFF;
+  Command = VALUE_OFF;
 
   for (i=0; i<KAKU_CodeLength; i++)
     {

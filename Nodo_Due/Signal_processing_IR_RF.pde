@@ -199,7 +199,7 @@ void RawSendRF(void)
   int x;
     
   if(Simulate)return;
-  if(S.WaitFreeRFAction==WAITFREERF_ALL)WaitFreeRF(S.WaitFreeRFWindow);
+  if(S.WaitFreeRFAction==VALUE_ALL)WaitFreeRF(S.WaitFreeRFWindow);
     
   digitalWrite(RF_ReceivePowerPin,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
   digitalWrite(RF_TransmitPowerPin,HIGH); // zet de 433Mhz zender aan   
