@@ -179,7 +179,7 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 #define CMD_WIRED_IN_EVENT 87
 #define CMD_VARIABLE_EVENT 88
 #define CMD_WILDCARD_EVENT 89
-#define CMD_USER_EVENT 90 // deze moet altijd op 90 blijven anders opnieuw leren aan universele afstandsbediening!
+#define CMD_USER_EVENT 90 // UserEvent moet altijd op 90 blijven anders opnieuw leren aan universele afstandsbediening!
 
 prog_char PROGMEM Cmd_0[]="Off";
 prog_char PROGMEM Cmd_1[]="On";
@@ -268,10 +268,10 @@ prog_char PROGMEM Cmd_83[]="EventStatus";
 prog_char PROGMEM Cmd_84[]="KAKU";
 prog_char PROGMEM Cmd_85[]="NewKAKU";
 prog_char PROGMEM Cmd_86[]="Timer";
-prog_char PROGMEM Cmd_87[]="UserEvent";
+prog_char PROGMEM Cmd_87[]="WiredIn";
 prog_char PROGMEM Cmd_88[]="Variable";
 prog_char PROGMEM Cmd_89[]="Wildcard";
-prog_char PROGMEM Cmd_90[]="WiredIn";
+prog_char PROGMEM Cmd_90[]="UserEvent"; // UserEvent moet altijd op 90 blijven anders opnieuw leren aan universele afstandsbediening!
 
 
 // tabel die refereert aan de commando strings
