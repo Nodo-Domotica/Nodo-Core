@@ -176,10 +176,10 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 #define CMD_KAKU 84
 #define CMD_KAKU_NEW 85
 #define CMD_TIMER_EVENT 86
-#define CMD_USER_EVENT 87
+#define CMD_WIRED_IN_EVENT 87
 #define CMD_VARIABLE_EVENT 88
 #define CMD_WILDCARD_EVENT 89
-#define CMD_WIRED_IN_EVENT 90
+#define CMD_USER_EVENT 90 // deze moet altijd op 90 blijven anders opnieuw leren aan universele afstandsbediening!
 
 prog_char PROGMEM Cmd_0[]="Off";
 prog_char PROGMEM Cmd_1[]="On";

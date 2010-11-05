@@ -206,8 +206,6 @@ void PrintEventCode(unsigned long Code)
     default:
       P1=P_VALUE;
       P2=P_VALUE;    
-      
-      
     }
         
   // Print Par1
