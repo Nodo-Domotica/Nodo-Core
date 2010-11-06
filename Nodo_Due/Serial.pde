@@ -57,7 +57,7 @@ unsigned long Receive_Serial(void)
          PrintTerm();
          }
        else
-         error=true;
+         error=VALUE_PARAMETER;
        break;
  
     case CMD_EVENTLIST_WRITE:
@@ -76,51 +76,61 @@ unsigned long Receive_Serial(void)
         error=true;
       break;        
 
-    case CMD_DIVERT_SETTINGS:
-      {
-      S.DivertType=Par1;
-      S.DivertPort=Par2;
-      SaveSettings();
-      break;
-      }
-
     case CMD_ANALYSE_SETTINGS:
-      {
       S.AnalyseTimeOut=Par1;
       S.AnalyseSharpness=Par2*1000;
       SaveSettings();
       break;
-      }
 
-    case CMD_TRACE: 
-      S.Trace=Par1&1 | (Par2&1)<<1;
-      SaveSettings();
+    case CMD_TRACE:
+      if(Par1<=1 && Par2<=1)
+        {
+        S.Trace=Par1&1 | (Par2&1)<<1;
+        SaveSettings();
+        }
+      else
+        error=VALUE_PARAMETER;
       break;        
   
+    case CMD_DIVERT:   
+      if(Par1<=UNIT_MAX)
+        DivertUnit=Par1&0xf;
+      else
+        error=VALUE_PARAMETER;
+      break;
+
     case CMD_RAWSIGNAL_GET:
       PrintText(Text_26,true);
       while(true)
         {            
         if((*portInputRegister(RFport)&RFbit)==RFbit)if(RFFetchSignal())break; // Kijk of er data start op RF binnenkomt
-        if((*portInputRegister(IRport)&IRbit)==0   )if(IRFetchSignal())break; // Kijk of er data start op IR binnenkomt
+        if((*portInputRegister(IRport)&IRbit)==0    )if(IRFetchSignal())break; // Kijk of er data start op IR binnenkomt
         }
       PrintRawSignal();
       break;        
 
-     case CMD_SIMULATE: 
-        Simulate=Par1;
+     case CMD_SIMULATE:
+        if(Par1<=1) 
+          Simulate=Par1;
+        else
+          error=VALUE_PARAMETER;
         break;        
  
      case CMD_UNIT:
-       S.Unit=Par1&0xf; // Par1 &0xf omdat alleen waarden van 0..15 geldig zijn.
-       DivertUnit=S.Unit;   // Alle commando's en events zijn voor de Nodo zelf.
-       if(Par2>0 && Par2<=10)
-         S.Home=Par2;
-       SaveSettings();
-       FactoryEventlist();
-       Reset();
+       if(Par1>0 && Par1<=UNIT_MAX)
+         {
+         S.Unit=Par1&0xf; // Par1 &0xf omdat alleen waarden van 0..15 geldig zijn.
+         DivertUnit=S.Unit;   // Alle commando's en events zijn voor de Nodo zelf.
+         if(Par2>0 && Par2<=10)
+           S.Home=Par2;
+         SaveSettings();
+         FactoryEventlist();
+         Reset();
+         }
+       else
+         error=VALUE_PARAMETER;
        break;    
-   
+  
      case CMD_RESET_FACTORY:
         ResetFactory();
         
@@ -144,8 +154,14 @@ unsigned long Receive_Serial(void)
       }
  
   if(error)
-    {
-    PrintText(Text_06,true);
+    {// als er een error is, dan een error-event genereren en verzenden.
+    if(error!=VALUE_PARAMETER)Cmd=0;
+    Event=command2event(CMD_ERROR,Cmd,error);
+    PrintEvent(Event,0, DIRECTION_INTERNAL);
+    Nodo_2_RawSignal(Event);
+    RawSendRF();
+    RawSendIR();
+    return false;
     }
  return 0L;
  }

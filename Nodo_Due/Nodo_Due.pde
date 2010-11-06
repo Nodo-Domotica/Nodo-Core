@@ -1,27 +1,26 @@
 
  /*****************************************************************************************************\
 
-Todo:
-- TransmitSettings
-- Ontvangen UserEvent vanuit EG print HEX
-- WildCard goed testen
+ Todo:
+ - TransmitSettings
+ - Ontvangen UserEvent vanuit EG print HEX
+ - WildCard goed testen
 
-Done:
-- automatische zomertijd / wintertijd omschakeling.
-- Commando 'ResetFactory' renamed naar 'Reset'. Oude reset komen te vervallen.
-- Commando 'VariableDaylight' vervallen. Kan de gebruiker zelf oplossen in de eventlist door een variabele te bijhouden
-- (Intern) Code bespaard door opschoning en functie PrintText() de PROGMEM teksten te laten printen.
-- 'ClockDate', 'ClockYear', 'ClockTime', 'ClockDOW' commando's renamed naar 'ClockSet...' Tevens commando overzicht aangepast.
-- Notatiewijzen van Par1 en Par2 bij keuzewaarden: geen getal meer maar een tekst. LET OP dat de oude waarden niet meer werken !!!
-- Issue 125: DivertSettings en WaitFreeRF opgenomen in Status en StatusEvent
+ Done:
+ - issue 126
+ - issue 131
+ - issue 130
+ - Checkt op geldige waarden voor parameters van commando's en Event genereren als er zich een error heeft voorgedaan
+ - LET OP tijdelijk staat versienummer van de Nodo op 0.
+ 
 
  \*****************************************************************************************************/
 
 
  /*****************************************************************************************************\
 
-  Compiler            : 0019  
-  Hardware            : - Arduino ATMeg328 processor @16Mhz.
+  Compiler            : - Arduino Compiler 0021
+  Hardware            : - Arduino met een ATMeg328 processor @16Mhz.
                         - Hardware en Arduino penbezetting volgens schema Nodo Due Rev.003
 
  ********************************************************************************************************
@@ -50,13 +49,13 @@ Done:
  *
  ********************************************************************************************************/
 
-#define VERSION                   98 // Nodo Version nummer
+#define VERSION                   99 // Nodo Version nummer
 #define BAUD                   19200 // Baudrate voor seriële communicatie.
 #define SERIAL_TERMINATOR_1     0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>, default voor EventGhost
 #define SERIAL_TERMINATOR_2     0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
 #define RF_ENDSIGNAL_TIME       1000 // Dit is de tijd in milliseconden waarna wordt aangenomen dat het ontvangen één RF signaal beëindigd is
 #define IR_ENDSIGNAL_TIME       1000 // Dit is de tijd in milliseconden waarna wordt aangenomen dat het ontvangen één IR signaal beëindigd is
-
+#define UNIT_MAX                  10 
 //****************************************************************************************************************************************
 
 #include "pins_arduino.h"
@@ -81,17 +80,18 @@ prog_char PROGMEM Text_12[] = "SYSTEM: ";
 prog_char PROGMEM Text_13[] = "EXECUTE: ";
 prog_char PROGMEM Text_14[] = ", Unit ";
 prog_char PROGMEM Text_15[] = "EVENTLIST: ";
+prog_char PROGMEM Text_16[] = "SYSTEM: Parameter error!";
 prog_char PROGMEM Text_26[] = "SYSTEM: Waiting for RF/IR event...";
 prog_char PROGMEM Text_30[] = ", Rawsignal=(";
 prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 
 #define RANGE_VALUE 24 // alle codes kleiner of gelijk aan deze waarde zijn vaste Nodo waarden.
 #define RANGE_EVENT 73 // alle codes groter of gelijk aan deze waarde zijn een event.
-#define COMMAND_MAX 91 // aantal commando's (geteld vanaf 0)
+#define COMMAND_MAX 92 // aantal commando's (geteld vanaf 0)
 
 #define VALUE_OFF 0
 #define VALUE_ON 1
-#define VALUE_ALL 2
+#define VALUE_PARAMETER 2
 #define VALUE_PORT_IR 3
 #define VALUE_PORT_IR_RF 4
 #define VALUE_PORT_RF 5
@@ -107,13 +107,13 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 #define VALUE_TYPE_EVENT 15
 #define VALUE_TYPE_OTHERUNIT 16
 #define VALUE_TYPE_UNKNOWN 17
-#define VALUE_RES5 18
+#define VALUE_RES1 18
 #define VALUE_RF_2_IR 19
 #define VALUE_IR_2_RF 20
-#define VALUE_RES1 21
+#define VALUE_OK 21
 #define VALUE_RES2 22
 #define VALUE_RES3 23
-#define VALUE_RES4 24
+#define VALUE_ALL 24
 #define CMD_ANALYSE_SETTINGS 25
 #define CMD_BREAK_ON_VAR_EQU 26
 #define CMD_BREAK_ON_VAR_LESS 27
@@ -180,10 +180,11 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 #define CMD_VARIABLE_EVENT 88
 #define CMD_WILDCARD_EVENT 89
 #define CMD_USER_EVENT 90 // UserEvent moet altijd op 90 blijven anders opnieuw leren aan universele afstandsbediening!
+#define CMD_ERROR 91
 
 prog_char PROGMEM Cmd_0[]="Off";
 prog_char PROGMEM Cmd_1[]="On";
-prog_char PROGMEM Cmd_2[]="All";
+prog_char PROGMEM Cmd_2[]="Parameter";
 prog_char PROGMEM Cmd_3[]="IR";
 prog_char PROGMEM Cmd_4[]="IR&RF";
 prog_char PROGMEM Cmd_5[]="RF";
@@ -202,10 +203,10 @@ prog_char PROGMEM Cmd_17[]="Unknown";
 prog_char PROGMEM Cmd_18[]="";
 prog_char PROGMEM Cmd_19[]="RF2IR";
 prog_char PROGMEM Cmd_20[]="IR2RF";
-prog_char PROGMEM Cmd_21[]="";
+prog_char PROGMEM Cmd_21[]="Ok";
 prog_char PROGMEM Cmd_22[]="";
 prog_char PROGMEM Cmd_23[]="";
-prog_char PROGMEM Cmd_24[]="";
+prog_char PROGMEM Cmd_24[]="All";
 prog_char PROGMEM Cmd_25[]="ReceiveSettings";
 prog_char PROGMEM Cmd_26[]="BreakOnVarEqu";
 prog_char PROGMEM Cmd_27[]="BreakOnVarLess";
@@ -271,7 +272,9 @@ prog_char PROGMEM Cmd_86[]="Timer";
 prog_char PROGMEM Cmd_87[]="WiredIn";
 prog_char PROGMEM Cmd_88[]="Variable";
 prog_char PROGMEM Cmd_89[]="Wildcard";
-prog_char PROGMEM Cmd_90[]="UserEvent"; // UserEvent moet altijd op 90 blijven anders opnieuw leren aan universele afstandsbediening!
+prog_char PROGMEM Cmd_90[]="UserEvent"; // UserEvent moet altijd op 90 blijven anders moet gebruiker opnieuw leren aan universele afstandsbediening!
+prog_char PROGMEM Cmd_91[]="Error"; // UserEvent moet altijd op 90 blijven anders moet gebruiker opnieuw leren aan universele afstandsbediening!
+
 
 
 // tabel die refereert aan de commando strings
@@ -285,7 +288,7 @@ PROGMEM const char *CommandText_tabel[]={
   Cmd_60,Cmd_61,Cmd_62,Cmd_63,Cmd_64,Cmd_65,Cmd_66,Cmd_67,Cmd_68,Cmd_69,
   Cmd_70,Cmd_71,Cmd_72,Cmd_73,Cmd_74,Cmd_75,Cmd_76,Cmd_77,Cmd_78,Cmd_79,          
   Cmd_80,Cmd_81,Cmd_82,Cmd_83,Cmd_84,Cmd_85,Cmd_86,Cmd_87,Cmd_88,Cmd_89,          
-  Cmd_90};          
+  Cmd_90,Cmd_91};          
 
 PROGMEM prog_uint16_t Sunrise[]={         
   528,525,516,503,487,467,446,424,401,378,355,333,313,295,279,268,261,259,263,271,283,297,312,329,
@@ -340,7 +343,7 @@ boolean WiredInputStatus[4],WiredOutputStatus[4];   // Wired variabelen
 unsigned int RawSignal[RAW_BUFFER_SIZE];            // Tabel met de gemeten pulsen in microseconden. eerste waarde is het aantal bits*2
 unsigned long EventTimeCodePrevious;                // t.b.v. voorkomen herhaald ontvangen van dezelfde code binnen ingestelde tijd
 byte DaylightPrevious;                              // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet
-byte Simulate,DivertUnit;
+byte Simulate, DivertUnit;
 void(*Reset)(void)=0; //declare reset function @ address 0
 uint8_t RFbit,RFport,IRbit,IRport;
 struct RealTimeClock {int Hour,Minutes,Seconds,Date,Month,Day,Daylight,Year,DaylightSaving;}Time;

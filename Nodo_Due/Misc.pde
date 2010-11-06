@@ -291,7 +291,7 @@ void ResetFactory(void)
   S.AnalyseSharpness   = 50;
   S.AnalyseTimeOut     = 10000;
   S.DivertPort         = VALUE_PORT_IR_RF;
-  S.DivertType         = CMD_USER_EVENT;
+  S.DivertType         = VALUE_TYPE_EVENT;
   S.WaitFreeRFAction   = VALUE_OFF;
   S.DaylightSaving     = DLS();
   

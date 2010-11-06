@@ -152,7 +152,7 @@ void WaitFreeRF(int Window)
   unsigned long WindowTimer, TimeOutTimer;  // meet of de time-out waarde gepasseerd is in milliseconden
 
   if(Simulate)return;
-  
+ 
   WindowTimer=millis()+Window; // reset de timer.  
   TimeOutTimer=millis()+15000; // tijd waarna de routine wordt afgebroken
 
@@ -199,7 +199,12 @@ void RawSendRF(void)
   int x;
     
   if(Simulate)return;
-  if(S.WaitFreeRFAction==VALUE_ALL)WaitFreeRF(S.WaitFreeRFWindow);
+  
+  if(S.WaitFreeRFAction==VALUE_ALL)
+    {
+    WaitFreeRF(S.WaitFreeRFWindow);
+    delay(100);// ??? issue 133
+    }
     
   digitalWrite(RF_ReceivePowerPin,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
   digitalWrite(RF_TransmitPowerPin,HIGH); // zet de 433Mhz zender aan   

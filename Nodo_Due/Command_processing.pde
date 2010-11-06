@@ -25,10 +25,12 @@
  * true teruggegeven. Zo niet dan wordt er een 'false' retour gegeven.
  * 
  \*********************************************************************************************/
+
 boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousContent, int PreviousSrc)
   {
   unsigned long Event, Action;  
-  int x,y,error=false;
+  int x,y;
+  byte error=false;
   
   int Command      = EventPart(Content,EVENT_PART_COMMAND);
   int Par1         = EventPart(Content,EVENT_PART_PAR1);
@@ -56,21 +58,31 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;
         
       case CMD_VARIABLE_INC: 
-        if(Par1<=USER_VARIABLES_MAX && (S.UserVar[Par1-1]+Par2)<=255) // alleen ophogen als variabele nog niet de maximale waarde heeft
-          {
-          if(!Par2)Par2=1;      
-          S.UserVar[Par1-1]+=Par2;
-          SaveSettings();
-          }
+        if(Par1<=USER_VARIABLES_MAX)
+           {
+           if((S.UserVar[Par1-1]+Par2)<=255) // alleen ophogen als variabele nog niet de maximale waarde heeft
+               {
+              if(!Par2)Par2=1;      
+              S.UserVar[Par1-1]+=Par2;
+              SaveSettings();
+               }
+            }
+        else
+          error=VALUE_PARAMETER;
         break;        
   
       case CMD_VARIABLE_DEC: 
-        if(Par1<=USER_VARIABLES_MAX && (S.UserVar[Par1-1]-Par2)>=0) // alleen decrement als variabele hierdoor niet negatief wordt
-          {
-          if(!Par2)Par2=1;      
-          S.UserVar[Par1-1]-=Par2;
-          SaveSettings();
-          }
+        if(Par1<=USER_VARIABLES_MAX)
+           {
+           if((S.UserVar[Par1-1]-Par2)>=0) // alleen decrement als variabele hierdoor niet negatief wordt
+              {
+              if(!Par2)Par2=1;      
+              S.UserVar[Par1-1]-=Par2;
+              SaveSettings();
+              }
+           }
+        else
+          error=VALUE_PARAMETER;
         break;        
   
       case CMD_VARIABLE_SET:   
@@ -79,6 +91,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
          S.UserVar[Par1-1]=Par2;
          SaveSettings();
          }
+        else
+          error=VALUE_PARAMETER;
         break;        
     
       case CMD_VARIABLE_VARIABLE: // alleen een geldige variabele setten.
@@ -87,6 +101,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           S.UserVar[Par1-1]=S.UserVar[Par2-1];
           SaveSettings();
           }
+        else
+          error=VALUE_PARAMETER;
         break;        
   
       case CMD_VARIABLE_WIRED_ANALOG: // alleen een geldige variabele setten met geldige WIRED-IN poort
@@ -95,6 +111,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           S.UserVar[Par1-1]=analogRead(WiredAnalogInputPin_1+(Par2-1))>>2;
           SaveSettings();
           }
+        else
+          error=VALUE_PARAMETER;
         break;        
   
       case CMD_BREAK_ON_VAR_EQU: // alleen een geldige variabele vergelijken
@@ -107,6 +125,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
             return false;
             }
           }
+        else
+          error=VALUE_PARAMETER;
         break;        
   
       case CMD_BREAK_ON_VAR_NEQU: // alleen een geldige variabele
@@ -119,6 +139,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
             return false;
             }
           }
+        else
+          error=VALUE_PARAMETER;
         break;        
   
       case CMD_BREAK_ON_VAR_MORE:// alleen een geldige variabele
@@ -131,6 +153,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
             return false;
             }
           }
+        else
+          error=VALUE_PARAMETER;
         break;        
   
       case CMD_BREAK_ON_VAR_LESS:// alleen een geldige variabele
@@ -143,6 +167,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
             return false;
             }
           }
+        else
+          error=VALUE_PARAMETER;
         break;  
   
       case CMD_TIMER_RESET:// Deze heeft betrekking op alle timers: cancellen.
@@ -155,6 +181,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           {
           if(Par1>0 && Par1<=USER_TIMER_MAX)// voor de gebruiker beginnen de timers bij één.
             UserTimer[Par1-1]=0L;
+          else
+            error=VALUE_PARAMETER;
           }
         break;
   
@@ -162,17 +190,17 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       // Voeg Home toe en Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
       Event=command2event(CMD_USER_EVENT,Par1,Par2)&0x00ffffff | ((unsigned long)S.Home)<<28; // Voeg Home toe en Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
       Nodo_2_RawSignal(Event);
-      if(PreviousSrc!=VALUE_PORT_IR && (S.DivertPort==VALUE_PORT_IR || S.DivertPort==VALUE_PORT_IR_RF))
+      if(S.DivertPort==VALUE_PORT_IR || S.DivertPort==VALUE_PORT_IR_RF)
         {
         PrintEvent(Event,VALUE_PORT_IR,DIRECTION_OUT);
         RawSendIR();
         } 
-      if(PreviousSrc!=VALUE_PORT_RF && (S.DivertPort==VALUE_PORT_RF || S.DivertPort==VALUE_PORT_IR_RF))
+      if(S.DivertPort==VALUE_PORT_RF || S.DivertPort==VALUE_PORT_IR_RF)
         {
         PrintEvent(Event,VALUE_PORT_RF,DIRECTION_OUT);
         RawSendRF();
         }
-      break;      
+      break;
 
     case CMD_SIMULATE_DAY:
        if(Par1==0)Par1=1;
@@ -186,7 +214,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         PrintEvent(0,VALUE_PORT_IR,DIRECTION_OUT);
         RawSendIR();
         }
-  
       if(PreviousSrc!=VALUE_PORT_RF && (Par1==VALUE_PORT_RF || Par1==VALUE_PORT_IR_RF))
         {
         PrintEvent(0,VALUE_PORT_RF,DIRECTION_OUT);
@@ -203,33 +230,54 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
          ClockSet();
          break;
          }
+       else
+         error=VALUE_PARAMETER;
       
     case CMD_CLOCK_TIME:
-       Time.Hour=Par1;
-       Time.Minutes=Par2;
-       Time.Seconds=0;
-       ClockSet();
+       if(Par1<=23 && Par2<=59)
+         {
+         Time.Hour=Par1;
+         Time.Minutes=Par2;
+         Time.Seconds=0;
+         ClockSet();
+         }
+       else
+         error=VALUE_PARAMETER;
        break;
   
     case CMD_CLOCK_DATE: // data1=datum, data2=maand
-       Time.Date=Par1;
-       Time.Month=Par2;
-       ClockSet();
-       break;
+      if(Par1<=31 && Par2<=12)
+        {      
+        Time.Date=Par1;
+        Time.Month=Par2;
+        ClockSet();
+        }
+      else
+        error=VALUE_PARAMETER;
+      break;
   
     case CMD_CLOCK_DOW:
-       Time.Day=Par1;
-       ClockSet();
-       break;
+      if(Par1>0 && Par1<8)
+        {
+        Time.Day=Par1;
+        ClockSet();
+        }
+      else
+        error=VALUE_PARAMETER;
+      break;
          
     case CMD_TIMER_SET:
       if(Par1>0 && Par1<=USER_TIMER_MAX)// alleen geldige timer. Voor de gebruiker beginnen de timers bij één.
         UserTimer[Par1-1]=millis()+(unsigned long)(Par2)*60000L;// Par1=timer, Par2=minuten
+      else
+        error=VALUE_PARAMETER;
       break;
   
     case CMD_TIMER_RANDOM:
       if(Par1>0 && Par1<=USER_TIMER_MAX)// alleen een geldige timer
         UserTimer[Par1-1]=millis()+(unsigned long)random(Par2)*60000L;// Par1=timer, Par2=maximaal aantal minuten
+      else
+        error=VALUE_PARAMETER;
       break;
   
     case CMD_DELAY:
@@ -242,15 +290,20 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     
     case CMD_WIRED_PULLUP:
        if(Par1>0 && Par1<5)
-          {
-          S.WiredInputPullUp[Par1-1]=Par2; // Par1 is de poort[1..4], Par2 is de waarde [0..1]
-          digitalWrite(14+WiredAnalogInputPin_1+Par1-1,S.WiredInputPullUp[Par1-1]?HIGH:LOW);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14
-          SaveSettings();
-          }
+         {
+         S.WiredInputPullUp[Par1-1]=Par2; // Par1 is de poort[1..4], Par2 is de waarde [0..1]
+         digitalWrite(14+WiredAnalogInputPin_1+Par1-1,S.WiredInputPullUp[Par1-1]?HIGH:LOW);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14
+         SaveSettings();
+         }
+       else
+         error=VALUE_PARAMETER;
        break;
              
     case CMD_VARIABLE_CLEAR:
-       error=VariableClear(Par1);
+       if(Par1>0 && Par1<=15)
+         VariableClear(Par1);
+       else
+         error=VALUE_PARAMETER;
        break;
        
     case CMD_WIRED_THRESHOLD:
@@ -259,6 +312,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
          S.WiredInputThreshold[Par1-1]=Par2; // Par1 is de poort[1..4], Par2 is de waarde [0..255]
          SaveSettings();
          }
+       else
+         error=VALUE_PARAMETER;
        break;
   
     case CMD_WIRED_OUT:
@@ -267,6 +322,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           digitalWrite(WiredDigitalOutputPin_1+Par1-1,Par2&1);
           WiredOutputStatus[Par1-1]=Par2&1;
           }
+       else
+         error=VALUE_PARAMETER;
        break;
                     
     case CMD_WIRED_SMITTTRIGGER:
@@ -275,28 +332,53 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
          S.WiredInputSmittTrigger[Par1-1]=Par2; // Par1 is de poort[1..4], Par2 is de waarde [0..255]
          SaveSettings();
          }
+       else
+         error=VALUE_PARAMETER;
        break;
        
     case CMD_WAITFREERF: 
-      {
-      S.WaitFreeRFAction=Par1;
-      S.WaitFreeRFWindow=Par2==0?S.Unit*500:Par2*100;
-      SaveSettings();
+      if(Par1==VALUE_OFF || Par1==VALUE_SERIES || Par1==VALUE_ALL)
+        {
+        S.WaitFreeRFAction=Par1;
+        S.WaitFreeRFWindow=Par2==0?S.Unit*500:Par2*100;
+        SaveSettings();
+        }
+      else
+         error=VALUE_PARAMETER;  
       break;
-      }
 
-    case CMD_DIVERT:   
-      DivertUnit=Par1&0xf;
+    case CMD_DIVERT:
+      
+      if(Par1<=10)
+        DivertUnit=Par1;
+      else
+        error=VALUE_PARAMETER;  
       break;
 
     case CMD_COPYSIGNAL:
-       if(Par1==VALUE_RF_2_IR)
-         CopySignalRF2IR(Par2);      
-       if(Par1==VALUE_IR_2_RF)
-         CopySignalIR2RF(Par2);
-       break;        
+      if(Par1==VALUE_RF_2_IR || Par1==VALUE_IR_2_RF)
+        {          
+        if(Par1==VALUE_RF_2_IR)
+          CopySignalRF2IR(Par2);      
+        if(Par1==VALUE_IR_2_RF)
+          CopySignalIR2RF(Par2);
+        }
+      else
+        error=VALUE_PARAMETER;  
+      break;        
 
-    case CMD_SEND_STATUS:
+    case CMD_DIVERT_SETTINGS:
+      if((Par1==VALUE_TYPE_EVENT || Par1==CMD_USER_EVENT || Par1==VALUE_ALL) && (Par2==VALUE_PORT_IR || Par2==VALUE_PORT_IR_RF || Par2==VALUE_PORT_RF))
+        {
+        S.DivertType=Par1;
+        S.DivertPort=Par2;
+        SaveSettings();
+        }
+      else
+        error=VALUE_PARAMETER;
+      break;
+
+    case CMD_SEND_STATUS://??? foutive opties afvangen mogelijk???
       x=Par1;// bevat het commando waarvoor de status opgehaald moet worden
       Par1=Par2;
       if(GetStatus(&x,&Par1,&Par2))// let op: call by reference. Gegevens komen terug in Par1 en Par2
@@ -322,13 +404,17 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     }   
   else
     {
-    error=true;
+    error=VALUE_TYPE_COMMAND;
     }
   
   if(error)
-    {
-    PrintText(Text_06,false);
-    PrintEventCode(Content);PrintTerm();
+    {// als er een error is, dan een error-event genereren en verzenden.
+    if(error!=VALUE_PARAMETER)Command=0;
+    Event=command2event(CMD_ERROR,Command,error);
+    PrintEvent(Event,0, DIRECTION_INTERNAL);
+    Nodo_2_RawSignal(Event);
+    RawSendRF();
+    RawSendIR();
     return false;
     }
   return true;

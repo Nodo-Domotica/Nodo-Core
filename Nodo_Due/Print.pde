@@ -163,6 +163,7 @@ void PrintEventCode(unsigned long Code)
       break;
 
     // Par1 als tekst en par2 als tekst
+    case CMD_ERROR:
     case CMD_TRACE:
     case CMD_DIVERT_SETTINGS:
     case CMD_WILDCARD_EVENT:

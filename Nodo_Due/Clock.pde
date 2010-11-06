@@ -167,7 +167,7 @@ unsigned long ClockRead(void)
   // als de DaylightSaving veranderd is, dan de clock verzetten. 
   // Dit vindt plaats op de DLS-data om 02:00 uur wintertijd,
   // of als de datum wordt verzet.
-  if(Time.DaylightSaving!=S.DaylightSaving)
+  if(Time.DaylightSaving!=S.DaylightSaving && Time.Hour==2)
     {
     if(S.DaylightSaving)// als het zomertijd IS en nu wintertijd WORDT...
       Time.Hour=Time.Hour==0?23:Time.Hour-1;// ...dan de klok een uur terug.
