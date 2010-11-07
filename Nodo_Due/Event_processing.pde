@@ -51,93 +51,6 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
     return false; // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
     }
 
-    // ############# Divert event ################  
-    // Check of het type binnengekomen event geforward moet worden
-    x=false;       
-    if(DivertUnit!=S.Unit)
-      {
-//      Serial.print("??? DivertUnit!=S.Unit, S.DivertType=");
-//      Serial.print(S.DivertType,DEC);
-//      Serial.print(", Command=");
-//      Serial.print(Command,DEC);
-//      Serial.print(", Type=");
-//      Serial.print(Type,DEC);
-//      Serial.print(", DivertUnit=");
-//      Serial.print(DivertUnit,DEC);
-//      Serial.print(", S.Unit=");
-//      Serial.print(S.Unit,DEC);
-//      PrintTerm();
-      
-      if(S.DivertType==CMD_USER_EVENT && Command==CMD_USER_EVENT && Type==VALUE_TYPE_EVENT)x=true; // Als het een UserEvent is...
-      if(S.DivertType==VALUE_TYPE_EVENT && (Type==VALUE_TYPE_EVENT || Type==VALUE_TYPE_UNKNOWN))x=true; // Als het een ander soort Nodo event is of een volledig onbekend type HEX event
-      if(S.DivertType==VALUE_ALL           )x=true; // In alle 
-       
-      if(x)
-        {      
-        //Maak Raw signaal gereed met het te forwarden event
-        if(EventPart(IncommingEvent,EVENT_PART_HOME)==S.Home)// Behoort event tot huidige Home?
-          {// Huidig home adres
-          switch(Command)
-            {
-            case CMD_USER_EVENT:
-              Event_1=IncommingEvent&0xf0ffffff; // Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.
-              Nodo_2_RawSignal(Event_1);  
-              break;
-    
-            case CMD_KAKU:
-              // KAKU ontvangers kunnen Nodo formaat niet ontvangen. Als het een KAKU event is, dan verzenden met SendKAKU
-              Event_1=(IncommingEvent&0xff00ffff) | ((unsigned long)CMD_KAKU)<<16;
-              KAKU_2_RawSignal(Event_1);// nu kan er worden verzonden volgens KAKU formaat
-              break;
-    
-            case CMD_KAKU_NEW:
-              // KAKU ontvangers kunnen Nodo formaat niet ontvangen. Als het een NewKAKU event is, dan verzenden met SendNewKAKU
-              Event_1=(IncommingEvent&0xff00ffff) | ((unsigned long)CMD_KAKU_NEW)<<16;
-              NewKAKU_2_RawSignal(Event_1);// nu kan er worden verzonden volgens NewKAKU formaat
-              break;
-              
-            default:
-              {
-              // Te forwarden event voorzien van nieuwe bestemming unit
-              Event_1=(IncommingEvent&0xf0ffffff) | ((unsigned long)(DivertUnit))<<24; // Event_1 is het te forwarden event voorzien van nieuwe bestemming unit
-              Nodo_2_RawSignal(Event_1);
-              }
-            }// switch
-          }// Huidig home adres
-        else 
-          {// Ander Home adres of onbekend signaal
-          Event_1=IncommingEvent; // onveranderd forwarden
-          Nodo_2_RawSignal(Event_1);
-          }
-    
-        // RawSignal buffer is gevuld en kan worden verzonden.      
-        if(S.Trace&1)
-          {
-          PrintText(Text_07,false);
-          Serial.print(DivertUnit,DEC);
-          PrintTerm();
-          }  
-        
-        if(Port!=VALUE_PORT_IR && (S.DivertPort==VALUE_PORT_IR || S.DivertPort==VALUE_PORT_IR_RF))
-          {
-          PrintEvent(Event_1,VALUE_PORT_IR,DIRECTION_OUT);
-          RawSendIR();
-          } 
-        if(Port!=VALUE_PORT_RF && (S.DivertPort==VALUE_PORT_RF || S.DivertPort==VALUE_PORT_IR_RF))
-          {
-          PrintEvent(Event_1,VALUE_PORT_RF,DIRECTION_OUT);
-          RawSendRF();
-          }
-          
-        if(DivertUnit!=0)// als event alleen maar voor een andere Nodo was, dan na een Divert NIET zelf het commando uitvoeren.
-          {
-          depth--;
-          return true;
-          }
-        }// DivertUnit!=S.Unit ==> in aanmerking voor forwarding
-      }
-
-
   // ############# Verwerk event ################  
   // als het een commando of event is voor deze unit, dan t.b.v. interne verwerking unit op 0 zetten.
   if(Type==VALUE_TYPE_COMMAND)
@@ -220,12 +133,6 @@ boolean CheckEventlist(unsigned long Code)
  \*********************************************************************************************/
 boolean CheckEvent(unsigned long Event, unsigned long MacroEvent)
   {  
-//   Serial.print("??? CheckEvent() Event=0x"); 
-//   Serial.print(Event,HEX);
-//   Serial.print(", MacroEvent=0x"); 
-//   Serial.print(MacroEvent,HEX);
-//   PrintTerm();
-  
   // als huidige event exact overeenkomt met het event in de regel uit de Eventlist, dan een match
   if(MacroEvent==Event)return true; 
   
@@ -311,4 +218,23 @@ boolean Eventlist_Read(int address, unsigned long *Event, unsigned long *Action)
   }
 
 
+ /**********************************************************************************************\
+ * verzendt een event en geeft dit tevens weer op SERAIL
+ \**********************************************************************************************/
+ boolean SendEvent(unsigned long Event)
+   {
+   Nodo_2_RawSignal(Event);
+
+   if(S.DivertPort==VALUE_PORT_IR || S.DivertPort==VALUE_PORT_IR_RF)
+     {
+     PrintEvent(Event,VALUE_PORT_IR,DIRECTION_OUT);
+     RawSendIR();
+     } 
+   if(S.DivertPort==VALUE_PORT_RF || S.DivertPort==VALUE_PORT_IR_RF)
+     {
+     PrintEvent(Event,VALUE_PORT_RF,DIRECTION_OUT);
+     RawSendRF();
+     }
+   }
+ 
  

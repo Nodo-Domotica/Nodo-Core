@@ -188,18 +188,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   
     case CMD_SEND_USEREVENT:
       // Voeg Home toe en Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
-      Event=command2event(CMD_USER_EVENT,Par1,Par2)&0x00ffffff | ((unsigned long)S.Home)<<28; // Voeg Home toe en Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
-      Nodo_2_RawSignal(Event);
-      if(S.DivertPort==VALUE_PORT_IR || S.DivertPort==VALUE_PORT_IR_RF)
-        {
-        PrintEvent(Event,VALUE_PORT_IR,DIRECTION_OUT);
-        RawSendIR();
-        } 
-      if(S.DivertPort==VALUE_PORT_RF || S.DivertPort==VALUE_PORT_IR_RF)
-        {
-        PrintEvent(Event,VALUE_PORT_RF,DIRECTION_OUT);
-        RawSendRF();
-        }
+      SendEvent(command2event(CMD_USER_EVENT,Par1,Par2)&0x00ffffff | ((unsigned long)S.Home)<<28);// Voeg Home toe en Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
       break;
 
     case CMD_SIMULATE_DAY:
@@ -209,6 +198,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
        break;     
 
     case CMD_SEND_RAW:
+      // verzend de de inhoud van de RAW buffer ??? DivertSettings als settings?
       if(PreviousSrc!=VALUE_PORT_IR && (Par1==VALUE_PORT_IR || Par1==VALUE_PORT_IR_RF))
         {
         PrintEvent(0,VALUE_PORT_IR,DIRECTION_OUT);
@@ -378,24 +368,13 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         error=VALUE_PARAMETER;
       break;
 
-    case CMD_SEND_STATUS://??? foutive opties afvangen mogelijk???
+    case CMD_SEND_STATUS://??? foutive opties voldoende afgevangen
       x=Par1;// bevat het commando waarvoor de status opgehaald moet worden
       Par1=Par2;
       if(GetStatus(&x,&Par1,&Par2))// let op: call by reference. Gegevens komen terug in Par1 en Par2
-        {
-        Event=command2event(x,Par1,Par2);
-        Nodo_2_RawSignal(Event);
-        if(S.DivertPort==VALUE_PORT_IR || S.DivertPort==VALUE_PORT_IR_RF)
-          {
-          PrintEvent(Event,VALUE_PORT_IR,DIRECTION_OUT);
-          RawSendIR();
-          } 
-        if(S.DivertPort==VALUE_PORT_RF || S.DivertPort==VALUE_PORT_IR_RF)
-          {
-          PrintEvent(Event,VALUE_PORT_RF,DIRECTION_OUT);
-          RawSendRF();
-          }
-        }
+        SendEvent(command2event(x,Par1,Par2));
+      else
+        error=VALUE_PARAMETER;
       break;
                 
       default:
@@ -403,18 +382,14 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       }
     }   
   else
-    {
     error=VALUE_TYPE_COMMAND;
-    }
   
   if(error)
     {// als er een error is, dan een error-event genereren en verzenden.
     if(error!=VALUE_PARAMETER)Command=0;
     Event=command2event(CMD_ERROR,Command,error);
-    PrintEvent(Event,0, DIRECTION_INTERNAL);
-    Nodo_2_RawSignal(Event);
-    RawSendRF();
-    RawSendIR();
+    SendEvent(Event);
+    ProcessEvent(Event,0,0,0)
     return false;
     }
   return true;

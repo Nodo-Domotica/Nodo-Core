@@ -94,7 +94,11 @@ unsigned long Receive_Serial(void)
   
     case CMD_DIVERT:   
       if(Par1<=UNIT_MAX)
-        DivertUnit=Par1&0xf;
+        {
+        Action=(SerialReadEvent()&0xf0ffffff) | ((unsigned long)(Par1))<<24; // Event_1 is het te forwarden event voorzien van nieuwe bestemming unit
+        SendEvent(Action);
+        }
+
       else
         error=VALUE_PARAMETER;
       break;
@@ -157,10 +161,10 @@ unsigned long Receive_Serial(void)
     {// als er een error is, dan een error-event genereren en verzenden.
     if(error!=VALUE_PARAMETER)Cmd=0;
     Event=command2event(CMD_ERROR,Cmd,error);
-    PrintEvent(Event,0, DIRECTION_INTERNAL);
-    Nodo_2_RawSignal(Event);
-    RawSendRF();
-    RawSendIR();
+    PrintEvent(Event,0, DIRECTION_INTERNAL); //???
+    //??? Nog nader bekijken of er een event gegenereerd moet worden al het foutive commando afkomstig is van Serial.
+    //??? ProcessEvent(Event,0,0,0)
+    //??? SendEvent(Event);
     return false;
     }
  return 0L;
