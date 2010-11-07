@@ -150,9 +150,8 @@ boolean GetStatus(int *Command, int *Par1, int *Par2)
       *Par2=S.AnalyseSharpness;
       break;
 
-    case CMD_DIVERT_SETTINGS:
-      *Par1=S.DivertType;
-      *Par2=S.DivertPort;
+    case CMD_TRANSMIT_SETTINGS:
+      *Par1=S.TransmitPort;
       break;
 
     case CMD_CLOCK_EVENT_DAYLIGHT:
@@ -290,8 +289,7 @@ void ResetFactory(void)
   S.Trace              = 0;
   S.AnalyseSharpness   = 50;
   S.AnalyseTimeOut     = 10000;
-  S.DivertPort         = VALUE_PORT_IR_RF;
-  S.DivertType         = VALUE_TYPE_EVENT;
+  S.TransmitPort       = VALUE_SOURCE_IR_RF;
   S.WaitFreeRFAction   = VALUE_OFF;
   S.DaylightSaving     = DLS();
   

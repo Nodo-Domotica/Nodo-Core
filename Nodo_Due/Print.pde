@@ -12,25 +12,12 @@ void PrintEvent(unsigned long Content, byte Port, boolean Direction)
     PrintComma();
     }
 
-  switch(Direction)
+  if(Direction)
     {
-    case DIRECTION_IN:
-       PrintText(Text_10,false);
-       break;
-    case DIRECTION_OUT:
-       PrintText(Text_11,false);
-       break;
-    case DIRECTION_INTERNAL:
-       PrintText(Text_12,false);
-       break;
-    case DIRECTION_EXECUTE:
-       PrintText(Text_13,false);
-       break;
-    default:
-       break;   
+    Serial.print(cmd2str(Direction));
+    Serial.print(": ");
     }
 
-  // Poort
   if(Port)
     Serial.print(cmd2str(Port));
     
@@ -85,7 +72,7 @@ void PrintLine(void)
  \*********************************************************************************************/
 void PrintComma(void)
   {
-  Serial.print(",");
+  Serial.print(", ");
   }
 
 
@@ -165,7 +152,6 @@ void PrintEventCode(unsigned long Code)
     // Par1 als tekst en par2 als tekst
     case CMD_ERROR:
     case CMD_TRACE:
-    case CMD_DIVERT_SETTINGS:
     case CMD_WILDCARD_EVENT:
       P1=P_TEXT;
       P2=P_TEXT;
@@ -180,6 +166,7 @@ void PrintEventCode(unsigned long Code)
       break;
 
     // Par1 als tekst en par2 niet
+    case CMD_TRANSMIT_SETTINGS:
     case CMD_SIMULATE:
     case CMD_SEND_RAW:
       P1=P_TEXT;
@@ -262,13 +249,13 @@ void PrintEventlistEntry(int entry, byte d)
   unsigned long Event, Action;
 
   Eventlist_Read(entry,&Event,&Action); // leesregel uit de Eventlist.    
-  PrintText(Text_15,false);
+  Serial.print(cmd2str(VALUE_SOURCE_EVENTLIST));
+  Serial.print(" ");
 
   if(d>1)
     {
-    Serial.print("(");
     Serial.print(d,DEC);
-    Serial.print(") ");
+    Serial.print(".");
     }
   Serial.print(entry,DEC);
   Serial.print(": ");

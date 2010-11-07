@@ -40,20 +40,20 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   
   if(Command) // is de ontvangen code een uitvoerbaar commando?
     {
-    if(S.Trace&1)
-      PrintEvent(Content,Src,DIRECTION_EXECUTE);
+//    if(S.Trace&1) ???
+      PrintEvent(Content,0,VALUE_DIRECTION_EXECUTE);
       
     switch(Command)
       {   
       case CMD_SEND_KAKU:
         KAKU_2_RawSignal(Content);
-        PrintEvent(command2event(CMD_KAKU,Par1,Par2),VALUE_PORT_RF,DIRECTION_OUT);
+        PrintEvent(command2event(CMD_KAKU,Par1,Par2), VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT);
         RawSendRF();      
         break;
         
       case CMD_SEND_KAKU_NEW:
         NewKAKU_2_RawSignal(Content);
-        PrintEvent(command2event(CMD_KAKU_NEW,Par1,Par2),VALUE_PORT_RF, DIRECTION_OUT);
+        PrintEvent(command2event(CMD_KAKU_NEW,Par1,Par2), VALUE_SOURCE_RF, VALUE_DIRECTION_OUTPUT);
         RawSendRF();      
         break;
         
@@ -199,14 +199,14 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
     case CMD_SEND_RAW:
       // verzend de de inhoud van de RAW buffer ??? DivertSettings als settings?
-      if(PreviousSrc!=VALUE_PORT_IR && (Par1==VALUE_PORT_IR || Par1==VALUE_PORT_IR_RF))
+      if(PreviousSrc!= VALUE_SOURCE_IR && (Par1== VALUE_SOURCE_IR || Par1== VALUE_SOURCE_IR_RF))
         {
-        PrintEvent(0,VALUE_PORT_IR,DIRECTION_OUT);
+        PrintEvent(0, VALUE_SOURCE_IR,VALUE_DIRECTION_OUTPUT);
         RawSendIR();
         }
-      if(PreviousSrc!=VALUE_PORT_RF && (Par1==VALUE_PORT_RF || Par1==VALUE_PORT_IR_RF))
+      if(PreviousSrc!= VALUE_SOURCE_RF && (Par1== VALUE_SOURCE_RF || Par1== VALUE_SOURCE_IR_RF))
         {
-        PrintEvent(0,VALUE_PORT_RF,DIRECTION_OUT);
+        PrintEvent(0, VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT);
         RawSendRF();      
         }
       PrintRawSignal();PrintTerm();
@@ -337,13 +337,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
          error=VALUE_PARAMETER;  
       break;
 
-    case CMD_DIVERT:
-      
-      if(Par1<=10)
-        DivertUnit=Par1;
-      else
-        error=VALUE_PARAMETER;  
-      break;
 
     case CMD_COPYSIGNAL:
       if(Par1==VALUE_RF_2_IR || Par1==VALUE_IR_2_RF)
@@ -357,11 +350,10 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         error=VALUE_PARAMETER;  
       break;        
 
-    case CMD_DIVERT_SETTINGS:
-      if((Par1==VALUE_TYPE_EVENT || Par1==CMD_USER_EVENT || Par1==VALUE_ALL) && (Par2==VALUE_PORT_IR || Par2==VALUE_PORT_IR_RF || Par2==VALUE_PORT_RF))
+    case CMD_TRANSMIT_SETTINGS:
+      if(Par1== VALUE_SOURCE_IR || Par1== VALUE_SOURCE_IR_RF || Par1== VALUE_SOURCE_RF)
         {
-        S.DivertType=Par1;
-        S.DivertPort=Par2;
+        S.TransmitPort=Par1;
         SaveSettings();
         }
       else
@@ -389,7 +381,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     if(error!=VALUE_PARAMETER)Command=0;
     Event=command2event(CMD_ERROR,Command,error);
     SendEvent(Event);
-    ProcessEvent(Event,0,0,0)
+    ProcessEvent(Event,VALUE_DIRECTION_INTERNAL,0,0,0);
     return false;
     }
   return true;

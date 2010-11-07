@@ -25,7 +25,7 @@
  \*********************************************************************************************/
 #define MACRO_EXECUTION_DEPTH 10 // maximale nesting van macro's.
  
-boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long PreviousContent, byte PreviousPort)
+boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, unsigned long PreviousContent, byte PreviousPort)
   {
   unsigned long Event_1, Event_2;
   byte Type=EventType(IncommingEvent);
@@ -40,8 +40,8 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
    if(S.WaitFreeRFAction==VALUE_SERIES)WaitFreeRF(S.WaitFreeRFWindow);
    }
 
-  //??? issue 123 if(depth==0 || S.Trace&1)PrintEvent(IncommingEvent,Port,DIRECTION_IN);  // geef event weer op Serial
-  PrintEvent(IncommingEvent,Port,DIRECTION_IN);  // geef event weer op Serial
+  //??? issue 123 if(depth==0 || S.Trace&1)PrintEvent(IncommingEvent,Port,VALUE_DIRECTION_INPUT);  // geef event weer op Serial
+  PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
   digitalWrite(MonitorLedPin,HIGH);          // LED aan om aan te geven dat er wat ontvangen is en verwerkt wordt
   
   if(depth++>=MACRO_EXECUTION_DEPTH)
@@ -83,7 +83,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
           
         if(EventPart(Event_2,EVENT_PART_COMMAND)==EVENT_PART_COMMAND) // is de ontvangen code een uitvoerbaar commando?
           {
-          if(!ExecuteCommand(Event_2,VALUE_SOURCE_MACRO,IncommingEvent,Port))
+          if(!ExecuteCommand(Event_2, VALUE_SOURCE_EVENTLIST,IncommingEvent,Port))
             {
             depth--;
             return true;
@@ -93,10 +93,10 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Port, unsigned long Prev
           {// het is een ander soort event;
           if(Event_1!=command2event(CMD_WILDCARD_EVENT,0,0))
             {
-            if(S.Trace&1)
-              PrintEvent(Event_2,VALUE_SOURCE_MACRO,DIRECTION_IN);
+//      ???     if(S.Trace&1)
+//              PrintEvent(Event_2, VALUE_SOURCE_EVENTLIST,VALUE_DIRECTION_INPUT);
   
-            if(!ProcessEvent(Event_2,VALUE_SOURCE_MACRO,IncommingEvent,Port))
+            if(!ProcessEvent(Event_2,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_EVENTLIST,IncommingEvent,Port))
               {
               depth--;
               return true;
@@ -225,14 +225,14 @@ boolean Eventlist_Read(int address, unsigned long *Event, unsigned long *Action)
    {
    Nodo_2_RawSignal(Event);
 
-   if(S.DivertPort==VALUE_PORT_IR || S.DivertPort==VALUE_PORT_IR_RF)
+   if(S.TransmitPort== VALUE_SOURCE_IR || S.TransmitPort== VALUE_SOURCE_IR_RF)
      {
-     PrintEvent(Event,VALUE_PORT_IR,DIRECTION_OUT);
+     PrintEvent(Event, VALUE_SOURCE_IR,VALUE_DIRECTION_OUTPUT);
      RawSendIR();
      } 
-   if(S.DivertPort==VALUE_PORT_RF || S.DivertPort==VALUE_PORT_IR_RF)
+   if(S.TransmitPort== VALUE_SOURCE_RF || S.TransmitPort== VALUE_SOURCE_IR_RF)
      {
-     PrintEvent(Event,VALUE_PORT_RF,DIRECTION_OUT);
+     PrintEvent(Event, VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT);
      RawSendRF();
      }
    }

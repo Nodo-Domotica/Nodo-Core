@@ -124,7 +124,6 @@ unsigned long Receive_Serial(void)
        if(Par1>0 && Par1<=UNIT_MAX)
          {
          S.Unit=Par1&0xf; // Par1 &0xf omdat alleen waarden van 0..15 geldig zijn.
-         DivertUnit=S.Unit;   // Alle commando's en events zijn voor de Nodo zelf.
          if(Par2>0 && Par2<=10)
            S.Home=Par2;
          SaveSettings();
@@ -161,7 +160,7 @@ unsigned long Receive_Serial(void)
     {// als er een error is, dan een error-event genereren en verzenden.
     if(error!=VALUE_PARAMETER)Cmd=0;
     Event=command2event(CMD_ERROR,Cmd,error);
-    PrintEvent(Event,0, DIRECTION_INTERNAL); //???
+    PrintEvent(Event,0, VALUE_DIRECTION_INTERNAL); //???
     //??? Nog nader bekijken of er een event gegenereerd moet worden al het foutive commando afkomstig is van Serial.
     //??? ProcessEvent(Event,0,0,0)
     //??? SendEvent(Event);

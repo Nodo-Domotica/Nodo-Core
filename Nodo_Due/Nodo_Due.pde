@@ -7,11 +7,12 @@
  - WildCard goed testen
 
  Done:
- - issue 126
- - issue 131
- - issue 130
- - Checkt op geldige waarden voor parameters van commando's en Event genereren als er zich een error heeft voorgedaan
- - LET OP tijdelijk staat versienummer van de Nodo op 0.
+ - Aanpassing notatiewijze verwerking events. Variabelen, klok en timers zijn INTERNAL i.p.v. INPUT.
+ - Bij uitvoer v/e commando wordt EXECUTE weergeven 
+ - LET OP tijdelijk staat versienummer van de Nodo op 2.
+ - UserEvent van 90 verhuisd naar 100
+ - Opschonen strings
+ - extra ruimte voor uitbreiding nieuwe commando's & events.
  
 
  \*****************************************************************************************************/
@@ -49,7 +50,7 @@
  *
  ********************************************************************************************************/
 
-#define VERSION                   99 // Nodo Version nummer
+#define VERSION                   02 // Nodo Version nummer
 #define BAUD                   19200 // Baudrate voor seriële communicatie.
 #define SERIAL_TERMINATOR_1     0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>, default voor EventGhost
 #define SERIAL_TERMINATOR_2     0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
@@ -71,116 +72,121 @@ prog_char PROGMEM Text_03[] = ", Home ";
 prog_char PROGMEM Text_04[] = " (DaylightSaving)";
 prog_char PROGMEM Text_05[] = "Dim";
 prog_char PROGMEM Text_06[] = "SYSTEM: Unknown command!";
-prog_char PROGMEM Text_07[] = "EXECUTE: Divert to unit ";
 prog_char PROGMEM Text_08[] = "Unit-";
 prog_char PROGMEM Text_09[] = "SYSTEM: Break!";
-prog_char PROGMEM Text_10[] = "INPUT: ";
-prog_char PROGMEM Text_11[] = "OUTPUT: ";
-prog_char PROGMEM Text_12[] = "SYSTEM: ";
-prog_char PROGMEM Text_13[] = "EXECUTE: ";
 prog_char PROGMEM Text_14[] = ", Unit ";
-prog_char PROGMEM Text_15[] = "EVENTLIST: ";
-prog_char PROGMEM Text_16[] = "SYSTEM: Parameter error!";
 prog_char PROGMEM Text_26[] = "SYSTEM: Waiting for RF/IR event...";
 prog_char PROGMEM Text_30[] = ", Rawsignal=(";
 prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 
-#define RANGE_VALUE 24 // alle codes kleiner of gelijk aan deze waarde zijn vaste Nodo waarden.
-#define RANGE_EVENT 73 // alle codes groter of gelijk aan deze waarde zijn een event.
-#define COMMAND_MAX 92 // aantal commando's (geteld vanaf 0)
+#define RANGE_VALUE 30 // alle codes kleiner of gelijk aan deze waarde zijn vaste Nodo waarden.
+#define RANGE_EVENT 81 // alle codes groter of gelijk aan deze waarde zijn een event.
+#define COMMAND_MAX 101 // aantal commando's (dus geteld vanaf 0)
 
 #define VALUE_OFF 0
 #define VALUE_ON 1
 #define VALUE_PARAMETER 2
-#define VALUE_PORT_IR 3
-#define VALUE_PORT_IR_RF 4
-#define VALUE_PORT_RF 5
-#define VALUE_PORT_SERIAL 6
-#define VALUE_PORT_WIRED 7
-#define VALUE_SERIES 8
-#define VALUE_SOURCE_MACRO 9
-#define VALUE_SOURCE_SYSTEM 10
-#define VALUE_SOURCE_TIMER 11
-#define VALUE_SOURCE_VARIABLE 12
-#define VALUE_SOURCE_CLOCK 13
-#define VALUE_TYPE_COMMAND 14
-#define VALUE_TYPE_EVENT 15
-#define VALUE_TYPE_OTHERUNIT 16
-#define VALUE_TYPE_UNKNOWN 17
-#define VALUE_RES1 18
-#define VALUE_RF_2_IR 19
-#define VALUE_IR_2_RF 20
-#define VALUE_OK 21
-#define VALUE_RES2 22
-#define VALUE_RES3 23
-#define VALUE_ALL 24
-#define CMD_ANALYSE_SETTINGS 25
-#define CMD_BREAK_ON_VAR_EQU 26
-#define CMD_BREAK_ON_VAR_LESS 27
-#define CMD_BREAK_ON_VAR_MORE 28
-#define CMD_BREAK_ON_VAR_NEQU 29
-#define CMD_CLOCK_DATE 30
-#define CMD_CLOCK_YEAR 31
-#define CMD_CLOCK_TIME 32
-#define CMD_CLOCK_DOW 33
-#define CMD_DELAY 34
-#define CMD_DIVERT 35
-#define CMD_EVENTLIST_ERASE 36
-#define CMD_EVENTLIST_SHOW 37
-#define CMD_EVENTLIST_WRITE 38
-#define CMD_DIVERT_SETTINGS 39
-#define CMD_RAWSIGNAL_GET 40
-#define CMD_RAWSIGNAL_PUT 41
-#define CMD_RESET_FACTORY 42
-#define CMD_SEND_KAKU 43
-#define CMD_SEND_KAKU_NEW 44
-#define CMD_SEND_RAW 45
-#define CMD_SIMULATE 46
-#define CMD_SIMULATE_DAY 47
-#define CMD_SOUND 48
-#define CMD_STATUS 49
-#define CMD_SEND_STATUS 50
-#define CMD_TIMER_RANDOM 51
-#define CMD_TIMER_RESET 52
-#define CMD_TIMER_SET 53
-#define CMD_TRACE 54
-#define CMD_UNIT 55
-#define CMD_VARIABLE_CLEAR 56
-#define CMD_VARIABLE_DEC 57
-#define CMD_VARIABLE_INC 58
-#define CMD_VARIABLE_SET 59
-#define CMD_VARIABLE_VARIABLE 60
-#define CMD_VARIABLE_WIRED_ANALOG 61
-#define CMD_WAITFREERF 62
-#define CMD_WIRED_ANALOG 63
-#define CMD_WIRED_OUT 64
-#define CMD_WIRED_PULLUP 65
-#define CMD_WIRED_SMITTTRIGGER 66
-#define CMD_WIRED_THRESHOLD 67
-#define CMD_SEND_USEREVENT 68
-#define CMD_COPYSIGNAL 69
-#define CMD_COMMAND_RES1 70
-#define CMD_COMMAND_RES2 71
-#define CMD_COMMAND_RES3 72
-#define CMD_BOOT_EVENT 73
-#define CMD_CLOCK_EVENT_DAYLIGHT 74
-#define CMD_CLOCK_EVENT_ALL 75
-#define CMD_CLOCK_EVENT_SUN 76
-#define CMD_CLOCK_EVENT_MON 77
-#define CMD_CLOCK_EVENT_TUE 78
-#define CMD_CLOCK_EVENT_WED 79
-#define CMD_CLOCK_EVENT_THU 80
-#define CMD_CLOCK_EVENT_FRI 81
-#define CMD_CLOCK_EVENT_SAT 82
-#define CMD_EVENT_STATUS 83
-#define CMD_KAKU 84
-#define CMD_KAKU_NEW 85
-#define CMD_TIMER_EVENT 86
-#define CMD_WIRED_IN_EVENT 87
-#define CMD_VARIABLE_EVENT 88
-#define CMD_WILDCARD_EVENT 89
-#define CMD_USER_EVENT 90 // UserEvent moet altijd op 90 blijven anders opnieuw leren aan universele afstandsbediening!
-#define CMD_ERROR 91
+#define VALUE_OFF 0
+#define VALUE_ON 1
+#define VALUE_PARAMETER 2
+#define VALUE_SOURCE_IR 3
+#define VALUE_SOURCE_IR_RF 4
+#define VALUE_SOURCE_RF 5
+#define VALUE_SOURCE_SERIAL 6
+#define VALUE_SOURCE_WIRED 7
+#define VALUE_SOURCE_EVENTLIST 8
+#define VALUE_SOURCE_SYSTEM 9
+#define VALUE_SOURCE_TIMER 10
+#define VALUE_SOURCE_VARIABLE 11
+#define VALUE_SOURCE_CLOCK 12
+#define VALUE_TYPE_COMMAND 13
+#define VALUE_TYPE_EVENT 14
+#define VALUE_TYPE_OTHERUNIT 15
+#define VALUE_TYPE_UNKNOWN 16
+#define VALUE_DIRECTION_INPUT 17
+#define VALUE_DIRECTION_OUTPUT 18
+#define VALUE_DIRECTION_INTERNAL 19
+#define VALUE_DIRECTION_EXECUTE 20
+#define VALUE_SERIES 21
+#define VALUE_RF_2_IR 22
+#define VALUE_IR_2_RF 23
+#define VALUE_ALL 24 // Deze waarde MOET >16 zijn.
+#define VALUE_RES1 25
+#define VALUE_RES2 26
+#define VALUE_RES3 27
+#define VALUE_RES4 28
+#define VALUE_RES6 29
+#define VALUE_RES5 30
+#define CMD_ANALYSE_SETTINGS 31
+#define CMD_BREAK_ON_VAR_EQU 32
+#define CMD_BREAK_ON_VAR_LESS 33
+#define CMD_BREAK_ON_VAR_MORE 34
+#define CMD_BREAK_ON_VAR_NEQU 35
+#define CMD_CLOCK_DATE 36
+#define CMD_CLOCK_YEAR 37
+#define CMD_CLOCK_TIME 38
+#define CMD_CLOCK_DOW 39
+#define CMD_DELAY 40
+#define CMD_DIVERT 41
+#define CMD_EVENTLIST_ERASE 42
+#define CMD_EVENTLIST_SHOW 43
+#define CMD_EVENTLIST_WRITE 44
+#define CMD_TRANSMIT_SETTINGS 45
+#define CMD_RAWSIGNAL_GET 46
+#define CMD_RAWSIGNAL_PUT 47
+#define CMD_RESET_FACTORY 48
+#define CMD_SEND_KAKU 49
+#define CMD_SEND_KAKU_NEW 50
+#define CMD_SEND_RAW 51
+#define CMD_SIMULATE 52
+#define CMD_SIMULATE_DAY 53
+#define CMD_SOUND 54
+#define CMD_STATUS 55
+#define CMD_SEND_STATUS 56
+#define CMD_TIMER_RANDOM 57
+#define CMD_TIMER_RESET 58
+#define CMD_TIMER_SET 59
+#define CMD_TRACE 60
+#define CMD_UNIT 61
+#define CMD_VARIABLE_CLEAR 62
+#define CMD_VARIABLE_DEC 63
+#define CMD_VARIABLE_INC 64
+#define CMD_VARIABLE_SET 65
+#define CMD_VARIABLE_VARIABLE 66
+#define CMD_VARIABLE_WIRED_ANALOG 67
+#define CMD_WAITFREERF 68
+#define CMD_WIRED_ANALOG 69
+#define CMD_WIRED_OUT 70
+#define CMD_WIRED_PULLUP 71
+#define CMD_WIRED_SMITTTRIGGER 72
+#define CMD_WIRED_THRESHOLD 73
+#define CMD_SEND_USEREVENT 74
+#define CMD_COPYSIGNAL 75
+#define CMD_COMMAND_RES1 76
+#define CMD_COMMAND_RES2 77
+#define CMD_COMMAND_RES3 78
+#define CMD_COMMAND_RES3 79
+#define CMD_COMMAND_RES3 80
+#define CMD_BOOT_EVENT 81
+#define CMD_CLOCK_EVENT_DAYLIGHT 82
+#define CMD_CLOCK_EVENT_ALL 83
+#define CMD_CLOCK_EVENT_SUN 84
+#define CMD_CLOCK_EVENT_MON 85
+#define CMD_CLOCK_EVENT_TUE 86
+#define CMD_CLOCK_EVENT_WED 87
+#define CMD_CLOCK_EVENT_THU 88
+#define CMD_CLOCK_EVENT_FRI 89
+#define CMD_CLOCK_EVENT_SAT 90
+#define CMD_EVENT_STATUS 91
+#define CMD_KAKU 92
+#define CMD_KAKU_NEW 93
+#define CMD_TIMER_EVENT 94
+#define CMD_WIRED_IN_EVENT 95
+#define CMD_VARIABLE_EVENT 96
+#define CMD_WILDCARD_EVENT 97
+#define CMD_OK 98
+#define CMD_ERROR 99
+#define CMD_USER_EVENT 100// deze moet altijd op 100 blijven anders opnieuw leren aan universele afstandsbediening!
 
 prog_char PROGMEM Cmd_0[]="Off";
 prog_char PROGMEM Cmd_1[]="On";
@@ -190,91 +196,99 @@ prog_char PROGMEM Cmd_4[]="IR&RF";
 prog_char PROGMEM Cmd_5[]="RF";
 prog_char PROGMEM Cmd_6[]="Serial";
 prog_char PROGMEM Cmd_7[]="Wired";
-prog_char PROGMEM Cmd_8[]="Series";
-prog_char PROGMEM Cmd_9[]="EventList";
-prog_char PROGMEM Cmd_10[]="System";
-prog_char PROGMEM Cmd_11[]="Timers";
-prog_char PROGMEM Cmd_12[]="Variables";
-prog_char PROGMEM Cmd_13[]="Clock";
-prog_char PROGMEM Cmd_14[]="Command";
-prog_char PROGMEM Cmd_15[]="Event";
-prog_char PROGMEM Cmd_16[]="OtherUnit";
-prog_char PROGMEM Cmd_17[]="Unknown";
-prog_char PROGMEM Cmd_18[]="";
-prog_char PROGMEM Cmd_19[]="RF2IR";
-prog_char PROGMEM Cmd_20[]="IR2RF";
-prog_char PROGMEM Cmd_21[]="Ok";
-prog_char PROGMEM Cmd_22[]="";
-prog_char PROGMEM Cmd_23[]="";
+prog_char PROGMEM Cmd_8[]="EventList";
+prog_char PROGMEM Cmd_9[]="System";
+prog_char PROGMEM Cmd_10[]="Timers";
+prog_char PROGMEM Cmd_11[]="Variables";
+prog_char PROGMEM Cmd_12[]="Clock";
+prog_char PROGMEM Cmd_13[]="Command";
+prog_char PROGMEM Cmd_14[]="Event";
+prog_char PROGMEM Cmd_15[]="OtherUnit";
+prog_char PROGMEM Cmd_16[]="Unknown";
+prog_char PROGMEM Cmd_17[]="INPUT";
+prog_char PROGMEM Cmd_18[]="OUTPUT";
+prog_char PROGMEM Cmd_19[]="INTERNAL";
+prog_char PROGMEM Cmd_20[]="EXECUTE";
+prog_char PROGMEM Cmd_21[]="Series";
+prog_char PROGMEM Cmd_22[]="RF2IR";
+prog_char PROGMEM Cmd_23[]="IR2RF";
 prog_char PROGMEM Cmd_24[]="All";
-prog_char PROGMEM Cmd_25[]="ReceiveSettings";
-prog_char PROGMEM Cmd_26[]="BreakOnVarEqu";
-prog_char PROGMEM Cmd_27[]="BreakOnVarLess";
-prog_char PROGMEM Cmd_28[]="BreakOnVarMore";
-prog_char PROGMEM Cmd_29[]="BreakOnVarNEqu";
-prog_char PROGMEM Cmd_30[]="ClockSetDate";
-prog_char PROGMEM Cmd_31[]="ClockSetYear";
-prog_char PROGMEM Cmd_32[]="ClockSetTime";
-prog_char PROGMEM Cmd_33[]="ClockSetDOW";
-prog_char PROGMEM Cmd_34[]="Delay";
-prog_char PROGMEM Cmd_35[]="Divert";
-prog_char PROGMEM Cmd_36[]="EventlistErase";
-prog_char PROGMEM Cmd_37[]="EventlistShow";
-prog_char PROGMEM Cmd_38[]="EventlistWrite";
-prog_char PROGMEM Cmd_39[]="DivertSettings";
-prog_char PROGMEM Cmd_40[]="RawsignalGet";
-prog_char PROGMEM Cmd_41[]="RawsignalPut";
-prog_char PROGMEM Cmd_42[]="Reset";
-prog_char PROGMEM Cmd_43[]="SendKAKU";
-prog_char PROGMEM Cmd_44[]="SendNewKAKU";
-prog_char PROGMEM Cmd_45[]="RawsignalSend";
-prog_char PROGMEM Cmd_46[]="Simulate";
-prog_char PROGMEM Cmd_47[]="SimulateDay";
-prog_char PROGMEM Cmd_48[]="Sound";
-prog_char PROGMEM Cmd_49[]="Status";
-prog_char PROGMEM Cmd_50[]="SendStatus";
-prog_char PROGMEM Cmd_51[]="TimerRandom";
-prog_char PROGMEM Cmd_52[]="TimerReset";
-prog_char PROGMEM Cmd_53[]="TimerSet";
-prog_char PROGMEM Cmd_54[]="Trace";
-prog_char PROGMEM Cmd_55[]="Unit";
-prog_char PROGMEM Cmd_56[]="VariableClear";
-prog_char PROGMEM Cmd_57[]="VariableDec";
-prog_char PROGMEM Cmd_58[]="VariableInc";
-prog_char PROGMEM Cmd_59[]="VariableSet";
-prog_char PROGMEM Cmd_60[]="VariableVariable";
-prog_char PROGMEM Cmd_61[]="VariableWiredAnalog";
-prog_char PROGMEM Cmd_62[]="WaitFreeRF";
-prog_char PROGMEM Cmd_63[]="WiredAnalog";
-prog_char PROGMEM Cmd_64[]="WiredOut";
-prog_char PROGMEM Cmd_65[]="WiredPullup";
-prog_char PROGMEM Cmd_66[]="WiredSmittTrigger";
-prog_char PROGMEM Cmd_67[]="WiredThreshold";
-prog_char PROGMEM Cmd_68[]="SendUserEvent";
-prog_char PROGMEM Cmd_69[]="RawsignalCopy";
-prog_char PROGMEM Cmd_70[]="";
-prog_char PROGMEM Cmd_71[]="";
-prog_char PROGMEM Cmd_72[]="";
-prog_char PROGMEM Cmd_73[]="Boot";
-prog_char PROGMEM Cmd_74[]="ClockDaylight";
-prog_char PROGMEM Cmd_75[]="ClockAll";
-prog_char PROGMEM Cmd_76[]="ClockSun";
-prog_char PROGMEM Cmd_77[]="ClockMon";
-prog_char PROGMEM Cmd_78[]="ClockTue";
-prog_char PROGMEM Cmd_79[]="ClockWed";
-prog_char PROGMEM Cmd_80[]="ClockThu";
-prog_char PROGMEM Cmd_81[]="ClockFri";
-prog_char PROGMEM Cmd_82[]="ClockSat";
-prog_char PROGMEM Cmd_83[]="EventStatus";
-prog_char PROGMEM Cmd_84[]="KAKU";
-prog_char PROGMEM Cmd_85[]="NewKAKU";
-prog_char PROGMEM Cmd_86[]="Timer";
-prog_char PROGMEM Cmd_87[]="WiredIn";
-prog_char PROGMEM Cmd_88[]="Variable";
-prog_char PROGMEM Cmd_89[]="Wildcard";
-prog_char PROGMEM Cmd_90[]="UserEvent"; // UserEvent moet altijd op 90 blijven anders moet gebruiker opnieuw leren aan universele afstandsbediening!
-prog_char PROGMEM Cmd_91[]="Error"; // UserEvent moet altijd op 90 blijven anders moet gebruiker opnieuw leren aan universele afstandsbediening!
-
+prog_char PROGMEM Cmd_25[]="";
+prog_char PROGMEM Cmd_26[]="";
+prog_char PROGMEM Cmd_27[]="";
+prog_char PROGMEM Cmd_28[]="";
+prog_char PROGMEM Cmd_29[]="";
+prog_char PROGMEM Cmd_30[]="";
+prog_char PROGMEM Cmd_31[]="ReceiveSettings";
+prog_char PROGMEM Cmd_32[]="BreakOnVarEqu";
+prog_char PROGMEM Cmd_33[]="BreakOnVarLess";
+prog_char PROGMEM Cmd_34[]="BreakOnVarMore";
+prog_char PROGMEM Cmd_35[]="BreakOnVarNEqu";
+prog_char PROGMEM Cmd_36[]="ClockSetDate";
+prog_char PROGMEM Cmd_37[]="ClockSetYear";
+prog_char PROGMEM Cmd_38[]="ClockSetTime";
+prog_char PROGMEM Cmd_39[]="ClockSetDOW";
+prog_char PROGMEM Cmd_40[]="Delay";
+prog_char PROGMEM Cmd_41[]="Divert";
+prog_char PROGMEM Cmd_42[]="EventlistErase";
+prog_char PROGMEM Cmd_43[]="EventlistShow";
+prog_char PROGMEM Cmd_44[]="EventlistWrite";
+prog_char PROGMEM Cmd_45[]="TransmitSettings";
+prog_char PROGMEM Cmd_46[]="RawsignalGet";
+prog_char PROGMEM Cmd_47[]="RawsignalPut";
+prog_char PROGMEM Cmd_48[]="Reset";
+prog_char PROGMEM Cmd_49[]="SendKAKU";
+prog_char PROGMEM Cmd_50[]="SendNewKAKU";
+prog_char PROGMEM Cmd_51[]="RawsignalSend";
+prog_char PROGMEM Cmd_52[]="Simulate";
+prog_char PROGMEM Cmd_53[]="SimulateDay";
+prog_char PROGMEM Cmd_54[]="Sound";
+prog_char PROGMEM Cmd_55[]="Status";
+prog_char PROGMEM Cmd_56[]="SendStatus";
+prog_char PROGMEM Cmd_57[]="TimerRandom";
+prog_char PROGMEM Cmd_58[]="TimerReset";
+prog_char PROGMEM Cmd_59[]="TimerSet";
+prog_char PROGMEM Cmd_60[]="Trace";
+prog_char PROGMEM Cmd_61[]="Unit";
+prog_char PROGMEM Cmd_62[]="VariableClear";
+prog_char PROGMEM Cmd_63[]="VariableDec";
+prog_char PROGMEM Cmd_64[]="VariableInc";
+prog_char PROGMEM Cmd_65[]="VariableSet";
+prog_char PROGMEM Cmd_66[]="VariableVariable";
+prog_char PROGMEM Cmd_67[]="VariableWiredAnalog";
+prog_char PROGMEM Cmd_68[]="WaitFreeRF";
+prog_char PROGMEM Cmd_69[]="WiredAnalog";
+prog_char PROGMEM Cmd_70[]="WiredOut";
+prog_char PROGMEM Cmd_71[]="WiredPullup";
+prog_char PROGMEM Cmd_72[]="WiredSmittTrigger";
+prog_char PROGMEM Cmd_73[]="WiredThreshold";
+prog_char PROGMEM Cmd_74[]="SendUserEvent";
+prog_char PROGMEM Cmd_75[]="RawsignalCopy";
+prog_char PROGMEM Cmd_76[]="";
+prog_char PROGMEM Cmd_77[]="";
+prog_char PROGMEM Cmd_78[]="";
+prog_char PROGMEM Cmd_79[]="";
+prog_char PROGMEM Cmd_80[]="";
+prog_char PROGMEM Cmd_81[]="Boot";
+prog_char PROGMEM Cmd_82[]="ClockDaylight";
+prog_char PROGMEM Cmd_83[]="ClockAll";
+prog_char PROGMEM Cmd_84[]="ClockSun";
+prog_char PROGMEM Cmd_85[]="ClockMon";
+prog_char PROGMEM Cmd_86[]="ClockTue";
+prog_char PROGMEM Cmd_87[]="ClockWed";
+prog_char PROGMEM Cmd_88[]="ClockThu";
+prog_char PROGMEM Cmd_89[]="ClockFri";
+prog_char PROGMEM Cmd_90[]="ClockSat";
+prog_char PROGMEM Cmd_91[]="EventStatus";
+prog_char PROGMEM Cmd_92[]="KAKU";
+prog_char PROGMEM Cmd_93[]="NewKAKU";
+prog_char PROGMEM Cmd_94[]="Timer";
+prog_char PROGMEM Cmd_95[]="WiredIn";
+prog_char PROGMEM Cmd_96[]="Variable";
+prog_char PROGMEM Cmd_97[]="Wildcard";
+prog_char PROGMEM Cmd_98[]="Ok";
+prog_char PROGMEM Cmd_99[]="Error";
+prog_char PROGMEM Cmd_100[]="UserEvent"; // deze moet altijd op 100 blijven anders opnieuw leren aan universele afstandsbediening!
 
 
 // tabel die refereert aan de commando strings
@@ -288,7 +302,8 @@ PROGMEM const char *CommandText_tabel[]={
   Cmd_60,Cmd_61,Cmd_62,Cmd_63,Cmd_64,Cmd_65,Cmd_66,Cmd_67,Cmd_68,Cmd_69,
   Cmd_70,Cmd_71,Cmd_72,Cmd_73,Cmd_74,Cmd_75,Cmd_76,Cmd_77,Cmd_78,Cmd_79,          
   Cmd_80,Cmd_81,Cmd_82,Cmd_83,Cmd_84,Cmd_85,Cmd_86,Cmd_87,Cmd_88,Cmd_89,          
-  Cmd_90,Cmd_91};          
+  Cmd_90,Cmd_91,Cmd_92,Cmd_93,Cmd_94,Cmd_95,Cmd_96,Cmd_97,Cmd_98,Cmd_99,          
+  Cmd_100};          
 
 PROGMEM prog_uint16_t Sunrise[]={         
   528,525,516,503,487,467,446,424,401,378,355,333,313,295,279,268,261,259,263,271,283,297,312,329,
@@ -325,11 +340,6 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define USER_VARIABLES_MAX          15 // aantal beschikbare gebbruikersvariabelen voor de user.
 #define RAW_BUFFER_SIZE            200 // Maximaal aantal te ontvangen bits*2. 
 
-#define DIRECTION_IN                 1
-#define DIRECTION_OUT                2
-#define DIRECTION_INTERNAL           3
-#define DIRECTION_EXECUTE            4
-
 #define EVENT_PART_COMMAND           1
 #define EVENT_PART_HOME              2
 #define EVENT_PART_UNIT              3
@@ -343,8 +353,8 @@ boolean WiredInputStatus[4],WiredOutputStatus[4];   // Wired variabelen
 unsigned int RawSignal[RAW_BUFFER_SIZE];            // Tabel met de gemeten pulsen in microseconden. eerste waarde is het aantal bits*2
 unsigned long EventTimeCodePrevious;                // t.b.v. voorkomen herhaald ontvangen van dezelfde code binnen ingestelde tijd
 byte DaylightPrevious;                              // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet
-byte Simulate, DivertUnit;
-void(*Reset)(void)=0; //declare reset function @ address 0
+boolean Simulate;
+void(*Reset)(void)=0; //reset functie op adres 0
 uint8_t RFbit,RFport,IRbit,IRport;
 struct RealTimeClock {int Hour,Minutes,Seconds,Date,Month,Day,Daylight,Year,DaylightSaving;}Time;
 
@@ -358,7 +368,7 @@ struct Settings
   byte    Unit;
   byte    Home;
   byte    Trace;
-  byte    DivertType,DivertPort;
+  byte    TransmitPort;
   int     WaitFreeRFWindow;
   byte    WaitFreeRFAction;
   boolean DaylightSaving;
@@ -389,7 +399,6 @@ void setup()
   SerialHold(true);    // Zend een X-Off zodat de nodo geen seriele tekens ontvangt die nog niet verwerkt kunnen worden
   IR38Khz_set();       // Initialiseet de 38Khz draaggolf voor de IR-zender.
   LoadSettings();      // laad alle settings zoals deze in de EEPROM zijn opgeslagen
-  DivertUnit=S.Unit;
   
   if(S.Version!=VERSION)ResetFactory(); // Als versienummer in EEPROM niet correct is, dan een ResetFactory.
   
@@ -409,7 +418,7 @@ void setup()
   for(byte x=0;x<4;x++){WiredInputStatus[x]=true;}
 
   PrintWelcome(); 
-  ProcessEvent(command2event(CMD_BOOT_EVENT,0,0),VALUE_SOURCE_SYSTEM,0,0);  // Voer het 'Boot' event uit.
+  ProcessEvent(command2event(CMD_BOOT_EVENT,0,0),VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM,0,0);  // Voer het 'Boot' event uit.
   }
 
 #define Loop_INTERVAL_1          500  // tijdsinterval in ms. voor achtergrondtaken.
@@ -437,7 +446,7 @@ void loop()
       if(Serial.available()>0)
         {
         if(Content=Receive_Serial())
-          ProcessEvent(Content,VALUE_PORT_SERIAL,0,0);      // verwerk binnengekomen event.
+          ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_SERIAL,0,0);      // verwerk binnengekomen event.
         StaySharpTimer=millis()+SHARP_TIME;
         SerialHold(false);
         }
@@ -457,7 +466,7 @@ void loop()
             if(Content==Checksum && (millis()>PauseTimerIR || Content!=ContentPrevious))
                {
                PauseTimerIR=millis()+IR_ENDSIGNAL_TIME; // zodat herhalingen niet opnieuw opgepikt worden
-               ProcessEvent(Content,VALUE_PORT_IR,0,0); // verwerk binnengekomen event.
+               ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_IR,0,0); // verwerk binnengekomen event.
                ContentPrevious=Content;
                }
             Checksum=Content;
@@ -481,7 +490,7 @@ void loop()
             if(Content==Checksum && (millis()>PauseTimerRF || Content!=ContentPrevious))// tweede maal ontvangen als checksum
                {
                PauseTimerRF=millis()+RF_ENDSIGNAL_TIME; // zodat herhalingen niet opnieuw opgepikt worden
-               ProcessEvent(Content,VALUE_PORT_RF,0,0); // verwerk binnengekomen event.
+               ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_RF,0,0); // verwerk binnengekomen event.
                ContentPrevious=Content;
                }
             Checksum=Content;
@@ -501,7 +510,7 @@ void loop()
       if(CheckEventlist(Content) && EventTimeCodePrevious!=Content)
         {
         EventTimeCodePrevious=Content; 
-        ProcessEvent(Content,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
+        ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
         }
       else
         Content=0L;
@@ -512,7 +521,7 @@ void loop()
         {
         Content=command2event(CMD_CLOCK_EVENT_DAYLIGHT,Time.Daylight,0L);
         DaylightPrevious=Time.Daylight;
-        ProcessEvent(Content,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
+        ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
         }
       }// lange interval
 
@@ -545,7 +554,7 @@ void loop()
      if(z)// er is een verandering van status op de ingang. 
        {    
        Content=command2event(CMD_WIRED_IN_EVENT,WiredCounter+1,WiredInputStatus[WiredCounter]);
-       ProcessEvent(Content,VALUE_PORT_WIRED,0,0);      // verwerk binnengekomen event.
+       ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
        }
 
     // TIMER: **************** Genereer event als één van de Timers voor de gebruiker afgelopen is ***********************
@@ -559,7 +568,7 @@ void loop()
           {
           UserTimer[TimerCounter]=0L;// zet de timer op inactief.
           Content=command2event(CMD_TIMER_EVENT,TimerCounter+1,0);
-          ProcessEvent(Content,VALUE_SOURCE_TIMER,0,0);      // verwerk binnengekomen event.
+          ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_TIMER,0,0);      // verwerk binnengekomen event.
           }
         }
         
@@ -570,7 +579,7 @@ void loop()
           {
           UserVarPrevious[x]=S.UserVar[x];
           Content=command2event(CMD_VARIABLE_EVENT,x+1,S.UserVar[x]);
-          ProcessEvent(Content,VALUE_SOURCE_VARIABLE,0,0);      // verwerk binnengekomen event.
+          ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_VARIABLE,0,0);      // verwerk binnengekomen event.
           }
         }
       }// korte interval
