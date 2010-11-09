@@ -123,9 +123,10 @@ unsigned long Receive_Serial(void)
      case CMD_UNIT:
        if(Par1>0 && Par1<=UNIT_MAX)
          {
-         S.Unit=Par1&0xf; // Par1 &0xf omdat alleen waarden van 0..15 geldig zijn.
          if(Par2>0 && Par2<=10)
            S.Home=Par2;
+         else
+           error=VALUE_PARAMETER;
          SaveSettings();
          FactoryEventlist();
          Reset();

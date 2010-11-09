@@ -153,7 +153,7 @@ void WaitFreeRF(int Window)
 
   if(Simulate)return;
  
-  WindowTimer=millis()+Window; // reset de timer.  
+  WindowTimer=millis()+500+Window; // reset de timer.  ??? 1ssue 133?
   TimeOutTimer=millis()+15000; // tijd waarna de routine wordt afgebroken
 
   while(WindowTimer>millis() && TimeOutTimer>millis())
@@ -202,8 +202,8 @@ void RawSendRF(void)
   
   if(S.WaitFreeRFAction==VALUE_ALL)
     {
-    WaitFreeRF(S.WaitFreeRFWindow);
     delay(100);// ??? issue 133
+    WaitFreeRF(S.WaitFreeRFWindow);
     }
     
   digitalWrite(RF_ReceivePowerPin,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.

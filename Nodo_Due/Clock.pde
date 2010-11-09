@@ -136,15 +136,15 @@ void DS1307_read(void)
  \*********************************************************************************************/
 void ClockSet(void) 
   {
-  rtc[DS1307_SEC]=DS1307_CLOCKHALT;  // Stop the clock. Set the ClockHalt bit high to stop the rtc. This bit is part of the seconds byte
+  rtc[DS1307_SEC]  =DS1307_CLOCKHALT;  // Stop the clock. Set the ClockHalt bit high to stop the rtc. This bit is part of the seconds byte
   DS1307_save();
-  rtc[DS1307_MIN]=((Time.Minutes/10)<<4)+(Time.Minutes%10);
-  rtc[DS1307_HR]=((Time.Hour/10)<<4)+(Time.Hour%10); // schrijf de wintertijd weg.
-  rtc[DS1307_DOW]=Time.Day;
-  rtc[DS1307_DATE]=((Time.Date/10)<<4)+(Time.Date%10);
-  rtc[DS1307_MTH]=((Time.Month/10)<<4)+(Time.Month%10);
-  rtc[DS1307_YR]=(((Time.Year-DS1307_BASE_YR)/10)<<4)+(Time.Year%10); 
-  rtc[DS1307_SEC]=((Time.Seconds/10)<<4)+(Time.Seconds%10); // and start the clock again...
+  rtc[DS1307_MIN]  =((Time.Minutes/10)<<4)+(Time.Minutes%10);
+  rtc[DS1307_HR]   =((Time.Hour/10)<<4)+(Time.Hour%10); // schrijf de wintertijd weg.
+  rtc[DS1307_DOW]  =Time.Day;
+  rtc[DS1307_DATE] =((Time.Date/10)<<4)+(Time.Date%10);
+  rtc[DS1307_MTH]  =((Time.Month/10)<<4)+(Time.Month%10);
+  rtc[DS1307_YR]   =(((Time.Year-DS1307_BASE_YR)/10)<<4)+(Time.Year%10); 
+  rtc[DS1307_SEC]  =((Time.Seconds/10)<<4)+(Time.Seconds%10); // and start the clock again...
   DS1307_save();
   }
 
@@ -153,50 +153,40 @@ void ClockSet(void)
  * Eveneens wordt de Event code terug gegeven
  \*********************************************************************************************/
 unsigned long ClockRead(void)
-  {  
+  {
   DS1307_read();// lees de RTC chip uit
-  Time.Seconds=(10*((rtc[DS1307_SEC] & DS1307_HI_SEC)>>4))+(rtc[DS1307_SEC] & DS1307_LO_BCD);
-  Time.Minutes=(10*((rtc[DS1307_MIN] & DS1307_HI_MIN)>>4))+(rtc[DS1307_MIN] & DS1307_LO_BCD);
-  Time.Day=rtc[DS1307_DOW] & DS1307_LO_DOW;
-  Time.Date=(10*((rtc[DS1307_DATE] & DS1307_HI_DATE)>>4))+(rtc[DS1307_DATE] & DS1307_LO_BCD);
-  Time.Month=(10*((rtc[DS1307_MTH] & DS1307_HI_MTH)>>4))+(rtc[DS1307_MTH] & DS1307_LO_BCD);
-  Time.Year=(10*((rtc[DS1307_YR] & DS1307_HI_YR)>>4))+(rtc[DS1307_YR] & DS1307_LO_BCD)+DS1307_BASE_YR;
-  Time.Hour=(10*((rtc[DS1307_HR] & DS1307_HI_HR)>>4))+(rtc[DS1307_HR] & DS1307_LO_BCD);
-  Time.DaylightSaving=DLS();
+  Time.Seconds =(10*((rtc[DS1307_SEC] & DS1307_HI_SEC)>>4))+(rtc[DS1307_SEC] & DS1307_LO_BCD);
+  Time.Minutes =(10*((rtc[DS1307_MIN] & DS1307_HI_MIN)>>4))+(rtc[DS1307_MIN] & DS1307_LO_BCD);
+  Time.Date    =(10*((rtc[DS1307_DATE] & DS1307_HI_DATE)>>4))+(rtc[DS1307_DATE] & DS1307_LO_BCD);
+  Time.Month   =(10*((rtc[DS1307_MTH] & DS1307_HI_MTH)>>4))+(rtc[DS1307_MTH] & DS1307_LO_BCD);
+  Time.Year    =(10*((rtc[DS1307_YR] & DS1307_HI_YR)>>4))+(rtc[DS1307_YR] & DS1307_LO_BCD)+DS1307_BASE_YR;
+  Time.Hour    =(10*((rtc[DS1307_HR] & DS1307_HI_HR)>>4))+(rtc[DS1307_HR] & DS1307_LO_BCD);
+  Time.Day     =rtc[DS1307_DOW] & DS1307_LO_DOW;
 
-  // als de DaylightSaving veranderd is, dan de clock verzetten. 
-  // Dit vindt plaats op de DLS-data om 02:00 uur wintertijd,
-  // of als de datum wordt verzet.
-  if(Time.DaylightSaving!=S.DaylightSaving && Time.Hour==2)
-    {
-    if(S.DaylightSaving)// als het zomertijd IS en nu wintertijd WORDT...
+  long x=(long)pgm_read_word_near(DLSDate+Time.Year-DLSBase);
+  long y=(long)((long)(Time.Date*100L)+(long)(Time.Month*10000L)+(long)Time.Hour);
+  Time.DaylightSaving=(y>=((x/100L)*100L+30002L) && y<((x%100L)*100L+100003L));  
+  
+  
+  // Automatische zomer-/wintertijd schakeling
+  x=Time.Month*100+Time.Date;  
+  if(Time.DaylightSaving!=S.DaylightSaving  && x!=S.DaylightSavingSet)
+    {  
+    if(S.DaylightSaving)// als het zomertijd is en wintertijd wordt EN verzetdatum ongelijk aan nu
       Time.Hour=Time.Hour==0?23:Time.Hour-1;// ...dan de klok een uur terug.
-    else
-      Time.Hour=Time.Hour<23?Time.Hour+1:0;
+    else // als het wintertijd is en zomertijd wordt
+      Time.Hour=Time.Hour<23?Time.Hour+1:0; //... dan klok uur vooruit.
+    S.DaylightSavingSet=x;
     S.DaylightSaving=Time.DaylightSaving;
     SaveSettings();
     ClockSet();// verzet de RTC klok
-    PrintWelcome();
+    PrintWelcome();//??? t.b.v. testen.
     }
-  
+      
   return ((unsigned long)(S.Home))<<28 |
          ((unsigned long)(S.Unit))<<24 | 
          ((unsigned long)(CMD_CLOCK_EVENT_ALL+Time.Day))<<16 | 
          ((unsigned long)(Time.Hour))<<8 | 
          ((unsigned long)(Time.Minutes));
-  }
-
-
-/**********************************************************************************************\
- * Geeft terug of het zomertijd is (true) 
- \*********************************************************************************************/
-boolean DLS(void)
-  {
-  // haal uit de tabel de waarden behorend bij het jaar. 1e element is het jaar DaylightSavingDatesBaseYear
-  // in de tabel omschakeldata zomertijd/wintertijd voor komende 10 jaar. 
-  // één int bevat de omschakeldatum maart en oktober. 1e element is 2010
-  int x=pgm_read_word_near(DLSDate+Time.Year-DLSBase);
-  int y=Time.Date+Time.Month*100;
-  return (y>(x/100+300) && y<(x%100+1000) && Time.Hour>2);  
   }
 

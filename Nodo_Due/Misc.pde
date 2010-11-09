@@ -140,6 +140,10 @@ boolean GetStatus(int *Command, int *Par1, int *Par2)
       *Par1=S.Unit;
       *Par2=S.Home;
       break;        
+
+    case VALUE_DLS:
+      *Par1=S.DaylightSaving;
+      break;
       
     case CMD_SIMULATE:
       *Par1=Simulate;
@@ -282,7 +286,9 @@ boolean LoadSettings()
 void ResetFactory(void)
   {
   Beep(2000,2000);
-
+  
+  ClockRead();  // eerst een ClockRead doen???
+  
   S.Version            = VERSION;
   S.Unit               = UNIT;
   S.Home               = HOME;
@@ -291,7 +297,7 @@ void ResetFactory(void)
   S.AnalyseTimeOut     = 10000;
   S.TransmitPort       = VALUE_SOURCE_IR_RF;
   S.WaitFreeRFAction   = VALUE_OFF;
-  S.DaylightSaving     = DLS();
+  S.DaylightSaving     = Time.DaylightSaving;
   
   for(byte x=0;x<4;x++)
     {

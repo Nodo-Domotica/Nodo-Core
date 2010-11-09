@@ -167,6 +167,7 @@ void PrintEventCode(unsigned long Code)
 
     // Par1 als tekst en par2 niet
     case CMD_TRANSMIT_SETTINGS:
+    case VALUE_DLS:
     case CMD_SIMULATE:
     case CMD_SEND_RAW:
       P1=P_TEXT;
@@ -319,7 +320,10 @@ void PrintWelcome(void)
     {
     PrintDateTime();
     if(Time.DaylightSaving)
-      PrintText(Text_04,false);
+      {
+      PrintComma();
+      Serial.print(cmd2str(VALUE_DLS));
+      }
     PrintTerm();
     }
   PrintLine();

@@ -3,16 +3,17 @@
 
  Todo:
  - TransmitSettings
- - Ontvangen UserEvent vanuit EG print HEX
  - WildCard goed testen
 
  Done:
- - Aanpassing notatiewijze verwerking events. Variabelen, klok en timers zijn INTERNAL i.p.v. INPUT.
- - Bij uitvoer v/e commando wordt EXECUTE weergeven 
- - LET OP tijdelijk staat versienummer van de Nodo op 2.
- - UserEvent van 90 verhuisd naar 100
- - Opschonen strings
- - extra ruimte voor uitbreiding nieuwe commando's & events.
+ - Issue 135
+ - Issue 108
+ - Issue 138
+ - Issue 136
+ - Issue 129
+ - Issue 139
+ - Issue 141
+ 
  
 
  \*****************************************************************************************************/
@@ -50,13 +51,13 @@
  *
  ********************************************************************************************************/
 
-#define VERSION                   02 // Nodo Version nummer
+#define VERSION                   03 // Nodo Version nummer
 #define BAUD                   19200 // Baudrate voor seriële communicatie.
 #define SERIAL_TERMINATOR_1     0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>, default voor EventGhost
 #define SERIAL_TERMINATOR_2     0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
 #define RF_ENDSIGNAL_TIME       1000 // Dit is de tijd in milliseconden waarna wordt aangenomen dat het ontvangen één RF signaal beëindigd is
 #define IR_ENDSIGNAL_TIME       1000 // Dit is de tijd in milliseconden waarna wordt aangenomen dat het ontvangen één IR signaal beëindigd is
-#define UNIT_MAX                  10 
+#define UNIT_MAX                  15 
 //****************************************************************************************************************************************
 
 #include "pins_arduino.h"
@@ -69,7 +70,6 @@
 prog_char PROGMEM Text_01[] = "NODO-Due (Beta) V0.";
 prog_char PROGMEM Text_02[] = "SunMonThuWedThuFriSat";
 prog_char PROGMEM Text_03[] = ", Home ";
-prog_char PROGMEM Text_04[] = " (DaylightSaving)";
 prog_char PROGMEM Text_05[] = "Dim";
 prog_char PROGMEM Text_06[] = "SYSTEM: Unknown command!";
 prog_char PROGMEM Text_08[] = "Unit-";
@@ -111,7 +111,7 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 #define VALUE_RF_2_IR 22
 #define VALUE_IR_2_RF 23
 #define VALUE_ALL 24 // Deze waarde MOET >16 zijn.
-#define VALUE_RES1 25
+#define VALUE_DLS 25
 #define VALUE_RES2 26
 #define VALUE_RES3 27
 #define VALUE_RES4 28
@@ -213,7 +213,7 @@ prog_char PROGMEM Cmd_21[]="Series";
 prog_char PROGMEM Cmd_22[]="RF2IR";
 prog_char PROGMEM Cmd_23[]="IR2RF";
 prog_char PROGMEM Cmd_24[]="All";
-prog_char PROGMEM Cmd_25[]="";
+prog_char PROGMEM Cmd_25[]="DaylightSaving";
 prog_char PROGMEM Cmd_26[]="";
 prog_char PROGMEM Cmd_27[]="";
 prog_char PROGMEM Cmd_28[]="";
@@ -356,7 +356,7 @@ byte DaylightPrevious;                              // t.b.v. voorkomen herhaald
 boolean Simulate;
 void(*Reset)(void)=0; //reset functie op adres 0
 uint8_t RFbit,RFport,IRbit,IRport;
-struct RealTimeClock {int Hour,Minutes,Seconds,Date,Month,Day,Daylight,Year,DaylightSaving;}Time;
+struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight; int Year,DaylightSaving;}Time;
 
 struct Settings
   {
@@ -372,6 +372,7 @@ struct Settings
   int     WaitFreeRFWindow;
   byte    WaitFreeRFAction;
   boolean DaylightSaving;
+  int     DaylightSavingSet;
   }S;
 
 void setup() 

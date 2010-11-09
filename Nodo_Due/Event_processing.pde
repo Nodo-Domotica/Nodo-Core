@@ -55,7 +55,11 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   // als het een commando of event is voor deze unit, dan t.b.v. interne verwerking unit op 0 zetten.
   if(Type==VALUE_TYPE_COMMAND)
     { // Er is een Commando binnengekomen 
-    ExecuteCommand(IncommingEvent,Port,PreviousContent,PreviousPort);
+    if(!ExecuteCommand(IncommingEvent,Port,PreviousContent,PreviousPort))
+      {
+      depth--;//??? Issue 141 hier wel een return. Toegevoegd voor Issue 141
+      return false;//??? 
+      }
     }
   else
     { // Er is een Event binnengekomen  
@@ -86,16 +90,13 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
           if(!ExecuteCommand(Event_2, VALUE_SOURCE_EVENTLIST,IncommingEvent,Port))
             {
             depth--;
-            return true;
+            return false;//??? moet dit false worden? Issue 141
             }
           }
         else
           {// het is een ander soort event;
           if(Event_1!=command2event(CMD_WILDCARD_EVENT,0,0))
             {
-//      ???     if(S.Trace&1)
-//              PrintEvent(Event_2, VALUE_SOURCE_EVENTLIST,VALUE_DIRECTION_INPUT);
-  
             if(!ProcessEvent(Event_2,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_EVENTLIST,IncommingEvent,Port))
               {
               depth--;
