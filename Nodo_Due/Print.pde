@@ -133,7 +133,6 @@ void PrintEventCode(unsigned long Code)
       P2=P_TEXT;
       Par2&=1;
       break;
-    
 
     case CMD_KAKU_NEW:
     case CMD_SEND_KAKU_NEW:
@@ -150,7 +149,6 @@ void PrintEventCode(unsigned long Code)
       break;
 
     // Par1 als tekst en par2 als tekst
-    case CMD_ERROR:
     case CMD_TRACE:
     case CMD_WILDCARD_EVENT:
       P1=P_TEXT;
@@ -158,6 +156,7 @@ void PrintEventCode(unsigned long Code)
       break;
 
     // Par1 als tekst en par2 als getal
+    case CMD_ERROR:
     case CMD_COPYSIGNAL:
     case CMD_WAITFREERF:
     case CMD_SEND_STATUS:

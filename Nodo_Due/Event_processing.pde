@@ -40,7 +40,6 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
    if(S.WaitFreeRFAction==VALUE_SERIES)WaitFreeRF(S.WaitFreeRFWindow);
    }
 
-  //??? issue 123 if(depth==0 || S.Trace&1)PrintEvent(IncommingEvent,Port,VALUE_DIRECTION_INPUT);  // geef event weer op Serial
   PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
   digitalWrite(MonitorLedPin,HIGH);          // LED aan om aan te geven dat er wat ontvangen is en verwerkt wordt
   
