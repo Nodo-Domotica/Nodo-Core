@@ -42,7 +42,7 @@
 
 /*********************************************************************************************\
 * KAKU
-* Encoding volgens Princeton PT2262 / MOSDESIGN M3EB / Domia Lite spec
+* Encoding volgens Princeton PT2262 / MOSDESIGN M3EB / Domia Lite spec.
 * Pulse (T) is 350us PWDM
 * 0 = T,3T,T,3T, 1 = T,3T,3T,T, short 0 = T,3T,T,T
 *

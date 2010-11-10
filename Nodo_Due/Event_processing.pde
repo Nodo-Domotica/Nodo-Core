@@ -185,7 +185,7 @@ boolean Eventlist_Write(int address, unsigned long Event, unsigned long Action)/
   EEPROM.write(address++,(Action>> 8 & 0xFF));
   EEPROM.write(address++,(Action     & 0xFF));
 
-  // Eerste volgende Event vullen met een 0. Dit markeert het einde van de Eventlist
+  // Eerste volgende Event vullen met een 0. Dit markeert het einde van de Eventlist.
   EEPROM.write(address++,0);
   EEPROM.write(address++,0);
   EEPROM.write(address++,0);
@@ -224,15 +224,17 @@ boolean Eventlist_Read(int address, unsigned long *Event, unsigned long *Action)
  \**********************************************************************************************/
  boolean SendEvent(unsigned long Event)
    {
-   Nodo_2_RawSignal(Event);
 
    if(S.TransmitPort== VALUE_SOURCE_IR || S.TransmitPort== VALUE_SOURCE_IR_RF)
      {
+     Nodo_2_RawSignal(Event);
      PrintEvent(Event, VALUE_SOURCE_IR,VALUE_DIRECTION_OUTPUT);
      RawSendIR();
      } 
    if(S.TransmitPort== VALUE_SOURCE_RF || S.TransmitPort== VALUE_SOURCE_IR_RF)
      {
+     if(S.WaitFreeRFAction==VALUE_ALL)WaitFreeRF(S.WaitFreeRFWindow);
+     Nodo_2_RawSignal(Event);
      PrintEvent(Event, VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT);
      RawSendRF();
      }

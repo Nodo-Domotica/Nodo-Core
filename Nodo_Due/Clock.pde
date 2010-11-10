@@ -16,7 +16,7 @@ void SetDaylight()
   int DOY,index,now,up,down;
   int u0,u1,d0,d1;
   
-  DOY=((Time.Month-1)*304)/10+Time.Date;// schrikkeljaar berekening niet nodig, levert slechts naukeurigheidsafwijking van één minuut
+  DOY=((Time.Month-1)*304)/10+Time.Date;// schrikkeljaar berekening niet nodig, levert slechts naukeurigheidsafwijking van één minuut.
   index=(DOY/10);
   now=Time.Hour*60+Time.Minutes;
 

@@ -6,7 +6,7 @@ void PrintEvent(unsigned long Content, byte Port, boolean Direction)
   {
   byte Type=EventType(Content);
 
-  if(S.Trace&2 && Time.Day) // Time.Day=true want dan is er een RTC aanwezig
+  if(S.Trace&2 && Time.Day) // Time.Day=true want dan is er een RTC aanwezig.
     {   
     PrintDateTime();
     PrintComma();

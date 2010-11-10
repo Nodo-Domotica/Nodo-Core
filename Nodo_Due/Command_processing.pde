@@ -46,12 +46,14 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     switch(Command)
       {   
       case CMD_SEND_KAKU:
+        if(S.WaitFreeRFAction==VALUE_ALL)WaitFreeRF(S.WaitFreeRFWindow);
         KAKU_2_RawSignal(Content);
         PrintEvent(command2event(CMD_KAKU,Par1,Par2), VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT);
         RawSendRF();      
         break;
         
       case CMD_SEND_KAKU_NEW:
+        if(S.WaitFreeRFAction==VALUE_ALL)WaitFreeRF(S.WaitFreeRFWindow);
         NewKAKU_2_RawSignal(Content);
         PrintEvent(command2event(CMD_KAKU_NEW,Par1,Par2), VALUE_SOURCE_RF, VALUE_DIRECTION_OUTPUT);
         RawSendRF();      
@@ -60,7 +62,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       case CMD_VARIABLE_INC: 
         if(Par1<=USER_VARIABLES_MAX)
            {
-           if((S.UserVar[Par1-1]+Par2)<=255) // alleen ophogen als variabele nog niet de maximale waarde heeft
+           if((S.UserVar[Par1-1]+Par2)<=255) // alleen ophogen als variabele nog niet de maximale waarde heeft.
                {
               if(!Par2)Par2=1;      
               S.UserVar[Par1-1]+=Par2;
