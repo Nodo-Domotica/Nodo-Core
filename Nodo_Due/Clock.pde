@@ -180,7 +180,7 @@ unsigned long ClockRead(void)
     S.DaylightSaving=Time.DaylightSaving;
     SaveSettings();
     ClockSet();// verzet de RTC klok
-    PrintWelcome();//??? t.b.v. testen.
+    GenerateEvent(CMD_OK,CMD_DLS_EVENT,S.DaylightSaving);
     }
       
   return ((unsigned long)(S.Home))<<28 |

@@ -43,7 +43,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   
   if(error=CommandError(Content))// als er een error is, dan een error-event genereren en verzenden.
     {
-    ErrorHandling(Command,error);
+    GenerateEvent(CMD_ERROR,Command,error);
     return false;
     }
   else // geen fouten, dan verwerken
@@ -67,7 +67,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       case CMD_VARIABLE_INC: 
         if((S.UserVar[Par1-1]+Par2)<=255) // alleen ophogen als variabele nog niet de maximale waarde heeft.
           {
-          if(!Par2)Par2=1;      
           S.UserVar[Par1-1]+=Par2;
           SaveSettings();
           }
@@ -76,7 +75,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       case CMD_VARIABLE_DEC: 
         if((S.UserVar[Par1-1]-Par2)>=0) // alleen decrement als variabele hierdoor niet negatief wordt
           {
-          if(!Par2)Par2=1;      
           S.UserVar[Par1-1]-=Par2;
           SaveSettings();
           }
@@ -104,7 +102,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
             PrintText(Text_09,true);
           error=true;
           }
-  
+        break;
+        
       case CMD_BREAK_ON_VAR_NEQU:
         if(S.UserVar[Par1-1]!=Par2)
           {
@@ -141,7 +140,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   
       case CMD_SEND_USEREVENT:
         // Voeg Home toe en Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
-        SendEvent(command2event(CMD_USER_EVENT,Par1,Par2)&0x00ffffff | ((unsigned long)S.Home)<<28);// Voeg Home toe en Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
+        SendEventCode(command2event(CMD_USER_EVENT,Par1,Par2)&0x00ffffff | ((unsigned long)S.Home)<<28);// Voeg Home toe en Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
         break;
   
       case CMD_SIMULATE_DAY:
@@ -248,9 +247,9 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       case CMD_SEND_STATUS:
         x=Par1;// bevat het commando waarvoor de status opgehaald moet worden
         Par1=Par2;
-        if(error=GetStatus(&x,&Par1,&Par2))// let op: call by reference. Gegevens komen terug in Par1 en Par2
-          SendEvent(command2event(x,Par1,Par2));
-        break;      
+        if(GetStatus(&x,&Par1,&Par2))// let op: call by reference. Gegevens komen terug in Par1 en Par2
+          GenerateEvent(x,Par1,Par2);
+        break;
        }
     }
   return error?false:true;
@@ -271,8 +270,8 @@ byte CommandError(unsigned long Content)
   switch(Command)
     {
     //test; geen, altijd goed
-    case CMD_SEND_STATUS://??? foutive opties nog niet voldoende afgevangen
-    case CMD_STATUS://??? foutive opties nog niet voldoende afgevangen
+    case CMD_SEND_STATUS:
+    case CMD_STATUS:
     case CMD_DELAY:
     case CMD_SOUND: 
     case CMD_SEND_RAW:
@@ -402,17 +401,7 @@ byte CommandError(unsigned long Content)
     }
   }
 
- /*********************************************************************************************\
- * Handel een foutmelding af
- \*********************************************************************************************/
-void ErrorHandling(byte P1, byte P2)
-  {
-  unsigned long Event;
-
-  Event=command2event(CMD_ERROR,P1,P2);
-  ProcessEvent(Event,VALUE_DIRECTION_INTERNAL,0,0,0);
-  SendEvent(Event);
-  }
+ 
 
   
   

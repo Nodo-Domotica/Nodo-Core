@@ -4,16 +4,20 @@
  Todo:
  - TransmitSettings
  - WildCard goed testen
-
+ - Documentatie aanpassen voor Status en StatusEvent met DaylightSaving
+ - VALUE_DLS is CMD_DLS_EVENT geworden op pos. 101
+ - WildCard in command reference aanpassen.
  Done:
- - Issue 135
- - Issue 108
- - Issue 138
- - Issue 136
- - Issue 129
- - Issue 139
- - Issue 141
  
+ Issue 141:	BreakOnVar statements
+ Issue 124:	VariableInc en VariableDec
+ Issue 148:	PrintWelcome
+ Issue 134:	SendStatus met obsolete par1 geeft vreemd resultaat
+ Issue 139:	ClockSetDLS
+ Error events worden niet meer verwerkt. Alleen verzonden.
+ Hoeveelheid regels bij verwerking teruggebracht. Nu alleen events die binnenkomen van een input (nesting niveau 0). Geen events die in de nesting dieper gaan, tenzij TRACE aan staat.
+ 
+
  
 
  \*****************************************************************************************************/
@@ -51,7 +55,7 @@
  *
  ********************************************************************************************************/
 
-#define VERSION                   04 // Nodo Version nummer
+#define VERSION                   99 // Nodo Version nummer
 #define BAUD                   19200 // Baudrate voor seriële communicatie.
 #define SERIAL_TERMINATOR_1     0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>, default voor EventGhost
 #define SERIAL_TERMINATOR_2     0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
@@ -82,7 +86,7 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 
 #define RANGE_VALUE 30 // alle codes kleiner of gelijk aan deze waarde zijn vaste Nodo waarden.
 #define RANGE_EVENT 81 // alle codes groter of gelijk aan deze waarde zijn een event.
-#define COMMAND_MAX 101 // aantal commando's (dus geteld vanaf 0)
+#define COMMAND_MAX 102 // aantal commando's (dus geteld vanaf 0)
 
 #define VALUE_OFF 0
 #define VALUE_ON 1
@@ -112,13 +116,13 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 #define VALUE_RF_2_IR 22
 #define VALUE_IR_2_RF 23
 #define VALUE_ALL 24 // Deze waarde MOET >16 zijn.
-#define VALUE_DLS 25
+#define VALUE_RES1 25
 #define VALUE_RES2 26
 #define VALUE_RES3 27
 #define VALUE_RES4 28
 #define VALUE_RES6 29
 #define VALUE_RES5 30
-#define CMD_ANALYSE_SETTINGS 31
+#define CMD_ANALYSE_SETTINGS 311
 #define CMD_BREAK_ON_VAR_EQU 32
 #define CMD_BREAK_ON_VAR_LESS 33
 #define CMD_BREAK_ON_VAR_MORE 34
@@ -188,6 +192,7 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 #define CMD_OK 98
 #define CMD_ERROR 99
 #define CMD_USER_EVENT 100// deze moet altijd op 100 blijven anders opnieuw leren aan universele afstandsbediening!
+#define CMD_DLS_EVENT 101
 
 prog_char PROGMEM Cmd_0[]="Off";
 prog_char PROGMEM Cmd_1[]="On";
@@ -214,7 +219,7 @@ prog_char PROGMEM Cmd_21[]="Series";
 prog_char PROGMEM Cmd_22[]="RF2IR";
 prog_char PROGMEM Cmd_23[]="IR2RF";
 prog_char PROGMEM Cmd_24[]="All";
-prog_char PROGMEM Cmd_25[]="DaylightSaving";
+prog_char PROGMEM Cmd_25[]="";
 prog_char PROGMEM Cmd_26[]="";
 prog_char PROGMEM Cmd_27[]="";
 prog_char PROGMEM Cmd_28[]="";
@@ -290,7 +295,7 @@ prog_char PROGMEM Cmd_97[]="Wildcard";
 prog_char PROGMEM Cmd_98[]="Ok";
 prog_char PROGMEM Cmd_99[]="Error";
 prog_char PROGMEM Cmd_100[]="UserEvent"; // deze moet altijd op 100 blijven anders opnieuw leren aan universele afstandsbediening!
-
+prog_char PROGMEM Cmd_101[]="DaylightSaving";
 
 // tabel die refereert aan de commando strings
 PROGMEM const char *CommandText_tabel[]={
@@ -304,7 +309,7 @@ PROGMEM const char *CommandText_tabel[]={
   Cmd_70,Cmd_71,Cmd_72,Cmd_73,Cmd_74,Cmd_75,Cmd_76,Cmd_77,Cmd_78,Cmd_79,          
   Cmd_80,Cmd_81,Cmd_82,Cmd_83,Cmd_84,Cmd_85,Cmd_86,Cmd_87,Cmd_88,Cmd_89,          
   Cmd_90,Cmd_91,Cmd_92,Cmd_93,Cmd_94,Cmd_95,Cmd_96,Cmd_97,Cmd_98,Cmd_99,          
-  Cmd_100};          
+  Cmd_100,Cmd_101};          
 
 PROGMEM prog_uint16_t Sunrise[]={         
   528,525,516,503,487,467,446,424,401,378,355,333,313,295,279,268,261,259,263,271,283,297,312,329,

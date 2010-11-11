@@ -42,9 +42,9 @@ unsigned long Receive_Serial(void)
     if(error)
       { // het was geen geldig uitvoerbaar commando  
       if(Cmd==0)
-        ErrorHandling(VALUE_TYPE_UNKNOWN,0);
+        GenerateEvent(CMD_ERROR,VALUE_TYPE_UNKNOWN,0);
       else
-        ErrorHandling(Cmd,error);
+        GenerateEvent(CMD_ERROR,Cmd,error);
       }
     else
       {// Commando is gevalideerd en kan worden uitgevoerd
@@ -83,12 +83,12 @@ unsigned long Receive_Serial(void)
   
           if(Event==0 || (EventType(Event)==VALUE_TYPE_COMMAND && (error=CommandError(Event ))))
             {
-            ErrorHandling(CMD_EVENTLIST_WRITE,1);
+            GenerateEvent(CMD_ERROR,CMD_EVENTLIST_WRITE,1);
             return false;
             }
           if(Action==0 || (EventType(Action)==VALUE_TYPE_COMMAND && (error=CommandError(Action ))))
             {
-            ErrorHandling(CMD_EVENTLIST_WRITE,2);
+            GenerateEvent(CMD_ERROR,CMD_EVENTLIST_WRITE,1);
             return false;
             }
   
@@ -116,7 +116,7 @@ unsigned long Receive_Serial(void)
       
         case CMD_DIVERT:   
           Action=(SerialReadEvent()&0xf0ffffff) | ((unsigned long)(Par1))<<24; // Event_1 is het te forwarden event voorzien van nieuwe bestemming unit
-          SendEvent(Action);
+          SendEventCode(Action);
            break;        
     
         case CMD_RAWSIGNAL_GET:

@@ -149,6 +149,7 @@ void PrintEventCode(unsigned long Code)
       break;
 
     // Par1 als tekst en par2 als tekst
+    case CMD_OK:
     case CMD_TRACE:
     case CMD_WILDCARD_EVENT:
       P1=P_TEXT;
@@ -165,8 +166,8 @@ void PrintEventCode(unsigned long Code)
       break;
 
     // Par1 als tekst en par2 niet
+    case CMD_DLS_EVENT:
     case CMD_TRANSMIT_SETTINGS:
-    case VALUE_DLS:
     case CMD_SIMULATE:
     case CMD_SEND_RAW:
       P1=P_TEXT;
@@ -321,7 +322,7 @@ void PrintWelcome(void)
     if(Time.DaylightSaving)
       {
       PrintComma();
-      Serial.print(cmd2str(VALUE_DLS));
+      Serial.print(cmd2str(CMD_DLS_EVENT));
       }
     PrintTerm();
     }

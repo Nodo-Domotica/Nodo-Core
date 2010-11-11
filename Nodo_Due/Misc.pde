@@ -141,7 +141,7 @@ boolean GetStatus(int *Command, int *Par1, int *Par2)
       *Par2=S.Home;
       break;        
 
-    case VALUE_DLS:
+    case CMD_DLS_EVENT:
       *Par1=S.DaylightSaving;
       break;
       
@@ -297,6 +297,7 @@ void ResetFactory(void)
   S.AnalyseTimeOut     = 10000;
   S.TransmitPort       = VALUE_SOURCE_IR_RF;
   S.WaitFreeRFAction   = VALUE_OFF;
+  S.WaitFreeRFWindow   = S.Unit*500;
   S.DaylightSaving     = Time.DaylightSaving;
   
   for(byte x=0;x<4;x++)
@@ -327,6 +328,7 @@ void FactoryEventlist(void)
  * Wist de inhoud van een variabele zonder een event te genereren.
  * als opgegeven variabele gelijk is aan 0, dan worden alle gewist
  * geeft true terug bij succes.
+ * LET OP: Voor de user is variabele 1 de eeste. Intern wordt getelt vanaf 0 (S.UserVar[0])
  \*********************************************************************************************/
 boolean VariableClear(byte Variable)
   {
@@ -343,7 +345,8 @@ boolean VariableClear(byte Variable)
 
   if(Variable>0 && Variable<=USER_VARIABLES_MAX)
     {
-    S.UserVar[Variable]=0;
+    S.UserVar[Variable-1]=0; //??? issue 145
+    UserVarPrevious[Variable-1]=0; //??? issue 145
     SaveSettings();
     return true;
     }

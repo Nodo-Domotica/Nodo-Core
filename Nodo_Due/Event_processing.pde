@@ -35,12 +35,15 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
 
   // Uitvoeren voorafgaand aan een reeks uitvoeren
   if(depth==0)
-   {
-   if(S.Trace&1)PrintLine();  
-   if(S.WaitFreeRFAction==VALUE_SERIES)WaitFreeRF(S.WaitFreeRFWindow);
-   }
+    {
+    if(S.Trace&1)PrintLine(); 
+    if(S.WaitFreeRFAction==VALUE_SERIES)WaitFreeRF(S.WaitFreeRFWindow);
+    }
 
-  PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
+  if(S.Trace&1 || depth==0)
+    PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
+  
+  
   digitalWrite(MonitorLedPin,HIGH);          // LED aan om aan te geven dat er wat ontvangen is en verwerkt wordt
   
   if(depth++>=MACRO_EXECUTION_DEPTH)
@@ -217,13 +220,21 @@ boolean Eventlist_Read(int address, unsigned long *Event, unsigned long *Action)
     return(true);
   }
 
-
+/*********************************************************************************************\
+ * Handel een foutmelding af
+ \*********************************************************************************************/
+void GenerateEvent(byte Cmd, byte P1, byte P2)
+  {
+  unsigned long Event;
+  Event=command2event(Cmd,P1,P2);
+  SendEventCode(Event);
+  }
+  
  /**********************************************************************************************\
  * verzendt een event en geeft dit tevens weer op SERAIL
  \**********************************************************************************************/
- boolean SendEvent(unsigned long Event)
+ boolean SendEventCode(unsigned long Event)
    {
-
    if(S.TransmitPort== VALUE_SOURCE_IR || S.TransmitPort== VALUE_SOURCE_IR_RF)
      {
      Nodo_2_RawSignal(Event);
