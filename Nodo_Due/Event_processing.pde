@@ -33,7 +33,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   byte x,y,z;
   static byte depth=0;  // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's
 
-PrintTerm();//??? mag weer weg na debugging wildcard.
+// PrintTerm();//??? mag weer weg na debugging wildcard.
 
   // Uitvoeren voorafgaand aan een reeks uitvoeren
   if(depth==0)
@@ -73,24 +73,25 @@ PrintTerm();//??? mag weer weg na debugging wildcard.
       // kijk of deze regel een match heeft, zo ja, dan set y=vlag voor uitvoeren
       
       // als de Eventlist regel een wildcard is, zo ja, dan set y=vlag voor uitvoeren
-      if(((Event_1>>16)&0xff)==CMD_WILDCARD_EVENT) // commando deel van het event.
+      if(((Event_1>>16)&0xff)==CMD_COMMAND_WILDCARD) // commando deel van het event.
         {
-        //??????????????????????????
-        //??? t.b.v. debugging WildCard 
-        Serial.print("Debug WildCard: ");
-        z=(Event_1>>8)&0xff; // Par1 deel bevat de poort
-        Serial.print("(WildCardPort=");
-        Serial.print(cmd2str(z));
-        Serial.print(", InputPort=");
-        Serial.print(cmd2str(Port));
-        z=Event_1&0xff; // Par2 deel bevat type event
-        Serial.print(") , (WildCardType=");
-        Serial.print(cmd2str(z));
-        Serial.print(", InputType=");
-        Serial.print(cmd2str(Type));
-        Serial.print(")");
-        //?????????????????????????
-                    
+
+          //        //??????????????????????????
+//        //??? t.b.v. debugging WildCard 
+//        Serial.print("Debug WildCard: ");
+//        z=(Event_1>>8)&0xff; // Par1 deel bevat de poort
+//        Serial.print("(WildCardPort=");
+//        Serial.print(cmd2str(z));
+//        Serial.print(", InputPort=");
+//        Serial.print(cmd2str(Port));
+//        z=Event_1&0xff; // Par2 deel bevat type event
+//        Serial.print(") , (WildCardType=");
+//        Serial.print(cmd2str(z));
+//        Serial.print(", InputType=");
+//        Serial.print(cmd2str(Type));
+//        Serial.print(")");
+//        //?????????????????????????
+            
         y=true;  
         z=(Event_1>>8)&0xff; // Par1 deel bevat de poort
         if(z!=VALUE_ALL && z!=Port)
@@ -105,7 +106,7 @@ PrintTerm();//??? mag weer weg na debugging wildcard.
       
       if(y)
         {
-        Serial.print("==> Match!");PrintTerm();
+//???        Serial.print("==> Match!");PrintTerm();
         if(S.Trace&1)
           PrintEventlistEntry(x,depth);
           
@@ -119,7 +120,7 @@ PrintTerm();//??? mag weer weg na debugging wildcard.
           }
         else
           {// het is een ander soort event;
-          if(Event_1!=command2event(CMD_WILDCARD_EVENT,0,0))
+          if(Event_1!=command2event(CMD_COMMAND_WILDCARD,0,0))
             {
             if(!ProcessEvent(Event_2,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_EVENTLIST,IncommingEvent,Port))
               {

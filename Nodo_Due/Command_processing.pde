@@ -20,8 +20,211 @@
 
 #define ERROR_PAR1     1
 #define ERROR_PAR2     2
-#define ERROR_COMMAND  4
+#define ERROR_COMMAND  3
 
+/*********************************************************************************************\
+ * Deze functie checked of de code die ontvangen is een uitvoerbare opdracht is/
+ * Als het een correct commando is wordt een false teruggegeven 
+ * in andere gevallen een foutcode
+ \*********************************************************************************************/
+
+byte CommandError(unsigned long Content)
+  {
+  byte Command      = EventPart(Content,EVENT_PART_COMMAND);
+  byte Par1         = EventPart(Content,EVENT_PART_PAR1);
+  byte Par2         = EventPart(Content,EVENT_PART_PAR2);
+
+  switch(Command)
+    {
+
+
+  
+    //test; geen, altijd goed
+    case CMD_VARIABLE_EVENT:    
+    case CMD_EVENT_STATUS: //??? wat hier afvangen??
+    case CMD_KAKU:
+    case CMD_DLS_EVENT:
+    case CMD_CLOCK_EVENT_DAYLIGHT:
+    case CMD_CLOCK_EVENT_ALL:
+    case CMD_CLOCK_EVENT_SUN:
+    case CMD_CLOCK_EVENT_MON:
+    case CMD_CLOCK_EVENT_TUE:
+    case CMD_CLOCK_EVENT_WED:
+    case CMD_CLOCK_EVENT_THU:
+    case CMD_CLOCK_EVENT_FRI:
+    case CMD_CLOCK_EVENT_SAT:
+    case CMD_SEND_STATUS:
+    case CMD_STATUS:
+    case CMD_DELAY:
+    case CMD_SOUND: 
+    case CMD_SEND_RAW:
+    case CMD_USER_EVENT:
+    case CMD_SEND_USEREVENT:
+    case CMD_SEND_KAKU:
+    case CMD_SEND_KAKU_NEW:
+    case CMD_ANALYSE_SETTINGS:
+    case CMD_RAWSIGNAL_GET:
+    case CMD_RAWSIGNAL_PUT:
+      return false;
+ 
+    // geen par1 of par2 ingevuld.
+    case CMD_BOOT_EVENT:
+    case CMD_EVENTLIST_WRITE:
+    case CMD_EVENTLIST_SHOW:
+    case CMD_RESET_FACTORY:
+    case CMD_EVENTLIST_ERASE: 
+      if(Par1!=0)return ERROR_PAR1;    
+      if(Par2!=0)return ERROR_PAR2;    
+      return false; 
+      
+    // test:Par1 binnen bereik maximaal beschikbare variabelen
+    case CMD_VARIABLE_INC: 
+    case CMD_VARIABLE_DEC: 
+    case CMD_VARIABLE_SET:   
+    case CMD_BREAK_ON_VAR_NEQU:
+    case CMD_BREAK_ON_VAR_MORE:
+    case CMD_BREAK_ON_VAR_LESS:
+    case CMD_BREAK_ON_VAR_EQU:
+      if(Par1<1 || Par1>USER_VARIABLES_MAX)return VALUE_PARAMETER;
+      return false;
+      
+    // test:Par1 en Par2 binnen bereik maximaal beschikbare variabelen
+    case CMD_VARIABLE_VARIABLE:
+      if(Par1<1 || Par1>USER_VARIABLES_MAX)return ERROR_PAR1;
+      if(Par2<1 || Par2<USER_VARIABLES_MAX)return ERROR_PAR2;
+      return false;
+        
+    // test:Par1 binnen bereik maximaal beschikbare variabelen, Par2 is een geldige WIRED_IN
+    case CMD_VARIABLE_WIRED_ANALOG:
+      if(Par1<1 || Par1>USER_VARIABLES_MAX)return ERROR_PAR1;
+      if(Par2<1 || Par2>4)return ERROR_PAR2;
+      return false;
+ 
+    // test:Par1 binnen bereik maximaal beschikbare timers
+    case CMD_TIMER_EVENT:
+    case CMD_TIMER_SET:
+    case CMD_TIMER_RANDOM:
+      if(Par1<1 || Par1>USER_TIMER_MAX)return ERROR_PAR1;
+      return false;
+
+    // test:Par1 binnen bereik maximaal beschikbare variabelen,0 mag ook (=alle variabelen)
+    case CMD_VARIABLE_CLEAR:
+      if(Par1>USER_VARIABLES_MAX)return ERROR_PAR1;
+      return false;
+
+    // test:Par1 binnen bereik maximaal beschikbare timers,0 mag ook (=alle timers)
+    case CMD_TIMER_RESET:
+      if(Par1>USER_TIMER_MAX)return ERROR_PAR1;
+      return false;
+
+    // alleen 0,1 of 7
+    case CMD_SIMULATE_DAY:
+      if(Par1!=0 && Par1!=1 && Par1!=7)return ERROR_PAR1;
+      return false;
+      
+    // geldig jaartal
+    case CMD_CLOCK_YEAR:
+      if(Par1>21)return ERROR_PAR1;
+      return false;
+    
+    // geldige tijd    
+    case CMD_CLOCK_TIME:
+      if(Par1>23)return ERROR_PAR1;
+      if(Par2>59)return ERROR_PAR2;
+      return false;
+
+    // geldige datum
+    case CMD_CLOCK_DATE: // data1=datum, data2=maand
+      if(Par1>31)return ERROR_PAR1;
+      if(Par2>12)return ERROR_PAR2;
+      return false;
+
+    case CMD_CLOCK_DOW:
+      if(Par1<1 || Par1>7)return ERROR_PAR1;
+      return false;
+       
+    // test:Par1 binnen bereik maximaal beschikbare wired poorten, Par2 [0..255]
+    case CMD_WIRED_IN_EVENT:
+    case CMD_WIRED_ANALOG:
+    case CMD_WIRED_THRESHOLD:
+    case CMD_WIRED_SMITTTRIGGER:
+      if(Par1<1 || Par1>4)return ERROR_PAR1;
+      return false;
+
+    // test:Par1 binnen bereik maximaal beschikbare wired poorten EN Par2 is 0 of 1
+    case CMD_WIRED_OUT:
+    case CMD_WIRED_PULLUP:
+      if(Par1<1 || Par1>4)return ERROR_PAR1;
+      if(Par2!=0 && Par2!=1)return ERROR_PAR2;
+      return false;
+
+    case CMD_WAITFREERF: 
+      if(Par1!=VALUE_OFF && Par1!=VALUE_SERIES && Par1!=VALUE_ALL)return ERROR_PAR1;
+      return false;
+
+    case CMD_COPYSIGNAL:
+      if(Par1!=VALUE_RF_2_IR && Par1!=VALUE_IR_2_RF)return ERROR_PAR1;
+      return false;
+
+    case CMD_TRANSMIT_SETTINGS:
+      if(Par1!=VALUE_SOURCE_IR && Par1!=VALUE_SOURCE_IR_RF && Par1!=VALUE_SOURCE_RF)return ERROR_PAR1;
+      return false;
+
+    case CMD_COMMAND_WILDCARD:
+      switch(Par1)
+        {
+        case VALUE_ALL:
+        case VALUE_SOURCE_IR:
+        case VALUE_SOURCE_RF:
+        case VALUE_SOURCE_SERIAL:
+        case VALUE_SOURCE_WIRED:
+        case VALUE_SOURCE_EVENTLIST:
+        case VALUE_SOURCE_SYSTEM:
+        case VALUE_SOURCE_TIMER:
+        case VALUE_SOURCE_VARIABLE:
+        case VALUE_SOURCE_CLOCK:
+          break;
+        default:
+          return ERROR_PAR1;
+        }
+
+      switch(Par2)
+        {
+        case VALUE_ALL:
+        case VALUE_TYPE_COMMAND:
+        case VALUE_TYPE_EVENT:
+        case VALUE_TYPE_UNKNOWN:
+          break;
+        default:
+          return ERROR_PAR2;
+        } 
+      return false;
+
+     // par1 alleen 0 of 1.
+    case CMD_SIMULATE:
+      if(Par1!=0 && Par1!=1)return ERROR_PAR1;
+      return false;
+
+    case CMD_TRACE:
+      if(Par1>1)return ERROR_PAR1;
+      if(Par1>2)return ERROR_PAR2;
+      return false;
+
+    case CMD_DIVERT:   
+     if(Par1>UNIT_MAX)return ERROR_PAR1;
+     return false;
+
+    case CMD_UNIT:
+      if(Par1<1 || Par1>UNIT_MAX)return ERROR_PAR1;
+      if(Par2>HOME_MAX)return ERROR_PAR2;
+      return false;
+
+    default:
+      return ERROR_COMMAND;
+    }
+  }
+
+ 
 /*********************************************************************************************\
  * Deze functie checked of de code die ontvangen is een uitvoerbare opdracht is/
  * Als het een correct commando is wordt deze uitgevoerd en 
@@ -251,183 +454,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   return error?false:true;
   }
 
-/*********************************************************************************************\
- * Deze functie checked of de code die ontvangen is een uitvoerbare opdracht is/
- * Als het een correct commando is wordt een false teruggegeven 
- * in andere gevallen een foutcode
- \*********************************************************************************************/
 
-byte CommandError(unsigned long Content)
-  {
-  byte Command      = EventPart(Content,EVENT_PART_COMMAND);
-  byte Par1         = EventPart(Content,EVENT_PART_PAR1);
-  byte Par2         = EventPart(Content,EVENT_PART_PAR2);
-
-  switch(Command)
-    {
-    //test; geen, altijd goed
-    case CMD_SEND_STATUS:
-    case CMD_STATUS:
-    case CMD_DELAY:
-    case CMD_SOUND: 
-    case CMD_SEND_RAW:
-    case CMD_SEND_USEREVENT:
-    case CMD_SEND_KAKU:
-    case CMD_EVENTLIST_SHOW:
-    case CMD_SEND_KAKU_NEW:
-    case CMD_EVENTLIST_WRITE:
-    case CMD_ANALYSE_SETTINGS:
-    case CMD_RAWSIGNAL_GET:
-    case CMD_RESET_FACTORY:
-    case CMD_RAWSIGNAL_PUT:
-    case CMD_EVENTLIST_ERASE: 
-      return false;
-      
-    // test:Par1 binnen bereik maximaal beschikbare variabelen
-    case CMD_VARIABLE_INC: 
-    case CMD_VARIABLE_DEC: 
-    case CMD_VARIABLE_SET:   
-    case CMD_BREAK_ON_VAR_NEQU:
-    case CMD_BREAK_ON_VAR_MORE:
-    case CMD_BREAK_ON_VAR_LESS:
-    case CMD_BREAK_ON_VAR_EQU:
-      if(Par1<1 || Par1>USER_VARIABLES_MAX)return VALUE_PARAMETER;
-      return false;
-      
-    // test:Par1 en Par2 binnen bereik maximaal beschikbare variabelen
-    case CMD_VARIABLE_VARIABLE:
-      if(Par1<1 || Par1>USER_VARIABLES_MAX)return ERROR_PAR1;
-      if(Par2<1 || Par2<USER_VARIABLES_MAX)return ERROR_PAR2;
-      return false;
-        
-    // test:Par1 binnen bereik maximaal beschikbare variabelen, Par2 is een geldige WIRED_IN
-    case CMD_VARIABLE_WIRED_ANALOG:
-      if(Par1<1 || Par1>USER_VARIABLES_MAX)return ERROR_PAR1;
-      if(Par2<1 || Par2>4)return ERROR_PAR2;
-      return false;
- 
-    // test:Par1 binnen bereik maximaal beschikbare timers
-    case CMD_TIMER_SET:
-    case CMD_TIMER_RANDOM:
-      if(Par1<1 || Par1>USER_TIMER_MAX)return ERROR_PAR1;
-      return false;
-
-    // test:Par1 binnen bereik maximaal beschikbare variabelen,0 mag ook (=alle variabelen)
-    case CMD_VARIABLE_CLEAR:
-      if(Par1>USER_VARIABLES_MAX)return ERROR_PAR1;
-      return false;
-
-    // test:Par1 binnen bereik maximaal beschikbare timers,0 mag ook (=alle timers)
-    case CMD_TIMER_RESET:
-      if(Par1>USER_TIMER_MAX)return ERROR_PAR1;
-      return false;
-
-    // alleen 0,1 of 7
-    case CMD_SIMULATE_DAY:
-      if(Par1!=0 && Par1!=1 && Par1!=7)return ERROR_PAR1;
-      return false;
-      
-    // geldig jaartal
-    case CMD_CLOCK_YEAR:
-      if(Par1>21)return ERROR_PAR1;
-      return false;
-    
-    // geldige tijd    
-    case CMD_CLOCK_TIME:
-      if(Par1>23)return ERROR_PAR1;
-      if(Par2>59)return ERROR_PAR2;
-      return false;
-
-    // geldige datum
-    case CMD_CLOCK_DATE: // data1=datum, data2=maand
-      if(Par1>31)return ERROR_PAR1;
-      if(Par2>12)return ERROR_PAR2;
-      return false;
-
-    case CMD_CLOCK_DOW:
-      if(Par1<1 || Par1>7)return ERROR_PAR1;
-      return false;
-       
-    // test:Par1 binnen bereik maximaal beschikbare wired poorten, Par2 [0..255]
-    case CMD_WIRED_THRESHOLD:
-    case CMD_WIRED_SMITTTRIGGER:
-      if(Par1<1 || Par1>4)return ERROR_PAR1;
-      return false;
-
-    // test:Par1 binnen bereik maximaal beschikbare wired poorten EN Par2 is 0 of 1
-    case CMD_WIRED_OUT:
-    case CMD_WIRED_PULLUP:
-      if(Par1<1 || Par1>4)return ERROR_PAR1;
-      if(Par2!=0 && Par2!=1)return ERROR_PAR2;
-      return false;
-
-    case CMD_WAITFREERF: 
-      if(Par1!=VALUE_OFF && Par1!=VALUE_SERIES && Par1!=VALUE_ALL)return ERROR_PAR1;
-      return false;
-
-    case CMD_COPYSIGNAL:
-      if(Par1!=VALUE_RF_2_IR && Par1!=VALUE_IR_2_RF)return ERROR_PAR1;
-      return false;
-
-    case CMD_TRANSMIT_SETTINGS:
-      if(Par1!=VALUE_SOURCE_IR && Par1!=VALUE_SOURCE_IR_RF && Par1!=VALUE_SOURCE_RF)return ERROR_PAR1;
-      return false;
-
-    case CMD_WILDCARD_EVENT:
-      switch(Par1)
-        {
-        case VALUE_ALL:
-        case VALUE_SOURCE_IR:
-        case VALUE_SOURCE_RF:
-        case VALUE_SOURCE_SERIAL:
-        case VALUE_SOURCE_WIRED:
-        case VALUE_SOURCE_EVENTLIST:
-        case VALUE_SOURCE_SYSTEM:
-        case VALUE_SOURCE_TIMER:
-        case VALUE_SOURCE_VARIABLE:
-        case VALUE_SOURCE_CLOCK:
-          break;
-        default:
-          return ERROR_PAR1;
-        }
-
-      switch(Par2)
-        {
-        case VALUE_ALL:
-        case VALUE_TYPE_COMMAND:
-        case VALUE_TYPE_EVENT:
-        case VALUE_TYPE_UNKNOWN:
-          break;
-        default:
-          return ERROR_PAR2;
-        } 
-      return false;
-
-     // par1 alleen 0 of 1.
-    case CMD_SIMULATE:
-      if(Par1!=0 && Par1!=1)return ERROR_PAR1;
-      return false;
-
-    case CMD_TRACE:
-      if(Par1>1)return ERROR_PAR1;
-      if(Par1>2)return ERROR_PAR2;
-      return false;
-
-    case CMD_DIVERT:   
-     if(Par1>UNIT_MAX)return ERROR_PAR1;
-     return false;
-
-    case CMD_UNIT:
-      if(Par1<1 || Par1>UNIT_MAX)return ERROR_PAR1;
-      if(Par2>HOME_MAX)return ERROR_PAR2;
-      return false;
-
-    default:
-      return ERROR_COMMAND;
-    }
-  }
-
- 
 
   
   

@@ -7,6 +7,7 @@
  - VALUE_DLS is CMD_DLS_EVENT geworden op pos. 101
  - WildCard keywords in command reference aanpassen.
  - in documntatie aanpassen dat de timers en variabelen op nul gezet worden na een eventlisterase.
+ - WildCard verhuisd van Event 97 naar commando 76
 
 Done:
  
@@ -53,7 +54,7 @@ LET OP: Command reference nog niet aangepast.
  *
  ********************************************************************************************************/
 
-#define VERSION                   99 // Nodo Version nummer
+#define VERSION                    0 // Nodo Version nummer
 #define BAUD                   19200 // Baudrate voor seriële communicatie.
 #define SERIAL_TERMINATOR_1     0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>, default voor EventGhost
 #define SERIAL_TERMINATOR_2     0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
@@ -70,7 +71,7 @@ LET OP: Command reference nog niet aangepast.
 #include <avr/pgmspace.h>
 
 // ********alle strings naar PROGMEM om hiermee RAM-geheugen te sparen ***********************************************
-prog_char PROGMEM Text_01[] = "NODO-Due (Beta) V0.";
+prog_char PROGMEM Text_01[] = "NODO-Due V1.";
 prog_char PROGMEM Text_02[] = "SunMonThuWedThuFriSat";
 prog_char PROGMEM Text_03[] = ", Home ";
 prog_char PROGMEM Text_05[] = "Dim";
@@ -165,7 +166,7 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 #define CMD_WIRED_THRESHOLD 73
 #define CMD_SEND_USEREVENT 74
 #define CMD_COPYSIGNAL 75
-#define CMD_COMMAND_RES1 76
+#define CMD_COMMAND_WILDCARD 76
 #define CMD_COMMAND_RES2 77
 #define CMD_COMMAND_RES3 78
 #define CMD_COMMAND_RES3 79
@@ -186,7 +187,7 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 #define CMD_TIMER_EVENT 94
 #define CMD_WIRED_IN_EVENT 95
 #define CMD_VARIABLE_EVENT 96
-#define CMD_WILDCARD_EVENT 97
+#define CMD_EVENT_RES1
 #define CMD_OK 98
 #define CMD_ERROR 99
 #define CMD_USER_EVENT 100// deze moet altijd op 100 blijven anders opnieuw leren aan universele afstandsbediening!
@@ -268,7 +269,7 @@ prog_char PROGMEM Cmd_72[]="WiredSmittTrigger";
 prog_char PROGMEM Cmd_73[]="WiredThreshold";
 prog_char PROGMEM Cmd_74[]="SendUserEvent";
 prog_char PROGMEM Cmd_75[]="RawsignalCopy";
-prog_char PROGMEM Cmd_76[]="";
+prog_char PROGMEM Cmd_76[]="WildCard";
 prog_char PROGMEM Cmd_77[]="";
 prog_char PROGMEM Cmd_78[]="";
 prog_char PROGMEM Cmd_79[]="";
@@ -289,7 +290,7 @@ prog_char PROGMEM Cmd_93[]="NewKAKU";
 prog_char PROGMEM Cmd_94[]="Timer";
 prog_char PROGMEM Cmd_95[]="WiredIn";
 prog_char PROGMEM Cmd_96[]="Variable";
-prog_char PROGMEM Cmd_97[]="Wildcard";
+prog_char PROGMEM Cmd_97[]="";
 prog_char PROGMEM Cmd_98[]="Ok";
 prog_char PROGMEM Cmd_99[]="Error";
 prog_char PROGMEM Cmd_100[]="UserEvent"; // deze moet altijd op 100 blijven anders opnieuw leren aan universele afstandsbediening!

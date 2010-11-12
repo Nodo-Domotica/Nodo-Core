@@ -151,7 +151,7 @@ void PrintEventCode(unsigned long Code)
     // Par1 als tekst en par2 als tekst
     case CMD_OK:
     case CMD_TRACE:
-    case CMD_WILDCARD_EVENT:
+    case CMD_COMMAND_WILDCARD:
       P1=P_TEXT;
       P2=P_TEXT;
       break;

@@ -321,7 +321,7 @@ void FactoryEventlist(void)
   {
   Eventlist_Write(1,0L,0L); // maak de eventlist leeg.
   Eventlist_Write(0,command2event(CMD_BOOT_EVENT,0,0),command2event(CMD_SOUND,7,0)); // geluidssignaal na opstarten Nodo
-  Eventlist_Write(0,command2event(CMD_WILDCARD_EVENT,VALUE_ALL,VALUE_ALL),command2event(CMD_SOUND,0,0)); // Kort geluidssignaal bij ieder binnenkomend event
+  Eventlist_Write(0,command2event(CMD_COMMAND_WILDCARD,VALUE_ALL,VALUE_ALL),command2event(CMD_SOUND,0,0)); // Kort geluidssignaal bij ieder binnenkomend event
   }
 
  /*********************************************************************************************\

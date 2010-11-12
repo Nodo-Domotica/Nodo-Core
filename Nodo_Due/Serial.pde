@@ -27,147 +27,142 @@ char SerialBuffer[SERIAL_BUFFER_SIZE];
 unsigned long Receive_Serial(void)
   {
   unsigned long Event,Action;
-  byte x,y,error;
+  byte x,y;
   int Par1,Par2,Cmd;
-
+  boolean error=false;
+  
   Event=SerialReadEvent();
   
   if(EventType(Event)==VALUE_TYPE_UNKNOWN)// het is zeker geen commando, maar een ander type event
-    {
-    return Event;
-    }
+      return Event;
   else
-    { // het zou een geldig commando kunnen zijn. Valideer...
-    error=CommandError(Event);
-    if(error)
-      { // het was geen geldig uitvoerbaar commando  
-      if(Cmd==0)
-        GenerateEvent(CMD_ERROR,VALUE_TYPE_UNKNOWN,0);
-      else
-        GenerateEvent(CMD_ERROR,Cmd,error);
-      }
-    else
-      {// Commando is gevalideerd en kan worden uitgevoerd
-      Cmd=EventPart(Event,EVENT_PART_COMMAND);
-      Par1=EventPart(Event,EVENT_PART_PAR1);
-      Par2=EventPart(Event,EVENT_PART_PAR2);
-        
-      switch(Cmd)
-        {
-        case CMD_EVENTLIST_SHOW:
-          PrintLine();
-          for(x=1;x<=Eventlist_MAX && Eventlist_Read(x,&Event,&Action);x++)
-            {
-            PrintEventlistEntry(x,0);PrintTerm();
-            }   
-          PrintLine();
-          break;
-    
-        case CMD_STATUS:
-           Cmd=Par1;
-           Par1=Par2;
-           if(GetStatus(&Cmd,&Par1,&Par2)) // let op: call by reference !
-             {
-             Event=command2event(Cmd,Par1,Par2);// event wordt samengesteld...
-             PrintEventCode(Event);// ...maar alleen weergegeven.
-             PrintTerm();
-             }
-           else
-             error=VALUE_PARAMETER;
-           break;
-     
-        case CMD_EVENTLIST_WRITE:
-          // haal event encommando op
-          Event=SerialReadEvent();
-          Action=SerialReadEvent();
+    { // het was een geldig uitvoerbaar commando. Dit wordt geborgd door SerialReadEvent();
+    Cmd=EventPart(Event,EVENT_PART_COMMAND);
+    Par1=EventPart(Event,EVENT_PART_PAR1);
+    Par2=EventPart(Event,EVENT_PART_PAR2);
+      
+    switch(Cmd)
+      {
+      case CMD_EVENTLIST_SHOW:
+        PrintLine();
+        for(x=1;x<=Eventlist_MAX && Eventlist_Read(x,&Event,&Action);x++)
+          {
+          PrintEventlistEntry(x,0);PrintTerm();
+          }   
+        PrintLine();
+        break;
   
-          if(Event==0 || (EventType(Event)!=VALUE_TYPE_UNKNOWN && (error=CommandError(Event ))))
-            {
-            GenerateEvent(CMD_ERROR,CMD_EVENTLIST_WRITE,1);
-            return false;
-            }
-          if(Action==0 || (EventType(Action)!=VALUE_TYPE_UNKNOWN && (error=CommandError(Action ))))
-            {
-            GenerateEvent(CMD_ERROR,CMD_EVENTLIST_WRITE,1);
-            return false;
-            }
-  
-          // als het een commando of een event is, dan unit er uitfilteren alvorens weg te schrijven
-          x=EventType(Event);
-          if(x==VALUE_TYPE_COMMAND || x==VALUE_TYPE_EVENT)Event&=0xf0ffffff;
-          x=EventType(Action);
-          if(x==VALUE_TYPE_COMMAND || x==VALUE_TYPE_EVENT)Action&=0xf0ffffff;
-          
-          // schrijf weg in eventlist
-          if(!Eventlist_Write(0,Event,Action)) // Unit er uit filteren, anders na wijzigen unit geen geldige eventlist.
-            error=ERROR_PAR1;
-          break;        
-    
-        case CMD_ANALYSE_SETTINGS:
-          S.AnalyseTimeOut=Par1;
-          S.AnalyseSharpness=Par2*1000;
-          SaveSettings();
+      case CMD_STATUS:
+         Cmd=Par1;
+         Par1=Par2;
+         if(GetStatus(&Cmd,&Par1,&Par2)) // let op: call by reference !
+           {
+           Event=command2event(Cmd,Par1,Par2);// event wordt samengesteld...
+           PrintEventCode(Event);// ...maar alleen weergegeven.
+           PrintTerm();
+           }
+         else
+           {
+           error=true;
+           Par1=CMD_STATUS;
+           Par2=VALUE_PARAMETER;
+           }
+         break;
+   
+      case CMD_EVENTLIST_WRITE:
+        // haal event encommando op
+        Event=SerialReadEvent();
+        Action=SerialReadEvent();
+
+        if(Event==0 || (EventType(Event)==VALUE_TYPE_COMMAND && (error=CommandError(Event ))))
+          {
+          GenerateEvent(CMD_ERROR,CMD_EVENTLIST_WRITE,1);
           break;
-    
-        case CMD_TRACE:
-          S.Trace=Par1&1 | (Par2&1)<<1;
-          SaveSettings();
-          break;        
-      
-        case CMD_DIVERT:   
-          Action=(SerialReadEvent()&0xf0ffffff) | ((unsigned long)(Par1))<<24; // Event_1 is het te forwarden event voorzien van nieuwe bestemming unit
-          SendEventCode(Action);
-           break;        
-    
-        case CMD_RAWSIGNAL_GET:
-          PrintText(Text_26,true);
-          while(true)
-            {            
-            if((*portInputRegister(RFport)&RFbit)==RFbit)if(RFFetchSignal())break; // Kijk of er data start op RF binnenkomt
-            if((*portInputRegister(IRport)&IRbit)==0    )if(IRFetchSignal())break; // Kijk of er data start op IR binnenkomt
-            }
-          PrintRawSignal();
-          break;        
-    
-         case CMD_SIMULATE:
-           Simulate=Par1;
-           break;        
-     
-         case CMD_UNIT:
-           S.Unit=Par1;
-           if(Par2>0)S.Home=Par2;
-           SaveSettings();
-           FactoryEventlist();
-           Reset();
-           break;    
-      
-         case CMD_RESET_FACTORY:
-            ResetFactory();
-            
-         case CMD_RAWSIGNAL_PUT:
-            y=1;
-            do
-              {
-              x=SerialReadBlock(SerialBuffer);
-              PrintTerm();
-              RawSignal[y++]=str2val(SerialBuffer);
-              }while(x && y<RAW_BUFFER_SIZE);
-            RawSignal[0]=y-1;
-            break;
-      
-          case CMD_EVENTLIST_ERASE:
-             VariableClear(0); // alle variabelen op nul zetten
-             TimerClear(0); // reset de timers
-             Eventlist_Write(1,0L,0L); // maak de eventlist leeg.
-             break;        
-              
-          default:// alle andere commando's hebben max. twee parameters. 
-            return Event;       
           }
+        if(Action==0 || (EventType(Action)==VALUE_TYPE_COMMAND && (error=CommandError(Action ))))
+          {
+          GenerateEvent(CMD_ERROR,CMD_EVENTLIST_WRITE,2);
+          break;
+          }
+          
+        x=EventType(Action);
+        if(x==VALUE_TYPE_COMMAND || x==VALUE_TYPE_EVENT)Event&=0xf0ffffff; // als het een commando of een event is, dan unit er uitfilteren alvorens weg te schrijven
+        x=EventType(Action);
+        if(x==VALUE_TYPE_COMMAND || x==VALUE_TYPE_EVENT)Action&=0xf0ffffff;
+        
+        // schrijf weg in eventlist
+        if(!Eventlist_Write(0,Event,Action)) // Unit er uit filteren, anders na wijzigen unit geen geldige eventlist.
+          {
+          error=true;
+          Par1=CMD_EVENTLIST_WRITE;
+          Par2=VALUE_SOURCE_EVENTLIST;
+          }
+        break;        
+  
+      case CMD_ANALYSE_SETTINGS:
+        S.AnalyseTimeOut=Par1;
+        S.AnalyseSharpness=Par2*1000;
+        SaveSettings();
+        break;
+  
+      case CMD_TRACE:
+        S.Trace=Par1&1 | (Par2&1)<<1;
+        SaveSettings();
+        break;        
+    
+      case CMD_DIVERT:   
+        Action=(SerialReadEvent()&0xf0ffffff) | ((unsigned long)(Par1))<<24; // Event_1 is het te forwarden event voorzien van nieuwe bestemming unit
+        SendEventCode(Action);
+        break;        
+  
+      case CMD_RAWSIGNAL_GET:
+        PrintText(Text_26,true);
+        while(true)
+          {            
+          if((*portInputRegister(RFport)&RFbit)==RFbit)if(RFFetchSignal())break; // Kijk of er data start op RF binnenkomt
+          if((*portInputRegister(IRport)&IRbit)==0    )if(IRFetchSignal())break; // Kijk of er data start op IR binnenkomt
+          }
+        PrintRawSignal();
+        break;        
+  
+       case CMD_SIMULATE:
+         Simulate=Par1;
+         break;        
+   
+       case CMD_UNIT:
+         S.Unit=Par1;
+         if(Par2>0)S.Home=Par2;
+         SaveSettings();
+         FactoryEventlist();
+         Reset();
+         break;    
+    
+       case CMD_RESET_FACTORY:
+          ResetFactory();
+          
+       case CMD_RAWSIGNAL_PUT:
+          y=1;
+          do
+            {
+            x=SerialReadBlock(SerialBuffer);
+            PrintTerm();
+            RawSignal[y++]=str2val(SerialBuffer);
+            }while(x && y<RAW_BUFFER_SIZE);
+          RawSignal[0]=y-1;
+          break;
+    
+        case CMD_EVENTLIST_ERASE:
+           VariableClear(0); // alle variabelen op nul zetten
+           TimerClear(0); // reset de timers
+           Eventlist_Write(1,0L,0L); // maak de eventlist leeg.
+           break;        
+            
+        default:// alle andere commando's hebben max. twee parameters. 
+          return Event;       
         }
-    }
- return 0L;
- }
+      }
+   return 0L;
+   }
 
 
 /*********************************************************************************************\
@@ -176,7 +171,7 @@ unsigned long Receive_Serial(void)
 unsigned long SerialReadEvent()
   {
   unsigned long Event;
-  byte x,y,z,error=false;;
+  byte x,y,z;
   int Par1,Par2;
 
   Par1=0;
@@ -194,7 +189,7 @@ unsigned long SerialReadEvent()
   else
     y=Event; 
 
-  if(y==CMD_KAKU || y== CMD_SEND_KAKU)
+  if(y==CMD_KAKU || y==CMD_SEND_KAKU)
     {// de string is een KAKU commando. Haal bij het commando behorende parameters op.
     if(x)
       {
@@ -228,10 +223,9 @@ unsigned long SerialReadEvent()
     Event=command2event(y,Par1,Par2);
     return Event;
     }
-
   
-  if(y>0 && y<=COMMAND_MAX)
-    {// de string is een bestaand commando. Haal bij het commando behorende parameters op.
+  if(y>RANGE_VALUE && y<=COMMAND_MAX)
+    {// de string is een bestaand commando of event. Haal bij het commando behorende parameters op.
     if(x)
       {
       x=SerialReadBlock(SerialBuffer);
@@ -243,15 +237,20 @@ unsigned long SerialReadEvent()
         }
       }
     Event=command2event(y,Par1,Par2);
+    x=CommandError(Event);
+    if(x)
+      { // het was geen geldig uitvoerbaar commando  
+      if(y==0)
+        GenerateEvent(CMD_ERROR,VALUE_TYPE_UNKNOWN,0);
+      else
+        GenerateEvent(CMD_ERROR,y,x);
+      return 0L;
+      }
     return Event;
     }
-  
-  else
-    error=true;
 
-  if(error && strlen(SerialBuffer)!=0)
+  if(strlen(SerialBuffer)!=0)
     PrintText(Text_06,true);
-
   return 0L;
   }
    
