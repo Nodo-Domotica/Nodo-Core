@@ -32,7 +32,7 @@ unsigned long Receive_Serial(void)
 
   Event=SerialReadEvent();
   
-  if(EventType(Event)!=VALUE_TYPE_COMMAND)// het is zeker geen commando, maar een ander type event
+  if(EventType(Event)==VALUE_TYPE_UNKNOWN)// het is zeker geen commando, maar een ander type event
     {
     return Event;
     }
@@ -81,12 +81,12 @@ unsigned long Receive_Serial(void)
           Event=SerialReadEvent();
           Action=SerialReadEvent();
   
-          if(Event==0 || (EventType(Event)==VALUE_TYPE_COMMAND && (error=CommandError(Event ))))
+          if(Event==0 || (EventType(Event)!=VALUE_TYPE_UNKNOWN && (error=CommandError(Event ))))
             {
             GenerateEvent(CMD_ERROR,CMD_EVENTLIST_WRITE,1);
             return false;
             }
-          if(Action==0 || (EventType(Action)==VALUE_TYPE_COMMAND && (error=CommandError(Action ))))
+          if(Action==0 || (EventType(Action)!=VALUE_TYPE_UNKNOWN && (error=CommandError(Action ))))
             {
             GenerateEvent(CMD_ERROR,CMD_EVENTLIST_WRITE,1);
             return false;
@@ -155,7 +155,9 @@ unsigned long Receive_Serial(void)
             RawSignal[0]=y-1;
             break;
       
-          case CMD_EVENTLIST_ERASE: 
+          case CMD_EVENTLIST_ERASE:
+             VariableClear(0); // alle variabelen op nul zetten
+             TimerClear(0); // reset de timers
              Eventlist_Write(1,0L,0L); // maak de eventlist leeg.
              break;        
               

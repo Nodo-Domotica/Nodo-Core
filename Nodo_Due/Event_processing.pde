@@ -33,6 +33,8 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   byte x,y,z;
   static byte depth=0;  // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's
 
+PrintTerm();//??? mag weer weg na debugging wildcard.
+
   // Uitvoeren voorafgaand aan een reeks uitvoeren
   if(depth==0)
     {
@@ -73,17 +75,37 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
       // als de Eventlist regel een wildcard is, zo ja, dan set y=vlag voor uitvoeren
       if(((Event_1>>16)&0xff)==CMD_WILDCARD_EVENT) // commando deel van het event.
         {
-        y=true; 
+        //??????????????????????????
+        //??? t.b.v. debugging WildCard 
+        Serial.print("Debug WildCard: ");
         z=(Event_1>>8)&0xff; // Par1 deel bevat de poort
-        if(z!=VALUE_ALL && z!=Port)y=false;
+        Serial.print("(WildCardPort=");
+        Serial.print(cmd2str(z));
+        Serial.print(", InputPort=");
+        Serial.print(cmd2str(Port));
         z=Event_1&0xff; // Par2 deel bevat type event
-        if(z!=VALUE_ALL && z!=Type)y=false;
+        Serial.print(") , (WildCardType=");
+        Serial.print(cmd2str(z));
+        Serial.print(", InputType=");
+        Serial.print(cmd2str(Type));
+        Serial.print(")");
+        //?????????????????????????
+                    
+        y=true;  
+        z=(Event_1>>8)&0xff; // Par1 deel bevat de poort
+        if(z!=VALUE_ALL && z!=Port)
+          y=false;          
+
+        z=Event_1&0xff; // Par2 deel bevat type event
+        if(z!=VALUE_ALL && z!=Type)
+          y=false;
         }
       else
         y=CheckEvent(IncommingEvent,Event_1);      
       
       if(y)
         {
+        Serial.print("==> Match!");PrintTerm();
         if(S.Trace&1)
           PrintEventlistEntry(x,depth);
           

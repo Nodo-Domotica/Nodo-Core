@@ -131,11 +131,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;  
   
       case CMD_TIMER_RESET:
-        if(Par1==0)
-          for(x=0;x<USER_TIMER_MAX;x++)
-            UserTimer[x]=0L;
-        else
-            UserTimer[Par1-1]=0L;
+        TimerClear(Par1);
         break;
   
       case CMD_SEND_USEREVENT:
@@ -375,6 +371,36 @@ byte CommandError(unsigned long Content)
 
     case CMD_TRANSMIT_SETTINGS:
       if(Par1!=VALUE_SOURCE_IR && Par1!=VALUE_SOURCE_IR_RF && Par1!=VALUE_SOURCE_RF)return ERROR_PAR1;
+      return false;
+
+    case CMD_WILDCARD_EVENT:
+      switch(Par1)
+        {
+        case VALUE_ALL:
+        case VALUE_SOURCE_IR:
+        case VALUE_SOURCE_RF:
+        case VALUE_SOURCE_SERIAL:
+        case VALUE_SOURCE_WIRED:
+        case VALUE_SOURCE_EVENTLIST:
+        case VALUE_SOURCE_SYSTEM:
+        case VALUE_SOURCE_TIMER:
+        case VALUE_SOURCE_VARIABLE:
+        case VALUE_SOURCE_CLOCK:
+          break;
+        default:
+          return ERROR_PAR1;
+        }
+
+      switch(Par2)
+        {
+        case VALUE_ALL:
+        case VALUE_TYPE_COMMAND:
+        case VALUE_TYPE_EVENT:
+        case VALUE_TYPE_UNKNOWN:
+          break;
+        default:
+          return ERROR_PAR2;
+        } 
       return false;
 
      // par1 alleen 0 of 1.

@@ -3,20 +3,18 @@
 
  Todo:
  - TransmitSettings
- - WildCard goed testen
  - Documentatie aanpassen voor Status en StatusEvent met DaylightSaving
  - VALUE_DLS is CMD_DLS_EVENT geworden op pos. 101
- - WildCard in command reference aanpassen.
- Done:
+ - WildCard keywords in command reference aanpassen.
+ - in documntatie aanpassen dat de timers en variabelen op nul gezet worden na een eventlisterase.
+
+Done:
  
- Issue 141:	BreakOnVar statements
- Issue 124:	VariableInc en VariableDec
- Issue 148:	PrintWelcome
- Issue 134:	SendStatus met obsolete par1 geeft vreemd resultaat
- Issue 139:	ClockSetDLS
- Error events worden niet meer verwerkt. Alleen verzonden.
- Hoeveelheid regels bij verwerking teruggebracht. Nu alleen events die binnenkomen van een input (nesting niveau 0). Geen events die in de nesting dieper gaan, tenzij TRACE aan staat.
- 
+Issue 150: WildCard gedraagt zich niet goed voor Variable en Timer
+Timers en variabelen worden gewist na een eventlisterase.
+TIJDELIJK TBV DEBUGGING EN TESTEN: Een regel bij binnenkomen van een event waarbij de wildcard vergelijking wordt getoond.
+LET OP: Command reference nog niet aangepast.
+
 
  
 

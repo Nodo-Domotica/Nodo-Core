@@ -447,5 +447,15 @@ byte EventType(unsigned long Code)
   /* in andere gevallen */                    return VALUE_TYPE_UNKNOWN;  
   }
     
-
+ /**********************************************************************************************\
+ * Set de timer op nul zonder dat er een event wordt gegenereerd.
+ \*********************************************************************************************/
+void TimerClear(byte Timer)
+  {
+  if(Timer==0)
+    for(int x=0;x<USER_TIMER_MAX;x++)
+      UserTimer[x]=0L;
+  else
+    UserTimer[Timer-1]=0L;
+  }
   
