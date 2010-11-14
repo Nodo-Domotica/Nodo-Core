@@ -54,7 +54,7 @@ LET OP: Command reference nog niet aangepast.
  *
  ********************************************************************************************************/
 
-#define VERSION                    0 // Nodo Version nummer
+#define VERSION                   99 // Nodo Version nummer
 #define BAUD                   19200 // Baudrate voor seriële communicatie.
 #define SERIAL_TERMINATOR_1     0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>, default voor EventGhost
 #define SERIAL_TERMINATOR_2     0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
@@ -71,7 +71,7 @@ LET OP: Command reference nog niet aangepast.
 #include <avr/pgmspace.h>
 
 // ********alle strings naar PROGMEM om hiermee RAM-geheugen te sparen ***********************************************
-prog_char PROGMEM Text_01[] = "NODO-Due V1.";
+prog_char PROGMEM Text_01[] = "NODO-Due Beta V0.";
 prog_char PROGMEM Text_02[] = "SunMonThuWedThuFriSat";
 prog_char PROGMEM Text_03[] = ", Home ";
 prog_char PROGMEM Text_05[] = "Dim";

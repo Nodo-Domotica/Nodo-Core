@@ -28,9 +28,8 @@
 boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, unsigned long PreviousContent, byte PreviousPort)
   {
   unsigned long Event_1, Event_2;
-  byte Type=EventType(IncommingEvent);
   byte Command=EventPart(IncommingEvent,EVENT_PART_COMMAND);
-  byte x,y,z;
+  byte w,x,y,z;
   static byte depth=0;  // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's
 
 // PrintTerm();//??? mag weer weg na debugging wildcard.
@@ -57,7 +56,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
 
   // ############# Verwerk event ################  
   // als het een commando of event is voor deze unit, dan t.b.v. interne verwerking unit op 0 zetten.
-  if(Type==VALUE_TYPE_COMMAND)
+  if(EventType(IncommingEvent)==VALUE_TYPE_COMMAND)
     { // Er is een Commando binnengekomen 
     if(!ExecuteCommand(IncommingEvent,Port,PreviousContent,PreviousPort))
       {
@@ -71,12 +70,13 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     for(x=1; x<=Eventlist_MAX && Eventlist_Read(x,&Event_1,&Event_2); x++)
       {
       // kijk of deze regel een match heeft, zo ja, dan set y=vlag voor uitvoeren
+      // de vlag y houdt bij of de wildcard een match heeft met zowel poort als type event. Als deze vlag staat, dan uitvoeren.
       
       // als de Eventlist regel een wildcard is, zo ja, dan set y=vlag voor uitvoeren
       if(((Event_1>>16)&0xff)==CMD_COMMAND_WILDCARD) // commando deel van het event.
         {
 
-          //        //??????????????????????????
+//        //??????????????????????????
 //        //??? t.b.v. debugging WildCard 
 //        Serial.print("Debug WildCard: ");
 //        z=(Event_1>>8)&0xff; // Par1 deel bevat de poort
@@ -92,14 +92,30 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
 //        Serial.print(")");
 //        //?????????????????????????
             
-        y=true;  
-        z=(Event_1>>8)&0xff; // Par1 deel bevat de poort
+
+
+        switch(Command)
+          {
+          case CMD_KAKU:
+          case CMD_KAKU_NEW:
+          case CMD_ERROR:
+          case CMD_OK:
+          case CMD_USER_EVENT:
+            w=Command;
+          default:
+            w=EventType(IncommingEvent);
+          }
+
+        y=true;         
+
+        z=Event_1&0xff; // Par2 deel Wildcard bevat type event
+        if(z!=VALUE_ALL && z!=w)
+          y=false;
+
+        z=(Event_1>>8)&0xff; // Par1 deel van de Wildcard bevat de poort
         if(z!=VALUE_ALL && z!=Port)
           y=false;          
 
-        z=Event_1&0xff; // Par2 deel bevat type event
-        if(z!=VALUE_ALL && z!=Type)
-          y=false;
         }
       else
         y=CheckEvent(IncommingEvent,Event_1);      
