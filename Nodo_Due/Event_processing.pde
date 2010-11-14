@@ -74,26 +74,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
       
       // als de Eventlist regel een wildcard is, zo ja, dan set y=vlag voor uitvoeren
       if(((Event_1>>16)&0xff)==CMD_COMMAND_WILDCARD) // commando deel van het event.
-        {
-
-//        //??????????????????????????
-//        //??? t.b.v. debugging WildCard 
-//        Serial.print("Debug WildCard: ");
-//        z=(Event_1>>8)&0xff; // Par1 deel bevat de poort
-//        Serial.print("(WildCardPort=");
-//        Serial.print(cmd2str(z));
-//        Serial.print(", InputPort=");
-//        Serial.print(cmd2str(Port));
-//        z=Event_1&0xff; // Par2 deel bevat type event
-//        Serial.print(") , (WildCardType=");
-//        Serial.print(cmd2str(z));
-//        Serial.print(", InputType=");
-//        Serial.print(cmd2str(Type));
-//        Serial.print(")");
-//        //?????????????????????????
-            
-
-
+        {        
         switch(Command)
           {
           case CMD_KAKU:
@@ -102,19 +83,36 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
           case CMD_OK:
           case CMD_USER_EVENT:
             w=Command;
+            break;
           default:
             w=EventType(IncommingEvent);
           }
 
         y=true;         
 
+        z=(Event_1>>8)&0xff; // Par1 deel van de Wildcard bevat de poort
+        if(z!=VALUE_ALL && z!=Port)
+          y=false;          
+
+//        //??????????????????????????
+//        //??? t.b.v. debugging WildCard 
+//        z=(Event_1>>8)&0xff; // Par1 deel bevat de poort
+//        Serial.print("(WildCardPort=");
+//        Serial.print(cmd2str(z));
+//        Serial.print(", InputPort=");
+//        Serial.print(cmd2str(Port));
+
         z=Event_1&0xff; // Par2 deel Wildcard bevat type event
         if(z!=VALUE_ALL && z!=w)
           y=false;
 
-        z=(Event_1>>8)&0xff; // Par1 deel van de Wildcard bevat de poort
-        if(z!=VALUE_ALL && z!=Port)
-          y=false;          
+//        Serial.print(") , (WildCardType=");
+//        Serial.print(cmd2str(z));
+//        Serial.print(", InputType=");
+//        Serial.print(cmd2str(w));
+//        Serial.print(")");
+//        PrintTerm(); // ??? debug
+//        //?????????????????????????
 
         }
       else
@@ -122,7 +120,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
       
       if(y)
         {
-//???        Serial.print("==> Match!");PrintTerm();
+//       Serial.print("==> Match!");PrintTerm(); // ??? debug
         if(S.Trace&1)
           PrintEventlistEntry(x,depth);
           

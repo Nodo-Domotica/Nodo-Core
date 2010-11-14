@@ -36,9 +36,6 @@ byte CommandError(unsigned long Content)
 
   switch(Command)
     {
-
-
-  
     //test; geen, altijd goed
     case CMD_VARIABLE_EVENT:    
     case CMD_EVENT_STATUS: //??? wat hier afvangen??
@@ -57,7 +54,7 @@ byte CommandError(unsigned long Content)
     case CMD_STATUS:
     case CMD_DELAY:
     case CMD_SOUND: 
-    case CMD_SEND_RAW:
+    case CMD_SEND_RAWSIGNAL:
     case CMD_USER_EVENT:
     case CMD_SEND_USEREVENT:
     case CMD_SEND_KAKU:
@@ -242,9 +239,9 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   int x,y;
 
   byte error        = false;
-  int Command      = EventPart(Content,EVENT_PART_COMMAND);
-  int Par1         = EventPart(Content,EVENT_PART_PAR1);
-  int Par2         = EventPart(Content,EVENT_PART_PAR2);
+  int Command       = EventPart(Content,EVENT_PART_COMMAND);
+  int Par1          = EventPart(Content,EVENT_PART_PAR1);
+  int Par2          = EventPart(Content,EVENT_PART_PAR2);
   byte Type         = EventType(Content);
   byte PreviousType = EventType(PreviousContent);
   
@@ -351,25 +348,28 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         SimulateDay(Par1); 
         break;     
   
-      case CMD_SEND_RAW:
-        // verzend de de inhoud van de RAW buffer ??? DivertSettings als settings?
-        if(PreviousSrc!= VALUE_SOURCE_IR && (Par1== VALUE_SOURCE_IR || Par1== VALUE_SOURCE_IR_RF))
+      case CMD_SEND_RAWSIGNAL:
+        // verzend het laatst ontvangen of verzonden rawsigna.
+        
+        Event=AnalyzeRawSignal();
+        if(S.TransmitPort==VALUE_SOURCE_IR || S.TransmitPort==VALUE_SOURCE_IR_RF)
           {
-          PrintEvent(0, VALUE_SOURCE_IR,VALUE_DIRECTION_OUTPUT);
+          PrintEvent(Event,VALUE_SOURCE_IR,VALUE_DIRECTION_OUTPUT_RAW);
           RawSendIR();
           }
-       if(PreviousSrc!= VALUE_SOURCE_RF && (Par1== VALUE_SOURCE_RF || Par1== VALUE_SOURCE_IR_RF))
-         {
-         PrintEvent(0, VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT);
-         RawSendRF();      
-         }
-       PrintRawSignal();PrintTerm();
-       break;        
+        if(S.TransmitPort==VALUE_SOURCE_RF || S.TransmitPort==VALUE_SOURCE_IR_RF)
+          {
+          if(S.WaitFreeRFAction==VALUE_ALL)WaitFreeRF(S.WaitFreeRFWindow);
+          PrintEvent(Event,VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT_RAW);
+          RawSendRF();
+          }
+        break;        
   
       case CMD_CLOCK_YEAR:
         x=Par1*100+Par2;
         Time.Year=x;
         ClockSet();
+        ClockRead();
         break;
       
       case CMD_CLOCK_TIME:
@@ -383,6 +383,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         Time.Date=Par1;
         Time.Month=Par2;
         ClockSet();
+        ClockRead();
         break;
   
       case CMD_CLOCK_DOW:

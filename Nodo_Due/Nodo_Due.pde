@@ -3,17 +3,14 @@
 
  Todo:
  - TransmitSettings
- - Documentatie aanpassen voor Status en StatusEvent met DaylightSaving
- - VALUE_DLS is CMD_DLS_EVENT geworden op pos. 101
  - WildCard keywords in command reference aanpassen.
- - in documntatie aanpassen dat de timers en variabelen op nul gezet worden na een eventlisterase.
- - WildCard verhuisd van Event 97 naar commando 76
+ - in documentatie aanpassen dat de timers en variabelen op nul gezet worden na een eventlisterase.
 
 Done:
- 
-Issue 150: WildCard gedraagt zich niet goed voor Variable en Timer
-Timers en variabelen worden gewist na een eventlisterase.
-TIJDELIJK TBV DEBUGGING EN TESTEN: Een regel bij binnenkomen van een event waarbij de wildcard vergelijking wordt getoond.
+- extra regel opgenomen in de EventList na een reset. => t.b.v. doorgeven IR KAKU naar RF
+- SendRawSignal neemt de instelingen van TransmitSettings 
+- WildCard aangepast (zie issue 150)
+
 LET OP: Command reference nog niet aangepast.
 
 
@@ -54,7 +51,7 @@ LET OP: Command reference nog niet aangepast.
  *
  ********************************************************************************************************/
 
-#define VERSION                   99 // Nodo Version nummer
+#define VERSION                  100 // Nodo Version nummer
 #define BAUD                   19200 // Baudrate voor seriële communicatie.
 #define SERIAL_TERMINATOR_1     0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>, default voor EventGhost
 #define SERIAL_TERMINATOR_2     0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
@@ -71,7 +68,7 @@ LET OP: Command reference nog niet aangepast.
 #include <avr/pgmspace.h>
 
 // ********alle strings naar PROGMEM om hiermee RAM-geheugen te sparen ***********************************************
-prog_char PROGMEM Text_01[] = "NODO-Due Beta V0.";
+prog_char PROGMEM Text_01[] = "NODO-Due V";
 prog_char PROGMEM Text_02[] = "SunMonThuWedThuFriSat";
 prog_char PROGMEM Text_03[] = ", Home ";
 prog_char PROGMEM Text_05[] = "Dim";
@@ -115,7 +112,7 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 #define VALUE_RF_2_IR 22
 #define VALUE_IR_2_RF 23
 #define VALUE_ALL 24 // Deze waarde MOET >16 zijn.
-#define VALUE_RES1 25
+#define VALUE_DIRECTION_OUTPUT_RAW 25
 #define VALUE_RES2 26
 #define VALUE_RES3 27
 #define VALUE_RES4 28
@@ -141,7 +138,7 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 #define CMD_RESET_FACTORY 48
 #define CMD_SEND_KAKU 49
 #define CMD_SEND_KAKU_NEW 50
-#define CMD_SEND_RAW 51
+#define CMD_SEND_RAWSIGNAL 51
 #define CMD_SIMULATE 52
 #define CMD_SIMULATE_DAY 53
 #define CMD_SOUND 54
@@ -218,7 +215,7 @@ prog_char PROGMEM Cmd_21[]="Series";
 prog_char PROGMEM Cmd_22[]="RF2IR";
 prog_char PROGMEM Cmd_23[]="IR2RF";
 prog_char PROGMEM Cmd_24[]="All";
-prog_char PROGMEM Cmd_25[]="";
+prog_char PROGMEM Cmd_25[]="OUTPUT-RAW";
 prog_char PROGMEM Cmd_26[]="";
 prog_char PROGMEM Cmd_27[]="";
 prog_char PROGMEM Cmd_28[]="";
@@ -244,7 +241,7 @@ prog_char PROGMEM Cmd_47[]="RawsignalPut";
 prog_char PROGMEM Cmd_48[]="Reset";
 prog_char PROGMEM Cmd_49[]="SendKAKU";
 prog_char PROGMEM Cmd_50[]="SendNewKAKU";
-prog_char PROGMEM Cmd_51[]="RawsignalSend";
+prog_char PROGMEM Cmd_51[]="SendRawSignal";
 prog_char PROGMEM Cmd_52[]="Simulate";
 prog_char PROGMEM Cmd_53[]="SimulateDay";
 prog_char PROGMEM Cmd_54[]="Sound";

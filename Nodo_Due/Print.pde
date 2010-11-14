@@ -53,7 +53,7 @@ void PrintRawSignal(void)
      if(x>1)PrintComma();
      Serial.print(RawSignal[x],DEC);
      }
-  Serial.print(")");
+  PrintChar(')');
   }
 
  /*********************************************************************************************\
@@ -80,9 +80,9 @@ void PrintComma(void)
  * Serial.Print neemt veel progmem in beslag. 
  * Print het teken '0' 
  \*********************************************************************************************/
-void PrintZero(void)
+void PrintChar(byte S)
   {
-  Serial.print("0");
+  Serial.print(S, BYTE);
   }
 
 
@@ -169,7 +169,6 @@ void PrintEventCode(unsigned long Code)
     case CMD_DLS_EVENT:
     case CMD_TRANSMIT_SETTINGS:
     case CMD_SIMULATE:
-    case CMD_SEND_RAW:
       P1=P_TEXT;
       P2=P_NOT;
       break;
@@ -186,6 +185,7 @@ void PrintEventCode(unsigned long Code)
       break;
 
     // Geen parameters
+    case CMD_SEND_RAWSIGNAL:
     case CMD_BOOT_EVENT:
       P1=P_NOT;
       P2=P_NOT;
@@ -199,7 +199,7 @@ void PrintEventCode(unsigned long Code)
         
   // Print Par1
   if(P1!=P_NOT)
-    Serial.print(" ");
+    PrintChar(' ');
   if(P1==P_TEXT)
     Serial.print(cmd2str(Par1));
   if(P1==P_VALUE)
@@ -227,7 +227,7 @@ void PrintEventCode(unsigned long Code)
        Serial.print(cmd2str(Par2 & 0x1)); // Print 'On' of 'Off'. laat cmd2str dit oplossen
      }
 
-  Serial.print(")"); 
+  PrintChar(')'); 
   }
 
      
@@ -256,7 +256,7 @@ void PrintEventlistEntry(int entry, byte d)
   if(d>1)
     {
     Serial.print(d,DEC);
-    Serial.print(".");
+    PrintChar('.');
     }
   Serial.print(entry,DEC);
   Serial.print(": ");
@@ -276,29 +276,29 @@ void PrintDateTime(void)
     Serial.print(" ");
 
     // print datum.    
-    if(Time.Date<10)PrintZero();
+    if(Time.Date<10)PrintChar('0');
     Serial.print(Time.Date,DEC);
 
-    Serial.print("-");
+    PrintChar('-');
     
     // print maand.    
-    if(Time.Month<10)PrintZero();
+    if(Time.Month<10)PrintChar('0');
     Serial.print(Time.Month,DEC);
 
-    Serial.print("-");
+    PrintChar('-');
 
     // print year.    
     Serial.print(Time.Year,DEC);
     PrintComma();
     
     // print uren.    
-    if(Time.Hour<10)PrintZero();
+    if(Time.Hour<10)PrintChar('0');
     Serial.print(Time.Hour,DEC);
 
-    Serial.print(":");
+    PrintChar(':');
 
     // print minuten.
-    if(Time.Minutes<10)PrintZero();
+    if(Time.Minutes<10)PrintChar('0');
     Serial.print(Time.Minutes,DEC);
     }
 
@@ -311,7 +311,10 @@ void PrintWelcome(void)
   PrintTerm();
   PrintLine();
   PrintText(Text_01,false);
-  Serial.print(S.Version,DEC);
+
+  Serial.print(S.Version/100,DEC);
+  PrintChar('.');
+  Serial.print(S.Version%100,DEC);  
   PrintText(Text_03,false);
   Serial.print(S.Home,DEC);
   PrintText(Text_14,false);
