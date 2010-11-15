@@ -7,9 +7,8 @@
  - in documentatie aanpassen dat de timers en variabelen op nul gezet worden na een eventlisterase.
 
 Done:
-- extra regel opgenomen in de EventList na een reset. => t.b.v. doorgeven IR KAKU naar RF
-- SendRawSignal neemt de instelingen van TransmitSettings 
-- WildCard aangepast (zie issue 150)
+- Issue 153: SendRawSignal
+- Na een RawSignalPut wordt er direct vorzonden.
 
 LET OP: Command reference nog niet aangepast.
 

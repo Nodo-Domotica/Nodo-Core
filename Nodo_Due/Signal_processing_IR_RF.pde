@@ -153,7 +153,7 @@ void WaitFreeRF(int Window)
 
   if(Simulate)return;
  
-  WindowTimer=millis()+Window; // reset de timer.  ??? 1ssue 133?
+  WindowTimer=millis()+Window; // reset de timer.
   TimeOutTimer=millis()+15000; // tijd waarna de routine wordt afgebroken
 
   while(WindowTimer>millis() && TimeOutTimer>millis())
@@ -354,7 +354,7 @@ void CopySignalIR2RF(byte Window)
 * Window tijd in seconden.
 * ??? deze funktie werkt nog niet!
 \*********************************************************************************************/
-#define MAXPULSETIME 10 // maximale zendtijd van de IR-LED in mSec. Ter voorkoming van overbelasting
+#define MAXPULSETIME 50 // maximale zendtijd van de IR-LED in mSec. Ter voorkoming van overbelasting
 void CopySignalRF2IR(byte Window)
   {
   unsigned long WindowTimer=millis()+((unsigned long)Window)*1000; // reset de timer.  
@@ -365,12 +365,40 @@ void CopySignalRF2IR(byte Window)
     while((*portInputRegister(RFport)&RFbit)==RFbit)// Zolang de RF-pulse duurt. (Pin=HOOG bij puls, laag bij SPACE). 
       {      
       if(PulseTimer>millis())// als de maximale zendtijd van IR nog niet verstreken
-        digitalWrite(MonitorLedPin,HIGH);// TCCR2A|=_BV(COM2A0);  // zet IR-modulatie AAN
+        {
+        digitalWrite(MonitorLedPin,HIGH);
+        TCCR2A|=_BV(COM2A0);  // zet IR-modulatie AAN
+        }
       else // zendtijd IR voorbij, zet IR uit.
-        digitalWrite(MonitorLedPin,LOW);// TCCR2A&=~_BV(COM2A0); // zet IR-modulatie UIT
+        {
+        digitalWrite(MonitorLedPin,LOW);
+        TCCR2A&=~_BV(COM2A0); // zet IR-modulatie UIT
+        }
       }
     PulseTimer=millis()+MAXPULSETIME;
-    digitalWrite(MonitorLedPin,LOW); //  TCCR2A&=~_BV(COM2A0); // zet IR-modulatie UIT // RF ontvangt SPACE, dus IR uit.
-//   digitalWrite(MonitorLedPin,(millis()>>7)&0x01); // LED laten knipperen.
+    //   digitalWrite(MonitorLedPin,(millis()>>7)&0x01); // LED laten knipperen.
+    }
+  digitalWrite(MonitorLedPin,LOW);
+  TCCR2A&=~_BV(COM2A0);
+  }
+  
+/**********************************************************************************************\
+* Deze functie zendt gedurende Window seconden de RF ontvangst direct door naar IR
+* Window tijd in seconden.
+* ??? deze funktie werkt nog niet!
+\*********************************************************************************************/
+void SendRawSignal(void)
+  {
+  unsigned long Event;
+  Event=AnalyzeRawSignal();
+  if(S.TransmitPort==VALUE_SOURCE_IR || S.TransmitPort==VALUE_SOURCE_IR_RF)
+    {
+    PrintEvent(Event,VALUE_SOURCE_IR,VALUE_DIRECTION_OUTPUT_RAW);
+    RawSendIR();
+    }
+  if(S.TransmitPort==VALUE_SOURCE_RF || S.TransmitPort==VALUE_SOURCE_IR_RF)
+    {
+    PrintEvent(Event,VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT_RAW);
+    RawSendRF();
     }
   }

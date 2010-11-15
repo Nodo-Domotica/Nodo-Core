@@ -349,20 +349,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;     
   
       case CMD_SEND_RAWSIGNAL:
-        // verzend het laatst ontvangen of verzonden rawsigna.
-        
-        Event=AnalyzeRawSignal();
-        if(S.TransmitPort==VALUE_SOURCE_IR || S.TransmitPort==VALUE_SOURCE_IR_RF)
-          {
-          PrintEvent(Event,VALUE_SOURCE_IR,VALUE_DIRECTION_OUTPUT_RAW);
-          RawSendIR();
-          }
-        if(S.TransmitPort==VALUE_SOURCE_RF || S.TransmitPort==VALUE_SOURCE_IR_RF)
-          {
-          if(S.WaitFreeRFAction==VALUE_ALL)WaitFreeRF(S.WaitFreeRFWindow);
-          PrintEvent(Event,VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT_RAW);
-          RawSendRF();
-          }
+        // verzend het laatst ontvangen of verzonden rawsignal.
+        SendRawSignal();        
         break;        
   
       case CMD_CLOCK_YEAR:

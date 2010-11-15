@@ -145,10 +145,11 @@ unsigned long Receive_Serial(void)
           do
             {
             x=SerialReadBlock(SerialBuffer);
-            PrintTerm();
+            // PrintTerm();//??? wat doet deze hier? kan weg?
             RawSignal[y++]=str2val(SerialBuffer);
             }while(x && y<RAW_BUFFER_SIZE);
           RawSignal[0]=y-1;
+          SendRawSignal();
           break;
     
         case CMD_EVENTLIST_ERASE:
