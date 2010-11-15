@@ -257,7 +257,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       case CMD_SEND_KAKU:
         if(S.WaitFreeRFAction==VALUE_ALL)WaitFreeRF(S.WaitFreeRFWindow);
         KAKU_2_RawSignal(Content);
-        PrintEvent(command2event(CMD_KAKU,Par1,Par2), VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT);
+        PrintEvent(command2event(CMD_KAKU,Par1,Par2),VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT);
         RawSendRF();      
         break;
         

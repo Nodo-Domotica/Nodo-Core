@@ -47,13 +47,14 @@ void PrintRawSignal(void)
   {
   byte x;
   PrintEventCode(AnalyzeRawSignal());
-  PrintText(Text_30,false);
+  PrintText(Text_07,false);
   for(int x=1;x<=RawSignal[0];x++)
      {
      if(x>1)PrintComma();
      Serial.print(RawSignal[x],DEC);
      }
   PrintChar(')');
+  PrintTerm();
   }
 
  /*********************************************************************************************\

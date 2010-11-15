@@ -10,8 +10,7 @@ void SetDaylight()
   // Geldig voor in Nederland (gemiddelde voor midden Nederland op 52.00 graden NB en 5.00 graden OL) 
   // Eerste dag is 01 januari, tweede is 10, januari, derde is 20 januari, etc.
   // tussenliggende dagen worden berekend aan de hand van lineaire interpolatie tussen de tabelwaarden. 
-  // Afwijking t.o.v. KNMI-tabel is beperkt tot +/-1 min.
-  // met de offset kan worden getoetst op uren +/- de momenten. +60 levert dus een uur na zonsondergang een event.
+  // Afwijking t.o.v. KNMI-tabel is hiermee beperkt tot +/-1 min.
   
   int DOY,index,now,up,down;
   int u0,u1,d0,d1;
@@ -35,7 +34,7 @@ void SetDaylight()
   up  =u0+((u1-u0)*(DOY%10))/10;// Zon op in minuten na middernacht
   down=d0+((d1-d0)*(DOY%10))/10;// Zon onder in minuten na middernacht
 
-  Time.Daylight=0;                        // astronomische start van de dag 
+  Time.Daylight=0;                        // astronomische start van de dag (in de wintertijd om 0:00 uur)
   if(now>=(up-offset))   Time.Daylight=1; // <offset> minuten voor zonsopkomst 
   if(now>=up)            Time.Daylight=2; // zonsopkomst
   if(now>=(down-offset)) Time.Daylight=3; // <offset> minuten voor zonsondergang

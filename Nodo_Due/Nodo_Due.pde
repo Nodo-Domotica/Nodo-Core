@@ -3,16 +3,8 @@
 
  Todo:
  - TransmitSettings
- - WildCard keywords in command reference aanpassen.
- - in documentatie aanpassen dat de timers en variabelen op nul gezet worden na een eventlisterase.
 
 Done:
-- Issue 153: SendRawSignal
-- Na een RawSignalPut wordt er direct vorzonden.
-
-LET OP: Command reference nog niet aangepast.
-
-
  
 
  \*****************************************************************************************************/
@@ -72,11 +64,11 @@ prog_char PROGMEM Text_02[] = "SunMonThuWedThuFriSat";
 prog_char PROGMEM Text_03[] = ", Home ";
 prog_char PROGMEM Text_05[] = "Dim";
 prog_char PROGMEM Text_06[] = "SYSTEM: Unknown command!";
+prog_char PROGMEM Text_07[] = ", Rawsignal=(";
 prog_char PROGMEM Text_08[] = "Unit-";
 prog_char PROGMEM Text_09[] = "SYSTEM: Break!";
 prog_char PROGMEM Text_14[] = ", Unit ";
 prog_char PROGMEM Text_26[] = "SYSTEM: Waiting for RF/IR event...";
-prog_char PROGMEM Text_30[] = ", Rawsignal=(";
 prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 
 #define RANGE_VALUE 30 // alle codes kleiner of gelijk aan deze waarde zijn vaste Nodo waarden.

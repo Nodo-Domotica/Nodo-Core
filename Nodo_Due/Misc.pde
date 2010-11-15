@@ -1,4 +1,3 @@
-
 /**************************************************************************\
 
     This file is part of Nodo Due, © Copyright Paul Tonkes
