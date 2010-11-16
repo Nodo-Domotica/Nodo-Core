@@ -349,8 +349,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;     
   
       case CMD_SEND_RAWSIGNAL:
-        // verzend het laatst ontvangen of verzonden rawsignal.
-        SendRawSignal();        
+        Event=AnalyzeRawSignal();
+        if(EventType(Event)==VALUE_TYPE_UNKNOWN)
+          SendRawSignal();        
+        else
+          SendEventCode(Event);
         break;        
   
       case CMD_CLOCK_YEAR:
