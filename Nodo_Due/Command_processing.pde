@@ -349,7 +349,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;     
   
       case CMD_SEND_RAWSIGNAL:
-        Event=AnalyzeRawSignal();
+        Event=RawSignal_2_32bit();// alleen Nodo eigen 32-bit signalen opnieuw opbouwen. Andere (dus ook KAKU) RAW verzenden.
         if(EventType(Event)==VALUE_TYPE_UNKNOWN)
           SendRawSignal();        
         else
