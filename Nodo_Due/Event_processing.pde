@@ -272,32 +272,33 @@ void GenerateEvent(byte Cmd, byte P1, byte P2)
 \**********************************************************************************************/
 
 boolean SendEventCode(unsigned long Event)
-   {
-   switch(EventPart(Event,EVENT_PART_COMMAND))
-     {
-     case CMD_KAKU:
-       KAKU_2_RawSignal(Event);
-       break;
+  {
+  if(EventType(Event!=VALUE_TYPE_UNKNOWN)
+    {
+    if(S.WaitFreeRFAction==VALUE_ALL)WaitFreeRF(S.WaitFreeRFWindow);
+    switch(EventPart(Event,EVENT_PART_COMMAND))
+      {
+      case CMD_KAKU:
+        KAKU_2_RawSignal(Event);
+        break;
 
-     case CMD_KAKU_NEW:
-       NewKAKU_2_RawSignal(Event);
-       break;
-
-     default:
-       Nodo_2_RawSignal(Event);
-     }   
-   
-   if(S.TransmitPort== VALUE_SOURCE_IR || S.TransmitPort== VALUE_SOURCE_IR_RF)
-     { 
-     PrintEvent(Event, VALUE_SOURCE_IR,VALUE_DIRECTION_OUTPUT);
-     RawSendIR();
-     } 
-   if(S.TransmitPort== VALUE_SOURCE_RF || S.TransmitPort== VALUE_SOURCE_IR_RF)
-     {
-     if(S.WaitFreeRFAction==VALUE_ALL)WaitFreeRF(S.WaitFreeRFWindow);
-     PrintEvent(Event, VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT);
-     RawSendRF();
-     }
-   }
+      case CMD_KAKU_NEW:
+        NewKAKU_2_RawSignal(Event);
+        break;
+      default:
+        Nodo_2_RawSignal(Event);
+      }
+    }
+  if(S.TransmitPort== VALUE_SOURCE_IR || S.TransmitPort== VALUE_SOURCE_IR_RF)
+    { 
+    PrintEvent(Event, VALUE_SOURCE_IR,VALUE_DIRECTION_OUTPUT);
+    RawSendIR();
+    } 
+  if(S.TransmitPort== VALUE_SOURCE_RF || S.TransmitPort== VALUE_SOURCE_IR_RF)
+    {
+    PrintEvent(Event, VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT);
+    RawSendRF();
+    }
+  }
  
  
