@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<EventGhost Name="Configuration Tree" Expanded="True" Version="1462" Guid="{7783FA45-A6CC-49EB-8BAC-2ED8B5F69285}" Time="1290163772.09">
+<EventGhost Name="Configuration Tree" Expanded="True" Version="1462" Guid="{DBE50227-B81B-4A98-80D8-169C2EDE9114}" Time="1290178170.6">
     <Autostart Name="Autostart" Expanded="True">
         <Action>
             EventGhost.ShowOSD(u'EventGhost with \nstandard testcases \nfor Nodo Due', u'0;-64;0;0;0;400;255;0;0;0;3;2;1;34;Arial', (0, 0, 255), None, 4, (0, 0), 0, 5.0, False)
@@ -2834,6 +2834,72 @@
             </Macro>
         </Folder>
         <Folder Name="Test case 16: test WildCards" Expanded="True">
+            <Folder Name="learn a few commands into the Harmony">
+                <Macro Name="Set up Nodo as a repeater" Expanded="True">
+                    <Action>
+                        Serial.Write(u'Unit 4, 10;')
+                    </Action>
+                    <Action>
+                        EventGhost.Wait(4.0)
+                    </Action>
+                    <Action>
+                        Serial.Write(u'WaitFreeRF All,5;')
+                    </Action>
+                    <Action>
+                        Serial2.Write(u'WaitFreeRF All,10;')
+                    </Action>
+                    <Action>
+                        Serial.Write(u'TransmitSettings IR&amp;RF;')
+                    </Action>
+                    <Action>
+                        Serial2.Write(u'TransmitSettings IR&amp;RF;')
+                    </Action>
+                    <Action>
+                        Serial.Write(u'EventlistErase;')
+                    </Action>
+                    <Action>
+                        Serial.Write(u'EventlistWrite;WildCard All,All; delay 1;')
+                    </Action>
+                    <Action>
+                        Serial.Write(u'EventlistWrite;WildCard IR,KAKU; SendRawSignal;')
+                    </Action>
+                    <Action>
+                        Serial.Write(u'EventlistWrite;WildCard RF,KAKU; SendRawSignal;')
+                    </Action>
+                    <Action>
+                        Serial.Write(u'EventlistWrite;WildCard IR,NewKAKU; SendRawSignal;')
+                    </Action>
+                    <Action>
+                        Serial.Write(u'EventlistWrite;WildCard RF,NewKAKU; SendRawSignal;')
+                    </Action>
+                    <Action>
+                        Serial.Write(u'EventlistWrite;WildCard IR,UserEvent; SendRawSignal;')
+                    </Action>
+                    <Action>
+                        Serial.Write(u'EventlistWrite;WildCard RF,UserEvent; SendRawSignal;')
+                    </Action>
+                </Macro>
+                <Macro Name="Learn the following commands into the Harmony, one by one" Expanded="True">
+                    <Action Name="KAKU command">
+                        EventGhost.Comment()
+                    </Action>
+                    <Action>
+                        Serial2.Write(u'SendKaku A1,off;')
+                    </Action>
+                    <Action Name="UserEvent">
+                        EventGhost.Comment()
+                    </Action>
+                    <Action Name="Serial Port #2: Write Data: SendUserEvent 1,1;">
+                        Serial2.Write(u'SendUserEvent 19,1;')
+                    </Action>
+                    <Action Name="NewKAKU command">
+                        EventGhost.Comment()
+                    </Action>
+                    <Action>
+                        Serial2.Write(u'SendNewKaku 1,off;')
+                    </Action>
+                </Macro>
+            </Folder>
             <Macro Name="test execution" Expanded="True">
                 <Action Name="Prerequisite: attach clocked Nodo on serial2, other Nodo on serial1">
                     EventGhost.Comment()
@@ -2892,11 +2958,26 @@
                 <Action Name="Press F5: set a variable: generates 16,71">
                     Serial.Write(u'VariableSet 5,140;')
                 </Action>
-                <Action Name="Press F5: send a weird Userevent from Nodo 2 to 1: generates 16,26. Not 16,28!!!">
+                <Action Name="Press F5: send a weird Userevent from Nodo 2 to 1: generates 16,26.">
                     Serial2.Write(u'SendUserEvent  16,234;')
                 </Action>
-                <Action Name="Press F5: send a valid command to another unit" Enabled="False">
-                    Serial2.Write(u'Divert 9; SendStatus DaylightSaving;')
+                <Action Name="Press F5: this will make unit5 send a NewKaku command across RF, and generate 16,23">
+                    Serial2.Write(u'SendNewKaku 1,on;')
+                </Action>
+                <Action Name="Manual: send a NewKAKU command over IR from Harmny. Generates: ">
+                    EventGhost.Comment()
+                </Action>
+                <Action Name="Press F5: send SendKaku A1,on from Nodo2.">
+                    Serial2.Write(u'SendKaku A1,on;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKaku 1,on;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKaku 1,on;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendKaku A1,on;')
                 </Action>
                 <Action Name="Press F5: Send a SendUserEvent command fia serial" Enabled="False">
                     Serial.Write(u'SendUserEvent 16,201;')
@@ -2918,492 +2999,492 @@
                 </Action>
             </Macro>
             <Folder Name="Statusindicators: enabled means not yet occurred, disabled means the event has occurred" Expanded="True">
-                <Macro Name="UserEvent 16,01" id="1017" Enabled="False">
+                <Macro Name="UserEvent 16,01" id="1025" Enabled="False">
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 1)" />
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1017))
+                        EventGhost.DisableItem(XmlIdLink(1025))
                     </Action>
                 </Macro>
-                <Macro Name="UserEvent 16,02" id="1020" Enabled="False">
+                <Macro Name="UserEvent 16,02" id="1028" Enabled="False">
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 1)" />
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1020))
+                        EventGhost.DisableItem(XmlIdLink(1028))
                     </Action>
                 </Macro>
-                <Macro Name="UserEvent 16,03" id="1023">
+                <Macro Name="UserEvent 16,03" id="1031" Enabled="False">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1023))
+                        EventGhost.DisableItem(XmlIdLink(1031))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 3)" />
                 </Macro>
-                <Macro Name="UserEvent 16,04" id="1026">
+                <Macro Name="UserEvent 16,04" id="1034">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1026))
+                        EventGhost.DisableItem(XmlIdLink(1034))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 4)" />
                 </Macro>
-                <Macro Name="UserEvent 16,05" id="1029">
+                <Macro Name="UserEvent 16,05" id="1037">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1029))
+                        EventGhost.DisableItem(XmlIdLink(1037))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 5)" />
                 </Macro>
-                <Macro Name="UserEvent 16,06" id="1032" Enabled="False">
+                <Macro Name="UserEvent 16,06" id="1040" Enabled="False">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1032))
+                        EventGhost.DisableItem(XmlIdLink(1040))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 6)" />
                 </Macro>
-                <Macro Name="UserEvent 16,07" id="1035" Enabled="False">
+                <Macro Name="UserEvent 16,07" id="1043" Enabled="False">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1035))
+                        EventGhost.DisableItem(XmlIdLink(1043))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 7)" />
                 </Macro>
-                <Macro Name="UserEvent 16,08" id="1038" Enabled="False">
+                <Macro Name="UserEvent 16,08" id="1046" Enabled="False">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1038))
+                        EventGhost.DisableItem(XmlIdLink(1046))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 8)" />
                 </Macro>
-                <Macro Name="UserEvent 16,11" id="1041" Enabled="False">
+                <Macro Name="UserEvent 16,11" id="1049" Enabled="False">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1041))
+                        EventGhost.DisableItem(XmlIdLink(1049))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 11)" />
                 </Macro>
-                <Macro Name="UserEvent 16,12" id="1044" Enabled="False">
+                <Macro Name="UserEvent 16,12" id="1052" Enabled="False">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1044))
+                        EventGhost.DisableItem(XmlIdLink(1052))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 12)" />
                 </Macro>
-                <Macro Name="UserEvent 16,13" id="1047">
+                <Macro Name="UserEvent 16,13" id="1055">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1047))
+                        EventGhost.DisableItem(XmlIdLink(1055))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 13)" />
                 </Macro>
-                <Macro Name="UserEvent 16,14" id="1050">
+                <Macro Name="UserEvent 16,14" id="1058">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1050))
+                        EventGhost.DisableItem(XmlIdLink(1058))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 14)" />
                 </Macro>
-                <Macro Name="UserEvent 16,15" id="1053">
+                <Macro Name="UserEvent 16,15" id="1061">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1053))
+                        EventGhost.DisableItem(XmlIdLink(1061))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 15)" />
                 </Macro>
-                <Macro Name="UserEvent 16,16" id="1056" Enabled="False">
+                <Macro Name="UserEvent 16,16" id="1064" Enabled="False">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1056))
+                        EventGhost.DisableItem(XmlIdLink(1064))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 16)" />
                 </Macro>
-                <Macro Name="UserEvent 16,17" id="1059">
+                <Macro Name="UserEvent 16,17" id="1067">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1059))
+                        EventGhost.DisableItem(XmlIdLink(1067))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 17)" />
                 </Macro>
-                <Macro Name="UserEvent 16,18" id="1062" Enabled="False">
+                <Macro Name="UserEvent 16,18" id="1070" Enabled="False">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1062))
+                        EventGhost.DisableItem(XmlIdLink(1070))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 18)" />
                 </Macro>
-                <Macro Name="UserEvent 16,21" id="1065" Enabled="False">
+                <Macro Name="UserEvent 16,21" id="1073" Enabled="False">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1065))
+                        EventGhost.DisableItem(XmlIdLink(1073))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 21)" />
                 </Macro>
-                <Macro Name="UserEvent 16,22" id="1068" Enabled="False">
+                <Macro Name="UserEvent 16,22" id="1076" Enabled="False">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1068))
+                        EventGhost.DisableItem(XmlIdLink(1076))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 22)" />
                 </Macro>
-                <Macro Name="UserEvent 16,23" id="1071">
+                <Macro Name="UserEvent 16,23" id="1079" Enabled="False">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1071))
+                        EventGhost.DisableItem(XmlIdLink(1079))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 23)" />
                 </Macro>
-                <Macro Name="UserEvent 16,24" id="1074">
+                <Macro Name="UserEvent 16,24" id="1082">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1074))
+                        EventGhost.DisableItem(XmlIdLink(1082))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 24)" />
                 </Macro>
-                <Macro Name="UserEvent 16,25" id="1077">
+                <Macro Name="UserEvent 16,25" id="1085">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1077))
+                        EventGhost.DisableItem(XmlIdLink(1085))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 25)" />
                 </Macro>
-                <Macro Name="UserEvent 16,26" id="1080" Enabled="False">
+                <Macro Name="UserEvent 16,26" id="1088" Enabled="False">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1080))
+                        EventGhost.DisableItem(XmlIdLink(1088))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 26)" />
                 </Macro>
-                <Macro Name="UserEvent 16,27" id="1083" Enabled="False">
+                <Macro Name="UserEvent 16,27" id="1091" Enabled="False">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1083))
+                        EventGhost.DisableItem(XmlIdLink(1091))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 27)" />
                 </Macro>
-                <Macro Name="UserEvent 16,28" id="1086">
+                <Macro Name="UserEvent 16,28" id="1094" Enabled="False">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1086))
+                        EventGhost.DisableItem(XmlIdLink(1094))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 28)" />
                 </Macro>
-                <Macro Name="UserEvent 16,31" id="1089" Enabled="False">
+                <Macro Name="UserEvent 16,31" id="1097" Enabled="False">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1089))
+                        EventGhost.DisableItem(XmlIdLink(1097))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 31)" />
                 </Macro>
-                <Macro Name="UserEvent 16,32" id="1092">
+                <Macro Name="UserEvent 16,32" id="1100">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1092))
+                        EventGhost.DisableItem(XmlIdLink(1100))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 32)" />
                 </Macro>
-                <Macro Name="UserEvent 16,33" id="1095">
+                <Macro Name="UserEvent 16,33" id="1103">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1095))
+                        EventGhost.DisableItem(XmlIdLink(1103))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 33)" />
                 </Macro>
-                <Macro Name="UserEvent 16,34" id="1098">
+                <Macro Name="UserEvent 16,34" id="1106">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1098))
+                        EventGhost.DisableItem(XmlIdLink(1106))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 34)" />
                 </Macro>
-                <Macro Name="UserEvent 16,35" id="1101">
+                <Macro Name="UserEvent 16,35" id="1109">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1101))
+                        EventGhost.DisableItem(XmlIdLink(1109))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 35)" />
                 </Macro>
-                <Macro Name="UserEvent 16,36" id="1104" Enabled="False">
+                <Macro Name="UserEvent 16,36" id="1112" Enabled="False">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1104))
+                        EventGhost.DisableItem(XmlIdLink(1112))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 36)" />
                 </Macro>
-                <Macro Name="UserEvent 16,37" id="1107">
+                <Macro Name="UserEvent 16,37" id="1115">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1107))
+                        EventGhost.DisableItem(XmlIdLink(1115))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 37)" />
                 </Macro>
-                <Macro Name="UserEvent 16,38" id="1110" Enabled="False">
+                <Macro Name="UserEvent 16,38" id="1118" Enabled="False">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1110))
+                        EventGhost.DisableItem(XmlIdLink(1118))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 38)" />
                 </Macro>
-                <Macro Name="UserEvent 16,41" id="1113" Enabled="False">
+                <Macro Name="UserEvent 16,41" id="1121" Enabled="False">
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 41)" />
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1113))
+                        EventGhost.DisableItem(XmlIdLink(1121))
                     </Action>
                 </Macro>
-                <Macro Name="UserEvent 16,42" id="1116">
+                <Macro Name="UserEvent 16,42" id="1124">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1116))
+                        EventGhost.DisableItem(XmlIdLink(1124))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 42)" />
                 </Macro>
-                <Macro Name="UserEvent 16,43" id="1119">
+                <Macro Name="UserEvent 16,43" id="1127">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1119))
+                        EventGhost.DisableItem(XmlIdLink(1127))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 43)" />
                 </Macro>
-                <Macro Name="UserEvent 16,44" id="1122">
+                <Macro Name="UserEvent 16,44" id="1130">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1122))
+                        EventGhost.DisableItem(XmlIdLink(1130))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 44)" />
                 </Macro>
-                <Macro Name="UserEvent 16,45" id="1125">
+                <Macro Name="UserEvent 16,45" id="1133">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1125))
+                        EventGhost.DisableItem(XmlIdLink(1133))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 45)" />
                 </Macro>
-                <Macro Name="UserEvent 16,46" id="1128">
+                <Macro Name="UserEvent 16,46" id="1136">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1128))
+                        EventGhost.DisableItem(XmlIdLink(1136))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 46)" />
                 </Macro>
-                <Macro Name="UserEvent 16,47" id="1131">
+                <Macro Name="UserEvent 16,47" id="1139">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1131))
+                        EventGhost.DisableItem(XmlIdLink(1139))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 47)" />
                 </Macro>
-                <Macro Name="UserEvent 16,48" id="1134">
+                <Macro Name="UserEvent 16,48" id="1142">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1134))
+                        EventGhost.DisableItem(XmlIdLink(1142))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 48)" />
                 </Macro>
-                <Macro Name="UserEvent 16,51" id="1137" Enabled="False">
+                <Macro Name="UserEvent 16,51" id="1145" Enabled="False">
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 51)" />
                     <Event Name="Unit6.OUTPUT: IR, (UserEvent 16, 51)" />
-                    <Action>
-                        EventGhost.DisableItem(XmlIdLink(1137))
-                    </Action>
-                </Macro>
-                <Macro Name="UserEvent 16,52" id="1141">
-                    <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 52)" />
-                    <Event Name="Unit6.OUTPUT: IR, (UserEvent 16, 52)" />
-                    <Action>
-                        EventGhost.DisableItem(XmlIdLink(1141))
-                    </Action>
-                </Macro>
-                <Macro Name="UserEvent 16,53" id="1145">
-                    <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 53)" />
-                    <Event Name="Unit6.OUTPUT: IR, (UserEvent 16, 53)" />
                     <Action>
                         EventGhost.DisableItem(XmlIdLink(1145))
                     </Action>
                 </Macro>
-                <Macro Name="UserEvent 16,54" id="1149">
-                    <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 54)" />
-                    <Event Name="Unit6.OUTPUT: IR, (UserEvent 16, 54)" />
+                <Macro Name="UserEvent 16,52" id="1149">
+                    <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 52)" />
+                    <Event Name="Unit6.OUTPUT: IR, (UserEvent 16, 52)" />
                     <Action>
                         EventGhost.DisableItem(XmlIdLink(1149))
                     </Action>
                 </Macro>
-                <Macro Name="UserEvent 16,55" id="1153">
-                    <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 55)" />
-                    <Event Name="Unit6.OUTPUT: IR, (UserEvent 16, 55)" />
+                <Macro Name="UserEvent 16,53" id="1153">
+                    <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 53)" />
+                    <Event Name="Unit6.OUTPUT: IR, (UserEvent 16, 53)" />
                     <Action>
                         EventGhost.DisableItem(XmlIdLink(1153))
                     </Action>
                 </Macro>
-                <Macro Name="UserEvent 16,56" id="1157">
-                    <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 56)" />
-                    <Event Name="Unit6.OUTPUT: IR, (UserEvent 16, 56)" />
+                <Macro Name="UserEvent 16,54" id="1157">
+                    <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 54)" />
+                    <Event Name="Unit6.OUTPUT: IR, (UserEvent 16, 54)" />
                     <Action>
                         EventGhost.DisableItem(XmlIdLink(1157))
                     </Action>
                 </Macro>
-                <Macro Name="UserEvent 16,57" id="1161">
-                    <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 57)" />
-                    <Event Name="Unit6.OUTPUT: IR, (UserEvent 16, 57)" />
+                <Macro Name="UserEvent 16,55" id="1161">
+                    <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 55)" />
+                    <Event Name="Unit6.OUTPUT: IR, (UserEvent 16, 55)" />
                     <Action>
                         EventGhost.DisableItem(XmlIdLink(1161))
                     </Action>
                 </Macro>
-                <Macro Name="UserEvent 16,58" id="1165">
-                    <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 58)" />
-                    <Event Name="Unit6.OUTPUT: IR, (UserEvent 16, 58)" />
+                <Macro Name="UserEvent 16,56" id="1165">
+                    <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 56)" />
+                    <Event Name="Unit6.OUTPUT: IR, (UserEvent 16, 56)" />
                     <Action>
                         EventGhost.DisableItem(XmlIdLink(1165))
                     </Action>
                 </Macro>
-                <Macro Name="UserEvent 16,61" id="1169" Enabled="False">
-                    <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 61)" />
+                <Macro Name="UserEvent 16,57" id="1169">
+                    <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 57)" />
+                    <Event Name="Unit6.OUTPUT: IR, (UserEvent 16, 57)" />
                     <Action>
                         EventGhost.DisableItem(XmlIdLink(1169))
                     </Action>
                 </Macro>
-                <Macro Name="UserEvent 16,62" id="1172">
+                <Macro Name="UserEvent 16,58" id="1173">
+                    <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 58)" />
+                    <Event Name="Unit6.OUTPUT: IR, (UserEvent 16, 58)" />
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1172))
+                        EventGhost.DisableItem(XmlIdLink(1173))
+                    </Action>
+                </Macro>
+                <Macro Name="UserEvent 16,61" id="1177" Enabled="False">
+                    <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 61)" />
+                    <Action>
+                        EventGhost.DisableItem(XmlIdLink(1177))
+                    </Action>
+                </Macro>
+                <Macro Name="UserEvent 16,62" id="1180">
+                    <Action>
+                        EventGhost.DisableItem(XmlIdLink(1180))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 62)" />
                 </Macro>
-                <Macro Name="UserEvent 16,63" id="1175">
+                <Macro Name="UserEvent 16,63" id="1183">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1175))
+                        EventGhost.DisableItem(XmlIdLink(1183))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 63)" />
                 </Macro>
-                <Macro Name="UserEvent 16,64" id="1178">
+                <Macro Name="UserEvent 16,64" id="1186">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1178))
+                        EventGhost.DisableItem(XmlIdLink(1186))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 64)" />
                 </Macro>
-                <Macro Name="UserEvent 16,65" id="1181">
+                <Macro Name="UserEvent 16,65" id="1189">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1181))
+                        EventGhost.DisableItem(XmlIdLink(1189))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 65)" />
                 </Macro>
-                <Macro Name="UserEvent 16,66" id="1184">
+                <Macro Name="UserEvent 16,66" id="1192">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1184))
+                        EventGhost.DisableItem(XmlIdLink(1192))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 66)" />
                 </Macro>
-                <Macro Name="UserEvent 16,67" id="1187">
+                <Macro Name="UserEvent 16,67" id="1195">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1187))
+                        EventGhost.DisableItem(XmlIdLink(1195))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 67)" />
                 </Macro>
-                <Macro Name="UserEvent 16,68" id="1190">
+                <Macro Name="UserEvent 16,68" id="1198">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1190))
+                        EventGhost.DisableItem(XmlIdLink(1198))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 68)" />
                 </Macro>
-                <Macro Name="UserEvent 16,71" id="1193" Enabled="False">
+                <Macro Name="UserEvent 16,71" id="1201" Enabled="False">
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 71)" />
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1193))
+                        EventGhost.DisableItem(XmlIdLink(1201))
                     </Action>
                 </Macro>
-                <Macro Name="UserEvent 16,72" id="1196">
+                <Macro Name="UserEvent 16,72" id="1204">
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 72)" />
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1196))
+                        EventGhost.DisableItem(XmlIdLink(1204))
                     </Action>
                 </Macro>
-                <Macro Name="UserEvent 16,73" id="1199">
+                <Macro Name="UserEvent 16,73" id="1207">
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 73)" />
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1199))
+                        EventGhost.DisableItem(XmlIdLink(1207))
                     </Action>
                 </Macro>
-                <Macro Name="UserEvent 16,74" id="1202">
+                <Macro Name="UserEvent 16,74" id="1210">
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 74)" />
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1202))
+                        EventGhost.DisableItem(XmlIdLink(1210))
                     </Action>
                 </Macro>
-                <Macro Name="UserEvent 16,75" id="1205">
+                <Macro Name="UserEvent 16,75" id="1213">
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 75)" />
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1205))
+                        EventGhost.DisableItem(XmlIdLink(1213))
                     </Action>
                 </Macro>
-                <Macro Name="UserEvent 16,76" id="1208">
+                <Macro Name="UserEvent 16,76" id="1216">
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 76)" />
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1208))
+                        EventGhost.DisableItem(XmlIdLink(1216))
                     </Action>
                 </Macro>
-                <Macro Name="UserEvent 16,77" id="1211">
+                <Macro Name="UserEvent 16,77" id="1219">
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 77)" />
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1211))
+                        EventGhost.DisableItem(XmlIdLink(1219))
                     </Action>
                 </Macro>
-                <Macro Name="UserEvent 16,78" id="1214">
+                <Macro Name="UserEvent 16,78" id="1222">
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 78)" />
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1214))
+                        EventGhost.DisableItem(XmlIdLink(1222))
                     </Action>
                 </Macro>
-                <Macro Name="UserEvent 16,81" id="1217" Enabled="False">
+                <Macro Name="UserEvent 16,81" id="1225" Enabled="False">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1217))
+                        EventGhost.DisableItem(XmlIdLink(1225))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 81)" />
                 </Macro>
-                <Macro Name="UserEvent 16,82" id="1220">
+                <Macro Name="UserEvent 16,82" id="1228">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1220))
+                        EventGhost.DisableItem(XmlIdLink(1228))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 82)" />
                 </Macro>
-                <Macro Name="UserEvent 16,83" id="1223">
+                <Macro Name="UserEvent 16,83" id="1231">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1223))
+                        EventGhost.DisableItem(XmlIdLink(1231))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 83)" />
                 </Macro>
-                <Macro Name="UserEvent 16,84" id="1226">
+                <Macro Name="UserEvent 16,84" id="1234">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1226))
+                        EventGhost.DisableItem(XmlIdLink(1234))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 84)" />
                 </Macro>
-                <Macro Name="UserEvent 16,85" id="1229">
+                <Macro Name="UserEvent 16,85" id="1237">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1229))
+                        EventGhost.DisableItem(XmlIdLink(1237))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 85)" />
                 </Macro>
-                <Macro Name="UserEvent 16,86" id="1232" Enabled="False">
+                <Macro Name="UserEvent 16,86" id="1240" Enabled="False">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1232))
+                        EventGhost.DisableItem(XmlIdLink(1240))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 86)" />
                 </Macro>
-                <Macro Name="UserEvent 16,87" id="1235">
+                <Macro Name="UserEvent 16,87" id="1243">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1235))
+                        EventGhost.DisableItem(XmlIdLink(1243))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 87)" />
                 </Macro>
-                <Macro Name="UserEvent 16,88" id="1238" Enabled="False">
+                <Macro Name="UserEvent 16,88" id="1246" Enabled="False">
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 88)" />
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1238))
+                        EventGhost.DisableItem(XmlIdLink(1246))
                     </Action>
                 </Macro>
-                <Macro Name="UserEvent 16,91" id="1241" Enabled="False">
+                <Macro Name="UserEvent 16,91" id="1249" Enabled="False">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1241))
+                        EventGhost.DisableItem(XmlIdLink(1249))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 91)" />
                 </Macro>
-                <Macro Name="UserEvent 16,92" id="1244">
+                <Macro Name="UserEvent 16,92" id="1252">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1244))
+                        EventGhost.DisableItem(XmlIdLink(1252))
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 92)" />
                 </Macro>
-                <Macro Name="UserEvent 16,93" id="1247">
+                <Macro Name="UserEvent 16,93" id="1255">
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 93)" />
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1247))
+                        EventGhost.DisableItem(XmlIdLink(1255))
                     </Action>
                 </Macro>
-                <Macro Name="UserEvent 16,94" id="1250">
+                <Macro Name="UserEvent 16,94" id="1258">
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 94)" />
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1250))
+                        EventGhost.DisableItem(XmlIdLink(1258))
                     </Action>
                 </Macro>
-                <Macro Name="UserEvent 16,95" id="1253">
+                <Macro Name="UserEvent 16,95" id="1261">
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 95)" />
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1253))
+                        EventGhost.DisableItem(XmlIdLink(1261))
                     </Action>
                 </Macro>
-                <Macro Name="UserEvent 16,96" id="1256">
+                <Macro Name="UserEvent 16,96" id="1264">
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 96)" />
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1256))
+                        EventGhost.DisableItem(XmlIdLink(1264))
                     </Action>
                 </Macro>
-                <Macro Name="UserEvent 16,97" id="1259">
+                <Macro Name="UserEvent 16,97" id="1267">
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 97)" />
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1259))
+                        EventGhost.DisableItem(XmlIdLink(1267))
                     </Action>
                 </Macro>
-                <Macro Name="UserEvent 16,98" id="1262">
+                <Macro Name="UserEvent 16,98" id="1270">
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 98)" />
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1262))
+                        EventGhost.DisableItem(XmlIdLink(1270))
                     </Action>
                 </Macro>
             </Folder>
@@ -3411,19 +3492,19 @@
                 <Macro Name="run all preparations" Expanded="True">
                     <Event Name="Main.Case16 initialize" />
                     <Action>
-                        EventGhost.NewJumpIf(XmlIdLink(1272), 2, True)
+                        EventGhost.NewJumpIf(XmlIdLink(1280), 2, True)
                     </Action>
                     <Action>
-                        EventGhost.NewJumpIf(XmlIdLink(1291), 2, True)
+                        EventGhost.NewJumpIf(XmlIdLink(1299), 2, True)
                     </Action>
                     <Action>
-                        EventGhost.NewJumpIf(XmlIdLink(1399), 2, True)
+                        EventGhost.NewJumpIf(XmlIdLink(1407), 2, True)
                     </Action>
                     <Action Enabled="False">
-                        EventGhost.NewJumpIf(XmlIdLink(1480), 2, True)
+                        EventGhost.NewJumpIf(XmlIdLink(1488), 2, True)
                     </Action>
                 </Macro>
-                <Macro Name="Preparations" id="1272" Expanded="True">
+                <Macro Name="Preparations" id="1280" Expanded="True">
                     <Action Name="Prepare for testing">
                         EventGhost.Comment()
                     </Action>
@@ -3478,7 +3559,7 @@
                         Serial.Write(u'SimulateDay 7;')
                     </Action>
                 </Macro>
-                <Macro Name="Program eventlists" id="1291" Expanded="True">
+                <Macro Name="Program eventlists" id="1299" Expanded="True">
                     <Action>
                         Serial2.Write(u'EventlistErase;')
                     </Action>
@@ -3550,6 +3631,15 @@
                     </Action>
                     <Action Name="Although all permutations are in this list, only the valid ones are enabled." Enabled="False">
                         EventGhost.Comment()
+                    </Action>
+                    <Action>
+                        Serial.Write(u'EventlistWrite;WildCard RF,KAKU; SendRawSignal;')
+                    </Action>
+                    <Action>
+                        Serial.Write(u'EventlistWrite;WildCard RF,NewKAKU; SendRawSignal;')
+                    </Action>
+                    <Action>
+                        Serial.Write(u'EventlistWrite;WildCard RF,UserEvent; SendRawSignal;')
                     </Action>
                     <Action>
                         Serial.Write(u'EventlistWrite;WildCard All,All; SendUserEvent 16,1;')
@@ -3801,132 +3891,126 @@
                         Serial.Write(u'EventlistWrite;UserEvent 16,255; 0xBC001199;')
                     </Action>
                 </Macro>
-                <Macro Name="Reset test status indicators" id="1399" Expanded="True">
+                <Macro Name="Reset test status indicators" id="1407" Expanded="True">
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1017))
+                        EventGhost.EnableItem(XmlIdLink(1025))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1020))
+                        EventGhost.EnableItem(XmlIdLink(1028))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1023))
+                        EventGhost.EnableItem(XmlIdLink(1031))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1026))
+                        EventGhost.EnableItem(XmlIdLink(1034))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1029))
+                        EventGhost.EnableItem(XmlIdLink(1037))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1032))
+                        EventGhost.EnableItem(XmlIdLink(1040))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1035))
+                        EventGhost.EnableItem(XmlIdLink(1043))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1038))
+                        EventGhost.EnableItem(XmlIdLink(1046))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1041))
+                        EventGhost.EnableItem(XmlIdLink(1049))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1044))
+                        EventGhost.EnableItem(XmlIdLink(1052))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1047))
+                        EventGhost.EnableItem(XmlIdLink(1055))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1050))
+                        EventGhost.EnableItem(XmlIdLink(1058))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1053))
+                        EventGhost.EnableItem(XmlIdLink(1061))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1056))
+                        EventGhost.EnableItem(XmlIdLink(1064))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1059))
+                        EventGhost.EnableItem(XmlIdLink(1067))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1062))
+                        EventGhost.EnableItem(XmlIdLink(1070))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1065))
+                        EventGhost.EnableItem(XmlIdLink(1073))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1068))
+                        EventGhost.EnableItem(XmlIdLink(1076))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1071))
+                        EventGhost.EnableItem(XmlIdLink(1079))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1074))
+                        EventGhost.EnableItem(XmlIdLink(1082))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1077))
+                        EventGhost.EnableItem(XmlIdLink(1085))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1080))
+                        EventGhost.EnableItem(XmlIdLink(1088))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1083))
+                        EventGhost.EnableItem(XmlIdLink(1091))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1086))
+                        EventGhost.EnableItem(XmlIdLink(1094))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1089))
+                        EventGhost.EnableItem(XmlIdLink(1097))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1092))
+                        EventGhost.EnableItem(XmlIdLink(1100))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1095))
+                        EventGhost.EnableItem(XmlIdLink(1103))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1098))
+                        EventGhost.EnableItem(XmlIdLink(1106))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1101))
+                        EventGhost.EnableItem(XmlIdLink(1109))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1104))
+                        EventGhost.EnableItem(XmlIdLink(1112))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1107))
+                        EventGhost.EnableItem(XmlIdLink(1115))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1110))
+                        EventGhost.EnableItem(XmlIdLink(1118))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1113))
+                        EventGhost.EnableItem(XmlIdLink(1121))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1116))
+                        EventGhost.EnableItem(XmlIdLink(1124))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1119))
+                        EventGhost.EnableItem(XmlIdLink(1127))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1122))
+                        EventGhost.EnableItem(XmlIdLink(1130))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1125))
+                        EventGhost.EnableItem(XmlIdLink(1133))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1128))
+                        EventGhost.EnableItem(XmlIdLink(1136))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1131))
+                        EventGhost.EnableItem(XmlIdLink(1139))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1134))
-                    </Action>
-                    <Action>
-                        EventGhost.EnableItem(XmlIdLink(1137))
-                    </Action>
-                    <Action>
-                        EventGhost.EnableItem(XmlIdLink(1141))
+                        EventGhost.EnableItem(XmlIdLink(1142))
                     </Action>
                     <Action>
                         EventGhost.EnableItem(XmlIdLink(1145))
@@ -3950,144 +4034,150 @@
                         EventGhost.EnableItem(XmlIdLink(1169))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1172))
+                        EventGhost.EnableItem(XmlIdLink(1173))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1175))
+                        EventGhost.EnableItem(XmlIdLink(1177))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1178))
+                        EventGhost.EnableItem(XmlIdLink(1180))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1181))
+                        EventGhost.EnableItem(XmlIdLink(1183))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1184))
+                        EventGhost.EnableItem(XmlIdLink(1186))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1187))
+                        EventGhost.EnableItem(XmlIdLink(1189))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1190))
+                        EventGhost.EnableItem(XmlIdLink(1192))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1193))
+                        EventGhost.EnableItem(XmlIdLink(1195))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1196))
+                        EventGhost.EnableItem(XmlIdLink(1198))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1199))
+                        EventGhost.EnableItem(XmlIdLink(1201))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1202))
+                        EventGhost.EnableItem(XmlIdLink(1204))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1205))
+                        EventGhost.EnableItem(XmlIdLink(1207))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1208))
+                        EventGhost.EnableItem(XmlIdLink(1210))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1211))
+                        EventGhost.EnableItem(XmlIdLink(1213))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1214))
+                        EventGhost.EnableItem(XmlIdLink(1216))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1217))
+                        EventGhost.EnableItem(XmlIdLink(1219))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1220))
+                        EventGhost.EnableItem(XmlIdLink(1222))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1223))
+                        EventGhost.EnableItem(XmlIdLink(1225))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1226))
+                        EventGhost.EnableItem(XmlIdLink(1228))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1229))
+                        EventGhost.EnableItem(XmlIdLink(1231))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1232))
+                        EventGhost.EnableItem(XmlIdLink(1234))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1235))
+                        EventGhost.EnableItem(XmlIdLink(1237))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1238))
+                        EventGhost.EnableItem(XmlIdLink(1240))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1241))
+                        EventGhost.EnableItem(XmlIdLink(1243))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1244))
+                        EventGhost.EnableItem(XmlIdLink(1246))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1247))
+                        EventGhost.EnableItem(XmlIdLink(1249))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1250))
+                        EventGhost.EnableItem(XmlIdLink(1252))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1253))
+                        EventGhost.EnableItem(XmlIdLink(1255))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1256))
+                        EventGhost.EnableItem(XmlIdLink(1258))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1259))
+                        EventGhost.EnableItem(XmlIdLink(1261))
                     </Action>
                     <Action>
-                        EventGhost.EnableItem(XmlIdLink(1262))
+                        EventGhost.EnableItem(XmlIdLink(1264))
+                    </Action>
+                    <Action>
+                        EventGhost.EnableItem(XmlIdLink(1267))
+                    </Action>
+                    <Action>
+                        EventGhost.EnableItem(XmlIdLink(1270))
                     </Action>
                 </Macro>
-                <Macro Name="Disable excluded status indicators" id="1480" Expanded="True">
+                <Macro Name="Disable excluded status indicators" id="1488">
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1116))
+                        EventGhost.DisableItem(XmlIdLink(1124))
                     </Action>
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1119))
+                        EventGhost.DisableItem(XmlIdLink(1127))
                     </Action>
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1128))
+                        EventGhost.DisableItem(XmlIdLink(1136))
                     </Action>
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1141))
+                        EventGhost.DisableItem(XmlIdLink(1149))
                     </Action>
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1145))
+                        EventGhost.DisableItem(XmlIdLink(1153))
                     </Action>
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1157))
+                        EventGhost.DisableItem(XmlIdLink(1165))
                     </Action>
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1172))
+                        EventGhost.DisableItem(XmlIdLink(1180))
                     </Action>
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1175))
+                        EventGhost.DisableItem(XmlIdLink(1183))
                     </Action>
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1184))
+                        EventGhost.DisableItem(XmlIdLink(1192))
                     </Action>
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1196))
+                        EventGhost.DisableItem(XmlIdLink(1204))
                     </Action>
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1199))
+                        EventGhost.DisableItem(XmlIdLink(1207))
                     </Action>
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1208))
+                        EventGhost.DisableItem(XmlIdLink(1216))
                     </Action>
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1244))
+                        EventGhost.DisableItem(XmlIdLink(1252))
                     </Action>
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1247))
+                        EventGhost.DisableItem(XmlIdLink(1255))
                     </Action>
                     <Action>
-                        EventGhost.DisableItem(XmlIdLink(1256))
+                        EventGhost.DisableItem(XmlIdLink(1264))
                     </Action>
                 </Macro>
             </Folder>
@@ -4175,7 +4265,7 @@
                 </Action>
             </Macro>
         </Folder>
-        <Folder Name="Test case 19: test Nodo as a repeater">
+        <Folder Name="Test case 19: test Nodo as a repeater" Expanded="True">
             <Macro Name="Test case 19: test Nodo as a repeater" Expanded="True">
                 <Action>
                     Serial.Write(u'Unit 4, 10;')
@@ -4207,8 +4297,11 @@
                 <Action>
                     Serial.Write(u'EventlistWrite;WildCard RF,KAKU; SendRawSignal;')
                 </Action>
-                <Action Enabled="False">
-                    Serial.Write(u'EventlistWrite;WildCard RF,KAKU; SendSignal;')
+                <Action>
+                    Serial.Write(u'EventlistWrite;WildCard IR,NewKAKU; SendRawSignal;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite;WildCard RF,NewKAKU; SendRawSignal;')
                 </Action>
                 <Action>
                     Serial.Write(u'EventlistWrite;WildCard IR,UserEvent; SendRawSignal;')
@@ -4225,14 +4318,23 @@
             </Macro>
             <Macro Name="Testing from second Nodo: send commands" Expanded="True">
                 <Action>
-                    Serial2.Write(u'SendKaku A3, off;')
+                    Serial2.Write(u'SendKaku A3,off;')
+                </Action>
+                <Action Name=" ">
+                    EventGhost.Comment()
                 </Action>
                 <Action>
                     Serial2.Write(u'SendUserEvent 19,1;')
                 </Action>
+                <Action Name=" ">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial2.Write(u'SendNewKaku 1,off;')
+                </Action>
             </Macro>
         </Folder>
-        <Folder Name="Test case 20: test out-of-the-box Nodo">
+        <Folder Name="Test case 20: test out-of-the-box Nodo" Expanded="True">
             <Macro Name="Test case 20: test out-of-the-box Nodo" Expanded="True">
                 <Action>
                     Serial.Write(u'Reset;')
@@ -4250,7 +4352,7 @@
                 </Action>
             </Macro>
         </Folder>
-        <Folder Name="Workarea">
+        <Folder Name="Workarea" Expanded="True">
             <Macro Name="Status" Expanded="True">
                 <Event Name="Mouse.MiddleButton" />
                 <Action>
@@ -4278,6 +4380,20 @@
                 </Action>
                 <Action>
                     Serial.Write(u'SendUserEvent 1,2;')
+                </Action>
+            </Macro>
+            <Macro Name="trace switches" Expanded="True">
+                <Action>
+                    Serial.Write(u'trace on;')
+                </Action>
+                <Action>
+                    Serial.Write(u'trace off;')
+                </Action>
+                <Action>
+                    Serial2.Write(u'trace on;')
+                </Action>
+                <Action>
+                    Serial2.Write(u'trace off;')
                 </Action>
             </Macro>
         </Folder>
