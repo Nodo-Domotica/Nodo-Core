@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<EventGhost Name="Configuration Tree" Expanded="True" Version="1462" Guid="{BF67CA1F-CA1F-4B74-9E55-3EA22D1DC527}" Time="1290096569.11">
+<EventGhost Name="Configuration Tree" Expanded="True" Version="1462" Guid="{7783FA45-A6CC-49EB-8BAC-2ED8B5F69285}" Time="1290163772.09">
     <Autostart Name="Autostart" Expanded="True">
         <Action>
             EventGhost.ShowOSD(u'EventGhost with \nstandard testcases \nfor Nodo Due', u'0;-64;0;0;0;400;255;0;0;0;3;2;1;34;Arial', (0, 0, 255), None, 4, (0, 0), 0, 5.0, False)
@@ -1097,9 +1097,9 @@
                     </Action>
                 </Macro>
             </Folder>
-            <Folder Name="Test by shifting on clock level" Expanded="True">
+            <Folder Name="Test by shifting on clock level">
                 <Macro Name="Execute these macro's in sequence! Check entry and exit states!" />
-                <Macro Name="Preparation step 1: set clock to summertime 2009." Expanded="True">
+                <Macro Name="Preparation step 1: set clock to summertime 2009.">
                     <Action Name="********************************************************************************">
                         EventGhost.Comment()
                     </Action>
@@ -1128,7 +1128,7 @@
                         EventGhost.Comment()
                     </Action>
                 </Macro>
-                <Macro Name="Preparation step 2: set date to wintertime to allow automatic switchover and time adjustment" Expanded="True">
+                <Macro Name="Preparation step 2: set date to wintertime to allow automatic switchover and time adjustment">
                     <Action Name="********************************************************************************">
                         EventGhost.Comment()
                     </Action>
@@ -1157,7 +1157,7 @@
                         EventGhost.Comment()
                     </Action>
                 </Macro>
-                <Macro Name="Test DLS switchover: 28-03-2010" Expanded="True">
+                <Macro Name="Test DLS switchover: 28-03-2010">
                     <Action Name="********************************************************************************">
                         EventGhost.Comment()
                     </Action>
@@ -1195,7 +1195,7 @@
                         EventGhost.Comment()
                     </Action>
                 </Macro>
-                <Macro Name="Test DLS switchover: 31-10-2010" Expanded="True">
+                <Macro Name="Test DLS switchover: 31-10-2010">
                     <Action Name="********************************************************************************">
                         EventGhost.Comment()
                     </Action>
@@ -1950,7 +1950,7 @@
                     </Action>
                 </Macro>
             </Folder>
-            <Folder Name="Test what happens when user sets date back" Expanded="True">
+            <Folder Name="Test what happens when user sets date back">
                 <Macro Name="Preparation step 1: set clock to wintertime 2011." Expanded="True">
                     <Action Name="********************************************************************************">
                         EventGhost.Comment()
@@ -1958,7 +1958,7 @@
                     <Action Name="entry state: unknown">
                         EventGhost.Comment()
                     </Action>
-                    <Action Name="exit state: summertime">
+                    <Action Name="exit state: wintertime">
                         EventGhost.Comment()
                     </Action>
                     <Action>
@@ -1981,10 +1981,10 @@
                     <Action Name="********************************************************************************">
                         EventGhost.Comment()
                     </Action>
-                    <Action Name="entry state: unknown">
+                    <Action Name="entry state: wintertime">
                         EventGhost.Comment()
                     </Action>
-                    <Action Name="exit state: summertime">
+                    <Action Name="exit state: wintertime">
                         EventGhost.Comment()
                     </Action>
                     <Action>
@@ -1994,7 +1994,7 @@
                         Serial.Write(u'ClockSetYear 20,11;')
                     </Action>
                     <Action>
-                        Serial.Write(u'ClockSetTime 12,00;')
+                        Serial.Write(u'ClockSetTime 0,30;')
                     </Action>
                     <Action>
                         EventGhost.TriggerEvent(u'Case9_Show_Time', 5.0)
@@ -2003,7 +2003,33 @@
                         EventGhost.Comment()
                     </Action>
                 </Macro>
-                <Macro Name="Preparation step 3: set clock to summertime 2011." Expanded="True">
+                <Macro Name="Preparation step 3a: set clock to switchover date, but time just before summertime 2011." Expanded="True">
+                    <Action Name="********************************************************************************">
+                        EventGhost.Comment()
+                    </Action>
+                    <Action Name="entry state: wintertime">
+                        EventGhost.Comment()
+                    </Action>
+                    <Action Name="exit state:  wintertime">
+                        EventGhost.Comment()
+                    </Action>
+                    <Action>
+                        Serial.Write(u'ClockSetTime 0,30;')
+                    </Action>
+                    <Action>
+                        Serial.Write(u'ClockSetDate 27,3;')
+                    </Action>
+                    <Action>
+                        Serial.Write(u'ClockSetYear 20,11;')
+                    </Action>
+                    <Action>
+                        EventGhost.TriggerEvent(u'Case9_Show_Time', 5.0)
+                    </Action>
+                    <Action Name="********************************************************************************">
+                        EventGhost.Comment()
+                    </Action>
+                </Macro>
+                <Macro Name="Preparation step 3b: set clock to summertime 2011." Expanded="True">
                     <Action Name="********************************************************************************">
                         EventGhost.Comment()
                     </Action>
@@ -2014,10 +2040,7 @@
                         EventGhost.Comment()
                     </Action>
                     <Action>
-                        Serial.Write(u'ClockSetDate 1,7;')
-                    </Action>
-                    <Action>
-                        Serial.Write(u'ClockSetYear 20,11;')
+                        Serial.Write(u'ClockSetTime 2,30;')
                     </Action>
                     <Action>
                         EventGhost.TriggerEvent(u'Case9_Show_Time', 5.0)
@@ -2119,7 +2142,7 @@
                     EventGhost.Comment()
                 </Action>
                 <Action>
-                    Serial.Write(u'Status ClockSetYear;Status ClockSetDate;Status ClockSetTime;')
+                    Serial.Write(u'Status ClockSetDate;Status ClockSetYear;Status ClockSetTime;Status DaylightSaving;')
                 </Action>
             </Macro>
         </Folder>
@@ -2810,7 +2833,7 @@
                 </Action>
             </Macro>
         </Folder>
-        <Folder Name="Test case 16: test WildCards">
+        <Folder Name="Test case 16: test WildCards" Expanded="True">
             <Macro Name="test execution" Expanded="True">
                 <Action Name="Prerequisite: attach clocked Nodo on serial2, other Nodo on serial1">
                     EventGhost.Comment()
@@ -2830,68 +2853,70 @@
                 <Action Name="Press F5: this will run all necessary preparations">
                     EventGhost.TriggerEvent(u'Case16 initialize', 0.0)
                 </Action>
-                <Action Name="Manual: fire an IR signal into the Nodo">
+                <Action Name="Manual: generate incoming KAKU by pressing any KAKU command from a KAKU hand unit: generates 16,22">
                     EventGhost.Comment()
                 </Action>
-                <Action Name="Manual: generate incoming KAKU by pressing any KAKU command from a KAKU hand unit">
+                <Action Name="Manual: fire any unknown IR signal into the Nodo: generates 16,18">
                     EventGhost.Comment()
                 </Action>
-                <Action Name="Manual: generate incoming KAKU via IR from Harmony remote">
+                <Action Name="Manual: generate incoming KAKU via IR from Harmony remote: generates 16,12">
                     EventGhost.Comment()
                 </Action>
-                <Action Name="Manual: generate incoming UserEvent via IR from Harmony remote">
+                <Action Name="Manual: generate incoming UserEvent via IR from Harmony remote: generate 16,16">
                     EventGhost.Comment()
                 </Action>
                 <Action Name="Press F5: Timer will be set to 0, this will generate an event immediately">
                     Serial.Write(u'TimerSet 1,0;')
                 </Action>
-                <Action Name="Press F5: this will simulate one full day with all sunup/sundown events">
+                <Action Name="Press F5: Send a dummy userevent from unit5 to unit4: generates 16,26/16,88">
+                    Serial2.Write(u'SendUserevent 16,255;')
+                </Action>
+                <Action Name="Press F5: this will simulate one full day with all sunup/sundown events: generates 16,61">
                     Serial2.Write(u'SimulateDay 1;')
                 </Action>
-                <Action Name='Press F5: generate command for unknown unit. Unit5 should detect this as "OtherUnit"'>
+                <Action Name='Press F5: generate command for unknown unit. Unit5 should detect this as "OtherUnit": generates 16,27'>
                     Serial2.Write(u'Divert 9; ClockSetYear 20,10;')
                 </Action>
-                <Action Name="Manual: disable serialport 1, then enable it again">
+                <Action Name="Manual: disable serialport 1, then enable it again: generates 16,91">
                     EventGhost.Comment()
                 </Action>
-                <Action Name="Press F5: generate unknown signal from RF">
+                <Action Name="Press F5: generate unknown userevent from eventlist: generates 16,36/16/86/16,88">
                     Serial.Write(u'UserEvent 16,200;')
                 </Action>
-                <Action Name="Press F5: generate unknown signal from serial">
+                <Action Name="Press F5: generate unknown hex signal from serial: generates 16,38">
                     Serial.Write(u'0xDEFEAC88;')
                 </Action>
-                <Action Name="Manual: short circuit one of the input ports on Nodo">
+                <Action Name="Manual: short circuit one of the input ports on Nodo: generates 16,41">
                     EventGhost.Comment()
                 </Action>
-                <Action Name="Press F5: set a variable">
-                    Serial.Write(u'VariableSet 5,140; VariableInc 5, 3;')
+                <Action Name="Press F5: set a variable: generates 16,71">
+                    Serial.Write(u'VariableSet 5,140;')
                 </Action>
-                <Action Name="Press F5: send a weird Userevent from Nodo 2 to 1">
+                <Action Name="Press F5: send a weird Userevent from Nodo 2 to 1: generates 16,26. Not 16,28!!!">
                     Serial2.Write(u'SendUserEvent  16,234;')
                 </Action>
-                <Action Name="Press F5: send a valid command to another unit">
+                <Action Name="Press F5: send a valid command to another unit" Enabled="False">
                     Serial2.Write(u'Divert 9; SendStatus DaylightSaving;')
                 </Action>
-                <Action Name="Press F5: send an unknown command via serial">
-                    Serial.Write(u'0xFECBA900;')
-                </Action>
-                <Action Name="Press F5: Send a SendUserEvent command fia serial">
+                <Action Name="Press F5: Send a SendUserEvent command fia serial" Enabled="False">
                     Serial.Write(u'SendUserEvent 16,201;')
                 </Action>
-                <Action Name="Press F5: Send a UserEvent command fia serial">
+                <Action Name="Press F5: Send a UserEvent command fia serial" Enabled="False">
                     Serial.Write(u'UserEvent 16,201;')
                 </Action>
-                <Action Name="Press F5: Send a KAKU command fia serial">
+                <Action Name="Press F5: Send a KAKU command fia serial: generates nothing" Enabled="False">
                     Serial.Write(u'SendKAKU A1,off;')
                 </Action>
-                <Action Name="Press F5: Send a NewKAKU command fia serial">
+                <Action Name="Press F5: Send a NewKAKU command fia serial: generates nothing" Enabled="False">
                     Serial.Write(u'SendNewKAKU A1,off;')
+                </Action>
+                <Action Name="Manual: send an unknown RF code from another handset: to be done">
+                    EventGhost.Comment()
                 </Action>
                 <Action Name=" ">
                     EventGhost.Comment()
                 </Action>
             </Macro>
-            <Macro Name="Serial Port: Write Data: boot;" />
             <Folder Name="Statusindicators: enabled means not yet occurred, disabled means the event has occurred" Expanded="True">
                 <Macro Name="UserEvent 16,01" id="1017" Enabled="False">
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 1)" />
@@ -3031,7 +3056,7 @@
                     </Action>
                     <Event Name="Unit5.OUTPUT: IR, (UserEvent 16, 27)" />
                 </Macro>
-                <Macro Name="UserEvent 16,28" id="1086" Enabled="False">
+                <Macro Name="UserEvent 16,28" id="1086">
                     <Action>
                         EventGhost.DisableItem(XmlIdLink(1086))
                     </Action>
@@ -4207,7 +4232,7 @@
                 </Action>
             </Macro>
         </Folder>
-        <Folder Name="Test case 20: test out-of-the-box Nodo" Expanded="True">
+        <Folder Name="Test case 20: test out-of-the-box Nodo">
             <Macro Name="Test case 20: test out-of-the-box Nodo" Expanded="True">
                 <Action>
                     Serial.Write(u'Reset;')
