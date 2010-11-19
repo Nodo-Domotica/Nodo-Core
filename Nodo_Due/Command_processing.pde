@@ -255,17 +255,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     switch(Command)
       {   
       case CMD_SEND_KAKU:
-        if(S.WaitFreeRFAction==VALUE_ALL)WaitFreeRF(S.WaitFreeRFWindow);
-        KAKU_2_RawSignal(Content);
-        PrintEvent(command2event(CMD_KAKU,Par1,Par2),VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT);
-        RawSendRF();      
+        SendEventCode(command2event(CMD_KAKU,Par1,Par2));
         break;
         
       case CMD_SEND_KAKU_NEW:
-        if(S.WaitFreeRFAction==VALUE_ALL)WaitFreeRF(S.WaitFreeRFWindow);
-        NewKAKU_2_RawSignal(Content);
-        PrintEvent(command2event(CMD_KAKU_NEW,Par1,Par2), VALUE_SOURCE_RF, VALUE_DIRECTION_OUTPUT);
-        RawSendRF();      
+        SendEventCode(command2event(CMD_KAKU_NEW,Par1,Par2));
         break;
         
       case CMD_VARIABLE_INC: 
@@ -349,7 +343,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;     
   
       case CMD_SEND_RAWSIGNAL:
-        Event=RawSignal_2_32bit();// alleen Nodo eigen 32-bit signalen opnieuw opbouwen. Andere (dus ook KAKU) RAW verzenden.
+        Event=AnalyzeRawSignal();
         if(EventType(Event)==VALUE_TYPE_UNKNOWN)
           SendRawSignal();        
         else
