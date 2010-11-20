@@ -129,7 +129,7 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 #define CMD_RESET_FACTORY 48
 #define CMD_SEND_KAKU 49
 #define CMD_SEND_KAKU_NEW 50
-#define CMD_SEND_RAWSIGNAL 51
+#define CMD_SEND_SIGNAL 51
 #define CMD_SIMULATE 52
 #define CMD_SIMULATE_DAY 53
 #define CMD_SOUND 54
@@ -232,7 +232,7 @@ prog_char PROGMEM Cmd_47[]="RawsignalPut";
 prog_char PROGMEM Cmd_48[]="Reset";
 prog_char PROGMEM Cmd_49[]="SendKAKU";
 prog_char PROGMEM Cmd_50[]="SendNewKAKU";
-prog_char PROGMEM Cmd_51[]="SendRawSignal";
+prog_char PROGMEM Cmd_51[]="SendSignal";
 prog_char PROGMEM Cmd_52[]="Simulate";
 prog_char PROGMEM Cmd_53[]="SimulateDay";
 prog_char PROGMEM Cmd_54[]="Sound";
@@ -256,7 +256,7 @@ prog_char PROGMEM Cmd_71[]="WiredPullup";
 prog_char PROGMEM Cmd_72[]="WiredSmittTrigger";
 prog_char PROGMEM Cmd_73[]="WiredThreshold";
 prog_char PROGMEM Cmd_74[]="SendUserEvent";
-prog_char PROGMEM Cmd_75[]="SendSignal";
+prog_char PROGMEM Cmd_75[]="RawSignalCopy";
 prog_char PROGMEM Cmd_76[]="WildCard";
 prog_char PROGMEM Cmd_77[]="";
 prog_char PROGMEM Cmd_78[]="";
@@ -440,7 +440,10 @@ void loop()
       if(Serial.available()>0)
         {
         if(Content=Receive_Serial())
+          {
+          Nodo_2_RawSignal(Content);// bouw een RawSignal op zodat deze later eventueel kan worden verzonden met SendSignal
           ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_SERIAL,0,0);      // verwerk binnengekomen event.
+          }
         StaySharpTimer=millis()+SHARP_TIME;
         SerialHold(false);
         }

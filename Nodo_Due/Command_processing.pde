@@ -54,7 +54,7 @@ byte CommandError(unsigned long Content)
     case CMD_STATUS:
     case CMD_DELAY:
     case CMD_SOUND: 
-    case CMD_SEND_RAWSIGNAL:
+    case CMD_SEND_SIGNAL:
     case CMD_USER_EVENT:
     case CMD_SEND_USEREVENT:
     case CMD_SEND_KAKU:
@@ -342,12 +342,15 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         SimulateDay(Par1); 
         break;     
   
-      case CMD_SEND_RAWSIGNAL:
-        Event=AnalyzeRawSignal();
-        if(EventType(Event)==VALUE_TYPE_UNKNOWN)
-          SendRawSignal();        
-        else
-          SendEventCode(Event);
+      case CMD_SEND_SIGNAL:
+        if(RawSignal[0]>=16)//alleen als er iets in de buffer zit, anders heeft verzenden geen zin.
+          {
+           Event=AnalyzeRawSignal();
+           if(EventType(Event)==VALUE_TYPE_UNKNOWN)
+             SendRawSignal();        
+           else
+             SendEventCode(Event);
+          }
         break;        
   
       case CMD_CLOCK_YEAR:

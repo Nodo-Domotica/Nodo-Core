@@ -186,7 +186,7 @@ void PrintEventCode(unsigned long Code)
       break;
 
     // Geen parameters
-    case CMD_SEND_RAWSIGNAL:
+    case CMD_SEND_SIGNAL:
     case CMD_BOOT_EVENT:
       P1=P_NOT;
       P2=P_NOT;
