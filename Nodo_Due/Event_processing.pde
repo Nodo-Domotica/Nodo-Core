@@ -32,7 +32,6 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   byte w,x,y,z;
   static byte depth=0;  // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's
 
-// PrintTerm();//??? mag weer weg na debugging wildcard.
 
   // Uitvoeren voorafgaand aan een reeks uitvoeren
   if(depth==0)
@@ -60,8 +59,8 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     { // Er is een Commando binnengekomen 
     if(!ExecuteCommand(IncommingEvent,Port,PreviousContent,PreviousPort))
       {
-      depth--;//??? Issue 141 hier wel een return. Toegevoegd voor Issue 141
-      return false;//??? 
+      depth--;
+      return false;
       }
     }
   else
@@ -94,33 +93,15 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
         if(z!=VALUE_ALL && z!=Port)
           y=false;          
 
-//        //??????????????????????????
-//        //??? t.b.v. debugging WildCard 
-//        z=(Event_1>>8)&0xff; // Par1 deel bevat de poort
-//        Serial.print("(WildCardPort=");
-//        Serial.print(cmd2str(z));
-//        Serial.print(", InputPort=");
-//        Serial.print(cmd2str(Port));
-
         z=Event_1&0xff; // Par2 deel Wildcard bevat type event
         if(z!=VALUE_ALL && z!=w)
           y=false;
-
-//        Serial.print(") , (WildCardType=");
-//        Serial.print(cmd2str(z));
-//        Serial.print(", InputType=");
-//        Serial.print(cmd2str(w));
-//        Serial.print(")");
-//        PrintTerm(); // ??? debug
-//        //?????????????????????????
-
         }
       else
         y=CheckEvent(IncommingEvent,Event_1);      
       
       if(y)
         {
-//       Serial.print("==> Match!");PrintTerm(); // ??? debug
         if(S.Trace&1)
           PrintEventlistEntry(x,depth);
           
@@ -129,7 +110,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
           if(!ExecuteCommand(Event_2, VALUE_SOURCE_EVENTLIST,IncommingEvent,Port))
             {
             depth--;
-            return false;//??? moet dit false worden? Issue 141
+            return false;
             }
           }
         else

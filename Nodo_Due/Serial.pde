@@ -51,24 +51,7 @@ unsigned long Receive_Serial(void)
           }   
         PrintLine();
         break;
-  
-      case CMD_STATUS:
-         Cmd=Par1;
-         Par1=Par2;
-         if(GetStatus(&Cmd,&Par1,&Par2)) // let op: call by reference !
-           {
-           Event=command2event(Cmd,Par1,Par2);// event wordt samengesteld...
-           PrintEventCode(Event);// ...maar alleen weergegeven.
-           PrintTerm();
-           }
-         else
-           {
-           error=true;
-           Par1=CMD_STATUS;
-           Par2=VALUE_PARAMETER;
-           }
-         break;
-   
+     
       case CMD_EVENTLIST_WRITE:
         // haal event encommando op
         Event=SerialReadEvent();
@@ -151,6 +134,23 @@ unsigned long Receive_Serial(void)
           RawSignal[0]=y-1;
           SendRawSignal();
           break;
+
+        case CMD_STATUS:
+           Cmd=Par1;
+           Par1=Par2;
+           if(GetStatus(&Cmd,&Par1,&Par2)) // let op: call by reference !
+             {
+             Event=command2event(Cmd,Par1,Par2);// event wordt samengesteld...
+             PrintEventCode(Event);// ...maar alleen weergegeven.
+             PrintTerm();
+             }
+           else
+             {
+             error=true;
+             Par1=CMD_STATUS;
+             Par2=VALUE_PARAMETER;
+             }
+           break;
     
         case CMD_EVENTLIST_ERASE:
            VariableClear(0); // alle variabelen op nul zetten

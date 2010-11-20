@@ -285,8 +285,7 @@ boolean LoadSettings()
 void ResetFactory(void)
   {
   Beep(2000,2000);
-  
-  ClockRead();  // eerst een ClockRead doen???
+  ClockRead();
   
   S.Version            = VERSION;
   S.Unit               = UNIT;
@@ -345,8 +344,8 @@ boolean VariableClear(byte Variable)
 
   if(Variable>0 && Variable<=USER_VARIABLES_MAX)
     {
-    S.UserVar[Variable-1]=0; //??? issue 145
-    UserVarPrevious[Variable-1]=0; //??? issue 145
+    S.UserVar[Variable-1]=0;
+    UserVarPrevious[Variable-1]=0;
     SaveSettings();
     return true;
     }

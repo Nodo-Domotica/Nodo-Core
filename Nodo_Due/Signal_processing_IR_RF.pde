@@ -352,7 +352,6 @@ void CopySignalIR2RF(byte Window)
 /**********************************************************************************************\
 * Deze functie zendt gedurende Window seconden de RF ontvangst direct door naar IR
 * Window tijd in seconden.
-* ??? deze funktie werkt nog niet!
 \*********************************************************************************************/
 #define MAXPULSETIME 50 // maximale zendtijd van de IR-LED in mSec. Ter voorkoming van overbelasting
 void CopySignalRF2IR(byte Window)
@@ -376,7 +375,6 @@ void CopySignalRF2IR(byte Window)
         }
       }
     PulseTimer=millis()+MAXPULSETIME;
-    //   digitalWrite(MonitorLedPin,(millis()>>7)&0x01); // LED laten knipperen.
     }
   digitalWrite(MonitorLedPin,LOW);
   TCCR2A&=~_BV(COM2A0);
@@ -385,7 +383,6 @@ void CopySignalRF2IR(byte Window)
 /**********************************************************************************************\
 * Deze functie zendt gedurende Window seconden de RF ontvangst direct door naar IR
 * Window tijd in seconden.
-* ??? deze funktie werkt nog niet!
 \*********************************************************************************************/
 void SendRawSignal(void)
   {

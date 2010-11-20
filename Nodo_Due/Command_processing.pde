@@ -38,7 +38,6 @@ byte CommandError(unsigned long Content)
     {
     //test; geen, altijd goed
     case CMD_VARIABLE_EVENT:    
-    case CMD_EVENT_STATUS: //??? wat hier afvangen??
     case CMD_KAKU:
     case CMD_DLS_EVENT:
     case CMD_CLOCK_EVENT_DAYLIGHT:

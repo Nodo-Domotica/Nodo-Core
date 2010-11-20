@@ -169,7 +169,7 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 #define CMD_CLOCK_EVENT_THU 88
 #define CMD_CLOCK_EVENT_FRI 89
 #define CMD_CLOCK_EVENT_SAT 90
-#define CMD_EVENT_STATUS 91
+#define CMD_RES_91 91
 #define CMD_KAKU 92
 #define CMD_KAKU_NEW 93
 #define CMD_TIMER_EVENT 94
@@ -272,7 +272,7 @@ prog_char PROGMEM Cmd_87[]="ClockWed";
 prog_char PROGMEM Cmd_88[]="ClockThu";
 prog_char PROGMEM Cmd_89[]="ClockFri";
 prog_char PROGMEM Cmd_90[]="ClockSat";
-prog_char PROGMEM Cmd_91[]="EventStatus";
+prog_char PROGMEM Cmd_91[]="";
 prog_char PROGMEM Cmd_92[]="KAKU";
 prog_char PROGMEM Cmd_93[]="NewKAKU";
 prog_char PROGMEM Cmd_94[]="Timer";

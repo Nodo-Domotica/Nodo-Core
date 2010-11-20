@@ -162,6 +162,7 @@ void PrintEventCode(unsigned long Code)
     case CMD_COPYSIGNAL:
     case CMD_WAITFREERF:
     case CMD_SEND_STATUS:
+    case CMD_STATUS:
       P1=P_TEXT;
       P2=P_VALUE;
       break;
