@@ -32,6 +32,12 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   byte w,x,y,z;
   static byte depth=0;  // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's
 
+  if(RawsignalGet)
+    {
+    PrintRawSignal();
+    RawsignalGet=false;
+    return true;
+    }
 
   // Uitvoeren voorafgaand aan een reeks uitvoeren
   if(depth==0)
@@ -248,35 +254,4 @@ void GenerateEvent(byte Cmd, byte P1, byte P2)
   SendEventCode(Event);
   }
   
-/**********************************************************************************************\
-* verzendt een event en geeft dit tevens weer op SERAIL
-\**********************************************************************************************/
 
-boolean SendEventCode(unsigned long Event)
-  {
-  if(S.WaitFreeRFAction==VALUE_ALL)WaitFreeRF(S.WaitFreeRFWindow);
-  switch(EventPart(Event,EVENT_PART_COMMAND))
-    {
-    case CMD_KAKU:
-      KAKU_2_RawSignal(Event);
-      break;
-    case CMD_KAKU_NEW:
-      NewKAKU_2_RawSignal(Event);
-      break;
-    default:
-      Nodo_2_RawSignal(Event);
-    }
-
-  if(S.TransmitPort== VALUE_SOURCE_IR || S.TransmitPort== VALUE_SOURCE_IR_RF)
-    { 
-    PrintEvent(Event, VALUE_SOURCE_IR,VALUE_DIRECTION_OUTPUT);
-    RawSendIR();
-    } 
-  if(S.TransmitPort== VALUE_SOURCE_RF || S.TransmitPort== VALUE_SOURCE_IR_RF)
-    {
-    PrintEvent(Event, VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT);
-    RawSendRF();
-    }
-  }
- 
- 

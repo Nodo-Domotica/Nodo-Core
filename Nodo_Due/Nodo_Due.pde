@@ -5,6 +5,7 @@
  - TransmitSettings
 
 Done:
+- Issue 150: opties 'Error' en 'Ok' verwijderd uit de wildcardtypen
  
 
  \*****************************************************************************************************/
@@ -43,14 +44,7 @@ Done:
  ********************************************************************************************************/
 
 #define VERSION                  100 // Nodo Version nummer
-#define BAUD                   19200 // Baudrate voor seriële communicatie.
-#define SERIAL_TERMINATOR_1     0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>, default voor EventGhost
-#define SERIAL_TERMINATOR_2     0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
-#define RF_ENDSIGNAL_TIME       1000 // Dit is de tijd in milliseconden waarna wordt aangenomen dat het ontvangen één RF signaal beëindigd is
-#define IR_ENDSIGNAL_TIME       1000 // Dit is de tijd in milliseconden waarna wordt aangenomen dat het ontvangen één IR signaal beëindigd is
-#define UNIT_MAX                  15 
-#define HOME_MAX                  10
-//****************************************************************************************************************************************
+
 
 #include "pins_arduino.h"
 #include "ctype.h"
@@ -64,11 +58,10 @@ prog_char PROGMEM Text_02[] = "SunMonThuWedThuFriSat";
 prog_char PROGMEM Text_03[] = ", Home ";
 prog_char PROGMEM Text_05[] = "Dim";
 prog_char PROGMEM Text_06[] = "SYSTEM: Unknown command!";
-prog_char PROGMEM Text_07[] = ", Rawsignal=(";
+prog_char PROGMEM Text_07[] = "SYSTEM: Rawsignal=(";
 prog_char PROGMEM Text_08[] = "Unit-";
 prog_char PROGMEM Text_09[] = "SYSTEM: Break!";
 prog_char PROGMEM Text_14[] = ", Unit ";
-prog_char PROGMEM Text_26[] = "SYSTEM: Waiting for RF/IR event...";
 prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 
 #define RANGE_VALUE 30 // alle codes kleiner of gelijk aan deze waarde zijn vaste Nodo waarden.
@@ -313,16 +306,16 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 // Declaratie aansluitingen op de Arduino
 // D0 en D1 kunnen niet worden gebruikt. In gebruik door de FTDI-chip voor seriele USB-communiatie (TX/RX).
 // A4 en A5 worden gebruikt voor I2C communicatie voor o.a. de real-time clock
-#define IR_ReceiveDataPin          3  // Op deze input komt het IR signaal binnen van de TSOP. Bij HIGH bij geen signaal.
-#define IR_TransmitDataPin        11  // Aan deze pin zit een zender IR-Led. (gebufferd via transistor i.v.m. hogere stroom die nodig is voor IR-led)
-#define RF_TransmitPowerPin        4  // +5 volt / Vcc spanning naar de zender.
-#define RF_TransmitDataPin         5  // data naar de zender
-#define RF_ReceiveDataPin          2  // Op deze input komt het 433Mhz-RF signaal binnen. LOW bij geen signaal.
-#define RF_ReceivePowerPin        12  // Spanning naar de ontvanger via deze pin.
-#define MonitorLedPin             13  // bij iedere ontvangst of verzending licht deze led kort op.
-#define BuzzerPin                  6  // luidspreker aansluiting
-#define WiredAnalogInputPin_1      0  // vier analoge inputs van 0 tot en met 3
-#define WiredDigitalOutputPin_1    7  // vier digitale outputs van 7 tot en met 10
+#define IR_ReceiveDataPin           3  // Op deze input komt het IR signaal binnen van de TSOP. Bij HIGH bij geen signaal.
+#define IR_TransmitDataPin         11  // Aan deze pin zit een zender IR-Led. (gebufferd via transistor i.v.m. hogere stroom die nodig is voor IR-led)
+#define RF_TransmitPowerPin         4  // +5 volt / Vcc spanning naar de zender.
+#define RF_TransmitDataPin          5  // data naar de zender
+#define RF_ReceiveDataPin           2  // Op deze input komt het 433Mhz-RF signaal binnen. LOW bij geen signaal.
+#define RF_ReceivePowerPin         12  // Spanning naar de ontvanger via deze pin.
+#define MonitorLedPin              13  // bij iedere ontvangst of verzending licht deze led kort op.
+#define BuzzerPin                   6  // luidspreker aansluiting
+#define WiredAnalogInputPin_1       0  // vier analoge inputs van 0 tot en met 3
+#define WiredDigitalOutputPin_1     7  // vier digitale outputs van 7 tot en met 10
 
 #define UNIT                       0x1 // Unit nummer van de Nodo. Bij gebruik van meerdere nodo's deze uniek toewijzen [1..F]
 #define HOME                       0x1 // Home adres van de Nodo. Bij gebruik van meerdere nodo's deze hetzelfde houden [1..F]
@@ -332,12 +325,32 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define USER_TIMER_MAX              15 // aantal beschikbare timers voor de user.
 #define USER_VARIABLES_MAX          15 // aantal beschikbare gebbruikersvariabelen voor de user.
 #define RAW_BUFFER_SIZE            200 // Maximaal aantal te ontvangen bits*2. 
+#define UNIT_MAX                    15 
+#define HOME_MAX                    10
+
+#define BAUD                     19200 // Baudrate voor seriële communicatie.
+#define SERIAL_TERMINATOR_1       0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>, default voor EventGhost
+#define SERIAL_TERMINATOR_2       0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
 
 #define EVENT_PART_COMMAND           1
 #define EVENT_PART_HOME              2
 #define EVENT_PART_UNIT              3
 #define EVENT_PART_PAR1              4
 #define EVENT_PART_PAR2              5
+
+// settings voor verzenden en ontvangen van IR/RF 
+#define ENDSIGNAL_TIME          1000 // Dit is de tijd in milliseconden waarna wordt aangenomen dat het ontvangen één reeks signalen beëindigd is
+#define SIGNAL_TIMEOUT_RF       5000 // na deze tijd in uSec. wordt één RF signaal als beëindigd beschouwd.
+#define SIGNAL_TIMEOUT_IR      10000 // na deze tijd in uSec. wordt één IR signaal als beëindigd beschouwd.
+#define REPEATS_RF                 5 // aantal herhalingen van een code binnen één RF reeks
+#define REPEATS_IR                 5 // aantal herhalingen van een code binnen één IR reeks
+#define DELAY_RF                  20 // milliseconden wachttijd tussen het verzenden van codes binnen één RF reeks
+#define DELAY_IR                  20 // milliseconden wachttijd tussen het verzenden van codes binnen één IR reeks
+#define MIN_PULSE_LENGTH         100 // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
+#define MIN_RAW_PULSES            16 // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
+#define SHARP_TIME              1000 // tijd in milliseconden dat de nodo gefocust moet blijven luisteren naar één dezelfde poort na binnenkomst van een signaal
+
+//****************************************************************************************************************************************
 
 unsigned long UserTimer[USER_TIMER_MAX];
 byte TimerCounter=0;
@@ -346,7 +359,7 @@ boolean WiredInputStatus[4],WiredOutputStatus[4];   // Wired variabelen
 unsigned int RawSignal[RAW_BUFFER_SIZE];            // Tabel met de gemeten pulsen in microseconden. eerste waarde is het aantal bits*2
 unsigned long EventTimeCodePrevious;                // t.b.v. voorkomen herhaald ontvangen van dezelfde code binnen ingestelde tijd
 byte DaylightPrevious;                              // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet
-boolean Simulate;
+boolean Simulate,RawsignalGet;
 void(*Reset)(void)=0; //reset functie op adres 0
 uint8_t RFbit,RFport,IRbit,IRport;
 struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight; int Year,DaylightSaving;}Time;
@@ -417,14 +430,13 @@ void setup()
 
 #define Loop_INTERVAL_1          500  // tijdsinterval in ms. voor achtergrondtaken.
 #define Loop_INTERVAL_2         5000  // tijdsinterval in ms. voor achtergrondtaken.
-#define SHARP_TIME              1000  // tijd dat de nodo gefocust moet blijven luisteren naar één dezelfde poort na binnenkomst van een signaal
 
 void loop() 
   {
   unsigned long Content=0L,StaySharpTimer=millis();
   unsigned long LoopIntervalTimer_1=millis();// millis() maakt dat de intervallen van 1 en 2 niet op zelfde moment vallen => 1 en 2 nu asynchroon
   unsigned long LoopIntervalTimer_2=0L;
-  unsigned long PauseTimerIR,PauseTimerRF,ContentPrevious; // t.b.v. voorkomen onbedoeld achter elkaar herhaald ontvangen van codes
+  unsigned long SupressRepeatTimer,ContentPrevious;
   unsigned long Checksum=0L;
   byte x,y,z, WiredCounter=0, VariableCounter;
 
@@ -454,23 +466,24 @@ void loop()
       {
       if((*portInputRegister(IRport)&IRbit)==0)// Kijk if er iets op de IR poort binnenkomt. (Pin=LAAG als signaal in de ether). 
         {
-        if(IRFetchSignal())// Als het een duidelijk signaal was
+        if(FetchSignal(IR_ReceiveDataPin,LOW,S.AnalyseTimeOut))// Als het een duidelijk IR signaal was
           {
           Content=AnalyzeRawSignal(); // Bereken uit de tabel met de pulstijden de 32-bit code. 
           if(Content)// als AnalyzeRawSignal een event heeft opgeleverd
             {
             StaySharpTimer=millis()+SHARP_TIME;
-            if(Content==Checksum && (millis()>PauseTimerIR || Content!=ContentPrevious))
+            if(Content==Checksum && (millis()>SupressRepeatTimer || Content!=ContentPrevious))// tweede maal ontvangen als checksum
                {
-               PauseTimerIR=millis()+IR_ENDSIGNAL_TIME; // zodat herhalingen niet opnieuw opgepikt worden
+               SupressRepeatTimer=millis()+ENDSIGNAL_TIME; // zodat herhalingen niet opnieuw opgepikt worden
                ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_IR,0,0); // verwerk binnengekomen event.
                ContentPrevious=Content;
                }
             Checksum=Content;
             }
           }
+        interrupts();
         }
-      }while(millis()<StaySharpTimer);
+      }while(StaySharpTimer>millis());
   
   
     // RF: *************** kijk of er data start op RF en genereer een event als er een code ontvangen is **********************
@@ -478,15 +491,15 @@ void loop()
       {
       if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
         {
-        if(RFFetchSignal())// Als het een duidelijk signaal was
+        if(FetchSignal(RF_ReceiveDataPin,HIGH,SIGNAL_TIMEOUT_RF))// Als het een duidelijk RF signaal was
           {
           Content=AnalyzeRawSignal(); // Bereken uit de tabel met de pulstijden de 32-bit code. 
           if(Content)// als AnalyzeRawSignal een event heeft opgeleverd
             {
             StaySharpTimer=millis()+SHARP_TIME;
-            if(Content==Checksum && (millis()>PauseTimerRF || Content!=ContentPrevious))// tweede maal ontvangen als checksum
+            if(Content==Checksum && (millis()>SupressRepeatTimer || Content!=ContentPrevious))// tweede maal ontvangen als checksum
                {
-               PauseTimerRF=millis()+RF_ENDSIGNAL_TIME; // zodat herhalingen niet opnieuw opgepikt worden
+               SupressRepeatTimer=millis()+ENDSIGNAL_TIME; // zodat herhalingen niet opnieuw opgepikt worden
                ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_RF,0,0); // verwerk binnengekomen event.
                ContentPrevious=Content;
                }

@@ -292,7 +292,7 @@ void ResetFactory(void)
   S.Home               = HOME;
   S.Trace              = 0;
   S.AnalyseSharpness   = 50;
-  S.AnalyseTimeOut     = 10000;
+  S.AnalyseTimeOut     = SIGNAL_TIMEOUT_IR;
   S.TransmitPort       = VALUE_SOURCE_IR_RF;
   S.WaitFreeRFAction   = VALUE_OFF;
   S.WaitFreeRFWindow   = S.Unit*500;
@@ -457,4 +457,17 @@ void TimerClear(byte Timer)
   else
     UserTimer[Timer-1]=0L;
   }
+  
+// this function will return the number of bytes currently free in RAM
+//int MemoryTest() 
+//  {
+//  int byteCounter = 0; // initialize a counter
+//  byte *byteArray; // create a pointer to a byte array
+//  while ( (byteArray = (byte*) malloc (byteCounter * sizeof(byte))) != NULL ) {
+//    byteCounter++; // if allocation was successful, then up the count for the next try
+//    free(byteArray); // free memory after allocating it
+//  }  
+//  free(byteArray); // also free memory after the function finishes
+//  return byteCounter; // send back the highest number of bytes successfully allocated
+// }
   

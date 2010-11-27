@@ -17,21 +17,6 @@
 
 \**************************************************************************/
 
-// ontvangen van RF-codes:
-#define RF_TIMEOUT                   5000   // na deze tijd in uSec. wordt een signaal als beëindigd beschouwd.
-#define RF_MIN_PULSE                  100   // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
-#define RF_MIN_RAW_PULSES              32   // =16 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
-
-// ontvangen van IR codes
-//#define IR_TIMEOUT                  10000   // na deze tijd (uSec.) geen IR siglaal meer ontvangen te hebben, wordt aangenomen dat verzenden van één code gereed is.
-#define IR_MIN_PULSE                  100   // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
-#define IR_MIN_RAW_PULSES              16   // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
-
-// vezenden van RF signalen
-#define RF_REPEATS 7
-
-// verzenden van IR signalen
-#define IR_REPEATS 5
 
 // creatie van NODO signalen
 #define NODO_PULSE_0                    500   // PWM: Tijdsduur van de puls bij verzenden van een '0' in uSec.
@@ -151,8 +136,7 @@ void WaitFreeRF(int Window)
   {
   unsigned long WindowTimer, TimeOutTimer;  // meet of de time-out waarde gepasseerd is in milliseconden
 
-  if(Simulate)return;
- 
+  if(Simulate)return; 
   WindowTimer=millis()+Window; // reset de timer.
   TimeOutTimer=millis()+15000; // tijd waarna de routine wordt afgebroken
 
@@ -160,7 +144,7 @@ void WaitFreeRF(int Window)
     {
     if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
       {
-      if(RFFetchSignal())// Als het een duidelijk signaal was
+      if(FetchSignal(RF_ReceiveDataPin,HIGH,SIGNAL_TIMEOUT_RF))// Als het een duidelijk signaal was
         WindowTimer=millis()+Window; // reset de timer weer.
       }
     digitalWrite(MonitorLedPin,(millis()>>7)&0x01);
@@ -200,9 +184,10 @@ void RawSendRF(void)
     
   if(Simulate)return;    
   digitalWrite(RF_ReceivePowerPin,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
-  digitalWrite(RF_TransmitPowerPin,HIGH); // zet de 433Mhz zender aan   
+  digitalWrite(RF_TransmitPowerPin,HIGH); // zet de 433Mhz zender aan
+  delay(5);// kleine pause om de zender de tijd te geven om stabiel te worden 
   
-  for(byte y=0; y<RF_REPEATS; y++) // herhaal verzenden RF code
+  for(byte y=0; y<REPEATS_RF; y++) // herhaal verzenden RF code
     {
     x=1;
     while(x<=RawSignal[0])
@@ -212,6 +197,7 @@ void RawSendRF(void)
       digitalWrite(RF_TransmitDataPin,LOW); // 0
       delayMicroseconds(RawSignal[x++]); 
       }
+    delay(DELAY_RF);
     }
   digitalWrite(RF_TransmitPowerPin,LOW); // zet de 433Mhz zender weer uit
   digitalWrite(RF_ReceivePowerPin,HIGH); // Spanning naar de RF ontvanger weer aan.
@@ -227,11 +213,11 @@ void RawSendRF(void)
 
 void RawSendIR(void)
   {
-  int x;
+  int x,y;
 
   if(Simulate)return;
   
-  for(byte y=0; y<IR_REPEATS; y++) // herhaal verzenden IR code
+  for(y=0; y<REPEATS_IR; y++) // herhaal verzenden IR code
     {
     x=1;
     while(x<=RawSignal[0])
@@ -241,6 +227,7 @@ void RawSendIR(void)
       TCCR2A&=~_BV(COM2A0); // zet IR-modulatie UIT
       delayMicroseconds(RawSignal[x++]); 
       }
+    delay(DELAY_IR);
     }
   }
 
@@ -266,68 +253,39 @@ void Nodo_2_RawSignal(unsigned long Code)
       RawSignal[y++]=NODO_PULSE_0;   
     RawSignal[y++]=NODO_SPACE;   
     }
-  RawSignal[y-1]=NODO_SPACE*32;// laatste SPACE is tevens wachttijd tussen pulstreinen
   RawSignal[0]=66; //  1 startbit bestaande uit een pulse/space + 32-bits is 64 pulse/space = totaal 66
   }
 
  
  /**********************************************************************************************\
- * Haal de pulsen van de TSOP1738 en plaats de tijden in een buffer.
- * in rust is de uitgang van de TSOP hoog.
- * op het momen dat hier aangekomen wordt is de startbit actief, dus de ingang laag.
- * Revision 01, 17-12-2009, P.K.Tonkes@gmail.com
+ * Haal de pulsen en plaats in buffer. Op het moment hier aangekomen is de startbit actief.
+ * bij de TSOP1738 is in rust is de uitgang hoog. StateSignal moet LOW zijn
+ * bij de 433RX is in rust is de uitgang laag. StateSignal moet HIGH zijn
+ * 
  \*********************************************************************************************/
 
-boolean IRFetchSignal(void)
+boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
   {
-  int IR_RawCodeLength=1;
+  int RawCodeLength=1;
   unsigned long PulseLength;
 
   do{// lees de pulsen in microseconden en plaats deze in een tijdelijke buffer
-    PulseLength=WaitForChangeState(IR_ReceiveDataPin, LOW, S.AnalyseTimeOut); // meet hoe lang signaal LOW (= PULSE van IR signaal)
-    if(PulseLength<IR_MIN_PULSE)return false;
-    RawSignal[IR_RawCodeLength++]=PulseLength;
-    PulseLength=WaitForChangeState(IR_ReceiveDataPin, HIGH, S.AnalyseTimeOut); // meet hoe lang signaal HIGH (= SPACE van IR signaal)
-    RawSignal[IR_RawCodeLength++]=PulseLength;
-    }while(IR_RawCodeLength<RAW_BUFFER_SIZE && PulseLength!=0);// Zolang nog niet alle bits ontvangen en er niet vroegtijdig een timeout plaats vindt
+    PulseLength=WaitForChangeState(DataPin, StateSignal, TimeOut); // meet hoe lang signaal LOW (= PULSE van IR signaal)
+    if(PulseLength<MIN_PULSE_LENGTH)return false;
+    RawSignal[RawCodeLength++]=PulseLength;
+    PulseLength=WaitForChangeState(DataPin, !StateSignal, TimeOut); // meet hoe lang signaal HIGH (= SPACE van IR signaal)
+    RawSignal[RawCodeLength++]=PulseLength;
+    }while(RawCodeLength<RAW_BUFFER_SIZE && PulseLength!=0);// Zolang nog niet alle bits ontvangen en er niet vroegtijdig een timeout plaats vindt
 
-  if(IR_RawCodeLength>=IR_MIN_RAW_PULSES)
+  if(RawCodeLength>=MIN_RAW_PULSES)
     {
-    RawSignal[0]=IR_RawCodeLength-1;
+    RawSignal[0]=RawCodeLength-1;
     return true;
     }
   RawSignal[0]=0;
   return false;
   }
 
- /**********************************************************************************************\
- * Haal de pulsen van de RF433 ontvanger en plaats de tijden in een buffer.
- * in rust is de uitgang van de ontvanger laag
- * op het momen dat hier aangekomen wordt is de startbit actief, dus de ingang hoog.
- * Revision 01, 02-02-2010, P.K.Tonkes@gmail.com
- \*********************************************************************************************/
-boolean RFFetchSignal(void)
-  {
-  int RF_RawCodeLength=1;
-  unsigned long PulseLength;
-
-  do{// lees de pulsen in microseconden en plaats deze in een tijdelijke buffer
-    PulseLength=WaitForChangeState(RF_ReceiveDataPin, HIGH, RF_TIMEOUT); // meet hoe lang signaal HIGH (= PULSE van RF signaal)
-    if(PulseLength<RF_MIN_PULSE)return false; // gelijk weer terug als het alleen maar een korte stoorpuls was.
-
-    RawSignal[RF_RawCodeLength++]=PulseLength;
-    PulseLength=WaitForChangeState(RF_ReceiveDataPin, LOW, RF_TIMEOUT); // meet hoe lang signaal LOW (= SPACE van RF signaal)
-    RawSignal[RF_RawCodeLength++]=PulseLength;
-    }while(RF_RawCodeLength<RAW_BUFFER_SIZE && PulseLength!=0);// Zolang nog niet alle bits ontvangen en er niet vroegtijdig een timeout plaats vindt
-
-  if(RF_RawCodeLength>=RF_MIN_RAW_PULSES)
-    {
-    RawSignal[0]=RF_RawCodeLength-1;// -1 omdat de teller RF_RawCodeLength++ altijd met één teveel uit de loop komt.
-    return true;
-    }
-  RawSignal[0]=0;
-  return false;
-  }
 
 
 /**********************************************************************************************\
@@ -381,21 +339,47 @@ void CopySignalRF2IR(byte Window)
   }
   
 /**********************************************************************************************\
-* Deze functie zendt gedurende Window seconden de RF ontvangst direct door naar IR
-* Window tijd in seconden.
-\*********************************************************************************************/
-void SendRawSignal(void)
+* verzendt een event en geeft dit tevens weer op SERIAL
+* als het Event gelijk is aan 0L dan wordt alleen de huidige inhoud van de buffer als RAW
+* verzonden.
+\**********************************************************************************************/
+
+boolean SendEventCode(unsigned long Event)
   {
-  unsigned long Event;
-  Event=AnalyzeRawSignal();
-  if(S.TransmitPort==VALUE_SOURCE_IR || S.TransmitPort==VALUE_SOURCE_IR_RF)
+  if(S.WaitFreeRFAction==VALUE_ALL)WaitFreeRF(S.WaitFreeRFWindow);
+
+  if(Event==0L)// als er geen event is opgegeven...
     {
-    PrintEvent(Event,VALUE_SOURCE_IR,VALUE_DIRECTION_OUTPUT_RAW);
-    RawSendIR();
+    if(RawSignal[0]<MIN_RAW_PULSES)return false; // er zat niets zinvols in de buffer
+    Event=AnalyzeRawSignal();   
+    }    
+
+  // als het een Nodo bekend eventtype is, dan deze weer opnieuw opbouwen in de buffer
+  if(EventType(Event)!=VALUE_TYPE_UNKNOWN)
+    {
+    switch(EventPart(Event,EVENT_PART_COMMAND))
+      {
+      case CMD_KAKU:
+        KAKU_2_RawSignal(Event);
+        break;
+      case CMD_KAKU_NEW:
+        NewKAKU_2_RawSignal(Event);
+        break;
+      default:
+        Nodo_2_RawSignal(Event);
+      }
     }
+  
+  if(S.TransmitPort==VALUE_SOURCE_IR || S.TransmitPort==VALUE_SOURCE_IR_RF)
+    { 
+    RawSendIR();
+    PrintEvent(Event,VALUE_SOURCE_IR,VALUE_DIRECTION_OUTPUT);
+    } 
   if(S.TransmitPort==VALUE_SOURCE_RF || S.TransmitPort==VALUE_SOURCE_IR_RF)
     {
-    PrintEvent(Event,VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT_RAW);
+    PrintEvent(Event,VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT);
     RawSendRF();
     }
   }
+ 
+ 

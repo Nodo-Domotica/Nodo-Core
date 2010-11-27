@@ -99,13 +99,7 @@ unsigned long Receive_Serial(void)
         break;        
   
       case CMD_RAWSIGNAL_GET:
-        PrintText(Text_26,true);
-        while(true)
-          {            
-          if((*portInputRegister(RFport)&RFbit)==RFbit)if(RFFetchSignal())break; // Kijk of er data start op RF binnenkomt
-          if((*portInputRegister(IRport)&IRbit)==0    )if(IRFetchSignal())break; // Kijk of er data start op IR binnenkomt
-          }
-        PrintRawSignal();
+        RawsignalGet=true;
         break;        
   
        case CMD_SIMULATE:
@@ -132,7 +126,8 @@ unsigned long Receive_Serial(void)
             RawSignal[y++]=str2val(SerialBuffer);
             }while(x && y<RAW_BUFFER_SIZE);
           RawSignal[0]=y-1;
-          SendRawSignal();
+          Event=AnalyzeRawSignal();
+          SendEventCode(Event);
           break;
 
         case CMD_STATUS:

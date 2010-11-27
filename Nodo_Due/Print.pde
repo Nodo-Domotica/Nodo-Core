@@ -1,3 +1,22 @@
+/**************************************************************************\
+
+    This file is part of Nodo Due, © Copyright Paul Tonkes
+
+    Nodo Due is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Nodo Due is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Nodo Due.  If not, see <http://www.gnu.org/licenses/>.
+
+\**************************************************************************/
+
 
  /*********************************************************************************************\
  * Print een event volgens formaat:  'EVENT/ACTION: <port>, <type>, <content>
@@ -45,10 +64,8 @@ void PrintEvent(unsigned long Content, byte Port, boolean Direction)
  \*********************************************************************************************/
 void PrintRawSignal(void)
   {
-  byte x;
-  PrintEventCode(AnalyzeRawSignal());
   PrintText(Text_07,false);
-  for(int x=1;x<=RawSignal[0];x++)
+  for(byte x=1;x<=RawSignal[0];x++)
      {
      if(x>1)PrintComma();
      Serial.print(RawSignal[x],DEC);
