@@ -339,16 +339,16 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define EVENT_PART_PAR2              5
 
 // settings voor verzenden en ontvangen van IR/RF 
-#define ENDSIGNAL_TIME          1000 // Dit is de tijd in milliseconden waarna wordt aangenomen dat het ontvangen één reeks signalen beëindigd is
+#define ENDSIGNAL_TIME          1500 // Dit is de tijd in milliseconden waarna wordt aangenomen dat het ontvangen één reeks signalen beëindigd is
 #define SIGNAL_TIMEOUT_RF       5000 // na deze tijd in uSec. wordt één RF signaal als beëindigd beschouwd.
-#define SIGNAL_TIMEOUT_IR      10000 // na deze tijd in uSec. wordt één IR signaal als beëindigd beschouwd.
-#define REPEATS_RF                 5 // aantal herhalingen van een code binnen één RF reeks
-#define REPEATS_IR                 5 // aantal herhalingen van een code binnen één IR reeks
-#define DELAY_RF                  20 // milliseconden wachttijd tussen het verzenden van codes binnen één RF reeks
+#define SIGNAL_TIMEOUT_IR       8000 // na deze tijd in uSec. wordt één IR signaal als beëindigd beschouwd.
+#define REPEATS_RF                 7 // aantal herhalingen van een code binnen één RF reeks
+#define REPEATS_IR                 7 // aantal herhalingen van een code binnen één IR reeks
+#define DELAY_RF                  10 // milliseconden wachttijd tussen het verzenden van codes binnen één RF reeks
 #define DELAY_IR                  20 // milliseconden wachttijd tussen het verzenden van codes binnen één IR reeks
 #define MIN_PULSE_LENGTH         100 // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define MIN_RAW_PULSES            16 // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
-#define SHARP_TIME              1000 // tijd in milliseconden dat de nodo gefocust moet blijven luisteren naar één dezelfde poort na binnenkomst van een signaal
+#define SHARP_TIME              1500 // tijd in milliseconden dat de nodo gefocust moet blijven luisteren naar één dezelfde poort na binnenkomst van een signaal
 
 //****************************************************************************************************************************************
 
