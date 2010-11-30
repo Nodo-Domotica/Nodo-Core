@@ -346,8 +346,6 @@ void CopySignalRF2IR(byte Window)
 
 boolean SendEventCode(unsigned long Event)
   {
-  if(S.WaitFreeRFAction==VALUE_ALL)WaitFreeRF(S.WaitFreeRFWindow);
-
   if(Event==0L)// als er geen event is opgegeven...
     {
     if(RawSignal[0]<MIN_RAW_PULSES)return false; // er zat niets zinvols in de buffer
@@ -357,6 +355,9 @@ boolean SendEventCode(unsigned long Event)
   // als het een Nodo bekend eventtype is, dan deze weer opnieuw opbouwen in de buffer
   if(EventType(Event)!=VALUE_TYPE_UNKNOWN)
     {
+    if(S.WaitFreeRFAction==VALUE_ALL)
+       WaitFreeRF(S.WaitFreeRFWindow); // alleen WaitFreeRF als type bekend is, anders gaat SendSignal niet goed a.g.v. overschrijven buffer
+       
     switch(EventPart(Event,EVENT_PART_COMMAND))
       {
       case CMD_KAKU:
@@ -372,8 +373,8 @@ boolean SendEventCode(unsigned long Event)
   
   if(S.TransmitPort==VALUE_SOURCE_IR || S.TransmitPort==VALUE_SOURCE_IR_RF)
     { 
-    RawSendIR();
     PrintEvent(Event,VALUE_SOURCE_IR,VALUE_DIRECTION_OUTPUT);
+    RawSendIR();
     } 
   if(S.TransmitPort==VALUE_SOURCE_RF || S.TransmitPort==VALUE_SOURCE_IR_RF)
     {

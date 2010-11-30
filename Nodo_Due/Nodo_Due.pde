@@ -5,8 +5,8 @@
  - TransmitSettings
 
 Done:
-- Issue 150: opties 'Error' en 'Ok' verwijderd uit de wildcardtypen
- 
+- OUTPUT: wordt nu weergegeven VOORDAT signaal verzonden wordt.
+- Issue 163 rommel ontvangst bij SendSignal.
 
  \*****************************************************************************************************/
 
