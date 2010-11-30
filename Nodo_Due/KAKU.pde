@@ -115,7 +115,8 @@ unsigned long RawSignal_2_KAKU(void)
   // conventionele KAKU bestaat altijd uit 12 data bits plus stop. Ongelijk, dan geen KAKU
   if (RawSignal[0]!=(KAKU_CodeLength*4)+2)return false;
 
-  Command = VALUE_OFF;
+//???  Command = KAKU_ALLOFF;
+  Command = 0;
 
   for (i=0; i<KAKU_CodeLength; i++)
     {
@@ -123,7 +124,7 @@ unsigned long RawSignal_2_KAKU(void)
         
     if      (RawSignal[4*i+1]<j && RawSignal[4*i+2]>j && RawSignal[4*i+3]<j && RawSignal[4*i+4]>j) {bitstream=(bitstream >> 1);} // 0
     else if (RawSignal[4*i+1]<j && RawSignal[4*i+2]>j && RawSignal[4*i+3]>j && RawSignal[4*i+4]<j) {bitstream=(bitstream >> 1 | (1 << (KAKU_CodeLength-1))); }// 1
-    else if (RawSignal[4*i+1]<j && RawSignal[4*i+2]>j && RawSignal[4*i+3]<j && RawSignal[4*i+4]<j) {bitstream=(bitstream >> 1); Command = KAKU_ALLOFF;} // Short 0
+    else if (RawSignal[4*i+1]<j && RawSignal[4*i+2]>j && RawSignal[4*i+3]<j && RawSignal[4*i+4]<j) {bitstream=(bitstream >> 1); Command= KAKU_ALLOFF;} // Short 0, Groep commando. Zet bit-2 van Par2.
     else {return false;} // foutief signaal
     }
  

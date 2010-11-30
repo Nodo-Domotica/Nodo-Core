@@ -116,7 +116,7 @@ void PrintChar(byte S)
 
 void PrintEventCode(unsigned long Code)
   {
-  byte P1,P2; 
+  byte P1,P2,Par2_b; 
   boolean P2Z=true;     // vlag: true=Par2 als nul waarde afdrukken false=nulwaarde weglaten
   
   byte Unit     = EventPart(Code,EVENT_PART_UNIT);
@@ -149,6 +149,7 @@ void PrintEventCode(unsigned long Code)
     case CMD_SEND_KAKU:
       P1=P_KAKU;
       P2=P_TEXT;
+      Par2_b=Par2;
       Par2&=1;
       break;
 
@@ -217,34 +218,46 @@ void PrintEventCode(unsigned long Code)
     }
         
   // Print Par1
-  if(P1!=P_NOT)
-    PrintChar(' ');
-  if(P1==P_TEXT)
-    Serial.print(cmd2str(Par1));
-  if(P1==P_VALUE)
-    Serial.print(Par1,DEC);
-  if(P1==P_KAKU)
+  if(P1!=P_NOT)PrintChar(' ');
+  
+  switch(P1)
     {
-    Serial.print('A'+((Par1&0xf0)>>4),BYTE); //  A1..P1 printen...
-    Serial.print(Par2&0x2?0:(Par1&0xF)+1,DEC);// als 2e bit in Par2 staat, dan is het een groep commando en moet adres '0' zijn.
+    case P_TEXT:
+      Serial.print(cmd2str(Par1));
+      break;
+    case P_VALUE:
+      Serial.print(Par1,DEC);
+      break;
+    case P_KAKU:
+      Serial.print('A'+((Par1&0xf0)>>4),BYTE); //  A..P printen.
+      Serial.print(Par2_b&0x2?0:(Par1&0xF)+1,DEC);// als 2e bit in Par2 staat, dan is het een groep commando en moet adres '0' zijn.
+      break;
+    default:
+      PrintChar(' ');
     }
 
   // Print Par2    
   if(P2!=P_NOT)PrintComma();
-  if(P2==P_TEXT)
-    Serial.print(cmd2str(Par2));
-  if(P2==P_VALUE)
-    Serial.print(Par2,DEC);
-  if(P2==P_DIM)
+  switch(P2)
     {
-    if ((Par2 & 0xF) == KAKU_DIMLEVEL)
-      {// als dimlevel commando dan 'Dim' met daarna het hoogste nibble als getal printen
-      PrintText(Text_05,false);
-      Serial.print((Par2 >> 4)+1,DEC);
-      } 
-    else
-       Serial.print(cmd2str(Par2 & 0x1)); // Print 'On' of 'Off'. laat cmd2str dit oplossen
-     }
+    case P_TEXT:
+      Serial.print(cmd2str(Par2));
+      break;
+    case P_VALUE:
+      Serial.print(Par2,DEC);
+      break;
+    case P_DIM:
+      {
+      if ((Par2 & 0xF) == KAKU_DIMLEVEL)
+        {// als dimlevel commando dan 'Dim' met daarna het hoogste nibble als getal printen
+        PrintText(Text_05,false);
+        Serial.print((Par2 >> 4)+1,DEC);
+        } 
+      else
+        Serial.print(cmd2str(Par2 & 0x1)); // Print 'On' of 'Off'. laat cmd2str dit oplossen
+      break;
+      }
+    }
 
   PrintChar(')'); 
   }
