@@ -33,7 +33,7 @@ unsigned long Receive_Serial(void)
   
   Event=SerialReadEvent();
   
-  if(EventType(Event)==VALUE_TYPE_UNKNOWN)// het is zeker geen commando, maar een ander type event
+  if(EventType(Event)==VALUE_TYPE_UNKNOWN)// het is geen commando, maar een ander type event
       return Event;
   else
     { // het was een geldig uitvoerbaar commando. Dit wordt geborgd door SerialReadEvent();
@@ -57,21 +57,22 @@ unsigned long Receive_Serial(void)
         Event=SerialReadEvent();
         Action=SerialReadEvent();
 
-        if(Event==0 || (EventType(Event)==VALUE_TYPE_COMMAND && (error=CommandError(Event ))))
+        if(Event==0 || (EventType(Event)==VALUE_TYPE_COMMAND && (error=CommandError(Event))))
           {
           GenerateEvent(CMD_ERROR,CMD_EVENTLIST_WRITE,1);
           break;
           }
-        if(Action==0 || (EventType(Action)==VALUE_TYPE_COMMAND && (error=CommandError(Action ))))
+        if(Action==0 || (EventType(Action)==VALUE_TYPE_COMMAND && (error=CommandError(Action))))
           {
           GenerateEvent(CMD_ERROR,CMD_EVENTLIST_WRITE,2);
           break;
           }
           
-        x=EventType(Action);
-        if(x==VALUE_TYPE_COMMAND || x==VALUE_TYPE_EVENT)Event&=0xf0ffffff; // als het een commando of een event is, dan unit er uitfilteren alvorens weg te schrijven
-        x=EventType(Action);
-        if(x==VALUE_TYPE_COMMAND || x==VALUE_TYPE_EVENT)Action&=0xf0ffffff;
+//??? kan dit weg? Issue 164
+//        x=EventType(Action);
+//        if(x==VALUE_TYPE_COMMAND || x==VALUE_TYPE_EVENT)Event&=0xf0ffffff; // als het een commando of een event is, dan unit er uitfilteren alvorens weg te schrijven
+//        x=EventType(Action);
+//        if(x==VALUE_TYPE_COMMAND || x==VALUE_TYPE_EVENT)Action&=0xf0ffffff;
         
         // schrijf weg in eventlist
         if(!Eventlist_Write(0,Event,Action)) // Unit er uit filteren, anders na wijzigen unit geen geldige eventlist.
@@ -112,7 +113,6 @@ unsigned long Receive_Serial(void)
          SaveSettings();
          FactoryEventlist();
          Reset();
-         break;    
     
        case CMD_RESET_FACTORY:
           ResetFactory();

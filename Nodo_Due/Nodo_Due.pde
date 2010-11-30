@@ -1,12 +1,8 @@
 
  /*****************************************************************************************************\
 
- Todo:
- - TransmitSettings
-
 Done:
-- OUTPUT: wordt nu weergegeven VOORDAT signaal verzonden wordt.
-- Issue 163 rommel ontvangst bij SendSignal.
+- Issue 164: HEX-code ontvangen IR en verwerken in Eventlist
 
  \*****************************************************************************************************/
 
