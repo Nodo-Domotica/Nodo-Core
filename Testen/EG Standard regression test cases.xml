@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<EventGhost Name="Configuration Tree" Expanded="True" Version="1462" Guid="{830FECB0-9164-4905-B896-0624DB053F8D}" Time="1291196380.84">
+<EventGhost Name="Configuration Tree" Expanded="True" Version="1462" Guid="{1C48F065-274E-483A-B2C4-72FA4096D450}" Time="1291198379.2">
     <Autostart Name="Autostart">
         <Action>
             EventGhost.ShowOSD(u'EventGhost with \nstandard testcases \nfor Nodo Due', u'0;-64;0;0;0;400;255;0;0;0;3;2;1;34;Arial', (0, 0, 255), None, 4, (0, 0), 0, 5.0, False)
@@ -18,8 +18,8 @@
         </Plugin>
     </Autostart>
     <Folder Name="Standard test cases" Expanded="True">
-        <Folder Name="Restore proper settings for further testing">
-            <Macro Name="Restore proper settings for further testing">
+        <Folder Name="Restore proper settings for further testing" Expanded="True">
+            <Macro Name="Restore proper settings for further testing" Expanded="True">
                 <Action>
                     Serial.Write(u'Reset;')
                 </Action>
@@ -4360,7 +4360,7 @@
                 </Action>
             </Macro>
         </Folder>
-        <Folder Name="Test case 19: test Nodo as a repeater">
+        <Folder Name="Test case 19: test Nodo as a repeater" Expanded="True">
             <Macro Name="Test case 19: test Nodo as a repeater" Expanded="True">
                 <Action>
                     Serial.Write(u'Unit 4, 10;')
@@ -4407,13 +4407,13 @@
                 <Action Name=" ">
                     EventGhost.Comment()
                 </Action>
-                <Action>
+                <Action Enabled="False">
                     Serial.Write(u'EventlistWrite;WildCard All,All; SendSignal;')
                 </Action>
-                <Action Enabled="False">
+                <Action>
                     Serial.Write(u'EventlistWrite;WildCard IR,All; SendSignal;')
                 </Action>
-                <Action Enabled="False">
+                <Action>
                     Serial.Write(u'EventlistWrite;WildCard RF,All; SendSignal;')
                 </Action>
                 <Action Enabled="False">
@@ -4460,6 +4460,9 @@
                 <Action Name=" ">
                     EventGhost.Comment()
                 </Action>
+                <Action Name="NewKAKU cannot be transmitted via IR due to insufficient capacity of TSOP transmittor" Enabled="False">
+                    EventGhost.Comment()
+                </Action>
                 <Action Enabled="False">
                     Serial2.Write(u'SendNewKaku 1,off;')
                 </Action>
@@ -4490,7 +4493,7 @@
                 <Action Name=" ">
                     EventGhost.Comment()
                 </Action>
-                <Action Enabled="False">
+                <Action>
                     Serial2.Write(u'SendNewKaku 1,off;')
                 </Action>
                 <Action Name=" ">
@@ -4531,7 +4534,7 @@
                 </Action>
             </Macro>
         </Folder>
-        <Folder Name="Test case 21: test with empty Nodo" Expanded="True">
+        <Folder Name="Test case 21: test with empty Nodo">
             <Macro Name="Test case 21: test with empty Nodo">
                 <Action>
                     Serial.Write(u'Reset;')
@@ -4716,7 +4719,7 @@
                 </Action>
             </Macro>
         </Folder>
-        <Folder Name="Test case 22: test KAKU Group switching" Expanded="True">
+        <Folder Name="Test case 22: test KAKU Group switching">
             <Macro Name="Test case 22: test KAKU Group switching" Expanded="True">
                 <Action>
                     Serial.Write(u'EventlistErase;')
@@ -4754,7 +4757,29 @@
                     Serial.Write(u'SendKAKU A1,AllOn;')
                 </Action>
                 <Action>
-                    Serial.Write(u'SendKAKU A1,AllOff;')
+                    Serial.Write(u'SendKAKU A0,AllOn;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendKAKU A0,On;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendKAKU A,AllOn;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendKAKU A,AllOn;')
+                </Action>
+            </Macro>
+        </Folder>
+        <Folder Name="Test case 23: load HEX code unaltered into EventList" Expanded="True">
+            <Macro Name="Test case 23: load HEX code unaltered into EventList" Expanded="True">
+                <Action>
+                    Serial.Write(u'EventlistErase;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistWrite;UserEvent 23,1; 0x621D9696;')
+                </Action>
+                <Action>
+                    Serial.Write(u'EventlistShow;')
                 </Action>
             </Macro>
         </Folder>
