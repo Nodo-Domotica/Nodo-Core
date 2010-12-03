@@ -38,7 +38,7 @@ Done:
  *
  ********************************************************************************************************/
 
-#define VERSION                  100 // Nodo Version nummer
+#define VERSION                  101 // Nodo Version nummer
 
 
 #include "pins_arduino.h"
@@ -53,7 +53,7 @@ prog_char PROGMEM Text_02[] = "SunMonThuWedThuFriSat";
 prog_char PROGMEM Text_03[] = ", Home ";
 prog_char PROGMEM Text_05[] = "Dim";
 prog_char PROGMEM Text_06[] = "SYSTEM: Unknown command!";
-prog_char PROGMEM Text_07[] = "SYSTEM: Rawsignal=(";
+prog_char PROGMEM Text_07[] = "SYSTEM: Rawsignal=";
 prog_char PROGMEM Text_08[] = "Unit-";
 prog_char PROGMEM Text_09[] = "SYSTEM: Break!";
 prog_char PROGMEM Text_14[] = ", Unit ";

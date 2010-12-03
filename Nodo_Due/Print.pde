@@ -70,7 +70,6 @@ void PrintRawSignal(void)
      if(x>1)PrintComma();
      Serial.print(RawSignal[x],DEC);
      }
-  PrintChar(')');
   PrintTerm();
   }
 
