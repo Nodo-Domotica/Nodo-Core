@@ -38,7 +38,7 @@ Done:
  *
  ********************************************************************************************************/
 
-#define VERSION                  101 // Nodo Version nummer
+#define VERSION                  110 // Nodo Version nummer
 
 
 #include "pins_arduino.h"

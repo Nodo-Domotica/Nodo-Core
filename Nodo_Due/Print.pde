@@ -345,6 +345,7 @@ void PrintWelcome(void)
 
   Serial.print(S.Version/100,DEC);
   PrintChar('.');
+  if((S.Version%100)<10)PrintChar('0');
   Serial.print(S.Version%100,DEC);  
   PrintText(Text_03,false);
   Serial.print(S.Home,DEC);
