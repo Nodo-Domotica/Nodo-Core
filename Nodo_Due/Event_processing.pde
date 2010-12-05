@@ -30,7 +30,6 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   unsigned long Event_1, Event_2;
   byte Command=EventPart(IncommingEvent,EVENT_PART_COMMAND);
   byte w,x,y,z;
-  static byte depth=0;  // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's
 
   if(RawsignalGet)
     {
@@ -40,16 +39,12 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     }
 
   // Uitvoeren voorafgaand aan een reeks uitvoeren
-  if(depth==0)
-    {
-    if(S.Trace&1)PrintLine(); 
-    if(S.WaitFreeRFAction==VALUE_SERIES)WaitFreeRF(S.WaitFreeRFWindow);
-    }
+  if(depth==0 && S.Trace&1)
+      PrintLine(); 
 
   if(S.Trace&1 || depth==0)
     PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
-  
-  
+    
   digitalWrite(MonitorLedPin,HIGH);          // LED aan om aan te geven dat er wat ontvangen is en verwerkt wordt
   
   if(depth++>=MACRO_EXECUTION_DEPTH)

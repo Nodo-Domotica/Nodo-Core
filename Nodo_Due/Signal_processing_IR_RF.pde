@@ -355,15 +355,17 @@ boolean SendEventCode(unsigned long Event)
   // als het een Nodo bekend eventtype is, dan deze weer opnieuw opbouwen in de buffer
   if(EventType(Event)!=VALUE_TYPE_UNKNOWN)
     {
-    if(S.WaitFreeRFAction==VALUE_ALL)
+    if(S.WaitFreeRFAction==VALUE_ALL || (depth<=2 && S.WaitFreeRFAction==VALUE_SERIES))
        WaitFreeRF(S.WaitFreeRFWindow); // alleen WaitFreeRF als type bekend is, anders gaat SendSignal niet goed a.g.v. overschrijven buffer
        
     switch(EventPart(Event,EVENT_PART_COMMAND))
       {
       case CMD_KAKU:
+      case CMD_SEND_KAKU:
         KAKU_2_RawSignal(Event);
         break;
       case CMD_KAKU_NEW:
+      case CMD_SEND_KAKU_NEW:
         NewKAKU_2_RawSignal(Event);
         break;
       default:

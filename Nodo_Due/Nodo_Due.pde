@@ -2,7 +2,8 @@
  /*****************************************************************************************************\
 
 Done:
-- Issue 165:	KAKU Groep commando regressie bug.
+- Issue 166:	WaitFreeRF gaat niet goed bij 'Series' en ontvangst van een SendKaku via IR.
+
  \*****************************************************************************************************/
 
 
@@ -38,7 +39,7 @@ Done:
  *
  ********************************************************************************************************/
 
-#define VERSION                  110 // Nodo Version nummer
+#define VERSION                  111 // Nodo Version nummer
 
 
 #include "pins_arduino.h"
@@ -354,6 +355,7 @@ boolean WiredInputStatus[4],WiredOutputStatus[4];   // Wired variabelen
 unsigned int RawSignal[RAW_BUFFER_SIZE];            // Tabel met de gemeten pulsen in microseconden. eerste waarde is het aantal bits*2
 unsigned long EventTimeCodePrevious;                // t.b.v. voorkomen herhaald ontvangen van dezelfde code binnen ingestelde tijd
 byte DaylightPrevious;                              // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet
+byte depth=0;                                       // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's
 boolean Simulate,RawsignalGet;
 void(*Reset)(void)=0; //reset functie op adres 0
 uint8_t RFbit,RFport,IRbit,IRport;
