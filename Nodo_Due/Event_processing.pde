@@ -11,7 +11,7 @@
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
+ bn
     You should have received a copy of the GNU General Public License
     along with Nodo Due.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -30,6 +30,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   unsigned long Event_1, Event_2;
   byte Command=EventPart(IncommingEvent,EVENT_PART_COMMAND);
   byte w,x,y,z;
+  static byte depth=0; // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's
 
   if(RawsignalGet)
     {
@@ -39,8 +40,11 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     }
 
   // Uitvoeren voorafgaand aan een reeks uitvoeren
-  if(depth==0 && S.Trace&1)
-      PrintLine(); 
+  if(depth==0)
+   {
+   if(S.Trace&1)PrintLine();
+   if(S.WaitFreeRFAction==VALUE_SERIES)S.WaitFreeRFAction=VALUE_ON;// eerstvolgende keer zenden een waitfreerf uitvoeren.
+   }
 
   if(S.Trace&1 || depth==0)
     PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
@@ -55,9 +59,10 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     }
 
   // ############# Verwerk event ################  
-  // als het een commando of event is voor deze unit, dan t.b.v. interne verwerking unit op 0 zetten.
+
   if(EventType(IncommingEvent)==VALUE_TYPE_COMMAND)
     { // Er is een Commando binnengekomen 
+
     if(!ExecuteCommand(IncommingEvent,Port,PreviousContent,PreviousPort))
       {
       depth--;
@@ -66,6 +71,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     }
   else
     { // Er is een Event binnengekomen  
+
     // loop de gehele eventlist langs om te kijken of er een treffer is.    
     for(x=1; x<=Eventlist_MAX && Eventlist_Read(x,&Event_1,&Event_2); x++)
       {
@@ -152,28 +158,39 @@ boolean CheckEventlist(unsigned long Code)
 
  /**********************************************************************************************\
  * Vergelijkt twee events op matching voor uitvoering Eventlist
+ * 
  \*********************************************************************************************/
 boolean CheckEvent(unsigned long Event, unsigned long MacroEvent)
-  {  
+  {
+  byte x;  
   // als huidige event exact overeenkomt met het event in de regel uit de Eventlist, dan een match
   if(MacroEvent==Event)return true; 
   
   // als Home niet overeenkomt, dan geen match
   if(EventPart(Event,EVENT_PART_HOME)!=S.Home)return false; 
   
-  // Als unit ongelijk aan 0 of ongelijk aan huidige unit, dan is er ook geen match
-  int x=EventPart(Event,EVENT_PART_UNIT);
+  // als het een UserEvent is, dan moet deze door alle Nodo's worden uitgevoerd. Maak dan unit nummer gelijk aan 0
+  if(EventPart(Event,EVENT_PART_COMMAND)==CMD_USER_EVENT)
+     Event&=0x00ffffff;
+    
+  // Als unit ongelijk aan 0 en ongelijk aan huidige unit, dan is er geen match.
+  x=EventPart(Event,EVENT_PART_UNIT);
   if(x!=0 && x!=S.Unit)return false; 
 
   // als huidige event (met wegfilterde home en unit ) gelijk is aan MacroEvent, dan een match
-  Event&=0x00ffffff;
   MacroEvent&=0x00ffffff;
+  Event&=0x00ffffff;
+
   if(MacroEvent==Event)return true; 
 
   // is er een match met een CLOCK_EVENT_ALL event?
-  if((MacroEvent&0x0000ffff)==(Event&0x0000ffff)) // tijdstippen kloppen
-    if(EventPart(MacroEvent,EVENT_PART_COMMAND)==CMD_CLOCK_EVENT_ALL) // En het is een ClockAll event.
-      return true;
+  x=EventPart(Event,EVENT_PART_COMMAND);
+  if(x>=CMD_CLOCK_EVENT_SUN && x<=CMD_CLOCK_EVENT_SAT) // het binnengekomen event is een clock event.   //??? oplossing issue 168
+    {
+    if(EventPart(MacroEvent,EVENT_PART_COMMAND)==CMD_CLOCK_EVENT_ALL) // als het event uit de eventlist is een ClockAll event.
+      if((MacroEvent&0x0000ffff)==(Event&0x0000ffff)) // en tijdstippen kloppen
+        return true;
+    }
  
   return false;
   }
