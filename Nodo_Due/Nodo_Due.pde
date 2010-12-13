@@ -4,9 +4,9 @@
 ToDo:
 
 Done:
-- Issue 166:	WaitFreeRF gaat niet goed bij 'Series' en ontvangst van een SendKaku via IR.
-- Issue 168:	ClockAll event in de eventlist geeft een match bij UserEvent
-
+- Issue 170:	datum instellen met maand 0 wordt geaccepteerd
+- Issue 166:	Nogmaals getest: WaitFreeRF werkt zowel voor 'Series' als bij 'All' 
+- Bij verzenden nu eerst RF en daarna IR. Was anders om.
  \*****************************************************************************************************/
 
 

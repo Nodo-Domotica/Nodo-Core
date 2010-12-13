@@ -373,16 +373,17 @@ boolean SendEventCode(unsigned long Event)
       }
     }
   
-  if(S.TransmitPort==VALUE_SOURCE_IR || S.TransmitPort==VALUE_SOURCE_IR_RF)
-    { 
-    PrintEvent(Event,VALUE_SOURCE_IR,VALUE_DIRECTION_OUTPUT);
-    RawSendIR();
-    } 
   if(S.TransmitPort==VALUE_SOURCE_RF || S.TransmitPort==VALUE_SOURCE_IR_RF)
     {
     PrintEvent(Event,VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT);
     RawSendRF();
     }
+
+  if(S.TransmitPort==VALUE_SOURCE_IR || S.TransmitPort==VALUE_SOURCE_IR_RF)
+    { 
+    PrintEvent(Event,VALUE_SOURCE_IR,VALUE_DIRECTION_OUTPUT);
+    RawSendIR();
+    } 
   }
  
  
