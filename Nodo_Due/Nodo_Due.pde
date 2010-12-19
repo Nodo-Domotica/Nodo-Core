@@ -1,12 +1,22 @@
 
  /*****************************************************************************************************\
 
-ToDo:
+Done release 1.15:
 
-Done:
+Opgeloste issues:
+- Issue 163:	SendSignal: regressie!!!
+- Issue 164:	HEX-code ontvangen IR en verwerken in Eventlist
+- Issue 165:	KAKU Groep commando regressie bug.
+- Issue 166:	WaitFreeRF gaat niet goed bij 'Series' en ontvangst van een SendKaku via IR.
+- Issue 168:	ClockAll event in de eventlist geeft een match bij UserEvent
 - Issue 170:	datum instellen met maand 0 wordt geaccepteerd
-- Issue 166:	Nogmaals getest: WaitFreeRF werkt zowel voor 'Series' als bij 'All' 
-- Bij verzenden nu eerst RF en daarna IR. Was anders om.
+- Issue 171:	WaitFreeRF All regressie.
+
+Overige aanpassingen:
+- Aanpassing pause bij herhaald sound 'ding-dong' en de 'Whoop' is nu een 'slow-whoop' 
+
+
+
  \*****************************************************************************************************/
 
 
@@ -42,7 +52,7 @@ Done:
  *
  ********************************************************************************************************/
 
-#define VERSION                  112 // Nodo Version nummer
+#define VERSION                  111 // Nodo Version nummer
 
 
 #include "pins_arduino.h"
@@ -67,6 +77,9 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 #define RANGE_EVENT 81 // alle codes groter of gelijk aan deze waarde zijn een event.
 #define COMMAND_MAX 102 // aantal commando's (dus geteld vanaf 0)
 
+#define VALUE_OFF 0
+#define VALUE_ON 1
+#define VALUE_PARAMETER 2
 #define VALUE_OFF 0
 #define VALUE_ON 1
 #define VALUE_PARAMETER 2
@@ -355,6 +368,7 @@ boolean WiredInputStatus[4],WiredOutputStatus[4];   // Wired variabelen
 unsigned int RawSignal[RAW_BUFFER_SIZE];            // Tabel met de gemeten pulsen in microseconden. eerste waarde is het aantal bits*2
 unsigned long EventTimeCodePrevious;                // t.b.v. voorkomen herhaald ontvangen van dezelfde code binnen ingestelde tijd
 byte DaylightPrevious;                              // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet
+byte depth=0;                                       // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's
 boolean Simulate,RawsignalGet;
 void(*Reset)(void)=0; //reset functie op adres 0
 uint8_t RFbit,RFport,IRbit,IRport;

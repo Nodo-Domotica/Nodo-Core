@@ -138,7 +138,7 @@ void WaitFreeRF(int Window)
 
   if(Simulate)return; 
   WindowTimer=millis()+Window; // reset de timer.
-  TimeOutTimer=millis()+15000; // tijd in milliseconden waarna de routine wordt afgebroken
+  TimeOutTimer=millis()+15000; // tijd waarna de routine wordt afgebroken
 
   while(WindowTimer>millis() && TimeOutTimer>millis())
     {
@@ -353,10 +353,10 @@ boolean SendEventCode(unsigned long Event)
     }    
 
   // als het een Nodo bekend eventtype is, dan deze weer opnieuw opbouwen in de buffer
-  if(EventType(Event)!=VALUE_TYPE_UNKNOWN) // alleen WaitFreeRF als type bekend is, anders gaat SendSignal niet goed a.g.v. overschrijven buffer
+  if(EventType(Event)!=VALUE_TYPE_UNKNOWN)
     {
-    if(S.WaitFreeRFAction==VALUE_ALL || S.WaitFreeRFAction==VALUE_ON)WaitFreeRF(S.WaitFreeRFWindow);
-    if(S.WaitFreeRFAction==VALUE_ON)S.WaitFreeRFAction=VALUE_SERIES;
+    if(S.WaitFreeRFAction==VALUE_ALL || (depth<=2 && S.WaitFreeRFAction==VALUE_SERIES))
+       WaitFreeRF(S.WaitFreeRFWindow); // alleen WaitFreeRF als type bekend is, anders gaat SendSignal niet goed a.g.v. overschrijven buffer
        
     switch(EventPart(Event,EVENT_PART_COMMAND))
       {
@@ -373,17 +373,16 @@ boolean SendEventCode(unsigned long Event)
       }
     }
   
-  if(S.TransmitPort==VALUE_SOURCE_RF || S.TransmitPort==VALUE_SOURCE_IR_RF)
-    {
-    PrintEvent(Event,VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT);
-    RawSendRF();
-    }
-
   if(S.TransmitPort==VALUE_SOURCE_IR || S.TransmitPort==VALUE_SOURCE_IR_RF)
     { 
     PrintEvent(Event,VALUE_SOURCE_IR,VALUE_DIRECTION_OUTPUT);
     RawSendIR();
     } 
+  if(S.TransmitPort==VALUE_SOURCE_RF || S.TransmitPort==VALUE_SOURCE_IR_RF)
+    {
+    PrintEvent(Event,VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT);
+    RawSendRF();
+    }
   }
  
  

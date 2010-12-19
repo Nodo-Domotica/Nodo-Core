@@ -70,20 +70,16 @@ void Alarm(int Variant,int Duration)
     case 2: // whoop up
       for(y=1;y<=(Duration>1?Duration:1);y++)
         {
-        for(x=1;x<=20;x++)
-          {
-            Beep(500*x/2,20);
-          }
+        for(x=1;x<=50;x++)
+            Beep(250*x/4,20);
         }          
       break;
 
     case 3: // whoop down
       for(y=1;y<=(Duration>1?Duration:1);y++)
         {
-        for(x=20;x>0;x--)
-          {
-            Beep(500*x/2,20);
-          }
+        for(x=50;x>0;x--)
+            Beep(250*x/4,20);
         }          
       break;
 
@@ -114,9 +110,9 @@ void Alarm(int Variant,int Duration)
      case 5:// ding-dong
        for(x=0;x<Duration;x++)
          {
+         if(x>0)delay(2000);
          Beep(1500,500);
          Beep(1200,500);
-         if(x>0)delay(1000);
          }    
        break;
 
