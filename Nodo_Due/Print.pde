@@ -167,7 +167,6 @@ void PrintEventCode(unsigned long Code)
       break;
 
     // Par1 als tekst en par2 als tekst
-    case CMD_OK:
     case CMD_TRACE:
     case CMD_COMMAND_WILDCARD:
       P1=P_TEXT;
@@ -185,6 +184,7 @@ void PrintEventCode(unsigned long Code)
       break;
 
     // Par1 als tekst en par2 niet
+    case CMD_CONFIRM:
     case CMD_DLS_EVENT:
     case CMD_TRANSMIT_SETTINGS:
     case CMD_SIMULATE:
@@ -194,6 +194,7 @@ void PrintEventCode(unsigned long Code)
 
     // Par1 als waarde en par2 niet
     case CMD_DIVERT:
+    case CMD_OK:
     case CMD_VARIABLE_CLEAR:
     case CMD_SIMULATE_DAY:
     case CMD_TIMER_RESET:

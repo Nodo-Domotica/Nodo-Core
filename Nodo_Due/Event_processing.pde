@@ -23,13 +23,15 @@
  * Voert alle events uit die correspenderen met de Code
  * Revision 01, 09-12-2009, P.K.Tonkes@gmail.com
  \*********************************************************************************************/
-#define MACRO_EXECUTION_DEPTH 10 // maximale nesting van macro's.
+
  
 boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, unsigned long PreviousContent, byte PreviousPort)
   {
   unsigned long Event_1, Event_2;
   byte Command=EventPart(IncommingEvent,EVENT_PART_COMMAND);
   byte w,x,y,z;
+
+  digitalWrite(MonitorLedPin,HIGH);          // LED aan om aan te geven dat er wat ontvangen is en verwerkt wordt
 
   if(RawsignalGet)
     {
@@ -42,14 +44,40 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   if(depth==0 && S.Trace&1)
       PrintLine(); 
 
-  if(S.Trace&1 || depth==0)
-    PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
-    
-  digitalWrite(MonitorLedPin,HIGH);          // LED aan om aan te geven dat er wat ontvangen is en verwerkt wordt
-  
+  // als de Nodo in de hold is gezet, verzamel dan relevante events in de queue
+  if(DelayTimer>millis())
+    {
+    // als het event de opdracht betreft om de hold uit te zetten, dan dit doen.
+    if(IncommingEvent==command2event(CMD_DELAY,0,0))
+      DelayTimer=0L;
+    else
+      {
+      // als het event voorkomt in de eventlist, dan is het relevant om op te slaan
+      if(CheckEventlist(IncommingEvent))
+        {
+        // als er nog plek is in de queue...
+        if(QueuePos<EVENT_QUEUE_MAX)
+          {
+          PrintEvent(IncommingEvent,0,VALUE_DIRECTION_QUEUE);  // geef event weer op Serial
+          QueueEvent[QueuePos]=IncommingEvent;
+          QueuePort[QueuePos]=Port;
+          QueuePos++;           
+          return true;
+          }
+        else
+          GenerateEvent(CMD_ERROR,CMD_DELAY,EVENT_QUEUE_MAX);
+        }
+      return true;
+      }
+    }     
+
+  if(depth==0 || S.Trace&1)PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
+//  if(depth==0 && S.Confirm && Command==CMD_USER_EVENT) //??? && Port==VALUE_SOURCE_RF)
+//      GenerateEvent(CMD_OK,S.Unit,CMD_USER_EVENT);
+
   if(depth++>=MACRO_EXECUTION_DEPTH)
     {
-    PrintText(Text_50,true);
+    GenerateEvent(CMD_ERROR,VALUE_NESTING,MACRO_EXECUTION_DEPTH);
     depth=0;
     return false; // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
     }

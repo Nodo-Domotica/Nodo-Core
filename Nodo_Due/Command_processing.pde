@@ -39,6 +39,7 @@ byte CommandError(unsigned long Content)
     //test; geen, altijd goed
     case CMD_VARIABLE_EVENT:    
     case CMD_KAKU:
+    case CMD_CONFIRM:
     case CMD_DLS_EVENT:
     case CMD_CLOCK_EVENT_DAYLIGHT:
     case CMD_CLOCK_EVENT_ALL:
@@ -100,7 +101,7 @@ byte CommandError(unsigned long Content)
     case CMD_TIMER_EVENT:
     case CMD_TIMER_SET:
     case CMD_TIMER_RANDOM:
-      if(Par1<1 || Par1>USER_TIMER_MAX)return ERROR_PAR1;
+      if(Par1<1 || Par1>TIMER_MAX)return ERROR_PAR1;
       return false;
 
     // test:Par1 binnen bereik maximaal beschikbare variabelen,0 mag ook (=alle variabelen)
@@ -110,7 +111,7 @@ byte CommandError(unsigned long Content)
 
     // test:Par1 binnen bereik maximaal beschikbare timers,0 mag ook (=alle timers)
     case CMD_TIMER_RESET:
-      if(Par1>USER_TIMER_MAX)return ERROR_PAR1;
+      if(Par1>TIMER_MAX)return ERROR_PAR1;
       return false;
 
     // alleen 0,1 of 7
@@ -370,15 +371,19 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;
          
       case CMD_TIMER_SET:
-        UserTimer[Par1-1]=millis()+(unsigned long)(Par2)*60000L;// Par1=timer, Par2=minuten
+        // timers werken op een resolutie van seconden maar worden door de gebruiker ingegeven in minuten
+        UserTimer[Par1-1]=millis()+Par2*60000;// Par1=timer, Par2=minuten
         break;
   
       case CMD_TIMER_RANDOM:
-        UserTimer[Par1-1]=millis()+(unsigned long)random(Par2)*60000L;// Par1=timer, Par2=maximaal aantal minuten
+        UserTimer[Par1-1]=millis()+random(Par2)*60000;// Par1=timer, Par2=maximaal aantal minuten
         break;
   
       case CMD_DELAY:
-        delay(Par1*1000);     
+        if(Par1)
+          DelayTimer=millis()+((unsigned long)(Par1))*1000;     
+        else
+          DelayTimer=0L;
         break;        
         
       case CMD_SOUND: 
@@ -420,6 +425,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         if(Par1==VALUE_RF_2_IR)CopySignalRF2IR(Par2);      
         if(Par1==VALUE_IR_2_RF)CopySignalIR2RF(Par2);
         break;        
+  
+      case CMD_CONFIRM:
+        S.Confirm=Par1;
+        SaveSettings();
+        break;
   
       case CMD_TRANSMIT_SETTINGS:
         S.TransmitPort=Par1;

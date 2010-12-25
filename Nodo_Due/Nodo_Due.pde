@@ -14,6 +14,12 @@ Opgeloste issues:
 
 Overige aanpassingen:
 - Aanpassing pause bij herhaald sound 'ding-dong' en de 'Whoop' is nu een 'slow-whoop' 
+- '(WildCard All, All); (Sound 0, 0)' niet meer default in de eventlist
+- Nieuwe setting 'Confirm' NOG NIET OPERATIONEEL !!!
+- Aanpassing commando 'Delay': Kan worden uitgezet en voorbijkomende event worden in queue gezet voor latere verwerking.
+
+Onder de motorkap:
+- Timers nu in een int i.p.v. unsigned long en aanpassing aflopen timers => geheugenbesparing
 
 
 
@@ -52,7 +58,7 @@ Overige aanpassingen:
  *
  ********************************************************************************************************/
 
-#define VERSION                  111 // Nodo Version nummer
+#define VERSION                  113 // Nodo Version nummer
 
 
 #include "pins_arduino.h"
@@ -71,7 +77,6 @@ prog_char PROGMEM Text_07[] = "SYSTEM: Rawsignal=";
 prog_char PROGMEM Text_08[] = "Unit-";
 prog_char PROGMEM Text_09[] = "SYSTEM: Break!";
 prog_char PROGMEM Text_14[] = ", Unit ";
-prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 
 #define RANGE_VALUE 30 // alle codes kleiner of gelijk aan deze waarde zijn vaste Nodo waarden.
 #define RANGE_EVENT 81 // alle codes groter of gelijk aan deze waarde zijn een event.
@@ -104,10 +109,10 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 #define VALUE_SERIES 21
 #define VALUE_RF_2_IR 22
 #define VALUE_IR_2_RF 23
-#define VALUE_ALL 24 // Deze waarde MOET >16 zijn.
+#define VALUE_ALL 24 // Deze waarde MOET groter dan 16 zijn.
 #define VALUE_DIRECTION_OUTPUT_RAW 25
-#define VALUE_RES2 26
-#define VALUE_RES3 27
+#define VALUE_NESTING 26
+#define VALUE_DIRECTION_QUEUE 27
 #define VALUE_RES4 28
 #define VALUE_RES6 29
 #define VALUE_RES5 30
@@ -157,10 +162,10 @@ prog_char PROGMEM Text_50[] = "SYSTEM: Nesting error!";
 #define CMD_SEND_USEREVENT 74
 #define CMD_COPYSIGNAL 75
 #define CMD_COMMAND_WILDCARD 76
-#define CMD_COMMAND_RES2 77
-#define CMD_COMMAND_RES3 78
+#define CMD_CONFIRM 77
+#define CMD_COMMAND_RES2 78
 #define CMD_COMMAND_RES3 79
-#define CMD_COMMAND_RES3 80
+#define CMD_COMMAND_RES4 80
 #define CMD_BOOT_EVENT 81
 #define CMD_CLOCK_EVENT_DAYLIGHT 82
 #define CMD_CLOCK_EVENT_ALL 83
@@ -209,8 +214,8 @@ prog_char PROGMEM Cmd_22[]="RF2IR";
 prog_char PROGMEM Cmd_23[]="IR2RF";
 prog_char PROGMEM Cmd_24[]="All";
 prog_char PROGMEM Cmd_25[]="OUTPUT-RAW";
-prog_char PROGMEM Cmd_26[]="";
-prog_char PROGMEM Cmd_27[]="";
+prog_char PROGMEM Cmd_26[]="Nesting";
+prog_char PROGMEM Cmd_27[]="QUEUE";
 prog_char PROGMEM Cmd_28[]="";
 prog_char PROGMEM Cmd_29[]="";
 prog_char PROGMEM Cmd_30[]="";
@@ -260,7 +265,7 @@ prog_char PROGMEM Cmd_73[]="WiredThreshold";
 prog_char PROGMEM Cmd_74[]="SendUserEvent";
 prog_char PROGMEM Cmd_75[]="RawSignalCopy";
 prog_char PROGMEM Cmd_76[]="WildCard";
-prog_char PROGMEM Cmd_77[]="";
+prog_char PROGMEM Cmd_77[]="Confirm";
 prog_char PROGMEM Cmd_78[]="";
 prog_char PROGMEM Cmd_79[]="";
 prog_char PROGMEM Cmd_80[]="";
@@ -331,11 +336,11 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define BASECODE                   0x0 // Base code voor 26-bit code. Geeft de mogenlijkheid een bestaande zender te emuleren. Hierbij worden de nodo-home & unit codes en de home codes van het NewKAKU commando bij opgeteld.
 #define Eventlist_OFFSET            64 // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer __ bytes. Deze niet te gebruiken voor de Eventlist.
 #define Eventlist_MAX              120 // aantal events dat de lijst bevat in het EEPROM geheugen van de ATMega328. Iedere event heeft 8 bytes nodig. eerste adres is 0
-#define USER_TIMER_MAX              15 // aantal beschikbare timers voor de user.
 #define USER_VARIABLES_MAX          15 // aantal beschikbare gebbruikersvariabelen voor de user.
 #define RAW_BUFFER_SIZE            200 // Maximaal aantal te ontvangen bits*2. 
 #define UNIT_MAX                    15 
 #define HOME_MAX                    10
+#define MACRO_EXECUTION_DEPTH       10 // maximale nesting van macro's.
 
 #define BAUD                     19200 // Baudrate voor seriële communicatie.
 #define SERIAL_TERMINATOR_1       0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>, default voor EventGhost
@@ -361,19 +366,6 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 
 //****************************************************************************************************************************************
 
-unsigned long UserTimer[USER_TIMER_MAX];
-byte TimerCounter=0;
-byte UserVarPrevious[USER_VARIABLES_MAX];
-boolean WiredInputStatus[4],WiredOutputStatus[4];   // Wired variabelen
-unsigned int RawSignal[RAW_BUFFER_SIZE];            // Tabel met de gemeten pulsen in microseconden. eerste waarde is het aantal bits*2
-unsigned long EventTimeCodePrevious;                // t.b.v. voorkomen herhaald ontvangen van dezelfde code binnen ingestelde tijd
-byte DaylightPrevious;                              // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet
-byte depth=0;                                       // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's
-boolean Simulate,RawsignalGet;
-void(*Reset)(void)=0; //reset functie op adres 0
-uint8_t RFbit,RFport,IRbit,IRport;
-struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight; int Year,DaylightSaving;}Time;
-
 struct Settings
   {
   int     Version;
@@ -388,8 +380,46 @@ struct Settings
   int     WaitFreeRFWindow;
   byte    WaitFreeRFAction;
   boolean DaylightSaving;
+  boolean Confirm;
   int     DaylightSavingSet;
   }S;
+
+
+// Timers voor de gebruiker
+#define TIMER_MAX              15      // aantal beschikbare timers voor de user, gerekend vanaf 0 t/m 14
+unsigned long UserTimer[TIMER_MAX];
+
+
+// timers voor verwerking op intervals
+#define Loop_INTERVAL_1          500  // tijdsinterval in ms. voor achtergrondtaken.
+#define Loop_INTERVAL_2         5000  // tijdsinterval in ms. voor achtergrondtaken.
+unsigned long StaySharpTimer=millis();
+unsigned long LoopIntervalTimer_1=millis();// millis() maakt dat de intervallen van 1 en 2 niet op zelfde moment vallen => 1 en 2 nu asynchroon
+unsigned long LoopIntervalTimer_2=0L;
+
+// definiëer een kleine queue voor events die voorbij komen tijdens een delay
+#define EVENT_QUEUE_MAX 15
+unsigned long QueueEvent[EVENT_QUEUE_MAX];
+byte QueuePort[EVENT_QUEUE_MAX];
+byte QueuePos;
+
+// Overige globals
+boolean Simulate,RawsignalGet;
+boolean WiredInputStatus[4],WiredOutputStatus[4];   // Wired variabelen
+unsigned int RawSignal[RAW_BUFFER_SIZE];            // Tabel met de gemeten pulsen in microseconden. eerste waarde is het aantal bits*2
+byte TimerCounter=0;
+byte UserVarPrevious[USER_VARIABLES_MAX];
+byte DaylightPrevious;                              // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet
+byte WiredCounter=0, VariableCounter;
+byte depth=0;                                       // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's
+unsigned long Content=0L,ContentPrevious;
+unsigned long Checksum=0L;
+unsigned long SupressRepeatTimer;
+unsigned long DelayTimer;
+unsigned long EventTimeCodePrevious;                // t.b.v. voorkomen herhaald ontvangen van dezelfde code binnen ingestelde tijd
+void(*Reset)(void)=0;                               //reset functie op adres 0
+uint8_t RFbit,RFport,IRbit,IRport;
+struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight; int Year,DaylightSaving;}Time;
 
 void setup() 
   {    
@@ -438,23 +468,19 @@ void setup()
   ProcessEvent(command2event(CMD_BOOT_EVENT,0,0),VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM,0,0);  // Voer het 'Boot' event uit.
   }
 
-#define Loop_INTERVAL_1          500  // tijdsinterval in ms. voor achtergrondtaken.
-#define Loop_INTERVAL_2         5000  // tijdsinterval in ms. voor achtergrondtaken.
 
 void loop() 
   {
-  unsigned long Content=0L,StaySharpTimer=millis();
-  unsigned long LoopIntervalTimer_1=millis();// millis() maakt dat de intervallen van 1 en 2 niet op zelfde moment vallen => 1 en 2 nu asynchroon
-  unsigned long LoopIntervalTimer_2=0L;
-  unsigned long SupressRepeatTimer,ContentPrevious;
-  unsigned long Checksum=0L;
-  byte x,y,z, WiredCounter=0, VariableCounter;
-
+  int x,y,z;
+  
   SerialHold(false); // er mogen weer tekens binnen komen van SERIAL
 
   while(true)// dit is een tijdkritische loop die wacht tot binnegekomen event op IR, RF, SERIAL, CLOCK, DAYLIGHT, TIMER
     {            
-    digitalWrite(MonitorLedPin,LOW);           // LED weer uit
+    if(DelayTimer>millis())
+      digitalWrite(MonitorLedPin,(millis()>>7)&0x01);
+    else
+      digitalWrite(MonitorLedPin,LOW);           // LED weer uit
 
     // SERIAL: *************** kijk of er data klaar staat op de seriële poort **********************
     do
@@ -535,6 +561,13 @@ void loop()
       else
         Content=0L;
       
+      // QUEUE: **************** Check zonsopkomst & zonsondergang  ***********************
+      while(QueuePos && DelayTimer<millis())
+        {
+        QueuePos--;
+        ProcessEvent(QueueEvent[QueuePos],VALUE_DIRECTION_INPUT,QueuePort[QueuePos],0,0);      // verwerk binnengekomen event.
+        }       
+        
       // DAYLIGHT: **************** Check zonsopkomst & zonsondergang  ***********************
       SetDaylight();
       if(Time.Daylight!=DaylightPrevious)// er heeft een zonsondergang of zonsopkomst event voorgedaan
@@ -548,8 +581,8 @@ void loop()
     // 1: niet tijdkritische processen die periodiek uitgevoerd moeten worden
     if(LoopIntervalTimer_1<millis())// korte interval
       {
-      LoopIntervalTimer_1=millis()+Loop_INTERVAL_1; // reset de timer 
-      
+      LoopIntervalTimer_1=millis()+Loop_INTERVAL_1; // reset de timer
+
       // WIRED: *************** kijk of statussen gewijzigd zijn op WIRED **********************
      if(WiredCounter<3)
        WiredCounter++;
@@ -577,8 +610,8 @@ void loop()
        ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
        }
 
-    // TIMER: **************** Genereer event als één van de Timers voor de gebruiker afgelopen is ***********************
-    if(TimerCounter<USER_TIMER_MAX-1)
+   // TIMER: **************** Genereer event als één van de Timers voor de gebruiker afgelopen is ***********************
+    if(TimerCounter<TIMER_MAX-1)
       TimerCounter++;
     else
       TimerCounter=0;

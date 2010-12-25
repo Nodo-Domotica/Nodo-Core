@@ -67,13 +67,7 @@ unsigned long Receive_Serial(void)
           GenerateEvent(CMD_ERROR,CMD_EVENTLIST_WRITE,2);
           break;
           }
-          
-//??? kan dit weg? Issue 164
-//        x=EventType(Action);
-//        if(x==VALUE_TYPE_COMMAND || x==VALUE_TYPE_EVENT)Event&=0xf0ffffff; // als het een commando of een event is, dan unit er uitfilteren alvorens weg te schrijven
-//        x=EventType(Action);
-//        if(x==VALUE_TYPE_COMMAND || x==VALUE_TYPE_EVENT)Action&=0xf0ffffff;
-        
+                  
         // schrijf weg in eventlist
         if(!Eventlist_Write(0,Event,Action)) // Unit er uit filteren, anders na wijzigen unit geen geldige eventlist.
           {
@@ -122,7 +116,6 @@ unsigned long Receive_Serial(void)
           do
             {
             x=SerialReadBlock(SerialBuffer);
-            // PrintTerm();//??? wat doet deze hier? kan weg?
             RawSignal[y++]=str2val(SerialBuffer);
             }while(x && y<RAW_BUFFER_SIZE);
           RawSignal[0]=y-1;

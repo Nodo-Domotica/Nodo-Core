@@ -138,7 +138,7 @@ void WaitFreeRF(int Window)
 
   if(Simulate)return; 
   WindowTimer=millis()+Window; // reset de timer.
-  TimeOutTimer=millis()+15000; // tijd waarna de routine wordt afgebroken
+  TimeOutTimer=millis()+30000; // tijd waarna de routine wordt afgebroken in milliseconden
 
   while(WindowTimer>millis() && TimeOutTimer>millis())
     {

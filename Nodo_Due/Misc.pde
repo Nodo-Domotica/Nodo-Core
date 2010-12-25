@@ -140,6 +140,10 @@ boolean GetStatus(int *Command, int *Par1, int *Par2)
       *Par2=S.Home;
       break;        
 
+    case CMD_CONFIRM: 
+      *Par1=S.Confirm;
+      break;        
+
     case CMD_DLS_EVENT:
       *Par1=S.DaylightSaving;
       break;
@@ -297,6 +301,7 @@ void ResetFactory(void)
   S.WaitFreeRFAction   = VALUE_OFF;
   S.WaitFreeRFWindow   = S.Unit*500;
   S.DaylightSaving     = Time.DaylightSaving;
+  S.Confirm            = false;
   
   for(byte x=0;x<4;x++)
     {
@@ -319,7 +324,6 @@ void FactoryEventlist(void)
   {
   Eventlist_Write(1,0L,0L); // maak de eventlist leeg.
   Eventlist_Write(0,command2event(CMD_BOOT_EVENT,0,0),command2event(CMD_SOUND,7,0)); // geluidssignaal na opstarten Nodo
-  Eventlist_Write(0,command2event(CMD_COMMAND_WILDCARD,VALUE_ALL,VALUE_ALL),command2event(CMD_SOUND,0,0)); // Kort geluidssignaal bij ieder binnenkomend event
   Eventlist_Write(0,command2event(CMD_COMMAND_WILDCARD,VALUE_SOURCE_IR,CMD_KAKU),command2event(CMD_SEND_SIGNAL,0,0)); // Kort geluidssignaal bij ieder binnenkomend event
   }
 
@@ -449,13 +453,13 @@ byte EventType(unsigned long Code)
  /**********************************************************************************************\
  * Set de timer op nul zonder dat er een event wordt gegenereerd.
  \*********************************************************************************************/
-void TimerClear(byte Timer)
+void TimerClear(byte TimerToReset)
   {
-  if(Timer==0)
-    for(int x=0;x<USER_TIMER_MAX;x++)
-      UserTimer[x]=0L;
+  if(TimerToReset==0)
+    for(int x=0;x<TIMER_MAX;x++)
+      UserTimer[x]=0;
   else
-    UserTimer[Timer-1]=0L;
+    UserTimer[TimerToReset-1]=0;
   }
   
 // this function will return the number of bytes currently free in RAM
@@ -470,4 +474,22 @@ void TimerClear(byte Timer)
 //  free(byteArray); // also free memory after the function finishes
 //  return byteCounter; // send back the highest number of bytes successfully allocated
 // }
+  
+ /**********************************************************************************************\
+ * Plaats een event in de queue voor latere verwerking
+ \*********************************************************************************************/
+
+//boolean QueueEvent(unsigned long Event)
+//  {
+//  if(QueuePos<EVENT_QUEUE_MAX)
+//    {
+//    PrintEvent(IncommingEvent,0,VALUE_DIRECTION_QUEUE);  // geef event weer op Serial
+//    QueueEvent[QueuePos]=IncommingEvent;
+//    QueuePort[QueuePos]=Port;
+//    QueuePos++;           
+//    return true;
+//    }
+// else
+//    GenerateEvent(CMD_ERROR,CMD_DELAY,EVENT_QUEUE_MAX);
+//  }
   
