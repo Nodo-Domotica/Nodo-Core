@@ -202,6 +202,12 @@ boolean GetStatus(int *Command, int *Par1, int *Par2)
         *Par2=0;
       break;
 
+
+    case CMD_WIRED_RANGE:
+      *Par1=xPar1;
+      *Par2=S.WiredInputRange[xPar1-1];
+      break;
+
     case CMD_WIRED_THRESHOLD:
       *Par1=xPar1;
       *Par2=S.WiredInputThreshold[xPar1-1];
@@ -224,7 +230,7 @@ boolean GetStatus(int *Command, int *Par1, int *Par2)
 
     case CMD_WIRED_ANALOG:
       *Par1=xPar1;
-      *Par2=analogRead(WiredAnalogInputPin_1+xPar1-1)>>2;
+      *Par2=WiredAnalog(xPar1-1);
       break;
       
     case CMD_WIRED_OUT:
@@ -307,6 +313,7 @@ void ResetFactory(void)
     {
     S.WiredInputThreshold[x]=0x80; 
     S.WiredInputSmittTrigger[x]=5;
+    S.WiredInputRange[x]=0;
     S.WiredInputPullUp[x]=true;
     }
 
@@ -474,22 +481,29 @@ void TimerClear(byte TimerToReset)
 //  free(byteArray); // also free memory after the function finishes
 //  return byteCounter; // send back the highest number of bytes successfully allocated
 // }
-  
- /**********************************************************************************************\
- * Plaats een event in de queue voor latere verwerking
- \*********************************************************************************************/
 
-//boolean QueueEvent(unsigned long Event)
-//  {
-//  if(QueuePos<EVENT_QUEUE_MAX)
-//    {
-//    PrintEvent(IncommingEvent,0,VALUE_DIRECTION_QUEUE);  // geef event weer op Serial
-//    QueueEvent[QueuePos]=IncommingEvent;
-//    QueuePort[QueuePos]=Port;
-//    QueuePos++;           
-//    return true;
-//    }
-// else
-//    GenerateEvent(CMD_ERROR,CMD_DELAY,EVENT_QUEUE_MAX);
-//  }
+ /**********************************************************************************************\
+ * Geeft de analoge waarde [0..255] van de WIRED-IN poort <WiredPort> [0..3]
+ \*********************************************************************************************/
+byte WiredAnalog(byte WiredPort)
+  {
+  int x=analogRead(WiredAnalogInputPin_1+WiredPort);
+    
+  if(S.WiredInputRange[WiredPort]==0)
+    // Hele bereik 0..5 volt 
+    // S.WiredInputRange=0, bits 0..10, Spanning 0.00-5.00, Resolutie 19.53 mllivolt. ADC bereik 0..1023 delen door 4 om op 0.255 uit te komen
+    x=x>>2;
+  else
+    {
+    // Deel van het bereik gebruiken
+    // S.WiredInputRange=1, bits 0..7,  Spanning 0.00-1.25, Resolutie 4.88 mllivolt. ADC bereik 0..255
+    // S.WiredInputRange=2, bits 1..8,  Spanning 1.25-2.49, Resolutie 4.88 mllivolt. ADC bereik 256..511
+    // S.WiredInputRange=3, bits 2..9,  Spanning 2.49-3.74, Resolutie 4.88 mllivolt. ADC bereik 512..983
+    // S.WiredInputRange=4, bits 3..10, Spanning 3.74-4.98, Resolutie 4.88 mllivolt. ADC bereik 768..1023
+    x=x-256*(int(S.WiredInputRange[WiredPort])-1);
+    }
+  if(x>255)x=255;
+  if(x<0)x=0;
+  return x;
+  }
   

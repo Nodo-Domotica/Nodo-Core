@@ -11,12 +11,16 @@ Opgeloste issues:
 - Issue 168:	ClockAll event in de eventlist geeft een match bij UserEvent
 - Issue 170:	datum instellen met maand 0 wordt geaccepteerd
 - Issue 171:	WaitFreeRF All regressie.
+- Issue 174:	Gebruik van variabele in UserEvent
+- Issue 175:	VariableVariable geeft foutmelding in Par2
+- Issue 173:	GetLM335 => Opgelost met WiredRange.
 
 Overige aanpassingen:
 - Aanpassing pause bij herhaald sound 'ding-dong' en de 'Whoop' is nu een 'slow-whoop' 
 - '(WildCard All, All); (Sound 0, 0)' niet meer default in de eventlist
-- Nieuwe setting 'Confirm' NOG NIET OPERATIONEEL !!!
+- Nieuwe setting 'Confirm'
 - Aanpassing commando 'Delay': Kan worden uitgezet en voorbijkomende event worden in queue gezet voor latere verwerking.
+- Nesting error wordt nu als een error-event verzonden
 
 Onder de motorkap:
 - Timers nu in een int i.p.v. unsigned long en aanpassing aflopen timers => geheugenbesparing
@@ -58,7 +62,7 @@ Onder de motorkap:
  *
  ********************************************************************************************************/
 
-#define VERSION                  113 // Nodo Version nummer
+#define VERSION                  114 // Nodo Version nummer
 
 
 #include "pins_arduino.h"
@@ -163,8 +167,8 @@ prog_char PROGMEM Text_14[] = ", Unit ";
 #define CMD_COPYSIGNAL 75
 #define CMD_COMMAND_WILDCARD 76
 #define CMD_CONFIRM 77
-#define CMD_COMMAND_RES2 78
-#define CMD_COMMAND_RES3 79
+#define CMD_SEND_VAR_USEREVENT 78
+#define CMD_WIRED_RANGE 79
 #define CMD_COMMAND_RES4 80
 #define CMD_BOOT_EVENT 81
 #define CMD_CLOCK_EVENT_DAYLIGHT 82
@@ -266,8 +270,8 @@ prog_char PROGMEM Cmd_74[]="SendUserEvent";
 prog_char PROGMEM Cmd_75[]="RawSignalCopy";
 prog_char PROGMEM Cmd_76[]="WildCard";
 prog_char PROGMEM Cmd_77[]="Confirm";
-prog_char PROGMEM Cmd_78[]="";
-prog_char PROGMEM Cmd_79[]="";
+prog_char PROGMEM Cmd_78[]="SendVarUserEvent";
+prog_char PROGMEM Cmd_79[]="WiredRange";
 prog_char PROGMEM Cmd_80[]="";
 prog_char PROGMEM Cmd_81[]="Boot";
 prog_char PROGMEM Cmd_82[]="ClockDaylight";
@@ -286,8 +290,8 @@ prog_char PROGMEM Cmd_94[]="Timer";
 prog_char PROGMEM Cmd_95[]="WiredIn";
 prog_char PROGMEM Cmd_96[]="Variable";
 prog_char PROGMEM Cmd_97[]="";
-prog_char PROGMEM Cmd_98[]="Ok";
-prog_char PROGMEM Cmd_99[]="Error";
+prog_char PROGMEM Cmd_98[]="Ok"; // deze moet altijd op 98 blijven
+prog_char PROGMEM Cmd_99[]="Error"; // deze moet altijd op  blijven
 prog_char PROGMEM Cmd_100[]="UserEvent"; // deze moet altijd op 100 blijven anders opnieuw leren aan universele afstandsbediening!
 prog_char PROGMEM Cmd_101[]="DaylightSaving";
 
@@ -369,7 +373,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 struct Settings
   {
   int     Version;
-  byte    WiredInputThreshold[4], WiredInputSmittTrigger[4], WiredInputPullUp[4];
+  byte    WiredInputThreshold[4], WiredInputSmittTrigger[4], WiredInputPullUp[4],WiredInputRange[4];
   byte    AnalyseSharpness;
   int     AnalyseTimeOut;
   byte    UserVar[USER_VARIABLES_MAX];
@@ -591,7 +595,8 @@ void loop()
 
      // als de huidige waarde groter dan threshold EN de vorige keer was dat nog niet zo DAN verstuur code
      z=false; // vlag om te kijken of er een wijziging is die verzonden moet worden.
-     y=analogRead(WiredAnalogInputPin_1+WiredCounter)>>2;
+
+     y=WiredAnalog(WiredCounter);
      
      if(y>S.WiredInputThreshold[WiredCounter]+S.WiredInputSmittTrigger[WiredCounter] && !WiredInputStatus[WiredCounter])
        {

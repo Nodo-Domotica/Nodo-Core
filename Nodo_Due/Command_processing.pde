@@ -39,7 +39,6 @@ byte CommandError(unsigned long Content)
     //test; geen, altijd goed
     case CMD_VARIABLE_EVENT:    
     case CMD_KAKU:
-    case CMD_CONFIRM:
     case CMD_DLS_EVENT:
     case CMD_CLOCK_EVENT_DAYLIGHT:
     case CMD_CLOCK_EVENT_ALL:
@@ -86,9 +85,10 @@ byte CommandError(unsigned long Content)
       return false;
       
     // test:Par1 en Par2 binnen bereik maximaal beschikbare variabelen
+    case CMD_SEND_VAR_USEREVENT:
     case CMD_VARIABLE_VARIABLE:
       if(Par1<1 || Par1>USER_VARIABLES_MAX)return ERROR_PAR1;
-      if(Par2<1 || Par2<USER_VARIABLES_MAX)return ERROR_PAR2;
+      if(Par2<1 || Par2>USER_VARIABLES_MAX)return ERROR_PAR2;
       return false;
         
     // test:Par1 binnen bereik maximaal beschikbare variabelen, Par2 is een geldige WIRED_IN
@@ -114,7 +114,12 @@ byte CommandError(unsigned long Content)
       if(Par1>TIMER_MAX)return ERROR_PAR1;
       return false;
 
-    // alleen 0,1 of 7
+    case CMD_WIRED_RANGE:
+      if(Par1<1 || Par1>4)return ERROR_PAR1; // poort
+      if(Par2>4)return ERROR_PAR2; // range
+      return false;
+
+    // Par1 alleen 0,1 of 7
     case CMD_SIMULATE_DAY:
       if(Par1!=0 && Par1!=1 && Par1!=7)return ERROR_PAR1;
       return false;
@@ -200,6 +205,7 @@ byte CommandError(unsigned long Content)
       return false;
 
      // par1 alleen 0 of 1.
+    case CMD_CONFIRM:
     case CMD_SIMULATE:
       if(Par1!=0 && Par1!=1)return ERROR_PAR1;
       return false;
@@ -287,7 +293,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;        
   
       case CMD_VARIABLE_WIRED_ANALOG:
-        S.UserVar[Par1-1]=analogRead(WiredAnalogInputPin_1+(Par2-1))>>2;
+        S.UserVar[Par1-1]=WiredAnalog(Par2-1);
         SaveSettings();
         break;        
   
@@ -335,6 +341,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         SendEventCode(command2event(CMD_USER_EVENT,Par1,Par2)&0x00ffffff | ((unsigned long)S.Home)<<28);// Voeg Home toe en Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
         break;
   
+      case CMD_SEND_VAR_USEREVENT:
+        // Voeg Home toe en Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
+        SendEventCode(command2event(CMD_USER_EVENT,S.UserVar[Par1-1],S.UserVar[Par2-1])&0x00ffffff | ((unsigned long)S.Home)<<28);// Voeg Home toe en Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
+        break;
+
       case CMD_SIMULATE_DAY:
         if(Par1==0)Par1=1;
         SimulateDay(Par1); 
@@ -405,6 +416,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         SaveSettings();
         break;
   
+      case CMD_WIRED_RANGE:
+        S.WiredInputRange[Par1-1]=Par2; // Par1 is de poort[1..4], Par2 is de range [0..4]
+        SaveSettings();
+        break;
+
       case CMD_WIRED_OUT:
         digitalWrite(WiredDigitalOutputPin_1+Par1-1,Par2&1);
         WiredOutputStatus[Par1-1]=Par2&1;

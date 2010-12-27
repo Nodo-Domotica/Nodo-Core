@@ -18,7 +18,6 @@
 \**************************************************************************/
 
 
-
  /**********************************************************************************************\
  * Voert alle events uit die correspenderen met de Code
  * Revision 01, 09-12-2009, P.K.Tonkes@gmail.com
@@ -52,8 +51,8 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
       DelayTimer=0L;
     else
       {
-      // als het event voorkomt in de eventlist, dan is het relevant om op te slaan
-      if(CheckEventlist(IncommingEvent))
+      // als het event voorkomt in de eventlist of het is een geldig commando voor deze Nodo, dan is het relevant om op te slaan
+      if(CheckEventlist(IncommingEvent || EventType(IncommingEvent)==VALUE_TYPE_COMMAND))
         {
         // als er nog plek is in de queue...
         if(QueuePos<EVENT_QUEUE_MAX)
@@ -72,9 +71,13 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     }     
 
   if(depth==0 || S.Trace&1)PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
-//  if(depth==0 && S.Confirm && Command==CMD_USER_EVENT) //??? && Port==VALUE_SOURCE_RF)
-//      GenerateEvent(CMD_OK,S.Unit,CMD_USER_EVENT);
 
+  // Als de 'Confirm' optie aan staat, dan een 'Ok'-event verzenden
+  // Dit alleen als het een commando of event voor deze nodo is.
+  x=EventType(IncommingEvent);
+  if(depth==0 && S.Confirm && (x==VALUE_TYPE_COMMAND || x==VALUE_TYPE_EVENT))
+    SendEventCode(command2event(CMD_OK,S.Unit,0)&0x00ffffff | ((unsigned long)S.Home)<<28);// Voeg Home toe en Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
+    
   if(depth++>=MACRO_EXECUTION_DEPTH)
     {
     GenerateEvent(CMD_ERROR,VALUE_NESTING,MACRO_EXECUTION_DEPTH);

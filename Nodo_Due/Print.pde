@@ -193,8 +193,8 @@ void PrintEventCode(unsigned long Code)
       break;
 
     // Par1 als waarde en par2 niet
-    case CMD_DIVERT:
     case CMD_OK:
+    case CMD_DIVERT:
     case CMD_VARIABLE_CLEAR:
     case CMD_SIMULATE_DAY:
     case CMD_TIMER_RESET:
