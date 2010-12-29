@@ -30,9 +30,9 @@
 
 byte CommandError(unsigned long Content)
   {
-  byte Command      = EventPart(Content,EVENT_PART_COMMAND);
-  byte Par1         = EventPart(Content,EVENT_PART_PAR1);
-  byte Par2         = EventPart(Content,EVENT_PART_PAR2);
+  byte Command      = (Content>>16)&0xff;
+  byte Par1         = (Content>>8)&0xff;
+  byte Par2         = Content&0xff;
 
   switch(Command)
     {
@@ -243,9 +243,9 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   int x,y;
 
   byte error        = false;
-  int Command       = EventPart(Content,EVENT_PART_COMMAND);
-  int Par1          = EventPart(Content,EVENT_PART_PAR1);
-  int Par2          = EventPart(Content,EVENT_PART_PAR2);
+  byte Command      = (Content>>16)&0xff;
+  byte Par1         = (Content>>8)&0xff;
+  byte Par2         = Content&0xff;
   byte Type         = EventType(Content);
   byte PreviousType = EventType(PreviousContent);
   
@@ -453,10 +453,10 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;
   
       case CMD_SEND_STATUS:
-        x=Par1;// bevat het commando waarvoor de status opgehaald moet worden
+        Command=Par1;// bevat het commando waarvoor de status opgehaald moet worden
         Par1=Par2;
-        if(GetStatus(&x,&Par1,&Par2))// let op: call by reference. Gegevens komen terug in Par1 en Par2
-          GenerateEvent(x,Par1,Par2);
+        if(GetStatus(&Command,&Par1,&Par2))// let op: call by reference. Gegevens komen terug in Par1 en Par2
+          GenerateEvent(Command,Par1,Par2);
         break;
        }
     }

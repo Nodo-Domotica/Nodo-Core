@@ -54,8 +54,7 @@ unsigned long command2event(int Command, byte Par1, byte Par2)
             (unsigned long)Par2;
     }
 
-
- /*********************************************************************************************\
+/*********************************************************************************************\
  * String mag HEX, DEC of een NODO commando zijn.
  * Deze routine coverteert uit een string een unsigned long waarde.
  * De string moet beginnen met het eerste teken(dus geen voorloop spaties).
@@ -122,10 +121,10 @@ unsigned long str2val(char *string)
  * Haal voor het opgegeven Command de status op.
  * Let op: call by reference!
  \*********************************************************************************************/
-boolean GetStatus(int *Command, int *Par1, int *Par2)
+boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
  { 
   byte x;
-  int xPar1=*Par1,xPar2=*Par2;
+  byte xPar1=*Par1,xPar2=*Par2;
   *Par1=0;
   *Par2=0;
   switch (*Command)
@@ -243,6 +242,7 @@ boolean GetStatus(int *Command, int *Par1, int *Par2)
     }
   return true;
   }
+
 
 
  /**********************************************************************************************\
@@ -409,47 +409,21 @@ byte DL2par(char* DL)
   return ((par-1) << 4 | KAKU_DIMLEVEL);      
 }
 
- /*********************************************************************************************\
- * geeft een deel uit de code terug.
- * er wordt geen rekening gehouden met juiste home of unit adressering.
- \*********************************************************************************************/
-byte EventPart(unsigned long Code, byte Part)
-  {
-  int x;
-
-  switch(Part)
-    {
-    case EVENT_PART_HOME:
-      return (Code>>28)&0xf;
-
-    case EVENT_PART_UNIT:
-      return (Code>>24)&0xf;
-
-    case EVENT_PART_COMMAND:
-      return (Code>>16)&0xff;
-      
-    case EVENT_PART_PAR1:
-      return (Code>>8)&0xff;
-
-    case EVENT_PART_PAR2:
-      return Code&0xff;
-
-    default:
-      return 0;
-    }
-  }
 
  /**********************************************************************************************\
  * Bepaal wat voor een type Event het is.
  \*********************************************************************************************/
 byte EventType(unsigned long Code)
   {
-  byte Command,Unit;
+  byte Unit=(Code>>24)&0xf;
+  byte Command=(Code>>16)&0xff;
+
+//  ??? debugging
+//  Serial.print("Unit=");Serial.print(Unit,DEC);PrintTerm();
+//  Serial.print("Command=");Serial.print(Command,DEC);PrintTerm();
+//  Serial.print("Home=");Serial.print((Code>>28)&0xf,DEC);PrintTerm();
   
-  Unit=   EventPart(Code,EVENT_PART_UNIT);
-  Command=EventPart(Code,EVENT_PART_COMMAND);
-  
-  if(EventPart(Code,EVENT_PART_HOME)!=S.Home) return VALUE_TYPE_UNKNOWN; 
+  if(((Code>>28)&0xf)!=S.Home)                return VALUE_TYPE_UNKNOWN; 
   if(Unit!=S.Unit && Unit!=0)                 return VALUE_TYPE_OTHERUNIT; // andere unit, dus niet voor deze nodo bestemd. Behalve unit=0, die is voor alle units    }
   if(Command<=RANGE_VALUE)                    return VALUE_TYPE_UNKNOWN;
   if(Command<RANGE_EVENT)                     return VALUE_TYPE_COMMAND;
@@ -496,10 +470,10 @@ byte WiredAnalog(byte WiredPort)
   else
     {
     // Deel van het bereik gebruiken
-    // S.WiredInputRange=1, bits 0..7,  Spanning 0.00-1.25, Resolutie 4.88 mllivolt. ADC bereik 0..255
+    // S.WiredInputRange=1, bits 0..7,  Spanning 0.00-1.24, Resolutie 4.88 mllivolt. ADC bereik 0..255
     // S.WiredInputRange=2, bits 1..8,  Spanning 1.25-2.49, Resolutie 4.88 mllivolt. ADC bereik 256..511
-    // S.WiredInputRange=3, bits 2..9,  Spanning 2.49-3.74, Resolutie 4.88 mllivolt. ADC bereik 512..983
-    // S.WiredInputRange=4, bits 3..10, Spanning 3.74-4.98, Resolutie 4.88 mllivolt. ADC bereik 768..1023
+    // S.WiredInputRange=3, bits 2..9,  Spanning 2.50-3.74, Resolutie 4.88 mllivolt. ADC bereik 512..983
+    // S.WiredInputRange=4, bits 3..10, Spanning 3.75-5.00, Resolutie 4.88 mllivolt. ADC bereik 768..1023
     x=x-256*(int(S.WiredInputRange[WiredPort])-1);
     }
   if(x>255)x=255;

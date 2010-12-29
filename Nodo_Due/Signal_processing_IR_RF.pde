@@ -358,7 +358,7 @@ boolean SendEventCode(unsigned long Event)
     if(S.WaitFreeRFAction==VALUE_ALL || (depth<=2 && S.WaitFreeRFAction==VALUE_SERIES))
        WaitFreeRF(S.WaitFreeRFWindow); // alleen WaitFreeRF als type bekend is, anders gaat SendSignal niet goed a.g.v. overschrijven buffer
        
-    switch(EventPart(Event,EVENT_PART_COMMAND))
+    switch((Event>>16)&0xff)// command deel
       {
       case CMD_KAKU:
       case CMD_SEND_KAKU:

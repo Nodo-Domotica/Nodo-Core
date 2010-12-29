@@ -118,11 +118,11 @@ void PrintEventCode(unsigned long Code)
   byte P1,P2,Par2_b; 
   boolean P2Z=true;     // vlag: true=Par2 als nul waarde afdrukken false=nulwaarde weglaten
   
-  byte Unit     = EventPart(Code,EVENT_PART_UNIT);
-  byte Home     = EventPart(Code,EVENT_PART_HOME);
-  byte Command  = EventPart(Code,EVENT_PART_COMMAND);
-  byte Par1     = EventPart(Code,EVENT_PART_PAR1);
-  byte Par2     = EventPart(Code,EVENT_PART_PAR2);
+  byte Unit     = (Code>>24)&0xf;
+  byte Home     = (Code>>28)&0xf;
+  byte Command  = (Code>>16)&0xff;
+  byte Par1     = (Code>>8)&0xff;
+  byte Par2     = (Code)&0xff;
   byte Type     = EventType(Code);
 
   if(Type==VALUE_TYPE_UNKNOWN)

@@ -27,7 +27,7 @@
 boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, unsigned long PreviousContent, byte PreviousPort)
   {
   unsigned long Event_1, Event_2;
-  byte Command=EventPart(IncommingEvent,EVENT_PART_COMMAND);
+  byte Command=(IncommingEvent>>16)&0xff;
   byte w,x,y,z;
 
   digitalWrite(MonitorLedPin,HIGH);          // LED aan om aan te geven dat er wat ontvangen is en verwerkt wordt
@@ -137,12 +137,13 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
         if(S.Trace&1)
           PrintEventlistEntry(x,depth);
           
-        if(EventPart(Event_2,EVENT_PART_COMMAND)==EVENT_PART_COMMAND) // is de ontvangen code een uitvoerbaar commando?
+        //??? if(EventPart(Event_2,EVENT_PART_COMMAND)==EVENT_PART_COMMAND) // is de ontvangen code een uitvoerbaar commando?
+        if(EventType(Event_2)==VALUE_TYPE_COMMAND) // is de ontvangen code een uitvoerbaar commando?
           {
           if(!ExecuteCommand(Event_2, VALUE_SOURCE_EVENTLIST,IncommingEvent,Port))
             {
             depth--;
-            return false;
+            return false;// false terug als het commando niet geldig of niet uitvoerbaar was
             }
           }
         else
@@ -186,14 +187,16 @@ boolean CheckEventlist(unsigned long Code)
  \*********************************************************************************************/
 boolean CheckEvent(unsigned long Event, unsigned long MacroEvent)
   {  
+  byte x;
+  
   // als huidige event exact overeenkomt met het event in de regel uit de Eventlist, dan een match
   if(MacroEvent==Event)return true; 
   
   // als Home niet overeenkomt, dan geen match
-  if(EventPart(Event,EVENT_PART_HOME)!=S.Home)return false; 
+  if(((Event>>28)&0xf)!=S.Home)return false; // home
   
   // Als unit ongelijk aan 0 of ongelijk aan huidige unit, dan is er ook geen match
-  int x=EventPart(Event,EVENT_PART_UNIT);
+  x=(Event>>24)&0x0f; // unit
   if(x!=0 && x!=S.Unit)return false; 
 
   // als huidige event (met wegfilterde home en unit ) gelijk is aan MacroEvent, dan een match
@@ -201,9 +204,17 @@ boolean CheckEvent(unsigned long Event, unsigned long MacroEvent)
   MacroEvent&=0x00ffffff;
   if(MacroEvent==Event)return true; 
 
+  // beschouw bij een UserEvent een 0 voor Par 1 of Par2 als een wildcard.
+  if(((Event>>16)&0xff)==CMD_USER_EVENT)// Command
+    {
+    if(((Event>>8)&0xff)==0 || ((MacroEvent>>8)&0xff)==0){Event&=0xffff00ff;MacroEvent&=0xffff00ff;}
+    if(((Event   )&0xff)==0 || ((MacroEvent   )&0xff)==0){Event&=0xffffff00;MacroEvent&=0xffffff00;}
+    if(MacroEvent==Event)return true; 
+    }
+
   // is er een match met een CLOCK_EVENT_ALL event?
   if((MacroEvent&0x0000ffff)==(Event&0x0000ffff)) // tijdstippen kloppen
-    if(EventPart(MacroEvent,EVENT_PART_COMMAND)==CMD_CLOCK_EVENT_ALL) // En het is een ClockAll event.
+    if(((MacroEvent>>16)&0xff)==CMD_CLOCK_EVENT_ALL) // En het command deel is een ClockAll event.
       return true;
  
   return false;

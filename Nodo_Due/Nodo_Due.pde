@@ -11,9 +11,12 @@ Opgeloste issues:
 - Issue 168:	ClockAll event in de eventlist geeft een match bij UserEvent
 - Issue 170:	datum instellen met maand 0 wordt geaccepteerd
 - Issue 171:	WaitFreeRF All regressie.
-- Issue 174:	Gebruik van variabele in UserEvent
 - Issue 175:	VariableVariable geeft foutmelding in Par2
+
+Nieuwe functionaliteit:
+- Issue 172:	wildcard gebruik in UserEvent
 - Issue 173:	GetLM335 => Opgelost met WiredRange.
+- Issue 174:	Gebruik van variabele in UserEvent
 
 Overige aanpassingen:
 - Aanpassing pause bij herhaald sound 'ding-dong' en de 'Whoop' is nu een 'slow-whoop' 
@@ -24,7 +27,7 @@ Overige aanpassingen:
 
 Onder de motorkap:
 - Timers nu in een int i.p.v. unsigned long en aanpassing aflopen timers => geheugenbesparing
-
+- EventPart functie laten vervallen en vervangen door directe shift/and op events => geheugenbesparing
 
 
  \*****************************************************************************************************/
@@ -62,7 +65,7 @@ Onder de motorkap:
  *
  ********************************************************************************************************/
 
-#define VERSION                  114 // Nodo Version nummer
+#define VERSION                  115 // Nodo Version nummer
 
 
 #include "pins_arduino.h"

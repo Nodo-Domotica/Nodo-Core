@@ -28,7 +28,7 @@ unsigned long Receive_Serial(void)
   {
   unsigned long Event,Action;
   byte x,y;
-  int Par1,Par2,Cmd;
+  byte Par1,Par2,Cmd;
   boolean error=false;
   
   Event=SerialReadEvent();
@@ -37,9 +37,9 @@ unsigned long Receive_Serial(void)
       return Event;
   else
     { // het was een geldig uitvoerbaar commando. Dit wordt geborgd door SerialReadEvent();
-    Cmd=EventPart(Event,EVENT_PART_COMMAND);
-    Par1=EventPart(Event,EVENT_PART_PAR1);
-    Par2=EventPart(Event,EVENT_PART_PAR2);
+    Cmd=(Event>>16)&0xff;
+    Par1=(Event>>8)&0xff;
+    Par2=(Event)&0xff;
       
     switch(Cmd)
       {
@@ -47,7 +47,8 @@ unsigned long Receive_Serial(void)
         PrintLine();
         for(x=1;x<=Eventlist_MAX && Eventlist_Read(x,&Event,&Action);x++)
           {
-          PrintEventlistEntry(x,0);PrintTerm();
+          PrintEventlistEntry(x,0);
+          PrintTerm();
           }   
         PrintLine();
         break;
