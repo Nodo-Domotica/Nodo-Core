@@ -355,7 +355,7 @@ boolean SendEventCode(unsigned long Event)
   // als het een Nodo bekend eventtype is, dan deze weer opnieuw opbouwen in de buffer
   if(EventType(Event)!=VALUE_TYPE_UNKNOWN)
     {
-    if(S.WaitFreeRFAction==VALUE_ALL || (depth<=2 && S.WaitFreeRFAction==VALUE_SERIES))
+    if(S.WaitFreeRFAction==VALUE_ALL || (EventlistDepth<=2 && S.WaitFreeRFAction==VALUE_SERIES))
        WaitFreeRF(S.WaitFreeRFWindow); // alleen WaitFreeRF als type bekend is, anders gaat SendSignal niet goed a.g.v. overschrijven buffer
        
     switch((Event>>16)&0xff)// command deel

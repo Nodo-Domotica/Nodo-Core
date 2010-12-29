@@ -417,11 +417,6 @@ byte EventType(unsigned long Code)
   {
   byte Unit=(Code>>24)&0xf;
   byte Command=(Code>>16)&0xff;
-
-//  ??? debugging
-//  Serial.print("Unit=");Serial.print(Unit,DEC);PrintTerm();
-//  Serial.print("Command=");Serial.print(Command,DEC);PrintTerm();
-//  Serial.print("Home=");Serial.print((Code>>28)&0xf,DEC);PrintTerm();
   
   if(((Code>>28)&0xf)!=S.Home)                return VALUE_TYPE_UNKNOWN; 
   if(Unit!=S.Unit && Unit!=0)                 return VALUE_TYPE_OTHERUNIT; // andere unit, dus niet voor deze nodo bestemd. Behalve unit=0, die is voor alle units    }

@@ -32,6 +32,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
 
   digitalWrite(MonitorLedPin,HIGH);          // LED aan om aan te geven dat er wat ontvangen is en verwerkt wordt
 
+  // Als de RAW pulsen worden opgevraagd door de gebruiker...
   if(RawsignalGet)
     {
     PrintRawSignal();
@@ -40,19 +41,19 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     }
 
   // Uitvoeren voorafgaand aan een reeks uitvoeren
-  if(depth==0 && S.Trace&1)
+  if(EventlistDepth==0 && S.Trace&1)
       PrintLine(); 
 
   // als de Nodo in de hold is gezet, verzamel dan relevante events in de queue
-  if(DelayTimer>millis())
+  if(HoldTimer>millis())
     {
     // als het event de opdracht betreft om de hold uit te zetten, dan dit doen.
     if(IncommingEvent==command2event(CMD_DELAY,0,0))
-      DelayTimer=0L;
+      HoldTimer=0L;
     else
       {
       // als het event voorkomt in de eventlist of het is een geldig commando voor deze Nodo, dan is het relevant om op te slaan
-      if(CheckEventlist(IncommingEvent || EventType(IncommingEvent)==VALUE_TYPE_COMMAND))
+      if(CheckEventlist(IncommingEvent) || EventType(IncommingEvent)==VALUE_TYPE_COMMAND)
         {
         // als er nog plek is in de queue...
         if(QueuePos<EVENT_QUEUE_MAX)
@@ -68,20 +69,20 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
         }
       return true;
       }
-    }     
+    }
 
-  if(depth==0 || S.Trace&1)PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
+  if(EventlistDepth==0 || S.Trace&1)PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
 
   // Als de 'Confirm' optie aan staat, dan een 'Ok'-event verzenden
   // Dit alleen als het een commando of event voor deze nodo is.
   x=EventType(IncommingEvent);
-  if(depth==0 && S.Confirm && (x==VALUE_TYPE_COMMAND || x==VALUE_TYPE_EVENT))
+  if(EventlistDepth==0 && S.Confirm && (x==VALUE_TYPE_COMMAND || x==VALUE_TYPE_EVENT))
     SendEventCode(command2event(CMD_OK,S.Unit,0)&0x00ffffff | ((unsigned long)S.Home)<<28);// Voeg Home toe en Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
     
-  if(depth++>=MACRO_EXECUTION_DEPTH)
+  if(EventlistDepth++>=MACRO_EXECUTION_DEPTH)
     {
     GenerateEvent(CMD_ERROR,VALUE_NESTING,MACRO_EXECUTION_DEPTH);
-    depth=0;
+    EventlistDepth=0;
     return false; // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
     }
 
@@ -91,7 +92,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     { // Er is een Commando binnengekomen 
     if(!ExecuteCommand(IncommingEvent,Port,PreviousContent,PreviousPort))
       {
-      depth--;
+      EventlistDepth--;
       return false;
       }
     }
@@ -135,14 +136,13 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
       if(y)
         {
         if(S.Trace&1)
-          PrintEventlistEntry(x,depth);
+          PrintEventlistEntry(x,EventlistDepth);
           
-        //??? if(EventPart(Event_2,EVENT_PART_COMMAND)==EVENT_PART_COMMAND) // is de ontvangen code een uitvoerbaar commando?
         if(EventType(Event_2)==VALUE_TYPE_COMMAND) // is de ontvangen code een uitvoerbaar commando?
           {
           if(!ExecuteCommand(Event_2, VALUE_SOURCE_EVENTLIST,IncommingEvent,Port))
             {
-            depth--;
+            EventlistDepth--;
             return false;// false terug als het commando niet geldig of niet uitvoerbaar was
             }
           }
@@ -152,7 +152,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
             {
             if(!ProcessEvent(Event_2,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_EVENTLIST,IncommingEvent,Port))
               {
-              depth--;
+              EventlistDepth--;
               return true;
               }
             }
@@ -160,7 +160,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
         }
       }
     }
-  depth--;
+  EventlistDepth--;
   return true;
   }
 

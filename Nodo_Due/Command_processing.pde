@@ -392,9 +392,16 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   
       case CMD_DELAY:
         if(Par1)
-          DelayTimer=millis()+((unsigned long)(Par1))*1000;     
+          {
+          HoldTimer=millis()+((unsigned long)(Par1))*1000;
+          if(Src==VALUE_SOURCE_EVENTLIST)
+            {
+            while(HoldTimer>millis())        
+              digitalWrite(MonitorLedPin,(millis()>>7)&0x01);
+            }
+          }        
         else
-          DelayTimer=0L;
+          HoldTimer=0L;
         break;        
         
       case CMD_SOUND: 

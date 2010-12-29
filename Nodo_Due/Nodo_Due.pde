@@ -1,5 +1,4 @@
-
- /*****************************************************************************************************\
+/**************************************************************************************************************************\
 
 Done release 1.15:
 
@@ -12,6 +11,8 @@ Opgeloste issues:
 - Issue 170:	datum instellen met maand 0 wordt geaccepteerd
 - Issue 171:	WaitFreeRF All regressie.
 - Issue 175:	VariableVariable geeft foutmelding in Par2
+- Issue 176:	Delay verstoort werking
+- Issue 177:	revisie186 - delay probleem
 
 Nieuwe functionaliteit:
 - Issue 172:	wildcard gebruik in UserEvent
@@ -28,9 +29,8 @@ Overige aanpassingen:
 Onder de motorkap:
 - Timers nu in een int i.p.v. unsigned long en aanpassing aflopen timers => geheugenbesparing
 - EventPart functie laten vervallen en vervangen door directe shift/and op events => geheugenbesparing
+\**************************************************************************************************************************/
 
-
- \*****************************************************************************************************/
 
 
  /*****************************************************************************************************\
@@ -418,11 +418,11 @@ byte TimerCounter=0;
 byte UserVarPrevious[USER_VARIABLES_MAX];
 byte DaylightPrevious;                              // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet
 byte WiredCounter=0, VariableCounter;
-byte depth=0;                                       // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's
+byte EventlistDepth=0;                                       // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's
 unsigned long Content=0L,ContentPrevious;
 unsigned long Checksum=0L;
 unsigned long SupressRepeatTimer;
-unsigned long DelayTimer;
+unsigned long HoldTimer;
 unsigned long EventTimeCodePrevious;                // t.b.v. voorkomen herhaald ontvangen van dezelfde code binnen ingestelde tijd
 void(*Reset)(void)=0;                               //reset functie op adres 0
 uint8_t RFbit,RFport,IRbit,IRport;
@@ -475,16 +475,14 @@ void setup()
   ProcessEvent(command2event(CMD_BOOT_EVENT,0,0),VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM,0,0);  // Voer het 'Boot' event uit.
   }
 
-
 void loop() 
   {
   int x,y,z;
   
   SerialHold(false); // er mogen weer tekens binnen komen van SERIAL
-
-  while(true)// dit is een tijdkritische loop die wacht tot binnegekomen event op IR, RF, SERIAL, CLOCK, DAYLIGHT, TIMER
+  while(true)// dit is een tijdkritische loop die wacht tot binnengekomen event op IR, RF, SERIAL, CLOCK, DAYLIGHT, TIMER
     {            
-    if(DelayTimer>millis())
+    if(HoldTimer>millis())
       digitalWrite(MonitorLedPin,(millis()>>7)&0x01);
     else
       digitalWrite(MonitorLedPin,LOW);           // LED weer uit
@@ -524,7 +522,6 @@ void loop()
             Checksum=Content;
             }
           }
-        interrupts();
         }
       }while(StaySharpTimer>millis());
   
@@ -569,7 +566,7 @@ void loop()
         Content=0L;
       
       // QUEUE: **************** Check zonsopkomst & zonsondergang  ***********************
-      while(QueuePos && DelayTimer<millis())
+      while(QueuePos && HoldTimer<millis())
         {
         QueuePos--;
         ProcessEvent(QueueEvent[QueuePos],VALUE_DIRECTION_INPUT,QueuePort[QueuePos],0,0);      // verwerk binnengekomen event.
@@ -644,7 +641,7 @@ void loop()
           }
         }
       }// korte interval
-    }
+    }// // while 
   }
 
 
