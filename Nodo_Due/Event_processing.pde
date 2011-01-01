@@ -199,12 +199,12 @@ boolean CheckEvent(unsigned long Event, unsigned long MacroEvent)
   x=(Event>>24)&0x0f; // unit
   if(x!=0 && x!=S.Unit)return false; 
 
-  // als huidige event (met wegfilterde home en unit ) gelijk is aan MacroEvent, dan een match
+  // als huidige event (met wegfilterde home en unit) gelijk is aan MacroEvent, dan een match
   Event&=0x00ffffff;
   MacroEvent&=0x00ffffff;
   if(MacroEvent==Event)return true; 
 
-  // beschouw bij een UserEvent een 0 voor Par 1 of Par2 als een wildcard.
+  // beschouw bij een UserEvent een 0 voor Par1 of Par2 als een wildcard.
   if(((Event>>16)&0xff)==CMD_USER_EVENT)// Command
     {
     if(((Event>>8)&0xff)==0 || ((MacroEvent>>8)&0xff)==0){Event&=0xffff00ff;MacroEvent&=0xffff00ff;}
@@ -213,10 +213,14 @@ boolean CheckEvent(unsigned long Event, unsigned long MacroEvent)
     }
 
   // is er een match met een CLOCK_EVENT_ALL event?
-  if((MacroEvent&0x0000ffff)==(Event&0x0000ffff)) // tijdstippen kloppen
-    if(((MacroEvent>>16)&0xff)==CMD_CLOCK_EVENT_ALL) // En het command deel is een ClockAll event.
-      return true;
- 
+  x=(Event>>16)&0xff;
+  if(x>=CMD_CLOCK_EVENT_SUN && x<=CMD_CLOCK_EVENT_SAT) // het binnengekomen event is een clock event.
+    {
+    if(((MacroEvent>>16)&0xff)==CMD_CLOCK_EVENT_ALL) // als het event uit de eventlist is een ClockAll event.
+      if((MacroEvent&0x0000ffff)==(Event&0x0000ffff)) // en tijdstippen kloppen
+        return true;
+    }
+  
   return false;
   }
 
