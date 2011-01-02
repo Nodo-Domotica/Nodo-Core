@@ -418,7 +418,8 @@ byte TimerCounter=0;
 byte UserVarPrevious[USER_VARIABLES_MAX];
 byte DaylightPrevious;                              // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet
 byte WiredCounter=0, VariableCounter;
-byte EventlistDepth=0;                                       // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's
+byte EventlistDepth=0;                              // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's
+byte InLoop=0;
 unsigned long Content=0L,ContentPrevious;
 unsigned long Checksum=0L;
 unsigned long SupressRepeatTimer;
@@ -587,6 +588,10 @@ void loop()
       {
       LoopIntervalTimer_1=millis()+Loop_INTERVAL_1; // reset de timer
 
+      // delay.
+      if(InLoop && HoldTimer<millis())
+        return;
+
       // WIRED: *************** kijk of statussen gewijzigd zijn op WIRED **********************
      if(WiredCounter<3)
        WiredCounter++;
@@ -624,7 +629,7 @@ void loop()
         {
         if(UserTimer[TimerCounter]<millis()) // als de timer is afgelopen.
           {
-          UserTimer[TimerCounter]=0L;// zet de timer op inactief.
+          UserTimer[TimerCounter]=0;// zet de timer op inactief.
           Content=command2event(CMD_TIMER_EVENT,TimerCounter+1,0);
           ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_TIMER,0,0);      // verwerk binnengekomen event.
           }

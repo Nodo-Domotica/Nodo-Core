@@ -394,14 +394,22 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         if(Par1)
           {
           HoldTimer=millis()+((unsigned long)(Par1))*1000;
-          if(Src==VALUE_SOURCE_EVENTLIST)
+          if(Par2==VALUE_OFF) // Niet opslaan in de queue, maar direct een 'dode' pause uitvoeren.
             {
             while(HoldTimer>millis())        
               digitalWrite(MonitorLedPin,(millis()>>7)&0x01);
             }
+          else
+            {
+            // start een nieuwe recursieve loop() om zo de events die voorbij komen te plaatsen in de queue.
+            // deze recursieve aanroep wordt beëindigd als HoldTimer==0L
+            InLoop++;
+            loop();
+            InLoop--;
+            }
           }        
         else
-          HoldTimer=0L;
+          HoldTimer=0L; //  Wachttijd is afgelopen;
         break;        
         
       case CMD_SOUND: 

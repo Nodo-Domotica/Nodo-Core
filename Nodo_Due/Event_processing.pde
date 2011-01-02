@@ -49,7 +49,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     {
     // als het event de opdracht betreft om de hold uit te zetten, dan dit doen.
     if(IncommingEvent==command2event(CMD_DELAY,0,0))
-      HoldTimer=0L;
+      HoldTimer=0L; //  HoldTimer is NU, dus wachttijd is afgelopen;
     else
       {
       // als het event voorkomt in de eventlist of het is een geldig commando voor deze Nodo, dan is het relevant om op te slaan

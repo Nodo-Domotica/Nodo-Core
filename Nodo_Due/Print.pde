@@ -159,6 +159,7 @@ void PrintEventCode(unsigned long Code)
       break;
 
     // Par1 als waarde en par2 als tekst
+    case CMD_DELAY:
     case CMD_WIRED_PULLUP:
     case CMD_WIRED_OUT:
     case CMD_WIRED_IN_EVENT:
@@ -199,7 +200,6 @@ void PrintEventCode(unsigned long Code)
     case CMD_SIMULATE_DAY:
     case CMD_TIMER_RESET:
     case CMD_CLOCK_DOW:
-    case CMD_DELAY:
       P1=P_VALUE;
       P2=P_NOT;
       break;
