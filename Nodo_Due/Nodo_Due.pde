@@ -13,6 +13,7 @@ Opgeloste issues:
 - Issue 175:	VariableVariable geeft foutmelding in Par2
 - Issue 176:	Delay verstoort werking
 - Issue 177:	revisie186 - delay probleem
+- Issue 178:	spontante Variables events.
 
 Nieuwe functionaliteit:
 - Issue 172:	wildcard gebruik in UserEvent
@@ -343,7 +344,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define BASECODE                   0x0 // Base code voor 26-bit code. Geeft de mogenlijkheid een bestaande zender te emuleren. Hierbij worden de nodo-home & unit codes en de home codes van het NewKAKU commando bij opgeteld.
 #define Eventlist_OFFSET            64 // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer __ bytes. Deze niet te gebruiken voor de Eventlist.
 #define Eventlist_MAX              120 // aantal events dat de lijst bevat in het EEPROM geheugen van de ATMega328. Iedere event heeft 8 bytes nodig. eerste adres is 0
-#define USER_VARIABLES_MAX          15 // aantal beschikbare gebbruikersvariabelen voor de user.
+#define USER_VARIABLES_MAX          15 // aantal beschikbare gebruikersvariabelen voor de user.
 #define RAW_BUFFER_SIZE            200 // Maximaal aantal te ontvangen bits*2. 
 #define UNIT_MAX                    15 
 #define HOME_MAX                    10
@@ -413,7 +414,7 @@ byte QueuePos;
 // Overige globals
 boolean Simulate,RawsignalGet;
 boolean WiredInputStatus[4],WiredOutputStatus[4];   // Wired variabelen
-unsigned int RawSignal[RAW_BUFFER_SIZE];            // Tabel met de gemeten pulsen in microseconden. eerste waarde is het aantal bits*2
+unsigned int RawSignal[RAW_BUFFER_SIZE+2];          // Tabel met de gemeten pulsen in microseconden. eerste waarde is het aantal bits*2
 byte TimerCounter=0;
 byte UserVarPrevious[USER_VARIABLES_MAX];
 byte DaylightPrevious;                              // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet
@@ -648,5 +649,3 @@ void loop()
       }// korte interval
     }// // while 
   }
-
-
