@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<EventGhost Name="Configuration Tree" Expanded="True" Version="1462" Guid="{6E620C49-DC48-48AE-9D26-F80EE068C871}" Time="1294157004.24">
+<EventGhost Name="Configuration Tree" Expanded="True" Version="1462" Guid="{C72B815A-963B-4666-9A3E-28D908568978}" Time="1294229507.84">
     <Autostart Name="Autostart">
         <Action>
             EventGhost.ShowOSD(u'EventGhost with \nstandard testcases \nfor Nodo Due', u'0;-64;0;0;0;400;255;0;0;0;3;2;1;34;Arial', (0, 0, 255), None, 4, (0, 0), 0, 5.0, False)
@@ -2939,7 +2939,7 @@
                 </Action>
             </Macro>
         </Folder>
-        <Folder Name="Test case 16: test WildCards">
+        <Folder Name="Test case 16: test WildCards" Expanded="True">
             <Folder Name="learn a few commands into the Harmony" Expanded="True">
                 <Macro Name="Set up Nodo as a repeater" Expanded="True">
                     <Action>
@@ -5095,6 +5095,247 @@
                 </Action>
                 <Action>
                     Serial.Write(u'UserEvent 0,0;')
+                </Action>
+            </Macro>
+        </Folder>
+        <Folder Name="Test case 27: test NewKAKU including dimlevels" Expanded="True">
+            <Macro Name="test events" Expanded="True">
+                <Action Name="test by executing the commands in sequence by F5">
+                    EventGhost.Comment()
+                </Action>
+                <Action Name="it is advisable to load the dimmer with both a lamp and a volt meter">
+                    EventGhost.Comment()
+                </Action>
+                <Action Name="first, a simple on and off. ">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,on;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,off;')
+                </Action>
+                <Action Name="now dim to 10%">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim5;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim10;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim15;')
+                </Action>
+                <Action Name="now dim to 20%">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim20;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim25;')
+                </Action>
+                <Action Name="now dim to 30%">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim30;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim35;')
+                </Action>
+                <Action Name="now dim to 40%">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim40;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim45;')
+                </Action>
+                <Action Name="now dim to 50%">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim50;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim55;')
+                </Action>
+                <Action Name="now dim to 60%">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim60;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim65;')
+                </Action>
+                <Action Name="now dim to 70%">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim70;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim75;')
+                </Action>
+                <Action Name="now dim to 80%">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim80;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim85;')
+                </Action>
+                <Action Name="now dim to 90%">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim90;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim95;')
+                </Action>
+                <Action Name="now dim to 100%">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim100;')
+                </Action>
+                <Action Name=" ">
+                    EventGhost.Comment()
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,off;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim0;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim1;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim2;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim3;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim4;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim5;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim6;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim7;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim8;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim9;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim10;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim11;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim12;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim13;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim14;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim15;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim16;')
+                </Action>
+                <Action>
+                    Serial.Write(u'SendNewKAKU 111,Dim17;')
+                </Action>
+                <Action Name=" ">
+                    EventGhost.Comment()
+                </Action>
+                <Action Name=" ">
+                    EventGhost.Comment()
+                </Action>
+                <Action Name=" ">
+                    EventGhost.Comment()
+                </Action>
+                <Action Name=" ">
+                    EventGhost.Comment()
                 </Action>
             </Macro>
         </Folder>
