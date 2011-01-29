@@ -17,11 +17,11 @@
 
 \**************************************************************************/
 
-
-// creatie van NODO signalen
+// timings NODO signalen
 #define NODO_PULSE_0                    500   // PWM: Tijdsduur van de puls bij verzenden van een '0' in uSec.
+#define NODO_PULSE_MID                 1000   // PWM: Pulsen langer zijn '1'
 #define NODO_PULSE_1                   1500   // PWM: Tijdsduur van de puls bij verzenden van een '1' in uSec. (3x NODO_PULSE_0)
-#define NODO_SPACE                      500   // PWM: Tijdsduur van de space tussen de bitspuls bij verzenden van een '1' in uSec.    
+#define NODO_SPACE                      500   // PWM: Tijdsduur van de space tussen de bitspuls bij verzenden van een '1' in uSec.   
 
 unsigned long AnalyzeRawSignal(void)
   {
@@ -29,15 +29,44 @@ unsigned long AnalyzeRawSignal(void)
   
   if(RawSignal[0]==RAW_BUFFER_SIZE)return 0L;     // Als het signaal een volle buffer beslaat is het zeer waarschijnlijk ruis.
 
-  Code=RawSignal_2_KAKU();    
-  if(Code)return Code;   // check of het een KAKU signaal is volgens de conventionele KAKU codering.
+  if(!(Code=RawSignal_2_Nodo()))
+    if(!(Code=RawSignal_2_KAKU()))
+      if(!(Code=RawSignal_2_NewKAKU()))
+        Code=RawSignal_2_32bit();
 
-  Code=RawSignal_2_NewKAKU();
-  if(Code)return Code;   // check of het een KAKU signaal is volgens de nieuwe KAKU codering.
-
-  Code=RawSignal_2_32bit();
   return Code;   // Geen Nodo, KAKU of NewKAKU code. Genereer uit het onbekende signaal een (vrijwel) unieke 32-bit waarde uit.  
   }
+
+/*********************************************************************************************\
+* Deze routine berekent de uit een RawSignal een NODO code
+* Geeft een false retour als geen geldig NODO signaal
+\*********************************************************************************************/
+unsigned long RawSignal_2_Nodo(void)
+  {
+  unsigned long bitstream=0L;
+  int x,y,z;
+  
+  // nieuwe NODO signaal bestaat altijd uit start bit + 32 bits. Ongelijk aan 66, dan geen Nodo signaal
+  if (RawSignal[0]!=66)return 0L;
+
+  x=3; // 0=aantal, 1=startpuls, 2=space na startpuls, 3=1e pulslengte
+  do{
+    if(RawSignal[x]>NODO_PULSE_MID)
+      bitstream|=(long)(1L<<z); //LSB in signaal wordt  als eerste verzonden
+    x+=2;
+    z++;
+    }while(x<RawSignal[0]);
+
+  // bitstream bevat nu alle bits die ontvangen zijn.
+ //???  Serial.print("Received bitstream 66 =0x");Serial.print(bitstream,HEX);PrintTerm();//???
+
+  if(((bitstream>>28)&0xf) == EVENT_TYPE_NODO)// is het type-nibble uit het signaal gevuld met de aanduiding NODO ?  
+    return bitstream;
+  else
+    return 0L;  
+  }
+
+
 
  /**********************************************************************************************\
  * Deze functie genereert uit een willekeurig gevulde RawSignal afkomstig van de meeste 
@@ -97,8 +126,9 @@ unsigned long RawSignal_2_32bit(void)
     x++;
     z++;
     }while(x<RawSignal[0]);
- 
- // geef code terug,maar maak zet de msb nibble (=home) op een niet bestaand Home 0x0F zodat deze niet abusievelijk als commando worden verwerkt.
+
+ // ??? geef code terug,maar zet de msb nibble (=home) op een niet bestaand Home 0x0F zodat deze niet abusievelijk als commando worden verwerkt.
+
  if(Counter_pulse>=1 && Counter_space<=1)return CodeP; // data zat in de pulsbreedte
  if(Counter_pulse<=1 && Counter_space>=1)return CodeS; // data zat in de pulse afstand
  return (CodeS^CodeP); // data zat in beide = bi-phase, maak er een leuke mix van.
@@ -239,12 +269,12 @@ void RawSendIR(void)
 void Nodo_2_RawSignal(unsigned long Code)
   {
   byte BitCounter,y=1;
-  
+
   // begin met een startbit. 
   RawSignal[y++]=NODO_PULSE_1*2; 
-  RawSignal[y++]=NODO_SPACE; 
+  RawSignal[y++]=NODO_SPACE*4;//??? *2 geeft meer tijd om ontvanger klaar te laten staan. 
 
-  // de rest van de bits 
+  // de rest van de bits LSB als eerste de lucht in
   for(BitCounter=0; BitCounter<=31; BitCounter++)
     {
     if(Code>>BitCounter&1)
@@ -344,7 +374,7 @@ void CopySignalRF2IR(byte Window)
 * verzonden.
 \**********************************************************************************************/
 
-boolean SendEventCode(unsigned long Event)
+boolean TransmitCode(unsigned long Event)
   {
   if(Event==0L)// als er geen event is opgegeven...
     {
@@ -353,7 +383,7 @@ boolean SendEventCode(unsigned long Event)
     }    
 
   // als het een Nodo bekend eventtype is, dan deze weer opnieuw opbouwen in de buffer
-  if(EventType(Event)!=VALUE_TYPE_UNKNOWN)
+  if(((Event>>28)&0xf) == EVENT_TYPE_NODO)
     {
     if(S.WaitFreeRFAction==VALUE_ALL || (EventlistDepth<=2 && S.WaitFreeRFAction==VALUE_SERIES))
        WaitFreeRF(S.WaitFreeRFWindow); // alleen WaitFreeRF als type bekend is, anders gaat SendSignal niet goed a.g.v. overschrijven buffer
@@ -372,17 +402,17 @@ boolean SendEventCode(unsigned long Event)
         Nodo_2_RawSignal(Event);
       }
     }
-  
-  if(S.TransmitPort==VALUE_SOURCE_IR || S.TransmitPort==VALUE_SOURCE_IR_RF)
-    { 
-    PrintEvent(Event,VALUE_SOURCE_IR,VALUE_DIRECTION_OUTPUT);
-    RawSendIR();
-    } 
+    
   if(S.TransmitPort==VALUE_SOURCE_RF || S.TransmitPort==VALUE_SOURCE_IR_RF)
     {
     PrintEvent(Event,VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT);
     RawSendRF();
     }
+  if(S.TransmitPort==VALUE_SOURCE_IR || S.TransmitPort==VALUE_SOURCE_IR_RF)
+    { 
+    PrintEvent(Event,VALUE_SOURCE_IR,VALUE_DIRECTION_OUTPUT);
+    RawSendIR();
+    } 
   }
  
  

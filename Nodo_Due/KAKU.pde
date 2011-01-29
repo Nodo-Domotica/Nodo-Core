@@ -1,5 +1,6 @@
 /**************************************************************************\
-    This file is part of Nodo Due, © Copyright Paul Tonkes, Kenneth Rovers
+    This file is part of Nodo Due, © Copyright Paul Tonkes, 
+    Thanks to: Kenneth Rover
 
     Nodo Due is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -14,16 +15,6 @@
     You should have received a copy of the GNU General Public License
     along with Nodo Due.  If not, see <http://www.gnu.org/licenses/>.
 \**************************************************************************/
-
-// BaseCode
-// Hierbij word de huiscode opgeteld voor het genereren van de nieuwe 26-bits KAKU code.
-// Bij ontvangst of decoderen wordt de basecode er juist afgehaald.
-// Voor het achterhalen van de basecode van een afstandsbediening: uncomment de print 
-// regel bij Rawsignal2NewKAKU
-
-#define KAKU_ALLOFF 2
-#define KAKU_ALLON 3
-#define KAKU_DIMLEVEL 6
 
 /*
 
@@ -41,6 +32,8 @@
 
 
 /*********************************************************************************************\
+* Deze routine berekent de RAW pulsen uit een CMD_KAKU plaatst deze in de buffer RawSignal
+*
 * KAKU
 * Encoding volgens Princeton PT2262 / MOSDESIGN M3EB / Domia Lite spec.
 * Pulse (T) is 350us PWDM
@@ -50,13 +43,10 @@
 *   on/off       ---- 000x Off/On
 *   all on/off   ---- 001x AllOff/AllOn // is group (unit code bestaat uit short 0s)
 \*********************************************************************************************/
+#define KAKU_ALLOFF 2 //???
+#define KAKU_ALLON 3 //???
 #define KAKU_CodeLength    12  // aantal data bits
 #define KAKU_T            350  // us
-
-
-/*********************************************************************************************\
-* Deze routine berekent de RAW pulsen uit een CMD_KAKU plaatst deze in de buffer RawSignal
-\*********************************************************************************************/
 
 void KAKU_2_RawSignal(unsigned long Code)
   {
@@ -68,7 +58,7 @@ void KAKU_2_RawSignal(unsigned long Code)
   // CMD_KAKU = NNxxHU0C, NN=Nodo Home + Unit, xx=CMD_KAKU, H=Home, U=Unit, C=Commando
   Home    = (Code >> 12) & 0xF; // home in bit 
   Unit    = (Code >>  8) & 0xF;
-  Command = (Code      ) & 0x1;
+  Command = ((Code&0xff)==VALUE_ON);
   Group   = (Code & KAKU_ALLOFF) == KAKU_ALLOFF;
   Code = Home | Unit << 4 | (0x600 | (Command << 11));
 
@@ -99,7 +89,7 @@ void KAKU_2_RawSignal(unsigned long Code)
       }
     }
   RawSignal[(KAKU_CodeLength*4)+1] = KAKU_T;
-  RawSignal[(KAKU_CodeLength*4)+2] = KAKU_T*32; // stop sync pulse
+  RawSignal[(KAKU_CodeLength*4)+2] = KAKU_T*32; // stop sync pulse ??? kan weg?
   }
 
 /*********************************************************************************************\
@@ -108,20 +98,17 @@ void KAKU_2_RawSignal(unsigned long Code)
 \*********************************************************************************************/
 unsigned long RawSignal_2_KAKU(void)
   {
-  byte Home, Unit, Level, Command;
+  byte Home, Unit, Level, Command=VALUE_OFF;
   int i,j;
+  boolean Group=false;
   unsigned long bitstream=0;
 
   // conventionele KAKU bestaat altijd uit 12 data bits plus stop. Ongelijk, dan geen KAKU
   if (RawSignal[0]!=(KAKU_CodeLength*4)+2)return false;
 
-//???  Command = KAKU_ALLOFF;
-  Command = 0;
-
   for (i=0; i<KAKU_CodeLength; i++)
     {
-    j=KAKU_T*2;
-        
+    j=KAKU_T*2;        
     if      (RawSignal[4*i+1]<j && RawSignal[4*i+2]>j && RawSignal[4*i+3]<j && RawSignal[4*i+4]>j) {bitstream=(bitstream >> 1);} // 0
     else if (RawSignal[4*i+1]<j && RawSignal[4*i+2]>j && RawSignal[4*i+3]>j && RawSignal[4*i+4]<j) {bitstream=(bitstream >> 1 | (1 << (KAKU_CodeLength-1))); }// 1
     else if (RawSignal[4*i+1]<j && RawSignal[4*i+2]>j && RawSignal[4*i+3]<j && RawSignal[4*i+4]<j) {bitstream=(bitstream >> 1); Command= KAKU_ALLOFF;} // Short 0, Groep commando. Zet bit-2 van Par2.
@@ -134,8 +121,9 @@ unsigned long RawSignal_2_KAKU(void)
   Unit =     (bitstream >>  4) & 0x0F;
   Command |= (bitstream >> 11) & 0x01;
 
-  return command2event(CMD_KAKU, (Home << 4 | Unit), Command);
+  return (command2event(CMD_KAKU, (Home << 4 | Unit), Command)&0x0fffffff) | (unsigned long)(EVENT_TYPE_NODO)<<28; // hoogte nible wissen en weer vullen met type NewKAKU
   }
+
 
 /*********************************************************************************************\
 * NewKAKU
@@ -146,80 +134,82 @@ unsigned long RawSignal_2_KAKU(void)
 * NewKAKU ondersteund:
 *   on/off       ---- 000x Off/On
 *   all on/off   ---- 001x AllOff/AllOn
-*   bright dim   ---- 010x Dim/Bright   // niet ondersteund
 *   dim absolute xxxx 0110 Dim16        // dim op bit 27 + 4 extra bits voor dim level
 *
-*  Nodo Event            = HHHHUUUUCCCCCCCC1111111122222222       -> H=Nodo_home, U=Unit, 1=Par-1, 2=Par-2
-*  Nodo commando NewKAKU = HHHHUUUUPPPPPPPPAAAAAAAALLLLCCCC       -> H=Nodo_home, U=Unit, P=CMD_NEWKAKU_SEND, A=User adres, L=dimlevel, c=commando
-*  NewKAKU (org.)        = AAAAAAAAAAAAAAAAAAAAAAAAAACCUUUU(LLLL) -> A=KAKU_adres, D=Dim, C=commando, U=KAKU-Unit, L=extra dimlevel bits (optioneel)
-*  NewKAKU van Nodo      = 000000000000000000AAAAAAAACCHHHH(LLLL) -> H=Nodo_home, A=User adres, C=commando, L=extra dimlevel bits (optioneel)
-*
+*  Nodo Event            = TTTTUUUUCCCCCCCC1111111122222222       -> T=Type, U=Unit, 1=Par-1, 2=Par-2
+*  Nodo commando NewKAKU = TTTTUUUUPPPPPPPPAAAAAAAALLLLCCCC       -> T=Type, U=Unit, P=CMD_NEWKAKU_SEND, A=User adres, L=dimlevel, c=commando
+*  NewKAKU (org.)        = AAAAAAAAAAAAAAAAAAAAAAAAAACCUUUU(LLLL) -> A=KAKU_adres, C=commando, U=KAKU-Unit, L=extra dimlevel bits (optioneel)
+*  NewKAKU van Nodo      = 000000000000000000AAAAAAAACC0001(LLLL) -> ??? H=Nodo_home, A=User adres, D=Dim, C=commando, L=extra dimlevel bits (optioneel)
+*  Bit                   = 01234567890123456789012345678901 2345  -> Bit-0 gaat als eerste door de ether.
+*                                    1111111111222222222233 3333 
 *
 \*********************************************************************************************/
-#define NewKAKU_CodeLength        32         // aantal data bits, +4 voor dimmen
-#define NewKAKU_T                175         // us
-#define NewKAKU_nP                 2         // pulse
-#define NewKAKU_nS                 1         // short pulse
-#define NewKAKU_nL                 7         // long pulse
+
+#define NewKAKU_RawSignalLength      132
+#define NewKAKUdim_RawSignalLength   148
+#define NewKAKU_1T                   275        // us
+#define NewKAKU_mT                   500        // us, midden tussen 1T en 4T 
+#define NewKAKU_4T                  1100        // us
+#define NewKAKU_8T                  2200        // us, Tijd van de space na de startbit
 
 /*********************************************************************************************\
 * Deze routine berekent de RAW pulsen uit een CMD_NEWKAKU plaatst deze in de buffer RawSignal
 \*********************************************************************************************/
 void NewKAKU_2_RawSignal(unsigned long CodeNodo)
   {
-  unsigned long CodeKAKU; // NewKAKU adres
-  byte Level, Command; // NewKAKU Dim-level en Commando  
-  byte Unit;
-  boolean Dim;
-  int i;
-  byte j;
-  boolean b0, b1;
+  unsigned long bitstream=0L;
+  byte Bit, Level, i=1;
+  byte x; /// aantal posities voor pulsen/spaces in RawSignal
+  byte y; 
 
-  // CodeNodo bevat het NewKAKU commando volgens Nodo formaat
-  // CodeKAKU bevat het KAKU signaal zoals verzonden moet worden via RF
-  
-  Level    =  (CodeNodo >>  4) & 0xF; // dim_level uit de Nodo_code halen.
-  Command  =  (CodeNodo      ) & 0x3; // schakel commando uit de Nodo_code halen.
-  Dim      =  (CodeNodo & 0xE) == KAKU_DIMLEVEL; // Dim vlag zetten als gebruiker gekozen heeft voor een dimlevel.
+  // bouw het KAKU adres op
+  bitstream=1|(CodeNodo>>2)&0x3FC0;  // Door gebruiker gekozen adres uit de Nodo_code toevoegen aan adres deel van de KAKU code. Tevens compatibiliteit met Versie 1.1 door 1e bit te zetten (Home adres 1)
+
+  // zet commando bit en level
+  Level=CodeNodo&0xff;
+  if(Level==VALUE_ON || Level==VALUE_OFF)
+    {
+    bitstream|=(Level==VALUE_ON)<<4; // bit-5 is het on/off commando in KAKU signaal
+    Level=false;
+    x=130;// verzend startbit + 32-bits = 130
+    }
+  else
+    {
+    Level--;// Dim level 0..15
+    x=146;// verzend startbit + 32-bits = 130 + 4dimbits = 146
+    }
  
-  if (Dim) 
-    {
-    Command=0;
-    j=2+((NewKAKU_CodeLength+4)*4)+2;
-    }
-  else 
-    {
-    j=2+(NewKAKU_CodeLength*4)+2;
-    }
+  // bitstream bevat nu de KAKU-bits die verzonden moeten worden.
 
-  CodeKAKU =    (CodeNodo>>28)& 0xF      // Nodo_home uit de Nodo_code toevoegen aan adres deel van de KAKU code
-              | (CodeNodo>> 2)& 0x3FC0   // Door gebruiker gekozen adres uit de Nodo_code toevoegen aan adres deel van de KAKU code
-              |  Command << 4;           // Commando toevoegen aan KAKU code
-
-  // CodeKAKU bevat nu de KAKU-bits die verzonden moeten worden.
-
-  // KAKU code omzetten naar RawSignal
-  RawSignal[0] = j;
-  RawSignal[1] = NewKAKU_nP*NewKAKU_T;
-  RawSignal[2] = 2*NewKAKU_nL*NewKAKU_T;
-  for (i=NewKAKU_CodeLength-1; i>=0; i--)
+  for(i=3;i<=x;i++)RawSignal[i]=NewKAKU_1T;  // De meeste tijden in signaal zijn T. Vul alle pulstijden met deze waarde. Later worden de 4T waarden op hun plek gezet
+  
+  i=1;
+  RawSignal[i++]=NewKAKU_1T; //pulse van de startbit
+  RawSignal[i++]=NewKAKU_8T; //space na de startbit
+  
+  y=31; // bit uit de bitstream
+  while(i<x)
     {
-    b0 = ( (CodeKAKU >> i)) & 1;
-    b1 = (~(CodeKAKU >> i)) & 1; //!b0;
-    if ((i == 4) && (Dim)){b0=0;b1=0;}// dim
-    NewKAKUencodePDM(2*(NewKAKU_CodeLength-1-i)+1, b0);
-    NewKAKUencodePDM(2*(NewKAKU_CodeLength-1-i)+2, b1);
-    }
-  if(Dim)
-    {
-    for (i=3; i>=0; i--)
+    if((bitstream>>(y--))&1)
+      RawSignal[i+1]=NewKAKU_4T;     // Bit=1; // T,4T,T,T
+    else
+      RawSignal[i+3]=NewKAKU_4T;     // Bit=0; // T,T,T,4T
+
+    if(x==146)  // als het een dim opdracht betreft
       {
-      NewKAKUencodePDM(2*(NewKAKU_CodeLength+4-1-i)+1, ( (Level >> i)) & 1);
-      NewKAKUencodePDM(2*(NewKAKU_CodeLength+4-1-i)+2, (~(Level >> i)) & 1);
+      if(i==111) // Plaats van de Commnado-bit uit KAKU 
+        RawSignal[i+3]=NewKAKU_1T;  // moet een T,T,T,T zijn bij een dim commando.
+      if(i==127)  // als alle pulsen van de 32-bits weggeschreven zijn
+        {
+        bitstream=(unsigned long)Level; //  nog vier extra dim-bits om te verzenden
+        y=3;
+        }
       }
+    i+=4;
     }
-  RawSignal[j-1] =    NewKAKU_nP*NewKAKU_T;
-  RawSignal[j  ] =    NewKAKU_nL*NewKAKU_T;
+  RawSignal[i++]=NewKAKU_1T; //pulse van de stopbit
+  RawSignal[i]=NewKAKU_1T; //space van de stopbit
+  RawSignal[0]=i; // aantal bits*2 die zich in het opgebouwde RawSignal bevinden
   }
 
 
@@ -228,86 +218,54 @@ void NewKAKU_2_RawSignal(unsigned long CodeNodo)
 * Geeft een false retour als geen geldig KAKU commando uit het signaal te destilleren
 \*********************************************************************************************/
 unsigned long RawSignal_2_NewKAKU(void)
-{
-  byte nodo_home, user_address, Level, Command;
-  boolean Dim;
-  int i;
-  byte x;
-  unsigned long y=0;
-
-  // nieuwe KAKU bestaat altijd uit start bit + 32 bits + evt 4 dim bits. Ongelijk, dan geen NewKAKU
-  if ((RawSignal[0] != 2+(NewKAKU_CodeLength*4)+2) && (RawSignal[0] != 2+((NewKAKU_CodeLength+4)*4)+2))return 0L;
-
-  // omzetten naar bitstream als timing correct is
-  Level=0;
-  Dim=false;
+  {
+  unsigned long bitstream=0L;
+  boolean Bit;
+  int Level=0,i;
   
-  for(i=0; i<NewKAKU_CodeLength; i++) 
+  // nieuwe KAKU bestaat altijd uit start bit + 32 bits + evt 4 dim bits. Ongelijk, dan geen NewKAKU
+  if (RawSignal[0]!=NewKAKU_RawSignalLength && (RawSignal[0]!=NewKAKUdim_RawSignalLength))return 0L;
+
+  // RawSignal[0] bevat aantal pulsen * 2  => negeren
+  // RawSignal[1] bevat startbit met tijdsduur van 1T => negeren
+  // RawSignal[2] bevat lange space na startbit met tijdsduur van 8T => negeren
+  i=3; // RawSignal[3] is de eerste van een T,xT,T,xT combinatie
+  
+  do 
     {
-    x = NewKAKUdecodePDM(2*i+1) << 1 | NewKAKUdecodePDM(2*i+2);
-    if      (x>=3)return false;
-    else if (x==1)y=y<<1;
-    else if (x==2)y=y<<1|1;
-    else if (x==0 && i==27) {y = y << 1; Dim = true;}
-    }
-    
-  if(Dim) 
-    {
-    for (i=NewKAKU_CodeLength; i<(NewKAKU_CodeLength+4); i++)
+    if     (RawSignal[i]<NewKAKU_mT && RawSignal[i+1]<NewKAKU_mT && RawSignal[i+2]<NewKAKU_mT && RawSignal[i+3]>NewKAKU_mT)Bit=0; // T,T,T,4T
+    else if(RawSignal[i]<NewKAKU_mT && RawSignal[i+1]>NewKAKU_mT && RawSignal[i+2]<NewKAKU_mT && RawSignal[i+3]<NewKAKU_mT)Bit=1; // T,4T,T,T
+    else if(RawSignal[i]<NewKAKU_mT && RawSignal[i+1]<NewKAKU_mT && RawSignal[i+2]<NewKAKU_mT && RawSignal[i+3]<NewKAKU_mT)       // T,T,T,T Deze hoort te zitten op i=111 want: 27e NewKAKU bit maal 4 plus 2 posities voor startbit
       {
-      x = NewKAKUdecodePDM(2*i+1) << 1 | NewKAKUdecodePDM(2*i+2);
-      if      (x>=3)return false;
-      else if (x==1)Level=Level<<1;
-      else if (x==2)Level=Level<<1|1;
-      else if (x==0)return false;
+      if(RawSignal[0]!=NewKAKUdim_RawSignalLength) // als de dim-bits er niet zijn
+        return false;
+      }
+    else
+      return false; // andere mogelijkheden zijn niet geldig in NewKAKU signaal.  
+      
+    if(i<130) // alle bits die tot de 32-bit pulstrein behoren 32bits * 4posities per bit + pulse/space voor startbit
+      bitstream=(bitstream<<1) | Bit;
+    else // de resterende vier bits die tot het dimlevel behoren 
+      Level=(Level<<1) | Bit;
+ 
+    i+=4;// volgende pulsenquartet
+    }while(i<RawSignal[0]-2); //-2 omdat de space/pulse van de stopbit geen deel meer van signaal uit maakt.
+
+  if(bitstream>0x0ffff)
+    // het is van een NewKAKU zender afkomstig
+    return (bitstream&0x0fffffff)|(unsigned long)(EVENT_TYPE_NEWKAKU)<<28; // hoogte nible wissen en weer vullen met type NewKAKU
+  else
+    {
+    // het is van een andere Nodo afkomstig. Maak er een Nodo commando van.
+    if(i>140)
+      return command2event(CMD_KAKU_NEW, (bitstream>>6)&0xff,Level+1);
+    else
+      {
+      i=((bitstream>>4)&0x01)?VALUE_ON:VALUE_OFF;
+      return command2event(CMD_KAKU_NEW, (bitstream>>6)&0xff,i);
       }
     }
-  // y bevat nu de KAKU-bits die ontvangen zijn.
-
-  nodo_home  = y&0xF;
-  if(nodo_home==S.Home)
-    {// KAKU code was verzonden door een Nodo met het zelfde home adres.
-    user_address = (y>>6) & 0xff;
-    if(Dim)
-      Command=KAKU_DIMLEVEL;
-    else
-      Command=(y>>4)&0x03;    
-    return command2event(CMD_KAKU_NEW, user_address, (Level << 4 | Command));
-    }
-  else// De KAKU code is niet verzonden door een Nodo met hetzelfde home
-    return y;
+  return bitstream;
   }
 
-
-void NewKAKUencodePDM(byte i, boolean y) 
-  { // pulse distance modulation / space coded
-  byte n;
-
-  if (y==0)
-    n=NewKAKU_nS;
-  else
-    n=NewKAKU_nL;
-
-  RawSignal[2*i+1] = NewKAKU_T * NewKAKU_nP;
-  RawSignal[2*i+2] = NewKAKU_T * n;    
-  }
-
-
-byte NewKAKUdecodePDM(byte i)  // pulse distance modulation
-  {
-  byte y = (NewKAKUdecodePulse(2*i, NewKAKU_nP, 0) << 1 | NewKAKUdecodePulse(2*i+1, NewKAKU_nS, NewKAKU_nL));
-  if (y==0)return 0;
-  if (y==1)return 1;
-  return 0xFF;
-  }
-
-
-byte NewKAKUdecodePulse(byte i, byte n0, byte n1)
-  {
-  unsigned int t; //, t0, t1;
-  t = RawSignal[i+1];
-  if ((t > ((n0-1)*NewKAKU_T)) && (t < ((n0+1)*NewKAKU_T)))return 0;
-  if ((t > ((n1-1)*NewKAKU_T)) && (t < ((n1+1)*NewKAKU_T)))return 1;
-  return 0xFF;
-  }
 

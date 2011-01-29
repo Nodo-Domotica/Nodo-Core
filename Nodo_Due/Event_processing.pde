@@ -41,7 +41,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     }
 
   // Uitvoeren voorafgaand aan een reeks uitvoeren
-  if(EventlistDepth==0 && S.Trace&1)
+  if(EventlistDepth==0 && S.Trace)
       PrintLine(); 
 
   // als de Nodo in de hold is gezet, verzamel dan relevante events in de queue
@@ -53,7 +53,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     else
       {
       // als het event voorkomt in de eventlist of het is een geldig commando voor deze Nodo, dan is het relevant om op te slaan
-      if(CheckEventlist(IncommingEvent) || EventType(IncommingEvent)==VALUE_TYPE_COMMAND)
+      if(CheckEventlist(IncommingEvent) ||   (IncommingEvent>>28)&0xf==EVENT_TYPE_NODO)
         {
         // als er nog plek is in de queue...
         if(QueuePos<EVENT_QUEUE_MAX)
@@ -71,13 +71,12 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
       }
     }
 
-  if(EventlistDepth==0 || S.Trace&1)PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
+  if(EventlistDepth==0 || S.Trace)PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
 
   // Als de 'Confirm' optie aan staat, dan een 'Ok'-event verzenden
   // Dit alleen als het een commando of event voor deze nodo is.
-  x=EventType(IncommingEvent);
-  if(EventlistDepth==0 && S.Confirm && (x==VALUE_TYPE_COMMAND || x==VALUE_TYPE_EVENT))
-    SendEventCode(command2event(CMD_OK,S.Unit,0)&0x00ffffff | ((unsigned long)S.Home)<<28);// Voeg Home toe en Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
+  if(EventlistDepth==0 && S.Confirm && ((IncommingEvent>>28)&0xf==EVENT_TYPE_NODO))
+    TransmitCode(command2event(CMD_OK,S.Unit,0));
     
   if(EventlistDepth++>=MACRO_EXECUTION_DEPTH)
     {
@@ -88,7 +87,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
 
   // ############# Verwerk event ################  
   // als het een commando of event is voor deze unit, dan t.b.v. interne verwerking unit op 0 zetten.
-  if(EventType(IncommingEvent)==VALUE_TYPE_COMMAND)
+  if(!CommandError(IncommingEvent))
     { // Er is een Commando binnengekomen 
     if(!ExecuteCommand(IncommingEvent,Port,PreviousContent,PreviousPort))
       {
@@ -107,7 +106,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
       // als de Eventlist regel een wildcard is, zo ja, dan set y=vlag voor uitvoeren
       if(((Event_1>>16)&0xff)==CMD_COMMAND_WILDCARD) // commando deel van het event.
         {        
-        switch(Command)
+        switch(Command) // Command deel van binnengekomen event.
           {
           case CMD_KAKU:
           case CMD_KAKU_NEW:
@@ -116,11 +115,12 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
           case CMD_USER_EVENT:
             w=Command;
             break;
-          default:
-            w=EventType(IncommingEvent);
+//          default:??? nog uitzoeken!
+//            //??? was: w=EventType(IncommingEvent);
+//            w=EventType(IncommingEvent);
           }
 
-        y=true;         
+        y=true;// vlag wildcard match.         
 
         z=(Event_1>>8)&0xff; // Par1 deel van de Wildcard bevat de poort
         if(z!=VALUE_ALL && z!=Port)
@@ -135,10 +135,10 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
       
       if(y)
         {
-        if(S.Trace&1)
+        if(S.Trace)
           PrintEventlistEntry(x,EventlistDepth);
           
-        if(EventType(Event_2)==VALUE_TYPE_COMMAND) // is de ontvangen code een uitvoerbaar commando?
+        if(!CommandError(Event_2)) // is de ontvangen code een geldig uitvoerbaar commando?
           {
           if(!ExecuteCommand(Event_2, VALUE_SOURCE_EVENTLIST,IncommingEvent,Port))
             {
@@ -189,19 +189,20 @@ boolean CheckEvent(unsigned long Event, unsigned long MacroEvent)
   {  
   byte x;
   
+  
+  Serial.print("CheckEvent() > Event=0x");Serial.print(Event,HEX);Serial.print(", MacroEvent=0x");Serial.print(MacroEvent,HEX);PrintTerm();//???
+
+  
   // als huidige event exact overeenkomt met het event in de regel uit de Eventlist, dan een match
   if(MacroEvent==Event)return true; 
-  
-  // als Home niet overeenkomt, dan geen match
-  if(((Event>>28)&0xf)!=S.Home)return false; // home
-  
+    
   // Als unit ongelijk aan 0 of ongelijk aan huidige unit, dan is er ook geen match
   x=(Event>>24)&0x0f; // unit
   if(x!=0 && x!=S.Unit)return false; 
 
-  // als huidige event (met wegfilterde home en unit) gelijk is aan MacroEvent, dan een match
-  Event&=0x00ffffff;
-  MacroEvent&=0x00ffffff;
+  // als huidige event (met wegfilterde unit) gelijk is aan MacroEvent, dan een match
+  Event&=0xf0ffffff;
+  MacroEvent&=0xf0ffffff;
   if(MacroEvent==Event)return true; 
 
   // beschouw bij een UserEvent een 0 voor Par1 of Par2 als een wildcard.
@@ -292,7 +293,7 @@ void GenerateEvent(byte Cmd, byte P1, byte P2)
   {
   unsigned long Event;
   Event=command2event(Cmd,P1,P2);
-  SendEventCode(Event);
+  TransmitCode(Event);
   }
   
 

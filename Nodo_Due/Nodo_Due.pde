@@ -1,3 +1,14 @@
+/*
+
+ToDo:
+- WiredPullup wordt nog niet goed weergegeven. Par2 valt weg.
+- Alle settings even nalopen op Par1 en Par 2 juist vullen en verwerken.
+- ontvangen Kaku en NewKAKU door een andere Nodo testen
+- Issue 186:   Onderdrukken Events die overeenkomen met Nodo commando's
+- NewKAKU moet nog ingevoerd kunnen worden via serial t.b.v. opnemen in EventList
+
+*/
+
 /**************************************************************************************************************************\
 
 Done release 1.15:
@@ -21,25 +32,27 @@ Nieuwe functionaliteit:
 - Issue 174:	Gebruik van variabele in UserEvent
 
 Overige aanpassingen:
+- Home adres is komen te vervallen.
+- SendNewKAKU: Dimniveau aanpassing. Opties voor Par2 zijn [On,Off,1..16] Dim niveaus dus ZONDER het woord 'dim'. Hoogste dimniveau is nu ook bereikbaar.
 - Aanpassing pause bij herhaald sound 'ding-dong' en de 'Whoop' is nu een 'slow-whoop' 
 - '(WildCard All, All); (Sound 0, 0)' niet meer default in de eventlist
 - Nieuwe setting 'Confirm'
 - Aanpassing commando 'Delay': Kan worden uitgezet en voorbijkomende event worden in queue gezet voor latere verwerking.
+- kleine aanpassingen in de MMI (Geen spatie meer na een komma)
 - Nesting error wordt nu als een error-event verzonden
 
 Onder de motorkap:
 - Timers nu in een int i.p.v. unsigned long en aanpassing aflopen timers => geheugenbesparing
 - EventPart functie laten vervallen en vervangen door directe shift/and op events => geheugenbesparing
+- EventType functie vervallen. Event type wordt nu onderdeel van het Event op de plaats waar het Home adres van de Nodo stond.
 \**************************************************************************************************************************/
 
 
 
  /*****************************************************************************************************\
-
   Compiler            : - Arduino Compiler 0021
   Hardware            : - Arduino met een ATMeg328 processor @16Mhz.
                         - Hardware en Arduino penbezetting volgens schema Nodo Due Rev.003
-
  ********************************************************************************************************
 
  * Arduino project "Nodo Due" © Copyright 2010 Paul Tonkes
@@ -75,11 +88,13 @@ Onder de motorkap:
 #include <Wire.h>
 #include <avr/pgmspace.h>
 
+/**************************************************************************************************************************\
+*  Nodo Event            = TTTTUUUUCCCCCCCC1111111122222222       -> T=Type, U=Unit, 1=Par-1, 2=Par-2
+\**************************************************************************************************************************/
+
 // ********alle strings naar PROGMEM om hiermee RAM-geheugen te sparen ***********************************************
 prog_char PROGMEM Text_01[] = "NODO-Due V";
 prog_char PROGMEM Text_02[] = "SunMonThuWedThuFriSat";
-prog_char PROGMEM Text_03[] = ", Home ";
-prog_char PROGMEM Text_05[] = "Dim";
 prog_char PROGMEM Text_06[] = "SYSTEM: Unknown command!";
 prog_char PROGMEM Text_07[] = "SYSTEM: Rawsignal=";
 prog_char PROGMEM Text_08[] = "Unit-";
@@ -91,10 +106,7 @@ prog_char PROGMEM Text_14[] = ", Unit ";
 #define COMMAND_MAX 102 // aantal commando's (dus geteld vanaf 0)
 
 #define VALUE_OFF 0
-#define VALUE_ON 1
-#define VALUE_PARAMETER 2
-#define VALUE_OFF 0
-#define VALUE_ON 1
+#define VALUE_COMMAND 1
 #define VALUE_PARAMETER 2
 #define VALUE_SOURCE_IR 3
 #define VALUE_SOURCE_IR_RF 4
@@ -106,10 +118,10 @@ prog_char PROGMEM Text_14[] = ", Unit ";
 #define VALUE_SOURCE_TIMER 10
 #define VALUE_SOURCE_VARIABLE 11
 #define VALUE_SOURCE_CLOCK 12
-#define VALUE_TYPE_COMMAND 13
-#define VALUE_TYPE_EVENT 14
-#define VALUE_TYPE_OTHERUNIT 15
-#define VALUE_TYPE_UNKNOWN 16
+#define VALUE_RES1 13
+#define VALUE_RES2 14
+#define VALUE_RES3 15
+#define VALUE_RES4 16
 #define VALUE_DIRECTION_INPUT 17
 #define VALUE_DIRECTION_OUTPUT 18
 #define VALUE_DIRECTION_INTERNAL 19
@@ -121,10 +133,10 @@ prog_char PROGMEM Text_14[] = ", Unit ";
 #define VALUE_DIRECTION_OUTPUT_RAW 25
 #define VALUE_NESTING 26
 #define VALUE_DIRECTION_QUEUE 27
-#define VALUE_RES4 28
+#define VALUE_ON 28 // Deze waarde MOET groter dan 16 zijn.
 #define VALUE_RES6 29
 #define VALUE_RES5 30
-#define CMD_ANALYSE_SETTINGS 311
+#define CMD_ANALYSE_SETTINGS 31
 #define CMD_BREAK_ON_VAR_EQU 32
 #define CMD_BREAK_ON_VAR_LESS 33
 #define CMD_BREAK_ON_VAR_MORE 34
@@ -197,7 +209,7 @@ prog_char PROGMEM Text_14[] = ", Unit ";
 #define CMD_DLS_EVENT 101
 
 prog_char PROGMEM Cmd_0[]="Off";
-prog_char PROGMEM Cmd_1[]="On";
+prog_char PROGMEM Cmd_1[]="Command";
 prog_char PROGMEM Cmd_2[]="Parameter";
 prog_char PROGMEM Cmd_3[]="IR";
 prog_char PROGMEM Cmd_4[]="IR&RF";
@@ -209,10 +221,10 @@ prog_char PROGMEM Cmd_9[]="System";
 prog_char PROGMEM Cmd_10[]="Timers";
 prog_char PROGMEM Cmd_11[]="Variables";
 prog_char PROGMEM Cmd_12[]="Clock";
-prog_char PROGMEM Cmd_13[]="Command";
-prog_char PROGMEM Cmd_14[]="Event";
-prog_char PROGMEM Cmd_15[]="OtherUnit";
-prog_char PROGMEM Cmd_16[]="Unknown";
+prog_char PROGMEM Cmd_13[]="";
+prog_char PROGMEM Cmd_14[]="";
+prog_char PROGMEM Cmd_15[]="";
+prog_char PROGMEM Cmd_16[]="";
 prog_char PROGMEM Cmd_17[]="INPUT";
 prog_char PROGMEM Cmd_18[]="OUTPUT";
 prog_char PROGMEM Cmd_19[]="INTERNAL";
@@ -224,7 +236,7 @@ prog_char PROGMEM Cmd_24[]="All";
 prog_char PROGMEM Cmd_25[]="OUTPUT-RAW";
 prog_char PROGMEM Cmd_26[]="Nesting";
 prog_char PROGMEM Cmd_27[]="QUEUE";
-prog_char PROGMEM Cmd_28[]="";
+prog_char PROGMEM Cmd_28[]="On";
 prog_char PROGMEM Cmd_29[]="";
 prog_char PROGMEM Cmd_30[]="";
 prog_char PROGMEM Cmd_31[]="ReceiveSettings";
@@ -340,22 +352,24 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define WiredDigitalOutputPin_1     7  // vier digitale outputs van 7 tot en met 10
 
 #define UNIT                       0x1 // Unit nummer van de Nodo. Bij gebruik van meerdere nodo's deze uniek toewijzen [1..F]
-#define HOME                       0x1 // Home adres van de Nodo. Bij gebruik van meerdere nodo's deze hetzelfde houden [1..F]
-#define BASECODE                   0x0 // Base code voor 26-bit code. Geeft de mogenlijkheid een bestaande zender te emuleren. Hierbij worden de nodo-home & unit codes en de home codes van het NewKAKU commando bij opgeteld.
 #define Eventlist_OFFSET            64 // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer __ bytes. Deze niet te gebruiken voor de Eventlist.
 #define Eventlist_MAX              120 // aantal events dat de lijst bevat in het EEPROM geheugen van de ATMega328. Iedere event heeft 8 bytes nodig. eerste adres is 0
 #define USER_VARIABLES_MAX          15 // aantal beschikbare gebruikersvariabelen voor de user.
 #define RAW_BUFFER_SIZE            200 // Maximaal aantal te ontvangen bits*2. 
 #define UNIT_MAX                    15 
-#define HOME_MAX                    10
 #define MACRO_EXECUTION_DEPTH       10 // maximale nesting van macro's.
+
+#define EVENT_TYPE_UNKNOWN           0
+#define EVENT_TYPE_OTHERUNIT         1
+#define EVENT_TYPE_NODO              2
+#define EVENT_TYPE_NEWKAKU           3
 
 #define BAUD                     19200 // Baudrate voor seriële communicatie.
 #define SERIAL_TERMINATOR_1       0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>, default voor EventGhost
 #define SERIAL_TERMINATOR_2       0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
 
 #define EVENT_PART_COMMAND           1
-#define EVENT_PART_HOME              2
+#define EVENT_PART_TYPE              2
 #define EVENT_PART_UNIT              3
 #define EVENT_PART_PAR1              4
 #define EVENT_PART_PAR2              5
@@ -382,8 +396,8 @@ struct Settings
   int     AnalyseTimeOut;
   byte    UserVar[USER_VARIABLES_MAX];
   byte    Unit;
-  byte    Home;
-  byte    Trace;
+  boolean Trace;
+  boolean TraceTime;
   byte    TransmitPort;
   int     WaitFreeRFWindow;
   byte    WaitFreeRFAction;
@@ -496,7 +510,7 @@ void loop()
         {
         if(Content=Receive_Serial())
           {
-          Nodo_2_RawSignal(Content);// bouw een RawSignal op zodat deze later eventueel kan worden verzonden met SendSignal
+            Nodo_2_RawSignal(Content);// bouw een RawSignal op zodat deze later eventueel kan worden verzonden met SendSignal
           ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_SERIAL,0,0);      // verwerk binnengekomen event.
           }
         StaySharpTimer=millis()+SHARP_TIME;
@@ -617,7 +631,7 @@ void loop()
    
      if(z)// er is een verandering van status op de ingang. 
        {    
-       Content=command2event(CMD_WIRED_IN_EVENT,WiredCounter+1,WiredInputStatus[WiredCounter]);
+       Content=command2event(CMD_WIRED_IN_EVENT,WiredCounter+1,WiredInputStatus[WiredCounter]?VALUE_ON:VALUE_OFF);
        ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
        }
 

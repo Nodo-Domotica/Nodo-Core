@@ -22,10 +22,8 @@
  * Print een event volgens formaat:  'EVENT/ACTION: <port>, <type>, <content>
  \*********************************************************************************************/
 void PrintEvent(unsigned long Content, byte Port, boolean Direction)
-  {
-  byte Type=EventType(Content);
-
-  if(S.Trace&2 && Time.Day) // Time.Day=true want dan is er een RTC aanwezig.
+  {  
+  if(S.TraceTime && Time.Day) // Time.Day=true want dan is er een RTC aanwezig.
     {   
     PrintDateTime();
     PrintComma();
@@ -40,19 +38,9 @@ void PrintEvent(unsigned long Content, byte Port, boolean Direction)
   if(Port)
     Serial.print(cmd2str(Port));
     
-  if(S.Trace&1)
-    {
-    // Type event
-    if(Type)
-      {
-      if(Port)PrintComma();   
-      Serial.print(cmd2str(Type));
-      }
-    }
-
   if(Content)
     {
-    if(Port | (Type && S.Trace&1))PrintComma();
+    if(Port)PrintComma();
     PrintEventCode(Content);
     }
   PrintTerm();
@@ -68,11 +56,26 @@ void PrintRawSignal(void)
   for(byte x=1;x<=RawSignal[0];x++)
      {
      if(x>1)PrintComma();
-     Serial.print(RawSignal[x],DEC);
+     PrintValue(RawSignal[x]);
      }
   PrintTerm();
   }
 
+ /*********************************************************************************************\
+ * Print een decimaal getal
+ * Serial.Print neemt veel progmem in beslag. 
+ \*********************************************************************************************/
+void PrintValue(unsigned long x)
+  {
+  if(x<=255)
+    Serial.print(x,DEC);
+  else
+    {
+    Serial.print("0x"); 
+    Serial.print(x,HEX);
+    }
+  }
+  
  /*********************************************************************************************\
  * Serial.Print neemt veel progmem in beslag. 
  * Print een lijn met het teken '*' 
@@ -89,7 +92,7 @@ void PrintLine(void)
  \*********************************************************************************************/
 void PrintComma(void)
   {
-  Serial.print(", ");
+  Serial.print(",");
   }
 
 
@@ -118,147 +121,158 @@ void PrintEventCode(unsigned long Code)
   byte P1,P2,Par2_b; 
   boolean P2Z=true;     // vlag: true=Par2 als nul waarde afdrukken false=nulwaarde weglaten
   
+  byte Type     = (Code>>28)&0xf;
   byte Unit     = (Code>>24)&0xf;
-  byte Home     = (Code>>28)&0xf;
   byte Command  = (Code>>16)&0xff;
   byte Par1     = (Code>>8)&0xff;
   byte Par2     = (Code)&0xff;
-  byte Type     = EventType(Code);
 
-  if(Type==VALUE_TYPE_UNKNOWN)
-    {
-    Serial.print("0x"); 
-    Serial.print(Code,HEX);
-    return;
-    }
-
-  if(Unit!=S.Unit && Unit!=0)
+  if(Type==EVENT_TYPE_NODO && (Unit!=S.Unit && Unit!=0))
     {
     PrintText(Text_08,false); 
-    Serial.print(Unit,DEC); 
+    PrintValue(Unit); 
     PrintComma();
     }
     
   Serial.print("("); 
-  Serial.print(cmd2str(Command));
 
-  switch(Command)
+  if(Type==EVENT_TYPE_NEWKAKU)
     {
-    case CMD_KAKU:
-    case CMD_SEND_KAKU:
-      P1=P_KAKU;
-      P2=P_TEXT;
-      Par2_b=Par2;
-      Par2&=1;
-      break;
-
-    case CMD_KAKU_NEW:
-    case CMD_SEND_KAKU_NEW:
-      P1=P_VALUE;
-      P2=P_DIM;
-      break;
-
-    // Par1 als waarde en par2 als tekst
-    case CMD_DELAY:
-    case CMD_WIRED_PULLUP:
-    case CMD_WIRED_OUT:
-    case CMD_WIRED_IN_EVENT:
-      P1=P_VALUE;
-      P2=P_TEXT;
-      break;
-
-    // Par1 als tekst en par2 als tekst
-    case CMD_TRACE:
-    case CMD_COMMAND_WILDCARD:
-      P1=P_TEXT;
-      P2=P_TEXT;
-      break;
-
-    // Par1 als tekst en par2 als getal
-    case CMD_ERROR:
-    case CMD_COPYSIGNAL:
-    case CMD_WAITFREERF:
-    case CMD_SEND_STATUS:
-    case CMD_STATUS:
-      P1=P_TEXT;
-      P2=P_VALUE;
-      break;
-
-    // Par1 als tekst en par2 niet
-    case CMD_CONFIRM:
-    case CMD_DLS_EVENT:
-    case CMD_TRANSMIT_SETTINGS:
-    case CMD_SIMULATE:
-      P1=P_TEXT;
-      P2=P_NOT;
-      break;
-
-    // Par1 als waarde en par2 niet
-    case CMD_OK:
-    case CMD_DIVERT:
-    case CMD_VARIABLE_CLEAR:
-    case CMD_SIMULATE_DAY:
-    case CMD_TIMER_RESET:
-    case CMD_CLOCK_DOW:
-      P1=P_VALUE;
-      P2=P_NOT;
-      break;
-
-    // Geen parameters
-    case CMD_SEND_SIGNAL:
-    case CMD_BOOT_EVENT:
-      P1=P_NOT;
-      P2=P_NOT;
-      break;
-
-    // Par1 als waarde en par2 als waarde
-    default:
-      P1=P_VALUE;
-      P2=P_VALUE;    
-    }
-        
-  // Print Par1
-  if(P1!=P_NOT)PrintChar(' ');
-  
-  switch(P1)
-    {
-    case P_TEXT:
-      Serial.print(cmd2str(Par1));
-      break;
-    case P_VALUE:
-      Serial.print(Par1,DEC);
-      break;
-    case P_KAKU:
-      Serial.print('A'+((Par1&0xf0)>>4),BYTE); //  A..P printen.
-      Serial.print(Par2_b&0x2?0:(Par1&0xF)+1,DEC);// als 2e bit in Par2 staat, dan is het een groep commando en moet adres '0' zijn.
-      break;
-    default:
-      PrintChar(' ');
+    // Aan/Uit zit in bit 5 
+    Serial.print(cmd2str(CMD_KAKU_NEW));
+    PrintChar(' ');
+    PrintValue(Code&0x0FFFFFEF);
+    PrintComma();   
+    Serial.print(cmd2str(((Code>>4)&0x1)?VALUE_ON:VALUE_OFF)); 
     }
 
-  // Print Par2    
-  if(P2!=P_NOT)PrintComma();
-  switch(P2)
+  else if(Type==EVENT_TYPE_NODO || Type==EVENT_TYPE_OTHERUNIT)
     {
-    case P_TEXT:
-      Serial.print(cmd2str(Par2));
-      break;
-    case P_VALUE:
-      Serial.print(Par2,DEC);
-      break;
-    case P_DIM:
+    Serial.print(cmd2str(Command));
+
+    switch(Command)
       {
-      if ((Par2 & 0xF) == KAKU_DIMLEVEL)
-        {// als dimlevel commando dan 'Dim' met daarna het hoogste nibble als getal printen
-        PrintText(Text_05,false);
-        Serial.print((Par2 >> 4)+1,DEC);
-        } 
-      else
-        Serial.print(cmd2str(Par2 & 0x1)); // Print 'On' of 'Off'. laat cmd2str dit oplossen
-      break;
+      // Par1 als KAKU adres [A0..P16] en Par2 als [On,Off]
+      case CMD_KAKU:
+      case CMD_SEND_KAKU:
+        P1=P_KAKU;
+        P2=P_TEXT;
+        Par2_b=Par2;
+        break;
+  
+      case CMD_KAKU_NEW:
+      case CMD_SEND_KAKU_NEW:
+        P1=P_VALUE;
+        P2=P_DIM;
+        break;
+  
+      // Par1 als waarde en par2 als tekst
+      case CMD_DELAY:
+      case CMD_WIRED_PULLUP:
+      case CMD_WIRED_OUT:
+      case CMD_WIRED_IN_EVENT:
+        P1=P_VALUE;
+        P2=P_TEXT;
+        break;
+  
+      // Par1 als tekst en par2 als tekst
+      case CMD_TRACE:
+      case CMD_COMMAND_WILDCARD:
+        P1=P_TEXT;
+        P2=P_TEXT;
+        break;
+  
+      // Par1 als tekst en par2 als getal
+      case CMD_ERROR:
+      case CMD_COPYSIGNAL:
+      case CMD_WAITFREERF:
+      case CMD_SEND_STATUS:
+      case CMD_STATUS:
+        P1=P_TEXT;
+        P2=P_VALUE;
+        break;
+  
+      // Par1 als tekst en par2 niet
+      case CMD_CONFIRM:
+      case CMD_DLS_EVENT:
+      case CMD_TRANSMIT_SETTINGS:
+      case CMD_SIMULATE:
+        P1=P_TEXT;
+        P2=P_NOT;
+        break;
+  
+      // Par1 als waarde en par2 niet
+      case CMD_OK:
+      case CMD_UNIT:
+      case CMD_DIVERT:
+      case CMD_VARIABLE_CLEAR:
+      case CMD_SIMULATE_DAY:
+      case CMD_TIMER_RESET:
+      case CMD_CLOCK_DOW:
+        P1=P_VALUE;
+        P2=P_NOT;
+        break;
+  
+      // Geen parameters
+      case CMD_SEND_SIGNAL:
+      case CMD_BOOT_EVENT:
+        P1=P_NOT;
+        P2=P_NOT;
+        break;
+  
+      // Par1 als waarde en par2 als waarde
+      default:
+        P1=P_VALUE;
+        P2=P_VALUE;    
       }
-    }
-
+    
+    // Print Par1      
+    if(P1!=P_NOT)
+      {
+      PrintChar(' ');
+      switch(P1)
+        {
+        case P_TEXT:
+          Serial.print(cmd2str(Par1));
+          break;
+        case P_VALUE:
+          PrintValue(Par1);
+          break;
+        case P_KAKU:
+          Serial.print('A'+((Par1&0xf0)>>4),BYTE); //  A..P printen.
+          PrintValue(Par2_b&0x2?0:(Par1&0xF)+1);// als 2e bit in Par2 staat, dan is het een groep commando en moet adres '0' zijn.
+          Par2=(Par2&0x1)?VALUE_ON:VALUE_OFF;
+          break;
+        }
+      }// P1
+  
+    // Print Par2    
+    if(P2!=P_NOT)
+      {
+      PrintComma();
+      switch(P2)
+        {
+        case P_TEXT:
+          Serial.print(cmd2str(Par2));
+          break;
+        case P_VALUE:
+          PrintValue(Par2);
+          break;
+        case P_DIM:
+          {
+          if(Par2==VALUE_OFF || Par2==VALUE_ON)
+            Serial.print(cmd2str(Par2)); // Print 'On' of 'Off'
+          else
+            PrintValue(Par2);
+          break;
+          }
+        }
+      }// P2
+    }//   if(Type==EVENT_TYPE_NODO || Type==EVENT_TYPE_OTHERUNIT)
+    
+  else // wat over blijft is het type UNKNOWN.
+    PrintValue(Code);
+    
   PrintChar(')'); 
   }
 
@@ -287,10 +301,10 @@ void PrintEventlistEntry(int entry, byte d)
 
   if(d>1)
     {
-    Serial.print(d,DEC);
+    PrintValue(d);
     PrintChar('.');
     }
-  Serial.print(entry,DEC);
+  PrintValue(entry);
   Serial.print(": ");
   PrintEventCode(Event);
   Serial.print("; ");
@@ -309,13 +323,13 @@ void PrintDateTime(void)
 
     // print datum.    
     if(Time.Date<10)PrintChar('0');
-    Serial.print(Time.Date,DEC);
+    PrintValue(Time.Date);
 
     PrintChar('-');
     
     // print maand.    
     if(Time.Month<10)PrintChar('0');
-    Serial.print(Time.Month,DEC);
+    PrintValue(Time.Month);
 
     PrintChar('-');
 
@@ -325,13 +339,13 @@ void PrintDateTime(void)
     
     // print uren.    
     if(Time.Hour<10)PrintChar('0');
-    Serial.print(Time.Hour,DEC);
+    PrintValue(Time.Hour);
 
     PrintChar(':');
 
     // print minuten.
     if(Time.Minutes<10)PrintChar('0');
-    Serial.print(Time.Minutes,DEC);
+    PrintValue(Time.Minutes);
     }
 
  /**********************************************************************************************\
@@ -344,14 +358,12 @@ void PrintWelcome(void)
   PrintLine();
   PrintText(Text_01,false);
 
-  Serial.print(S.Version/100,DEC);
+  PrintValue(S.Version/100);
   PrintChar('.');
   if((S.Version%100)<10)PrintChar('0');
-  Serial.print(S.Version%100,DEC);  
-  PrintText(Text_03,false);
-  Serial.print(S.Home,DEC);
+  PrintValue(S.Version%100);  
   PrintText(Text_14,false);
-  Serial.print(S.Unit,DEC);PrintTerm();
+  PrintValue(S.Unit);PrintTerm();
   if(Time.Day)
     {
     PrintDateTime();

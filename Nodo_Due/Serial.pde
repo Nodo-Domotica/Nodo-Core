@@ -33,10 +33,10 @@ unsigned long Receive_Serial(void)
   
   Event=SerialReadEvent();
   
-  if(EventType(Event)==VALUE_TYPE_UNKNOWN)// het is geen commando, maar een ander type event
+  if(CommandError(Event))// het is geen geldig commando, maar een ander type event
       return Event;
   else
-    { // het was een geldig uitvoerbaar commando. Dit wordt geborgd door SerialReadEvent();
+    { // het was een geldig uitvoerbaar commando. 
     Cmd=(Event>>16)&0xff;
     Par1=(Event>>8)&0xff;
     Par2=(Event)&0xff;
@@ -58,12 +58,13 @@ unsigned long Receive_Serial(void)
         Event=SerialReadEvent();
         Action=SerialReadEvent();
 
-        if(Event==0 || (EventType(Event)==VALUE_TYPE_COMMAND && (error=CommandError(Event))))
+        if(Event==0 || ((Event>>28)&0xf==EVENT_TYPE_NODO && (error=CommandError(Event))))
           {
           GenerateEvent(CMD_ERROR,CMD_EVENTLIST_WRITE,1);
           break;
           }
-        if(Action==0 || (EventType(Action)==VALUE_TYPE_COMMAND && (error=CommandError(Action))))
+          
+        if(Action==0 || ((Action>>28)&0xf==EVENT_TYPE_NODO && (error=CommandError(Action))))
           {
           GenerateEvent(CMD_ERROR,CMD_EVENTLIST_WRITE,2);
           break;
@@ -85,13 +86,14 @@ unsigned long Receive_Serial(void)
         break;
   
       case CMD_TRACE:
-        S.Trace=Par1&1 | (Par2&1)<<1;
+        S.Trace    =Par1==VALUE_ON?true:false;
+        S.TraceTime=Par2==VALUE_ON?true:false;
         SaveSettings();
         break;        
     
       case CMD_DIVERT:   
-        Action=(SerialReadEvent()&0xf0ffffff) | ((unsigned long)(Par1))<<24; // Event_1 is het te forwarden event voorzien van nieuwe bestemming unit
-        SendEventCode(Action);
+        Action=(SerialReadEvent()&0x00ffffff) | ((unsigned long)(Par1))<<24 | ((unsigned long)(EVENT_TYPE_NODO))<<28; // Event_1 is het te forwarden event voorzien van nieuwe bestemming unit
+        TransmitCode(Action);
         break;        
   
       case CMD_RAWSIGNAL_GET:
@@ -99,12 +101,11 @@ unsigned long Receive_Serial(void)
         break;        
   
        case CMD_SIMULATE:
-         Simulate=Par1;
+         Simulate=Par1==VALUE_ON?true:false;;
          break;        
    
        case CMD_UNIT:
          S.Unit=Par1;
-         if(Par2>0)S.Home=Par2;
          SaveSettings();
          FactoryEventlist();
          Reset();
@@ -121,7 +122,7 @@ unsigned long Receive_Serial(void)
             }while(x && y<RAW_BUFFER_SIZE);
           RawSignal[0]=y-1;
           Event=AnalyzeRawSignal();
-          SendEventCode(Event);
+          TransmitCode(Event);
           break;
 
         case CMD_STATUS:
@@ -179,35 +180,36 @@ unsigned long SerialReadEvent()
   else
     y=Event; 
 
+//???@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+  if(y==CMD_KAKU_NEW)
+    {// de string is een NewKAKU event. Haal bij het commando behorende parameters op.
+    x=SerialReadBlock(SerialBuffer);
+    if(x)
+      {
+      Event=(str2val(SerialBuffer)&0x0fffffff)|(unsigned long)(EVENT_TYPE_NEWKAKU)<<28; //  // Niet Par1 want NewKAKU kan als enige op de Par1 plaats een 28-bit waarde hebben. Hoogste nible wissen en weer vullen met type NewKAKU
+      if(x)
+        {
+        x=SerialReadBlock(SerialBuffer);
+        Event|=((str2val(SerialBuffer)==VALUE_ON)<<4); // Stop on/off commando op juiste plek in NewKAKU code
+        }
+      }
+    return Event;
+    }
+
+//???@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
   if(y==CMD_KAKU || y==CMD_SEND_KAKU)
     {// de string is een KAKU commando. Haal bij het commando behorende parameters op.
     if(x)
       {
       x=SerialReadBlock(SerialBuffer);
       z=0;
-      Par1=HA2address(SerialBuffer,&z); // Parameter-1 bevat [A1..P16]. Omzetten naar absolute waarde.
+      Par1=HA2address(SerialBuffer,&z); // Parameter-1 bevat [A1..P16]. Omzetten naar absolute waarde. z=groep commando
       if(x)
         {
         x=SerialReadBlock(SerialBuffer);
-        Par2=str2val(SerialBuffer) | (z<<1); // Parameter-2 bevat [On,Off]. Omzetten naar 1,0. tevens op bit-2 het groepcommando zetten.
-        }
-      }
-    Event=command2event(y,Par1,Par2);
-    return Event;
-    }
-
-  if(y==CMD_KAKU_NEW || y==CMD_SEND_KAKU_NEW)
-    {// de string is een KAKU commando. Haal bij het commando behorende parameters op.
-    if(x)
-      {
-      x=SerialReadBlock(SerialBuffer);
-      z=0;
-      Par1=HA2address(SerialBuffer,&z); // Parameter-1 bevat adres als tekst. // omzetten met andere functie
-      if(x)
-        {
-        x=SerialReadBlock(SerialBuffer);
-        Par2=DL2par(SerialBuffer); // Parameter-2 bevat [Dim1..Dim16]. Omzetten naar code.
-        if(!Par2)Par2=str2val(SerialBuffer);
+        Par2=(str2val(SerialBuffer)==VALUE_ON) | (z<<1); // Parameter-2 bevat [On,Off]. Omzetten naar 1,0. tevens op bit-2 het groepcommando zetten.
         }
       }
     Event=command2event(y,Par1,Par2);
@@ -231,7 +233,7 @@ unsigned long SerialReadEvent()
     if(x)
       { // het was geen geldig uitvoerbaar commando  
       if(y==0)
-        GenerateEvent(CMD_ERROR,VALUE_TYPE_UNKNOWN,0);
+        GenerateEvent(CMD_ERROR,VALUE_COMMAND,0);
       else
         GenerateEvent(CMD_ERROR,y,x);
       return 0L;
@@ -245,8 +247,7 @@ unsigned long SerialReadEvent()
   }
    
 /**********************************************************************************************\
- * Haalt uit een seriële reeks teken met formaat 'aaaa,bbbb,cccc,dddd;' de blokken tekst 
- * die gescheiden worden door komma's of spaties. 
+ * Haalt uit een seriële reeks met formaat 'aaaa,bbbb,cccc,dddd;' de blokken tekst 
  * geeft een 1 terug als blok afgesloten met een komma of spatie (en er nog meerdere volgen)
  * geeft een 0 terug als hele reeks is afgesloten met een '\n' of een ';'
  \*********************************************************************************************/

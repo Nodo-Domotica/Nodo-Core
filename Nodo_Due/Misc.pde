@@ -47,12 +47,13 @@ int str2cmd(char *command)
  \*********************************************************************************************/
 unsigned long command2event(int Command, byte Par1, byte Par2)
     {
-    return ((unsigned long)S.Home)<<28  | 
-           ((unsigned long)S.Unit)<<24  | 
-           ((unsigned long)Command)<<16 | 
-           ((unsigned long)Par1)<<8     | 
+    return ((unsigned long)EVENT_TYPE_NODO)<<28  | 
+           ((unsigned long)S.Unit)<<24            | 
+           ((unsigned long)Command)<<16           | 
+           ((unsigned long)Par1)<<8               | 
             (unsigned long)Par2;
     }
+
 
 /*********************************************************************************************\
  * String mag HEX, DEC of een NODO commando zijn.
@@ -136,19 +137,18 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
   
     case CMD_UNIT: 
       *Par1=S.Unit;
-      *Par2=S.Home;
       break;        
 
     case CMD_CONFIRM: 
-      *Par1=S.Confirm;
+      *Par1=S.Confirm?VALUE_ON:VALUE_OFF;
       break;        
 
     case CMD_DLS_EVENT:
-      *Par1=S.DaylightSaving;
+      *Par1=S.DaylightSaving?VALUE_ON:VALUE_OFF;
       break;
       
     case CMD_SIMULATE:
-      *Par1=Simulate;
+      *Par1=Simulate?VALUE_ON:VALUE_OFF;
       break;
             
     case CMD_ANALYSE_SETTINGS:
@@ -170,8 +170,8 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       break;
 
     case CMD_TRACE:
-      *Par1=S.Trace&1;
-      *Par2=S.Trace&2>0;      
+      *Par1=S.Trace    ?VALUE_ON:VALUE_OFF;
+      *Par2=S.TraceTime?VALUE_ON:VALUE_OFF;
       break;
 
     case CMD_CLOCK_DATE:
@@ -201,7 +201,6 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
         *Par2=0;
       break;
 
-
     case CMD_WIRED_RANGE:
       *Par1=xPar1;
       *Par2=S.WiredInputRange[xPar1-1];
@@ -214,7 +213,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
 
     case CMD_WIRED_PULLUP:
       *Par1=xPar1;
-      *Par2=S.WiredInputPullUp[xPar1-1];
+      *Par2=(S.WiredInputPullUp[xPar1-1])?VALUE_ON:VALUE_OFF;
       break;
 
     case CMD_WIRED_SMITTTRIGGER:
@@ -224,7 +223,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
 
     case CMD_WIRED_IN_EVENT:
       *Par1=xPar1;
-      *Par2=WiredInputStatus[xPar1-1];
+      *Par2=(WiredInputStatus[xPar1-1])?VALUE_ON:VALUE_OFF;
       break;
 
     case CMD_WIRED_ANALOG:
@@ -234,7 +233,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       
     case CMD_WIRED_OUT:
       *Par1=xPar1;
-      *Par2=WiredOutputStatus[xPar1-1];
+      *Par2=(WiredOutputStatus[xPar1-1])?VALUE_ON:VALUE_OFF;
       break;
       
     default:
@@ -299,7 +298,6 @@ void ResetFactory(void)
   
   S.Version            = VERSION;
   S.Unit               = UNIT;
-  S.Home               = HOME;
   S.Trace              = 0;
   S.AnalyseSharpness   = 50;
   S.AnalyseTimeOut     = SIGNAL_TIMEOUT_IR;
@@ -386,9 +384,7 @@ int HA2address(char* HA, byte *group)
       return Home<<4;
       }
     else
-      {
       return (Home<<4) | (Address-1);        
-      }
     }
   else // absoluut adres [0..255]
     return Address; // KAKU adres 1 is intern 0     
@@ -397,34 +393,40 @@ int HA2address(char* HA, byte *group)
 /**********************************************************************************************\
  * Converteert een string volgens formaat "Dim<level>" naar een parameter code
  \*********************************************************************************************/
-byte DL2par(char* DL)
-{
-  byte c;   // teken uit de string die behandeld wordt
-  byte x=3, par=0;
-  
-  if (DL[0] != 'd' || DL[1] != 'i' || DL[2] != 'm' || DL[3] == 0) { return 0; }
-  while((c=DL[x++])!=0) {
-    if(c>='0' && c<='9') { par = par*10; par = par + c - '0'; }
-  }
-  return ((par-1) << 4 | KAKU_DIMLEVEL);      
-}
+//byte DL2par(char* DL)
+//{
+//  byte c;   // teken uit de string die behandeld wordt
+//  byte x=3, par=0;
+//  
+//  if (DL[0] != 'd' || DL[1] != 'i' || DL[2] != 'm' || DL[3] == 0)
+//    return 0;
+//  while((c=DL[x++])!=0)
+//    {
+//    if(c>='0' && c<='9')
+//      {
+//      par=par*10;
+//      par=par+c-'0';
+//      }
+//  }
+//  return ((par-1) << 4 | KAKU_DIMLEVEL);      
+//}
 
 
- /**********************************************************************************************\
- * Bepaal wat voor een type Event het is.
- \*********************************************************************************************/
-byte EventType(unsigned long Code)
-  {
-  byte Unit=(Code>>24)&0xf;
-  byte Command=(Code>>16)&0xff;
-  
-  if(((Code>>28)&0xf)!=S.Home)                return VALUE_TYPE_UNKNOWN; 
-  if(Unit!=S.Unit && Unit!=0)                 return VALUE_TYPE_OTHERUNIT; // andere unit, dus niet voor deze nodo bestemd. Behalve unit=0, die is voor alle units    }
-  if(Command<=RANGE_VALUE)                    return VALUE_TYPE_UNKNOWN;
-  if(Command<RANGE_EVENT)                     return VALUE_TYPE_COMMAND;
-  if(Command<=COMMAND_MAX)                    return VALUE_TYPE_EVENT;
-  /* in andere gevallen */                    return VALUE_TYPE_UNKNOWN;  
-  }
+// /**********************************************************************************************\
+// * Bepaal wat voor een type Event het is.
+// \*********************************************************************************************/
+//byte EventType(unsigned long Code)
+//  {
+//  byte Unit=(Code>>24)&0xf;
+//  byte Command=(Code>>16)&0xff;
+//  
+//  if(((Code>>28)&0xf)==EVENT_TYPE_NIBBLE_NEWKAKU)   return VALUE_TYPE_EVENT;
+//  if(Unit!=S.Unit && Unit!=0)                 return VALUE_TYPE_OTHERUNIT; // andere unit, dus niet voor deze nodo bestemd. Behalve unit=0, die is voor alle units    }
+//  if(Command<=RANGE_VALUE)                    return VALUE_TYPE_UNKNOWN;
+//  if(Command<RANGE_EVENT)                     return VALUE_TYPE_COMMAND;
+//  if(Command<=COMMAND_MAX)                    return VALUE_TYPE_EVENT;
+//  /* in andere gevallen */                    return VALUE_TYPE_UNKNOWN;  
+//  }
     
  /**********************************************************************************************\
  * Set de timer op nul zonder dat er een event wordt gegenereerd.

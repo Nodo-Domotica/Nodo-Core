@@ -34,11 +34,18 @@ byte CommandError(unsigned long Content)
   byte Par1         = (Content>>8)&0xff;
   byte Par2         = Content&0xff;
 
+  // als het een NewKAKU is, niet afkomstig van een Nodo, dan heeft checken geen zin
+  if((Content>>28)&0xf != EVENT_TYPE_NEWKAKU)
+    return false;
+
+  // als het geen Nodo event of commando was dan is checken zowieso niet nodig
+  if((Content>>28)&0xf != EVENT_TYPE_NODO)
+    return ERROR_COMMAND;
+
   switch(Command)
     {
     //test; geen, altijd goed
     case CMD_VARIABLE_EVENT:    
-    case CMD_KAKU:
     case CMD_DLS_EVENT:
     case CMD_CLOCK_EVENT_DAYLIGHT:
     case CMD_CLOCK_EVENT_ALL:
@@ -56,13 +63,18 @@ byte CommandError(unsigned long Content)
     case CMD_SEND_SIGNAL:
     case CMD_USER_EVENT:
     case CMD_SEND_USEREVENT:
-    case CMD_SEND_KAKU:
-    case CMD_SEND_KAKU_NEW:
     case CMD_ANALYSE_SETTINGS:
     case CMD_RAWSIGNAL_GET:
     case CMD_RAWSIGNAL_PUT:
+    case CMD_KAKU:
+    case CMD_SEND_KAKU:
       return false;
  
+    case CMD_SEND_KAKU_NEW:
+    case CMD_KAKU_NEW:    
+      if(Par2==VALUE_ON || Par2==VALUE_OFF || Par2<=16)return false;
+      return ERROR_PAR2;
+
     // geen par1 of par2 ingevuld.
     case CMD_BOOT_EVENT:
     case CMD_EVENTLIST_WRITE:
@@ -157,7 +169,7 @@ byte CommandError(unsigned long Content)
     case CMD_WIRED_OUT:
     case CMD_WIRED_PULLUP:
       if(Par1<1 || Par1>4)return ERROR_PAR1;
-      if(Par2!=0 && Par2!=1)return ERROR_PAR2;
+      if(Par2!=VALUE_ON && Par2!=VALUE_OFF)return ERROR_PAR2;
       return false;
 
     case CMD_WAITFREERF: 
@@ -196,23 +208,24 @@ byte CommandError(unsigned long Content)
         case CMD_KAKU:
         case CMD_KAKU_NEW:
         case CMD_USER_EVENT:
-        case VALUE_TYPE_OTHERUNIT:
-        case VALUE_TYPE_UNKNOWN:
+//???
+//        case VALUE_TYPE_OTHERUNIT:
+//        case VALUE_TYPE_UNKNOWN:
           break;
         default:
           return ERROR_PAR2;
         } 
       return false;
 
-     // par1 alleen 0 of 1.
+     // par1 alleen On of Off.
     case CMD_CONFIRM:
     case CMD_SIMULATE:
-      if(Par1!=0 && Par1!=1)return ERROR_PAR1;
+      if(Par1!=VALUE_OFF && Par1!=VALUE_ON)return ERROR_PAR1;
       return false;
 
     case CMD_TRACE:
-      if(Par1>1)return ERROR_PAR1;
-      if(Par1>2)return ERROR_PAR2;
+      if(Par1!=VALUE_OFF && Par1!=VALUE_ON)return ERROR_PAR1;
+      if(Par2!=VALUE_OFF && Par2!=VALUE_ON)return ERROR_PAR2;
       return false;
 
     case CMD_DIVERT:   
@@ -221,7 +234,6 @@ byte CommandError(unsigned long Content)
 
     case CMD_UNIT:
       if(Par1<1 || Par1>UNIT_MAX)return ERROR_PAR1;
-      if(Par2>HOME_MAX)return ERROR_PAR2;
       return false;
 
     default:
@@ -246,8 +258,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   byte Command      = (Content>>16)&0xff;
   byte Par1         = (Content>>8)&0xff;
   byte Par2         = Content&0xff;
-  byte Type         = EventType(Content);
-  byte PreviousType = EventType(PreviousContent);
+  byte Type         = (Content>>28)&0x0f;
+  byte PreviousType = (PreviousContent>>28)&0x0f;
   
   if(error=CommandError(Content))// als er een error is, dan een error-event genereren en verzenden.
     {
@@ -259,11 +271,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     switch(Command)
       {   
       case CMD_SEND_KAKU:
-        SendEventCode(command2event(CMD_KAKU,Par1,Par2));
+        TransmitCode(command2event(CMD_KAKU,Par1,Par2));
         break;
         
       case CMD_SEND_KAKU_NEW:
-        SendEventCode(command2event(CMD_KAKU_NEW,Par1,Par2));
+        TransmitCode(command2event(CMD_KAKU_NEW,Par1,Par2));
         break;
         
       case CMD_VARIABLE_INC: 
@@ -300,7 +312,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       case CMD_BREAK_ON_VAR_EQU:
         if(S.UserVar[Par1-1]==Par2)
           {
-          if(S.Trace&1)
+          if(S.Trace)
             PrintText(Text_09,true);
           error=true;
           }
@@ -309,7 +321,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       case CMD_BREAK_ON_VAR_NEQU:
         if(S.UserVar[Par1-1]!=Par2)
           {
-          if(S.Trace&1)PrintText(Text_09,true);
+          if(S.Trace)PrintText(Text_09,true);
           error=true;
           }
         break;        
@@ -317,7 +329,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       case CMD_BREAK_ON_VAR_MORE:
         if(S.UserVar[Par1-1]>Par2)
           {
-          if(S.Trace&1)
+          if(S.Trace)
             PrintText(Text_09,true);
           error=true;
           }
@@ -326,7 +338,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       case CMD_BREAK_ON_VAR_LESS:
         if(S.UserVar[Par1-1]<Par2)
           {
-          if(S.Trace&1)
+          if(S.Trace)
             PrintText(Text_09,true);
           error=true;
           }
@@ -337,13 +349,13 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;
   
       case CMD_SEND_USEREVENT:
-        // Voeg Home toe en Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
-        SendEventCode(command2event(CMD_USER_EVENT,Par1,Par2)&0x00ffffff | ((unsigned long)S.Home)<<28);// Voeg Home toe en Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
+        // Voeg Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
+        TransmitCode(command2event(CMD_USER_EVENT,Par1,Par2)&0xf0ffffff);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
         break;
   
       case CMD_SEND_VAR_USEREVENT:
-        // Voeg Home toe en Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
-        SendEventCode(command2event(CMD_USER_EVENT,S.UserVar[Par1-1],S.UserVar[Par2-1])&0x00ffffff | ((unsigned long)S.Home)<<28);// Voeg Home toe en Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
+        // Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
+        TransmitCode(command2event(CMD_USER_EVENT,S.UserVar[Par1-1],S.UserVar[Par2-1])&0xf0ffffff);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
         break;
 
       case CMD_SIMULATE_DAY:
@@ -352,7 +364,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;     
   
       case CMD_SEND_SIGNAL:
-        SendEventCode(0L);
+        TransmitCode(0L);
         break;        
   
       case CMD_CLOCK_YEAR:
@@ -418,7 +430,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     
       case CMD_WIRED_PULLUP:
         S.WiredInputPullUp[Par1-1]=Par2; // Par1 is de poort[1..4], Par2 is de waarde [0..1]
-        digitalWrite(14+WiredAnalogInputPin_1+Par1-1,S.WiredInputPullUp[Par1-1]?HIGH:LOW);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14
+        digitalWrite(14+WiredAnalogInputPin_1+Par1-1,S.WiredInputPullUp[Par1-1]==VALUE_ON?HIGH:LOW);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14
         SaveSettings();
         break;
              
@@ -437,7 +449,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;
 
       case CMD_WIRED_OUT:
-        digitalWrite(WiredDigitalOutputPin_1+Par1-1,Par2&1);
+        digitalWrite(WiredDigitalOutputPin_1+Par1-1,Par2==VALUE_ON);
         WiredOutputStatus[Par1-1]=Par2&1;
         break;
                     
@@ -458,7 +470,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;        
   
       case CMD_CONFIRM:
-        S.Confirm=Par1;
+        S.Confirm=Par1==VALUE_ON;
         SaveSettings();
         break;
   

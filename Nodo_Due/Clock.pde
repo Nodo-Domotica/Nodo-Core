@@ -182,7 +182,7 @@ unsigned long ClockRead(void)
     GenerateEvent(CMD_OK,CMD_DLS_EVENT,S.DaylightSaving);
     }
       
-  return ((unsigned long)(S.Home))<<28 |
+  return ((unsigned long)(EVENT_TYPE_NODO))<<28 |
          ((unsigned long)(S.Unit))<<24 | 
          ((unsigned long)(CMD_CLOCK_EVENT_ALL+Time.Day))<<16 | 
          ((unsigned long)(Time.Hour))<<8 | 
