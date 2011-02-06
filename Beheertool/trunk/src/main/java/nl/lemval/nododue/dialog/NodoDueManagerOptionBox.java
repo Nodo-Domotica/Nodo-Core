@@ -2,7 +2,7 @@
  * NodoDueManagerAboutBox.java
  */
 
-package nl.lemval.nododue;
+package nl.lemval.nododue.dialog;
 
 import com.connectina.swing.fontchooser.JFontChooser;
 import java.awt.Font;
@@ -11,6 +11,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import javax.swing.JComponent;
 import javax.swing.KeyStroke;
+import nl.lemval.nododue.Options;
 import org.jdesktop.application.Action;
 
 public class NodoDueManagerOptionBox extends javax.swing.JDialog {
@@ -106,6 +107,7 @@ public class NodoDueManagerOptionBox extends javax.swing.JDialog {
         font1Label.setText(resourceMap.getString("font1Label.text")); // NOI18N
         font1Label.setName("font1Label"); // NOI18N
 
+        font1Text.setForeground(resourceMap.getColor("font2Text.foreground")); // NOI18N
         font1Text.setText(resourceMap.getString("font1Text.text")); // NOI18N
         font1Text.setName("font1Text"); // NOI18N
         font1Text.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -121,6 +123,7 @@ public class NodoDueManagerOptionBox extends javax.swing.JDialog {
         font2Label.setText(resourceMap.getString("font2Label.text")); // NOI18N
         font2Label.setName("font2Label"); // NOI18N
 
+        font2Text.setForeground(resourceMap.getColor("font2Text.foreground")); // NOI18N
         font2Text.setText(resourceMap.getString("font2Text.text")); // NOI18N
         font2Text.setName("font2Text"); // NOI18N
         font2Text.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -161,11 +164,11 @@ public class NodoDueManagerOptionBox extends javax.swing.JDialog {
                                 .add(autoDetect, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 157, Short.MAX_VALUE)
                                 .add(autoConnect, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                 .add(org.jdesktop.layout.GroupLayout.TRAILING, closeButton)))))
-                .addContainerGap(10, Short.MAX_VALUE))
+                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(imageLabel, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 182, Short.MAX_VALUE)
+            .add(imageLabel, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 205, Short.MAX_VALUE)
             .add(layout.createSequentialGroup()
                 .addContainerGap()
                 .add(appTitleLabel)

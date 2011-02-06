@@ -3,6 +3,8 @@
  */
 package nl.lemval.nododue;
 
+import nl.lemval.nododue.dialog.NodoDueManagerOptionBox;
+import nl.lemval.nododue.dialog.NodoDueManagerAboutBox;
 import nl.lemval.nododue.util.listeners.StatusMessageListener;
 import org.jdesktop.application.Action;
 import org.jdesktop.application.ResourceMap;

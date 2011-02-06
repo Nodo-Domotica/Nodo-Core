@@ -2,7 +2,7 @@
  * NodoDueManagerAboutBox.java
  */
 
-package nl.lemval.nododue;
+package nl.lemval.nododue.dialog;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -109,7 +109,7 @@ public class NodoDueManagerAboutBox extends javax.swing.JDialog {
                 .add(18, 18, 18)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(appTitleLabel)
-                    .add(appDescLabel, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 266, Short.MAX_VALUE)
+                    .add(appDescLabel, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 284, Short.MAX_VALUE)
                     .add(org.jdesktop.layout.GroupLayout.TRAILING, closeButton)
                     .add(layout.createSequentialGroup()
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -127,7 +127,7 @@ public class NodoDueManagerAboutBox extends javax.swing.JDialog {
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(imageLabel, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .add(imageLabel, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 200, Short.MAX_VALUE)
             .add(layout.createSequentialGroup()
                 .addContainerGap()
                 .add(appTitleLabel)

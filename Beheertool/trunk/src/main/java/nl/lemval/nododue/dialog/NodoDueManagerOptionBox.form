@@ -51,13 +51,13 @@
                       </Group>
                   </Group>
               </Group>
-              <EmptySpace pref="10" max="32767" attributes="0"/>
+              <EmptySpace max="32767" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
     <DimensionLayout dim="1">
       <Group type="103" groupAlignment="0" attributes="0">
-          <Component id="imageLabel" min="-2" pref="182" max="32767" attributes="0"/>
+          <Component id="imageLabel" min="-2" pref="205" max="32767" attributes="0"/>
           <Group type="102" alignment="0" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Component id="appTitleLabel" min="-2" max="-2" attributes="0"/>
@@ -187,6 +187,7 @@
     </Component>
     <Component class="javax.swing.JLabel" name="font1Text">
       <Properties>
+        <Property name="foreground" type="java.awt.Color" resourceKey="font2Text.foreground"/>
         <Property name="text" type="java.lang.String" resourceKey="font1Text.text"/>
         <Property name="name" type="java.lang.String" value="font1Text" noResource="true"/>
       </Properties>
@@ -208,6 +209,7 @@
     </Component>
     <Component class="javax.swing.JLabel" name="font2Text">
       <Properties>
+        <Property name="foreground" type="java.awt.Color" resourceKey="font2Text.foreground"/>
         <Property name="text" type="java.lang.String" resourceKey="font2Text.text"/>
         <Property name="name" type="java.lang.String" value="font2Text" noResource="true"/>
       </Properties>
