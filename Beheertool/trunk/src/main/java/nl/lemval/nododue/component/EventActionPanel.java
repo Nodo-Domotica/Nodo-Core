@@ -415,9 +415,25 @@ public class EventActionPanel extends NodoBasePanel {
     }
 
     public void setSelected(NodoCommand cmd) {
-        CommandInfo info;
+
+        // First check for an appliance
+        Device appliance = Options.getInstance().getAppliance(cmd.toString());
+        if ( appliance != null) {
+            for (int i = 0; i < nodoCommandList.getItemCount(); i++) {
+                Object obj = nodoCommandList.getItemAt(i);
+                if ( obj instanceof CommandInfo ) {
+                    CommandInfo info = (CommandInfo) obj;
+                    if ( info.getName().equals(CommandDeviceInfo.getName(appliance)) ) {
+                        nodoCommandList.setSelectedIndex(i);
+                        return;
+                    }
+                }
+            }
+        }
+
         for (int i = 0; i < nodoCommandList.getItemCount(); i++) {
             Object obj = nodoCommandList.getItemAt(i);
+
             if ( obj instanceof CommandDeviceInfo ) {
                 if ( cmd.matches(((CommandDeviceInfo) obj).getDevice()) ) {
                     nodoCommandList.setSelectedIndex(i);
@@ -426,7 +442,15 @@ public class EventActionPanel extends NodoBasePanel {
             }
 
             if ( obj instanceof CommandInfo ) {
-                info = (CommandInfo) obj;
+                CommandInfo info = (CommandInfo) obj;
+
+                if ( appliance != null ) {
+                    if ( info.getName().equals(CommandDeviceInfo.getName(appliance)) ) {
+                        nodoCommandList.setSelectedIndex(i);
+                        return;
+                    }
+                }
+
                 if ( cmd.getName().equals(info.getName()) ) {
                     nodoCommandList.setSelectedIndex(i);
                     String val1 = info.getParameter(0).getValueName(cmd.getData1());

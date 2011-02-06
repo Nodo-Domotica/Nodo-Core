@@ -106,16 +106,15 @@ public class NodoMacroHandler {
         CommandInfo write = CommandLoader.get(CommandInfo.Name.EventlistWrite);
         NodoCommand writeCmd = new NodoCommand(write, null, null);
         for (int i = 0; i < list.size(); i++) {
-            commands[3*i+1] = writeCmd;
-            commands[3*i+2] = list.get(i).getEvent();
-            commands[3*i+3] = list.get(i).getAction();
+            final NodoMacro listItem = list.get(i);
+            if ( listItem != null ) {
+                commands[3*i+1] = writeCmd;
+                commands[3*i+2] = listItem.getEvent();
+                commands[3*i+3] = listItem.getAction();
+            }
         }
 
-        // TODO : Appliances added are not parsed correctly and results in an empty entry in the list.
-        // This nullpointers above....
-        
         String result = execute(commands, false);
-//        System.out.println("Result = " + result);
         return true;
     }
 }

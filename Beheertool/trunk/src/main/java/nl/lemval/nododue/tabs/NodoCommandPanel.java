@@ -51,9 +51,6 @@ public class NodoCommandPanel extends NodoBasePanel {
 
     @Override
     public void setVisible(boolean aFlag) {
-        if ( aFlag == true ) {
-            actionPanel.updateAppliances();
-        }
         super.setVisible(aFlag);
     }
 

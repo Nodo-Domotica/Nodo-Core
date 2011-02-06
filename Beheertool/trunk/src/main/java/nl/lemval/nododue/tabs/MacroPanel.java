@@ -88,7 +88,6 @@ public class MacroPanel extends NodoBasePanel {
     public void setVisible(boolean aFlag) {
         if ( aFlag == true ) {
             eventPanel.updateAppliances();
-            commandPanel.updateAppliances();
         }
         super.setVisible(aFlag);
     }
