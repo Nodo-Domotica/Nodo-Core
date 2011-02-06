@@ -110,6 +110,9 @@ public class NodoMacroHandler {
             commands[3*i+2] = list.get(i).getEvent();
             commands[3*i+3] = list.get(i).getAction();
         }
+
+        // TODO : Appliances added are not parsed correctly and results in an empty entry in the list.
+        // This nullpointers above....
         
         String result = execute(commands, false);
 //        System.out.println("Result = " + result);

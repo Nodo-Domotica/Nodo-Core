@@ -27,6 +27,7 @@ import nl.lemval.nododue.Options;
 import nl.lemval.nododue.cmd.CommandInfo;
 import nl.lemval.nododue.cmd.CommandLoader;
 import nl.lemval.nododue.cmd.NodoCommand;
+import nl.lemval.nododue.util.Device;
 import nl.lemval.nododue.util.listeners.OutputEventListener;
 import nl.lemval.nododue.util.SerialCommunicator;
 import org.jdesktop.application.Action;
@@ -456,9 +457,18 @@ public class ConnectPanel extends NodoBasePanel implements OutputEventListener {
             length = substring.length();
         } else {
             lineCount++;
-            serialOutput.append(message);
-            serialOutput.append(NEWLINE);
         }
+        serialOutput.append(message);
+        String[] signal = message.split(",");
+        String deviceCode = signal[signal.length - 1].trim();
+
+        // TODO: Space between KAKU D1,Off (D1, Off)
+//        if ( deviceCode.startsWith("(")) { deviceCode = deviceCode.substring(1, deviceCode.length()-2); }
+        Device appliance = Options.getInstance().getAppliance(deviceCode);
+        if ( appliance != null && appliance.isActive() ) {
+            serialOutput.append(" " + getResourceString("comm.known_device", appliance.getName(), appliance.getLocation()));
+        }
+        serialOutput.append(NEWLINE);
         serialOutput.setCaretPosition(length);
     }
 

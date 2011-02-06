@@ -289,7 +289,9 @@ public class Options {
     }
 
     public void addAppliance(Device device) {
-        devices.put(device.getSignal(), device);
+        if ( getAppliance(device.getSignal()) == null ) {
+            devices.put(device.getSignal(), device);
+        }
     }
 
     public void removeAppliance(String code) {

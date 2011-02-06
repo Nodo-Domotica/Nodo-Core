@@ -54,6 +54,7 @@ public class DevicesListModel extends AbstractListModel {
             }
         }
         activeAppliances = active.toArray(new Device[active.size()]);
+        update();
     }
 
     private final void update() {
