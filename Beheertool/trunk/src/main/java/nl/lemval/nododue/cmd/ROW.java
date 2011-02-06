@@ -5,7 +5,8 @@
 package nl.lemval.nododue.cmd;
 
 /**
- *
+ * Represents the columns in the command XLS structure.
+ * 
  * @author Michael
  */
 public enum ROW {

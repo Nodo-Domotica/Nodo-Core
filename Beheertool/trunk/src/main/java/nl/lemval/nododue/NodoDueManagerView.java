@@ -86,6 +86,8 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
 	showMonitorMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_6, InputEvent.CTRL_MASK));
 	showRawSignalMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_7, InputEvent.CTRL_MASK));
 
+        historyMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.CTRL_MASK));
+
 	unitLabel.setBorder(new CompoundBorder(unitLabel.getBorder(), new EmptyBorder(2, 5, 2, 5)));
 	statusMessageLabel.setText("");
 	statusAnimationLabel.setVisible(false);

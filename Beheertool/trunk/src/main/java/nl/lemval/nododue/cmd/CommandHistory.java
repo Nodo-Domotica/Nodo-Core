@@ -27,12 +27,14 @@ public class CommandHistory {
         synchronized (lock) {
             history.add(new HistoryElem(cmd, true));
         }
+        checkTruncate();
     }
     public void addResponse(String cmd) {
         Options.getInstance().registerResponse(cmd);
         synchronized (lock) {
             history.add(new HistoryElem(cmd, false));
         }
+        checkTruncate();
     }
 
     public ArrayList<HistoryElem> getCommands() {
@@ -46,6 +48,19 @@ public class CommandHistory {
     public void removeCommand(HistoryElem historyElem) {
         synchronized (lock) {
             history.remove(historyElem);
+        }
+    }
+
+    private void checkTruncate() {
+        int maxSize = Options.getInstance().getMaxHistorySize();
+        if ( history.size() > maxSize ) {
+            synchronized (lock) {
+                int delta = maxSize/100;
+                int newStart = history.size() - maxSize + (delta==0?1:delta);
+                if ( newStart > 0 ) {
+                    history.subList(0, newStart).clear();
+                }
+            }
         }
     }
 }

@@ -22,6 +22,7 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 public class Options {
 
     private static Options instance = null;
+
     private PropertiesConfiguration config;
     private boolean hasScanned = false;
     private HashMap<String, Device> devices;
@@ -39,7 +40,7 @@ public class Options {
         // String
         lastComportUsed, folder, domesticCode, baseFont, titleFont,
         // int
-        lastBaudrateUsed,
+        lastBaudrateUsed, maxHistorySize,
     }
 
     private Options() {
@@ -203,6 +204,14 @@ public class Options {
 
     public void setLastBaudrateUsed(int lastBaudrateUsed) {
         config.setProperty(Opts.lastBaudrateUsed.name(), lastBaudrateUsed);
+    }
+
+    public int getMaxHistorySize() {
+        return config.getInt(Opts.maxHistorySize.name(), 5000);
+    }
+
+    public void setMaxHistorySize(int maxHistorySize) {
+        config.setProperty(Opts.maxHistorySize.name(), maxHistorySize);
     }
 
     public String getLastComportUsed() {

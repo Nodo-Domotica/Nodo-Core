@@ -43,6 +43,7 @@ public class ConnectPanel extends NodoBasePanel implements OutputEventListener {
     private DefaultComboBoxModel comPortModel;
     private HashMap<String, CommPortIdentifier> ports;
     private ResourceMap resourceMap;
+    private int lineCount = 0;
 
     private static final String NEWLINE = System.getProperty("line.separator");
 
@@ -446,9 +447,19 @@ public class ConnectPanel extends NodoBasePanel implements OutputEventListener {
     }
 
     public void handleOutputLine(String message) {
-        serialOutput.append(message);
-        serialOutput.append(NEWLINE);
-        serialOutput.setCaretPosition(serialOutput.getText().length());
+        int length = serialOutput.getText().length();
+        if ( lineCount > Options.getInstance().getMaxHistorySize() ) {
+            String text = serialOutput.getText();
+            int idx = text.indexOf(NEWLINE);
+            final String substring = text.substring(idx + 1);
+            serialOutput.setText(substring);
+            length = substring.length();
+        } else {
+            lineCount++;
+            serialOutput.append(message);
+            serialOutput.append(NEWLINE);
+        }
+        serialOutput.setCaretPosition(length);
     }
 
     public void handleClear() {
