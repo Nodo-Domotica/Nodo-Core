@@ -27,14 +27,14 @@
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
                   <Group type="102" alignment="0" attributes="0">
-                      <Component id="listScrollPanel" min="-2" pref="120" max="-2" attributes="0"/>
+                      <Component id="listScrollPanel" pref="134" max="32767" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="detailPanel" max="32767" attributes="0"/>
-                          <Component id="jPanel1" alignment="0" pref="277" max="32767" attributes="0"/>
+                          <Component id="jPanel1" min="-2" pref="277" max="-2" attributes="0"/>
+                          <Component id="detailPanel" alignment="0" min="-2" max="-2" attributes="0"/>
                       </Group>
                   </Group>
-                  <Component id="buttonPanel" alignment="1" pref="404" max="32767" attributes="0"/>
+                  <Component id="buttonPanel" alignment="1" pref="418" max="32767" attributes="0"/>
                   <Component id="listLabel" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
@@ -48,11 +48,11 @@
               <Component id="listLabel" min="-2" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="listScrollPanel" pref="222" max="32767" attributes="0"/>
-                  <Group type="102" alignment="1" attributes="0">
-                      <Component id="detailPanel" max="32767" attributes="0"/>
-                      <EmptySpace max="-2" attributes="0"/>
-                      <Component id="jPanel1" min="-2" max="-2" attributes="0"/>
+                  <Component id="listScrollPanel" pref="261" max="32767" attributes="0"/>
+                  <Group type="102" alignment="0" attributes="0">
+                      <Component id="detailPanel" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace pref="18" max="32767" attributes="0"/>
+                      <Component id="jPanel1" min="-2" pref="63" max="-2" attributes="0"/>
                   </Group>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
@@ -284,6 +284,21 @@
           </Properties>
           <Events>
             <EventHandler event="stateChanged" listener="javax.swing.event.ChangeListener" parameters="javax.swing.event.ChangeEvent" handler="discoverDevices"/>
+          </Events>
+        </Component>
+        <Component class="javax.swing.JCheckBox" name="hideDisabledCheck">
+          <Properties>
+            <Property name="action" type="javax.swing.Action" editor="org.netbeans.modules.swingapp.ActionEditor">
+              <action class="nl.lemval.nododue.dialog.DevicesBox" id="showOrHideDisabledDevices" methodName="showOrHideDisabledDevices"/>
+            </Property>
+            <Property name="text" type="java.lang.String" resourceKey="hideDisabledCheck.text"/>
+            <Property name="margin" type="java.awt.Insets" editor="org.netbeans.beaninfo.editors.InsetsEditor">
+              <Insets value="[0, 0, 0, 0]"/>
+            </Property>
+            <Property name="name" type="java.lang.String" value="hideDisabledCheck" noResource="true"/>
+          </Properties>
+          <Events>
+            <EventHandler event="stateChanged" listener="javax.swing.event.ChangeListener" parameters="javax.swing.event.ChangeEvent" handler="hideDisabledCheckdiscoverDevices"/>
           </Events>
         </Component>
       </SubComponents>

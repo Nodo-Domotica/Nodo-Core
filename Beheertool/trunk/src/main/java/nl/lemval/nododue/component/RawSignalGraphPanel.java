@@ -39,6 +39,9 @@ public class RawSignalGraphPanel extends JPanel {
 
     public void setSignal(int[] data) {
 	signal = data.clone();
+        if ( signal.length == 0 ) {
+            return;
+        }
 	points = new int[2*signal.length+1];
 	values = new int[2*signal.length+1];
 	total = 0;
@@ -74,7 +77,7 @@ public class RawSignalGraphPanel extends JPanel {
     }
 
     public int[] getActiveSignal() {
-	if ( divider == 0 ) {
+	if ( divider == 0 || signal.length == 0) {
 	    // No signal yet
 	    return new int[0];
 	}
@@ -87,6 +90,10 @@ public class RawSignalGraphPanel extends JPanel {
 	}
 	int length = end-start;
 	int[] result = new int[length];
+        System.out.println("Signal length = " + signal.length);
+        System.out.println("Start  = " + start);
+        System.out.println("Length = " + length);
+        System.out.println("Copy to = " + result.length);
 	System.arraycopy(signal, start, result, 0, length);
 	return result;
     }

@@ -403,7 +403,6 @@ public class RawSignalPanel extends NodoBasePanel {
             } catch (Exception e) {
                 getListener().showStatusMessage(getResourceString("update_fail.margin", e.getMessage()));
             }
-            System.out.println("Read :" + data.toString());
             String[] split = data.toString().split(", ?");
             int[] values = new int[split.length];
             int counter = 0;

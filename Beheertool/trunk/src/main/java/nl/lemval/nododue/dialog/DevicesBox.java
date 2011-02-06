@@ -79,6 +79,7 @@ public class DevicesBox extends javax.swing.JDialog {
         ignoreField = new javax.swing.JCheckBox();
         jPanel1 = new javax.swing.JPanel();
         discoverCheck = new javax.swing.JCheckBox();
+        hideDisabledCheck = new javax.swing.JCheckBox();
 
         org.jdesktop.application.ResourceMap resourceMap = org.jdesktop.application.Application.getInstance(nl.lemval.nododue.NodoDueManager.class).getContext().getResourceMap(DevicesBox.class);
         setTitle(resourceMap.getString("Form.title")); // NOI18N
@@ -219,6 +220,17 @@ public class DevicesBox extends javax.swing.JDialog {
         });
         jPanel1.add(discoverCheck);
 
+        hideDisabledCheck.setAction(actionMap.get("showOrHideDisabledDevices")); // NOI18N
+        hideDisabledCheck.setText(resourceMap.getString("hideDisabledCheck.text")); // NOI18N
+        hideDisabledCheck.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        hideDisabledCheck.setName("hideDisabledCheck"); // NOI18N
+        hideDisabledCheck.addChangeListener(new javax.swing.event.ChangeListener() {
+            public void stateChanged(javax.swing.event.ChangeEvent evt) {
+                hideDisabledCheckdiscoverDevices(evt);
+            }
+        });
+        jPanel1.add(hideDisabledCheck);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -227,12 +239,12 @@ public class DevicesBox extends javax.swing.JDialog {
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(listScrollPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(listScrollPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 134, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(detailPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 277, Short.MAX_VALUE)))
-                    .addComponent(buttonPanel, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 404, Short.MAX_VALUE)
+                            .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 277, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(detailPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addComponent(buttonPanel, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 418, Short.MAX_VALUE)
                     .addComponent(listLabel))
                 .addContainerGap())
         );
@@ -243,11 +255,11 @@ public class DevicesBox extends javax.swing.JDialog {
                 .addComponent(listLabel)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(listScrollPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 222, Short.MAX_VALUE)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(detailPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addComponent(listScrollPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 261, Short.MAX_VALUE)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(detailPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 18, Short.MAX_VALUE)
+                        .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 63, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(buttonPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
@@ -288,6 +300,10 @@ public class DevicesBox extends javax.swing.JDialog {
         Options.getInstance().setScanResponse(discoverCheck.isSelected());
     }//GEN-LAST:event_discoverDevices
 
+    private void hideDisabledCheckdiscoverDevices(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_hideDisabledCheckdiscoverDevices
+        // TODO add your handling code here:
+    }//GEN-LAST:event_hideDisabledCheckdiscoverDevices
+
     private Device getSelectedDevice() {
         Object[] selected = signalList.getSelectedValues();
         if ( selected.length == 1 ) {
@@ -301,11 +317,17 @@ public class DevicesBox extends javax.swing.JDialog {
         signalModel.synchronize();
     }
 
+    @Action
+    public void showOrHideDisabledDevices() {
+        signalModel.hideDisabled(hideDisabledCheck.isSelected());
+    }
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel buttonPanel;
     private javax.swing.JButton closeButton;
     private javax.swing.JPanel detailPanel;
     private javax.swing.JCheckBox discoverCheck;
+    private javax.swing.JCheckBox hideDisabledCheck;
     private javax.swing.JCheckBox ignoreField;
     private javax.swing.JLabel ignoreLabel;
     private javax.swing.JPanel jPanel1;
