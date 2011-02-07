@@ -1,6 +1,5 @@
-/**************************************************************************\
-
-    This file is part of Nodo Due, Â© Copyright Paul Tonkes
+  /**************************************************************************\
+    This file is part of Nodo Due, © Copyright Paul Tonkes
 
     Nodo Due is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -14,11 +13,10 @@
 
     You should have received a copy of the GNU General Public License
     along with Nodo Due.  If not, see <http://www.gnu.org/licenses/>.
-
-\**************************************************************************/
+  \**************************************************************************/
 
  /*********************************************************************************************\
- * kopiÃ«er de string van een commando naar een string[]
+ * kopiëer de string van een commando naar een string[]
  \*********************************************************************************************/
 char* cmd2str(int i)
   {
@@ -42,12 +40,22 @@ int str2cmd(char *command)
   return false;
   }
 
+
+ /*********************************************************************************************\
+ * Zet het hoogste nibbel van een event zodat het event het Type kenmerk krijgt
+ \*********************************************************************************************/
+unsigned long SetEventType(unsigned long Event, byte Type)
+  {
+  return (Event&0x0fffffff) | (unsigned long)(Type)<<28;
+  }
+
+
  /*********************************************************************************************\
  * Bouw een Code op uit commando, data1 en data2
  \*********************************************************************************************/
 unsigned long command2event(int Command, byte Par1, byte Par2)
     {
-    return ((unsigned long)EVENT_TYPE_NODO)<<28  | 
+    return ((unsigned long)SIGNAL_TYPE_NODO)<<28   | 
            ((unsigned long)S.Unit)<<24            | 
            ((unsigned long)Command)<<16           | 
            ((unsigned long)Par1)<<8               | 
@@ -299,6 +307,7 @@ void ResetFactory(void)
   S.Version            = VERSION;
   S.Unit               = UNIT;
   S.Trace              = 0;
+  S.TraceTime          = 0;
   S.AnalyseSharpness   = 50;
   S.AnalyseTimeOut     = SIGNAL_TIMEOUT_IR;
   S.TransmitPort       = VALUE_SOURCE_IR_RF;
@@ -318,7 +327,7 @@ void ResetFactory(void)
   VariableClear(0); // alle variabelen op nul zetten
   SaveSettings();  
   FactoryEventlist();
-  delay(500);// kleine pauze, anders kans fout bij seriÃ«le communicatie
+  delay(500);// kleine pauze, anders kans fout bij seriële communicatie
   Reset();
   }
   
@@ -390,28 +399,6 @@ int HA2address(char* HA, byte *group)
     return Address; // KAKU adres 1 is intern 0     
   }
 
-/**********************************************************************************************\
- * Converteert een string volgens formaat "Dim<level>" naar een parameter code
- \*********************************************************************************************/
-//byte DL2par(char* DL)
-//{
-//  byte c;   // teken uit de string die behandeld wordt
-//  byte x=3, par=0;
-//  
-//  if (DL[0] != 'd' || DL[1] != 'i' || DL[2] != 'm' || DL[3] == 0)
-//    return 0;
-//  while((c=DL[x++])!=0)
-//    {
-//    if(c>='0' && c<='9')
-//      {
-//      par=par*10;
-//      par=par+c-'0';
-//      }
-//  }
-//  return ((par-1) << 4 | KAKU_DIMLEVEL);      
-//}
-
-
 // /**********************************************************************************************\
 // * Bepaal wat voor een type Event het is.
 // \*********************************************************************************************/
@@ -420,7 +407,7 @@ int HA2address(char* HA, byte *group)
 //  byte Unit=(Code>>24)&0xf;
 //  byte Command=(Code>>16)&0xff;
 //  
-//  if(((Code>>28)&0xf)==EVENT_TYPE_NIBBLE_NEWKAKU)   return VALUE_TYPE_EVENT;
+//  if(((Code>>28)&0xf)==SIGNAL_TYPE_NIBBLE_NEWKAKU)   return VALUE_TYPE_EVENT;
 //  if(Unit!=S.Unit && Unit!=0)                 return VALUE_TYPE_OTHERUNIT; // andere unit, dus niet voor deze nodo bestemd. Behalve unit=0, die is voor alle units    }
 //  if(Command<=RANGE_VALUE)                    return VALUE_TYPE_UNKNOWN;
 //  if(Command<RANGE_EVENT)                     return VALUE_TYPE_COMMAND;

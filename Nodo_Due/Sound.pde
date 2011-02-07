@@ -1,5 +1,4 @@
-/**************************************************************************\
-
+  /**************************************************************************\
     This file is part of Nodo Due, © Copyright Paul Tonkes
 
     Nodo Due is free software: you can redistribute it and/or modify
@@ -14,8 +13,7 @@
 
     You should have received a copy of the GNU General Public License
     along with Nodo Due.  If not, see <http://www.gnu.org/licenses/>.
-
-\**************************************************************************/
+  \**************************************************************************/
 
 /**********************************************************************************************\
  * Geef een geluidssignaal met toonhoogte van 'frequentie' in Herz en tijdsduur 'duration' in milliseconden.

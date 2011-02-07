@@ -1,5 +1,4 @@
-/**************************************************************************\
-
+  /**************************************************************************\
     This file is part of Nodo Due, © Copyright Paul Tonkes
 
     Nodo Due is free software: you can redistribute it and/or modify
@@ -14,8 +13,7 @@
 
     You should have received a copy of the GNU General Public License
     along with Nodo Due.  If not, see <http://www.gnu.org/licenses/>.
-
-\**************************************************************************/
+  \**************************************************************************/
 
 
  /**********************************************************************************************\
@@ -52,8 +50,8 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
       HoldTimer=0L; //  HoldTimer is NU, dus wachttijd is afgelopen;
     else
       {
-      // als het event voorkomt in de eventlist of het is een geldig commando voor deze Nodo, dan is het relevant om op te slaan
-      if(CheckEventlist(IncommingEvent) ||   (IncommingEvent>>28)&0xf==EVENT_TYPE_NODO)
+      // als het event voorkomt in de eventlist of het is een Nodo commando voor deze Nodo, dan is het relevant om in queue te plaatsen
+      if(CheckEventlist(IncommingEvent) || NodoType(IncommingEvent)==NODO_TYPE_COMMAND)
         {
         // als er nog plek is in de queue...
         if(QueuePos<EVENT_QUEUE_MAX)
@@ -75,7 +73,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
 
   // Als de 'Confirm' optie aan staat, dan een 'Ok'-event verzenden
   // Dit alleen als het een commando of event voor deze nodo is.
-  if(EventlistDepth==0 && S.Confirm && ((IncommingEvent>>28)&0xf==EVENT_TYPE_NODO))
+  if(EventlistDepth==0 && S.Confirm && (((IncommingEvent>>28)&0xf)==SIGNAL_TYPE_NODO))
     TransmitCode(command2event(CMD_OK,S.Unit,0));
     
   if(EventlistDepth++>=MACRO_EXECUTION_DEPTH)
@@ -86,9 +84,9 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     }
 
   // ############# Verwerk event ################  
-  // als het een commando of event is voor deze unit, dan t.b.v. interne verwerking unit op 0 zetten.
-  if(!CommandError(IncommingEvent))
-    { // Er is een Commando binnengekomen 
+  // als het een Nodo event is en een geldig commando, dan deze uitvoeren
+  if(NodoType(IncommingEvent)==NODO_TYPE_COMMAND)
+    { // Er is een geldig Commando binnengekomen 
     if(!ExecuteCommand(IncommingEvent,Port,PreviousContent,PreviousPort))
       {
       EventlistDepth--;
@@ -96,7 +94,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
       }
     }
   else
-    { // Er is een Event binnengekomen  
+    {// Er is een Event binnengekomen  
     // loop de gehele eventlist langs om te kijken of er een treffer is.    
     for(x=1; x<=Eventlist_MAX && Eventlist_Read(x,&Event_1,&Event_2); x++)
       {
@@ -132,13 +130,13 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
         }
       else
         y=CheckEvent(IncommingEvent,Event_1);      
-      
+
       if(y)
         {
         if(S.Trace)
           PrintEventlistEntry(x,EventlistDepth);
           
-        if(!CommandError(Event_2)) // is de ontvangen code een geldig uitvoerbaar commando?
+        if(NodoType(Event_2)==NODO_TYPE_COMMAND) // is de ontvangen code een uitvoerbaar commando?
           {
           if(!ExecuteCommand(Event_2, VALUE_SOURCE_EVENTLIST,IncommingEvent,Port))
             {
@@ -190,7 +188,7 @@ boolean CheckEvent(unsigned long Event, unsigned long MacroEvent)
   byte x;
   
   
-  Serial.print("CheckEvent() > Event=0x");Serial.print(Event,HEX);Serial.print(", MacroEvent=0x");Serial.print(MacroEvent,HEX);PrintTerm();//???
+  //  Serial.print("CheckEvent() > Event=0x");Serial.print(Event,HEX);Serial.print(", MacroEvent=0x");Serial.print(MacroEvent,HEX);PrintTerm();//???
 
   
   // als huidige event exact overeenkomt met het event in de regel uit de Eventlist, dan een match

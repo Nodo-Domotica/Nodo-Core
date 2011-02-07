@@ -26,7 +26,7 @@ void PrintEvent(unsigned long Content, byte Port, boolean Direction)
   if(S.TraceTime && Time.Day) // Time.Day=true want dan is er een RTC aanwezig.
     {   
     PrintDateTime();
-    PrintComma();
+    PrintChar(',');
     }
 
   if(Direction)
@@ -40,7 +40,11 @@ void PrintEvent(unsigned long Content, byte Port, boolean Direction)
     
   if(Content)
     {
-    if(Port)PrintComma();
+    if(Port)
+      {
+      PrintChar(',');
+      PrintChar(' ');
+      }
     PrintEventCode(Content);
     }
   PrintTerm();
@@ -55,7 +59,7 @@ void PrintRawSignal(void)
   PrintText(Text_07,false);
   for(byte x=1;x<=RawSignal[0];x++)
      {
-     if(x>1)PrintComma();
+     if(x>1)PrintChar(',');
      PrintValue(RawSignal[x]);
      }
   PrintTerm();
@@ -82,17 +86,8 @@ void PrintValue(unsigned long x)
  \*********************************************************************************************/
 void PrintLine(void)
   {
-  for(byte x=1;x<=50;x++)Serial.print("*");
+  for(byte x=1;x<=50;x++)PrintChar('*');
   PrintTerm();
-  }
-
- /*********************************************************************************************\
- * Serial.Print neemt veel progmem in beslag. 
- * Print het teken ',' 
- \*********************************************************************************************/
-void PrintComma(void)
-  {
-  Serial.print(",");
   }
 
 
@@ -127,29 +122,27 @@ void PrintEventCode(unsigned long Code)
   byte Par1     = (Code>>8)&0xff;
   byte Par2     = (Code)&0xff;
 
-  if(Type==EVENT_TYPE_NODO && (Unit!=S.Unit && Unit!=0))
+  if(Type==SIGNAL_TYPE_NODO && (Unit!=S.Unit && Unit!=0))
     {
     PrintText(Text_08,false); 
     PrintValue(Unit); 
-    PrintComma();
+    PrintChar(',');
     }
     
-  Serial.print("("); 
+  PrintChar('('); 
 
-  if(Type==EVENT_TYPE_NEWKAKU)
+  if(Type==SIGNAL_TYPE_NEWKAKU)
     {
     // Aan/Uit zit in bit 5 
     Serial.print(cmd2str(CMD_KAKU_NEW));
     PrintChar(' ');
     PrintValue(Code&0x0FFFFFEF);
-    PrintComma();   
+    PrintChar(',');   
     Serial.print(cmd2str(((Code>>4)&0x1)?VALUE_ON:VALUE_OFF)); 
     }
-
-  else if(Type==EVENT_TYPE_NODO || Type==EVENT_TYPE_OTHERUNIT)
+  else if(Type==SIGNAL_TYPE_NODO)
     {
     Serial.print(cmd2str(Command));
-
     switch(Command)
       {
       // Par1 als KAKU adres [A0..P16] en Par2 als [On,Off]
@@ -202,7 +195,6 @@ void PrintEventCode(unsigned long Code)
         break;
   
       // Par1 als waarde en par2 niet
-      case CMD_OK:
       case CMD_UNIT:
       case CMD_DIVERT:
       case CMD_VARIABLE_CLEAR:
@@ -214,6 +206,7 @@ void PrintEventCode(unsigned long Code)
         break;
   
       // Geen parameters
+      case CMD_OK:
       case CMD_SEND_SIGNAL:
       case CMD_BOOT_EVENT:
         P1=P_NOT;
@@ -249,7 +242,7 @@ void PrintEventCode(unsigned long Code)
     // Print Par2    
     if(P2!=P_NOT)
       {
-      PrintComma();
+      PrintChar(',');
       switch(P2)
         {
         case P_TEXT:
@@ -268,7 +261,7 @@ void PrintEventCode(unsigned long Code)
           }
         }
       }// P2
-    }//   if(Type==EVENT_TYPE_NODO || Type==EVENT_TYPE_OTHERUNIT)
+    }//   if(Type==SIGNAL_TYPE_NODO || Type==SIGNAL_TYPE_OTHERUNIT)
     
   else // wat over blijft is het type UNKNOWN.
     PrintValue(Code);
@@ -309,7 +302,6 @@ void PrintEventlistEntry(int entry, byte d)
   PrintEventCode(Event);
   Serial.print("; ");
   PrintEventCode(Action);
-  PrintTerm();
   }
   
  /**********************************************************************************************\
@@ -319,7 +311,7 @@ void PrintDateTime(void)
     {
     // Print de dag. 1=zondag, 0=geen RTC aanwezig
     for(byte x=0;x<=2;x++)Serial.print(*(Text(Text_02)+(Time.Day-1)*3+x),BYTE);
-    Serial.print(" ");
+    PrintChar(' ');
 
     // print datum.    
     if(Time.Date<10)PrintChar('0');
@@ -335,7 +327,8 @@ void PrintDateTime(void)
 
     // print year.    
     Serial.print(Time.Year,DEC);
-    PrintComma();
+    PrintChar(',');
+    PrintChar(' ');
     
     // print uren.    
     if(Time.Hour<10)PrintChar('0');
@@ -369,7 +362,8 @@ void PrintWelcome(void)
     PrintDateTime();
     if(Time.DaylightSaving)
       {
-      PrintComma();
+      PrintChar(',');
+      PrintChar(' ');
       Serial.print(cmd2str(CMD_DLS_EVENT));
       }
     PrintTerm();

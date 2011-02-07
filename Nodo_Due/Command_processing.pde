@@ -1,5 +1,4 @@
   /**************************************************************************\
-
     This file is part of Nodo Due, © Copyright Paul Tonkes
 
     Nodo Due is free software: you can redistribute it and/or modify
@@ -14,34 +13,58 @@
 
     You should have received a copy of the GNU General Public License
     along with Nodo Due.  If not, see <http://www.gnu.org/licenses/>.
+  \**************************************************************************/
 
-\**************************************************************************/
+/*********************************************************************************************\
+ * Eenvoudige check of een Nodo commando is
+ * Test NIET op geldigheid van de parameters
+ \*********************************************************************************************/
+byte NodoType(unsigned long Content)
+  {
+  byte x;
 
+  // als het geen Nodo event of commando was dan zowieso geen commando
+  if(((Content>>28)&0xf)!=SIGNAL_TYPE_NODO)
+    return false;
+  
+  // als het voor een andere Nodo bestemd was Unit deel ongelijk aan eigen adres en ongelijk aan wildcard unit=0
+  x=(Content>>24)&0xf;
+  if(x!=S.Unit && x!=0)
+    return false;
+ 
+  x=(Content>>16)&0xff;
+  if(x<=RANGE_VALUE)
+    return false;
 
+  if(x>=RANGE_EVENT)
+    return NODO_TYPE_EVENT;
+
+  return NODO_TYPE_COMMAND;
+ 
+  }
+  
+  
+
+/*********************************************************************************************\
+ * Deze functie checked of de code die ontvangen is een geldige uitvoerbare opdracht is
+ * Als het een correct commando is wordt een false teruggegeven 
+ * in andere gevallen een foutcode
+ \*********************************************************************************************/
 #define ERROR_PAR1     1
 #define ERROR_PAR2     2
 #define ERROR_COMMAND  3
 
-/*********************************************************************************************\
- * Deze functie checked of de code die ontvangen is een uitvoerbare opdracht is/
- * Als het een correct commando is wordt een false teruggegeven 
- * in andere gevallen een foutcode
- \*********************************************************************************************/
-
 byte CommandError(unsigned long Content)
   {
+  byte x;
+  
+  if(NodoType(Content)!=NODO_TYPE_COMMAND)
+    return ERROR_COMMAND;
+  
   byte Command      = (Content>>16)&0xff;
   byte Par1         = (Content>>8)&0xff;
   byte Par2         = Content&0xff;
-
-  // als het een NewKAKU is, niet afkomstig van een Nodo, dan heeft checken geen zin
-  if((Content>>28)&0xf != EVENT_TYPE_NEWKAKU)
-    return false;
-
-  // als het geen Nodo event of commando was dan is checken zowieso niet nodig
-  if((Content>>28)&0xf != EVENT_TYPE_NODO)
-    return ERROR_COMMAND;
-
+  
   switch(Command)
     {
     //test; geen, altijd goed
@@ -267,7 +290,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     return false;
     }
   else // geen fouten, dan verwerken
-    {      
+    {        
     switch(Command)
       {   
       case CMD_SEND_KAKU:
@@ -429,8 +452,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;     
     
       case CMD_WIRED_PULLUP:
-        S.WiredInputPullUp[Par1-1]=Par2; // Par1 is de poort[1..4], Par2 is de waarde [0..1]
-        digitalWrite(14+WiredAnalogInputPin_1+Par1-1,S.WiredInputPullUp[Par1-1]==VALUE_ON?HIGH:LOW);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14
+        S.WiredInputPullUp[Par1-1]=Par2==VALUE_ON; // Par1 is de poort[1..4], Par2 is de waarde [0..1]
+        digitalWrite(14+WiredAnalogInputPin_1+Par1-1,S.WiredInputPullUp[Par1-1]==VALUE_ON);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14
         SaveSettings();
         break;
              
@@ -450,7 +473,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
       case CMD_WIRED_OUT:
         digitalWrite(WiredDigitalOutputPin_1+Par1-1,Par2==VALUE_ON);
-        WiredOutputStatus[Par1-1]=Par2&1;
+        WiredOutputStatus[Par1-1]=Par2==VALUE_ON;
+        PrintEvent(Content,VALUE_SOURCE_WIRED,VALUE_DIRECTION_OUTPUT);
         break;
                     
       case CMD_WIRED_SMITTTRIGGER:

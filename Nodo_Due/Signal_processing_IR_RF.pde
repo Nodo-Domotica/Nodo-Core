@@ -1,5 +1,4 @@
-/**************************************************************************\
-
+  /**************************************************************************\
     This file is part of Nodo Due, © Copyright Paul Tonkes
 
     Nodo Due is free software: you can redistribute it and/or modify
@@ -14,8 +13,7 @@
 
     You should have received a copy of the GNU General Public License
     along with Nodo Due.  If not, see <http://www.gnu.org/licenses/>.
-
-\**************************************************************************/
+  \**************************************************************************/
 
 // timings NODO signalen
 #define NODO_PULSE_0                    500   // PWM: Tijdsduur van de puls bij verzenden van een '0' in uSec.
@@ -60,7 +58,7 @@ unsigned long RawSignal_2_Nodo(void)
   // bitstream bevat nu alle bits die ontvangen zijn.
  //???  Serial.print("Received bitstream 66 =0x");Serial.print(bitstream,HEX);PrintTerm();//???
 
-  if(((bitstream>>28)&0xf) == EVENT_TYPE_NODO)// is het type-nibble uit het signaal gevuld met de aanduiding NODO ?  
+  if(((bitstream>>28)&0xf) == SIGNAL_TYPE_NODO)// is het type-nibble uit het signaal gevuld met de aanduiding NODO ?  
     return bitstream;
   else
     return 0L;  
@@ -163,7 +161,7 @@ static void IR38Khz_set()
  \*********************************************************************************************/
 
 void WaitFreeRF(int Window)
-  {
+  {///??? 'dode' wachttijd + verkorten window nog implementeren
   unsigned long WindowTimer, TimeOutTimer;  // meet of de time-out waarde gepasseerd is in milliseconden
 
   if(Simulate)return; 
@@ -383,7 +381,7 @@ boolean TransmitCode(unsigned long Event)
     }    
 
   // als het een Nodo bekend eventtype is, dan deze weer opnieuw opbouwen in de buffer
-  if(((Event>>28)&0xf) == EVENT_TYPE_NODO)
+  if(((Event>>28)&0xf) == SIGNAL_TYPE_NODO)
     {
     if(S.WaitFreeRFAction==VALUE_ALL || (EventlistDepth<=2 && S.WaitFreeRFAction==VALUE_SERIES))
        WaitFreeRF(S.WaitFreeRFWindow); // alleen WaitFreeRF als type bekend is, anders gaat SendSignal niet goed a.g.v. overschrijven buffer

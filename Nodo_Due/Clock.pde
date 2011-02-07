@@ -15,7 +15,7 @@ void SetDaylight()
   int DOY,index,now,up,down;
   int u0,u1,d0,d1;
   
-  DOY=((Time.Month-1)*304)/10+Time.Date;// schrikkeljaar berekening niet nodig, levert slechts naukeurigheidsafwijking van Ã©Ã©n minuut.
+  DOY=((Time.Month-1)*304)/10+Time.Date;// schrikkeljaar berekening niet nodig, levert slechts naukeurigheidsafwijking van één minuut.
   index=(DOY/10);
   now=Time.Hour*60+Time.Minutes;
 
@@ -81,7 +81,7 @@ void SimulateDay(byte days)
   PrintLine();
   for(int d=1;d<=days;d++)
     {
-    for(int m=0;m<=1439;m++)  // loop alle minuten van Ã©Ã©n etmaal door
+    for(int m=0;m<=1439;m++)  // loop alle minuten van één etmaal door
       {
       // Simuleer alle menuten van een etmaal
       if(Time.Minutes==60){Time.Minutes=0;Time.Hour++;}  // roll-over naar volgende uur
@@ -182,7 +182,7 @@ unsigned long ClockRead(void)
     GenerateEvent(CMD_OK,CMD_DLS_EVENT,S.DaylightSaving);
     }
       
-  return ((unsigned long)(EVENT_TYPE_NODO))<<28 |
+  return ((unsigned long)(SIGNAL_TYPE_NODO))<<28 |
          ((unsigned long)(S.Unit))<<24 | 
          ((unsigned long)(CMD_CLOCK_EVENT_ALL+Time.Day))<<16 | 
          ((unsigned long)(Time.Hour))<<8 | 

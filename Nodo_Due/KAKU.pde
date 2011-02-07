@@ -1,4 +1,4 @@
-/**************************************************************************\
+  /**************************************************************************\
     This file is part of Nodo Due, © Copyright Paul Tonkes, 
     Thanks to: Kenneth Rover
 
@@ -14,7 +14,7 @@
 
     You should have received a copy of the GNU General Public License
     along with Nodo Due.  If not, see <http://www.gnu.org/licenses/>.
-\**************************************************************************/
+  \**************************************************************************/
 
 /*
 
@@ -121,7 +121,7 @@ unsigned long RawSignal_2_KAKU(void)
   Unit =     (bitstream >>  4) & 0x0F;
   Command |= (bitstream >> 11) & 0x01;
 
-  return (command2event(CMD_KAKU, (Home << 4 | Unit), Command)&0x0fffffff) | (unsigned long)(EVENT_TYPE_NODO)<<28; // hoogte nible wissen en weer vullen met type NewKAKU
+  return SetEventType(command2event(CMD_KAKU, (Home << 4 | Unit), Command),SIGNAL_TYPE_NODO); // hoogte nible wissen en weer vullen met type NewKAKU
   }
 
 
@@ -253,7 +253,7 @@ unsigned long RawSignal_2_NewKAKU(void)
 
   if(bitstream>0x0ffff)
     // het is van een NewKAKU zender afkomstig
-    return (bitstream&0x0fffffff)|(unsigned long)(EVENT_TYPE_NEWKAKU)<<28; // hoogte nible wissen en weer vullen met type NewKAKU
+    return SetEventType(bitstream,SIGNAL_TYPE_NEWKAKU); // hoogte nible wissen en weer vullen met type NewKAKU
   else
     {
     // het is van een andere Nodo afkomstig. Maak er een Nodo commando van.

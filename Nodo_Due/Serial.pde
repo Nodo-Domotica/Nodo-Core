@@ -1,5 +1,4 @@
-/**************************************************************************\
-
+  /**************************************************************************\
     This file is part of Nodo Due, © Copyright Paul Tonkes.
 
     Nodo Due is free software: you can redistribute it and/or modify
@@ -14,14 +13,18 @@
 
     You should have received a copy of the GNU General Public License
     along with Nodo Due.  If not, see <http://www.gnu.org/licenses/>.
-
-\**************************************************************************/
+  \**************************************************************************/
 
 
 /*********************************************************************************************\
-* 
+* Deze functie dient alleen aangeroepen te worden als er tekens beschikbaar zijn op de
+* seriële poort. Deze functie haalt de tekens op, parsed commando en parameters er uit en 
+* maakt hier een Event van. Als het event een MMI afwijkend commando is of een commando
+* waarvan het niet wenselijk is dat dit via RF/IR ontvangen en verwerkt mag worden,
+* dan wordt deze tevens uitgevoerd. Alle overige events & commando's worden ter verdere
+* verwerking teruggestuurd.
 \*********************************************************************************************/
-#define SERIAL_BUFFER_SIZE        25  // kleine String waar de karakters van de seriele poort in worden opgeslagen. Max. grootte voor HEX getal. 
+#define SERIAL_BUFFER_SIZE        35  // kleine String waar de karakters van de seriele poort in worden opgeslagen.
 char SerialBuffer[SERIAL_BUFFER_SIZE];
 
 unsigned long Receive_Serial(void)
@@ -31,12 +34,17 @@ unsigned long Receive_Serial(void)
   byte Par1,Par2,Cmd;
   boolean error=false;
   
+  // Hier aangekomen staan er tekens klaar. Haal op van seriële poort en maak er een Event van.
   Event=SerialReadEvent();
+  //???Serial.print("Event=0x");Serial.print(Event,HEX);PrintTerm();
   
-  if(CommandError(Event))// het is geen geldig commando, maar een ander type event
-      return Event;
+  // kijk of het een Nodo-event is.
+  if(((Event>>28)&0xf)!=SIGNAL_TYPE_NODO)
+     return Event; // verdere uitvoer hoeft niet hier plaats te vinden.
   else
     { // het was een geldig uitvoerbaar commando. 
+    //??? Serial.print("Trace-1");PrintTerm();
+
     Cmd=(Event>>16)&0xff;
     Par1=(Event>>8)&0xff;
     Par2=(Event)&0xff;
@@ -54,24 +62,23 @@ unsigned long Receive_Serial(void)
         break;
      
       case CMD_EVENTLIST_WRITE:
-        // haal event encommando op
+        // haal event en actie op
         Event=SerialReadEvent();
-        Action=SerialReadEvent();
-
-        if(Event==0 || ((Event>>28)&0xf==EVENT_TYPE_NODO && (error=CommandError(Event))))
+        if(!Event)
           {
           GenerateEvent(CMD_ERROR,CMD_EVENTLIST_WRITE,1);
           break;
           }
           
-        if(Action==0 || ((Action>>28)&0xf==EVENT_TYPE_NODO && (error=CommandError(Action))))
+        Action=SerialReadEvent();
+        if(!Event)
           {
           GenerateEvent(CMD_ERROR,CMD_EVENTLIST_WRITE,2);
           break;
           }
                   
         // schrijf weg in eventlist
-        if(!Eventlist_Write(0,Event,Action)) // Unit er uit filteren, anders na wijzigen unit geen geldige eventlist.
+        if(!Eventlist_Write(0,Event,Action)) // Unit er uit filteren, anders na wijzigen unit geen geldige eventlist.???
           {
           error=true;
           Par1=CMD_EVENTLIST_WRITE;
@@ -92,7 +99,7 @@ unsigned long Receive_Serial(void)
         break;        
     
       case CMD_DIVERT:   
-        Action=(SerialReadEvent()&0x00ffffff) | ((unsigned long)(Par1))<<24 | ((unsigned long)(EVENT_TYPE_NODO))<<28; // Event_1 is het te forwarden event voorzien van nieuwe bestemming unit
+        Action=(SerialReadEvent()&0x00ffffff) | ((unsigned long)(Par1))<<24 | ((unsigned long)(SIGNAL_TYPE_NODO))<<28; // Event_1 is het te forwarden event voorzien van nieuwe bestemming unit
         TransmitCode(Action);
         break;        
   
@@ -157,94 +164,114 @@ unsigned long Receive_Serial(void)
 
 
 /*********************************************************************************************\
-* 
+* Hier aangekomen staan er tekens klaar op de Seriële poort
+* Haal deze op en stel een Event samen. Sommige commando's hebben (helaas) een afwijkende MMI 
+* Of behandeling. De geldigheid van het commando wordt eveneens getoetst.
 \*********************************************************************************************/
 unsigned long SerialReadEvent()
   {
   unsigned long Event;
   byte x,y,z;
   int Par1,Par2;
-
-  Par1=0;
-  Par2=0;
   
   // haal 1e blok gegevens op.
   x=SerialReadBlock(SerialBuffer);
+  if(SerialBuffer[0]==0)
+    return 0L; // als de string leeg is (b.v. als er wel tekens klaarstonden maar deze niet geldig waren
 
   // is het gewoon een getal dat als event moet worden verwerkt? Deze zijn altijd groter dan 255 want 0..255 zijn commando's
   Event=str2val(SerialBuffer);
-  if(Event>0xff)return Event; // alle waarden groter dan 255 mogen gelijk verwerkt worden als een event.
+  if(Event>0xff)
+    return SetEventType(Event,SIGNAL_TYPE_UNKNOWN); // alle waarden groter dan 255 mogen gelijk verwerkt worden als een event.
 
-  if(Event==0)
-    y=str2cmd(SerialBuffer);  // invoer was geen getal. Haal uit de invoer de code van het tekst commando
-  else
-    y=Event; 
+  y=str2cmd(SerialBuffer);  // invoer was geen getal. Haal uit de invoer de code van het tekst commando
+  if(y)
+    {
+    Par1=0;
+    Par2=0;
 
-//???@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-  if(y==CMD_KAKU_NEW)
-    {// de string is een NewKAKU event. Haal bij het commando behorende parameters op.
-    x=SerialReadBlock(SerialBuffer);
-    if(x)
-      {
-      Event=(str2val(SerialBuffer)&0x0fffffff)|(unsigned long)(EVENT_TYPE_NEWKAKU)<<28; //  // Niet Par1 want NewKAKU kan als enige op de Par1 plaats een 28-bit waarde hebben. Hoogste nible wissen en weer vullen met type NewKAKU
-      if(x)
-        {
-        x=SerialReadBlock(SerialBuffer);
-        Event|=((str2val(SerialBuffer)==VALUE_ON)<<4); // Stop on/off commando op juiste plek in NewKAKU code
-        }
-      }
-    return Event;
-    }
-
-//???@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-  if(y==CMD_KAKU || y==CMD_SEND_KAKU)
-    {// de string is een KAKU commando. Haal bij het commando behorende parameters op.
-    if(x)
-      {
+    // NewKAKU events hebben een afwijkende MMI voor invoer. Par2 kan nl. een 28-bit hex-code zijn.
+    if(y==CMD_KAKU_NEW)
+      {// de string is een NewKAKU event. Haal bij het commando behorende parameters op.
       x=SerialReadBlock(SerialBuffer);
-      z=0;
-      Par1=HA2address(SerialBuffer,&z); // Parameter-1 bevat [A1..P16]. Omzetten naar absolute waarde. z=groep commando
       if(x)
         {
-        x=SerialReadBlock(SerialBuffer);
-        Par2=(str2val(SerialBuffer)==VALUE_ON) | (z<<1); // Parameter-2 bevat [On,Off]. Omzetten naar 1,0. tevens op bit-2 het groepcommando zetten.
+        // er kunnen twee situaties voor doen: een NewKAKU volgens lange HEX-codering of volgens reguliere Nodo codering
+        Event=str2val(SerialBuffer); // bevat waarde op de MMI positie van Par1
+        if(Event>255)
+          {
+          Event=(Event&0x0fffffff) | (((unsigned long)SIGNAL_TYPE_NEWKAKU)<<28); //  // Niet Par1 want NewKAKU kan als enige op de Par1 plaats een 28-bit waarde hebben. Hoogste nible wissen en weer vullen met type NewKAKU        
+          if(x)
+            {
+            x=SerialReadBlock(SerialBuffer);
+            Event|=((str2val(SerialBuffer)==VALUE_ON)<<4); // Stop on/off commando op juiste plek in NewKAKU code
+            return Event;
+            }
+          }
+        else
+          {
+          Par1=Event;        
+          if(x)
+            {
+            x=SerialReadBlock(SerialBuffer);
+            Par2=str2val(SerialBuffer); // Parameter-2 bevat [0..255,On,Off].
+            }
+          }
         }
       }
-    Event=command2event(y,Par1,Par2);
-    return Event;
-    }
   
-  if(y>RANGE_VALUE && y<=COMMAND_MAX)
-    {// de string is een bestaand commando of event. Haal bij het commando behorende parameters op.
-    if(x)
-      {
-      x=SerialReadBlock(SerialBuffer);
-      Par1=str2val(SerialBuffer);
+    // KAKU events hebben een afwijkende MMI voor invoer. Par1 kan nl. A0..P16 bevatten.
+    if(y==CMD_KAKU || y==CMD_SEND_KAKU)
+      {// de string is een KAKU commando. Haal bij het commando behorende parameters op.
       if(x)
         {
         x=SerialReadBlock(SerialBuffer);
-        Par2=str2val(SerialBuffer);
+        z=0;
+        Par1=HA2address(SerialBuffer,&z); // Parameter-1 bevat [A1..P16]. Omzetten naar absolute waarde. z=groep commando
+        if(x)
+          {
+          x=SerialReadBlock(SerialBuffer);
+          Par2=(str2val(SerialBuffer)==VALUE_ON) | (z<<1); // Parameter-2 bevat [On,Off]. Omzetten naar 1,0. tevens op bit-2 het groepcommando zetten.
+          }
+        }
+      }
+  
+    if(y>RANGE_VALUE && y<=COMMAND_MAX)
+      {// de string valt in de reeks van een commando of event. Haal bij het commando behorende parameters op.
+      if(x)
+        {
+        x=SerialReadBlock(SerialBuffer);
+        Par1=str2val(SerialBuffer);
+        if(x)
+          {
+          x=SerialReadBlock(SerialBuffer);
+          Par2=str2val(SerialBuffer);
+          }
         }
       }
     Event=command2event(y,Par1,Par2);
-    x=CommandError(Event);
-    if(x)
-      { // het was geen geldig uitvoerbaar commando  
-      if(y==0)
-        GenerateEvent(CMD_ERROR,VALUE_COMMAND,0);
-      else
-        GenerateEvent(CMD_ERROR,y,x);
-      return 0L;
-      }
-    return Event;
     }
 
-  if(strlen(SerialBuffer)!=0)
-    PrintText(Text_06,true);
+  // op dit punt kan het opgehaalde event + parameters zowel een Nodo-event zijn als een Nodo-commando
+
+  // kijk of het een Nodo-event is.
+  if(((Event>>28)&0xf)==SIGNAL_TYPE_NODO)
+     return Event; // verdere check hoeft niet plaats te vinden.
+
+  // Als het een commando is, dan checken of er geldige parameters zijn opgegeven
+  x=CommandError(Event);
+  if(!x)
+    return Event;// commando en parameters zijn O.K.
+  else
+    {
+    if(y==0) // commando bestaat niet 
+      GenerateEvent(CMD_ERROR,VALUE_COMMAND,0);
+    else // commando bestaat maar parameters niet correct
+      GenerateEvent(CMD_ERROR,y,x);
+    }    
   return 0L;
   }
+   
    
 /**********************************************************************************************\
  * Haalt uit een seriële reeks met formaat 'aaaa,bbbb,cccc,dddd;' de blokken tekst 
@@ -268,7 +295,7 @@ byte SerialReadBlock(char *SerialString)
     if(Serial.available()>0)
       {
       SerialByte=Serial.read();
-      if(StringLength==0 && SerialByte==32)continue; // voorloop spaties overslaan
+      if(StringLength==0 && (SerialByte==32 || SerialByte==','))continue; // voorloop spaties overslaan
       if(SerialByte=='(' || SerialByte==')')continue; // deze tekens zijn comment.
       if(SerialByte==';' || SerialByte==',' || SerialByte=='\n' || SerialByte==32)// tekens die parameters of commando's van elkaar onderscheiden
         x=SerialByte;
@@ -282,7 +309,7 @@ byte SerialReadBlock(char *SerialString)
   if(x==',' || x==32)return true;// er komen nog meer blokken
   return false;// afgesloten met '\n' of een ';', dus commando is compleet
   }
-  
+
 #define XON                       0x11
 #define XOFF                      0x13
 

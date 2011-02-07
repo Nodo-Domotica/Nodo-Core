@@ -1,12 +1,8 @@
 /*
-
+                                                    
 ToDo:
-- WiredPullup wordt nog niet goed weergegeven. Par2 valt weg.
-- Alle settings even nalopen op Par1 en Par 2 juist vullen en verwerken.
-- ontvangen Kaku en NewKAKU door een andere Nodo testen
-- Issue 186:   Onderdrukken Events die overeenkomen met Nodo commando's
-- NewKAKU moet nog ingevoerd kunnen worden via serial t.b.v. opnemen in EventList
-
+- fout commando met parameters geeft drie foutmeldingen.
+- komt nog er wel een foutmelding als eventlist vol is?
 */
 
 /**************************************************************************************************************************\
@@ -18,7 +14,7 @@ Opgeloste issues:
 - Issue 164:	HEX-code ontvangen IR en verwerken in Eventlist
 - Issue 165:	KAKU Groep commando regressie bug.
 - Issue 166:	WaitFreeRF gaat niet goed bij 'Series' en ontvangst van een SendKaku via IR.
-- Issue 168:	ClockAll event in de eventlist geeft een match bij UserEvent
+- Issue 168:	ClockAll event in de erventlist geeft een match bij UserEvent
 - Issue 170:	datum instellen met maand 0 wordt geaccepteerd
 - Issue 171:	WaitFreeRF All regressie.
 - Issue 175:	VariableVariable geeft foutmelding in Par2
@@ -31,20 +27,24 @@ Nieuwe functionaliteit:
 - Issue 173:	GetLM335 => Opgelost met WiredRange.
 - Issue 174:	Gebruik van variabele in UserEvent
 
-Overige aanpassingen:
-- Home adres is komen te vervallen.
+Overige functionele aanpassingen:
+- Home adres is komen te vervallen;
 - SendNewKAKU: Dimniveau aanpassing. Opties voor Par2 zijn [On,Off,1..16] Dim niveaus dus ZONDER het woord 'dim'. Hoogste dimniveau is nu ook bereikbaar.
-- Aanpassing pause bij herhaald sound 'ding-dong' en de 'Whoop' is nu een 'slow-whoop' 
-- '(WildCard All, All); (Sound 0, 0)' niet meer default in de eventlist
-- Nieuwe setting 'Confirm'
-- Aanpassing commando 'Delay': Kan worden uitgezet en voorbijkomende event worden in queue gezet voor latere verwerking.
-- kleine aanpassingen in de MMI (Geen spatie meer na een komma)
-- Nesting error wordt nu als een error-event verzonden
+- Aanpassing pause bij herhaald sound 'ding-dong' en de 'Whoop' is nu een 'slow-whoop';
+- '(WildCard All, All); (Sound 0, 0)' niet meer default in de eventlist;
+- Nieuwe setting 'Confirm';
+- Aanpassing commando 'Delay': Kan worden uitgezet en voorbijkomende event worden in queue gezet voor latere verwerking;
+- kleine aanpassingen in de MMI (Geen spatie meer na een komma);
+- Nesting error wordt nu als een error-event verzonden.
+- dubbele regeleinden aan einde regel in EventList verwijderd;
+- OUTPUT melding verschijnt bij uitvoer van een wired out.
 
 Onder de motorkap:
 - Timers nu in een int i.p.v. unsigned long en aanpassing aflopen timers => geheugenbesparing
 - EventPart functie laten vervallen en vervangen door directe shift/and op events => geheugenbesparing
 - EventType functie vervallen. Event type wordt nu onderdeel van het Event op de plaats waar het Home adres van de Nodo stond.
+- Trace settings anders opgelost.
+
 \**************************************************************************************************************************/
 
 
@@ -54,7 +54,6 @@ Onder de motorkap:
   Hardware            : - Arduino met een ATMeg328 processor @16Mhz.
                         - Hardware en Arduino penbezetting volgens schema Nodo Due Rev.003
  ********************************************************************************************************
-
  * Arduino project "Nodo Due" © Copyright 2010 Paul Tonkes
  *
  * This program is free software: you can redistribute it and/or modify
@@ -80,7 +79,6 @@ Onder de motorkap:
  ********************************************************************************************************/
 
 #define VERSION                  115 // Nodo Version nummer
-
 
 #include "pins_arduino.h"
 #include "ctype.h"
@@ -359,10 +357,12 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define UNIT_MAX                    15 
 #define MACRO_EXECUTION_DEPTH       10 // maximale nesting van macro's.
 
-#define EVENT_TYPE_UNKNOWN           0
-#define EVENT_TYPE_OTHERUNIT         1
-#define EVENT_TYPE_NODO              2
-#define EVENT_TYPE_NEWKAKU           3
+#define SIGNAL_TYPE_UNKNOWN          0
+#define SIGNAL_TYPE_NODO             1
+#define SIGNAL_TYPE_NEWKAKU          2
+
+#define NODO_TYPE_EVENT              1
+#define NODO_TYPE_COMMAND            2
 
 #define BAUD                     19200 // Baudrate voor seriële communicatie.
 #define SERIAL_TERMINATOR_1       0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>, default voor EventGhost
@@ -384,7 +384,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define DELAY_IR                  20 // milliseconden wachttijd tussen het verzenden van codes binnen één IR reeks
 #define MIN_PULSE_LENGTH         100 // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define MIN_RAW_PULSES            16 // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
-#define SHARP_TIME              1500 // tijd in milliseconden dat de nodo gefocust moet blijven luisteren naar één dezelfde poort na binnenkomst van een signaal
+#define SHARP_TIME               500 // tijd in milliseconden dat de nodo gefocust moet blijven luisteren naar één dezelfde poort na binnenkomst van een signaal
 
 //****************************************************************************************************************************************
 
@@ -410,7 +410,6 @@ struct Settings
 // Timers voor de gebruiker
 #define TIMER_MAX              15      // aantal beschikbare timers voor de user, gerekend vanaf 0 t/m 14
 unsigned long UserTimer[TIMER_MAX];
-
 
 // timers voor verwerking op intervals
 #define Loop_INTERVAL_1          500  // tijdsinterval in ms. voor achtergrondtaken.
