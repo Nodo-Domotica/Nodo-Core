@@ -53,17 +53,17 @@ public class NodoSettingRetriever {
             if ( range.length > 0 ) {
                 for (int i = 0; i < range.length; i++) {
                     comm.send(NodoCommand.getStatusCommand(ci, range[i]));
-                    comm.waitCommand(200);
+                    comm.waitCommand();
                 }
             } else {
                 comm.send(NodoCommand.getStatusCommand(ci));
-                comm.waitCommand(200);
+                comm.waitCommand();
             }
         }
         // Need to sleep and wait for the response, since the Nodo cannot
         // handle all the commands at once. Waitcommand does not help, due
         // to the busy indicator can be reset by an earlier command.
-        comm.waitCommand(2000);
+        comm.waitCommand(500);
         comm.removeOutputListener(listener);
         return builder.toString();
     }
@@ -85,6 +85,9 @@ public class NodoSettingRetriever {
 	    Matcher data = elementPattern.matcher(matcher.group());
 	    if (!data.matches()) {
 		System.out.println("Oeps, no element match on '"+matcher.group()+"'...");
+            for (char c : matcher.group().toCharArray()) {
+                System.out.println(" " + ((int)c));
+            }
 		continue;
 	    }
             CommandInfo info = map.get(data.group(1));
@@ -133,7 +136,7 @@ public class NodoSettingRetriever {
                 NodoCommand nc = new NodoCommand(cmd, nodoSetting.getAttributeData1(), nodoSetting.getAttributeData2());
                 nc.makeDistributed();
                 comm.send(nc);
-                comm.waitCommand(150, 500);
+                comm.waitCommand(50, 500);
             }
         }
     }

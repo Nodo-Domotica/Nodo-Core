@@ -163,6 +163,8 @@ public class SettingsPanel extends NodoBasePanel {
          * @return A Collection of NodoSetting objects
          */
         @Override protected Object doInBackground() {
+            download.setEnabled(false);
+            upload.setEnabled(false);
             Collection<CommandInfo> cis = CommandLoader.getActions(CommandType.SETTING);
             return NodoSettingRetriever.getSettings(cis);
         }
@@ -172,6 +174,8 @@ public class SettingsPanel extends NodoBasePanel {
          * @param result The data returned by doInBackground
          */
         @Override protected void succeeded(Object result) {
+            download.setEnabled(true);
+            upload.setEnabled(true);
             Collection<NodoSetting> settings = (Collection<NodoSetting>) result;
             if ( settings == null ) {
                 getListener().showStatusMessage(getResourceString("no.connection"));
@@ -260,7 +264,11 @@ public class SettingsPanel extends NodoBasePanel {
                     }
                 }
                 setCursor(new Cursor(Cursor.WAIT_CURSOR));
+                download.setEnabled(false);
+                upload.setEnabled(false);
                 NodoSettingRetriever.storeSettings(results);
+                download.setEnabled(true);
+                upload.setEnabled(true);
                 setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
             }
         }

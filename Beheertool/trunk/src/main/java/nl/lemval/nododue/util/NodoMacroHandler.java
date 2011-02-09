@@ -2,7 +2,6 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package nl.lemval.nododue.util;
 
 import java.util.Collection;
@@ -31,20 +30,23 @@ public class NodoMacroHandler {
     }
 
     private String query(CommandInfo cmd) {
-        return execute(new NodoCommand[] {new NodoCommand(cmd, null, null)}, true);
+        return execute(new NodoCommand[]{new NodoCommand(cmd, null, null)}, true);
     }
 
     private String execute(NodoCommand[] commands, boolean read) {
         final StringBuilder builder = new StringBuilder();
         OutputEventListener listener = new OutputEventListener() {
+
             public void handleOutputLine(String message) {
                 builder.append(message);
             }
-            public void handleClear() {}
+
+            public void handleClear() {
+            }
         };
         SerialCommunicator comm =
-            NodoDueManager.getApplication().getSerialCommunicator();
-        if ( ! comm.isListening() ) {
+                NodoDueManager.getApplication().getSerialCommunicator();
+        if (!comm.isListening()) {
             return null;
         }
         comm.addOutputListener(listener);
@@ -52,16 +54,16 @@ public class NodoMacroHandler {
             comm.send(commands[i]);
             comm.waitCommand(100);
         }
-	while ( read && builder.toString().endsWith("****") == false ) {
-	    comm.waitCommand(1000);
-	}
+        while (read && builder.toString().endsWith("****") == false) {
+            comm.waitCommand(1000);
+        }
         comm.removeOutputListener(listener);
         return builder.toString();
     }
 
     private NodoMacroList parseSettings(String result, Collection<CommandInfo> cis) {
         NodoMacroList list = new NodoMacroList();
-        if ( result == null ) {
+        if (result == null) {
             return list;
         }
 
@@ -72,7 +74,7 @@ public class NodoMacroHandler {
         Set<Device> applicances = Options.getInstance().getApplicances();
         HashMap<String, Device> dev = new HashMap<String, Device>();
         for (Device device : applicances) {
-            if ( device.isActive() ) {
+            if (device.isActive()) {
                 dev.put(device.getSignal(), device);
             }
         }
@@ -81,8 +83,8 @@ public class NodoMacroHandler {
         Pattern pattern = Pattern.compile("([0-9]+): \\(?([^\\)]+)\\)?; \\(?([^\\)]+)\\)?");
         Matcher matcher = pattern.matcher(result);
 
-        while ( matcher.find() ) {
-            int index = Integer.parseInt( matcher.group(1) );
+        while (matcher.find()) {
+            int index = Integer.parseInt(matcher.group(1));
             try {
                 list.add(index, NodoMacro.loadFrom(map, dev, matcher.group(2), matcher.group(3)));
             } catch (Exception e) {
@@ -100,17 +102,17 @@ public class NodoMacroHandler {
      * @return
      */
     public Boolean writeList(NodoMacroList list) {
-        NodoCommand[] commands = new NodoCommand[3*list.size()+1];
+        NodoCommand[] commands = new NodoCommand[3 * list.size() + 1];
         commands[0] = new NodoCommand(CommandLoader.get(CommandInfo.Name.EventlistErase), null, null);
 
         CommandInfo write = CommandLoader.get(CommandInfo.Name.EventlistWrite);
         NodoCommand writeCmd = new NodoCommand(write, null, null);
         for (int i = 0; i < list.size(); i++) {
             final NodoMacro listItem = list.get(i);
-            if ( listItem != null ) {
-                commands[3*i+1] = writeCmd;
-                commands[3*i+2] = listItem.getEvent();
-                commands[3*i+3] = listItem.getAction();
+            if (listItem != null) {
+                commands[3 * i + 1] = writeCmd;
+                commands[3 * i + 2] = listItem.getEvent();
+                commands[3 * i + 3] = listItem.getAction();
             }
         }
 

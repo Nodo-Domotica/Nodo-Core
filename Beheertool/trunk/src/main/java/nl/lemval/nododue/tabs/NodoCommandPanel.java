@@ -8,9 +8,7 @@
  *
  * Created on 21-mrt-2010, 19:10:28
  */
-
 package nl.lemval.nododue.tabs;
-
 
 import java.awt.GridLayout;
 import java.awt.event.KeyEvent;
@@ -32,9 +30,8 @@ import org.jdesktop.application.Action;
 public class NodoCommandPanel extends NodoBasePanel {
 
     private EventActionPanel actionPanel;
-
     public static final String NEWLINE = System.getProperty("line.separator");
-    
+
     /** Creates new form NodoCommandPanel */
     public NodoCommandPanel(NodoDueManagerView view) {
         super(view);
@@ -176,7 +173,7 @@ public class NodoCommandPanel extends NodoBasePanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void rawInputCheck(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_rawInputCheck
-	if ( evt.getKeyCode() == KeyEvent.VK_ENTER ) {
+        if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
             sendCommand(rawInput.getText());
             evt.consume();
             rawInput.setText(null);
@@ -185,48 +182,51 @@ public class NodoCommandPanel extends NodoBasePanel {
 
     public void sendCommand(String message) {
         SerialCommunicator comm =
-            NodoDueManager.getApplication().getSerialCommunicator();
+                NodoDueManager.getApplication().getSerialCommunicator();
         comm.setMessageListener(getListener());
-	commandOutput.setText(null);
-	OutputEventListener lix = null;
-	comm.addOutputListener(lix = new OutputEventListener() {
-	    public void handleOutputLine(String message) {
-		commandOutput.append(message);
-		commandOutput.append(NEWLINE);
-	    }
-	    public void handleClear() {
-		commandOutput.setText(null);
-	    }
-	});
+        commandOutput.setText(null);
+        OutputEventListener lix = null;
+        comm.addOutputListener(lix = new OutputEventListener() {
+
+            public void handleOutputLine(String message) {
+                commandOutput.append(message);
+                commandOutput.append(NEWLINE);
+            }
+
+            public void handleClear() {
+                commandOutput.setText(null);
+            }
+        });
         comm.sendRaw(message);
-        comm.waitCommand(1000);
-	comm.removeOutputListener(lix);
+        comm.waitCommand(500);
+        comm.removeOutputListener(lix);
     }
 
     @Action
     public void executeNodoCommand() {
         NodoCommand cmd = actionPanel.getSelectedItem();
-        if ( cmd != null ) {
+        if (cmd != null) {
             SerialCommunicator comm =
-                NodoDueManager.getApplication().getSerialCommunicator();
+                    NodoDueManager.getApplication().getSerialCommunicator();
             comm.setMessageListener(getListener());
             commandOutput.setText(null);
             OutputEventListener lix = null;
             comm.addOutputListener(lix = new OutputEventListener() {
+
                 public void handleOutputLine(String message) {
                     commandOutput.append(message);
                     commandOutput.append(NEWLINE);
                 }
+
                 public void handleClear() {
                     commandOutput.setText(null);
                 }
             });
             comm.send(cmd);
-            comm.waitCommand(1000);
+            comm.waitCommand(500);
             comm.removeOutputListener(lix);
         }
     }
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextArea commandOutput;
     private javax.swing.JLabel commandOutputLabel;
@@ -237,5 +237,4 @@ public class NodoCommandPanel extends NodoBasePanel {
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTextField rawInput;
     // End of variables declaration//GEN-END:variables
-
 }

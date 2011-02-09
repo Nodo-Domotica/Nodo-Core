@@ -52,25 +52,25 @@ public class MonitorPanel extends NodoBasePanel {
     private ComboBoxModel typeSelectionModel;
 
     public MonitorPanel(NodoDueManagerView view) {
-	super(view);
+        super(view);
 
         Object[] items = Options.getInstance().getInputRanges();
         typeSelectionModel = new DefaultComboBoxModel(items);
 
         initComponents();
 
-	rrSlider.setValue(20);
-	refreshRateValueChanged(null);
+        rrSlider.setValue(20);
+        refreshRateValueChanged(null);
 
-	if (NodoDueManager.isLinux()) {
-	    rrSlider.setPaintLabels(true);
-	    marginSlider.setPaintLabels(true);
-	    thresholdSlider.setPaintLabels(true);
-	}
-	thresholdSlider.setEnabled(false);
-	thresholdValue.setEnabled(false);
-	marginSlider.setEnabled(false);
-	marginValue.setEnabled(false);
+        if (NodoDueManager.isLinux()) {
+            rrSlider.setPaintLabels(true);
+            marginSlider.setPaintLabels(true);
+            thresholdSlider.setPaintLabels(true);
+        }
+        thresholdSlider.setEnabled(false);
+        thresholdValue.setEnabled(false);
+        marginSlider.setEnabled(false);
+        marginValue.setEnabled(false);
         typeSelection.setEnabled(false);
 
         updateTooltips();
@@ -80,7 +80,7 @@ public class MonitorPanel extends NodoBasePanel {
         allWires.get(2, Type.Input).setSignalType(ir);
         allWires.get(3, Type.Input).setSignalType(ir);
         allWires.get(4, Type.Input).setSignalType(ir);
-}
+    }
 
     /** This method is called from within the constructor to
      * initialize the form.
@@ -509,249 +509,252 @@ public class MonitorPanel extends NodoBasePanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void inputWireMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_inputWireMouseClicked
-	changeGraph(evt.getComponent().getName(), Type.Input);
+        changeGraph(evt.getComponent().getName(), Type.Input);
     }//GEN-LAST:event_inputWireMouseClicked
 
     private void refreshRateValueChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_refreshRateValueChanged
-	if (rrSlider.getValueIsAdjusting() == false) {
-	    int value = rrSlider.getValue();
-	    double res = value / 2.0;
-	    if (res >= 10) {
-		rrValue.setText(String.valueOf((int) res));
-	    } else {
-		rrValue.setText(String.valueOf(res));
-	    }
-	    refreshTickAction();
-	}
+        if (rrSlider.getValueIsAdjusting() == false) {
+            int value = rrSlider.getValue();
+            double res = value / 2.0;
+            if (res >= 10) {
+                rrValue.setText(String.valueOf((int) res));
+            } else {
+                rrValue.setText(String.valueOf(res));
+            }
+            refreshTickAction();
+        }
     }//GEN-LAST:event_refreshRateValueChanged
 
     private void triggerValueChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_triggerValueChanged
-	if (thresholdSlider.getValueIsAdjusting() == false) {
+        if (thresholdSlider.getValueIsAdjusting() == false) {
             updateTooltips();
-	    updateThreshold();
-	}
+            updateThreshold();
+        }
     }//GEN-LAST:event_triggerValueChanged
 
     private void marginValueChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_marginValueChanged
-	if (marginSlider.getValueIsAdjusting() == false) {
+        if (marginSlider.getValueIsAdjusting() == false) {
             updateTooltips();
-	    updateMargin();
-	}
+            updateMargin();
+        }
     }//GEN-LAST:event_marginValueChanged
 
     private void refreshRateNumberChanged(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_refreshRateNumberChanged
-	String txt = rrValue.getText();
-	int value = rrSlider.getValue();
-	try {
-	    value = (int) Double.parseDouble(txt) * 2;
-	    if (value > rrSlider.getMaximum()) {
-		value = rrSlider.getMaximum();
-	    }
-	    if (value < rrSlider.getMinimum()) {
-		value = rrSlider.getMinimum();
-	    }
-	} catch (NumberFormatException e) {
-	}
-	rrSlider.setValue(value);
-	// Former triggers the actual action
+        String txt = rrValue.getText();
+        int value = rrSlider.getValue();
+        try {
+            value = (int) Double.parseDouble(txt) * 2;
+            if (value > rrSlider.getMaximum()) {
+                value = rrSlider.getMaximum();
+            }
+            if (value < rrSlider.getMinimum()) {
+                value = rrSlider.getMinimum();
+            }
+        } catch (NumberFormatException e) {
+        }
+        rrSlider.setValue(value);
+        // Former triggers the actual action
     }//GEN-LAST:event_refreshRateNumberChanged
 
     private void triggerNumberChanged(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_triggerNumberChanged
-	String txt = thresholdValue.getText();
-	int value = thresholdSlider.getValue();
-	try {
-	    value = Integer.parseInt(txt);
-	    if (value > thresholdSlider.getMaximum()) {
-		value = thresholdSlider.getMaximum();
-	    }
-	    if (value < thresholdSlider.getMinimum()) {
-		value = thresholdSlider.getMinimum();
-	    }
-	} catch (NumberFormatException e) {
-	}
-	thresholdSlider.setValue(value);
-	// Former triggers the actual action
+        String txt = thresholdValue.getText();
+        int value = thresholdSlider.getValue();
+        try {
+            value = Integer.parseInt(txt);
+            if (value > thresholdSlider.getMaximum()) {
+                value = thresholdSlider.getMaximum();
+            }
+            if (value < thresholdSlider.getMinimum()) {
+                value = thresholdSlider.getMinimum();
+            }
+        } catch (NumberFormatException e) {
+        }
+        thresholdSlider.setValue(value);
+        // Former triggers the actual action
     }//GEN-LAST:event_triggerNumberChanged
 
     private void marginNumberChanged(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_marginNumberChanged
-	String txt = marginValue.getText();
-	int value = marginSlider.getValue();
-	try {
-	    value = Integer.parseInt(txt);
-	    if (value > marginSlider.getMaximum()) {
-		value = marginSlider.getMaximum();
-	    }
-	    if (value < marginSlider.getMinimum()) {
-		value = marginSlider.getMinimum();
-	    }
-	} catch (NumberFormatException e) {
-	}
-	marginSlider.setValue(value);
-	// Former triggers the actual action
+        String txt = marginValue.getText();
+        int value = marginSlider.getValue();
+        try {
+            value = Integer.parseInt(txt);
+            if (value > marginSlider.getMaximum()) {
+                value = marginSlider.getMaximum();
+            }
+            if (value < marginSlider.getMinimum()) {
+                value = marginSlider.getMinimum();
+            }
+        } catch (NumberFormatException e) {
+        }
+        marginSlider.setValue(value);
+        // Former triggers the actual action
     }//GEN-LAST:event_marginNumberChanged
 
     private void outputWireMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_outputWireMouseClicked
-	changeGraph(evt.getComponent().getName(), Type.Output);
+        changeGraph(evt.getComponent().getName(), Type.Output);
     }//GEN-LAST:event_outputWireMouseClicked
 
     private void typeSelectionItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_typeSelectionItemStateChanged
-        if ( selectedWire != null ) {
+        if (selectedWire != null) {
             selectedWire.setSignalType((InputRange) typeSelection.getSelectedItem());
         }
         updateTooltips();
     }//GEN-LAST:event_typeSelectionItemStateChanged
 
     private JPanel createImagePanel() {
-	return new ArduinoImagePanel();
+        return new ArduinoImagePanel();
     }
 
     private void changeGraph(String cName, Type type) {
-	Type prev = (selectedWire == null ? null : selectedWire.getType());
+        Type prev = (selectedWire == null ? null : selectedWire.getType());
 
-	int idx = Integer.parseInt(cName.substring(cName.length() - 1));
-	selectedWire = allWires.get(idx, type);
-	Type now = (selectedWire == null ? null : selectedWire.getType());
+        int idx = Integer.parseInt(cName.substring(cName.length() - 1));
+        selectedWire = allWires.get(idx, type);
+        Type now = (selectedWire == null ? null : selectedWire.getType());
 
-	if (now.equals(prev) == false) {
-	    updateGraphState();
-	}
+        if (now.equals(prev) == false) {
+            updateGraphState();
+        }
 
-	if (now == Type.Output) {
-	    graphTitle.setText(getResourceString("graph.title.outputMessage", idx));
-	} else {
-	    graphTitle.setText(getResourceString("graph.title.inputMessage", idx));
-            if ( selectedWire != null && selectedWire.getSignalType() != null ) {
+        if (now == Type.Output) {
+            graphTitle.setText(getResourceString("graph.title.outputMessage", idx));
+        } else {
+            graphTitle.setText(getResourceString("graph.title.inputMessage", idx));
+            if (selectedWire != null && selectedWire.getSignalType() != null) {
                 typeSelection.setSelectedItem(selectedWire.getSignalType());
             }
-	}
+        }
 
-	updateScreen();
+        updateScreen();
     }
 
     private void updateGraphState() {
-	Type state = (selectedWire == null ? null : selectedWire.getType());
+        Type state = (selectedWire == null ? null : selectedWire.getType());
 
-	if (state==Type.Input) {
-	    wireCheck.setText(getResourceString("graph.wire.input"));
-	    thresholdSlider.setEnabled(true);
-	    thresholdValue.setEnabled(true);
-	    marginSlider.setEnabled(true);
-	    marginValue.setEnabled(true);
+        if (state == Type.Input) {
+            wireCheck.setText(getResourceString("graph.wire.input"));
+            thresholdSlider.setEnabled(true);
+            thresholdValue.setEnabled(true);
+            marginSlider.setEnabled(true);
+            marginValue.setEnabled(true);
             typeSelection.setEnabled(true);
-	} else {
-	    wireCheck.setText(getResourceString("graph.wire.output"));
-	    thresholdSlider.setEnabled(false);
-	    thresholdValue.setEnabled(false);
-	    marginSlider.setEnabled(false);
-	    marginValue.setEnabled(false);
+        } else {
+            wireCheck.setText(getResourceString("graph.wire.output"));
+            thresholdSlider.setEnabled(false);
+            thresholdValue.setEnabled(false);
+            marginSlider.setEnabled(false);
+            marginValue.setEnabled(false);
             typeSelection.setEnabled(false);
-	}
+        }
     }
 
     private void updateScreen() {
-	if (selectedWire != null) {
-	    updateGraph();
-	}
-	output1.setText(allWires.get(1, Type.Output).getActive());
-	output2.setText(allWires.get(2, Type.Output).getActive());
-	output3.setText(allWires.get(3, Type.Output).getActive());
-	output4.setText(allWires.get(4, Type.Output).getActive());
+        if (selectedWire != null) {
+            updateGraph();
+        }
+        output1.setText(allWires.get(1, Type.Output).getActive());
+        output2.setText(allWires.get(2, Type.Output).getActive());
+        output3.setText(allWires.get(3, Type.Output).getActive());
+        output4.setText(allWires.get(4, Type.Output).getActive());
 
         final Wire wire1 = allWires.get(1, Type.Input);
         final Wire wire2 = allWires.get(2, Type.Input);
         final Wire wire3 = allWires.get(3, Type.Input);
         final Wire wire4 = allWires.get(4, Type.Input);
 
-	input1.setText(wire1.getLastValue());
-	input2.setText(wire2.getLastValue());
-	input3.setText(wire3.getLastValue());
-	input4.setText(wire4.getLastValue());
+        input1.setText(wire1.getLastValue());
+        input2.setText(wire2.getLastValue());
+        input3.setText(wire3.getLastValue());
+        input4.setText(wire4.getLastValue());
 
         InputRange ir = (InputRange) typeSelection.getSelectedItem();
-        if ( wire1.getLastData() != null )
+        if (wire1.getLastData() != null) {
             input1.setToolTipText(ir.getDescription(wire1.getLastData().getValue()));
-        if ( wire2.getLastData() != null )
+        }
+        if (wire2.getLastData() != null) {
             input2.setToolTipText(ir.getDescription(wire2.getLastData().getValue()));
-        if ( wire3.getLastData() != null )
+        }
+        if (wire3.getLastData() != null) {
             input3.setToolTipText(ir.getDescription(wire3.getLastData().getValue()));
-        if ( wire4.getLastData() != null )
+        }
+        if (wire4.getLastData() != null) {
             input4.setToolTipText(ir.getDescription(wire4.getLastData().getValue()));
+        }
     }
 
     protected void updateGraph() {
-	// Update the graph
-	WireData data = selectedWire.getLastData();
-	if (data != null) {
-	    if (marginSlider.isEnabled()) {
-		marginSlider.setValue(data.getMargin());
-	    }
-	    if (thresholdSlider.isEnabled()) {
-		thresholdSlider.setValue(data.getThreshold());
-	    }
-	    wireCheck.setSelected(data.isState());
-	    ((WireGraphPanel) lineGraph).setData(selectedWire);
-	    lineGraph.repaint();
-	}
+        // Update the graph
+        WireData data = selectedWire.getLastData();
+        if (data != null) {
+            if (marginSlider.isEnabled()) {
+                marginSlider.setValue(data.getMargin());
+            }
+            if (thresholdSlider.isEnabled()) {
+                thresholdSlider.setValue(data.getThreshold());
+            }
+            wireCheck.setSelected(data.isState());
+            ((WireGraphPanel) lineGraph).setData(selectedWire);
+            lineGraph.repaint();
+        }
     }
 
-
     private void updateMargin() {
-	if (NodoDueManager.hasConnection()) {
-	    // Only set the new margin on actual change
-	    WireData data = selectedWire.getLastData();
-	    if (data == null || marginSlider.getValue() != data.getMargin()) {
-		SerialCommunicator comm =
-			NodoDueManager.getApplication().getSerialCommunicator();
-		try {
-		    CommandInfo ci = CommandLoader.get(Name.WiredSmittTrigger);
-		    comm.send(new NodoCommand(ci,
-			    String.valueOf(selectedWire.getChannel()),
-			    String.valueOf(marginSlider.getValue())));
-		    comm.waitCommand(500, 1500);
-		} catch (Exception e) {
-		    getListener().showStatusMessage(getResourceString("update_fail.margin", e.getMessage()));
-		}
-	    }
-	}
+        if (NodoDueManager.hasConnection()) {
+            // Only set the new margin on actual change
+            WireData data = selectedWire.getLastData();
+            if (data == null || marginSlider.getValue() != data.getMargin()) {
+                SerialCommunicator comm =
+                        NodoDueManager.getApplication().getSerialCommunicator();
+                try {
+                    CommandInfo ci = CommandLoader.get(Name.WiredSmittTrigger);
+                    comm.send(new NodoCommand(ci,
+                            String.valueOf(selectedWire.getChannel()),
+                            String.valueOf(marginSlider.getValue())));
+                    comm.waitCommand(50, 500);
+                } catch (Exception e) {
+                    getListener().showStatusMessage(getResourceString("update_fail.margin", e.getMessage()));
+                }
+            }
+        }
     }
 
     private void updateThreshold() {
-	if (NodoDueManager.hasConnection()) {
-	    // Only set the new margin on actual change
-	    WireData data = selectedWire.getLastData();
-	    if (data == null || thresholdSlider.getValue() != data.getThreshold()) {
-		SerialCommunicator comm =
-			NodoDueManager.getApplication().getSerialCommunicator();
-		try {
-		    CommandInfo ci = CommandLoader.get(Name.WiredThreshold);
-		    comm.send(new NodoCommand(ci,
-			    String.valueOf(selectedWire.getChannel()),
-			    String.valueOf(thresholdSlider.getValue())));
-		    comm.waitCommand(500, 1000);
-		} catch (Exception e) {
-		    getListener().showStatusMessage(getResourceString("update_fail.threshold", e.getMessage()));
-		}
-	    }
-	}
+        if (NodoDueManager.hasConnection()) {
+            // Only set the new margin on actual change
+            WireData data = selectedWire.getLastData();
+            if (data == null || thresholdSlider.getValue() != data.getThreshold()) {
+                SerialCommunicator comm =
+                        NodoDueManager.getApplication().getSerialCommunicator();
+                try {
+                    CommandInfo ci = CommandLoader.get(Name.WiredThreshold);
+                    comm.send(new NodoCommand(ci,
+                            String.valueOf(selectedWire.getChannel()),
+                            String.valueOf(thresholdSlider.getValue())));
+                    comm.waitCommand(50, 500);
+                } catch (Exception e) {
+                    getListener().showStatusMessage(getResourceString("update_fail.threshold", e.getMessage()));
+                }
+            }
+        }
     }
 
     private void downloadAndRefresh() {
-	NodoDueManager app = NodoDueManager.getApplication();
-	if (!app.hasConnection(false)) {
-	    return;
-	}
-	TaskService ts = app.getContext().getTaskService();
-	refreshTask = new RefreshTask(app);
-	ts.execute(refreshTask);
+        NodoDueManager app = NodoDueManager.getApplication();
+        if (!app.hasConnection(false)) {
+            return;
+        }
+        TaskService ts = app.getContext().getTaskService();
+        refreshTask = new RefreshTask(app);
+        ts.execute(refreshTask);
     }
 
     private void updateTooltips() {
         InputRange ir = (InputRange) typeSelection.getSelectedItem();
-        
+
         String thresholdText = ir.getDescription(thresholdSlider.getValue());
         thresholdSlider.setToolTipText(thresholdText);
         thresholdValue.setToolTipText(thresholdText);
-	thresholdValue.setText(String.valueOf(thresholdSlider.getValue()));
+        thresholdValue.setText(String.valueOf(thresholdSlider.getValue()));
 
         String marginText = ir.getDescription(marginSlider.getValue());
         marginSlider.setToolTipText(marginText);
@@ -761,127 +764,127 @@ public class MonitorPanel extends NodoBasePanel {
 
     private class RefreshTask extends org.jdesktop.application.Task<Object, Void> {
 
-	RefreshTask(org.jdesktop.application.Application app) {
-	    super(app);
-	    Wire.setMaxLength(lineGraph.getWidth());
-	}
+        RefreshTask(org.jdesktop.application.Application app) {
+            super(app);
+            Wire.setMaxLength(lineGraph.getWidth());
+        }
 
-	@Override
-	protected Object doInBackground() {
-	    if (NodoDueManager.hasConnection() == false) {
-		return null;
-	    }
-	    Collection<CommandInfo> cis = new ArrayList<CommandInfo>();
-	    CommandInfo wiredOut = CommandLoader.get(Name.WiredOut);
-	    CommandInfo wiredPul = CommandLoader.get(Name.WiredPullup);
-	    CommandInfo wiredStr = CommandLoader.get(Name.WiredSmittTrigger);
-	    CommandInfo wiredThd = CommandLoader.get(Name.WiredThreshold);
-	    CommandInfo wiredAna = CommandLoader.get(Name.WiredAnalog);
-	    cis.add(wiredOut);
-	    cis.add(wiredPul);
-	    cis.add(wiredStr);
-	    cis.add(wiredThd);
-	    cis.add(wiredAna);
+        @Override
+        protected Object doInBackground() {
+            if (NodoDueManager.hasConnection() == false) {
+                return null;
+            }
+            Collection<CommandInfo> cis = new ArrayList<CommandInfo>();
+            CommandInfo wiredOut = CommandLoader.get(Name.WiredOut);
+            CommandInfo wiredPul = CommandLoader.get(Name.WiredPullup);
+            CommandInfo wiredStr = CommandLoader.get(Name.WiredSmittTrigger);
+            CommandInfo wiredThd = CommandLoader.get(Name.WiredThreshold);
+            CommandInfo wiredAna = CommandLoader.get(Name.WiredAnalog);
+            cis.add(wiredOut);
+            cis.add(wiredPul);
+            cis.add(wiredStr);
+            cis.add(wiredThd);
+            cis.add(wiredAna);
 //	    System.out.println("Refreshing...");
-	    Collection<NodoSetting> settings = NodoSettingRetriever.getSettings(cis);
+            Collection<NodoSetting> settings = NodoSettingRetriever.getSettings(cis);
 
-	    WireData[] data = new WireData[8];
-	    for (int i = 0; i < data.length; i++) {
-		data[i] = new WireData();
-	    }
+            WireData[] data = new WireData[8];
+            for (int i = 0; i < data.length; i++) {
+                data[i] = new WireData();
+            }
 
-	    for (NodoSetting nodoSetting : settings) {
-		int idx = Integer.parseInt(nodoSetting.getAttributeData1());
-		String value = nodoSetting.getAttributeData2();
-		Name name = nodoSetting.getInfo().getNameElement();
-		if (name == null) {
-		    System.out.println("Oeps on " + nodoSetting);
-		    continue;
-		}
+            for (NodoSetting nodoSetting : settings) {
+                int idx = Integer.parseInt(nodoSetting.getAttributeData1());
+                String value = nodoSetting.getAttributeData2();
+                Name name = nodoSetting.getInfo().getNameElement();
+                if (name == null) {
+                    System.out.println("Oeps on " + nodoSetting);
+                    continue;
+                }
 
-		switch (name) {
-		    case WiredOut:
-			WireData wd = data[idx - 1 + 4];
-			wd.setState("On".equals(value));
-			wd.setValue(wd.isState()?255:0);
-			break;
-		    case WiredPullup:
-			data[idx - 1].setState("On".equals(value));
-			break;
-		    case WiredSmittTrigger:
-			data[idx - 1].setMargin(Integer.parseInt(value));
-			break;
-		    case WiredThreshold:
-			data[idx - 1].setThreshold(Integer.parseInt(value));
-			break;
-		    case WiredAnalog:
-			data[idx - 1].setValue(Integer.parseInt(value));
-			break;
-		}
-	    }
-	    return data;
-	}
+                switch (name) {
+                    case WiredOut:
+                        WireData wd = data[idx - 1 + 4];
+                        wd.setState("On".equals(value));
+                        wd.setValue(wd.isState() ? 255 : 0);
+                        break;
+                    case WiredPullup:
+                        data[idx - 1].setState("On".equals(value));
+                        break;
+                    case WiredSmittTrigger:
+                        data[idx - 1].setMargin(Integer.parseInt(value));
+                        break;
+                    case WiredThreshold:
+                        data[idx - 1].setThreshold(Integer.parseInt(value));
+                        break;
+                    case WiredAnalog:
+                        data[idx - 1].setValue(Integer.parseInt(value));
+                        break;
+                }
+            }
+            return data;
+        }
 
-	@Override
-	protected void succeeded(Object result) {
-	    if (result == null) {
-		return;
-	    }
+        @Override
+        protected void succeeded(Object result) {
+            if (result == null) {
+                return;
+            }
 
-	    WireData[] data = (WireData[]) result;
-	    Wire wire = null;
+            WireData[] data = (WireData[]) result;
+            Wire wire = null;
 
-	    for (int i = 0; i < 4; i++) {
-		wire = allWires.get(i + 1, Type.Input);
-		wire.addData(data[i]);
-	    }
-	    for (int i = 4; i < 8; i++) {
-		wire = allWires.get(i + 1 - 4, Type.Output);
-		wire.addData(data[i]);
-	    }
-	    updateScreen();
-	}
+            for (int i = 0; i < 4; i++) {
+                wire = allWires.get(i + 1, Type.Input);
+                wire.addData(data[i]);
+            }
+            for (int i = 4; i < 8; i++) {
+                wire = allWires.get(i + 1 - 4, Type.Output);
+                wire.addData(data[i]);
+            }
+            updateScreen();
+        }
     }
 
     @Action
     public void refreshTickAction() {
-	if (refreshTimer == null) {
-	    // Interval from 1..100, interval .5 seconds
-	    int time = rrSlider.getValue() * 500;
-	    refreshTimer = new Timer(time, new ActionListener() {
+        if (refreshTimer == null) {
+            // Interval from 1..100, interval .5 seconds
+            int time = rrSlider.getValue() * 500;
+            refreshTimer = new Timer(time, new ActionListener() {
 
-		public void actionPerformed(ActionEvent e) {
-		    downloadAndRefresh();
-		}
-	    });
-	    refreshTimer.setRepeats(true);
-	}
+                public void actionPerformed(ActionEvent e) {
+                    downloadAndRefresh();
+                }
+            });
+            refreshTimer.setRepeats(true);
+        }
 
-	if (rrCheck.isSelected()) {
-	    if (refreshTimer.isRunning()) {
-		refreshTimer.stop();
-	    }
-	    refreshTimer.setDelay(rrSlider.getValue() * 500);
-	    markDisabled(true);
-	    refreshTimer.start();
-	    downloadAndRefresh();
-	} else {
-	    refreshTimer.stop();
-	    markDisabled(false);
-	}
+        if (rrCheck.isSelected()) {
+            if (refreshTimer.isRunning()) {
+                refreshTimer.stop();
+            }
+            refreshTimer.setDelay(rrSlider.getValue() * 500);
+            markDisabled(true);
+            refreshTimer.start();
+            downloadAndRefresh();
+        } else {
+            refreshTimer.stop();
+            markDisabled(false);
+        }
     }
 
     private void markDisabled(boolean disable) {
-	ververs.setEnabled(!disable);
-	wireCheck.setEnabled(!disable);
-	if ( disable ) {
-	    thresholdSlider.setEnabled(false);
-	    thresholdValue.setEnabled(false);
-	    marginSlider.setEnabled(false);
-	    marginValue.setEnabled(false);
-	} else {
-	    updateGraphState();
-	}
+        ververs.setEnabled(!disable);
+        wireCheck.setEnabled(!disable);
+        if (disable) {
+            thresholdSlider.setEnabled(false);
+            thresholdValue.setEnabled(false);
+            marginSlider.setEnabled(false);
+            marginValue.setEnabled(false);
+        } else {
+            updateGraphState();
+        }
     }
 
 //    private void enableContainer(Container base, boolean enable) {
@@ -894,40 +897,39 @@ public class MonitorPanel extends NodoBasePanel {
 //	    }
 //	}
 //    }
-
     @Action
     public void wireTickAction() {
-	CommandInfo ci = null;
-	String val = null;
-	String idx = null;
-	if (selectedWire != null) {
-	    idx = "" + selectedWire.getChannel();
-	    if (selectedWire.getType() == Type.Input) {
-		// Switch pullup
-		ci = CommandLoader.get(Name.WiredPullup);
-		val = wireCheck.isSelected() ? "On" : "Off";
-	    } else {
-		// Switch output
-		ci = CommandLoader.get(Name.WiredOut);
-		val = wireCheck.isSelected() ? "On" : "Off";
-	    }
-	}
-	if (NodoDueManager.hasConnection() == false) {
-	    return;
-	}
-	SerialCommunicator comm =
-		NodoDueManager.getApplication().getSerialCommunicator();
-	try {
-	    comm.send(new NodoCommand(ci, idx, val));
-	    comm.waitCommand(500, 1000);
-	} catch (Exception e) {
-	    getListener().showStatusMessage(getResourceString("update_fail.wireChange", e.getMessage()));
-	}
+        CommandInfo ci = null;
+        String val = null;
+        String idx = null;
+        if (selectedWire != null) {
+            idx = "" + selectedWire.getChannel();
+            if (selectedWire.getType() == Type.Input) {
+                // Switch pullup
+                ci = CommandLoader.get(Name.WiredPullup);
+                val = wireCheck.isSelected() ? "On" : "Off";
+            } else {
+                // Switch output
+                ci = CommandLoader.get(Name.WiredOut);
+                val = wireCheck.isSelected() ? "On" : "Off";
+            }
+        }
+        if (NodoDueManager.hasConnection() == false) {
+            return;
+        }
+        SerialCommunicator comm =
+                NodoDueManager.getApplication().getSerialCommunicator();
+        try {
+            comm.send(new NodoCommand(ci, idx, val));
+            comm.waitCommand();
+        } catch (Exception e) {
+            getListener().showStatusMessage(getResourceString("update_fail.wireChange", e.getMessage()));
+        }
     }
 
     @Action
     public void refreshNow() {
-	downloadAndRefresh();
+        downloadAndRefresh();
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel graphGroup;

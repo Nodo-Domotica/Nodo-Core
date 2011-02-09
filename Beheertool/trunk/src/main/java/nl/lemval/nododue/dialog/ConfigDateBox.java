@@ -8,7 +8,6 @@
  *
  * Created on 2-jan-2011, 15:38:02
  */
-
 package nl.lemval.nododue.dialog;
 
 import java.awt.Dimension;
@@ -171,13 +170,15 @@ public class ConfigDateBox extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     /**
-    * @param args the command line arguments
-    */
+     * @param args the command line arguments
+     */
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(new Runnable() {
+
             public void run() {
                 ConfigDateBox dialog = new ConfigDateBox(new javax.swing.JFrame(), true);
                 dialog.addWindowListener(new java.awt.event.WindowAdapter() {
+
                     public void windowClosing(java.awt.event.WindowEvent e) {
                         System.exit(0);
                     }
@@ -189,131 +190,129 @@ public class ConfigDateBox extends javax.swing.JDialog {
 
     @Action
     public void performOperation() {
-	Calendar cal = Calendar.getInstance();
+        Calendar cal = Calendar.getInstance();
 
-	if (syncButton.isSelected()) {
-	    sendDateTime(cal);
-	} else if (writeTimeButton.isSelected()) {
-	    cal.setTime(datePicker.getDate());
-	    Calendar time = Calendar.getInstance();
-	    time.setTime(timePicker.getDate());
-	    cal.set(Calendar.HOUR_OF_DAY, time.get(Calendar.HOUR_OF_DAY));
-	    cal.set(Calendar.MINUTE, time.get(Calendar.MINUTE));
-	    cal.set(Calendar.SECOND, time.get(Calendar.SECOND));
-	    sendDateTime(cal);
-	} else if (readTimeButton.isSelected()) {
-	    cal = retrieveDateTime();
-	    if (cal != null) {
-		datePicker.setDate(cal.getTime());
-		timePicker.setDate(cal.getTime());
-		datePicker.invalidate();
-		timePicker.invalidate();
-	    }
-	}
+        if (syncButton.isSelected()) {
+            sendDateTime(cal);
+        } else if (writeTimeButton.isSelected()) {
+            cal.setTime(datePicker.getDate());
+            Calendar time = Calendar.getInstance();
+            time.setTime(timePicker.getDate());
+            cal.set(Calendar.HOUR_OF_DAY, time.get(Calendar.HOUR_OF_DAY));
+            cal.set(Calendar.MINUTE, time.get(Calendar.MINUTE));
+            cal.set(Calendar.SECOND, time.get(Calendar.SECOND));
+            sendDateTime(cal);
+        } else if (readTimeButton.isSelected()) {
+            cal = retrieveDateTime();
+            if (cal != null) {
+                datePicker.setDate(cal.getTime());
+                timePicker.setDate(cal.getTime());
+                datePicker.invalidate();
+                timePicker.invalidate();
+            }
+        }
     }
 
     private String getResource(String resource) {
-	ResourceMap resourceMap = Application.getInstance(NodoDueManager.class).getContext().getResourceMap(getClass());
-	return resourceMap.getString(resource);
+        ResourceMap resourceMap = Application.getInstance(NodoDueManager.class).getContext().getResourceMap(getClass());
+        return resourceMap.getString(resource);
     }
 
     private void initCalendar() {
-	Calendar calendar = Calendar.getInstance();
-	datePicker =
-		new JCalendarCombo(
-		calendar,
-		Locale.getDefault(),
-		JCalendarCombo.DISPLAY_DATE,
-		true);
-	datePicker.setMinimumSize(new Dimension(250, 23));
-	datePicker.setPreferredSize(new Dimension(250, 23));
+        Calendar calendar = Calendar.getInstance();
+        datePicker =
+                new JCalendarCombo(
+                calendar,
+                Locale.getDefault(),
+                JCalendarCombo.DISPLAY_DATE,
+                true);
+        datePicker.setMinimumSize(new Dimension(250, 23));
+        datePicker.setPreferredSize(new Dimension(250, 23));
 
-	timePicker =
-		new JCalendarCombo(
-		calendar,
-		Locale.getDefault(),
-		JCalendarCombo.DISPLAY_TIME,
-		true);
-	datePicker.setMinimumSize(new Dimension(250, 23));
-	timePicker.setPreferredSize(new Dimension(250, 23));
+        timePicker =
+                new JCalendarCombo(
+                calendar,
+                Locale.getDefault(),
+                JCalendarCombo.DISPLAY_TIME,
+                true);
+        datePicker.setMinimumSize(new Dimension(250, 23));
+        timePicker.setPreferredSize(new Dimension(250, 23));
 
-        contentPanel.setLayout(new GridLayout(2,1));
-	contentPanel.add(datePicker);
-	contentPanel.add(timePicker);
+        contentPanel.setLayout(new GridLayout(2, 1));
+        contentPanel.add(datePicker);
+        contentPanel.add(timePicker);
     }
 
     public void sendDateTime(Calendar cal) {
-	if (NodoDueManager.hasConnection() == false) {
-	    return;
-	}
-	String day = String.valueOf(cal.get(Calendar.DATE));
-	String mon = String.valueOf(cal.get(Calendar.MONTH) + 1);
-	String era = String.valueOf(cal.get(Calendar.YEAR) / 100);
-	String year = String.valueOf(cal.get(Calendar.YEAR) % 100);
-	String hour = String.valueOf(cal.get(Calendar.HOUR_OF_DAY));
-	String mins = String.valueOf(cal.get(Calendar.MINUTE));
-	String dayOfWeek = String.valueOf(cal.get(Calendar.DAY_OF_WEEK));
+        if (NodoDueManager.hasConnection() == false) {
+            return;
+        }
+        String day = String.valueOf(cal.get(Calendar.DATE));
+        String mon = String.valueOf(cal.get(Calendar.MONTH) + 1);
+        String era = String.valueOf(cal.get(Calendar.YEAR) / 100);
+        String year = String.valueOf(cal.get(Calendar.YEAR) % 100);
+        String hour = String.valueOf(cal.get(Calendar.HOUR_OF_DAY));
+        String mins = String.valueOf(cal.get(Calendar.MINUTE));
+        String dayOfWeek = String.valueOf(cal.get(Calendar.DAY_OF_WEEK));
 
-	SerialCommunicator comm =
-		NodoDueManager.getApplication().getSerialCommunicator();
-	try {
-	    comm.send(new NodoCommand(CommandLoader.get(Name.ClockSetDOW), dayOfWeek, ""));
-	    comm.send(new NodoCommand(CommandLoader.get(Name.ClockSetDate), day, mon));
-	    comm.send(new NodoCommand(CommandLoader.get(Name.ClockSetYear), era, year));
-	    comm.send(new NodoCommand(CommandLoader.get(Name.ClockSetTime), hour, mins));
-	    comm.waitCommand(1000);
-	} catch (Exception e) {
+        SerialCommunicator comm =
+                NodoDueManager.getApplication().getSerialCommunicator();
+        try {
+            comm.send(new NodoCommand(CommandLoader.get(Name.ClockSetDOW), dayOfWeek, ""));
+            comm.send(new NodoCommand(CommandLoader.get(Name.ClockSetDate), day, mon));
+            comm.send(new NodoCommand(CommandLoader.get(Name.ClockSetYear), era, year));
+            comm.send(new NodoCommand(CommandLoader.get(Name.ClockSetTime), hour, mins));
+            comm.waitCommand(500);
+        } catch (Exception e) {
             // TODO Report message
 //	    getListener().showStatusMessage(getResourceString("update_fail.dateTime", e.getMessage()));
-	}
+        }
     }
 
     private Calendar retrieveDateTime() {
-	if (NodoDueManager.hasConnection() == false) {
-	    return null;
-	}
-	Collection<CommandInfo> cis = new HashSet<CommandInfo>();
+        if (NodoDueManager.hasConnection() == false) {
+            return null;
+        }
+        Collection<CommandInfo> cis = new HashSet<CommandInfo>();
 
-	cis.add(CommandLoader.get(Name.ClockSetDate));
-	cis.add(CommandLoader.get(Name.ClockSetYear));
-	cis.add(CommandLoader.get(Name.ClockSetTime));
-	cis.add(CommandLoader.get(Name.ClockSetDOW));
+        cis.add(CommandLoader.get(Name.ClockSetDate));
+        cis.add(CommandLoader.get(Name.ClockSetYear));
+        cis.add(CommandLoader.get(Name.ClockSetTime));
+        cis.add(CommandLoader.get(Name.ClockSetDOW));
 
-	Collection<NodoSetting> settings = NodoSettingRetriever.getSettings(cis);
-	if (settings == null) {
-	    return null;
-	}
+        Collection<NodoSetting> settings = NodoSettingRetriever.getSettings(cis);
+        if (settings == null) {
+            return null;
+        }
 
-	Calendar cal = Calendar.getInstance();
+        Calendar cal = Calendar.getInstance();
 
-	for (NodoSetting nodoSetting : settings) {
-	    Name name = Name.valueOf(nodoSetting.getName());
-	    switch (name) {
-		case ClockSetDate:
-		    cal.set(Calendar.DAY_OF_MONTH, Integer.parseInt(nodoSetting.getAttributeValue1()));
-		    cal.set(Calendar.MONTH, Integer.parseInt(nodoSetting.getAttributeValue2())-1);
-		    break;
-		case ClockSetYear:
-		    cal.set(Calendar.YEAR, Integer.parseInt(nodoSetting.getAttributeValue1()) * 100
-			    + Integer.parseInt(nodoSetting.getAttributeValue2()));
-		    break;
-		case ClockSetTime:
-		    cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(nodoSetting.getAttributeValue1()));
-		    cal.set(Calendar.MINUTE, Integer.parseInt(nodoSetting.getAttributeValue2()));
-		    break;
-		case ClockSetDOW:
-		    cal.set(Calendar.DAY_OF_WEEK, Integer.parseInt(nodoSetting.getAttributeData1()));
-		    break;
-	    }
-	}
-	if (cal.get(Calendar.YEAR) == 0) {
-	    JOptionPane.showMessageDialog(this, getResource("rtc.notavailable"));
-	    return null;
-	}
-	return cal;
+        for (NodoSetting nodoSetting : settings) {
+            Name name = Name.valueOf(nodoSetting.getName());
+            switch (name) {
+                case ClockSetDate:
+                    cal.set(Calendar.DAY_OF_MONTH, Integer.parseInt(nodoSetting.getAttributeValue1()));
+                    cal.set(Calendar.MONTH, Integer.parseInt(nodoSetting.getAttributeValue2()) - 1);
+                    break;
+                case ClockSetYear:
+                    cal.set(Calendar.YEAR, Integer.parseInt(nodoSetting.getAttributeValue1()) * 100
+                            + Integer.parseInt(nodoSetting.getAttributeValue2()));
+                    break;
+                case ClockSetTime:
+                    cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(nodoSetting.getAttributeValue1()));
+                    cal.set(Calendar.MINUTE, Integer.parseInt(nodoSetting.getAttributeValue2()));
+                    break;
+                case ClockSetDOW:
+                    cal.set(Calendar.DAY_OF_WEEK, Integer.parseInt(nodoSetting.getAttributeData1()));
+                    break;
+            }
+        }
+        if (cal.get(Calendar.YEAR) == 0) {
+            JOptionPane.showMessageDialog(this, getResource("rtc.notavailable"));
+            return null;
+        }
+        return cal;
     }
-
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup actionGroup;
     private javax.swing.JPanel actionPanel;
@@ -325,5 +324,4 @@ public class ConfigDateBox extends javax.swing.JDialog {
     private javax.swing.JRadioButton syncButton;
     private javax.swing.JRadioButton writeTimeButton;
     // End of variables declaration//GEN-END:variables
-
 }
