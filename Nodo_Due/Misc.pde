@@ -1,5 +1,5 @@
   /**************************************************************************\
-    This file is part of Nodo Due, © Copyright Paul Tonkes
+    This file is part of Nodo Due, Â© Copyright Paul Tonkes
 
     Nodo Due is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
   \**************************************************************************/
 
  /*********************************************************************************************\
- * kopiëer de string van een commando naar een string[]
+ * kopiÃ«er de string van een commando naar een string[]
  \*********************************************************************************************/
 char* cmd2str(int i)
   {
@@ -65,7 +65,7 @@ unsigned long command2event(int Command, byte Par1, byte Par2)
 
 /*********************************************************************************************\
  * String mag HEX, DEC of een NODO commando zijn.
- * Deze routine coverteert uit een string een unsigned long waarde.
+ * Deze routine converteert uit een string een unsigned long waarde.
  * De string moet beginnen met het eerste teken(dus geen voorloop spaties).
  * bij ongeldige tekens in de string wordt een false terug gegeven.
  \*********************************************************************************************/
@@ -139,8 +139,8 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
   switch (*Command)
     {
     case CMD_WAITFREERF: 
-      *Par1=S.WaitFreeRFAction;
-      *Par2=S.WaitFreeRFWindow/100;
+      *Par1=S.WaitFreeRF_Delay;
+      *Par2=S.WaitFreeRF_Window;
       break;
   
     case CMD_UNIT: 
@@ -251,7 +251,6 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
   }
 
 
-
  /**********************************************************************************************\
  * Deze functie haalt een tekst op uit PROGMEM en geeft als string terug
  * BUILD 01, 09-01-2010, P.K.Tonkes@gmail.com
@@ -311,8 +310,8 @@ void ResetFactory(void)
   S.AnalyseSharpness   = 50;
   S.AnalyseTimeOut     = SIGNAL_TIMEOUT_IR;
   S.TransmitPort       = VALUE_SOURCE_IR_RF;
-  S.WaitFreeRFAction   = VALUE_OFF;
-  S.WaitFreeRFWindow   = S.Unit*500;
+  S.WaitFreeRF_Window  = 0;
+  S.WaitFreeRF_Delay   = 0;
   S.DaylightSaving     = Time.DaylightSaving;
   S.Confirm            = false;
   
@@ -327,7 +326,7 @@ void ResetFactory(void)
   VariableClear(0); // alle variabelen op nul zetten
   SaveSettings();  
   FactoryEventlist();
-  delay(500);// kleine pauze, anders kans fout bij seriële communicatie
+  delay(500);// kleine pauze, anders kans fout bij seriÃ«le communicatie
   Reset();
   }
   
@@ -465,3 +464,4 @@ byte WiredAnalog(byte WiredPort)
   return x;
   }
   
+

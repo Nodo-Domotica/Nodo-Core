@@ -15,7 +15,7 @@ void SetDaylight()
   int DOY,index,now,up,down;
   int u0,u1,d0,d1;
   
-  DOY=((Time.Month-1)*304)/10+Time.Date;// schrikkeljaar berekening niet nodig, levert slechts naukeurigheidsafwijking van één minuut.
+  DOY=((Time.Month-1)*304)/10+Time.Date;// schrikkeljaar berekening niet nodig, levert slechts naukeurigheidsafwijking van Ã©Ã©n minuut.
   index=(DOY/10);
   now=Time.Hour*60+Time.Minutes;
 
@@ -81,7 +81,7 @@ void SimulateDay(byte days)
   PrintLine();
   for(int d=1;d<=days;d++)
     {
-    for(int m=0;m<=1439;m++)  // loop alle minuten van één etmaal door
+    for(int m=0;m<=1439;m++)  // loop alle minuten van Ã©Ã©n etmaal door
       {
       // Simuleer alle menuten van een etmaal
       if(Time.Minutes==60){Time.Minutes=0;Time.Hour++;}  // roll-over naar volgende uur
@@ -188,4 +188,5 @@ unsigned long ClockRead(void)
          ((unsigned long)(Time.Hour))<<8 | 
          ((unsigned long)(Time.Minutes));
   }
+
 

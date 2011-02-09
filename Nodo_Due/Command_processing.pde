@@ -1,5 +1,5 @@
   /**************************************************************************\
-    This file is part of Nodo Due, © Copyright Paul Tonkes
+    This file is part of Nodo Due, Â© Copyright Paul Tonkes
 
     Nodo Due is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -68,6 +68,7 @@ byte CommandError(unsigned long Content)
   switch(Command)
     {
     //test; geen, altijd goed
+    case CMD_WAITFREERF: 
     case CMD_VARIABLE_EVENT:    
     case CMD_DLS_EVENT:
     case CMD_CLOCK_EVENT_DAYLIGHT:
@@ -193,10 +194,6 @@ byte CommandError(unsigned long Content)
     case CMD_WIRED_PULLUP:
       if(Par1<1 || Par1>4)return ERROR_PAR1;
       if(Par2!=VALUE_ON && Par2!=VALUE_OFF)return ERROR_PAR2;
-      return false;
-
-    case CMD_WAITFREERF: 
-      if(Par1!=VALUE_OFF && Par1!=VALUE_SERIES && Par1!=VALUE_ALL)return ERROR_PAR1;
       return false;
 
     case CMD_COPYSIGNAL:
@@ -437,7 +434,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           else
             {
             // start een nieuwe recursieve loop() om zo de events die voorbij komen te plaatsen in de queue.
-            // deze recursieve aanroep wordt beëindigd als HoldTimer==0L
+            // deze recursieve aanroep wordt beÃ«indigd als HoldTimer==0L
             InLoop++;
             loop();
             InLoop--;
@@ -483,8 +480,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;
        
       case CMD_WAITFREERF: 
-        S.WaitFreeRFAction=Par1;
-        S.WaitFreeRFWindow=Par2==0?S.Unit*500:Par2*100;
+        S.WaitFreeRF_Delay=Par1;
+        S.WaitFreeRF_Window=Par2;
         SaveSettings();
         break;
   
@@ -521,3 +518,4 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   
   
   
+

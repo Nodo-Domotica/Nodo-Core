@@ -3,6 +3,8 @@
 ToDo:
 - fout commando met parameters geeft drie foutmeldingen.
 - komt nog er wel een foutmelding als eventlist vol is?
+- wildcard op unit ?? bepalen impact.
+- wildcardtypen: verwerking bekijken en wijzigingen documenteren
 */
 
 /**************************************************************************************************************************\
@@ -38,12 +40,17 @@ Overige functionele aanpassingen:
 - Nesting error wordt nu als een error-event verzonden.
 - dubbele regeleinden aan einde regel in EventList verwijderd;
 - OUTPUT melding verschijnt bij uitvoer van een wired out.
+- WaitfreeRF is gewijzigd. Par1=delay alvorens te zenden, Par2=lijstertijd naar vrije ether. 
+  Default 0,0. Bij wijzigenunit > 1 dan delay afhankelijk van unitnummer.
+  All en series vervallen.
+- Als unitnummer wordt gewijzigd dan wordt tevens de WaitFreeRF geactiveerd.
 
 Onder de motorkap:
 - Timers nu in een int i.p.v. unsigned long en aanpassing aflopen timers => geheugenbesparing
 - EventPart functie laten vervallen en vervangen door directe shift/and op events => geheugenbesparing
 - EventType functie vervallen. Event type wordt nu onderdeel van het Event op de plaats waar het Home adres van de Nodo stond.
 - Trace settings anders opgelost.
+- SERIES parameter t.b.v. WaitFreeRF vervallen.
 
 \**************************************************************************************************************************/
 
@@ -78,7 +85,7 @@ Onder de motorkap:
  *
  ********************************************************************************************************/
 
-#define VERSION                  115 // Nodo Version nummer
+#define VERSION                  999 // Nodo Version nummer
 
 #include "pins_arduino.h"
 #include "ctype.h"
@@ -124,7 +131,7 @@ prog_char PROGMEM Text_14[] = ", Unit ";
 #define VALUE_DIRECTION_OUTPUT 18
 #define VALUE_DIRECTION_INTERNAL 19
 #define VALUE_DIRECTION_EXECUTE 20
-#define VALUE_SERIES 21
+#define VALUE_RES5 21
 #define VALUE_RF_2_IR 22
 #define VALUE_IR_2_RF 23
 #define VALUE_ALL 24 // Deze waarde MOET groter dan 16 zijn.
@@ -227,7 +234,7 @@ prog_char PROGMEM Cmd_17[]="INPUT";
 prog_char PROGMEM Cmd_18[]="OUTPUT";
 prog_char PROGMEM Cmd_19[]="INTERNAL";
 prog_char PROGMEM Cmd_20[]="EXECUTE";
-prog_char PROGMEM Cmd_21[]="Series";
+prog_char PROGMEM Cmd_21[]="";
 prog_char PROGMEM Cmd_22[]="RF2IR";
 prog_char PROGMEM Cmd_23[]="IR2RF";
 prog_char PROGMEM Cmd_24[]="All";
@@ -399,8 +406,8 @@ struct Settings
   boolean Trace;
   boolean TraceTime;
   byte    TransmitPort;
-  int     WaitFreeRFWindow;
-  byte    WaitFreeRFAction;
+  byte    WaitFreeRF_Window;
+  byte    WaitFreeRF_Delay;
   boolean DaylightSaving;
   boolean Confirm;
   int     DaylightSavingSet;

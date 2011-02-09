@@ -1,5 +1,5 @@
   /**************************************************************************\
-    This file is part of Nodo Due, © Copyright Paul Tonkes, 
+    This file is part of Nodo Due, Â© Copyright Paul Tonkes, 
     Thanks to: Kenneth Rover
 
     Nodo Due is free software: you can redistribute it and/or modify
@@ -267,5 +267,6 @@ unsigned long RawSignal_2_NewKAKU(void)
     }
   return bitstream;
   }
+
 
 

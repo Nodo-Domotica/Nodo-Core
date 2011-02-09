@@ -1,10 +1,10 @@
   /**************************************************************************\
-    This file is part of Nodo Due, © Copyright Paul Tonkes.
+    This file is part of Nodo Due, Â© Copyright Paul Tonkes.
 
     Nodo Due is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    (at your option) any later version.  
 
     Nodo Due is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -18,7 +18,7 @@
 
 /*********************************************************************************************\
 * Deze functie dient alleen aangeroepen te worden als er tekens beschikbaar zijn op de
-* seriële poort. Deze functie haalt de tekens op, parsed commando en parameters er uit en 
+* seriÃ«le poort. Deze functie haalt de tekens op, parsed commando en parameters er uit en 
 * maakt hier een Event van. Als het event een MMI afwijkend commando is of een commando
 * waarvan het niet wenselijk is dat dit via RF/IR ontvangen en verwerkt mag worden,
 * dan wordt deze tevens uitgevoerd. Alle overige events & commando's worden ter verdere
@@ -34,7 +34,7 @@ unsigned long Receive_Serial(void)
   byte Par1,Par2,Cmd;
   boolean error=false;
   
-  // Hier aangekomen staan er tekens klaar. Haal op van seriële poort en maak er een Event van.
+  // Hier aangekomen staan er tekens klaar. Haal op van seriÃ«le poort en maak er een Event van.
   Event=SerialReadEvent();
   //???Serial.print("Event=0x");Serial.print(Event,HEX);PrintTerm();
   
@@ -113,6 +113,17 @@ unsigned long Receive_Serial(void)
    
        case CMD_UNIT:
          S.Unit=Par1;
+         if(Par1>1)
+            {
+            S.WaitFreeRF_Delay=10 + Par1*3;
+            S.WaitFreeRF_Window=3; // 1 eenheid = 100 ms.
+            }
+         else
+            {
+            S.WaitFreeRF_Delay=0;
+            S.WaitFreeRF_Window=0;
+            }
+
          SaveSettings();
          FactoryEventlist();
          Reset();
@@ -164,7 +175,7 @@ unsigned long Receive_Serial(void)
 
 
 /*********************************************************************************************\
-* Hier aangekomen staan er tekens klaar op de Seriële poort
+* Hier aangekomen staan er tekens klaar op de SeriÃ«le poort
 * Haal deze op en stel een Event samen. Sommige commando's hebben (helaas) een afwijkende MMI 
 * Of behandeling. De geldigheid van het commando wordt eveneens getoetst.
 \*********************************************************************************************/
@@ -274,7 +285,7 @@ unsigned long SerialReadEvent()
    
    
 /**********************************************************************************************\
- * Haalt uit een seriële reeks met formaat 'aaaa,bbbb,cccc,dddd;' de blokken tekst 
+ * Haalt uit een seriÃ«le reeks met formaat 'aaaa,bbbb,cccc,dddd;' de blokken tekst 
  * geeft een 1 terug als blok afgesloten met een komma of spatie (en er nog meerdere volgen)
  * geeft een 0 terug als hele reeks is afgesloten met een '\n' of een ';'
  \*********************************************************************************************/
@@ -291,7 +302,7 @@ byte SerialReadBlock(char *SerialString)
   TimeOutTimer=millis()+SERIAL_TIMEOUT;
 
   do
-    {// lees de seriële poort totdat afsluitteken of een teken voor volgende parameter
+    {// lees de seriÃ«le poort totdat afsluitteken of een teken voor volgende parameter
     if(Serial.available()>0)
       {
       SerialByte=Serial.read();
@@ -328,3 +339,4 @@ void SerialHold(boolean x)
     previous=x;
     }
   }
+

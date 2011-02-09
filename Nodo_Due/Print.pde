@@ -1,6 +1,6 @@
 /**************************************************************************\
 
-    This file is part of Nodo Due, © Copyright Paul Tonkes
+    This file is part of Nodo Due, Â© Copyright Paul Tonkes
 
     Nodo Due is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -271,7 +271,7 @@ void PrintEventCode(unsigned long Code)
 
      
  /**********************************************************************************************\
- * Verzend teken(s) naar de seriële poort die een regel afsluiten.
+ * Verzend teken(s) naar de seriÃ«le poort die een regel afsluiten.
  \*********************************************************************************************/
 void PrintTerm()
   {
@@ -388,3 +388,4 @@ void PrintText(prog_char* text,boolean Term)
   if(Term)
     PrintTerm();
   }
+

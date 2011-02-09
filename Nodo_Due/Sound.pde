@@ -1,5 +1,5 @@
   /**************************************************************************\
-    This file is part of Nodo Due, © Copyright Paul Tonkes
+    This file is part of Nodo Due, Â© Copyright Paul Tonkes
 
     Nodo Due is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -132,5 +132,6 @@ void Alarm(int Variant,int Duration)
        break;
     }
   }
+
 
 

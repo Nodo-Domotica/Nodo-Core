@@ -1,5 +1,5 @@
   /**************************************************************************\
-    This file is part of Nodo Due, © Copyright Paul Tonkes
+    This file is part of Nodo Due, Â© Copyright Paul Tonkes
 
     Nodo Due is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -157,16 +157,19 @@ static void IR38Khz_set()
 
  /**********************************************************************************************\
  * Deze functie wacht totdat de 433 band vrij is of er een timeout heeft plaats gevonden 
- * Window tijd in ms.
+ * Window en delay tijd in milliseconden
  \*********************************************************************************************/
+# define WAITFREERF_TIMEOUT             30000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
 
-void WaitFreeRF(int Window)
-  {///??? 'dode' wachttijd + verkorten window nog implementeren
+void WaitFreeRF(int Delay, int Window)
+  {
   unsigned long WindowTimer, TimeOutTimer;  // meet of de time-out waarde gepasseerd is in milliseconden
 
-  if(Simulate)return; 
+  if(Simulate)return;
+  delay(Delay); 
+
   WindowTimer=millis()+Window; // reset de timer.
-  TimeOutTimer=millis()+30000; // tijd waarna de routine wordt afgebroken in milliseconden
+  TimeOutTimer=millis()+WAITFREERF_TIMEOUT; // tijd waarna de routine wordt afgebroken in milliseconden
 
   while(WindowTimer>millis() && TimeOutTimer>millis())
     {
@@ -383,8 +386,8 @@ boolean TransmitCode(unsigned long Event)
   // als het een Nodo bekend eventtype is, dan deze weer opnieuw opbouwen in de buffer
   if(((Event>>28)&0xf) == SIGNAL_TYPE_NODO)
     {
-    if(S.WaitFreeRFAction==VALUE_ALL || (EventlistDepth<=2 && S.WaitFreeRFAction==VALUE_SERIES))
-       WaitFreeRF(S.WaitFreeRFWindow); // alleen WaitFreeRF als type bekend is, anders gaat SendSignal niet goed a.g.v. overschrijven buffer
+    if(S.WaitFreeRF_Window!=0 || S.WaitFreeRF_Delay!=0)
+       WaitFreeRF(S.WaitFreeRF_Delay*100, S.WaitFreeRF_Window*100); // alleen WaitFreeRF als type bekend is, anders gaat SendSignal niet goed a.g.v. overschrijven buffer
        
     switch((Event>>16)&0xff)// command deel
       {
@@ -413,4 +416,4 @@ boolean TransmitCode(unsigned long Event)
     } 
   }
  
- 
+
