@@ -53,7 +53,7 @@ public class OptionsTest extends TestCase {
     }
 
     public void testAddAppliance() {
-        Options.getInstance().addAppliance(Device.fromString("KaKu D1|Lamp|Achterkamer|RF"));
+        Options.getInstance().addAppliance(Device.fromString("KaKu D2|Lamp|Achterkamer|RF"));
     }
 
     public void testAddAppliance1() {

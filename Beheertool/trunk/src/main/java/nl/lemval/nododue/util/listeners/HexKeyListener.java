@@ -86,21 +86,20 @@ public class HexKeyListener implements KeyListener {
         }
 
         // Now check the validity of the text
-        int maxValue = (int) Math.pow(16, maxSize) - 1;
         try {
             // Jump to catch block
             if ( hexValue )
                 throw new NumberFormatException("Hex value, not decimal");
             
             long result = Long.parseLong(newValue);
-            if ( result > maxValue ) {
+            if ( result > getMaxValue() ) {
                 evt.consume();
                 return;
             }
         } catch (NumberFormatException e) {
             try {
                 long result = Long.parseLong(newValue, 16);
-                if ( result > maxValue ) {
+                if ( result > getMaxValue() ) {
                     evt.consume();
                     return;
                 }
@@ -130,7 +129,7 @@ public class HexKeyListener implements KeyListener {
         return Long.toHexString(value).toUpperCase();
     }
 
-    private long toValue(String data) {
+    public long toValue(String data) {
         if ( data == null ) {
             return -1;
         }
@@ -161,6 +160,10 @@ public class HexKeyListener implements KeyListener {
             }
         }
         return result;
+    }
+    
+    public long getMaxValue() {
+        return (long) Math.pow(16, maxSize) - 1;
     }
 
     public void keyTyped(KeyEvent e) {

@@ -184,6 +184,15 @@
                 <Property name="name" type="java.lang.String" value="dateTimeMenuItem" noResource="true"/>
               </Properties>
             </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="learnMenuItem">
+              <Properties>
+                <Property name="action" type="javax.swing.Action" editor="org.netbeans.modules.swingapp.ActionEditor">
+                  <action class="nl.lemval.nododue.NodoDueManagerView" id="showLearnCommandsDialog" methodName="showLearnCommandsDialog"/>
+                </Property>
+                <Property name="text" type="java.lang.String" resourceKey="learnMenuItem.text"/>
+                <Property name="name" type="java.lang.String" value="learnMenuItem" noResource="true"/>
+              </Properties>
+            </MenuItem>
           </SubComponents>
         </Menu>
         <Menu class="javax.swing.JMenu" name="schermMenu">

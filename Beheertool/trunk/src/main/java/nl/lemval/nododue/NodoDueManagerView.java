@@ -31,6 +31,7 @@ import javax.swing.filechooser.FileFilter;
 import nl.lemval.nododue.dialog.CommandHistoryBox;
 import nl.lemval.nododue.dialog.ConfigDateBox;
 import nl.lemval.nododue.dialog.DevicesBox;
+import nl.lemval.nododue.dialog.LearnCommandBox;
 import nl.lemval.nododue.dialog.UnitSelectorBox;
 import nl.lemval.nododue.tabs.*;
 import nl.lemval.nododue.util.NodoSetting;
@@ -206,6 +207,7 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
         devicesMenuItem = new javax.swing.JMenuItem();
         historyMenuItem = new javax.swing.JMenuItem();
         dateTimeMenuItem = new javax.swing.JMenuItem();
+        learnMenuItem = new javax.swing.JMenuItem();
         schermMenu = new javax.swing.JMenu();
         showConnectMenuItem = new javax.swing.JMenuItem();
         showCommandMenuItem = new javax.swing.JMenuItem();
@@ -319,6 +321,11 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
         dateTimeMenuItem.setText(resourceMap.getString("dateTimeMenuItem.text")); // NOI18N
         dateTimeMenuItem.setName("dateTimeMenuItem"); // NOI18N
         nodoMenu.add(dateTimeMenuItem);
+
+        learnMenuItem.setAction(actionMap.get("showLearnCommandsDialog")); // NOI18N
+        learnMenuItem.setText(resourceMap.getString("learnMenuItem.text")); // NOI18N
+        learnMenuItem.setName("learnMenuItem"); // NOI18N
+        nodoMenu.add(learnMenuItem);
 
         menuBar.add(nodoMenu);
 
@@ -479,6 +486,7 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
     private javax.swing.JMenuItem historyMenuItem;
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JPopupMenu.Separator jSeparator2;
+    private javax.swing.JMenuItem learnMenuItem;
     private javax.swing.JMenuItem loadConfigMenuItem;
     private javax.swing.JMenuItem loadMacroMenuItem;
     private javax.swing.JMenu macroMenu;
@@ -725,5 +733,13 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
 	    unitBox.setLocationRelativeTo(mainFrame);
 	}
 	NodoDueManager.getApplication().show(unitBox);
+    }
+
+    @Action
+    public void showLearnCommandsDialog() {
+	    JFrame mainFrame = NodoDueManager.getApplication().getMainFrame();
+	    JDialog dialog = new LearnCommandBox(mainFrame, true);
+	    dialog.setLocationRelativeTo(mainFrame);
+        NodoDueManager.getApplication().show(dialog);
     }
 }

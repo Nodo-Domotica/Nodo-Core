@@ -2,7 +2,6 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package nl.lemval.nododue.cmd;
 
 import java.util.ArrayList;
@@ -10,7 +9,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 
 /**
  * This is the class describing a command, not the actual command.
@@ -28,64 +26,59 @@ public class CommandInfo {
     private int[] queryRange;
 
     public enum Name {
+
         EventlistErase,
         EventlistShow,
         EventlistWrite,
         EventStatus,
         SendStatus,
+        SendSignal,
         SendKAKU,
         Unit,
         Status,
         Reset,
-	KAKU,
-	
-	ClockSetDOW,
-	ClockSetYear,
-	ClockSetDate,
-	ClockSetTime,
-
+        KAKU,
+        ClockSetDOW,
+        ClockSetYear,
+        ClockSetDate,
+        ClockSetTime,
         RawsignalGet,
         RawsignalPut,
-        
         TimerSet,
+        UserEvent,
         VariableSet,
         WiredOut,
         WiredPullup,
         WiredSmittTrigger,
         WiredThreshold,
-	WiredAnalog,
+        WiredAnalog,
+        WildCard,
     };
     public static final String CUSTOM_CMD = "<Custom>";
-
-    public static final Collection<String> UNIT_SET
-	    = Arrays.asList(new String[] {
-		Name.Unit.name()});
-    public static final Collection<String> DATE_SET
-	    = Arrays.asList(new String[] {
-		Name.ClockSetDOW.name(),
-		Name.ClockSetDate.name(),
-		Name.ClockSetTime.name(),
-		Name.ClockSetYear.name()});
-    public static final Collection<String> VAR_SET
-	    = Arrays.asList(new String[] {
-		Name.VariableSet.name()});
-    public static final Collection<String> TIMER_SET
-	    = Arrays.asList(new String[] {
-		Name.TimerSet.name()});
-    public static final Collection<String> WIRE_SET
-	    = Arrays.asList(new String[] {
-		Name.WiredSmittTrigger.name(),
-		Name.WiredThreshold.name(),
-		Name.WiredPullup.name()});
-    public static final Collection<String> OUT_SET
-	    = Arrays.asList(new String[] {
-		Name.WiredOut.name()});
+    public static final Collection<String> UNIT_SET = Arrays.asList(new String[]{
+                Name.Unit.name()});
+    public static final Collection<String> DATE_SET = Arrays.asList(new String[]{
+                Name.ClockSetDOW.name(),
+                Name.ClockSetDate.name(),
+                Name.ClockSetTime.name(),
+                Name.ClockSetYear.name()});
+    public static final Collection<String> VAR_SET = Arrays.asList(new String[]{
+                Name.VariableSet.name()});
+    public static final Collection<String> TIMER_SET = Arrays.asList(new String[]{
+                Name.TimerSet.name()});
+    public static final Collection<String> WIRE_SET = Arrays.asList(new String[]{
+                Name.WiredSmittTrigger.name(),
+                Name.WiredThreshold.name(),
+                Name.WiredPullup.name()});
+    public static final Collection<String> OUT_SET = Arrays.asList(new String[]{
+                Name.WiredOut.name()});
 
     public CommandInfo(String name, String description, String remark) {
         this.name = name;
-	try {
-	    this.nameElement = Name.valueOf(name);
-	} catch (IllegalArgumentException e) {}
+        try {
+            this.nameElement = Name.valueOf(name);
+        } catch (IllegalArgumentException e) {
+        }
         this.description = description;
         this.explanation = remark;
         this.parameters = new ArrayList<Parameter>();
@@ -97,7 +90,7 @@ public class CommandInfo {
     }
 
     public Parameter getParameter(int i) {
-        if ( i >= parameters.size() ) {
+        if (i >= parameters.size()) {
             return null;
         }
         return parameters.get(i);
@@ -117,7 +110,7 @@ public class CommandInfo {
     }
 
     public Name getNameElement() {
-	return nameElement;
+        return nameElement;
     }
 
     public CommandType getType() {
@@ -136,17 +129,19 @@ public class CommandInfo {
         Pattern rangePattern = Pattern.compile("\\[?([0-9]+)\\.\\.([0-9]+)\\]?");
 
         ArrayList<Integer> result = new ArrayList<Integer>();
-        if ( contents != null ) {
+        if (contents != null) {
             String[] set = contents.split(",");
             // Ok, now split it up
             for (int i = 0; i < set.length; i++) {
                 String value = set[i];
                 Matcher rangeMatcher = rangePattern.matcher(value);
-                if ( rangeMatcher.matches() ) {
+                if (rangeMatcher.matches()) {
                     int start = Integer.parseInt(rangeMatcher.group(1));
                     int end = Integer.parseInt(rangeMatcher.group(2));
-                    if ( end < start ) {
-                        int tmp = start; start = end; end = tmp;
+                    if (end < start) {
+                        int tmp = start;
+                        start = end;
+                        end = tmp;
                     }
                     for (int j = start; j <= end; j++) {
                         result.add(j);
@@ -154,13 +149,14 @@ public class CommandInfo {
                 } else {
                     try {
                         result.add(Integer.parseInt(value));
-                    } catch (Exception e) {}
+                    } catch (Exception e) {
+                    }
                 }
             }
         }
 
         queryRange = new int[result.size()];
-        int cnt=0;
+        int cnt = 0;
         for (Integer integer : result) {
             queryRange[cnt++] = integer.intValue();
         }
