@@ -14,13 +14,13 @@ import java.awt.GridLayout;
 import java.awt.event.KeyEvent;
 import nl.lemval.nododue.NodoDueManager;
 import nl.lemval.nododue.NodoDueManagerView;
-import nl.lemval.nododue.Options;
 import nl.lemval.nododue.cmd.CommandLoader;
 import nl.lemval.nododue.cmd.CommandType;
 import nl.lemval.nododue.cmd.NodoCommand;
 import nl.lemval.nododue.component.EventActionPanel;
 import nl.lemval.nododue.util.listeners.OutputEventListener;
 import nl.lemval.nododue.util.SerialCommunicator;
+import org.apache.commons.lang.StringUtils;
 import org.jdesktop.application.Action;
 
 /**
@@ -61,13 +61,12 @@ public class NodoCommandPanel extends NodoBasePanel {
     private void initComponents() {
 
         commandPanel = new javax.swing.JPanel();
-        jPanel1 = new javax.swing.JPanel();
-        commandRun = new javax.swing.JButton();
         commandOutputLabel = new javax.swing.JLabel();
         jScrollPane2 = new javax.swing.JScrollPane();
         commandOutput = new javax.swing.JTextArea();
         rawInput = new javax.swing.JTextField();
         commandOutputLabel1 = new javax.swing.JLabel();
+        commandRun = new javax.swing.JButton();
 
         setName("Form"); // NOI18N
 
@@ -78,38 +77,14 @@ public class NodoCommandPanel extends NodoBasePanel {
         commandPanel.setLayout(commandPanelLayout);
         commandPanelLayout.setHorizontalGroup(
             commandPanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 208, Short.MAX_VALUE)
+            .add(0, 217, Short.MAX_VALUE)
         );
         commandPanelLayout.setVerticalGroup(
             commandPanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 338, Short.MAX_VALUE)
+            .add(0, 330, Short.MAX_VALUE)
         );
 
-        jPanel1.setName("jPanel1"); // NOI18N
-
-        javax.swing.ActionMap actionMap = org.jdesktop.application.Application.getInstance(nl.lemval.nododue.NodoDueManager.class).getContext().getActionMap(NodoCommandPanel.class, this);
-        commandRun.setAction(actionMap.get("executeNodoCommand")); // NOI18N
         org.jdesktop.application.ResourceMap resourceMap = org.jdesktop.application.Application.getInstance(nl.lemval.nododue.NodoDueManager.class).getContext().getResourceMap(NodoCommandPanel.class);
-        commandRun.setText(resourceMap.getString("commandRun.text")); // NOI18N
-        commandRun.setActionCommand(resourceMap.getString("commandRun.actionCommand")); // NOI18N
-        commandRun.setName("commandRun"); // NOI18N
-
-        org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
-        jPanel1.setLayout(jPanel1Layout);
-        jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel1Layout.createSequentialGroup()
-                .addContainerGap(102, Short.MAX_VALUE)
-                .add(commandRun, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 94, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
-        );
-        jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel1Layout.createSequentialGroup()
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .add(commandRun))
-        );
-
         commandOutputLabel.setText(resourceMap.getString("commandOutputLabel.text")); // NOI18N
         commandOutputLabel.setName("commandOutputLabel"); // NOI18N
 
@@ -135,39 +110,45 @@ public class NodoCommandPanel extends NodoBasePanel {
         commandOutputLabel1.setText(resourceMap.getString("commandOutputLabel1.text")); // NOI18N
         commandOutputLabel1.setName("commandOutputLabel1"); // NOI18N
 
+        javax.swing.ActionMap actionMap = org.jdesktop.application.Application.getInstance(nl.lemval.nododue.NodoDueManager.class).getContext().getActionMap(NodoCommandPanel.class, this);
+        commandRun.setAction(actionMap.get("executeNodoCommand")); // NOI18N
+        commandRun.setText(resourceMap.getString("commandRun.text")); // NOI18N
+        commandRun.setToolTipText(resourceMap.getString("commandRun.toolTipText")); // NOI18N
+        commandRun.setActionCommand(resourceMap.getString("commandRun.actionCommand")); // NOI18N
+        commandRun.setName("commandRun"); // NOI18N
+
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(layout.createSequentialGroup()
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
-                    .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(commandPanel, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                    .add(commandPanel, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(commandRun, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 94, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, rawInput, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, commandOutputLabel, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, commandOutputLabel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
-                    .add(jScrollPane2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE))
+                    .add(commandOutputLabel, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 224, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, commandOutputLabel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 224, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, jScrollPane2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 224, Short.MAX_VALUE)
+                    .add(rawInput, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 224, Short.MAX_VALUE))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(layout.createSequentialGroup()
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
+                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
                     .add(layout.createSequentialGroup()
-                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                            .add(org.jdesktop.layout.GroupLayout.LEADING, layout.createSequentialGroup()
-                                .addContainerGap()
-                                .add(commandOutputLabel1)
-                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                .add(jScrollPane2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 301, Short.MAX_VALUE))
-                            .add(org.jdesktop.layout.GroupLayout.LEADING, commandPanel, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                        .addContainerGap()
+                        .add(commandOutputLabel1)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(commandOutputLabel)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(rawInput, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                        .add(jScrollPane2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 293, Short.MAX_VALUE))
+                    .add(commandPanel, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(commandOutputLabel)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                    .add(rawInput, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(commandRun))
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -204,6 +185,12 @@ public class NodoCommandPanel extends NodoBasePanel {
 
     @Action
     public void executeNodoCommand() {
+        if ( StringUtils.isNotBlank(rawInput.getText())) {
+            sendCommand(rawInput.getText());
+            rawInput.setText(null);
+            return;
+        }
+
         NodoCommand cmd = actionPanel.getSelectedItem();
         if (cmd != null) {
             SerialCommunicator comm =
@@ -233,7 +220,6 @@ public class NodoCommandPanel extends NodoBasePanel {
     private javax.swing.JLabel commandOutputLabel1;
     private javax.swing.JPanel commandPanel;
     private javax.swing.JButton commandRun;
-    private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTextField rawInput;
     // End of variables declaration//GEN-END:variables

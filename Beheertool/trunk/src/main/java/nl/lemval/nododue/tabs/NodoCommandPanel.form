@@ -20,16 +20,16 @@
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" alignment="0" attributes="0">
-              <Group type="103" groupAlignment="1" max="-2" attributes="0">
-                  <Component id="jPanel1" min="-2" max="-2" attributes="1"/>
-                  <Component id="commandPanel" max="32767" attributes="1"/>
+              <Group type="103" groupAlignment="1" attributes="0">
+                  <Component id="commandPanel" min="-2" max="-2" attributes="1"/>
+                  <Component id="commandRun" alignment="1" min="-2" pref="94" max="-2" attributes="1"/>
               </Group>
-              <EmptySpace max="-2" attributes="0"/>
+              <EmptySpace type="unrelated" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="rawInput" alignment="1" pref="238" max="32767" attributes="0"/>
-                  <Component id="commandOutputLabel" alignment="1" pref="238" max="32767" attributes="0"/>
-                  <Component id="commandOutputLabel1" alignment="1" pref="238" max="32767" attributes="0"/>
-                  <Component id="jScrollPane2" pref="238" max="32767" attributes="0"/>
+                  <Component id="commandOutputLabel" alignment="0" pref="224" max="32767" attributes="0"/>
+                  <Component id="commandOutputLabel1" alignment="1" pref="224" max="32767" attributes="0"/>
+                  <Component id="jScrollPane2" alignment="1" pref="224" max="32767" attributes="0"/>
+                  <Component id="rawInput" alignment="0" pref="224" max="32767" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
@@ -37,24 +37,22 @@
     </DimensionLayout>
     <DimensionLayout dim="1">
       <Group type="103" groupAlignment="0" attributes="0">
-          <Group type="102" attributes="0">
-              <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="jPanel1" alignment="1" min="-2" max="-2" attributes="0"/>
-                  <Group type="102" alignment="0" attributes="0">
-                      <Group type="103" groupAlignment="1" attributes="0">
-                          <Group type="102" alignment="0" attributes="0">
-                              <EmptySpace max="-2" attributes="0"/>
-                              <Component id="commandOutputLabel1" min="-2" max="-2" attributes="0"/>
-                              <EmptySpace max="-2" attributes="0"/>
-                              <Component id="jScrollPane2" pref="301" max="32767" attributes="0"/>
-                          </Group>
-                          <Component id="commandPanel" alignment="0" min="-2" max="-2" attributes="0"/>
-                      </Group>
+          <Group type="102" alignment="1" attributes="0">
+              <Group type="103" groupAlignment="1" attributes="0">
+                  <Group type="102" attributes="0">
                       <EmptySpace max="-2" attributes="0"/>
-                      <Component id="commandOutputLabel" min="-2" max="-2" attributes="0"/>
+                      <Component id="commandOutputLabel1" min="-2" max="-2" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
-                      <Component id="rawInput" min="-2" max="-2" attributes="0"/>
+                      <Component id="jScrollPane2" pref="293" max="32767" attributes="0"/>
                   </Group>
+                  <Component id="commandPanel" max="32767" attributes="0"/>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+              <Component id="commandOutputLabel" min="-2" max="-2" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="rawInput" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="commandRun" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
@@ -71,52 +69,15 @@
       <Layout>
         <DimensionLayout dim="0">
           <Group type="103" groupAlignment="0" attributes="0">
-              <EmptySpace min="0" pref="208" max="32767" attributes="0"/>
+              <EmptySpace min="0" pref="217" max="32767" attributes="0"/>
           </Group>
         </DimensionLayout>
         <DimensionLayout dim="1">
           <Group type="103" groupAlignment="0" attributes="0">
-              <EmptySpace min="0" pref="338" max="32767" attributes="0"/>
+              <EmptySpace min="0" pref="330" max="32767" attributes="0"/>
           </Group>
         </DimensionLayout>
       </Layout>
-    </Container>
-    <Container class="javax.swing.JPanel" name="jPanel1">
-      <Properties>
-        <Property name="name" type="java.lang.String" value="jPanel1" noResource="true"/>
-      </Properties>
-
-      <Layout>
-        <DimensionLayout dim="0">
-          <Group type="103" groupAlignment="0" attributes="0">
-              <Group type="102" alignment="1" attributes="0">
-                  <EmptySpace pref="102" max="32767" attributes="0"/>
-                  <Component id="commandRun" min="-2" pref="94" max="-2" attributes="1"/>
-                  <EmptySpace max="-2" attributes="0"/>
-              </Group>
-          </Group>
-        </DimensionLayout>
-        <DimensionLayout dim="1">
-          <Group type="103" groupAlignment="0" attributes="0">
-              <Group type="102" alignment="1" attributes="0">
-                  <EmptySpace max="32767" attributes="0"/>
-                  <Component id="commandRun" min="-2" max="-2" attributes="0"/>
-              </Group>
-          </Group>
-        </DimensionLayout>
-      </Layout>
-      <SubComponents>
-        <Component class="javax.swing.JButton" name="commandRun">
-          <Properties>
-            <Property name="action" type="javax.swing.Action" editor="org.netbeans.modules.swingapp.ActionEditor">
-              <action class="nl.lemval.nododue.tabs.NodoCommandPanel" id="executeNodoCommand" methodName="executeNodoCommand"/>
-            </Property>
-            <Property name="text" type="java.lang.String" resourceKey="commandRun.text"/>
-            <Property name="actionCommand" type="java.lang.String" resourceKey="commandRun.actionCommand"/>
-            <Property name="name" type="java.lang.String" value="commandRun" noResource="true"/>
-          </Properties>
-        </Component>
-      </SubComponents>
     </Container>
     <Component class="javax.swing.JLabel" name="commandOutputLabel">
       <Properties>
@@ -164,6 +125,17 @@
         </Property>
         <Property name="text" type="java.lang.String" resourceKey="commandOutputLabel1.text"/>
         <Property name="name" type="java.lang.String" value="commandOutputLabel1" noResource="true"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JButton" name="commandRun">
+      <Properties>
+        <Property name="action" type="javax.swing.Action" editor="org.netbeans.modules.swingapp.ActionEditor">
+          <action class="nl.lemval.nododue.tabs.NodoCommandPanel" id="executeNodoCommand" methodName="executeNodoCommand"/>
+        </Property>
+        <Property name="text" type="java.lang.String" resourceKey="commandRun.text"/>
+        <Property name="toolTipText" type="java.lang.String" resourceKey="commandRun.toolTipText"/>
+        <Property name="actionCommand" type="java.lang.String" resourceKey="commandRun.actionCommand"/>
+        <Property name="name" type="java.lang.String" value="commandRun" noResource="true"/>
       </Properties>
     </Component>
   </SubComponents>
