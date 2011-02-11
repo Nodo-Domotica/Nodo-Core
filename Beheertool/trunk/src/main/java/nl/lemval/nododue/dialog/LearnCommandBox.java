@@ -8,23 +8,17 @@
  *
  * Created on 10-feb-2011, 19:39:23
  */
-
 package nl.lemval.nododue.dialog;
 
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Cursor;
 import nl.lemval.nododue.NodoDueManager;
 import nl.lemval.nododue.Options;
 import nl.lemval.nododue.cmd.CommandInfo;
 import nl.lemval.nododue.cmd.CommandLoader;
 import nl.lemval.nododue.cmd.NodoCommand;
 import nl.lemval.nododue.util.Device;
-import nl.lemval.nododue.util.NodoMacro;
-import nl.lemval.nododue.util.NodoMacroHandler;
-import nl.lemval.nododue.util.NodoMacroList;
 import nl.lemval.nododue.util.SerialCommunicator;
 import nl.lemval.nododue.util.listeners.HexKeyListener;
+import org.apache.commons.lang.StringUtils;
 import org.jdesktop.application.Action;
 
 /**
@@ -33,11 +27,8 @@ import org.jdesktop.application.Action;
  */
 public class LearnCommandBox extends javax.swing.JDialog {
 
-    private static final CommandInfo.Name USER_EVENT = CommandInfo.Name.UserEvent;
-    private static NodoMacro neededMacro;
-    private static NodoMacro optionalMacro;
     private HexKeyListener hkl = new HexKeyListener(2);
-    
+
     /** Creates new form LearnCommandBox */
     public LearnCommandBox(java.awt.Frame parent, boolean modal) {
         super(parent, modal);
@@ -47,19 +38,6 @@ public class LearnCommandBox extends javax.swing.JDialog {
         numValue.setText("1");
         groupValue.addKeyListener(hkl);
         numValue.addKeyListener(hkl);
-
-        startButton.setEnabled(true);
-        setEnabled(actionPanel, false);
-        
-        if ( neededMacro == null || optionalMacro == null ) {
-            CommandInfo action = CommandLoader.get(CommandInfo.Name.SendSignal);
-            CommandInfo event = CommandLoader.get(CommandInfo.Name.WildCard);
-            NodoCommand sendSignalCommand = new NodoCommand(action, null, null);
-            NodoCommand wildcardAllCommand = new NodoCommand(event, "All", USER_EVENT.name());
-            NodoCommand wildcardSerialCommand = new NodoCommand(event, "Serial", USER_EVENT.name());
-            optionalMacro = new NodoMacro(wildcardAllCommand, sendSignalCommand);
-            neededMacro = new NodoMacro(wildcardSerialCommand, sendSignalCommand);
-        }
     }
 
     /** This method is called from within the constructor to
@@ -73,9 +51,6 @@ public class LearnCommandBox extends javax.swing.JDialog {
 
         javax.swing.JLabel titleLabel = new javax.swing.JLabel();
         infoLabel = new javax.swing.JTextArea();
-        startPanel = new javax.swing.JPanel();
-        startButton = new javax.swing.JButton();
-        statusLabel = new javax.swing.JLabel();
         actionPanel = new javax.swing.JPanel();
         groupLabel = new javax.swing.JLabel();
         numLabel = new javax.swing.JLabel();
@@ -88,6 +63,7 @@ public class LearnCommandBox extends javax.swing.JDialog {
         buttonPanel = new javax.swing.JPanel();
         sendButton = new javax.swing.JButton();
         incrementButton = new javax.swing.JButton();
+        jButton1 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         org.jdesktop.application.ResourceMap resourceMap = org.jdesktop.application.Application.getInstance(nl.lemval.nododue.NodoDueManager.class).getContext().getResourceMap(LearnCommandBox.class);
@@ -109,18 +85,6 @@ public class LearnCommandBox extends javax.swing.JDialog {
         infoLabel.setWrapStyleWord(true);
         infoLabel.setBorder(null);
         infoLabel.setName("infoLabel"); // NOI18N
-
-        startPanel.setName("startPanel"); // NOI18N
-
-        javax.swing.ActionMap actionMap = org.jdesktop.application.Application.getInstance(nl.lemval.nododue.NodoDueManager.class).getContext().getActionMap(LearnCommandBox.class, this);
-        startButton.setAction(actionMap.get("startAction")); // NOI18N
-        startButton.setText(resourceMap.getString("startButton.text")); // NOI18N
-        startButton.setName("startButton"); // NOI18N
-        startPanel.add(startButton);
-
-        statusLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        statusLabel.setText(resourceMap.getString("statusLabel.text")); // NOI18N
-        statusLabel.setName("statusLabel"); // NOI18N
 
         actionPanel.setBorder(javax.swing.BorderFactory.createEtchedBorder());
         actionPanel.setName("actionPanel"); // NOI18N
@@ -157,6 +121,7 @@ public class LearnCommandBox extends javax.swing.JDialog {
 
         buttonPanel.setName("buttonPanel"); // NOI18N
 
+        javax.swing.ActionMap actionMap = org.jdesktop.application.Application.getInstance(nl.lemval.nododue.NodoDueManager.class).getContext().getActionMap(LearnCommandBox.class, this);
         sendButton.setAction(actionMap.get("sendAction")); // NOI18N
         sendButton.setText(resourceMap.getString("sendButton.text")); // NOI18N
         sendButton.setName("sendButton"); // NOI18N
@@ -232,6 +197,10 @@ public class LearnCommandBox extends javax.swing.JDialog {
                 .addContainerGap())
         );
 
+        jButton1.setAction(actionMap.get("closeAction")); // NOI18N
+        jButton1.setText(resourceMap.getString("jButton1.text")); // NOI18N
+        jButton1.setName("jButton1"); // NOI18N
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -240,10 +209,9 @@ public class LearnCommandBox extends javax.swing.JDialog {
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(actionPanel, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(statusLabel, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 382, Short.MAX_VALUE)
+                    .addComponent(infoLabel, javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(titleLabel, javax.swing.GroupLayout.DEFAULT_SIZE, 382, Short.MAX_VALUE)
-                    .addComponent(startPanel, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 382, Short.MAX_VALUE)
-                    .addComponent(infoLabel, javax.swing.GroupLayout.Alignment.LEADING))
+                    .addComponent(jButton1))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -252,14 +220,12 @@ public class LearnCommandBox extends javax.swing.JDialog {
                 .addContainerGap()
                 .addComponent(titleLabel)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(infoLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 61, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(startPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(statusLabel)
+                .addComponent(infoLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(actionPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jButton1)
+                .addContainerGap())
         );
 
         pack();
@@ -268,12 +234,12 @@ public class LearnCommandBox extends javax.swing.JDialog {
     @Action
     public void storeAction() {
         nameValue.setText("");
-        
-        long value = hkl.toValue(numValue.getText())+1;
-        if ( value > hkl.getMaxValue() ) {
+
+        long value = hkl.toValue(numValue.getText()) + 1;
+        if (value > hkl.getMaxValue()) {
             value = 0;
-            long group = hkl.toValue(groupValue.getText())+1;
-            if ( group > hkl.getMaxValue() ) {
+            long group = hkl.toValue(groupValue.getText()) + 1;
+            if (group > hkl.getMaxValue()) {
                 group = 0;
             }
             groupValue.setText(Long.toString(group));
@@ -283,58 +249,61 @@ public class LearnCommandBox extends javax.swing.JDialog {
 
     @Action
     public void sendAction() {
-        CommandInfo ue = CommandLoader.get(USER_EVENT);
-        NodoCommand cmd = new NodoCommand(ue, groupValue.getText(), numValue.getText());
-        SerialCommunicator comm =
-                NodoDueManager.getApplication().getSerialCommunicator();
-        comm.send(cmd);
-        comm.waitCommand();
+        if (NodoDueManager.hasConnection()) {
+            CommandInfo sue = CommandLoader.get(CommandInfo.Name.SendUserEvent);
+            NodoCommand cmd = new NodoCommand(sue, groupValue.getText(), numValue.getText());
+            SerialCommunicator comm =
+                    NodoDueManager.getApplication().getSerialCommunicator();
+            comm.send(cmd);
+            comm.waitCommand();
 
-        Device device = new Device(cmd.toString());
-        device.setSource("IR");
-        device.setLocation(locationValue.getText());
-        device.setName(nameValue.getText());
-        Options.getInstance().addAppliance(device);
-    }
-
-    @Action
-    public void startAction() {
-        if ( NodoDueManager.hasConnection() ) {
-            setCursor(new Cursor(Cursor.WAIT_CURSOR));
-            statusLabel.setText("Ophalen events voor controle...");
-            NodoMacroHandler macroHandler = new NodoMacroHandler();
-            NodoMacroList list = macroHandler.getList();
-            statusLabel.setText("Controle verzending via IR...");
-            
-            boolean found = false;
-            for (int i = 0; i < list.size(); i++) {
-                NodoMacro macro = list.get(i);
-                if ( neededMacro.equals(macro) || optionalMacro.equals(macro) ) {
-                    found = true;
-                    statusLabel.setText("Event aanwezig :-)");
-                    break;
-                }
+            if (StringUtils.isNotBlank(nameValue.getText())) {
+                CommandInfo ue = CommandLoader.get(CommandInfo.Name.UserEvent);
+                Device device = new Device(
+                        new NodoCommand(ue, groupValue.getText(), numValue.getText()).toString());
+                device.setSource("IR");
+                device.setLocation(locationValue.getText());
+                device.setName(nameValue.getText());
+                Options.getInstance().addAppliance(device);
             }
-            
-            if ( !found ) {
-                if ( list.size() >= NodoMacroList.MAXLENGTH ) {
-                    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                    statusLabel.setText("Event ontbreekt en lijst is vol :-(");
-                    return;
-                }
-                list.add(neededMacro);
-                statusLabel.setText("Bijwerken events...");
-                macroHandler.writeList(list);
-            }
-
-            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-            statusLabel.setText("Aanleren kan beginnen!");
-            setEnabled(actionPanel, true);
-            startButton.setText("Started");
-            startButton.setEnabled(false);
         }
     }
-
+//    public void startAction() {
+//        if ( NodoDueManager.hasConnection() ) {
+//            setCursor(new Cursor(Cursor.WAIT_CURSOR));
+//            statusLabel.setText("Ophalen events voor controle...");
+//            NodoMacroHandler macroHandler = new NodoMacroHandler();
+//            NodoMacroList list = macroHandler.getList();
+//            statusLabel.setText("Controle verzending via IR...");
+//            
+//            boolean found = false;
+//            for (int i = 0; i < list.size(); i++) {
+//                NodoMacro macro = list.get(i);
+//                if ( neededMacro.equals(macro) || optionalMacro.equals(macro) ) {
+//                    found = true;
+//                    statusLabel.setText("Event aanwezig :-)");
+//                    break;
+//                }
+//            }
+//            
+//            if ( !found ) {
+//                if ( list.size() >= NodoMacroList.MAXLENGTH ) {
+//                    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+//                    statusLabel.setText("Event ontbreekt en lijst is vol :-(");
+//                    return;
+//                }
+//                list.add(neededMacro);
+//                statusLabel.setText("Bijwerken events...");
+//                macroHandler.writeList(list);
+//            }
+//
+//            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+//            statusLabel.setText("Aanleren kan beginnen!");
+//            setEnabled(actionPanel, true);
+//            startButton.setText("Started");
+//            startButton.setEnabled(false);
+//        }
+//    }
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel actionPanel;
     private javax.swing.JPanel buttonPanel;
@@ -342,6 +311,7 @@ public class LearnCommandBox extends javax.swing.JDialog {
     private javax.swing.JTextField groupValue;
     private javax.swing.JButton incrementButton;
     private javax.swing.JTextArea infoLabel;
+    private javax.swing.JButton jButton1;
     private javax.swing.JLabel locationLabel;
     private javax.swing.JTextField locationValue;
     private javax.swing.JLabel nameLabel;
@@ -349,18 +319,10 @@ public class LearnCommandBox extends javax.swing.JDialog {
     private javax.swing.JLabel numLabel;
     private javax.swing.JTextField numValue;
     private javax.swing.JButton sendButton;
-    private javax.swing.JButton startButton;
-    private javax.swing.JPanel startPanel;
-    private javax.swing.JLabel statusLabel;
     // End of variables declaration//GEN-END:variables
 
-    private void setEnabled(Container component, boolean enable) {
-        component.setEnabled(enable);
-        for (Component child : component.getComponents()) {
-            if ( child instanceof Container ) {
-                setEnabled((Container)child, enable);
-            }
-        }
+    @Action
+    public void closeAction() {
+        dispose();
     }
-
 }

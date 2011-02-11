@@ -1,7 +1,6 @@
 /*
  * NodoDueManagerAboutBox.java
  */
-
 package nl.lemval.nododue.dialog;
 
 import java.awt.Cursor;
@@ -33,26 +32,24 @@ import org.jdesktop.application.Action;
 public class UnitSelectorBox extends javax.swing.JDialog {
 
     private static final String ALL_NODOS = "Alle";
-
     /** Gesorteerde lijst van remote units in het tekstveld */
-    private TreeSet<String> remoteUnits = new TreeSet<String>(new Comparator<String>() {
-       public int compare(String o1, String o2) {
-           try {
-               return (int)(Long.parseLong(o1) - Long.parseLong(o2));
-           } catch (Exception e) {
-	       if ( o1 == null ) {
-		   return -1;
-	       }
-               return o1.compareTo(o2);
-           }
+    private TreeSet<String> remoteUnits = new TreeSet<String>(new Comparator<String>()  {
+
+        public int compare(String o1, String o2) {
+            try {
+                return (int) (Long.parseLong(o1) - Long.parseLong(o2));
+            } catch (Exception e) {
+                if (o1 == null) {
+                    return -1;
+                }
+                return o1.compareTo(o2);
+            }
         }
     });
     /** Locale unit in het tekstveld */
     private String currentUnit = null;
-
     /** Validator voor de invoer van remote units */
     private HexKeyListener hexKeyListener = new HexKeyListener(1);
-
     /** Mogelijke selectie van remote units */
     private DefaultComboBoxModel remoteUnitModel = new DefaultComboBoxModel();
 
@@ -65,7 +62,7 @@ public class UnitSelectorBox extends javax.swing.JDialog {
 
     @Override
     public void setVisible(boolean state) {
-        if ( state ) {
+        if (state) {
             refreshDialog();
         }
         super.setVisible(state);
@@ -75,52 +72,52 @@ public class UnitSelectorBox extends javax.swing.JDialog {
         Options options = Options.getInstance();
         int currentUnitNum = options.getNodoUnit();
         String[] ru = options.getRemoteUnits();
-	boolean local = options.isUseLocalUnit();
-	boolean remote = options.isUseRemoteUnits();
+        boolean local = options.isUseLocalUnit();
+        boolean remote = options.isUseRemoteUnits();
 
-	nodoHomeLabel.setText(String.valueOf(options.getNodoHome()));
-	remoteUnitModel.removeAllElements();
-	remoteUnitModel.addElement(ALL_NODOS);
-	for (int i = 1; i < 16; i++) {
-	    if ( i != currentUnitNum) {
-		remoteUnitModel.addElement(String.valueOf(i));
-	    }
-	}
-	currentUnit = String.valueOf(currentUnitNum);
-	localUnitLabel.setText(currentUnit);
-	if (ru.length > 0) {
-    	remoteUnitSelection.setSelectedItem(ru[0]);
-	    remoteUnits.addAll(Arrays.asList(ru));
-	    updateRemoteUnits();
-	}
+        nodoHomeLabel.setText(String.valueOf(options.getNodoHome()));
+        remoteUnitModel.removeAllElements();
+        remoteUnitModel.addElement(ALL_NODOS);
+        for (int i = 1; i < 16; i++) {
+            if (i != currentUnitNum) {
+                remoteUnitModel.addElement(String.valueOf(i));
+            }
+        }
+        currentUnit = String.valueOf(currentUnitNum);
+        localUnitLabel.setText(currentUnit);
+        if (ru.length > 0) {
+            remoteUnitSelection.setSelectedItem(ru[0]);
+            remoteUnits.addAll(Arrays.asList(ru));
+            updateRemoteUnits();
+        }
 
-	if (local && !remote) {
+        if (local && !remote) {
             localButton.getModel().setSelected(true);
-	} else {
-	    if ( !local && ru.length == 1 ) {
+        } else {
+            if (!local && ru.length == 1) {
                 remoteButton.getModel().setSelected(true);
-	    } else {
+            } else {
                 multipleRemoteButton.getModel().setSelected(true);
-		if (local) {
-		    includeLocal.getModel().setSelected(true);
-		}
-	    }
+                if (local) {
+                    includeLocal.getModel().setSelected(true);
+                }
+            }
         }
     }
 
     @Action
     public void closeOptionBox() {
         Options options = Options.getInstance();
-        if ( multipleRemoteButton.isSelected() ) {
+        if (multipleRemoteButton.isSelected()) {
             options.setUseLocalUnit(includeLocal.isSelected());
             options.setUseRemoteUnits(true);
             options.setRemoteUnits(remoteUnits);
-        } else if ( remoteButton.isSelected() ) {
+        } else if (remoteButton.isSelected()) {
             options.setUseLocalUnit(false);
             options.setUseRemoteUnits(true);
-	    String su = (String) remoteUnitSelection.getSelectedItem();
-	    HashSet<String> set = new HashSet<String>();
-	    set.add(su);
+            String su = (String) remoteUnitSelection.getSelectedItem();
+            HashSet<String> set = new HashSet<String>();
+            set.add(su);
             options.setRemoteUnits(set);
         } else {
             options.setUseLocalUnit(true);
@@ -328,12 +325,12 @@ public class UnitSelectorBox extends javax.swing.JDialog {
 
     private void updateRemoteUnits(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_updateRemoteUnits
         char keychar = evt.getKeyChar();
-        if ( keychar == KeyEvent.VK_DELETE
+        if (keychar == KeyEvent.VK_DELETE
                 || keychar == KeyEvent.VK_BACK_SPACE
                 || remoteUnitList.getSelectedText() != null) {
             remoteUnits.clear();
         }
-        if ( keychar == KeyEvent.VK_ENTER ) {
+        if (keychar == KeyEvent.VK_ENTER) {
             updateRemoteUnits();
         }
         boolean active = (remoteUnitList.getText().length() > 0);
@@ -345,10 +342,10 @@ public class UnitSelectorBox extends javax.swing.JDialog {
     }//GEN-LAST:event_remoteUnitListFocusLost
 
     private void remoteUnitSelectionItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_remoteUnitSelectionItemStateChanged
-	if ( evt.getStateChange() == ItemEvent.SELECTED ) {
-	    String value = (String) evt.getItem();
-	    remoteButton.getModel().setSelected(true);
-	}
+        if (evt.getStateChange() == ItemEvent.SELECTED) {
+            String value = (String) evt.getItem();
+            remoteButton.getModel().setSelected(true);
+        }
     }//GEN-LAST:event_remoteUnitSelectionItemStateChanged
 
     private void updateRemoteUnits() {
@@ -357,14 +354,15 @@ public class UnitSelectorBox extends javax.swing.JDialog {
         String[] list = all.split(",");
         for (int i = 0; i < list.length; i++) {
             String value = hexKeyListener.toDecValue(list[i].trim());
-            if ( value != null ) {
-            	int result = Integer.parseInt(value);
-            	if ( result > 0 && result < 16 )
+            if (value != null) {
+                int result = Integer.parseInt(value);
+                if (result > 0 && result < 16) {
                     remoteUnits.add(value);
+                }
             }
         }
         // Skip the current unit
-        if ( remoteUnits.contains(currentUnit) ) {
+        if (remoteUnits.contains(currentUnit)) {
             remoteUnits.remove(currentUnit);
             includeLocal.getModel().setSelected(true);
         }
@@ -375,101 +373,104 @@ public class UnitSelectorBox extends javax.swing.JDialog {
             b.append(Integer.parseInt(value));
             b.append(",");
         }
-        if ( b.length() > 1 )
-            remoteUnitList.setText(b.substring(0, b.length()-1));
-        else
+        if (b.length() > 1) {
+            remoteUnitList.setText(b.substring(0, b.length() - 1));
+        } else {
             remoteUnitList.setText(null);
+        }
     }
 
     /*
     @Action
     public void scanRemoteUnits() {
-        if ( NodoDueManager.hasConnection() ) {
-            setCursor(new Cursor(Cursor.WAIT_CURSOR));
-
-            SerialCommunicator comm = NodoDueManager.getApplication().getSerialCommunicator();
-
-            // Let wel op dat je bij meerdere Nodo's je eenmalig de instelling 'WaitFreeRF All'
-            // verzendt, anders gaan de Nodo's door elkaar heen praten en krijg je vreemde 
-            // hex-codes of er gebeurt niets.
-            //
-            CommandInfo info = CommandLoader.get(CommandInfo.Name.WaitFreeRF);
-            comm.send(new NodoCommand(info, "All", "0"));
-            comm.waitCommand(500);
-
-            final StringBuilder result = new StringBuilder();
-            OutputEventListener listener = new OutputEventListener() {
-                public void handleOutputLine(String message) {
-                    result.append(message);
-                    result.append("~");
-                }
-                public void handleClear() {}
-            };
-            comm.addOutputListener(listener);
-
-            info = CommandLoader.get(CommandInfo.Name.Unit);
-
-            int timeoutCount = 0;
-            for (int i = 1; i < 16; i++) {
-                NodoCommand cmd = NodoCommand.getRemoteStatusCommand(info, i);
-                comm.send(cmd);
-                System.out.println("Sent : " + cmd);
-                if ( comm.waitCommand(500, 500) ) {
-                    timeoutCount++;
-                }
-                System.out.println("Rcvd : " + result.toString());
-                
-//                if ( timeoutCount >= 3 ) {
-//                    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-//                    NodoDueManager.getApplication().reportTimeout();
-//                    return;
-//                }
-            }
-
-            // Has more output. Make sure to catch it.
-            comm.waitCommand(1500,1500);
-            comm.removeOutputListener(listener);
-
-            System.out.println("Eind : " + result.toString());
-
-            // Parse result
-            HashSet<String> foundUnits = new HashSet<String>();
-            // Nodo-?.INPUT: RF, Unit-2, (Unit 2, 1)
-         
-            Pattern pattern = Pattern.compile("RF, \\(?Unit-([0-9]{1,2}), \\(?Unit");
-            Matcher matcher = pattern.matcher(result);
-            while ( matcher.find() ) {
-                foundUnits.add( matcher.group(1) );
-            }
-
-            Options.getInstance().setRemoteUnits(foundUnits);
-            remoteUnitModel.removeAllElements();
-            for (String ru : foundUnits) {
-                remoteUnitModel.addElement(ru);
-            }
-            remoteButton.setEnabled(!foundUnits.isEmpty());
-
-            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-        }
+    if ( NodoDueManager.hasConnection() ) {
+    setCursor(new Cursor(Cursor.WAIT_CURSOR));
+    
+    SerialCommunicator comm = NodoDueManager.getApplication().getSerialCommunicator();
+    
+    // Let wel op dat je bij meerdere Nodo's je eenmalig de instelling 'WaitFreeRF All'
+    // verzendt, anders gaan de Nodo's door elkaar heen praten en krijg je vreemde 
+    // hex-codes of er gebeurt niets.
+    //
+    CommandInfo info = CommandLoader.get(CommandInfo.Name.WaitFreeRF);
+    comm.send(new NodoCommand(info, "All", "0"));
+    comm.waitCommand(500);
+    
+    final StringBuilder result = new StringBuilder();
+    OutputEventListener listener = new OutputEventListener() {
+    public void handleOutputLine(String message) {
+    result.append(message);
+    result.append("~");
     }
-*/
-
+    public void handleClear() {}
+    };
+    comm.addOutputListener(listener);
+    
+    info = CommandLoader.get(CommandInfo.Name.Unit);
+    
+    int timeoutCount = 0;
+    for (int i = 1; i < 16; i++) {
+    NodoCommand cmd = NodoCommand.getRemoteStatusCommand(info, i);
+    comm.send(cmd);
+    System.out.println("Sent : " + cmd);
+    if ( comm.waitCommand(500, 500) ) {
+    timeoutCount++;
+    }
+    System.out.println("Rcvd : " + result.toString());
+    
+    //                if ( timeoutCount >= 3 ) {
+    //                    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+    //                    NodoDueManager.getApplication().reportTimeout();
+    //                    return;
+    //                }
+    }
+    
+    // Has more output. Make sure to catch it.
+    comm.waitCommand(1500,1500);
+    comm.removeOutputListener(listener);
+    
+    System.out.println("Eind : " + result.toString());
+    
+    // Parse result
+    HashSet<String> foundUnits = new HashSet<String>();
+    // Nodo-?.INPUT: RF, Unit-2, (Unit 2, 1)
+    
+    Pattern pattern = Pattern.compile("RF, \\(?Unit-([0-9]{1,2}), \\(?Unit");
+    Matcher matcher = pattern.matcher(result);
+    while ( matcher.find() ) {
+    foundUnits.add( matcher.group(1) );
+    }
+    
+    Options.getInstance().setRemoteUnits(foundUnits);
+    remoteUnitModel.removeAllElements();
+    for (String ru : foundUnits) {
+    remoteUnitModel.addElement(ru);
+    }
+    remoteButton.setEnabled(!foundUnits.isEmpty());
+    
+    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+    }
+    }
+     */
     @Action
     public void validateRemoteUnit() {
-        if ( NodoDueManager.hasConnection() ) {
+        if (NodoDueManager.hasConnection()) {
             setCursor(new Cursor(Cursor.WAIT_CURSOR));
 
             SerialCommunicator comm = NodoDueManager.getApplication().getSerialCommunicator();
 
             final StringBuilder result = new StringBuilder();
-            OutputEventListener listener = new OutputEventListener() {
+            OutputEventListener listener = new OutputEventListener()  {
+
                 public void handleOutputLine(String message) {
                     result.append(message);
                 }
-                public void handleClear() {}
+
+                public void handleClear() {
+                }
             };
             comm.addOutputListener(listener);
-	    int unit = Integer.parseInt((String)remoteUnitSelection.getSelectedItem());
+            int unit = Integer.parseInt((String) remoteUnitSelection.getSelectedItem());
             CommandInfo info = CommandLoader.get(CommandInfo.Name.Unit);
             NodoCommand cmd = NodoCommand.getRemoteStatusCommand(info, unit);
             comm.send(cmd);
@@ -483,10 +484,10 @@ public class UnitSelectorBox extends javax.swing.JDialog {
 
             Pattern pattern = Pattern.compile("RF, \\(?Unit-([0-9]{1,2}), \\(?Unit");
             Matcher matcher = pattern.matcher(result);
-            if ( matcher.find() ) {
-		HashSet<String> data = new HashSet<String>();
-		data.add(matcher.group(1));
-		Options.getInstance().setRemoteUnits( data );
+            if (matcher.find()) {
+                HashSet<String> data = new HashSet<String>();
+                data.add(matcher.group(1));
+                Options.getInstance().setRemoteUnits(data);
             }
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
         }
@@ -494,17 +495,20 @@ public class UnitSelectorBox extends javax.swing.JDialog {
 
     @Action
     public void scanLocalUnit() {
-        if ( NodoDueManager.hasConnection() ) {
+        if (NodoDueManager.hasConnection()) {
             setCursor(new Cursor(Cursor.WAIT_CURSOR));
 
             SerialCommunicator comm = NodoDueManager.getApplication().getSerialCommunicator();
             final StringBuilder result = new StringBuilder();
-            OutputEventListener listener = new OutputEventListener() {
+            OutputEventListener listener = new OutputEventListener()  {
+
                 public void handleOutputLine(String message) {
                     result.append(message);
                     result.append("~");
                 }
-                public void handleClear() {}
+
+                public void handleClear() {
+                }
             };
             comm.addOutputListener(listener);
 
@@ -520,7 +524,6 @@ public class UnitSelectorBox extends javax.swing.JDialog {
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
         }
     }
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton closeButton;
     private javax.swing.JLabel huiscodeLabel;
@@ -538,5 +541,4 @@ public class UnitSelectorBox extends javax.swing.JDialog {
     private javax.swing.JButton scanLocalButton;
     private javax.swing.JButton scanRemoteButton;
     // End of variables declaration//GEN-END:variables
-
 }

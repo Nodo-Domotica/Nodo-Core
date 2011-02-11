@@ -166,13 +166,18 @@
                 <Property name="name" type="java.lang.String" value="devicesMenuItem" noResource="true"/>
               </Properties>
             </MenuItem>
-            <MenuItem class="javax.swing.JMenuItem" name="historyMenuItem">
+            <MenuItem class="javax.swing.JMenuItem" name="learnMenuItem">
               <Properties>
                 <Property name="action" type="javax.swing.Action" editor="org.netbeans.modules.swingapp.ActionEditor">
-                  <action class="nl.lemval.nododue.NodoDueManagerView" id="showHistoryBox" methodName="showHistoryBox"/>
+                  <action class="nl.lemval.nododue.NodoDueManagerView" id="showLearnCommandsDialog" methodName="showLearnCommandsDialog"/>
                 </Property>
-                <Property name="text" type="java.lang.String" resourceKey="historyMenuItem.text"/>
-                <Property name="name" type="java.lang.String" value="historyMenuItem" noResource="true"/>
+                <Property name="text" type="java.lang.String" resourceKey="learnMenuItem.text"/>
+                <Property name="name" type="java.lang.String" value="learnMenuItem" noResource="true"/>
+              </Properties>
+            </MenuItem>
+            <MenuItem class="javax.swing.JPopupMenu$Separator" name="jSeparator3">
+              <Properties>
+                <Property name="name" type="java.lang.String" value="jSeparator3" noResource="true"/>
               </Properties>
             </MenuItem>
             <MenuItem class="javax.swing.JMenuItem" name="dateTimeMenuItem">
@@ -184,13 +189,18 @@
                 <Property name="name" type="java.lang.String" value="dateTimeMenuItem" noResource="true"/>
               </Properties>
             </MenuItem>
-            <MenuItem class="javax.swing.JMenuItem" name="learnMenuItem">
+            <MenuItem class="javax.swing.JPopupMenu$Separator" name="jSeparator4">
+              <Properties>
+                <Property name="name" type="java.lang.String" value="jSeparator4" noResource="true"/>
+              </Properties>
+            </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="historyMenuItem">
               <Properties>
                 <Property name="action" type="javax.swing.Action" editor="org.netbeans.modules.swingapp.ActionEditor">
-                  <action class="nl.lemval.nododue.NodoDueManagerView" id="showLearnCommandsDialog" methodName="showLearnCommandsDialog"/>
+                  <action class="nl.lemval.nododue.NodoDueManagerView" id="showHistoryBox" methodName="showHistoryBox"/>
                 </Property>
-                <Property name="text" type="java.lang.String" resourceKey="learnMenuItem.text"/>
-                <Property name="name" type="java.lang.String" value="learnMenuItem" noResource="true"/>
+                <Property name="text" type="java.lang.String" resourceKey="historyMenuItem.text"/>
+                <Property name="name" type="java.lang.String" value="historyMenuItem" noResource="true"/>
               </Properties>
             </MenuItem>
           </SubComponents>

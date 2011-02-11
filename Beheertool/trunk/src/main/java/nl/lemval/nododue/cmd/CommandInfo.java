@@ -34,6 +34,7 @@ public class CommandInfo {
         SendStatus,
         SendSignal,
         SendKAKU,
+        SendUserEvent,
         Unit,
         Status,
         Reset,

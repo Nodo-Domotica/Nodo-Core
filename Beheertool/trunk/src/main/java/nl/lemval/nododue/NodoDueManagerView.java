@@ -205,9 +205,11 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
         nodoMenu = new javax.swing.JMenu();
         unitMenuItem = new javax.swing.JMenuItem();
         devicesMenuItem = new javax.swing.JMenuItem();
-        historyMenuItem = new javax.swing.JMenuItem();
-        dateTimeMenuItem = new javax.swing.JMenuItem();
         learnMenuItem = new javax.swing.JMenuItem();
+        jSeparator3 = new javax.swing.JPopupMenu.Separator();
+        dateTimeMenuItem = new javax.swing.JMenuItem();
+        jSeparator4 = new javax.swing.JPopupMenu.Separator();
+        historyMenuItem = new javax.swing.JMenuItem();
         schermMenu = new javax.swing.JMenu();
         showConnectMenuItem = new javax.swing.JMenuItem();
         showCommandMenuItem = new javax.swing.JMenuItem();
@@ -312,20 +314,26 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
         devicesMenuItem.setName("devicesMenuItem"); // NOI18N
         nodoMenu.add(devicesMenuItem);
 
-        historyMenuItem.setAction(actionMap.get("showHistoryBox")); // NOI18N
-        historyMenuItem.setText(resourceMap.getString("historyMenuItem.text")); // NOI18N
-        historyMenuItem.setName("historyMenuItem"); // NOI18N
-        nodoMenu.add(historyMenuItem);
+        learnMenuItem.setAction(actionMap.get("showLearnCommandsDialog")); // NOI18N
+        learnMenuItem.setText(resourceMap.getString("learnMenuItem.text")); // NOI18N
+        learnMenuItem.setName("learnMenuItem"); // NOI18N
+        nodoMenu.add(learnMenuItem);
+
+        jSeparator3.setName("jSeparator3"); // NOI18N
+        nodoMenu.add(jSeparator3);
 
         dateTimeMenuItem.setAction(actionMap.get("showDateTimeDialog")); // NOI18N
         dateTimeMenuItem.setText(resourceMap.getString("dateTimeMenuItem.text")); // NOI18N
         dateTimeMenuItem.setName("dateTimeMenuItem"); // NOI18N
         nodoMenu.add(dateTimeMenuItem);
 
-        learnMenuItem.setAction(actionMap.get("showLearnCommandsDialog")); // NOI18N
-        learnMenuItem.setText(resourceMap.getString("learnMenuItem.text")); // NOI18N
-        learnMenuItem.setName("learnMenuItem"); // NOI18N
-        nodoMenu.add(learnMenuItem);
+        jSeparator4.setName("jSeparator4"); // NOI18N
+        nodoMenu.add(jSeparator4);
+
+        historyMenuItem.setAction(actionMap.get("showHistoryBox")); // NOI18N
+        historyMenuItem.setText(resourceMap.getString("historyMenuItem.text")); // NOI18N
+        historyMenuItem.setName("historyMenuItem"); // NOI18N
+        nodoMenu.add(historyMenuItem);
 
         menuBar.add(nodoMenu);
 
@@ -486,6 +494,8 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
     private javax.swing.JMenuItem historyMenuItem;
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JPopupMenu.Separator jSeparator2;
+    private javax.swing.JPopupMenu.Separator jSeparator3;
+    private javax.swing.JPopupMenu.Separator jSeparator4;
     private javax.swing.JMenuItem learnMenuItem;
     private javax.swing.JMenuItem loadConfigMenuItem;
     private javax.swing.JMenuItem loadMacroMenuItem;

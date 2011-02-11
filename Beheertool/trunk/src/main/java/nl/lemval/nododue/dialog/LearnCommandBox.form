@@ -29,10 +29,9 @@
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="1" attributes="0">
                   <Component id="actionPanel" alignment="0" max="32767" attributes="0"/>
-                  <Component id="statusLabel" alignment="0" pref="382" max="32767" attributes="0"/>
-                  <Component id="titleLabel" alignment="1" pref="382" max="32767" attributes="0"/>
-                  <Component id="startPanel" alignment="0" pref="382" max="32767" attributes="0"/>
                   <Component id="infoLabel" alignment="0" max="32767" attributes="0"/>
+                  <Component id="titleLabel" alignment="1" pref="382" max="32767" attributes="0"/>
+                  <Component id="jButton1" alignment="1" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
@@ -44,14 +43,12 @@
               <EmptySpace max="-2" attributes="0"/>
               <Component id="titleLabel" min="-2" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
-              <Component id="infoLabel" min="-2" pref="61" max="-2" attributes="0"/>
-              <EmptySpace max="-2" attributes="0"/>
-              <Component id="startPanel" min="-2" max="-2" attributes="0"/>
-              <EmptySpace max="-2" attributes="0"/>
-              <Component id="statusLabel" min="-2" max="-2" attributes="0"/>
+              <Component id="infoLabel" min="-2" pref="70" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
               <Component id="actionPanel" min="-2" max="-2" attributes="0"/>
               <EmptySpace max="32767" attributes="0"/>
+              <Component id="jButton1" min="-2" max="-2" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
@@ -90,31 +87,6 @@
           <Border info="null"/>
         </Property>
         <Property name="name" type="java.lang.String" value="infoLabel" noResource="true"/>
-      </Properties>
-    </Component>
-    <Container class="javax.swing.JPanel" name="startPanel">
-      <Properties>
-        <Property name="name" type="java.lang.String" value="startPanel" noResource="true"/>
-      </Properties>
-
-      <Layout class="org.netbeans.modules.form.compat2.layouts.DesignFlowLayout"/>
-      <SubComponents>
-        <Component class="javax.swing.JButton" name="startButton">
-          <Properties>
-            <Property name="action" type="javax.swing.Action" editor="org.netbeans.modules.swingapp.ActionEditor">
-              <action class="nl.lemval.nododue.dialog.LearnCommandBox" id="startAction" methodName="startAction"/>
-            </Property>
-            <Property name="text" type="java.lang.String" resourceKey="startButton.text"/>
-            <Property name="name" type="java.lang.String" value="startButton" noResource="true"/>
-          </Properties>
-        </Component>
-      </SubComponents>
-    </Container>
-    <Component class="javax.swing.JLabel" name="statusLabel">
-      <Properties>
-        <Property name="horizontalAlignment" type="int" value="0"/>
-        <Property name="text" type="java.lang.String" resourceKey="statusLabel.text"/>
-        <Property name="name" type="java.lang.String" value="statusLabel" noResource="true"/>
       </Properties>
     </Component>
     <Container class="javax.swing.JPanel" name="actionPanel">
@@ -301,5 +273,14 @@
         </Container>
       </SubComponents>
     </Container>
+    <Component class="javax.swing.JButton" name="jButton1">
+      <Properties>
+        <Property name="action" type="javax.swing.Action" editor="org.netbeans.modules.swingapp.ActionEditor">
+          <action class="nl.lemval.nododue.dialog.LearnCommandBox" id="closeAction" methodName="closeAction"/>
+        </Property>
+        <Property name="text" type="java.lang.String" resourceKey="jButton1.text"/>
+        <Property name="name" type="java.lang.String" value="jButton1" noResource="true"/>
+      </Properties>
+    </Component>
   </SubComponents>
 </Form>
