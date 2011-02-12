@@ -168,12 +168,11 @@ void PrintValue(unsigned long x)
   }
   
  /*********************************************************************************************\
- * Serial.Print neemt veel progmem in beslag. 
  * Print een lijn met het teken '*' 
  \*********************************************************************************************/
 void PrintLine(void)
   {
-  for(byte x=1;x<=75;x++)PrintChar('*');
+  for(byte x=1;x<=60;x++)PrintChar('*');
   PrintTerm();
   }
 
@@ -347,10 +346,11 @@ void PrintEventCode(unsigned long Code)
 
      
  /**********************************************************************************************\
- * Verzend teken(s) naar de seriÃ«le poort die een regel afsluiten.
+ * Verzend teken(s) naar de seriele poort die een regel afsluiten.
  \*********************************************************************************************/
 void PrintTerm()
   {
+  // FreeMemory();//??? t.b.v. debugging
   if(SERIAL_TERMINATOR_1)Serial.print(SERIAL_TERMINATOR_1,BYTE);
   if(SERIAL_TERMINATOR_2)Serial.print(SERIAL_TERMINATOR_2,BYTE);
   }
@@ -386,7 +386,7 @@ void PrintEventlistEntry(int entry, byte d)
 void PrintDateTime(void)
     {
     // Print de dag. 1=zondag, 0=geen RTC aanwezig
-    for(byte x=0;x<=2;x++)Serial.print(*(Text(Text_02)+(Time.Day-1)*3+x),BYTE);
+    for(byte x=0;x<=2;x++)Serial.print(*(Text(Text_08)+(Time.Day-1)*3+x),BYTE);
     PrintChar(' ');
 
     // print year.    
@@ -421,18 +421,25 @@ void PrintWelcome(void)
   // Print Welkomsttekst
   PrintTerm();
   PrintLine();
-  PrintText(Text_01);
 
+  PrintText(Text_01);
+  PrintTerm();
+
+  PrintText(Text_02);
+  PrintTerm();
+
+  PrintText(Text_15);
   PrintValue(S.Version/100);
   PrintChar('.');
-  if((S.Version%100)<10)PrintChar('0');
-  PrintValue(S.Version%100);  
+  PrintValue((S.Version%100)/10);
+  PrintChar('.');
+  PrintValue(S.Version%10);
   PrintChar(',');
   PrintChar(' ');
-  Serial.print(cmd2str(CMD_UNIT));
-  PrintChar('-');
-  PrintValue((Content>>24)&0xf); 
-  PrintValue(S.Unit);PrintTerm();
+  PrintText(Text_13);
+  PrintValue(S.Unit);
+  PrintTerm();
+
   if(Time.Day)
     {
     PrintDateTime();
@@ -444,6 +451,7 @@ void PrintWelcome(void)
       }
     PrintTerm();
     }
+
   PrintLine();
   }
 
@@ -453,7 +461,7 @@ void PrintWelcome(void)
 void PrintText(prog_char* text)
   {
   byte x=0;
-  char buffer[40];
+  char buffer[50];
 
   do
     {

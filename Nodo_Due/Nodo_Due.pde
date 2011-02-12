@@ -10,8 +10,6 @@ ToDo:
 
 /**************************************************************************************************************************\
 
-Done release 1.15:
-
 Opgeloste issues:
 - Issue 163:	SendSignal: regressie!!!
 - Issue 164:	HEX-code ontvangen IR en verwerken in Eventlist
@@ -25,7 +23,6 @@ Opgeloste issues:
 - Issue 177:	revisie186 - delay probleem
 - Issue 178:	spontante Variables events.
 
-
 Overige functionele aanpassingen:
 - Issue 172:	wildcard gebruik in UserEvent
 - Issue 173:	GetLM335 => Opgelost met WiredRange.
@@ -36,7 +33,6 @@ Overige functionele aanpassingen:
 - '(WildCard All, All); (Sound 0, 0)' niet meer default in de eventlist;
 - Nieuwe setting 'Confirm';
 - Aanpassing commando 'Delay': Kan worden uitgezet en voorbijkomende event worden in queue gezet voor latere verwerking;
-- kleine aanpassingen in de MMI (Geen spatie meer na een komma);
 - Nesting error wordt nu als een error-event verzonden.
 - dubbele regeleinden aan einde regel in EventList verwijderd;
 - OUTPUT melding verschijnt bij uitvoer van een wired out.
@@ -59,7 +55,6 @@ Overige functionele aanpassingen:
 - MMI aanpassing + 'Display' commando toegevoegd en commando 'Trace' vervallen. Trace in te stellen met Display commando
 - Datum tijd notatie aangepast naar standaardnotatie: EEE YYYY-MM-DD HH:MM
 
-
 Onder de motorkap:
 - Timers nu in een int i.p.v. unsigned long en aanpassing aflopen timers => geheugenbesparing
 - EventPart functie laten vervallen en vervangen door directe shift/and op events => geheugenbesparing
@@ -71,8 +66,8 @@ Onder de motorkap:
 
 
  /*****************************************************************************************************\
-  Compiler            : - Arduino Compiler 0021
-  Hardware            : - Arduino met een ATMeg328 processor @16Mhz.
+  Compiler            : - Arduino Compiler 0022
+  Hardware            : - Arduino UNO, Duemilanove of Nano met een ATMeg328 processor @16Mhz.
                         - Hardware en Arduino penbezetting volgens schema Nodo Due Rev.003
  ********************************************************************************************************
  * Arduino project "Nodo Due" © Copyright 2010 Paul Tonkes
@@ -100,9 +95,7 @@ Onder de motorkap:
  ********************************************************************************************************/
 
 #define VERSION                  999 // Nodo Version nummer
-
 #include "pins_arduino.h"
-#include "ctype.h"
 #include <EEPROM.h>
 #include <Wire.h>
 #include <avr/pgmspace.h>
@@ -111,9 +104,10 @@ Onder de motorkap:
 *  Nodo Event            = TTTTUUUUCCCCCCCC1111111122222222       -> T=Type, U=Unit, 1=Par-1, 2=Par-2
 \**************************************************************************************************************************/
 
-// ********alle strings naar PROGMEM om hiermee RAM-geheugen te sparen ***********************************************
-prog_char PROGMEM Text_01[] = "NODO-Due V";
-prog_char PROGMEM Text_02[] = "SUNMONTHUWEDTHUFRISAT";
+// strings met vaste tekst naar PROGMEM om hiermee RAM-geheugen te sparen.
+prog_char PROGMEM Text_01[] = "NODO-Due (C) Copyright 2011 Paul Tonkes.";
+prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
+prog_char PROGMEM Text_08[] = "SUNMONTHUWEDTHUFRISAT";
 prog_char PROGMEM Text_06[] = "SYSTEM: Unknown command!";
 prog_char PROGMEM Text_07[] = "SYSTEM: Rawsignal=";
 prog_char PROGMEM Text_09[] = "SYSTEM: Break!";
@@ -122,6 +116,7 @@ prog_char PROGMEM Text_11[] = "Direction=";
 prog_char PROGMEM Text_12[] = "Port=";
 prog_char PROGMEM Text_13[] = "Unit=";
 prog_char PROGMEM Text_14[] = "Event=";
+prog_char PROGMEM Text_15[] = "NodoVersion=";
 
 #define RANGE_VALUE 30 // alle codes kleiner of gelijk aan deze waarde zijn vaste Nodo waarden.
 #define RANGE_EVENT 81 // alle codes groter of gelijk aan deze waarde zijn een event.
@@ -360,7 +355,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define DLSBase 2010 // jaar van eerste element uit de array
 
 
-// Declaratie aansluitingen op de Arduino
+// Declaratie aansluitingen I/O-pennen op de Arduino
 // D0 en D1 kunnen niet worden gebruikt. In gebruik door de FTDI-chip voor seriele USB-communiatie (TX/RX).
 // A4 en A5 worden gebruikt voor I2C communicatie voor o.a. de real-time clock
 #define IR_ReceiveDataPin           3  // Op deze input komt het IR signaal binnen van de TSOP. Bij HIGH bij geen signaal.
@@ -378,7 +373,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define Eventlist_OFFSET            64 // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer __ bytes. Deze niet te gebruiken voor de Eventlist.
 #define Eventlist_MAX              120 // aantal events dat de lijst bevat in het EEPROM geheugen van de ATMega328. Iedere event heeft 8 bytes nodig. eerste adres is 0
 #define USER_VARIABLES_MAX          15 // aantal beschikbare gebruikersvariabelen voor de user.
-#define RAW_BUFFER_SIZE            200 // Maximaal aantal te ontvangen bits*2. 
+#define RAW_BUFFER_SIZE            200 // ??? Maximaal aantal te ontvangen bits*2. 
 #define UNIT_MAX                    15 
 #define MACRO_EXECUTION_DEPTH       10 // maximale nesting van macro's.
 
@@ -494,7 +489,6 @@ void setup()
 
   Wire.begin();        // zet I2C communicatie gereed voor uitlezen van de realtime clock.
   Serial.begin(BAUD);  // Initialiseer de seriële poort
-  SerialHold(true);    // Zend een X-Off zodat de nodo geen seriele tekens ontvangt die nog niet verwerkt kunnen worden
   IR38Khz_set();       // Initialiseet de 38Khz draaggolf voor de IR-zender.
   LoadSettings();      // laad alle settings zoals deze in de EEPROM zijn opgeslagen
   
@@ -670,7 +664,7 @@ void loop()
        ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
        }
 
-   // TIMER: **************** Genereer event als één van de Timers voor de gebruiker afgelopen is ***********************
+   // TIMER: **************** Genereer event als één van de Timers voor de gebruiker afgelopen is ***********************    
     if(TimerCounter<TIMER_MAX-1)
       TimerCounter++;
     else
