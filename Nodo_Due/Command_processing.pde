@@ -80,7 +80,6 @@ byte CommandError(unsigned long Content)
     case CMD_CLOCK_EVENT_THU:
     case CMD_CLOCK_EVENT_FRI:
     case CMD_CLOCK_EVENT_SAT:
-    case CMD_SEND_STATUS:
     case CMD_STATUS:
     case CMD_DELAY:
     case CMD_SOUND: 
@@ -243,11 +242,6 @@ byte CommandError(unsigned long Content)
       if(Par1!=VALUE_OFF && Par1!=VALUE_ON)return ERROR_PAR1;
       return false;
 
-    case CMD_TRACE:
-      if(Par1!=VALUE_OFF && Par1!=VALUE_ON)return ERROR_PAR1;
-      if(Par2!=VALUE_OFF && Par2!=VALUE_ON)return ERROR_PAR2;
-      return false;
-
     case CMD_DIVERT:   
      if(Par1>UNIT_MAX)return ERROR_PAR1;
      return false;
@@ -331,37 +325,22 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   
       case CMD_BREAK_ON_VAR_EQU:
         if(S.UserVar[Par1-1]==Par2)
-          {
-          if(S.Trace)
-            PrintText(Text_09,true);
           error=true;
-          }
         break;
         
       case CMD_BREAK_ON_VAR_NEQU:
         if(S.UserVar[Par1-1]!=Par2)
-          {
-          if(S.Trace)PrintText(Text_09,true);
           error=true;
-          }
         break;        
   
       case CMD_BREAK_ON_VAR_MORE:
         if(S.UserVar[Par1-1]>Par2)
-          {
-          if(S.Trace)
-            PrintText(Text_09,true);
           error=true;
-          }
         break;        
   
       case CMD_BREAK_ON_VAR_LESS:
         if(S.UserVar[Par1-1]<Par2)
-          {
-          if(S.Trace)
-            PrintText(Text_09,true);
           error=true;
-          }
         break;  
   
       case CMD_TIMER_RESET:
@@ -497,15 +476,13 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   
       case CMD_TRANSMIT_SETTINGS:
         S.TransmitPort=Par1;
+        if(Par2)S.TransmitRepeat=Par2;
         SaveSettings();
         break;
-  
-      case CMD_SEND_STATUS:
-        Command=Par1;// bevat het commando waarvoor de status opgehaald moet worden
-        Par1=Par2;
-        if(GetStatus(&Command,&Par1,&Par2))// let op: call by reference. Gegevens komen terug in Par1 en Par2
-          GenerateEvent(Command,Par1,Par2);
-        break;
+    
+       case CMD_STATUS:
+         Status(Src==VALUE_SOURCE_SERIAL, Par1, Par2);
+         break;
        }
     }
   return error?false:true;

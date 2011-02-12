@@ -55,9 +55,6 @@ unsigned long RawSignal_2_Nodo(void)
     z++;
     }while(x<RawSignal[0]);
 
-  // bitstream bevat nu alle bits die ontvangen zijn.
- //???  Serial.print("Received bitstream 66 =0x");Serial.print(bitstream,HEX);PrintTerm();//???
-
   if(((bitstream>>28)&0xf) == SIGNAL_TYPE_NODO)// is het type-nibble uit het signaal gevuld met de aanduiding NODO ?  
     return bitstream;
   else
@@ -163,20 +160,26 @@ static void IR38Khz_set()
 
 void WaitFreeRF(int Delay, int Window)
   {
-  unsigned long WindowTimer, TimeOutTimer;  // meet of de time-out waarde gepasseerd is in milliseconden
-
+  unsigned long Timer, TimeOutTimer;  
+  
+  // WaitFreeRF is zinloos in de simulatie mode
   if(Simulate)return;
-  delay(Delay); 
 
-  WindowTimer=millis()+Window; // reset de timer.
+  // eerst de 'dode' wachttijd
+  Timer=millis()+Delay; // set de timer.
+  while(Timer>millis())
+    digitalWrite(MonitorLedPin,(millis()>>7)&0x01);
+  
+  // dan kijken of de ether vrij is.
+  Timer=millis()+Window; // reset de timer.
   TimeOutTimer=millis()+WAITFREERF_TIMEOUT; // tijd waarna de routine wordt afgebroken in milliseconden
 
-  while(WindowTimer>millis() && TimeOutTimer>millis())
+  while(Timer>millis() && TimeOutTimer>millis())
     {
     if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
       {
       if(FetchSignal(RF_ReceiveDataPin,HIGH,SIGNAL_TIMEOUT_RF))// Als het een duidelijk signaal was
-        WindowTimer=millis()+Window; // reset de timer weer.
+        Timer=millis()+Window; // reset de timer weer.
       }
     digitalWrite(MonitorLedPin,(millis()>>7)&0x01);
     }
@@ -218,7 +221,7 @@ void RawSendRF(void)
   digitalWrite(RF_TransmitPowerPin,HIGH); // zet de 433Mhz zender aan
   delay(5);// kleine pause om de zender de tijd te geven om stabiel te worden 
   
-  for(byte y=0; y<REPEATS_RF; y++) // herhaal verzenden RF code
+  for(byte y=0; y<S.TransmitRepeat; y++) // herhaal verzenden RF code
     {
     x=1;
     while(x<=RawSignal[0])
@@ -228,7 +231,6 @@ void RawSendRF(void)
       digitalWrite(RF_TransmitDataPin,LOW); // 0
       delayMicroseconds(RawSignal[x++]); 
       }
-    delay(DELAY_RF);
     }
   digitalWrite(RF_TransmitPowerPin,LOW); // zet de 433Mhz zender weer uit
   digitalWrite(RF_ReceivePowerPin,HIGH); // Spanning naar de RF ontvanger weer aan.
@@ -248,7 +250,7 @@ void RawSendIR(void)
 
   if(Simulate)return;
   
-  for(y=0; y<REPEATS_IR; y++) // herhaal verzenden IR code
+  for(y=0; y<S.TransmitRepeat; y++) // herhaal verzenden IR code
     {
     x=1;
     while(x<=RawSignal[0])
@@ -258,7 +260,6 @@ void RawSendIR(void)
       TCCR2A&=~_BV(COM2A0); // zet IR-modulatie UIT
       delayMicroseconds(RawSignal[x++]); 
       }
-    delay(DELAY_IR);
     }
   }
 
@@ -284,6 +285,7 @@ void Nodo_2_RawSignal(unsigned long Code)
       RawSignal[y++]=NODO_PULSE_0;   
     RawSignal[y++]=NODO_SPACE;   
     }
+  RawSignal[y-1]=NODO_PULSE_1*10; // pauze tussen de pulsreeksen
   RawSignal[0]=66; //  1 startbit bestaande uit een pulse/space + 32-bits is 64 pulse/space = totaal 66
   }
 
@@ -325,11 +327,11 @@ boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
 \*********************************************************************************************/
 void CopySignalIR2RF(byte Window)
   {
-  unsigned long WindowTimer=millis()+((unsigned long)Window)*1000; // reset de timer.  
+  unsigned long Timer=millis()+((unsigned long)Window)*1000; // reset de timer.  
 
   digitalWrite(RF_ReceivePowerPin,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
   digitalWrite(RF_TransmitPowerPin,HIGH); // zet de 433Mhz zender aan   
-  while(WindowTimer>millis())
+  while(Timer>millis())
     {
     digitalWrite(RF_TransmitDataPin,(*portInputRegister(IRport)&IRbit)==0);// Kijk if er iets op de IR poort binnenkomt. (Pin=LAAG als signaal in de ether). 
     digitalWrite(MonitorLedPin,(millis()>>7)&0x01);
@@ -345,10 +347,10 @@ void CopySignalIR2RF(byte Window)
 #define MAXPULSETIME 50 // maximale zendtijd van de IR-LED in mSec. Ter voorkoming van overbelasting
 void CopySignalRF2IR(byte Window)
   {
-  unsigned long WindowTimer=millis()+((unsigned long)Window)*1000; // reset de timer.  
+  unsigned long Timer=millis()+((unsigned long)Window)*1000; // reset de timer.  
   unsigned long PulseTimer;
   
-  while(WindowTimer>millis())// voor de duur van het opgegeven tijdframe
+  while(Timer>millis())// voor de duur van het opgegeven tijdframe
     {
     while((*portInputRegister(RFport)&RFbit)==RFbit)// Zolang de RF-pulse duurt. (Pin=HOOG bij puls, laag bij SPACE). 
       {      
@@ -386,9 +388,9 @@ boolean TransmitCode(unsigned long Event)
   // als het een Nodo bekend eventtype is, dan deze weer opnieuw opbouwen in de buffer
   if(((Event>>28)&0xf) == SIGNAL_TYPE_NODO)
     {
-    if(S.WaitFreeRF_Window!=0 || S.WaitFreeRF_Delay!=0)
-       WaitFreeRF(S.WaitFreeRF_Delay*100, S.WaitFreeRF_Window*100); // alleen WaitFreeRF als type bekend is, anders gaat SendSignal niet goed a.g.v. overschrijven buffer
-       
+    if((S.WaitFreeRF_Window + S.WaitFreeRF_Delay)>=0)
+        WaitFreeRF(S.WaitFreeRF_Delay*100, S.WaitFreeRF_Window*100); // alleen WaitFreeRF als type bekend is, anders gaat SendSignal niet goed a.g.v. overschrijven buffer
+
     switch((Event>>16)&0xff)// command deel
       {
       case CMD_KAKU:

@@ -89,7 +89,7 @@ void KAKU_2_RawSignal(unsigned long Code)
       }
     }
   RawSignal[(KAKU_CodeLength*4)+1] = KAKU_T;
-  RawSignal[(KAKU_CodeLength*4)+2] = KAKU_T*32; // stop sync pulse ??? kan weg?
+  RawSignal[(KAKU_CodeLength*4)+2] = KAKU_T*32; // pauze tussen de pulsreeksen
   }
 
 /*********************************************************************************************\
@@ -208,7 +208,7 @@ void NewKAKU_2_RawSignal(unsigned long CodeNodo)
     i+=4;
     }
   RawSignal[i++]=NewKAKU_1T; //pulse van de stopbit
-  RawSignal[i]=NewKAKU_1T; //space van de stopbit
+  RawSignal[i]=NewKAKU_1T*32; //space van de stopbit tevens pause tussen signalen
   RawSignal[0]=i; // aantal bits*2 die zich in het opgebouwde RawSignal bevinden
   }
 

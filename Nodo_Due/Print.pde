@@ -22,41 +22,128 @@
  * Print een event volgens formaat:  'EVENT/ACTION: <port>, <type>, <content>
  \*********************************************************************************************/
 void PrintEvent(unsigned long Content, byte Port, boolean Direction)
-  {  
-  if(S.TraceTime && Time.Day) // Time.Day=true want dan is er een RTC aanwezig.
+  {
+  boolean first=true;
+  
+  if(S.Display&DISPLAY_TIMESTAMP && Time.Day) // Time.Day=true want dan is er een RTC aanwezig.
     {   
+    if(S.Display&DISPLAY_TAG)
+      PrintText(Text_10);
     PrintDateTime();
-    PrintChar(',');
+    first=false;
     }
 
-  if(Direction)
+  if(S.Display&DISPLAY_DIRECTION)
     {
-    Serial.print(cmd2str(Direction));
-    Serial.print(": ");
-    }
-
-  if(Port)
-    Serial.print(cmd2str(Port));
-    
-  if(Content)
-    {
-    if(Port)
+    if(!first)
       {
       PrintChar(',');
       PrintChar(' ');
       }
-    PrintEventCode(Content);
+    first=false;
+    if(S.Display&DISPLAY_TAG)
+      PrintText(Text_11);
+    
+    Serial.print(cmd2str(Direction));
+    if(Direction == VALUE_DIRECTION_QUEUE)
+      {
+      PrintChar('-');
+      PrintValue(QueuePos+1);
+      }
     }
+
+  if(S.Display&DISPLAY_PORT && Port)
+    {
+    if(!first)
+      {
+      PrintChar(',');
+      PrintChar(' ');
+      }
+    first=false;
+    if(S.Display&DISPLAY_TAG)
+      PrintText(Text_12);
+    Serial.print(cmd2str(Port));
+    }
+
+  if(S.Display&DISPLAY_UNIT && (Content>>28)&0xf==SIGNAL_TYPE_NODO)
+    {
+    if(!first)
+      {
+      PrintChar(',');
+      PrintChar(' ');
+      }
+    first=false;
+    if(S.Display&DISPLAY_TAG)
+      PrintText(Text_13);
+    PrintValue((Content>>24)&0xf); 
+    }    
+
+  if(!first)
+    {
+    PrintChar(',');
+    PrintChar(' ');
+    }
+    
+  if(S.Display&DISPLAY_TAG)
+    PrintText(Text_14);
+  PrintEventCode(Content);
   PrintTerm();
   }  
 
+///*********************************************************************************************\
+// * Print een event volgens formaat:  'EVENT/ACTION: <port>, <type>, <content>
+// \*********************************************************************************************/
+//void PrintEvent(unsigned long Content, byte Port, boolean Direction)
+//  {  
+//  if(S.Display&DISPLAY_TIME && Time.Day) // Time.Day=true want dan is er een RTC aanwezig.
+//    {   
+//    PrintDateTime();
+//    PrintChar(',');
+//    PrintChar(' ');
+//    }
+//
+//  if(S.Display&DISPLAY_DIRECTION)
+//    {
+//    Serial.print(cmd2str(Direction));
+//    if(Direction == VALUE_DIRECTION_QUEUE)
+//      {
+//      PrintChar('-');
+//      PrintValue(QueuePos+1);
+//      }
+//    PrintChar(':');
+//    PrintChar(' ');
+//    }
+//
+//  if(S.Display&DISPLAY_PORT && Port)
+//    {
+//    Serial.print(cmd2str(Port));
+//    PrintChar(',');
+//    PrintChar(' ');
+//    }
+//
+//  if(true || (Content>>28)&0xf==SIGNAL_TYPE_NODO)
+//    {
+//    if(S.Display&DISPLAY_UNIT)
+//      {
+//      Serial.print(cmd2str(CMD_UNIT));
+//      PrintChar('-');
+//      PrintValue((Content>>24)&0xf); 
+//      PrintChar(',');
+//      PrintChar(' ');
+//      }
+//    }    
+//
+//  PrintEventCode(Content);
+//  PrintTerm();
+//  }  
+//
 
  /*********************************************************************************************\
  * print een lijst met de inhoud van de RawSignal buffer.
  \*********************************************************************************************/
 void PrintRawSignal(void)
   {
-  PrintText(Text_07,false);
+  PrintText(Text_07);
   for(byte x=1;x<=RawSignal[0];x++)
      {
      if(x>1)PrintChar(',');
@@ -86,7 +173,7 @@ void PrintValue(unsigned long x)
  \*********************************************************************************************/
 void PrintLine(void)
   {
-  for(byte x=1;x<=50;x++)PrintChar('*');
+  for(byte x=1;x<=75;x++)PrintChar('*');
   PrintTerm();
   }
 
@@ -117,18 +204,10 @@ void PrintEventCode(unsigned long Code)
   boolean P2Z=true;     // vlag: true=Par2 als nul waarde afdrukken false=nulwaarde weglaten
   
   byte Type     = (Code>>28)&0xf;
-  byte Unit     = (Code>>24)&0xf;
   byte Command  = (Code>>16)&0xff;
   byte Par1     = (Code>>8)&0xff;
   byte Par2     = (Code)&0xff;
 
-  if(Type==SIGNAL_TYPE_NODO && (Unit!=S.Unit && Unit!=0))
-    {
-    PrintText(Text_08,false); 
-    PrintValue(Unit); 
-    PrintChar(',');
-    }
-    
   PrintChar('('); 
 
   if(Type==SIGNAL_TYPE_NEWKAKU)
@@ -169,7 +248,6 @@ void PrintEventCode(unsigned long Code)
         break;
   
       // Par1 als tekst en par2 als tekst
-      case CMD_TRACE:
       case CMD_COMMAND_WILDCARD:
         P1=P_TEXT;
         P2=P_TEXT;
@@ -178,8 +256,7 @@ void PrintEventCode(unsigned long Code)
       // Par1 als tekst en par2 als getal
       case CMD_ERROR:
       case CMD_COPYSIGNAL:
-      case CMD_WAITFREERF:
-      case CMD_SEND_STATUS:
+      case CMD_TRANSMIT_SETTINGS:
       case CMD_STATUS:
         P1=P_TEXT;
         P2=P_VALUE;
@@ -188,7 +265,6 @@ void PrintEventCode(unsigned long Code)
       // Par1 als tekst en par2 niet
       case CMD_CONFIRM:
       case CMD_DLS_EVENT:
-      case CMD_TRANSMIT_SETTINGS:
       case CMD_SIMULATE:
         P1=P_TEXT;
         P2=P_NOT;
@@ -313,27 +389,23 @@ void PrintDateTime(void)
     for(byte x=0;x<=2;x++)Serial.print(*(Text(Text_02)+(Time.Day-1)*3+x),BYTE);
     PrintChar(' ');
 
-    // print datum.    
-    if(Time.Date<10)PrintChar('0');
-    PrintValue(Time.Date);
-
+    // print year.    
+    Serial.print(Time.Year,DEC);
     PrintChar('-');
-    
+
     // print maand.    
     if(Time.Month<10)PrintChar('0');
     PrintValue(Time.Month);
-
     PrintChar('-');
 
-    // print year.    
-    Serial.print(Time.Year,DEC);
-    PrintChar(',');
+    // print datum.    
+    if(Time.Date<10)PrintChar('0');
+    PrintValue(Time.Date);
     PrintChar(' ');
     
     // print uren.    
     if(Time.Hour<10)PrintChar('0');
     PrintValue(Time.Hour);
-
     PrintChar(':');
 
     // print minuten.
@@ -349,13 +421,17 @@ void PrintWelcome(void)
   // Print Welkomsttekst
   PrintTerm();
   PrintLine();
-  PrintText(Text_01,false);
+  PrintText(Text_01);
 
   PrintValue(S.Version/100);
   PrintChar('.');
   if((S.Version%100)<10)PrintChar('0');
   PrintValue(S.Version%100);  
-  PrintText(Text_14,false);
+  PrintChar(',');
+  PrintChar(' ');
+  Serial.print(cmd2str(CMD_UNIT));
+  PrintChar('-');
+  PrintValue((Content>>24)&0xf); 
   PrintValue(S.Unit);PrintTerm();
   if(Time.Day)
     {
@@ -374,7 +450,7 @@ void PrintWelcome(void)
  /**********************************************************************************************\
  * Print een string uit PROGMEM
  \*********************************************************************************************/
-void PrintText(prog_char* text,boolean Term)
+void PrintText(prog_char* text)
   {
   byte x=0;
   char buffer[40];
@@ -385,7 +461,5 @@ void PrintText(prog_char* text,boolean Term)
     }while(buffer[x++]!=0);
 
   Serial.print(buffer);
-  if(Term)
-    PrintTerm();
   }
 

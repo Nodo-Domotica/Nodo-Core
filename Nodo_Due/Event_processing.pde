@@ -17,35 +17,28 @@
 
 
  /**********************************************************************************************\
- * Voert alle events uit die correspenderen met de Code
- * Revision 01, 09-12-2009, P.K.Tonkes@gmail.com
+ * Voert alle relevante acties in de eventlist uit die horen bij het binnengekomen event
+ * Doorlopen van een volledig gevulde eventlist duurt ongeveer 15ms inclusief printen naar serial
+ * maar exclusief verwerking n.a.v. een 'hit'.
  \*********************************************************************************************/
-
- 
 boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, unsigned long PreviousContent, byte PreviousPort)
   {
   unsigned long Event_1, Event_2;
   byte Command=(IncommingEvent>>16)&0xff;
   byte w,x,y,z;
 
-  digitalWrite(MonitorLedPin,HIGH);          // LED aan om aan te geven dat er wat ontvangen is en verwerkt wordt
-
-  // Als de RAW pulsen worden opgevraagd door de gebruiker...
-  if(RawsignalGet)
-    {
-    PrintRawSignal();
-    RawsignalGet=false;
-    return true;
-    }
-
   // Uitvoeren voorafgaand aan een reeks uitvoeren
-  if(EventlistDepth==0 && S.Trace)
+  if(EventlistDepth==0 && (S.Display & DISPLAY_TRACE))
       PrintLine(); 
+
+  if(EventlistDepth==0 || (S.Display & DISPLAY_TRACE))PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
+
 
   // als de Nodo in de hold is gezet, verzamel dan relevante events in de queue
   if(HoldTimer>millis())
     {
     // als het event de opdracht betreft om de hold uit te zetten, dan dit doen.
+    PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
     if(IncommingEvent==command2event(CMD_DELAY,0,0))
       HoldTimer=0L; //  HoldTimer is NU, dus wachttijd is afgelopen;
     else
@@ -56,7 +49,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
         // als er nog plek is in de queue...
         if(QueuePos<EVENT_QUEUE_MAX)
           {
-          PrintEvent(IncommingEvent,0,VALUE_DIRECTION_QUEUE);  // geef event weer op Serial
+//???          PrintEvent(IncommingEvent,Port,VALUE_DIRECTION_QUEUE);  // geef event weer op Serial
           QueueEvent[QueuePos]=IncommingEvent;
           QueuePort[QueuePos]=Port;
           QueuePos++;           
@@ -69,7 +62,13 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
       }
     }
 
-  if(EventlistDepth==0 || S.Trace)PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
+  // Als de RAW pulsen worden opgevraagd door de gebruiker...
+  if(RawsignalGet)
+    {
+    PrintRawSignal();
+    RawsignalGet=false;
+    return true;
+    }
 
   // Als de 'Confirm' optie aan staat, dan een 'Ok'-event verzenden
   // Dit alleen als het een commando of event voor deze nodo is.
@@ -89,6 +88,8 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     { // Er is een geldig Commando binnengekomen 
     if(!ExecuteCommand(IncommingEvent,Port,PreviousContent,PreviousPort))
       {
+      if(S.Display & DISPLAY_TRACE)
+        
       EventlistDepth--;
       return false;
       }
@@ -133,8 +134,11 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
 
       if(y)
         {
-        if(S.Trace)
+        if(S.Display & DISPLAY_TRACE)
+          {
           PrintEventlistEntry(x,EventlistDepth);
+          PrintTerm();//???
+          }
           
         if(NodoType(Event_2)==NODO_TYPE_COMMAND) // is de ontvangen code een uitvoerbaar commando?
           {
@@ -285,7 +289,7 @@ boolean Eventlist_Read(int address, unsigned long *Event, unsigned long *Action)
   }
 
 /*********************************************************************************************\
- * Handel een foutmelding af
+ * Verzend een event
  \*********************************************************************************************/
 void GenerateEvent(byte Cmd, byte P1, byte P2)
   {

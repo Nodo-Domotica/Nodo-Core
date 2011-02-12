@@ -2,8 +2,9 @@
                                                     
 ToDo:
 - fout commando met parameters geeft drie foutmeldingen.
+- het is mogelijk om een setting op te vragen van een niet bestaande variabele, poort of timer. Geen vastloper maar onzinnige waarde
 - komt nog er wel een foutmelding als eventlist vol is?
-- wildcard op unit ?? bepalen impact.
+- wildcard op unit ?? bepalen impact. In princiepe is de eventlist 'wildcard-loos', maar binnengekomen events niet. Worden nu weggefilterd.
 - wildcardtypen: verwerking bekijken en wijzigingen documenteren
 */
 
@@ -24,12 +25,11 @@ Opgeloste issues:
 - Issue 177:	revisie186 - delay probleem
 - Issue 178:	spontante Variables events.
 
-Nieuwe functionaliteit:
+
+Overige functionele aanpassingen:
 - Issue 172:	wildcard gebruik in UserEvent
 - Issue 173:	GetLM335 => Opgelost met WiredRange.
 - Issue 174:	Gebruik van variabele in UserEvent
-
-Overige functionele aanpassingen:
 - Home adres is komen te vervallen;
 - SendNewKAKU: Dimniveau aanpassing. Opties voor Par2 zijn [On,Off,1..16] Dim niveaus dus ZONDER het woord 'dim'. Hoogste dimniveau is nu ook bereikbaar.
 - Aanpassing pause bij herhaald sound 'ding-dong' en de 'Whoop' is nu een 'slow-whoop';
@@ -40,17 +40,31 @@ Overige functionele aanpassingen:
 - Nesting error wordt nu als een error-event verzonden.
 - dubbele regeleinden aan einde regel in EventList verwijderd;
 - OUTPUT melding verschijnt bij uitvoer van een wired out.
-- WaitfreeRF is gewijzigd. Par1=delay alvorens te zenden, Par2=lijstertijd naar vrije ether. 
+- WaitfreeRF is gewijzigd. Par1=delay alvorens te zenden, Par2=luistertijd naar vrije ether. 
   Default 0,0. Bij wijzigenunit > 1 dan delay afhankelijk van unitnummer.
   All en series vervallen.
 - Als unitnummer wordt gewijzigd dan wordt tevens de WaitFreeRF geactiveerd.
+- Commando unit gewijzigd. Bij Unit hoger dan 1, dan waitfreerf geactiveerd.
+- Versnellen verwerking RF signalen:
+  * default 7x pulsreeks verzenden KAKU teruggebracht naar 5x.
+  * Space stopbit timings aangepast.
+  * delay in zendroutine na zenden pulsreeks verwijderd. 
+  Hierdoor:
+  * verzenden KAKU     : 4 schakelingen per seconde.
+  * verzenden NewKAKU  : 2,5 schakelingen per seconde.
+  * verzenden Nodo     : 2,7 comando's per seconde.
+- Aantal herhalingen bij verzenden van een code instelbaar met TransmitSettings (Par2)
+- Commando Sendstatus vervallen. Status commando aangepast;
+- SERIES parameter t.b.v. WaitFreeRF vervallen.
+- MMI aanpassing + 'Display' commando toegevoegd en commando 'Trace' vervallen. Trace in te stellen met Display commando
+- Datum tijd notatie aangepast naar standaardnotatie: EEE YYYY-MM-DD HH:MM
+
 
 Onder de motorkap:
 - Timers nu in een int i.p.v. unsigned long en aanpassing aflopen timers => geheugenbesparing
 - EventPart functie laten vervallen en vervangen door directe shift/and op events => geheugenbesparing
 - EventType functie vervallen. Event type wordt nu onderdeel van het Event op de plaats waar het Home adres van de Nodo stond.
 - Trace settings anders opgelost.
-- SERIES parameter t.b.v. WaitFreeRF vervallen.
 
 \**************************************************************************************************************************/
 
@@ -99,12 +113,15 @@ Onder de motorkap:
 
 // ********alle strings naar PROGMEM om hiermee RAM-geheugen te sparen ***********************************************
 prog_char PROGMEM Text_01[] = "NODO-Due V";
-prog_char PROGMEM Text_02[] = "SunMonThuWedThuFriSat";
+prog_char PROGMEM Text_02[] = "SUNMONTHUWEDTHUFRISAT";
 prog_char PROGMEM Text_06[] = "SYSTEM: Unknown command!";
 prog_char PROGMEM Text_07[] = "SYSTEM: Rawsignal=";
-prog_char PROGMEM Text_08[] = "Unit-";
 prog_char PROGMEM Text_09[] = "SYSTEM: Break!";
-prog_char PROGMEM Text_14[] = ", Unit ";
+prog_char PROGMEM Text_10[] = "Timestamp=";
+prog_char PROGMEM Text_11[] = "Direction=";
+prog_char PROGMEM Text_12[] = "Port=";
+prog_char PROGMEM Text_13[] = "Unit=";
+prog_char PROGMEM Text_14[] = "Event=";
 
 #define RANGE_VALUE 30 // alle codes kleiner of gelijk aan deze waarde zijn vaste Nodo waarden.
 #define RANGE_EVENT 81 // alle codes groter of gelijk aan deze waarde zijn een event.
@@ -123,15 +140,15 @@ prog_char PROGMEM Text_14[] = ", Unit ";
 #define VALUE_SOURCE_TIMER 10
 #define VALUE_SOURCE_VARIABLE 11
 #define VALUE_SOURCE_CLOCK 12
-#define VALUE_RES1 13
-#define VALUE_RES2 14
-#define VALUE_RES3 15
-#define VALUE_RES4 16
+#define VALUE_TRACE 13
+#define VALUE_TAG 14
+#define VALUE_TIMESTAMP 15
+#define VALUE_DIRECTION 16
 #define VALUE_DIRECTION_INPUT 17
 #define VALUE_DIRECTION_OUTPUT 18
 #define VALUE_DIRECTION_INTERNAL 19
 #define VALUE_DIRECTION_EXECUTE 20
-#define VALUE_RES5 21
+#define VALUE_PORT 21
 #define VALUE_RF_2_IR 22
 #define VALUE_IR_2_RF 23
 #define VALUE_ALL 24 // Deze waarde MOET groter dan 16 zijn.
@@ -166,11 +183,11 @@ prog_char PROGMEM Text_14[] = ", Unit ";
 #define CMD_SIMULATE_DAY 53
 #define CMD_SOUND 54
 #define CMD_STATUS 55
-#define CMD_SEND_STATUS 56
+#define CMD_STATUS_LIST 56
 #define CMD_TIMER_RANDOM 57
 #define CMD_TIMER_RESET 58
 #define CMD_TIMER_SET 59
-#define CMD_TRACE 60
+#define CMD_DISPLAY 60
 #define CMD_UNIT 61
 #define CMD_VARIABLE_CLEAR 62
 #define CMD_VARIABLE_DEC 63
@@ -226,21 +243,21 @@ prog_char PROGMEM Cmd_9[]="System";
 prog_char PROGMEM Cmd_10[]="Timers";
 prog_char PROGMEM Cmd_11[]="Variables";
 prog_char PROGMEM Cmd_12[]="Clock";
-prog_char PROGMEM Cmd_13[]="";
-prog_char PROGMEM Cmd_14[]="";
-prog_char PROGMEM Cmd_15[]="";
-prog_char PROGMEM Cmd_16[]="";
-prog_char PROGMEM Cmd_17[]="INPUT";
-prog_char PROGMEM Cmd_18[]="OUTPUT";
-prog_char PROGMEM Cmd_19[]="INTERNAL";
-prog_char PROGMEM Cmd_20[]="EXECUTE";
-prog_char PROGMEM Cmd_21[]="";
+prog_char PROGMEM Cmd_13[]="Trace";
+prog_char PROGMEM Cmd_14[]="Tag";
+prog_char PROGMEM Cmd_15[]="Timestamp";
+prog_char PROGMEM Cmd_16[]="Direction";
+prog_char PROGMEM Cmd_17[]="Input";
+prog_char PROGMEM Cmd_18[]="Output";
+prog_char PROGMEM Cmd_19[]="Internal";
+prog_char PROGMEM Cmd_20[]="Execute"; //??? wordt deze gebruikt ?
+prog_char PROGMEM Cmd_21[]="Port";
 prog_char PROGMEM Cmd_22[]="RF2IR";
 prog_char PROGMEM Cmd_23[]="IR2RF";
 prog_char PROGMEM Cmd_24[]="All";
-prog_char PROGMEM Cmd_25[]="OUTPUT-RAW";
+prog_char PROGMEM Cmd_25[]="Output_RAW";
 prog_char PROGMEM Cmd_26[]="Nesting";
-prog_char PROGMEM Cmd_27[]="QUEUE";
+prog_char PROGMEM Cmd_27[]="Queue";
 prog_char PROGMEM Cmd_28[]="On";
 prog_char PROGMEM Cmd_29[]="";
 prog_char PROGMEM Cmd_30[]="";
@@ -269,11 +286,11 @@ prog_char PROGMEM Cmd_52[]="Simulate";
 prog_char PROGMEM Cmd_53[]="SimulateDay";
 prog_char PROGMEM Cmd_54[]="Sound";
 prog_char PROGMEM Cmd_55[]="Status";
-prog_char PROGMEM Cmd_56[]="SendStatus";
+prog_char PROGMEM Cmd_56[]="StatusList";
 prog_char PROGMEM Cmd_57[]="TimerRandom";
 prog_char PROGMEM Cmd_58[]="TimerReset";
 prog_char PROGMEM Cmd_59[]="TimerSet";
-prog_char PROGMEM Cmd_60[]="Trace";
+prog_char PROGMEM Cmd_60[]="Display";
 prog_char PROGMEM Cmd_61[]="Unit";
 prog_char PROGMEM Cmd_62[]="VariableClear";
 prog_char PROGMEM Cmd_63[]="VariableDec";
@@ -342,6 +359,7 @@ PROGMEM prog_uint16_t Sunset[]={
 PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,3127};
 #define DLSBase 2010 // jaar van eerste element uit de array
 
+
 // Declaratie aansluitingen op de Arduino
 // D0 en D1 kunnen niet worden gebruikt. In gebruik door de FTDI-chip voor seriele USB-communiatie (TX/RX).
 // A4 en A5 worden gebruikt voor I2C communicatie voor o.a. de real-time clock
@@ -381,14 +399,18 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define EVENT_PART_PAR1              4
 #define EVENT_PART_PAR2              5
 
+#define DISPLAY_TIMESTAMP            1
+#define DISPLAY_UNIT                 2
+#define DISPLAY_DIRECTION            4
+#define DISPLAY_PORT                 8
+#define DISPLAY_TRACE               16
+#define DISPLAY_TAG                 32
+
 // settings voor verzenden en ontvangen van IR/RF 
 #define ENDSIGNAL_TIME          1500 // Dit is de tijd in milliseconden waarna wordt aangenomen dat het ontvangen één reeks signalen beëindigd is
 #define SIGNAL_TIMEOUT_RF       5000 // na deze tijd in uSec. wordt één RF signaal als beëindigd beschouwd.
 #define SIGNAL_TIMEOUT_IR      10000 // na deze tijd in uSec. wordt één IR signaal als beëindigd beschouwd.
-#define REPEATS_RF                 7 // aantal herhalingen van een code binnen één RF reeks
-#define REPEATS_IR                 7 // aantal herhalingen van een code binnen één IR reeks
-#define DELAY_RF                  10 // milliseconden wachttijd tussen het verzenden van codes binnen één RF reeks
-#define DELAY_IR                  20 // milliseconden wachttijd tussen het verzenden van codes binnen één IR reeks
+#define TX_REPEATS                 5 // aantal herhalingen van een code binnen één RF of IR reeks
 #define MIN_PULSE_LENGTH         100 // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define MIN_RAW_PULSES            16 // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
 #define SHARP_TIME               500 // tijd in milliseconden dat de nodo gefocust moet blijven luisteren naar één dezelfde poort na binnenkomst van een signaal
@@ -403,9 +425,9 @@ struct Settings
   int     AnalyseTimeOut;
   byte    UserVar[USER_VARIABLES_MAX];
   byte    Unit;
-  boolean Trace;
-  boolean TraceTime;
+  byte    Display;
   byte    TransmitPort;
+  byte    TransmitRepeat;
   byte    WaitFreeRF_Window;
   byte    WaitFreeRF_Delay;
   boolean DaylightSaving;
@@ -495,6 +517,7 @@ void setup()
 
   PrintWelcome(); 
   ProcessEvent(command2event(CMD_BOOT_EVENT,0,0),VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM,0,0);  // Voer het 'Boot' event uit.
+  SerialHold(false);    // Zend een X-Off zodat de nodo geen seriele tekens ontvangt die nog niet verwerkt kunnen worden
   }
 
 void loop() 
@@ -502,8 +525,12 @@ void loop()
   int x,y,z;
   
   SerialHold(false); // er mogen weer tekens binnen komen van SERIAL
-  while(true)// dit is een tijdkritische loop die wacht tot binnengekomen event op IR, RF, SERIAL, CLOCK, DAYLIGHT, TIMER
-    {            
+
+  // hoofdloop: scannen naar signalen
+  // dit is een tijdkritische loop die wacht tot binnengekomen event op IR, RF, SERIAL, CLOCK, DAYLIGHT, TIMER
+  // als er geen signalen binnenkomen duurt deze hoofdloop +/- 35uSec. snel genoeg om geen signalen te missen.
+  while(true)
+    {
     if(HoldTimer>millis())
       digitalWrite(MonitorLedPin,(millis()>>7)&0x01);
     else
@@ -516,7 +543,7 @@ void loop()
         {
         if(Content=Receive_Serial())
           {
-            Nodo_2_RawSignal(Content);// bouw een RawSignal op zodat deze later eventueel kan worden verzonden met SendSignal
+          Nodo_2_RawSignal(Content);// bouw een RawSignal op zodat deze later eventueel kan worden verzonden met SendSignal
           ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_SERIAL,0,0);      // verwerk binnengekomen event.
           }
         StaySharpTimer=millis()+SHARP_TIME;
@@ -562,7 +589,9 @@ void loop()
             if(Content==Checksum && (millis()>SupressRepeatTimer || Content!=ContentPrevious))// tweede maal ontvangen als checksum
                {
                SupressRepeatTimer=millis()+ENDSIGNAL_TIME; // zodat herhalingen niet opnieuw opgepikt worden
+      digitalWrite(MonitorLedPin,HIGH);           // LED weer uit
                ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_RF,0,0); // verwerk binnengekomen event.
+      digitalWrite(MonitorLedPin,LOW);           // LED weer uit
                ContentPrevious=Content;
                }
             Checksum=Content;
@@ -570,8 +599,7 @@ void loop()
           }
         }
       }while(millis()<StaySharpTimer);
- 
-    
+     
     // 2: niet tijdkritische processen die periodiek uitgevoerd moeten worden
     if(LoopIntervalTimer_2<millis()) // lange interval
       {
@@ -591,7 +619,8 @@ void loop()
       while(QueuePos && HoldTimer<millis())
         {
         QueuePos--;
-        ProcessEvent(QueueEvent[QueuePos],VALUE_DIRECTION_INPUT,QueuePort[QueuePos],0,0);      // verwerk binnengekomen event.
+        // ProcessEvent(QueueEvent[QueuePos],VALUE_DIRECTION_INPUT,QueuePort[QueuePos],0,0);      // verwerk binnengekomen event.
+        ProcessEvent(QueueEvent[QueuePos],VALUE_DIRECTION_QUEUE,QueuePort[QueuePos],0,0);      // verwerk binnengekomen event.
         }       
         
       // DAYLIGHT: **************** Check zonsopkomst & zonsondergang  ***********************

@@ -92,12 +92,6 @@ unsigned long Receive_Serial(void)
         SaveSettings();
         break;
   
-      case CMD_TRACE:
-        S.Trace    =Par1==VALUE_ON?true:false;
-        S.TraceTime=Par2==VALUE_ON?true:false;
-        SaveSettings();
-        break;        
-    
       case CMD_DIVERT:   
         Action=(SerialReadEvent()&0x00ffffff) | ((unsigned long)(Par1))<<24 | ((unsigned long)(SIGNAL_TYPE_NODO))<<28; // Event_1 is het te forwarden event voorzien van nieuwe bestemming unit
         TransmitCode(Action);
@@ -111,11 +105,48 @@ unsigned long Receive_Serial(void)
          Simulate=Par1==VALUE_ON?true:false;;
          break;        
    
+       case CMD_DISPLAY:
+         {
+         switch(Par1)
+           {
+           case VALUE_ALL:
+             x=255;
+             break;
+           case VALUE_TIMESTAMP:
+             x=DISPLAY_TIMESTAMP;
+             break;
+           case CMD_UNIT:
+             x=DISPLAY_UNIT;
+             break;
+           case VALUE_DIRECTION:
+             x=DISPLAY_DIRECTION;
+             break;
+           case VALUE_PORT:
+             x=DISPLAY_PORT;
+             break;
+           case VALUE_TRACE:
+             x=DISPLAY_TRACE;
+             break;
+           case VALUE_TAG:
+             x=DISPLAY_TAG;
+             break;
+           default:
+             x=VALUE_OFF;//??? default waarde nog bepalen.
+           }
+         if(Par2==VALUE_ON)
+           S.Display|=x;
+         else
+           S.Display&=~x;
+           
+         SaveSettings();
+         break;
+         }
+         
        case CMD_UNIT:
          S.Unit=Par1;
          if(Par1>1)
             {
-            S.WaitFreeRF_Delay=10 + Par1*3;
+            S.WaitFreeRF_Delay=3 + Par1*3;
             S.WaitFreeRF_Window=3; // 1 eenheid = 100 ms.
             }
          else
@@ -142,24 +173,7 @@ unsigned long Receive_Serial(void)
           Event=AnalyzeRawSignal();
           TransmitCode(Event);
           break;
-
-        case CMD_STATUS:
-           Cmd=Par1;
-           Par1=Par2;
-           if(GetStatus(&Cmd,&Par1,&Par2)) // let op: call by reference !
-             {
-             Event=command2event(Cmd,Par1,Par2);// event wordt samengesteld...
-             PrintEventCode(Event);// ...maar alleen weergegeven.
-             PrintTerm();
-             }
-           else
-             {
-             error=true;
-             Par1=CMD_STATUS;
-             Par2=VALUE_PARAMETER;
-             }
-           break;
-    
+     
         case CMD_EVENTLIST_ERASE:
            VariableClear(0); // alle variabelen op nul zetten
            TimerClear(0); // reset de timers

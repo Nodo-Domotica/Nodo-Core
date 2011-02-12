@@ -134,6 +134,9 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
  { 
   byte x;
   byte xPar1=*Par1,xPar2=*Par2;
+  
+  
+  
   *Par1=0;
   *Par2=0;
   switch (*Command)
@@ -166,6 +169,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
 
     case CMD_TRANSMIT_SETTINGS:
       *Par1=S.TransmitPort;
+      *Par2=S.TransmitRepeat;
       break;
 
     case CMD_CLOCK_EVENT_DAYLIGHT:
@@ -175,11 +179,6 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
     case CMD_VARIABLE_SET:
       *Par1=xPar1;
       *Par2=S.UserVar[xPar1-1];
-      break;
-
-    case CMD_TRACE:
-      *Par1=S.Trace    ?VALUE_ON:VALUE_OFF;
-      *Par2=S.TraceTime?VALUE_ON:VALUE_OFF;
       break;
 
     case CMD_CLOCK_DATE:
@@ -302,14 +301,14 @@ void ResetFactory(void)
   {
   Beep(2000,2000);
   ClockRead();
-  
+
   S.Version            = VERSION;
   S.Unit               = UNIT;
-  S.Trace              = 0;
-  S.TraceTime          = 0;
+  S.Display            = DISPLAY_UNIT | DISPLAY_DIRECTION | VALUE_TAG; //??? nog de default bepalen
   S.AnalyseSharpness   = 50;
   S.AnalyseTimeOut     = SIGNAL_TIMEOUT_IR;
   S.TransmitPort       = VALUE_SOURCE_IR_RF;
+  S.TransmitRepeat     = TX_REPEATS;
   S.WaitFreeRF_Window  = 0;
   S.WaitFreeRF_Delay   = 0;
   S.DaylightSaving     = Time.DaylightSaving;
@@ -398,25 +397,9 @@ int HA2address(char* HA, byte *group)
     return Address; // KAKU adres 1 is intern 0     
   }
 
-// /**********************************************************************************************\
-// * Bepaal wat voor een type Event het is.
-// \*********************************************************************************************/
-//byte EventType(unsigned long Code)
-//  {
-//  byte Unit=(Code>>24)&0xf;
-//  byte Command=(Code>>16)&0xff;
-//  
-//  if(((Code>>28)&0xf)==SIGNAL_TYPE_NIBBLE_NEWKAKU)   return VALUE_TYPE_EVENT;
-//  if(Unit!=S.Unit && Unit!=0)                 return VALUE_TYPE_OTHERUNIT; // andere unit, dus niet voor deze nodo bestemd. Behalve unit=0, die is voor alle units    }
-//  if(Command<=RANGE_VALUE)                    return VALUE_TYPE_UNKNOWN;
-//  if(Command<RANGE_EVENT)                     return VALUE_TYPE_COMMAND;
-//  if(Command<=COMMAND_MAX)                    return VALUE_TYPE_EVENT;
-//  /* in andere gevallen */                    return VALUE_TYPE_UNKNOWN;  
-//  }
-    
  /**********************************************************************************************\
  * Set de timer op nul zonder dat er een event wordt gegenereerd.
- \*********************************************************************************************/
+ \**********************************************************************************************/
 void TimerClear(byte TimerToReset)
   {
   if(TimerToReset==0)
@@ -427,21 +410,21 @@ void TimerClear(byte TimerToReset)
   }
   
 // this function will return the number of bytes currently free in RAM
-//int MemoryTest() 
-//  {
-//  int byteCounter = 0; // initialize a counter
-//  byte *byteArray; // create a pointer to a byte array
-//  while ( (byteArray = (byte*) malloc (byteCounter * sizeof(byte))) != NULL ) {
-//    byteCounter++; // if allocation was successful, then up the count for the next try
-//    free(byteArray); // free memory after allocating it
-//  }  
-//  free(byteArray); // also free memory after the function finishes
-//  return byteCounter; // send back the highest number of bytes successfully allocated
-// }
+int FreeMemory() 
+  {
+  int byteCounter = 0; // initialize a counter
+  byte *byteArray; // create a pointer to a byte array
+  while ( (byteArray = (byte*) malloc (byteCounter * sizeof(byte))) != NULL ) {
+    byteCounter++; // if allocation was successful, then up the count for the next try
+    free(byteArray); // free memory after allocating it
+  }  
+  free(byteArray); // also free memory after the function finishes
+  return byteCounter; // send back the highest number of bytes successfully allocated
+ }
 
  /**********************************************************************************************\
  * Geeft de analoge waarde [0..255] van de WIRED-IN poort <WiredPort> [0..3]
- \*********************************************************************************************/
+ \**********************************************************************************************/
 byte WiredAnalog(byte WiredPort)
   {
   int x=analogRead(WiredAnalogInputPin_1+WiredPort);
@@ -463,5 +446,76 @@ byte WiredAnalog(byte WiredPort)
   if(x<0)x=0;
   return x;
   }
-  
 
+ /**********************************************************************************************\
+  * Geeft de status weer of verzendt deze.
+  *
+  *
+ \**********************************************************************************************/
+void Status(boolean ToSerial, byte Par1, byte Par2)
+  {
+  byte CMD_Start,CMD_End;
+  byte Par1_Start,Par1_End;
+  byte P1,P2; // in deze variabele wordt de waarde geplaats (call by reference)
+  
+  if(Par1==VALUE_ALL || Par1==0)
+    {
+    if(ToSerial)
+      PrintWelcome();
+    CMD_Start=RANGE_VALUE;
+    CMD_End=RANGE_EVENT;
+    }
+  else
+    {
+    CMD_Start=Par1;
+    CMD_End=Par1;
+    }
+
+  for(byte x=CMD_Start; x<=CMD_End; x++)
+    {
+    if(GetStatus(&x,&Par1_Start,&Par1_Start)) // Als het een geldige uitvraag is. let op: call by reference ! Par1_Start is gebruikt als dummy.
+      {
+      if(!Par2) // Als in het commando 'Status Par1, Par2' Par2 niet is gevuld met een waarde
+        {
+        switch(x)
+          {
+          case CMD_WIRED_ANALOG:
+          case CMD_WIRED_OUT:
+          case CMD_WIRED_PULLUP:
+          case CMD_WIRED_SMITTTRIGGER:
+          case CMD_WIRED_THRESHOLD:
+          case CMD_WIRED_RANGE:
+            Par1_Start=1;
+            Par1_End=4;
+            break;      
+          case CMD_VARIABLE_SET:
+          case CMD_TIMER_SET:
+            Par1_Start=1;
+            Par1_End=15;
+            break;
+          default:
+            Par1_Start=0;
+            Par1_End=0;
+          }
+        }
+      else
+        {
+        Par1_Start=Par2;
+        Par1_End=Par2;
+        }
+
+      for(byte y=Par1_Start;y<=Par1_End;y++)
+          {
+          P1=y;
+          P2=0;
+          GetStatus(&x,&P1,&P2); // haal status op. Call by Reference!
+          if(ToSerial)
+            PrintEvent(command2event(x,P1,P2),VALUE_SOURCE_SYSTEM,VALUE_DIRECTION_OUTPUT);  // geef event weer op Serial
+          else
+            TransmitCode(command2event(x,P1,P2));
+          }
+      }// if Getstatus
+    }// for x
+  if(ToSerial && CMD_Start!=CMD_End) 
+    PrintLine();
+  }
