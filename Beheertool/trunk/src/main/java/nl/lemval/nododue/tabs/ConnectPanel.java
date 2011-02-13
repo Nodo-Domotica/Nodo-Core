@@ -35,30 +35,39 @@ import org.jdesktop.application.ResourceMap;
 import org.jdesktop.application.Task;
 
 /**
- *
+ * Panel for connecting to the Nodo
+ * 
  * @author Michael
  */
 public class ConnectPanel extends NodoBasePanel implements OutputEventListener {
 
+    private static final String NEWLINE = System.getProperty("line.separator");
+
+    /** Contains the list of com ports in the gui */
     private DefaultComboBoxModel comPortModel;
+    /** The list of detected comm ports */
     private HashMap<String, CommPortIdentifier> ports;
+
+    /** Map for loading resources from configuration files */
     private ResourceMap resourceMap;
     private int lineCount = 0;
-    private static final String NEWLINE = System.getProperty("line.separator");
 
     /** Creates new form ConnectPanel */
     public ConnectPanel(NodoDueManagerView view) {
         super(view);
 
         resourceMap = Application.getInstance(NodoDueManager.class).getContext().getResourceMap(ConnectPanel.class);
+
         String start = resourceMap.getString("message.uitvoeren_scan");
         comPortModel = new DefaultComboBoxModel(new String[]{start});
         ports = new HashMap<String, CommPortIdentifier>();
 
         initComponents();
 
+        /** If the combobox selection changes, check whether there is a default
+         * baudrate for this port
+         */
         portSelection.addItemListener(new ItemListener() {
-
             public void itemStateChanged(ItemEvent e) {
                 if (e.getStateChange() == e.SELECTED) {
                     changeBaudrate((String) portSelection.getSelectedItem());
@@ -451,7 +460,7 @@ public class ConnectPanel extends NodoBasePanel implements OutputEventListener {
                         getResourceString("comm.nodo_unrecognized.title"),
                         JOptionPane.WARNING_MESSAGE);
             } else {
-                return getResourceString("comm.connected.ok", options.getNodoUnit(), options.getNodoHome());
+                return getResourceString("comm.connected.ok", options.getNodoUnit());
             }
         }
         return "";

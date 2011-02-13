@@ -66,12 +66,14 @@ public class MonitorPanel extends NodoBasePanel {
             rrSlider.setPaintLabels(true);
             marginSlider.setPaintLabels(true);
             thresholdSlider.setPaintLabels(true);
+            rangeSlider.setPaintLabels(true);
         }
         thresholdSlider.setEnabled(false);
         thresholdValue.setEnabled(false);
         marginSlider.setEnabled(false);
         marginValue.setEnabled(false);
         typeSelection.setEnabled(false);
+        rangeSlider.setEnabled(false);
 
         updateTooltips();
 
@@ -105,7 +107,6 @@ public class MonitorPanel extends NodoBasePanel {
         imagePanel = createImagePanel();
         graphGroup = new javax.swing.JPanel();
         graphTitle = new javax.swing.JLabel();
-        lineGraph = new WireGraphPanel();
         thresholdPanel = new javax.swing.JPanel();
         thresholdLabel = new javax.swing.JLabel();
         thresholdSlider = new javax.swing.JSlider();
@@ -118,14 +119,17 @@ public class MonitorPanel extends NodoBasePanel {
         typePanel = new javax.swing.JPanel();
         typeLabel = new javax.swing.JLabel();
         typeSelection = new javax.swing.JComboBox();
+        jButton1 = new javax.swing.JButton();
+        jPanel4 = new javax.swing.JPanel();
+        rangeSlider = new javax.swing.JSlider();
+        lineGraph = new WireGraphPanel();
         refreshGroup = new javax.swing.JPanel();
         jPanel1 = new javax.swing.JPanel();
+        ververs = new javax.swing.JButton();
         rrCheck = new javax.swing.JCheckBox();
         rrSlider = new javax.swing.JSlider();
         rrValue = new javax.swing.JTextField();
         rrLabel = new javax.swing.JLabel();
-        jPanel3 = new javax.swing.JPanel();
-        ververs = new javax.swing.JButton();
 
         setName("Form"); // NOI18N
 
@@ -277,24 +281,6 @@ public class MonitorPanel extends NodoBasePanel {
         graphTitle.setText(resourceMap.getString("graph.title.input")); // NOI18N
         graphTitle.setName("graphTitle"); // NOI18N
 
-        lineGraph.setBackground(resourceMap.getColor("lineGraph.background")); // NOI18N
-        lineGraph.setBorder(javax.swing.BorderFactory.createLineBorder(resourceMap.getColor("lineGraph.border.lineColor"))); // NOI18N
-        lineGraph.setMaximumSize(new java.awt.Dimension(250, 50));
-        lineGraph.setMinimumSize(new java.awt.Dimension(250, 50));
-        lineGraph.setName("lineGraph"); // NOI18N
-        lineGraph.setPreferredSize(new java.awt.Dimension(250, 50));
-
-        org.jdesktop.layout.GroupLayout lineGraphLayout = new org.jdesktop.layout.GroupLayout(lineGraph);
-        lineGraph.setLayout(lineGraphLayout);
-        lineGraphLayout.setHorizontalGroup(
-            lineGraphLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 285, Short.MAX_VALUE)
-        );
-        lineGraphLayout.setVerticalGroup(
-            lineGraphLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(0, 48, Short.MAX_VALUE)
-        );
-
         thresholdPanel.setName("thresholdPanel"); // NOI18N
         thresholdPanel.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 3, 3));
 
@@ -387,6 +373,61 @@ public class MonitorPanel extends NodoBasePanel {
         });
         typePanel.add(typeSelection);
 
+        jButton1.setAction(actionMap.get("editTypes")); // NOI18N
+        jButton1.setText(resourceMap.getString("jButton1.text")); // NOI18N
+        jButton1.setMargin(new java.awt.Insets(2, 7, 2, 7));
+        jButton1.setName("jButton1"); // NOI18N
+        typePanel.add(jButton1);
+
+        jPanel4.setFocusable(false);
+        jPanel4.setName("jPanel4"); // NOI18N
+        jPanel4.setLayout(new java.awt.BorderLayout());
+
+        rangeSlider.setMajorTickSpacing(1);
+        rangeSlider.setMaximum(4);
+        rangeSlider.setMinorTickSpacing(1);
+        rangeSlider.setOrientation(javax.swing.JSlider.VERTICAL);
+        rangeSlider.setPaintTicks(true);
+        rangeSlider.setSnapToTicks(true);
+        rangeSlider.setToolTipText(resourceMap.getString("rangeSlider.toolTipText")); // NOI18N
+        rangeSlider.setValue(0);
+        rangeSlider.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
+        rangeSlider.setName("rangeSlider"); // NOI18N
+        rangeSlider.addChangeListener(new javax.swing.event.ChangeListener() {
+            public void stateChanged(javax.swing.event.ChangeEvent evt) {
+                rangeSliderStateChanged(evt);
+            }
+        });
+        rangeSlider.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                rangeSliderFocusGained(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                rangeSliderFocusLost(evt);
+            }
+        });
+        jPanel4.add(rangeSlider, java.awt.BorderLayout.WEST);
+
+        lineGraph.setBackground(resourceMap.getColor("lineGraph.background")); // NOI18N
+        lineGraph.setBorder(javax.swing.BorderFactory.createLineBorder(resourceMap.getColor("lineGraph.border.lineColor"))); // NOI18N
+        lineGraph.setMaximumSize(new java.awt.Dimension(325, 50));
+        lineGraph.setMinimumSize(new java.awt.Dimension(325, 50));
+        lineGraph.setName("lineGraph"); // NOI18N
+        lineGraph.setPreferredSize(new java.awt.Dimension(325, 50));
+
+        org.jdesktop.layout.GroupLayout lineGraphLayout = new org.jdesktop.layout.GroupLayout(lineGraph);
+        lineGraph.setLayout(lineGraphLayout);
+        lineGraphLayout.setHorizontalGroup(
+            lineGraphLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(0, 323, Short.MAX_VALUE)
+        );
+        lineGraphLayout.setVerticalGroup(
+            lineGraphLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(0, 50, Short.MAX_VALUE)
+        );
+
+        jPanel4.add(lineGraph, java.awt.BorderLayout.EAST);
+
         org.jdesktop.layout.GroupLayout graphGroupLayout = new org.jdesktop.layout.GroupLayout(graphGroup);
         graphGroup.setLayout(graphGroupLayout);
         graphGroupLayout.setHorizontalGroup(
@@ -394,21 +435,14 @@ public class MonitorPanel extends NodoBasePanel {
             .add(graphGroupLayout.createSequentialGroup()
                 .add(graphGroupLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(graphGroupLayout.createSequentialGroup()
-                        .addContainerGap()
+                        .add(50, 50, 50)
                         .add(graphTitle, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 151, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .add(18, 18, 18)
-                        .add(wireCheck, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 118, Short.MAX_VALUE))
-                    .add(graphGroupLayout.createSequentialGroup()
-                        .addContainerGap()
-                        .add(typePanel, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 287, Short.MAX_VALUE))
-                    .add(graphGroupLayout.createSequentialGroup()
-                        .addContainerGap()
-                        .add(lineGraph, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 287, Short.MAX_VALUE))
-                    .add(graphGroupLayout.createSequentialGroup()
-                        .add(10, 10, 10)
-                        .add(graphGroupLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(org.jdesktop.layout.GroupLayout.TRAILING, thresholdPanel, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 289, Short.MAX_VALUE)
-                            .add(marginPanel, 0, 0, Short.MAX_VALUE))))
+                        .add(wireCheck, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 369, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, marginPanel, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 369, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, typePanel, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 369, Short.MAX_VALUE)
+                    .add(thresholdPanel, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 369, Short.MAX_VALUE))
                 .addContainerGap())
         );
         graphGroupLayout.setVerticalGroup(
@@ -418,22 +452,26 @@ public class MonitorPanel extends NodoBasePanel {
                     .add(graphTitle)
                     .add(wireCheck, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(lineGraph, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(jPanel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 52, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(thresholdPanel, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(marginPanel, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(typePanel, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .add(typePanel, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
         );
 
         refreshGroup.setBorder(javax.swing.BorderFactory.createTitledBorder(resourceMap.getString("refreshGroup.border.title"))); // NOI18N
         refreshGroup.setName("refreshGroup"); // NOI18N
-        refreshGroup.setLayout(new java.awt.GridLayout(2, 0));
+        refreshGroup.setLayout(new java.awt.GridLayout());
 
         jPanel1.setName("jPanel1"); // NOI18N
         jPanel1.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
+
+        ververs.setAction(actionMap.get("refreshNow")); // NOI18N
+        ververs.setText(resourceMap.getString("ververs.text")); // NOI18N
+        ververs.setName("ververs"); // NOI18N
+        jPanel1.add(ververs);
 
         rrCheck.setAction(actionMap.get("refreshTickAction")); // NOI18N
         rrCheck.setText(resourceMap.getString("rrCheck.text")); // NOI18N
@@ -472,15 +510,6 @@ public class MonitorPanel extends NodoBasePanel {
 
         refreshGroup.add(jPanel1);
 
-        jPanel3.setName("jPanel3"); // NOI18N
-        jPanel3.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
-
-        ververs.setAction(actionMap.get("refreshNow")); // NOI18N
-        ververs.setName("ververs"); // NOI18N
-        jPanel3.add(ververs);
-
-        refreshGroup.add(jPanel3);
-
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -489,10 +518,10 @@ public class MonitorPanel extends NodoBasePanel {
                 .addContainerGap()
                 .add(inoutputGroup, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 373, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
-                    .add(refreshGroup, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .add(graphGroup, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 323, Short.MAX_VALUE))
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(refreshGroup, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 393, Short.MAX_VALUE)
+                    .add(graphGroup, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -500,11 +529,11 @@ public class MonitorPanel extends NodoBasePanel {
                 .addContainerGap()
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(layout.createSequentialGroup()
-                        .add(graphGroup, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                        .add(graphGroup, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 222, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                        .add(66, 66, 66)
                         .add(refreshGroup, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                     .add(inoutputGroup, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 338, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(34, Short.MAX_VALUE))
+                .addContainerGap(21, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -601,6 +630,21 @@ public class MonitorPanel extends NodoBasePanel {
         updateTooltips();
     }//GEN-LAST:event_typeSelectionItemStateChanged
 
+    private void rangeSliderStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_rangeSliderStateChanged
+        ((WireGraphPanel) lineGraph).highlight(rangeSlider.getValue());
+        if ( rangeSlider.getValueIsAdjusting() == false ) {
+            updateRange();
+        }
+    }//GEN-LAST:event_rangeSliderStateChanged
+
+    private void rangeSliderFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_rangeSliderFocusGained
+        ((WireGraphPanel) lineGraph).highlight(rangeSlider.getValue());
+    }//GEN-LAST:event_rangeSliderFocusGained
+
+    private void rangeSliderFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_rangeSliderFocusLost
+        ((WireGraphPanel) lineGraph).highlight(-1);
+    }//GEN-LAST:event_rangeSliderFocusLost
+
     private JPanel createImagePanel() {
         return new ArduinoImagePanel();
     }
@@ -638,6 +682,7 @@ public class MonitorPanel extends NodoBasePanel {
             marginSlider.setEnabled(true);
             marginValue.setEnabled(true);
             typeSelection.setEnabled(true);
+            rangeSlider.setEnabled(true);
         } else {
             wireCheck.setText(getResourceString("graph.wire.output"));
             thresholdSlider.setEnabled(false);
@@ -645,6 +690,7 @@ public class MonitorPanel extends NodoBasePanel {
             marginSlider.setEnabled(false);
             marginValue.setEnabled(false);
             typeSelection.setEnabled(false);
+            rangeSlider.setEnabled(false);
         }
     }
 
@@ -692,6 +738,9 @@ public class MonitorPanel extends NodoBasePanel {
             if (thresholdSlider.isEnabled()) {
                 thresholdSlider.setValue(data.getThreshold());
             }
+            if (rangeSlider.isEnabled()) {
+                rangeSlider.setValue(data.getRange());
+            }
             wireCheck.setSelected(data.isState());
             ((WireGraphPanel) lineGraph).setData(selectedWire);
             lineGraph.repaint();
@@ -738,6 +787,22 @@ public class MonitorPanel extends NodoBasePanel {
         }
     }
 
+    private void updateRange() {
+        if (NodoDueManager.hasConnection()) {
+            SerialCommunicator comm =
+                    NodoDueManager.getApplication().getSerialCommunicator();
+            try {
+                CommandInfo ci = CommandLoader.get(Name.WiredRange);
+                comm.send(new NodoCommand(ci,
+                        String.valueOf(selectedWire.getChannel()),
+                        String.valueOf(rangeSlider.getValue())));
+                comm.waitCommand();
+            } catch (Exception e) {
+                getListener().showStatusMessage(getResourceString("update_fail.range", e.getMessage()));
+            }
+        }
+    }
+
     private void downloadAndRefresh() {
         NodoDueManager app = NodoDueManager.getApplication();
         if (!app.hasConnection(false)) {
@@ -780,11 +845,13 @@ public class MonitorPanel extends NodoBasePanel {
             CommandInfo wiredStr = CommandLoader.get(Name.WiredSmittTrigger);
             CommandInfo wiredThd = CommandLoader.get(Name.WiredThreshold);
             CommandInfo wiredAna = CommandLoader.get(Name.WiredAnalog);
+            CommandInfo wiredRng = CommandLoader.get(Name.WiredRange);
             cis.add(wiredOut);
             cis.add(wiredPul);
             cis.add(wiredStr);
             cis.add(wiredThd);
             cis.add(wiredAna);
+            cis.add(wiredRng);
 //	    System.out.println("Refreshing...");
             Collection<NodoSetting> settings = NodoSettingRetriever.getSettings(cis);
 
@@ -819,6 +886,9 @@ public class MonitorPanel extends NodoBasePanel {
                         break;
                     case WiredAnalog:
                         data[idx - 1].setValue(Integer.parseInt(value));
+                        break;
+                    case WiredRange:
+                        data[idx - 1].setRange(Integer.parseInt(value));
                         break;
                 }
             }
@@ -931,6 +1001,10 @@ public class MonitorPanel extends NodoBasePanel {
     public void refreshNow() {
         downloadAndRefresh();
     }
+
+    @Action
+    public void editTypes() {
+    }
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel graphGroup;
     private javax.swing.JLabel graphTitle;
@@ -940,9 +1014,10 @@ public class MonitorPanel extends NodoBasePanel {
     private javax.swing.JLabel input2;
     private javax.swing.JLabel input3;
     private javax.swing.JLabel input4;
+    private javax.swing.JButton jButton1;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
-    private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel lineGraph;
     private javax.swing.JLabel marginLabel;
     private javax.swing.JPanel marginPanel;
@@ -953,6 +1028,7 @@ public class MonitorPanel extends NodoBasePanel {
     private javax.swing.JLabel output3;
     private javax.swing.JLabel output4;
     private javax.swing.JPanel outputPanel;
+    private javax.swing.JSlider rangeSlider;
     private javax.swing.JPanel refreshGroup;
     private javax.swing.JCheckBox rrCheck;
     private javax.swing.JLabel rrLabel;

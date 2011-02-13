@@ -10,8 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import nl.lemval.nododue.cmd.NodoResponse;
 import nl.lemval.nododue.util.Device;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
@@ -31,8 +30,7 @@ public class Options {
 
     enum Opts {
         // short
-
-        nodoUnit, nodoHome,
+        nodoUnit,
         // String array
         remoteUnits, devices, inputRanges,
         // boolean
@@ -103,18 +101,19 @@ public class Options {
     }
 
     /**
-     * Command to scan the Home and Unit parameters from the boot
+     * Command to scan the Unit parameters from the boot
      * string.
      * @param message
      */
     public boolean scanLine(String message) {
-        Pattern info = Pattern.compile("Unit ([0-9]{1,2}), ([0-9]{1,2})|Unit ([0-9]{1,2}), Home ([0-9]{1,2})");
-        Matcher m = info.matcher(message);
-
-        if (m.find()) {
-            setNodoUnit(m.group(1) == null ? m.group(4) : m.group(1));
-            setNodoHome(m.group(2) == null ? m.group(3) : m.group(2));
-            hasScanned = true;
+        NodoResponse[] responses = NodoResponse.getResponses(message);
+        for (int i = 0; i < responses.length; i++) {
+            if ( responses[i].is(NodoResponse.Direction.OUTPUT) && responses[i].isCommand("Unit")) {
+                setNodoUnit(responses[i].getFirstParameter());
+                hasScanned = true;
+                break;
+            }
+            
         }
         return hasScanned;
     }
@@ -162,27 +161,6 @@ public class Options {
         } catch (NumberFormatException e) {
             try {
                 setNodoUnit(Short.parseShort(nodoUnit, 16));
-            } catch (NumberFormatException e2) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public short getNodoHome() {
-        return config.getShort(Opts.nodoHome.name(), (short) 0);
-    }
-
-    public void setNodoHome(short nodoHome) {
-        config.setProperty(Opts.nodoHome.name(), nodoHome);
-    }
-
-    public boolean setNodoHome(String nodoHome) {
-        try {
-            setNodoHome(Short.parseShort(nodoHome));
-        } catch (NumberFormatException e) {
-            try {
-                setNodoHome(Short.parseShort(nodoHome, 16));
             } catch (NumberFormatException e2) {
                 return false;
             }

@@ -13,13 +13,9 @@ public class WireData {
     private int value = -1;
     private int margin = -1;
     private int threshold = -1;
+    private int range = -1;
+    
     private boolean state;
-
-    public WireData(int value, int threshold, int margin) {
-        this.value = value;
-        this.threshold = threshold;
-        this.margin = margin;
-    }
 
     public WireData() {
     }
@@ -34,6 +30,14 @@ public class WireData {
 
     public int getThreshold() {
         return threshold;
+    }
+
+    public int getRange() {
+        return range;
+    }
+
+    public void setRange(int range) {
+        if (this.range == -1) this.range = range;
     }
 
     public void setMargin(int margin) {

@@ -53,6 +53,7 @@ public class CommandInfo {
         WiredSmittTrigger,
         WiredThreshold,
         WiredAnalog,
+        WiredRange,
         WildCard,
     };
     public static final String CUSTOM_CMD = "<Custom>";

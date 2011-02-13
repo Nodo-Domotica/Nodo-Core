@@ -14,7 +14,7 @@
   </dependencySets>
   <fileSets>
     <fileSet>
-      <directory>${project.build.outputDirectory}</directory>
+      <directory>**/classes/**</directory>
     </fileSet>
   </fileSets>
 </assembly>

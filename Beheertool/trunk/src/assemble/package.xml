@@ -9,7 +9,7 @@
   <file>
 	  <source>target/${project.artifactId}-${project.version}-uber.${project.packaging}</source>
 	  <outputDirectory>/</outputDirectory>
-	  <destName>NodoDueBeheer.jar</destName>
+	  <destName>NodoBeheer.jar</destName>
   </file>
   <file>
 	  <source>README.txt</source>

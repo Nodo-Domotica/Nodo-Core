@@ -2,7 +2,6 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package nl.lemval.nododue.cmd;
 
 import java.util.ArrayList;
@@ -12,6 +11,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import nl.lemval.nododue.util.listeners.HexKeyListener;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * This class represents a value from the spreadsheet and
@@ -24,17 +24,39 @@ import nl.lemval.nododue.util.listeners.HexKeyListener;
 public class Parameter {
 
     private class Prop {
+
         public String name;
         public String value;
-        public Prop(String n, String v) { this.name = n.trim(); this.value = v.trim(); }
-    };
 
+        public Prop(String n, String v) {
+            this.name = n.trim();
+            this.value = v.trim();
+        }
+
+        private int compareTo(Prop o2) {
+            String n1 = name;
+            String n2 = o2.name;
+            try {
+                Integer.parseInt(n1);
+                n1 = "000".substring(n1.length()) + n1;
+            } catch (NumberFormatException e) {
+                // This one is a string...
+            }
+            try {
+                Integer.parseInt(n2);
+                n2 = "000".substring(n2.length()) + n2;
+            } catch (NumberFormatException e) {
+                // This one is also a string...
+            }
+            return n1.compareTo(n2);
+        }
+    };
+    
     private String name;
     private String[] values = null;
     private String[] valueNames = null;
     private String validator;
     private boolean notNull = false;
-
     private static HexKeyListener kl = new HexKeyListener();
 
     Parameter(String name, String values) {
@@ -47,11 +69,11 @@ public class Parameter {
     }
 
     public String[] getValueNames() {
-        if ( valueNames == null && validator != null ) {
+        if (valueNames == null && validator != null) {
             // Retrieve all commands of type 'validator'
             // and add as option.
             ArrayList<String> vals = new ArrayList<String>();
-            for(CommandInfo ci : CommandLoader.getActions(CommandType.fromString(validator)) ) {
+            for (CommandInfo ci : CommandLoader.getActions(CommandType.fromString(validator))) {
                 vals.add(ci.getName());
             }
             valueNames = values = vals.toArray(new String[0]);
@@ -71,93 +93,90 @@ public class Parameter {
      */
     public String getValue(String parValue) {
         // First check for a named value.
-	getValueNames();
+        getValueNames();
         for (int i = 0; i < valueNames.length; i++) {
-            if (valueNames[i].equals(parValue))
+            if (valueNames[i].equals(parValue)) {
                 return values[i];
+            }
         }
         for (int i = 0; i < values.length; i++) {
-            if (values[i].equals(parValue))
+            if (values[i].equals(parValue)) {
                 return values[i];
+            }
         }
         String rv = kl.toDecValue(parValue);
-	if ( notNull && "0".equals(rv) ) {
-	    return null;
-	}
-	return rv;
+        if (notNull && "0".equals(rv)) {
+            return null;
+        }
+        return rv;
     }
-    
+
     public String getValueName(String value) {
-	getValueNames();
-	for (int i = 0; i < values.length; i++) {
-            if ( values[i].equals(value) )
+        getValueNames();
+        for (int i = 0; i < values.length; i++) {
+            if (values[i].equals(value)) {
                 return valueNames[i];
+            }
         }
         return value;
     }
 
     private void prepare(String input) {
         // Check for reference value
-        if ( input.matches("\\[.*\\]") ) {
-            validator = input.substring(1, input.length()-1);
-	    // Initialize the arrays.
-	    // Delay until realy needed ;-) otherwise the list is not fully loaded.
-	    // getValueNames();
+        if (input.matches("\\[.*\\]")) {
+            validator = input.substring(1, input.length() - 1);
+            // Initialize the arrays.
+            // Delay until realy needed ;-) otherwise the list is not fully loaded.
+            // getValueNames();
             return;
         }
 
-	if ( input.equals("!0")  ) {
-	    notNull = true;
-	    valueNames = new String[0];
-	    values = new String[0];
-	    return;
-	}
+        if (input.equals("!0")) {
+            notNull = true;
+            valueNames = new String[0];
+            values = new String[0];
+            return;
+        }
 
         // Nope, check for multiple values, comma separated
         String[] set = input.split(",");
 
         // Make sure it is sorted by using a tree set
-        TreeSet<Prop> list = new TreeSet<Prop>(new Comparator<Prop>() {
+        TreeSet<Prop> list = new TreeSet<Prop>(new Comparator<Prop>()  {
+
             public int compare(Prop o1, Prop o2) {
-                String n1 = o1.name;
-                String n2 = o2.name;
-                try {
-                    Integer.parseInt(n1);
-                    n1 = "000".substring(n1.length()) + n1;
-                } catch (NumberFormatException e) {
-                    // This one is a string...
-                }
-                try {
-                    Integer.parseInt(n2);
-                    n2 = "000".substring(n2.length()) + n2;
-                } catch (NumberFormatException e) {
-                    // This one is also a string...
-                }
-                return n1.compareTo(n2);
+                return o1.compareTo(o2);
             }
         });
 
-        Pattern rangePattern = Pattern.compile("\\[?([0-9]+)\\.\\.([0-9]+)\\]?");
+        Pattern rangePattern = Pattern.compile("([0-9]+)\\.\\.([0-9]+)");
         Pattern namedPattern = Pattern.compile("([^:]+):(.+)");
 
         // Ok, now split it up
         for (int i = 0; i < set.length; i++) {
-            String value = set[i];
+            String value = set[i].trim();
+            if ( StringUtils.isBlank(value) ) {
+                continue;
+            }
+            
             Matcher rangeMatcher = rangePattern.matcher(value);
             Matcher namedMatcher = namedPattern.matcher(value);
-            if ( rangeMatcher.matches() ) {
+
+            if (rangeMatcher.matches()) {
                 int start = Integer.parseInt(rangeMatcher.group(1));
                 int end = Integer.parseInt(rangeMatcher.group(2));
-                if ( end < start ) {
-                    int tmp = start; start = end; end = tmp;
+                if (end < start) {
+                    int tmp = start;
+                    start = end;
+                    end = tmp;
                 }
                 for (int j = start; j <= end; j++) {
                     String data = String.valueOf(j);
                     list.add(new Prop(data, data));
                 }
-            } else if ( namedMatcher.matches() ) {
+            } else if (namedMatcher.matches()) {
                 list.add(new Prop(namedMatcher.group(1), namedMatcher.group(2)));
-            } else if ( value.trim().length() > 0 ) {
+            } else {
                 list.add(new Prop(value, value));
             }
         }

@@ -75,7 +75,6 @@ public class UnitSelectorBox extends javax.swing.JDialog {
         boolean local = options.isUseLocalUnit();
         boolean remote = options.isUseRemoteUnits();
 
-        nodoHomeLabel.setText(String.valueOf(options.getNodoHome()));
         remoteUnitModel.removeAllElements();
         remoteUnitModel.addElement(ALL_NODOS);
         for (int i = 1; i < 16; i++) {
@@ -137,9 +136,6 @@ public class UnitSelectorBox extends javax.swing.JDialog {
 
         localOrRemoteGroup = new javax.swing.ButtonGroup();
         javax.swing.JLabel titleLabel = new javax.swing.JLabel();
-        huiscodePanel = new javax.swing.JPanel();
-        huiscodeLabel = new javax.swing.JLabel();
-        nodoHomeLabel = new javax.swing.JLabel();
         javax.swing.JLabel sendToLabel = new javax.swing.JLabel();
         localButton = new javax.swing.JRadioButton();
         localUnitLabel = new javax.swing.JTextField();
@@ -163,33 +159,6 @@ public class UnitSelectorBox extends javax.swing.JDialog {
         titleLabel.setFont(titleLabel.getFont().deriveFont(titleLabel.getFont().getStyle() | java.awt.Font.BOLD, titleLabel.getFont().getSize()+4));
         titleLabel.setText(resourceMap.getString("title")); // NOI18N
         titleLabel.setName("titleLabel"); // NOI18N
-
-        huiscodePanel.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        huiscodePanel.setName("huiscodePanel"); // NOI18N
-
-        huiscodeLabel.setText(resourceMap.getString("huiscodeLabel.text")); // NOI18N
-        huiscodeLabel.setName("huiscodeLabel"); // NOI18N
-
-        nodoHomeLabel.setText(resourceMap.getString("nodoHomeLabel.text")); // NOI18N
-        nodoHomeLabel.setName("nodoHomeLabel"); // NOI18N
-
-        org.jdesktop.layout.GroupLayout huiscodePanelLayout = new org.jdesktop.layout.GroupLayout(huiscodePanel);
-        huiscodePanel.setLayout(huiscodePanelLayout);
-        huiscodePanelLayout.setHorizontalGroup(
-            huiscodePanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(huiscodePanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .add(huiscodeLabel)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(nodoHomeLabel)
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-        huiscodePanelLayout.setVerticalGroup(
-            huiscodePanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(huiscodePanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                .add(nodoHomeLabel)
-                .add(huiscodeLabel))
-        );
 
         sendToLabel.setText(resourceMap.getString("sendToLabel.text")); // NOI18N
         sendToLabel.setName("sendToLabel"); // NOI18N
@@ -258,45 +227,42 @@ public class UnitSelectorBox extends javax.swing.JDialog {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(layout.createSequentialGroup()
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 294, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
-                        .addContainerGap()
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
+                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                    .add(layout.createSequentialGroup()
+                        .add(12, 12, 12)
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(org.jdesktop.layout.GroupLayout.TRAILING, titleLabel, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 282, Short.MAX_VALUE)
-                            .add(layout.createSequentialGroup()
-                                .add(sendToLabel)
-                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 140, Short.MAX_VALUE))
-                            .add(huiscodePanel, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                            .add(layout.createSequentialGroup()
-                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                                    .add(multipleRemoteButton)
-                                    .add(remoteButton)
-                                    .add(localButton))
-                                .add(18, 18, 18)
-                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                                    .add(includeLocal)
-                                    .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                                        .add(remoteUnitList, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 132, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                        .add(org.jdesktop.layout.GroupLayout.LEADING, layout.createSequentialGroup()
-                                            .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
-                                                .add(localUnitLabel)
-                                                .add(remoteUnitSelection, 0, 58, Short.MAX_VALUE))
-                                            .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                            .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
-                                                .add(scanLocalButton, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                                .add(scanRemoteButton, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))))
-                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 12, Short.MAX_VALUE)))))
+                            .add(multipleRemoteButton)
+                            .add(remoteButton)
+                            .add(localButton))
+                        .add(18, 18, 18)
+                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                            .add(includeLocal)
+                            .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                                .add(remoteUnitList, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 132, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .add(org.jdesktop.layout.GroupLayout.LEADING, layout.createSequentialGroup()
+                                    .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
+                                        .add(localUnitLabel)
+                                        .add(remoteUnitSelection, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 58, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                                    .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                    .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
+                                        .add(scanLocalButton, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .add(scanRemoteButton)))))
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 12, Short.MAX_VALUE))
+                    .add(layout.createSequentialGroup()
+                        .addContainerGap()
+                        .add(titleLabel, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 282, Short.MAX_VALUE))
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, layout.createSequentialGroup()
+                        .addContainerGap()
+                        .add(sendToLabel))
+                    .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 294, Short.MAX_VALUE))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(layout.createSequentialGroup()
-                .addContainerGap()
+                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .add(titleLabel)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
-                .add(huiscodePanel, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(sendToLabel)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
@@ -316,8 +282,7 @@ public class UnitSelectorBox extends javax.swing.JDialog {
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(includeLocal)
                 .add(12, 12, 12)
-                .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
         );
 
         pack();
@@ -526,15 +491,12 @@ public class UnitSelectorBox extends javax.swing.JDialog {
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton closeButton;
-    private javax.swing.JLabel huiscodeLabel;
-    private javax.swing.JPanel huiscodePanel;
     private javax.swing.JCheckBox includeLocal;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JRadioButton localButton;
     private javax.swing.ButtonGroup localOrRemoteGroup;
     private javax.swing.JTextField localUnitLabel;
     private javax.swing.JRadioButton multipleRemoteButton;
-    private javax.swing.JLabel nodoHomeLabel;
     private javax.swing.JRadioButton remoteButton;
     private javax.swing.JTextField remoteUnitList;
     private javax.swing.JComboBox remoteUnitSelection;
