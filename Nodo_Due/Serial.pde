@@ -86,11 +86,6 @@ unsigned long Receive_Serial(void)
           }
         break;        
   
-      case CMD_ANALYSE_SETTINGS:
-        S.AnalyseTimeOut=Par1;
-        S.AnalyseSharpness=Par2*1000;
-        SaveSettings();
-        break;
   
       case CMD_DIVERT:   
         Action=(SerialReadEvent()&0x00ffffff) | ((unsigned long)(Par1))<<24 | ((unsigned long)(SIGNAL_TYPE_NODO))<<28; // Event_1 is het te forwarden event voorzien van nieuwe bestemming unit
@@ -120,6 +115,9 @@ unsigned long Receive_Serial(void)
              break;
            case VALUE_DIRECTION:
              x=DISPLAY_DIRECTION;
+             break;
+           case VALUE_SOURCE_SERIAL:
+             x=DISPLAY_SERIAL;
              break;
            case VALUE_PORT:
              x=DISPLAY_PORT;

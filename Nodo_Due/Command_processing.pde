@@ -483,6 +483,12 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
        case CMD_STATUS:
          Status(Src==VALUE_SOURCE_SERIAL, Par1, Par2);
          break;
+
+      case CMD_ANALYSE_SETTINGS:
+        S.AnalyseTimeOut=Par1;
+        S.AnalyseSharpness=Par2*1000;
+        SaveSettings();
+        break;
        }
     }
   return error?false:true;

@@ -268,11 +268,20 @@ class EventlistWrite(eg.ActionClass):
             panel.SetResult(EventlistActionCtrl.GetValue(),EventlistEventCtrl.GetValue())
 
 #===============================================================================
+
 class NodoSerial(eg.PluginClass):
     def __init__(self):
+        eg.globals.NodoVersion=""
+        eg.globals.hold = 0
+        eg.globals.Unit=""
+        eg.globals.Source=""
+        eg.globals.Direction=""
+        eg.globals.Command=""
+        eg.globals.Par1=""
+        eg.globals.Par2=""
         
         self.serial = None
-        eg.globals.hold = 0
+        
         group = self        
         for Command, DescriptionCommand, DescriptionPar1, DescriptionPar2 in NodoCommandList:              
 
@@ -362,7 +371,7 @@ class NodoSerial(eg.PluginClass):
     # verzenden van het commando en gelijkertijd kijken of er een XOFF verzonden is
     def Send(self, StringToSend=""):
         #verzend de reeks tekens uit het Nodo commando
-        print "Serial.write: " + StringToSend
+        # print "Serial.write: " + StringToSend
         for i in range(len(StringToSend)):        
             if eg.globals.hold == 1:
                 while eg.globals.hold == 1:
@@ -375,6 +384,8 @@ class NodoSerial(eg.PluginClass):
       while True:
           b = serial.Read(1, 0.2)
           if b == "\n":
+              eg.globals.Line = buffer
+              self.ParseReceivedLine(buffer)
               self.TriggerEvent(buffer)
               return
               
@@ -393,6 +404,59 @@ class NodoSerial(eg.PluginClass):
               continue
                          
           buffer += b
+
+    def ParseReceivedLine(self, ReceivedString):
+            # parse de ontvangen Nodo regel en plaats de delen in eg.globals voor later gebruik door de user
+                
+            # Zoek Direction uit de regel
+            Tag = "Direction="
+            x = ReceivedString.find(Tag, 0, len(ReceivedString))
+            if x!=-1:
+                x+=len(Tag)
+                y = ReceivedString.find(",", x, len(ReceivedString))
+                eg.globals.direction=ReceivedString[x:y].strip(", ")
+            
+            # Zoek Unit uit de regel
+            Tag = "Unit="
+            x = ReceivedString.find(Tag, 0, len(ReceivedString))
+            if x!=-1:
+                x+=len(Tag)
+                y = ReceivedString.find(",", x, len(ReceivedString))
+                eg.globals.Unit=ReceivedString[x:y].strip(", ")
+            
+            # Zoek Source uit de regel
+            Tag = "Source="
+            x = ReceivedString.find(Tag, 0, len(ReceivedString))
+            if x!=-1:
+                x+=len(Tag)
+                y = ReceivedString.find(",", x, len(ReceivedString))
+                eg.globals.Source=ReceivedString[x:y].strip(", ")
+            
+            # Zoek NodoVersion uit de regel
+            Tag = "NodoVersion="
+            x = ReceivedString.find(Tag, 0, len(ReceivedString))
+            if x!=-1:
+                x+=len(Tag)
+                y = ReceivedString.find(",", x, len(ReceivedString))
+                eg.globals.NodoVersion=ReceivedString[x:y].strip(", ")
+            
+            # Zoek commando deel uit de regel
+            x = ReceivedString.find("(", 0, len(ReceivedString))
+            y = ReceivedString.find(")", 0, len(ReceivedString))
+
+            # commando wordt altijd omsloten met haakjes.
+            if x!=-1 and y!=-1:
+                ReceivedString = ReceivedString[x+1:y]
+    
+                # Zoek Command commando deel
+                Result = ReceivedString.partition(" ")
+                eg.globals.Command = Result[0]
+                # Zoek Par1 en Par2
+                Params = Result[2].partition(",")
+                eg.globals.Par1=Params[0]
+                eg.globals.Par2=Params[2]
+
+            return
 
 #===============================================================================
 

@@ -123,7 +123,7 @@ prog_char PROGMEM Text_07[] = "SYSTEM: Rawsignal=";
 prog_char PROGMEM Text_09[] = "SYSTEM: Break!";
 prog_char PROGMEM Text_10[] = "Timestamp=";
 prog_char PROGMEM Text_11[] = "Direction=";
-prog_char PROGMEM Text_12[] = "Port=";
+prog_char PROGMEM Text_12[] = "Source=";
 prog_char PROGMEM Text_13[] = "Unit=";
 prog_char PROGMEM Text_14[] = "Event=";
 prog_char PROGMEM Text_15[] = "NodoVersion=";
@@ -410,6 +410,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define DISPLAY_PORT                 8
 #define DISPLAY_TRACE               16
 #define DISPLAY_TAG                 32
+#define DISPLAY_SERIAL              64
 
 // settings voor verzenden en ontvangen van IR/RF 
 #define ENDSIGNAL_TIME          1500 // Dit is de tijd in milliseconden waarna wordt aangenomen dat het ontvangen één reeks signalen beëindigd is

@@ -24,6 +24,10 @@
 void PrintEvent(unsigned long Content, byte Port, boolean Direction)
   {
   boolean first=true;
+
+  // als ingesteld staat dat seriële input niet weergegeven moet worden en de poort was serieel, dan direct terug
+  if(!(S.Display&DISPLAY_SERIAL) && Port==VALUE_SOURCE_SERIAL && Direction==VALUE_DIRECTION_INPUT)
+    return;
   
   if(S.Display&DISPLAY_TIMESTAMP && Time.Day) // Time.Day=true want dan is er een RTC aanwezig.
     {   
