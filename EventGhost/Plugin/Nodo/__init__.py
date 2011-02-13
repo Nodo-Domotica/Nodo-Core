@@ -1,8 +1,9 @@
 # This is a part of the EventGhost and the Nodo software.
 # Copyright (C) 2011 Paul Tonkes <p.k.tonkes@gmail.com>
+# Thanks to Frank van der Strigt <fvdstrigt@hotmail.com>
 
 r"""<rst>
-Plugin voor de **Nodo Due** V1.50 zelfbouw domotica controller.
+Plugin voor de **Nodo Due** V1.2.x zelfbouw domotica controller.
 
 Kijk op voor meer informatie op de `website`__.
 
@@ -22,7 +23,7 @@ eg.RegisterPlugin(
     description=__doc__,
     url="http://members.chello.nl/p.tonkes8/index.html",
     author="Paul Tonkes",
-    version="0.00 beta",
+    version="Plugin version 0.00 beta",
     canMultiLoad = True,
     createMacrosOnAdd = True,
 )
@@ -57,10 +58,11 @@ NodoCommandList =  (
           ('Timer','Timer Event','Timer nummer. [1..15]',None),
 
       ('Clock', None, None,None),                                      
-          ('ClockSetDate','Zet de datum an de Nodo','Dag [1..31]','Maand [1..12]'),
-          ('ClockSetDOW','Zet de dag van de week','Weekdag [1..7] 1=zondag',None),
-          ('ClockSetTime','Zet de tijd van de Nodo','Uren [0..23]','Minuten [0..59]'),
-          ('ClockSetYear','Stel het huidige jaar in','Eeuw [19..21]','Jaar [00..99]'),
+          ('ClockSync','Zet de klok van de Nodo gelijk aan die van de computer',None,None),
+          ('ClockSetDate','Zet handmatig de datum an de Nodo','Dag [1..31]','Maand [1..12]'),
+          ('ClockSetDOW','Zet handmatig de dag van de week','Weekdag [1..7] 1=zondag',None),
+          ('ClockSetTime','Zet handmatig de tijd van de Nodo','Uren [0..23]','Minuten [0..59]'),
+          ('ClockSetYear','Stel handmatig het huidige jaar in','Eeuw [19..21]','Jaar [00..99]'),
           ('ClockSun','Levert match in eventlist op zondag voor opgegeven uren:minuten','Uren [0..23]','Minuten [0..59]'),
           ('ClockMon','Levert match in eventlist op maandag voor opgegeven uren:minuten','Uren [0..23]','Minuten [0..59]'),
           ('ClockTue','Levert match in eventlist op dinsdag voor opgegeven uren:minuten','Uren [0..23]','Minuten [0..59]'),
@@ -104,52 +106,48 @@ NodoCommandList =  (
 
       ('Debugging', None, None,None),                                      
           ('SimulateDay','Simuleer de tijd ','[1,7]',None),
-          ('Trace','Trace modus voor eenvoudig debuggen','Trace [ON, OFF]','Tijd [ON, OFF]'),
+          ('Trace','Trace modus voor eenvoudig debuggen','Trace [ON,OFF]','Tijd [ON,OFF]'),
 
       ('Overig', None, None,None),                                      
           ('NodoCommand', 'Stuur een commando naar de Nodo.', 'Meerdere commandos van elkaar scheiden met een puntkomma.\n\nCommand Par1,Par2',None),
           ('Boot','Event reedt op na een reset',None,None),
-          ('Simulate','Simulate voorkomt dat er via RF wordt verzonden. Handig voor testdoeleinden.','[ON, OFF]',None),
+          ('Status','Haal de status op van de Nodo','Nodo commando (optioneel)','Parameter-1 behorend bij Nodo commando (optioneel)\n[1..4] voor Wired...\n[1..15] voor TimerSet,VariableSet\n'),
+          ('Simulate','Simulate voorkomt dat er via RF wordt verzonden. Handig voor testdoeleinden.','[ON,OFF]',None),
           ('Confirm','Geeft na ontvangst een bevestiging dat het singaal door de Nodo is ontvangen','Confirm [On,Off]',None),
           ('Delay','Wacht','Tijd in seconden [Off, 1..255]','Queue events [On,Off]'),
           ('Sound','Geef geluidsignaal','Signaal. [0..7]','Herhalingen. [1..255]'),
 
       (None, None, None,None),              
 )
+
 #===============================================================================
 
 class NodoCommand(eg.ActionClass):
-    """class voor Nodo Command's zonder parameters van de gebruiker"""
+    # class voor Nodo Command's zonder parameters van de gebruiker
     def __call__(self):
         eg.plugins.NodoSerial.plugin.Send(self.cmd  + ';')
 
 #===============================================================================
 
-class NodoCommandPar1(eg.ActionWithStringParameter):
-    """class voor Nodo Commando's met Parameter-1"""
-    def __call__(self, Par1):
-        eg.plugins.NodoSerial.plugin.Send(self.cmd + ' '+ str(Par1) + ';')
+class NodoCommandPar1(eg.ActionClass):
+    # class voor Nodo Commando's met Parameter-1
+
+    class text:
+        DescPar1=""
+                
+    def __call__(self, Par1=""):
+        NodoCommand=self.cmd
+        if len(Par1)>0:
+            NodoCommand += ' ' + Par1
+        else:
+            NodoCommand += " 0"
+        NodoCommand+=';'
+        eg.plugins.NodoSerial.plugin.Send(NodoCommand)
 
     def GetLabel(self, Par1):
         return self.cmd + ' ' + str(Par1) + ';'
 
-#===============================================================================
-
-class NodoCommandPar2(eg.ActionClass):
-    """class voor Nodo Commando's met Parameter-1 en Parameter-2"""
-
-
-    class text:
-        DescPar1=""
-        DescPar2=""
-                
-    def __call__(self, Par1, Par2):
-        eg.plugins.NodoSerial.plugin.Send(self.cmd + ' ' + str(Par1) + ',' + str(Par2) + ';')
-
-    def GetLabel(self, Par1, Par2):
-        return self.cmd + ' ' + str(Par1) + ',' + str(Par2) + ';'
-
-    def Configure(self,Par1="",Par2=""):
+    def Configure(self, Par1=""):
         panel = eg.ConfigPanel(self)
         mainSizer =wx.BoxSizer(wx.VERTICAL)
         Par1Lbl=wx.StaticText(panel, -1, self.text.DescPar1)
@@ -157,16 +155,75 @@ class NodoCommandPar2(eg.ActionClass):
         Par1Ctrl.SetMinSize((20,20))
         mainSizer.Add(Par1Lbl,0,wx.TOP,20)
         mainSizer.Add(Par1Ctrl,0,wx.EXPAND)
+        panel.sizer.Add(mainSizer)
+        
+        while panel.Affirmed():
+            panel.SetResult(Par1Ctrl.GetValue())
+                
+
+#===============================================================================
+
+class NodoCommandPar2(eg.ActionClass):
+    # class voor Nodo Commando's met Parameter-1 en Parameter-2
+
+    class text:
+        DescPar1=""
+        DescPar2=""
+                
+    def __call__(self, Par1="", Par2=""):
+        NodoCommand=self.cmd
+        if len(Par1)>0:
+            NodoCommand += ' ' + Par1
+        else:
+            NodoCommand += " 0"
+        if len(Par2)>0:
+            NodoCommand += ',' + Par2 + ';'
+        else:
+            NodoCommand += ",0"
+        NodoCommand+=';'
+        eg.plugins.NodoSerial.plugin.Send(NodoCommand)
+
+    def GetLabel(self, Par1, Par2):
+        return self.cmd + ' ' + str(Par1) + ',' + str(Par2) + ';'
+
+    def Configure(self,Par1="",Par2=""):
+        panel = eg.ConfigPanel(self)
+        mainSizer =wx.BoxSizer(wx.VERTICAL)
+        
+        Par1Lbl=wx.StaticText(panel, -1, self.text.DescPar1)
+        Par1Ctrl=wx.TextCtrl(panel,-1,Par1)
+        Par1Ctrl.SetMinSize((100,20))
+        mainSizer.Add(Par1Lbl,0,wx.TOP,20)
+        mainSizer.Add(Par1Ctrl,0,wx.EXPAND)
+        
         Par2Lbl=wx.StaticText(panel, -1, self.text.DescPar2)
         Par2Ctrl=wx.TextCtrl(panel,-1,Par2)
-        Par2Ctrl.SetMinSize((20,20))
+        Par2Ctrl.SetMinSize((100,20))
         mainSizer.Add(Par2Lbl,0,wx.wx.TOP,20)
         mainSizer.Add(Par2Ctrl,0,wx.EXPAND)        
+        
         panel.sizer.Add(mainSizer)
         
         while panel.Affirmed():
             panel.SetResult(Par1Ctrl.GetValue(),Par2Ctrl.GetValue())
                 
+#===============================================================================
+
+class ClockSync(eg.ActionClass):
+
+    def __call__(self):
+        from datetime import datetime
+        t = datetime.now ()
+        eg.plugins.NodoSerial.plugin.Send("ClockSetYear " + str(t.year)[:2] + " " + str(t.year)[2:] + ";")
+        eg.plugins.NodoSerial.plugin.Send("ClockSetDate " + str(t.day) + " " + str(t.month) + ";")
+        eg.plugins.NodoSerial.plugin.Send("ClockSetTime " + str(t.hour) + " " + str(t.minute) + ";")
+        # Nodo: 1=zondag, 7=zaterdag
+        # function weekday: 0=maandag 6=zondag
+        DOW = (t.weekday() + 2) % 7
+        if DOW == 0:
+            DOW = 7   # zaterdag!
+        eg.plugins.NodoSerial.plugin.Send("ClockSetDow " + str(DOW) + ";")
+        
 #===============================================================================
         
 class NodoCommandRaw(eg.ActionWithStringParameter):
@@ -211,7 +268,6 @@ class EventlistWrite(eg.ActionClass):
             panel.SetResult(EventlistActionCtrl.GetValue(),EventlistEventCtrl.GetValue())
 
 #===============================================================================
-
 class NodoSerial(eg.PluginClass):
     def __init__(self):
         
@@ -244,6 +300,13 @@ class NodoSerial(eg.PluginClass):
                  group.AddAction(NodoCommandRaw)
                  continue
 
+            elif Command == 'ClockSync':
+                 ClockSync.name = Command
+                 ClockSync.description = DescriptionCommand
+                 ClockSync.cmd = Command
+                 group.AddAction(ClockSync)
+                 continue
+            
             # voeg de overige standaard Nodo commandos toe                            
             if DescriptionPar1 is not None and DescriptionPar2 is None:
                 # Commando met parameter-1                                    
@@ -251,7 +314,7 @@ class NodoSerial(eg.PluginClass):
                     name = Command
                     description = DescriptionCommand
                     cmd = Command
-                    parameterDescription = DescriptionPar1
+                Action.text.DescPar1 = DescriptionPar1
                 Action.__name__ = Command                
                 group.AddAction(Action)
 
@@ -275,7 +338,7 @@ class NodoSerial(eg.PluginClass):
                     description = DescriptionCommand
                 Action.__name__ = Command
                 group.AddAction(Action)
-      
+
     def __start__(self, port):
         self.port = port
         self.serialThread = eg.SerialThread()
@@ -299,6 +362,7 @@ class NodoSerial(eg.PluginClass):
     # verzenden van het commando en gelijkertijd kijken of er een XOFF verzonden is
     def Send(self, StringToSend=""):
         #verzend de reeks tekens uit het Nodo commando
+        print "Serial.write: " + StringToSend
         for i in range(len(StringToSend)):        
             if eg.globals.hold == 1:
                 while eg.globals.hold == 1:
@@ -331,3 +395,4 @@ class NodoSerial(eg.PluginClass):
           buffer += b
 
 #===============================================================================
+

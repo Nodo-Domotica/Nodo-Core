@@ -6,9 +6,12 @@ ToDo:
 - komt nog er wel een foutmelding als eventlist vol is?
 - wildcard op unit ?? bepalen impact. In princiepe is de eventlist 'wildcard-loos', maar binnengekomen events niet. Worden nu weggefilterd.
 - wildcardtypen: verwerking bekijken en wijzigingen documenteren
+- geen controle op unit nummer bij invoer.
 */
 
 /**************************************************************************************************************************\
+
+### Release V1.2.0
 
 Opgeloste issues:
 - Issue 163:	SendSignal: regressie!!!
@@ -94,7 +97,14 @@ Onder de motorkap:
  *
  ********************************************************************************************************/
 
-#define VERSION                  999 // Nodo Version nummer
+#define VERSION        120        // Nodo Version nummer:
+                                  // Major.Minor.Patch
+                                  // Major: Grote veranderingen aan concept, besturing, werking.
+                                  // Minor: Uitbreiding/aanpassing van commando's, functionaliteit en MMI aanpassingen
+                                  // Patch: Herstel van bugs zonder (ingrijpende) functionele veranderingen.
+
+
+
 #include "pins_arduino.h"
 #include <EEPROM.h>
 #include <Wire.h>
@@ -105,7 +115,7 @@ Onder de motorkap:
 \**************************************************************************************************************************/
 
 // strings met vaste tekst naar PROGMEM om hiermee RAM-geheugen te sparen.
-prog_char PROGMEM Text_01[] = "NODO-Due (C) Copyright 2011 Paul Tonkes.";
+prog_char PROGMEM Text_01[] = "Nodo-Due Domotica controller (c) Copyright 2011 P.K.Tonkes.";
 prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
 prog_char PROGMEM Text_08[] = "SUNMONTHUWEDTHUFRISAT";
 prog_char PROGMEM Text_06[] = "SYSTEM: Unknown command!";
