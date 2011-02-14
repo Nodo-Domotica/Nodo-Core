@@ -56,9 +56,9 @@ void KAKU_2_RawSignal(unsigned long Code)
   boolean b;
 
   // CMD_KAKU = NNxxHU0C, NN=Nodo Home + Unit, xx=CMD_KAKU, H=Home, U=Unit, C=Commando
-  Home    = (Code >> 12) & 0xF; // home in bit 
+  Home    = (Code >> 12) & 0xF;
   Unit    = (Code >>  8) & 0xF;
-  Command = ((Code&0xff)==VALUE_ON);
+  Command = Code&0xff!=0;
   Group   = (Code & KAKU_ALLOFF) == KAKU_ALLOFF;
   Code = Home | Unit << 4 | (0x600 | (Command << 11));
 
@@ -116,7 +116,7 @@ unsigned long RawSignal_2_KAKU(void)
     }
  
   if ((bitstream&0x600)!=0x600)return false; // twee vaste bits van KAKU gebruiken als checksum
-  
+
   Home =     (bitstream      ) & 0x0F;
   Unit =     (bitstream >>  4) & 0x0F;
   Command |= (bitstream >> 11) & 0x01;

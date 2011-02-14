@@ -56,7 +56,7 @@ void PrintEvent(unsigned long Content, byte Port, boolean Direction)
       }
     }
 
-  if(S.Display&DISPLAY_PORT && Port)
+  if(S.Display&DISPLAY_SOURCE && Port)
     {
     if(!first)
       {

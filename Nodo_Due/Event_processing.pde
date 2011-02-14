@@ -27,9 +27,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   byte Command=(IncommingEvent>>16)&0xff;
   byte w,x,y,z;
 
-  // Uitvoeren voorafgaand aan een reeks uitvoeren
-  if(EventlistDepth==0 && (S.Display & DISPLAY_TRACE))
-      PrintLine(); 
+  digitalWrite(MonitorLedPin,HIGH);           // LED aan als er iets verwerkt wordt
 
   if(EventlistDepth==0 || (S.Display & DISPLAY_TRACE))PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
 
@@ -49,14 +47,14 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
         // als er nog plek is in de queue...
         if(QueuePos<EVENT_QUEUE_MAX)
           {
-//???          PrintEvent(IncommingEvent,Port,VALUE_DIRECTION_QUEUE);  // geef event weer op Serial
+          PrintEvent(IncommingEvent,Port,VALUE_DIRECTION_QUEUE);  // geef event weer op Serial
           QueueEvent[QueuePos]=IncommingEvent;
           QueuePort[QueuePos]=Port;
           QueuePos++;           
           return true;
           }
         else
-          GenerateEvent(CMD_ERROR,CMD_DELAY,EVENT_QUEUE_MAX);
+          TransmitCode(command2event(CMD_ERROR,CMD_DELAY,EVENT_QUEUE_MAX));
         }
       return true;
       }
@@ -77,7 +75,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     
   if(EventlistDepth++>=MACRO_EXECUTION_DEPTH)
     {
-    GenerateEvent(CMD_ERROR,VALUE_NESTING,MACRO_EXECUTION_DEPTH);
+    TransmitCode(command2event(CMD_ERROR,VALUE_NESTING,MACRO_EXECUTION_DEPTH));
     EventlistDepth=0;
     return false; // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
     }
@@ -198,6 +196,8 @@ boolean CheckEvent(unsigned long Event, unsigned long MacroEvent)
   // als huidige event exact overeenkomt met het event in de regel uit de Eventlist, dan een match
   if(MacroEvent==Event)return true; 
     
+
+
   // Als unit ongelijk aan 0 of ongelijk aan huidige unit, dan is er ook geen match
   x=(Event>>24)&0x0f; // unit
   if(x!=0 && x!=S.Unit)return false; 
@@ -288,15 +288,15 @@ boolean Eventlist_Read(int address, unsigned long *Event, unsigned long *Action)
     return(true);
   }
 
-/*********************************************************************************************\
- * Verzend een event
- \*********************************************************************************************/
-void GenerateEvent(byte Cmd, byte P1, byte P2)
-  {
-  unsigned long Event;
-  Event=command2event(Cmd,P1,P2);
-  TransmitCode(Event);
-  }
+///*********************************************************************************************\
+// * Verzend een event
+// \*********************************************************************************************/
+//void GenerateEvent(byte Cmd, byte P1, byte P2)
+//  {
+//  unsigned long Event;
+//  Event=command2event(Cmd,P1,P2);
+//  TransmitCode(command2event(Cmd,P1,P2));
+//  }
   
 
 

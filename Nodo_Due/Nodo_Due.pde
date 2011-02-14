@@ -6,7 +6,6 @@ ToDo:
 - komt nog er wel een foutmelding als eventlist vol is?
 - wildcard op unit ?? bepalen impact. In princiepe is de eventlist 'wildcard-loos', maar binnengekomen events niet. Worden nu weggefilterd.
 - wildcardtypen: verwerking bekijken en wijzigingen documenteren
-- geen controle op unit nummer bij invoer.
 */
 
 /**************************************************************************************************************************\
@@ -44,6 +43,7 @@ Overige functionele aanpassingen:
   All en series vervallen.
 - Als unitnummer wordt gewijzigd dan wordt tevens de WaitFreeRF geactiveerd.
 - Commando unit gewijzigd. Bij Unit hoger dan 1, dan waitfreerf geactiveerd.
+- Bij trace wordt geen lijn met sterretjes meer weergegeven.
 - Versnellen verwerking RF signalen:
   * default 7x pulsreeks verzenden KAKU teruggebracht naar 5x.
   * Space stopbit timings aangepast.
@@ -63,6 +63,14 @@ Onder de motorkap:
 - EventPart functie laten vervallen en vervangen door directe shift/and op events => geheugenbesparing
 - EventType functie vervallen. Event type wordt nu onderdeel van het Event op de plaats waar het Home adres van de Nodo stond.
 - Trace settings anders opgelost.
+
+
+
+- Issue 182:	suggestie voor verbetering QUEUED
+- Issue 193:	SendKAKU ON werkt niet
+- Issue 194:	Unitnummer wordt niet goed gechecked
+- Issue 191:	Status led werkt niet juist
+
 
 \**************************************************************************************************************************/
 
@@ -153,7 +161,7 @@ prog_char PROGMEM Text_15[] = "NodoVersion=";
 #define VALUE_DIRECTION_OUTPUT 18
 #define VALUE_DIRECTION_INTERNAL 19
 #define VALUE_DIRECTION_EXECUTE 20
-#define VALUE_PORT 21
+#define VALUE_SOURCE 21
 #define VALUE_RF_2_IR 22
 #define VALUE_IR_2_RF 23
 #define VALUE_ALL 24 // Deze waarde MOET groter dan 16 zijn.
@@ -256,7 +264,7 @@ prog_char PROGMEM Cmd_17[]="Input";
 prog_char PROGMEM Cmd_18[]="Output";
 prog_char PROGMEM Cmd_19[]="Internal";
 prog_char PROGMEM Cmd_20[]="Execute"; //??? wordt deze gebruikt ?
-prog_char PROGMEM Cmd_21[]="Port";
+prog_char PROGMEM Cmd_21[]="Source";
 prog_char PROGMEM Cmd_22[]="RF2IR";
 prog_char PROGMEM Cmd_23[]="IR2RF";
 prog_char PROGMEM Cmd_24[]="All";
@@ -407,7 +415,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define DISPLAY_TIMESTAMP            1
 #define DISPLAY_UNIT                 2
 #define DISPLAY_DIRECTION            4
-#define DISPLAY_PORT                 8
+#define DISPLAY_SOURCE               8
 #define DISPLAY_TRACE               16
 #define DISPLAY_TAG                 32
 #define DISPLAY_SERIAL              64
@@ -594,9 +602,7 @@ void loop()
             if(Content==Checksum && (millis()>SupressRepeatTimer || Content!=ContentPrevious))// tweede maal ontvangen als checksum
                {
                SupressRepeatTimer=millis()+ENDSIGNAL_TIME; // zodat herhalingen niet opnieuw opgepikt worden
-      digitalWrite(MonitorLedPin,HIGH);           // LED weer uit
                ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_RF,0,0); // verwerk binnengekomen event.
-      digitalWrite(MonitorLedPin,LOW);           // LED weer uit
                ContentPrevious=Content;
                }
             Checksum=Content;

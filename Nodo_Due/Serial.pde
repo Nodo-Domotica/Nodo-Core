@@ -18,7 +18,7 @@
 
 /*********************************************************************************************\
 * Deze functie dient alleen aangeroepen te worden als er tekens beschikbaar zijn op de
-* seriÃ«le poort. Deze functie haalt de tekens op, parsed commando en parameters er uit en 
+* seriële poort. Deze functie haalt de tekens op, parsed commando en parameters er uit en 
 * maakt hier een Event van. Als het event een MMI afwijkend commando is of een commando
 * waarvan het niet wenselijk is dat dit via RF/IR ontvangen en verwerkt mag worden,
 * dan wordt deze tevens uitgevoerd. Alle overige events & commando's worden ter verdere
@@ -34,160 +34,166 @@ unsigned long Receive_Serial(void)
   byte Par1,Par2,Cmd;
   boolean error=false;
   
-  // Hier aangekomen staan er tekens klaar. Haal op van seriÃ«le poort en maak er een Event van.
+  // Hier aangekomen staan er tekens klaar. Haal op van seriële poort en maak er een Event van.
   Event=SerialReadEvent();
   //???Serial.print("Event=0x");Serial.print(Event,HEX);PrintTerm();
-  
+
   // kijk of het een Nodo-event is.
   if(((Event>>28)&0xf)!=SIGNAL_TYPE_NODO)
      return Event; // verdere uitvoer hoeft niet hier plaats te vinden.
-  else
-    { // het was een geldig uitvoerbaar commando. 
-    //??? Serial.print("Trace-1");PrintTerm();
 
-    Cmd=(Event>>16)&0xff;
-    Par1=(Event>>8)&0xff;
-    Par2=(Event)&0xff;
-      
-    switch(Cmd)
-      {
-      case CMD_EVENTLIST_SHOW:
-        PrintLine();
-        for(x=1;x<=Eventlist_MAX && Eventlist_Read(x,&Event,&Action);x++)
-          {
-          PrintEventlistEntry(x,0);
-          PrintTerm();
-          }   
-        PrintLine();
-        break;
-     
-      case CMD_EVENTLIST_WRITE:
-        // haal event en actie op
-        Event=SerialReadEvent();
-        if(!Event)
-          {
-          GenerateEvent(CMD_ERROR,CMD_EVENTLIST_WRITE,1);
-          break;
-          }
-          
-        Action=SerialReadEvent();
-        if(!Event)
-          {
-          GenerateEvent(CMD_ERROR,CMD_EVENTLIST_WRITE,2);
-          break;
-          }
-                  
-        // schrijf weg in eventlist
-        if(!Eventlist_Write(0,Event,Action)) // Unit er uit filteren, anders na wijzigen unit geen geldige eventlist.???
-          {
-          error=true;
-          Par1=CMD_EVENTLIST_WRITE;
-          Par2=VALUE_SOURCE_EVENTLIST;
-          }
-        break;        
-  
-  
-      case CMD_DIVERT:   
-        Action=(SerialReadEvent()&0x00ffffff) | ((unsigned long)(Par1))<<24 | ((unsigned long)(SIGNAL_TYPE_NODO))<<28; // Event_1 is het te forwarden event voorzien van nieuwe bestemming unit
-        TransmitCode(Action);
-        break;        
-  
-      case CMD_RAWSIGNAL_GET:
-        RawsignalGet=true;
-        break;        
-  
-       case CMD_SIMULATE:
-         Simulate=Par1==VALUE_ON?true:false;;
-         break;        
-   
-       case CMD_DISPLAY:
-         {
-         switch(Par1)
-           {
-           case VALUE_ALL:
-             x=255;
-             break;
-           case VALUE_TIMESTAMP:
-             x=DISPLAY_TIMESTAMP;
-             break;
-           case CMD_UNIT:
-             x=DISPLAY_UNIT;
-             break;
-           case VALUE_DIRECTION:
-             x=DISPLAY_DIRECTION;
-             break;
-           case VALUE_SOURCE_SERIAL:
-             x=DISPLAY_SERIAL;
-             break;
-           case VALUE_PORT:
-             x=DISPLAY_PORT;
-             break;
-           case VALUE_TRACE:
-             x=DISPLAY_TRACE;
-             break;
-           case VALUE_TAG:
-             x=DISPLAY_TAG;
-             break;
-           default:
-             x=VALUE_OFF;//??? default waarde nog bepalen.
-           }
-         if(Par2==VALUE_ON)
-           S.Display|=x;
-         else
-           S.Display&=~x;
-           
-         SaveSettings();
-         break;
-         }
-         
-       case CMD_UNIT:
-         S.Unit=Par1;
-         if(Par1>1)
-            {
-            S.WaitFreeRF_Delay=3 + Par1*3;
-            S.WaitFreeRF_Window=3; // 1 eenheid = 100 ms.
-            }
-         else
-            {
-            S.WaitFreeRF_Delay=0;
-            S.WaitFreeRF_Window=0;
-            }
-
-         SaveSettings();
-         FactoryEventlist();
-         Reset();
+  // Als het een commando is, dan checken of er geldige parameters zijn opgegeven
+  Cmd=(Event>>16)&0xff;
+  error=CommandError(Event);
+  if(error)
+    {
+    if(error==ERROR_COMMAND) // commando bestaat niet 
+        TransmitCode(command2event(CMD_ERROR,VALUE_COMMAND,0));    
+    else // commando bestaat maar parameters niet correct
+        TransmitCode(command2event(CMD_ERROR,Cmd,error));
+    return 0L;
+    }
     
-       case CMD_RESET_FACTORY:
-          ResetFactory();
-          
-       case CMD_RAWSIGNAL_PUT:
-          y=1;
-          do
-            {
-            x=SerialReadBlock(SerialBuffer);
-            RawSignal[y++]=str2val(SerialBuffer);
-            }while(x && y<RAW_BUFFER_SIZE);
-          RawSignal[0]=y-1;
-          Event=AnalyzeRawSignal();
-          TransmitCode(Event);
-          break;
-     
-        case CMD_EVENTLIST_ERASE:
-           VariableClear(0); // alle variabelen op nul zetten
-           TimerClear(0); // reset de timers
-           Eventlist_Write(1,0L,0L); // maak de eventlist leeg.
-           break;        
-            
-        default:// alle andere commando's hebben max. twee parameters. 
-          return Event;       
+  Par1=(Event>>8)&0xff;
+  Par2=(Event)&0xff;
+
+  switch(Cmd)
+    {
+    case CMD_EVENTLIST_SHOW:
+      PrintLine();
+      for(x=1;x<=Eventlist_MAX && Eventlist_Read(x,&Event,&Action);x++)
+        {
+        PrintEventlistEntry(x,0);
+        PrintTerm();
+        }   
+      PrintLine();
+      break;
+   
+    case CMD_EVENTLIST_WRITE:
+      // haal event en actie op
+      Event=SerialReadEvent();
+      if(!Event)
+        {
+        TransmitCode(command2event(CMD_ERROR,CMD_EVENTLIST_WRITE,1));
+        break;
         }
+        
+      Action=SerialReadEvent();
+      if(!Event)
+        {
+        TransmitCode(command2event(CMD_ERROR,CMD_EVENTLIST_WRITE,2));
+        break;
+        }
+                
+      // schrijf weg in eventlist
+      if(!Eventlist_Write(0,Event,Action)) // Unit er uit filteren, anders na wijzigen unit geen geldige eventlist.???
+        {
+        error=true;
+        Par1=CMD_EVENTLIST_WRITE;
+        Par2=VALUE_SOURCE_EVENTLIST;
+        }
+      break;        
+
+    case CMD_DIVERT:   
+      Action=(SerialReadEvent()&0x00ffffff) | ((unsigned long)(Par1))<<24 | ((unsigned long)(SIGNAL_TYPE_NODO))<<28; // Event_1 is het te forwarden event voorzien van nieuwe bestemming unit
+      TransmitCode(Action);
+      break;        
+
+    case CMD_RAWSIGNAL_GET:
+      RawsignalGet=true;
+      break;        
+
+    case CMD_SIMULATE:
+      Simulate=Par1==VALUE_ON?true:false;;
+      break;        
+ 
+    case CMD_DISPLAY:
+      {
+      switch(Par1)
+        {
+        case VALUE_ALL:
+          x=255;
+          break;
+        case VALUE_TIMESTAMP:
+          x=DISPLAY_TIMESTAMP;
+          break;
+        case CMD_UNIT:
+          x=DISPLAY_UNIT;
+          break;
+        case VALUE_DIRECTION:
+          x=DISPLAY_DIRECTION;
+          break;
+        case VALUE_SOURCE_SERIAL:
+          x=DISPLAY_SERIAL;
+          break;
+        case VALUE_SOURCE:
+          x=DISPLAY_SOURCE;
+          break;
+        case VALUE_TRACE:
+          x=DISPLAY_TRACE;
+          break;
+        case VALUE_TAG:
+          x=DISPLAY_TAG;
+          break;
+        default:
+          x=VALUE_OFF;//??? default waarde nog bepalen.
+        }
+      if(Par2==VALUE_ON)
+        S.Display|=x;
+      else
+        S.Display&=~x;
+        
+      SaveSettings();
+      break;
       }
-   return 0L;
-   }
+       
+    case CMD_UNIT:
+      S.Unit=Par1;
+      if(Par1>1)
+         {
+         S.WaitFreeRF_Delay=3 + Par1*3;
+         S.WaitFreeRF_Window=3; // 1 eenheid = 100 ms.
+         }
+      else
+         {
+         S.WaitFreeRF_Delay=0;
+         S.WaitFreeRF_Window=0;
+         }
+       SaveSettings();
+      FactoryEventlist();
+      Reset();
+  
+    case CMD_RESET_FACTORY:
+        ResetFactory();
+        
+    case CMD_RAWSIGNAL_PUT:
+      y=1;
+      do
+        {
+        x=SerialReadBlock(SerialBuffer);
+        RawSignal[y++]=str2val(SerialBuffer);
+        }while(x && y<RAW_BUFFER_SIZE);
+      RawSignal[0]=y-1;
+      Event=AnalyzeRawSignal();
+      TransmitCode(Event);
+      break;
+   
+    case CMD_EVENTLIST_ERASE:
+      VariableClear(0); // alle variabelen op nul zetten
+      TimerClear(0); // reset de timers
+      Eventlist_Write(1,0L,0L); // maak de eventlist leeg.
+      break;        
+          
+    default:
+      // het is een geldig commando, maar verwerking vond niet hier plaats.
+      return Event; // verdere afhandeling door ExecuteCommand()
+    }
+  return 0L;
+  }
 
 
 /*********************************************************************************************\
-* Hier aangekomen staan er tekens klaar op de SeriÃ«le poort
+* Hier aangekomen staan er tekens klaar op de seriële poort
 * Haal deze op en stel een Event samen. Sommige commando's hebben (helaas) een afwijkende MMI 
 * Of behandeling. De geldigheid van het commando wordt eveneens getoetst.
 \*********************************************************************************************/
@@ -279,25 +285,13 @@ unsigned long SerialReadEvent()
 
   // kijk of het een Nodo-event is.
   if(((Event>>28)&0xf)==SIGNAL_TYPE_NODO)
-     return Event; // verdere check hoeft niet plaats te vinden.
 
-  // Als het een commando is, dan checken of er geldige parameters zijn opgegeven
-  x=CommandError(Event);
-  if(!x)
-    return Event;// commando en parameters zijn O.K.
-  else
-    {
-    if(y==0) // commando bestaat niet 
-      GenerateEvent(CMD_ERROR,VALUE_COMMAND,0);
-    else // commando bestaat maar parameters niet correct
-      GenerateEvent(CMD_ERROR,y,x);
-    }    
-  return 0L;
+  return Event; // verdere check hoeft niet plaats te vinden.
   }
    
    
 /**********************************************************************************************\
- * Haalt uit een seriÃ«le reeks met formaat 'aaaa,bbbb,cccc,dddd;' de blokken tekst 
+ * Haalt uit een seriële reeks met formaat 'aaaa,bbbb,cccc,dddd;' de blokken tekst 
  * geeft een 1 terug als blok afgesloten met een komma of spatie (en er nog meerdere volgen)
  * geeft een 0 terug als hele reeks is afgesloten met een '\n' of een ';'
  \*********************************************************************************************/
@@ -314,7 +308,7 @@ byte SerialReadBlock(char *SerialString)
   TimeOutTimer=millis()+SERIAL_TIMEOUT;
 
   do
-    {// lees de seriÃ«le poort totdat afsluitteken of een teken voor volgende parameter
+    {// lees de seriële poort totdat afsluitteken of een teken voor volgende parameter
     if(Serial.available()>0)
       {
       SerialByte=Serial.read();

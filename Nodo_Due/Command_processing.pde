@@ -81,6 +81,7 @@ byte CommandError(unsigned long Content)
     case CMD_CLOCK_EVENT_FRI:
     case CMD_CLOCK_EVENT_SAT:
     case CMD_STATUS:
+    case CMD_DISPLAY: // ??? foutieve invoer nog afvangen
     case CMD_DELAY:
     case CMD_SOUND: 
     case CMD_SEND_SIGNAL:
@@ -277,7 +278,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   
   if(error=CommandError(Content))// als er een error is, dan een error-event genereren en verzenden.
     {
-    GenerateEvent(CMD_ERROR,Command,error);
+    TransmitCode(command2event(CMD_ERROR,Command,error));
     return false;
     }
   else // geen fouten, dan verwerken

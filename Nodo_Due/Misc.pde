@@ -135,8 +135,6 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
   byte x;
   byte xPar1=*Par1,xPar2=*Par2;
   
-  
-  
   *Par1=0;
   *Par2=0;
   switch (*Command)
@@ -304,7 +302,7 @@ void ResetFactory(void)
 
   S.Version            = VERSION;
   S.Unit               = UNIT;
-  S.Display            = DISPLAY_UNIT | DISPLAY_DIRECTION | VALUE_TAG; //??? nog de default bepalen
+  S.Display            = DISPLAY_UNIT + DISPLAY_SOURCE + DISPLAY_DIRECTION + VALUE_TAG;
   S.AnalyseSharpness   = 50;
   S.AnalyseTimeOut     = SIGNAL_TIMEOUT_IR;
   S.TransmitPort       = VALUE_SOURCE_IR_RF;

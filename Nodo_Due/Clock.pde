@@ -179,7 +179,7 @@ unsigned long ClockRead(void)
     S.DaylightSaving=Time.DaylightSaving;
     SaveSettings();
     ClockSet();// verzet de RTC klok
-    GenerateEvent(CMD_OK,CMD_DLS_EVENT,S.DaylightSaving);
+    TransmitCode(command2event(CMD_OK,CMD_DLS_EVENT,S.DaylightSaving));
     }
       
   return ((unsigned long)(SIGNAL_TYPE_NODO))<<28 |
