@@ -41,36 +41,13 @@ public class HexKeyListener implements KeyListener {
             return;
         }
 
-        // Determine the text, but ignore any selection made, since that
-        // is replaced by the newly typed character.
-        String text = tf.getText();
-        int idx = tf.getCaretPosition();
-
-        String old = tf.getSelectedText();
-        if ( old != null ) {
-            text = text.replaceFirst(old, "");
-            idx -= old.length();
-            if ( idx < 0) { idx = 0; }
-        }
-
-        // Now construct the new text
+        String newValue = null;
         char value = evt.getKeyChar();
-        StringBuilder nv = new StringBuilder(text);
-
-        // Note that deletes and backspaces cannot be consumed, since they
-        // are already reflected in the text found..
-        if ( value == 8 /*bs*/ ) {
-//            nv.deleteCharAt(idx);
-        } else if ( value == 127 /*delete*/ ) {
-//            nv.delete(idx, idx+1);
-        } else {
-            try {
-                nv.insert(idx, value);
-            } catch (Exception e) {
-                NodoDueManager.showMessage("HexKey.handling_failed", value, idx);
-            }
+        try {
+            newValue = TextFieldUtil.determineValue(tf, value);
+        } catch (Exception e) {
+            NodoDueManager.showMessage("HexKey.handling_failed", value, "?");
         }
-        String newValue = nv.toString();
 
         boolean hexValue = false;
         if ( newValue.startsWith("0x") || newValue.startsWith("0X") ) {

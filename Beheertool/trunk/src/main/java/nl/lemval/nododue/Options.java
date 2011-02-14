@@ -28,6 +28,13 @@ public class Options {
 
     private InputRange defaultRange;
 
+    private void printRanges() {
+//        System.out.println("--Ranges----------- ");
+//        for (InputRange inputRange : getInputRanges()) {
+//            System.out.println(" -> " + inputRange.asString());
+//        }
+    }
+
     enum Opts {
         // short
         nodoUnit,
@@ -43,7 +50,7 @@ public class Options {
 
     private Options() {
         devices = new HashMap<String, Device>();
-        defaultRange = new InputRange("Bitwaarde", 0, 255, 1, null, 0);
+        defaultRange = new InputRange("Bitwaarde", 0, 255, 1, "", 0);
     }
 
     public static Options getInstance() {
@@ -54,19 +61,40 @@ public class Options {
         return instance;
     }
 
-    public Object[] getInputRanges() {
-        ArrayList<InputRange> ranges = new ArrayList<InputRange>();
-        ranges.add(defaultRange);
+    public ArrayList<InputRange> getInputRanges() {
+        HashMap<String, InputRange> ranges = new HashMap<String, InputRange>();
+        ranges.put(defaultRange.getName(), defaultRange);
         String[] stringArray = config.getStringArray(Opts.inputRanges.name());
         for (String data : stringArray) {
             InputRange range = InputRange.fromString(data);
             if (range != null) {
-                ranges.add(range);
+                ranges.put(range.getName(), range);
             }
         }
-        return ranges.toArray();
+        return new ArrayList<InputRange>(ranges.values());
     }
 
+    
+    public void addInputRange(InputRange range) {
+        config.addProperty(Opts.inputRanges.name(), range.asString());
+        printRanges();
+    }
+    
+    public void removeInputRange(String name) {
+        ArrayList<InputRange> ranges = getInputRanges();
+        for (InputRange inputRange : ranges) {
+            if ( name.equals(inputRange.toString()) ) {
+                ranges.remove(inputRange);
+                break;
+            }
+        }
+        config.clearProperty(Opts.inputRanges.name());
+        for (InputRange inputRange : ranges) {
+            config.addProperty(Opts.inputRanges.name(), inputRange.asString());
+        }
+        printRanges();
+    }
+    
     private void load() {
         try {
             config = new PropertiesConfiguration("nododue.ini");

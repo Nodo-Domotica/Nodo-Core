@@ -16,7 +16,6 @@ public class InputRange {
     private String name;
     private double start;
     private double end;
-    private double curve;
     private String postfix;
     private int decimals = 0;
 
@@ -24,7 +23,6 @@ public class InputRange {
         this.name = name;
         this.start = start;
         this.end = end;
-        this.curve = curve;
         this.postfix = postfix;
         this.decimals = dec;
     }
@@ -43,6 +41,10 @@ public class InputRange {
         } catch (Exception e) {
             return null;
         }
+    }
+    
+    public String asString() {
+        return name + "|" + start + "|" + end + "|" + 0 + "|" + postfix + "|" + decimals;
     }
 
     private double convertValue(int value) {
@@ -69,5 +71,45 @@ public class InputRange {
             sb.append(postfix);
         }
         return sb.toString();
+    }
+
+    public int getDecimals() {
+        return decimals;
+    }
+
+    public double getEnd() {
+        return end;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getPostfix() {
+        return postfix;
+    }
+
+    public double getStart() {
+        return start;
+    }
+
+    public void setDecimals(int decimals) {
+        this.decimals = decimals;
+    }
+
+    public void setEnd(double end) {
+        this.end = end;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setPostfix(String postfix) {
+        this.postfix = postfix;
+    }
+
+    public void setStart(double start) {
+        this.start = start;
     }
 }

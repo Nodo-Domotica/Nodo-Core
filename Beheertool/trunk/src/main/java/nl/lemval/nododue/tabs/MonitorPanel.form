@@ -521,16 +521,16 @@
                 <EventHandler event="itemStateChanged" listener="java.awt.event.ItemListener" parameters="java.awt.event.ItemEvent" handler="typeSelectionItemStateChanged"/>
               </Events>
             </Component>
-            <Component class="javax.swing.JButton" name="jButton1">
+            <Component class="javax.swing.JButton" name="modifyRanges">
               <Properties>
                 <Property name="action" type="javax.swing.Action" editor="org.netbeans.modules.swingapp.ActionEditor">
                   <action class="nl.lemval.nododue.tabs.MonitorPanel" id="editTypes" methodName="editTypes"/>
                 </Property>
-                <Property name="text" type="java.lang.String" resourceKey="jButton1.text"/>
+                <Property name="text" type="java.lang.String" resourceKey="modifyRanges.text"/>
                 <Property name="margin" type="java.awt.Insets" editor="org.netbeans.beaninfo.editors.InsetsEditor">
                   <Insets value="[2, 7, 2, 7]"/>
                 </Property>
-                <Property name="name" type="java.lang.String" value="jButton1" noResource="true"/>
+                <Property name="name" type="java.lang.String" value="modifyRanges" noResource="true"/>
               </Properties>
             </Component>
           </SubComponents>

@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 import nl.lemval.nododue.NodoDueManager;
@@ -32,6 +34,7 @@ import nl.lemval.nododue.util.Wire;
 import nl.lemval.nododue.util.Wire.Type;
 import nl.lemval.nododue.util.WireList;
 import nl.lemval.nododue.component.WireGraphPanel;
+import nl.lemval.nododue.dialog.TypeEditBox;
 import nl.lemval.nododue.util.InputRange;
 import nl.lemval.nododue.util.SerialCommunicator;
 import nl.lemval.nododue.util.WireData;
@@ -53,9 +56,7 @@ public class MonitorPanel extends NodoBasePanel {
 
     public MonitorPanel(NodoDueManagerView view) {
         super(view);
-
-        Object[] items = Options.getInstance().getInputRanges();
-        typeSelectionModel = new DefaultComboBoxModel(items);
+        updateRangesList();
 
         initComponents();
 
@@ -119,7 +120,7 @@ public class MonitorPanel extends NodoBasePanel {
         typePanel = new javax.swing.JPanel();
         typeLabel = new javax.swing.JLabel();
         typeSelection = new javax.swing.JComboBox();
-        jButton1 = new javax.swing.JButton();
+        modifyRanges = new javax.swing.JButton();
         jPanel4 = new javax.swing.JPanel();
         rangeSlider = new javax.swing.JSlider();
         lineGraph = new WireGraphPanel();
@@ -373,11 +374,11 @@ public class MonitorPanel extends NodoBasePanel {
         });
         typePanel.add(typeSelection);
 
-        jButton1.setAction(actionMap.get("editTypes")); // NOI18N
-        jButton1.setText(resourceMap.getString("jButton1.text")); // NOI18N
-        jButton1.setMargin(new java.awt.Insets(2, 7, 2, 7));
-        jButton1.setName("jButton1"); // NOI18N
-        typePanel.add(jButton1);
+        modifyRanges.setAction(actionMap.get("editTypes")); // NOI18N
+        modifyRanges.setText(resourceMap.getString("modifyRanges.text")); // NOI18N
+        modifyRanges.setMargin(new java.awt.Insets(2, 7, 2, 7));
+        modifyRanges.setName("modifyRanges"); // NOI18N
+        typePanel.add(modifyRanges);
 
         jPanel4.setFocusable(false);
         jPanel4.setName("jPanel4"); // NOI18N
@@ -463,7 +464,7 @@ public class MonitorPanel extends NodoBasePanel {
 
         refreshGroup.setBorder(javax.swing.BorderFactory.createTitledBorder(resourceMap.getString("refreshGroup.border.title"))); // NOI18N
         refreshGroup.setName("refreshGroup"); // NOI18N
-        refreshGroup.setLayout(new java.awt.GridLayout());
+        refreshGroup.setLayout(new java.awt.GridLayout(1, 0));
 
         jPanel1.setName("jPanel1"); // NOI18N
         jPanel1.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
@@ -632,7 +633,7 @@ public class MonitorPanel extends NodoBasePanel {
 
     private void rangeSliderStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_rangeSliderStateChanged
         ((WireGraphPanel) lineGraph).highlight(rangeSlider.getValue());
-        if ( rangeSlider.getValueIsAdjusting() == false ) {
+        if (rangeSlider.getValueIsAdjusting() == false) {
             updateRange();
         }
     }//GEN-LAST:event_rangeSliderStateChanged
@@ -921,7 +922,7 @@ public class MonitorPanel extends NodoBasePanel {
         if (refreshTimer == null) {
             // Interval from 1..100, interval .5 seconds
             int time = rrSlider.getValue() * 500;
-            refreshTimer = new Timer(time, new ActionListener() {
+            refreshTimer = new Timer(time, new ActionListener()  {
 
                 public void actionPerformed(ActionEvent e) {
                     downloadAndRefresh();
@@ -946,7 +947,7 @@ public class MonitorPanel extends NodoBasePanel {
 
     private void markDisabled(boolean disable) {
         ververs.setEnabled(!disable);
-        wireCheck.setEnabled(!disable);
+//        wireCheck.setEnabled(!disable);
         if (disable) {
             thresholdSlider.setEnabled(false);
             thresholdValue.setEnabled(false);
@@ -1004,6 +1005,20 @@ public class MonitorPanel extends NodoBasePanel {
 
     @Action
     public void editTypes() {
+        JFrame mainFrame = NodoDueManager.getApplication().getMainFrame();
+        JDialog dialog = new TypeEditBox(mainFrame, true);
+        dialog.setLocationRelativeTo(mainFrame);
+        NodoDueManager.getApplication().show(dialog);
+        updateRangesList();
+    }
+
+    public void updateRangesList() {
+        ArrayList<InputRange> ranges = Options.getInstance().getInputRanges();
+        Object[] items = ranges.toArray(new InputRange[ranges.size()]);
+        typeSelectionModel = new DefaultComboBoxModel(items);
+        if (typeSelection != null) {
+            typeSelection.setModel(typeSelectionModel);
+        }
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel graphGroup;
@@ -1014,7 +1029,6 @@ public class MonitorPanel extends NodoBasePanel {
     private javax.swing.JLabel input2;
     private javax.swing.JLabel input3;
     private javax.swing.JLabel input4;
-    private javax.swing.JButton jButton1;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel4;
@@ -1023,6 +1037,7 @@ public class MonitorPanel extends NodoBasePanel {
     private javax.swing.JPanel marginPanel;
     private javax.swing.JSlider marginSlider;
     private javax.swing.JTextField marginValue;
+    private javax.swing.JButton modifyRanges;
     private javax.swing.JLabel output1;
     private javax.swing.JLabel output2;
     private javax.swing.JLabel output3;
