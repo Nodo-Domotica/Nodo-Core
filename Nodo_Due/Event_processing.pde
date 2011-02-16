@@ -288,15 +288,3 @@ boolean Eventlist_Read(int address, unsigned long *Event, unsigned long *Action)
     return(true);
   }
 
-///*********************************************************************************************\
-// * Verzend een event
-// \*********************************************************************************************/
-//void GenerateEvent(byte Cmd, byte P1, byte P2)
-//  {
-//  unsigned long Event;
-//  Event=command2event(Cmd,P1,P2);
-//  TransmitCode(command2event(Cmd,P1,P2));
-//  }
-  
-
-

@@ -302,7 +302,7 @@ void ResetFactory(void)
 
   S.Version            = VERSION;
   S.Unit               = UNIT;
-  S.Display            = DISPLAY_UNIT + DISPLAY_SOURCE + DISPLAY_DIRECTION + VALUE_TAG;
+  S.Display            = DISPLAY_UNIT + DISPLAY_SOURCE + DISPLAY_DIRECTION + DISPLAY_TAG + DISPLAY_SERIAL;
   S.AnalyseSharpness   = 50;
   S.AnalyseTimeOut     = SIGNAL_TIMEOUT_IR;
   S.TransmitPort       = VALUE_SOURCE_IR_RF;
@@ -461,9 +461,11 @@ void Status(boolean ToSerial, byte Par1, byte Par2)
   {
   byte CMD_Start,CMD_End;
   byte Par1_Start,Par1_End;
-  byte P1,P2; // in deze variabele wordt de waarde geplaats (call by reference)
+  byte x,P1,P2; // in deze variabele wordt de waarde geplaats (call by reference)
   
-  if(Par1==VALUE_ALL || Par1==0)
+  if(Par1==0)return;
+  if(Par2==VALUE_ALL)Par2==0;
+  if(Par1==VALUE_ALL)
     {
     if(ToSerial)
       PrintWelcome();
@@ -472,15 +474,17 @@ void Status(boolean ToSerial, byte Par1, byte Par2)
     }
   else
     {
+    if(!GetStatus(&Par1,&P1,&P2)) // P1 en P2 even gebruikt als dummy
+      return;
     CMD_Start=Par1;
     CMD_End=Par1;
     }
 
-  for(byte x=CMD_Start; x<=CMD_End; x++)
+  for(x=CMD_Start; x<=CMD_End; x++)
     {
     if(GetStatus(&x,&Par1_Start,&Par1_Start)) // Als het een geldige uitvraag is. let op: call by reference ! Par1_Start is gebruikt als dummy.
       {
-      if(!Par2) // Als in het commando 'Status Par1, Par2' Par2 niet is gevuld met een waarde
+      if(Par2==0) // Als in het commando 'Status Par1, Par2' Par2 niet is gevuld met een waarde
         {
         switch(x)
           {

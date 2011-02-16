@@ -36,12 +36,14 @@ unsigned long Receive_Serial(void)
   
   // Hier aangekomen staan er tekens klaar. Haal op van seriële poort en maak er een Event van.
   Event=SerialReadEvent();
-  //???Serial.print("Event=0x");Serial.print(Event,HEX);PrintTerm();
 
+  // Serial.print("Event=");Serial.print(Event,HEX);PrintTerm();//???
+  
   // kijk of het een Nodo-event is.
   if(((Event>>28)&0xf)!=SIGNAL_TYPE_NODO)
-     return Event; // verdere uitvoer hoeft niet hier plaats te vinden.
-
+     return Event; // HEX-waarde. verdere uitvoer hoeft niet hier plaats te vinden.
+    
+    
   // Als het een commando is, dan checken of er geldige parameters zijn opgegeven
   Cmd=(Event>>16)&0xff;
   error=CommandError(Event);
@@ -285,8 +287,8 @@ unsigned long SerialReadEvent()
 
   // kijk of het een Nodo-event is.
   if(((Event>>28)&0xf)==SIGNAL_TYPE_NODO)
-
-  return Event; // verdere check hoeft niet plaats te vinden.
+    return Event; // verdere check hoeft niet plaats te vinden.
+  return 0L;
   }
    
    

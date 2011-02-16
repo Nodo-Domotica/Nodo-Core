@@ -40,7 +40,6 @@ byte NodoType(unsigned long Content)
     return NODO_TYPE_EVENT;
 
   return NODO_TYPE_COMMAND;
- 
   }
   
   
@@ -58,7 +57,8 @@ byte CommandError(unsigned long Content)
   {
   byte x;
   
-  if(NodoType(Content)!=NODO_TYPE_COMMAND)
+  x=NodoType(Content);
+  if(x!=NODO_TYPE_COMMAND && x!=NODO_TYPE_EVENT)
     return ERROR_COMMAND;
   
   byte Command      = (Content>>16)&0xff;
@@ -68,6 +68,8 @@ byte CommandError(unsigned long Content)
   switch(Command)
     {
     //test; geen, altijd goed
+    case CMD_STATUS_LIST:
+    case CMD_ERROR:
     case CMD_WAITFREERF: 
     case CMD_VARIABLE_EVENT:    
     case CMD_DLS_EVENT:

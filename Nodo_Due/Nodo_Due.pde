@@ -65,12 +65,11 @@ Onder de motorkap:
 - Trace settings anders opgelost.
 
 
-
 - Issue 182:	suggestie voor verbetering QUEUED
 - Issue 193:	SendKAKU ON werkt niet
 - Issue 194:	Unitnummer wordt niet goed gechecked
 - Issue 191:	Status led werkt niet juist
-
+- Issue 195:	UserEvent niet geaccepteerd vanuit EventGhost
 
 \**************************************************************************************************************************/
 

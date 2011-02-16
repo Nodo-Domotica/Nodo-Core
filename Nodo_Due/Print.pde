@@ -69,7 +69,7 @@ void PrintEvent(unsigned long Content, byte Port, boolean Direction)
     Serial.print(cmd2str(Port));
     }
 
-  if(S.Display&DISPLAY_UNIT && (Content>>28)&0xf==SIGNAL_TYPE_NODO)
+  if(S.Display&DISPLAY_UNIT && ((Content>>28)&0xf)==SIGNAL_TYPE_NODO)
     {
     if(!first)
       {
@@ -80,8 +80,8 @@ void PrintEvent(unsigned long Content, byte Port, boolean Direction)
     if(S.Display&DISPLAY_TAG)
       PrintText(Text_13);
     PrintValue((Content>>24)&0xf); 
-    }    
-
+    }
+    
   if(!first)
     {
     PrintChar(',');
