@@ -18,7 +18,6 @@ public class RawSignalGraphPanel extends JPanel {
     private int[] points;
     private int[] values;
     private int total = 0;
-
     private static final Color valueColor = Color.BLUE;
     private static final Color inactiveColor = Color.LIGHT_GRAY;
     private static final Color hiddenColor = Color.BLACK;
@@ -31,80 +30,81 @@ public class RawSignalGraphPanel extends JPanel {
     }
 
     public void setStartState(boolean value) {
-	if ( this.startState != value ) {
-	    this.startState = value;
-	    setSignal(signal);
-	}
+        if (this.startState != value) {
+            this.startState = value;
+            setSignal(signal);
+        }
     }
 
     public void setSignal(int[] data) {
-	signal = data.clone();
-        if ( signal.length == 0 ) {
+        signal = data.clone();
+        if (signal.length == 0) {
             return;
         }
-	points = new int[2*signal.length+1];
-	values = new int[2*signal.length+1];
-	total = 0;
-	for (int s : signal) {
-	    total += s;
-	}
+        points = new int[2 * signal.length + 1];
+        values = new int[2 * signal.length + 1];
+        total = 0;
+        for (int s : signal) {
+            total += s;
+        }
 
-	int high = 5;
-	int low = getHeight() - 5;
-	int location = 0;
-	divider = (1.0*total)/getWidth();
-	boolean isOne = startState;
-	int pointIndex = 0;
-	int signalIndex = 0;
+        int high = 5;
+        int low = getHeight() - 5;
+        int location = 0;
+        divider = (1.0 * total) / getWidth();
+        boolean isOne = startState;
+        int pointIndex = 0;
+        int signalIndex = 0;
 
-	// Set the first point to start with
-	points[pointIndex] = location;
-	values[pointIndex] = (isOne ? high:low);
-	pointIndex++;
+        // Set the first point to start with
+        points[pointIndex] = location;
+        values[pointIndex] = (isOne ? high : low);
+        pointIndex++;
 
-	do {
-	    isOne = !isOne;
-	    int s = signal[signalIndex++];
+        do {
+            isOne = !isOne;
+            int s = signal[signalIndex++];
 
-	    location += (int) ((divider/2 + s) / divider);
-	    points[pointIndex] = location;
-	    values[pointIndex] = (isOne ? low:high);
-	    pointIndex++;
-	    points[pointIndex] = location;
-	    values[pointIndex] = (isOne ? high:low);
-	    pointIndex++;
-	} while ( signalIndex < signal.length );
+            location += (int) ((divider / 2 + s) / divider);
+            points[pointIndex] = location;
+            values[pointIndex] = (isOne ? low : high);
+            pointIndex++;
+            points[pointIndex] = location;
+            values[pointIndex] = (isOne ? high : low);
+            pointIndex++;
+        } while (signalIndex < signal.length);
     }
 
     public int[] getActiveSignal() {
-	if ( divider == 0 || signal.length == 0) {
-	    // No signal yet
-	    return new int[0];
-	}
-	int start = 0;
-	int end = signal.length;
-	for (int i = 0; i < points.length; i++) {
-	    int point = points[i];
-	    if ( startPosition > point ) { start = i/2; }
-	    if ( endPosition < point ) { end = i/2 + 1; break; }
-	}
-	int length = end-start;
-	int[] result = new int[length];
-        System.out.println("Signal length = " + signal.length);
-        System.out.println("Start  = " + start);
-        System.out.println("Length = " + length);
-        System.out.println("Copy to = " + result.length);
-	System.arraycopy(signal, start, result, 0, length);
-	return result;
+        if (divider == 0 || signal.length == 0) {
+            // No signal yet
+            return new int[0];
+        }
+        int start = 0;
+        int end = signal.length;
+        for (int i = 0; i < points.length; i++) {
+            int point = points[i];
+            if (startPosition > point) {
+                start = i / 2;
+            }
+            if (endPosition < point) {
+                end = i / 2 + 1;
+                break;
+            }
+        }
+        int length = end - start;
+        int[] result = new int[length];
+        System.arraycopy(signal, start, result, 0, length);
+        return result;
     }
 
     @Override
     public void paint(Graphics g) {
         super.paint(g);
 
-	Color old = g.getColor();
+        Color old = g.getColor();
 
-	if(total > 0) {
+        if (total > 0) {
 //	    int startIndex=0;
 //	    int endIndex=values.length-1;
 //	    for (int i = 0; i < points.length; i++) {
@@ -128,27 +128,27 @@ public class RawSignalGraphPanel extends JPanel {
 //	    System.arraycopy(points, startIndex, segmentPoints, 0, points.length-startIndex);
 //	    System.arraycopy(values, startIndex, segmentValues, 0, values.length-startIndex);
 
-	    g.setColor(valueColor);
-	    g.drawPolyline(points, values, values.length);
+            g.setColor(valueColor);
+            g.drawPolyline(points, values, values.length);
 //	    System.out.print("Line drawn: ");
 //	    for (int i = 0; i < points.length; i++) {
 //		System.out.print("[" + points[i] + "," + values[i] + "] ");
 //	    }
 //	    System.out.println();
-	}
-	g.setColor(hiddenColor);
-	g.drawLine(startPosition, 0, startPosition, getHeight());
-	g.drawLine(endPosition, 0, endPosition, getHeight());
-	g.setColor(old);
+        }
+        g.setColor(hiddenColor);
+        g.drawLine(startPosition, 0, startPosition, getHeight());
+        g.drawLine(endPosition, 0, endPosition, getHeight());
+        g.setColor(old);
 
     }
 
     public void setBounds(int start, int end) {
-	startPosition = start;
-	endPosition = end;
+        startPosition = start;
+        endPosition = end;
     }
 
     public int[] getSignal() {
-	return signal;
+        return signal;
     }
 }

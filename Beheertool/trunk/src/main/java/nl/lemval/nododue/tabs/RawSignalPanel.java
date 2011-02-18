@@ -29,22 +29,23 @@ import org.jdesktop.application.Action;
  * @author Michael
  */
 public class RawSignalPanel extends NodoBasePanel {
+
     private double dividerValue;
     private int thresholdValue;
 
     /** Creates new form RawSignalPanel */
     public RawSignalPanel(final NodoDueManagerView view) {
-	super(view);
-	initComponents();
+        super(view);
+        initComponents();
 
     }
 
     @Override
     public void setVisible(boolean aFlag) {
-	super.setVisible(aFlag);
-	if (aFlag) {
-	    initStatus();
-	}
+        super.setVisible(aFlag);
+        if (aFlag) {
+            initStatus();
+        }
     }
 
     private static StringBuilder buildRawString(int[] activeSignal) {
@@ -52,7 +53,7 @@ public class RawSignalPanel extends NodoBasePanel {
         data.append(CommandInfo.Name.RawsignalPut.name());
         data.append(';');
         int size = 0;
-        for (int i=0; i < activeSignal.length; i++) {
+        for (int i = 0; i < activeSignal.length; i++) {
             int value = activeSignal[i];
             if (value == 0) {
                 break;
@@ -275,65 +276,64 @@ public class RawSignalPanel extends NodoBasePanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void startPointStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_startPointStateChanged
-	if (startSlider.getValueIsAdjusting()) {
-	    int start = startSlider.getValue();
-	    int end = endSlider.getValue();
-	    if (start > end) {
-		endSlider.setValue(start);
-		end = start;
-	    }
-	    ((RawSignalGraphPanel) lineGraph).setBounds(start, end);
-	    ((RawSignalGraphPanel) lineGraph).repaint();
-	    updateSignalText();
-	}
+        if (startSlider.getValueIsAdjusting()) {
+            int start = startSlider.getValue();
+            int end = endSlider.getValue();
+            if (start > end) {
+                endSlider.setValue(start);
+                end = start;
+            }
+            ((RawSignalGraphPanel) lineGraph).setBounds(start, end);
+            ((RawSignalGraphPanel) lineGraph).repaint();
+            updateSignalText();
+        }
     }//GEN-LAST:event_startPointStateChanged
 
     private void endPointStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_endPointStateChanged
-	if (endSlider.getValueIsAdjusting()) {
-	    int start = startSlider.getValue();
-	    int end = endSlider.getValue();
-	    if (end < start) {
-		startSlider.setValue(end);
-		start = end;
-	    }
-	    ((RawSignalGraphPanel) lineGraph).setBounds(start, end);
-	    ((RawSignalGraphPanel) lineGraph).repaint();
-	    updateSignalText();
-	}
+        if (endSlider.getValueIsAdjusting()) {
+            int start = startSlider.getValue();
+            int end = endSlider.getValue();
+            if (end < start) {
+                startSlider.setValue(end);
+                start = end;
+            }
+            ((RawSignalGraphPanel) lineGraph).setBounds(start, end);
+            ((RawSignalGraphPanel) lineGraph).repaint();
+            updateSignalText();
+        }
     }//GEN-LAST:event_endPointStateChanged
 
     private void dividerStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_dividerStateChanged
-	if (divider.getValueIsAdjusting()) {
-	    updateDividerValue();
-	}
+        if (divider.getValueIsAdjusting()) {
+            updateDividerValue();
+        }
     }//GEN-LAST:event_dividerStateChanged
 
     private void thresholdStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_thresholdStateChanged
-	if ( threshold.getValueIsAdjusting() ) {
-	    updateThresholdValue();
-	}
+        if (threshold.getValueIsAdjusting()) {
+            updateThresholdValue();
+        }
     }//GEN-LAST:event_thresholdStateChanged
 
     private void updateDividerValue() {
-	double value = divider.getValue() / 2.0;
-	if (value == 0) {
-	    dividerValue = 0;
-	    dividerText.setText("--");
-	} else if (value < 0) {
-	    double fraction = -1.0 * value + 1;
-	    dividerValue = Math.round(100 / fraction) / 100.0;
-	    dividerText.setText(""+dividerValue);
-	} else if (value > 0) {
-	    dividerValue = value;
-	    dividerText.setText("" + dividerValue);
-	}
+        double value = divider.getValue() / 2.0;
+        if (value == 0) {
+            dividerValue = 0;
+            dividerText.setText("--");
+        } else if (value < 0) {
+            double fraction = -1.0 * value + 1;
+            dividerValue = Math.round(100 / fraction) / 100.0;
+            dividerText.setText("" + dividerValue);
+        } else if (value > 0) {
+            dividerValue = value;
+            dividerText.setText("" + dividerValue);
+        }
     }
 
     private void updateThresholdValue() {
-	thresholdValue = threshold.getValue();
-	thresholdText.setText("" + thresholdValue);
+        thresholdValue = threshold.getValue();
+        thresholdText.setText("" + thresholdValue);
     }
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel buttonPanel;
     private javax.swing.JButton cleanButton;
@@ -355,26 +355,26 @@ public class RawSignalPanel extends NodoBasePanel {
     // End of variables declaration//GEN-END:variables
 
     private void initStatus() {
-	RawSignalGraphPanel graph = (RawSignalGraphPanel) lineGraph;
-	// Initialize the sliders and the graph
-	int width = graph.getWidth();
-	int interval = width / 25;
+        RawSignalGraphPanel graph = (RawSignalGraphPanel) lineGraph;
+        // Initialize the sliders and the graph
+        int width = graph.getWidth();
+        int interval = width / 25;
 
-	startSlider.setMinimum(0);
-	startSlider.setMaximum(width);
-	endSlider.setMajorTickSpacing(interval);
-	endSlider.setMinorTickSpacing(1);
+        startSlider.setMinimum(0);
+        startSlider.setMaximum(width);
+        endSlider.setMajorTickSpacing(interval);
+        endSlider.setMinorTickSpacing(1);
 
-	endSlider.setMinimum(0);
-	endSlider.setMaximum(width);
-	endSlider.setValue(width);
-	endSlider.setMajorTickSpacing(interval);
-	endSlider.setMinorTickSpacing(1);
+        endSlider.setMinimum(0);
+        endSlider.setMaximum(width);
+        endSlider.setValue(width);
+        endSlider.setMajorTickSpacing(interval);
+        endSlider.setMinorTickSpacing(1);
 
-	updateDividerValue();
-	updateThresholdValue();
+        updateDividerValue();
+        updateThresholdValue();
 
-	graph.setBounds(0, width);
+        graph.setBounds(0, width);
 //	if (NodoDueManager.isLinux()) {
 //	    startSlider.setPaintLabels(true);
 //	    endSlider.setPaintLabels(true);
@@ -383,43 +383,56 @@ public class RawSignalPanel extends NodoBasePanel {
 
     @Action
     public void retrieveRawSignal() {
-	if (NodoDueManager.hasConnection()) {
+        if (NodoDueManager.hasConnection()) {
             SerialCommunicator comm =
                     NodoDueManager.getApplication().getSerialCommunicator();
             final StringBuilder data = new StringBuilder();
-            OutputEventListener lix = null;
-            comm.addOutputListener(lix = new OutputEventListener() {
+            OutputEventListener lix = new OutputEventListener()  {
+
                 public void handleOutputLine(String message) {
-                    data.append(message);
+                    int idx = message.indexOf("Rawsignal");
+                    if ( idx >= 0 ) {
+                        idx = message.indexOf('=', idx);
+                        data.append(message.substring(idx+1));
+                    }
                 }
+
                 public void handleClear() {
                 }
 
                 public void handleNodoResponses(NodoResponse[] responses) {
                 }
-            });
+            };
+            comm.addOutputListener(lix);
+            long t = System.currentTimeMillis();
+            long delta = 0;
             try {
                 CommandInfo ci = CommandLoader.get(Name.RawsignalGet);
                 setCursor(new Cursor(Cursor.WAIT_CURSOR));
                 comm.send(new NodoCommand(ci, null, null));
-                comm.waitCommand(1500, 15000);
+                do {
+                    comm.waitCommand(200);
+                    delta = System.currentTimeMillis() - t;
+                } while ( data.length() == 0 && delta < 5000 );
                 comm.removeOutputListener(lix);
             } catch (Exception e) {
                 getListener().showStatusMessage(getResourceString("update_fail.margin", e.getMessage()));
             }
+            
             String[] split = data.toString().split(", ?");
             int[] values = new int[split.length];
             int counter = 0;
             for (String aValue : split) {
                 int value = -1;
                 try {
-                    value = Integer.parseInt(aValue);
+                    if ( aValue.startsWith("0x") || aValue.startsWith("0X") ) {
+                        value = Integer.parseInt(aValue.substring(2), 16);
+                    } else {
+                        value = Integer.parseInt(aValue);
+                    }
                 } catch (NumberFormatException e) {
-                    try {
-                        value = Integer.parseInt(aValue.split("=")[1]);
-                    } catch (Exception ex) { /* ignored */ }
                 }
-                if ( value >= 0 ) {
+                if (value >= 0) {
                     values[counter++] = value;
                 }
             }
@@ -428,33 +441,33 @@ public class RawSignalPanel extends NodoBasePanel {
             update(result);
 
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-	}
+        }
     }
 
     @Action
     public void cleanRawSignal() {
-	if ( dividerValue == 0 ) {
-	    return;
-	}
-	RawSignalGraphPanel graph = (RawSignalGraphPanel) lineGraph;
-	int[] signal = graph.getSignal();
+        if (dividerValue == 0) {
+            return;
+        }
+        RawSignalGraphPanel graph = (RawSignalGraphPanel) lineGraph;
+        int[] signal = graph.getSignal();
 
-	// Find smallest value and divide by 3
-	int smallest = Integer.MAX_VALUE;
-	for (int i = 0; i < signal.length; i++) {
-	    int value = signal[i];
-	    // Values smaller than MIN will result in the same signal as before
-	    if (value < smallest && value >= thresholdValue) {
-		smallest = value;
-	    }
-	}
-	smallest = (int)(smallest / dividerValue);
-	if ( smallest > 1 ) {
-	    for (int i = 0; i < signal.length; i++) {
-		signal[i] = smallest * ((signal[i] + smallest / 2) / smallest);
-	    }
-	    update(signal);
-	}
+        // Find smallest value and divide by 3
+        int smallest = Integer.MAX_VALUE;
+        for (int i = 0; i < signal.length; i++) {
+            int value = signal[i];
+            // Values smaller than MIN will result in the same signal as before
+            if (value < smallest && value >= thresholdValue) {
+                smallest = value;
+            }
+        }
+        smallest = (int) (smallest / dividerValue);
+        if (smallest > 1) {
+            for (int i = 0; i < signal.length; i++) {
+                signal[i] = smallest * ((signal[i] + smallest / 2) / smallest);
+            }
+            update(signal);
+        }
     }
 
     @Action
@@ -472,25 +485,25 @@ public class RawSignalPanel extends NodoBasePanel {
             } catch (Exception e) {
                 getListener().showStatusMessage(getResourceString("update_fail.margin", e.getMessage()));
             }
-	}
+        }
     }
 
     private void update(int[] data) {
-	RawSignalGraphPanel graph = (RawSignalGraphPanel) lineGraph;
-	graph.setSignal(data);
-	updateSignalText();
-	graph.repaint();
+        RawSignalGraphPanel graph = (RawSignalGraphPanel) lineGraph;
+        graph.setSignal(data);
+        updateSignalText();
+        graph.repaint();
     }
 
     private void updateSignalText() {
-	RawSignalGraphPanel graph = (RawSignalGraphPanel) lineGraph;
-	int[] activeSignal = graph.getActiveSignal();
-	rawSignalText.setText(Arrays.toString(activeSignal));
+        RawSignalGraphPanel graph = (RawSignalGraphPanel) lineGraph;
+        int[] activeSignal = graph.getActiveSignal();
+        rawSignalText.setText(Arrays.toString(activeSignal));
     }
 
     @Action
     public void invertSignal() {
-	((RawSignalGraphPanel) lineGraph).setStartState(!invert.isSelected());
-	lineGraph.repaint();
+        ((RawSignalGraphPanel) lineGraph).setStartState(!invert.isSelected());
+        lineGraph.repaint();
     }
 }
