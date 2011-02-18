@@ -23,7 +23,7 @@
  \*********************************************************************************************/
 void PrintEvent(unsigned long Content, byte Port, boolean Direction)
   {
-  boolean first=true;
+  boolean first=0;
 
   // als ingesteld staat dat seriële input niet weergegeven moet worden en de poort was serieel, dan direct terug
   if(!(S.Display&DISPLAY_SERIAL) && Port==VALUE_SOURCE_SERIAL && Direction==VALUE_DIRECTION_INPUT)
@@ -34,17 +34,28 @@ void PrintEvent(unsigned long Content, byte Port, boolean Direction)
     if(S.Display&DISPLAY_TAG)
       PrintText(Text_10);
     PrintDateTime();
-    first=false;
+    first++;
     }
 
-  if(S.Display&DISPLAY_DIRECTION)
+  if(Simulate)
     {
-    if(!first)
+    if(first++)
       {
       PrintChar(',');
       PrintChar(' ');
       }
-    first=false;
+    Serial.print(cmd2str(CMD_SIMULATE));
+    PrintChar('=');
+    Serial.print(cmd2str(VALUE_ON));
+    }
+
+  if(S.Display&DISPLAY_DIRECTION)
+    {
+    if(first++)
+      {
+      PrintChar(',');
+      PrintChar(' ');
+      }
     if(S.Display&DISPLAY_TAG)
       PrintText(Text_11);
     
@@ -58,12 +69,11 @@ void PrintEvent(unsigned long Content, byte Port, boolean Direction)
 
   if(S.Display&DISPLAY_SOURCE && Port)
     {
-    if(!first)
+    if(first++)
       {
       PrintChar(',');
       PrintChar(' ');
       }
-    first=false;
     if(S.Display&DISPLAY_TAG)
       PrintText(Text_12);
     Serial.print(cmd2str(Port));
@@ -71,18 +81,17 @@ void PrintEvent(unsigned long Content, byte Port, boolean Direction)
 
   if(S.Display&DISPLAY_UNIT && ((Content>>28)&0xf)==SIGNAL_TYPE_NODO)
     {
-    if(!first)
+    if(first++)
       {
       PrintChar(',');
       PrintChar(' ');
       }
-    first=false;
     if(S.Display&DISPLAY_TAG)
       PrintText(Text_13);
     PrintValue((Content>>24)&0xf); 
     }
     
-  if(!first)
+  if(first++)
     {
     PrintChar(',');
     PrintChar(' ');

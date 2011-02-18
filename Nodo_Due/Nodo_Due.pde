@@ -57,6 +57,7 @@ Overige functionele aanpassingen:
 - SERIES parameter t.b.v. WaitFreeRF vervallen.
 - MMI aanpassing + 'Display' commando toegevoegd en commando 'Trace' vervallen. Trace in te stellen met Display commando
 - Datum tijd notatie aangepast naar standaardnotatie: EEE YYYY-MM-DD HH:MM
+- Als de 'Simulate' aan staat wordt dit weergegeven op Serial.
 
 Onder de motorkap:
 - Timers nu in een int i.p.v. unsigned long en aanpassing aflopen timers => geheugenbesparing
@@ -70,6 +71,8 @@ Onder de motorkap:
 - Issue 194:	Unitnummer wordt niet goed gechecked
 - Issue 191:	Status led werkt niet juist
 - Issue 195:	UserEvent niet geaccepteerd vanuit EventGhost
+
+
 
 \**************************************************************************************************************************/
 

@@ -360,6 +360,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         TransmitCode(command2event(CMD_USER_EVENT,S.UserVar[Par1-1],S.UserVar[Par2-1])&0xf0ffffff);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
         break;
 
+      case CMD_WIRED_ANALOG:
+        // Lees de analoge waarde uit en verzend deze
+        TransmitCode(command2event(CMD_WIRED_ANALOG,Par1,WiredAnalog(Par1-1)));
+        break;
+
       case CMD_SIMULATE_DAY:
         if(Par1==0)Par1=1;
         SimulateDay(Par1); 

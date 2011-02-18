@@ -30,6 +30,8 @@ eg.RegisterPlugin(
 
 #===============================================================================
 
+CommandsToRemember = ("Unit", "WiredOut", "WiredIn", "WiredAnalog", "Kaku", "NewKAKU", "Variable", "UserEvent", "VariableSet", "Variable", "Confirm")
+
 NodoCommandList =  (   
       ('Configuratie', None, None, None),
           ('Reset','Reset de Nodo. Alle instellingen worden teruggezet naar default waarden.',None,None),
@@ -270,18 +272,10 @@ class EventlistWrite(eg.ActionClass):
 #===============================================================================
 
 class NodoSerial(eg.PluginClass):
-    def __init__(self):
-        eg.globals.NodoVersion=""
-        eg.globals.hold = 0
-        eg.globals.Unit=""
-        eg.globals.Source=""
-        eg.globals.Direction=""
-        eg.globals.Command=""
-        eg.globals.Par1=""
-        eg.globals.Par2=""
-        
+    def __init__(self):        
         self.serial = None
-        
+        eg.globals.hold = 0
+
         group = self        
         for Command, DescriptionCommand, DescriptionPar1, DescriptionPar2 in NodoCommandList:              
 
@@ -406,48 +400,25 @@ class NodoSerial(eg.PluginClass):
           buffer += b
 
     def ParseReceivedLine(self, ReceivedString):
-            # parse de ontvangen Nodo regel en plaats de delen in eg.globals voor later gebruik door de user
-                
-            # Zoek Direction uit de regel
-            Tag = "Direction="
-            x = ReceivedString.find(Tag, 0, len(ReceivedString))
-            if x!=-1:
-                x+=len(Tag)
-                y = ReceivedString.find(",", x, len(ReceivedString))
-                eg.globals.direction=ReceivedString[x:y].strip(", ")
-            
-            # Zoek Unit uit de regel
-            Tag = "Unit="
-            x = ReceivedString.find(Tag, 0, len(ReceivedString))
-            if x!=-1:
-                x+=len(Tag)
-                y = ReceivedString.find(",", x, len(ReceivedString))
-                eg.globals.Unit=ReceivedString[x:y].strip(", ")
-            
-            # Zoek Source uit de regel
-            Tag = "Source="
-            x = ReceivedString.find(Tag, 0, len(ReceivedString))
-            if x!=-1:
-                x+=len(Tag)
-                y = ReceivedString.find(",", x, len(ReceivedString))
-                eg.globals.Source=ReceivedString[x:y].strip(", ")
-            
-            # Zoek NodoVersion uit de regel
-            Tag = "NodoVersion="
-            x = ReceivedString.find(Tag, 0, len(ReceivedString))
-            if x!=-1:
-                x+=len(Tag)
-                y = ReceivedString.find(",", x, len(ReceivedString))
-                eg.globals.NodoVersion=ReceivedString[x:y].strip(", ")
-            
-            # Zoek commando deel uit de regel
+
+            # parse de ontvangen Nodo regel en plaats de delen in eg.globals voor later gebruik door de user     
+            TagsToParse = ["Simulate=", "Direction=","Unit=","NodoVersion=","Source="]
+
+            # Zoek in de binnengekomen regels naar de Tags en haal bijbehorende waarde er uit.
+            # Plaats deze vervolgens in de globale namespace eg.globals            
+            for Tag in TagsToParse:
+                x = ReceivedString.find(Tag, 0, len(ReceivedString))
+                if x!=-1:
+                    x+=len(Tag)
+                    y = ReceivedString.find(",", x, len(ReceivedString))
+                    eg.globals.__setattr__(Tag.strip("= "),ReceivedString[x:y].strip(", ")) 
+                      
+                                                               
+            # Zoek commando deel uit de regel: commando wordt altijd omsloten met haakjes.
             x = ReceivedString.find("(", 0, len(ReceivedString))
             y = ReceivedString.find(")", 0, len(ReceivedString))
-
-            # commando wordt altijd omsloten met haakjes.
             if x!=-1 and y!=-1:
-                ReceivedString = ReceivedString[x+1:y]
-    
+                ReceivedString = ReceivedString[x+1:y]    
                 # Zoek Command commando deel
                 Result = ReceivedString.partition(" ")
                 eg.globals.Command = Result[0]
@@ -455,6 +426,14 @@ class NodoSerial(eg.PluginClass):
                 Params = Result[2].partition(",")
                 eg.globals.Par1=Params[0]
                 eg.globals.Par2=Params[2]
+
+
+            # Van enkele events/commando's is het handig om de waarde te onthouden als globale variabele in eg.globals
+            # Zoek in de binnengekomen regels naar de Tags en haal bijbehorende waarde er uit.
+            # Plaats deze vervolgens in de globale namespace eg.globals            
+            for cmd in CommandsToRemember:
+                if eg.globals.Command == cmd: 
+                    eg.globals.__setattr__(cmd + "_" + str(eg.globals.Par1),eg.globals.Par2) 
 
             return
 
