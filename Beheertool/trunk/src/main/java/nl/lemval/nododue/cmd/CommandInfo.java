@@ -71,6 +71,7 @@ public class CommandInfo {
     public static final Collection<String> WIRE_SET = Arrays.asList(new String[]{
                 Name.WiredSmittTrigger.name(),
                 Name.WiredThreshold.name(),
+                Name.WiredRange.name(),
                 Name.WiredPullup.name()});
     public static final Collection<String> OUT_SET = Arrays.asList(new String[]{
                 Name.WiredOut.name()});

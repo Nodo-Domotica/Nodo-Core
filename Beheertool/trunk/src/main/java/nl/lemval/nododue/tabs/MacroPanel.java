@@ -8,9 +8,7 @@
  *
  * Created on 21-mrt-2010, 19:10:28
  */
-
 package nl.lemval.nododue.tabs;
-
 
 import java.awt.GridLayout;
 import java.io.File;
@@ -40,7 +38,7 @@ public class MacroPanel extends NodoBasePanel {
     private EventActionPanel eventPanel;
     private EventActionPanel commandPanel;
     private MacroListModel macroListModel;
-    
+
     /** Creates new form NodoCommandPanel */
     public MacroPanel(NodoDueManagerView view) {
         super(view);
@@ -53,7 +51,7 @@ public class MacroPanel extends NodoBasePanel {
         commandPanel.setAutoUnit(true);
 
         Collection<CommandInfo> cmds = CommandLoader.getActions(
-		CommandType.MACRO.add(CommandType.COMMAND).add(CommandType.EVENT) );
+                CommandType.COMMAND.add(CommandType.EVENT));
         eventPanel.addAll(cmds);
 
         cmds = CommandLoader.getActions(CommandType.COMMAND.add(CommandType.SETTING));
@@ -61,20 +59,21 @@ public class MacroPanel extends NodoBasePanel {
         commandPanel.addAll(cmds);
 
         initComponents();
-	updateCount();
+        updateCount();
 
         panel1.setLayout(new GridLayout());
         panel2.setLayout(new GridLayout());
         panel1.add(eventPanel);
         panel2.add(commandPanel);
 
-        macrolist.addListSelectionListener(new ListSelectionListener() {
+        macrolist.addListSelectionListener(new ListSelectionListener()  {
+
             public void valueChanged(ListSelectionEvent e) {
                 if (e.getValueIsAdjusting() == false) {
                     Object[] selected = macrolist.getSelectedValues();
-                    if ( selected.length == 1 ) {
+                    if (selected.length == 1) {
                         NodoMacro nm = (NodoMacro) selected[0];
-                        if ( nm != null ) {
+                        if (nm != null) {
                             eventPanel.setSelected(nm.getEvent());
                             commandPanel.setSelected(nm.getAction());
                         }
@@ -86,7 +85,7 @@ public class MacroPanel extends NodoBasePanel {
 
     @Override
     public void setVisible(boolean aFlag) {
-        if ( aFlag == true ) {
+        if (aFlag == true) {
             eventPanel.updateAppliances();
         }
         super.setVisible(aFlag);
@@ -302,37 +301,38 @@ public class MacroPanel extends NodoBasePanel {
 
     @Action
     public Task retrieveMacros() {
-        if ( NodoDueManager.hasConnection() )
+        if (NodoDueManager.hasConnection()) {
             return new RetrieveMacrosTask(org.jdesktop.application.Application.getInstance(nl.lemval.nododue.NodoDueManager.class));
+        }
         return null;
     }
 
     public void loadFromFile(File selected) {
         NodoMacroList list = new NodoMacroList();
-        if ( list.load(selected) ) {
+        if (list.load(selected)) {
             macroListModel.setContent(list);
-	    updateCount();
-	}
+            updateCount();
+        }
     }
 
     private void updateCount() {
-	int size = macroListModel.getSize();
-	int avail = NodoMacroList.MAXLENGTH - size;
-	availableLabel.setText( size + "/" + NodoMacroList.MAXLENGTH);
-	switch (avail) {
-	    case NodoMacroList.MAXLENGTH:
-		availableLabel.setToolTipText(NodoDueManager.getMessage("MacroPanel.AllAvailable"));
-		break;
-	    case 1:
-		availableLabel.setToolTipText(NodoDueManager.getMessage("MacroPanel.OneAvailable"));
-		break;
-	    case 0:
-		availableLabel.setToolTipText(NodoDueManager.getMessage("MacroPanel.NoneAvailable"));
-		break;
-	    default:
-		availableLabel.setToolTipText(NodoDueManager.getMessage("MacroPanel.SetAvailable", avail));
-		break;
-	}
+        int size = macroListModel.getSize();
+        int avail = NodoMacroList.MAXLENGTH - size;
+        availableLabel.setText(size + "/" + NodoMacroList.MAXLENGTH);
+        switch (avail) {
+            case NodoMacroList.MAXLENGTH:
+                availableLabel.setToolTipText(NodoDueManager.getMessage("MacroPanel.AllAvailable"));
+                break;
+            case 1:
+                availableLabel.setToolTipText(NodoDueManager.getMessage("MacroPanel.OneAvailable"));
+                break;
+            case 0:
+                availableLabel.setToolTipText(NodoDueManager.getMessage("MacroPanel.NoneAvailable"));
+                break;
+            default:
+                availableLabel.setToolTipText(NodoDueManager.getMessage("MacroPanel.SetAvailable", avail));
+                break;
+        }
     }
 
     public void saveToFile(File selected, boolean overwrite) {
@@ -341,48 +341,59 @@ public class MacroPanel extends NodoBasePanel {
     }
 
     private class RetrieveMacrosTask extends org.jdesktop.application.Task<Object, Void> {
+
         RetrieveMacrosTask(org.jdesktop.application.Application app) {
             // Runs on the EDT.  Copy GUI state that
             // doInBackground() depends on from parameters
             // to RetrieveMacrosTask fields, here.
             super(app);
         }
-        @Override protected Object doInBackground() {
+
+        @Override
+        protected Object doInBackground() {
             // Your Task's code here.  This method runs
             // on a background thread, so don't reference
             // the Swing GUI from here.
             return new NodoMacroHandler().getList();
         }
-        @Override protected void succeeded(Object result) {
+
+        @Override
+        protected void succeeded(Object result) {
             // Runs on the EDT.  Update the GUI based on
             // the result computed by doInBackground().
             NodoMacroList list = (NodoMacroList) result;
             macroListModel.setContent(list);
-	    updateCount();
+            updateCount();
         }
     }
 
     @Action
     public Task storeMacros() {
-        if ( NodoDueManager.hasConnection() )
+        if (NodoDueManager.hasConnection()) {
             return new StoreMacrosTask(org.jdesktop.application.Application.getInstance(nl.lemval.nododue.NodoDueManager.class));
+        }
         return null;
     }
 
     private class StoreMacrosTask extends org.jdesktop.application.Task<Object, Void> {
+
         StoreMacrosTask(org.jdesktop.application.Application app) {
             // Runs on the EDT.  Copy GUI state that
             // doInBackground() depends on from parameters
             // to RetrieveMacrosTask fields, here.
             super(app);
         }
-        @Override protected Object doInBackground() {
+
+        @Override
+        protected Object doInBackground() {
             // Your Task's code here.  This method runs
             // on a background thread, so don't reference
             // the Swing GUI from here.
             return new NodoMacroHandler().writeList(macroListModel.getList());
         }
-        @Override protected void succeeded(Object result) {
+
+        @Override
+        protected void succeeded(Object result) {
             // Runs on the EDT.  Update the GUI based on
             // the result computed by doInBackground().
         }
@@ -393,7 +404,7 @@ public class MacroPanel extends NodoBasePanel {
         Object[] selected = macrolist.getSelectedValues();
         for (int i = 0; i < selected.length; i++) {
             macroListModel.remove(selected[i]);
-	    updateCount();
+            updateCount();
         }
     }
 
@@ -401,23 +412,23 @@ public class MacroPanel extends NodoBasePanel {
     public void addMacro() {
         NodoCommand event = eventPanel.getSelectedItem();
         NodoCommand action = commandPanel.getSelectedItem();
-        if ( event != null && action != null ) {
+        if (event != null && action != null) {
             macroListModel.add(new NodoMacro(event, action));
-	    updateCount();
+            updateCount();
         }
     }
 
     private void doMove(boolean up) {
         int numSel = macrolist.getSelectedValues().length;
-        if ( numSel != 1 ) {
+        if (numSel != 1) {
             return;
         }
         int idx = macrolist.getSelectedIndex();
-        if ( idx != -1 )
+        if (idx != -1) {
             macroListModel.move(idx, up);
-        macrolist.setSelectedIndex(up ? idx-1 : idx+1);
+        }
+        macrolist.setSelectedIndex(up ? idx - 1 : idx + 1);
     }
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton add;
     private javax.swing.JLabel availableLabel;
@@ -434,5 +445,4 @@ public class MacroPanel extends NodoBasePanel {
     private javax.swing.JButton retrieve;
     private javax.swing.JButton store;
     // End of variables declaration//GEN-END:variables
-
 }

@@ -259,6 +259,7 @@ public class LearnCommandBox extends javax.swing.JDialog {
 
             if (StringUtils.isNotBlank(nameValue.getText())) {
                 CommandInfo ue = CommandLoader.get(CommandInfo.Name.UserEvent);
+// TODO: Check to read results and create device
                 Device device = new Device(
                         new NodoCommand(ue, groupValue.getText(), numValue.getText()).toString());
                 device.setSource("IR");

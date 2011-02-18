@@ -10,14 +10,13 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javax.swing.DefaultComboBoxModel;
 import nl.lemval.nododue.NodoDueManager;
 import nl.lemval.nododue.Options;
 import nl.lemval.nododue.cmd.CommandInfo;
 import nl.lemval.nododue.cmd.CommandLoader;
 import nl.lemval.nododue.cmd.NodoCommand;
+import nl.lemval.nododue.cmd.NodoResponse;
 import nl.lemval.nododue.util.SerialCommunicator;
 import nl.lemval.nododue.util.listeners.HexKeyListener;
 import nl.lemval.nododue.util.listeners.OutputEventListener;
@@ -309,6 +308,7 @@ public class UnitSelectorBox extends javax.swing.JDialog {
     private void remoteUnitSelectionItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_remoteUnitSelectionItemStateChanged
         if (evt.getStateChange() == ItemEvent.SELECTED) {
             String value = (String) evt.getItem();
+            // TODO
             remoteButton.getModel().setSelected(true);
         }
     }//GEN-LAST:event_remoteUnitSelectionItemStateChanged
@@ -345,78 +345,6 @@ public class UnitSelectorBox extends javax.swing.JDialog {
         }
     }
 
-    /*
-    @Action
-    public void scanRemoteUnits() {
-    if ( NodoDueManager.hasConnection() ) {
-    setCursor(new Cursor(Cursor.WAIT_CURSOR));
-    
-    SerialCommunicator comm = NodoDueManager.getApplication().getSerialCommunicator();
-    
-    // Let wel op dat je bij meerdere Nodo's je eenmalig de instelling 'WaitFreeRF All'
-    // verzendt, anders gaan de Nodo's door elkaar heen praten en krijg je vreemde 
-    // hex-codes of er gebeurt niets.
-    //
-    CommandInfo info = CommandLoader.get(CommandInfo.Name.WaitFreeRF);
-    comm.send(new NodoCommand(info, "All", "0"));
-    comm.waitCommand(500);
-    
-    final StringBuilder result = new StringBuilder();
-    OutputEventListener listener = new OutputEventListener() {
-    public void handleOutputLine(String message) {
-    result.append(message);
-    result.append("~");
-    }
-    public void handleClear() {}
-    };
-    comm.addOutputListener(listener);
-    
-    info = CommandLoader.get(CommandInfo.Name.Unit);
-    
-    int timeoutCount = 0;
-    for (int i = 1; i < 16; i++) {
-    NodoCommand cmd = NodoCommand.getRemoteStatusCommand(info, i);
-    comm.send(cmd);
-    System.out.println("Sent : " + cmd);
-    if ( comm.waitCommand(500, 500) ) {
-    timeoutCount++;
-    }
-    System.out.println("Rcvd : " + result.toString());
-    
-    //                if ( timeoutCount >= 3 ) {
-    //                    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-    //                    NodoDueManager.getApplication().reportTimeout();
-    //                    return;
-    //                }
-    }
-    
-    // Has more output. Make sure to catch it.
-    comm.waitCommand(1500,1500);
-    comm.removeOutputListener(listener);
-    
-    System.out.println("Eind : " + result.toString());
-    
-    // Parse result
-    HashSet<String> foundUnits = new HashSet<String>();
-    // Nodo-?.INPUT: RF, Unit-2, (Unit 2, 1)
-    
-    Pattern pattern = Pattern.compile("RF, \\(?Unit-([0-9]{1,2}), \\(?Unit");
-    Matcher matcher = pattern.matcher(result);
-    while ( matcher.find() ) {
-    foundUnits.add( matcher.group(1) );
-    }
-    
-    Options.getInstance().setRemoteUnits(foundUnits);
-    remoteUnitModel.removeAllElements();
-    for (String ru : foundUnits) {
-    remoteUnitModel.addElement(ru);
-    }
-    remoteButton.setEnabled(!foundUnits.isEmpty());
-    
-    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-    }
-    }
-     */
     @Action
     public void validateRemoteUnit() {
         if (NodoDueManager.hasConnection()) {
@@ -442,16 +370,16 @@ public class UnitSelectorBox extends javax.swing.JDialog {
 //            System.out.println("Sent : " + cmd);
             comm.waitCommand(1500);
             comm.removeOutputListener(listener);
-//            System.out.println("Eind : " + result.toString());
-
             // Parse result
             // Nodo-?.INPUT: RF, Unit-2, (Unit 2, 1)
-
-            Pattern pattern = Pattern.compile("RF, \\(?Unit-([0-9]{1,2}), \\(?Unit");
-            Matcher matcher = pattern.matcher(result);
-            if (matcher.find()) {
-                HashSet<String> data = new HashSet<String>();
-                data.add(matcher.group(1));
+            HashSet<String> data = new HashSet<String>();
+            NodoResponse[] responses = NodoResponse.getResponses(result.toString());
+            for (NodoResponse nodoResponse : responses) {
+                if ( nodoResponse.is(CommandInfo.Name.Unit) ) {
+                    data.add(nodoResponse.getCommand().getData1());
+                }
+            }
+            if ( data.size() > 0 ) {
                 Options.getInstance().setRemoteUnits(data);
             }
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));

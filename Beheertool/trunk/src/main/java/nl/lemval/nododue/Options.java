@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.TreeSet;
+import nl.lemval.nododue.cmd.CommandInfo;
 import nl.lemval.nododue.cmd.NodoResponse;
 import nl.lemval.nododue.util.Device;
 import org.apache.commons.configuration.PropertiesConfiguration;
@@ -136,8 +137,8 @@ public class Options {
     public boolean scanLine(String message) {
         NodoResponse[] responses = NodoResponse.getResponses(message);
         for (int i = 0; i < responses.length; i++) {
-            if ( responses[i].is(NodoResponse.Direction.OUTPUT) && responses[i].isCommand("Unit")) {
-                setNodoUnit(responses[i].getFirstParameter());
+            if ( responses[i].is(NodoResponse.Direction.Output) && responses[i].is(CommandInfo.Name.Unit)) {
+                setNodoUnit(responses[i].getCommand().getData1());
                 hasScanned = true;
                 break;
             }

@@ -2,11 +2,12 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package nl.lemval.nododue.cmd;
 
 import java.security.AccessControlException;
 import java.util.HashSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import nl.lemval.nododue.Options;
 import nl.lemval.nododue.util.Device;
 
@@ -16,16 +17,21 @@ import nl.lemval.nododue.util.Device;
  */
 public class NodoCommand {
 
+    private static final String NEWLINE = System.getProperty("line.separator");
+    private static final Pattern elementPattern = Pattern.compile("\\(([A-Za-z]+) ([^,; \\)]*),? ?([^,; \\)]*)\\)");
+    private static final Pattern hexPattern = Pattern.compile("\\(0x([A-Fa-f0-9]{4})([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})\\)");
+    private static final Pattern unknownPattern = Pattern.compile("\\(0x([A-Fa-f0-9]{1,8})\\)");
+
     private String name;
     private String data1;
     private String data2;
+    
+    // TODO: Refactor to have NodoCommandExecution.
     private boolean local = true;
     private boolean custom = false;
     private HashSet<Integer> units;
     private boolean useLocalUnit = false;
 
-    private static final String NEWLINE = System.getProperty("line.separator");
-    
     public NodoCommand(CommandInfo action, String d1, String d2) {
         this(action.toString(), d1, d2);
         this.local = action.getType().is(CommandType.SERIALONLY);
@@ -37,29 +43,50 @@ public class NodoCommand {
         this.data2 = d2; // toHexValue(d2);
         this.units = new HashSet<Integer>();
 
-	CommandInfo info = CommandLoader.get(action);
-	if ( info != null ) {
-	    this.local =  info.getType().is(CommandType.SERIALONLY);
-	}
+        CommandInfo info = CommandLoader.get(action);
+        if (info != null) {
+            this.local = info.getType().is(CommandType.SERIALONLY);
+        }
     }
 
     public NodoCommand(Device device) {
         this.name = device.getSignal();
     }
 
+    public static NodoCommand fromString(String cmd) {
+        // (Status Unit,0)
+        // 
+        Matcher matcher = elementPattern.matcher(cmd);
+        if ( matcher.matches()) {
+            return new NodoCommand(matcher.group(1), matcher.group(2), matcher.group(3));
+        }
+        matcher = hexPattern.matcher(cmd);
+        if ( matcher.matches()) {
+            return getCustomCommand(matcher.group(1), matcher.group(2), matcher.group(3));
+        }
+        matcher = unknownPattern.matcher(cmd);
+        if ( matcher.matches()) {
+            return getCustomCommand(matcher.group(1), null, null);
+        }
+//        System.out.println("Could not parse: " + cmd);
+        return null;
+    }
+    
     public boolean matches(Device device) {
         return name.equals(device.getSignal()) || toString().equals(device.getSignal());
     }
 
     public void setData(String one, String two) {
-        if ( one != null ) {
-            if ( data1 != null )
+        if (one != null) {
+            if (data1 != null) {
                 throw new AccessControlException("Already set");
+            }
             data1 = one;
         }
-        if ( two != null ) {
-            if ( data2 != null )
+        if (two != null) {
+            if (data2 != null) {
                 throw new AccessControlException("Already set");
+            }
             data2 = two;
         }
     }
@@ -87,21 +114,25 @@ public class NodoCommand {
     public static NodoCommand getCustomCommand(String cmd, String v1, String v2) {
         NodoCommand nc = new NodoCommand(cmd, v1, v2);
         nc.custom = true;
-        // TODO: Ouch. I do not know if the created comment is local or not.
+        // TODO: Ouch. I do not know if the created command is local or not.
         // Let the Nodo decide than...
         nc.local = false;
-        System.out.println("Created CUSTOM with: " + nc.getName() + ":" + nc.getData1() + ":" + nc.getData2());
+//        System.out.println("Created CUSTOM with: " + nc.getName() + ":" + nc.getData1() + ":" + nc.getData2());
         return nc;
     }
 
+    public boolean isCustom() {
+        return custom;
+    }
+
     public void addUnit(int i) {
-        if ( i >= 0 && i < 16 ) {
+        if (i >= 0 && i < 16) {
             units.add(i);
         }
     }
 
     private void addCurrentUnit() {
-	this.useLocalUnit = true;
+        this.useLocalUnit = true;
     }
 
     private int[] getUnits() {
@@ -115,26 +146,26 @@ public class NodoCommand {
 
     public String getRawCommand() {
         StringBuilder builder = new StringBuilder();
-	if ( local ) {
-	    addCommand(builder);
-	    return builder.toString();
-	}
+        if (local) {
+            addCommand(builder);
+            return builder.toString();
+        }
 
         int[] list = getUnits();
-        if ( list.length > 0 ) {
-	    if ( useLocalUnit ) {
-		addCommand(builder);
-		builder.append(NEWLINE);
+        if (list.length > 0) {
+            if (useLocalUnit) {
+                addCommand(builder);
+                builder.append(NEWLINE);
             }
             for (int i = 0; i < list.length; i++) {
                 int unit = list[i];
-		builder.append("Divert");
-		builder.append(" ");
-		builder.append(unit);
-		builder.append("; ");
+                builder.append("Divert");
+                builder.append(" ");
+                builder.append(unit);
+                builder.append("; ");
                 addCommand(builder);
 
-                if ( i < (list.length-1) ) {
+                if (i < (list.length - 1)) {
                     builder.append(NEWLINE);
                 }
             }
@@ -152,25 +183,28 @@ public class NodoCommand {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        if ( custom ) {
-            if ( name == null ) {
+        if (custom) {
+            if ( name != null && name.length() > 4 ) {
+                return "0x" + name;
+            }
+            if (name == null) {
                 builder.append("0x0000");
             } else {
-                if ( name.startsWith("0x") ) {
-                    builder.append("0000".substring(name.length()-2));
+                if (name.startsWith("0x")) {
+                    builder.append("0000".substring(name.length() - 2));
                 } else {
                     builder.append("0x");
                     builder.append("0000".substring(name.length()));
                 }
                 builder.append(name);
             }
-            if ( data1 == null ) {
+            if (data1 == null) {
                 builder.append("00");
             } else {
                 builder.append("00".substring(data1.length()));
                 builder.append(data1);
             }
-            if ( data2 == null ) {
+            if (data2 == null) {
                 builder.append("00");
             } else {
                 builder.append("00".substring(data2.length()));
@@ -178,10 +212,10 @@ public class NodoCommand {
             }
         } else {
             builder.append(name);
-            if ( data1 != null && data1.trim().length() > 0 ) {
+            if (data1 != null && data1.trim().length() > 0) {
                 builder.append(" ");
                 builder.append(data1);
-                if ( data2 != null && data2.trim().length() > 0 ) {
+                if (data2 != null && data2.trim().length() > 0) {
                     builder.append(",");
                     builder.append(data2);
                 }
@@ -211,7 +245,7 @@ public class NodoCommand {
      */
     public void makeDistributed() {
         Options options = Options.getInstance();
-        if ( options.isUseRemoteUnits() ) {
+        if (options.isUseRemoteUnits()) {
             String[] list = options.getRemoteUnits();
             if (list.length > 0 && options.isUseLocalUnit()) {
                 addCurrentUnit();

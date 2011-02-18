@@ -12,20 +12,19 @@ package nl.lemval.nododue.cmd;
 public enum ROW {
 
     Command(0, "Command"),
-    Code(1, "Code"),
-    Description(2, "Description"),
-    Explanation(3, "Explanation"),
-    ParName1(4, "Par1"),
-    ParOpts1(5, "Par1opt"),
-    ParName2(6, "Par2"),
-    ParOpts2(7, "Par2opt"),
-    FlagMacro(8, "Macro"),
-    FlagAction(9, "Action"),
-    FlagSetting(10, "Setting"),
-    FlagEvent(11, "Event"),
-    FlagMultiNodo(12, "MultiNodo"),
-    QueryRange(13, "QueryRange"),
-    FlagSerialOnly(14, "SerialOnly");
+    Description(1, "Description"),
+    Explanation(2, "Explanation"),
+    ParName1(3, "Par1"),
+    ParOpts1(4, "Par1opt"),
+    ParName2(5, "Par2"),
+    ParOpts2(6, "Par2opt"),
+    FlagAction(7, "Action"),
+    FlagSetting(8, "Setting"),
+    FlagEvent(9, "Event"),
+    FlagMultiNodo(10, "MultiNodo"),
+    QueryRange(11, "QueryRange"),
+    FlagSerialOnly(12, "SerialOnly"),
+    FlagDevice(13, "Device");
     
     public final int val;
     public final String col;

@@ -4,34 +4,25 @@
  */
 package nl.lemval.nododue.util;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import nl.lemval.nododue.cmd.CommandInfo;
+import nl.lemval.nododue.cmd.CommandLoader;
+import nl.lemval.nododue.cmd.CommandType;
+import nl.lemval.nododue.cmd.NodoCommand;
+import nl.lemval.nododue.cmd.NodoResponse;
 import org.apache.commons.lang.StringUtils;
 
 /**
  *
  * @author Michael
  */
-public class Device implements Comparable<Device>{
+public class Device implements Comparable<Device> {
 
-    private static final Pattern pattern = Pattern.compile("INPUT: ([A-Z]+), \\(?([^\\)]*).*");
-
-    public static Device parseFrom(String cmd) {
-        Matcher matcher = pattern.matcher(cmd);
-        if ( matcher.find() ) {
-            Device device = new Device(matcher.group(2));
-            device.setSource(matcher.group(1));
-            return device;
-        }
-        return null;
-    }
-
+    private static final char SEPARATOR = '|';
     private String signal;
     private String name;
     private String location;
     private String source;
     private boolean ignored;
-    private static final char SEPARATOR = '|';
 
     public Device(String signal) {
         this.signal = signal.replace(", ", ",");
@@ -40,10 +31,18 @@ public class Device implements Comparable<Device>{
         this.ignored = false;
     }
 
-    public static Device fromString(String dv) {
-        Device d = new Device("onbekend");
-        if (d.parse(dv)) {
-            return d;
+    public static Device parseFrom(String cmd) {
+        NodoResponse[] responses = NodoResponse.getResponses(cmd);
+        for (NodoResponse nodoResponse : responses) {
+            NodoCommand command = nodoResponse.getCommand();
+            if ( command != null ) {
+                CommandInfo get = CommandLoader.get(command.getName());
+//                System.out.println("On " + command.getName() + ": " + get);
+                if ( command.isCustom() || (get != null && get.getType().is(CommandType.DEVICE)) ) {
+//                    System.out.println("Registering new device: " + nodoResponse);
+                    return new Device(command.toString());
+                }
+            }
         }
         return null;
     }
@@ -80,6 +79,32 @@ public class Device implements Comparable<Device>{
         return source;
     }
 
+    public boolean isIgnored() {
+        return ignored;
+    }
+
+    public void setIgnored(boolean ignored) {
+        this.ignored = ignored;
+    }
+
+    public static Device fromString(String value) {
+        Device result = null;
+        try {
+            // SEPARATOR
+            String segments[] = value.split("\\|");
+            result = new Device(segments[0]);
+            result.setName(segments[1]);
+            result.setLocation(segments[2]);
+            result.setSource(segments[3]);
+            if (segments.length > 4) {
+                result.setIgnored(Boolean.parseBoolean(segments[4]));
+            }
+        } catch (Exception e) {
+            return null;
+        }
+        return result;
+    }
+
     public String asString() {
         StringBuilder builder = new StringBuilder();
         builder.append(signal);
@@ -89,47 +114,31 @@ public class Device implements Comparable<Device>{
         builder.append(location);
         builder.append(SEPARATOR);
         builder.append(source);
-        if ( isIgnored() ) {
+        if (isIgnored()) {
             builder.append(SEPARATOR);
             builder.append("true");
         }
         return builder.toString();
     }
 
-    public boolean isIgnored() {
-        return ignored;
-    }
-
-    public void setIgnored(boolean ignored) {
-        this.ignored = ignored;
-    }
-
-
-    private boolean parse(String value) {
-        try {
-            // SEPARATOR
-            String segments[] = value.split("\\|");
-            setSignal(segments[0]);
-            setName(segments[1]);
-            setLocation(segments[2]);
-            setSource(segments[3]);
-            if ( segments.length > 4 ) { setIgnored(Boolean.parseBoolean(segments[4])); }
-        } catch (Exception e) {
-            return false;
-        }
-        return true;
-    }
-
+    @Override
     public String toString() {
         return signal;
     }
 
     @Override
     public boolean equals(Object obj) {
-        if ( obj instanceof Device ) {
+        if (obj instanceof Device) {
             return signal.equals(((Device) obj).signal);
         }
         return false;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 37 * hash + (this.signal != null ? this.signal.hashCode() : 0);
+        return hash;
     }
 
     public int compareTo(Device o) {

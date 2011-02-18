@@ -77,22 +77,22 @@ public class CommandLoader {
                     
                     CommandType type = action.getType();
                     if ( "Y".equals(sheet.getCell(rows[ROW.FlagAction.val], i).getContents()) ) {
-                        type = type.add(CommandType.fromString(ROW.FlagAction.col));
+                        type = type.add(CommandType.COMMAND);
                     }
                     if ( "Y".equals(sheet.getCell(rows[ROW.FlagEvent.val], i).getContents()) ) {
-                        type = type.add(CommandType.fromString(ROW.FlagEvent.col));
+                        type = type.add(CommandType.EVENT);
                     }
-                    if ( "Y".equals(sheet.getCell(rows[ROW.FlagMacro.val], i).getContents()) ) {
-                        type = type.add(CommandType.fromString(ROW.FlagMacro.col));
+                    if ( "Y".equals(sheet.getCell(rows[ROW.FlagDevice.val], i).getContents()) ) {
+                        type = type.add(CommandType.DEVICE);
                     }
                     if ( "Y".equals(sheet.getCell(rows[ROW.FlagSetting.val], i).getContents()) ) {
-                        type = type.add(CommandType.fromString(ROW.FlagSetting.col));
+                        type = type.add(CommandType.SETTING);
                     }
                     if ( "Y".equals(sheet.getCell(rows[ROW.FlagMultiNodo.val], i).getContents()) ) {
-                        type = type.add(CommandType.fromString(ROW.FlagMultiNodo.col));
+                        type = type.add(CommandType.MULTI);
                     }
                     if ( "Y".equals(sheet.getCell(rows[ROW.FlagSerialOnly.val], i).getContents()) ) {
-                        type = type.add(CommandType.fromString(ROW.FlagSerialOnly.col));
+                        type = type.add(CommandType.SERIALONLY);
                     }
                     action.setType(type);
                     commands.put(action.toString()+":"+type.toString(), action);

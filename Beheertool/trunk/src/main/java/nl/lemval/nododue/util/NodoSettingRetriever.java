@@ -2,19 +2,17 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package nl.lemval.nododue.util;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import nl.lemval.nododue.NodoDueManager;
 import nl.lemval.nododue.cmd.CommandInfo;
 import nl.lemval.nododue.cmd.CommandLoader;
 import nl.lemval.nododue.cmd.CommandType;
 import nl.lemval.nododue.cmd.NodoCommand;
+import nl.lemval.nododue.cmd.NodoResponse;
 import nl.lemval.nododue.util.listeners.OutputEventListener;
 
 /**
@@ -23,34 +21,39 @@ import nl.lemval.nododue.util.listeners.OutputEventListener;
  */
 public class NodoSettingRetriever {
 
-    private NodoSettingRetriever() {}
-    
+    private NodoSettingRetriever() {
+    }
+
     public static Collection<NodoSetting> getSettings(Collection<CommandInfo> cis) {
         String result = queryCommands(cis);
-        if ( result == null )
+        if (result == null) {
             return null;
+        }
         return parseSettings(result, cis);
     }
 
     private static String queryCommands(Collection<CommandInfo> cis) {
         final StringBuilder builder = new StringBuilder();
-        OutputEventListener listener = new OutputEventListener() {
+        OutputEventListener listener = new OutputEventListener()   {
+
             public void handleOutputLine(String message) {
                 builder.append(message);
-		builder.append(';');
+                builder.append(';');
             }
-            public void handleClear() {}
+
+            public void handleClear() {
+            }
         };
         SerialCommunicator comm =
-            NodoDueManager.getApplication().getSerialCommunicator();
-        if ( ! comm.isListening() ) {
+                NodoDueManager.getApplication().getSerialCommunicator();
+        if (!comm.isListening()) {
             return null;
         }
         comm.addOutputListener(listener);
 
         for (CommandInfo ci : cis) {
             int[] range = ci.getQueryRange();
-            if ( range.length > 0 ) {
+            if (range.length > 0) {
                 for (int i = 0; i < range.length; i++) {
                     comm.send(NodoCommand.getStatusCommand(ci, range[i]));
                     comm.waitCommand();
@@ -74,55 +77,27 @@ public class NodoSettingRetriever {
         for (CommandInfo commandInfo : cis) {
             map.put(commandInfo.getName(), commandInfo);
         }
+        NodoResponse[] responses = NodoResponse.getResponses(result);
+        for (NodoResponse nodoResponse : responses) {
+            NodoCommand cmd = nodoResponse.getCommand();
+            if (cmd != null) {
+                CommandInfo info = map.get(cmd.getName());
+                if (info != null) {
+                    NodoSetting setting = new NodoSetting(info);
+                    setting.setAttributeValue1(cmd.getData1());
+                    setting.setAttributeValue2(cmd.getData2());
 
-	Pattern commandPattern = Pattern.compile("\\(([^\\)]+)\\)");
-	Pattern elementPattern = Pattern.compile("\\(([A-Za-z]+) ?([^,; \\)]*),? ?([^,; \\)]*)\\)");
-
-	Matcher matcher = commandPattern.matcher(result);
-
-        while ( matcher.find() ) {
-//            System.out.println("Match on: " + matcher.group());
-	    Matcher data = elementPattern.matcher(matcher.group());
-	    if (!data.matches()) {
-		System.out.println("Oeps, no element match on '"+matcher.group()+"'...");
-            for (char c : matcher.group().toCharArray()) {
-                System.out.println(" " + ((int)c));
-            }
-		continue;
-	    }
-            CommandInfo info = map.get(data.group(1));
-            if ( info != null ) {
-                NodoSetting setting = new NodoSetting(info);
-		String data1 = data.group(2);
-		String data2 = data.group(3);
-//		System.out.println("Data: '" + data1 + "'" + data2 + "'");
-		setting.setAttributeValue1(data1);
-		setting.setAttributeValue2(data2);
-
-                rv.add(setting);
+                    rv.add(setting);
+                }
             }
         }
         return rv;
     }
 
-//    private static String valueOf(Collection<CommandInfo> cis) {
-//        StringBuilder builder = new StringBuilder();
-//        builder.append("[");
-//        builder.append(cis.size());
-//        builder.append("(");
-//        for (CommandInfo commandInfo : cis) {
-//            builder.append(commandInfo.toString());
-//            builder.append(", ");
-//        }
-//        builder.replace(builder.length()-2, builder.length(), "");
-//        builder.append(")]");
-//        return builder.toString();
-//    }
-//
     public static void storeSettings(Collection<NodoSetting> settings) {
         SerialCommunicator comm =
-            NodoDueManager.getApplication().getSerialCommunicator();
-        if ( ! comm.isListening() ) {
+                NodoDueManager.getApplication().getSerialCommunicator();
+        if (!comm.isListening()) {
             return;
         }
         Collection<CommandInfo> cis = CommandLoader.getActions(CommandType.COMMAND);
@@ -132,7 +107,7 @@ public class NodoSettingRetriever {
         }
         for (NodoSetting nodoSetting : settings) {
             CommandInfo cmd = map.get(nodoSetting.getName());
-            if ( cmd != null ) {
+            if (cmd != null) {
                 NodoCommand nc = new NodoCommand(cmd, nodoSetting.getAttributeData1(), nodoSetting.getAttributeData2());
                 nc.makeDistributed();
                 comm.send(nc);
@@ -140,5 +115,4 @@ public class NodoSettingRetriever {
             }
         }
     }
-
 }

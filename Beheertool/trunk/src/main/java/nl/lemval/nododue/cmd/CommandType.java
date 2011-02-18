@@ -5,6 +5,8 @@
 
 package nl.lemval.nododue.cmd;
 
+import java.util.HashMap;
+
 
 /**
  *
@@ -12,13 +14,28 @@ package nl.lemval.nododue.cmd;
  */
 public class CommandType {
     public static final CommandType NOTHING = new CommandType(0);
-    public static final CommandType MACRO   = new CommandType(1);
     public static final CommandType COMMAND = new CommandType(2);
     public static final CommandType SETTING = new CommandType(4);
     public static final CommandType EVENT   = new CommandType(8);
     public static final CommandType MULTI   = new CommandType(16);
     public static final CommandType SERIALONLY = new CommandType(32);
+    public static final CommandType DEVICE  = new CommandType(64);
     public static final CommandType ALL = new CommandType(0xFF);
+
+    private static final HashMap<String, CommandType> mapping;
+    static {
+        mapping = new HashMap<String, CommandType>();
+        mapping.put(ROW.FlagAction.name(), COMMAND);
+        mapping.put(ROW.FlagSetting.name(), SETTING);
+        mapping.put(ROW.FlagEvent.name(), EVENT);
+        mapping.put(ROW.FlagMultiNodo.name(), MULTI);
+        mapping.put(ROW.FlagSerialOnly.name(), SERIALONLY);
+        mapping.put(ROW.FlagDevice.name(), DEVICE);
+    };
+    
+    static CommandType fromString(String validator) {
+        return mapping.get(validator);
+    }
 
     private int value;
 
@@ -41,38 +58,22 @@ public class CommandType {
         return (value & type.value) > 0;
     }
 
-    public static CommandType fromString(String text) {
-        if ( ROW.FlagMacro.col.equalsIgnoreCase(text) ) {
-            return MACRO;
-        }
-        if ( ROW.FlagAction.col.equalsIgnoreCase(text) ) {
-            return COMMAND;
-        }
-        if ( ROW.FlagSetting.col.equalsIgnoreCase(text) ) {
-            return SETTING;
-        }
-        if ( ROW.FlagEvent.col.equalsIgnoreCase(text) ) {
-            return EVENT;
-        }
-        if ( ROW.FlagMultiNodo.col.equalsIgnoreCase(text) ) {
-            return MULTI;
-        }
-        if ( ROW.FlagSerialOnly.col.equalsIgnoreCase(text) ) {
-            return SERIALONLY;
-        }
-        return NOTHING;
+    @Override
+    public boolean equals(Object obj) {
+        throw new NullPointerException();
+//        return super.equals(obj);
     }
-
+    
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder(" ");
-        if ( is(MACRO) ) buf.append("Macro,");
+        if ( is(DEVICE) ) buf.append("Device,");
         if ( is(COMMAND) ) buf.append("Action,");
         if ( is(SETTING) ) buf.append("Setting,");
         if ( is(EVENT) ) buf.append("Event,");
         if ( is(MULTI) ) buf.append("RemoteNodo,");
         if ( is(SERIALONLY) ) buf.append("SerialOnly,");
-        buf.append(Integer.toHexString(value));
+        buf.append(Integer.toBinaryString(value));
         return buf.substring(0, buf.length());
     }
 }
