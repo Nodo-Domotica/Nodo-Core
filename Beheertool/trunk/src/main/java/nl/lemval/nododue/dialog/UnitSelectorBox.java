@@ -6,6 +6,7 @@ package nl.lemval.nododue.dialog;
 import java.awt.Cursor;
 import java.awt.event.ItemEvent;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -347,33 +348,43 @@ public class UnitSelectorBox extends javax.swing.JDialog {
 
     @Action
     public void validateRemoteUnit() {
-        if (NodoDueManager.hasConnection()) {
+// TODO
+            if ( true ) return;
+
+            if (NodoDueManager.hasConnection()) {
             setCursor(new Cursor(Cursor.WAIT_CURSOR));
 
             SerialCommunicator comm = NodoDueManager.getApplication().getSerialCommunicator();
 
-            final StringBuilder result = new StringBuilder();
+//            final StringBuilder result = new StringBuilder();
+            final ArrayList<NodoResponse> responses = new ArrayList<NodoResponse>();
             OutputEventListener listener = new OutputEventListener()  {
 
                 public void handleOutputLine(String message) {
-                    result.append(message);
+//                    result.append(message);
                 }
 
                 public void handleClear() {
+                }
+
+                public void handleNodoResponses(NodoResponse[] data) {
+                    for (NodoResponse nodoResponse : data) {
+                        responses.add(nodoResponse);
+                    }
                 }
             };
             comm.addOutputListener(listener);
             int unit = Integer.parseInt((String) remoteUnitSelection.getSelectedItem());
             CommandInfo info = CommandLoader.get(CommandInfo.Name.Unit);
-            NodoCommand cmd = NodoCommand.getRemoteStatusCommand(info, unit);
-            comm.send(cmd);
-//            System.out.println("Sent : " + cmd);
+// TODO
+            if ( true ) return;
+            
+            //            NodoCommand cmd = NodoCommand.getRemoteStatusCommand(info, unit);
+//            comm.send(cmd);
             comm.waitCommand(1500);
             comm.removeOutputListener(listener);
             // Parse result
-            // Nodo-?.INPUT: RF, Unit-2, (Unit 2, 1)
             HashSet<String> data = new HashSet<String>();
-            NodoResponse[] responses = NodoResponse.getResponses(result.toString());
             for (NodoResponse nodoResponse : responses) {
                 if ( nodoResponse.is(CommandInfo.Name.Unit) ) {
                     data.add(nodoResponse.getCommand().getData1());
@@ -392,15 +403,16 @@ public class UnitSelectorBox extends javax.swing.JDialog {
             setCursor(new Cursor(Cursor.WAIT_CURSOR));
 
             SerialCommunicator comm = NodoDueManager.getApplication().getSerialCommunicator();
-            final StringBuilder result = new StringBuilder();
             OutputEventListener listener = new OutputEventListener()  {
 
                 public void handleOutputLine(String message) {
-                    result.append(message);
-                    result.append("~");
                 }
 
                 public void handleClear() {
+                }
+
+                public void handleNodoResponses(NodoResponse[] responses) {
+                    Options.getInstance().scanUnitFromResponse(responses);
                 }
             };
             comm.addOutputListener(listener);
@@ -411,7 +423,6 @@ public class UnitSelectorBox extends javax.swing.JDialog {
             comm.waitCommand(500, 1000);
 
             comm.removeOutputListener(listener);
-            Options.getInstance().scanLine(result.toString());
             refreshDialog();
             invalidate();
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));

@@ -22,6 +22,7 @@ import java.util.TooManyListenersException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import nl.lemval.nododue.NodoDueManager;
+import nl.lemval.nododue.cmd.NodoResponse;
 import org.jdesktop.application.Application;
 import org.jdesktop.application.ResourceMap;
 
@@ -287,6 +288,10 @@ public class SerialCommunicator implements Runnable, SerialPortEventListener {
                         history.addResponse(data);
                         for (OutputEventListener outputListener : outputListeners) {
                             outputListener.handleOutputLine(data);
+                        }
+                        NodoResponse[] responses = NodoResponse.getResponses(data);
+                        for (OutputEventListener outputListener : outputListeners) {
+                            outputListener.handleNodoResponses(responses);
                         }
                     }
                     start = i + 1;

@@ -5,6 +5,8 @@
 
 package nl.lemval.nododue.util.listeners;
 
+import nl.lemval.nododue.cmd.NodoResponse;
+
 /**
  *
  * @author Michael
@@ -12,4 +14,6 @@ package nl.lemval.nododue.util.listeners;
 public interface OutputEventListener {
     public void handleOutputLine(String message);
     public void handleClear();
+
+    public void handleNodoResponses(NodoResponse[] responses);
 }

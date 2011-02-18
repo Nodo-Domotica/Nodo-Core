@@ -24,6 +24,7 @@ public class NodoResponse {
     private Direction direction;
     private Date time;
     private NodoCommand command;
+    private int unit;
 
     public enum Direction {
 
@@ -71,33 +72,29 @@ public class NodoResponse {
     }
 
     private void parseDouble(String[] elemData) {
-//        System.out.println("On message:  ");
-//        for (String ed : elemData) {
-//            System.out.println("Response element " + ed);
-//        }
         if ("Source".equals(elemData[0])) {
             try {
                 source = Source.valueOf(elemData[1]);
             } catch (Exception ex) {
-                Logger.getLogger(NodoResponse.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         if ("Timestamp".equals(elemData[0])) {
             try {
                 time = dateFormat.parse(elemData[1].substring(4));
             } catch (ParseException ex) {
-                Logger.getLogger(NodoResponse.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         if ("Direction".equals(elemData[0])) {
             try {
                 direction = Direction.valueOf(elemData[1]);
             } catch (Exception ex) {
-                Logger.getLogger(NodoResponse.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         if ("Event".equals(elemData[0])) {
             command = NodoCommand.fromString(elemData[1]);
+        }
+        if ("Unit".equals(elemData[0])) {
+            unit = Integer.parseInt(elemData[1]);
         }
     }
 
@@ -106,13 +103,20 @@ public class NodoResponse {
             direction = Direction.valueOf(data);
             return;
         } catch (Exception ex) {
-            Logger.getLogger(NodoResponse.class.getName()).log(Level.FINE, null, ex);
         }
         try {
             source = Source.valueOf(data);
             return;
         } catch (Exception ex) {
-            Logger.getLogger(NodoResponse.class.getName()).log(Level.FINE, null, ex);
+        }
+        try {
+            unit = Integer.parseInt(data);
+            return;
+        } catch (Exception ex) {
+        }
+        try {
+            time = dateFormat.parse(data.substring(4));
+        } catch (Exception ex) {
         }
         command = NodoCommand.fromString(data);
     }

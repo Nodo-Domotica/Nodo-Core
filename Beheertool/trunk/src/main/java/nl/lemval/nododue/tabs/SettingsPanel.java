@@ -13,6 +13,7 @@ import nl.lemval.nododue.cmd.CommandLoader;
 import nl.lemval.nododue.cmd.CommandType;
 import nl.lemval.nododue.component.NodoSettingsTableModel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import javax.swing.table.TableColumn;
 import nl.lemval.nododue.NodoDueManager;
@@ -165,8 +166,8 @@ public class SettingsPanel extends NodoBasePanel {
         @Override protected Object doInBackground() {
             download.setEnabled(false);
             upload.setEnabled(false);
-            Collection<CommandInfo> cis = CommandLoader.getActions(CommandType.SETTING);
-            return NodoSettingRetriever.getSettings(cis);
+//            Collection<CommandInfo> cis = CommandLoader.getActions(CommandType.SETTING);
+            return NodoSettingRetriever.getAllSettings();
         }
 
         /**

@@ -15,6 +15,7 @@ import nl.lemval.nododue.cmd.CommandInfo;
 import nl.lemval.nododue.cmd.CommandLoader;
 import nl.lemval.nododue.cmd.CommandType;
 import nl.lemval.nododue.cmd.NodoCommand;
+import nl.lemval.nododue.cmd.NodoResponse;
 import nl.lemval.nododue.util.listeners.OutputEventListener;
 
 /**
@@ -42,6 +43,9 @@ public class NodoMacroHandler {
             }
 
             public void handleClear() {
+            }
+
+            public void handleNodoResponses(NodoResponse[] responses) {
             }
         };
         SerialCommunicator comm =
@@ -116,7 +120,7 @@ public class NodoMacroHandler {
             }
         }
 
-        String result = execute(commands, false);
+        execute(commands, false);
         return true;
     }
 }

@@ -17,6 +17,7 @@ import nl.lemval.nododue.NodoDueManagerView;
 import nl.lemval.nododue.cmd.CommandLoader;
 import nl.lemval.nododue.cmd.CommandType;
 import nl.lemval.nododue.cmd.NodoCommand;
+import nl.lemval.nododue.cmd.NodoResponse;
 import nl.lemval.nododue.component.EventActionPanel;
 import nl.lemval.nododue.util.listeners.OutputEventListener;
 import nl.lemval.nododue.util.SerialCommunicator;
@@ -177,6 +178,9 @@ public class NodoCommandPanel extends NodoBasePanel {
             public void handleClear() {
                 commandOutput.setText(null);
             }
+
+            public void handleNodoResponses(NodoResponse[] responses) {
+            }
         });
         comm.sendRaw(message);
         comm.waitCommand(500);
@@ -207,6 +211,9 @@ public class NodoCommandPanel extends NodoBasePanel {
 
                 public void handleClear() {
                     commandOutput.setText(null);
+                }
+
+                public void handleNodoResponses(NodoResponse[] responses) {
                 }
             });
             comm.send(cmd);

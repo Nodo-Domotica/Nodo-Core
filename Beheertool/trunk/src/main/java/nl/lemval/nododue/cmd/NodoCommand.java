@@ -91,24 +91,13 @@ public class NodoCommand {
         }
     }
 
-    public static NodoCommand getStatusEventCommand(CommandInfo setting) {
-        CommandInfo stevt = CommandLoader.get(CommandInfo.Name.EventStatus);
-        return new NodoCommand(stevt, setting.getName(), null);
-    }
-
     public static NodoCommand getStatusCommand(CommandInfo setting) {
-        CommandInfo status = CommandLoader.get(CommandInfo.Name.Status);
-        return new NodoCommand(status, setting.getName(), null);
+        return getStatusCommand(setting, -1);
     }
 
     public static NodoCommand getStatusCommand(CommandInfo setting, int item) {
         CommandInfo status = CommandLoader.get(CommandInfo.Name.Status);
-        return new NodoCommand(status, setting.getName(), String.valueOf(item));
-    }
-
-    public static NodoCommand getRemoteStatusCommand(CommandInfo setting, int item) {
-        CommandInfo status = CommandLoader.get(CommandInfo.Name.SendStatus);
-        return new NodoCommand(status, setting.getName(), String.valueOf(item));
+        return new NodoCommand(status, setting==null?"All":setting.getName(), item<0?null:String.valueOf(item));
     }
 
     public static NodoCommand getCustomCommand(String cmd, String v1, String v2) {

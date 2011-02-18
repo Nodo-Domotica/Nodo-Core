@@ -18,6 +18,7 @@ import nl.lemval.nododue.cmd.CommandInfo;
 import nl.lemval.nododue.cmd.CommandInfo.Name;
 import nl.lemval.nododue.cmd.CommandLoader;
 import nl.lemval.nododue.cmd.NodoCommand;
+import nl.lemval.nododue.cmd.NodoResponse;
 import nl.lemval.nododue.component.RawSignalGraphPanel;
 import nl.lemval.nododue.util.SerialCommunicator;
 import nl.lemval.nododue.util.listeners.OutputEventListener;
@@ -392,6 +393,9 @@ public class RawSignalPanel extends NodoBasePanel {
                     data.append(message);
                 }
                 public void handleClear() {
+                }
+
+                public void handleNodoResponses(NodoResponse[] responses) {
                 }
             });
             try {

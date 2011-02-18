@@ -26,6 +26,7 @@ import nl.lemval.nododue.Options;
 import nl.lemval.nododue.cmd.CommandInfo;
 import nl.lemval.nododue.cmd.CommandLoader;
 import nl.lemval.nododue.cmd.NodoCommand;
+import nl.lemval.nododue.cmd.NodoResponse;
 import nl.lemval.nododue.util.Device;
 import nl.lemval.nododue.util.listeners.OutputEventListener;
 import nl.lemval.nododue.util.SerialCommunicator;
@@ -426,18 +427,22 @@ public class ConnectPanel extends NodoBasePanel implements OutputEventListener {
      * @return
      */
     private String initConnection(SerialCommunicator comm, boolean force) {
-        final StringBuilder result = new StringBuilder();
-        Options options = Options.getInstance();
+//        final StringBuilder result = new StringBuilder();
+        final Options options = Options.getInstance();
         if (force || !options.hasScanned()) {
-            final String NL = System.getProperty("line.separator");
+//            final String NL = System.getProperty("line.separator");
             OutputEventListener listener = new OutputEventListener() {
 
                 public void handleOutputLine(String message) {
-                    result.append(message);
-                    result.append(NL);
+//                    result.append(message);
+//                    result.append(NL);
                 }
 
                 public void handleClear() {
+                }
+
+                public void handleNodoResponses(NodoResponse[] responses) {
+                    options.scanUnitFromResponse(responses);
                 }
             };
             comm.addOutputListener(listener);
@@ -448,7 +453,6 @@ public class ConnectPanel extends NodoBasePanel implements OutputEventListener {
             boolean timeout = false;
             do {
                 timeout = comm.waitCommand(200, 1500);
-                options.scanLine(result.toString());
             } while (!options.hasScanned() && !timeout);
 
             comm.removeOutputListener(listener);
@@ -478,19 +482,21 @@ public class ConnectPanel extends NodoBasePanel implements OutputEventListener {
             lineCount++;
         }
         serialOutput.append(message);
-        String[] signal = message.split(",");
-        String deviceCode = signal[signal.length - 1].trim();
-
-        // TODO: Space between KAKU D1,Off (D1, Off)
-//        if ( deviceCode.startsWith("(")) { deviceCode = deviceCode.substring(1, deviceCode.length()-2); }
-        Device appliance = Options.getInstance().getAppliance(deviceCode);
-        if (appliance != null && appliance.isActive()) {
-            serialOutput.append(" " + getResourceString("comm.known_device", appliance.getName(), appliance.getLocation()));
-        }
         serialOutput.append(NEWLINE);
         serialOutput.setCaretPosition(length);
     }
 
+    public void handleNodoResponses(NodoResponse[] responses) {
+        for (NodoResponse response : responses) {
+            Device appliance = Options.getInstance().getAppliance(response.getCommand().toString());
+            if (appliance != null && appliance.isActive()) {
+                serialOutput.append(getResourceString("comm.known_device", appliance.getName(), appliance.getLocation()));
+                serialOutput.append(NEWLINE);
+               serialOutput.setCaretPosition(serialOutput.getText().length());
+            }
+        }
+    }
+    
     public void handleClear() {
         serialOutput.setText(null);
     }

@@ -134,16 +134,21 @@ public class Options {
      * string.
      * @param message
      */
-    public boolean scanLine(String message) {
-        NodoResponse[] responses = NodoResponse.getResponses(message);
-        for (int i = 0; i < responses.length; i++) {
-            if ( responses[i].is(NodoResponse.Direction.Output) && responses[i].is(CommandInfo.Name.Unit)) {
-                setNodoUnit(responses[i].getCommand().getData1());
+    public boolean scanUnitFromResponse(NodoResponse[] responses) {
+        for (NodoResponse nodoResponse : responses) {
+            if ( nodoResponse.is(NodoResponse.Direction.Output) && nodoResponse.is(CommandInfo.Name.Unit)) {
+                setNodoUnit(nodoResponse.getCommand().getData1());
                 hasScanned = true;
                 break;
             }
-            
         }
+//        for (int i = 0; i < responses.length; i++) {
+//            if ( responses[i].is(NodoResponse.Direction.Output) && responses[i].is(CommandInfo.Name.Unit)) {
+//                setNodoUnit(responses[i].getCommand().getData1());
+//                hasScanned = true;
+//                break;
+//            }
+//        }
         return hasScanned;
     }
 
@@ -296,8 +301,14 @@ public class Options {
     }
 
     public void addAppliance(Device device) {
-        if ( getAppliance(device.getSignal()) == null ) {
+        final Device appliance = getAppliance(device.getSignal());
+        if ( appliance == null ) {
             devices.put(device.getSignal(), device);
+        } else {
+            // Update
+            appliance.setSource(device.getSource());
+            appliance.setName(device.getName());
+            appliance.setLocation(device.getLocation());
         }
     }
 

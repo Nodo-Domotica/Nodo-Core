@@ -25,12 +25,12 @@ public class CommandType {
     private static final HashMap<String, CommandType> mapping;
     static {
         mapping = new HashMap<String, CommandType>();
-        mapping.put(ROW.FlagAction.name(), COMMAND);
-        mapping.put(ROW.FlagSetting.name(), SETTING);
-        mapping.put(ROW.FlagEvent.name(), EVENT);
-        mapping.put(ROW.FlagMultiNodo.name(), MULTI);
-        mapping.put(ROW.FlagSerialOnly.name(), SERIALONLY);
-        mapping.put(ROW.FlagDevice.name(), DEVICE);
+        mapping.put(ROW.FlagAction.col, COMMAND);
+        mapping.put(ROW.FlagSetting.col, SETTING);
+        mapping.put(ROW.FlagEvent.col, EVENT);
+        mapping.put(ROW.FlagMultiNodo.col, MULTI);
+        mapping.put(ROW.FlagSerialOnly.col, SERIALONLY);
+        mapping.put(ROW.FlagDevice.col, DEVICE);
     };
     
     static CommandType fromString(String validator) {

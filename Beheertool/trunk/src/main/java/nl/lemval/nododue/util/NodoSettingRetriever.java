@@ -4,6 +4,7 @@
  */
 package nl.lemval.nododue.util;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,24 +25,43 @@ public class NodoSettingRetriever {
     private NodoSettingRetriever() {
     }
 
+    public static Collection<NodoSetting> getAllSettings() {
+        Collection<CommandInfo> cis = CommandLoader.getActions(CommandType.ALL);
+//        long t = System.currentTimeMillis();
+        ArrayList<NodoResponse> result = queryCommands(null);
+//        System.out.println("Querying took " + (System.currentTimeMillis()-t) + "ms.");
+        return parseSettings(result, cis);
+    }
+    
     public static Collection<NodoSetting> getSettings(Collection<CommandInfo> cis) {
-        String result = queryCommands(cis);
-        if (result == null) {
-            return null;
-        }
+        // If there is full display, this is quicker than all settings.
+        // If there is minimal display, this is slower on 20+ settings.
+//        long t = System.currentTimeMillis();
+        ArrayList<NodoResponse> result = queryCommands(cis);
+//        System.out.println("Querying took " + (System.currentTimeMillis()-t) + "ms.");
         return parseSettings(result, cis);
     }
 
-    private static String queryCommands(Collection<CommandInfo> cis) {
-        final StringBuilder builder = new StringBuilder();
+    private static ArrayList<NodoResponse> queryCommands(Collection<CommandInfo> cis) {
+//        final StringBuilder builder = new StringBuilder();
+        final ArrayList<NodoResponse> result = new ArrayList<NodoResponse>();
+        final long[] inputReceived = new long[1];
+        inputReceived[0] = System.currentTimeMillis();
         OutputEventListener listener = new OutputEventListener()   {
-
+            
             public void handleOutputLine(String message) {
-                builder.append(message);
-                builder.append(';');
+                inputReceived[0] = System.currentTimeMillis();
             }
 
             public void handleClear() {
+            }
+
+            public void handleNodoResponses(NodoResponse[] responses) {
+                for (NodoResponse nodoResponse : responses) {
+                    if ( nodoResponse.is(NodoResponse.Direction.Output)) {
+                        result.add(nodoResponse);
+                    }
+                }
             }
         };
         SerialCommunicator comm =
@@ -51,33 +71,40 @@ public class NodoSettingRetriever {
         }
         comm.addOutputListener(listener);
 
-        for (CommandInfo ci : cis) {
-            int[] range = ci.getQueryRange();
-            if (range.length > 0) {
-                for (int i = 0; i < range.length; i++) {
-                    comm.send(NodoCommand.getStatusCommand(ci, range[i]));
+        if ( cis == null ) {
+            comm.send(NodoCommand.getStatusCommand(null));
+        } else {
+            for (CommandInfo ci : cis) {
+                int[] range = ci.getQueryRange();
+                if (range.length > 0) {
+                    for (int i = 0; i < range.length; i++) {
+                        final NodoCommand statusCommand = NodoCommand.getStatusCommand(ci, range[i]);
+                        comm.send(statusCommand);
+                        comm.waitCommand();
+                    }
+                } else {
+                    final NodoCommand statusCommand = NodoCommand.getStatusCommand(ci);
+                    comm.send(statusCommand);
                     comm.waitCommand();
                 }
-            } else {
-                comm.send(NodoCommand.getStatusCommand(ci));
-                comm.waitCommand();
             }
         }
         // Need to sleep and wait for the response, since the Nodo cannot
         // handle all the commands at once. Waitcommand does not help, due
         // to the busy indicator can be reset by an earlier command.
-        comm.waitCommand(500);
+        while ( inputReceived[0] + 250 > System.currentTimeMillis() ) {
+            comm.waitCommand(250);
+        }
         comm.removeOutputListener(listener);
-        return builder.toString();
+        return result;
     }
 
-    private static Collection<NodoSetting> parseSettings(String result, Collection<CommandInfo> cis) {
+    private static Collection<NodoSetting> parseSettings(ArrayList<NodoResponse> responses, Collection<CommandInfo> cis) {
         HashMap<String, CommandInfo> map = new HashMap<String, CommandInfo>();
         Collection<NodoSetting> rv = new HashSet<NodoSetting>();
         for (CommandInfo commandInfo : cis) {
             map.put(commandInfo.getName(), commandInfo);
         }
-        NodoResponse[] responses = NodoResponse.getResponses(result);
         for (NodoResponse nodoResponse : responses) {
             NodoCommand cmd = nodoResponse.getCommand();
             if (cmd != null) {
