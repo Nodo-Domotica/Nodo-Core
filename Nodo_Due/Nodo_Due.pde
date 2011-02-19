@@ -134,7 +134,7 @@ prog_char PROGMEM Text_09[] = "SYSTEM: Break!";
 prog_char PROGMEM Text_10[] = "Timestamp=";
 prog_char PROGMEM Text_11[] = "Direction=";
 prog_char PROGMEM Text_12[] = "Source=";
-prog_char PROGMEM Text_13[] = "Unit=";
+prog_char PROGMEM Text_13[] = "ThisUnit=";
 prog_char PROGMEM Text_14[] = "Event=";
 prog_char PROGMEM Text_15[] = "NodoVersion=";
 
