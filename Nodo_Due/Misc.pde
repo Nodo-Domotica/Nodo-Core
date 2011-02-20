@@ -302,7 +302,7 @@ void ResetFactory(void)
 
   S.Version            = VERSION;
   S.Unit               = UNIT;
-  S.Display            = DISPLAY_UNIT + DISPLAY_SOURCE + DISPLAY_DIRECTION + DISPLAY_TAG;
+  S.Display            = DISPLAY_RESET;
   S.AnalyseSharpness   = 50;
   S.AnalyseTimeOut     = SIGNAL_TIMEOUT_IR;
   S.TransmitPort       = VALUE_SOURCE_IR_RF;

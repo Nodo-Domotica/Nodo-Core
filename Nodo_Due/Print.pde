@@ -87,7 +87,10 @@ void PrintEvent(unsigned long Content, byte Port, boolean Direction)
       PrintChar(' ');
       }
     if(S.Display&DISPLAY_TAG)
-      PrintText(Text_13);
+        {
+        Serial.print(cmd2str(CMD_UNIT));
+        PrintChar('=');
+        }
     PrintValue((Content>>24)&0xf); 
     }
     

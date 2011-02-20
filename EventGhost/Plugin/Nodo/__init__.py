@@ -5,6 +5,8 @@ Bugs:
 
 Idee:
 - Logging naar file
+- borgen dat de Boot altijd plaatsvindt.
+- korte wachttijd na opstarten plugin om Nodo de boor uit te kunnen laten voeren
 
 """
 
@@ -51,13 +53,14 @@ CommandsToRemember = ("WiredOut", "WiredIn", "WiredAnalog", "KAKU", "NewKAKU", "
 
 NodoCommandList =  (   
       ('Configuratie', None, None, None,0),
+          ('Display','Commando: Veranderd de gegevens weergave van SERIAL\nLET OP: kan de werking van de plugin stoppen.\nLees voor meer opties de command-reference!','[Trace,Reset,...]','[ON,OFF]',0),
           ('Reset','Commando: Reset de Nodo. Alle instellingen worden teruggezet naar default waarden.',None,None,0),
           ('Unit','Commando: Verander het Unit adres van de Nodo','Unitnummer[1-15]',None,0),
 
       ('EventList', None, None,None,0),
-          ('EventlistWrite', 'Commando: Schrijf een regel in de Eventlist om een macro samen te stellen.', None,None,0),
-          ('EventlistShow','Commando: Laat de EventList zien',None,None,0),
           ('EventlistErase','Commando: Wis de inhoud van de Eventlist',None,None,0),
+          ('EventlistShow','Commando: Laat de EventList zien',None,None,0),
+          ('EventlistWrite', 'Commando: Schrijf een regel in de Eventlist om een macro samen te stellen.', None,None,0),
 
       ('KlikAanKlikUit', None, None,None,0),                                      
           ('SendKAKU','Commando: Schakelt een KlikAanKlikUit ontvanger volgens de conventionele codering', 'Adres[A1..P16]','Command[On,Off]',1),
@@ -74,7 +77,7 @@ NodoCommandList =  (
           ('TimerRandom','Commando: Stel de timer in met een willekeurige tijd','Timer nummer. [1..15]','Maximaal aantal minuten. [1...255]',1),
           ('TimerReset','Commando: Reset timer zonder event te genereren','Timer [0,1...15] 0 = alle',None,1),
           ('TimerSet','Commando: Stel een timer is.','Timer [1..15]','Minuten [1..255]',1),
-          ('Timer','Commando: Timer Event','Timer nummer. [1..15]',None,1),
+          ('Timer','Event: Timer Event','Timer nummer. [1..15]',None,1),
 
       ('Clock', None, None,None,0),                                      
           ('ClockSync','Commando: Zet de klok van de Nodo gelijk aan die van de computer',None,None,1),
@@ -92,6 +95,10 @@ NodoCommandList =  (
           ('ClockAll','Event: Levert match in wildcard op voor opgegeven uren:minuten','Uren [0..23]','Minuten [0..59]',1),
 
       ('Variabelen', None, None,None,0),                                      
+          # ('BreakOnVarEqu','Commando: Breekt uitvoer van een macro af als variabele gelijk is aan waarde.','Variabele [1..15]','Waarde [0..255]',1),
+          # ('BreakOnVarLess','Commando: Breekt uitvoer van een macro af als variabele minder is dan waarde','Variabele [1..15]','Waarde [0..255]',1),
+          # ('BreakOnVarMore','Commando: Breekt uitvoer van een macro af als variabele meer is dan waarde','Variabele [1..15]','Waarde [0..255]',1),
+          # ('BreakOnVarNEqu','Commando: Breekt uitvoer van een macro af als variabele ongelijk is aan waarde','Variabele [1..15]','Waarde [0..255]',1),
           ('Variable','Event: treedt op als de inhoud van een variabele wijzigt.','Variabele [1..15]','Waarde [0..255]',1),
           ('VariableClear','Commando: Wis inhoud van een variabele','Variabele [0,1...15] 0 = alle',None,1),
           ('VariableDec','Commando: Tel een waarde op bij een variabele','Variabele [1..15]','Waarde [1..255]',1),
@@ -99,19 +106,15 @@ NodoCommandList =  (
           ('VariableSet','Commando: Zet een variabele','Variabele [1..15]','Waarde [0..255]',1),
           ('VariableVariable','Commando: Vul een variabele met de waarde van een andere variabele','Variabele [1..15]','Variabele [1..15]',1),
           ('SendVarUserEvent','Commando: Verzend een Event samengesteld uit twee variabelen.','Variabele [1..15]','Variabele [1..15]',1),
-          ('BreakOnVarEqu','Commando: Breekt uitvoer van een macro af als variabele gelijk is aan waarde.','Variabele [1..15]','Waarde [0..255]',1),
-          ('BreakOnVarLess','Commando: Breekt uitvoer van een macro af als variabele minder is dan waarde','Variabele [1..15]','Waarde [0..255]',1),
-          ('BreakOnVarMore','Commando: Breekt uitvoer van een macro af als variabele meer is dan waarde','Variabele [1..15]','Waarde [0..255]',1),
-          ('BreakOnVarNEqu','Commando: Breekt uitvoer van een macro af als variabele ongelijk is aan waarde','Variabele [1..15]','Waarde [0..255]',1),
 
       ('Signaalverwerking IR & RF', None, None,None,0),                                      
-          ('WaitFreeRF','Commando: Wacht voordat een RF signaal wordt verzonden op een vrije ether','[Off,Series,All]','Tijd [1..255] x 0.1 sec.',1),
+          ('ReceiveSettings','Commando: geavanceerde instellingen voor analyse van ontvangen signalen','Timeout [1..255] milliseconde','Scherpte [1..255]',1),
           ('RawsignalCopy','Commando: Stuurt exact een signaal door tussen RF en IR','[IR2RF, RF2IR]','Seconden [1..255]',1),
           ('RawsignalGet','Commando: Haal de RAW codes op van het eerstvolgende signaal dat wordt ontvangen',None,None,1),
           ('RawsignalPut','Commando: Verzend een RAW signaal','Pulsetijd, Spacetijd, ...,...,0',None,1),
-          ('ReceiveSettings','Commando: geavanceerde instellingen voor analyse van ontvangen signalen','Timeout [1..255] milliseconde','Scherpte [1..255]',1),
           ('SendSignal','Commando: Verzend de inhoud van de RAW buffer (nogmaals)',None,None,1),
           ('TransmitSettings','Commando: Geef aan naar welke poorten verzonden moet worden.','Poort [IR, RF, IR&RF]',None,1),
+          ('WaitFreeRF','Commando: Wacht voordat een RF signaal wordt verzonden op een vrije ether','[Off,Series,All]','Tijd [1..255] x 0.1 sec.',1),
 
       ('Wired', None, None,None,0),                                      
           ('VariableWiredAnalog','Commando: Vult een variabele met de waarde van een WIRED-IN','Variabele [1..15]','Poort [1..4]',1),
@@ -124,17 +127,16 @@ NodoCommandList =  (
           ('WiredThreshold','Commando: Stel de threshold in van een WIRED-IN poort','Poort [1..4]','Threshold [0..255]',1),
 
       ('Debugging', None, None,None,0),                                      
+          ('Simulate','Commando: Simulate voorkomt dat er via RF wordt verzonden. Handig voor testdoeleinden.','[ON,OFF]',None,0),
           ('SimulateDay','Commando: Simuleer de tijd ','[1,7]',None,0),
-          ('Trace','Commando: Trace modus voor eenvoudig debuggen','Trace [ON,OFF]','Tijd [ON,OFF]',0),
 
       ('Overig', None, None,None,0),                                      
-          ('NodoCommand', 'Commando: Stuur een commando naar de Nodo.', 'Meerdere commandos van elkaar scheiden met een puntkomma.\n\nCommand Par1,Par2',None,0),
           ('Boot','Event: Event reedt op na een reset',None,None,1),
-          ('Status','Commando: Haal de status op van de Nodo','Nodo commando (optioneel)','Parameter-1 behorend bij Nodo commando (optioneel)\n[1..4] voor Wired...\n[1..15] voor TimerSet,VariableSet\n',1),
-          ('Simulate','Commando: Simulate voorkomt dat er via RF wordt verzonden. Handig voor testdoeleinden.','[ON,OFF]',None,0),
-          ('Confirm','Commando: Geeft na ontvangst een bevestiging dat het singaal door de Nodo is ontvangen','Confirm [On,Off]',None,1),
           ('Delay','Commando: Wacht','Tijd in seconden [Off, 1..255]','Queue events [On,Off]',1),
+          ('Confirm','Commando: Geeft na ontvangst een bevestiging dat het singaal door de Nodo is ontvangen','Confirm [On,Off]',None,1),
+          ('RawCommand', 'Commando: Stuur een commando naar de Nodo.', 'Meerdere commandos van elkaar scheiden met een puntkomma.\n\nCommand Par1,Par2',None,0),
           ('Sound','Commando: Geef geluidsignaal','Signaal. [0..7]','Herhalingen. [1..255]',1),
+          ('Status','Commando: Haal de status op van de Nodo','Nodo commando (optioneel)','Parameter-1 behorend bij Nodo commando (optioneel)\n[1..4] voor Wired...\n[1..15] voor TimerSet,VariableSet\n',1),
 
       (None, None, None,None,0),              
 )
@@ -145,14 +147,19 @@ class NodoCommandNoDivert(eg.ActionClass):
     # class voor Nodo Command's zonder parameters van de gebruiker
     def __call__(self, Divert=0):
         eg.plugins.NodoSerial.plugin.Send(self.cmd  + ';')
+
+    def GetLabel(self, ):
+        return self.cmd + ';'
+
+#===============================================================================
                         
 class NodoCommand(eg.ActionClass):
     # class voor Nodo Command's zonder parameters van de gebruiker die wel ge-divert kan worden
     class text:
         Diverting = ""
 
-    def __call__(self, Divert=1):
-        if Divert!=int(eg.globals.ThisUnit):
+    def __call__(self, Divert=0):
+        if Divert!=0:
             NodoCommand = "Divert " + str(Divert) + ";"
         else:
             NodoCommand=""
@@ -160,10 +167,16 @@ class NodoCommand(eg.ActionClass):
         NodoCommand+=self.cmd
         eg.plugins.NodoSerial.plugin.Send(NodoCommand  + ';')
 
+    def GetLabel(self, Divert=0):
+        if Divert!=0:
+            return "Divert " + str(Divert) + "; " + self.cmd + ';'
+        else:
+            return self.cmd + ';'
+
     def Configure(self, Divert=0):
         panel = eg.ConfigPanel(self)
 
-        if self.text.Diverting=="1":
+        if self.text.Diverting=="0":
             DivertCtrl = panel.SpinIntCtrl(Divert, 0, 15)        
             DivertSettingsBox = panel.BoxedGroup(
                 "Divert",
@@ -184,8 +197,8 @@ class NodoCommandPar1(eg.ActionClass):
         DescPar1=""
         Diverting = ""
 
-    def __call__(self, Par1="", Divert=1):
-        if Divert!=int(eg.globals.ThisUnit):
+    def __call__(self, Par1="0", Divert=0):
+        if Divert!=0:
             NodoCommand = "Divert " + str(Divert) + ";"
         else:
             NodoCommand=""
@@ -199,8 +212,11 @@ class NodoCommandPar1(eg.ActionClass):
         NodoCommand+=';'
         eg.plugins.NodoSerial.plugin.Send(NodoCommand)
 
-    def GetLabel(self, Par1, Divert):
-        return self.cmd + ' ' + str(Par1) + ';'
+    def GetLabel(self, Par1="", Divert=0):
+        if Divert!=0:
+            return "Divert " + str(Divert) + "; " + self.cmd + ' ' + str(Par1) + ';'
+        else:
+            return self.cmd + ' ' + str(Par1) + ';'
 
     def Configure(self, Par1="", Divert=1):
         panel = eg.ConfigPanel(self)
@@ -241,8 +257,8 @@ class NodoCommandPar2(eg.ActionClass):
         DescPar2=""
         Diverting = ""
                 
-    def __call__(self, Par1="", Par2="", Divert=1):
-        if Divert!=int(eg.globals.ThisUnit):
+    def __call__(self, Par1="0", Par2="0", Divert=0):
+        if Divert!=0:
             NodoCommand = "Divert " + str(Divert) + ";"
         else:
             NodoCommand=""
@@ -259,10 +275,13 @@ class NodoCommandPar2(eg.ActionClass):
             NodoCommand += ",0;"
         eg.plugins.NodoSerial.plugin.Send(NodoCommand)
 
-    def GetLabel(self, Par1="", Par2="", Divert=1):
-        return "Divert " + str(Divert) + "; " + self.cmd + ' ' + str(Par1) + ',' + str(Par2) + ';'
+    def GetLabel(self, Par1="0", Par2="0", Divert=0):
+        if Divert!=0:
+            return "Divert " + str(Divert) + "; " + self.cmd + ' ' + str(Par1) + ',' + str(Par2) + ';'
+        else:
+            return self.cmd + ' ' + str(Par1) + ',' + str(Par2) + ';'
 
-    def Configure(self, Par1="", Par2="", Divert=1):
+    def Configure(self, Par1="", Par2="", Divert=0):
         panel = eg.ConfigPanel(self)
         mainSizer =wx.BoxSizer(wx.VERTICAL)
 
@@ -311,12 +330,12 @@ class ClockSync(eg.ActionClass):
         eg.plugins.NodoSerial.plugin.Send("ClockSetDow " + str(DOW) + ";")
         
 #===============================================================================
-        
-class NodoCommandRaw(eg.ActionWithStringParameter):
+          
+class RawCommand(eg.ActionWithStringParameter):
     def __call__(self, data):
         eg.plugins.NodoSerial.plugin.Send(str(data) + ';')
 
-    def GetLabel(self, Data):
+    def GetLabel(self, data):
         return str(data) + ';'
         
 #===============================================================================
@@ -379,12 +398,12 @@ class NodoSerial(eg.PluginClass):
                  group.AddAction(EventlistWrite)        
                  continue
                 
-            elif Command == 'NodoCommand':
-                 NodoCommandRaw.name = Command
-                 NodoCommandRaw.description = DescriptionCommand
-                 NodoCommandRaw.parameterDescription = DescriptionPar1
-                 NodoCommandRaw.cmd = Command
-                 group.AddAction(NodoCommandRaw)
+            elif Command == 'RawCommand':
+                 RawCommand.name = Command
+                 RawCommand.description = DescriptionCommand
+                 RawCommand.parameterDescription = DescriptionPar1
+                 RawCommand.cmd = Command
+                 group.AddAction(RawCommand)
                  continue
 
             elif Command == 'ClockSync':

@@ -105,7 +105,7 @@ byte CommandError(unsigned long Content)
     case CMD_BOOT_EVENT:
     case CMD_EVENTLIST_WRITE:
     case CMD_EVENTLIST_SHOW:
-    case CMD_RESET_FACTORY:
+    case CMD_RESET:
     case CMD_EVENTLIST_ERASE: 
       if(Par1!=0)return ERROR_PAR1;    
       if(Par2!=0)return ERROR_PAR2;    

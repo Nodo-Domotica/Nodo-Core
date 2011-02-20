@@ -190,7 +190,7 @@ prog_char PROGMEM Text_15[] = "NodoVersion=";
 #define CMD_TRANSMIT_SETTINGS 45
 #define CMD_RAWSIGNAL_GET 46
 #define CMD_RAWSIGNAL_PUT 47
-#define CMD_RESET_FACTORY 48
+#define CMD_RESET 48
 #define CMD_SEND_KAKU 49
 #define CMD_SEND_KAKU_NEW 50
 #define CMD_SEND_SIGNAL 51
@@ -421,6 +421,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define DISPLAY_TRACE               16
 #define DISPLAY_TAG                 32
 #define DISPLAY_SERIAL              64
+#define DISPLAY_RESET               DISPLAY_UNIT + DISPLAY_SOURCE + DISPLAY_DIRECTION + DISPLAY_TAG
 
 // settings voor verzenden en ontvangen van IR/RF 
 #define ENDSIGNAL_TIME          1500 // Dit is de tijd in milliseconden waarna wordt aangenomen dat het ontvangen één reeks signalen beëindigd is

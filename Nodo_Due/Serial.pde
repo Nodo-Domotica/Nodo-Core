@@ -138,12 +138,16 @@ unsigned long Receive_Serial(void)
           x=DISPLAY_TAG;
           break;
         default:
-          x=VALUE_OFF;//??? default waarde nog bepalen.
+          x=0;
         }
+
       if(Par2==VALUE_ON)
         S.Display|=x;
       else
         S.Display&=~x;
+        
+      if(Par1==CMD_RESET)
+        S.Display=DISPLAY_RESET;
         
       SaveSettings();
       break;
@@ -165,7 +169,7 @@ unsigned long Receive_Serial(void)
       FactoryEventlist();
       Reset();
   
-    case CMD_RESET_FACTORY:
+    case CMD_RESET:
         ResetFactory();
         
     case CMD_RAWSIGNAL_PUT:
