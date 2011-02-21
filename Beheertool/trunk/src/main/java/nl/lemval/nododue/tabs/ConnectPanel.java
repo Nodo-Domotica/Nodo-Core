@@ -448,7 +448,7 @@ public class ConnectPanel extends NodoBasePanel implements OutputEventListener {
             comm.addOutputListener(listener);
 
             CommandInfo info = CommandLoader.get(CommandInfo.Name.Unit);
-            comm.send(NodoCommand.getStatusCommand(info));
+            comm.send(NodoCommand.getStatusCommand(info, 0));
 
             boolean timeout = false;
             do {

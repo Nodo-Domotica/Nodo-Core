@@ -267,7 +267,8 @@ public class SettingsPanel extends NodoBasePanel {
                 setCursor(new Cursor(Cursor.WAIT_CURSOR));
                 download.setEnabled(false);
                 upload.setEnabled(false);
-                NodoSettingRetriever.storeSettings(results);
+                // TODO: Allow distribution
+                NodoSettingRetriever.storeSettings(results, 0);
                 download.setEnabled(true);
                 upload.setEnabled(true);
                 setCursor(new Cursor(Cursor.DEFAULT_CURSOR));

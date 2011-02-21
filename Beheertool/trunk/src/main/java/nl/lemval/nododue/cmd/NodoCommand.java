@@ -17,35 +17,32 @@ import nl.lemval.nododue.util.Device;
  */
 public class NodoCommand {
 
-    private static final String NEWLINE = System.getProperty("line.separator");
+//    private static final String NEWLINE = System.getProperty("line.separator");
     private static final Pattern elementPattern = Pattern.compile("\\(([A-Za-z]+) ([^,; \\)]*),? ?([^,; \\)]*)\\)");
     private static final Pattern hexPattern = Pattern.compile("\\(0x([A-Fa-f0-9]{4})([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})\\)");
     private static final Pattern unknownPattern = Pattern.compile("\\(0x([A-Fa-f0-9]{1,8})\\)");
-
     private String name;
     private String data1;
     private String data2;
-    
-    // TODO: Refactor to have NodoCommandExecution.
-    private boolean local = true;
+    private boolean useLocalUnit = true;
+    private boolean localOnly = true;
     private boolean custom = false;
-    private HashSet<Integer> units;
-    private boolean useLocalUnit = false;
+    private HashSet<Integer> sendToUnits;
 
     public NodoCommand(CommandInfo action, String d1, String d2) {
         this(action.toString(), d1, d2);
-        this.local = action.getType().is(CommandType.SERIALONLY);
+        this.localOnly = action.getType().is(CommandType.SERIALONLY);
     }
 
     private NodoCommand(String action, String d1, String d2) {
         this.name = action;
-        this.data1 = d1; // toHexValue(d1);
-        this.data2 = d2; // toHexValue(d2);
-        this.units = new HashSet<Integer>();
+        this.data1 = d1;
+        this.data2 = d2;
+        this.sendToUnits = new HashSet<Integer>();
 
         CommandInfo info = CommandLoader.get(action);
         if (info != null) {
-            this.local = info.getType().is(CommandType.SERIALONLY);
+            this.localOnly = info.getType().is(CommandType.SERIALONLY);
         }
     }
 
@@ -57,21 +54,44 @@ public class NodoCommand {
         // (Status Unit,0)
         // 
         Matcher matcher = elementPattern.matcher(cmd);
-        if ( matcher.matches()) {
+        if (matcher.matches()) {
             return new NodoCommand(matcher.group(1), matcher.group(2), matcher.group(3));
         }
         matcher = hexPattern.matcher(cmd);
-        if ( matcher.matches()) {
+        if (matcher.matches()) {
             return getCustomCommand(matcher.group(1), matcher.group(2), matcher.group(3));
         }
         matcher = unknownPattern.matcher(cmd);
-        if ( matcher.matches()) {
+        if (matcher.matches()) {
             return getCustomCommand(matcher.group(1), null, null);
         }
 //        System.out.println("Could not parse: " + cmd);
         return null;
     }
-    
+
+    public static NodoCommand getStatusCommand(CommandInfo setting, int nodo) {
+        return getStatusCommand(setting, -1, nodo);
+    }
+
+    public static NodoCommand getStatusCommand(CommandInfo setting, int item, int nodo) {
+        CommandInfo status = CommandLoader.get(CommandInfo.Name.Status);
+        NodoCommand cmd = new NodoCommand(status, setting == null ? "All" : setting.getName(), item < 0 ? null : String.valueOf(item));
+        if ( nodo > 0 ) {
+            cmd.setTargetNodo(nodo);
+        }
+        return cmd;
+    }
+
+    public static NodoCommand getCustomCommand(String cmd, String v1, String v2) {
+        NodoCommand nc = new NodoCommand(cmd, v1, v2);
+        nc.custom = true;
+        // TODO: Ouch. I do not know if the created command is local or not.
+        // Let the Nodo decide than...
+        nc.localOnly = false;
+//        System.out.println("Created CUSTOM with: " + nc.getName() + ":" + nc.getData1() + ":" + nc.getData2());
+        return nc;
+    }
+
     public boolean matches(Device device) {
         return name.equals(device.getSignal()) || toString().equals(device.getSignal());
     }
@@ -91,89 +111,34 @@ public class NodoCommand {
         }
     }
 
-    public static NodoCommand getStatusCommand(CommandInfo setting) {
-        return getStatusCommand(setting, -1);
-    }
-
-    public static NodoCommand getStatusCommand(CommandInfo setting, int item) {
-        CommandInfo status = CommandLoader.get(CommandInfo.Name.Status);
-        return new NodoCommand(status, setting==null?"All":setting.getName(), item<0?null:String.valueOf(item));
-    }
-
-    public static NodoCommand getCustomCommand(String cmd, String v1, String v2) {
-        NodoCommand nc = new NodoCommand(cmd, v1, v2);
-        nc.custom = true;
-        // TODO: Ouch. I do not know if the created command is local or not.
-        // Let the Nodo decide than...
-        nc.local = false;
-//        System.out.println("Created CUSTOM with: " + nc.getName() + ":" + nc.getData1() + ":" + nc.getData2());
-        return nc;
-    }
-
     public boolean isCustom() {
         return custom;
     }
 
-    public void addUnit(int i) {
-        if (i >= 0 && i < 16) {
-            units.add(i);
-        }
-    }
-
-    private void addCurrentUnit() {
-        this.useLocalUnit = true;
-    }
-
-    private int[] getUnits() {
-        Integer[] ints = units.toArray(new Integer[0]);
-        int[] result = new int[ints.length];
-        for (int i = 0; i < ints.length; i++) {
-            result[i] = ints[i].intValue();
-        }
-        return result;
-    }
-
     public String getRawCommand() {
         StringBuilder builder = new StringBuilder();
-        if (local) {
-            addCommand(builder);
-            return builder.toString();
+        if (useLocalUnit || sendToUnits.isEmpty()) {
+            builder.append(toString());
+            builder.append(';');
         }
-
-        int[] list = getUnits();
-        if (list.length > 0) {
-            if (useLocalUnit) {
-                addCommand(builder);
-                builder.append(NEWLINE);
-            }
-            for (int i = 0; i < list.length; i++) {
-                int unit = list[i];
+        if (!localOnly) {
+            for (Integer unit : sendToUnits) {
                 builder.append("Divert");
                 builder.append(" ");
                 builder.append(unit);
                 builder.append("; ");
-                addCommand(builder);
-
-                if (i < (list.length - 1)) {
-                    builder.append(NEWLINE);
-                }
+                builder.append(toString());
+                builder.append(';');
             }
-        } else {
-            addCommand(builder);
         }
         return builder.toString();
-    }
-
-    private void addCommand(StringBuilder builder) {
-        builder.append(toString());
-        builder.append(';');
     }
 
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         if (custom) {
-            if ( name != null && name.length() > 4 ) {
+            if (name != null && name.length() > 4) {
                 return "0x" + name;
             }
             if (name == null) {
@@ -225,6 +190,11 @@ public class NodoCommand {
         return data2;
     }
 
+    public void setTargetNodo(int unit) {
+        useLocalUnit = false;
+        sendToUnits.clear();
+        sendToUnits.add(unit);
+    }
     /**
      * Normally, you have to specify to which unit the command is sent.
      * By default, this is the local unit.
@@ -234,13 +204,13 @@ public class NodoCommand {
      */
     public void makeDistributed() {
         Options options = Options.getInstance();
+        useLocalUnit = options.isUseLocalUnit();
+        sendToUnits.clear();
+
         if (options.isUseRemoteUnits()) {
             String[] list = options.getRemoteUnits();
-            if (list.length > 0 && options.isUseLocalUnit()) {
-                addCurrentUnit();
-            }
             for (int i = 0; i < list.length; i++) {
-                addUnit(Integer.parseInt(list[i], 16));
+                sendToUnits.add(Integer.parseInt(list[i]/*, 16*/));
             }
         }
     }

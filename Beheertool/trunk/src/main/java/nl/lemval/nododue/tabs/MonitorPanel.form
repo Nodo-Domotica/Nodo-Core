@@ -23,9 +23,10 @@
               <EmptySpace max="-2" attributes="0"/>
               <Component id="inoutputGroup" min="-2" pref="373" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
-              <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="refreshGroup" pref="393" max="32767" attributes="1"/>
+              <Group type="103" groupAlignment="1" attributes="0">
+                  <Component id="refreshGroup" alignment="0" pref="393" max="32767" attributes="1"/>
                   <Component id="graphGroup" alignment="0" max="32767" attributes="1"/>
+                  <Component id="useLocalUnit" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
@@ -38,7 +39,9 @@
               <Group type="103" groupAlignment="0" attributes="0">
                   <Group type="102" alignment="0" attributes="0">
                       <Component id="graphGroup" min="-2" pref="222" max="-2" attributes="0"/>
-                      <EmptySpace min="-2" pref="66" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="useLocalUnit" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace min="-2" pref="38" max="-2" attributes="0"/>
                       <Component id="refreshGroup" min="-2" max="-2" attributes="0"/>
                   </Group>
                   <Component id="inoutputGroup" min="-2" pref="338" max="-2" attributes="1"/>
@@ -704,5 +707,16 @@
         </Container>
       </SubComponents>
     </Container>
+    <Component class="javax.swing.JCheckBox" name="useLocalUnit">
+      <Properties>
+        <Property name="action" type="javax.swing.Action" editor="org.netbeans.modules.swingapp.ActionEditor">
+          <action class="nl.lemval.nododue.tabs.MonitorPanel" id="selectUnit" methodName="selectUnit"/>
+        </Property>
+        <Property name="selected" type="boolean" value="true"/>
+        <Property name="text" type="java.lang.String" resourceKey="useLocalUnit.text"/>
+        <Property name="horizontalTextPosition" type="int" value="2"/>
+        <Property name="name" type="java.lang.String" value="useLocalUnit" noResource="true"/>
+      </Properties>
+    </Component>
   </SubComponents>
 </Form>

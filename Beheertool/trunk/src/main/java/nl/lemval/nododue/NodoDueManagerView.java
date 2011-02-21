@@ -16,7 +16,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
-import java.util.Arrays;
 import java.util.Collection;
 import javax.swing.Timer;
 import javax.swing.Icon;
@@ -46,139 +45,140 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
     private ConnectPanel connectPanel;
     private MacroPanel macroPanel;
     private SettingsPanel settingsPanel;
-
     private final Timer messageTimer;
     private final Timer busyIconTimer;
     private final Icon idleIcon;
     private final Icon[] busyIcons = new Icon[15];
     private int busyIconIndex = 0;
-
     private JDialog aboutBox;
     private JDialog optionsBox;
     private JDialog dateTimeBox;
-    private JDialog unitBox;
+    private UnitSelectorBox unitBox;
     private JDialog devicesBox;
     private CommandHistoryBox historyBox;
 
     public NodoDueManagerView(SingleFrameApplication app) {
-	super(app);
+        super(app);
 
-	initComponents();
+        initComponents();
 
-	ResourceMap resourceMap = getResourceMap();
+        ResourceMap resourceMap = getResourceMap();
 
-	this.connectPanel = new ConnectPanel(this);
-	this.macroPanel = new MacroPanel(this);
-	this.settingsPanel = new SettingsPanel(this);
+        this.connectPanel = new ConnectPanel(this);
+        this.macroPanel = new MacroPanel(this);
+        this.settingsPanel = new SettingsPanel(this);
 
-	tabContainer.addTab(resourceMap.getString("tab.connection"), connectPanel);
-	tabContainer.addTab(resourceMap.getString("tab.nodoCommand"), new NodoCommandPanel(this));
-	tabContainer.addTab(resourceMap.getString("tab.macroCommand"), macroPanel);
-	tabContainer.addTab(resourceMap.getString("tab.kakuCommand"), new KakuCommandPanel(this));
-	tabContainer.addTab(resourceMap.getString("tab.settings"), settingsPanel);
-	tabContainer.addTab(resourceMap.getString("tab.monitor"), new MonitorPanel(this));
-	tabContainer.addTab(resourceMap.getString("tab.raw"), new RawSignalPanel(this));
+        tabContainer.addTab(resourceMap.getString("tab.connection"), connectPanel);
+        tabContainer.addTab(resourceMap.getString("tab.nodoCommand"), new NodoCommandPanel(this));
+        tabContainer.addTab(resourceMap.getString("tab.macroCommand"), macroPanel);
+        tabContainer.addTab(resourceMap.getString("tab.kakuCommand"), new KakuCommandPanel(this));
+        tabContainer.addTab(resourceMap.getString("tab.settings"), settingsPanel);
+        tabContainer.addTab(resourceMap.getString("tab.monitor"), new MonitorPanel(this));
+        tabContainer.addTab(resourceMap.getString("tab.raw"), new RawSignalPanel(this));
 
-	showConnectMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_1, InputEvent.CTRL_MASK));
-	showCommandMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_2, InputEvent.CTRL_MASK));
-	showMacroMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_3, InputEvent.CTRL_MASK));
-	showKakuMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_4, InputEvent.CTRL_MASK));
-	showConfigMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_5, InputEvent.CTRL_MASK));
-	showMonitorMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_6, InputEvent.CTRL_MASK));
-	showRawSignalMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_7, InputEvent.CTRL_MASK));
+        showConnectMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_1, InputEvent.CTRL_MASK));
+        showCommandMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_2, InputEvent.CTRL_MASK));
+        showMacroMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_3, InputEvent.CTRL_MASK));
+        showKakuMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_4, InputEvent.CTRL_MASK));
+        showConfigMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_5, InputEvent.CTRL_MASK));
+        showMonitorMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_6, InputEvent.CTRL_MASK));
+        showRawSignalMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_7, InputEvent.CTRL_MASK));
 
         historyMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.CTRL_MASK));
 
-	unitLabel.setBorder(new CompoundBorder(unitLabel.getBorder(), new EmptyBorder(2, 5, 2, 5)));
-	statusMessageLabel.setText("");
-	statusAnimationLabel.setVisible(false);
-	getFrame().setResizable(false);
+        unitLabel.setBorder(new CompoundBorder(unitLabel.getBorder(), new EmptyBorder(2, 5, 2, 5)));
+        statusMessageLabel.setText("");
+        statusAnimationLabel.setVisible(false);
+        getFrame().setResizable(false);
 
-	// status bar initialization - message timeout, idle icon and busy animation, etc
-	int messageTimeout = resourceMap.getInteger("StatusBar.messageTimeout");
-	messageTimer = new Timer(messageTimeout, new ActionListener() {
-	    public void actionPerformed(ActionEvent e) {
-		statusMessageLabel.setText("");
-	    }
-	});
-	messageTimer.setRepeats(false);
-	int busyAnimationRate = resourceMap.getInteger("StatusBar.busyAnimationRate");
-	for (int i = 0; i < busyIcons.length; i++) {
-	    busyIcons[i] = resourceMap.getIcon("StatusBar.busyIcons[" + i + "]");
-	}
-	busyIconTimer = new Timer(busyAnimationRate, new ActionListener() {
-	    public void actionPerformed(ActionEvent e) {
-		busyIconIndex = (busyIconIndex + 1) % busyIcons.length;
-		statusAnimationLabel.setIcon(busyIcons[busyIconIndex]);
-	    }
-	});
-	idleIcon = resourceMap.getIcon("StatusBar.idleIcon");
-	statusAnimationLabel.setIcon(idleIcon);
-	progressBar.setVisible(false);
+        // status bar initialization - message timeout, idle icon and busy animation, etc
+        int messageTimeout = resourceMap.getInteger("StatusBar.messageTimeout");
+        messageTimer = new Timer(messageTimeout, new ActionListener()  {
 
-	// connecting action tasks to status bar via TaskMonitor
-	TaskMonitor taskMonitor = new TaskMonitor(getApplication().getContext());
-	taskMonitor.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
-	    public void propertyChange(java.beans.PropertyChangeEvent evt) {
-		String propertyName = evt.getPropertyName();
-		if ("started".equals(propertyName)) {
-		    if (!busyIconTimer.isRunning()) {
-			statusAnimationLabel.setIcon(busyIcons[0]);
-			busyIconIndex = 0;
-			busyIconTimer.start();
-		    }
-		    progressBar.setVisible(true);
-		    progressBar.setIndeterminate(true);
-		} else if ("done".equals(propertyName)) {
-		    busyIconTimer.stop();
-		    statusAnimationLabel.setIcon(idleIcon);
-		    progressBar.setVisible(false);
-		    progressBar.setValue(0);
-		} else if ("message".equals(propertyName)) {
-		    String text = (String) (evt.getNewValue());
-		    statusMessageLabel.setText((text == null) ? "" : text);
-		    messageTimer.restart();
-		} else if ("progress".equals(propertyName)) {
-		    int value = (Integer) (evt.getNewValue());
-		    progressBar.setVisible(true);
-		    progressBar.setIndeterminate(false);
-		    progressBar.setValue(value);
-		}
-	    }
-	});
+            public void actionPerformed(ActionEvent e) {
+                statusMessageLabel.setText("");
+            }
+        });
+        messageTimer.setRepeats(false);
+        int busyAnimationRate = resourceMap.getInteger("StatusBar.busyAnimationRate");
+        for (int i = 0; i < busyIcons.length; i++) {
+            busyIcons[i] = resourceMap.getIcon("StatusBar.busyIcons[" + i + "]");
+        }
+        busyIconTimer = new Timer(busyAnimationRate, new ActionListener()  {
+
+            public void actionPerformed(ActionEvent e) {
+                busyIconIndex = (busyIconIndex + 1) % busyIcons.length;
+                statusAnimationLabel.setIcon(busyIcons[busyIconIndex]);
+            }
+        });
+        idleIcon = resourceMap.getIcon("StatusBar.idleIcon");
+        statusAnimationLabel.setIcon(idleIcon);
+        progressBar.setVisible(false);
+
+        // connecting action tasks to status bar via TaskMonitor
+        TaskMonitor taskMonitor = new TaskMonitor(getApplication().getContext());
+        taskMonitor.addPropertyChangeListener(new java.beans.PropertyChangeListener()  {
+
+            public void propertyChange(java.beans.PropertyChangeEvent evt) {
+                String propertyName = evt.getPropertyName();
+                if ("started".equals(propertyName)) {
+                    if (!busyIconTimer.isRunning()) {
+                        statusAnimationLabel.setIcon(busyIcons[0]);
+                        busyIconIndex = 0;
+                        busyIconTimer.start();
+                    }
+                    progressBar.setVisible(true);
+                    progressBar.setIndeterminate(true);
+                } else if ("done".equals(propertyName)) {
+                    busyIconTimer.stop();
+                    statusAnimationLabel.setIcon(idleIcon);
+                    progressBar.setVisible(false);
+                    progressBar.setValue(0);
+                } else if ("message".equals(propertyName)) {
+                    String text = (String) (evt.getNewValue());
+                    statusMessageLabel.setText((text == null) ? "" : text);
+                    messageTimer.restart();
+                } else if ("progress".equals(propertyName)) {
+                    int value = (Integer) (evt.getNewValue());
+                    progressBar.setVisible(true);
+                    progressBar.setIndeterminate(false);
+                    progressBar.setValue(value);
+                }
+            }
+        });
     }
 
     @Action
     public void showAboutBox() {
-	if (aboutBox == null) {
-	    JFrame mainFrame = NodoDueManager.getApplication().getMainFrame();
-	    aboutBox = new NodoDueManagerAboutBox(mainFrame);
-	    aboutBox.setLocationRelativeTo(mainFrame);
-	}
-	NodoDueManager.getApplication().show(aboutBox);
+        if (aboutBox == null) {
+            JFrame mainFrame = NodoDueManager.getApplication().getMainFrame();
+            aboutBox = new NodoDueManagerAboutBox(mainFrame);
+            aboutBox.setLocationRelativeTo(mainFrame);
+        }
+        NodoDueManager.getApplication().show(aboutBox);
     }
 
     @Action
     public void showHistoryBox() {
-	if (historyBox == null) {
-	    NodoDueManager app = NodoDueManager.getApplication();
-	    JFrame mainFrame = app.getMainFrame();
-	    historyBox = new CommandHistoryBox(mainFrame, false);
-	    historyBox.setLocationRelativeTo(mainFrame);
-	    SerialCommunicator comm = app.getSerialCommunicator();
-	    historyBox.setHistory(comm.getHistory());
-	}
-	NodoDueManager.getApplication().show(historyBox);
+        if (historyBox == null) {
+            NodoDueManager app = NodoDueManager.getApplication();
+            JFrame mainFrame = app.getMainFrame();
+            historyBox = new CommandHistoryBox(mainFrame, false);
+            historyBox.setLocationRelativeTo(mainFrame);
+            SerialCommunicator comm = app.getSerialCommunicator();
+            historyBox.setHistory(comm.getHistory());
+        }
+        NodoDueManager.getApplication().show(historyBox);
     }
 
     @Action
     public void showOptionsBox() {
-	if (optionsBox == null) {
-	    JFrame mainFrame = NodoDueManager.getApplication().getMainFrame();
-	    optionsBox = new NodoDueManagerOptionBox(mainFrame);
-	    optionsBox.setLocationRelativeTo(mainFrame);
-	}
-	NodoDueManager.getApplication().show(optionsBox);
+        if (optionsBox == null) {
+            JFrame mainFrame = NodoDueManager.getApplication().getMainFrame();
+            optionsBox = new NodoDueManagerOptionBox(mainFrame);
+            optionsBox.setLocationRelativeTo(mainFrame);
+        }
+        NodoDueManager.getApplication().show(optionsBox);
     }
 
     /** This method is called from within the constructor to
@@ -473,18 +473,18 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
     }// </editor-fold>//GEN-END:initComponents
 
     private void unitFieldMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_unitFieldMouseClicked
-	showUnitSelectorBox();
+        selectAndUpdateUnit(false);
     }//GEN-LAST:event_unitFieldMouseClicked
 
     public void showStatusMessage(String message) {
-	statusMessageLabel.setText(message);
-	connectPanel.handleOutputLine(message);
-	messageTimer.restart();
+        statusMessageLabel.setText(message);
+        connectPanel.handleOutputLine(message);
+        messageTimer.restart();
     }
 
     @Action
     public void connectNodo() {
-	connectPanel.connectSerial();
+        connectPanel.connectSerial();
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenu configMenu;
@@ -524,232 +524,248 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
     // End of variables declaration//GEN-END:variables
 
     public void readyForConnection(boolean state) {
-	connectStatus.setEnabled(state);
-	if (state) {
-	    connectStatus.setIcon(getResourceMap().getIcon("connectStatus.disconnect.icon")); // NOI18N
-	    connectStatus.setToolTipText(getResourceMap().getString("connectStatus.disconnect.tooltip"));
-	} else {
-	    connectStatus.setIcon(getResourceMap().getIcon("connectStatus.icon")); // NOI18N
-	    connectStatus.setToolTipText(getResourceMap().getString("connectStatus.disabled.tooltip"));
-	}
+        connectStatus.setEnabled(state);
+        if (state) {
+            connectStatus.setIcon(getResourceMap().getIcon("connectStatus.disconnect.icon")); // NOI18N
+            connectStatus.setToolTipText(getResourceMap().getString("connectStatus.disconnect.tooltip"));
+        } else {
+            connectStatus.setIcon(getResourceMap().getIcon("connectStatus.icon")); // NOI18N
+            connectStatus.setToolTipText(getResourceMap().getString("connectStatus.disabled.tooltip"));
+        }
     }
 
     public void connected(boolean valid) {
-	connectStatus.setIcon(getResourceMap().getIcon("connectStatus.connect.icon")); // NOI18N
-	connectStatus.setToolTipText(getResourceMap().getString("connectStatus.connect.tooltip"));
-	if (valid) {
-	    updateUnitField();
-	}
+        connectStatus.setIcon(getResourceMap().getIcon("connectStatus.connect.icon")); // NOI18N
+        connectStatus.setToolTipText(getResourceMap().getString("connectStatus.connect.tooltip"));
+        if (valid) {
+            updateUnitField();
+        }
     }
 
     public void disconnected() {
-	connectStatus.setIcon(getResourceMap().getIcon("connectStatus.disconnect.icon")); // NOI18N
-	connectStatus.setToolTipText(getResourceMap().getString("connectStatus.disconnect.tooltip"));
+        connectStatus.setIcon(getResourceMap().getIcon("connectStatus.disconnect.icon")); // NOI18N
+        connectStatus.setToolTipText(getResourceMap().getString("connectStatus.disconnect.tooltip"));
     }
 
     @Action
     public void macroLoadFromFile() {
-	File selected = selectFile(false, ".mac", "macro_file_description");
-	if (selected != null && selected.exists()) {
-	    Options.getInstance().setFolder(selected.getParent());
-	    macroPanel.loadFromFile(selected);
-	}
+        File selected = selectFile(false, ".mac", "macro_file_description");
+        if (selected != null && selected.exists()) {
+            Options.getInstance().setFolder(selected.getParent());
+            macroPanel.loadFromFile(selected);
+        }
     }
 
     @Action
     public void macroSaveToFile() {
-	File selected = selectFile(true, ".mac", "macro_file_description");
-	if (selected != null) {
-	    if (selected.getName().endsWith(".mac") == false) {
-		selected = new File(selected.getPath() + ".mac");
-	    }
-	    Options.getInstance().setFolder(selected.getParent());
-	    boolean overwrite = checkOverwrite(selected);
-	    macroPanel.saveToFile(selected, overwrite);
-	}
+        File selected = selectFile(true, ".mac", "macro_file_description");
+        if (selected != null) {
+            if (selected.getName().endsWith(".mac") == false) {
+                selected = new File(selected.getPath() + ".mac");
+            }
+            Options.getInstance().setFolder(selected.getParent());
+            boolean overwrite = checkOverwrite(selected);
+            macroPanel.saveToFile(selected, overwrite);
+        }
     }
 
     @Action
     public void configLoadFromFile() {
-	File selected = selectFile(false, ".ndc", "config_file_description");
-	if (selected == null || !selected.exists()) {
-	    return;
-	}
+        File selected = selectFile(false, ".ndc", "config_file_description");
+        if (selected == null || !selected.exists()) {
+            return;
+        }
 
-	Options.getInstance().setFolder(selected.getParent());
-	Collection<NodoSetting> settings = NodoSetting.loadFromFile(selected);
-	settingsPanel.updateSettings(settings);
+        Options.getInstance().setFolder(selected.getParent());
+        Collection<NodoSetting> settings = NodoSetting.loadFromFile(selected);
+        settingsPanel.updateSettings(settings);
     }
 
     @Action
     public void configSaveToFile() {
-	Collection<NodoSetting> settings = settingsPanel.getSettings();
-	if (settings == null || settings.isEmpty()) {
-	    // Ask retrieve settings from Nodo first....
-	    JOptionPane.showMessageDialog(this.getFrame(),
-		    getResourceMap().getString("saveConfig.message"),
-		    getResourceMap().getString("saveConfig.title"),
-		    JOptionPane.WARNING_MESSAGE);
-	    return;
-	}
+        Collection<NodoSetting> settings = settingsPanel.getSettings();
+        if (settings == null || settings.isEmpty()) {
+            // Ask retrieve settings from Nodo first....
+            JOptionPane.showMessageDialog(this.getFrame(),
+                    getResourceMap().getString("saveConfig.message"),
+                    getResourceMap().getString("saveConfig.title"),
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
 
-	File selected = selectFile(true, ".ndc", "config_file_description");
-	if (selected != null) {
-	    if (selected.getName().endsWith(".ndc") == false) {
-		selected = new File(selected.getPath() + ".ndc");
-	    }
-	    Options.getInstance().setFolder(selected.getParent());
-	    boolean overwrite = checkOverwrite(selected);
-	    NodoSetting.saveToFile(settings, selected, overwrite);
-	}
+        File selected = selectFile(true, ".ndc", "config_file_description");
+        if (selected != null) {
+            if (selected.getName().endsWith(".ndc") == false) {
+                selected = new File(selected.getPath() + ".ndc");
+            }
+            Options.getInstance().setFolder(selected.getParent());
+            boolean overwrite = checkOverwrite(selected);
+            NodoSetting.saveToFile(settings, selected, overwrite);
+        }
     }
 
     private boolean checkOverwrite(File selected) {
-	if (selected.exists() == false) {
-	    return false;
-	}
+        if (selected.exists() == false) {
+            return false;
+        }
 
-	Object[] options = {
-	    getResourceMap().getString("fileSelection.overwrite.yes"),
-	    getResourceMap().getString("fileSelection.overwrite.no")
-	};
-	int n = JOptionPane.showOptionDialog(this.getFrame(),
-		getResourceMap().getString("fileSelection.overwrite.question", selected.getName()),
-		getResourceMap().getString("fileSelection.overwrite.title"),
-		JOptionPane.YES_NO_OPTION,
-		JOptionPane.QUESTION_MESSAGE,
-		null,
-		options,
-		options[1]);
-	switch (n) {
-	    case JOptionPane.YES_OPTION:
-		return true;
-	    case JOptionPane.NO_OPTION:
-	    case JOptionPane.CLOSED_OPTION:
-	    case JOptionPane.CANCEL_OPTION:
-	    default:
-		break;
-	}
-	return false;
+        Object[] options = {
+            getResourceMap().getString("fileSelection.overwrite.yes"),
+            getResourceMap().getString("fileSelection.overwrite.no")
+        };
+        int n = JOptionPane.showOptionDialog(this.getFrame(),
+                getResourceMap().getString("fileSelection.overwrite.question", selected.getName()),
+                getResourceMap().getString("fileSelection.overwrite.title"),
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[1]);
+        switch (n) {
+            case JOptionPane.YES_OPTION:
+                return true;
+            case JOptionPane.NO_OPTION:
+            case JOptionPane.CLOSED_OPTION:
+            case JOptionPane.CANCEL_OPTION:
+            default:
+                break;
+        }
+        return false;
     }
 
     private File selectFile(boolean saveMode, final String ext, final String desc) {
-	String base = Options.getInstance().getFolder();
-	JFileChooser fc = new JFileChooser(base == null ? null : new File(base));
-	fc.setFileFilter(new FileFilter() {
-	    @Override
-	    public boolean accept(File f) {
-		return (f.isDirectory() || f.getName().endsWith(ext));
-	    }
+        String base = Options.getInstance().getFolder();
+        JFileChooser fc = new JFileChooser(base == null ? null : new File(base));
+        fc.setFileFilter(new FileFilter()  {
 
-	    @Override
-	    public String getDescription() {
-		return getResourceMap().getString(desc);
-	    }
-	});
-	int returnVal = saveMode
-		? fc.showSaveDialog(this.getComponent())
-		: fc.showOpenDialog(this.getComponent());
+            @Override
+            public boolean accept(File f) {
+                return (f.isDirectory() || f.getName().endsWith(ext));
+            }
 
-	if (returnVal == JFileChooser.APPROVE_OPTION) {
-	    return fc.getSelectedFile();
-	}
-	return null;
+            @Override
+            public String getDescription() {
+                return getResourceMap().getString(desc);
+            }
+        });
+        int returnVal = saveMode
+                ? fc.showSaveDialog(this.getComponent())
+                : fc.showOpenDialog(this.getComponent());
+
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+            return fc.getSelectedFile();
+        }
+        return null;
     }
 
     void initialize() {
-	TaskService ts = getApplication().getContext().getTaskService();
-	ts.execute(connectPanel.scanPorts());
-	tabContainer.setSelectedIndex(0);
+        TaskService ts = getApplication().getContext().getTaskService();
+        ts.execute(connectPanel.scanPorts());
+        tabContainer.setSelectedIndex(0);
     }
 
     @Action
     public void showConnectScreen() {
-	tabContainer.setSelectedIndex(0);
+        tabContainer.setSelectedIndex(0);
     }
 
     @Action
     public void showCommandScreen() {
-	tabContainer.setSelectedIndex(1);
+        tabContainer.setSelectedIndex(1);
     }
 
     @Action
     public void showMacroScreen() {
-	tabContainer.setSelectedIndex(2);
+        tabContainer.setSelectedIndex(2);
     }
 
     @Action
     public void showKakuScreen() {
-	tabContainer.setSelectedIndex(3);
+        tabContainer.setSelectedIndex(3);
     }
 
     @Action
     public void showConfigScreen() {
-	tabContainer.setSelectedIndex(4);
+        tabContainer.setSelectedIndex(4);
     }
 
     @Action
     public void showMonitorScreen() {
-	tabContainer.setSelectedIndex(5);
+        tabContainer.setSelectedIndex(5);
     }
 
     @Action
     public void showRawSignalScreen() {
-	tabContainer.setSelectedIndex(6);
+        tabContainer.setSelectedIndex(6);
     }
 
     @Action
-    public void showUnitSelectorBox() {
-	showUnitSelectionBox();
-	updateUnitField();
+    public void selectAndUpdateUnit(boolean singleNodo) {
+        showUnitSelectionBox(singleNodo);
+        updateUnitField();
     }
 
     private void updateUnitField() {
-	Options options = Options.getInstance();
-	String unit = "???";
-	if (options.isUseLocalUnit() && !options.isUseRemoteUnits()) {
-	    unit = String.valueOf(options.getNodoUnit());
-	} else {
-	    unit = (options.isUseLocalUnit() ? options.getNodoUnit() + "; " : "")
-		    + Arrays.toString(options.getRemoteUnits());
-	}
-	unitLabel.setText(getResourceMap().getString("unitLabel.info", unit));
+        Options options = Options.getInstance();
+        StringBuilder sb = new StringBuilder();
+        if (options.getNodoUnit() == 0) {
+            sb.append("???");
+        } else {
+            sb.append(String.valueOf(options.getNodoUnit()));
+            if (options.isUseRemoteUnits()) {
+                sb.append(" (");
+                if (options.isUseLocalUnit()) {
+                    sb.append(options.getNodoUnit());
+                    sb.append(",");
+                }
+                String[] remoteUnits = options.getRemoteUnits();
+                for (int i = 0; i < remoteUnits.length; i++) {
+                    sb.append(remoteUnits[i]);
+                    if ( i < remoteUnits.length-1 ) {
+                        sb.append(",");
+                    }
+                }
+                sb.append(")");
+            }
+        }
+        unitLabel.setText(getResourceMap().getString("unitLabel.info", sb.toString()));
     }
 
     @Action
     public void showDateTimeDialog() {
-	if (dateTimeBox == null) {
-	    JFrame mainFrame = NodoDueManager.getApplication().getMainFrame();
-	    dateTimeBox = new ConfigDateBox(mainFrame, false);
-	    dateTimeBox.setLocationRelativeTo(mainFrame);
-	}
-	NodoDueManager.getApplication().show(dateTimeBox);
+        if (dateTimeBox == null) {
+            JFrame mainFrame = NodoDueManager.getApplication().getMainFrame();
+            dateTimeBox = new ConfigDateBox(mainFrame, false);
+            dateTimeBox.setLocationRelativeTo(mainFrame);
+        }
+        NodoDueManager.getApplication().show(dateTimeBox);
     }
 
     @Action
     public void showDevicesBox() {
-	if (devicesBox == null) {
-	    JFrame mainFrame = NodoDueManager.getApplication().getMainFrame();
-	    devicesBox = new DevicesBox(mainFrame, false);
-	    devicesBox.setLocationRelativeTo(mainFrame);
-	}
-	NodoDueManager.getApplication().show(devicesBox);
+        if (devicesBox == null) {
+            JFrame mainFrame = NodoDueManager.getApplication().getMainFrame();
+            devicesBox = new DevicesBox(mainFrame, false);
+            devicesBox.setLocationRelativeTo(mainFrame);
+        }
+        NodoDueManager.getApplication().show(devicesBox);
     }
 
-    public void showUnitSelectionBox() {
-	if (unitBox == null) {
-	    JFrame mainFrame = NodoDueManager.getApplication().getMainFrame();
-	    unitBox = new UnitSelectorBox(mainFrame);
-	    unitBox.setLocationRelativeTo(mainFrame);
-	}
-	NodoDueManager.getApplication().show(unitBox);
+    public void showUnitSelectionBox(boolean singleUnit) {
+        if (unitBox == null) {
+            JFrame mainFrame = NodoDueManager.getApplication().getMainFrame();
+            unitBox = new UnitSelectorBox(mainFrame);
+            unitBox.setLocationRelativeTo(mainFrame);
+        }
+        unitBox.setSingleUnitSelectionMode(singleUnit);
+        NodoDueManager.getApplication().show(unitBox);
     }
 
     @Action
     public void showLearnCommandsDialog() {
-	    JFrame mainFrame = NodoDueManager.getApplication().getMainFrame();
-	    JDialog dialog = new LearnCommandBox(mainFrame, true);
-	    dialog.setLocationRelativeTo(mainFrame);
+        JFrame mainFrame = NodoDueManager.getApplication().getMainFrame();
+        JDialog dialog = new LearnCommandBox(mainFrame, true);
+        dialog.setLocationRelativeTo(mainFrame);
         NodoDueManager.getApplication().show(dialog);
     }
 }

@@ -411,7 +411,7 @@ public class EventActionPanel extends NodoBasePanel {
 
     @Action
     public void selectUnits() {
-        NodoDueManager.getApplication().getView().showUnitSelectionBox();
+        NodoDueManager.getApplication().getView().showUnitSelectionBox(false);
     }
 
     public void setSelected(NodoCommand cmd) {

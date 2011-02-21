@@ -69,6 +69,7 @@ public class ConfigDateBox extends javax.swing.JDialog {
         org.jdesktop.application.ResourceMap resourceMap = org.jdesktop.application.Application.getInstance(nl.lemval.nododue.NodoDueManager.class).getContext().getResourceMap(ConfigDateBox.class);
         setTitle(resourceMap.getString("Form.title")); // NOI18N
         setName("Form"); // NOI18N
+        setResizable(false);
 
         selectionPanel.setName("selectionPanel"); // NOI18N
 
@@ -90,16 +91,11 @@ public class ConfigDateBox extends javax.swing.JDialog {
         selectionPanelLayout.setHorizontalGroup(
             selectionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(selectionPanelLayout.createSequentialGroup()
+                .addContainerGap()
                 .addGroup(selectionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(selectionPanelLayout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(readTimeButton))
-                    .addGroup(selectionPanelLayout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(syncButton))
-                    .addGroup(selectionPanelLayout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(writeTimeButton)))
+                    .addComponent(readTimeButton)
+                    .addComponent(syncButton)
+                    .addComponent(writeTimeButton))
                 .addContainerGap(81, Short.MAX_VALUE))
         );
         selectionPanelLayout.setVerticalGroup(
@@ -130,7 +126,7 @@ public class ConfigDateBox extends javax.swing.JDialog {
         );
         contentPanelLayout.setVerticalGroup(
             contentPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 39, Short.MAX_VALUE)
+            .addGap(0, 52, Short.MAX_VALUE)
         );
 
         javax.swing.GroupLayout calendarPanelLayout = new javax.swing.GroupLayout(calendarPanel);
@@ -150,8 +146,7 @@ public class ConfigDateBox extends javax.swing.JDialog {
             .addGroup(calendarPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(calendarPanelLayout.createSequentialGroup()
                     .addContainerGap()
-                    .addComponent(contentPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 39, Short.MAX_VALUE)
-                    .addContainerGap()))
+                    .addComponent(contentPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 52, Short.MAX_VALUE)))
         );
 
         getContentPane().add(calendarPanel, java.awt.BorderLayout.PAGE_START);
@@ -280,7 +275,8 @@ public class ConfigDateBox extends javax.swing.JDialog {
         cis.add(CommandLoader.get(Name.ClockSetTime));
         cis.add(CommandLoader.get(Name.ClockSetDOW));
 
-        Collection<NodoSetting> settings = NodoSettingRetriever.getSettings(cis);
+        // TODO: Allow to send to another unit.
+        Collection<NodoSetting> settings = NodoSettingRetriever.getSettings(cis, 0);
         if (settings == null) {
             return null;
         }

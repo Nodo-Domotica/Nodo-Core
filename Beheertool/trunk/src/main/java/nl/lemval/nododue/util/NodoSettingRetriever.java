@@ -28,27 +28,27 @@ public class NodoSettingRetriever {
     public static Collection<NodoSetting> getAllSettings() {
         Collection<CommandInfo> cis = CommandLoader.getActions(CommandType.ALL);
 //        long t = System.currentTimeMillis();
-        ArrayList<NodoResponse> result = queryCommands(null);
-//        System.out.println("Querying took " + (System.currentTimeMillis()-t) + "ms.");
-        return parseSettings(result, cis);
-    }
-    
-    public static Collection<NodoSetting> getSettings(Collection<CommandInfo> cis) {
-        // If there is full display, this is quicker than all settings.
-        // If there is minimal display, this is slower on 20+ settings.
-//        long t = System.currentTimeMillis();
-        ArrayList<NodoResponse> result = queryCommands(cis);
+        ArrayList<NodoResponse> result = queryCommands(null, 0);
 //        System.out.println("Querying took " + (System.currentTimeMillis()-t) + "ms.");
         return parseSettings(result, cis);
     }
 
-    private static ArrayList<NodoResponse> queryCommands(Collection<CommandInfo> cis) {
+    public static Collection<NodoSetting> getSettings(Collection<CommandInfo> cis, int nodo) {
+        // If there is full display, this is quicker than all settings.
+        // If there is minimal display, this is slower on 20+ settings.
+//        long t = System.currentTimeMillis();
+        ArrayList<NodoResponse> result = queryCommands(cis, nodo);
+//        System.out.println("Querying took " + (System.currentTimeMillis()-t) + "ms.");
+        return parseSettings(result, cis);
+    }
+
+    private static ArrayList<NodoResponse> queryCommands(Collection<CommandInfo> cis, int nodo) {
 //        final StringBuilder builder = new StringBuilder();
         final ArrayList<NodoResponse> result = new ArrayList<NodoResponse>();
         final long[] inputReceived = new long[1];
         inputReceived[0] = System.currentTimeMillis();
-        OutputEventListener listener = new OutputEventListener()   {
-            
+        OutputEventListener listener = new OutputEventListener()    {
+
             public void handleOutputLine(String message) {
                 inputReceived[0] = System.currentTimeMillis();
             }
@@ -58,7 +58,7 @@ public class NodoSettingRetriever {
 
             public void handleNodoResponses(NodoResponse[] responses) {
                 for (NodoResponse nodoResponse : responses) {
-                    if ( nodoResponse.is(NodoResponse.Direction.Output)) {
+                    if (nodoResponse.is(NodoResponse.Direction.Output)) {
                         result.add(nodoResponse);
                     }
                 }
@@ -71,30 +71,32 @@ public class NodoSettingRetriever {
         }
         comm.addOutputListener(listener);
 
-        if ( cis == null ) {
-            comm.send(NodoCommand.getStatusCommand(null));
+        if (cis == null) {
+            NodoCommand statusCommand = NodoCommand.getStatusCommand(null, nodo);
+            comm.send(statusCommand);
         } else {
             for (CommandInfo ci : cis) {
                 int[] range = ci.getQueryRange();
                 if (range.length > 0) {
                     for (int i = 0; i < range.length; i++) {
-                        final NodoCommand statusCommand = NodoCommand.getStatusCommand(ci, range[i]);
+                        final NodoCommand statusCommand = NodoCommand.getStatusCommand(ci, range[i], nodo);
                         comm.send(statusCommand);
                         comm.waitCommand();
                     }
                 } else {
-                    final NodoCommand statusCommand = NodoCommand.getStatusCommand(ci);
+                    final NodoCommand statusCommand = NodoCommand.getStatusCommand(ci, nodo);
                     comm.send(statusCommand);
                     comm.waitCommand();
                 }
             }
         }
+        while (inputReceived[0] + 250 > System.currentTimeMillis()) {
+            comm.waitCommand(250);
+        }
+
         // Need to sleep and wait for the response, since the Nodo cannot
         // handle all the commands at once. Waitcommand does not help, due
         // to the busy indicator can be reset by an earlier command.
-        while ( inputReceived[0] + 250 > System.currentTimeMillis() ) {
-            comm.waitCommand(250);
-        }
         comm.removeOutputListener(listener);
         return result;
     }
@@ -121,7 +123,7 @@ public class NodoSettingRetriever {
         return rv;
     }
 
-    public static void storeSettings(Collection<NodoSetting> settings) {
+    public static void storeSettings(Collection<NodoSetting> settings, int unit) {
         SerialCommunicator comm =
                 NodoDueManager.getApplication().getSerialCommunicator();
         if (!comm.isListening()) {
@@ -136,7 +138,9 @@ public class NodoSettingRetriever {
             CommandInfo cmd = map.get(nodoSetting.getName());
             if (cmd != null) {
                 NodoCommand nc = new NodoCommand(cmd, nodoSetting.getAttributeData1(), nodoSetting.getAttributeData2());
-                nc.makeDistributed();
+                if (unit > 0) {
+                    nc.setTargetNodo(unit);
+                }
                 comm.send(nc);
                 comm.waitCommand(50, 500);
             }

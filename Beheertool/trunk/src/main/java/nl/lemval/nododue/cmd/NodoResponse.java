@@ -9,8 +9,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import nl.lemval.nododue.cmd.CommandInfo.Name;
 
 /**
@@ -20,8 +18,8 @@ import nl.lemval.nododue.cmd.CommandInfo.Name;
 public class NodoResponse {
 
     private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-    private Source source;
-    private Direction direction;
+    private Source source = Source.Unknown;
+    private Direction direction = Direction.Unknown;
     private Date time;
     private NodoCommand command;
     private int unit;
@@ -39,6 +37,7 @@ public class NodoResponse {
         IR,
         Serial,
         System,
+        Unknown,
     }
 
     public static NodoResponse[] getResponses(String message) {
@@ -52,10 +51,6 @@ public class NodoResponse {
             for (int j = 0; j < responseData.length; j++) {
                 String[] elemData = responseData[j].split("=");
                 if (elemData.length == 1) {
-                    if ( response.direction == null ) {
-                        // This is an assumption, s
-                        response.direction = Direction.Output;
-                    }
                     response.parseSingle(elemData[0]);
                 } else {
                     response.parseDouble(elemData);
@@ -122,11 +117,11 @@ public class NodoResponse {
     }
 
     public boolean is(Direction d) {
-        return d == direction;
+        return direction == Direction.Unknown || d == direction;
     }
 
     public boolean is(Source s) {
-        return s == source;
+        return source == Source.Unknown || s == source;
     }
 
     public boolean is(Name name) {
@@ -142,6 +137,10 @@ public class NodoResponse {
             return direction.name();
         }
         return Direction.Unknown.name();
+    }
+
+    public int getUnit() {
+        return unit;
     }
 
     @Override

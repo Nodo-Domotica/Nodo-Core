@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.TreeSet;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.JOptionPane;
 import nl.lemval.nododue.NodoDueManager;
 import nl.lemval.nododue.Options;
 import nl.lemval.nododue.cmd.CommandInfo;
@@ -31,9 +32,11 @@ import org.jdesktop.application.Action;
  */
 public class UnitSelectorBox extends javax.swing.JDialog {
 
+    private boolean singleUnitSelectionMode = false;
+
     private static final String ALL_NODOS = "Alle";
     /** Gesorteerde lijst van remote units in het tekstveld */
-    private TreeSet<String> remoteUnits = new TreeSet<String>(new Comparator<String>()  {
+    private TreeSet<String> remoteUnits = new TreeSet<String>(new Comparator<String>()       {
 
         public int compare(String o1, String o2) {
             try {
@@ -66,6 +69,10 @@ public class UnitSelectorBox extends javax.swing.JDialog {
             refreshDialog();
         }
         super.setVisible(state);
+    }
+
+    public void setSingleUnitSelectionMode(boolean singleUnit) {
+        singleUnitSelectionMode = singleUnit;
     }
 
     private void refreshDialog() {
@@ -116,6 +123,9 @@ public class UnitSelectorBox extends javax.swing.JDialog {
             options.setUseRemoteUnits(true);
             String su = (String) remoteUnitSelection.getSelectedItem();
             HashSet<String> set = new HashSet<String>();
+            if (ALL_NODOS.equals(su)) {
+                su = "0";
+            }
             set.add(su);
             options.setRemoteUnits(set);
         } else {
@@ -309,8 +319,12 @@ public class UnitSelectorBox extends javax.swing.JDialog {
     private void remoteUnitSelectionItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_remoteUnitSelectionItemStateChanged
         if (evt.getStateChange() == ItemEvent.SELECTED) {
             String value = (String) evt.getItem();
-            // TODO
-            remoteButton.getModel().setSelected(true);
+            if (ALL_NODOS.equals(value)) {
+                scanRemoteButton.setEnabled(false);
+            } else {
+                scanRemoteButton.setEnabled(true);
+            }
+            remoteButton.setSelected(true);
         }
     }//GEN-LAST:event_remoteUnitSelectionItemStateChanged
 
@@ -348,17 +362,19 @@ public class UnitSelectorBox extends javax.swing.JDialog {
 
     @Action
     public void validateRemoteUnit() {
-// TODO
-            if ( true ) return;
+        String selectedItem = (String) remoteUnitSelection.getSelectedItem();
+        if (ALL_NODOS.equals(selectedItem)) {
+            selectedItem = "All";
+        }
 
-            if (NodoDueManager.hasConnection()) {
+        if (NodoDueManager.hasConnection()) {
             setCursor(new Cursor(Cursor.WAIT_CURSOR));
 
             SerialCommunicator comm = NodoDueManager.getApplication().getSerialCommunicator();
 
 //            final StringBuilder result = new StringBuilder();
             final ArrayList<NodoResponse> responses = new ArrayList<NodoResponse>();
-            OutputEventListener listener = new OutputEventListener()  {
+            OutputEventListener listener = new OutputEventListener()      {
 
                 public void handleOutputLine(String message) {
 //                    result.append(message);
@@ -374,24 +390,30 @@ public class UnitSelectorBox extends javax.swing.JDialog {
                 }
             };
             comm.addOutputListener(listener);
-            int unit = Integer.parseInt((String) remoteUnitSelection.getSelectedItem());
             CommandInfo info = CommandLoader.get(CommandInfo.Name.Unit);
-// TODO
-            if ( true ) return;
-            
-            //            NodoCommand cmd = NodoCommand.getRemoteStatusCommand(info, unit);
-//            comm.send(cmd);
-            comm.waitCommand(1500);
-            comm.removeOutputListener(listener);
-            // Parse result
+            int unit = Integer.parseInt(selectedItem);
+            NodoCommand cmd = NodoCommand.getStatusCommand(info, unit);
+            long t = System.currentTimeMillis();
+            boolean found = false;
             HashSet<String> data = new HashSet<String>();
-            for (NodoResponse nodoResponse : responses) {
-                if ( nodoResponse.is(CommandInfo.Name.Unit) ) {
-                    data.add(nodoResponse.getCommand().getData1());
+            comm.send(cmd);
+            do {
+                comm.waitCommand(100);
+                // Parse result
+                for (NodoResponse nodoResponse : responses) {
+//                    System.out.println("Received: " + nodoResponse);
+                    if (nodoResponse.is(CommandInfo.Name.Unit)
+                            && nodoResponse.is(NodoResponse.Direction.Input)) {
+                        data.add(nodoResponse.getCommand().getData1());
+                        found = true;
+                    }
                 }
-            }
-            if ( data.size() > 0 ) {
+            } while (!found && (System.currentTimeMillis() - t) < 5000);
+            comm.removeOutputListener(listener);
+            if (data.size() > 0) {
                 Options.getInstance().setRemoteUnits(data);
+            } else {
+                JOptionPane.showMessageDialog(this, "Remote unit '" + unit + "' not found within 5 seconds");
             }
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
         }
@@ -403,7 +425,7 @@ public class UnitSelectorBox extends javax.swing.JDialog {
             setCursor(new Cursor(Cursor.WAIT_CURSOR));
 
             SerialCommunicator comm = NodoDueManager.getApplication().getSerialCommunicator();
-            OutputEventListener listener = new OutputEventListener()  {
+            OutputEventListener listener = new OutputEventListener()      {
 
                 public void handleOutputLine(String message) {
                 }
@@ -418,7 +440,7 @@ public class UnitSelectorBox extends javax.swing.JDialog {
             comm.addOutputListener(listener);
 
             CommandInfo info = CommandLoader.get(CommandInfo.Name.Unit);
-            NodoCommand cmd = NodoCommand.getStatusCommand(info);
+            NodoCommand cmd = NodoCommand.getStatusCommand(info, 0);
             comm.send(cmd);
             comm.waitCommand(500, 1000);
 

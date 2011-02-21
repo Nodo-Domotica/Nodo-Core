@@ -83,6 +83,8 @@ public class MonitorPanel extends NodoBasePanel {
         allWires.get(2, Type.Input).setSignalType(ir);
         allWires.get(3, Type.Input).setSignalType(ir);
         allWires.get(4, Type.Input).setSignalType(ir);
+        
+        useLocalUnit.setVisible(false);
     }
 
     /** This method is called from within the constructor to
@@ -131,6 +133,7 @@ public class MonitorPanel extends NodoBasePanel {
         rrSlider = new javax.swing.JSlider();
         rrValue = new javax.swing.JTextField();
         rrLabel = new javax.swing.JLabel();
+        useLocalUnit = new javax.swing.JCheckBox();
 
         setName("Form"); // NOI18N
 
@@ -511,6 +514,12 @@ public class MonitorPanel extends NodoBasePanel {
 
         refreshGroup.add(jPanel1);
 
+        useLocalUnit.setAction(actionMap.get("selectUnit")); // NOI18N
+        useLocalUnit.setSelected(true);
+        useLocalUnit.setText(resourceMap.getString("useLocalUnit.text")); // NOI18N
+        useLocalUnit.setHorizontalTextPosition(javax.swing.SwingConstants.LEFT);
+        useLocalUnit.setName("useLocalUnit"); // NOI18N
+
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -519,9 +528,10 @@ public class MonitorPanel extends NodoBasePanel {
                 .addContainerGap()
                 .add(inoutputGroup, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 373, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(refreshGroup, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 393, Short.MAX_VALUE)
-                    .add(graphGroup, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, refreshGroup, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 393, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, graphGroup, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .add(useLocalUnit))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -531,7 +541,9 @@ public class MonitorPanel extends NodoBasePanel {
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(layout.createSequentialGroup()
                         .add(graphGroup, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 222, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .add(66, 66, 66)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                        .add(useLocalUnit)
+                        .add(38, 38, 38)
                         .add(refreshGroup, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                     .add(inoutputGroup, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 338, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(21, Short.MAX_VALUE))
@@ -853,8 +865,13 @@ public class MonitorPanel extends NodoBasePanel {
             cis.add(wiredThd);
             cis.add(wiredAna);
             cis.add(wiredRng);
-//	    System.out.println("Refreshing...");
-            Collection<NodoSetting> settings = NodoSettingRetriever.getSettings(cis);
+
+            int nodo = 0;
+            if ( !useLocalUnit.isSelected() ) {
+                String name = Options.getInstance().getRemoteUnits()[0];
+                nodo = Integer.parseInt(name);
+            }
+            Collection<NodoSetting> settings = NodoSettingRetriever.getSettings(cis, nodo);
 
             WireData[] data = new WireData[8];
             for (int i = 0; i < data.length; i++) {
@@ -922,7 +939,7 @@ public class MonitorPanel extends NodoBasePanel {
         if (refreshTimer == null) {
             // Interval from 1..100, interval .5 seconds
             int time = rrSlider.getValue() * 500;
-            refreshTimer = new Timer(time, new ActionListener()  {
+            refreshTimer = new Timer(time, new ActionListener()   {
 
                 public void actionPerformed(ActionEvent e) {
                     downloadAndRefresh();
@@ -1012,12 +1029,19 @@ public class MonitorPanel extends NodoBasePanel {
         updateRangesList();
     }
 
-    public void updateRangesList() {
+    public final void updateRangesList() {
         ArrayList<InputRange> ranges = Options.getInstance().getInputRanges();
         Object[] items = ranges.toArray(new InputRange[ranges.size()]);
         typeSelectionModel = new DefaultComboBoxModel(items);
         if (typeSelection != null) {
             typeSelection.setModel(typeSelectionModel);
+        }
+    }
+
+    @Action
+    public void selectUnit() {
+        if (!useLocalUnit.isSelected()) {
+            NodoDueManager.getApplication().getView().selectAndUpdateUnit(true);
         }
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -1056,6 +1080,7 @@ public class MonitorPanel extends NodoBasePanel {
     private javax.swing.JLabel typeLabel;
     private javax.swing.JPanel typePanel;
     private javax.swing.JComboBox typeSelection;
+    private javax.swing.JCheckBox useLocalUnit;
     private javax.swing.JButton ververs;
     private javax.swing.JCheckBox wireCheck;
     // End of variables declaration//GEN-END:variables

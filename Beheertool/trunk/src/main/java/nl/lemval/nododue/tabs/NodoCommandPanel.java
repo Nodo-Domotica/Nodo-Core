@@ -167,10 +167,12 @@ public class NodoCommandPanel extends NodoBasePanel {
                 NodoDueManager.getApplication().getSerialCommunicator();
         comm.setMessageListener(getListener());
         commandOutput.setText(null);
-        OutputEventListener lix = null;
-        comm.addOutputListener(lix = new OutputEventListener() {
-
+        final long[] inputReceived = new long[1];
+        inputReceived[0] = System.currentTimeMillis();
+        OutputEventListener listener = new OutputEventListener()   {
+            
             public void handleOutputLine(String message) {
+                inputReceived[0] = System.currentTimeMillis();
                 commandOutput.append(message);
                 commandOutput.append(NEWLINE);
             }
@@ -181,10 +183,13 @@ public class NodoCommandPanel extends NodoBasePanel {
 
             public void handleNodoResponses(NodoResponse[] responses) {
             }
-        });
+        };
+        comm.addOutputListener(listener);
         comm.sendRaw(message);
-        comm.waitCommand(500);
-        comm.removeOutputListener(lix);
+        while ( inputReceived[0] + 250 > System.currentTimeMillis() ) {
+            comm.waitCommand(250);
+        }
+        comm.removeOutputListener(listener);
     }
 
     @Action
@@ -201,10 +206,12 @@ public class NodoCommandPanel extends NodoBasePanel {
                     NodoDueManager.getApplication().getSerialCommunicator();
             comm.setMessageListener(getListener());
             commandOutput.setText(null);
-            OutputEventListener lix = null;
-            comm.addOutputListener(lix = new OutputEventListener() {
+            final long[] inputReceived = new long[1];
+            inputReceived[0] = System.currentTimeMillis();
+            OutputEventListener listener = new OutputEventListener()   {
 
                 public void handleOutputLine(String message) {
+                    inputReceived[0] = System.currentTimeMillis();
                     commandOutput.append(message);
                     commandOutput.append(NEWLINE);
                 }
@@ -215,10 +222,13 @@ public class NodoCommandPanel extends NodoBasePanel {
 
                 public void handleNodoResponses(NodoResponse[] responses) {
                 }
-            });
+            };
+            comm.addOutputListener(listener);
             comm.send(cmd);
-            comm.waitCommand(500);
-            comm.removeOutputListener(lix);
+            while ( inputReceived[0] + 250 > System.currentTimeMillis() ) {
+                comm.waitCommand(250);
+            }
+            comm.removeOutputListener(listener);
         }
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables
