@@ -106,53 +106,6 @@ void PrintEvent(unsigned long Content, byte Port, boolean Direction)
   PrintTerm();
   }  
 
-///*********************************************************************************************\
-// * Print een event volgens formaat:  'EVENT/ACTION: <port>, <type>, <content>
-// \*********************************************************************************************/
-//void PrintEvent(unsigned long Content, byte Port, boolean Direction)
-//  {  
-//  if(S.Display&DISPLAY_TIME && Time.Day) // Time.Day=true want dan is er een RTC aanwezig.
-//    {   
-//    PrintDateTime();
-//    PrintChar(',');
-//    PrintChar(' ');
-//    }
-//
-//  if(S.Display&DISPLAY_DIRECTION)
-//    {
-//    Serial.print(cmd2str(Direction));
-//    if(Direction == VALUE_DIRECTION_QUEUE)
-//      {
-//      PrintChar('-');
-//      PrintValue(QueuePos+1);
-//      }
-//    PrintChar(':');
-//    PrintChar(' ');
-//    }
-//
-//  if(S.Display&DISPLAY_PORT && Port)
-//    {
-//    Serial.print(cmd2str(Port));
-//    PrintChar(',');
-//    PrintChar(' ');
-//    }
-//
-//  if(true || (Content>>28)&0xf==SIGNAL_TYPE_NODO)
-//    {
-//    if(S.Display&DISPLAY_UNIT)
-//      {
-//      Serial.print(cmd2str(CMD_UNIT));
-//      PrintChar('-');
-//      PrintValue((Content>>24)&0xf); 
-//      PrintChar(',');
-//      PrintChar(' ');
-//      }
-//    }    
-//
-//  PrintEventCode(Content);
-//  PrintTerm();
-//  }  
-//
 
  /*********************************************************************************************\
  * print een lijst met de inhoud van de RawSignal buffer.
@@ -288,9 +241,7 @@ void PrintEventCode(unsigned long Code)
       // Par1 als waarde en par2 niet
       case CMD_UNIT:
       case CMD_DIVERT:
-      case CMD_VARIABLE_CLEAR:
       case CMD_SIMULATE_DAY:
-      case CMD_TIMER_RESET:
       case CMD_CLOCK_DOW:
         P1=P_VALUE;
         P2=P_NOT;

@@ -198,7 +198,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       *Par2=Time.Year-2000;
       break;
 
-    case CMD_TIMER_SET:
+    case CMD_TIMER_SET_MIN:
       *Par1=xPar1;
       if(UserTimer[xPar1-1])
         *Par2=(byte)((UserTimer[xPar1-1]-millis()+59999UL)/60000UL);
@@ -320,7 +320,10 @@ void ResetFactory(void)
     S.WiredInputPullUp[x]=true;
     }
 
-  VariableClear(0); // alle variabelen op nul zetten
+  // maak alle variabelen leeg
+  for(byte x=0;x<USER_VARIABLES_MAX;x++)
+     S.UserVar[x]=0;
+
   SaveSettings();  
   FactoryEventlist();
   delay(500);// kleine pauze, anders kans fout bij seriële communicatie
@@ -337,34 +340,6 @@ void FactoryEventlist(void)
   Eventlist_Write(0,command2event(CMD_COMMAND_WILDCARD,VALUE_SOURCE_IR,CMD_KAKU),command2event(CMD_SEND_SIGNAL,0,0)); // Kort geluidssignaal bij ieder binnenkomend event
   }
 
- /*********************************************************************************************\
- * Wist de inhoud van een variabele zonder een event te genereren.
- * als opgegeven variabele gelijk is aan 0, dan worden alle gewist
- * geeft true terug bij succes.
- * LET OP: Voor de user is variabele 1 de eeste. Intern wordt getelt vanaf 0 (S.UserVar[0])
- \*********************************************************************************************/
-boolean VariableClear(byte Variable)
-  {
-  if(Variable==0)
-    {
-    for(byte x=0;x<USER_VARIABLES_MAX;x++)
-      {
-      S.UserVar[x]=0;
-      UserVarPrevious[x]=0;
-      }
-    SaveSettings();
-    return true;
-    }
-
-  if(Variable>0 && Variable<=USER_VARIABLES_MAX)
-    {
-    S.UserVar[Variable-1]=0;
-    UserVarPrevious[Variable-1]=0;
-    SaveSettings();
-    return true;
-    }
-  return false;
-  }
   
 /**********************************************************************************************\
  * Converteert een string volgens formaat "<Home><address>" naar een absoluut adres [0..255]
@@ -395,17 +370,6 @@ int HA2address(char* HA, byte *group)
     return Address; // KAKU adres 1 is intern 0     
   }
 
- /**********************************************************************************************\
- * Set de timer op nul zonder dat er een event wordt gegenereerd.
- \**********************************************************************************************/
-void TimerClear(byte TimerToReset)
-  {
-  if(TimerToReset==0)
-    for(int x=0;x<TIMER_MAX;x++)
-      UserTimer[x]=0;
-  else
-    UserTimer[TimerToReset-1]=0;
-  }
   
 
 /* This function places the current value of the heap and stack pointers in the
@@ -498,7 +462,7 @@ void Status(boolean ToSerial, byte Par1, byte Par2)
             Par1_End=4;
             break;      
           case CMD_VARIABLE_SET:
-          case CMD_TIMER_SET:
+          case CMD_TIMER_SET_MIN:
             Par1_Start=1;
             Par1_End=15;
             break;

@@ -72,6 +72,15 @@ Onder de motorkap:
 - Issue 191:	Status led werkt niet juist
 - Issue 195:	UserEvent niet geaccepteerd vanuit EventGhost
 
+Aanpassingen vanaf svn build r230:
+- 'TimerSet' commando gerenamed naar 'TimerSetMin':
+- 'TimerSetSec': nieuw commando. Als oude 'TimerSet', maar zet timers, maar dan in resolutie van seconden.
+- 'TimerSetMin' en 'TimerSetSec': 0=wildcard voor alle timers.
+- 'TimerReset': commando vervallen;
+- 'Status' aanpassing: 'TimerSet' parameter is nu 'TimerSetMin' i.v.m. aanpassing commando 'TimerSet'.
+- 'variableClear' commando vervallen. wissen kan nu met 'variableSet', waarbij variabele=0 een wildcard is voor alle variabelen.
+- intern: tegelijk afgelopen timers worden nu sneller achter elkaar afgehandeld.
+
 
 
 \**************************************************************************************************************************/
@@ -107,12 +116,11 @@ Onder de motorkap:
  *
  ********************************************************************************************************/
 
-#define VERSION        120        // Nodo Version nummer:
+#define VERSION        0        // Nodo Version nummer:
                                   // Major.Minor.Patch
                                   // Major: Grote veranderingen aan concept, besturing, werking.
                                   // Minor: Uitbreiding/aanpassing van commando's, functionaliteit en MMI aanpassingen
                                   // Patch: Herstel van bugs zonder (ingrijpende) functionele veranderingen.
-
 
 
 #include "pins_arduino.h"
@@ -172,7 +180,7 @@ prog_char PROGMEM Text_15[] = "NodoVersion=";
 #define VALUE_DIRECTION_QUEUE 27
 #define VALUE_ON 28 // Deze waarde MOET groter dan 16 zijn.
 #define VALUE_RES6 29
-#define VALUE_RES5 30
+#define VALUE_RES3 30
 #define CMD_ANALYSE_SETTINGS 31
 #define CMD_BREAK_ON_VAR_EQU 32
 #define CMD_BREAK_ON_VAR_LESS 33
@@ -200,11 +208,11 @@ prog_char PROGMEM Text_15[] = "NodoVersion=";
 #define CMD_STATUS 55
 #define CMD_STATUS_LIST 56
 #define CMD_TIMER_RANDOM 57
-#define CMD_TIMER_RESET 58
-#define CMD_TIMER_SET 59
+#define CMD_TIMER_SET_SEC 58
+#define CMD_TIMER_SET_MIN 59
 #define CMD_DISPLAY 60
 #define CMD_UNIT 61
-#define CMD_VARIABLE_CLEAR 62
+#define CMD_RES4 62
 #define CMD_VARIABLE_DEC 63
 #define CMD_VARIABLE_INC 64
 #define CMD_VARIABLE_SET 65
@@ -303,11 +311,11 @@ prog_char PROGMEM Cmd_54[]="Sound";
 prog_char PROGMEM Cmd_55[]="Status";
 prog_char PROGMEM Cmd_56[]="StatusList";
 prog_char PROGMEM Cmd_57[]="TimerRandom";
-prog_char PROGMEM Cmd_58[]="TimerReset";
+prog_char PROGMEM Cmd_58[]="TimerSetSec";
 prog_char PROGMEM Cmd_59[]="TimerSet";
 prog_char PROGMEM Cmd_60[]="Display";
 prog_char PROGMEM Cmd_61[]="Unit";
-prog_char PROGMEM Cmd_62[]="VariableClear";
+prog_char PROGMEM Cmd_62[]="";
 prog_char PROGMEM Cmd_63[]="VariableDec";
 prog_char PROGMEM Cmd_64[]="VariableInc";
 prog_char PROGMEM Cmd_65[]="VariableSet";
@@ -458,7 +466,7 @@ struct Settings
 unsigned long UserTimer[TIMER_MAX];
 
 // timers voor verwerking op intervals
-#define Loop_INTERVAL_1          500  // tijdsinterval in ms. voor achtergrondtaken.
+#define Loop_INTERVAL_1          250  // tijdsinterval in ms. voor achtergrondtaken.
 #define Loop_INTERVAL_2         5000  // tijdsinterval in ms. voor achtergrondtaken.
 unsigned long StaySharpTimer=millis();
 unsigned long LoopIntervalTimer_1=millis();// millis() maakt dat de intervallen van 1 en 2 niet op zelfde moment vallen => 1 en 2 nu asynchroon
@@ -474,7 +482,7 @@ byte QueuePos;
 boolean Simulate,RawsignalGet;
 boolean WiredInputStatus[4],WiredOutputStatus[4];   // Wired variabelen
 unsigned int RawSignal[RAW_BUFFER_SIZE+2];          // Tabel met de gemeten pulsen in microseconden. eerste waarde is het aantal bits*2
-byte TimerCounter=0;
+
 byte UserVarPrevious[USER_VARIABLES_MAX];
 byte DaylightPrevious;                              // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet
 byte WiredCounter=0, VariableCounter;
@@ -633,7 +641,6 @@ void loop()
       while(QueuePos && HoldTimer<millis())
         {
         QueuePos--;
-        // ProcessEvent(QueueEvent[QueuePos],VALUE_DIRECTION_INPUT,QueuePort[QueuePos],0,0);      // verwerk binnengekomen event.
         ProcessEvent(QueueEvent[QueuePos],VALUE_DIRECTION_QUEUE,QueuePort[QueuePos],0,0);      // verwerk binnengekomen event.
         }       
         
@@ -652,53 +659,21 @@ void loop()
       {
       LoopIntervalTimer_1=millis()+Loop_INTERVAL_1; // reset de timer
 
-      // delay.
-      if(InLoop && HoldTimer<millis())
-        return;
+      // TIMER: **************** Genereer event als één van de Timers voor de gebruiker afgelopen is ***********************    
 
-      // WIRED: *************** kijk of statussen gewijzigd zijn op WIRED **********************
-     if(WiredCounter<3)
-       WiredCounter++;
-     else
-       WiredCounter=0;
-
-     // als de huidige waarde groter dan threshold EN de vorige keer was dat nog niet zo DAN verstuur code
-     z=false; // vlag om te kijken of er een wijziging is die verzonden moet worden.
-
-     y=WiredAnalog(WiredCounter);
-     
-     if(y>S.WiredInputThreshold[WiredCounter]+S.WiredInputSmittTrigger[WiredCounter] && !WiredInputStatus[WiredCounter])
-       {
-       WiredInputStatus[WiredCounter]=true;
-       z=true;
-       }
-     if(y<S.WiredInputThreshold[WiredCounter]-S.WiredInputSmittTrigger[WiredCounter] && WiredInputStatus[WiredCounter])
-       {
-       WiredInputStatus[WiredCounter]=false;
-       z=true;
-       }
-   
-     if(z)// er is een verandering van status op de ingang. 
-       {    
-       Content=command2event(CMD_WIRED_IN_EVENT,WiredCounter+1,WiredInputStatus[WiredCounter]?VALUE_ON:VALUE_OFF);
-       ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
-       }
-
-   // TIMER: **************** Genereer event als één van de Timers voor de gebruiker afgelopen is ***********************    
-    if(TimerCounter<TIMER_MAX-1)
-      TimerCounter++;
-    else
-      TimerCounter=0;
-    if(UserTimer[TimerCounter]!=0L)// als de timer actief is
+      for(x=0;x<TIMER_MAX;x++)
         {
-        if(UserTimer[TimerCounter]<millis()) // als de timer is afgelopen.
+        if(UserTimer[x]!=0L)// als de timer actief is
           {
-          UserTimer[TimerCounter]=0;// zet de timer op inactief.
-          Content=command2event(CMD_TIMER_EVENT,TimerCounter+1,0);
-          ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_TIMER,0,0);      // verwerk binnengekomen event.
+          if(UserTimer[x]<millis()) // als de timer is afgelopen.
+            {
+            UserTimer[x]=0;// zet de timer op inactief.
+            Content=command2event(CMD_TIMER_EVENT,x+1,0);
+            ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_TIMER,0,0);      // verwerk binnengekomen event.
+            }
           }
         }
-        
+
       // VARIABLE: *************** Behandel gewijzigde variabelen als en binnengekomen event ******************************
       for(x=0;x<USER_VARIABLES_MAX;x++)
         {
@@ -708,6 +683,38 @@ void loop()
           Content=command2event(CMD_VARIABLE_EVENT,x+1,S.UserVar[x]);
           ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_VARIABLE,0,0);      // verwerk binnengekomen event.
           }
+        }
+
+      // delay.
+      if(InLoop && HoldTimer<millis())
+        return;
+
+      // WIRED: *************** kijk of statussen gewijzigd zijn op WIRED **********************
+      if(WiredCounter<3)
+        WiredCounter++;
+      else
+        WiredCounter=0;
+
+      // als de huidige waarde groter dan threshold EN de vorige keer was dat nog niet zo DAN verstuur code
+      z=false; // vlag om te kijken of er een wijziging is die verzonden moet worden.
+      y=WiredAnalog(WiredCounter);
+     
+      if(y>S.WiredInputThreshold[WiredCounter]+S.WiredInputSmittTrigger[WiredCounter] && !WiredInputStatus[WiredCounter])
+        {
+        WiredInputStatus[WiredCounter]=true;
+        z=true;
+        }
+
+      if(y<S.WiredInputThreshold[WiredCounter]-S.WiredInputSmittTrigger[WiredCounter] && WiredInputStatus[WiredCounter])
+        {
+        WiredInputStatus[WiredCounter]=false;
+        z=true;
+        }
+
+      if(z)// er is een verandering van status op de ingang. 
+        {    
+        Content=command2event(CMD_WIRED_IN_EVENT,WiredCounter+1,WiredInputStatus[WiredCounter]?VALUE_ON:VALUE_OFF);
+        ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
         }
       }// korte interval
     }// // while 

@@ -185,8 +185,6 @@ unsigned long Receive_Serial(void)
       break;
    
     case CMD_EVENTLIST_ERASE:
-      VariableClear(0); // alle variabelen op nul zetten
-      TimerClear(0); // reset de timers
       Eventlist_Write(1,0L,0L); // maak de eventlist leeg.
       break;        
           

@@ -111,15 +111,20 @@ byte CommandError(unsigned long Content)
       if(Par2!=0)return ERROR_PAR2;    
       return false; 
       
+    case CMD_VARIABLE_SET:   
+    case CMD_TIMER_SET_SEC:
+    case CMD_TIMER_SET_MIN:
+      if(Par1>USER_VARIABLES_MAX)return ERROR_PAR1;
+      return false;
+
     // test:Par1 binnen bereik maximaal beschikbare variabelen
     case CMD_VARIABLE_INC: 
     case CMD_VARIABLE_DEC: 
-    case CMD_VARIABLE_SET:   
     case CMD_BREAK_ON_VAR_NEQU:
     case CMD_BREAK_ON_VAR_MORE:
     case CMD_BREAK_ON_VAR_LESS:
     case CMD_BREAK_ON_VAR_EQU:
-      if(Par1<1 || Par1>USER_VARIABLES_MAX)return VALUE_PARAMETER;
+      if(Par1<1 || Par1>USER_VARIABLES_MAX)return ERROR_PAR1;
       return false;
       
     // test:Par1 en Par2 binnen bereik maximaal beschikbare variabelen
@@ -137,20 +142,11 @@ byte CommandError(unsigned long Content)
  
     // test:Par1 binnen bereik maximaal beschikbare timers
     case CMD_TIMER_EVENT:
-    case CMD_TIMER_SET:
     case CMD_TIMER_RANDOM:
       if(Par1<1 || Par1>TIMER_MAX)return ERROR_PAR1;
       return false;
 
     // test:Par1 binnen bereik maximaal beschikbare variabelen,0 mag ook (=alle variabelen)
-    case CMD_VARIABLE_CLEAR:
-      if(Par1>USER_VARIABLES_MAX)return ERROR_PAR1;
-      return false;
-
-    // test:Par1 binnen bereik maximaal beschikbare timers,0 mag ook (=alle timers)
-    case CMD_TIMER_RESET:
-      if(Par1>TIMER_MAX)return ERROR_PAR1;
-      return false;
 
     case CMD_WIRED_RANGE:
       if(Par1<1 || Par1>4)return ERROR_PAR1; // poort
@@ -312,7 +308,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;        
   
       case CMD_VARIABLE_SET:   
-        S.UserVar[Par1-1]=Par2;
+        if(Par1==0)
+          for(byte x=0;x<USER_VARIABLES_MAX;x++)
+            S.UserVar[x]=Par2;
+        else
+          S.UserVar[Par1-1]=Par2;
         SaveSettings();
         break;        
     
@@ -345,10 +345,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         if(S.UserVar[Par1-1]<Par2)
           error=true;
         break;  
-  
-      case CMD_TIMER_RESET:
-        TimerClear(Par1);
-        break;
   
       case CMD_SEND_USEREVENT:
         // Voeg Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
@@ -399,12 +395,25 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         Time.Day=Par1;
         ClockSet();
         break;
-         
-      case CMD_TIMER_SET:
-        // timers werken op een resolutie van seconden maar worden door de gebruiker ingegeven in minuten
-        UserTimer[Par1-1]=millis()+Par2*60000;// Par1=timer, Par2=minuten
+
+      case CMD_TIMER_SET_SEC:
+        // Par1=timer, Par2=seconden. Timers werken op een resolutie van seconden.   
+        if(Par1==0) // 0=wildcard voor alle timers.
+          for(int x=0;x<TIMER_MAX;x++)
+            UserTimer[x]=millis()+Par2*1000;
+        else
+          UserTimer[Par1-1]=millis()+Par2*1000;
         break;
-  
+         
+      case CMD_TIMER_SET_MIN:
+        // Par1=timer, Par2=minuten. Timers werken op een resolutie van seconden maar worden door de gebruiker ingegeven in minuten        
+        if(Par1==0) // 0=wildcard voor alle timers.
+          for(int x=0;x<TIMER_MAX;x++)
+            UserTimer[x]=millis()+Par2*60000;
+        else
+          UserTimer[Par1-1]=millis()+Par2*60000;
+        break;
+
       case CMD_TIMER_RANDOM:
         UserTimer[Par1-1]=millis()+random(Par2)*60000;// Par1=timer, Par2=maximaal aantal minuten
         break;
@@ -440,11 +449,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         digitalWrite(14+WiredAnalogInputPin_1+Par1-1,S.WiredInputPullUp[Par1-1]==VALUE_ON);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14
         SaveSettings();
         break;
-             
-      case CMD_VARIABLE_CLEAR:
-        VariableClear(Par1);
-        break;
-       
+                   
       case CMD_WIRED_THRESHOLD:
         S.WiredInputThreshold[Par1-1]=Par2; // Par1 is de poort[1..4], Par2 is de waarde [0..255]
         SaveSettings();

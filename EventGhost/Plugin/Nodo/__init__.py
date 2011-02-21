@@ -1,18 +1,10 @@
-"""
-
-Bugs:
-- 
-
-Idee:
-- Logging naar file
-- borgen dat de Boot altijd plaatsvindt.
-- korte wachttijd na opstarten plugin om Nodo de boor uit te kunnen laten voeren
-
-"""
-
-
-
-
+# Bugs:
+# - 
+#
+# Idee:
+# - Logging naar file
+# - borgen dat de Boot altijd plaatsvindt.
+# - korte wachttijd na opstarten plugin om Nodo de boor uit te kunnen laten voeren
 
 
 
@@ -75,8 +67,8 @@ NodoCommandList =  (
 
       ('Timers', None, None,None,0),                                      
           ('TimerRandom','Commando: Stel de timer in met een willekeurige tijd','Timer nummer. [1..15]','Maximaal aantal minuten. [1...255]',1),
-          ('TimerReset','Commando: Reset timer zonder event te genereren','Timer [0,1...15] 0 = alle',None,1),
-          ('TimerSet','Commando: Stel een timer is.','Timer [1..15]','Minuten [1..255]',1),
+          ('TimerSetMin','Commando: Stel een timer in. Timer 0 = alle timers.','Timer [0..15]','Minuten [0..255]',1),
+          ('TimerSetSec','Commando: Stel een timer in. Timer 0 = alle timers.','Timer [0..15]','Seconden [0..255]',1),
           ('Timer','Event: Timer Event','Timer nummer. [1..15]',None,1),
 
       ('Clock', None, None,None,0),                                      
@@ -95,15 +87,14 @@ NodoCommandList =  (
           ('ClockAll','Event: Levert match in wildcard op voor opgegeven uren:minuten','Uren [0..23]','Minuten [0..59]',1),
 
       ('Variabelen', None, None,None,0),                                      
-          # ('BreakOnVarEqu','Commando: Breekt uitvoer van een macro af als variabele gelijk is aan waarde.','Variabele [1..15]','Waarde [0..255]',1),
-          # ('BreakOnVarLess','Commando: Breekt uitvoer van een macro af als variabele minder is dan waarde','Variabele [1..15]','Waarde [0..255]',1),
-          # ('BreakOnVarMore','Commando: Breekt uitvoer van een macro af als variabele meer is dan waarde','Variabele [1..15]','Waarde [0..255]',1),
-          # ('BreakOnVarNEqu','Commando: Breekt uitvoer van een macro af als variabele ongelijk is aan waarde','Variabele [1..15]','Waarde [0..255]',1),
+          ('BreakOnVarEqu','Eventlist commando: Breekt uitvoer van een macro af als variabele gelijk is aan waarde.','Variabele [1..15]','Waarde [0..255]',1),
+          ('BreakOnVarLess','Eventlist commando: Breekt uitvoer van een macro af als variabele minder is dan waarde','Variabele [1..15]','Waarde [0..255]',1),
+          ('BreakOnVarMore','Eventlist commando: Breekt uitvoer van een macro af als variabele meer is dan waarde','Variabele [1..15]','Waarde [0..255]',1),
+          ('BreakOnVarNEqu','Eventlist commando: Breekt uitvoer van een macro af als variabele ongelijk is aan waarde','Variabele [1..15]','Waarde [0..255]',1),
           ('Variable','Event: treedt op als de inhoud van een variabele wijzigt.','Variabele [1..15]','Waarde [0..255]',1),
-          ('VariableClear','Commando: Wis inhoud van een variabele','Variabele [0,1...15] 0 = alle',None,1),
           ('VariableDec','Commando: Tel een waarde op bij een variabele','Variabele [1..15]','Waarde [1..255]',1),
           ('VariableInc','Commando: Trek een waarde af van een variabele','Variabele [1..15]','Waarde [1..255]',1),
-          ('VariableSet','Commando: Zet een variabele','Variabele [1..15]','Waarde [0..255]',1),
+          ('VariableSet','Commando: Zet een variabele. Variabele 0 = alle variabelen.','Variabele [0..15]','Waarde [0..255]',1),
           ('VariableVariable','Commando: Vul een variabele met de waarde van een andere variabele','Variabele [1..15]','Variabele [1..15]',1),
           ('SendVarUserEvent','Commando: Verzend een Event samengesteld uit twee variabelen.','Variabele [1..15]','Variabele [1..15]',1),
 
