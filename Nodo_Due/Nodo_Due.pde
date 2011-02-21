@@ -81,7 +81,8 @@ Aanpassingen vanaf svn build r230:
 - 'variableClear' commando vervallen. wissen kan nu met 'variableSet', waarbij variabele=0 een wildcard is voor alle variabelen.
 - intern: tegelijk afgelopen timers worden nu sneller achter elkaar afgehandeld.
 
-
+Aanpassingen vanaf svn build r231:
+- Timers allemaal op 0 zetten levert nu geen event meer op.
 
 \**************************************************************************************************************************/
 
@@ -312,7 +313,7 @@ prog_char PROGMEM Cmd_55[]="Status";
 prog_char PROGMEM Cmd_56[]="StatusList";
 prog_char PROGMEM Cmd_57[]="TimerRandom";
 prog_char PROGMEM Cmd_58[]="TimerSetSec";
-prog_char PROGMEM Cmd_59[]="TimerSet";
+prog_char PROGMEM Cmd_59[]="TimerSetMin";
 prog_char PROGMEM Cmd_60[]="Display";
 prog_char PROGMEM Cmd_61[]="Unit";
 prog_char PROGMEM Cmd_62[]="";

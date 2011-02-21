@@ -396,22 +396,14 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         ClockSet();
         break;
 
-      case CMD_TIMER_SET_SEC:
-        // Par1=timer, Par2=seconden. Timers werken op een resolutie van seconden.   
-        if(Par1==0) // 0=wildcard voor alle timers.
-          for(int x=0;x<TIMER_MAX;x++)
-            UserTimer[x]=millis()+Par2*1000;
-        else
-          UserTimer[Par1-1]=millis()+Par2*1000;
-        break;
-         
       case CMD_TIMER_SET_MIN:
         // Par1=timer, Par2=minuten. Timers werken op een resolutie van seconden maar worden door de gebruiker ingegeven in minuten        
-        if(Par1==0) // 0=wildcard voor alle timers.
-          for(int x=0;x<TIMER_MAX;x++)
-            UserTimer[x]=millis()+Par2*60000;
-        else
-          UserTimer[Par1-1]=millis()+Par2*60000;
+        TimerSet(Par1,int(Par2)*60);
+        break;
+        
+      case CMD_TIMER_SET_SEC:
+        // Par1=timer, Par2=seconden. Timers werken op een resolutie van seconden.            
+        TimerSet(Par1,Par2);
         break;
 
       case CMD_TIMER_RANDOM:

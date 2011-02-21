@@ -47,6 +47,7 @@ NodoCommandList =  (
       ('Configuratie', None, None, None,0),
           ('Display','Commando: Veranderd de gegevens weergave van SERIAL\nLET OP: kan de werking van de plugin stoppen.\nLees voor meer opties de command-reference!','[Trace,Reset,...]','[ON,OFF]',0),
           ('Reset','Commando: Reset de Nodo. Alle instellingen worden teruggezet naar default waarden.',None,None,0),
+          ('Status','Commando: Haal de status op van de Nodo','Nodo commando (optioneel)','Parameter-1 behorend bij Nodo commando (optioneel)\n[1..4] voor Wired...\n[1..15] voor TimerSet,VariableSet\n',1),
           ('Unit','Commando: Verander het Unit adres van de Nodo','Unitnummer[1-15]',None,0),
 
       ('EventList', None, None,None,0),
@@ -72,7 +73,7 @@ NodoCommandList =  (
           ('Timer','Event: Timer Event','Timer nummer. [1..15]',None,1),
 
       ('Clock', None, None,None,0),                                      
-          ('ClockSync','Commando: Zet de klok van de Nodo gelijk aan die van de computer',None,None,1),
+          ('ClockSync','Commando: Zet automatisch de klok van de Nodo gelijk aan die van de computer',None,None,1),
           ('ClockSetDate','Commando: Zet handmatig de datum an de Nodo','Dag [1..31]','Maand [1..12]',1),
           ('ClockSetDOW','Commando: Zet handmatig de dag van de week','Weekdag [1..7] 1=zondag',None,1),
           ('ClockSetTime','Commando: Zet handmatig de tijd van de Nodo','Uren [0..23]','Minuten [0..59]',1),
@@ -105,7 +106,8 @@ NodoCommandList =  (
           ('RawsignalPut','Commando: Verzend een RAW signaal','Pulsetijd, Spacetijd, ...,...,0',None,1),
           ('SendSignal','Commando: Verzend de inhoud van de RAW buffer (nogmaals)',None,None,1),
           ('TransmitSettings','Commando: Geef aan naar welke poorten verzonden moet worden.','Poort [IR, RF, IR&RF]',None,1),
-          ('WaitFreeRF','Commando: Wacht voordat een RF signaal wordt verzonden op een vrije ether','[Off,Series,All]','Tijd [1..255] x 0.1 sec.',1),
+          ('WaitFreeRF','Commando: Wacht voordat een RF signaal wordt verzonden op een vrije ether. \n Tijden in eenheden van 100 milliseconden.','Pause [0..255] x 100mSec.','Window [0..255] x 100mSec.',1),
+          ('Confirm','Commando: Geeft na ontvangst van een signaal een bevestiging dat \nhet signaal door de Nodo is ontvangen','Confirm [On,Off]',None,1),
 
       ('Wired', None, None,None,0),                                      
           ('VariableWiredAnalog','Commando: Vult een variabele met de waarde van een WIRED-IN','Variabele [1..15]','Poort [1..4]',1),
@@ -120,14 +122,13 @@ NodoCommandList =  (
       ('Debugging', None, None,None,0),                                      
           ('Simulate','Commando: Simulate voorkomt dat er via RF wordt verzonden. Handig voor testdoeleinden.','[ON,OFF]',None,0),
           ('SimulateDay','Commando: Simuleer de tijd ','[1,7]',None,0),
+          ('Display','Commando: Veranderd de gegevens weergave van SERIAL\nLET OP: kan de werking van de plugin stoppen.\nLees voor meer opties de command-reference!','[Trace,Reset,...]','[ON,OFF]',0),
 
       ('Overig', None, None,None,0),                                      
           ('Boot','Event: Event reedt op na een reset',None,None,1),
           ('Delay','Commando: Wacht','Tijd in seconden [Off, 1..255]','Queue events [On,Off]',1),
-          ('Confirm','Commando: Geeft na ontvangst een bevestiging dat het singaal door de Nodo is ontvangen','Confirm [On,Off]',None,1),
           ('RawCommand', 'Commando: Stuur een commando naar de Nodo.', 'Meerdere commandos van elkaar scheiden met een puntkomma.\n\nCommand Par1,Par2',None,0),
           ('Sound','Commando: Geef geluidsignaal','Signaal. [0..7]','Herhalingen. [1..255]',1),
-          ('Status','Commando: Haal de status op van de Nodo','Nodo commando (optioneel)','Parameter-1 behorend bij Nodo commando (optioneel)\n[1..4] voor Wired...\n[1..15] voor TimerSet,VariableSet\n',1),
 
       (None, None, None,None,0),              
 )

@@ -125,6 +125,31 @@ unsigned long str2val(char *string)
   return str2cmd(string);
   }
 
+ /*********************************************************************************************\
+ * (re)set een timer. Eenheden in seconden. 
+ * Timer 1..15. Timer=0 is een wildcard voor alle timers
+ * Als de timer op 0 wordt gezet, wordt er geen event gegenereerd.
+ \*********************************************************************************************/
+void TimerSet(byte Timer, int Time)
+  {
+  if(Timer==0)// 0=wildcard voor alle timers
+    {
+    for(int x=0;x<TIMER_MAX;x++)
+      {
+      if(Time==0)
+        UserTimer[x]=0L;
+      else
+        UserTimer[x]=millis()+(unsigned long)(Time)*1000;
+      }
+    }
+  else
+    {
+    if(Time==0)
+      UserTimer[Timer-1]=0L;
+    else
+      UserTimer[Timer-1]=millis()+(unsigned long)Time*1000;
+    }
+  }
 
  /*********************************************************************************************\
  * Haal voor het opgegeven Command de status op.
