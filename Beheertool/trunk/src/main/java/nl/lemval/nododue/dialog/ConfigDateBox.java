@@ -12,6 +12,7 @@ package nl.lemval.nododue.dialog;
 
 import java.awt.Dimension;
 import java.awt.GridLayout;
+import java.text.MessageFormat;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashSet;
@@ -44,6 +45,8 @@ public class ConfigDateBox extends javax.swing.JDialog {
         super(parent, modal);
         initComponents();
         initCalendar();
+        
+        DialogUtil.configureCloseOnEscape(this);
     }
 
     /** This method is called from within the constructor to
@@ -164,25 +167,6 @@ public class ConfigDateBox extends javax.swing.JDialog {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        java.awt.EventQueue.invokeLater(new Runnable() {
-
-            public void run() {
-                ConfigDateBox dialog = new ConfigDateBox(new javax.swing.JFrame(), true);
-                dialog.addWindowListener(new java.awt.event.WindowAdapter() {
-
-                    public void windowClosing(java.awt.event.WindowEvent e) {
-                        System.exit(0);
-                    }
-                });
-                dialog.setVisible(true);
-            }
-        });
-    }
-
     @Action
     public void performOperation() {
         Calendar cal = Calendar.getInstance();
@@ -206,11 +190,6 @@ public class ConfigDateBox extends javax.swing.JDialog {
                 timePicker.invalidate();
             }
         }
-    }
-
-    private String getResource(String resource) {
-        ResourceMap resourceMap = Application.getInstance(NodoDueManager.class).getContext().getResourceMap(getClass());
-        return resourceMap.getString(resource);
     }
 
     private void initCalendar() {
@@ -259,8 +238,7 @@ public class ConfigDateBox extends javax.swing.JDialog {
             comm.send(new NodoCommand(CommandLoader.get(Name.ClockSetTime), hour, mins));
             comm.waitCommand(500);
         } catch (Exception e) {
-            // TODO Report message
-//	    getListener().showStatusMessage(getResourceString("update_fail.dateTime", e.getMessage()));
+            JOptionPane.showMessageDialog(this, MessageFormat.format(getResource("rtc.updatefailed"), e.getMessage()));
         }
     }
 
@@ -282,33 +260,49 @@ public class ConfigDateBox extends javax.swing.JDialog {
         }
 
         Calendar cal = Calendar.getInstance();
-
+        int total = 0;
         for (NodoSetting nodoSetting : settings) {
             Name name = Name.valueOf(nodoSetting.getName());
+
+            int value1, value2 = 0;
+            if ( name == Name.ClockSetDOW ) {
+                value1 = Integer.parseInt(nodoSetting.getAttributeData1());
+            } else {
+                value1 = Integer.parseInt(nodoSetting.getAttributeValue1());
+                value2 = Integer.parseInt(nodoSetting.getAttributeValue2());
+            }
+            total = total + value1 + value2;
+
             switch (name) {
                 case ClockSetDate:
-                    cal.set(Calendar.DAY_OF_MONTH, Integer.parseInt(nodoSetting.getAttributeValue1()));
-                    cal.set(Calendar.MONTH, Integer.parseInt(nodoSetting.getAttributeValue2()) - 1);
+                    cal.set(Calendar.DAY_OF_MONTH, value1);
+                    cal.set(Calendar.MONTH, value2 - 1);
                     break;
                 case ClockSetYear:
-                    cal.set(Calendar.YEAR, Integer.parseInt(nodoSetting.getAttributeValue1()) * 100
-                            + Integer.parseInt(nodoSetting.getAttributeValue2()));
+                    cal.set(Calendar.YEAR, value1 * 100 + value2);
                     break;
                 case ClockSetTime:
-                    cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(nodoSetting.getAttributeValue1()));
-                    cal.set(Calendar.MINUTE, Integer.parseInt(nodoSetting.getAttributeValue2()));
+                    cal.set(Calendar.HOUR_OF_DAY, value1);
+                    cal.set(Calendar.MINUTE, value2);
                     break;
                 case ClockSetDOW:
-                    cal.set(Calendar.DAY_OF_WEEK, Integer.parseInt(nodoSetting.getAttributeData1()));
+                    cal.set(Calendar.DAY_OF_WEEK, value1);
                     break;
             }
         }
-        if (cal.get(Calendar.YEAR) == 0) {
+        if (total == 0 || total == 20) {
             JOptionPane.showMessageDialog(this, getResource("rtc.notavailable"));
             return null;
         }
         return cal;
     }
+    
+    private String getResource(String resource) {
+        ResourceMap resourceMap = Application.getInstance(NodoDueManager.class).getContext().getResourceMap(getClass());
+        return resourceMap.getString(resource);
+    }
+
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup actionGroup;
     private javax.swing.JPanel actionPanel;

@@ -304,7 +304,7 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
         nodoMenu.setText(resourceMap.getString("nodoMenu.text")); // NOI18N
         nodoMenu.setName("nodoMenu"); // NOI18N
 
-        unitMenuItem.setAction(actionMap.get("showUnitSelectorBox")); // NOI18N
+        unitMenuItem.setAction(actionMap.get("showUnitSelectionBox")); // NOI18N
         unitMenuItem.setText(resourceMap.getString("unitMenuItem.text")); // NOI18N
         unitMenuItem.setName("unitMenuItem"); // NOI18N
         nodoMenu.add(unitMenuItem);
@@ -473,7 +473,7 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
     }// </editor-fold>//GEN-END:initComponents
 
     private void unitFieldMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_unitFieldMouseClicked
-        selectAndUpdateUnit(false);
+        showUnitSelectionBox(false);
     }//GEN-LAST:event_unitFieldMouseClicked
 
     public void showStatusMessage(String message) {
@@ -553,6 +553,7 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
         if (selected != null && selected.exists()) {
             Options.getInstance().setFolder(selected.getParent());
             macroPanel.loadFromFile(selected);
+            showMacroMenuItem.doClick();
         }
     }
 
@@ -566,6 +567,7 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
             Options.getInstance().setFolder(selected.getParent());
             boolean overwrite = checkOverwrite(selected);
             macroPanel.saveToFile(selected, overwrite);
+            showMacroMenuItem.doClick();
         }
     }
 
@@ -579,6 +581,7 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
         Options.getInstance().setFolder(selected.getParent());
         Collection<NodoSetting> settings = NodoSetting.loadFromFile(selected);
         settingsPanel.updateSettings(settings);
+        showConfigMenuItem.doClick();
     }
 
     @Action
@@ -601,6 +604,7 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
             Options.getInstance().setFolder(selected.getParent());
             boolean overwrite = checkOverwrite(selected);
             NodoSetting.saveToFile(settings, selected, overwrite);
+            showConfigMenuItem.doClick();
         }
     }
 
@@ -699,12 +703,6 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
         tabContainer.setSelectedIndex(6);
     }
 
-    @Action
-    public void selectAndUpdateUnit(boolean singleNodo) {
-        showUnitSelectionBox(singleNodo);
-        updateUnitField();
-    }
-
     private void updateUnitField() {
         Options options = Options.getInstance();
         StringBuilder sb = new StringBuilder();
@@ -751,6 +749,11 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
         NodoDueManager.getApplication().show(devicesBox);
     }
 
+    @Action
+    public void showUnitSelectionBox() {
+        showUnitSelectionBox(false);
+    }
+    
     public void showUnitSelectionBox(boolean singleUnit) {
         if (unitBox == null) {
             JFrame mainFrame = NodoDueManager.getApplication().getMainFrame();
@@ -759,6 +762,7 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
         }
         unitBox.setSingleUnitSelectionMode(singleUnit);
         NodoDueManager.getApplication().show(unitBox);
+        updateUnitField();
     }
 
     @Action

@@ -151,7 +151,7 @@
             <MenuItem class="javax.swing.JMenuItem" name="unitMenuItem">
               <Properties>
                 <Property name="action" type="javax.swing.Action" editor="org.netbeans.modules.swingapp.ActionEditor">
-                  <action class="nl.lemval.nododue.NodoDueManagerView" id="showUnitSelectorBox" methodName="showUnitSelectorBox"/>
+                  <action class="nl.lemval.nododue.NodoDueManagerView" id="showUnitSelectionBox" methodName="showUnitSelectionBox"/>
                 </Property>
                 <Property name="text" type="java.lang.String" resourceKey="unitMenuItem.text"/>
                 <Property name="name" type="java.lang.String" value="unitMenuItem" noResource="true"/>

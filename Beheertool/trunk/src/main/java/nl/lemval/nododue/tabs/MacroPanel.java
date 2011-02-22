@@ -347,6 +347,8 @@ public class MacroPanel extends NodoBasePanel {
             // doInBackground() depends on from parameters
             // to RetrieveMacrosTask fields, here.
             super(app);
+            retrieve.setEnabled(false);
+            store.setEnabled(false);
         }
 
         @Override
@@ -364,6 +366,8 @@ public class MacroPanel extends NodoBasePanel {
             NodoMacroList list = (NodoMacroList) result;
             macroListModel.setContent(list);
             updateCount();
+            retrieve.setEnabled(true);
+            store.setEnabled(true);
         }
     }
 
@@ -382,6 +386,8 @@ public class MacroPanel extends NodoBasePanel {
             // doInBackground() depends on from parameters
             // to RetrieveMacrosTask fields, here.
             super(app);
+            retrieve.setEnabled(false);
+            store.setEnabled(false);
         }
 
         @Override
@@ -396,6 +402,8 @@ public class MacroPanel extends NodoBasePanel {
         protected void succeeded(Object result) {
             // Runs on the EDT.  Update the GUI based on
             // the result computed by doInBackground().
+            retrieve.setEnabled(true);
+            store.setEnabled(true);
         }
     }
 
