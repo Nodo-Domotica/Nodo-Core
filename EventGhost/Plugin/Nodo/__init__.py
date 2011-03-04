@@ -4,7 +4,7 @@
 # Idee:
 # - Logging naar file
 # - borgen dat de Boot altijd plaatsvindt.
-# - korte wachttijd na opstarten plugin om Nodo de boor uit te kunnen laten voeren
+# - korte wachttijd na opstarten plugin om Nodo de boot uit te kunnen laten voeren
 
 
 
@@ -34,8 +34,8 @@ eg.RegisterPlugin(
     description=__doc__,
     url="http://members.chello.nl/p.tonkes8/index.html",
     author="Paul Tonkes",
-    version="Plugin version 0.00 beta",
-    canMultiLoad = True,
+    version="Plugin version 0.02 beta",
+    canMultiLoad = False,
     createMacrosOnAdd = True,
 )
 
@@ -47,7 +47,7 @@ NodoCommandList =  (
       ('Configuratie', None, None, None,0),
           ('Display','Commando: Veranderd de gegevens weergave van SERIAL\nLET OP: kan de werking van de plugin stoppen.\nLees voor meer opties de command-reference!','[Trace,Reset,...]','[ON,OFF]',0),
           ('Reset','Commando: Reset de Nodo. Alle instellingen worden teruggezet naar default waarden.',None,None,0),
-          ('Status','Commando: Haal de status op van de Nodo','Nodo commando (optioneel)','Parameter-1 behorend bij Nodo commando (optioneel)\n[1..4] voor Wired...\n[1..15] voor TimerSet,VariableSet\n',1),
+          ('Status','Commando: Haal de status op van de Nodo','Nodo commando (optioneel) of [All]','Parameter-1 behorend bij Nodo commando (optioneel)\n[1..4] voor Wired...\n[1..15] voor TimerSet,VariableSet\n',1),
           ('Unit','Commando: Verander het Unit adres van de Nodo','Unitnummer[1-15]',None,0),
 
       ('EventList', None, None,None,0),
@@ -88,10 +88,6 @@ NodoCommandList =  (
           ('ClockAll','Event: Levert match in wildcard op voor opgegeven uren:minuten','Uren [0..23]','Minuten [0..59]',1),
 
       ('Variabelen', None, None,None,0),                                      
-          ('BreakOnVarEqu','Eventlist commando: Breekt uitvoer van een macro af als variabele gelijk is aan waarde.','Variabele [1..15]','Waarde [0..255]',1),
-          ('BreakOnVarLess','Eventlist commando: Breekt uitvoer van een macro af als variabele minder is dan waarde','Variabele [1..15]','Waarde [0..255]',1),
-          ('BreakOnVarMore','Eventlist commando: Breekt uitvoer van een macro af als variabele meer is dan waarde','Variabele [1..15]','Waarde [0..255]',1),
-          ('BreakOnVarNEqu','Eventlist commando: Breekt uitvoer van een macro af als variabele ongelijk is aan waarde','Variabele [1..15]','Waarde [0..255]',1),
           ('Variable','Event: treedt op als de inhoud van een variabele wijzigt.','Variabele [1..15]','Waarde [0..255]',1),
           ('VariableDec','Commando: Tel een waarde op bij een variabele','Variabele [1..15]','Waarde [1..255]',1),
           ('VariableInc','Commando: Trek een waarde af van een variabele','Variabele [1..15]','Waarde [1..255]',1),
@@ -371,6 +367,8 @@ class NodoSerial(eg.PluginClass):
         eg.globals.hold = 0
         eg.globals.Unit = "?"
         eg.globals.ThisUnit = "1"
+        eg.globals.Direction=""
+        eg.globals.Version="?"
         
         group = self        
         for Command, DescriptionCommand, DescriptionPar1, DescriptionPar2, Dvrt in NodoCommandList:              

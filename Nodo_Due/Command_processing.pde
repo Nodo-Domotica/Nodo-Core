@@ -68,7 +68,6 @@ byte CommandError(unsigned long Content)
   switch(Command)
     {
     //test; geen, altijd goed
-    case CMD_STATUS_LIST:
     case CMD_ERROR:
     case CMD_WAITFREERF: 
     case CMD_VARIABLE_EVENT:    
@@ -276,7 +275,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   
   if(error=CommandError(Content))// als er een error is, dan een error-event genereren en verzenden.
     {
-    TransmitCode(command2event(CMD_ERROR,Command,error));
+    TransmitCode(command2event(CMD_ERROR,Command,error),SIGNAL_TYPE_NODO);
     return false;
     }
   else // geen fouten, dan verwerken
@@ -284,11 +283,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     switch(Command)
       {   
       case CMD_SEND_KAKU:
-        TransmitCode(command2event(CMD_KAKU,Par1,Par2));
+        TransmitCode(command2event(CMD_KAKU,Par1,Par2),SIGNAL_TYPE_KAKU);
         break;
         
       case CMD_SEND_KAKU_NEW:
-        TransmitCode(command2event(CMD_KAKU_NEW,Par1,Par2));
+        TransmitCode(command2event(CMD_KAKU_NEW,Par1,Par2),SIGNAL_TYPE_NEWKAKU);
         break;
         
       case CMD_VARIABLE_INC: 
@@ -348,17 +347,17 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   
       case CMD_SEND_USEREVENT:
         // Voeg Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
-        TransmitCode(command2event(CMD_USER_EVENT,Par1,Par2)&0xf0ffffff);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
+        TransmitCode(command2event(CMD_USER_EVENT,Par1,Par2)&0xf0ffffff,SIGNAL_TYPE_NODO);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
         break;
   
       case CMD_SEND_VAR_USEREVENT:
         // Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
-        TransmitCode(command2event(CMD_USER_EVENT,S.UserVar[Par1-1],S.UserVar[Par2-1])&0xf0ffffff);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
+        TransmitCode(command2event(CMD_USER_EVENT,S.UserVar[Par1-1],S.UserVar[Par2-1])&0xf0ffffff,SIGNAL_TYPE_NODO);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
         break;
 
       case CMD_WIRED_ANALOG:
         // Lees de analoge waarde uit en verzend deze
-        TransmitCode(command2event(CMD_WIRED_ANALOG,Par1,WiredAnalog(Par1-1)));
+        TransmitCode(command2event(CMD_WIRED_ANALOG,Par1,WiredAnalog(Par1-1)),SIGNAL_TYPE_NODO);
         break;
 
       case CMD_SIMULATE_DAY:
@@ -367,7 +366,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;     
   
       case CMD_SEND_SIGNAL:
-        TransmitCode(0L);
+        TransmitCode(0L,SIGNAL_TYPE_UNKNOWN);
         break;        
   
       case CMD_CLOCK_YEAR:

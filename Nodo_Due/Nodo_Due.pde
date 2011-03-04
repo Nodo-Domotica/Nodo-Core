@@ -84,6 +84,17 @@ Aanpassingen vanaf svn build r230:
 Aanpassingen vanaf svn build r231:
 - Timers allemaal op 0 zetten levert nu geen event meer op.
 
+Aanpassingen vanaf svn build r231:
+- Queue binnenkomst en verwerking wordt nu anders weergegeven
+- Queue wordt nu FIFO afgehandeld i.p.v. LIFO
+- Bug opgelost: Als bij een eventlistwrite een actie wordt aangegeven die niet correct is verscheen er niet (altijd) een foutmelding. Nu wel.
+- Issue 169:	Error message geeft error...
+- Issue 208:	KAKU via een Divert wordt toch lokaal afgehandeld.
+- Aanpassing divert commando: Bij een Divert 0 wordt het te diverten commando ook zelf uitgevoerd.
+- Aanpassing divert commando: Geen verzending door ether als de divert gelijk is aan huidige unitnummer. Niet nodig want alle units zijn uniek
+- Status: Par1 extra optie 'Boot' om de welkomsttekst weer te geven.
+- Aanpassing afdrukken van een regel uit de eventlist: wordt nu afgesloten met een puntkomma.
+
 \**************************************************************************************************************************/
 
 
@@ -136,6 +147,7 @@ Aanpassingen vanaf svn build r231:
 // strings met vaste tekst naar PROGMEM om hiermee RAM-geheugen te sparen.
 prog_char PROGMEM Text_01[] = "Nodo-Due Domotica controller (c) Copyright 2011 P.K.Tonkes.";
 prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
+prog_char PROGMEM Text_03[] = "Line=";
 prog_char PROGMEM Text_08[] = "SUNMONTHUWEDTHUFRISAT";
 prog_char PROGMEM Text_06[] = "SYSTEM: Unknown command!";
 prog_char PROGMEM Text_07[] = "SYSTEM: Rawsignal=";
@@ -145,7 +157,8 @@ prog_char PROGMEM Text_11[] = "Direction=";
 prog_char PROGMEM Text_12[] = "Source=";
 prog_char PROGMEM Text_13[] = "ThisUnit=";
 prog_char PROGMEM Text_14[] = "Event=";
-prog_char PROGMEM Text_15[] = "NodoVersion=";
+prog_char PROGMEM Text_15[] = "Version=";
+prog_char PROGMEM Text_16[] = "Action=";
 
 #define RANGE_VALUE 30 // alle codes kleiner of gelijk aan deze waarde zijn vaste Nodo waarden.
 #define RANGE_EVENT 81 // alle codes groter of gelijk aan deze waarde zijn een event.
@@ -178,7 +191,7 @@ prog_char PROGMEM Text_15[] = "NodoVersion=";
 #define VALUE_ALL 24 // Deze waarde MOET groter dan 16 zijn.
 #define VALUE_DIRECTION_OUTPUT_RAW 25
 #define VALUE_NESTING 26
-#define VALUE_DIRECTION_QUEUE 27
+#define VALUE_SOURCE_QUEUE 27
 #define VALUE_ON 28 // Deze waarde MOET groter dan 16 zijn.
 #define VALUE_RES6 29
 #define VALUE_RES3 30
@@ -207,7 +220,7 @@ prog_char PROGMEM Text_15[] = "NodoVersion=";
 #define CMD_SIMULATE_DAY 53
 #define CMD_SOUND 54
 #define CMD_STATUS 55
-#define CMD_STATUS_LIST 56
+#define CMD_RES1 56
 #define CMD_TIMER_RANDOM 57
 #define CMD_TIMER_SET_SEC 58
 #define CMD_TIMER_SET_MIN 59
@@ -310,7 +323,7 @@ prog_char PROGMEM Cmd_52[]="Simulate";
 prog_char PROGMEM Cmd_53[]="SimulateDay";
 prog_char PROGMEM Cmd_54[]="Sound";
 prog_char PROGMEM Cmd_55[]="Status";
-prog_char PROGMEM Cmd_56[]="StatusList";
+prog_char PROGMEM Cmd_56[]="";
 prog_char PROGMEM Cmd_57[]="TimerRandom";
 prog_char PROGMEM Cmd_58[]="TimerSetSec";
 prog_char PROGMEM Cmd_59[]="TimerSetMin";
@@ -408,7 +421,8 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 
 #define SIGNAL_TYPE_UNKNOWN          0
 #define SIGNAL_TYPE_NODO             1
-#define SIGNAL_TYPE_NEWKAKU          2
+#define SIGNAL_TYPE_KAKU             2
+#define SIGNAL_TYPE_NEWKAKU          3
 
 #define NODO_TYPE_EVENT              1
 #define NODO_TYPE_COMMAND            2
@@ -430,6 +444,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define DISPLAY_TRACE               16
 #define DISPLAY_TAG                 32
 #define DISPLAY_SERIAL              64
+
 #define DISPLAY_RESET               DISPLAY_UNIT + DISPLAY_SOURCE + DISPLAY_DIRECTION + DISPLAY_TAG
 
 // settings voor verzenden en ontvangen van IR/RF 
@@ -639,10 +654,12 @@ void loop()
         Content=0L;
       
       // QUEUE: **************** Check zonsopkomst & zonsondergang  ***********************
-      while(QueuePos && HoldTimer<millis())
+      if(QueuePos && HoldTimer<millis())
         {
-        QueuePos--;
-        ProcessEvent(QueueEvent[QueuePos],VALUE_DIRECTION_QUEUE,QueuePort[QueuePos],0,0);      // verwerk binnengekomen event.
+        x=QueuePos;
+        for(QueuePos=0;QueuePos<x;QueuePos++)
+          ProcessEvent(QueueEvent[QueuePos],VALUE_DIRECTION_INPUT,QueuePort[QueuePos],0,0);      // verwerk binnengekomen event.
+        QueuePos=0;
         }       
         
       // DAYLIGHT: **************** Check zonsopkomst & zonsondergang  ***********************
@@ -661,7 +678,6 @@ void loop()
       LoopIntervalTimer_1=millis()+Loop_INTERVAL_1; // reset de timer
 
       // TIMER: **************** Genereer event als één van de Timers voor de gebruiker afgelopen is ***********************    
-
       for(x=0;x<TIMER_MAX;x++)
         {
         if(UserTimer[x]!=0L)// als de timer actief is

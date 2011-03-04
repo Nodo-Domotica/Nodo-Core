@@ -21,7 +21,7 @@
  /*********************************************************************************************\
  * Print een event volgens formaat:  'EVENT/ACTION: <port>, <type>, <content>
  \*********************************************************************************************/
-void PrintEvent(unsigned long Content, byte Port, boolean Direction)
+void PrintEvent(unsigned long Content, byte Port, byte Direction)
   {
   boolean first=0;
 
@@ -29,6 +29,7 @@ void PrintEvent(unsigned long Content, byte Port, boolean Direction)
   if(!(S.Display&DISPLAY_SERIAL) && Port==VALUE_SOURCE_SERIAL && Direction==VALUE_DIRECTION_INPUT)
     return;
   
+  // datum en tijd weergeven
   if(S.Display&DISPLAY_TIMESTAMP && Time.Day) // Time.Day=true want dan is er een RTC aanwezig.
     {   
     if(S.Display&DISPLAY_TAG)
@@ -37,6 +38,7 @@ void PrintEvent(unsigned long Content, byte Port, boolean Direction)
     first++;
     }
 
+  // geef aan of de simulatie mode aan stond
   if(Simulate)
     {
     if(first++)
@@ -49,6 +51,7 @@ void PrintEvent(unsigned long Content, byte Port, boolean Direction)
     Serial.print(cmd2str(VALUE_ON));
     }
 
+  // Geef de richting van de communicatie weer
   if(S.Display&DISPLAY_DIRECTION)
     {
     if(first++)
@@ -58,15 +61,15 @@ void PrintEvent(unsigned long Content, byte Port, boolean Direction)
       }
     if(S.Display&DISPLAY_TAG)
       PrintText(Text_11);
-    
     Serial.print(cmd2str(Direction));
-    if(Direction == VALUE_DIRECTION_QUEUE)
+    if(Direction==VALUE_SOURCE_QUEUE)
       {
       PrintChar('-');
-      PrintValue(QueuePos+1);
+      PrintValue(QueuePos+1);       
       }
-    }
+    }    
 
+  // geef de source van het event weer
   if(S.Display&DISPLAY_SOURCE && Port)
     {
     if(first++)
@@ -79,6 +82,7 @@ void PrintEvent(unsigned long Content, byte Port, boolean Direction)
     Serial.print(cmd2str(Port));
     }
 
+  // geef unit nummer weer
   if(S.Display&DISPLAY_UNIT && ((Content>>28)&0xf)==SIGNAL_TYPE_NODO)
     {
     if(first++)
@@ -322,7 +326,6 @@ void PrintTerm()
   if(SERIAL_TERMINATOR_2)Serial.print(SERIAL_TERMINATOR_2,BYTE);
   }
 
-
   
  /**********************************************************************************************\
  * Print een regel uit de Eventlist.
@@ -332,18 +335,29 @@ void PrintEventlistEntry(int entry, byte d)
   unsigned long Event, Action;
 
   Eventlist_Read(entry,&Event,&Action); // leesregel uit de Eventlist.    
-  Serial.print(cmd2str(VALUE_SOURCE_EVENTLIST));
-  Serial.print(" ");
 
+  // Geef de entry van de eventlist weer
+  if(S.Display&DISPLAY_TAG)
+    PrintText(Text_03);
   if(d>1)
     {
     PrintValue(d);
     PrintChar('.');
     }
   PrintValue(entry);
-  Serial.print(": ");
+
+  // geef het event weer
+  PrintChar(',');
+  PrintChar(' ');
+  if(S.Display&DISPLAY_TAG)
+    PrintText(Text_14);
   PrintEventCode(Event);
-  Serial.print("; ");
+
+  // geef het action weer
+  PrintChar(',');
+  PrintChar(' ');
+  if(S.Display&DISPLAY_TAG)
+    PrintText(Text_16);
   PrintEventCode(Action);
   }
   

@@ -50,9 +50,9 @@ unsigned long Receive_Serial(void)
   if(error)
     {
     if(error==ERROR_COMMAND) // commando bestaat niet 
-        TransmitCode(command2event(CMD_ERROR,VALUE_COMMAND,0));    
+        TransmitCode(command2event(CMD_ERROR,VALUE_COMMAND,0),SIGNAL_TYPE_NODO);    
     else // commando bestaat maar parameters niet correct
-        TransmitCode(command2event(CMD_ERROR,Cmd,error));
+        TransmitCode(command2event(CMD_ERROR,Cmd,error),SIGNAL_TYPE_NODO);
     return 0L;
     }
     
@@ -76,18 +76,19 @@ unsigned long Receive_Serial(void)
       Event=SerialReadEvent();
       if(!Event)
         {
-        TransmitCode(command2event(CMD_ERROR,CMD_EVENTLIST_WRITE,1));
+        TransmitCode(command2event(CMD_ERROR,CMD_EVENTLIST_WRITE,1),SIGNAL_TYPE_NODO);
         break;
         }
         
       Action=SerialReadEvent();
-      if(!Event)
+      if(!Action)
         {
-        TransmitCode(command2event(CMD_ERROR,CMD_EVENTLIST_WRITE,2));
+        TransmitCode(command2event(CMD_ERROR,CMD_EVENTLIST_WRITE,2),SIGNAL_TYPE_NODO);
         break;
         }
                 
       // schrijf weg in eventlist
+      
       if(!Eventlist_Write(0,Event,Action)) // Unit er uit filteren, anders na wijzigen unit geen geldige eventlist.???
         {
         error=true;
@@ -98,7 +99,14 @@ unsigned long Receive_Serial(void)
 
     case CMD_DIVERT:   
       Action=(SerialReadEvent()&0x00ffffff) | ((unsigned long)(Par1))<<24 | ((unsigned long)(SIGNAL_TYPE_NODO))<<28; // Event_1 is het te forwarden event voorzien van nieuwe bestemming unit
-      TransmitCode(Action);
+      x=(Action>>24)&0x0f; // unit
+
+      if(x==0 || x==S.Unit)
+        ProcessEvent(Action,VALUE_DIRECTION_INPUT,VALUE_SOURCE_SERIAL,0,0);      // verwerk binnengekomen event.
+        
+      if(x!=S.Unit)
+        TransmitCode(Action,SIGNAL_TYPE_NODO);
+
       break;        
 
     case CMD_RAWSIGNAL_GET:
@@ -181,7 +189,7 @@ unsigned long Receive_Serial(void)
         }while(x && y<RAW_BUFFER_SIZE);
       RawSignal[0]=y-1;
       Event=AnalyzeRawSignal();
-      TransmitCode(Event);
+      TransmitCode(Event,SIGNAL_TYPE_UNKNOWN);
       break;
    
     case CMD_EVENTLIST_ERASE:

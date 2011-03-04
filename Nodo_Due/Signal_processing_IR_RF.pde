@@ -1,5 +1,5 @@
   /**************************************************************************\
-    This file is part of Nodo Due, Â© Copyright Paul Tonkes
+    This file is part of Nodo Due, (c) Copyright Paul Tonkes
 
     Nodo Due is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -377,33 +377,32 @@ void CopySignalRF2IR(byte Window)
 * verzonden.
 \**********************************************************************************************/
 
-boolean TransmitCode(unsigned long Event)
-  {
-  if(Event==0L)// als er geen event is opgegeven...
-    {
-    if(RawSignal[0]<MIN_RAW_PULSES)return false; // er zat niets zinvols in de buffer
-    Event=AnalyzeRawSignal();   
-    }    
+boolean TransmitCode(unsigned long Event,byte SignalType)
+  {  
 
-  // als het een Nodo bekend eventtype is, dan deze weer opnieuw opbouwen in de buffer
-  if(((Event>>28)&0xf) == SIGNAL_TYPE_NODO)
-    {
+  if(SignalType!=SIGNAL_TYPE_UNKNOWN)
     if((S.WaitFreeRF_Window + S.WaitFreeRF_Delay)>=0)
         WaitFreeRF(S.WaitFreeRF_Delay*100, S.WaitFreeRF_Window*100); // alleen WaitFreeRF als type bekend is, anders gaat SendSignal niet goed a.g.v. overschrijven buffer
 
-    switch((Event>>16)&0xff)// command deel
-      {
-      case CMD_KAKU:
-      case CMD_SEND_KAKU:
-        KAKU_2_RawSignal(Event);
-        break;
-      case CMD_KAKU_NEW:
-      case CMD_SEND_KAKU_NEW:
-        NewKAKU_2_RawSignal(Event);
-        break;
-      default:
-        Nodo_2_RawSignal(Event);
-      }
+  switch(SignalType)
+    {
+    case SIGNAL_TYPE_KAKU:
+      KAKU_2_RawSignal(Event);
+      break;
+
+    case SIGNAL_TYPE_NEWKAKU:
+      NewKAKU_2_RawSignal(Event);
+      break;
+      
+    case SIGNAL_TYPE_NODO:
+      Nodo_2_RawSignal(Event);
+      break;
+
+    case SIGNAL_TYPE_UNKNOWN:
+      break;
+    
+    default:
+      return false;
     }
     
   if(S.TransmitPort==VALUE_SOURCE_RF || S.TransmitPort==VALUE_SOURCE_IR_RF)
@@ -411,6 +410,7 @@ boolean TransmitCode(unsigned long Event)
     PrintEvent(Event,VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT);
     RawSendRF();
     }
+
   if(S.TransmitPort==VALUE_SOURCE_IR || S.TransmitPort==VALUE_SOURCE_IR_RF)
     { 
     PrintEvent(Event,VALUE_SOURCE_IR,VALUE_DIRECTION_OUTPUT);

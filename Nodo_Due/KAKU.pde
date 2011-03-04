@@ -1,5 +1,5 @@
   /**************************************************************************\
-    This file is part of Nodo Due, Â© Copyright Paul Tonkes, 
+    This file is part of Nodo Due, (c) Copyright Paul Tonkes, 
     Thanks to: Kenneth Rover
 
     Nodo Due is free software: you can redistribute it and/or modify

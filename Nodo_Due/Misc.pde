@@ -452,10 +452,21 @@ void Status(boolean ToSerial, byte Par1, byte Par2)
   byte Par1_Start,Par1_End;
   byte x,P1,P2; // in deze variabele wordt de waarde geplaats (call by reference)
   
-  if(Par1==0)return;
-  if(Par2==VALUE_ALL)Par2==0;
+  if(Par1==0)
+    return;
+    
+  if(Par2==VALUE_ALL)
+    Par2==0;
+
+  if(Par1==CMD_BOOT_EVENT)
+    {
+    PrintWelcome();
+    return;
+    }
+    
   if(Par1==VALUE_ALL)
     {
+    Par2=0;
     if(ToSerial)
       PrintWelcome();
     CMD_Start=RANGE_VALUE;
@@ -510,7 +521,7 @@ void Status(boolean ToSerial, byte Par1, byte Par2)
           if(ToSerial)
             PrintEvent(command2event(x,P1,P2),VALUE_SOURCE_SYSTEM,VALUE_DIRECTION_OUTPUT);  // geef event weer op Serial
           else
-            TransmitCode(command2event(x,P1,P2));
+            TransmitCode(command2event(x,P1,P2),SIGNAL_TYPE_NODO);
           }
       }// if Getstatus
     }// for x

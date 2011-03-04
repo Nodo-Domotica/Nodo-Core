@@ -1,5 +1,5 @@
   /**************************************************************************\
-    This file is part of Nodo Due, Â© Copyright Paul Tonkes
+    This file is part of Nodo Due, (c) Copyright Paul Tonkes
 
     Nodo Due is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,15 +29,10 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
 
   digitalWrite(MonitorLedPin,HIGH);           // LED aan als er iets verwerkt wordt
 
-  if(EventlistDepth==0 || (S.Display & DISPLAY_TRACE))PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
-
-
   // als de Nodo in de hold is gezet, verzamel dan relevante events in de queue
   if(HoldTimer>millis())
     {
-    // als het event de opdracht betreft om de hold uit te zetten, dan dit doen.
-    PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
-    if(IncommingEvent==command2event(CMD_DELAY,0,0))
+    if((IncommingEvent&0xffffff00)==command2event(CMD_DELAY,0,0))
       HoldTimer=0L; //  HoldTimer is NU, dus wachttijd is afgelopen;
     else
       {
@@ -47,18 +42,25 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
         // als er nog plek is in de queue...
         if(QueuePos<EVENT_QUEUE_MAX)
           {
-          PrintEvent(IncommingEvent,Port,VALUE_DIRECTION_QUEUE);  // geef event weer op Serial
+          PrintEvent(IncommingEvent,Port,VALUE_SOURCE_QUEUE);  // print event, maar voer niet uit.
           QueueEvent[QueuePos]=IncommingEvent;
           QueuePort[QueuePos]=Port;
           QueuePos++;           
           return true;
-          }
+          }       
         else
-          TransmitCode(command2event(CMD_ERROR,CMD_DELAY,EVENT_QUEUE_MAX));
+          TransmitCode(command2event(CMD_ERROR,CMD_DELAY,EVENT_QUEUE_MAX),SIGNAL_TYPE_NODO);
         }
+      else
+        // geef event weer op Serial maar doe er verder niets mee
+        PrintEvent(IncommingEvent,Port,Direction);  
+
       return true;
       }
     }
+
+  if(EventlistDepth==0 || (S.Display & DISPLAY_TRACE))
+    PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
 
   // Als de RAW pulsen worden opgevraagd door de gebruiker...
   if(RawsignalGet)
@@ -71,11 +73,11 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   // Als de 'Confirm' optie aan staat, dan een 'Ok'-event verzenden
   // Dit alleen als het een commando of event voor deze nodo is.
   if(EventlistDepth==0 && S.Confirm && (((IncommingEvent>>28)&0xf)==SIGNAL_TYPE_NODO))
-    TransmitCode(command2event(CMD_OK,S.Unit,0));
+    TransmitCode(command2event(CMD_OK,S.Unit,0),SIGNAL_TYPE_NODO);
     
   if(EventlistDepth++>=MACRO_EXECUTION_DEPTH)
     {
-    TransmitCode(command2event(CMD_ERROR,VALUE_NESTING,MACRO_EXECUTION_DEPTH));
+    TransmitCode(command2event(CMD_ERROR,VALUE_NESTING,MACRO_EXECUTION_DEPTH),SIGNAL_TYPE_NODO);
     EventlistDepth=0;
     return false; // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
     }
@@ -86,8 +88,6 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     { // Er is een geldig Commando binnengekomen 
     if(!ExecuteCommand(IncommingEvent,Port,PreviousContent,PreviousPort))
       {
-      if(S.Display & DISPLAY_TRACE)
-        
       EventlistDepth--;
       return false;
       }
@@ -175,8 +175,10 @@ boolean CheckEventlist(unsigned long Code)
   for(byte x=1; x<=Eventlist_MAX;x++)
     {
     Eventlist_Read(x,&Event,&Action);
-    if(CheckEvent(Code,Event))return true; // match gevonden
-    if(Event==0L)break;
+    if(CheckEvent(Code,Event))
+      return true; // match gevonden
+    if(Event==0L)
+      break;
     }
   return false;
   }
@@ -195,8 +197,6 @@ boolean CheckEvent(unsigned long Event, unsigned long MacroEvent)
   
   // als huidige event exact overeenkomt met het event in de regel uit de Eventlist, dan een match
   if(MacroEvent==Event)return true; 
-    
-
 
   // Als unit ongelijk aan 0 of ongelijk aan huidige unit, dan is er ook geen match
   x=(Event>>24)&0x0f; // unit
