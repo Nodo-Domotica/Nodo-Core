@@ -4,17 +4,11 @@
  */
 package nl.lemval.nododue.util;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import nl.lemval.nododue.NodoDueManager;
-import nl.lemval.nododue.Options;
 import nl.lemval.nododue.cmd.CommandInfo;
 import nl.lemval.nododue.cmd.CommandLoader;
-import nl.lemval.nododue.cmd.CommandType;
 import nl.lemval.nododue.cmd.NodoCommand;
+import nl.lemval.nododue.cmd.NodoMacroResponse;
 import nl.lemval.nododue.cmd.NodoResponse;
 import nl.lemval.nododue.util.listeners.OutputEventListener;
 
@@ -26,20 +20,21 @@ public class NodoMacroHandler {
 
     public NodoMacroList getList() {
         CommandInfo command = CommandLoader.get(CommandInfo.Name.EventlistShow);
-        String content = query(command);
-        return parseSettings(content, CommandLoader.getActions(CommandType.ALL));
+        NodoCommand nodoCommand = new NodoCommand(command, null, null);
+        String content = execute(new NodoCommand[]{nodoCommand});
+        return parseSettings(content);
     }
 
-    private String query(CommandInfo cmd) {
-        return execute(new NodoCommand[]{new NodoCommand(cmd, null, null)}, true);
-    }
-
-    private String execute(NodoCommand[] commands, boolean read) {
+    private String execute(NodoCommand[] commands/*, boolean read*/) {
         final StringBuilder builder = new StringBuilder();
+        final long[] lastUpdated = new long[1];
+        
         OutputEventListener listener = new OutputEventListener() {
 
             public void handleOutputLine(String message) {
                 builder.append(message);
+                builder.append(System.getProperty("line.separator"));
+                lastUpdated[0] = System.currentTimeMillis();
             }
 
             public void handleClear() {
@@ -56,43 +51,28 @@ public class NodoMacroHandler {
         comm.addOutputListener(listener);
         for (int i = 0; i < commands.length; i++) {
             comm.send(commands[i]);
-            comm.waitCommand(100);
         }
-        while (read && builder.toString().endsWith("****") == false) {
-            comm.waitCommand(1000);
+        lastUpdated[0] = System.currentTimeMillis();
+        while (lastUpdated[0] + 250 > System.currentTimeMillis()) {
+            comm.waitCommand(150);
         }
         comm.removeOutputListener(listener);
         return builder.toString();
     }
 
-    private NodoMacroList parseSettings(String result, Collection<CommandInfo> cis) {
+    private NodoMacroList parseSettings(String result) {
         NodoMacroList list = new NodoMacroList();
         if (result == null) {
             return list;
         }
 
-        HashMap<String, CommandInfo> map = new HashMap<String, CommandInfo>();
-        for (CommandInfo commandInfo : cis) {
-            map.put(commandInfo.getName(), commandInfo);
-        }
-        Set<Device> applicances = Options.getInstance().getApplicances();
-        HashMap<String, Device> dev = new HashMap<String, Device>();
-        for (Device device : applicances) {
-            if (device.isActive()) {
-                dev.put(device.getSignal(), device);
-            }
-        }
-
-        // EVENTLIST: 4: (Wildcard 0,0); (SendIR 5,0)
-        Pattern pattern = Pattern.compile("([0-9]+): \\(?([^\\)]+)\\)?; \\(?([^\\)]+)\\)?");
-        Matcher matcher = pattern.matcher(result);
-
-        while (matcher.find()) {
-            int index = Integer.parseInt(matcher.group(1));
+        NodoMacroResponse[] macros = NodoMacroResponse.getMacros(result);
+        for (int i = 0; i < macros.length; i++) {
+            NodoMacroResponse macro = macros[i];
             try {
-                list.add(index, NodoMacro.loadFrom(map, dev, matcher.group(2), matcher.group(3)));
+                list.add(new NodoMacro(macro.getEvent(), macro.getAction()));
             } catch (Exception e) {
-                NodoDueManager.showMessage("Macroloader.parse_failed", index, result, e);
+                NodoDueManager.showMessage("Macroloader.parse_failed", macro.getIndex(), result, e);
             }
         }
         return list;
@@ -119,8 +99,7 @@ public class NodoMacroHandler {
                 commands[3 * i + 3] = listItem.getAction();
             }
         }
-
-        execute(commands, false);
+        execute(commands);
         return true;
     }
 }

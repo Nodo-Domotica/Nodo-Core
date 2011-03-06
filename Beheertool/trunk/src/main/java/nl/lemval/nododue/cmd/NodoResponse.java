@@ -56,17 +56,14 @@ public class NodoResponse {
                     response.parseDouble(elemData);
                 }
             }
-            if ( response.getCommand() != null ) {
+            if (response.getCommand() != null) {
                 result.add(response);
             }
         }
-//        for (NodoResponse response : result) {
-//            System.out.println("Response = " + response);
-//        }
         return result.toArray(new NodoResponse[result.size()]);
     }
 
-    private void parseDouble(String[] elemData) {
+    protected void parseDouble(String[] elemData) {
         if ("Source".equals(elemData[0])) {
             try {
                 source = Source.valueOf(elemData[1]);
@@ -93,7 +90,7 @@ public class NodoResponse {
         }
     }
 
-    private void parseSingle(String data) {
+    protected void parseSingle(String data) {
         try {
             direction = Direction.valueOf(data);
             return;
@@ -147,6 +144,8 @@ public class NodoResponse {
     public String toString() {
         return "[" + source + "|" + direction + "|" + time + "] " + command;
     }
-    
-    
+
+    protected void setCommand(NodoCommand cmd) {
+        this.command = cmd;
+    }
 }

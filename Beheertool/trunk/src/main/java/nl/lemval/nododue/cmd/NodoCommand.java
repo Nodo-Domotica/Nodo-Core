@@ -18,7 +18,7 @@ import nl.lemval.nododue.util.Device;
 public class NodoCommand {
 
 //    private static final String NEWLINE = System.getProperty("line.separator");
-    private static final Pattern elementPattern = Pattern.compile("\\(([A-Za-z]+) ([^,; \\)]*),? ?([^,; \\)]*)\\)");
+    private static final Pattern elementPattern = Pattern.compile("\\(([A-Za-z]+) ?([^,; \\)]*),? ?([^,; \\)]*)\\)");
     private static final Pattern hexPattern = Pattern.compile("\\(0x([A-Fa-f0-9]{4})([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})\\)");
     private static final Pattern unknownPattern = Pattern.compile("\\(0x([A-Fa-f0-9]{1,8})\\)");
     private String name;

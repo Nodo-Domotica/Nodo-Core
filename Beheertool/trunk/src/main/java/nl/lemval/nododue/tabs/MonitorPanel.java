@@ -1041,7 +1041,7 @@ public class MonitorPanel extends NodoBasePanel {
     @Action
     public void selectUnit() {
         if (!useLocalUnit.isSelected()) {
-            NodoDueManager.getApplication().getView().selectAndUpdateUnit(true);
+            NodoDueManager.getApplication().getView().showUnitSelectionBox(true);
         }
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables

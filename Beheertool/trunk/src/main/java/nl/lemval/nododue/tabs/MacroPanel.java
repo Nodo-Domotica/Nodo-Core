@@ -343,9 +343,6 @@ public class MacroPanel extends NodoBasePanel {
     private class RetrieveMacrosTask extends org.jdesktop.application.Task<Object, Void> {
 
         RetrieveMacrosTask(org.jdesktop.application.Application app) {
-            // Runs on the EDT.  Copy GUI state that
-            // doInBackground() depends on from parameters
-            // to RetrieveMacrosTask fields, here.
             super(app);
             retrieve.setEnabled(false);
             store.setEnabled(false);
@@ -353,16 +350,11 @@ public class MacroPanel extends NodoBasePanel {
 
         @Override
         protected Object doInBackground() {
-            // Your Task's code here.  This method runs
-            // on a background thread, so don't reference
-            // the Swing GUI from here.
             return new NodoMacroHandler().getList();
         }
 
         @Override
         protected void succeeded(Object result) {
-            // Runs on the EDT.  Update the GUI based on
-            // the result computed by doInBackground().
             NodoMacroList list = (NodoMacroList) result;
             macroListModel.setContent(list);
             updateCount();
@@ -382,9 +374,6 @@ public class MacroPanel extends NodoBasePanel {
     private class StoreMacrosTask extends org.jdesktop.application.Task<Object, Void> {
 
         StoreMacrosTask(org.jdesktop.application.Application app) {
-            // Runs on the EDT.  Copy GUI state that
-            // doInBackground() depends on from parameters
-            // to RetrieveMacrosTask fields, here.
             super(app);
             retrieve.setEnabled(false);
             store.setEnabled(false);
@@ -392,16 +381,11 @@ public class MacroPanel extends NodoBasePanel {
 
         @Override
         protected Object doInBackground() {
-            // Your Task's code here.  This method runs
-            // on a background thread, so don't reference
-            // the Swing GUI from here.
             return new NodoMacroHandler().writeList(macroListModel.getList());
         }
 
         @Override
         protected void succeeded(Object result) {
-            // Runs on the EDT.  Update the GUI based on
-            // the result computed by doInBackground().
             retrieve.setEnabled(true);
             store.setEnabled(true);
         }
