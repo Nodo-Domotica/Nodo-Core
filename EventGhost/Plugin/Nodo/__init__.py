@@ -42,7 +42,7 @@ eg.RegisterPlugin(
 #===============================================================================
 
 CommandsToRemember = ("WiredOut", "WiredIn", "WiredAnalog", "KAKU", "NewKAKU", "Variable", "UserEvent")
-TagsToRemember = ["ThisUnit", "Simulate", "Direction", "Unit", "Version", "Source"]
+TagsToRemember = ["RawSignal", "ThisUnit", "Simulate", "Direction", "Unit", "Version", "Source"]
 
 
 NodoCommandList =  (   
@@ -92,12 +92,12 @@ NodoCommandList =  (
           ('Unit','Unit',['1..15'],'',[''],'Stel Nodo unitnummer in.',0,),
 
       ('Signaal verwerking','',[''],'',[''],'',0,),
-          ('RawsignalCopy','Richting',['ir2rf','rf2ir'],'Seconden',['0..255'],'Verzend een binnengekomen RF/IR signaal direct naar IR/RF.',1,),
-          ('RawsignalGet','',[''],'',[''],'Wacht op een IR of RF event en geeft het signaal dat zich vervolgens in de buffer bevindt. De reeks met pulsen kan worden gebruikt om later met RawsignalPut weer te verzenden.',0,),
-          ('RawsignalPut','Pulsetijd, Spacetijd, ...,...,0',[''],'',[''],'Verzend een RAW pulsreeks',0,),
+          ('RawSignalCopy','Richting',['ir2rf','rf2ir'],'Seconden',['0..255'],'Verzend een binnengekomen RF/IR signaal direct naar IR/RF.',1,),
+          ('RawSignalGet','',[''],'',[''],'Wacht op een IR of RF event en geeft het signaal dat zich vervolgens in de buffer bevindt. De reeks met pulsen kan worden gebruikt om later met RawsignalPut weer te verzenden.',0,),
+          ('RawSignalPut','Pulsetijd, Spacetijd, ...,...,0',[''],'',[''],'Verzend een RAW pulsreeks',0,),
           ('ReceiveSettings','Timeout ( milliseconde)',['0..255'],'Scherpte',['0..255'],'Settings analyse van op IR of RF binnengekomen RAW signalen aanpassen.',1,),
           ('SendSignal','',[''],'',[''],'Verzend huidige inhoud van de RAW signaalbuffer.',1,),
-          ('TransmitSettings','Poort',['ir2rf','rf2ir'],'',[''],'Instellen van de settings voor  verzenden van Events.',1,),
+          ('TransmitSettings','Poort',['RF','IR','IR&RF'],'',[''],'Instellen van de settings voor  verzenden van Events.',1,),
           ('WaitFreeRF','Pause ( x 100mSec.)',['0..255'],'Window ( x 100mSec.)',['0..255'],'Stel wachten op vrije 433Mhz. ether in.',1,),
 
       ('Variabelen','',[''],'',[''],'',0,),
@@ -186,8 +186,7 @@ class NodoCommand(eg.ActionClass):
     def __call__(self, Par1Choice=0 , Par2Choice=0 , Divert=1):
         # Verzend het commando naar de Nodo 
         eg.plugins.NodoSerial.plugin.Send(self.GetNodoCommand(Par1Choice,Par2Choice,Divert))
-    
-    
+        
     def GetLabel(self, Par1Choice=0, Par2Choice=0, Divert=1):        
         return self.GetNodoCommand(Par1Choice,Par2Choice,Divert)
 
@@ -312,6 +311,15 @@ class ClockSync(eg.ActionClass):
   
 #===============================================================================
           
+class RawSignalPut(eg.ActionWithStringParameter):
+    def __call__(self, data):
+        eg.plugins.NodoSerial.plugin.Send("RawSignalPut;" + str(data) + ';')
+
+    def GetLabel(self, data):
+        return 'RawSignalPut;'
+        
+#===============================================================================
+          
 class RawCommand(eg.ActionWithStringParameter):
     def __call__(self, data):
         eg.plugins.NodoSerial.plugin.Send(str(data) + ';')
@@ -363,7 +371,7 @@ class NodoSerial(eg.PluginClass):
         eg.globals.Direction=""
         eg.globals.Version="?"
         
-        group = self        
+        # ???        group = self        
         for Command, DescriptionPar1, RangePar1, DescriptionPar2, RangePar2, DescriptionCommand, Dvrt in NodoCommandList:              
             if len(DescriptionCommand)==0:
                 # Nieuwe subgroep of terug naar vorig niveau
@@ -372,7 +380,7 @@ class NodoSerial(eg.PluginClass):
                 else:
                     group = self.AddGroup(Command)                    
                 continue
-                                
+
             # er zijn een aantal commando's met een separate, elders gedefinieerde class
             if Command == 'EventlistWrite':
                  EventlistWrite.name = Command
@@ -387,6 +395,14 @@ class NodoSerial(eg.PluginClass):
                  RawCommand.parameterDescription = DescriptionPar1
                  RawCommand.cmd = Command
                  group.AddAction(RawCommand)
+                 continue
+
+            elif Command == 'RawSignalPut':
+                 RawSignalPut.name = Command
+                 RawSignalPut.description = DescriptionCommand
+                 RawSignalPut.parameterDescription = DescriptionPar1
+                 RawSignalPut.cmd = Command
+                 group.AddAction(RawSignalPut)
                  continue
 
             elif Command == 'ClockSync':
@@ -417,8 +433,7 @@ class NodoSerial(eg.PluginClass):
         self.serialThread.SetReadEventCallback(self.OnReceive)
         self.serialThread.Open(port, 19200)
         self.serialThread.SetRts()
-        self.serialThread.Start()
-        
+        self.serialThread.Start()        
 
     def __stop__(self):
         self.serialThread.Close()
@@ -494,9 +509,15 @@ class NodoSerial(eg.PluginClass):
                         y = len(ReceivedString)                        
                     if y>0:
                         # ken waarde aan variabele toe een global variabele
-                        eg.globals.__setattr__(Tag.strip("= "),ReceivedString[x:y].strip(", ()=;"))
-                        # ??? print "Tag gevonden: " + Tag.strip("= ") + "= >" +  ReceivedString[x:y].strip(", ()=;") + "<  Start=" + str(x) + " eind=" + str(y) 
+                        Tag=Tag.strip(" =")
+                        eg.globals.__setattr__(Tag,ReceivedString[x:y].strip(", ()=;"))
 
+                        # dan zijn er een aantal tags die, als ze voorbij gekomen zijn, een speciale behandeling behoeven
+                        if Tag=="RawSignal":
+                            self.info.eventPrefix = "Nodo"
+                            eg.globals.__setattr__(Tag,ReceivedString[x:len(ReceivedString)])
+                            self.TriggerEvent(Tag)
+                            
             # Event is een ander geval. Hier de afzonderlijke delen uitparsen
             Tag="Event="
             x = ReceivedString.find(Tag, 0, len(ReceivedString))
@@ -521,6 +542,7 @@ class NodoSerial(eg.PluginClass):
             for cmd in CommandsToRemember:
                 if eg.globals.Command == cmd: 
                     eg.globals.__setattr__("Unit" + eg.globals.Unit + "_" + cmd + "_" + str(eg.globals.Par1),eg.globals.Par2) 
+
 
             return
 

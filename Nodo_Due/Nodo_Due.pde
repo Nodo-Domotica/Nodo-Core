@@ -94,6 +94,17 @@ Aanpassingen vanaf svn build r231:
 - Aanpassing divert commando: Geen verzending door ether als de divert gelijk is aan huidige unitnummer. Niet nodig want alle units zijn uniek
 - Status: Par1 extra optie 'Boot' om de welkomsttekst weer te geven.
 - Aanpassing afdrukken van een regel uit de eventlist: wordt nu afgesloten met een puntkomma.
+- Weergave regels 'EventlistShow' aangepast aan nieuwe MMI
+
+Aanpassingen vanaf svn build r235:
+- "SYSTEM: Rawsignal=" melding veranderd in "RawSignal="
+- 
+- 
+- 
+- 
+- 
+
+
 
 \**************************************************************************************************************************/
 
@@ -150,7 +161,7 @@ prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
 prog_char PROGMEM Text_03[] = "Line=";
 prog_char PROGMEM Text_08[] = "SUNMONTHUWEDTHUFRISAT";
 prog_char PROGMEM Text_06[] = "SYSTEM: Unknown command!";
-prog_char PROGMEM Text_07[] = "SYSTEM: Rawsignal=";
+prog_char PROGMEM Text_07[] = "RawSignal=";
 prog_char PROGMEM Text_09[] = "SYSTEM: Break!";
 prog_char PROGMEM Text_10[] = "Timestamp=";
 prog_char PROGMEM Text_11[] = "Direction=";
