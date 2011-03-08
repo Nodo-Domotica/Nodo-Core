@@ -33,7 +33,7 @@ eg.RegisterPlugin(
     name="Nodo",
     description=__doc__,
     url="http://members.chello.nl/p.tonkes8/index.html",
-    author="Paul Tonkes",
+    author="P.K.Tonkes@gmail.com",
     version="Plugin version 0.02 beta",
     canMultiLoad = False,
     createMacrosOnAdd = True,
@@ -43,7 +43,6 @@ eg.RegisterPlugin(
 
 CommandsToRemember = ("WiredOut", "WiredIn", "WiredAnalog", "KAKU", "NewKAKU", "Variable", "UserEvent")
 TagsToRemember = ["RawSignal", "ThisUnit", "Simulate", "Direction", "Unit", "Version", "Source"]
-
 
 NodoCommandList =  (   
       # Commando, Par1-label, Par1-bereik, Par2-label, Par2-bereik, Beschrijving, Divertable
@@ -138,6 +137,12 @@ class KAKU:
                'N1','N2','N3','N4','N5','N6','N7','N8','N9','N10','N11','N12','N13','N14','N15','N16',
                'O1','O2','O3','O4','O5','O6','O7','O8','O9','O10','O11','O12','O13','O14','O15','O16',
                'P1','P2','P3','P4','P5','P6','P7','P8','P9','P10','P11','P12','P13','P14','P15','P16',]
+
+#===============================================================================
+
+class PluginVars:
+    Prefix = "Unit-{Unit}"
+    XonXoffHold = 0
 
 #===============================================================================
 
@@ -293,7 +298,7 @@ class ClockSync(eg.ActionClass):
             DOW = 7   # zaterdag!
         eg.plugins.NodoSerial.plugin.Send(DivertCommand + "ClockSetDow " + str(DOW) + ";")
 
-    def Configure(self,Divert=1):
+    def Configure(self, Divert=1):
         panel = eg.ConfigPanel(self)
         mainSizer =wx.BoxSizer(wx.VERTICAL)
     
@@ -355,7 +360,7 @@ class EventlistWrite(eg.ActionClass):
         EventlistActionCtrl.SetMinSize((75,20))
         mainSizer.Add(EventlistActionLbl,0,wx.wx.TOP,20)
         mainSizer.Add(EventlistActionCtrl,0,wx.EXPAND)        
-
+        
         panel.sizer.Add(mainSizer)
         while panel.Affirmed():
             panel.SetResult(EventlistActionCtrl.GetValue(),EventlistEventCtrl.GetValue())
@@ -365,13 +370,12 @@ class EventlistWrite(eg.ActionClass):
 class NodoSerial(eg.PluginClass):
     def __init__(self):        
         self.serial = None
-        eg.globals.hold = 0
+
         eg.globals.Unit = "1"
         eg.globals.ThisUnit = "1"
         eg.globals.Direction=""
         eg.globals.Version="?"
         
-        # ???        group = self        
         for Command, DescriptionPar1, RangePar1, DescriptionPar2, RangePar2, DescriptionCommand, Dvrt in NodoCommandList:              
             if len(DescriptionCommand)==0:
                 # Nieuwe subgroep of terug naar vorig niveau
@@ -427,7 +431,7 @@ class NodoSerial(eg.PluginClass):
                 Action.__name__ = Command                
                 group.AddAction(Action)
 
-    def __start__(self, port):
+    def __start__(self, port, Prefix):
         self.port = port
         self.serialThread = eg.SerialThread()
         self.serialThread.SetReadEventCallback(self.OnReceive)
@@ -438,22 +442,35 @@ class NodoSerial(eg.PluginClass):
     def __stop__(self):
         self.serialThread.Close()
  
-    def Configure(self, port=0):
+    def Configure(self, port=0, Prefix=PluginVars.Prefix):
         panel = eg.ConfigPanel(self)
-        portCtrl = panel.SerialPortChoice(port)
-        panel.AddLine("Zorg er voor dat eerst de Arduino drivers correct zijn geinstalleerd.\n"),
-        panel.AddLine("Bij gelijktijdig gebruik van andere plugins, niet dezelfde COM-poort toewijzen.\n\n"),
-        panel.AddLine("Poort:", portCtrl)
+        mainSizer =wx.BoxSizer(wx.VERTICAL)
+    
+        PortCtrl = panel.SerialPortChoice(port)
+        CommunicationBox = panel.BoxedGroup( "Communicatie:",("COM: poort ", PortCtrl))
+        eg.EqualizeWidths(CommunicationBox.GetColumnItems(0))
+        panel.sizer.Add(CommunicationBox)
+
+        Textlbl=wx.StaticText(panel, -1, " ")
+        panel.sizer.Add(Textlbl)
+
+        PrefixCtrl=wx.TextCtrl(panel,-1,Prefix)
+        SettingsBox = panel.BoxedGroup( "Overige instellingen: ",( "Prefix ", PrefixCtrl))
+        eg.EqualizeWidths(SettingsBox.GetColumnItems(0))
+        panel.sizer.Add(SettingsBox)
+
         while panel.Affirmed():
-            panel.SetResult(portCtrl.GetValue())
+            panel.SetResult(PortCtrl.GetValue(),PrefixCtrl.GetValue())
+        
+        PluginVars.Prefix=Prefix
 
     # verzenden van het commando en gelijkertijd kijken of er een XOFF verzonden is
     def Send(self, StringToSend=""):
         #verzend de reeks tekens uit het Nodo commando
         print "< " + StringToSend
         for i in range(len(StringToSend)):        
-            if eg.globals.hold == 1:
-                while eg.globals.hold == 1:
+            if PluginVars.XonXoffHold == 1:
+                while PluginVars.XonXoffHold == 1:
                     # hier een timeout inbouwen ???
                     x = 0
             self.serialThread.Write(StringToSend[i])                                
@@ -464,12 +481,13 @@ class NodoSerial(eg.PluginClass):
       while True:
           b = serial.Read(1, 0.2)
           if b == "\n":
-              eg.globals.Line = buffer
-              self.ParseReceivedLine(buffer)
-              self.info.eventPrefix = "Unit" + str(eg.globals.Unit)
+              eg.globals.Input = buffer
               print "> " + buffer
+              self.ParseReceivedLine(buffer)
+
               if eg.globals.Event !="" and (eg.globals.Direction=="Input" or eg.globals.Direction=="Internal"):
-                self.TriggerEvent(eg.globals.Event)
+                      self.info.eventPrefix = eg.ParseString(PluginVars.Prefix) 
+                      self.TriggerEvent(eg.globals.Event)
               return
               
           elif b == "":
@@ -478,12 +496,12 @@ class NodoSerial(eg.PluginClass):
               
           elif b == chr(17):
               # XON: nodo heeft aangegeven weer klaar te staan. Ga verder met zenden van tekens
-              eg.globals.hold = 0
+              PluginVars.XonXoffHold = 0
               continue
 
           elif b == chr(19):
               # XOFF: zet verzenden van tekens naar de seriele poort tijdelijk even in de hold zodat de buffer van de Nodo niet overloopt.
-              eg.globals.hold = 1
+              PluginVars.XonXoffHold = 1
               continue
                          
           buffer += b
