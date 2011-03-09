@@ -98,7 +98,7 @@ Aanpassingen vanaf svn build r231:
 
 Aanpassingen vanaf svn build r235:
 - "SYSTEM: Rawsignal=" melding veranderd in "RawSignal="
-- 
+-  Timestamp" is "TimeStamp" geworden. tevens weergave van deze tag in de welkomsttekst.
 - 
 - 
 - 
@@ -163,7 +163,7 @@ prog_char PROGMEM Text_08[] = "SUNMONTHUWEDTHUFRISAT";
 prog_char PROGMEM Text_06[] = "SYSTEM: Unknown command!";
 prog_char PROGMEM Text_07[] = "RawSignal=";
 prog_char PROGMEM Text_09[] = "SYSTEM: Break!";
-prog_char PROGMEM Text_10[] = "Timestamp=";
+prog_char PROGMEM Text_10[] = "TimeStamp=";
 prog_char PROGMEM Text_11[] = "Direction=";
 prog_char PROGMEM Text_12[] = "Source=";
 prog_char PROGMEM Text_13[] = "ThisUnit=";

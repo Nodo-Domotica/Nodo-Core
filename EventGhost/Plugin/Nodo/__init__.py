@@ -40,14 +40,14 @@ eg.RegisterPlugin(
 )
 
 #===============================================================================
-
-CommandsToRemember = ("WiredOut", "WiredIn", "WiredAnalog", "KAKU", "NewKAKU", "Variable", "UserEvent")
-TagsToRemember = ["RawSignal", "ThisUnit", "Simulate", "Direction", "Unit", "Version", "Source"]
+            
+CommandsToRemember = ("WiredOut", "WiredIn", "WiredAnalog", "KAKU", "NewKAKU", "Variable", "VariableSet")
+TagsToRemember = ["TimeStamp", "RawSignal", "ThisUnit", "Simulate", "Direction", "Unit", "Version", "Source"]
 
 NodoCommandList =  (   
       # Commando, Par1-label, Par1-bereik, Par2-label, Par2-bereik, Beschrijving, Divertable
       ('System','',[''],'',[''],'',0,),
-          ('Status','Nodo commando',['ClockDaylight','ClockSetDate','ClockSetDOW','ClockSetTime','ClockSetYear','TimerSetMin','Boot','Simulate','UserEvent','Confirm','Unit','WaitFreeRF','ReceiveSettings','TransmitSettings','All','WiredAnalog','WiredIn','WiredOut','WiredPullup','WiredRange','WiredSmittTrigger','WiredThreshold'],'Parameter-1 van Nodo commando',['0..15'],'Opvragen van settings zoals opgeslagen in de Nodo',1,),
+          ('Status','Nodo commando',['Boot','ClockDaylight','ClockSetDate','ClockSetDOW','ClockSetTime','ClockSetYear','TimerSetMin','Simulate','UserEvent','Confirm','Unit','WaitFreeRF','ReceiveSettings','TransmitSettings','All','WiredAnalog','WiredIn','WiredOut','WiredPullup','WiredRange','WiredSmittTrigger','WiredThreshold'],'Parameter-1 van Nodo commando',['0..15'],'Opvragen van settings zoals opgeslagen in de Nodo',1,),
           ('Reset','',[''],'',[''],'Nodo terugzetten naar fabrieksinstelling. ALLE SETTING WORDEN GEWIST!',0,),
 
       ('EventList','',[''],'',[''],'',0,),
@@ -115,7 +115,6 @@ NodoCommandList =  (
           ('Display','View',['All','Direction','Source','Unit','Timestamp','Trace', 'Tag', 'Serial', 'Reset'],'Status',['On','Off'],'Hiermee kunt u instellen hoe binnengekomen en verzonden events worden weergegeven.',0,),
           ('Boot','',[''],'',[''],'Dit is een event dat altijd eenmalig plaatsvindt na opstarten van de Nodo.',1,),
           ('RawCommand','Commando',[''],'',[''],'Vrij in te geven Nodo commando. Als er meer commando s worden opgegeven, deze dan van elkaar scheiden met een puntkomma.',0,),
-
 )
 
 #===============================================================================
@@ -141,7 +140,8 @@ class KAKU:
 #===============================================================================
 
 class PluginVars:
-    Prefix = "Unit-{Unit}"
+    EventPrefix = "Unit-{Unit}"
+    EventSuffix = "{Event}"
     XonXoffHold = 0
 
 #===============================================================================
@@ -150,11 +150,11 @@ class NodoCommand(eg.ActionClass):
     # class voor standaard Nodo Commando's met opties voor Parameter-1, Parameter-2 en divert
     
     class text:
-        Par1Label = ""
-        Par1Range = ""
-        Par2Label = ""
-        Par2Range = ""
-        Diverting = ""
+        Par1Label  = ""
+        Par1Range  = ""
+        Par2Label  = ""
+        Par2Range  = ""
+        Diverting  = ""
         NodoCommand = ""
                         
     def GetNodoCommand(self, Par1Choice=0 , Par2Choice=0 , Divert=1):
@@ -371,10 +371,11 @@ class NodoSerial(eg.PluginClass):
     def __init__(self):        
         self.serial = None
 
-        eg.globals.Unit = "1"
-        eg.globals.ThisUnit = "1"
-        eg.globals.Direction=""
-        eg.globals.Version="?"
+        eg.globals.Unit        = "1"
+        eg.globals.ThisUnit    = "1"
+        eg.globals.Direction   = ""
+        eg.globals.Version     = "?"
+        eg.globals.Output      = ""
         
         for Command, DescriptionPar1, RangePar1, DescriptionPar2, RangePar2, DescriptionCommand, Dvrt in NodoCommandList:              
             if len(DescriptionCommand)==0:
@@ -431,18 +432,19 @@ class NodoSerial(eg.PluginClass):
                 Action.__name__ = Command                
                 group.AddAction(Action)
 
-    def __start__(self, port, Prefix):
+    def __start__(self, port, EventPrefix, EventSuffix):
         self.port = port
         self.serialThread = eg.SerialThread()
         self.serialThread.SetReadEventCallback(self.OnReceive)
         self.serialThread.Open(port, 19200)
         self.serialThread.SetRts()
         self.serialThread.Start()        
+        eg.plugins.NodoSerial.plugin.Send("Status Boot;")
 
     def __stop__(self):
         self.serialThread.Close()
  
-    def Configure(self, port=0, Prefix=PluginVars.Prefix):
+    def Configure(self, port=0, EventPrefix=PluginVars.EventPrefix, EventSuffix=PluginVars.EventSuffix):
         panel = eg.ConfigPanel(self)
         mainSizer =wx.BoxSizer(wx.VERTICAL)
     
@@ -454,24 +456,27 @@ class NodoSerial(eg.PluginClass):
         Textlbl=wx.StaticText(panel, -1, " ")
         panel.sizer.Add(Textlbl)
 
-        PrefixCtrl=wx.TextCtrl(panel,-1,Prefix)
-        SettingsBox = panel.BoxedGroup( "Overige instellingen: ",( "Prefix ", PrefixCtrl))
+        PrefixCtrl=wx.TextCtrl(panel,-1,EventPrefix)
+        SuffixCtrl=wx.TextCtrl(panel,-1,EventSuffix)
+        SettingsBox = panel.BoxedGroup( "Events: ",( "Prefix ", PrefixCtrl),( "Suffix ", SuffixCtrl))
         eg.EqualizeWidths(SettingsBox.GetColumnItems(0))
         panel.sizer.Add(SettingsBox)
 
         while panel.Affirmed():
-            panel.SetResult(PortCtrl.GetValue(),PrefixCtrl.GetValue())
+            panel.SetResult(PortCtrl.GetValue(),PrefixCtrl.GetValue(),SuffixCtrl.GetValue(),0,0,0)
         
-        PluginVars.Prefix=Prefix
+        PluginVars.EventPrefix=EventPrefix
+        PluginVars.EventSuffix=EventSuffix
 
     # verzenden van het commando en gelijkertijd kijken of er een XOFF verzonden is
     def Send(self, StringToSend=""):
-        #verzend de reeks tekens uit het Nodo commando
         print "< " + StringToSend
+        eg.globals.Output = StringToSend
+        
+        #verzend de reeks tekens uit het Nodo commando
         for i in range(len(StringToSend)):        
             if PluginVars.XonXoffHold == 1:
                 while PluginVars.XonXoffHold == 1:
-                    # hier een timeout inbouwen ???
                     x = 0
             self.serialThread.Write(StringToSend[i])                                
     
@@ -486,8 +491,8 @@ class NodoSerial(eg.PluginClass):
               self.ParseReceivedLine(buffer)
 
               if eg.globals.Event !="" and (eg.globals.Direction=="Input" or eg.globals.Direction=="Internal"):
-                      self.info.eventPrefix = eg.ParseString(PluginVars.Prefix) 
-                      self.TriggerEvent(eg.globals.Event)
+                      self.info.eventPrefix = eg.ParseString(PluginVars.EventPrefix) 
+                      self.TriggerEvent(eg.ParseString(PluginVars.EventSuffix))
               return
               
           elif b == "":
@@ -519,16 +524,12 @@ class NodoSerial(eg.PluginClass):
                     y = ReceivedString.find(",", x, len(ReceivedString))
                     if y<0:
                         y = ReceivedString.find(";", x, len(ReceivedString))
-                    if y<0:
-                        y = ReceivedString.find(".", x, len(ReceivedString))
-                    if y<0:
-                        y = ReceivedString.find(" ", x, len(ReceivedString))
                     if y<0 :
                         y = len(ReceivedString)                        
                     if y>0:
                         # ken waarde aan variabele toe een global variabele
                         Tag=Tag.strip(" =")
-                        eg.globals.__setattr__(Tag,ReceivedString[x:y].strip(", ()=;"))
+                        eg.globals.__setattr__(Tag,ReceivedString[x:y].strip(", ;"))
 
                         # dan zijn er een aantal tags die, als ze voorbij gekomen zijn, een speciale behandeling behoeven
                         if Tag=="RawSignal":
@@ -558,8 +559,15 @@ class NodoSerial(eg.PluginClass):
             # Zoek in de binnengekomen regels naar de Tags en haal bijbehorende waarde er uit.
             # Plaats deze vervolgens in de globale namespace eg.globals            
             for cmd in CommandsToRemember:
-                if eg.globals.Command == cmd: 
-                    eg.globals.__setattr__("Unit" + eg.globals.Unit + "_" + cmd + "_" + str(eg.globals.Par1),eg.globals.Par2) 
+                if cmd==eg.globals.Command:
+                    # enkele events hebben ook een commando tegenhanger.
+                    # bij opslaan in variabelen hiertussen geen onderscheid meer maken
+
+                    if cmd == "VariableSet":
+                        cmd="Variable"
+
+                    # als het event afkomstig is van een andere Nodo dan de huidig aangesloten dan de prefix aan de variabele toevoegen
+                    eg.globals.__setattr__(cmd + "_" + str(eg.globals.Par1),eg.globals.Par2) 
 
 
             return

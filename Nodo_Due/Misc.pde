@@ -470,7 +470,7 @@ void Status(boolean ToSerial, byte Par1, byte Par2)
     if(ToSerial)
       PrintWelcome();
     CMD_Start=RANGE_VALUE;
-    CMD_End=RANGE_EVENT;
+    CMD_End=COMMAND_MAX;
     }
   else
     {
@@ -494,6 +494,7 @@ void Status(boolean ToSerial, byte Par1, byte Par2)
           case CMD_WIRED_SMITTTRIGGER:
           case CMD_WIRED_THRESHOLD:
           case CMD_WIRED_RANGE:
+          case CMD_WIRED_IN_EVENT:
             Par1_Start=1;
             Par1_End=4;
             break;      

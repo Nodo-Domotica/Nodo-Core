@@ -18,7 +18,7 @@
 \**************************************************************************/
 
 
- /*********************************************************************************************\
+ /******************************welcome***************************************************************\
  * Print een event volgens formaat:  'EVENT/ACTION: <port>, <type>, <content>
  \*********************************************************************************************/
 void PrintEvent(unsigned long Content, byte Port, byte Direction)
@@ -424,6 +424,7 @@ void PrintWelcome(void)
     {
     PrintChar(',');
     PrintChar(' ');
+    PrintText(Text_10);
     PrintDateTime();
     if(Time.DaylightSaving)
       {
