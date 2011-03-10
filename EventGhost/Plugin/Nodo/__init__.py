@@ -1,5 +1,4 @@
 # Bugs:
-# -  sendvaruserevent is nog niet divertable
 #
 # Idee:
 
@@ -43,7 +42,7 @@ TagsToRemember = ["TimeStamp", "RawSignal", "ThisUnit", "Simulate", "Direction",
 NodoCommandList =  (   
       # Commando, Par1-label, Par1-bereik, Par2-label, Par2-bereik, Beschrijving, Divertable
       ('System','',[''],'',[''],'',0,),
-          ('Status','Nodo commando',['Boot','ClockDaylight','ClockSetDate','ClockSetDOW','ClockSetTime','ClockSetYear','TimerSetMin','Simulate','UserEvent','Confirm','Unit','WaitFreeRF','ReceiveSettings','TransmitSettings','All','WiredAnalog','WiredIn','WiredOut','WiredPullup','WiredRange','WiredSmittTrigger','WiredThreshold'],'Parameter-1 van Nodo commando',['0..15'],'Opvragen van settings zoals opgeslagen in de Nodo',1,),
+          ('Status','Nodo commando',['ClockDaylightSaving','ClockSetDate','ClockSetDOW','ClockSetTime','ClockSetYear','TimerSetMin','Boot','Simulate','VariableSet','Confirm','Unit','WaitFreeRF','ReceiveSettings','TransmitSettings','All','WiredAnalog','WiredIn','WiredOut','WiredPullup','WiredRange','WiredSmittTrigger','WiredThreshold'],'Parameter-1 van Nodo commando',['0..15'],'Opvragen van settings zoals opgeslagen in de Nodo',1,),
           ('Reset','',[''],'',[''],'Nodo terugzetten naar fabrieksinstelling. ALLE SETTING WORDEN GEWIST!',0,),
 
       ('EventList','',[''],'',[''],'',0,),
@@ -61,7 +60,7 @@ NodoCommandList =  (
           ('WiredIn','Poort',['1..4'],'Waarde',['0','1'],'Wired-in status',1,),
           ('WiredOut','Poort',['1..4'],'Status',['On','Off'],'Wired-out status',1,),
           ('WiredPullup','Poort',['1..4'],'Status',['On','Off'],'Activeer de interne pull-up weerstand.',1,),
-          ('WiredRange','Poort',['1..4'],'Bereik',['1..4'],'Stel het analoge meetbereik is van een Wired-in poort.',1,),
+          ('WiredRange','Poort',['1..4'],'Bereik',['0..4'],'Stel het analoge meetbereik is van een Wired-in poort.',1,),
           ('WiredSmittTrigger','Poort',['1..4'],'Waarde',['0..255'],'Stel de SmittTrigger waarde in voor een Wired-In poort.',1,),
           ('WiredThreshold','Poort',['1..4'],'Waarde',['0..255'],'Stel de Threshold waarde in voor een Wired-In poort',1,),
 
@@ -104,7 +103,7 @@ NodoCommandList =  (
           ('VariableWiredAnalog','Variabele',['1..15'],'Poort',['1..4'],'Variabele zoals opgegeven met parameter-1 gelijk maken aan de analoge waarde van een WIRED_IN poort.',1,),
 
       ('Diversen','',[''],'',[''],'',0,),
-          ('SendVarUserEvent','Variabele',['1..15'],'Variabele',['1..15'],'Verzendt een UserEvent zoals het commando SendUserEvent, echter met de inhoud van een variabele',0,),
+          ('SendVarUserEvent','Variabele',['1..15'],'Variabele',['1..15'],'Verzendt een UserEvent zoals het commando SendUserEvent, echter met de inhoud van een variabele',1,),
           ('UserEvent','Waarde',['0..255'],'Waarde (0=Wildcard)',['0..255'],'UserEvent is een type event dat vrij door de gebruiker kan worden ingezet voor eigen doeleinden.',1,),
           ('SendUserEvent','Waarde',['0..255'],'Waarde',['0..255'],'Verzend een UserEvent naar de poorten zoals ingesteld met TransmitSettings.',1,),
           ('Sound','Signaal',['0..7'],'Herhalingen',['0..255'],'Geeft een geluidssignaal.',1,),
@@ -488,8 +487,8 @@ class NodoSerial(eg.PluginClass):
               self.ParseReceivedLine(buffer)
 
               if eg.globals.Event !="" and (eg.globals.Direction=="Input" or eg.globals.Direction=="Internal"):
-                      self.info.eventPrefix = eg.ParseString(PluginVars.EventPrefix) 
-                      self.TriggerEvent(eg.ParseString(PluginVars.EventSuffix))
+                  self.info.eventPrefix = eg.ParseString(PluginVars.EventPrefix) 
+                  self.TriggerEvent(eg.ParseString(PluginVars.EventSuffix))
               return
               
           elif b == "":
@@ -512,13 +511,12 @@ class NodoSerial(eg.PluginClass):
     def ParseReceivedLine(self, ReceivedString):
             # parse de ontvangen Nodo regel en plaats de delen in eg.globals voor later gebruik door de user     
 
-      
+            # Om te voorkomen dat Unit variabele niet meer actuele gegevens bevat
+            # de variabele Unit leeg maken.
+            eg.globals.Unit = ""
+
             # Zoek in de binnengekomen regels naar de Tags en haal bijbehorende waarde er uit.
             # Plaats deze vervolgens in de globale namespace eg.globals
-            # Niet Nodo events krijgen geen Unit-nummer mee in de ontvangen regel
-            # Om te voorkomen dat Unit variabele niet meer actuele gegevens bevat
-            # de variabele Unit vullen met ThisUnit.
-            eg.globals.Unit = eg.globals.ThisUnit
             for Tag in TagsToRemember:
                 Tag+="="
                 x = ReceivedString.find(Tag, 0, len(ReceivedString))
@@ -539,8 +537,11 @@ class NodoSerial(eg.PluginClass):
                             self.TriggerEvent(Tag)
                         else:
                             eg.globals.__setattr__(Tag,ReceivedString[x:y].strip(", ;"))
-                                                 
-                            
+
+            # Niet Nodo events krijgen geen Unit-tag mee
+            if eg.globals.Unit == "":                                     
+                eg.globals.Unit = "?"
+                
             # Event is een ander geval. Hier de afzonderlijke delen uitparsen
             Tag="Event="
             x = ReceivedString.find(Tag, 0, len(ReceivedString))
@@ -571,7 +572,11 @@ class NodoSerial(eg.PluginClass):
                         cmd="Variable"
 
                     # schrijf weg voor de gebruiker. Twee maal: met en zonder unit als prefix
-                    eg.globals.__setattr__("Unit" + str(eg.globals.Unit) + "_" + cmd + "_" + str(eg.globals.Par1),eg.globals.Par2) 
+                    
+                    if eg.globals.Unit!="" and eg.globals.Unit!="?" :
+                        eg.globals.__setattr__("Unit" + str(eg.globals.Unit) + "_" + cmd + "_" + str(eg.globals.Par1),eg.globals.Par2) 
+                    else:
+                        eg.globals.__setattr__(cmd + "_" + str(eg.globals.Par1),eg.globals.Par2) 
 
             return
 
