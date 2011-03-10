@@ -463,7 +463,7 @@ class NodoSerial(eg.PluginClass):
         panel.sizer.Add(SettingsBox)
 
         while panel.Affirmed():
-            panel.SetResult(PortCtrl.GetValue(),PrefixCtrl.GetValue(),SuffixCtrl.GetValue(),0,0,0)
+            panel.SetResult(PortCtrl.GetValue(),PrefixCtrl.GetValue(),SuffixCtrl.GetValue())
         
         PluginVars.EventPrefix=EventPrefix
         PluginVars.EventSuffix=EventSuffix
