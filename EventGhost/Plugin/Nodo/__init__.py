@@ -41,7 +41,7 @@ eg.RegisterPlugin(
 
 #===============================================================================
             
-CommandsToRemember = ("WiredOut", "WiredIn", "WiredAnalog", "KAKU", "NewKAKU", "Variable", "VariableSet")
+CommandsToRemember = ("Error", "WiredOut", "WiredIn", "WiredAnalog", "KAKU", "NewKAKU", "Variable", "VariableSet")
 TagsToRemember = ["TimeStamp", "RawSignal", "ThisUnit", "Simulate", "Direction", "Unit", "Version", "Source"]
 
 NodoCommandList =  (   
@@ -339,13 +339,13 @@ class EventlistWrite(eg.ActionClass):
         EventlistEvent="Als onderstaand event zich voordoet...\n\nEvent Par1,Par2"
         EventlistAction="...dan de volgende actie uitvoeren\n\nAction Par1,Par2"
         
-    def GetLabel(self, EventlistAction, EventlistEvent):
+    def GetLabel(self, EventlistEvent, EventlistAction):
         return "EventlistWrite; " + str(EventlistEvent) + '; ' + str(EventlistAction) + ';'
 
-    def __call__(self, EventlistAction, EventlistEvent):
+    def __call__(self, EventlistEvent, EventlistAction):
         eg.plugins.NodoSerial.plugin.Send("EventlistWrite;" + str(EventlistEvent) + ';' + str(EventlistAction) + ';' )
 
-    def Configure(self,EventlistAction="",EventlistEvent=""):
+    def Configure(self,EventlistEvent="", EventlistAction=""):
         panel = eg.ConfigPanel(self)
         mainSizer =wx.BoxSizer(wx.VERTICAL)
 
@@ -363,7 +363,7 @@ class EventlistWrite(eg.ActionClass):
         
         panel.sizer.Add(mainSizer)
         while panel.Affirmed():
-            panel.SetResult(EventlistActionCtrl.GetValue(),EventlistEventCtrl.GetValue())
+            panel.SetResult(EventlistEventCtrl.GetValue(),EventlistActionCtrl.GetValue())
 
 #===============================================================================
 
