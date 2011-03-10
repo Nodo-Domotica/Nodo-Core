@@ -390,7 +390,7 @@ public class RawSignalPanel extends NodoBasePanel {
             OutputEventListener lix = new OutputEventListener()  {
 
                 public void handleOutputLine(String message) {
-                    int idx = message.indexOf("Rawsignal");
+                    int idx = message.indexOf("RawSignal");
                     if ( idx >= 0 ) {
                         idx = message.indexOf('=', idx);
                         data.append(message.substring(idx+1));

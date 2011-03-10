@@ -70,7 +70,7 @@ public class NodoResponse {
             } catch (Exception ex) {
             }
         }
-        if ("Timestamp".equals(elemData[0])) {
+        if ("TimeStamp".equals(elemData[0])) {
             try {
                 time = dateFormat.parse(elemData[1].substring(4));
             } catch (ParseException ex) {
