@@ -1,11 +1,7 @@
 # Bugs:
-# -  sendvaruserevent niet divertable
+# -  sendvaruserevent is nog niet divertable
 #
 # Idee:
-# - Logging naar file
-# - borgen dat de Boot altijd plaatsvindt.
-# - korte wachttijd na opstarten plugin om Nodo de boot uit te kunnen laten voeren
-
 
 
 
@@ -343,6 +339,7 @@ class EventlistWrite(eg.ActionClass):
         return "EventlistWrite; " + str(EventlistEvent) + '; ' + str(EventlistAction) + ';'
 
     def __call__(self, EventlistEvent, EventlistAction):
+        eg.globals.Direction   = ""
         eg.plugins.NodoSerial.plugin.Send("EventlistWrite;" + str(EventlistEvent) + ';' + str(EventlistAction) + ';' )
 
     def Configure(self,EventlistEvent="", EventlistAction=""):
@@ -514,8 +511,14 @@ class NodoSerial(eg.PluginClass):
     # De van de seriele poort ontvangen regel parsen en relevante variabelen opslaan
     def ParseReceivedLine(self, ReceivedString):
             # parse de ontvangen Nodo regel en plaats de delen in eg.globals voor later gebruik door de user     
+
+      
             # Zoek in de binnengekomen regels naar de Tags en haal bijbehorende waarde er uit.
-            # Plaats deze vervolgens in de globale namespace eg.globals            
+            # Plaats deze vervolgens in de globale namespace eg.globals
+            # Niet Nodo events krijgen geen Unit-nummer mee in de ontvangen regel
+            # Om te voorkomen dat Unit variabele niet meer actuele gegevens bevat
+            # de variabele Unit vullen met ThisUnit.
+            eg.globals.Unit = eg.globals.ThisUnit
             for Tag in TagsToRemember:
                 Tag+="="
                 x = ReceivedString.find(Tag, 0, len(ReceivedString))
@@ -527,15 +530,16 @@ class NodoSerial(eg.PluginClass):
                     if y<0 :
                         y = len(ReceivedString)                        
                     if y>0:
-                        # ken waarde aan variabele toe een global variabele
                         Tag=Tag.strip(" =")
-                        eg.globals.__setattr__(Tag,ReceivedString[x:y].strip(", ;"))
 
-                        # dan zijn er een aantal tags die, als ze voorbij gekomen zijn, een speciale behandeling behoeven
+                        # Ken de waarde toe aan een variabele. Enkele een speciale behandeling behoeven
                         if Tag=="RawSignal":
                             self.info.eventPrefix = "Nodo"
                             eg.globals.__setattr__(Tag,ReceivedString[x:len(ReceivedString)])
                             self.TriggerEvent(Tag)
+                        else:
+                            eg.globals.__setattr__(Tag,ReceivedString[x:y].strip(", ;"))
+                                                 
                             
             # Event is een ander geval. Hier de afzonderlijke delen uitparsen
             Tag="Event="
@@ -560,15 +564,14 @@ class NodoSerial(eg.PluginClass):
             # Plaats deze vervolgens in de globale namespace eg.globals            
             for cmd in CommandsToRemember:
                 if cmd==eg.globals.Command:
+
                     # enkele events hebben ook een commando tegenhanger.
                     # bij opslaan in variabelen hiertussen geen onderscheid meer maken
-
                     if cmd == "VariableSet":
                         cmd="Variable"
 
-                    # als het event afkomstig is van een andere Nodo dan de huidig aangesloten dan de prefix aan de variabele toevoegen
-                    eg.globals.__setattr__(cmd + "_" + str(eg.globals.Par1),eg.globals.Par2) 
-
+                    # schrijf weg voor de gebruiker. Twee maal: met en zonder unit als prefix
+                    eg.globals.__setattr__("Unit" + str(eg.globals.Unit) + "_" + cmd + "_" + str(eg.globals.Par1),eg.globals.Par2) 
 
             return
 

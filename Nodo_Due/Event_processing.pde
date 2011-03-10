@@ -69,11 +69,6 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     RawsignalGet=false;
     return true;
     }
-
-  // Als de 'Confirm' optie aan staat, dan een 'Ok'-event verzenden
-  // Dit alleen als het een commando of event voor deze nodo is.
-  if(EventlistDepth==0 && S.Confirm && (((IncommingEvent>>28)&0xf)==SIGNAL_TYPE_NODO))
-    TransmitCode(command2event(CMD_OK,S.Unit,0),SIGNAL_TYPE_NODO);
     
   if(EventlistDepth++>=MACRO_EXECUTION_DEPTH)
     {
@@ -82,10 +77,18 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     return false; // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
     }
 
+  // Als de 'Confirm' optie aan staat, dan een 'Ok'-event verzenden
+  if(S.Confirm)
+   {
+   // Dit alleen als het een commando of event voor deze nodo is.
+   if(CheckEventlist(IncommingEvent) || NodoType(IncommingEvent)==NODO_TYPE_COMMAND)
+     TransmitCode(command2event(CMD_OK,S.Unit,0),SIGNAL_TYPE_NODO);
+   }
+
   // ############# Verwerk event ################  
   // als het een Nodo event is en een geldig commando, dan deze uitvoeren
   if(NodoType(IncommingEvent)==NODO_TYPE_COMMAND)
-    { // Er is een geldig Commando binnengekomen 
+    { // Er is een geldig Commando binnengekomen       
     if(!ExecuteCommand(IncommingEvent,Port,PreviousContent,PreviousPort))
       {
       EventlistDepth--;
@@ -199,8 +202,8 @@ boolean CheckEvent(unsigned long Event, unsigned long MacroEvent)
   if(MacroEvent==Event)return true; 
 
   // Als unit ongelijk aan 0 of ongelijk aan huidige unit, dan is er ook geen match
-  x=(Event>>24)&0x0f; // unit
-  if(x!=0 && x!=S.Unit)return false; 
+  // x=(Event>>24)&0x0f; // unit
+  // if(x!=0 && x!=S.Unit)return false; ??? wordt deze check al eeder gedaan?
 
   // als huidige event (met wegfilterde unit) gelijk is aan MacroEvent, dan een match
   Event&=0xf0ffffff;
@@ -210,8 +213,8 @@ boolean CheckEvent(unsigned long Event, unsigned long MacroEvent)
   // beschouw bij een UserEvent een 0 voor Par1 of Par2 als een wildcard.
   if(((Event>>16)&0xff)==CMD_USER_EVENT)// Command
     {
-    if(((Event>>8)&0xff)==0 || ((MacroEvent>>8)&0xff)==0){Event&=0xffff00ff;MacroEvent&=0xffff00ff;}
-    if(((Event   )&0xff)==0 || ((MacroEvent   )&0xff)==0){Event&=0xffffff00;MacroEvent&=0xffffff00;}
+    if(((Event>>8)&0xff)==0 || ((MacroEvent>>8)&0xff)==0){Event&=0xf0ff00ff;MacroEvent&=0xf0ff00ff;}
+    if(((Event   )&0xff)==0 || ((MacroEvent   )&0xff)==0){Event&=0xf0ffff00;MacroEvent&=0xf0ffff00;}
     if(MacroEvent==Event)return true; 
     }
 

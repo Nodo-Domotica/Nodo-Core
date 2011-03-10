@@ -23,7 +23,7 @@
  \*********************************************************************************************/
 void PrintEvent(unsigned long Content, byte Port, byte Direction)
   {
-  boolean first=0;
+  byte x,first=0;
 
   // als ingesteld staat dat seriële input niet weergegeven moet worden en de poort was serieel, dan direct terug
   if(!(S.Display&DISPLAY_SERIAL) && Port==VALUE_SOURCE_SERIAL && Direction==VALUE_DIRECTION_INPUT)
@@ -83,19 +83,23 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
     }
 
   // geef unit nummer weer
-  if(S.Display&DISPLAY_UNIT && ((Content>>28)&0xf)==SIGNAL_TYPE_NODO)
+  if(S.Display&DISPLAY_UNIT)
     {
-    if(first++)
+    // Voor NIET-nodo signalen is het afdrukken van het unitnummer zinloos
+    if(((Content>>28)&0xf)==SIGNAL_TYPE_NODO && ((Content>>16)&0xff)!=CMD_KAKU_NEW && ((Content>>16)&0xff)!=CMD_KAKU)
       {
-      PrintChar(',');
-      PrintChar(' ');
-      }
-    if(S.Display&DISPLAY_TAG)
+      if(first++)
         {
-        Serial.print(cmd2str(CMD_UNIT));
-        PrintChar('=');
+        PrintChar(',');
+        PrintChar(' ');
         }
-    PrintValue((Content>>24)&0xf); 
+      if(S.Display&DISPLAY_TAG)
+          {
+          Serial.print(cmd2str(CMD_UNIT));
+          PrintChar('=');
+          }
+      PrintValue((Content>>24)&0xf); 
+      }
     }
     
   if(first++)
@@ -191,7 +195,8 @@ void PrintEventCode(unsigned long Code)
     PrintChar(',');   
     Serial.print(cmd2str(((Code>>4)&0x1)?VALUE_ON:VALUE_OFF)); 
     }
-  else if(Type==SIGNAL_TYPE_NODO)
+
+  else if(Type==SIGNAL_TYPE_NODO || Type==SIGNAL_TYPE_KAKU)
     {
     Serial.print(cmd2str(Command));
     switch(Command)

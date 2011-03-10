@@ -121,7 +121,7 @@ unsigned long RawSignal_2_KAKU(void)
   Unit =     (bitstream >>  4) & 0x0F;
   Command |= (bitstream >> 11) & 0x01;
 
-  return SetEventType(command2event(CMD_KAKU, (Home << 4 | Unit), Command),SIGNAL_TYPE_NODO); // hoogte nible wissen en weer vullen met type NewKAKU
+  return SetEventType(command2event(CMD_KAKU, (Home << 4 | Unit), Command),SIGNAL_TYPE_KAKU); // hoogte nible wissen en weer vullen met type NewKAKU
   }
 
 
@@ -252,7 +252,7 @@ unsigned long RawSignal_2_NewKAKU(void)
     }while(i<RawSignal[0]-2); //-2 omdat de space/pulse van de stopbit geen deel meer van signaal uit maakt.
 
   if(bitstream>0x0ffff)
-    // het is van een NewKAKU zender afkomstig
+    // het is van een NewKAKU zender afkomstig. Geef de hex-waarde terug.
     return SetEventType(bitstream,SIGNAL_TYPE_NEWKAKU); // hoogte nible wissen en weer vullen met type NewKAKU
   else
     {

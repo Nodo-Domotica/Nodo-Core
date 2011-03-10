@@ -16,7 +16,7 @@
   \**************************************************************************/
 
 /*********************************************************************************************\
- * Eenvoudige check of een Nodo commando is
+ * Eenvoudige check of event een Nodo commando is die voor deze Nodo bestemd is.
  * Test NIET op geldigheid van de parameters
  \*********************************************************************************************/
 byte NodoType(unsigned long Content)
@@ -27,6 +27,10 @@ byte NodoType(unsigned long Content)
   if(((Content>>28)&0xf)!=SIGNAL_TYPE_NODO)
     return false;
   
+  // als het een UserEvent was, dan is die altijd voor deze Nodo
+  if(((Content>>16)&0xff)==CMD_USER_EVENT)
+    return NODO_TYPE_EVENT;
+
   // als het voor een andere Nodo bestemd was Unit deel ongelijk aan eigen adres en ongelijk aan wildcard unit=0
   x=(Content>>24)&0xf;
   if(x!=S.Unit && x!=0)
@@ -41,6 +45,31 @@ byte NodoType(unsigned long Content)
 
   return NODO_TYPE_COMMAND;
   }
+
+//  {
+//  byte cmd  = (Content>>16)&0xff;
+//  byte unit = (Content>>24)&0xf;
+//
+//  // als het geen Nodo signaal was dan zowieso niet
+//  if((Content>>28)&0xf!=SIGNAL_TYPE_NODO)
+//    return false;
+//
+//  // als het een UserEvent was, dan is die altijd voor deze Nodo
+//  if(cmd==CMD_USER_EVENT)
+//    return NODO_TYPE_EVENT;
+//
+//  // als het voor een andere Nodo bestemd was of Unit deel ongelijk aan eigen adres en ongelijk aan wildcard unit=0
+//  if(unit!=S.Unit && unit!=0)
+//    return false;
+// 
+//  if(cmd<=RANGE_VALUE)
+//    return false;
+//
+//  if(cmd>=RANGE_EVENT)
+//    return NODO_TYPE_EVENT;
+//
+//  return NODO_TYPE_COMMAND;
+//  }
   
   
 
@@ -347,7 +376,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   
       case CMD_SEND_USEREVENT:
         // Voeg Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
-        TransmitCode(command2event(CMD_USER_EVENT,Par1,Par2)&0xf0ffffff,SIGNAL_TYPE_NODO);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
+        TransmitCode(command2event(CMD_USER_EVENT,Par1,Par2),SIGNAL_TYPE_NODO);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
         break;
   
       case CMD_SEND_VAR_USEREVENT:

@@ -99,10 +99,10 @@ Aanpassingen vanaf svn build r231:
 Aanpassingen vanaf svn build r235:
 - "SYSTEM: Rawsignal=" melding veranderd in "RawSignal="
 -  Timestamp" is "TimeStamp" geworden. tevens weergave van deze tag in de welkomsttekst.
-- 
-- 
-- 
-- 
+
+Aanpassingen vanaf svn build r240:
+- Geen weergave van het unitnummer als het signaal een HEX, KAKU of NewKAKU is.
+- UserEvent draagt bij verzenden het unitnummer i.p.v. nul. Pas aan de ontvangstzijde wordt deze toebedeeld aan alle units.
 
 
 
@@ -159,7 +159,7 @@ Aanpassingen vanaf svn build r235:
 prog_char PROGMEM Text_01[] = "Nodo-Due Domotica controller (c) Copyright 2011 P.K.Tonkes.";
 prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
 prog_char PROGMEM Text_03[] = "Line=";
-prog_char PROGMEM Text_08[] = "SUNMONTHUWEDTHUFRISAT";
+prog_char PROGMEM Text_08[] = "SunMonThuWedThuFriSat";
 prog_char PROGMEM Text_06[] = "SYSTEM: Unknown command!";
 prog_char PROGMEM Text_07[] = "RawSignal=";
 prog_char PROGMEM Text_09[] = "SYSTEM: Break!";
