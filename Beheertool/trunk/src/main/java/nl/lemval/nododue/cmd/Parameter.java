@@ -69,14 +69,25 @@ public class Parameter {
     }
 
     public String[] getValueNames() {
-        if (valueNames == null && validator != null) {
+        if (validator != null) {
             // Retrieve all commands of type 'validator'
             // and add as option.
-            ArrayList<String> vals = new ArrayList<String>();
+            // Make sure it is sorted by using a tree set
+            TreeSet<Prop> list = new TreeSet<Prop>(new Comparator<Prop>()  {
+                public int compare(Prop o1, Prop o2) {
+                    return o1.compareTo(o2);
+                }
+            });
+//            ArrayList<String> vals = new ArrayList<String>();
             for (CommandInfo ci : CommandLoader.getActions(CommandType.fromString(validator))) {
-                vals.add(ci.getName());
+                list.add(new Prop(ci.getName(), ci.getName()));
             }
-            valueNames = values = vals.toArray(new String[0]);
+            for (int i = 0; i < values.length; i++) {
+                list.add(new Prop(valueNames[i], values[i]));
+                
+            }
+            setAllValues(list);
+            validator = null;
         }
         return valueNames;
     }
@@ -122,14 +133,6 @@ public class Parameter {
     }
 
     private void prepare(String input) {
-        // Check for reference value
-        if (input.matches("\\[.*\\]")) {
-            validator = input.substring(1, input.length() - 1);
-            // Initialize the arrays.
-            // Delay until realy needed ;-) otherwise the list is not fully loaded.
-            // getValueNames();
-            return;
-        }
 
         if (input.equals("!0")) {
             notNull = true;
@@ -155,6 +158,16 @@ public class Parameter {
         // Ok, now split it up
         for (int i = 0; i < set.length; i++) {
             String value = set[i].trim();
+
+            // Check for reference value
+            if (value.matches("\\[.*\\]")) {
+                validator = value.substring(1, value.length() - 1);
+                // Initialize the arrays.
+                // Delay until realy needed ;-) otherwise the list is not fully loaded.
+                // getValueNames();
+                continue;
+            }
+            
             if ( StringUtils.isBlank(value) ) {
                 continue;
             }
@@ -180,7 +193,10 @@ public class Parameter {
                 list.add(new Prop(value, value));
             }
         }
+        setAllValues(list);
+    }
 
+    private void setAllValues(TreeSet<Prop> list) {
         valueNames = new String[list.size()];
         values = new String[list.size()];
 
@@ -191,4 +207,5 @@ public class Parameter {
             i++;
         }
     }
+
 }
