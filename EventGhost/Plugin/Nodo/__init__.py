@@ -1,8 +1,3 @@
-# Bugs:
-#
-# Idee:
-
-
 
 # This is a part of the EventGhost and the Nodo software.
 # Copyright (C) 2011 Paul Tonkes <p.k.tonkes@gmail.com>

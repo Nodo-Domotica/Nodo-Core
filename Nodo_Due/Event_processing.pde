@@ -206,8 +206,8 @@ boolean CheckEvent(unsigned long Event, unsigned long MacroEvent)
   // if(x!=0 && x!=S.Unit)return false; ??? wordt deze check al eeder gedaan?
 
   // als huidige event (met wegfilterde unit) gelijk is aan MacroEvent, dan een match
-  Event&=0xf0ffffff;
-  MacroEvent&=0xf0ffffff;
+  Event&=0x00ffffff;
+  MacroEvent&=0x00ffffff;
   if(MacroEvent==Event)return true; 
 
   // beschouw bij een UserEvent een 0 voor Par1 of Par2 als een wildcard.
