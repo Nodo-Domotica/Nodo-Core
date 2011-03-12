@@ -30,14 +30,10 @@ public class CommandInfo {
         EventlistErase,
         EventlistShow,
         EventlistWrite,
-        EventStatus,
-        SendStatus,
-        SendSignal,
         SendKAKU,
-        SendUserEvent,
+        SendNewKAKU,
         Unit,
         Status,
-        Reset,
         KAKU,
         ClockSetDOW,
         ClockSetYear,
@@ -45,7 +41,9 @@ public class CommandInfo {
         ClockSetTime,
         RawsignalGet,
         RawsignalPut,
-        TimerSet,
+        TimerSetMin,
+        TimerSetSec,
+        SendUserEvent,
         UserEvent,
         VariableSet,
         WiredOut,
@@ -54,7 +52,6 @@ public class CommandInfo {
         WiredThreshold,
         WiredAnalog,
         WiredRange,
-        WildCard,
     };
     public static final String CUSTOM_CMD = "<Custom>";
     public static final Collection<String> UNIT_SET = Arrays.asList(new String[]{
@@ -67,7 +64,8 @@ public class CommandInfo {
     public static final Collection<String> VAR_SET = Arrays.asList(new String[]{
                 Name.VariableSet.name()});
     public static final Collection<String> TIMER_SET = Arrays.asList(new String[]{
-                Name.TimerSet.name()});
+                Name.TimerSetSec.name(),
+                Name.TimerSetMin.name()});
     public static final Collection<String> WIRE_SET = Arrays.asList(new String[]{
                 Name.WiredSmittTrigger.name(),
                 Name.WiredThreshold.name(),

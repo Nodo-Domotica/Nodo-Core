@@ -3,17 +3,13 @@
  *
  * Created on 21-mrt-2010, 20:49:41
  */
-
 package nl.lemval.nododue.tabs;
 
 import java.awt.Cursor;
 
 import nl.lemval.nododue.cmd.CommandInfo;
-import nl.lemval.nododue.cmd.CommandLoader;
-import nl.lemval.nododue.cmd.CommandType;
 import nl.lemval.nododue.component.NodoSettingsTableModel;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import javax.swing.table.TableColumn;
 import nl.lemval.nododue.NodoDueManager;
@@ -38,7 +34,6 @@ public class SettingsPanel extends NodoBasePanel {
     private SettingsCellRenderer cellRenderer;
     private SettingsCellEditor cellEditor;
 
-
     /**
      * Creates the new form. A custom table model is used for showing
      * the settings. Both column 2 and 4 (values of parameters) of the
@@ -46,7 +41,7 @@ public class SettingsPanel extends NodoBasePanel {
      */
     public SettingsPanel(final NodoDueManagerView view) {
         super(view);
-        
+
         settingsTableModel = new NodoSettingsTableModel(getResourceMap());
 
         initComponents();
@@ -57,14 +52,14 @@ public class SettingsPanel extends NodoBasePanel {
         cellEditor = new SettingsCellEditor(settingsTableModel);
 
         TableColumn col;
-	col = settingsTable.getColumnModel().getColumn(0);
+        col = settingsTable.getColumnModel().getColumn(0);
         col.setCellRenderer(cellRenderer);
-	col = settingsTable.getColumnModel().getColumn(1);
+        col = settingsTable.getColumnModel().getColumn(1);
         col.setCellRenderer(cellRenderer);
-	col = settingsTable.getColumnModel().getColumn(2);
+        col = settingsTable.getColumnModel().getColumn(2);
         col.setCellRenderer(cellRenderer);
         col.setCellEditor(cellEditor);
-	col = settingsTable.getColumnModel().getColumn(3);
+        col = settingsTable.getColumnModel().getColumn(3);
         col.setCellRenderer(cellRenderer);
         col = settingsTable.getColumnModel().getColumn(4);
         col.setCellRenderer(cellRenderer);
@@ -146,12 +141,14 @@ public class SettingsPanel extends NodoBasePanel {
      */
     @Action
     public Task updateSelected() {
-        if ( NodoDueManager.hasConnection() )
+        if (NodoDueManager.hasConnection()) {
             return new UpdateSelectedTask(org.jdesktop.application.Application.getInstance(nl.lemval.nododue.NodoDueManager.class));
+        }
         return null;
     }
 
     private class UpdateSelectedTask extends org.jdesktop.application.Task<Object, Void> {
+
         UpdateSelectedTask(org.jdesktop.application.Application app) {
             // Runs on the EDT.  Copy GUI state that
             // doInBackground() depends on from parameters
@@ -163,7 +160,8 @@ public class SettingsPanel extends NodoBasePanel {
          * Downloads and parses all commands of type SETTING.
          * @return A Collection of NodoSetting objects
          */
-        @Override protected Object doInBackground() {
+        @Override
+        protected Object doInBackground() {
             download.setEnabled(false);
             upload.setEnabled(false);
 //            Collection<CommandInfo> cis = CommandLoader.getActions(CommandType.SETTING);
@@ -174,11 +172,12 @@ public class SettingsPanel extends NodoBasePanel {
          * Refreshes the table with properties.
          * @param result The data returned by doInBackground
          */
-        @Override protected void succeeded(Object result) {
+        @Override
+        protected void succeeded(Object result) {
             download.setEnabled(true);
             upload.setEnabled(true);
             Collection<NodoSetting> settings = (Collection<NodoSetting>) result;
-            if ( settings == null ) {
+            if (settings == null) {
                 getListener().showStatusMessage(getResourceString("no.connection"));
                 return;
             }
@@ -220,48 +219,53 @@ public class SettingsPanel extends NodoBasePanel {
             box.setLocationRelativeTo(this);
             app.show(box);
 
-	    Collection<String> specified = new ArrayList<String>();
-	    specified.addAll(CommandInfo.DATE_SET);
-	    specified.addAll(CommandInfo.OUT_SET);
-	    specified.addAll(CommandInfo.TIMER_SET);
-	    specified.addAll(CommandInfo.UNIT_SET);
-	    specified.addAll(CommandInfo.VAR_SET);
-	    specified.addAll(CommandInfo.WIRE_SET);
+            if (box.isConfirmed()) {
+                Collection<NodoSetting> writeAttrs = settingsTableModel.getSettings(false);
 
-	    Collection<NodoSetting> candidates = settingsTableModel.getSettings(false);
-            if ( box.isConfirmed() ) {
-		ArrayList<String> names = new ArrayList<String>();
-		if (box.includeUnitFunction()) {
-		    names.addAll(CommandInfo.UNIT_SET);
-		} else {
-		    if (box.includeOtherFunctions()) {
-			for (NodoSetting setting : candidates) {
-			    String name = setting.getName();
-			    if ( !specified.contains(name) ) {
-				names.add(setting.getName());
-			    }
-			}
-		    }
-		    if (box.includeDateFunctions()) {
-			names.addAll(CommandInfo.DATE_SET);
-		    }
-		    if (box.includeOutputFunctions()) {
-			names.addAll(CommandInfo.OUT_SET);
-		    }
-		    if (box.includeSettings()) {
-			names.addAll(CommandInfo.VAR_SET);
-		    }
-		    if (box.includeTimers()) {
-			names.addAll(CommandInfo.TIMER_SET);
-		    }
-		    if (box.includeWireFunctions()) {
-			names.addAll(CommandInfo.WIRE_SET);
-		    }
-		}
+                Collection<String> specified = new ArrayList<String>();
+                specified.addAll(CommandInfo.DATE_SET);
+                specified.addAll(CommandInfo.OUT_SET);
+                specified.addAll(CommandInfo.TIMER_SET);
+                specified.addAll(CommandInfo.UNIT_SET);
+                specified.addAll(CommandInfo.VAR_SET);
+                specified.addAll(CommandInfo.WIRE_SET);
+
+                ArrayList<String> names = new ArrayList<String>();
+                if (box.includeUnitFunction()) {
+                    names.addAll(CommandInfo.UNIT_SET);
+                } else {
+                    if (box.includeOtherFunctions()) {
+                        for (NodoSetting setting : writeAttrs) {
+                            String name = setting.getName();
+                            if (!specified.contains(name)) {
+                                names.add(setting.getName());
+                            }
+                        }
+                    }
+                    if (box.includeDateFunctions()) {
+                        names.addAll(CommandInfo.DATE_SET);
+                    }
+                    if (box.includeOutputFunctions()) {
+                        names.addAll(CommandInfo.OUT_SET);
+                    }
+                    if (box.includeSettings()) {
+                        names.addAll(CommandInfo.VAR_SET);
+                    }
+                    if (box.includeTimers()) {
+                        names.addAll(CommandInfo.TIMER_SET);
+                    }
+                    if (box.includeWireFunctions()) {
+                        names.addAll(CommandInfo.WIRE_SET);
+                    }
+                }
                 Collection<NodoSetting> results = new ArrayList<NodoSetting>();
-                for (NodoSetting nodoSetting : candidates) {
-                    if ( names.contains(nodoSetting.getName()) ) {
-                        results.add(nodoSetting);
+                for (NodoSetting nodoSetting : writeAttrs) {
+                    if (names.contains(nodoSetting.getName())) {
+                        if (CommandInfo.TIMER_SET.contains(nodoSetting.getName()) && nodoSetting.getAttributeValue2().equals("0") ) {
+                            System.out.println("Skipping " + nodoSetting);
+                        } else {
+                            results.add(nodoSetting);
+                        }
                     }
                 }
                 setCursor(new Cursor(Cursor.WAIT_CURSOR));
@@ -275,8 +279,6 @@ public class SettingsPanel extends NodoBasePanel {
             }
         }
     }
-
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton download;
     private javax.swing.JScrollPane settingsScroll;
@@ -284,5 +286,4 @@ public class SettingsPanel extends NodoBasePanel {
     private javax.swing.JLabel title;
     private javax.swing.JButton upload;
     // End of variables declaration//GEN-END:variables
-
 }

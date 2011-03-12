@@ -29,8 +29,20 @@ public class NodoSettingRetriever {
         Collection<CommandInfo> cis = CommandLoader.getActions(CommandType.ALL);
 //        long t = System.currentTimeMillis();
         ArrayList<NodoResponse> result = queryCommands(null, 0);
+        Collection<NodoSetting> parseSettings = parseSettings(result, cis);
 //        System.out.println("Querying took " + (System.currentTimeMillis()-t) + "ms.");
-        return parseSettings(result, cis);
+        
+        // Manually add the second timers
+        CommandInfo ci = CommandLoader.get(CommandInfo.Name.TimerSetSec);
+        int[] queryRange = ci.getQueryRange();
+        for (int i = 0; i < queryRange.length; i++) {
+            NodoSetting setting = new NodoSetting(ci);
+            setting.setAttributeValue1(String.valueOf(queryRange[i]));
+            setting.setAttributeValue2("0");
+
+            parseSettings.add(setting);
+        }
+        return parseSettings;
     }
 
     public static Collection<NodoSetting> getSettings(Collection<CommandInfo> cis, int nodo) {

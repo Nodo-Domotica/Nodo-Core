@@ -130,6 +130,11 @@ public class NodoSettingsTableModel implements TableModel {
         settings.clear();
     }
 
+    /**
+     * Retrieves all writable (false) or all shown (true) settings.
+     * @param all boolean to differentiate between writable and shown.
+     * @return  List of setttings from the view
+     */
     public Collection<NodoSetting> getSettings(boolean all) {
         Collection<NodoSetting> result = new HashSet<NodoSetting>();
         if ( all ) {
