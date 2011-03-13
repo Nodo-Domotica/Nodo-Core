@@ -25,6 +25,12 @@ public class CommandInfo {
     private CommandType type;
     private int[] queryRange;
 
+    public enum State {
+
+        On,
+        Off,
+    };
+
     public enum Name {
 
         EventlistErase,

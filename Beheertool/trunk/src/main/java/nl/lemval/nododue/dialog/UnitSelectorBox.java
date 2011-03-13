@@ -401,7 +401,6 @@ public class UnitSelectorBox extends javax.swing.JDialog {
                 comm.waitCommand(100);
                 // Parse result
                 for (NodoResponse nodoResponse : responses) {
-//                    System.out.println("Received: " + nodoResponse);
                     if (nodoResponse.is(CommandInfo.Name.Unit)
                             && nodoResponse.is(NodoResponse.Direction.Input)) {
                         data.add(nodoResponse.getCommand().getData1());
@@ -412,8 +411,9 @@ public class UnitSelectorBox extends javax.swing.JDialog {
             comm.removeOutputListener(listener);
             if (data.size() > 0) {
                 Options.getInstance().setRemoteUnits(data);
+                JOptionPane.showMessageDialog(this, "Unit " + unit + " gevonden!");
             } else {
-                JOptionPane.showMessageDialog(this, "Remote unit '" + unit + "' not found within 5 seconds");
+                JOptionPane.showMessageDialog(this, "Unit " + unit + " niet gevonden binnen 5 seconde.");
             }
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
         }
