@@ -1,16 +1,13 @@
 /*
                                                     
 ToDo:
-- fout commando met parameters geeft drie foutmeldingen.
-- het is mogelijk om een setting op te vragen van een niet bestaande variabele, poort of timer. Geen vastloper maar onzinnige waarde
 - komt nog er wel een foutmelding als eventlist vol is?
-- wildcard op unit ?? bepalen impact. In princiepe is de eventlist 'wildcard-loos', maar binnengekomen events niet. Worden nu weggefilterd.
 - wildcardtypen: verwerking bekijken en wijzigingen documenteren
 */
 
 /**************************************************************************************************************************\
 
-### Release V1.2.0
+### Release V1.1.9
 
 Opgeloste issues:
 - Issue 163:	SendSignal: regressie!!!
@@ -139,7 +136,7 @@ Aanpassingen vanaf svn build r240:
  *
  ********************************************************************************************************/
 
-#define VERSION        0        // Nodo Version nummer:
+#define VERSION        119        // Nodo Version nummer:
                                   // Major.Minor.Patch
                                   // Major: Grote veranderingen aan concept, besturing, werking.
                                   // Minor: Uitbreiding/aanpassing van commando's, functionaliteit en MMI aanpassingen
