@@ -199,8 +199,8 @@ byte CommandError(unsigned long Content)
 
     // geldige datum
     case CMD_CLOCK_DATE: // data1=datum, data2=maand
-      if(Par1>31)return ERROR_PAR1;
-      if(Par2>12)return ERROR_PAR2;
+      if(Par1>31 || Par1<1)return ERROR_PAR1;
+      if(Par2>12 || Par2<1)return ERROR_PAR2;
       return false;
 
     case CMD_CLOCK_DOW:
