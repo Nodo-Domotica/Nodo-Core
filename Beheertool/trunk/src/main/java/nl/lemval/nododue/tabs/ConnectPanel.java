@@ -43,12 +43,10 @@ import org.jdesktop.application.Task;
 public class ConnectPanel extends NodoBasePanel implements OutputEventListener {
 
     private static final String NEWLINE = System.getProperty("line.separator");
-
     /** Contains the list of com ports in the gui */
     private DefaultComboBoxModel comPortModel;
     /** The list of detected comm ports */
     private HashMap<String, CommPortIdentifier> ports;
-
     /** Map for loading resources from configuration files */
     private ResourceMap resourceMap;
     private int lineCount = 0;
@@ -69,6 +67,7 @@ public class ConnectPanel extends NodoBasePanel implements OutputEventListener {
          * baudrate for this port
          */
         portSelection.addItemListener(new ItemListener() {
+
             public void itemStateChanged(ItemEvent e) {
                 if (e.getStateChange() == e.SELECTED) {
                     changeBaudrate((String) portSelection.getSelectedItem());
@@ -380,8 +379,6 @@ public class ConnectPanel extends NodoBasePanel implements OutputEventListener {
 
             if (portId != null) {
                 String baudRate = (String) baudSelection.getSelectedItem();
-                Options options = Options.getInstance();
-
                 comm.setPort(portId);
                 comm.setBaud(baudRate);
                 try {
@@ -394,12 +391,12 @@ public class ConnectPanel extends NodoBasePanel implements OutputEventListener {
                     } catch (InterruptedException e) {
                     }
 
-                    String previousPort = options.getLastComportUsed();
-                    long previousRate = options.getLastBaudrateUsed();
-                    boolean force = !portname.equals(previousPort);
-                    force = force || (previousRate != Long.parseLong(baudRate));
-                    String message = initConnection(comm, force);
+//                    String previousPort = options.getLastComportUsed();
+//                    long previousRate = options.getLastBaudrateUsed();
+//                    boolean force = !portname.equals(previousPort);
+//                    force = force || (previousRate != Long.parseLong(baudRate));
                     comm.addOutputListener(this);
+                    String message = initConnection(comm);
                     handleOutputLine(message);
                     getListener().connected(message.length() > 0 ? true : false);
                 } catch (Exception e) {
@@ -409,6 +406,7 @@ public class ConnectPanel extends NodoBasePanel implements OutputEventListener {
                     handleOutputLine(e.getMessage());
                 }
 
+                Options options = Options.getInstance();
                 options.setLastBaudrateUsed(Integer.parseInt(baudRate));
                 options.setLastComportUsed(portname);
             }
@@ -423,51 +421,43 @@ public class ConnectPanel extends NodoBasePanel implements OutputEventListener {
      * Initializes the connection and checks for the unit and home code.
      * 
      * @param comm
-     * @param force
      * @return
      */
-    private String initConnection(SerialCommunicator comm, boolean force) {
-//        final StringBuilder result = new StringBuilder();
+    private String initConnection(SerialCommunicator comm) {
         final Options options = Options.getInstance();
-        if (force || !options.hasScanned()) {
-//            final String NL = System.getProperty("line.separator");
-            OutputEventListener listener = new OutputEventListener() {
+        OutputEventListener listener = new OutputEventListener() {
 
-                public void handleOutputLine(String message) {
-//                    result.append(message);
-//                    result.append(NL);
-                }
-
-                public void handleClear() {
-                }
-
-                public void handleNodoResponses(NodoResponse[] responses) {
-                    options.scanUnitFromResponse(responses);
-                }
-            };
-            comm.addOutputListener(listener);
-
-            CommandInfo info = CommandLoader.get(CommandInfo.Name.Unit);
-            comm.send(NodoCommand.getStatusCommand(info, 0));
-
-            boolean timeout = false;
-            do {
-                timeout = comm.waitCommand(200, 1500);
-            } while (!options.hasScanned() && !timeout);
-
-            comm.removeOutputListener(listener);
-
-            if (!options.hasScanned()) {
-                String portname = (String) comPortModel.getSelectedItem();
-                JOptionPane.showMessageDialog(this,
-                        getResourceString("comm.nodo_unrecognized.message", portname),
-                        getResourceString("comm.nodo_unrecognized.title"),
-                        JOptionPane.WARNING_MESSAGE);
-            } else {
-                return getResourceString("comm.connected.ok", options.getNodoUnit());
+            public void handleOutputLine(String message) {
             }
+
+            public void handleClear() {
+            }
+
+            public void handleNodoResponses(NodoResponse[] responses) {
+                options.scanUnitFromResponse(responses);
+            }
+        };
+        comm.addOutputListener(listener);
+
+        CommandInfo info = CommandLoader.get(CommandInfo.Name.Unit);
+        comm.send(NodoCommand.getStatusCommand(info, 0));
+
+        boolean timeout = false;
+        do {
+            timeout = comm.waitCommand(200, 1500);
+        } while (!options.hasScanned() && !timeout);
+
+        comm.removeOutputListener(listener);
+
+        if (!options.hasScanned()) {
+            String portname = (String) comPortModel.getSelectedItem();
+            JOptionPane.showMessageDialog(this,
+                    getResourceString("comm.nodo_unrecognized.message", portname),
+                    getResourceString("comm.nodo_unrecognized.title"),
+                    JOptionPane.WARNING_MESSAGE);
+            return "";
         }
-        return "";
+        return getResourceString("comm.connected.ok", options.getNodoUnit());
     }
 
     public void handleOutputLine(String message) {
@@ -502,7 +492,7 @@ public class ConnectPanel extends NodoBasePanel implements OutputEventListener {
     }
 
     @Action
-    public void cleanOutput() {
+        public void cleanOutput() {
         handleClear();
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables

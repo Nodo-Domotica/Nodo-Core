@@ -135,6 +135,7 @@ public class Options {
      * @param message
      */
     public boolean scanUnitFromResponse(NodoResponse[] responses) {
+        hasScanned = false;
         for (NodoResponse nodoResponse : responses) {
             if ( nodoResponse.is(NodoResponse.Direction.Output) && nodoResponse.is(CommandInfo.Name.Unit)) {
                 setNodoUnit(nodoResponse.getCommand().getData1());
@@ -142,13 +143,6 @@ public class Options {
                 break;
             }
         }
-//        for (int i = 0; i < responses.length; i++) {
-//            if ( responses[i].is(NodoResponse.Direction.Output) && responses[i].is(CommandInfo.Name.Unit)) {
-//                setNodoUnit(responses[i].getCommand().getData1());
-//                hasScanned = true;
-//                break;
-//            }
-//        }
         return hasScanned;
     }
 

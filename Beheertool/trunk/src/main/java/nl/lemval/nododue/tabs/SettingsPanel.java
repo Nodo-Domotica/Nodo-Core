@@ -262,7 +262,7 @@ public class SettingsPanel extends NodoBasePanel {
                 for (NodoSetting nodoSetting : writeAttrs) {
                     if (names.contains(nodoSetting.getName())) {
                         if (CommandInfo.TIMER_SET.contains(nodoSetting.getName()) && nodoSetting.getAttributeValue2().equals("0") ) {
-                            System.out.println("Skipping " + nodoSetting);
+                            // System.out.println("Skipping " + nodoSetting);
                         } else {
                             results.add(nodoSetting);
                         }
