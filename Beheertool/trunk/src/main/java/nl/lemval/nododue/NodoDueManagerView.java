@@ -260,6 +260,7 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
         fileMenu.setText(resourceMap.getString("fileMenu.text")); // NOI18N
         fileMenu.setName("fileMenu"); // NOI18N
 
+        macroMenu.setMnemonic('m');
         macroMenu.setText(resourceMap.getString("macroMenu.text")); // NOI18N
         macroMenu.setName("macroMenu"); // NOI18N
 
@@ -270,21 +271,25 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
         macroMenu.add(loadMacroMenuItem);
 
         saveMacroMenuItem.setAction(actionMap.get("macroSaveToFile")); // NOI18N
+        saveMacroMenuItem.setMnemonic('s');
         saveMacroMenuItem.setText(resourceMap.getString("saveMacroMenuItem.text")); // NOI18N
         saveMacroMenuItem.setName("saveMacroMenuItem"); // NOI18N
         macroMenu.add(saveMacroMenuItem);
 
         fileMenu.add(macroMenu);
 
+        configMenu.setMnemonic('s');
         configMenu.setLabel(resourceMap.getString("configMenu.label")); // NOI18N
         configMenu.setName("configMenu"); // NOI18N
 
         loadConfigMenuItem.setAction(actionMap.get("configLoadFromFile")); // NOI18N
+        loadConfigMenuItem.setMnemonic('l');
         loadConfigMenuItem.setText(resourceMap.getString("loadConfigMenuItem.text")); // NOI18N
         loadConfigMenuItem.setName("loadConfigMenuItem"); // NOI18N
         configMenu.add(loadConfigMenuItem);
 
         saveConfigMenuItem.setAction(actionMap.get("configSaveToFile")); // NOI18N
+        saveConfigMenuItem.setMnemonic('s');
         saveConfigMenuItem.setText(resourceMap.getString("saveConfigMenuItem.text")); // NOI18N
         saveConfigMenuItem.setName("saveConfigMenuItem"); // NOI18N
         configMenu.add(saveConfigMenuItem);
@@ -301,20 +306,24 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
 
         menuBar.add(fileMenu);
 
+        nodoMenu.setMnemonic('n');
         nodoMenu.setText(resourceMap.getString("nodoMenu.text")); // NOI18N
         nodoMenu.setName("nodoMenu"); // NOI18N
 
         unitMenuItem.setAction(actionMap.get("showUnitSelectionBox")); // NOI18N
+        unitMenuItem.setMnemonic('n');
         unitMenuItem.setText(resourceMap.getString("unitMenuItem.text")); // NOI18N
         unitMenuItem.setName("unitMenuItem"); // NOI18N
         nodoMenu.add(unitMenuItem);
 
         devicesMenuItem.setAction(actionMap.get("showDevicesBox")); // NOI18N
+        devicesMenuItem.setMnemonic('p');
         devicesMenuItem.setText(resourceMap.getString("devicesMenuItem.text")); // NOI18N
         devicesMenuItem.setName("devicesMenuItem"); // NOI18N
         nodoMenu.add(devicesMenuItem);
 
         learnMenuItem.setAction(actionMap.get("showLearnCommandsDialog")); // NOI18N
+        learnMenuItem.setMnemonic('a');
         learnMenuItem.setText(resourceMap.getString("learnMenuItem.text")); // NOI18N
         learnMenuItem.setName("learnMenuItem"); // NOI18N
         nodoMenu.add(learnMenuItem);
@@ -323,6 +332,7 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
         nodoMenu.add(jSeparator3);
 
         dateTimeMenuItem.setAction(actionMap.get("showDateTimeDialog")); // NOI18N
+        dateTimeMenuItem.setMnemonic('t');
         dateTimeMenuItem.setText(resourceMap.getString("dateTimeMenuItem.text")); // NOI18N
         dateTimeMenuItem.setName("dateTimeMenuItem"); // NOI18N
         nodoMenu.add(dateTimeMenuItem);
@@ -331,12 +341,14 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
         nodoMenu.add(jSeparator4);
 
         historyMenuItem.setAction(actionMap.get("showHistoryBox")); // NOI18N
+        historyMenuItem.setMnemonic('h');
         historyMenuItem.setText(resourceMap.getString("historyMenuItem.text")); // NOI18N
         historyMenuItem.setName("historyMenuItem"); // NOI18N
         nodoMenu.add(historyMenuItem);
 
         menuBar.add(nodoMenu);
 
+        schermMenu.setMnemonic('T');
         schermMenu.setText(resourceMap.getString("schermMenu.text")); // NOI18N
         schermMenu.setName("schermMenu"); // NOI18N
 
@@ -381,10 +393,12 @@ public class NodoDueManagerView extends FrameView implements StatusMessageListen
 
         menuBar.add(schermMenu);
 
+        helpMenu.setMnemonic('h');
         helpMenu.setText(resourceMap.getString("helpMenu.text")); // NOI18N
         helpMenu.setName("helpMenu"); // NOI18N
 
         optionsMenuItem.setAction(actionMap.get("showOptionsBox")); // NOI18N
+        optionsMenuItem.setMnemonic('p');
         optionsMenuItem.setText(resourceMap.getString("optionsMenuItem.text")); // NOI18N
         optionsMenuItem.setName("optionsMenuItem"); // NOI18N
         helpMenu.add(optionsMenuItem);

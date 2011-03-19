@@ -72,6 +72,7 @@
           <SubComponents>
             <Menu class="javax.swing.JMenu" name="macroMenu">
               <Properties>
+                <Property name="mnemonic" type="int" value="109"/>
                 <Property name="text" type="java.lang.String" resourceKey="macroMenu.text"/>
                 <Property name="name" type="java.lang.String" value="macroMenu" noResource="true"/>
               </Properties>
@@ -90,6 +91,7 @@
                     <Property name="action" type="javax.swing.Action" editor="org.netbeans.modules.swingapp.ActionEditor">
                       <action class="nl.lemval.nododue.NodoDueManagerView" id="macroSaveToFile" methodName="macroSaveToFile"/>
                     </Property>
+                    <Property name="mnemonic" type="int" value="115"/>
                     <Property name="text" type="java.lang.String" resourceKey="saveMacroMenuItem.text"/>
                     <Property name="name" type="java.lang.String" value="saveMacroMenuItem" noResource="true"/>
                   </Properties>
@@ -98,6 +100,7 @@
             </Menu>
             <Menu class="javax.swing.JMenu" name="configMenu">
               <Properties>
+                <Property name="mnemonic" type="int" value="115"/>
                 <Property name="label" type="java.lang.String" resourceKey="configMenu.label"/>
                 <Property name="name" type="java.lang.String" value="configMenu" noResource="true"/>
               </Properties>
@@ -107,6 +110,7 @@
                     <Property name="action" type="javax.swing.Action" editor="org.netbeans.modules.swingapp.ActionEditor">
                       <action class="nl.lemval.nododue.NodoDueManagerView" id="configLoadFromFile" methodName="configLoadFromFile"/>
                     </Property>
+                    <Property name="mnemonic" type="int" value="108"/>
                     <Property name="text" type="java.lang.String" resourceKey="loadConfigMenuItem.text"/>
                     <Property name="name" type="java.lang.String" value="loadConfigMenuItem" noResource="true"/>
                   </Properties>
@@ -116,6 +120,7 @@
                     <Property name="action" type="javax.swing.Action" editor="org.netbeans.modules.swingapp.ActionEditor">
                       <action class="nl.lemval.nododue.NodoDueManagerView" id="configSaveToFile" methodName="configSaveToFile"/>
                     </Property>
+                    <Property name="mnemonic" type="int" value="115"/>
                     <Property name="text" type="java.lang.String" resourceKey="saveConfigMenuItem.text"/>
                     <Property name="name" type="java.lang.String" value="saveConfigMenuItem" noResource="true"/>
                   </Properties>
@@ -144,6 +149,7 @@
         </Menu>
         <Menu class="javax.swing.JMenu" name="nodoMenu">
           <Properties>
+            <Property name="mnemonic" type="int" value="110"/>
             <Property name="text" type="java.lang.String" resourceKey="nodoMenu.text"/>
             <Property name="name" type="java.lang.String" value="nodoMenu" noResource="true"/>
           </Properties>
@@ -153,6 +159,7 @@
                 <Property name="action" type="javax.swing.Action" editor="org.netbeans.modules.swingapp.ActionEditor">
                   <action class="nl.lemval.nododue.NodoDueManagerView" id="showUnitSelectionBox" methodName="showUnitSelectionBox"/>
                 </Property>
+                <Property name="mnemonic" type="int" value="110"/>
                 <Property name="text" type="java.lang.String" resourceKey="unitMenuItem.text"/>
                 <Property name="name" type="java.lang.String" value="unitMenuItem" noResource="true"/>
               </Properties>
@@ -162,6 +169,7 @@
                 <Property name="action" type="javax.swing.Action" editor="org.netbeans.modules.swingapp.ActionEditor">
                   <action class="nl.lemval.nododue.NodoDueManagerView" id="showDevicesBox" methodName="showDevicesBox"/>
                 </Property>
+                <Property name="mnemonic" type="int" value="112"/>
                 <Property name="text" type="java.lang.String" resourceKey="devicesMenuItem.text"/>
                 <Property name="name" type="java.lang.String" value="devicesMenuItem" noResource="true"/>
               </Properties>
@@ -171,6 +179,7 @@
                 <Property name="action" type="javax.swing.Action" editor="org.netbeans.modules.swingapp.ActionEditor">
                   <action class="nl.lemval.nododue.NodoDueManagerView" id="showLearnCommandsDialog" methodName="showLearnCommandsDialog"/>
                 </Property>
+                <Property name="mnemonic" type="int" value="97"/>
                 <Property name="text" type="java.lang.String" resourceKey="learnMenuItem.text"/>
                 <Property name="name" type="java.lang.String" value="learnMenuItem" noResource="true"/>
               </Properties>
@@ -185,6 +194,7 @@
                 <Property name="action" type="javax.swing.Action" editor="org.netbeans.modules.swingapp.ActionEditor">
                   <action class="nl.lemval.nododue.NodoDueManagerView" id="showDateTimeDialog" methodName="showDateTimeDialog"/>
                 </Property>
+                <Property name="mnemonic" type="int" value="116"/>
                 <Property name="text" type="java.lang.String" resourceKey="dateTimeMenuItem.text"/>
                 <Property name="name" type="java.lang.String" value="dateTimeMenuItem" noResource="true"/>
               </Properties>
@@ -199,6 +209,7 @@
                 <Property name="action" type="javax.swing.Action" editor="org.netbeans.modules.swingapp.ActionEditor">
                   <action class="nl.lemval.nododue.NodoDueManagerView" id="showHistoryBox" methodName="showHistoryBox"/>
                 </Property>
+                <Property name="mnemonic" type="int" value="104"/>
                 <Property name="text" type="java.lang.String" resourceKey="historyMenuItem.text"/>
                 <Property name="name" type="java.lang.String" value="historyMenuItem" noResource="true"/>
               </Properties>
@@ -207,6 +218,7 @@
         </Menu>
         <Menu class="javax.swing.JMenu" name="schermMenu">
           <Properties>
+            <Property name="mnemonic" type="int" value="84"/>
             <Property name="text" type="java.lang.String" resourceKey="schermMenu.text"/>
             <Property name="name" type="java.lang.String" value="schermMenu" noResource="true"/>
           </Properties>
@@ -282,6 +294,7 @@
         </Menu>
         <Menu class="javax.swing.JMenu" name="helpMenu">
           <Properties>
+            <Property name="mnemonic" type="int" value="104"/>
             <Property name="text" type="java.lang.String" resourceKey="helpMenu.text"/>
             <Property name="name" type="java.lang.String" value="helpMenu" noResource="true"/>
           </Properties>
@@ -295,6 +308,7 @@
                 <Property name="action" type="javax.swing.Action" editor="org.netbeans.modules.swingapp.ActionEditor">
                   <action class="nl.lemval.nododue.NodoDueManagerView" id="showOptionsBox" methodName="showOptionsBox"/>
                 </Property>
+                <Property name="mnemonic" type="int" value="112"/>
                 <Property name="text" type="java.lang.String" resourceKey="optionsMenuItem.text"/>
                 <Property name="name" type="java.lang.String" value="optionsMenuItem" noResource="true"/>
               </Properties>
