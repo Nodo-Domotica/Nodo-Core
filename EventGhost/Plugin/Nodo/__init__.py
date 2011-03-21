@@ -76,7 +76,7 @@ NodoCommandList =  (
           ('TimerSetSec','Timer',['1..15'],'Seconden',['0..255'],'Stel een timer in (seconden)',1,),
 
       ('Multi Nodo','',[''],'',[''],'',0,),
-          ('Handshake','Handshaking',['On','Off'],'',[''],'Verzend ontvangstbevestiging bij binnenkomst van een Event.',1,),
+          ('SendBusy','SendBusy',['On','Off'],'',[''],'Verzend ontvangstbevestiging bij binnenkomst van een Event.',1,),
           ('Divert','Unit [1..15]',['1..15'],'',[''],'Stuur eerstvolgende Event/Commando door naar andere Nodo.',0,),
           ('Unit','Unit',['1..15'],'',[''],'Stel Nodo unitnummer in.',0,),
           ('WaitBusy','',[''],'',[''],'Wacht totdat de opgegeven Nodo gereed is met verwerking.',1,),
