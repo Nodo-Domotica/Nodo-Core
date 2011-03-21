@@ -272,18 +272,34 @@ class WaitBusy(eg.ActionClass):
     def __call__(self, Unit=1):
         from datetime import datetime
         t = datetime.now ()
+        x = 0
+        print "Waiting for Nodo-" + str(Unit) + "..."
 
+        # als de nodo nog niet aan het verwerken is, wacht hier dan even op
+        if PluginVars.NodoBusy[Unit]==0:
+            x=100
+            while PluginVars.NodoBusy[Unit]==0 and x>0:
+                eg.plugins.EventGhost.Wait(0.1)
+                x = x - 1
+
+        # als de Nodo niet tijdig aangeeft bezig te zijn met verwerking, 
+        # dan is er zeer waarschijnlijk iets niet o.k.
+        # dan niet onnodig de wacht in. 
+        if x<=t.second:
+            print "Timeout on waiting for Nodo-" + str(Unit) + "! (Busy ON not received)"
+            PluginVars.NodoBusy[Unit]=0
+            return        
+        
+        # Alles wel o.k., dan wacht tot Nodo gereed is            
         if PluginVars.NodoBusy[Unit]==1:
-            print "Waiting for Nodo-" + str(Unit) + "..."
-            x=t.second + 60
-            previous = 0
-    
-            while PluginVars.NodoBusy[Unit]==1 and t.second<x:
-                t = datetime.now ()
-                eg.plugins.EventGhost.Wait(1.0)
-    
+            x=600
+            while PluginVars.NodoBusy[Unit]==1 and x>0:
+                eg.plugins.EventGhost.Wait(0.1)
+                x = x - 1
+            
             if x<=t.second:
-                print "Timeout on waiting for Nodo-" + str(Unit) + "!"
+                print "Timeout on waiting for Nodo-" + str(Unit) + "! (Busy OFF not received)"
+                PluginVars.NodoBusy[Unit]=0
             
     def Configure(self, Divert=1):
         panel = eg.ConfigPanel(self)
