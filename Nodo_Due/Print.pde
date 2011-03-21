@@ -242,6 +242,7 @@ void PrintEventCode(unsigned long Code)
       // Par1 als tekst en par2 niet
       case CMD_CONFIRM:
       case CMD_DLS_EVENT:
+      case CMD_BUSY:
       case CMD_SIMULATE:
         P1=P_TEXT;
         P2=P_NOT;
@@ -257,7 +258,6 @@ void PrintEventCode(unsigned long Code)
         break;
   
       // Geen parameters
-      case CMD_OK:
       case CMD_SEND_SIGNAL:
       case CMD_BOOT_EVENT:
         P1=P_NOT;

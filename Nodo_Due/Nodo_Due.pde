@@ -1,8 +1,10 @@
 /*
                                                     
 ToDo:
-- komt nog er wel een foutmelding als eventlist vol is?
 - wildcardtypen: verwerking bekijken en wijzigingen documenteren
+- Handshaking in command-reference aanpassen
+- commando dat wacht op een handshake resultaat
+
 */
 
 /**************************************************************************************************************************\
@@ -101,6 +103,13 @@ Aanpassingen vanaf svn build r240:
 - Geen weergave van het unitnummer als het signaal een HEX, KAKU of NewKAKU is.
 - UserEvent draagt bij verzenden het unitnummer i.p.v. nul. Pas aan de ontvangstzijde wordt deze toebedeeld aan alle units.
 
+Aanpassingen vanaf svn build rxxx
+- Commando 'Confirm' wordt 'SendBusy'. Voor start verwerking event wordt een 'Busy On' verzonden. Als gereed een 'Busy Off'.
+- Toevoegen documentatie plugin ('WaitBusy','',[''],'',[''],'Wacht totdat de opgegeven Nodo gereed is met verwerking.',1,),
+- Toevoegen command reference plugin ('WaitBusy','',[''],'',[''],'Wacht totdat de opgegeven Nodo gereed is met verwerking.',1,),
+
+
+
 
 
 \**************************************************************************************************************************/
@@ -192,7 +201,7 @@ prog_char PROGMEM Text_16[] = "Action=";
 #define VALUE_DIRECTION_INPUT 17
 #define VALUE_DIRECTION_OUTPUT 18
 #define VALUE_DIRECTION_INTERNAL 19
-#define VALUE_DIRECTION_EXECUTE 20
+#define VALUE_BUSY 20
 #define VALUE_SOURCE 21
 #define VALUE_RF_2_IR 22
 #define VALUE_IR_2_RF 23
@@ -269,8 +278,8 @@ prog_char PROGMEM Text_16[] = "Action=";
 #define CMD_TIMER_EVENT 94
 #define CMD_WIRED_IN_EVENT 95
 #define CMD_VARIABLE_EVENT 96
-#define CMD_EVENT_RES1
-#define CMD_OK 98
+#define CMD_BUSY 97
+#define CMD_res 98
 #define CMD_ERROR 99
 #define CMD_USER_EVENT 100// deze moet altijd op 100 blijven anders opnieuw leren aan universele afstandsbediening!
 #define CMD_DLS_EVENT 101
@@ -295,7 +304,7 @@ prog_char PROGMEM Cmd_16[]="Direction";
 prog_char PROGMEM Cmd_17[]="Input";
 prog_char PROGMEM Cmd_18[]="Output";
 prog_char PROGMEM Cmd_19[]="Internal";
-prog_char PROGMEM Cmd_20[]="Execute"; //??? wordt deze gebruikt ?
+prog_char PROGMEM Cmd_20[]="Busy";
 prog_char PROGMEM Cmd_21[]="Source";
 prog_char PROGMEM Cmd_22[]="RF2IR";
 prog_char PROGMEM Cmd_23[]="IR2RF";
@@ -304,8 +313,8 @@ prog_char PROGMEM Cmd_25[]="Output_RAW";
 prog_char PROGMEM Cmd_26[]="Nesting";
 prog_char PROGMEM Cmd_27[]="Queue";
 prog_char PROGMEM Cmd_28[]="On";
-prog_char PROGMEM Cmd_29[]="";
-prog_char PROGMEM Cmd_30[]="";
+prog_char PROGMEM Cmd_29[]=""; // reserve
+prog_char PROGMEM Cmd_30[]=""; // reserve
 prog_char PROGMEM Cmd_31[]="ReceiveSettings";
 prog_char PROGMEM Cmd_32[]="BreakOnVarEqu";
 prog_char PROGMEM Cmd_33[]="BreakOnVarLess";
@@ -331,13 +340,13 @@ prog_char PROGMEM Cmd_52[]="Simulate";
 prog_char PROGMEM Cmd_53[]="SimulateDay";
 prog_char PROGMEM Cmd_54[]="Sound";
 prog_char PROGMEM Cmd_55[]="Status";
-prog_char PROGMEM Cmd_56[]="";
+prog_char PROGMEM Cmd_56[]=""; // reserve
 prog_char PROGMEM Cmd_57[]="TimerRandom";
 prog_char PROGMEM Cmd_58[]="TimerSetSec";
 prog_char PROGMEM Cmd_59[]="TimerSetMin";
 prog_char PROGMEM Cmd_60[]="Display";
 prog_char PROGMEM Cmd_61[]="Unit";
-prog_char PROGMEM Cmd_62[]="";
+prog_char PROGMEM Cmd_62[]=""; // reserve
 prog_char PROGMEM Cmd_63[]="VariableDec";
 prog_char PROGMEM Cmd_64[]="VariableInc";
 prog_char PROGMEM Cmd_65[]="VariableSet";
@@ -352,10 +361,10 @@ prog_char PROGMEM Cmd_73[]="WiredThreshold";
 prog_char PROGMEM Cmd_74[]="SendUserEvent";
 prog_char PROGMEM Cmd_75[]="RawSignalCopy";
 prog_char PROGMEM Cmd_76[]="WildCard";
-prog_char PROGMEM Cmd_77[]="Confirm";
+prog_char PROGMEM Cmd_77[]="SendBusy";
 prog_char PROGMEM Cmd_78[]="SendVarUserEvent";
 prog_char PROGMEM Cmd_79[]="WiredRange";
-prog_char PROGMEM Cmd_80[]="";
+prog_char PROGMEM Cmd_80[]=""; // reserve
 prog_char PROGMEM Cmd_81[]="Boot";
 prog_char PROGMEM Cmd_82[]="ClockDaylight";
 prog_char PROGMEM Cmd_83[]="ClockAll";
@@ -366,14 +375,14 @@ prog_char PROGMEM Cmd_87[]="ClockWed";
 prog_char PROGMEM Cmd_88[]="ClockThu";
 prog_char PROGMEM Cmd_89[]="ClockFri";
 prog_char PROGMEM Cmd_90[]="ClockSat";
-prog_char PROGMEM Cmd_91[]="";
+prog_char PROGMEM Cmd_91[]=""; // reserve
 prog_char PROGMEM Cmd_92[]="KAKU";
 prog_char PROGMEM Cmd_93[]="NewKAKU";
 prog_char PROGMEM Cmd_94[]="Timer";
 prog_char PROGMEM Cmd_95[]="WiredIn";
 prog_char PROGMEM Cmd_96[]="Variable";
-prog_char PROGMEM Cmd_97[]="";
-prog_char PROGMEM Cmd_98[]="Ok"; // deze moet altijd op 98 blijven
+prog_char PROGMEM Cmd_97[]="Busy";
+prog_char PROGMEM Cmd_98[]=""; // reserve
 prog_char PROGMEM Cmd_99[]="Error"; // deze moet altijd op  blijven
 prog_char PROGMEM Cmd_100[]="UserEvent"; // deze moet altijd op 100 blijven anders opnieuw leren aan universele afstandsbediening!
 prog_char PROGMEM Cmd_101[]="DaylightSaving";

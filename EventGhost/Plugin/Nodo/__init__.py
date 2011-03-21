@@ -37,7 +37,7 @@ TagsToRemember = ["TimeStamp", "RawSignal", "ThisUnit", "Simulate", "Direction",
 NodoCommandList =  (   
       # Commando, Par1-label, Par1-bereik, Par2-label, Par2-bereik, Beschrijving, Divertable
       ('System','',[''],'',[''],'',0,),
-          ('Status','Nodo commando',['ClockDaylightSaving','ClockSetDate','ClockSetDOW','ClockSetTime','ClockSetYear','TimerSetMin','Boot','Simulate','VariableSet','Confirm','Unit','WaitFreeRF','ReceiveSettings','TransmitSettings','All','WiredAnalog','WiredIn','WiredOut','WiredPullup','WiredRange','WiredSmittTrigger','WiredThreshold'],'Parameter-1 van Nodo commando',['0..15'],'Opvragen van settings zoals opgeslagen in de Nodo',1,),
+          ('Status','Nodo commando',['All','ClockDaylightSaving','ClockSetDate','ClockSetDOW','ClockSetTime','ClockSetYear','TimerSetMin','Boot','Simulate','VariableSet','Confirm','Unit','WaitFreeRF','ReceiveSettings','TransmitSettings','WiredAnalog','WiredIn','WiredOut','WiredPullup','WiredRange','WiredSmittTrigger','WiredThreshold'],'Parameter-1 van Nodo commando',['0..15'],'Opvragen van settings zoals opgeslagen in de Nodo',1,),
           ('Reset','',[''],'',[''],'Nodo terugzetten naar fabrieksinstelling. ALLE SETTING WORDEN GEWIST!',0,),
 
       ('EventList','',[''],'',[''],'',0,),
@@ -76,9 +76,10 @@ NodoCommandList =  (
           ('TimerSetSec','Timer',['1..15'],'Seconden',['0..255'],'Stel een timer in (seconden)',1,),
 
       ('Multi Nodo','',[''],'',[''],'',0,),
-          ('Confirm','Confirm',['On','Off'],'',[''],'Verzend ontvangstbevestiging bij binnenkomst van een Event.',1,),
+          ('Handshake','Handshaking',['On','Off'],'',[''],'Verzend ontvangstbevestiging bij binnenkomst van een Event.',1,),
           ('Divert','Unit [1..15]',['1..15'],'',[''],'Stuur eerstvolgende Event/Commando door naar andere Nodo.',0,),
           ('Unit','Unit',['1..15'],'',[''],'Stel Nodo unitnummer in.',0,),
+          ('WaitBusy','',[''],'',[''],'Wacht totdat de opgegeven Nodo gereed is met verwerking.',1,),
 
       ('Signaal verwerking','',[''],'',[''],'',0,),
           ('RawSignalCopy','Richting',['ir2rf','rf2ir'],'Seconden',['0..255'],'Verzend een binnengekomen RF/IR signaal direct naar IR/RF.',1,),
@@ -133,6 +134,7 @@ class PluginVars:
     EventPrefix = "Unit-{Unit}"
     EventSuffix = "{Event}"
     XonXoffHold = 0
+    NodoBusy    = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 
 #===============================================================================
 
@@ -235,7 +237,7 @@ class NodoCommand(eg.ActionClass):
         # Als diverting bij dit commando gebruikt kan worden, dan de gebruikersinput hiervoor gereed maken
         if DivertUsed:
             Textlbl=wx.StaticText(panel, -1, " ")
-            DivertCtrl = panel.SpinIntCtrl(Divert, 0, 15)        
+            DivertCtrl = panel.SpinIntCtrl(Divert, 1, 15)        
             DivertBox = panel.BoxedGroup( "Divert: ",( "Nodo unit: ", DivertCtrl))
             eg.EqualizeWidths(DivertBox.GetColumnItems(0))
             panel.sizer.Add(Textlbl)
@@ -264,7 +266,42 @@ class NodoCommand(eg.ActionClass):
             self.text.NodoCommand=self.GetNodoCommand(Par1Choice,Par2Choice,Divert)
                                 
 #===============================================================================
+class WaitBusy(eg.ActionClass):
 
+    # Wacht totdat een remote Nodo klaar is met verwerking
+    def __call__(self, Unit=1):
+        from datetime import datetime
+        t = datetime.now ()
+
+        if PluginVars.NodoBusy[Unit]==1:
+            print "Waiting for Nodo-" + str(Unit) + "..."
+            x=t.second + 60
+            previous = 0
+    
+            while PluginVars.NodoBusy[Unit]==1 and t.second<x:
+                t = datetime.now ()
+                eg.plugins.EventGhost.Wait(1.0)
+    
+            if x<=t.second:
+                print "Timeout on waiting for Nodo-" + str(Unit) + "!"
+            
+    def Configure(self, Divert=1):
+        panel = eg.ConfigPanel(self)
+        mainSizer =wx.BoxSizer(wx.VERTICAL)
+    
+        Textlbl=wx.StaticText(panel, -1, " ")
+        DivertCtrl = panel.SpinIntCtrl(Divert, 1, 15)        
+        DivertBox = panel.BoxedGroup( "Divert: ",( "Nodo unit: ", DivertCtrl))
+        eg.EqualizeWidths(DivertBox.GetColumnItems(0))
+        panel.sizer.Add(Textlbl)
+        panel.sizer.Add(DivertBox)
+        while panel.Affirmed():
+            panel.SetResult(DivertCtrl.GetValue())
+
+    def GetLabel(self, Divert=1):
+        return "WaitBusy " + str(Divert) + ';'
+  
+#===============================================================================
 class ClockSync(eg.ActionClass):
 
     def __call__(self, Divert=1):
@@ -278,8 +315,11 @@ class ClockSync(eg.ActionClass):
             DivertCommand = ""
             
         eg.plugins.NodoSerial.plugin.Send(DivertCommand + "ClockSetYear " + str(t.year)[:2] + " " + str(t.year)[2:] + ";")
+        eg.plugins.EventGhost.Wait(2.0)
         eg.plugins.NodoSerial.plugin.Send(DivertCommand + "ClockSetDate " + str(t.day) + " " + str(t.month) + ";")
+        eg.plugins.EventGhost.Wait(2.0)
         eg.plugins.NodoSerial.plugin.Send(DivertCommand + "ClockSetTime " + str(t.hour) + " " + str(t.minute) + ";")
+        eg.plugins.EventGhost.Wait(2.0)
 
         # Nodo: 1=zondag, 7=zaterdag
         # function weekday: 0=maandag 6=zondag
@@ -293,7 +333,7 @@ class ClockSync(eg.ActionClass):
         mainSizer =wx.BoxSizer(wx.VERTICAL)
     
         Textlbl=wx.StaticText(panel, -1, " ")
-        DivertCtrl = panel.SpinIntCtrl(Divert, 0, 15)        
+        DivertCtrl = panel.SpinIntCtrl(Divert, 1, 15)        
         DivertBox = panel.BoxedGroup( "Divert: ",( "Nodo unit: ", DivertCtrl))
         eg.EqualizeWidths(DivertBox.GetColumnItems(0))
         panel.sizer.Add(Textlbl)
@@ -304,8 +344,7 @@ class ClockSync(eg.ActionClass):
     def GetLabel(self, Divert=1):
         return "Divert " + str(Divert) + '; ClockSet...;'
   
-#===============================================================================
-          
+#===============================================================================          
 class RawSignalPut(eg.ActionWithStringParameter):
     def __call__(self, data):
         eg.plugins.NodoSerial.plugin.Send("RawSignalPut;" + str(data) + ';')
@@ -313,8 +352,7 @@ class RawSignalPut(eg.ActionWithStringParameter):
     def GetLabel(self, data):
         return 'RawSignalPut;'
         
-#===============================================================================
-          
+#===============================================================================          
 class RawCommand(eg.ActionWithStringParameter):
     def __call__(self, data):
         eg.plugins.NodoSerial.plugin.Send(str(data) + ';')
@@ -323,7 +361,6 @@ class RawCommand(eg.ActionWithStringParameter):
         return str(data) + ';'
         
 #===============================================================================
-        
 class EventlistWrite(eg.ActionClass):
     class text:
         EventlistEvent="Als onderstaand event zich voordoet...\n\nEvent Par1,Par2"
@@ -357,7 +394,6 @@ class EventlistWrite(eg.ActionClass):
             panel.SetResult(EventlistEventCtrl.GetValue(),EventlistActionCtrl.GetValue())
 
 #===============================================================================
-
 class NodoSerial(eg.PluginClass):
     def __init__(self):        
         self.serial = None
@@ -378,6 +414,13 @@ class NodoSerial(eg.PluginClass):
                 continue
 
             # er zijn een aantal commando's met een separate, elders gedefinieerde class
+            if Command == 'WaitBusy':
+                 EventlistWrite.name = Command
+                 EventlistWrite.description = DescriptionCommand
+                 EventlistWrite.cmd = Command
+                 group.AddAction(WaitBusy)        
+                 continue
+                
             if Command == 'EventlistWrite':
                  EventlistWrite.name = Command
                  EventlistWrite.description = DescriptionCommand
@@ -554,6 +597,15 @@ class NodoSerial(eg.PluginClass):
             Params = Result[2].partition(",")
             eg.globals.Par1=str(Params[0])
             eg.globals.Par2=str(Params[2])
+
+            # Handshaking in een multi-nodo omgeving. 
+            # als een Nodo "Busy On" heeft verzonden is deze bezig met verwerking
+            # bewaar van alle units de Busy status in de tabel NodoBusy[] 
+            if eg.globals.Command == "Busy":
+                if eg.globals.Par1 == "On":
+                    PluginVars.NodoBusy[int(eg.globals.Unit)] = 1;
+                else:
+                    PluginVars.NodoBusy[int(eg.globals.Unit)] = 0;                  
 
             # Van enkele events/commando's is het handig om de waarde te onthouden als globale variabele in eg.globals
             # Zoek in de binnengekomen regels naar de Tags en haal bijbehorende waarde er uit.

@@ -23,10 +23,6 @@
  \*********************************************************************************************/
 boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, unsigned long PreviousContent, byte PreviousPort)
   {
-  unsigned long Event_1, Event_2;
-  byte Command=(IncommingEvent>>16)&0xff;
-  byte w,x,y,z;
-
   digitalWrite(MonitorLedPin,HIGH);           // LED aan als er iets verwerkt wordt
 
   // als de Nodo in de hold is gezet, verzamel dan relevante events in de queue
@@ -59,9 +55,6 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
       }
     }
 
-  if(EventlistDepth==0 || (S.Display & DISPLAY_TRACE))
-    PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
-
   // Als de RAW pulsen worden opgevraagd door de gebruiker...
   if(RawsignalGet)
     {
@@ -69,21 +62,41 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     RawsignalGet=false;
     return true;
     }
-    
+
+  PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
+
+  // Als het een commando of event voor deze nodo is...
+  if(CheckEventlist(IncommingEvent) || NodoType(IncommingEvent)==NODO_TYPE_COMMAND)
+    {
+    // Als de 'Handshake' optie aan staat, dan een 'Busy On'-event verzenden
+    if(S.Confirm)
+       TransmitCode(command2event(CMD_BUSY,VALUE_ON,0),SIGNAL_TYPE_NODO);
+
+    // Binnengekomen event verwerken
+    ProcessEvent2(IncommingEvent,Direction,Port,PreviousContent,PreviousPort);
+      
+    // Als de 'Handshake' optie aan staat, dan een 'Busy Off'-event verzenden
+    if(S.Confirm)
+       TransmitCode(command2event(CMD_BUSY,VALUE_OFF,0),SIGNAL_TYPE_NODO);
+    }
+  }
+
+boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, unsigned long PreviousContent, byte PreviousPort)
+  {
+  unsigned long Event_1, Event_2;
+  byte Command=(IncommingEvent>>16)&0xff;
+  byte w,x,y,z;
+
+  // trace aan, dan alle regels die vanuit de eventlist worden verwerkt weergeven.
+  if(EventlistDepth>0 && (S.Display & DISPLAY_TRACE))
+    PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
+
   if(EventlistDepth++>=MACRO_EXECUTION_DEPTH)
     {
     TransmitCode(command2event(CMD_ERROR,VALUE_NESTING,MACRO_EXECUTION_DEPTH),SIGNAL_TYPE_NODO);
     EventlistDepth=0;
     return false; // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
     }
-
-  // Als de 'Confirm' optie aan staat, dan een 'Ok'-event verzenden
-  if(S.Confirm)
-   {
-   // Dit alleen als het een commando of event voor deze nodo is.
-   if(CheckEventlist(IncommingEvent) || NodoType(IncommingEvent)==NODO_TYPE_COMMAND)
-     TransmitCode(command2event(CMD_OK,S.Unit,0),SIGNAL_TYPE_NODO);
-   }
 
   // ############# Verwerk event ################  
   // als het een Nodo event is en een geldig commando, dan deze uitvoeren
@@ -111,7 +124,6 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
           case CMD_KAKU:
           case CMD_KAKU_NEW:
           case CMD_ERROR:
-          case CMD_OK:
           case CMD_USER_EVENT:
             w=Command;
             break;
@@ -153,7 +165,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
           {// het is een ander soort event;
           if(Event_1!=command2event(CMD_COMMAND_WILDCARD,0,0))
             {
-            if(!ProcessEvent(Event_2,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_EVENTLIST,IncommingEvent,Port))
+            if(!ProcessEvent2(Event_2,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_EVENTLIST,IncommingEvent,Port))
               {
               EventlistDepth--;
               return true;
