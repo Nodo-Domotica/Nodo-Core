@@ -173,12 +173,16 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       *Par1=S.Unit;
       break;        
 
-    case CMD_CONFIRM: 
-      *Par1=S.Confirm?VALUE_ON:VALUE_OFF;
-      break;        
-
     case CMD_DLS_EVENT:
       *Par1=S.DaylightSaving?VALUE_ON:VALUE_OFF;
+      break;
+
+    case CMD_SENDBUSY:
+      *Par1=S.SendBusy?VALUE_ALL:VALUE_OFF;
+      break;
+      
+    case CMD_WAITBUSY:
+      *Par1=S.WaitBusy?VALUE_ALL:VALUE_OFF;
       break;
       
     case CMD_SIMULATE:
@@ -332,10 +336,11 @@ void ResetFactory(void)
   S.AnalyseTimeOut     = SIGNAL_TIMEOUT_IR;
   S.TransmitPort       = VALUE_SOURCE_IR_RF;
   S.TransmitRepeat     = TX_REPEATS;
+  S.SendBusy           = false;
+  S.WaitBusy           = false;
   S.WaitFreeRF_Window  = 0;
   S.WaitFreeRF_Delay   = 0;
   S.DaylightSaving     = Time.DaylightSaving;
-  S.Confirm            = false;
   
   for(byte x=0;x<4;x++)
     {

@@ -23,39 +23,32 @@
  \*********************************************************************************************/
 boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, unsigned long PreviousContent, byte PreviousPort)
   {
-  digitalWrite(MonitorLedPin,HIGH);           // LED aan als er iets verwerkt wordt
+  byte x;
+  boolean CommandForThisNodo=CheckEventlist(IncommingEvent) || NodoType(IncommingEvent)==NODO_TYPE_COMMAND;
+  boolean SetBusyOff=false;
+  
+  digitalWrite(MonitorLedPin,HIGH);           // LED aan als er iets verwerkt wordt  
 
-  // als de Nodo in de hold is gezet, verzamel dan relevante events in de queue
-  if(HoldTimer>millis())
+  if(CommandForThisNodo && Hold)
+    PrintText(Text_09);
+
+  PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
+
+  // houdt bij wat de busy status van andere Nodo's is.
+  if(((IncommingEvent>>16)&0xff)==CMD_BUSY) // command
     {
-    if((IncommingEvent&0xffffff00)==command2event(CMD_DELAY,0,0))
-      HoldTimer=0L; //  HoldTimer is NU, dus wachttijd is afgelopen;
-    else
+    x=(IncommingEvent>>24)&0xf; // unit
+    if(((IncommingEvent>>8)&0xff)==VALUE_ON) // Par1
       {
-      // als het event voorkomt in de eventlist of het is een Nodo commando voor deze Nodo, dan is het relevant om in queue te plaatsen
-      if(CheckEventlist(IncommingEvent) || NodoType(IncommingEvent)==NODO_TYPE_COMMAND)
-        {
-        // als er nog plek is in de queue...
-        if(QueuePos<EVENT_QUEUE_MAX)
-          {
-          PrintEvent(IncommingEvent,Port,VALUE_SOURCE_QUEUE);  // print event, maar voer niet uit.
-          QueueEvent[QueuePos]=IncommingEvent;
-          QueuePort[QueuePos]=Port;
-          QueuePos++;           
-          return true;
-          }       
-        else
-          TransmitCode(command2event(CMD_ERROR,CMD_DELAY,EVENT_QUEUE_MAX),SIGNAL_TYPE_NODO);
-        }
-      else
-        // geef event weer op Serial maar doe er verder niets mee
-        PrintEvent(IncommingEvent,Port,Direction);  
-
-      return true;
+      BusyNodo|=(1<<x);
+      HoldTimer=millis()+60000; // timeout teller (opnieuw) zetten voor geval er een 'Busy Off;'event gemist wordt
       }
+    else
+      BusyNodo&=~(1<<x);
     }
 
   // Als de RAW pulsen worden opgevraagd door de gebruiker...
+  // dan de pulsenreeks weergeven en er verder niets mee doen
   if(RawsignalGet)
     {
     PrintRawSignal();
@@ -63,21 +56,66 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     return true;
     }
 
-  PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
-
-  // Als het een commando of event voor deze nodo is...
-  if(CheckEventlist(IncommingEvent) || NodoType(IncommingEvent)==NODO_TYPE_COMMAND)
+  if(S.WaitBusy)
     {
-    // Als de 'Handshake' optie aan staat, dan een 'Busy On'-event verzenden
-    if(S.Confirm)
-       TransmitCode(command2event(CMD_BUSY,VALUE_ON,0),SIGNAL_TYPE_NODO);
+    Hold=CMD_BUSY;
+    loop(); // deze recursieve aanroep wordt beëindigd als BusyNodo==0
+    }
 
-    // Binnengekomen event verwerken
-    ProcessEvent2(IncommingEvent,Direction,Port,PreviousContent,PreviousPort);
-      
-    // Als de 'Handshake' optie aan staat, dan een 'Busy Off'-event verzenden
-    if(S.Confirm)
-       TransmitCode(command2event(CMD_BUSY,VALUE_OFF,0),SIGNAL_TYPE_NODO);
+  // event behandelen als uitvoerbaar commando voor deze Nodo of er een hit is in de eventlist.
+  if(CommandForThisNodo)
+    {
+    // verzend 'Busy On;'
+    if(S.SendBusy && !Hold)
+      {
+      TransmitCode(command2event(CMD_BUSY,VALUE_ON,0),SIGNAL_TYPE_NODO);
+      SetBusyOff=true;
+      }
+
+    // als de Nodo in de hold modus is gezet, verzamel dan events in de queue
+    if(Hold)
+      {
+      if((IncommingEvent&0xffffff00)==command2event(CMD_DELAY,0,0) ||
+         (IncommingEvent&0xffffff00)==command2event(CMD_WAITBUSY,0,0)   )
+        {
+        HoldTimer=0L; //  Zet de wachttijd op afgelopen;        
+        return true;
+        }
+        
+      // als het event voorkomt in de eventlist of het is een Nodo commando voor deze Nodo, dan is het relevant om in queue te plaatsen
+      // als er nog plek is in de queue...
+      if(QueuePos<EVENT_QUEUE_MAX)
+        {
+        QueueEvent[QueuePos]=IncommingEvent;
+        QueuePort[QueuePos]=Port;
+        QueuePos++;           
+        }       
+      else
+        TransmitCode(command2event(CMD_ERROR,VALUE_SOURCE_QUEUE,EVENT_QUEUE_MAX),SIGNAL_TYPE_NODO);
+      return true;
+      }
+    else // !Hold
+      ProcessEvent2(IncommingEvent,Direction,Port,PreviousContent,PreviousPort);
+    }
+    
+  // Verwerk de events die in de queue zijn geplaatst.
+  if(QueuePos)
+    {
+    x=QueuePos;
+    for(x=0;x<QueuePos;x++)
+      {
+      PrintText(Text_08);
+      PrintEvent(QueueEvent[x],QueuePort[x],VALUE_DIRECTION_INPUT);  // geef event weer op Serial
+      ProcessEvent2(QueueEvent[x],VALUE_DIRECTION_INPUT,QueuePort[x],0,0);      // verwerk binnengekomen event.
+      }
+    QueuePos=0;
+    }       
+
+  // verzend 'Busy Off;'
+  if(SetBusyOff)
+    {
+    SetBusyOff=false;
+    TransmitCode(command2event(CMD_BUSY,VALUE_OFF,0),SIGNAL_TYPE_NODO);
     }
   }
 
@@ -87,7 +125,7 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
   byte Command=(IncommingEvent>>16)&0xff;
   byte w,x,y,z;
 
-  // trace aan, dan alle regels die vanuit de eventlist worden verwerkt weergeven.
+  // print regel. Als trace aan, dan alle regels die vanuit de eventlist worden verwerkt weergeven
   if(EventlistDepth>0 && (S.Display & DISPLAY_TRACE))
     PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
 

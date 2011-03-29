@@ -3,7 +3,7 @@
 ToDo:
 - wildcardtypen: verwerking bekijken en wijzigingen documenteren
 - Handshaking in command-reference aanpassen
-- commando dat wacht op een handshake resultaat
+- Hex ontvangen via serial werkt niet meer.
 
 */
 
@@ -103,13 +103,12 @@ Aanpassingen vanaf svn build r240:
 - Geen weergave van het unitnummer als het signaal een HEX, KAKU of NewKAKU is.
 - UserEvent draagt bij verzenden het unitnummer i.p.v. nul. Pas aan de ontvangstzijde wordt deze toebedeeld aan alle units.
 
-Aanpassingen vanaf svn build rxxx
-- Commando 'Confirm' wordt 'SendBusy'. Voor start verwerking event wordt een 'Busy On' verzonden. Als gereed een 'Busy Off'.
-- Toevoegen documentatie plugin ('WaitBusy','',[''],'',[''],'Wacht totdat de opgegeven Nodo gereed is met verwerking.',1,),
-- Toevoegen command reference plugin ('WaitBusy','',[''],'',[''],'Wacht totdat de opgegeven Nodo gereed is met verwerking.',1,),
-
-
-
+Aanpassingen vanaf svn build r262 uitgebrachte Beta release V1.1.9
+- Commando 'Confirm' vervallen;
+- Commando 'SendBusy' toegevoegd;
+- Commando 'WaitBusy' toegevoegd;
+- snellere verwerking van een gevulde queue
+- bij invoer seriëel commando: Als het geen geldig HEX-event was en de tekst werd niet herkend als een commando, dan foutmelding.
 
 
 \**************************************************************************************************************************/
@@ -145,7 +144,7 @@ Aanpassingen vanaf svn build rxxx
  *
  ********************************************************************************************************/
 
-#define VERSION        119        // Nodo Version nummer:
+#define VERSION        2        // Nodo Version nummer:
                                   // Major.Minor.Patch
                                   // Major: Grote veranderingen aan concept, besturing, werking.
                                   // Minor: Uitbreiding/aanpassing van commando's, functionaliteit en MMI aanpassingen
@@ -165,10 +164,11 @@ Aanpassingen vanaf svn build rxxx
 prog_char PROGMEM Text_01[] = "Nodo-Due Domotica controller (c) Copyright 2011 P.K.Tonkes.";
 prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
 prog_char PROGMEM Text_03[] = "Line=";
-prog_char PROGMEM Text_08[] = "SunMonThuWedThuFriSat";
-prog_char PROGMEM Text_06[] = "SYSTEM: Unknown command!";
+prog_char PROGMEM Text_04[] = "SunMonThuWedThuFriSat";
+prog_char PROGMEM Text_06[] = "Unknown command: ";
 prog_char PROGMEM Text_07[] = "RawSignal=";
-prog_char PROGMEM Text_09[] = "SYSTEM: Break!";
+prog_char PROGMEM Text_08[] = "Queue=Out, ";
+prog_char PROGMEM Text_09[] = "Queue=In, ";
 prog_char PROGMEM Text_10[] = "TimeStamp=";
 prog_char PROGMEM Text_11[] = "Direction=";
 prog_char PROGMEM Text_12[] = "Source=";
@@ -243,7 +243,7 @@ prog_char PROGMEM Text_16[] = "Action=";
 #define CMD_TIMER_SET_MIN 59
 #define CMD_DISPLAY 60
 #define CMD_UNIT 61
-#define CMD_RES4 62
+#define CMD_WAITBUSY 62
 #define CMD_VARIABLE_DEC 63
 #define CMD_VARIABLE_INC 64
 #define CMD_VARIABLE_SET 65
@@ -258,7 +258,7 @@ prog_char PROGMEM Text_16[] = "Action=";
 #define CMD_SEND_USEREVENT 74
 #define CMD_COPYSIGNAL 75
 #define CMD_COMMAND_WILDCARD 76
-#define CMD_CONFIRM 77
+#define CMD_SENDBUSY 77
 #define CMD_SEND_VAR_USEREVENT 78
 #define CMD_WIRED_RANGE 79
 #define CMD_COMMAND_RES4 80
@@ -340,13 +340,13 @@ prog_char PROGMEM Cmd_52[]="Simulate";
 prog_char PROGMEM Cmd_53[]="SimulateDay";
 prog_char PROGMEM Cmd_54[]="Sound";
 prog_char PROGMEM Cmd_55[]="Status";
-prog_char PROGMEM Cmd_56[]=""; // reserve
+prog_char PROGMEM Cmd_56[]="";
 prog_char PROGMEM Cmd_57[]="TimerRandom";
 prog_char PROGMEM Cmd_58[]="TimerSetSec";
 prog_char PROGMEM Cmd_59[]="TimerSetMin";
 prog_char PROGMEM Cmd_60[]="Display";
 prog_char PROGMEM Cmd_61[]="Unit";
-prog_char PROGMEM Cmd_62[]=""; // reserve
+prog_char PROGMEM Cmd_62[]="WaitBusy";
 prog_char PROGMEM Cmd_63[]="VariableDec";
 prog_char PROGMEM Cmd_64[]="VariableInc";
 prog_char PROGMEM Cmd_65[]="VariableSet";
@@ -488,8 +488,9 @@ struct Settings
   byte    TransmitRepeat;
   byte    WaitFreeRF_Window;
   byte    WaitFreeRF_Delay;
+  boolean SendBusy;
+  boolean WaitBusy;
   boolean DaylightSaving;
-  boolean Confirm;
   int     DaylightSavingSet;
   }S;
 
@@ -515,12 +516,12 @@ byte QueuePos;
 boolean Simulate,RawsignalGet;
 boolean WiredInputStatus[4],WiredOutputStatus[4];   // Wired variabelen
 unsigned int RawSignal[RAW_BUFFER_SIZE+2];          // Tabel met de gemeten pulsen in microseconden. eerste waarde is het aantal bits*2
-
+int BusyNodo;                                       // in deze variabele de status van het event 'Busy' van de betreffende units 1 t/m 15. bit-1 = unit-1
 byte UserVarPrevious[USER_VARIABLES_MAX];
 byte DaylightPrevious;                              // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet
 byte WiredCounter=0, VariableCounter;
 byte EventlistDepth=0;                              // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's
-byte InLoop=0;
+byte Hold=false;
 unsigned long Content=0L,ContentPrevious;
 unsigned long Checksum=0L;
 unsigned long SupressRepeatTimer;
@@ -532,6 +533,8 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight; int Yea
 
 void setup() 
   {    
+  byte x;
+    
   pinMode(IR_ReceiveDataPin,INPUT);
   pinMode(RF_ReceiveDataPin,INPUT);
   pinMode(RF_TransmitDataPin,OUTPUT);
@@ -558,7 +561,7 @@ void setup()
   if(S.Version!=VERSION)ResetFactory(); // Als versienummer in EEPROM niet correct is, dan een ResetFactory.
   
   // initialiseer de Wired in- en uitgangen
-  for(byte x=0;x<=3;x++)
+  for(x=0;x<=3;x++)
     {
     pinMode(WiredDigitalOutputPin_1+x,OUTPUT); // definieer Arduino pin's voor Wired-Out
     digitalWrite(14+WiredAnalogInputPin_1+x,S.WiredInputPullUp[x]?HIGH:LOW);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14
@@ -570,7 +573,7 @@ void setup()
   DaylightPrevious=Time.Daylight;
 
   // Zet statussen WIRED_IN op hoog, anders wordt direct wij het opstarten vier maal een event gegenereerd omdat de pull-up weerstand analoge de waarden op FF zet
-  for(byte x=0;x<4;x++){WiredInputStatus[x]=true;}
+  for(x=0;x<4;x++){WiredInputStatus[x]=true;}
 
   PrintWelcome(); 
   ProcessEvent(command2event(CMD_BOOT_EVENT,0,0),VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM,0,0);  // Voer het 'Boot' event uit.
@@ -579,7 +582,7 @@ void setup()
 
 void loop() 
   {
-  int x,y,z;
+  int x,y,z; //??? mag dit een byte zijn?
   
   SerialHold(false); // er mogen weer tekens binnen komen van SERIAL
 
@@ -588,10 +591,26 @@ void loop()
   // als er geen signalen binnenkomen duurt deze hoofdloop +/- 35uSec. snel genoeg om geen signalen te missen.
   while(true)
     {
-    if(HoldTimer>millis())
+    if(Hold)
+      {
       digitalWrite(MonitorLedPin,(millis()>>7)&0x01);
+      // als in de hold-modus met reden het Delay commando EN de tijd is om, dan geneste aanroop loop() verlaten.
+      if(Hold==CMD_DELAY && HoldTimer<millis())
+        {
+        Hold=false;
+        return;
+        }
+        
+      // als in de hold-modus met reden Busy commando EN de er zijn geen Nodo's meer met status Busy, dan geneste aanroop loop() verlaten.
+      if(Hold==CMD_BUSY && (!BusyNodo || HoldTimer<millis()))
+        {
+        Hold=false;
+        return;
+        }
+      }
     else
       digitalWrite(MonitorLedPin,LOW);           // LED weer uit
+
 
     // SERIAL: *************** kijk of er data klaar staat op de seriële poort **********************
     do
@@ -669,16 +688,7 @@ void loop()
         }
       else
         Content=0L;
-      
-      // QUEUE: **************** Check zonsopkomst & zonsondergang  ***********************
-      if(QueuePos && HoldTimer<millis())
-        {
-        x=QueuePos;
-        for(QueuePos=0;QueuePos<x;QueuePos++)
-          ProcessEvent(QueueEvent[QueuePos],VALUE_DIRECTION_INPUT,QueuePort[QueuePos],0,0);      // verwerk binnengekomen event.
-        QueuePos=0;
-        }       
-        
+              
       // DAYLIGHT: **************** Check zonsopkomst & zonsondergang  ***********************
       SetDaylight();
       if(Time.Daylight!=DaylightPrevious)// er heeft een zonsondergang of zonsopkomst event voorgedaan
@@ -718,11 +728,7 @@ void loop()
           ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_VARIABLE,0,0);      // verwerk binnengekomen event.
           }
         }
-
-      // delay.
-      if(InLoop && HoldTimer<millis())
-        return;
-
+        
       // WIRED: *************** kijk of statussen gewijzigd zijn op WIRED **********************
       if(WiredCounter<3)
         WiredCounter++;

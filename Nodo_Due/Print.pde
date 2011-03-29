@@ -240,9 +240,10 @@ void PrintEventCode(unsigned long Code)
         break;
   
       // Par1 als tekst en par2 niet
-      case CMD_CONFIRM:
       case CMD_DLS_EVENT:
       case CMD_BUSY:
+      case CMD_SENDBUSY:
+      case CMD_WAITBUSY:
       case CMD_SIMULATE:
         P1=P_TEXT;
         P2=P_NOT;
@@ -372,7 +373,7 @@ void PrintEventlistEntry(int entry, byte d)
 void PrintDateTime(void)
     {
     // Print de dag. 1=zondag, 0=geen RTC aanwezig
-    for(byte x=0;x<=2;x++)Serial.print(*(Text(Text_08)+(Time.Day-1)*3+x),BYTE);
+    for(byte x=0;x<=2;x++)Serial.print(*(Text(Text_04)+(Time.Day-1)*3+x),BYTE);
     PrintChar(' ');
 
     // print year.    

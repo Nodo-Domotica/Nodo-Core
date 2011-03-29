@@ -37,12 +37,9 @@ unsigned long Receive_Serial(void)
   // Hier aangekomen staan er tekens klaar. Haal op van seriële poort en maak er een Event van.
   Event=SerialReadEvent();
 
-  // Serial.print("Event=");Serial.print(Event,HEX);PrintTerm();//???
-  
   // kijk of het een Nodo-event is.
   if(((Event>>28)&0xf)!=SIGNAL_TYPE_NODO)
-     return Event; // HEX-waarde. verdere uitvoer hoeft niet hier plaats te vinden.
-    
+    return Event; // HEX-waarde. verdere uitvoer hoeft niet hier plaats te vinden.
     
   // Als het een commando is, dan checken of er geldige parameters zijn opgegeven
   Cmd=(Event>>16)&0xff;
@@ -87,9 +84,8 @@ unsigned long Receive_Serial(void)
         break;
         }
                 
-      // schrijf weg in eventlist
-      
-      if(!Eventlist_Write(0,Event,Action)) // Unit er uit filteren, anders na wijzigen unit geen geldige eventlist.???
+      // schrijf weg in eventlist      
+      if(!Eventlist_Write(0,Event,Action))
         {
         error=true;
         Par1=CMD_EVENTLIST_WRITE;
@@ -100,13 +96,10 @@ unsigned long Receive_Serial(void)
     case CMD_DIVERT:   
       Action=(SerialReadEvent()&0x00ffffff) | ((unsigned long)(Par1))<<24 | ((unsigned long)(SIGNAL_TYPE_NODO))<<28; // Event_1 is het te forwarden event voorzien van nieuwe bestemming unit
       x=(Action>>24)&0x0f; // unit
-
       if(x==0 || x==S.Unit)
         ProcessEvent(Action,VALUE_DIRECTION_INPUT,VALUE_SOURCE_SERIAL,0,0);      // verwerk binnengekomen event.
-        
       if(x!=S.Unit)
         TransmitCode(Action,SIGNAL_TYPE_NODO);
-
       break;        
 
     case CMD_RAWSIGNAL_GET:
@@ -173,7 +166,7 @@ unsigned long Receive_Serial(void)
          S.WaitFreeRF_Delay=0;
          S.WaitFreeRF_Window=0;
          }
-       SaveSettings();
+      SaveSettings();
       FactoryEventlist();
       Reset();
   
@@ -224,8 +217,19 @@ unsigned long SerialReadEvent()
   Event=str2val(SerialBuffer);
   if(Event>0xff)
     return SetEventType(Event,SIGNAL_TYPE_UNKNOWN); // alle waarden groter dan 255 mogen gelijk verwerkt worden als een event.
+    
+  // invoer was geen getal. Haal uit de invoer de code van het tekst commando
+  y=str2cmd(SerialBuffer);
 
-  y=str2cmd(SerialBuffer);  // invoer was geen getal. Haal uit de invoer de code van het tekst commando
+  // als het geen geldig HEX-event was en de tekst werd niet herkend als een commando, dan foutmelding.
+  if(y==0)
+    {
+    PrintText(Text_06);
+    Serial.print(SerialBuffer);
+    PrintTerm();
+    return 0L;
+    }
+    
   if(y)
     {
     Par1=0;

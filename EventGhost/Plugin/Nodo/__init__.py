@@ -37,7 +37,7 @@ TagsToRemember = ["TimeStamp", "RawSignal", "ThisUnit", "Simulate", "Direction",
 NodoCommandList =  (   
       # Commando, Par1-label, Par1-bereik, Par2-label, Par2-bereik, Beschrijving, Divertable
       ('System','',[''],'',[''],'',0,),
-          ('Status','Nodo commando',['All','ClockDaylightSaving','ClockSetDate','ClockSetDOW','ClockSetTime','ClockSetYear','TimerSetMin','Boot','Simulate','VariableSet','Confirm','Unit','WaitFreeRF','ReceiveSettings','TransmitSettings','WiredAnalog','WiredIn','WiredOut','WiredPullup','WiredRange','WiredSmittTrigger','WiredThreshold'],'Parameter-1 van Nodo commando',['0..15'],'Opvragen van settings zoals opgeslagen in de Nodo',1,),
+          ('Status','Nodo commando',['All','ClockDaylightSaving','ClockSetDate','ClockSetDOW','ClockSetTime','ClockSetYear','TimerSetMin','Boot','Simulate','VariableSet','Confirm','Unit','WaitFreeRF','ReceiveSettings','SendBusy','TransmitSettings','WaitBusy','WiredAnalog','WiredIn','WiredOut','WiredPullup','WiredRange','WiredSmittTrigger','WiredThreshold'],'Parameter-1 van Nodo commando',['0..15'],'Opvragen van settings zoals opgeslagen in de Nodo',1,),
           ('Reset','',[''],'',[''],'Nodo terugzetten naar fabrieksinstelling. ALLE SETTING WORDEN GEWIST!',0,),
 
       ('EventList','',[''],'',[''],'',0,),
@@ -76,10 +76,10 @@ NodoCommandList =  (
           ('TimerSetSec','Timer',['1..15'],'Seconden',['0..255'],'Stel een timer in (seconden)',1,),
 
       ('Multi Nodo','',[''],'',[''],'',0,),
-          ('SendBusy','SendBusy',['On','Off'],'',[''],'Verzend ontvangstbevestiging bij binnenkomst van een Event.',1,),
+          ('SendBusy','SendBusy',['On','Off','All'],'',[''],'Verzend ontvangstbevestiging bij binnenkomst van een Event.',1,),
           ('Divert','Unit [1..15]',['1..15'],'',[''],'Stuur eerstvolgende Event/Commando door naar andere Nodo.',0,),
           ('Unit','Unit',['1..15'],'',[''],'Stel Nodo unitnummer in.',0,),
-          ('WaitBusy','',[''],'',[''],'Wacht totdat de opgegeven Nodo gereed is met verwerking.',1,),
+          ('WaitBusy','WaitBusy',['On','Off','All'],'',[''],'Wacht totdat de opgegeven Nodo gereed is met verwerking.',1,),
 
       ('Signaal verwerking','',[''],'',[''],'',0,),
           ('RawSignalCopy','Richting',['ir2rf','rf2ir'],'Seconden',['0..255'],'Verzend een binnengekomen RF/IR signaal direct naar IR/RF.',1,),
@@ -131,10 +131,11 @@ class KAKU:
 #===============================================================================
 
 class PluginVars:
-    EventPrefix = "Unit-{Unit}"
-    EventSuffix = "{Event}"
-    XonXoffHold = 0
-    NodoBusy    = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    EventPrefix     = "Unit-{Unit}"                     # default prefix is "Unit-n" waarbij n het unitnummer is
+    EventSuffix     = "{Event}"                         # default suffix is de tekst achter "event="
+    XonXoffHold     = 0                                 # t.b.v. seriele handshaking xon/xoff
+    NodoBusy        = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] # per unit: is deze bezig met verwerking of niet
+    NodoBusyActive  = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] # per unit: wordt de Busy On/Off gebruikt?
 
 #===============================================================================
 
@@ -142,11 +143,11 @@ class NodoCommand(eg.ActionClass):
     # class voor standaard Nodo Commando's met opties voor Parameter-1, Parameter-2 en divert
     
     class text:
-        Par1Label  = ""
-        Par1Range  = ""
-        Par2Label  = ""
-        Par2Range  = ""
-        Diverting  = ""
+        Par1Label   = ""
+        Par1Range   = ""
+        Par2Label   = ""
+        Par2Range   = ""
+        Diverting   = ""
         NodoCommand = ""
                         
     def GetNodoCommand(self, Par1Choice=0 , Par2Choice=0 , Divert=1):
@@ -181,6 +182,8 @@ class NodoCommand(eg.ActionClass):
 
 
     def __call__(self, Par1Choice=0 , Par2Choice=0 , Divert=1):
+        #wacht als bekend is dat de Nodo bezig is met verwerking
+        eg.plugins.NodoSerial.plugin.WaitBusyNodo(Divert)
         # Verzend het commando naar de Nodo 
         eg.plugins.NodoSerial.plugin.Send(self.GetNodoCommand(Par1Choice,Par2Choice,Divert))
         
@@ -237,7 +240,7 @@ class NodoCommand(eg.ActionClass):
         # Als diverting bij dit commando gebruikt kan worden, dan de gebruikersinput hiervoor gereed maken
         if DivertUsed:
             Textlbl=wx.StaticText(panel, -1, " ")
-            DivertCtrl = panel.SpinIntCtrl(Divert, 1, 15)        
+            DivertCtrl = panel.SpinIntCtrl(Divert, 0, 15)        
             DivertBox = panel.BoxedGroup( "Divert: ",( "Nodo unit: ", DivertCtrl))
             eg.EqualizeWidths(DivertBox.GetColumnItems(0))
             panel.sizer.Add(Textlbl)
@@ -264,59 +267,7 @@ class NodoCommand(eg.ActionClass):
                     panel.SetResult(0, 0, 0)
                     
             self.text.NodoCommand=self.GetNodoCommand(Par1Choice,Par2Choice,Divert)
-                                
-#===============================================================================
-class WaitBusy(eg.ActionClass):
-
-    # Wacht totdat een remote Nodo klaar is met verwerking
-    def __call__(self, Unit=1):
-        from datetime import datetime
-        t = datetime.now ()
-        x = 0
-        print "Waiting for Nodo-" + str(Unit) + "..."
-
-        # als de nodo nog niet aan het verwerken is, wacht hier dan even op
-        if PluginVars.NodoBusy[Unit]==0:
-            x=100
-            while PluginVars.NodoBusy[Unit]==0 and x>0:
-                eg.plugins.EventGhost.Wait(0.1)
-                x = x - 1
-
-        # als de Nodo niet tijdig aangeeft bezig te zijn met verwerking, 
-        # dan is er zeer waarschijnlijk iets niet o.k.
-        # dan niet onnodig de wacht in. 
-        if x<=t.second:
-            print "Timeout on waiting for Nodo-" + str(Unit) + "! (Busy ON not received)"
-            PluginVars.NodoBusy[Unit]=0
-            return        
-        
-        # Alles wel o.k., dan wacht tot Nodo gereed is            
-        if PluginVars.NodoBusy[Unit]==1:
-            x=600
-            while PluginVars.NodoBusy[Unit]==1 and x>0:
-                eg.plugins.EventGhost.Wait(0.1)
-                x = x - 1
-            
-            if x<=t.second:
-                print "Timeout on waiting for Nodo-" + str(Unit) + "! (Busy OFF not received)"
-                PluginVars.NodoBusy[Unit]=0
-            
-    def Configure(self, Divert=1):
-        panel = eg.ConfigPanel(self)
-        mainSizer =wx.BoxSizer(wx.VERTICAL)
-    
-        Textlbl=wx.StaticText(panel, -1, " ")
-        DivertCtrl = panel.SpinIntCtrl(Divert, 1, 15)        
-        DivertBox = panel.BoxedGroup( "Divert: ",( "Nodo unit: ", DivertCtrl))
-        eg.EqualizeWidths(DivertBox.GetColumnItems(0))
-        panel.sizer.Add(Textlbl)
-        panel.sizer.Add(DivertBox)
-        while panel.Affirmed():
-            panel.SetResult(DivertCtrl.GetValue())
-
-    def GetLabel(self, Divert=1):
-        return "WaitBusy " + str(Divert) + ';'
-  
+                                  
 #===============================================================================
 class ClockSync(eg.ActionClass):
 
@@ -330,18 +281,18 @@ class ClockSync(eg.ActionClass):
         else:
             DivertCommand = ""
             
-        eg.plugins.NodoSerial.plugin.Send(DivertCommand + "ClockSetYear " + str(t.year)[:2] + " " + str(t.year)[2:] + ";")
-        eg.plugins.EventGhost.Wait(2.0)
-        eg.plugins.NodoSerial.plugin.Send(DivertCommand + "ClockSetDate " + str(t.day) + " " + str(t.month) + ";")
-        eg.plugins.EventGhost.Wait(2.0)
-        eg.plugins.NodoSerial.plugin.Send(DivertCommand + "ClockSetTime " + str(t.hour) + " " + str(t.minute) + ";")
-        eg.plugins.EventGhost.Wait(2.0)
-
         # Nodo: 1=zondag, 7=zaterdag
         # function weekday: 0=maandag 6=zondag
         DOW = (t.weekday() + 2) % 7
         if DOW == 0:
             DOW = 7   # zaterdag!
+
+        eg.plugins.NodoSerial.plugin.Send(DivertCommand + "ClockSetYear " + str(t.year)[:2] + " " + str(t.year)[2:] + ";")
+        eg.plugins.EventGhost.Wait(3.0)
+        eg.plugins.NodoSerial.plugin.Send(DivertCommand + "ClockSetDate " + str(t.day) + " " + str(t.month) + ";")
+        eg.plugins.EventGhost.Wait(3.0)
+        eg.plugins.NodoSerial.plugin.Send(DivertCommand + "ClockSetTime " + str(t.hour) + " " + str(t.minute) + ";")
+        eg.plugins.EventGhost.Wait(3.0)
         eg.plugins.NodoSerial.plugin.Send(DivertCommand + "ClockSetDow " + str(DOW) + ";")
 
     def Configure(self, Divert=1):
@@ -349,7 +300,7 @@ class ClockSync(eg.ActionClass):
         mainSizer =wx.BoxSizer(wx.VERTICAL)
     
         Textlbl=wx.StaticText(panel, -1, " ")
-        DivertCtrl = panel.SpinIntCtrl(Divert, 1, 15)        
+        DivertCtrl = panel.SpinIntCtrl(Divert, 0, 15)        
         DivertBox = panel.BoxedGroup( "Divert: ",( "Nodo unit: ", DivertCtrl))
         eg.EqualizeWidths(DivertBox.GetColumnItems(0))
         panel.sizer.Add(Textlbl)
@@ -429,14 +380,7 @@ class NodoSerial(eg.PluginClass):
                     group = self.AddGroup(Command)                    
                 continue
 
-            # er zijn een aantal commando's met een separate, elders gedefinieerde class
-            if Command == 'WaitBusy':
-                 EventlistWrite.name = Command
-                 EventlistWrite.description = DescriptionCommand
-                 EventlistWrite.cmd = Command
-                 group.AddAction(WaitBusy)        
-                 continue
-                
+            # er zijn een aantal commando's met een separate, elders gedefinieerde class                
             if Command == 'EventlistWrite':
                  EventlistWrite.name = Command
                  EventlistWrite.description = DescriptionCommand
@@ -517,6 +461,66 @@ class NodoSerial(eg.PluginClass):
         
         PluginVars.EventPrefix=EventPrefix
         PluginVars.EventSuffix=EventSuffix
+
+    # Wacht totdat een remote Nodo klaar is met verwerking
+    def WaitBusyNodo(self, Unit):        
+
+        # Als er een Nodo busy is, dan wacht tot Nodo gereed is            
+        if PluginVars.NodoBusyActive[Unit]==1:
+        
+            # geef een melding als een Nodo bezig is
+            Busy=0
+            for x in PluginVars.NodoBusy:              
+                Busy+=x
+            
+            if Busy>0:
+                print "Waiting for busy Nodo..."
+    
+            # Wacht enige tijd totdat alle Nodos een 'Busy off' hebben verzonden. 
+            TimeOut=600 
+            BusyPrevious=0;
+            while Busy!=0 and TimeOut>0:
+                eg.plugins.EventGhost.Wait(0.1)
+                TimeOut = TimeOut - 1
+                Busy=0
+                for x in PluginVars.NodoBusy:              
+                    Busy+=x
+                # als er een wijziging is in de status van een Nodo
+                if Busy != BusyPrevious:
+                    BusyPrevious=Busy
+                    TimeOut=600 # ongeveer een minuut.
+            
+            #Zet de status van de Nodo op Busy omdat verwerking te snel gaat om 'Busy On' van de Nodo op tijd te ontvangen
+            PluginVars.NodoBusy[Unit]=1  
+    
+            # Als de timeout opgetreden is, geef dan weer welke Nodo(s) hiervoor verantwoordelijk. 
+            Unit=0
+            if Busy>0:
+                print "Timeout error!" 
+                Unit=0
+                for x in PluginVars.NodoBusy:              
+                    if x!=0:
+                        print "Nodo-" + str(Unit)+ " is busy or missing \'Busy Off\' event."
+                        PluginVars.NodoBusy[Unit]=0
+                        PluginVars.NodoBusyActive[Unit]=0 # zet Busy handshaking uit want er ging wat fout.
+                    Unit+=1
+
+            
+            
+
+#        if PluginVars.NodoBusyActive[Unit]==1:
+#            if PluginVars.NodoBusy[Unit]==1:
+#                print "Nodo-" + str(Unit)+ " is busy..."
+#                x=600 # ongeveer een minuut.
+#                while PluginVars.NodoBusy[Unit]==1 and x>0:
+#                    eg.plugins.EventGhost.Wait(0.1)
+#                    x = x - 1
+#                
+#                if x==0:
+#                    print "Timeout error! Unit-" + str(Unit)+ " still busy or missing \'Busy Off\' event."
+#                    PluginVars.NodoBusy[Unit]=0  
+#                    PluginVars.NodoBusyActive[Unit]=0 # zet Busy handshaking uit want er ging wat fout.
+#            PluginVars.NodoBusy[Unit]=1  
 
     # verzenden van het commando en gelijkertijd kijken of er een XOFF verzonden is
     def Send(self, StringToSend=""):
@@ -618,10 +622,11 @@ class NodoSerial(eg.PluginClass):
             # als een Nodo "Busy On" heeft verzonden is deze bezig met verwerking
             # bewaar van alle units de Busy status in de tabel NodoBusy[] 
             if eg.globals.Command == "Busy":
+                PluginVars.NodoBusyActive[int(eg.globals.Unit)]=1 # zet deze vlag om aan te geven dat de Busy handshaking gebruikt wordt.
                 if eg.globals.Par1 == "On":
-                    PluginVars.NodoBusy[int(eg.globals.Unit)] = 1;
+                    PluginVars.NodoBusy[int(eg.globals.Unit)] = 1                  
                 else:
-                    PluginVars.NodoBusy[int(eg.globals.Unit)] = 0;                  
+                    PluginVars.NodoBusy[int(eg.globals.Unit)] = 0                  
 
             # Van enkele events/commando's is het handig om de waarde te onthouden als globale variabele in eg.globals
             # Zoek in de binnengekomen regels naar de Tags en haal bijbehorende waarde er uit.
@@ -634,13 +639,11 @@ class NodoSerial(eg.PluginClass):
                     if cmd == "VariableSet":
                         cmd="Variable"
 
-                    # schrijf weg voor de gebruiker. Twee maal: met en zonder unit als prefix
-                    
+                    # schrijf weg voor de gebruiker.
                     if eg.globals.Unit!="" and eg.globals.Unit!="?" :
                         eg.globals.__setattr__("Unit" + str(eg.globals.Unit) + "_" + cmd + "_" + str(eg.globals.Par1),eg.globals.Par2) 
                     else:
                         eg.globals.__setattr__(cmd + "_" + str(eg.globals.Par1),eg.globals.Par2) 
-
             return
 
 #===============================================================================

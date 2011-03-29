@@ -268,5 +268,3 @@ unsigned long RawSignal_2_NewKAKU(void)
   return bitstream;
   }
 
-
-

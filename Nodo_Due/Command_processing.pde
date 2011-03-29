@@ -44,33 +44,7 @@ byte NodoType(unsigned long Content)
     return NODO_TYPE_EVENT;
 
   return NODO_TYPE_COMMAND;
-  }
-
-//  {
-//  byte cmd  = (Content>>16)&0xff;
-//  byte unit = (Content>>24)&0xf;
-//
-//  // als het geen Nodo signaal was dan zowieso niet
-//  if((Content>>28)&0xf!=SIGNAL_TYPE_NODO)
-//    return false;
-//
-//  // als het een UserEvent was, dan is die altijd voor deze Nodo
-//  if(cmd==CMD_USER_EVENT)
-//    return NODO_TYPE_EVENT;
-//
-//  // als het voor een andere Nodo bestemd was of Unit deel ongelijk aan eigen adres en ongelijk aan wildcard unit=0
-//  if(unit!=S.Unit && unit!=0)
-//    return false;
-// 
-//  if(cmd<=RANGE_VALUE)
-//    return false;
-//
-//  if(cmd>=RANGE_EVENT)
-//    return NODO_TYPE_EVENT;
-//
-//  return NODO_TYPE_COMMAND;
-//  }
-  
+  }  
   
 
 /*********************************************************************************************\
@@ -215,7 +189,7 @@ byte CommandError(unsigned long Content)
       if(Par1<1 || Par1>4)return ERROR_PAR1;
       return false;
 
-    // test:Par1 binnen bereik maximaal beschikbare wired poorten EN Par2 is 0 of 1
+    // test:Par1 binnen bereik maximaal beschikbare wired poorten EN Par2 is ON of OFF
     case CMD_WIRED_OUT:
     case CMD_WIRED_PULLUP:
       if(Par1<1 || Par1>4)return ERROR_PAR1;
@@ -223,7 +197,12 @@ byte CommandError(unsigned long Content)
       return false;
 
     case CMD_COPYSIGNAL:
-      if(Par1!=VALUE_RF_2_IR && Par1!=VALUE_IR_2_RF)return ERROR_PAR1;
+      if(Par1!=VALUE_RF_2_IR && Par1!=VALUE_IR_2_RF)
+      return false;
+
+    case CMD_WAITBUSY:
+    case CMD_SENDBUSY:
+      if(Par1!=VALUE_OFF && Par1!=VALUE_ON && Par1!=VALUE_ALL)return ERROR_PAR1;
       return false;
 
     case CMD_TRANSMIT_SETTINGS:
@@ -264,7 +243,6 @@ byte CommandError(unsigned long Content)
       return false;
 
      // par1 alleen On of Off.
-    case CMD_CONFIRM:
     case CMD_SIMULATE:
       if(Par1!=VALUE_OFF && Par1!=VALUE_ON)return ERROR_PAR1;
       return false;
@@ -450,10 +428,9 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           else
             {
             // start een nieuwe recursieve loop() om zo de events die voorbij komen te plaatsen in de queue.
-            // deze recursieve aanroep wordt beÃ«indigd als HoldTimer==0L
-            InLoop++;
+            // deze recursieve aanroep wordt beëindigd als HoldTimer==0L
+            Hold=CMD_DELAY;
             loop();
-            InLoop--;
             }
           }        
         else
@@ -502,9 +479,27 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         if(Par1==VALUE_IR_2_RF)CopySignalIR2RF(Par2);
         break;        
   
-      case CMD_CONFIRM:
-        S.Confirm=Par1==VALUE_ON;
-        SaveSettings();
+      case CMD_SENDBUSY:
+        if(Par1==VALUE_ALL)
+          S.SendBusy=true;
+        else
+          if(S.SendBusy)
+            S.SendBusy=false;
+          else
+            TransmitCode(command2event(CMD_BUSY,Par1,0),SIGNAL_TYPE_NODO);
+        break;
+        
+      case CMD_WAITBUSY:
+        if(Par1==VALUE_ALL)
+          S.WaitBusy=true;
+        else
+          if(S.WaitBusy)
+            S.WaitBusy=false;
+          else
+            {
+            Hold=CMD_BUSY;
+            loop(); // deze recursieve aanroep wordt beëindigd als BusyNodo==0
+            }
         break;
   
       case CMD_TRANSMIT_SETTINGS:
