@@ -425,11 +425,10 @@ void PrintWelcome(void)
   PrintChar(' ');
   PrintText(Text_13);
   PrintValue(S.Unit);
+  PrintTerm();
 
   if(Time.Day)
     {
-    PrintChar(',');
-    PrintChar(' ');
     PrintText(Text_10);
     PrintDateTime();
     if(Time.DaylightSaving)
@@ -438,9 +437,8 @@ void PrintWelcome(void)
       PrintChar(' ');
       Serial.print(cmd2str(CMD_DLS_EVENT));
       }
+    PrintTerm();
     }
-
-  PrintTerm();
   PrintLine();
   }
 

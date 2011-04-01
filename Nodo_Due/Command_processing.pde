@@ -230,12 +230,10 @@ byte CommandError(unsigned long Content)
       switch(Par2)
         {
         case VALUE_ALL:
+        case CMD_ERROR:
         case CMD_KAKU:
         case CMD_KAKU_NEW:
         case CMD_USER_EVENT:
-//???
-//        case VALUE_TYPE_OTHERUNIT:
-//        case VALUE_TYPE_UNKNOWN:
           break;
         default:
           return ERROR_PAR2;

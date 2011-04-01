@@ -1,125 +1,6 @@
-/*
-                                                    
-ToDo:
-- wildcardtypen: verwerking bekijken en wijzigingen documenteren
-- Handshaking in command-reference aanpassen
-- Hex ontvangen via serial werkt niet meer.
-
-*/
-
-/**************************************************************************************************************************\
-
-### Release V1.1.9
-
-Opgeloste issues:
-- Issue 163:	SendSignal: regressie!!!
-- Issue 164:	HEX-code ontvangen IR en verwerken in Eventlist
-- Issue 165:	KAKU Groep commando regressie bug.
-- Issue 166:	WaitFreeRF gaat niet goed bij 'Series' en ontvangst van een SendKaku via IR.
-- Issue 168:	ClockAll event in de erventlist geeft een match bij UserEvent
-- Issue 170:	datum instellen met maand 0 wordt geaccepteerd
-- Issue 171:	WaitFreeRF All regressie.
-- Issue 175:	VariableVariable geeft foutmelding in Par2
-- Issue 176:	Delay verstoort werking
-- Issue 177:	revisie186 - delay probleem
-- Issue 178:	spontante Variables events.
-
-Overige functionele aanpassingen:
-- Issue 172:	wildcard gebruik in UserEvent
-- Issue 173:	GetLM335 => Opgelost met WiredRange.
-- Issue 174:	Gebruik van variabele in UserEvent
-- Home adres is komen te vervallen;
-- SendNewKAKU: Dimniveau aanpassing. Opties voor Par2 zijn [On,Off,1..16] Dim niveaus dus ZONDER het woord 'dim'. Hoogste dimniveau is nu ook bereikbaar.
-- Aanpassing pause bij herhaald sound 'ding-dong' en de 'Whoop' is nu een 'slow-whoop';
-- '(WildCard All, All); (Sound 0, 0)' niet meer default in de eventlist;
-- Nieuwe setting 'Confirm';
-- Aanpassing commando 'Delay': Kan worden uitgezet en voorbijkomende event worden in queue gezet voor latere verwerking;
-- Nesting error wordt nu als een error-event verzonden.
-- dubbele regeleinden aan einde regel in EventList verwijderd;
-- OUTPUT melding verschijnt bij uitvoer van een wired out.
-- WaitfreeRF is gewijzigd. Par1=delay alvorens te zenden, Par2=luistertijd naar vrije ether. 
-  Default 0,0. Bij wijzigenunit > 1 dan delay afhankelijk van unitnummer.
-  All en series vervallen.
-- Als unitnummer wordt gewijzigd dan wordt tevens de WaitFreeRF geactiveerd.
-- Commando unit gewijzigd. Bij Unit hoger dan 1, dan waitfreerf geactiveerd.
-- Bij trace wordt geen lijn met sterretjes meer weergegeven.
-- Versnellen verwerking RF signalen:
-  * default 7x pulsreeks verzenden KAKU teruggebracht naar 5x.
-  * Space stopbit timings aangepast.
-  * delay in zendroutine na zenden pulsreeks verwijderd. 
-  Hierdoor:
-  * verzenden KAKU     : 4 schakelingen per seconde.
-  * verzenden NewKAKU  : 2,5 schakelingen per seconde.
-  * verzenden Nodo     : 2,7 comando's per seconde.
-- Aantal herhalingen bij verzenden van een code instelbaar met TransmitSettings (Par2)
-- Commando Sendstatus vervallen. Status commando aangepast;
-- SERIES parameter t.b.v. WaitFreeRF vervallen.
-- MMI aanpassing + 'Display' commando toegevoegd en commando 'Trace' vervallen. Trace in te stellen met Display commando
-- Datum tijd notatie aangepast naar standaardnotatie: EEE YYYY-MM-DD HH:MM
-- Als de 'Simulate' aan staat wordt dit weergegeven op Serial.
-
-Onder de motorkap:
-- Timers nu in een int i.p.v. unsigned long en aanpassing aflopen timers => geheugenbesparing
-- EventPart functie laten vervallen en vervangen door directe shift/and op events => geheugenbesparing
-- EventType functie vervallen. Event type wordt nu onderdeel van het Event op de plaats waar het Home adres van de Nodo stond.
-- Trace settings anders opgelost.
 
 
-- Issue 182:	suggestie voor verbetering QUEUED
-- Issue 193:	SendKAKU ON werkt niet
-- Issue 194:	Unitnummer wordt niet goed gechecked
-- Issue 191:	Status led werkt niet juist
-- Issue 195:	UserEvent niet geaccepteerd vanuit EventGhost
-
-Aanpassingen vanaf svn build r230:
-- 'TimerSet' commando gerenamed naar 'TimerSetMin':
-- 'TimerSetSec': nieuw commando. Als oude 'TimerSet', maar zet timers, maar dan in resolutie van seconden.
-- 'TimerSetMin' en 'TimerSetSec': 0=wildcard voor alle timers.
-- 'TimerReset': commando vervallen;
-- 'Status' aanpassing: 'TimerSet' parameter is nu 'TimerSetMin' i.v.m. aanpassing commando 'TimerSet'.
-- 'variableClear' commando vervallen. wissen kan nu met 'variableSet', waarbij variabele=0 een wildcard is voor alle variabelen.
-- intern: tegelijk afgelopen timers worden nu sneller achter elkaar afgehandeld.
-
-Aanpassingen vanaf svn build r231:
-- Timers allemaal op 0 zetten levert nu geen event meer op.
-
-Aanpassingen vanaf svn build r231:
-- Queue binnenkomst en verwerking wordt nu anders weergegeven
-- Queue wordt nu FIFO afgehandeld i.p.v. LIFO
-- Bug opgelost: Als bij een eventlistwrite een actie wordt aangegeven die niet correct is verscheen er niet (altijd) een foutmelding. Nu wel.
-- Issue 169:	Error message geeft error...
-- Issue 208:	KAKU via een Divert wordt toch lokaal afgehandeld.
-- Aanpassing divert commando: Bij een Divert 0 wordt het te diverten commando ook zelf uitgevoerd.
-- Aanpassing divert commando: Geen verzending door ether als de divert gelijk is aan huidige unitnummer. Niet nodig want alle units zijn uniek
-- Status: Par1 extra optie 'Boot' om de welkomsttekst weer te geven.
-- Aanpassing afdrukken van een regel uit de eventlist: wordt nu afgesloten met een puntkomma.
-- Weergave regels 'EventlistShow' aangepast aan nieuwe MMI
-
-Aanpassingen vanaf svn build r235:
-- "SYSTEM: Rawsignal=" melding veranderd in "RawSignal="
--  Timestamp" is "TimeStamp" geworden. tevens weergave van deze tag in de welkomsttekst.
-
-Aanpassingen vanaf svn build r240:
-- Geen weergave van het unitnummer als het signaal een HEX, KAKU of NewKAKU is.
-- UserEvent draagt bij verzenden het unitnummer i.p.v. nul. Pas aan de ontvangstzijde wordt deze toebedeeld aan alle units.
-
-Aanpassingen vanaf svn build r262 uitgebrachte Beta release V1.1.9
-- Commando 'Confirm' vervallen;
-- Commando 'SendBusy' toegevoegd;
-- Commando 'WaitBusy' toegevoegd;
-- snellere verwerking van een gevulde queue
-- bij invoer seriëel commando: Als het geen geldig HEX-event was en de tekst werd niet herkend als een commando, dan foutmelding.
-
-
-\**************************************************************************************************************************/
-
-
-
- /*****************************************************************************************************\
-  Compiler            : - Arduino Compiler 0022
-  Hardware            : - Arduino UNO, Duemilanove of Nano met een ATMeg328 processor @16Mhz.
-                        - Hardware en Arduino penbezetting volgens schema Nodo Due Rev.003
- ********************************************************************************************************
+ /****************************************************************************************************************************\
  * Arduino project "Nodo Due" © Copyright 2010 Paul Tonkes
  *
  * This program is free software: you can redistribute it and/or modify
@@ -136,15 +17,17 @@ Aanpassingen vanaf svn build r262 uitgebrachte Beta release V1.1.9
  * along with this program in tab '_COPYING'.
  *
  * voor toelichting op de licentievoorwaarden zie    : http://www.gnu.org/licenses
- * Voor discussie: Zie Logitech Harmony forum        : http://www.harmony-forum.nl 
- * Uitgebreide documentatie is te vinden op          : http://members.chello.nl/p.tonkes8/index.html
+ * Voor discussie: Zie Logitech Harmony forum        : http://groups.google.com/group/arduinodo/topics
+ * Uitgebreide documentatie is te vinden op          : http://www.nodo-domotica.nl
  * bugs kunnen worden gelogd op                      : https://code.google.com/p/arduino-nodo/
  * Compiler voor deze programmacode te downloaden op : http://arduino.cc
  * Voor vragen of suggesties, mail naar              : p.k.tonkes@gmail.com
- *
- ********************************************************************************************************/
+ * Compiler                                          : - Arduino Compiler 0022
+ * Hardware                                          : - Arduino UNO, Duemilanove of Nano met een ATMeg328 processor @16Mhz.
+ *                                                     - Hardware en Arduino penbezetting volgens schema Nodo Due Rev.003
+ \****************************************************************************************************************************/
 
-#define VERSION        2        // Nodo Version nummer:
+#define VERSION        120        // Nodo Version nummer:
                                   // Major.Minor.Patch
                                   // Major: Grote veranderingen aan concept, besturing, werking.
                                   // Minor: Uitbreiding/aanpassing van commando's, functionaliteit en MMI aanpassingen
@@ -432,7 +315,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define Eventlist_OFFSET            64 // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer __ bytes. Deze niet te gebruiken voor de Eventlist.
 #define Eventlist_MAX              120 // aantal events dat de lijst bevat in het EEPROM geheugen van de ATMega328. Iedere event heeft 8 bytes nodig. eerste adres is 0
 #define USER_VARIABLES_MAX          15 // aantal beschikbare gebruikersvariabelen voor de user.
-#define RAW_BUFFER_SIZE            200 // ??? Maximaal aantal te ontvangen bits*2. 
+#define RAW_BUFFER_SIZE            200 // Maximaal aantal te ontvangen bits*2
 #define UNIT_MAX                    15 
 #define MACRO_EXECUTION_DEPTH       10 // maximale nesting van macro's.
 
@@ -582,7 +465,7 @@ void setup()
 
 void loop() 
   {
-  int x,y,z; //??? mag dit een byte zijn?
+  int x,y,z;
   
   SerialHold(false); // er mogen weer tekens binnen komen van SERIAL
 

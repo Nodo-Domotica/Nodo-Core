@@ -43,8 +43,8 @@
 *   on/off       ---- 000x Off/On
 *   all on/off   ---- 001x AllOff/AllOn // is group (unit code bestaat uit short 0s)
 \*********************************************************************************************/
-#define KAKU_ALLOFF 2 //???
-#define KAKU_ALLON 3 //???
+#define KAKU_ALLOFF 2
+#define KAKU_ALLON 3
 #define KAKU_CodeLength    12  // aantal data bits
 #define KAKU_T            350  // us
 
@@ -139,7 +139,7 @@ unsigned long RawSignal_2_KAKU(void)
 *  Nodo Event            = TTTTUUUUCCCCCCCC1111111122222222       -> T=Type, U=Unit, 1=Par-1, 2=Par-2
 *  Nodo commando NewKAKU = TTTTUUUUPPPPPPPPAAAAAAAALLLLCCCC       -> T=Type, U=Unit, P=CMD_NEWKAKU_SEND, A=User adres, L=dimlevel, c=commando
 *  NewKAKU (org.)        = AAAAAAAAAAAAAAAAAAAAAAAAAACCUUUU(LLLL) -> A=KAKU_adres, C=commando, U=KAKU-Unit, L=extra dimlevel bits (optioneel)
-*  NewKAKU van Nodo      = 000000000000000000AAAAAAAACC0001(LLLL) -> ??? H=Nodo_home, A=User adres, D=Dim, C=commando, L=extra dimlevel bits (optioneel)
+*  NewKAKU van Nodo      = 000000000000000000AAAAAAAACC0001(LLLL) -> H=Nodo_home, A=User adres, D=Dim, C=commando, L=extra dimlevel bits (optioneel)
 *  Bit                   = 01234567890123456789012345678901 2345  -> Bit-0 gaat als eerste door de ether.
 *                                    1111111111222222222233 3333 
 *

@@ -165,12 +165,9 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
           case CMD_USER_EVENT:
             w=Command;
             break;
-//          default:??? nog uitzoeken!
-//            //??? was: w=EventType(IncommingEvent);
-//            w=EventType(IncommingEvent);
           }
 
-        y=true;// vlag wildcard match.         
+        y=true;// vlag wildcard         
 
         z=(Event_1>>8)&0xff; // Par1 deel van de Wildcard bevat de poort
         if(z!=VALUE_ALL && z!=Port)
@@ -188,7 +185,7 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
         if(S.Display & DISPLAY_TRACE)
           {
           PrintEventlistEntry(x,EventlistDepth);
-          PrintTerm();//???
+          PrintTerm();
           }
           
         if(NodoType(Event_2)==NODO_TYPE_COMMAND) // is de ontvangen code een uitvoerbaar commando?
@@ -244,16 +241,10 @@ boolean CheckEvent(unsigned long Event, unsigned long MacroEvent)
   {  
   byte x;
   
-  
-  //  Serial.print("CheckEvent() > Event=0x");Serial.print(Event,HEX);Serial.print(", MacroEvent=0x");Serial.print(MacroEvent,HEX);PrintTerm();//???
-
+  //  Serial.print("CheckEvent() > Event=0x");Serial.print(Event,HEX);Serial.print(", MacroEvent=0x");Serial.print(MacroEvent,HEX);PrintTerm();//???debugging
   
   // als huidige event exact overeenkomt met het event in de regel uit de Eventlist, dan een match
   if(MacroEvent==Event)return true; 
-
-  // Als unit ongelijk aan 0 of ongelijk aan huidige unit, dan is er ook geen match
-  // x=(Event>>24)&0x0f; // unit
-  // if(x!=0 && x!=S.Unit)return false; ??? wordt deze check al eeder gedaan?
 
   // als huidige event (met wegfilterde unit) gelijk is aan MacroEvent, dan een match
   Event&=0x00ffffff;

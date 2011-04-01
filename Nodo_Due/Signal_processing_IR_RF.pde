@@ -122,8 +122,6 @@ unsigned long RawSignal_2_32bit(void)
     z++;
     }while(x<RawSignal[0]);
 
- // ??? geef code terug,maar zet de msb nibble (=home) op een niet bestaand Home 0x0F zodat deze niet abusievelijk als commando worden verwerkt.
-
  if(Counter_pulse>=1 && Counter_space<=1)return CodeP; // data zat in de pulsbreedte
  if(Counter_pulse<=1 && Counter_space>=1)return CodeS; // data zat in de pulse afstand
  return (CodeS^CodeP); // data zat in beide = bi-phase, maak er een leuke mix van.
@@ -274,7 +272,7 @@ void Nodo_2_RawSignal(unsigned long Code)
 
   // begin met een startbit. 
   RawSignal[y++]=NODO_PULSE_1*2; 
-  RawSignal[y++]=NODO_SPACE*4;//??? *2 geeft meer tijd om ontvanger klaar te laten staan. 
+  RawSignal[y++]=NODO_SPACE*4;
 
   // de rest van de bits LSB als eerste de lucht in
   for(BitCounter=0; BitCounter<=31; BitCounter++)

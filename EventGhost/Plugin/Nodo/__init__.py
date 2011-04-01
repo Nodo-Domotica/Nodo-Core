@@ -1,7 +1,6 @@
-
 # This is a part of the EventGhost and the Nodo software.
 # Copyright (C) 2011 Paul Tonkes <p.k.tonkes@gmail.com>
-# Thanks to Frank van der Strigt <fvdstrigt@hotmail.com>
+
 
 r"""<rst>
 Plugin voor de **Nodo Due** V1.2.x zelfbouw domotica controller.
@@ -364,9 +363,7 @@ class EventlistWrite(eg.ActionClass):
 class NodoSerial(eg.PluginClass):
     def __init__(self):        
         self.serial = None
-
         eg.globals.Unit        = "1"
-        eg.globals.ThisUnit    = "1"
         eg.globals.Direction   = ""
         eg.globals.Version     = "?"
         eg.globals.Output      = ""
@@ -427,13 +424,25 @@ class NodoSerial(eg.PluginClass):
                 group.AddAction(Action)
 
     def __start__(self, port, EventPrefix, EventSuffix):
+        # Start de seriele communicatie
         self.port = port
         self.serialThread = eg.SerialThread()
         self.serialThread.SetReadEventCallback(self.OnReceive)
         self.serialThread.Open(port, 19200)
         self.serialThread.SetRts()
-        self.serialThread.Start()        
-        eg.plugins.NodoSerial.plugin.Send("Status Boot;")
+        self.serialThread.Start()
+        
+        # Haal het openingsscherm van de Nodo op om hieruit huidige Nodo te halen
+        TryBoot = 10        
+        eg.globals.ThisUnit    = ""
+        while TryBoot > 0 and len(eg.globals.ThisUnit)==0:
+            TryBoot = TryBoot - 1
+            eg.plugins.NodoSerial.plugin.Send("Status Boot;")
+            eg.plugins.EventGhost.Wait(0.5)
+
+        if len(eg.globals.ThisUnit)==0:
+            print "Plugin error: Nodo not found!"
+        
 
     def __stop__(self):
         self.serialThread.Close()
@@ -504,23 +513,6 @@ class NodoSerial(eg.PluginClass):
                         PluginVars.NodoBusy[Unit]=0
                         PluginVars.NodoBusyActive[Unit]=0 # zet Busy handshaking uit want er ging wat fout.
                     Unit+=1
-
-            
-            
-
-#        if PluginVars.NodoBusyActive[Unit]==1:
-#            if PluginVars.NodoBusy[Unit]==1:
-#                print "Nodo-" + str(Unit)+ " is busy..."
-#                x=600 # ongeveer een minuut.
-#                while PluginVars.NodoBusy[Unit]==1 and x>0:
-#                    eg.plugins.EventGhost.Wait(0.1)
-#                    x = x - 1
-#                
-#                if x==0:
-#                    print "Timeout error! Unit-" + str(Unit)+ " still busy or missing \'Busy Off\' event."
-#                    PluginVars.NodoBusy[Unit]=0  
-#                    PluginVars.NodoBusyActive[Unit]=0 # zet Busy handshaking uit want er ging wat fout.
-#            PluginVars.NodoBusy[Unit]=1  
 
     # verzenden van het commando en gelijkertijd kijken of er een XOFF verzonden is
     def Send(self, StringToSend=""):
