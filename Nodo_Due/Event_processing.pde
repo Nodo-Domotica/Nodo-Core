@@ -24,7 +24,7 @@
 boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, unsigned long PreviousContent, byte PreviousPort)
   {
   byte x;
-  boolean CommandForThisNodo=CheckEventlist(IncommingEvent) || NodoType(IncommingEvent)==NODO_TYPE_COMMAND;
+  boolean CommandForThisNodo=CheckEventlist(IncommingEvent,Port) || NodoType(IncommingEvent)==NODO_TYPE_COMMAND;
   boolean SetBusyOff=false;
   
   digitalWrite(MonitorLedPin,HIGH);           // LED aan als er iets verwerkt wordt  
@@ -122,8 +122,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
 boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, unsigned long PreviousContent, byte PreviousPort)
   {
   unsigned long Event_1, Event_2;
-  byte Command=(IncommingEvent>>16)&0xff;
-  byte w,x,y,z;
+  byte w,x;
 
   // print regel. Als trace aan, dan alle regels die vanuit de eventlist worden verwerkt weergeven
   if(EventlistDepth>0 && (S.Display & DISPLAY_TRACE))
@@ -151,36 +150,7 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
     // loop de gehele eventlist langs om te kijken of er een treffer is.    
     for(x=1; x<=Eventlist_MAX && Eventlist_Read(x,&Event_1,&Event_2); x++)
       {
-      // kijk of deze regel een match heeft, zo ja, dan set y=vlag voor uitvoeren
-      // de vlag y houdt bij of de wildcard een match heeft met zowel poort als type event. Als deze vlag staat, dan uitvoeren.
-      
-      // als de Eventlist regel een wildcard is, zo ja, dan set y=vlag voor uitvoeren
-      if(((Event_1>>16)&0xff)==CMD_COMMAND_WILDCARD) // commando deel van het event.
-        {        
-        switch(Command) // Command deel van binnengekomen event.
-          {
-          case CMD_KAKU:
-          case CMD_KAKU_NEW:
-          case CMD_ERROR:
-          case CMD_USER_EVENT:
-            w=Command;
-            break;
-          }
-
-        y=true;// vlag wildcard         
-
-        z=(Event_1>>8)&0xff; // Par1 deel van de Wildcard bevat de poort
-        if(z!=VALUE_ALL && z!=Port)
-          y=false;          
-
-        z=Event_1&0xff; // Par2 deel Wildcard bevat type event
-        if(z!=VALUE_ALL && z!=w)
-          y=false;
-        }
-      else
-        y=CheckEvent(IncommingEvent,Event_1);      
-
-      if(y)
+      if(CheckEvent(IncommingEvent,Event_1,Port))
         {
         if(S.Display & DISPLAY_TRACE)
           {
@@ -218,14 +188,14 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
  /**********************************************************************************************\
  * Toetst of de Code ergens voorkomt in de Eventlist. Geeft False als de opgegeven code niet bestaat.
  \*********************************************************************************************/
-boolean CheckEventlist(unsigned long Code)
+boolean CheckEventlist(unsigned long Code,byte Port)
   {
   unsigned long Event, Action;
 
   for(byte x=1; x<=Eventlist_MAX;x++)
     {
     Eventlist_Read(x,&Event,&Action);
-    if(CheckEvent(Code,Event))
+    if(CheckEvent(Code,Event,Port))
       return true; // match gevonden
     if(Event==0L)
       break;
@@ -237,28 +207,26 @@ boolean CheckEventlist(unsigned long Code)
  /**********************************************************************************************\
  * Vergelijkt twee events op matching voor uitvoering Eventlist
  \*********************************************************************************************/
-boolean CheckEvent(unsigned long Event, unsigned long MacroEvent)
+boolean CheckEvent(unsigned long Event, unsigned long MacroEvent, byte Port)
   {  
-  byte x;
+  byte x,z;
+  byte Command; 
+  // Serial.print("CheckEvent() > Event=0x");Serial.print(Event,HEX);Serial.print(", MacroEvent=0x");Serial.print(MacroEvent,HEX);PrintTerm();//???debugging
   
-  //  Serial.print("CheckEvent() > Event=0x");Serial.print(Event,HEX);Serial.print(", MacroEvent=0x");Serial.print(MacroEvent,HEX);PrintTerm();//???debugging
   
+  // ### exacte match: 
   // als huidige event exact overeenkomt met het event in de regel uit de Eventlist, dan een match
   if(MacroEvent==Event)return true; 
 
+
+  // ### excate match zonder type/unit.  
   // als huidige event (met wegfilterde unit) gelijk is aan MacroEvent, dan een match
   Event&=0x00ffffff;
   MacroEvent&=0x00ffffff;
   if(MacroEvent==Event)return true; 
 
-  // beschouw bij een UserEvent een 0 voor Par1 of Par2 als een wildcard.
-  if(((Event>>16)&0xff)==CMD_USER_EVENT)// Command
-    {
-    if(((Event>>8)&0xff)==0 || ((MacroEvent>>8)&0xff)==0){Event&=0xf0ff00ff;MacroEvent&=0xf0ff00ff;}
-    if(((Event   )&0xff)==0 || ((MacroEvent   )&0xff)==0){Event&=0xf0ffff00;MacroEvent&=0xf0ffff00;}
-    if(MacroEvent==Event)return true; 
-    }
 
+  // ### CLOCK:
   // is er een match met een CLOCK_EVENT_ALL event?
   x=(Event>>16)&0xff;
   if(x>=CMD_CLOCK_EVENT_SUN && x<=CMD_CLOCK_EVENT_SAT) // het binnengekomen event is een clock event.
@@ -267,8 +235,41 @@ boolean CheckEvent(unsigned long Event, unsigned long MacroEvent)
       if((MacroEvent&0x0000ffff)==(Event&0x0000ffff)) // en tijdstippen kloppen
         return true;
     }
-  
-  return false;
+
+
+  // ### WILDCARD:      
+  if(((MacroEvent>>16)&0xff)==CMD_COMMAND_WILDCARD) // is regel uit de eventlist een WildCard?
+    {
+    Command=(Event>>16)&0xff; 
+    z=(MacroEvent>>8)&0xff; // Par1 deel van de Wildcard bevat de poort
+    if(z!=VALUE_ALL && z!=Port)return false;
+
+    switch(Command) // Command deel van binnengekomen event.
+      {
+      case CMD_KAKU:
+      case CMD_KAKU_NEW:
+      case CMD_ERROR:
+      case CMD_USER_EVENT:
+        x=Command;
+        break;
+      default:
+        x=0;
+      }
+    z=MacroEvent&0xff; // Par2 deel Wildcard bevat type event
+    if(z!=VALUE_ALL && z!=x)return false;
+    return true;
+    }
+
+  // USEREVENT:
+  // beschouw bij een UserEvent een 0 voor Par1 of Par2 als een wildcard.
+  if(((Event>>16)&0xff)==CMD_USER_EVENT)// Command
+    {
+    if(((Event>>8)&0xff)==0 || ((MacroEvent>>8)&0xff)==0){Event&=0xf0ff00ff;MacroEvent&=0xf0ff00ff;}
+    if(((Event   )&0xff)==0 || ((MacroEvent   )&0xff)==0){Event&=0xf0ffff00;MacroEvent&=0xf0ffff00;}
+    if(MacroEvent==Event)return true; 
+    }
+
+  return false; // geen match gevonden
   }
 
 

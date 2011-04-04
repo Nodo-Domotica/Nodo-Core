@@ -23,7 +23,7 @@ eg.RegisterPlugin(
     description=__doc__,
     url="http://members.chello.nl/p.tonkes8/index.html",
     author="P.K.Tonkes@gmail.com",
-    version="Plugin version 0.02 beta",
+    version="Plugin version 1.00",
     canMultiLoad = False,
     createMacrosOnAdd = True,
 )
@@ -32,7 +32,7 @@ eg.RegisterPlugin(
             
 CommandsToRemember = ("Error", "WiredOut", "WiredIn", "WiredAnalog", "KAKU", "NewKAKU", "Variable", "VariableSet")
 TagsToRemember = ["TimeStamp", "RawSignal", "ThisUnit", "Simulate", "Direction", "Unit", "Version", "Source"]
-
+               
 NodoCommandList =  (   
       # Commando, Par1-label, Par1-bereik, Par2-label, Par2-bereik, Beschrijving, Divertable
       ('System','',[''],'',[''],'',0,),
@@ -431,8 +431,10 @@ class NodoSerial(eg.PluginClass):
         self.serialThread.Open(port, 19200)
         self.serialThread.SetRts()
         self.serialThread.Start()
-        
+
+
         # Haal het openingsscherm van de Nodo op om hieruit huidige Nodo te halen
+        eg.plugins.EventGhost.Wait(0.5)        
         TryBoot = 10        
         eg.globals.ThisUnit    = ""
         while TryBoot > 0 and len(eg.globals.ThisUnit)==0:
@@ -535,7 +537,7 @@ class NodoSerial(eg.PluginClass):
               eg.globals.Input = buffer
               print "> " + buffer
               self.ParseReceivedLine(buffer)
-
+               
               if eg.globals.Event !="" and (eg.globals.Direction=="Input" or eg.globals.Direction=="Internal"):
                   self.info.eventPrefix = eg.ParseString(PluginVars.EventPrefix) 
                   self.TriggerEvent(eg.ParseString(PluginVars.EventSuffix))
@@ -561,9 +563,11 @@ class NodoSerial(eg.PluginClass):
     def ParseReceivedLine(self, ReceivedString):
             # parse de ontvangen Nodo regel en plaats de delen in eg.globals voor later gebruik door de user     
 
-            # Om te voorkomen dat Unit variabele niet meer actuele gegevens bevat
-            # de variabele Unit leeg maken.
-            eg.globals.Unit = ""
+            # Om te voorkomen dat variabelen niet meer actuele gegevens bevatten
+            eg.globals.Simulate=""
+            eg.globals.Direction=""
+            eg.globals.Unit=""
+            eg.globals.Source=""
 
             # Zoek in de binnengekomen regels naar de Tags en haal bijbehorende waarde er uit.
             # Plaats deze vervolgens in de globale namespace eg.globals

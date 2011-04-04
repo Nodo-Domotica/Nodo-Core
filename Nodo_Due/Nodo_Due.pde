@@ -27,7 +27,7 @@
  *                                                     - Hardware en Arduino penbezetting volgens schema Nodo Due Rev.003
  \****************************************************************************************************************************/
 
-#define VERSION        120        // Nodo Version nummer:
+#define VERSION        121        // Nodo Version nummer:
                                   // Major.Minor.Patch
                                   // Major: Grote veranderingen aan concept, besturing, werking.
                                   // Minor: Uitbreiding/aanpassing van commando's, functionaliteit en MMI aanpassingen
@@ -48,7 +48,7 @@ prog_char PROGMEM Text_01[] = "Nodo-Due Domotica controller (c) Copyright 2011 P
 prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
 prog_char PROGMEM Text_03[] = "Line=";
 prog_char PROGMEM Text_04[] = "SunMonThuWedThuFriSat";
-prog_char PROGMEM Text_06[] = "Unknown command: ";
+prog_char PROGMEM Text_06[] = "Error in command.";
 prog_char PROGMEM Text_07[] = "RawSignal=";
 prog_char PROGMEM Text_08[] = "Queue=Out, ";
 prog_char PROGMEM Text_09[] = "Queue=In, ";
@@ -564,7 +564,7 @@ void loop()
 
       // CLOCK: **************** Lees periodiek de realtime klok uit en check op events  ***********************
       Content=ClockRead(); // Lees de Real Time Clock waarden in de struct Time
-      if(CheckEventlist(Content) && EventTimeCodePrevious!=Content)
+      if(CheckEventlist(Content,VALUE_SOURCE_CLOCK) && EventTimeCodePrevious!=Content)
         {
         EventTimeCodePrevious=Content; 
         ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.

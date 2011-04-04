@@ -18,6 +18,7 @@
 /*********************************************************************************************\
  * Eenvoudige check of event een Nodo commando is die voor deze Nodo bestemd is.
  * Test NIET op geldigheid van de parameters
+ * geeft de waarde 0, NODO_TYPE_EVENT of NODO_TYPE_COMMAND terug.
  \*********************************************************************************************/
 byte NodoType(unsigned long Content)
   {
@@ -31,7 +32,7 @@ byte NodoType(unsigned long Content)
   if(((Content>>16)&0xff)==CMD_USER_EVENT)
     return NODO_TYPE_EVENT;
 
-  // als het voor een andere Nodo bestemd was Unit deel ongelijk aan eigen adres en ongelijk aan wildcard unit=0
+  // als Unit deel ongelijk is aan eigen adres en ongelijk aan wildcard unit=0, dan was het een event voor een andere Nodo
   x=(Content>>24)&0xf;
   if(x!=S.Unit && x!=0)
     return false;

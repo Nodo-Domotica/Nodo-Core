@@ -225,7 +225,6 @@ unsigned long SerialReadEvent()
   if(y==0)
     {
     PrintText(Text_06);
-    Serial.print(SerialBuffer);
     PrintTerm();
     return 0L;
     }
@@ -300,8 +299,16 @@ unsigned long SerialReadEvent()
   // op dit punt kan het opgehaalde event + parameters zowel een Nodo-event zijn als een Nodo-commando
 
   // kijk of het een Nodo-event is.
-  if(((Event>>28)&0xf)==SIGNAL_TYPE_NODO)
-    return Event; // verdere check hoeft niet plaats te vinden.
+  //  if(((Event>>28)&0xf)==SIGNAL_TYPE_NODO)
+  if(CommandError(Event))// als er een error is, dan melding op Serial
+    {
+    PrintText(Text_06);
+    PrintTerm();
+    return 0L;
+    }
+  else
+    return Event; // verdere check hoeft niet plaats te vinden.      
+
   return 0L;
   }
    

@@ -90,7 +90,7 @@ void SimulateDay(byte days)
 
       // Kijk of er op het gesimuleerde tijdstip een hit is in de EventList
       SimulatedClockEvent=command2event(CMD_CLOCK_EVENT_ALL+Time.Day,Time.Hour,Time.Minutes);
-      if(CheckEventlist(SimulatedClockEvent)) // kijk of er een hit is in de EventList
+      if(CheckEventlist(SimulatedClockEvent,VALUE_SOURCE_CLOCK)) // kijk of er een hit is in de EventList
         ProcessEvent(SimulatedClockEvent,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);
         
       // Kijk of er op het gesimuleerde tijdstip een zonsondergang of zonsopkomst wisseling heeft voorgedaan
