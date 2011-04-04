@@ -197,8 +197,8 @@ byte CommandError(unsigned long Content)
       if(Par2!=VALUE_ON && Par2!=VALUE_OFF)return ERROR_PAR2;
       return false;
 
-    case CMD_COPYSIGNAL:
-      if(Par1!=VALUE_RF_2_IR && Par1!=VALUE_IR_2_RF)
+    case CMD_RAWSIGNAL_COPY:
+      if(Par1!=VALUE_RF_2_IR && Par1!=VALUE_IR_2_RF)return ERROR_PAR1;
       return false;
 
     case CMD_WAITBUSY:
@@ -473,7 +473,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         SaveSettings();
         break;
   
-      case CMD_COPYSIGNAL:
+      case CMD_RAWSIGNAL_COPY:
         if(Par1==VALUE_RF_2_IR)CopySignalRF2IR(Par2);      
         if(Par1==VALUE_IR_2_RF)CopySignalIR2RF(Par2);
         break;        

@@ -232,7 +232,7 @@ void PrintEventCode(unsigned long Code)
   
       // Par1 als tekst en par2 als getal
       case CMD_ERROR:
-      case CMD_COPYSIGNAL:
+      case CMD_RAWSIGNAL_COPY:
       case CMD_TRANSMIT_SETTINGS:
       case CMD_STATUS:
         P1=P_TEXT;
