@@ -3,16 +3,15 @@
 
 
 r"""<rst>
-Plugin voor de **Nodo Due** V1.2.x zelfbouw domotica controller.
-
-Kijk op voor meer informatie op de `website`__.
+Plugin voor de **Nodo Due** V1.2.x zelfbouw domotica controller. 
+Kijk op voor meer informatie op `www.nodo-domotica.nl`__.
 
 .. image:: Nodo.jpg
    :align: center
 
 **Let op:** Gebruik altijd de plugin-versie die hoort bij de juiste versie van de Nodo!
 
-__ http://members.chello.nl/p.tonkes8/index.html
+__ http://www.nodo-domotica.nl
 """
 
 import eg
@@ -21,9 +20,9 @@ import binascii
 eg.RegisterPlugin(
     name="Nodo",
     description=__doc__,
-    url="http://members.chello.nl/p.tonkes8/index.html",
+    url="http://nodo-domotica.nl",
     author="P.K.Tonkes@gmail.com",
-    version="Plugin version 1.00",
+    version="Plugin version V1.0.1",
     canMultiLoad = False,
     createMacrosOnAdd = True,
 )
@@ -133,8 +132,8 @@ class PluginVars:
     EventPrefix     = "Unit-{Unit}"                     # default prefix is "Unit-n" waarbij n het unitnummer is
     EventSuffix     = "{Event}"                         # default suffix is de tekst achter "event="
     XonXoffHold     = 0                                 # t.b.v. seriele handshaking xon/xoff
-    NodoBusy        = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] # per unit: is deze bezig met verwerking of niet
-    NodoBusyActive  = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] # per unit: wordt de Busy On/Off gebruikt?
+    NodoBusy        = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] # per unit: is deze bezig met verwerking of niet NodoBusy[0] niet in gebruik, start bij 1]
+    NodoBusyTimeout = 60                                # Tijd in seconden waarna een Timeout error ontstaat na een 'Busy On' event.
 
 #===============================================================================
 
@@ -271,27 +270,36 @@ class NodoCommand(eg.ActionClass):
 class ClockSync(eg.ActionClass):
 
     def __call__(self, Divert=1):
-        from datetime import datetime
-        t = datetime.now ()
 
         # voer een divert toe als de gebruiker een andere bestemming heeft gekozen dan de huidige unit
-        if eg.globals.ThisUnit<>Divert:
+
+        if eg.globals.ThisUnit!=str(Divert):
             DivertCommand = "Divert " + str(Divert) + "; "
         else:
             DivertCommand = ""
             
+        from datetime import datetime
+        t = datetime.now ()
         # Nodo: 1=zondag, 7=zaterdag
         # function weekday: 0=maandag 6=zondag
         DOW = (t.weekday() + 2) % 7
         if DOW == 0:
             DOW = 7   # zaterdag!
 
+        #wacht als bekend is dat de Nodo bezig is met verwerking
+        eg.plugins.NodoSerial.plugin.WaitBusyNodo(Divert)
         eg.plugins.NodoSerial.plugin.Send(DivertCommand + "ClockSetYear " + str(t.year)[:2] + " " + str(t.year)[2:] + ";")
-        eg.plugins.EventGhost.Wait(3.0)
+
+        #wacht als bekend is dat de Nodo bezig is met verwerking
+        eg.plugins.NodoSerial.plugin.WaitBusyNodo(Divert)
         eg.plugins.NodoSerial.plugin.Send(DivertCommand + "ClockSetDate " + str(t.day) + " " + str(t.month) + ";")
-        eg.plugins.EventGhost.Wait(3.0)
+
+        #wacht als bekend is dat de Nodo bezig is met verwerking
+        eg.plugins.NodoSerial.plugin.WaitBusyNodo(Divert)
         eg.plugins.NodoSerial.plugin.Send(DivertCommand + "ClockSetTime " + str(t.hour) + " " + str(t.minute) + ";")
-        eg.plugins.EventGhost.Wait(3.0)
+
+        #wacht als bekend is dat de Nodo bezig is met verwerking
+        eg.plugins.NodoSerial.plugin.WaitBusyNodo(Divert)
         eg.plugins.NodoSerial.plugin.Send(DivertCommand + "ClockSetDow " + str(DOW) + ";")
 
     def Configure(self, Divert=1):
@@ -365,7 +373,7 @@ class NodoSerial(eg.PluginClass):
         self.serial = None
         eg.globals.Unit        = "1"
         eg.globals.Direction   = ""
-        eg.globals.Version     = "?"
+        eg.globals.Version     = "0"
         eg.globals.Output      = ""
         
         for Command, DescriptionPar1, RangePar1, DescriptionPar2, RangePar2, DescriptionCommand, Dvrt in NodoCommandList:              
@@ -432,18 +440,17 @@ class NodoSerial(eg.PluginClass):
         self.serialThread.SetRts()
         self.serialThread.Start()
 
-
         # Haal het openingsscherm van de Nodo op om hieruit huidige Nodo te halen
         eg.plugins.EventGhost.Wait(0.5)        
         TryBoot = 10        
         eg.globals.ThisUnit    = ""
         while TryBoot > 0 and len(eg.globals.ThisUnit)==0:
             TryBoot = TryBoot - 1
-            eg.plugins.NodoSerial.plugin.Send("Status Boot;")
+            eg.plugins.NodoSerial.plugin.Send("Divert 0; Status Boot;")
             eg.plugins.EventGhost.Wait(0.5)
 
         if len(eg.globals.ThisUnit)==0:
-            print "Plugin error: Nodo not found!"
+            print "# Nodo Plugin: error! Nodo not found."
         
 
     def __stop__(self):
@@ -475,46 +482,51 @@ class NodoSerial(eg.PluginClass):
 
     # Wacht totdat een remote Nodo klaar is met verwerking
     def WaitBusyNodo(self, Unit):        
-
-        # Als er een Nodo busy is, dan wacht tot Nodo gereed is            
-        if PluginVars.NodoBusyActive[Unit]==1:
         
-            # geef een melding als een Nodo bezig is
+        # geef een melding als een Nodo bezig is
+        from datetime import datetime
+        t = datetime.now()
+        SecCounter = t.hour*3600 + t.minute*60 + t.second
+        Busy=0
+        Nodo=0
+        for NodoBusy in PluginVars.NodoBusy:
+            if NodoBusy>1:
+                if NodoBusy<(SecCounter-PluginVars.NodoBusyTimeout):
+                    # 'Busy Off' event is niet ontvangen. Geef foutmelding maar wacht niet meer op deze Nodo.
+                    print "# Nodo Plugin: Timeout error! Unit-" + str(Nodo)+ " still busy after " + str(SecCounter - NodoBusy + PluginVars.NodoBusyTimeout)+ " seconds, or missing \'Busy Off\' event."                    
+                    PluginVars.NodoBusy[Nodo]=0
+                            
+                elif NodoBusy>SecCounter:                      
+                    Busy+=1
+                    print "# Nodo Plugin: Waiting for Nodo Unit-" + str(Nodo)
+            Nodo+=1
+              
+        # Wacht enige tijd totdat alle Nodos een 'Busy off' hebben verzonden. 
+        TimeOut=SecCounter+PluginVars.NodoBusyTimeout
+        while Busy!=0 and TimeOut>SecCounter:        
+            t = datetime.now()
+            SecCounter = t.hour*3600 + t.minute*60 + t.second
+            eg.plugins.EventGhost.Wait(0.1)
             Busy=0
-            for x in PluginVars.NodoBusy:              
-                Busy+=x
-            
-            if Busy>0:
-                print "Waiting for busy Nodo..."
-    
-            # Wacht enige tijd totdat alle Nodos een 'Busy off' hebben verzonden. 
-            TimeOut=600 
-            BusyPrevious=0;
-            while Busy!=0 and TimeOut>0:
-                eg.plugins.EventGhost.Wait(0.1)
-                TimeOut = TimeOut - 1
-                Busy=0
-                for x in PluginVars.NodoBusy:              
-                    Busy+=x
-                # als er een wijziging is in de status van een Nodo
-                if Busy != BusyPrevious:
-                    BusyPrevious=Busy
-                    TimeOut=600 # ongeveer een minuut.
-            
-            #Zet de status van de Nodo op Busy omdat verwerking te snel gaat om 'Busy On' van de Nodo op tijd te ontvangen
-            PluginVars.NodoBusy[Unit]=1  
-    
-            # Als de timeout opgetreden is, geef dan weer welke Nodo(s) hiervoor verantwoordelijk. 
-            Unit=0
-            if Busy>0:
-                print "Timeout error!" 
-                Unit=0
-                for x in PluginVars.NodoBusy:              
-                    if x!=0:
-                        print "Nodo-" + str(Unit)+ " is busy or missing \'Busy Off\' event."
-                        PluginVars.NodoBusy[Unit]=0
-                        PluginVars.NodoBusyActive[Unit]=0 # zet Busy handshaking uit want er ging wat fout.
-                    Unit+=1
+            for NodoBusy in PluginVars.NodoBusy:
+                if NodoBusy>1:                      
+                    Busy+=1
+ 
+        # Als de timeout opgetreden is, geef dan weer welke Nodo(s) hiervoor verantwoordelijk waren. 
+        if Busy:
+            Nodo=0
+            for NodoBusy in PluginVars.NodoBusy:
+                # alleen de Nodos weergeven waarbij de 'SendBusy' actief is
+                if NodoBusy>1:
+                    print "# Nodo Plugin: Timeout error! Unit-" + str(Nodo)+ " still busy after " + str(SecCounter - NodoBusy + PluginVars.NodoBusyTimeout)+ " seconds, or missing \'Busy Off\' event."                    
+                    # Markeer voor deze Nodo dat de 'WaitBusy' van de plugin niet meer gebruikt wordt 
+                    PluginVars.NodoBusy[Nodo]=0
+                Nodo+=1
+
+        # Zet de status van de Nodo op Busy omdat verwerking te snel gaat om 'Busy On' van de Nodo op tijd te ontvangen
+        # echter alleen als de SendBusy actief is op de betreffende Nodo
+        if PluginVars.NodoBusy[Unit]>0:
+           PluginVars.NodoBusy[Unit]=SecCounter+PluginVars.NodoBusyTimeout  
 
     # verzenden van het commando en gelijkertijd kijken of er een XOFF verzonden is
     def Send(self, StringToSend=""):
@@ -538,9 +550,15 @@ class NodoSerial(eg.PluginClass):
               print "> " + buffer
               self.ParseReceivedLine(buffer)
                
+              # Nodo events die ontvangen worden door de plugin moeten leiden tot een event in EventGhost echter alleen 
+              # als deze input zijn voor de Nodo.
+              # "Busy" Events ook afvangen want deze worden behandeld wordt door de plugin.
               if eg.globals.Event !="" and (eg.globals.Direction=="Input" or eg.globals.Direction=="Internal"):
-                  self.info.eventPrefix = eg.ParseString(PluginVars.EventPrefix) 
-                  self.TriggerEvent(eg.ParseString(PluginVars.EventSuffix))
+                  if eg.globals.Command == "Busy":
+                      pass
+                  else:
+                      self.info.eventPrefix = eg.ParseString(PluginVars.EventPrefix) 
+                      self.TriggerEvent(eg.ParseString(PluginVars.EventSuffix))
               return
               
           elif b == "":
@@ -594,7 +612,7 @@ class NodoSerial(eg.PluginClass):
 
             # Niet Nodo events krijgen geen Unit-tag mee
             if eg.globals.Unit == "":                                     
-                eg.globals.Unit = "?"
+                eg.globals.Unit = "0"
                 
             # Event is een ander geval. Hier de afzonderlijke delen uitparsen
             Tag="Event="
@@ -616,13 +634,21 @@ class NodoSerial(eg.PluginClass):
 
             # Handshaking in een multi-nodo omgeving. 
             # als een Nodo "Busy On" heeft verzonden is deze bezig met verwerking
-            # bewaar van alle units de Busy status in de tabel NodoBusy[] 
+            # bewaar van alle units de Busy status in de tabel NodoBusy[]
+             
             if eg.globals.Command == "Busy":
-                PluginVars.NodoBusyActive[int(eg.globals.Unit)]=1 # zet deze vlag om aan te geven dat de Busy handshaking gebruikt wordt.
+
+                # gebruik de systeemtijd om de timeout van een 'Busy' Nodo vast te stellen
+                from datetime import datetime
+                t = datetime.now()
+
                 if eg.globals.Par1 == "On":
-                    PluginVars.NodoBusy[int(eg.globals.Unit)] = 1                  
+                    # zet de timeout tijd op nu + enige wachttijd
+                    PluginVars.NodoBusy[int(eg.globals.Unit)] = t.hour*3600 + t.minute*60 + t.second + PluginVars.NodoBusyTimeout                  
                 else:
-                    PluginVars.NodoBusy[int(eg.globals.Unit)] = 0                  
+                    # vul met een 1 om aan te geven dat er niet gewacht hoeft te worden maar de Nodo wel 
+                    # gebruik maakt van 'SendBusy'
+                    PluginVars.NodoBusy[int(eg.globals.Unit)] = 1                  
 
             # Van enkele events/commando's is het handig om de waarde te onthouden als globale variabele in eg.globals
             # Zoek in de binnengekomen regels naar de Tags en haal bijbehorende waarde er uit.
@@ -636,7 +662,7 @@ class NodoSerial(eg.PluginClass):
                         cmd="Variable"
 
                     # schrijf weg voor de gebruiker.
-                    if eg.globals.Unit!="" and eg.globals.Unit!="?" :
+                    if eg.globals.Unit!="" and eg.globals.Unit!="0" :
                         eg.globals.__setattr__("Unit" + str(eg.globals.Unit) + "_" + cmd + "_" + str(eg.globals.Par1),eg.globals.Par2) 
                     else:
                         eg.globals.__setattr__(cmd + "_" + str(eg.globals.Par1),eg.globals.Par2) 
