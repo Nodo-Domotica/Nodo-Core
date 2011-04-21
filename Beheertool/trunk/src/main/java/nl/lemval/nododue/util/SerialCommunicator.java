@@ -191,6 +191,9 @@ public class SerialCommunicator implements Runnable, SerialPortEventListener {
                     for (int i = 0; i < elems.length; i++) {
                         history.addRequest(elems[i]);
 //                        System.out.println("Sending : '"+elems[i]+";'");
+                        while ( !sendingAllowed ) {
+                            Thread.sleep(50);
+                        }
                         outputStream.write((elems[i] + ";").getBytes());
                         outputStream.flush();
                     }
@@ -243,7 +246,8 @@ public class SerialCommunicator implements Runnable, SerialPortEventListener {
             case SerialPortEvent.CTS:/* Clear to send */
             case SerialPortEvent.DSR:/* Data set ready */
             case SerialPortEvent.RI: /* Ring indicator */
-            case SerialPortEvent.OUTPUT_BUFFER_EMPTY:
+            case SerialPortEvent.OUTPUT_BUFFER_EMPTY: /* 2 */
+                System.out.println("Got " + event.getEventType());
                 break;
             case SerialPortEvent.DATA_AVAILABLE:
                 handleData();
@@ -270,21 +274,24 @@ public class SerialCommunicator implements Runnable, SerialPortEventListener {
                     if ( start == read.length() ) {
                         return;
                     }
+//                    System.out.println("Got XON");
 //                    System.out.println(read.substring(start, i) + "*" + read.substring(i+1));
                 } else if (c == XOFF) {
                     sendingAllowed = false;
                     start++;
+//                    System.out.println("Got XOFF");
                     if ( start == read.length() ) {
                         return;
                     }
 //                    System.out.println(read.substring(start, i) + "#" + read.substring(i+1));
                 } else if (c == '\r' || c == '\n') {
+//                    System.out.println("Got NL");
                     final String readData = read.substring(start, i);
                     previousContent.append(readData);
                     String data = previousContent.toString();
                     previousContent.delete(0, previousContent.length());
                     if (data.length() > 0) {
-//                        System.out.println("Received: '"+data+"'");
+                        System.out.println("Received: '"+data+"'");
                         history.addResponse(data);
                         for (OutputEventListener outputListener : outputListeners) {
                             outputListener.handleOutputLine(data);
