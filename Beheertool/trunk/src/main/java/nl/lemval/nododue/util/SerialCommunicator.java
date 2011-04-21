@@ -247,7 +247,6 @@ public class SerialCommunicator implements Runnable, SerialPortEventListener {
             case SerialPortEvent.DSR:/* Data set ready */
             case SerialPortEvent.RI: /* Ring indicator */
             case SerialPortEvent.OUTPUT_BUFFER_EMPTY: /* 2 */
-                System.out.println("Got " + event.getEventType());
                 break;
             case SerialPortEvent.DATA_AVAILABLE:
                 handleData();
@@ -291,7 +290,7 @@ public class SerialCommunicator implements Runnable, SerialPortEventListener {
                     String data = previousContent.toString();
                     previousContent.delete(0, previousContent.length());
                     if (data.length() > 0) {
-                        System.out.println("Received: '"+data+"'");
+//                        System.out.println("Received: '"+data+"'");
                         history.addResponse(data);
                         for (OutputEventListener outputListener : outputListeners) {
                             outputListener.handleOutputLine(data);
