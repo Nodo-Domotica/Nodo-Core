@@ -137,7 +137,7 @@ static uint8_t enabled = 0;
 static void IR38Khz_set()  
   {
   uint8_t pre, top;
-  unsigned long period=208; // IR_TransmitCarrier=26 want pulsen van de IR-led op een draaggolf van 38Khz. (1000000/38000=26uSec.) Vervolgens period=IR_TransmitCarrier*clockCyclesPerMicrosecond())/2;  // period =208 bij 38Khz
+  unsigned long period=208; // Frequentie draaggolf is 38Khz. Pulstijd is dan 1000000/38000Khz =26uSec. De ATMega heeft 16 ClockCyclesPerMicrosec. Period = (16 * 26)/2 = 208
   pre=1;
   top=period-1;
   TCCR2B=0;
