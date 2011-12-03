@@ -1,19 +1,3 @@
-  /**************************************************************************\
-    This file is part of Nodo Due, Â© Copyright Paul Tonkes
-
-    Nodo Due is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    Nodo Due is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with Nodo Due.  If not, see <http://www.gnu.org/licenses/>.
-  \**************************************************************************/
 
 /*********************************************************************************************\
  * Eenvoudige check of event een Nodo commando is die voor deze Nodo bestemd is.
@@ -99,8 +83,8 @@ byte CommandError(unsigned long Content)
     case CMD_USEREVENT:
     case CMD_SEND_USEREVENT:
     case CMD_ANALYSE_SETTINGS:
-    case CMD_RAWSIGNAL_GET:
-    case CMD_RAWSIGNAL_PUT:
+    case CMD_RAWSIGNAL_SAVE:
+    case CMD_RAWSIGNAL_SEND:
     case CMD_KAKU:
     case CMD_SEND_KAKU:
       return false;
@@ -571,8 +555,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         digitalWrite(EthernetShield_CS_SDCard,HIGH);
         break;
 
-      case CMD_RAWSIGNAL_GET:
-        RawsignalGet=true;
+      case CMD_RAWSIGNAL_SAVE:
+        RawSignalSave=Par1;
         break;        
 
       case CMD_REBOOT:
@@ -678,9 +662,6 @@ void ExecuteLine(char *Line, byte Port)
         switch(Cmd)
           {
           // enkele commandos hebben een afwijkende MMI. Deze hier behandelen.
-          case CMD_RAWSIGNAL_PUT:
-            RawSignalPut(Line);
-            break;
 
           case CMD_EVENTLIST_WRITE:
             State_EventlistWrite=1;

@@ -1,19 +1,3 @@
-  /**************************************************************************\
-    This file is part of Nodo Due, (c) Copyright Paul Tonkes
-
-    Nodo Due is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    Nodo Due is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with Nodo Due.  If not, see <http://www.gnu.org/licenses/>.
-  \**************************************************************************/
 
 // timings NODO signalen
 #define NODO_PULSE_0                    500   // PWM: Tijdsduur van de puls bij verzenden van een '0' in uSec.

@@ -1,20 +1,3 @@
-  /**************************************************************************\
-    This file is part of Nodo Due, © Copyright Paul Tonkes
-
-    Nodo Due is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    Nodo Due is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with Nodo Due.  If not, see <http://www.gnu.org/licenses/>.
-  \**************************************************************************/
-
 
 
  /*********************************************************************************************\
@@ -951,5 +934,71 @@ boolean LogSDCard(String Line)
     digitalWrite(EthernetShield_CS_SDCard,HIGH);
     }
   return SDCardPresent;
+  }
+
+ /*********************************************************************************************\
+ * print een lijst met de inhoud van de RawSignal buffer. ??? kan weg op termijn?
+ \*********************************************************************************************/
+void SaveRawSignal(unsigned long Event, byte Key)
+  {
+  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+  digitalWrite(Ethernetshield_CS_W5100, HIGH);
+  digitalWrite(EthernetShield_CS_SDCard,LOW);
+
+  // maak een .raw file aan met als naam de key die door de gebruiker is gekozen  
+  sprintf(TempString,"%s/%s.raw",ProgmemString(Text_27),int2str(Key));
+
+  SD.remove(TempString); // eventueel bestaande file wissen, anders wordt de data toegevoegd.
+  
+  File KeyFile = SD.open(TempString, FILE_WRITE);
+  if(KeyFile) 
+    {
+    strcpy(TempString,ProgmemString(Text_14));
+    strcat(TempString,Event2str(Event));
+    strcat(TempString,";");
+    strcat(TempString,ProgmemString(Text_07));
+    KeyFile.write(TempString);
+
+    for(int x=1;x<=RawSignal[0];x++)
+      {
+      TempString[0]=0;
+      if(x>1)
+        strcat(TempString,",");
+      strcat(TempString,int2str(RawSignal[x]));
+      KeyFile.write(TempString);
+      }
+    strcpy(TempString,";\n");
+    KeyFile.write(TempString);
+    KeyFile.close();
+    }
+  else 
+    {
+    TransmitCode(command2event(CMD_ERROR,ERROR_03,0),SIGNAL_TYPE_NODO);
+    return;
+    }
+
+
+  // maak een .key file aan met als naam de key die door de gebruiker is gekozen  
+  sprintf(TempString,"%s/%s.key",ProgmemString(Text_28),int2str(Event)+2); // +2 omdat dan de tekens '0x' niet worden meegenomen. anders groter dan acht posities in filenaam.
+
+  SD.remove(TempString); // eventueel bestaande file wissen, anders wordt de data toegevoegd.
+  
+  KeyFile = SD.open(TempString, FILE_WRITE);
+  if(KeyFile) 
+    {
+    strcpy(TempString,Event2str(Key));
+    strcat(TempString,";\n");
+    KeyFile.write(TempString);
+    KeyFile.close();
+    }
+  else 
+    {
+    TransmitCode(command2event(CMD_ERROR,ERROR_03,0),SIGNAL_TYPE_NODO);
+    return;
+    }
+
+  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip
+  digitalWrite(Ethernetshield_CS_W5100, LOW);
+  digitalWrite(EthernetShield_CS_SDCard,HIGH);
   }
 

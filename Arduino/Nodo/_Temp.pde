@@ -2,8 +2,13 @@
 
 Serial.print("*** =");Serial.println(,DEC);//??? Debug
 
+Label=   ; Value=  ;
 
+HexCode=0x12345678; Key=201; RawSignal=
 
+iedere hexcode heeft file: RawSignal=......
+
+iedere key heeft file: HexCode= ; 
 
 */
 

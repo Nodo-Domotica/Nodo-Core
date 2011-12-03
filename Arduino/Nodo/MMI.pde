@@ -1,23 +1,4 @@
 
-/**************************************************************************\
-
-    This file is part of Nodo Due, (C) Copyright Paul Tonkes
-
-    Nodo Due is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, for
-    (at your option) any later version.
-
-    Nodo Due is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with Nodo Due.  If not, see <http://www.gnu.org/licenses/>.
-
-\**************************************************************************/
-
 
  /*********************************************************************************************\
  * Print een event volgens formaat:  'EVENT/ACTION: <port>, <type>, <content>
@@ -212,23 +193,6 @@ void PrintSettings(void)
   PrintLine(ProgmemString(Text_22));
   }
 
-
- /*********************************************************************************************\
- * print een lijst met de inhoud van de RawSignal buffer. ??? kan weg op termijn?
- \*********************************************************************************************/
-void PrintRawSignal(void)
-  {
-  String Line;
-  
-  Line=ProgmemString(Text_07);
-  for(byte x=1;x<=RawSignal[0];x++)
-     {
-     if(x>1)
-       Line+=',';
-     Line+=RawSignal[x];
-     }
-  PrintLine(Line);
-  }
 
 
  /**********************************************************************************************\

@@ -50,14 +50,14 @@ prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
 prog_char PROGMEM Text_03[] = "Line=";
 prog_char PROGMEM Text_04[] = "SunMonThuWedThuFriSat";
 prog_char PROGMEM Text_05[] = "0123456789abcdef";
-prog_char PROGMEM Text_06[] = "Error=Unknown command.";
+prog_char PROGMEM Text_06[] = "Error=Unknown command.";//??? nog nodig ???
 prog_char PROGMEM Text_07[] = "RawSignal=";
 prog_char PROGMEM Text_08[] = "Queue=Out, ";
 prog_char PROGMEM Text_09[] = "Queue=In, ";
-prog_char PROGMEM Text_10[] = "EventClientIP";
+prog_char PROGMEM Text_10[] = "EventClientIP"; // nog nodig ???
 prog_char PROGMEM Text_11[] = "Output=";
 prog_char PROGMEM Text_12[] = "Input=";
-prog_char PROGMEM Text_13[] = "RawSignal"; // directory naam op SDCard
+prog_char PROGMEM Text_13[] = "";
 prog_char PROGMEM Text_14[] = "Event=";
 prog_char PROGMEM Text_15[] = "";
 prog_char PROGMEM Text_16[] = "Action=";
@@ -71,7 +71,9 @@ prog_char PROGMEM Text_23[] = "Log.txt";
 prog_char PROGMEM Text_24[] = "Logging on SDCard enabled.";
 prog_char PROGMEM Text_25[] = "System=";
 prog_char PROGMEM Text_26[] = "Event received from: ";
-
+prog_char PROGMEM Text_27[] = "Raw/Key"; // Directory op de SDCard voor opslag RawSignal
+prog_char PROGMEM Text_28[] = "Raw/Hex"; // Directory op de SDCard voor opslag RawSignal
+ 
 // Commando's:
 prog_char PROGMEM Cmd_000[]="";    
 prog_char PROGMEM Cmd_001[]="ReceiveSettings";
@@ -89,8 +91,8 @@ prog_char PROGMEM Cmd_012[]="EventlistErase";
 prog_char PROGMEM Cmd_013[]="EventlistShow";
 prog_char PROGMEM Cmd_014[]="EventlistWrite";
 prog_char PROGMEM Cmd_015[]="VariableSave";
-prog_char PROGMEM Cmd_016[]="RawsignalGet";
-prog_char PROGMEM Cmd_017[]="RawsignalPut";
+prog_char PROGMEM Cmd_016[]="RawSignalSave";
+prog_char PROGMEM Cmd_017[]="RawSignalSend";
 prog_char PROGMEM Cmd_018[]="Reset";
 prog_char PROGMEM Cmd_019[]="SendKAKU";
 prog_char PROGMEM Cmd_020[]="SendNewKAKU";
@@ -281,13 +283,13 @@ prog_char PROGMEM Cmd_199[]="";
 prog_char PROGMEM Cmd_200[]="";
 prog_char PROGMEM Cmd_201[]="Unknown command.";
 prog_char PROGMEM Cmd_202[]="Invalid parameter in command.";
-prog_char PROGMEM Cmd_203[]="Unable to open Log.txt on SDCard.";
+prog_char PROGMEM Cmd_203[]="Unable to write to SDCard.";
 prog_char PROGMEM Cmd_204[]="Queue overflow.";
 prog_char PROGMEM Cmd_205[]="Eventlist nesting error.";
 prog_char PROGMEM Cmd_206[]="Writing to eventlist failed.";
 prog_char PROGMEM Cmd_207[]="IP connection problem.";
 prog_char PROGMEM Cmd_208[]="Incorrect password.";
-prog_char PROGMEM Cmd_209[]="";
+prog_char PROGMEM Cmd_209[]="Command not supported in this Nodo version.";
 
 // commando:
 #define FIRST_COMMAND                    0 // Eerste COMMANDO uit de commando tabel
@@ -307,8 +309,8 @@ prog_char PROGMEM Cmd_209[]="";
 #define CMD_EVENTLIST_SHOW              13
 #define CMD_EVENTLIST_WRITE             14
 #define CMD_VARIABLE_SAVE               15
-#define CMD_RAWSIGNAL_GET               16
-#define CMD_RAWSIGNAL_PUT               17
+#define CMD_RAWSIGNAL_SAVE              16
+#define CMD_RAWSIGNAL_SEND              17
 #define CMD_RESET                       18
 #define CMD_SEND_KAKU                   19
 #define CMD_SEND_KAKU_NEW               20
@@ -589,7 +591,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define UNIT                       0x1 // Unit nummer van de Nodo. Bij gebruik van meerdere nodo's deze uniek toewijzen [1..F]
 #define EVENTLIST_MAX              256 // aantal events dat de lijst bevat in het EEPROM geheugen van de ATMega328. Iedere regel in de eventlist heeft 8 bytes nodig. eerste adres is 0
 #define USER_VARIABLES_MAX          32 // aantal beschikbare gebruikersvariabelen voor de user.
-#define RAW_BUFFER_SIZE            256 // Maximaal aantal te ontvangen bits*2
+#define RAW_BUFFER_SIZE             80 // Maximaal aantal te ontvangen bits*2
 #define UNIT_MAX                    15 
 #define MACRO_EXECUTION_DEPTH       10 // maximale nesting van macro's.
 #define WIRED_PORTS                  8 // aantal WiredIn/WiredOut poorten
@@ -604,7 +606,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define BAUD                     19200 // Baudrate voor seriële communicatie.
 #define SERIAL_TERMINATOR_1       0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>, default voor EventGhost
 #define SERIAL_TERMINATOR_2       0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
-#define INPUT_BUFFER_SIZE          256  // Buffer waar de karakters van de seriele /IP poort in worden opgeslagen.
+#define INPUT_BUFFER_SIZE           80  // Buffer waar de karakters van de seriele /IP poort in worden opgeslagen.
 char InputBuffer[INPUT_BUFFER_SIZE];
 char TerminalBuffer[INPUT_BUFFER_SIZE];
 
@@ -689,7 +691,7 @@ Server TerminalServer(23);                          // Server class voor Termina
 Client TerminalClient=false;                        // Client class voor Terminal sessie
 
 // Overige globals
-boolean RawsignalGet;                               // Als deze vlag staat wordt het eerstvolgende event dat wordt ontvangen weergegeven als rawsignal
+byte RawSignalSave;                               // Als deze vlag staat wordt het eerstvolgende event dat wordt ontvangen weergegeven als rawsignal
 boolean WiredInputStatus[WIRED_PORTS];              // Status van de WiredIn worden hierin opgeslagen
 boolean WiredOutputStatus[WIRED_PORTS];             // Wired variabelen
 unsigned int RawSignal[RAW_BUFFER_SIZE+2];          // Tabel met de gemeten pulsen in microseconden. eerste waarde is het aantal bits*2
@@ -769,7 +771,9 @@ void setup()
 
   if(SD.begin(EthernetShield_CS_SDCard))
     {
-    SD.mkdir(Text_13); // maak drectory aan waar de Rawsignal bestanden in worden opgeslagen
+    SD.mkdir(ProgmemString(Text_27)); // maak drectory aan waar de Rawsignal HEX bestanden in worden opgeslagen
+    SD.mkdir(ProgmemString(Text_28)); // maak drectory aan waar de Rawsignal KEY bestanden in worden opgeslagen
+    
     File dataFile = SD.open(ProgmemString(Text_23), FILE_WRITE);
     if (dataFile) 
       {

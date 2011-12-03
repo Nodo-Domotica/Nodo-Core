@@ -39,10 +39,12 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
 
   // Als de RAW pulsen worden opgevraagd door de gebruiker...
   // dan de pulsenreeks weergeven en er verder niets mee doen
-  if(RawsignalGet)
+  if(RawSignalSave!=0)
     {
-    PrintRawSignal();
-    RawsignalGet=false;
+
+    SaveRawSignal(IncommingEvent,RawSignalSave);  
+  
+    RawSignalSave=0;
     return true;
     }
 
