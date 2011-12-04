@@ -941,64 +941,71 @@ boolean LogSDCard(String Line)
  \*********************************************************************************************/
 void SaveRawSignal(unsigned long Event, byte Key)
   {
-  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-  digitalWrite(Ethernetshield_CS_W5100, HIGH);
-  digitalWrite(EthernetShield_CS_SDCard,LOW);
-
-  // maak een .raw file aan met als naam de key die door de gebruiker is gekozen  
-  sprintf(TempString,"%s/%s.raw",ProgmemString(Text_27),int2str(Key));
-
-  SD.remove(TempString); // eventueel bestaande file wissen, anders wordt de data toegevoegd.
+  boolean error=false;
   
-  File KeyFile = SD.open(TempString, FILE_WRITE);
-  if(KeyFile) 
+  if(SDCardPresent)
     {
-    strcpy(TempString,ProgmemString(Text_14));
-    strcat(TempString,Event2str(Event));
-    strcat(TempString,";");
-    strcat(TempString,ProgmemString(Text_07));
-    KeyFile.write(TempString);
-
-    for(int x=1;x<=RawSignal[0];x++)
+    // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+    digitalWrite(Ethernetshield_CS_W5100, HIGH);
+    digitalWrite(EthernetShield_CS_SDCard,LOW);
+  
+    // maak een .raw file aan met als naam de key die door de gebruiker is gekozen  
+    sprintf(TempString,"%s/%s.raw",ProgmemString(Text_27),int2str(Key));  
+    Serial.print("*** File=");Serial.println(TempString);//??? Debug  
+    SD.remove(TempString); // eventueel bestaande file wissen, anders wordt de data toegevoegd.    
+    File KeyFile = SD.open(TempString, FILE_WRITE);
+    if(KeyFile) 
       {
-      TempString[0]=0;
-      if(x>1)
-        strcat(TempString,",");
-      strcat(TempString,int2str(RawSignal[x]));
+      strcpy(TempString,ProgmemString(Text_14));
+      strcat(TempString,Event2str(Event));
+      strcat(TempString,";");
+      strcat(TempString,ProgmemString(Text_07));
       KeyFile.write(TempString);
+      Serial.print("*** Schrijf naar *.raw=");Serial.println(TempString);//??? Debug
+      for(int x=1;x<=RawSignal[0];x++)
+        {
+        TempString[0]=0;
+        if(x>1)
+          strcat(TempString,",");
+        strcat(TempString,int2str(RawSignal[x]));
+        KeyFile.write(TempString);
+        }
+      strcpy(TempString,";\n");
+      KeyFile.write(TempString);
+      KeyFile.close();
+
+      // maak een .key file aan met als naam de key die door de gebruiker is gekozen  
+      sprintf(TempString,"%s/%s.key",ProgmemString(Text_28),int2str(Event)+2); // +2 omdat dan de tekens '0x' niet worden meegenomen. anders groter dan acht posities in filenaam.
+      Serial.print("*** File=");Serial.println(TempString);//??? Debug    
+      SD.remove(TempString); // eventueel bestaande file wissen, anders wordt de data toegevoegd.      
+      KeyFile = SD.open(TempString, FILE_WRITE);
+      if(KeyFile) 
+        {
+        strcpy(TempString,int2str(Key));
+        strcat(TempString,";\n");
+        Serial.print("*** Schrijf naar *.key=");Serial.println(TempString);//??? Debug
+        KeyFile.write(TempString);
+        KeyFile.close();
+        }
+      else 
+        error=true;
       }
-    strcpy(TempString,";\n");
-    KeyFile.write(TempString);
-    KeyFile.close();
+    else 
+      error=true;
+   
+    // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip
+    digitalWrite(Ethernetshield_CS_W5100, LOW);
+    digitalWrite(EthernetShield_CS_SDCard,HIGH);
     }
-  else 
+  else
+    error=true;
+    
+  if(error)
     {
     TransmitCode(command2event(CMD_ERROR,ERROR_03,0),SIGNAL_TYPE_NODO);
-    return;
     }
-
-
-  // maak een .key file aan met als naam de key die door de gebruiker is gekozen  
-  sprintf(TempString,"%s/%s.key",ProgmemString(Text_28),int2str(Event)+2); // +2 omdat dan de tekens '0x' niet worden meegenomen. anders groter dan acht posities in filenaam.
-
-  SD.remove(TempString); // eventueel bestaande file wissen, anders wordt de data toegevoegd.
-  
-  KeyFile = SD.open(TempString, FILE_WRITE);
-  if(KeyFile) 
+  else
     {
-    strcpy(TempString,Event2str(Key));
-    strcat(TempString,";\n");
-    KeyFile.write(TempString);
-    KeyFile.close();
     }
-  else 
-    {
-    TransmitCode(command2event(CMD_ERROR,ERROR_03,0),SIGNAL_TYPE_NODO);
-    return;
-    }
-
-  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip
-  digitalWrite(Ethernetshield_CS_W5100, LOW);
-  digitalWrite(EthernetShield_CS_SDCard,HIGH);
   }
 

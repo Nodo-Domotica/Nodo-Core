@@ -46,7 +46,6 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
     strcat(Line, cmd2str(Port));
   
 
-  // Voor NIET-nodo signalen is het afdrukken van het unitnummer zinloos
   if(Port!=VALUE_SOURCE_EVENTGHOST)
     {
     if(((Content>>28)&0xf)==SIGNAL_TYPE_NODO && ((Content>>16)&0xff)!=CMD_KAKU_NEW && ((Content>>16)&0xff)!=CMD_KAKU)
@@ -220,4 +219,208 @@ void PrintLine(String LineToPrint)
     }
   }
 
+char* Event2str(unsigned long Code)
+  {
+  int x,y;
+  byte P1,P2,Par2_b; 
+  boolean P2Z=true;     // vlag: true=Par2 als nul waarde afdrukken false=nulwaarde weglaten
+
+  byte Type     = (Code>>28)&0xf;
+  byte Command  = (Code>>16)&0xff;
+  byte Par1     = (Code>>8)&0xff;
+  byte Par2     = (Code)&0xff;
+  static char EventString[50]; 
+
+  //  Serial.print("*** Event   =");Serial.println(Code,HEX);//??? Debug
+  //  Serial.print("*** Command =");Serial.println(Command,DEC);//??? Debug
+  //  Serial.print("*** Par1    =");Serial.println(Par1,DEC);//??? Debug
+  //  Serial.print("*** Par2    =");Serial.println(Par2,DEC);//??? Debug
+  
+  strcpy(EventString, "(");
+
+  if(Type==SIGNAL_TYPE_NEWKAKU)
+    {
+    // Aan/Uit zit in bit 5 
+    strcpy(EventString,cmd2str(CMD_KAKU_NEW));
+    strcat(EventString," ");
+    strcat(EventString,int2str(Code&0x0FFFFFEF));
+    strcat(EventString,",");   
+    strcat(EventString,cmd2str(((Code>>4)&0x1)?VALUE_ON:VALUE_OFF)); 
+    }
+
+  else if(Type==SIGNAL_TYPE_NODO || Type==SIGNAL_TYPE_KAKU)
+    {
+    strcat(EventString,cmd2str(Command));
+    switch(Command)
+      {
+      // Par1 als KAKU adres [A0..P16] en Par2 als [On,Off]
+      case CMD_KAKU:
+      case CMD_SEND_KAKU:
+        P1=P_KAKU;
+        P2=P_TEXT;
+        Par2_b=Par2;
+        break;
+  
+      case CMD_KAKU_NEW:
+      case CMD_SEND_KAKU_NEW:
+        P1=P_VALUE;
+        P2=P_DIM;
+        break;
+  
+      // Par1 als waarde en par2 als tekst
+      case CMD_DELAY:
+      case CMD_WIRED_PULLUP:
+      case CMD_WIRED_OUT:
+      case CMD_WIRED_IN_EVENT:
+        P1=P_VALUE;
+        P2=P_TEXT;
+        break;
+  
+      // Par1 als tekst en par2 als tekst
+      case CMD_TERMINAL:
+      case CMD_COMMAND_WILDCARD:
+        P1=P_TEXT;
+        P2=P_TEXT;
+        break;
+  
+      // Par1 als tekst en par2 als getal
+      case CMD_RAWSIGNAL_COPY:
+      case CMD_TRANSMIT_IR:
+      case CMD_TRANSMIT_RF:
+      case CMD_STATUS:
+        P1=P_TEXT;
+        P2=P_VALUE;
+        break;
+  
+      // Par1 als tekst en par2 niet
+      case CMD_DLS_EVENT:
+      case CMD_ERROR:
+      case CMD_BUSY:
+      case CMD_SENDBUSY:
+      case CMD_WAITBUSY:
+        P1=P_TEXT;
+        P2=P_NOT;
+        break;
+  
+      // Par1 als waarde en par2 niet
+      case CMD_UNIT:
+      case CMD_DIVERT:
+      case CMD_SIMULATE_DAY:
+      case CMD_CLOCK_DOW:
+        P1=P_VALUE;
+        P2=P_NOT;
+        break;
+  
+      // Geen parameters
+      case CMD_SEND_SIGNAL:
+      case CMD_BOOT_EVENT:
+        P1=P_NOT;
+        P2=P_NOT;
+        break;
+  
+      // Par1 als waarde en par2 als waarde
+      default:
+        P1=P_VALUE;
+        P2=P_VALUE;    
+      }
+    
+    // Print Par1      
+    if(P1!=P_NOT)
+      {
+      strcat(EventString," ");
+      switch(P1)
+        {
+        case P_TEXT:
+          strcat(EventString,cmd2str(Par1));
+          break;
+        case P_VALUE:
+          strcat(EventString,int2str(Par1));
+          break;
+        case P_KAKU:
+          char t[3];
+          t[0]= 'A' + ((Par1&0xf0)>>4);      // A..P
+          t[1]= 0;                         // en de mini-string afsluiten.
+          strcat(EventString,t);
+
+          // als 2e bit in Par2 staat, dan is het een groep commando en moet adres '0' zijn.
+          if(Par2_b&0x02)
+            strcat(EventString,int2str(0));              
+          else
+            strcat(EventString,int2str((Par1&0xF)+1));              
+                    
+          Par2=(Par2&0x1)?VALUE_ON:VALUE_OFF;
+          break;
+        }
+      }// P1
+  
+    // Print Par2    
+    if(P2!=P_NOT)
+      {
+      strcat(EventString,",");
+      switch(P2)
+        {
+        case P_TEXT:
+          strcat(EventString,cmd2str(Par2));
+          break;
+        case P_VALUE:
+          strcat(EventString,int2str(Par2));
+          break;
+        case P_DIM:
+          {
+          if(Par2==VALUE_OFF || Par2==VALUE_ON)
+            strcat(EventString, cmd2str(Par2)); // Print 'On' of 'Off'
+          else
+            strcat(EventString,int2str(Par2));
+          break;
+          }
+        }
+      }// P2
+    }//   if(Type==SIGNAL_TYPE_NODO || Type==SIGNAL_TYPE_OTHERUNIT)
+    
+  else // wat over blijft is het type UNKNOWN.
+    {
+    // ??? test functionaliteit. nog beoordelen of we dit wel zo willen. 
+    // kijk of de hex-code toevallig al eerder is opgeslagen als rawsignal op de SDCard
+    if(SDCardPresent)
+      {
+      // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+      digitalWrite(Ethernetshield_CS_W5100, HIGH);
+      digitalWrite(EthernetShield_CS_SDCard,LOW);      
+      sprintf(TempString,"%s/%s.key",ProgmemString(Text_28),int2str(Code)+2); // +2 omdat dan de tekens '0x' niet worden meegenomen. anders groter dan acht posities in filenaam.
+      Serial.print("*** check binnengekomen hex-event in file ");Serial.println(TempString);//??? Debug
+      
+      File dataFile=SD.open(TempString);
+      if(dataFile) 
+        {
+        y=0;       
+        while(dataFile.available())
+          {
+          x=dataFile.read();
+          if(isprint(x) && y<INPUT_BUFFER_SIZE)
+            {
+            InputBuffer[y++]=x;
+            }
+          else
+            {
+            InputBuffer[y]=0;
+            y=0;
+
+            Serial.print("*** Equivalent key gevonden=");Serial.println(InputBuffer);//??? Debug
+            
+//???            command2event(CMD_RAWSIGNAL, str2int(InputBuffer), 0);
+            }
+          }
+        dataFile.close();
+        }  
+
+      // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip
+      digitalWrite(Ethernetshield_CS_W5100, LOW);
+      digitalWrite(EthernetShield_CS_SDCard,HIGH);
+      }          
+      
+    strcat(EventString,int2str(Code));
+    }
+  strcat(EventString,")");
+  return EventString;
+  }
 

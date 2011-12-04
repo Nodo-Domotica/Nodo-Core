@@ -1,14 +1,45 @@
-/*
+//    // kijk of de hex-code toevallig al eerder is opgeslagen als rawsignal op de SDCard
+//    if(SDCardPresent)
+//      {
+//      // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+//      digitalWrite(Ethernetshield_CS_W5100, HIGH);
+//      digitalWrite(EthernetShield_CS_SDCard,LOW);      
+//      sprintf(TempString,"%s/%s.key",ProgmemString(Text_28),int2str(Event)+2); // +2 omdat dan de tekens '0x' niet worden meegenomen. anders groter dan acht posities in filenaam.
+//      Serial.print("*** check binnengekomen hex-event in file ");Serial.println(TempString);//??? Debug
+//      
+//      File dataFile=SD.open(TempString);
+//      if(dataFile) 
+//        {
+//        y=0;       
+//        while(dataFile.available())
+//          {
+//          x=dataFile.read();
+//          if(isprint(x) && y<INPUT_BUFFER_SIZE)
+//            {
+//            InputBuffer[y++]=x;
+//            }
+//          else
+//            {
+//            InputBuffer[y]=0;
+//            y=0;
+//            PrintLine(InputBuffer);
+//            }
+//          }
+//        dataFile.close();
+//        }  
+//      Serial.print("*** Equivalent key=");Serial.println(InputBuffer);//??? Debug
+//
+//      // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip
+//      digitalWrite(Ethernetshield_CS_W5100, LOW);
+//      digitalWrite(EthernetShield_CS_SDCard,HIGH);
+//      }    
+
+
+
+/***************************************************************************
 
 Serial.print("*** =");Serial.println(,DEC);//??? Debug
 
-Label=   ; Value=  ;
-
-HexCode=0x12345678; Key=201; RawSignal=
-
-iedere hexcode heeft file: RawSignal=......
-
-iedere key heeft file: HexCode= ; 
 
 */
 
