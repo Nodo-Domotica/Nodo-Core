@@ -591,7 +591,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define UNIT                       0x1 // Unit nummer van de Nodo. Bij gebruik van meerdere nodo's deze uniek toewijzen [1..F]
 #define EVENTLIST_MAX              256 // aantal events dat de lijst bevat in het EEPROM geheugen van de ATMega328. Iedere regel in de eventlist heeft 8 bytes nodig. eerste adres is 0
 #define USER_VARIABLES_MAX          32 // aantal beschikbare gebruikersvariabelen voor de user.
-#define RAW_BUFFER_SIZE             80 // Maximaal aantal te ontvangen bits*2
+#define RAW_BUFFER_SIZE            256 // Maximaal aantal te ontvangen bits*2
 #define UNIT_MAX                    15 
 #define MACRO_EXECUTION_DEPTH       10 // maximale nesting van macro's.
 #define WIRED_PORTS                  8 // aantal WiredIn/WiredOut poorten
