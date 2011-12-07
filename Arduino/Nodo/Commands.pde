@@ -266,13 +266,18 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   byte Par2         = Content&0xff;
   byte Type         = (Content>>28)&0x0f;
   byte PreviousType = (PreviousContent>>28)&0x0f;
-  
 
-  if(error=CommandError(Content))// als er een error is, dan een error-event genereren en verzenden.
+  error=CommandError(Content);
+  if(error)
     {
-    RaiseError(ERROR_01);
+    if(error==ERROR_COMMAND) // commando bestaat niet 
+      RaiseError(ERROR_01);    
+    else // commando bestaat maar parameters niet correct
+      RaiseError(ERROR_02);
+
+    // als er een error is, dan stoppen met verwerken van de gehele regel. Dit om stapelen van errors te voorkomen.
     return false;
-    }
+    } 
   else // geen fouten, dan verwerken
     {        
     switch(Command)
@@ -555,10 +560,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         digitalWrite(EthernetShield_CS_SDCard,HIGH);
         break;
 
-      case CMD_RAWSIGNAL_SAVE:
-        RawSignalSave=Par1;
-        break;        
-
       case CMD_REBOOT:
         delay(1000);
         Reset();
@@ -684,9 +685,9 @@ void ExecuteLine(char *Line, byte Port)
             else
               {
               Par1=v;        
-              v=command2event(Cmd,Par1,Par2);
+              ProcessEvent(command2event(Cmd,Par1,Par2),VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
+              return;
               }
-            Error=CommandError(v);
             break;
             }  
             
@@ -711,8 +712,14 @@ void ExecuteLine(char *Line, byte Port)
             }  
             
           case CMD_RESET:
-              ResetFactory();
+            ResetFactory();
               
+          case CMD_RAWSIGNAL_SAVE:
+            PrintLine(ProgmemString(Text_07));
+            GetArgv(Command,TmpStr,2);
+            RawSignal.Key=str2val(TmpStr);
+            break;        
+
           case CMD_EVENTLIST_ERASE:
             Eventlist_Write(1,0L,0L); // maak de eventlist leeg.
             break;        
@@ -734,7 +741,7 @@ void ExecuteLine(char *Line, byte Port)
             }  
 
           case CMD_SEND_KAKU:
-          case CMD_KAKU://??? hier zit nog een bug 
+          case CMD_KAKU:
             {
             if(GetArgv(Command,TmpStr,2))
               {
@@ -743,10 +750,10 @@ void ExecuteLine(char *Line, byte Port)
               if(GetArgv(Command,TmpStr,3))
                 {
                 Par2=(str2val(TmpStr)==VALUE_ON) | (z<<1); // Parameter-2 bevat [On,Off]. Omzetten naar 1,0. tevens op bit-2 het groepcommando zetten.
-                v=command2event(Cmd,Par1,Par2);
+                ProcessEvent(command2event(Cmd,Par1,Par2),VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
+                return;
                 }
               }
-            Error=CommandError(v);
             break;
             }
             
@@ -759,55 +766,40 @@ void ExecuteLine(char *Line, byte Port)
             if(GetArgv(Command,TmpStr,3))
               Par2=str2val(TmpStr);
             
-            v=command2event(Cmd,Par1,Par2);
-            Error=CommandError(v);
-            break;
+            ProcessEvent(command2event(Cmd,Par1,Par2),VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
+            return;
             }
           }
         }  
  
-      if(Error)
+      if(State_EventlistWrite==0)// Gewoon uitvoeren
         {
-        if(Error==ERROR_COMMAND) // commando bestaat niet 
-          RaiseError(ERROR_01);    
-        else // commando bestaat maar parameters niet correct
-          RaiseError(ERROR_02);
+        continue;
+        }
 
-        // als er een error is, dan stoppen met verwerken van de gehele regel. Dit om stapelen van errors te voorkomen.
-        return;
-        } 
-      else
-        {          
-        if(State_EventlistWrite==0)// Gewoon uitvoeren
+      if(State_EventlistWrite==3)
+        {
+        action=v;
+        if(!Eventlist_Write(0,event,action))
           {
-          Nodo_2_RawSignal(v);// bouw een RawSignal op zodat deze later eventueel kan worden verzonden met SendSignal
-          ProcessEvent(v,VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
-          continue;
+          RaiseError(ERROR_06);    
+          return;
           }
+        State_EventlistWrite=0;
+        }
 
-        if(State_EventlistWrite==3)
-          {
-          action=v;
-          if(!Eventlist_Write(0,event,action))
-            {
-            RaiseError(ERROR_06);    
-            return;
-            }
-          State_EventlistWrite=0;
-          }
+      if(State_EventlistWrite==2)
+        {
+        event=v;
+        State_EventlistWrite=3;
+        }
 
-        if(State_EventlistWrite==2)
-          {
-          event=v;
-          State_EventlistWrite=3;
-          }
-
-        if(State_EventlistWrite==1)
-          {
-          State_EventlistWrite=2;
-          }
+      if(State_EventlistWrite==1)
+        {
+        State_EventlistWrite=2;
         }
       }
+
     else
       Command[PosCommand++]=x;
     }

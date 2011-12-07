@@ -939,19 +939,22 @@ boolean LogSDCard(String Line)
  /*********************************************************************************************\
  * print een lijst met de inhoud van de RawSignal buffer. ??? kan weg op termijn?
  \*********************************************************************************************/
-void SaveRawSignal(unsigned long Event, byte Key)
+boolean SaveRawSignal(byte Key)
   {
   boolean error=false;
-  
+  unsigned long Event;
+
   if(SDCardPresent)
     {
+    Event=AnalyzeRawSignal();
+  
     // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
     digitalWrite(Ethernetshield_CS_W5100, HIGH);
     digitalWrite(EthernetShield_CS_SDCard,LOW);
   
     // maak een .raw file aan met als naam de key die door de gebruiker is gekozen  
     sprintf(TempString,"%s/%s.raw",ProgmemString(Text_27),int2str(Key));  
-    Serial.print("*** File=");Serial.println(TempString);//??? Debug  
+    // Serial.print("*** File=");Serial.println(TempString);//??? Debug  
     SD.remove(TempString); // eventueel bestaande file wissen, anders wordt de data toegevoegd.    
     File KeyFile = SD.open(TempString, FILE_WRITE);
     if(KeyFile) 
@@ -961,13 +964,13 @@ void SaveRawSignal(unsigned long Event, byte Key)
       strcat(TempString,";");
       strcat(TempString,ProgmemString(Text_07));
       KeyFile.write(TempString);
-      Serial.print("*** Schrijf naar *.raw=");Serial.println(TempString);//??? Debug
-      for(int x=1;x<=RawSignal[0];x++)
+      // Serial.print("*** Schrijf naar *.raw=");Serial.println(TempString);//??? Debug
+      for(int x=1;x<=RawSignal.Number;x++)
         {
         TempString[0]=0;
         if(x>1)
           strcat(TempString,",");
-        strcat(TempString,int2str(RawSignal[x]));
+        strcat(TempString,int2str(RawSignal.Pulses[x]));
         KeyFile.write(TempString);
         }
       strcpy(TempString,";\n");
@@ -976,14 +979,14 @@ void SaveRawSignal(unsigned long Event, byte Key)
 
       // maak een .key file aan met als naam de key die door de gebruiker is gekozen  
       sprintf(TempString,"%s/%s.key",ProgmemString(Text_28),int2str(Event)+2); // +2 omdat dan de tekens '0x' niet worden meegenomen. anders groter dan acht posities in filenaam.
-      Serial.print("*** File=");Serial.println(TempString);//??? Debug    
+      // Serial.print("*** File=");Serial.println(TempString);//??? Debug    
       SD.remove(TempString); // eventueel bestaande file wissen, anders wordt de data toegevoegd.      
       KeyFile = SD.open(TempString, FILE_WRITE);
       if(KeyFile) 
         {
         strcpy(TempString,int2str(Key));
         strcat(TempString,";\n");
-        Serial.print("*** Schrijf naar *.key=");Serial.println(TempString);//??? Debug
+        // Serial.print("*** Schrijf naar *.key=");Serial.println(TempString);//??? Debug
         KeyFile.write(TempString);
         KeyFile.close();
         }
@@ -1003,9 +1006,8 @@ void SaveRawSignal(unsigned long Event, byte Key)
   if(error)
     {
     TransmitCode(command2event(CMD_ERROR,ERROR_03,0),SIGNAL_TYPE_NODO);
+    return false;
     }
-  else
-    {
-    }
+  return true;
   }
 

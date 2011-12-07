@@ -304,6 +304,7 @@ char* Event2str(unsigned long Code)
   
       // Par1 als waarde en par2 niet
       case CMD_UNIT:
+      case CMD_RAWSIGNAL:
       case CMD_DIVERT:
       case CMD_SIMULATE_DAY:
       case CMD_CLOCK_DOW:
@@ -379,45 +380,6 @@ char* Event2str(unsigned long Code)
     
   else // wat over blijft is het type UNKNOWN.
     {
-    // ??? test functionaliteit. nog beoordelen of we dit wel zo willen. 
-    // kijk of de hex-code toevallig al eerder is opgeslagen als rawsignal op de SDCard
-    if(SDCardPresent)
-      {
-      // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-      digitalWrite(Ethernetshield_CS_W5100, HIGH);
-      digitalWrite(EthernetShield_CS_SDCard,LOW);      
-      sprintf(TempString,"%s/%s.key",ProgmemString(Text_28),int2str(Code)+2); // +2 omdat dan de tekens '0x' niet worden meegenomen. anders groter dan acht posities in filenaam.
-      Serial.print("*** check binnengekomen hex-event in file ");Serial.println(TempString);//??? Debug
-      
-      File dataFile=SD.open(TempString);
-      if(dataFile) 
-        {
-        y=0;       
-        while(dataFile.available())
-          {
-          x=dataFile.read();
-          if(isprint(x) && y<INPUT_BUFFER_SIZE)
-            {
-            InputBuffer[y++]=x;
-            }
-          else
-            {
-            InputBuffer[y]=0;
-            y=0;
-
-            Serial.print("*** Equivalent key gevonden=");Serial.println(InputBuffer);//??? Debug
-            
-//???            command2event(CMD_RAWSIGNAL, str2int(InputBuffer), 0);
-            }
-          }
-        dataFile.close();
-        }  
-
-      // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip
-      digitalWrite(Ethernetshield_CS_W5100, LOW);
-      digitalWrite(EthernetShield_CS_SDCard,HIGH);
-      }          
-      
     strcat(EventString,int2str(Code));
     }
   strcat(EventString,")");

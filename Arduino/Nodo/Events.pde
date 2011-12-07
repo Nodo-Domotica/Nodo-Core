@@ -17,12 +17,10 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
 //  if(CommandForThisNodo && Hold)
 //    PrintLinePB_AddProgMemString(Text_09);
 
-
   if(!UserPlugin_Receive(IncommingEvent))
     return true;
  
   PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
-
 
   // houdt bij wat de busy status van andere Nodo's is.
   if(((IncommingEvent>>16)&0xff)==CMD_BUSY) // command
@@ -39,12 +37,11 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
 
   // Als de RAW pulsen worden opgevraagd door de gebruiker...
   // dan de pulsenreeks weergeven en er verder niets mee doen
-  if(RawSignalSave!=0)
+  if(RawSignal.Key!=0)
     {
-
-    SaveRawSignal(IncommingEvent,RawSignalSave);  
-  
-    RawSignalSave=0;
+    if(SaveRawSignal(RawSignal.Key))
+      PrintLine(ProgmemString(Text_13));
+    RawSignal.Key=0;
     return true;
     }
 

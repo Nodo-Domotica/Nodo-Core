@@ -51,13 +51,13 @@ prog_char PROGMEM Text_03[] = "Line=";
 prog_char PROGMEM Text_04[] = "SunMonThuWedThuFriSat";
 prog_char PROGMEM Text_05[] = "0123456789abcdef";
 prog_char PROGMEM Text_06[] = "Error=Unknown command.";//??? nog nodig ???
-prog_char PROGMEM Text_07[] = "RawSignal=";
+prog_char PROGMEM Text_07[] = "Waiting for signal...";
 prog_char PROGMEM Text_08[] = "Queue=Out, ";
 prog_char PROGMEM Text_09[] = "Queue=In, ";
 prog_char PROGMEM Text_10[] = "EventClientIP"; // nog nodig ???
 prog_char PROGMEM Text_11[] = "Output=";
 prog_char PROGMEM Text_12[] = "Input=";
-prog_char PROGMEM Text_13[] = "";
+prog_char PROGMEM Text_13[] = "Ok.";
 prog_char PROGMEM Text_14[] = "Event=";
 prog_char PROGMEM Text_15[] = "";
 prog_char PROGMEM Text_16[] = "Action=";
@@ -188,7 +188,7 @@ prog_char PROGMEM Cmd_106[]="ClockWed";
 prog_char PROGMEM Cmd_107[]="ClockThu";
 prog_char PROGMEM Cmd_108[]="ClockFri";
 prog_char PROGMEM Cmd_109[]="ClockSat";
-prog_char PROGMEM Cmd_110[]=""; // reserve
+prog_char PROGMEM Cmd_110[]="RawSignal";
 prog_char PROGMEM Cmd_111[]="KAKU";
 prog_char PROGMEM Cmd_112[]="NewKAKU";
 prog_char PROGMEM Cmd_113[]="Timer";
@@ -256,7 +256,7 @@ prog_char PROGMEM Cmd_172[]="Source";
 prog_char PROGMEM Cmd_173[]="RF2IR";
 prog_char PROGMEM Cmd_174[]="IR2RF";
 prog_char PROGMEM Cmd_175[]="All";
-prog_char PROGMEM Cmd_176[]="Output_RAW";
+prog_char PROGMEM Cmd_176[]="Output_RAW";//??? nog in gebruik?
 prog_char PROGMEM Cmd_177[]="Nesting";
 prog_char PROGMEM Cmd_178[]="Queue";
 prog_char PROGMEM Cmd_179[]="Trace";
@@ -407,7 +407,7 @@ prog_char PROGMEM Cmd_209[]="Command not supported in this Nodo version.";
 #define CMD_CLOCK_EVENT_THU            107
 #define CMD_CLOCK_EVENT_FRI            108
 #define CMD_CLOCK_EVENT_SAT            109
-#define CMD_RES_110                    110
+#define CMD_RAWSIGNAL                  110
 #define CMD_KAKU                       111
 #define CMD_KAKU_NEW                   112
 #define CMD_TIMER_EVENT                113
@@ -610,21 +610,24 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 char InputBuffer[INPUT_BUFFER_SIZE];
 char TerminalBuffer[INPUT_BUFFER_SIZE];
 
-#define EVENT_PART_COMMAND           1
-#define EVENT_PART_TYPE              2
-#define EVENT_PART_UNIT              3
-#define EVENT_PART_PAR1              4
-#define EVENT_PART_PAR2              5
 
-// attributen die kunnen worden weergegeven.
-#define DISPLAY_TIMESTAMP            1
-#define DISPLAY_UNIT                 2
-#define DISPLAY_DIRECTION            4
-#define DISPLAY_SOURCE               8
-#define DISPLAY_TRACE               16
-#define DISPLAY_TAG                 32
-#define DISPLAY_SERIAL              64
-#define DISPLAY_RESET               DISPLAY_TIMESTAMP + DISPLAY_UNIT + DISPLAY_SOURCE + DISPLAY_DIRECTION + DISPLAY_TAG
+//??? kan weg???
+//#define EVENT_PART_COMMAND           1
+//#define EVENT_PART_TYPE              2
+//#define EVENT_PART_UNIT              3
+//#define EVENT_PART_PAR1              4
+//#define EVENT_PART_PAR2              5
+
+//// attributen die kunnen worden weergegeven.
+////??? kunnen weg?
+//#define DISPLAY_TIMESTAMP            1
+//#define DISPLAY_UNIT                 2
+//#define DISPLAY_DIRECTION            4
+//#define DISPLAY_SOURCE               8
+//#define DISPLAY_TRACE               16
+//#define DISPLAY_TAG                 32
+//#define DISPLAY_SERIAL              64
+//#define DISPLAY_RESET               DISPLAY_TIMESTAMP + DISPLAY_UNIT + DISPLAY_SOURCE + DISPLAY_DIRECTION + DISPLAY_TAG
 
 // settings voor verzenden en ontvangen van IR/RF 
 #define ENDSIGNAL_TIME          1500 // Dit is de tijd in milliseconden waarna wordt aangenomen dat het ontvangen één reeks signalen beëindigd is
@@ -665,7 +668,7 @@ struct Settings
   byte    Terminal_Prompt;
   }S;
 
-
+  
 // Timers voor de gebruiker
 #define TIMER_MAX              32                   // aantal beschikbare timers voor de user, gerekend vanaf 
 unsigned long UserTimer[TIMER_MAX];                 // Timers voor de gebruiker.
@@ -690,11 +693,19 @@ Client EventClient=false;                           // Client class voor Events
 Server TerminalServer(23);                          // Server class voor Terminal sessie
 Client TerminalClient=false;                        // Client class voor Terminal sessie
 
-// Overige globals
-byte RawSignalSave;                               // Als deze vlag staat wordt het eerstvolgende event dat wordt ontvangen weergegeven als rawsignal
 boolean WiredInputStatus[WIRED_PORTS];              // Status van de WiredIn worden hierin opgeslagen
 boolean WiredOutputStatus[WIRED_PORTS];             // Wired variabelen
-unsigned int RawSignal[RAW_BUFFER_SIZE+2];          // Tabel met de gemeten pulsen in microseconden. eerste waarde is het aantal bits*2
+
+struct RawsignalStruct
+  {
+  unsigned int Pulses[RAW_BUFFER_SIZE+2];           // Tabel met de gemeten pulsen in microseconden. eerste waarde is het aantal bits*2
+  byte Source;                                      // Bron waar het signaal op is binnengekomen
+  int Number;                                       // aantal bits *2, omdat iedere bit een pulse en een space heeft
+  byte Key;                                         // sleutel waaronder de pulsenreeks op SDCard opgeslgen moet worden
+  byte Type;                                        // Type signaal dan ontvangen is
+  }RawSignal;
+
+
 int BusyNodo;                                       // in deze variabele de status van het event 'Busy' van de betreffende units 1 t/m 15. bit-1 = unit-1
 byte UserVarPrevious[USER_VARIABLES_MAX];           // Vorige versie van de UserVariablles: om wisselingen te kunnen vaststellen
 byte DaylightPrevious;                              // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet
@@ -847,7 +858,7 @@ void loop()
     else
       digitalWrite(MonitorLedPin,LOW);           // LED weer uit
 
-    // IP (Event) : *************** kijk of er een Event klaar staat op de ethernet shield **********************    
+    // IP (Event) : *************** kijk of er een Event klaar staat op het ethernet shield **********************    
     if(EventGhostReceive(InputBuffer))
       {
       ExecuteLine(InputBuffer, VALUE_SOURCE_EVENTGHOST);
@@ -885,7 +896,7 @@ void loop()
         {
         InByte=Serial.read();
         
-        if(InByte>=32 && InByte<=126 && Pos<INPUT_BUFFER_SIZE) // alleen de printbare tekens zijn zinvol.
+        if(isprint(InByte) && Pos<INPUT_BUFFER_SIZE) // alleen de printbare tekens zijn zinvol.
           {
           StaySharpTimer=millis()+SHARP_TIME;      
           InputBuffer[Pos++]=InByte;
@@ -917,7 +928,11 @@ void loop()
             StaySharpTimer=millis()+SHARP_TIME;
             if(Content==Checksum && (millis()>SupressRepeatTimer || Content!=ContentPrevious))// tweede maal ontvangen als checksum
                {
+               RawSignal.Source=VALUE_SOURCE_IR;
+               CheckRawSignalKey(&Content); // check of er een RawSignal key op de SDCard aanwezig is en vul met Nodo Event. Call by reference!
+
                SupressRepeatTimer=millis()+ENDSIGNAL_TIME; // zodat herhalingen niet opnieuw opgepikt worden
+                
                ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_IR,0,0); // verwerk binnengekomen event.
                ContentPrevious=Content;
                }
@@ -941,6 +956,9 @@ void loop()
             StaySharpTimer=millis()+SHARP_TIME;
             if(Content==Checksum && (millis()>SupressRepeatTimer || Content!=ContentPrevious))// tweede maal ontvangen als checksum
                {
+               RawSignal.Source=VALUE_SOURCE_RF;
+               CheckRawSignalKey(&Content); // check of er een RawSignal key op de SDCard aanwezig is en vul met Nodo Event. Call by reference!
+
                SupressRepeatTimer=millis()+ENDSIGNAL_TIME; // zodat herhalingen niet opnieuw opgepikt worden
                ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_RF,0,0); // verwerk binnengekomen event.
                ContentPrevious=Content;

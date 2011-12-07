@@ -45,34 +45,35 @@ void KAKU_2_RawSignal(unsigned long Code)
   Group   = (Code & KAKU_ALLOFF) == KAKU_ALLOFF;
   Code = Home | Unit << 4 | (0x600 | (Command << 11));
 
-  RawSignal[0]=KAKU_CodeLength*4+2;
-
+  RawSignal.Number=KAKU_CodeLength*4+2;
+  RawSignal.Type=SIGNAL_TYPE_KAKU;
+  
   for (i=0; i<KAKU_CodeLength; i++) // loop de 12-bits langs en vertaal naar pulse/space signalen.  
     {
-    RawSignal[4*i+1]=KAKU_T;
-    RawSignal[4*i+2]=KAKU_T*3;
+    RawSignal.Pulses[4*i+1]=KAKU_T;
+    RawSignal.Pulses[4*i+2]=KAKU_T*3;
 
     if (Group && i>=4 && i<8) 
       {
-      RawSignal[4*i+3]=KAKU_T;
-      RawSignal[4*i+4]=KAKU_T;
+      RawSignal.Pulses[4*i+3]=KAKU_T;
+      RawSignal.Pulses[4*i+4]=KAKU_T;
       } // short 0
     else
       {
       if((Code>>i)&1)// 1
         {
-        RawSignal[4*i+3]=KAKU_T*3;
-        RawSignal[4*i+4]=KAKU_T;
+        RawSignal.Pulses[4*i+3]=KAKU_T*3;
+        RawSignal.Pulses[4*i+4]=KAKU_T;
         }
       else //0
         {
-        RawSignal[4*i+3]=KAKU_T;
-        RawSignal[4*i+4]=KAKU_T*3;          
+        RawSignal.Pulses[4*i+3]=KAKU_T;
+        RawSignal.Pulses[4*i+4]=KAKU_T*3;          
         }          
       }
     }
-  RawSignal[(KAKU_CodeLength*4)+1] = KAKU_T;
-  RawSignal[(KAKU_CodeLength*4)+2] = KAKU_T*32; // pauze tussen de pulsreeksen
+  RawSignal.Pulses[(KAKU_CodeLength*4)+1] = KAKU_T;
+  RawSignal.Pulses[(KAKU_CodeLength*4)+2] = KAKU_T*32; // pauze tussen de pulsreeksen
   }
 
 /*********************************************************************************************\
@@ -87,14 +88,14 @@ unsigned long RawSignal_2_KAKU(void)
   unsigned long bitstream=0;
 
   // conventionele KAKU bestaat altijd uit 12 data bits plus stop. Ongelijk, dan geen KAKU
-  if (RawSignal[0]!=(KAKU_CodeLength*4)+2)return false;
+  if (RawSignal.Number!=(KAKU_CodeLength*4)+2)return false;
 
   for (i=0; i<KAKU_CodeLength; i++)
     {
     j=KAKU_T*2;        
-    if      (RawSignal[4*i+1]<j && RawSignal[4*i+2]>j && RawSignal[4*i+3]<j && RawSignal[4*i+4]>j) {bitstream=(bitstream >> 1);} // 0
-    else if (RawSignal[4*i+1]<j && RawSignal[4*i+2]>j && RawSignal[4*i+3]>j && RawSignal[4*i+4]<j) {bitstream=(bitstream >> 1 | (1 << (KAKU_CodeLength-1))); }// 1
-    else if (RawSignal[4*i+1]<j && RawSignal[4*i+2]>j && RawSignal[4*i+3]<j && RawSignal[4*i+4]<j) {bitstream=(bitstream >> 1); Command=KAKU_ALLOFF;} // Short 0, Groep commando. Zet bit-2 van Par2.
+    if      (RawSignal.Pulses[4*i+1]<j && RawSignal.Pulses[4*i+2]>j && RawSignal.Pulses[4*i+3]<j && RawSignal.Pulses[4*i+4]>j) {bitstream=(bitstream >> 1);} // 0
+    else if (RawSignal.Pulses[4*i+1]<j && RawSignal.Pulses[4*i+2]>j && RawSignal.Pulses[4*i+3]>j && RawSignal.Pulses[4*i+4]<j) {bitstream=(bitstream >> 1 | (1 << (KAKU_CodeLength-1))); }// 1
+    else if (RawSignal.Pulses[4*i+1]<j && RawSignal.Pulses[4*i+2]>j && RawSignal.Pulses[4*i+3]<j && RawSignal.Pulses[4*i+4]<j) {bitstream=(bitstream >> 1); Command=KAKU_ALLOFF;} // Short 0, Groep commando. Zet bit-2 van Par2.
     else {return false;} // foutief signaal
     }
  
@@ -103,7 +104,9 @@ unsigned long RawSignal_2_KAKU(void)
   Home =     (bitstream      ) & 0x0F;
   Unit =     (bitstream >>  4) & 0x0F;
   Command |= (bitstream >> 11) & 0x01;
-
+  
+  RawSignal.Type=SIGNAL_TYPE_KAKU;
+  
   return SetEventType(command2event(CMD_KAKU, (Home << 4 | Unit), Command),SIGNAL_TYPE_KAKU); 
   }
 
@@ -150,6 +153,8 @@ void NewKAKU_2_RawSignal(unsigned long CodeNodo)
 
   // zet commando bit en level
   Level=CodeNodo&0xff;
+  RawSignal.Type=SIGNAL_TYPE_NEWKAKU;
+
   if(Level==VALUE_ON || Level==VALUE_OFF)
     {
     bitstream|=(Level==VALUE_ON)<<4; // bit-5 is het on/off commando in KAKU signaal
@@ -164,24 +169,24 @@ void NewKAKU_2_RawSignal(unsigned long CodeNodo)
  
   // bitstream bevat nu de KAKU-bits die verzonden moeten worden.
 
-  for(i=3;i<=x;i++)RawSignal[i]=NewKAKU_1T;  // De meeste tijden in signaal zijn T. Vul alle pulstijden met deze waarde. Later worden de 4T waarden op hun plek gezet
+  for(i=3;i<=x;i++)RawSignal.Pulses[i]=NewKAKU_1T;  // De meeste tijden in signaal zijn T. Vul alle pulstijden met deze waarde. Later worden de 4T waarden op hun plek gezet
   
   i=1;
-  RawSignal[i++]=NewKAKU_1T; //pulse van de startbit
-  RawSignal[i++]=NewKAKU_8T; //space na de startbit
+  RawSignal.Pulses[i++]=NewKAKU_1T; //pulse van de startbit
+  RawSignal.Pulses[i++]=NewKAKU_8T; //space na de startbit
   
   y=31; // bit uit de bitstream
   while(i<x)
     {
     if((bitstream>>(y--))&1)
-      RawSignal[i+1]=NewKAKU_4T;     // Bit=1; // T,4T,T,T
+      RawSignal.Pulses[i+1]=NewKAKU_4T;     // Bit=1; // T,4T,T,T
     else
-      RawSignal[i+3]=NewKAKU_4T;     // Bit=0; // T,T,T,4T
+      RawSignal.Pulses[i+3]=NewKAKU_4T;     // Bit=0; // T,T,T,4T
 
     if(x==146)  // als het een dim opdracht betreft
       {
       if(i==111) // Plaats van de Commnado-bit uit KAKU 
-        RawSignal[i+3]=NewKAKU_1T;  // moet een T,T,T,T zijn bij een dim commando.
+        RawSignal.Pulses[i+3]=NewKAKU_1T;  // moet een T,T,T,T zijn bij een dim commando.
       if(i==127)  // als alle pulsen van de 32-bits weggeschreven zijn
         {
         bitstream=(unsigned long)Level; //  nog vier extra dim-bits om te verzenden
@@ -190,9 +195,9 @@ void NewKAKU_2_RawSignal(unsigned long CodeNodo)
       }
     i+=4;
     }
-  RawSignal[i++]=NewKAKU_1T; //pulse van de stopbit
-  RawSignal[i]=NewKAKU_1T*32; //space van de stopbit tevens pause tussen signalen
-  RawSignal[0]=i; // aantal bits*2 die zich in het opgebouwde RawSignal bevinden
+  RawSignal.Pulses[i++]=NewKAKU_1T; //pulse van de stopbit
+  RawSignal.Pulses[i]=NewKAKU_1T*32; //space van de stopbit tevens pause tussen signalen
+  RawSignal.Number=i; // aantal bits*2 die zich in het opgebouwde RawSignal bevinden
   }
 
 
@@ -207,20 +212,20 @@ unsigned long RawSignal_2_NewKAKU(void)
   int Level=0,i;
   
   // nieuwe KAKU bestaat altijd uit start bit + 32 bits + evt 4 dim bits. Ongelijk, dan geen NewKAKU
-  if (RawSignal[0]!=NewKAKU_RawSignalLength && (RawSignal[0]!=NewKAKUdim_RawSignalLength))return 0L;
+  if (RawSignal.Number!=NewKAKU_RawSignalLength && (RawSignal.Number!=NewKAKUdim_RawSignalLength))return 0L;
 
-  // RawSignal[0] bevat aantal pulsen * 2  => negeren
-  // RawSignal[1] bevat startbit met tijdsduur van 1T => negeren
-  // RawSignal[2] bevat lange space na startbit met tijdsduur van 8T => negeren
-  i=3; // RawSignal[3] is de eerste van een T,xT,T,xT combinatie
+  // RawSignal.Number bevat aantal pulsen * 2  => negeren
+  // RawSignal.Pulses[1] bevat startbit met tijdsduur van 1T => negeren
+  // RawSignal.Pulses[2] bevat lange space na startbit met tijdsduur van 8T => negeren
+  i=3; // RawSignal.Pulses[3] is de eerste van een T,xT,T,xT combinatie
   
   do 
     {
-    if     (RawSignal[i]<NewKAKU_mT && RawSignal[i+1]<NewKAKU_mT && RawSignal[i+2]<NewKAKU_mT && RawSignal[i+3]>NewKAKU_mT)Bit=0; // T,T,T,4T
-    else if(RawSignal[i]<NewKAKU_mT && RawSignal[i+1]>NewKAKU_mT && RawSignal[i+2]<NewKAKU_mT && RawSignal[i+3]<NewKAKU_mT)Bit=1; // T,4T,T,T
-    else if(RawSignal[i]<NewKAKU_mT && RawSignal[i+1]<NewKAKU_mT && RawSignal[i+2]<NewKAKU_mT && RawSignal[i+3]<NewKAKU_mT)       // T,T,T,T Deze hoort te zitten op i=111 want: 27e NewKAKU bit maal 4 plus 2 posities voor startbit
+    if     (RawSignal.Pulses[i]<NewKAKU_mT && RawSignal.Pulses[i+1]<NewKAKU_mT && RawSignal.Pulses[i+2]<NewKAKU_mT && RawSignal.Pulses[i+3]>NewKAKU_mT)Bit=0; // T,T,T,4T
+    else if(RawSignal.Pulses[i]<NewKAKU_mT && RawSignal.Pulses[i+1]>NewKAKU_mT && RawSignal.Pulses[i+2]<NewKAKU_mT && RawSignal.Pulses[i+3]<NewKAKU_mT)Bit=1; // T,4T,T,T
+    else if(RawSignal.Pulses[i]<NewKAKU_mT && RawSignal.Pulses[i+1]<NewKAKU_mT && RawSignal.Pulses[i+2]<NewKAKU_mT && RawSignal.Pulses[i+3]<NewKAKU_mT)       // T,T,T,T Deze hoort te zitten op i=111 want: 27e NewKAKU bit maal 4 plus 2 posities voor startbit
       {
-      if(RawSignal[0]!=NewKAKUdim_RawSignalLength) // als de dim-bits er niet zijn
+      if(RawSignal.Number!=NewKAKUdim_RawSignalLength) // als de dim-bits er niet zijn
         return false;
       }
     else
@@ -232,13 +237,17 @@ unsigned long RawSignal_2_NewKAKU(void)
       Level=(Level<<1) | Bit;
  
     i+=4;// volgende pulsenquartet
-    }while(i<RawSignal[0]-2); //-2 omdat de space/pulse van de stopbit geen deel meer van signaal uit maakt.
+    }while(i<RawSignal.Number-2); //-2 omdat de space/pulse van de stopbit geen deel meer van signaal uit maakt.
 
   if(bitstream>0x0ffff)
+    {
     // het is van een NewKAKU zender afkomstig. Geef de hex-waarde terug.
+    RawSignal.Type=SIGNAL_TYPE_NEWKAKU;
     return SetEventType(bitstream,SIGNAL_TYPE_NEWKAKU); // hoogte nible wissen en weer vullen met type NewKAKU
+    }
   else
     {
+    RawSignal.Type=SIGNAL_TYPE_NODO;
     // het is van een andere Nodo afkomstig. Maak er een Nodo commando van.
     if(i>140)
       return command2event(CMD_KAKU_NEW, (bitstream>>6)&0xff,Level+1);
@@ -248,6 +257,6 @@ unsigned long RawSignal_2_NewKAKU(void)
       return command2event(CMD_KAKU_NEW, (bitstream>>6)&0xff,i);
       }
     }
-  return bitstream;
+  // ??? kan weg ?return bitstream;
   }
 

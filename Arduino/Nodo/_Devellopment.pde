@@ -3,12 +3,12 @@
 Builds:
 
 Ideeën / Issues:
-- rawsignal get en put herschreven voor nieuwe input verwerking;
+- Toevoeging commando "RawSignalSend <naam>.
+- EventlistWrite werkt niet
 - vreemde weergave: Date=2011-11-09, Time=23:23, System=System, Unit=2, Event=(Error Unknown command,)
 - Nodo due compatibel maken n.a.v. omnummeren CMD_...
 - onduidelijk of transmitsettings nog een Par2 voor instellen van de herhalen: documnteren!
 - temperatuur uitlezen LM335 ?
-- RwaSignal, RawSignalSase, RawSignalSend nog uitwerken.
 
 Opgeloste issues:
 - Issue xxx:
@@ -39,7 +39,7 @@ Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - Toevoeging commando "LogShow": laat de inhoud van de log op SDCard zien
 - Toevoeging commando "LogErase": wist de logfile
 - Commando "RawSignalGet" en "RawSignlPut" vervallen;
-- Toevoeging commando "RawSignalSave". Slaat pulsenreeks van het eerstvolgende ontvangen signaal op op SDCard onder opgegeven nummer;
+- Toevoeging commando "RawSignalSave <numer>". Slaat pulsenreeks van het eerstvolgende ontvangen signaal op op SDCard onder opgegeven nummer
 - "SendVarUserEvent" renamed naar "VariableSendUserEvent"
 - nieuw commando: "VariableUserEvent" genereert een userevent op basis van de inhoud van twee variabelen.
 - Commando "TransmitSettings" vervallen. Vervangen door "TransmitIR", "TransmitRF"

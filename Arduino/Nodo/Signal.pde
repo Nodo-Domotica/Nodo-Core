@@ -9,13 +9,13 @@ unsigned long AnalyzeRawSignal(void)
   {
   unsigned long Code=0L;
   
-  if(RawSignal[0]==RAW_BUFFER_SIZE)return 0L;     // Als het signaal een volle buffer beslaat is het zeer waarschijnlijk ruis.
+  if(RawSignal.Number==RAW_BUFFER_SIZE)return 0L;     // Als het signaal een volle buffer beslaat is het zeer waarschijnlijk ruis.
 
   if(!(Code=RawSignal_2_Nodo()))
     if(!(Code=RawSignal_2_KAKU()))
       if(!(Code=RawSignal_2_NewKAKU()))
         Code=RawSignal_2_32bit();
-
+      
   return Code;   // Geen Nodo, KAKU of NewKAKU code. Genereer uit het onbekende signaal een (vrijwel) unieke 32-bit waarde uit.  
   }
 
@@ -29,18 +29,21 @@ unsigned long RawSignal_2_Nodo(void)
   int x,y,z;
   
   // nieuwe NODO signaal bestaat altijd uit start bit + 32 bits. Ongelijk aan 66, dan geen Nodo signaal
-  if (RawSignal[0]!=66)return 0L;
+  if (RawSignal.Number!=66)return 0L;
 
   x=3; // 0=aantal, 1=startpuls, 2=space na startpuls, 3=1e pulslengte
   do{
-    if(RawSignal[x]>NODO_PULSE_MID)
+    if(RawSignal.Pulses[x]>NODO_PULSE_MID)
       bitstream|=(long)(1L<<z); //LSB in signaal wordt  als eerste verzonden
     x+=2;
     z++;
-    }while(x<RawSignal[0]);
+    }while(x<RawSignal.Number);
 
   if(((bitstream>>28)&0xf) == SIGNAL_TYPE_NODO)// is het type-nibble uit het signaal gevuld met de aanduiding NODO ?  
+    {
+    RawSignal.Type=SIGNAL_TYPE_NODO;
     return bitstream;
+    }
   else
     return 0L;  
   }
@@ -65,11 +68,11 @@ unsigned long RawSignal_2_32bit(void)
   
   // zoek de kortste tijd (PULSE en SPACE)
   x=5; // 0=aantal, 1=startpuls, 2=space na startpuls, 3=1e puls
-  while(x<=RawSignal[0]-4)
+  while(x<=RawSignal.Number-4)
     {
-    if(RawSignal[x]<MinPulse)MinPulse=RawSignal[x]; // Zoek naar de kortste pulstijd.
+    if(RawSignal.Pulses[x]<MinPulse)MinPulse=RawSignal.Pulses[x]; // Zoek naar de kortste pulstijd.
     x++;
-    if(RawSignal[x]<MinSpace)MinSpace=RawSignal[x]; // Zoek naar de kortste spacetijd.
+    if(RawSignal.Pulses[x]<MinSpace)MinSpace=RawSignal.Pulses[x]; // Zoek naar de kortste spacetijd.
     x++;
     }
   MinPulse+=(MinPulse*S.AnalyseSharpness)/100;
@@ -84,7 +87,7 @@ unsigned long RawSignal_2_32bit(void)
       CodeS=CodeS>>1;
       }
       
-    if(RawSignal[x]>MinPulse)
+    if(RawSignal.Pulses[x]>MinPulse)
       {
       if(z<=31)// de eerste 32 bits vullen in de 32-bit variabele
           CodeP|=(long)(1L<<z); //LSB in signaal wordt  als eerste verzonden
@@ -94,7 +97,7 @@ unsigned long RawSignal_2_32bit(void)
       }
     x++;
 
-    if(RawSignal[x]>MinSpace)
+    if(RawSignal.Pulses[x]>MinSpace)
       {
       if(z<=31)// de eerste 32 bits vullen in de 32-bit variabele
           CodeS|=(long)(1L<<z); //LSB in signaal wordt  als eerste verzonden
@@ -104,10 +107,11 @@ unsigned long RawSignal_2_32bit(void)
       }
     x++;
     z++;
-    }while(x<RawSignal[0]);
+    }while(x<RawSignal.Number);
 
  if(Counter_pulse>=1 && Counter_space<=1)return CodeP; // data zat in de pulsbreedte
  if(Counter_pulse<=1 && Counter_space>=1)return CodeS; // data zat in de pulse afstand
+ RawSignal.Type=SIGNAL_TYPE_UNKNOWN;
  return (CodeS^CodeP); // data zat in beide = bi-phase, maak er een leuke mix van.
  }
 
@@ -187,7 +191,7 @@ unsigned long WaitForChangeState(uint8_t pin, uint8_t state, unsigned long timeo
  /*********************************************************************************************\
  * Deze routine zendt een RAW code via RF. 
  * De inhoud van de buffer RawSignal moet de pulstijden bevatten. 
- * RawSignal[0] het aantal pulsen*2
+ * RawSignal.Number het aantal pulsen*2
  \*********************************************************************************************/
 
 void RawSendRF(void)
@@ -201,12 +205,12 @@ void RawSendRF(void)
   for(byte y=0; y<S.TransmitRepeatRF; y++) // herhaal verzenden RF code
     {
     x=1;
-    while(x<=RawSignal[0])
+    while(x<=RawSignal.Number)
       {
       digitalWrite(RF_TransmitDataPin,HIGH); // 1
-      delayMicroseconds(RawSignal[x++]); 
+      delayMicroseconds(RawSignal.Pulses[x++]); 
       digitalWrite(RF_TransmitDataPin,LOW); // 0
-      delayMicroseconds(RawSignal[x++]); 
+      delayMicroseconds(RawSignal.Pulses[x++]); 
       }
     }
   digitalWrite(RF_TransmitPowerPin,LOW); // zet de 433Mhz zender weer uit
@@ -217,7 +221,7 @@ void RawSendRF(void)
  /*********************************************************************************************\
  * Deze routine zendt een 32-bits code via IR. 
  * De inhoud van de buffer RawSignal moet de pulstijden bevatten. 
- * RawSignal[0] het aantal pulsen*2
+ * RawSignal.Number het aantal pulsen*2
  * Pulsen worden verzonden op en draaggolf van 38Khz.
  \*********************************************************************************************/
 
@@ -228,12 +232,12 @@ void RawSendIR(void)
   for(y=0; y<S.TransmitRepeatIR; y++) // herhaal verzenden IR code
     {
     x=1;
-    while(x<=RawSignal[0])
+    while(x<=RawSignal.Number)
       {
       TCCR2A|=_BV(COM2B0); // zet IR-modulatie AAN
-      delayMicroseconds(RawSignal[x++]); 
+      delayMicroseconds(RawSignal.Pulses[x++]); 
       TCCR2A&=~_BV(COM2B0); // zet IR-modulatie UIT
-      delayMicroseconds(RawSignal[x++]); 
+      delayMicroseconds(RawSignal.Pulses[x++]); 
       }
     }
   }
@@ -248,20 +252,20 @@ void Nodo_2_RawSignal(unsigned long Code)
   byte BitCounter,y=1;
 
   // begin met een startbit. 
-  RawSignal[y++]=NODO_PULSE_1*2; 
-  RawSignal[y++]=NODO_SPACE*4;
+  RawSignal.Pulses[y++]=NODO_PULSE_1*2; 
+  RawSignal.Pulses[y++]=NODO_SPACE*4;
 
   // de rest van de bits LSB als eerste de lucht in
   for(BitCounter=0; BitCounter<=31; BitCounter++)
     {
     if(Code>>BitCounter&1)
-      RawSignal[y++]=NODO_PULSE_1; 
+      RawSignal.Pulses[y++]=NODO_PULSE_1; 
     else
-      RawSignal[y++]=NODO_PULSE_0;   
-    RawSignal[y++]=NODO_SPACE;   
+      RawSignal.Pulses[y++]=NODO_PULSE_0;   
+    RawSignal.Pulses[y++]=NODO_SPACE;   
     }
-  RawSignal[y-1]=NODO_PULSE_1*10; // pauze tussen de pulsreeksen
-  RawSignal[0]=66; //  1 startbit bestaande uit een pulse/space + 32-bits is 64 pulse/space = totaal 66
+  RawSignal.Pulses[y-1]=NODO_PULSE_1*10; // pauze tussen de pulsreeksen
+  RawSignal.Number=66; //  1 startbit bestaande uit een pulse/space + 32-bits is 64 pulse/space = totaal 66
   }
 
  
@@ -280,17 +284,17 @@ boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
   do{// lees de pulsen in microseconden en plaats deze in een tijdelijke buffer
     PulseLength=WaitForChangeState(DataPin, StateSignal, TimeOut); // meet hoe lang signaal LOW (= PULSE van IR signaal)
     if(PulseLength<MIN_PULSE_LENGTH)return false;
-    RawSignal[RawCodeLength++]=PulseLength;
+    RawSignal.Pulses[RawCodeLength++]=PulseLength;
     PulseLength=WaitForChangeState(DataPin, !StateSignal, TimeOut); // meet hoe lang signaal HIGH (= SPACE van IR signaal)
-    RawSignal[RawCodeLength++]=PulseLength;
+    RawSignal.Pulses[RawCodeLength++]=PulseLength;
     }while(RawCodeLength<RAW_BUFFER_SIZE && PulseLength!=0);// Zolang nog niet alle bits ontvangen en er niet vroegtijdig een timeout plaats vindt
 
   if(RawCodeLength>=MIN_RAW_PULSES)
     {
-    RawSignal[0]=RawCodeLength-1;
+    RawSignal.Number=RawCodeLength-1;
     return true;
     }
-  RawSignal[0]=0;
+  RawSignal.Number=0;
   return false;
   }
 
@@ -419,5 +423,50 @@ boolean TransmitCode(unsigned long Event,byte SignalType)
     } 
 
   }
- 
+
+
+void CheckRawSignalKey(unsigned long *Code)
+  {
+  int x,y;
+
+  if(SDCardPresent && RawSignal.Type==SIGNAL_TYPE_UNKNOWN)
+    {
+    // kijk of de hex-code toevallig al eerder is opgeslagen als rawsignal op de SDCard
+    // maak er dan een Nodo event van. 
+  
+    // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+    digitalWrite(Ethernetshield_CS_W5100, HIGH);
+    digitalWrite(EthernetShield_CS_SDCard,LOW);      
+    sprintf(TempString,"%s/%s.key",ProgmemString(Text_28),int2str(*Code)+2); // +2 omdat dan de tekens '0x' niet worden meegenomen. anders groter dan acht posities in filenaam.
+    //  Serial.print("*** check binnengekomen hex-event in file ");Serial.println(TempString);//??? Debug
+    
+    File dataFile=SD.open(TempString);
+    if(dataFile) 
+      {
+      y=0;       
+      while(dataFile.available())
+        {
+        x=dataFile.read();
+        if(isDigit(x) && y<INPUT_BUFFER_SIZE)
+          {
+          TempString[y++]=x;
+          }
+        else if(x=='\n' || isPunct(x))
+          {
+          TempString[y]=0;
+          y=0;
+          // Serial.print("*** Key op SDCard=");Serial.println(TempString);//??? Debug  
+          *Code=command2event(CMD_RAWSIGNAL,str2val(TempString),0);
+          return;
+          }
+        }
+      dataFile.close();
+      }  
+  
+    // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
+    digitalWrite(Ethernetshield_CS_W5100, LOW);
+    digitalWrite(EthernetShield_CS_SDCard,HIGH);
+    }
+  }
+
 
