@@ -40,10 +40,25 @@ Op dit moment is alleen de Beta beschikbaar voor de Arduino Mega. De Piccolo is 
 
 Installeren:
 
-1. Zorg eerst dat de hardware correct is aangesloten aan de Arduino Mega! Plaats de Ethernet shield op de arduino Mega en stop
-eventueel een een vers geformatteerd SD-kaartje in het slot. 
+0. Gebruik de Arduino compiler 1.0 of hoger!
 
-Aansluitinge op de Mega:
+
+1. Koppel de mega los van overige hardware (ethernet shield, nodo shields, etc.)
+
+
+2. Pak 'EthernetNodo.zip' uit en plaats de folder bij de andere libraries van de
+Arduino compiler ..Program Files/Arduino/Libraries/..
+
+ 
+3. Stel in de Arduino compiler het juiste Arduino board in en de juiste com-poort.
+
+ 
+4. Compileer en upload de Arduino Nodo/Arduino code zoals gebruikelijk.
+
+
+5. Plaats de Ethernet shield op de arduino Mega en stop eventueel een een vers geformatteerd SD-kaartje in het slot.
+Verbind de Nodo hardware met de Arduino Mega!  
+
 WiredAnalogInputPin_1       8   // Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
 IR_ReceiveDataPin           3   // Op deze input komt het IR signaal binnen van de TSOP. Bij HIGH bij geen signaal.
 MonitorLedPin               5   // bij iedere ontvangst of verzending licht deze led kort op.
@@ -53,20 +68,14 @@ RF_TransmitPowerPin         14  // +5 volt Vcc spanning naar de zender.
 RF_TransmitDataPin          15  // data naar de zender
 RF_ReceivePowerPin          16  // Spanning naar de ontvanger via deze pin.
 RF_ReceiveDataPin           17  // Op deze input komt het 433Mhz-RF signaal binnen. LOW bij geen signaal.
-WiredDigitalOutputPin_1     22  // 8 digitale outputs D22 t/m D29 worden gebruikt voor WiredIn 1 tot en met 8
-
-
-2. Pak bestant Ethernet2.zip uit en plaats de folder bij de andere libraries van de
-Arduino compiler ..Program Files/Arduino/Libraries/..
-
- 
-3. Stel in de Arduino compiler de juiste Arduino board is en de juiste com-poort.
-
- 
-4. Compileer de Arduino Nodo/Arduino code zoals gebruikelijk.
-
-
-5. Als de compiler gereed is, geef de Nodo dan een vrij IP adres met het commando "NodoIP".
-
+WiredDigitalOutputPin_1     22  // 8 digitale outputs D22 t/m D29 worden gebruikt voor WiredOut 1 tot en met 8
 
 6. Gaan met de banaan...
+
+#######################################################################################################################################
+
+Opmerkingen:
+
+* Kijk altijd op het tabblad 'Development' voor de laatste details over de funktionele aanpassingen.
+* De documentatie is nog niet bijgewerkt.
+* Deze release werkt NIET goed met de huidige EventGhost plugin en de beheertool!
