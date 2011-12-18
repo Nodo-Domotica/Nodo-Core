@@ -48,7 +48,7 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
     }
       
   if(Port==VALUE_SOURCE_EVENTGHOST)
-    strcat(TempString, ip2str(IP));
+    strcat(TempString, ip2str(EventClientIP));
   else
     strcat(TempString, cmd2str(Port));
   
@@ -154,7 +154,7 @@ void PrintWelcome(void)
   // print IP adres van de Nodo
   if(EthernetEnabled)
     {
-    sprintf(TempString,"ThisUnit=%u.%u.%u.%u, TerminalPort=%d, EventPort=%d",Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3], S.Terminal_Port, S.Event_Port);
+    sprintf(TempString,"IP Address=%u.%u.%u.%u, TerminalPort=23, EventPort=1024",Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
     PrintLine(TempString);
     }
     

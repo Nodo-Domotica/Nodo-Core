@@ -126,12 +126,6 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
         *Par2=0;
       break;
 
-// ??? kan komen te vervallen
-//    case CMD_WIRED_RANGE:
-//      *Par1=xPar1;
-//      *Par2=S.WiredInputRange[xPar1-1];
-//      break;
-
     case CMD_WIRED_THRESHOLD:
       *Par1=xPar1;
       *Par2=S.WiredInputThreshold[xPar1-1];
@@ -194,6 +188,9 @@ Serial.print("*** Poort status uitvraag=");Serial.println(analogRead(WiredAnalog
 void SaveSettings(void)  
   {
   char ByteToSave,*pointerToByteToSave=pointerToByteToSave=(char*)&S;    //pointer verwijst nu naar startadres van de struct. 
+  
+  Serial.println("*** SaveSettings();");//???
+
   for(int x=0; x<sizeof(struct Settings) ;x++)
     {
     EEPROM.write(x,*pointerToByteToSave); 
@@ -244,8 +241,6 @@ void ResetFactory(void)
   S.WaitFreeRF_Window          = 0;
   S.WaitFreeRF_Delay           = 0;
   S.DaylightSaving             = Time.DaylightSaving;
-  S.Event_Port                 = 1024;
-  S.Terminal_Port              = 23;
   S.Terminal_Enabled           = VALUE_OFF;
 
   strcpy(S.Password,"Nodo");
@@ -260,7 +255,6 @@ void ResetFactory(void)
     {
     S.WiredInputThreshold[x]=512; 
     S.WiredInputSmittTrigger[x]=10;
-// ???   S.WiredInputRange[x]=0; /// kan komen te vervallen!
     S.WiredInputPullUp[x]=true;
     S.WiredInput_Calibration_IH[x]=1023;
     S.WiredInput_Calibration_IL[x]=0;
@@ -366,7 +360,6 @@ void Status(boolean ToSerial, byte Par1, byte Par2) //??? waaromnog de ToSerial 
           case CMD_WIRED_PULLUP:
           case CMD_WIRED_SMITTTRIGGER:
           case CMD_WIRED_THRESHOLD:
-          case CMD_WIRED_RANGE:
           case CMD_WIRED_IN_EVENT:
             Par1_Start=1;
             Par1_End=WIRED_PORTS;

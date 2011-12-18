@@ -385,31 +385,6 @@ boolean TransmitCode(unsigned long Event,byte SignalType)
       return false;
     }
 
-  // Het event moet worden veronden naar alle IP adressen die bekend zijn
-  for(x=0;x<SERVER_IP_MAX;x++)
-    {  
-    // IP adres tijdelijk opslaan om later te kunnen printen.
-    IP[0]=S.Server_IP[x][0];
-    IP[1]=S.Server_IP[x][1];
-    IP[2]=S.Server_IP[x][2];
-    IP[3]=S.Server_IP[x][3];
-
-    if((IP[0]+IP[1]+IP[2]+IP[3])>0)
-      {
-      PrintEvent(Event,VALUE_SOURCE_EVENTGHOST,VALUE_DIRECTION_OUTPUT);
-      
-      if(!EventGhostSend(Event2str(Event),IP))
-        {
-        // wis IP adres in de server tabel
-        S.Server_IP[x][0]=0;
-        S.Server_IP[x][1]=0;
-        S.Server_IP[x][2]=0;
-        S.Server_IP[x][3]=0;
-        SaveSettings();
-        }
-      }
-    }
-    
   if(S.TransmitRF==VALUE_ON)
     {
     PrintEvent(Event,VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT);
@@ -422,6 +397,35 @@ boolean TransmitCode(unsigned long Event,byte SignalType)
     RawSendIR();
     } 
 
+
+  // Het event moet worden verzonden naar alle IP adressen die bekend zijn
+  for(x=0;x<SERVER_IP_MAX;x++)
+    {  
+    // IP adres tijdelijk opslaan om later te kunnen printen.
+    EventClientIP[0]=S.Server_IP[x][0];
+    EventClientIP[1]=S.Server_IP[x][1];
+    EventClientIP[2]=S.Server_IP[x][2];
+    EventClientIP[3]=S.Server_IP[x][3];
+
+    if((EventClientIP[0]+EventClientIP[1]+EventClientIP[2]+EventClientIP[3])>0)
+      {
+      PrintEvent(Event,VALUE_SOURCE_EVENTGHOST,VALUE_DIRECTION_OUTPUT);
+      
+      if(!EventGhostSend(Event2str(Event),EventClientIP))
+        {
+        // wis IP adres in de server tabel
+        S.Server_IP[x][0]=0;
+        S.Server_IP[x][1]=0;
+        S.Server_IP[x][2]=0;
+        S.Server_IP[x][3]=0;
+        
+        
+        sprintf(TempString,"*** IP adres verwijderd uit EGServer tabel: %u.%u.%u.%u",EventClientIP[0],EventClientIP[1],EventClientIP[2],EventClientIP[3]);//??? debugging
+        PrintLine(TempString);
+        SaveSettings();// ???
+        }
+      }
+    }
   }
 
 

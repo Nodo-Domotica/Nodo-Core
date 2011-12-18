@@ -1,25 +1,26 @@
 /**************************************************************************************************************************\
 
 
-Issues / ToDo:
+Known Errors / ToDo:
 - Found in r306: als ethernet niet aangesloten dan start de nodo (soms) niet op.
 - Found in r306: ijk/kalibreer procedure werkt nog niet goed
 - Found in r306: Status WiredAnalog 22 is mogelijk
 - Found in r306: Nodo due compatibel maken n.a.v. omnummeren CMD_...
-- Found in r306: onduidelijk of transmitsettings nog een Par2 voor instellen van de herhalen: documnteren!
 - Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue testen
 - Wired poorten testen incl. Trigger, Threshold.
 - Found in r306: Na volledig volschrijven van de eventlist blijft Nodo hangen in continue uitvoeren van het reboot event.
 - Found in r306: Tijdens type van een regel in Telnet kan het typen worden onderbroken door binnenkomend event. (weergave verminkt)
-- Found in r306: Na een RaiseError vanuit een TelNes sessie werkt invoer commando eerst daarop volgende keer niet. Eerste commando wordt overgeslagen.
-- Events naar IP adressen worden niet correct verzonden als tegelijkertijd een TelNet sessie actief is.
+- Found in r306: Na een RaiseError vanuit een TelNet sessie werkt invoer commando eerst daarop volgende keer niet. Eerste commando wordt overgeslagen.
 
 Ideeën:
 - versturen eventlist naar andere Nodo (over IR/RF)
 - Moet een self-learned IP adres in de settings worden opgeslagen of niet??? Nu niet het geval.
 
-Opgeloste issues & aanpassingen:
-- Issue xxx:
+Aanpassingen r307:
+- Found in r306: Events naar IP adressen worden niet correct verzonden als tegelijkertijd een TelNet sessie actief is.
+- Verzenden van een EventGhost Event naar IP nu voorzien van retry bij fout in verzending.
+
+Aanpassingen r306:
 - Found in r306: Terminal On setting niet bewaard na reboot.
 - Found in r306: Terugsturen events naar bekende IP adressen werkt niet goed. (self-learning)
 - Found in r306: Invoer commando via telnet werkt niet lekker;
@@ -39,7 +40,6 @@ Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - 8 analoge wired poorten i.p.v. 4
 - Eventlist uitgebreid van 120 posities naar 256
 - queue voor opvangen events tijdens delay van 15 uitgebreid naar 32 events.
-- Toevoeging commando "Port" voor instellen TCP/IP poort
 - Toevoeging commando "IP" IP adres
 - Welkomsttekst uitgebreid met de IP-settings
 - Welkomsttekst uitgebreid met melding logging naar SDCard.
@@ -115,9 +115,9 @@ Serial.print("3*** Value=");Serial.println(Value,DEC);//??? Debug
 
 int analog2port(byte Par1, byte Par2)
   {
-//Serial.print("2*** Par1=");Serial.println(Par1,BIN);//??? Debug
-//Serial.print("2*** Par2=");Serial.println(Par2,BIN);//??? Debug
-//Serial.print("2*** Port=");Serial.println(((Par2>>4)&0xf)+1,DEC);//??? Debug
+  //Serial.print("2*** Par1=");Serial.println(Par1,BIN);//??? Debug
+  //Serial.print("2*** Par2=");Serial.println(Par2,BIN);//??? Debug
+  //Serial.print("2*** Port=");Serial.println(((Par2>>4)&0xf)+1,DEC);//??? Debug
   return ((Par2>>4)&0xf);    
   }
 
@@ -125,9 +125,9 @@ void int2calibrated(byte *Par1, byte *Par2, int Port, int Value)
   {
   byte P1,P2;
 
-// mapping en calibratie nog inbouwen  
-//  Serial.print("4*** Port=");Serial.println(Port,DEC);//??? Debug
-//  Serial.print("4*** Value=");Serial.println(Value,DEC);//??? Debug
+  // mapping en calibratie nog inbouwen  
+  //  Serial.print("4*** Port=");Serial.println(Port,DEC);//??? Debug
+  //  Serial.print("4*** Value=");Serial.println(Value,DEC);//??? Debug
   
   P1=(Value   )&0xff; // 1e acht bits
   P2=(Value>>8)&0x03; // laatste twee bits 

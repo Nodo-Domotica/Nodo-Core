@@ -28,7 +28,7 @@
  *
  \****************************************************************************************************************************/
 
-#define VERSION        005        // Nodo Version nummer:
+#define VERSION        006        // Nodo Version nummer:
                                   // Major.Minor.Patch
                                   // Major: Grote veranderingen aan concept, besturing, werking.
                                   // Minor: Uitbreiding/aanpassing van commando's, functionaliteit en MMI aanpassingen
@@ -129,13 +129,13 @@ prog_char PROGMEM Cmd_045[]="RawSignalCopy";
 prog_char PROGMEM Cmd_046[]="WildCard";
 prog_char PROGMEM Cmd_047[]="SendBusy";
 prog_char PROGMEM Cmd_048[]="VariableSendUserEvent";
-prog_char PROGMEM Cmd_049[]="WiredRange";
+prog_char PROGMEM Cmd_049[]="";
 prog_char PROGMEM Cmd_050[]="VariableUserEvent";
 prog_char PROGMEM Cmd_051[]="WiredAnalogCalibrate";
 prog_char PROGMEM Cmd_052[]="Reboot";
-prog_char PROGMEM Cmd_053[]="TerminalPort";
+prog_char PROGMEM Cmd_053[]="";
 prog_char PROGMEM Cmd_054[]="WiredAnalogSend";
-prog_char PROGMEM Cmd_055[]="EventPort";
+prog_char PROGMEM Cmd_055[]="";
 prog_char PROGMEM Cmd_056[]="AnalyseSettings";
 prog_char PROGMEM Cmd_057[]="Password";
 prog_char PROGMEM Cmd_058[]="OutputIR";
@@ -348,13 +348,13 @@ prog_char PROGMEM Cmd_210[]="Unauthorized terminal access.";
 #define CMD_COMMAND_WILDCARD            46
 #define CMD_SENDBUSY                    47
 #define CMD_VARIABLE_SEND_USEREVENT     48
-#define CMD_WIRED_RANGE                 49
+#define CMD_RES49                       49
 #define CMD_VARIABLE_USEREVENT          50
 #define CMD_WIRED_ANALOG_CALIBRATE      51
 #define CMD_REBOOT                      52
-#define CMD_MONITOR_PORT                53
+#define CMD_RES53                       53
 #define CMD_WIRED_ANALOG_SEND           54
-#define CMD_EVENT_PORT                  55
+#define CMD_RES55                       55
 #define CMD_ANALYSE_SETTINGS            56
 #define CMD_PASSWORD                    57
 #define CMD_TRANSMIT_IR                 58
@@ -644,8 +644,6 @@ struct Settings
   int     DaylightSavingSet;                                // Vlag voor correct automatisch kunnen overschakelen van zomertijd naar wintertijd of vice-versa
   char    Password[25];                                     // String met wachtwoord.
   byte    Server_IP[SERVER_IP_MAX][4];                      // lijst met IP adressen waar de events naar toe moeten worden gestuurd.
-  int     Event_Port;                                       // IP-Poort waar EventGhost events op binnenkomen / uitgaan.
-  int     Terminal_Port;                                    // IP-Poort waar de Telnes sessie over verbinding maakt.
   byte    Terminal_Enabled;                                 // vlag geeft aan of Telnet sessies toegestaan zijn.
   byte    Terminal_Prompt;                                  // vlag geeft aan of er een prompt getoond moet worden tijdens de telnet sessie
   }S;
@@ -659,10 +657,6 @@ unsigned long QueueEvent[EVENT_QUEUE_MAX];                  // queue voor tijdel
 byte QueuePort[EVENT_QUEUE_MAX];                            // tabel behorend bij de queue. Geeft herkomst van het event in de queue aan.
 byte QueuePos;                                              // teller die wijst naar een plaats in de queue.
 byte Ethernet_MAC_Address[]={0xDE,0xAD,0xBE,0xEF,0xFE,0xED};// MAC adres van de Nodo.
-EthernetServer EventServer(1024);                           // Server class voor ontvangen van Events van een EventGhost applicatie
-EthernetClient EventClient=false;                           // Client class voor ontvangen van Events van een EventGhost applicatie
-EthernetServer TerminalServer(23);                          // Server class voor Terminal sessie.
-EthernetClient TerminalClient=false;                        // Client class voor Terminal sessie.
 boolean WiredInputStatus[WIRED_PORTS];                      // Status van de WiredIn worden hierin opgeslagen.
 boolean WiredOutputStatus[WIRED_PORTS];                     // Wired variabelen.
 int BusyNodo;                                               // in deze variabele de status van het event 'Busy' van de betreffende units 1 t/m 15. bit-1 = unit-1.
@@ -683,9 +677,13 @@ boolean SDCardPresent = false;                              // Vlag die aangeeft
 boolean EthernetEnabled = false;                            // Vlag die aangeeft of er een Ethernetverbinding is.
 byte UserVar[USER_VARIABLES_MAX];
 char TempString[INPUT_BUFFER_SIZE];                         // Globale, tijdelijke string voor algemeen gebruik in diverste functies. ??? Nodig?
-byte IP[4];                                                 // tijdelijke plek voor IP adres.
 boolean TerminalConnected=false;                            // Vlag geeft aan of er een verbinding is met een Terminal.
 boolean SerialConnected=true;                               // Vlag geeft aan of er een verbinding USB-poort.
+
+EthernetServer EventServer(1024);                              // Globale Server class voor ontvangen van Events van een EventGhost applicatie
+EthernetServer TerminalServer(23);                           // Server class voor Terminal sessie.
+EthernetClient TerminalClient=false;                        // Client class voor Terminal sessie.
+byte EventClientIP[4];                                      // IP adres van de EventGhost client die verbinding probeert te maken c.q. verbonden is.
 
 // RealTimeclock DS1307
 struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight; int Year,DaylightSaving;}Time; // Hier wordt datum & tijd in opgeslagen afkomstig van de RTC.
@@ -768,12 +766,12 @@ void setup()
   // Zet statussen WIRED_IN op hoog, anders wordt direct wij het opstarten meerdere malen een event gegenereerd omdat de pull-up weerstand analoge de waarden op hoog zet
   for(x=0;x<WIRED_PORTS;x++){WiredInputStatus[x]=true;}
 
-  // Initialiseer ethernet device  ???
+  // Initialiseer ethernet device
   if(Ethernet.begin(Ethernet_MAC_Address)!=0)
     {
     // MAC en IP adres van de Nodo
-    EthernetServer EventServer(S.Event_Port);           // Server class voor ontvangst van Events
     EventServer.begin();                                // Start Server voor ontvangst van Events
+    TerminalServer.begin();                             // Start server voor Terminalsessies via TelNet
     EthernetEnabled=true;
     }
     
@@ -841,7 +839,6 @@ void loop()
           {
           if(TerminalReceive(InputBuffer))
             {
-            TerminalClient.print("\n\r");
             if(S.Terminal_Enabled==VALUE_ON)
               ExecuteLine(InputBuffer, VALUE_SOURCE_TERMINAL);    
             else
@@ -849,7 +846,6 @@ void loop()
               TerminalClient.println(cmd2str(ERROR_10));
               RaiseError(ERROR_10); 
               }
-//???            TerminalClient.print(">");            
             }
           }
         }

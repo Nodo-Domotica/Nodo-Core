@@ -129,12 +129,6 @@ byte CommandError(unsigned long Content)
       if(Par1<1 || Par1>TIMER_MAX)return ERROR_02;
       return false;
 
-    // test:Par1 binnen bereik maximaal beschikbare variabelen,0 mag ook (=alle variabelen)
-    case CMD_WIRED_RANGE:
-      if(Par1<1 || Par1>WIRED_PORTS)return ERROR_02; // poort
-      if(Par2>WIRED_PORTS)return ERROR_02; // range
-      return false;
-
     // Par1 alleen 0,1 of 7
     case CMD_SIMULATE_DAY:
       if(Par1!=0 && Par1!=1 && Par1!=7)return ERROR_02;
@@ -723,14 +717,6 @@ void ExecuteLine(char *Line, byte Port)
             break;
             }
             
-          case CMD_EVENT_PORT:
-            {
-            GetArgv(Command,TmpStr,2);
-            S.Event_Port=str2val(TmpStr);
-            SaveSettings();
-            break;
-            }  
-            
           case CMD_RESET:
             ResetFactory();
               
@@ -744,14 +730,6 @@ void ExecuteLine(char *Line, byte Port)
             Eventlist_Write(1,0L,0L); // maak de eventlist leeg.
             break;        
 
-          case CMD_MONITOR_PORT:
-            {
-            GetArgv(Command,TmpStr,2);
-            S.Terminal_Port=str2val(TmpStr);
-            SaveSettings();
-            break;
-            }  
-            
           case CMD_PASSWORD:
             {
             if(GetArgv(Command,S.Password,2))
