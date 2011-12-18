@@ -28,7 +28,7 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
   switch(Direction)
     {
     case VALUE_SOURCE_QUEUE:// testen ???
-      strcat(TempString,ProgmemString(cmd2str(VALUE_SOURCE_QUEUE)));      
+      strcat(TempString,cmd2str(VALUE_SOURCE_QUEUE));      
       strcat(TempString,"-");
       strcat(TempString, int2str(QueuePos+1));
       strcat(TempString,"=");
@@ -66,8 +66,16 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
     
   // geef het event weer
   strcat(TempString, ", ");
-  strcat(TempString, ProgmemString(Text_14));
-  strcat(TempString, Event2str(Content));
+  if(((Content>>16)&0xff)==CMD_ERROR)
+    {
+    strcat(TempString, ProgmemString(Text_06));
+    strcat(TempString, cmd2str((Content>>8)&0xff));
+    }
+  else
+    {
+    strcat(TempString, ProgmemString(Text_14));
+    strcat(TempString, Event2str(Content));
+    }
 
   // stuur de regel naar Serial en/of naar Ethernet
   PrintLine(TempString);
@@ -144,9 +152,12 @@ void PrintWelcome(void)
   PrintLine(TempString);
 
   // print IP adres van de Nodo
-  sprintf(TempString,"ThisUnit=%u.%u.%u.%u, TerminalPort=%d, EventPort=%d",Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3], S.Terminal_Port, S.Event_Port);
-  PrintLine(TempString);
-  
+  if(EthernetEnabled)
+    {
+    sprintf(TempString,"ThisUnit=%u.%u.%u.%u, TerminalPort=%d, EventPort=%d",Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3], S.Terminal_Port, S.Event_Port);
+    PrintLine(TempString);
+    }
+    
   // geef melding als de SDCard goed geconnect is
   if(SDCardPresent)
     PrintLine(ProgmemString(Text_24));
@@ -163,26 +174,6 @@ void PrintWelcome(void)
 
 
  /**********************************************************************************************\
- * Print de ethernet settings
- \*********************************************************************************************/
-void PrintSettings(void)
-  {
-  int x;
-  
-  // toon de clients die eerder met succes verbonden zijn en nu als server worden beschouwd;
-  for(x=0;x<SERVER_IP_MAX;x++)
-    {
-    if((S.Server_IP[x][0]+S.Server_IP[x][1]+S.Server_IP[x][2]+S.Server_IP[x][3])>0)
-      {
-      sprintf(TempString,"%s=%u.%u.%u.%u",ProgmemString(Text_10),S.Server_IP[x][0],S.Server_IP[x][1],S.Server_IP[x][2],S.Server_IP[x][3]);
-      PrintLine(TempString);
-      }
-    }
-  }
-
-
-
- /**********************************************************************************************\
  * Verzend teken(s) naar de Terminal
  \*********************************************************************************************/
 void PrintLine(String LineToPrint)
@@ -190,19 +181,22 @@ void PrintLine(String LineToPrint)
   if(SerialConnected)
     Serial.println(LineToPrint);
     
-  if(S.Terminal_Enabled==VALUE_ON && TerminalConnected)
+  if(EthernetEnabled)
     {
-    if(TerminalClient.connected())
+    if(S.Terminal_Enabled==VALUE_ON && TerminalConnected)
       {
-      TerminalClient.println(LineToPrint);
-      }
-    else
-      {
-      // als de client niet meer verbonden is, maar deze was dat wel,
-      // dan de verbinding netjes afsluiten
-      TerminalClient.flush();
-      TerminalClient.stop();
-      TerminalConnected=false;
+      if(TerminalClient.connected())
+        {
+        TerminalClient.println(LineToPrint);
+        }
+      else
+        {
+        // als de client niet meer verbonden is, maar deze was dat wel,
+        // dan de verbinding netjes afsluiten
+        TerminalClient.flush();
+        TerminalClient.stop();
+        TerminalConnected=false;
+        }
       }
     }
   }
@@ -252,7 +246,7 @@ char* Event2str(unsigned long Code)
         return EventString; // deze functie niet verder afwerken. Dit CMD_WIRED_ANALOG heeft een afwijkende MMI
         break;
 
-        // Par1 als KAKU adres [A0..P16] en Par2 als [On,Off]
+      // Par1 als KAKU adres [A0..P16] en Par2 als [On,Off]
       case CMD_KAKU:
       case CMD_SEND_KAKU:
         P1=P_KAKU;
@@ -293,7 +287,6 @@ char* Event2str(unsigned long Code)
       // Par1 als tekst en par2 niet
       case CMD_TERMINAL:
       case CMD_DLS_EVENT:
-      case CMD_ERROR:
       case CMD_BUSY:
       case CMD_SENDBUSY:
       case CMD_WAITBUSY:
@@ -383,5 +376,25 @@ char* Event2str(unsigned long Code)
     }
   strcat(EventString,")");
   return EventString;
+  }
+
+
+
+ /**********************************************************************************************\
+ * 
+ \*********************************************************************************************/
+void PrintEGServers(void)
+  {
+  int x;
+  
+  // toon de clients die eerder met succes verbonden zijn en nu als server worden beschouwd;
+  for(x=0;x<SERVER_IP_MAX;x++)
+    {
+    if((S.Server_IP[x][0]+S.Server_IP[x][1]+S.Server_IP[x][2]+S.Server_IP[x][3])>0)
+      {
+      sprintf(TempString,"%s=%u.%u.%u.%u",ProgmemString(Text_10),S.Server_IP[x][0],S.Server_IP[x][1],S.Server_IP[x][2],S.Server_IP[x][3]);
+      PrintLine(TempString);
+      }
+    }
   }
 

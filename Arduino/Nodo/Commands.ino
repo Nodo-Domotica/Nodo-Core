@@ -38,9 +38,6 @@ byte NodoType(unsigned long Content)
  * Als het een correct commando is wordt een false teruggegeven 
  * in andere gevallen een foutcode
  \*********************************************************************************************/
-#define ERROR_PAR1     1
-#define ERROR_PAR2     2
-#define ERROR_COMMAND  3
 
 byte CommandError(unsigned long Content)
   {
@@ -48,7 +45,7 @@ byte CommandError(unsigned long Content)
   
   x=NodoType(Content);
   if(x!=NODO_TYPE_COMMAND && x!=NODO_TYPE_EVENT)
-    return ERROR_COMMAND;
+    return ERROR_01;
   
   byte Command      = (Content>>16)&0xff;
   byte Par1         = (Content>>8)&0xff;
@@ -90,7 +87,7 @@ byte CommandError(unsigned long Content)
     case CMD_SEND_KAKU_NEW:
     case CMD_KAKU_NEW:    
       if(Par2==VALUE_ON || Par2==VALUE_OFF || Par2<=16)return false;
-      return ERROR_PAR2;
+      return ERROR_02;
 
     // Generiek: geen par1 of par2 ingevuld.
     case CMD_BOOT_EVENT:
@@ -98,14 +95,14 @@ byte CommandError(unsigned long Content)
     case CMD_EVENTLIST_SHOW:
     case CMD_RESET:
     case CMD_EVENTLIST_ERASE: 
-      if(Par1!=0)return ERROR_PAR1;    
-      if(Par2!=0)return ERROR_PAR2;    
+      if(Par1!=0)return ERROR_02;    
+      if(Par2!=0)return ERROR_02;    
       return false; 
       
     case CMD_VARIABLE_SET:   
     case CMD_TIMER_SET_SEC:
     case CMD_TIMER_SET_MIN:
-      if(Par1>USER_VARIABLES_MAX)return ERROR_PAR1;
+      if(Par1>USER_VARIABLES_MAX)return ERROR_02;
       return false;
 
     // test:Par1 binnen bereik maximaal beschikbare variabelen
@@ -115,53 +112,53 @@ byte CommandError(unsigned long Content)
     case CMD_BREAK_ON_VAR_MORE:
     case CMD_BREAK_ON_VAR_LESS:
     case CMD_BREAK_ON_VAR_EQU:
-      if(Par1<1 || Par1>USER_VARIABLES_MAX)return ERROR_PAR1;
+      if(Par1<1 || Par1>USER_VARIABLES_MAX)return ERROR_02;
       return false;
       
     // test:Par1 en Par2 binnen bereik maximaal beschikbare variabelen
     case CMD_VARIABLE_USEREVENT:
     case CMD_VARIABLE_SEND_USEREVENT:
     case CMD_VARIABLE_VARIABLE:
-      if(Par1<1 || Par1>USER_VARIABLES_MAX)return ERROR_PAR1;
-      if(Par2<1 || Par2>USER_VARIABLES_MAX)return ERROR_PAR2;
+      if(Par1<1 || Par1>USER_VARIABLES_MAX)return ERROR_02;
+      if(Par2<1 || Par2>USER_VARIABLES_MAX)return ERROR_02;
       return false;
         
     // test:Par1 binnen bereik maximaal beschikbare timers
     case CMD_TIMER_EVENT:
     case CMD_TIMER_RANDOM:
-      if(Par1<1 || Par1>TIMER_MAX)return ERROR_PAR1;
+      if(Par1<1 || Par1>TIMER_MAX)return ERROR_02;
       return false;
 
     // test:Par1 binnen bereik maximaal beschikbare variabelen,0 mag ook (=alle variabelen)
     case CMD_WIRED_RANGE:
-      if(Par1<1 || Par1>WIRED_PORTS)return ERROR_PAR1; // poort
-      if(Par2>WIRED_PORTS)return ERROR_PAR2; // range
+      if(Par1<1 || Par1>WIRED_PORTS)return ERROR_02; // poort
+      if(Par2>WIRED_PORTS)return ERROR_02; // range
       return false;
 
     // Par1 alleen 0,1 of 7
     case CMD_SIMULATE_DAY:
-      if(Par1!=0 && Par1!=1 && Par1!=7)return ERROR_PAR1;
+      if(Par1!=0 && Par1!=1 && Par1!=7)return ERROR_02;
       return false;
       
     // geldig jaartal
     case CMD_CLOCK_YEAR:
-      if(Par1>21)return ERROR_PAR1;
+      if(Par1>21)return ERROR_02;
       return false;
     
     // geldige tijd    
     case CMD_CLOCK_TIME:
-      if(Par1>23)return ERROR_PAR1;
-      if(Par2>59)return ERROR_PAR2;
+      if(Par1>23)return ERROR_02;
+      if(Par2>59)return ERROR_02;
       return false;
 
     // geldige datum
     case CMD_CLOCK_DATE: // data1=datum, data2=maand
-      if(Par1>31 || Par1<1)return ERROR_PAR1;
-      if(Par2>12 || Par2<1)return ERROR_PAR2;
+      if(Par1>31 || Par1<1)return ERROR_02;
+      if(Par2>12 || Par2<1)return ERROR_02;
       return false;
 
     case CMD_CLOCK_DOW:
-      if(Par1<1 || Par1>7)return ERROR_PAR1;
+      if(Par1<1 || Par1>7)return ERROR_02;
       return false;
        
     // test:Par1 binnen bereik maximaal beschikbare wired poorten.
@@ -170,27 +167,27 @@ byte CommandError(unsigned long Content)
     case CMD_WIRED_ANALOG_SEND:
     case CMD_WIRED_THRESHOLD:
     case CMD_WIRED_SMITTTRIGGER:
-      if(Par1<1 || Par1>WIRED_PORTS)return ERROR_PAR1;
+      if(Par1<1 || Par1>WIRED_PORTS)return ERROR_02;
       return false;
 
     // test:Par1 binnen bereik maximaal beschikbare wired poorten EN Par2 is ON of OFF
     case CMD_WIRED_OUT:
     case CMD_WIRED_PULLUP:
-      if(Par1<1 || Par1>WIRED_PORTS)return ERROR_PAR1;
-      if(Par2!=VALUE_ON && Par2!=VALUE_OFF)return ERROR_PAR2;
+      if(Par1<1 || Par1>WIRED_PORTS)return ERROR_02;
+      if(Par2!=VALUE_ON && Par2!=VALUE_OFF)return ERROR_02;
       return false;
 
 //    case CMD_RAWSIGNAL_COPY: //??? kan dit weg of herstellen wat verpunkt is?
-//      if(Par1!=VALUE_IP && Par1!=VALUE_EVENTGHOST && Par1!=VALUE_OFF)return ERROR_PAR1;
+//      if(Par1!=VALUE_IP && Par1!=VALUE_EVENTGHOST && Par1!=VALUE_OFF)return ERROR_02;
 //      return false;
 
     case CMD_WAITBUSY:
     case CMD_SENDBUSY:
-      if(Par1!=VALUE_OFF && Par1!=VALUE_ON && Par1!=VALUE_ALL)return ERROR_PAR1;
+      if(Par1!=VALUE_OFF && Par1!=VALUE_ON && Par1!=VALUE_ALL)return ERROR_02;
       return false;
 
     case CMD_WIRED_ANALOG_CALIBRATE:
-      if(Par1!=VALUE_HIGH && Par1!=VALUE_LOW)return ERROR_PAR1;
+      if(Par1!=VALUE_HIGH && Par1!=VALUE_LOW)return ERROR_02;
       return false;
 
     case CMD_COMMAND_WILDCARD:
@@ -208,7 +205,7 @@ byte CommandError(unsigned long Content)
         case VALUE_SOURCE_CLOCK:
           break;
         default:
-          return ERROR_PAR1;
+          return ERROR_02;
         }
 
       switch(Par2)
@@ -220,7 +217,7 @@ byte CommandError(unsigned long Content)
         case CMD_USEREVENT:
           break;
         default:
-          return ERROR_PAR2;
+          return ERROR_02;
         } 
       return false;
 
@@ -228,19 +225,19 @@ byte CommandError(unsigned long Content)
     case CMD_TERMINAL:
     case CMD_TRANSMIT_RF:
     case CMD_TRANSMIT_IR:
-      if(Par1!=VALUE_OFF && Par1!=VALUE_ON)return ERROR_PAR1;
+      if(Par1!=VALUE_OFF && Par1!=VALUE_ON)return ERROR_02;
       return false;
 
     case CMD_DIVERT:   
-     if(Par1>UNIT_MAX)return ERROR_PAR1;
+     if(Par1>UNIT_MAX)return ERROR_02;
      return false;
 
     case CMD_UNIT:
-      if(Par1<1 || Par1>UNIT_MAX)return ERROR_PAR1;
+      if(Par1<1 || Par1>UNIT_MAX)return ERROR_02;
       return false;
 
     default:
-      return ERROR_COMMAND;
+      return ERROR_01;
     }
   }
 
@@ -267,7 +264,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   error=CommandError(Content);
   if(error)
     {
-    if(error==ERROR_COMMAND) // commando bestaat niet 
+    if(error==ERROR_01) // commando bestaat niet 
       RaiseError(ERROR_01);    
     else // commando bestaat maar parameters niet correct
       RaiseError(ERROR_02);
@@ -623,17 +620,15 @@ void ExecuteLine(char *Line, byte Port)
   char Command[80], TmpStr[80];//??? erg veel. kan dit ook anders / kleiner
   int PosCommand=0;
   int L;
-  byte Error,Par1,Par2,Cmd;
+  byte Error=0,Par1,Par2,Cmd;
   byte State_EventlistWrite=0;
   int x,y;
   unsigned long v,event,action; 
   
-  Error=false;  
   L=strlen(Line);
-
-  //??? Serial.print("*** Line=");Serial.println(Line);//??? Debug
+  // Serial.print("*** Line=");Serial.println(Line);//??? Debug
   
-  for(int PosLine=0;PosLine<=L;PosLine++)
+  for(int PosLine=0;PosLine<=L && Error==0 ;PosLine++)
     {
     byte x=Line[PosLine];
 
@@ -644,20 +639,27 @@ void ExecuteLine(char *Line, byte Port)
       PosCommand=0;
       // string met commando is afgesloten met een puntkomma. Deze bevat nu "commando par1,par2"
 
-      //?? Serial.print("*** Commnd=");Serial.println(Command);//??? Debug
+      // Serial.print("*** Commnd=");Serial.println(Command);//??? Debug
 
       Cmd=0;
       Par1=0;
       Par2=0;
+      v=0;
 
       if(GetArgv(Command,TmpStr,1))
         v=str2val(TmpStr);
 
-      // groter dan een bestaand commando. Dan behandelen als een hex-event
+      // kleiner of gelijk aan een bestaand commando. Dan behandelen als een comman
       if(v<=COMMAND_MAX)
         {
         Cmd=(byte)v;
         v=0;          
+
+        if(GetArgv(Command,TmpStr,2))
+          Par1=str2val(TmpStr);
+          
+        if(GetArgv(Command,TmpStr,3))
+          Par2=str2val(TmpStr);
 
         switch(Cmd)
           {
@@ -681,9 +683,8 @@ void ExecuteLine(char *Line, byte Port)
               }
             else
               {
-              Par1=v;        
-              ProcessEvent(command2event(Cmd,Par1,Par2),VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
-              return;
+              v=command2event(Cmd,v,Par2);      // verwerk binnengekomen event.
+              Error=CommandError(v);
               }
             break;
             }  
@@ -718,7 +719,7 @@ void ExecuteLine(char *Line, byte Port)
                 Serial.print("*** Calibratie voltooid. IL=");Serial.print(t,DEC);Serial.print(", OL=");Serial.println(v,DEC);//??? Debug
                 }
               }
-            //??? error afvangen
+            v=0;
             break;
             }
             
@@ -727,7 +728,6 @@ void ExecuteLine(char *Line, byte Port)
             GetArgv(Command,TmpStr,2);
             S.Event_Port=str2val(TmpStr);
             SaveSettings();
-            Reset();
             break;
             }  
             
@@ -738,7 +738,6 @@ void ExecuteLine(char *Line, byte Port)
             PrintLine(ProgmemString(Text_07));
             GetArgv(Command,TmpStr,2);
             RawSignal.Key=str2val(TmpStr);
-            // ??? PrintRawSignal();
             break;        
 
           case CMD_EVENTLIST_ERASE:
@@ -750,7 +749,6 @@ void ExecuteLine(char *Line, byte Port)
             GetArgv(Command,TmpStr,2);
             S.Terminal_Port=str2val(TmpStr);
             SaveSettings();
-            Reset();
             break;
             }  
             
@@ -771,8 +769,8 @@ void ExecuteLine(char *Line, byte Port)
               if(GetArgv(Command,TmpStr,3))
                 {
                 Par2=(str2val(TmpStr)==VALUE_ON) | (z<<1); // Parameter-2 bevat [On,Off]. Omzetten naar 1,0. tevens op bit-2 het groepcommando zetten.
-                ProcessEvent(command2event(Cmd,Par1,Par2),VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
-                return;
+                v=command2event(Cmd,Par1,Par2);
+                Error=CommandError(v);
                 }
               }
             break;
@@ -780,53 +778,50 @@ void ExecuteLine(char *Line, byte Port)
             
           default:
             {              
-
-            if(GetArgv(Command,TmpStr,2))
-              Par1=str2val(TmpStr);
-              
-            if(GetArgv(Command,TmpStr,3))
-              Par2=str2val(TmpStr);
-
             //Serial.print("*** Cmd =");Serial.println(Cmd,DEC);//??? Debug
             //Serial.print("*** Par1=");Serial.println(Par1,DEC);//??? Debug
             //Serial.print("*** Par2=");Serial.println(Par2,DEC);//??? Debug
 
-            // standaard commando volgens gewone syntax            
-            ProcessEvent(command2event(Cmd,Par1,Par2),VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
-            
-            //??? return;
+            // standaard commando volgens gewone syntax
+            v=command2event(Cmd,Par1,Par2);
+            Error=CommandError(v);
             }
           }
-        }  
- 
-      if(State_EventlistWrite==0)// Gewoon uitvoeren
-        {
-        continue;
         }
-
-      if(State_EventlistWrite==3)
+      if(v && Error==0)
         {
-        action=v;
-        if(!Eventlist_Write(0,event,action))
+        if(State_EventlistWrite==0)// Gewoon uitvoeren
           {
-          RaiseError(ERROR_06);    
-          return;
+          ProcessEvent(v,VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
+          continue;
           }
-        State_EventlistWrite=0;
+  
+        if(State_EventlistWrite==2)
+          {
+          action=v;
+          if(!Eventlist_Write(0,event,action))
+            {
+            RaiseError(ERROR_06);    
+            return;
+            }
+          State_EventlistWrite=0;
+          }
+  
+        if(State_EventlistWrite=1)
+          {
+          event=v;
+          State_EventlistWrite=2;
+          }
         }
-
-      if(State_EventlistWrite==2)
+      else // er heeft zich een fout voorgedaan
         {
-        event=v;
-        State_EventlistWrite=3;
-        }
-
-      if(State_EventlistWrite==1)
-        {
-        State_EventlistWrite=2;
-        }
+        strcpy(TempString,Command);
+        strcat(TempString, " ?");
+        PrintLine(TempString);
+        RaiseError(Error);
+        Line[0]=0;
+        }          
       }
-
     else
       Command[PosCommand++]=x;
     }

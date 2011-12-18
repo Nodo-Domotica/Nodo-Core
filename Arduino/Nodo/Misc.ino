@@ -819,54 +819,6 @@ uint32_t md5_T[] PROGMEM = {
   md5_ctx2hash(dest, &ctx);
   }
 
-char* ip2str(byte* IP)
-  {
-  static char str[20];
-  sprintf(str,"%u.%u.%u.%u",IP[0],IP[1],IP[2],IP[3]);
-  return str;
-  }
-
-char* int2str(unsigned long x)
-  {
-  static char OutputLine[10];
-  char* OutputLinePosPtr=&OutputLine[10];
-  int y;
-  
-  *OutputLinePosPtr=0;
-
-  if(x==0)
-    {
-    *--OutputLinePosPtr='0';
-    }
-    
-  else if(x<=10000)  // getallen weergeven als een integer in decimaal formaat
-    {
-    while(x>0)
-      {
-      *--OutputLinePosPtr='0'+(x%10);
-      x/=10;
-      }
-    }
-    
-  else // getallen weergeven als een integer in hexadecimaal formaat
-    {
-    while(x>0)
-      {
-      y=x&0xf;
-
-      if(y<10)
-        *--OutputLinePosPtr='0'+y;
-      else
-        *--OutputLinePosPtr='A'+(y-10);
-
-      x=x>>4;;
-      }
-    *--OutputLinePosPtr='x';
-    *--OutputLinePosPtr='0';
-    }
-    
-  return OutputLinePosPtr;
-  }
 
 void RaiseError(byte ErrorCode)
   {

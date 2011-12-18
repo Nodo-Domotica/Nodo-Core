@@ -1,22 +1,35 @@
 /**************************************************************************************************************************\
 
-Builds:
 
-Ideeën / Issues:
-- ijk/kalibreer procedure werkt nog niet goed
-- Status WiredAnalog 22 is mogelijk
-- EventlistWrite werkt niet
-- Nodo due compatibel maken n.a.v. omnummeren CMD_...
-- onduidelijk of transmitsettings nog een Par2 voor instellen van de herhalen: documnteren!
-- temperatuur uitlezen LM335 ?
+Issues / ToDo:
+- Found in r306: als ethernet niet aangesloten dan start de nodo (soms) niet op.
+- Found in r306: ijk/kalibreer procedure werkt nog niet goed
+- Found in r306: Status WiredAnalog 22 is mogelijk
+- Found in r306: Nodo due compatibel maken n.a.v. omnummeren CMD_...
+- Found in r306: onduidelijk of transmitsettings nog een Par2 voor instellen van de herhalen: documnteren!
+- Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue testen
+- Wired poorten testen incl. Trigger, Threshold.
+- Found in r306: Na volledig volschrijven van de eventlist blijft Nodo hangen in continue uitvoeren van het reboot event.
+- Found in r306: Tijdens type van een regel in Telnet kan het typen worden onderbroken door binnenkomend event. (weergave verminkt)
+- Found in r306: Na een RaiseError vanuit een TelNes sessie werkt invoer commando eerst daarop volgende keer niet. Eerste commando wordt overgeslagen.
+- Events naar IP adressen worden niet correct verzonden als tegelijkertijd een TelNet sessie actief is.
 
-Opgeloste issues:
+Ideeën:
+- versturen eventlist naar andere Nodo (over IR/RF)
+- Moet een self-learned IP adres in de settings worden opgeslagen of niet??? Nu niet het geval.
+
+Opgeloste issues & aanpassingen:
 - Issue xxx:
-- Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken
+- Found in r306: Terminal On setting niet bewaard na reboot.
+- Found in r306: Terugsturen events naar bekende IP adressen werkt niet goed. (self-learning)
+- Found in r306: Invoer commando via telnet werkt niet lekker;
+- Found in r306: EventlistWrite werkt niet
+- Found in r306: prompt teken weggehaald uit terminal venster. lasig altijd weer te geven en voegt niets toe.
+- Found in r306: Hex-events worden niet geaccepteerd.
 
 
 Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
-- Ethernet intergratie. Events van EventGhost (PC, Android, IPad) ontvangen en verzenden over IP;
+- Ethernet intergratie. Events van EventGhost (PC, Android) ontvangen en verzenden over IP;
 - Bij opstarten de melding "Booting..." omdat wachten op IP adres van de router de eerste keer even tijd in beslag kan nemen.
 - Indien SDCard geplaatst, dan logging naar Log.txt.
 - UserPlugin maakt mogelijk om gebruiker zelf code aan de Nodo code toe te voegen.
@@ -47,7 +60,7 @@ Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - Commando "TransmitSettings" vervallen. Vervangen door "TransmitIR", "TransmitRF"
 - Commando "Simulate" vervallen. Kan worden opgelost met de nieuwe commandos "TransmitIR" en "TransmitRF".
 - Aanpassing weergave van datum/tijd. De dag wordt na NA de datum weergegeven ipv VOOR (ivm kunnen sorteren logfile).
-- Errors worden nu weergeven met een tekstuele toelichting wat de fout veroorzaakte.
+- Errors worden nu weergeven met een tekstuele toelichting wat de fout veroorzaakte: "Error=<tekst>". 
 - "Timestamp=" wordt nu iets anders weergegeven als "Date=yyyy-mm-dd, Time=hh:mm".
 - Variabelen worden na wijzigen niet meer automatisch opgeslagen in het EEPROM geheugen. Opslaan kan nu met commando "VariableSave"
 - Tag Direction vervangen door Input, Output, Internal

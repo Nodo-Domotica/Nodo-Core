@@ -79,10 +79,8 @@ boolean EventGhostReceive(char *Buffer)
     // we hebben een EventClient. Leg IP vast.
     EventClient.getRemoteIP(IP);
 
-//  sprintf(TempString,"Client=%u.%u.%u.%u",IP[0],IP[1],IP[2],IP[3]);
-
-
-// Serial.println("*** IP client verzoekt contact");//???
+    //  sprintf(TempString,"Client=%u.%u.%u.%u",IP[0],IP[1],IP[2],IP[3]);
+    // Serial.println("*** IP client verzoekt contact");//???
 
     // Kijk vervolgens of er data binnen komt.
     while((InByteIPCount<INPUT_BUFFER_SIZE) && TimeoutTimer>millis() )
@@ -102,7 +100,6 @@ boolean EventGhostReceive(char *Buffer)
         
           if(EGState==2)
             {
- //Serial.println("*** EGState==2");//???
             // password uitwisseling via MD5 is gelukt en accept is verzonden
             // Nu kunnen de volgende regels voorbij komen:
             // - payload.....
@@ -185,7 +182,7 @@ boolean EventGhostReceive(char *Buffer)
                     S.Server_IP[y][1]=IP[1];
                     S.Server_IP[y][2]=IP[2];
                     S.Server_IP[y][3]=IP[3];
-                    SaveSettings();
+//???                    SaveSettings();
                     break;
                     }
                   }
@@ -265,11 +262,13 @@ boolean EventGhostSend(char* event, byte* IP)
   int x,y;
   byte EventGhostClientState=0; 
   char str1[80],str2[80];
-  unsigned long Timeout=millis()+1000; //binnen deze tijd moet de gehele verzending gereed zijn, anders is er iets fout gegaan
+  unsigned long Timeout=millis()+2000; //binnen deze tijd moet de gehele verzending gereed zijn, anders is er iets fout gegaan
   
-// ??? origineel  EthernetClient EGclient(&IP[0], S.Event_Port);
   EthernetClient EGclient;  // (&IP[0], S.Event_Port);
-  IPAddress server(192,168,1,104); // ???
+  IPAddress server(IP[0],IP[1],IP[2],IP[3]);
+
+//  sprintf(TempString,"%s=%u.%u.%u.%u",ProgmemString(Text_10),IP[0],IP[1],IP[2],IP[3]);//??? debugging
+//  PrintLine(TempString);
 
   while(Timeout > millis())
     {
@@ -377,6 +376,10 @@ boolean TerminalReceive(char *Buffer)
   {
   int InByteIP;
   static int InByteIPCount=0;
+  
+  // check even of ergens buiten deze funktie om de inputbuffer leeg is gemaak
+  if(Buffer[0]==0)
+    InByteIP=0;
   
   while(TerminalClient.available())
     {
