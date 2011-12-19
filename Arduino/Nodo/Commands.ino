@@ -439,11 +439,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         SaveSettings();
         break;
           
-//      case CMD_WIRED_RANGE:
-//        S.WiredInputRange[Par1-1]=Par2; // Par1 is de poort[1..4], Par2 is de range [0..4]
-//        SaveSettings();
-//        break;
-
       case CMD_WIRED_OUT:
         digitalWrite(WiredDigitalOutputPin_1+Par1-1,Par2==VALUE_ON);
         WiredOutputStatus[Par1-1]=Par2==VALUE_ON;
@@ -569,13 +564,13 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
             x=dataFile.read();
             if(isprint(x) && y<INPUT_BUFFER_SIZE)
               {
-              InputBuffer[y++]=x;
+              TempString[y++]=x;
               }
             else
               {
-              InputBuffer[y]=0;
+              TempString[y]=0;
               y=0;
-              PrintLine(InputBuffer);
+              PrintLine(TempString);
               }
             }
           dataFile.close();

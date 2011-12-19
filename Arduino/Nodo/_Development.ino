@@ -11,22 +11,25 @@ Known Errors / ToDo:
 - Found in r306: Na volledig volschrijven van de eventlist blijft Nodo hangen in continue uitvoeren van het reboot event.
 - Found in r306: Tijdens type van een regel in Telnet kan het typen worden onderbroken door binnenkomend event. (weergave verminkt)
 - Found in r306: Na een RaiseError vanuit een TelNet sessie werkt invoer commando eerst daarop volgende keer niet. Eerste commando wordt overgeslagen.
+- Gevoelige commando's verhuizen van ExecuteCommand naar ExecuteLine
 
 Ideeën:
 - versturen eventlist naar andere Nodo (over IR/RF)
 - Moet een self-learned IP adres in de settings worden opgeslagen of niet??? Nu niet het geval.
 
 Aanpassingen r307:
-- Found in r306: Events naar IP adressen worden niet correct verzonden als tegelijkertijd een TelNet sessie actief is.
-- Verzenden van een EventGhost Event naar IP nu voorzien van retry bij fout in verzending.
+- Bug: Found in r306: Events naar IP adressen worden niet correct verzonden als tegelijkertijd een TelNet sessie actief is.
+- Funktioneel: Echo tekens bij TelNet sessie verwijderd. Dit regelen de meeste Terminal programma's
+- Technisch: Telnet, Serial en EventGhost hebben ieder een eigen inputbuffer
+- Technisch: Verzenden van een EventGhost Event naar IP nu voorzien van retry bij fout in verzending.
 
 Aanpassingen r306:
-- Found in r306: Terminal On setting niet bewaard na reboot.
-- Found in r306: Terugsturen events naar bekende IP adressen werkt niet goed. (self-learning)
-- Found in r306: Invoer commando via telnet werkt niet lekker;
-- Found in r306: EventlistWrite werkt niet
-- Found in r306: prompt teken weggehaald uit terminal venster. lasig altijd weer te geven en voegt niets toe.
-- Found in r306: Hex-events worden niet geaccepteerd.
+- Bug: Terugsturen events naar bekende IP adressen werkt niet goed. (self-learning)
+- Bug: EventlistWrite werkt niet
+- Bug: Hex-events worden niet geaccepteerd.
+- Funktioneel: prompt teken weggehaald uit terminal venster. lasig altijd weer te geven en voegt niets toe.
+- Funktioneel: Terminal On setting niet bewaard na reboot.
+- Technisch: Invoer commando via telnet werkt niet lekker;
 
 
 Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release

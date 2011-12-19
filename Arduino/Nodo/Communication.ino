@@ -61,14 +61,15 @@ int GetLineSerial(char *Buffer)
  *
  \*********************************************************************************************/
 
-boolean EventGhostReceive(char *Buffer)
+boolean EventGhostReceive(char *ResultString)
   {
   const int TimeOut=1000;
   unsigned long TimeoutTimer;
   int InByteIP,InByteIPCount=0;
   byte EGState=0;
   int x,y,z;
-  char str_1[INPUT_BUFFER_SIZE],str_2[INPUT_BUFFER_SIZE];
+  char str_2[INPUT_BUFFER_SIZE];
+  char IPInputBuffer[INPUT_BUFFER_SIZE];//???
   char Cookie[8];
   
   // Luister of er een EventClient is die verbinding wil maken met de Nodo EG EventServer
@@ -88,7 +89,7 @@ boolean EventGhostReceive(char *Buffer)
 
         if(InByteIP==0x0a)
           {
-          Buffer[InByteIPCount]=0;          
+          IPInputBuffer[InByteIPCount]=0;          
           TimeoutTimer=millis()+TimeOut;  
           // regel is compleet. 
         
@@ -101,21 +102,20 @@ boolean EventGhostReceive(char *Buffer)
             // - <event>
       
             // Regels met "Payload" worden door de Bridge/Nodo niet gebruikt ->negeren.
-            if(StringFind(Buffer,PROGMEM2str(Text_17))>=0)// payload
+            if(StringFind(IPInputBuffer,PROGMEM2str(Text_17))>=0)// payload
               {
               ; // negeren. Bridge doet niets met de payload functie.          
               }
-            else if(strcasecmp(Buffer,PROGMEM2str(Text_19))==0) // "close"
+            else if(strcasecmp(IPInputBuffer,PROGMEM2str(Text_19))==0) // "close"
               {
               // Regel "close", dan afsluiten van de communicatie met EventGhost
-              strcpy(Buffer,str_1);
               EventClient.stop();
               return true;
               }
             else
               {
-              // Event van EG ontvangen. Parkeer deze tijdelijk in str_1 omdat er nog een close ontvangen moet worden
-              strcpy(str_1,Buffer);
+              // Event van EG ontvangen.
+              strcpy(ResultString,IPInputBuffer);
               }
             }
   
@@ -123,28 +123,26 @@ boolean EventGhostReceive(char *Buffer)
             {
             // Cookie is verzonden en regel met de MD5 hash is ontvangen
             // Stel de string samen waar de MD5-hash aan de Nodo zijde voor gegenereerd moet worden
-            strcpy(str_1,Cookie);
-            strcat(str_1,":");
-            strcat(str_1,S.Password);
+            sprintf(TempString,"%s:%s",Cookie,S.Password);
         
             // Bereken eigen MD5-Hash uit de string "<cookie>:<password>"                
-            md5((struct md5_hash_t*)&MD5HashCode, str_1);    
+            md5((struct md5_hash_t*)&MD5HashCode, TempString); 
             strcpy(str_2,PROGMEM2str(Text_05));              
             y=0;
             for(x=0; x<16; x++)
               {
-              str_1[y++]=str_2[MD5HashCode[x]>>4  ];
-              str_1[y++]=str_2[MD5HashCode[x]&0x0f];
+              TempString[y++]=str_2[MD5HashCode[x]>>4  ];
+              TempString[y++]=str_2[MD5HashCode[x]&0x0f];
               }
-            str_1[y]=0;
+            TempString[y]=0;
         
             // vergelijk hash-waarden en bevestig de EventClient bij akkoord
-            if(strcasecmp(str_1,Buffer)==0)
+            if(strcasecmp(TempString,IPInputBuffer)==0)
               {
               // MD5-hash code matched de we hebben een geverifiëerde EventClient
-              strcpy(str_1,PROGMEM2str(Text_18));
-              strcat(str_1,"\n");
-              EventClient.print(str_1); // "accept"
+              strcpy(TempString,PROGMEM2str(Text_18));
+              strcat(TempString,"\n");
+              EventClient.print(TempString); // "accept"
 
               // Wachtwoord correct. Checken of het IP adres van de EventClient al bekend is.
               // zo niet dan opslaan in tabel met EventClients waar events naar toe moeten worden verzonden
@@ -192,7 +190,7 @@ boolean EventGhostReceive(char *Buffer)
             EventClient.read(); // er kan nog een \r in de buffer zitten.
 
             // Kijk of de input een connect verzoek is vanuit EventGhost
-            if(strcasecmp(InputBuffer,PROGMEM2str(Text_20))==0) // "quintessence" 
+            if(strcasecmp(IPInputBuffer,PROGMEM2str(Text_20))==0) // "quintessence" 
               { 
               // sprintf(TempString,"*** EventGhost client maakt verbinding: %u.%u.%u.%u",EventClientIP[0],EventClientIP[1],EventClientIP[2],EventClientIP[3]);//??? Debug
               // PrintLine(TempString); //??? Debug
@@ -204,20 +202,20 @@ boolean EventGhostReceive(char *Buffer)
               for(x=0;x<4;x++)
                 Cookie[x]=str_2[int(random(0,0xf))];
               Cookie[x]=0; // sluit string af;
-              strcpy(str_1,Cookie);
-              strcat(str_1,"\n");
-              EventClient.print(str_1);          
+              strcpy(TempString,Cookie);
+              strcat(TempString,"\n");
+              EventClient.print(TempString);          
   
               // ga naar volgende state: Haal MD5 en verwerk deze
               EGState=1;
               }
             }
-          Buffer[0]=0;          
+          IPInputBuffer[0]=0;          
           InByteIPCount=0;          
           }
         if(isprint(InByteIP))
           {
-          Buffer[InByteIPCount++]=InByteIP;
+          IPInputBuffer[InByteIPCount++]=InByteIP;
           }
         }
       }
@@ -241,8 +239,12 @@ boolean EventGhostSend(char* event, byte* SendToIP)
   int  InByteIPCount=0;
   int x,y,Try;
   byte EventGhostClientState=0; 
-  char str1[80],str2[80];
+  char str2[80];
   unsigned long Timeout;
+  
+  const int MaxBufferSize=80;//??? mag deze kleiner? 
+  char IPInputBuffer[MaxBufferSize];
+  
   
   EthernetClient EGclient;
   IPAddress EGserver(SendToIP[0],SendToIP[1],SendToIP[2],SendToIP[3]);
@@ -273,13 +275,13 @@ boolean EventGhostSend(char* event, byte* SendToIP)
             InByteIP = EGclient.read();
             if(InByteIP)
               {
-              if(InByteIPCount<INPUT_BUFFER_SIZE && InByteIP>=32 && InByteIP<=126)
-                InputBuffer[InByteIPCount++]=InByteIP;// vul de string aan met het binnengekomen teken.
+              if(InByteIPCount<MaxBufferSize && isprint(InByteIP))
+                IPInputBuffer[InByteIPCount++]=InByteIP;// vul de string aan met het binnengekomen teken.
   
               // check op tekens die een regel afsluiten
               if(InByteIP==0x0a && InByteIPCount!=0) // als de ontvangen regel met een 0x0A wordt afgesloten, is er een lege regel. Deze niet verwerken.
                 {
-                InputBuffer[InByteIPCount]=0;
+                IPInputBuffer[InByteIPCount]=0;
                 InByteIPCount=0;
   
                 // Over IP ontvangen regel is compleet 
@@ -287,24 +289,24 @@ boolean EventGhostSend(char* event, byte* SendToIP)
                 // wacht op "accept"
                 if(EventGhostClientState==1)
                   {
-                  if(strcasecmp(InputBuffer,PROGMEM2str(Text_18))==0) // accept
+                  if(strcasecmp(IPInputBuffer,PROGMEM2str(Text_18))==0) // accept
                     {
                     // "accept" is ontvangen dus wachtwoord geaccepteerd
                     // Verbinding is geaccepteerd. schrijf weg ??? nog uitwerken
                     
                     // - payload.....
-                    strcpy(str1,PROGMEM2str(Text_21)); // "Payload withoutRelease"
-                    strcat(str1,"\n");
-                    EGclient.print(str1);
+                    strcpy(TempString,PROGMEM2str(Text_21)); // "Payload withoutRelease"
+                    strcat(TempString,"\n");
+                    EGclient.print(TempString);
   
                     // - <event>
                     strcat(event,"\n");
                     EGclient.print(event);
   
                     // - "close"
-                    strcpy(str1,PROGMEM2str(Text_19)); 
-                    strcat(str1,"\n");
-                    EGclient.print(str1);
+                    strcpy(TempString,PROGMEM2str(Text_19)); 
+                    strcat(TempString,"\n");
+                    EGclient.print(TempString);
   
                     // klaar met verzenden en verbreek de verbinding;
                     EGclient.stop();    // close the connection:
@@ -317,25 +319,24 @@ boolean EventGhostSend(char* event, byte* SendToIP)
                   // Cookie is door de bridge ontvangen en moet worden beantwoord met een MD5-hash
                   // Stel de string samen waar de MD5 hash voor gegenereerd moet worden
   
-                  strcpy(str1,InputBuffer);
-                  strcat(str1,":");
-                  strcat(str1,S.Password);
+                  strcpy(TempString,IPInputBuffer);
+                  strcat(TempString,":");
+                  strcat(TempString,S.Password);
    
                   // Bereken MD5-Hash uit de string "<cookie>:<password>"                
-                  md5((struct md5_hash_t*)&MD5HashCode, str1);  
+                  md5((struct md5_hash_t*)&MD5HashCode, TempString);  
                   strcpy(str2,PROGMEM2str(Text_05));              
                   y=0;
-                  
                   for(x=0; x<16; x++)
                     {
-                    str1[y++]=str2[MD5HashCode[x]>>4  ];
-                    str1[y++]=str2[MD5HashCode[x]&0x0f];
+                    TempString[y++]=str2[MD5HashCode[x]>>4  ];
+                    TempString[y++]=str2[MD5HashCode[x]&0x0f];
                     }
-                  str1[y++]=0x0a;
-                  str1[y]=0;
+                  TempString[y++]=0x0a;
+                  TempString[y]=0;
   
                   // verzend hash-waarde
-                  EGclient.print(str1);
+                  EGclient.print(TempString);
                   EventGhostClientState=1;
                   }
                 }
@@ -378,13 +379,11 @@ boolean TerminalReceive(char *Buffer)
       {
       Buffer[InByteIPCount]=0;
       InByteIPCount=0;
-      TerminalClient.print("\n\r");
       return true;
       }
     if(isprint(InByteIP))
       {
       Buffer[InByteIPCount++]=InByteIP;
-      TerminalClient.write(InByteIP); // Echo teken terug naar de terminal  
       }
     }
   return false;

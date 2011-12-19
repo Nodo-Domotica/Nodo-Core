@@ -266,7 +266,7 @@ prog_char PROGMEM Cmd_177[]="Nesting";
 prog_char PROGMEM Cmd_178[]="Queue";
 prog_char PROGMEM Cmd_179[]="Trace";
 prog_char PROGMEM Cmd_180[]="";
-prog_char PROGMEM Cmd_181[]="ServerIP";
+prog_char PROGMEM Cmd_181[]="";
 prog_char PROGMEM Cmd_182[]="High";
 prog_char PROGMEM Cmd_183[]="Low";
 prog_char PROGMEM Cmd_184[]="";
@@ -489,7 +489,7 @@ prog_char PROGMEM Cmd_210[]="Unauthorized terminal access.";
 #define VALUE_SOURCE_QUEUE             178
 #define VALUE_TRACE                    179
 #define VALUE_RES180                   180
-#define VALUE_SOURCE_SERVER_IP         181
+#define VALUE_RES181                   181
 #define VALUE_HIGH                     182
 #define VALUE_LOW                      183
 #define VALUE_RES184                   184
@@ -648,15 +648,10 @@ struct Settings
   byte    Terminal_Prompt;                                  // vlag geeft aan of er een prompt getoond moet worden tijdens de telnet sessie
   }S;
 
-char InputBuffer[INPUT_BUFFER_SIZE];                        // Buffer voor input van IP en Serial regel.
 unsigned long UserTimer[TIMER_MAX];                         // Timers voor de gebruiker.
-unsigned long StaySharpTimer=millis();                      // timer die start bij ontvangn van een signaal. Dwingt om enige tijd te luisteren naar dezelfde poort.
-unsigned long LoopIntervalTimer_1=millis();                 // Timer voor periodieke verwerking. millis() maakt dat de intervallen van 1 en 2 niet op zelfde moment vallen => 1 en 2 nu asynchroon.
-unsigned long LoopIntervalTimer_2=0L;                       // Timer voor periodieke verwerking.
 unsigned long QueueEvent[EVENT_QUEUE_MAX];                  // queue voor tijdelijk onthouden van events die tijdens een delay functie voorbij komen.
 byte QueuePort[EVENT_QUEUE_MAX];                            // tabel behorend bij de queue. Geeft herkomst van het event in de queue aan.
 byte QueuePos;                                              // teller die wijst naar een plaats in de queue.
-byte Ethernet_MAC_Address[]={0xDE,0xAD,0xBE,0xEF,0xFE,0xED};// MAC adres van de Nodo.
 boolean WiredInputStatus[WIRED_PORTS];                      // Status van de WiredIn worden hierin opgeslagen.
 boolean WiredOutputStatus[WIRED_PORTS];                     // Wired variabelen.
 int BusyNodo;                                               // in deze variabele de status van het event 'Busy' van de betreffende units 1 t/m 15. bit-1 = unit-1.
@@ -665,11 +660,7 @@ byte DaylightPrevious;                                      // t.b.v. voorkomen 
 byte WiredCounter=0, VariableCounter;                       // tellers.
 byte EventlistDepth=0;                                      // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's.
 byte Hold=false;
-unsigned long Content=0L,ContentPrevious;                   // Ontvangen event van RF, IR, ... Tevens buffer voor het vorige ontvangen Event
-unsigned long Checksum=0L;                                  // Als gelijk aan Event dan tweemaal dezelfde code ontvangen: checksum funktie.
-unsigned long SupressRepeatTimer;
 unsigned long HoldTimer;
-unsigned long EventTimeCodePrevious;                        // t.b.v. voorkomen herhaald ontvangen van dezelfde code binnen ingestelde tijd.
 void(*Reset)(void)=0;                                       // reset functie op adres 0.
 uint8_t RFbit,RFport,IRbit,IRport;                          // t.b.v. verwerking IR/FR signalen.
 uint8_t MD5HashCode[16];                                    // tabel voor berekenen van MD5 hash codes t.b.v. uitwisselen wachtwoord EventGhost.
@@ -680,7 +671,8 @@ char TempString[INPUT_BUFFER_SIZE];                         // Globale, tijdelij
 boolean TerminalConnected=false;                            // Vlag geeft aan of er een verbinding is met een Terminal.
 boolean SerialConnected=true;                               // Vlag geeft aan of er een verbinding USB-poort.
 
-EthernetServer EventServer(1024);                              // Globale Server class voor ontvangen van Events van een EventGhost applicatie
+byte Ethernet_MAC_Address[]={0xDE,0xAD,0xBE,0xEF,0xFE,0xED};// MAC adres van de Nodo.
+EthernetServer EventServer(1024);                           // Globale Server class voor ontvangen van Events van een EventGhost applicatie
 EthernetServer TerminalServer(23);                           // Server class voor Terminal sessie.
 EthernetClient TerminalClient=false;                        // Client class voor Terminal sessie.
 byte EventClientIP[4];                                      // IP adres van de EventGhost client die verbinding probeert te maken c.q. verbonden is.
@@ -785,8 +777,22 @@ void loop()
   int x,y,z;
   int InByte;
   int Pos=0;  
+  unsigned long StaySharpTimer=millis();                      // timer die start bij ontvangn van een signaal. Dwingt om enige tijd te luisteren naar dezelfde poort.
+  unsigned long LoopIntervalTimer_1=millis();                 // Timer voor periodieke verwerking. millis() maakt dat de intervallen van 1 en 2 niet op zelfde moment vallen => 1 en 2 nu asynchroon.
+  unsigned long LoopIntervalTimer_2=0L;                       // Timer voor periodieke verwerking.
+
+unsigned long Content=0L,ContentPrevious;                   // Ontvangen event van RF, IR, ... Tevens buffer voor het vorige ontvangen Event
+unsigned long Checksum=0L;                                  // Als gelijk aan Event dan tweemaal dezelfde code ontvangen: checksum funktie.
+unsigned long SupressRepeatTimer;
+unsigned long EventTimeCodePrevious;                        // t.b.v. voorkomen herhaald ontvangen van dezelfde code binnen ingestelde tijd.
+
   
   SerialHold(false); // er mogen weer tekens binnen komen van SERIAL
+
+  char Inputbuffer_Serial[INPUT_BUFFER_SIZE];                 // Buffer voor input
+  char InputBuffer_IPEvent[INPUT_BUFFER_SIZE];                // Buffer voor input
+  char Inputbuffer_Terminal[INPUT_BUFFER_SIZE];               // Buffer voor input
+
 
   // hoofdloop: scannen naar signalen
   // dit is een tijdkritische loop die wacht tot binnengekomen event op IR, RF, SERIAL, CLOCK, DAYLIGHT, TIMER
@@ -817,8 +823,8 @@ void loop()
     if(EthernetEnabled)
       {
       // IP (Event) : *************** kijk of er een Event klaar staat op het ethernet shield **********************    
-      if(EventGhostReceive(InputBuffer))
-        ExecuteLine(InputBuffer, VALUE_SOURCE_EVENTGHOST);
+      if(EventGhostReceive(InputBuffer_IPEvent))
+        ExecuteLine(InputBuffer_IPEvent, VALUE_SOURCE_EVENTGHOST);
 
         
       // IP (Terminal) : *************** kijk of er verzoek tot verbinding vanuit een terminal is **********************    
@@ -837,10 +843,10 @@ void loop()
   
         if(TerminalClient.connected() && TerminalClient.available()) // er staat data van de terminal klaar
           {
-          if(TerminalReceive(InputBuffer))
+          if(TerminalReceive(Inputbuffer_Terminal))
             {
             if(S.Terminal_Enabled==VALUE_ON)
-              ExecuteLine(InputBuffer, VALUE_SOURCE_TERMINAL);    
+              ExecuteLine(Inputbuffer_Terminal, VALUE_SOURCE_TERMINAL);    
             else
               {
               TerminalClient.println(cmd2str(ERROR_10));
@@ -860,16 +866,16 @@ void loop()
         if(isprint(InByte) && Pos<INPUT_BUFFER_SIZE) // alleen de printbare tekens zijn zinvol.
           {
           StaySharpTimer=millis()+SHARP_TIME;      
-          InputBuffer[Pos++]=InByte;
+          Inputbuffer_Serial[Pos++]=InByte;
           }
         else if(InByte=='\n') 
           {
           SerialHold(true);
-          InputBuffer[Pos]=0; // serieel ontvangen regel is compleet
+          Inputbuffer_Serial[Pos]=0; // serieel ontvangen regel is compleet
           SerialConnected=true;
-          ExecuteLine(InputBuffer, VALUE_SOURCE_SERIAL);
+          ExecuteLine(Inputbuffer_Serial, VALUE_SOURCE_SERIAL);
           Pos=0;  
-          InputBuffer[0]=0; // serieel ontvangen regel is compleet
+          Inputbuffer_Serial[0]=0; // serieel ontvangen regel is compleet
           SerialHold(false);
           StaySharpTimer=millis()+SHARP_TIME;      
           }
