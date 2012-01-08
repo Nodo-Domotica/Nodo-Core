@@ -46,7 +46,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     return true;
     }
 
-  if(S.WaitBusy)
+  if(S.WaitBusy!=VALUE_OFF)
     {
     Hold=CMD_BUSY;
     loop(); // deze recursieve aanroep wordt beëindigd als BusyNodo==0

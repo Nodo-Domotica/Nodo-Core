@@ -54,8 +54,6 @@ void UserPlugin_Command(int Par1, int Par2)
   ExecuteLine("Sound 0;",VALUE_DIRECTION_INTERNAL);    
 
 
-PrintEGServers();
-
   // VOORBEELD-4: Loggen naar de SDCard
   LogSDCard("Hello, UserPlugin was here.");
 

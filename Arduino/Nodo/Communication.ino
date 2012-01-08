@@ -77,8 +77,7 @@ boolean EventGhostReceive(char *ResultString)
   EthernetClient EventClient=EventServer.available();
   if(EventClient) 
     {
-    // we hebben een EventClient. Leg IP vast.
-    EventClient.getRemoteIP(EventClientIP);
+    // we hebben een EventClient. 
     
     // Kijk vervolgens of er data binnen komt.
     while((InByteIPCount<INPUT_BUFFER_SIZE) && TimeoutTimer>millis() )
@@ -109,7 +108,13 @@ boolean EventGhostReceive(char *ResultString)
             else if(strcasecmp(IPInputBuffer,PROGMEM2str(Text_19))==0) // "close"
               {
               // Regel "close", dan afsluiten van de communicatie met EventGhost
+
               EventClient.stop();
+//??? debug
+              if(TemporyEventGhostError)
+                  Serial.println("*** debug: Tijdelijk opgeheven EventGhost communicatie hersteld.");//???
+//??? debug
+              TemporyEventGhostError=false; 
               return true;
               }
             else
@@ -144,35 +149,20 @@ boolean EventGhostReceive(char *ResultString)
               strcat(TempString,"\n");
               EventClient.print(TempString); // "accept"
 
-              // Wachtwoord correct. Checken of het IP adres van de EventClient al bekend is.
-              // zo niet dan opslaan in tabel met EventClients waar events naar toe moeten worden verzonden
-              for(x=0;x<SERVER_IP_MAX;x++)
+              // Wachtwoord correct. Bewaar IP adres indien nodig
+              EventClient.getRemoteIP(EventClientIP);  
+              if(S.AutoSaveEventGhostIP==VALUE_ON)
                 {
-                // Is de EventServer in de tabel gelijk aan de EventClient?
-                if(EventClientIP[0]==S.Server_IP[x][0] && EventClientIP[1]==S.Server_IP[x][1] && EventClientIP[2]==S.Server_IP[x][2] && EventClientIP[3]==S.Server_IP[x][3])
-                  break;
-                }
-    
-              // als het adres niet voor komt in de EventServer tabel, dan deze opslaan in de eerste vrije plaats
-              if(x>=SERVER_IP_MAX)
-                {
-                // zoek eerste lege plaats op in de tabel
-                for(y=0;y<SERVER_IP_MAX;y++)
+                if( S.EventGhostServer_IP[0]!=EventClientIP[0] ||
+                    S.EventGhostServer_IP[1]!=EventClientIP[1] ||
+                    S.EventGhostServer_IP[2]!=EventClientIP[2] ||
+                    S.EventGhostServer_IP[3]!=EventClientIP[3] )
                   {
-                  // Is de plek in de tabel leeg?
-                  if((S.Server_IP[y][0] + S.Server_IP[y][1] + S.Server_IP[y][2] + S.Server_IP[y][3])==0)
-                    {
-                    // Sla IP adres dan op in deze lege plaats
-                    S.Server_IP[y][0]=EventClientIP[0];
-                    S.Server_IP[y][1]=EventClientIP[1];
-                    S.Server_IP[y][2]=EventClientIP[2];
-                    S.Server_IP[y][3]=EventClientIP[3];
-
-                    sprintf(TempString,"*** nieuw IP adres opgenomen in EGServer tabel: %u.%u.%u.%u",EventClientIP[0],EventClientIP[1],EventClientIP[2],EventClientIP[3]);//??? debugging
-                    PrintLine(TempString);
-                    SaveSettings();
-                    break;
-                    }
+                  S.EventGhostServer_IP[0]=EventClientIP[0];
+                  S.EventGhostServer_IP[1]=EventClientIP[1];
+                  S.EventGhostServer_IP[2]=EventClientIP[2];
+                  S.EventGhostServer_IP[3]=EventClientIP[3];
+                  SaveSettings();
                   }
                 }
               }
@@ -192,7 +182,7 @@ boolean EventGhostReceive(char *ResultString)
             // Kijk of de input een connect verzoek is vanuit EventGhost
             if(strcasecmp(IPInputBuffer,PROGMEM2str(Text_20))==0) // "quintessence" 
               { 
-              // sprintf(TempString,"*** EventGhost client maakt verbinding: %u.%u.%u.%u",EventClientIP[0],EventClientIP[1],EventClientIP[2],EventClientIP[3]);//??? Debug
+              // sprintf(TempString,"*** debug: EventGhost client maakt verbinding: %u.%u.%u.%u",EventClientIP[0],EventClientIP[1],EventClientIP[2],EventClientIP[3]);//??? Debug
               // PrintLine(TempString); //??? Debug
 
               // Een wachtwoord beveiligd verzoek vanuit een EventGhost EventClient (PC, Andoid, IPhone)
@@ -220,7 +210,6 @@ boolean EventGhostReceive(char *ResultString)
         }
       }
     EventClient.flush();
-    RaiseError(ERROR_07);
     return false;
     }
   else
@@ -233,7 +222,7 @@ boolean EventGhostReceive(char *ResultString)
  * gebruikt en is leeg. Er wordt een false teruggegeven als de communicatie met de EventGhost EventServer
  * niet tot stand gebracht kon worden.
  \*******************************************************************************************************/
-boolean EventGhostSend(char* event, byte* SendToIP)
+boolean SendEventGhost(char* event, byte* SendToIP)
   {
   byte InByteIP;
   int  InByteIPCount=0;
@@ -244,29 +233,26 @@ boolean EventGhostSend(char* event, byte* SendToIP)
   
   const int MaxBufferSize=80;//??? mag deze kleiner? 
   char IPInputBuffer[MaxBufferSize];
-  
-  
+    
   EthernetClient EGclient;
   IPAddress EGserver(SendToIP[0],SendToIP[1],SendToIP[2],SendToIP[3]);
 
-  // sprintf(TempString,"*** Verzenden event naar IP: %u.%u.%u.%u",SendToIP[0],SendToIP[1],SendToIP[2],SendToIP[3]);//??? debugging
-  // PrintLine(TempString);
+ // sprintf(TempString,"*** debug: SendEventGhost(): Verzenden event naar IP: %u.%u.%u.%u",SendToIP[0],SendToIP[1],SendToIP[2],SendToIP[3]);//??? debugging
+ // Serial.println(TempString);
 
   Try=0;
   do
     {
-    // Serial.print("*** Poging=");Serial.println(Try,DEC);//??? Debug
-
     long Timeout=millis()+1000; //binnen deze tijd moet de gehele verzending gereed zijn, anders is er iets fout gegaan
     while(Timeout > millis())
       {
       if(EGclient.connect(EGserver,1024))
         {
-        EGclient.flush();    // close the connection:
-
+        EGclient.flush();
+  
         // verzend verzoek om verbinding met de EventGhost Server
         EGclient.print(F("quintessence\n\r")); //  
-      
+    
         // Haal de Cookie op van de server
         while(Timeout > millis()) 
           {
@@ -283,6 +269,8 @@ boolean EventGhostSend(char* event, byte* SendToIP)
                 {
                 IPInputBuffer[InByteIPCount]=0;
                 InByteIPCount=0;
+
+                // Serial.print("*** debug: SendEventGhost(): IPInputBuffer=");Serial.println(IPInputBuffer);//??? Debug
   
                 // Over IP ontvangen regel is compleet 
                 // volgende fase in ontvangstproces  
@@ -298,7 +286,7 @@ boolean EventGhostSend(char* event, byte* SendToIP)
                     strcpy(TempString,PROGMEM2str(Text_21)); // "Payload withoutRelease"
                     strcat(TempString,"\n");
                     EGclient.print(TempString);
-  
+
                     // - <event>
                     strcat(event,"\n");
                     EGclient.print(event);
@@ -345,11 +333,10 @@ boolean EventGhostSend(char* event, byte* SendToIP)
           }
         }
       }
+    
     EGclient.stop();    // close the connection:
     EGclient.flush();    // close the connection:
-    }while(++Try<=25);
-    
-  //  Serial.println("*** Verzenden van event naar EventGhost niet gelukt!");//???
+    }while(++Try<5);
   return false;
   }
     
@@ -389,3 +376,55 @@ boolean TerminalReceive(char *Buffer)
   return false;
   }
 
+
+ /*******************************************************************************************************\
+ * Deze functie verzendt een regel als event naar een EventGhost EventServer. De Payload wordt niet
+ * gebruikt en is leeg. Er wordt een false teruggegeven als de communicatie met de EventGhost EventServer
+ * niet tot stand gebracht kon worden.
+ \*******************************************************************************************************/
+boolean HTTP_Request(char* event)
+  {
+  boolean error=0;
+  int y=0;
+
+  if(SDCardPresent)
+    {
+    // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+    digitalWrite(Ethernetshield_CS_W5100, HIGH);
+    digitalWrite(EthernetShield_CS_SDCard,LOW);      
+
+    File dataFile=SD.open(ProgmemString(Text_29));
+    if(dataFile) 
+      {
+      TempString[0]=0; // maak tijdelijke string leeg
+      while(dataFile.available() && y<INPUT_BUFFER_SIZE)
+          TempString[y++]=dataFile.read();
+      TempString[y]=0; // sluit de string af
+      dataFile.close();
+      }
+    else
+      {
+      S.TransmitHTTP=VALUE_OFF;
+      error=ERROR_03;
+      }
+
+    // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
+    digitalWrite(Ethernetshield_CS_W5100, LOW);
+    digitalWrite(EthernetShield_CS_SDCard,HIGH);
+    }
+
+  // TempString bevat nu de HTTP regel.
+  
+  if(!error)
+    {
+    strcat(TempString,event);
+    Serial.print("*** debug: HTTP Request=");Serial.println(TempString);//??? Debug
+    }
+    
+  if(error)
+    {     
+    RaiseError(error);
+    return false;
+    }
+  return true;  
+  }

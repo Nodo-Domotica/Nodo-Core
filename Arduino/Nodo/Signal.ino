@@ -397,36 +397,34 @@ boolean TransmitCode(unsigned long Event,byte SignalType)
     RawSendIR();
     } 
 
+  // Het event verzenden naar de EventGhostServer
+  if(S.TransmitEventGhost==VALUE_ON && !TemporyEventGhostError)
+    {
+    // IP adres waar event naar toe moet even in de globale IP variabele plaatsen om de regel te kunnen printen.
+    EventClientIP[0]=S.EventGhostServer_IP[0];
+    EventClientIP[1]=S.EventGhostServer_IP[1];
+    EventClientIP[2]=S.EventGhostServer_IP[2];
+    EventClientIP[3]=S.EventGhostServer_IP[3];
 
-  // Het event moet worden verzonden naar alle IP adressen die bekend zijn
-  for(x=0;x<SERVER_IP_MAX;x++)
-    {  
-    // IP adres tijdelijk opslaan om later te kunnen printen.
-    EventClientIP[0]=S.Server_IP[x][0];
-    EventClientIP[1]=S.Server_IP[x][1];
-    EventClientIP[2]=S.Server_IP[x][2];
-    EventClientIP[3]=S.Server_IP[x][3];
-
-    if((EventClientIP[0]+EventClientIP[1]+EventClientIP[2]+EventClientIP[3])>0)
+    PrintEvent(Event,VALUE_SOURCE_EVENTGHOST,VALUE_DIRECTION_OUTPUT);
+    
+    if(!SendEventGhost(Event2str(Event),S.EventGhostServer_IP))
       {
-      PrintEvent(Event,VALUE_SOURCE_EVENTGHOST,VALUE_DIRECTION_OUTPUT);
-      
-      if(!EventGhostSend(Event2str(Event),EventClientIP))
-        {
-        // wis IP adres in de server tabel
-        S.Server_IP[x][0]=0;
-        S.Server_IP[x][1]=0;
-        S.Server_IP[x][2]=0;
-        S.Server_IP[x][3]=0;
-        
-        
-        sprintf(TempString,"*** IP adres verwijderd uit EGServer tabel: %u.%u.%u.%u",EventClientIP[0],EventClientIP[1],EventClientIP[2],EventClientIP[3]);//??? debugging
-        PrintLine(TempString);
-        SaveSettings();// ???
-        }
+      Serial.println("*** debug: EventGhost communicatie tijdelijk opgeheven i.v.m. fout.");//???
+//      S.TransmitEventGhost==VALUE_OFF;
+//      RaiseError(ERROR_11);
+//      S.TransmitEventGhost==VALUE_ON;
+      TemporyEventGhostError=true;
       }
     }
+
+  if(S.TransmitHTTP==VALUE_ON)
+    {
+    PrintEvent(Event,VALUE_SOURCE_HTTP,VALUE_DIRECTION_OUTPUT);
+    HTTP_Request(Event2str(Event));
+    }
   }
+
 
 
  /*********************************************************************************************\
@@ -447,7 +445,7 @@ void CheckRawSignalKey(unsigned long *Code)
     digitalWrite(Ethernetshield_CS_W5100, HIGH);
     digitalWrite(EthernetShield_CS_SDCard,LOW);      
     sprintf(TempString,"%s/%s.key",ProgmemString(Text_28),int2str(*Code)+2); // +2 omdat dan de tekens '0x' niet worden meegenomen. anders groter dan acht posities in filenaam.
-    //  Serial.print("*** check binnengekomen hex-event in file ");Serial.println(TempString);//??? Debug
+    //  Serial.print("*** debug: check binnengekomen hex-event in file ");Serial.println(TempString);//??? Debug
     
     File dataFile=SD.open(TempString);
     if(dataFile) 
@@ -464,7 +462,7 @@ void CheckRawSignalKey(unsigned long *Code)
           {
           TempString[y]=0;
           y=0;
-          // Serial.print("*** Key op SDCard=");Serial.println(TempString);//??? Debug  
+          // Serial.print("*** debug: Key op SDCard=");Serial.println(TempString);//??? Debug  
           *Code=command2event(CMD_RAWSIGNAL,str2val(TempString),0);
           return;
           }
@@ -496,7 +494,7 @@ boolean SaveRawSignal(byte Key)
   
     // maak een .raw file aan met als naam de key die door de gebruiker is gekozen  
     sprintf(TempString,"%s/%s.raw",ProgmemString(Text_27),int2str(Key));  
-    // Serial.print("*** File=");Serial.println(TempString);//??? Debug  
+    // Serial.print("*** debug: File=");Serial.println(TempString);//??? Debug  
     SD.remove(TempString); // eventueel bestaande file wissen, anders wordt de data toegevoegd.    
     File KeyFile = SD.open(TempString, FILE_WRITE);
     if(KeyFile) 
@@ -516,7 +514,7 @@ boolean SaveRawSignal(byte Key)
       // maak een .key file aan met als naam de key die door de gebruiker is gekozen  
       sprintf(TempString,"%s/%s.key",ProgmemString(Text_28),int2str(Event)+2); // +2 omdat dan de tekens '0x' niet worden meegenomen. anders groter dan acht posities in filenaam.
 
-      // Serial.print("*** File=");Serial.println(TempString);//??? Debug    
+      // Serial.print("*** debug: File=");Serial.println(TempString);//??? Debug    
       SD.remove(TempString); // eventueel bestaande file wissen, anders wordt de data toegevoegd.      
 
       KeyFile = SD.open(TempString, FILE_WRITE);
@@ -524,7 +522,7 @@ boolean SaveRawSignal(byte Key)
         {
         strcpy(TempString,int2str(Key));
         strcat(TempString,";\n");
-        // Serial.print("*** Schrijf naar *.key=");Serial.println(TempString);//??? Debug
+        // Serial.print("*** debug: Schrijf naar *.key=");Serial.println(TempString);//??? Debug
         KeyFile.write(TempString);
         KeyFile.close();
         }

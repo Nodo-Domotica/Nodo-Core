@@ -49,6 +49,12 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
   *Par2=0;
   switch (*Command)
     {
+    case CMD_TRANSMIT_EVENTGHOST:
+      *Par1=S.TransmitEventGhost;
+      *Par2=S.AutoSaveEventGhostIP;
+      break;
+
+
     case CMD_WAITFREERF: 
       *Par1=S.WaitFreeRF_Delay;
       *Par2=S.WaitFreeRF_Window;
@@ -148,7 +154,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
 
     case CMD_WIRED_ANALOG:
 
-Serial.print("*** Poort status uitvraag=");Serial.println(analogRead(WiredAnalogInputPin_1+xPar1-1),DEC);//??? Debug
+Serial.print("*** debug: Poort status uitvraag=");Serial.println(analogRead(WiredAnalogInputPin_1+xPar1-1),DEC);//??? Debug
 
       int2calibrated(Par1,Par2,xPar1-1,analogRead(WiredAnalogInputPin_1+xPar1-1));// Call by reference voor Par1 en Par2
       break;
@@ -189,8 +195,6 @@ void SaveSettings(void)
   {
   char ByteToSave,*pointerToByteToSave=pointerToByteToSave=(char*)&S;    //pointer verwijst nu naar startadres van de struct. 
   
-  Serial.println("*** SaveSettings();");//???
-
   for(int x=0; x<sizeof(struct Settings) ;x++)
     {
     EEPROM.write(x,*pointerToByteToSave); 
@@ -206,6 +210,10 @@ boolean LoadSettings()
   byte x;
     
   char ByteToSave,*pointerToByteToRead=(char*)&S;    //pointer verwijst nu naar startadres van de struct.
+
+Serial.print("*** debug: struct Setting=");Serial.println(sizeof(struct Settings),DEC);//??? Debug
+
+
   for(int x=0; x<sizeof(struct Settings);x++)
     {
     *pointerToByteToRead=EEPROM.read(x);
@@ -232,8 +240,9 @@ void ResetFactory(void)
   S.Trace                      = false;
   S.AnalyseSharpness           = 50;
   S.AnalyseTimeOut             = SIGNAL_TIMEOUT_IR;
-  S.TransmitIR                 = VALUE_ON;
+  S.TransmitIR                 = VALUE_OFF;
   S.TransmitRF                 = VALUE_ON;
+  S.TransmitHTTP               = VALUE_OFF;
   S.TransmitRepeatIR           = TX_REPEATS;
   S.TransmitRepeatRF           = TX_REPEATS;
   S.SendBusy                   = VALUE_OFF;
@@ -242,14 +251,15 @@ void ResetFactory(void)
   S.WaitFreeRF_Delay           = 0;
   S.DaylightSaving             = Time.DaylightSaving;
   S.Terminal_Enabled           = VALUE_OFF;
-
+  S.AutoSaveEventGhostIP       = VALUE_OFF;
+  S.TransmitEventGhost         = VALUE_OFF;
+  S.EventGhostServer_IP[0]     = 0; // IP adres van de EventGhost server
+  S.EventGhostServer_IP[1]     = 0; // IP adres van de EventGhost server
+  S.EventGhostServer_IP[2]     = 0; // IP adres van de EventGhost server
+  S.EventGhostServer_IP[3]     = 0; // IP adres van de EventGhost server
+  
   strcpy(S.Password,"Nodo");
   
-  // zet alle IP adressen van de eventghost servers op 0
-  for(x=0;x<SERVER_IP_MAX;x++)
-    for(y=0;y<=3;y++)    
-      S.Server_IP[x][y]=0;
-
   // zet analoge waarden op default
   for(x=0;x<WIRED_PORTS;x++)
     {
@@ -300,7 +310,7 @@ void FreeMemory(int x)
   heapptr = stackptr;                     // save value of heap pointer
   free(stackptr);      // free up the memory again (sets stackptr to 0)
   stackptr =  (uint8_t *)(SP);           // save value of stack pointer
-  Serial.print("*** Free RAM (");Serial.print(x,DEC);Serial.print(")=");Serial.println(stackptr-heapptr,DEC);
+  Serial.print("*** debug: Free RAM (");Serial.print(x,DEC);Serial.print(")=");Serial.println(stackptr-heapptr,DEC);
   }
 
 
@@ -568,11 +578,8 @@ int StringFind(char *string, char *keyword)
   for(x=0; x<=(string_len-keyword_len); x++)
     {
     y=0;
-
     while(y<keyword_len && (tolower(string[x+y])==tolower(keyword[y])))
-      {
       y++;
-      }
 
     if(y==keyword_len)
       return x;
@@ -665,8 +672,6 @@ uint32_t md5_T[] PROGMEM = {
   #define MD5_BLOCK_BITS 512
   #define MD5_BLOCK_BYTES (MD5_BLOCK_BITS/8)
   #define MD5_HASH_BITS  128
-
-  // typedef uint8_t md5_hash_t[MD5_HASH_BYTES];
 
   struct md5_ctx_t 
     {
@@ -853,4 +858,39 @@ boolean LogSDCard(char *Line)
   return SDCardPresent;
   }
 
+
+ /*********************************************************************************************\
+ * Sla de regel op die gebruikt wordt bij verzenden va een HTTP request (OutputHTTP)
+ \*********************************************************************************************/
+boolean HTTPRequestSave(char *Request)
+  {
+  boolean error=false;
+
+  // Serial.print("*** debug: HTTPRequestSave(); Schrijven naar bestand=");Serial.println(Request);//??? Debug
+
+  if(SDCardPresent)
+    {
+    // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+    digitalWrite(Ethernetshield_CS_W5100, HIGH);
+    digitalWrite(EthernetShield_CS_SDCard,LOW);
+
+    SD.remove(ProgmemString(Text_29)); // eventueel bestaande file wissen, anders wordt de data toegevoegd.    
+    File dataFile = SD.open(ProgmemString(Text_29), FILE_WRITE);
+    if(dataFile) 
+      {
+      dataFile.write(Request);
+      dataFile.close();
+      }
+    else
+      {
+      TransmitCode(command2event(CMD_ERROR,ERROR_03,0),SIGNAL_TYPE_NODO);
+      error=true;
+      }
+
+    // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
+    digitalWrite(Ethernetshield_CS_W5100, LOW);
+    digitalWrite(EthernetShield_CS_SDCard,HIGH);
+    }
+  return error;
+  }
 

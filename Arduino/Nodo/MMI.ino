@@ -46,13 +46,16 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
       strcat(TempString,ProgmemString(Text_11));
       break;
     }
-      
-  if(Port==VALUE_SOURCE_EVENTGHOST)
-    strcat(TempString, ip2str(EventClientIP));
-  else
-    strcat(TempString, cmd2str(Port));
   
+  // geef poort weer
+  strcat(TempString, cmd2str(Port));
+  if(Port==VALUE_SOURCE_EVENTGHOST)
+    {
+    strcat(TempString, " ");
+    strcat(TempString, ip2str(EventClientIP));
+    }
 
+  // geef unit weer
   if(Port!=VALUE_SOURCE_EVENTGHOST)
     {
     if(((Content>>28)&0xf)==SIGNAL_TYPE_NODO && ((Content>>16)&0xff)!=CMD_KAKU_NEW && ((Content>>16)&0xff)!=CMD_KAKU)
@@ -151,23 +154,30 @@ void PrintWelcome(void)
   sprintf(TempString,"Version= (Beta) %d.%d.%d, ThisUnit=%d",S.Version/100, (S.Version%100)/10, S.Version%10,S.Unit); //??? beta tekst verwijderen
   PrintLine(TempString);
 
-  // print IP adres van de Nodo
-  if(EthernetEnabled)
-    {
-    sprintf(TempString,"IP Address=%u.%u.%u.%u, TerminalPort=23, EventPort=1024",Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
-    PrintLine(TempString);
-    }
-    
-  // geef melding als de SDCard goed geconnect is
-  if(SDCardPresent)
-    PrintLine(ProgmemString(Text_24));
-
   // Geef datum en tijd weer.
   if(Time.Day)
     {
     sprintf(TempString,"%s %s",DateTimeString(), cmd2str(Time.DaylightSaving?CMD_DLS_EVENT:0));
     PrintLine(TempString);
     }
+
+  // print IP adres van de Nodo
+  if(EthernetEnabled)
+    {
+    sprintf(TempString,"Nodo_IP=%u.%u.%u.%u, Terminal_Port=23, EventGhost_Server_Port=1024",Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
+    PrintLine(TempString);
+    }
+ 
+  // print EventGhost server IP adres
+  if(S.TransmitEventGhost==VALUE_ON)
+    {
+    sprintf(TempString,"EventGhost_Client_IP=%u.%u.%u.%u, EventGhost_Client_Port=1024",S.EventGhostServer_IP[0],S.EventGhostServer_IP[1],S.EventGhostServer_IP[2],S.EventGhostServer_IP[3]);
+    PrintLine(TempString);
+    } 
+ 
+  // geef melding als de SDCard goed geconnect is
+  if(SDCardPresent)
+    PrintLine(ProgmemString(Text_24));
     
   PrintLine(ProgmemString(Text_22));
   }
@@ -213,10 +223,10 @@ char* Event2str(unsigned long Code)
   byte Par2     = (Code)&0xff;
   static char EventString[50]; 
 
-  //  Serial.print("*** Event   =");Serial.println(Code,HEX);//??? Debug
-  //  Serial.print("*** Command =");Serial.println(Command,DEC);//??? Debug
-  //  Serial.print("*** Par1    =");Serial.println(Par1,DEC);//??? Debug
-  //  Serial.print("*** Par2    =");Serial.println(Par2,DEC);//??? Debug
+  //  Serial.print("*** debug: Event   =");Serial.println(Code,HEX);//??? Debug
+  //  Serial.print("*** debug: Command =");Serial.println(Command,DEC);//??? Debug
+  //  Serial.print("*** debug: Par1    =");Serial.println(Par1,DEC);//??? Debug
+  //  Serial.print("*** debug: Par2    =");Serial.println(Par2,DEC);//??? Debug
   
   strcpy(EventString, "(");
 
@@ -270,6 +280,7 @@ char* Event2str(unsigned long Code)
         break;
   
       // Par1 als tekst en par2 als tekst
+      case CMD_TRANSMIT_EVENTGHOST:
       case CMD_COMMAND_WILDCARD:
         P1=P_TEXT;
         P2=P_TEXT;
@@ -288,6 +299,7 @@ char* Event2str(unsigned long Code)
       case CMD_TERMINAL:
       case CMD_DLS_EVENT:
       case CMD_BUSY:
+      case CMD_TRANSMIT_HTTP:
       case CMD_SENDBUSY:
       case CMD_WAITBUSY:
         P1=P_TEXT;
@@ -307,6 +319,7 @@ char* Event2str(unsigned long Code)
   
       // Geen parameters
       case CMD_BOOT_EVENT:
+      case CMD_REBOOT:
         P1=P_NOT;
         P2=P_NOT;
         break;
@@ -349,17 +362,20 @@ char* Event2str(unsigned long Code)
     // Print Par2    
     if(P2!=P_NOT)
       {
-      strcat(EventString,",");
       switch(P2)
         {
         case P_TEXT:
+          if(Par2)
+            strcat(EventString,",");
           strcat(EventString,cmd2str(Par2));
           break;
         case P_VALUE:
+          strcat(EventString,",");
           strcat(EventString,int2str(Par2));
           break;
         case P_DIM:
           {
+          strcat(EventString,",");
           if(Par2==VALUE_OFF || Par2==VALUE_ON)
             strcat(EventString, cmd2str(Par2)); // Print 'On' of 'Off'
           else
@@ -380,21 +396,4 @@ char* Event2str(unsigned long Code)
 
 
 
- /**********************************************************************************************\
- * 
- \*********************************************************************************************/
-void PrintEGServers(void)
-  {
-  int x;
-  
-  // toon de clients die eerder met succes verbonden zijn en nu als server worden beschouwd;
-  for(x=0;x<SERVER_IP_MAX;x++)
-    {
-    if((S.Server_IP[x][0]+S.Server_IP[x][1]+S.Server_IP[x][2]+S.Server_IP[x][3])>0)
-      {
-      sprintf(TempString,"%s=%u.%u.%u.%u",ProgmemString(Text_10),S.Server_IP[x][0],S.Server_IP[x][1],S.Server_IP[x][2],S.Server_IP[x][3]);
-      PrintLine(TempString);
-      }
-    }
-  }
 

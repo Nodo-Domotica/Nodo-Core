@@ -4,26 +4,35 @@
 Known Errors / ToDo:
 - Found in r306: als ethernet niet aangesloten dan start de nodo (soms) niet op.
 - Found in r306: ijk/kalibreer procedure werkt nog niet goed
-- Found in r306: Status WiredAnalog 22 is mogelijk
 - Found in r306: Nodo due compatibel maken n.a.v. omnummeren CMD_...
 - Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue testen
 - Wired poorten testen incl. Trigger, Threshold.
 - Found in r306: Na volledig volschrijven van de eventlist blijft Nodo hangen in continue uitvoeren van het reboot event.
-- Found in r306: Tijdens type van een regel in Telnet kan het typen worden onderbroken door binnenkomend event. (weergave verminkt)
 - Found in r306: Na een RaiseError vanuit een TelNet sessie werkt invoer commando eerst daarop volgende keer niet. Eerste commando wordt overgeslagen.
 - Gevoelige commando's verhuizen van ExecuteCommand naar ExecuteLine
+- Commando "OutputHTTP"
+- Commando "OutputPachube"
+
+Minor:
+- Found in r306: Status WiredAnalog 22 is mogelijk
+
+
 
 Ideeën:
 - versturen eventlist naar andere Nodo (over IR/RF)
 - Moet een self-learned IP adres in de settings worden opgeslagen of niet??? Nu niet het geval.
 
-Aanpassingen r307:
+Aanpassingen vanaf r306:
+- Toevoeging commando "HTTPRequest <line>"
+- Opgelost: status weergaven van OutputEG wordt niet goed wergegeven
+- Verwijderen commando "IPNodo" IP adres. Gaat nu via DHCP.
 - Bug: Found in r306: Events naar IP adressen worden niet correct verzonden als tegelijkertijd een TelNet sessie actief is.
 - Funktioneel: Echo tekens bij TelNet sessie verwijderd. Dit regelen de meeste Terminal programma's
 - Technisch: Telnet, Serial en EventGhost hebben ieder een eigen inputbuffer
 - Technisch: Verzenden van een EventGhost Event naar IP nu voorzien van retry bij fout in verzending.
+- Nieuw commando "SendEG <On|Off> , <AutoSaveIP On|Off>"
 
-Aanpassingen r306:
+Aanpassingen vanaf r305:
 - Bug: Terugsturen events naar bekende IP adressen werkt niet goed. (self-learning)
 - Bug: EventlistWrite werkt niet
 - Bug: Hex-events worden niet geaccepteerd.
@@ -34,6 +43,8 @@ Aanpassingen r306:
 
 Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - Ethernet intergratie. Events van EventGhost (PC, Android) ontvangen en verzenden over IP;
+- Toevoeging commando "HTTPRequest <line>"
+- Nieuw commando "OutputEG <On|Off> , <SaveIP Save|On|Off>"
 - Bij opstarten de melding "Booting..." omdat wachten op IP adres van de router de eerste keer even tijd in beslag kan nemen.
 - Indien SDCard geplaatst, dan logging naar Log.txt.
 - UserPlugin maakt mogelijk om gebruiker zelf code aan de Nodo code toe te voegen.
@@ -43,7 +54,6 @@ Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - 8 analoge wired poorten i.p.v. 4
 - Eventlist uitgebreid van 120 posities naar 256
 - queue voor opvangen events tijdens delay van 15 uitgebreid naar 32 events.
-- Toevoeging commando "IP" IP adres
 - Welkomsttekst uitgebreid met de IP-settings
 - Welkomsttekst uitgebreid met melding logging naar SDCard.
 - Toevoeging commando "Password"
@@ -74,7 +84,7 @@ Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - Commaando toegevoegd "WiredAnalogCalibrate <poort> <High|Low> <ijkwaarde>"
 - Commando "WiredRange" vervallen. Overbodig geworden n.a.v. calibratie/ijking funktionaliteit.
 - Event aangepast "WiredAnalog". Geeft nu gecalibreerde waarde weer metdecimalen achter de komma
-
+- Verzenden van IR staat default op Off na een reset.
 Onder de motorkap:
 - Verwerken van seriele gegevens volledig herschreven
 - omnummeren van tabel met events,commando en waarden om plaats te maken voor uitbreiding commandoset. LET OP: niet meer compatibel met de Uno 1.2.1 en lagere versies!
@@ -174,4 +184,10 @@ char* calibrated2str(byte Par1, byte Par2)
 
   return str;
   }
-  
+
+
+void Trace(int x)//???
+  {
+  Serial.print("*** Debug: ");
+  Serial.println(x,DEC);
+  }

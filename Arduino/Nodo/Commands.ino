@@ -54,6 +54,7 @@ byte CommandError(unsigned long Content)
   switch(Command)
     {
     //test; geen, altijd goed
+    case CMD_TRANSMIT_EVENTGHOST:
     case CMD_RAWSIGNAL_SAVE:
     case CMD_RAWSIGNAL_SEND:
     case CMD_LOGFILE_SHOW:
@@ -216,10 +217,13 @@ byte CommandError(unsigned long Content)
       return false;
 
      // par1 alleen On of Off.
+     // par2 alleen 0, On of Off.
     case CMD_TERMINAL:
     case CMD_TRANSMIT_RF:
+    case CMD_TRANSMIT_HTTP:
     case CMD_TRANSMIT_IR:
       if(Par1!=VALUE_OFF && Par1!=VALUE_ON)return ERROR_02;
+      if(Par2!=VALUE_OFF && Par2!=VALUE_ON && Par2!=0)return ERROR_02;
       return false;
 
     case CMD_DIVERT:   
@@ -345,7 +349,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
       case CMD_WIRED_ANALOG_SEND:
         // Lees de analoge waarde uit en verzend deze
-        Serial.print("*** Poort WiredAnalogSend=");Serial.println(analogRead(WiredAnalogInputPin_1+Par1-1),DEC);//??? Debug
+        Serial.print("*** debug: Poort WiredAnalogSend=");Serial.println(analogRead(WiredAnalogInputPin_1+Par1-1),DEC);//??? Debug
         int2calibrated(&Par1,&Par2,Par1-1,analogRead(WiredAnalogInputPin_1+Par1-1));// Call by reference voor Par1 en Par2
         TransmitCode(command2event(CMD_WIRED_ANALOG,Par1,Par2),SIGNAL_TYPE_NODO);
         break;
@@ -477,6 +481,25 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
             TransmitCode(command2event(CMD_BUSY,Par1,0),SIGNAL_TYPE_NODO);
         break;
         
+      case CMD_TRANSMIT_EVENTGHOST:
+        if(Par1==VALUE_ON || Par1==VALUE_OFF)
+          S.TransmitEventGhost=Par1;        
+
+        if(Par2==VALUE_SAVE)
+          {
+          // Sla IP van de EventGhost Client op die het laatste een event heeft verstuurd
+          S.EventGhostServer_IP[0]=EventClientIP[0];
+          S.EventGhostServer_IP[1]=EventClientIP[1];
+          S.EventGhostServer_IP[2]=EventClientIP[2];
+          S.EventGhostServer_IP[3]=EventClientIP[3];          
+          }
+          
+        if(Par2==VALUE_ON || Par2==VALUE_OFF)
+          S.AutoSaveEventGhostIP=Par2;
+
+        SaveSettings();
+        PrintWelcome();//??? debug.
+        
       case CMD_WAITBUSY:
         if(Par1==VALUE_ALL)
           S.WaitBusy=Par1;
@@ -499,6 +522,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       case CMD_TRANSMIT_RF:
         S.TransmitRF=Par1;
         if(Par2)S.TransmitRepeatRF=Par2;
+        SaveSettings();
+        break;
+        
+      case CMD_TRANSMIT_HTTP:
+        S.TransmitHTTP=Par1;
         SaveSettings();
         break;
         
@@ -615,8 +643,9 @@ void ExecuteLine(char *Line, byte Port)
   unsigned long v,event,action; 
   
   L=strlen(Line);
-  // Serial.print("*** Line=");Serial.println(Line);//??? Debug
   
+Serial.println("*** debug: 1");//???
+
   for(int PosLine=0;PosLine<=L && Error==0 ;PosLine++)
     {
     byte x=Line[PosLine];
@@ -628,12 +657,14 @@ void ExecuteLine(char *Line, byte Port)
       PosCommand=0;
       // string met commando is afgesloten met een puntkomma. Deze bevat nu "commando par1,par2"
 
-      // Serial.print("*** Commnd=");Serial.println(Command);//??? Debug
+      // Serial.print("*** debug: Commnd=");Serial.println(Command);//??? Debug
 
       Cmd=0;
       Par1=0;
       Par2=0;
       v=0;
+Serial.println("*** debug: 2");//???
+
 
       if(GetArgv(Command,TmpStr,1))
         v=str2val(TmpStr);
@@ -687,25 +718,25 @@ void ExecuteLine(char *Line, byte Port)
               Par2=str2val(TmpStr);
 
             int t;              
-            Serial.print("*** analogRead()=");Serial.println(analogRead(WiredAnalogInputPin_1+Par1-1),DEC);
+            Serial.print("*** debug: analogRead()=");Serial.println(analogRead(WiredAnalogInputPin_1+Par1-1),DEC);
             t=analogRead(WiredAnalogInputPin_1+Par1-1);
-            Serial.print("***1 t=");Serial.println(t);
+            Serial.print("*** debug:1 t=");Serial.println(t);
             if(GetArgv(Command,TmpStr,4))
               {
               v=str2val(TmpStr);
-            Serial.print("***2 t=");Serial.println(t);
+            Serial.print("*** debug:2 t=");Serial.println(t);
               if(Par2==VALUE_HIGH)
                 {
-            Serial.print("***3 t=");Serial.println(t);
+            Serial.print("*** debug:3 t=");Serial.println(t);
                 S.WiredInput_Calibration_IH[Par1-1]=t;
                 S.WiredInput_Calibration_OH[Par1-1]=v;
-                Serial.print("*** Calibratie voltooid. IH=");Serial.print(t,DEC);Serial.print(", OH=");Serial.println(v,DEC);//??? Debug
+                Serial.print("*** debug: Calibratie voltooid. IH=");Serial.print(t,DEC);Serial.print(", OH=");Serial.println(v,DEC);//??? Debug
                 }
               if(Par2==VALUE_LOW)
                 {
                 S.WiredInput_Calibration_IL[Par1-1]=t;
                 S.WiredInput_Calibration_OL[Par1-1]=v;
-                Serial.print("*** Calibratie voltooid. IL=");Serial.print(t,DEC);Serial.print(", OL=");Serial.println(v,DEC);//??? Debug
+                Serial.print("*** debug: Calibratie voltooid. IL=");Serial.print(t,DEC);Serial.print(", OL=");Serial.println(v,DEC);//??? Debug
                 }
               }
             v=0;
@@ -724,6 +755,14 @@ void ExecuteLine(char *Line, byte Port)
           case CMD_EVENTLIST_ERASE:
             Eventlist_Write(1,0L,0L); // maak de eventlist leeg.
             break;        
+
+          case CMD_HTTP_REQUEST:
+            // zoek in de regel waar de string met het http request begint.
+            x=StringFind(Line,cmd2str(CMD_HTTP_REQUEST))+strlen(cmd2str(CMD_HTTP_REQUEST));
+            while(Line[x]==32)x++;
+
+            HTTPRequestSave(&Line[0]+x); 
+            break;
 
           case CMD_PASSWORD:
             {
@@ -751,18 +790,23 @@ void ExecuteLine(char *Line, byte Port)
             
           default:
             {              
-            //Serial.print("*** Cmd =");Serial.println(Cmd,DEC);//??? Debug
-            //Serial.print("*** Par1=");Serial.println(Par1,DEC);//??? Debug
-            //Serial.print("*** Par2=");Serial.println(Par2,DEC);//??? Debug
+Serial.println("*** debug: 3");//???
+
+            //Serial.print("*** debug: Cmd =");Serial.println(Cmd,DEC);//??? Debug
+            //Serial.print("*** debug: Par1=");Serial.println(Par1,DEC);//??? Debug
+            //Serial.print("*** debug: Par2=");Serial.println(Par2,DEC);//??? Debug
 
             // standaard commando volgens gewone syntax
             v=command2event(Cmd,Par1,Par2);
             Error=CommandError(v);
             }
           }
+Serial.println("*** debug: 4");//???
         }
+
       if(v && Error==0)
         {
+Serial.println("*** debug: 5");//???
         if(State_EventlistWrite==0)// Gewoon uitvoeren
           {
           ProcessEvent(v,VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
@@ -778,6 +822,7 @@ void ExecuteLine(char *Line, byte Port)
             return;
             }
           State_EventlistWrite=0;
+          continue;
           }
   
         if(State_EventlistWrite=1)
@@ -786,7 +831,11 @@ void ExecuteLine(char *Line, byte Port)
           State_EventlistWrite=2;
           }
         }
-      else // er heeft zich een fout voorgedaan
+
+Serial.println("*** debug: 6");//???
+
+
+      if(Error) // er heeft zich een fout voorgedaan
         {
         strcpy(TempString,Command);
         strcat(TempString, " ?");
@@ -794,42 +843,12 @@ void ExecuteLine(char *Line, byte Port)
         RaiseError(Error);
         Line[0]=0;
         }          
+Serial.println("*** debug: 7");//???
       }
     else
       Command[PosCommand++]=x;
     }
+Serial.println("*** debug: 8");//???
   }
   
   
-//void RawSignalSend(char *Line, byte start)
-//  {
-//  Serial.print("*** Line=");Serial.println(Line);//??? Debug
-//  Serial.print("*** start=");Serial.println(start,DEC);//??? Debug
-//  
-//  
-//  int L=strlen(Line);
-//  char ValueStr[40];
-//  int ValueStrPos=0;
-//  int PosLine;
-//  
-//  for(PosLine=start;PosLine<=L;PosLine++)
-//    {
-//    byte x=Line[PosLine];
-//
-//    if(isxdigit(x))
-//      {
-//      // als teken een cijfer is, dan toevoegen aan de string
-//      ValueStr[ValueStrPos++]=x;
-//      }
-//    else
-//      {
-//      // ander teken, dus cijfer is klaar.
-//      ValueStr[ValueStrPos]=0;
-//      ValueStrPos=0;
-//      Serial.print("*** ValueStr=");Serial.println(ValueStr);//??? Debug
-//      }
-//    }    
-//  }
-  
-  
-

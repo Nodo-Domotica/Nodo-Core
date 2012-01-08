@@ -19,11 +19,10 @@ CMD_TEMP_CALIBRATE
 CMD_TEMP_WIRED
 
 
-Serial.print("*** =");Serial.println(,DEC);//??? Debug
+Serial.print("*** debug: =");Serial.println(,DEC);//??? Debug
+Serial.println("*** debug: ");//???
 
-Serial.println("*** ");//???
-
-if((millis()>>12)&0x01==1)Serial.println("*** ...");//???
+if((millis()>>12)&0x01==1)Serial.println("*** debug: ...");//???
 
 
 */

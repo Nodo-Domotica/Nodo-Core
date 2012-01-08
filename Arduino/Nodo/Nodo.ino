@@ -28,7 +28,7 @@
  *
  \****************************************************************************************************************************/
 
-#define VERSION        006        // Nodo Version nummer:
+#define VERSION        309        // Nodo Version nummer:
                                   // Major.Minor.Patch
                                   // Major: Grote veranderingen aan concept, besturing, werking.
                                   // Minor: Uitbreiding/aanpassing van commando's, functionaliteit en MMI aanpassingen
@@ -76,11 +76,11 @@ prog_char PROGMEM Text_25[] = "System=";
 prog_char PROGMEM Text_26[] = "Event received from: ";
 prog_char PROGMEM Text_27[] = "Raw/Key"; // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_28[] = "Raw/Hex"; // Directory op de SDCard voor opslag RawSignal
-prog_char PROGMEM Text_29[] = "RawSignal="; //??? is deze nog nodig
+prog_char PROGMEM Text_29[] = "HTTP.dat"; // bestandsnaam waar het HTTP adres in staat waar events naar toe gestuurd moeten worden
 prog_char PROGMEM Text_30[] = "No access!";
  
 // Commando's:
-prog_char PROGMEM Cmd_000[]="";    
+prog_char PROGMEM Cmd_000[]=""; // dummy. Niet gebruiken
 prog_char PROGMEM Cmd_001[]="ReceiveSettings";
 prog_char PROGMEM Cmd_002[]="BreakOnVarEqu";
 prog_char PROGMEM Cmd_003[]="BreakOnVarLess";
@@ -129,21 +129,21 @@ prog_char PROGMEM Cmd_045[]="RawSignalCopy";
 prog_char PROGMEM Cmd_046[]="WildCard";
 prog_char PROGMEM Cmd_047[]="SendBusy";
 prog_char PROGMEM Cmd_048[]="VariableSendUserEvent";
-prog_char PROGMEM Cmd_049[]="";
+prog_char PROGMEM Cmd_049[]="Password";
 prog_char PROGMEM Cmd_050[]="VariableUserEvent";
 prog_char PROGMEM Cmd_051[]="WiredAnalogCalibrate";
 prog_char PROGMEM Cmd_052[]="Reboot";
-prog_char PROGMEM Cmd_053[]="";
+prog_char PROGMEM Cmd_053[]="HTTPRequest";
 prog_char PROGMEM Cmd_054[]="WiredAnalogSend";
 prog_char PROGMEM Cmd_055[]="";
 prog_char PROGMEM Cmd_056[]="AnalyseSettings";
-prog_char PROGMEM Cmd_057[]="Password";
+prog_char PROGMEM Cmd_057[]="OutputHTTP"; // nog uitwerken
 prog_char PROGMEM Cmd_058[]="OutputIR";
 prog_char PROGMEM Cmd_059[]="OutputRF";
-prog_char PROGMEM Cmd_060[]="";
-prog_char PROGMEM Cmd_061[]="LogShow";
+prog_char PROGMEM Cmd_060[]="OutputEG";
+prog_char PROGMEM Cmd_061[]="OutputPachube"; // nog uitwerken
 prog_char PROGMEM Cmd_062[]="LogErase";
-prog_char PROGMEM Cmd_063[]="";
+prog_char PROGMEM Cmd_063[]="LogShow";
 prog_char PROGMEM Cmd_064[]="";
 prog_char PROGMEM Cmd_065[]="";
 prog_char PROGMEM Cmd_066[]="";
@@ -202,7 +202,7 @@ prog_char PROGMEM Cmd_115[]="Variable";
 prog_char PROGMEM Cmd_116[]="Busy";
 prog_char PROGMEM Cmd_117[]="";
 prog_char PROGMEM Cmd_118[]="Error";
-prog_char PROGMEM Cmd_119[]="Boot";
+prog_char PROGMEM Cmd_119[]="Boot"; // ??? nog nodig?
 prog_char PROGMEM Cmd_120[]="DaylightSaving";
 prog_char PROGMEM Cmd_121[]="";
 prog_char PROGMEM Cmd_122[]="";
@@ -237,10 +237,10 @@ prog_char PROGMEM Cmd_149[]="";
 // Waarden:
 prog_char PROGMEM Cmd_150[]="Off";
 prog_char PROGMEM Cmd_151[]="On";
-prog_char PROGMEM Cmd_152[]="Command";
-prog_char PROGMEM Cmd_153[]="Parameter";
+prog_char PROGMEM Cmd_152[]="Command"; //??? kan weg?
+prog_char PROGMEM Cmd_153[]="Parameter"; //??? kan weg?
 prog_char PROGMEM Cmd_154[]="IR";
-prog_char PROGMEM Cmd_155[]="EventGhost";
+prog_char PROGMEM Cmd_155[]="HTTP";
 prog_char PROGMEM Cmd_156[]="RF";
 prog_char PROGMEM Cmd_157[]="Serial";
 prog_char PROGMEM Cmd_158[]="Wired";
@@ -250,9 +250,9 @@ prog_char PROGMEM Cmd_161[]="Timers";
 prog_char PROGMEM Cmd_162[]="Variables";
 prog_char PROGMEM Cmd_163[]="Clock";
 prog_char PROGMEM Cmd_164[]="Terminal";
-prog_char PROGMEM Cmd_165[]="Tag";
+prog_char PROGMEM Cmd_165[]="EventGhost";
 prog_char PROGMEM Cmd_166[]="Time";
-prog_char PROGMEM Cmd_167[]="";
+prog_char PROGMEM Cmd_167[]="Save";
 prog_char PROGMEM Cmd_168[]="Input";
 prog_char PROGMEM Cmd_169[]="Output";
 prog_char PROGMEM Cmd_170[]="Internal";
@@ -262,9 +262,9 @@ prog_char PROGMEM Cmd_173[]="RF2IR";
 prog_char PROGMEM Cmd_174[]="IR2RF";
 prog_char PROGMEM Cmd_175[]="All";
 prog_char PROGMEM Cmd_176[]="Output_RAW";//??? nog in gebruik?
-prog_char PROGMEM Cmd_177[]="Nesting";
-prog_char PROGMEM Cmd_178[]="Queue";
-prog_char PROGMEM Cmd_179[]="Trace";
+prog_char PROGMEM Cmd_177[]="Nesting"; //??? kan weg?
+prog_char PROGMEM Cmd_178[]="Queue"; //??? kan weg ?
+prog_char PROGMEM Cmd_179[]="Trace"; //??? waar wordt trace nu geregeld? commando of value?
 prog_char PROGMEM Cmd_180[]="";
 prog_char PROGMEM Cmd_181[]="";
 prog_char PROGMEM Cmd_182[]="High";
@@ -288,18 +288,18 @@ prog_char PROGMEM Cmd_199[]="";
 prog_char PROGMEM Cmd_200[]="";
 prog_char PROGMEM Cmd_201[]="Unknown command.";
 prog_char PROGMEM Cmd_202[]="Invalid parameter in command.";
-prog_char PROGMEM Cmd_203[]="Unable to access SDCard.";
+prog_char PROGMEM Cmd_203[]="Unable to open file on SDCard.";
 prog_char PROGMEM Cmd_204[]="Queue overflow.";
 prog_char PROGMEM Cmd_205[]="Eventlist nesting error.";
 prog_char PROGMEM Cmd_206[]="Writing to eventlist failed.";
-prog_char PROGMEM Cmd_207[]="IP connection problem.";
+prog_char PROGMEM Cmd_207[]="Error <???>";
 prog_char PROGMEM Cmd_208[]="Incorrect password.";
 prog_char PROGMEM Cmd_209[]="Command not supported in this Nodo version.";
-prog_char PROGMEM Cmd_210[]="Unauthorized terminal access.";
+prog_char PROGMEM Cmd_210[]="Terminal access not allowed.";
+prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 
 // commando:
 #define FIRST_COMMAND                    0 // Eerste COMMANDO uit de commando tabel
-#define CMD_NULL                         0 // lege dummy.
 #define CMD_RECEIVE_SETTINGS             1
 #define CMD_BREAK_ON_VAR_EQU             2
 #define CMD_BREAK_ON_VAR_LESS            3
@@ -320,7 +320,7 @@ prog_char PROGMEM Cmd_210[]="Unauthorized terminal access.";
 #define CMD_RESET                       18
 #define CMD_SEND_KAKU                   19
 #define CMD_SEND_KAKU_NEW               20
-#define CMD_res21                       21
+#define CMDRES                          21
 #define CMD_TERMINAL                    22
 #define CMD_SIMULATE_DAY                23
 #define CMD_SOUND                       24
@@ -348,21 +348,21 @@ prog_char PROGMEM Cmd_210[]="Unauthorized terminal access.";
 #define CMD_COMMAND_WILDCARD            46
 #define CMD_SENDBUSY                    47
 #define CMD_VARIABLE_SEND_USEREVENT     48
-#define CMD_RES49                       49
+#define CMD_PASSWORD                    49
 #define CMD_VARIABLE_USEREVENT          50
 #define CMD_WIRED_ANALOG_CALIBRATE      51
 #define CMD_REBOOT                      52
-#define CMD_RES53                       53
+#define CMD_HTTP_REQUEST                53
 #define CMD_WIRED_ANALOG_SEND           54
 #define CMD_RES55                       55
 #define CMD_ANALYSE_SETTINGS            56
-#define CMD_PASSWORD                    57
+#define CMD_TRANSMIT_HTTP               57
 #define CMD_TRANSMIT_IR                 58
 #define CMD_TRANSMIT_RF                 59
-#define CMD_RES60                       60
-#define CMD_LOGFILE_SHOW                61
+#define CMD_TRANSMIT_EVENTGHOST         60
+#define CMD_RES61                       61
 #define CMD_LOGFILE_ERASE               62
-#define CMD_RES063                      63
+#define CMD_LOGFILE_SHOW                63
 #define CMD_RES064                      64
 #define CMD_RES065                      65
 #define CMD_RES066                      66
@@ -462,8 +462,7 @@ prog_char PROGMEM Cmd_210[]="Unauthorized terminal access.";
 #define VALUE_COMMAND                  152
 #define VALUE_PARAMETER                153
 #define VALUE_SOURCE_IR                154
-//#define VALUE_SOURCE_IR_RF             155
-#define VALUE_SOURCE_EVENTGHOST        155
+#define VALUE_SOURCE_HTTP              155
 #define VALUE_SOURCE_RF                156
 #define VALUE_SOURCE_SERIAL            157
 #define VALUE_SOURCE_WIRED             158
@@ -473,9 +472,9 @@ prog_char PROGMEM Cmd_210[]="Unauthorized terminal access.";
 #define VALUE_SOURCE_VARIABLE          162
 #define VALUE_SOURCE_CLOCK             163
 #define VALUE_SOURCE_TERMINAL          164
-#define VALUE_TAG                      165 // ??? kan weg?
+#define VALUE_SOURCE_EVENTGHOST        165
 #define VALUE_TIMESTAMP                166
-#define VALUE_RES167                   167
+#define VALUE_SAVE                     167
 #define VALUE_DIRECTION_INPUT          168
 #define VALUE_DIRECTION_OUTPUT         169
 #define VALUE_DIRECTION_INTERNAL       170
@@ -519,8 +518,9 @@ prog_char PROGMEM Cmd_210[]="Unauthorized terminal access.";
 #define ERROR_08                       208
 #define ERROR_09                       209
 #define ERROR_10                       210
-#define LAST_VALUE                     210 // laatste VALUE uit de commando tabel
-#define COMMAND_MAX                    211 // aantal commando's (dus geteld vanaf 0)
+#define ERROR_11                       211
+#define LAST_VALUE                     211 // laatste VALUE uit de commando tabel
+#define COMMAND_MAX                    212 // aantal commando's (dus geteld vanaf 0)
 
 
 // tabel die refereert aan de commando strings
@@ -632,9 +632,10 @@ struct Settings
   byte    UserVar[USER_VARIABLES_MAX];
   byte    Unit;
   byte    TransmitIR;
-  byte    TransmitRF;
   byte    TransmitRepeatIR;
+  byte    TransmitRF;
   byte    TransmitRepeatRF;
+  byte    TransmitHTTP;
   byte    WaitFreeRF_Window;
   byte    WaitFreeRF_Delay;
   byte    SendBusy;
@@ -643,7 +644,9 @@ struct Settings
   boolean DaylightSaving;                                   // Vlag die aangeeft of het zomertijd of wintertijd is
   int     DaylightSavingSet;                                // Vlag voor correct automatisch kunnen overschakelen van zomertijd naar wintertijd of vice-versa
   char    Password[25];                                     // String met wachtwoord.
-  byte    Server_IP[SERVER_IP_MAX][4];                      // lijst met IP adressen waar de events naar toe moeten worden gestuurd.
+  byte    TransmitEventGhost;
+  byte    EventGhostServer_IP[4];                           // IP adres van waar EventGhost Events naar verstuurd moeten worden.
+  byte    AutoSaveEventGhostIP;                             // Automatisch IP adres opslaan na ontvangst van een EG event of niet.
   byte    Terminal_Enabled;                                 // vlag geeft aan of Telnet sessies toegestaan zijn.
   byte    Terminal_Prompt;                                  // vlag geeft aan of er een prompt getoond moet worden tijdens de telnet sessie
   }S;
@@ -670,6 +673,7 @@ byte UserVar[USER_VARIABLES_MAX];
 char TempString[INPUT_BUFFER_SIZE];                         // Globale, tijdelijke string voor algemeen gebruik in diverste functies. ??? Nodig?
 boolean TerminalConnected=false;                            // Vlag geeft aan of er een verbinding is met een Terminal.
 boolean SerialConnected=true;                               // Vlag geeft aan of er een verbinding USB-poort.
+boolean TemporyEventGhostError=false;                       // Vlag om tijdelijk evetghost verzending stil te leggen na een communicatie probleem
 
 byte Ethernet_MAC_Address[]={0xDE,0xAD,0xBE,0xEF,0xFE,0xED};// MAC adres van de Nodo.
 EthernetServer EventServer(1024);                           // Globale Server class voor ontvangen van Events van een EventGhost applicatie
@@ -745,11 +749,10 @@ void setup()
       SDCardPresent=true; // Als logfile kon worden geopend, dan is alles voor elkaar kan de vlag SDCardPresent op true worden gezet.
       }    
     }
-  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip
+  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
   digitalWrite(Ethernetshield_CS_W5100, LOW);
   digitalWrite(EthernetShield_CS_SDCard,HIGH);
   
-      
   //Zorg ervoor dat er niet direct na een boot een CMD_CLOCK_DAYLIGHT event optreedt
   ClockRead();
   SetDaylight();
@@ -777,15 +780,14 @@ void loop()
   int x,y,z;
   int InByte;
   int Pos=0;  
+
   unsigned long StaySharpTimer=millis();                      // timer die start bij ontvangn van een signaal. Dwingt om enige tijd te luisteren naar dezelfde poort.
   unsigned long LoopIntervalTimer_1=millis();                 // Timer voor periodieke verwerking. millis() maakt dat de intervallen van 1 en 2 niet op zelfde moment vallen => 1 en 2 nu asynchroon.
   unsigned long LoopIntervalTimer_2=0L;                       // Timer voor periodieke verwerking.
-
-unsigned long Content=0L,ContentPrevious;                   // Ontvangen event van RF, IR, ... Tevens buffer voor het vorige ontvangen Event
-unsigned long Checksum=0L;                                  // Als gelijk aan Event dan tweemaal dezelfde code ontvangen: checksum funktie.
-unsigned long SupressRepeatTimer;
-unsigned long EventTimeCodePrevious;                        // t.b.v. voorkomen herhaald ontvangen van dezelfde code binnen ingestelde tijd.
-
+  unsigned long Content=0L,ContentPrevious;                   // Ontvangen event van RF, IR, ... Tevens buffer voor het vorige ontvangen Event
+  unsigned long Checksum=0L;                                  // Als gelijk aan Event dan tweemaal dezelfde code ontvangen: checksum funktie.
+  unsigned long SupressRepeatTimer;
+  unsigned long EventTimeCodePrevious;                        // t.b.v. voorkomen herhaald ontvangen van dezelfde code binnen ingestelde tijd.
   
   SerialHold(false); // er mogen weer tekens binnen komen van SERIAL
 
@@ -793,10 +795,8 @@ unsigned long EventTimeCodePrevious;                        // t.b.v. voorkomen 
   char InputBuffer_IPEvent[INPUT_BUFFER_SIZE];                // Buffer voor input
   char Inputbuffer_Terminal[INPUT_BUFFER_SIZE];               // Buffer voor input
 
-
   // hoofdloop: scannen naar signalen
   // dit is een tijdkritische loop die wacht tot binnengekomen event op IR, RF, SERIAL, CLOCK, DAYLIGHT, TIMER
-  // als er geen signalen binnenkomen duurt deze hoofdloop +/- 35uSec. snel genoeg om geen signalen te missen.
   while(true)
     {
     if(Hold)
@@ -835,10 +835,15 @@ unsigned long EventTimeCodePrevious;                        // t.b.v. voorkomen 
           // we hebben een nieuwe Terminal client
           TerminalConnected=true;
           TerminalClient=TerminalServer.available();
-          x=S.Terminal_Enabled;
-          S.Terminal_Enabled=VALUE_ON;
-          PrintWelcome();
-          S.Terminal_Enabled=x;
+          if(S.Terminal_Enabled==VALUE_ON)
+            {
+            PrintWelcome();
+            }
+          else
+            {
+            TerminalClient.println(cmd2str(ERROR_10));
+            RaiseError(ERROR_10); 
+            }              
           }
   
         if(TerminalClient.connected() && TerminalClient.available()) // er staat data van de terminal klaar
@@ -873,13 +878,16 @@ unsigned long EventTimeCodePrevious;                        // t.b.v. voorkomen 
           SerialHold(true);
           Inputbuffer_Serial[Pos]=0; // serieel ontvangen regel is compleet
           SerialConnected=true;
+Serial.println("*** debug: 0a");//???
           ExecuteLine(Inputbuffer_Serial, VALUE_SOURCE_SERIAL);
+Serial.println("*** debug: 9a");//???
           Pos=0;  
           Inputbuffer_Serial[0]=0; // serieel ontvangen regel is compleet
           SerialHold(false);
           StaySharpTimer=millis()+SHARP_TIME;      
           }
         }while(Serial.available() || StaySharpTimer>millis());
+Serial.println("*** debug: 10a");//???
       }
 
     // IR: *************** kijk of er data staat op IR en genereer een event als er een code ontvangen is **********************
