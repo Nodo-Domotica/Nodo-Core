@@ -189,6 +189,7 @@ byte CommandError(unsigned long Content)
       switch(Par1)
         {
         case VALUE_ALL:
+        //??? moet EventGhost hier nog bij
         case VALUE_SOURCE_IR:
         case VALUE_SOURCE_RF:
         case VALUE_SOURCE_SERIAL:
@@ -343,15 +344,15 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       case CMD_VARIABLE_USEREVENT:
         // stel een nieuw userevent samen uit twee variabelen en voer deze uit.
         Event=command2event(CMD_USEREVENT,UserVar[Par1-1],UserVar[Par2-1])&0xf0ffffff;
-
         ProcessEvent(Event,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM,0,0);
         break;
 
       case CMD_WIRED_ANALOG_SEND:
         // Lees de analoge waarde uit en verzend deze
-        Serial.print("*** debug: Poort WiredAnalogSend=");Serial.println(analogRead(WiredAnalogInputPin_1+Par1-1),DEC);//??? Debug
-        int2calibrated(&Par1,&Par2,Par1-1,analogRead(WiredAnalogInputPin_1+Par1-1));// Call by reference voor Par1 en Par2
-        TransmitCode(command2event(CMD_WIRED_ANALOG,Par1,Par2),SIGNAL_TYPE_NODO);
+        // lees analoge waarde. Dit is een 10-bit waarde, unsigned 0..1023
+        // vervolgens met map() omrekenen naar gekalibreerde waarde        
+        x=map(analogRead(Par1+WiredAnalogInputPin_1-1),S.WiredInput_Calibration_IL[Par1-1],S.WiredInput_Calibration_IH[Par1-1],S.WiredInput_Calibration_OL[Par1-1],S.WiredInput_Calibration_OH[Par1-1]);        
+        TransmitCode(wiredint2event(x,Par1-1,CMD_WIRED_ANALOG),SIGNAL_TYPE_NODO);
         break;
 
       case CMD_SIMULATE_DAY:
@@ -634,52 +635,43 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
  \*******************************************************************************************************/
 void ExecuteLine(char *Line, byte Port)
   {
-  char Command[80], TmpStr[80];//??? erg veel. kan dit ook anders / kleiner
-  int PosCommand=0;
-  int L;
+  const int MaxCommandLength=80; // maximaal aantal tekens van een commando
+  char Command[MaxCommandLength], TmpStr[MaxCommandLength];//??? erg veel. kan dit ook anders / kleiner
+  int PosCommand;
+  int PosLine;
+  int L=strlen(Line);
+  int x,y;
   byte Error=0,Par1,Par2,Cmd;
   byte State_EventlistWrite=0;
-  int x,y;
   unsigned long v,event,action; 
   
-  L=strlen(Line);
-  
-Serial.println("*** debug: 1");//???
-
-  for(int PosLine=0;PosLine<=L && Error==0 ;PosLine++)
+  PosCommand=0;
+  for(PosLine=0;PosLine<=L && Error==0 ;PosLine++)
     {
-    byte x=Line[PosLine];
+    x=Line[PosLine];
 
-    // puntkomma scheidt opdachten, laatste opdracht hoeft niet met puntkomma afgesloten te worden en een commando moet groter zijn dan drie tekens
-    if((x==';' || PosLine==L) && PosCommand>3)
+    // als puntkomma (scheidt opdachten) of einde string(0), en het commando groter dan drie tekens
+    if((x==';' || x==0) && PosCommand>3)
       {
       Command[PosCommand]=0;
       PosCommand=0;
-      // string met commando is afgesloten met een puntkomma. Deze bevat nu "commando par1,par2"
-
-      // Serial.print("*** debug: Commnd=");Serial.println(Command);//??? Debug
-
       Cmd=0;
       Par1=0;
       Par2=0;
       v=0;
-Serial.println("*** debug: 2");//???
+      // string met commando compleet
+      
+      // Serial.print("*** debug: Command=");Serial.println(Command);//??? Debug
 
-
-      if(GetArgv(Command,TmpStr,1))
+      // maak van de string een commando waarde. Het kan ook zijn dat het een hex-event is.
+      if(GetArgv(Command,TmpStr,1));
         v=str2val(TmpStr);
 
-      // kleiner of gelijk aan een bestaand commando. Dan behandelen als een comman
+      // kleiner of gelijk aan een bestaand commando. Dan behandelen als een commando. Anders is het een hex-event.
       if(v<=COMMAND_MAX)
         {
         Cmd=(byte)v;
         v=0;          
-
-        if(GetArgv(Command,TmpStr,2))
-          Par1=str2val(TmpStr);
-          
-        if(GetArgv(Command,TmpStr,3))
-          Par2=str2val(TmpStr);
 
         switch(Cmd)
           {
@@ -718,28 +710,24 @@ Serial.println("*** debug: 2");//???
               Par2=str2val(TmpStr);
 
             int t;              
-            Serial.print("*** debug: analogRead()=");Serial.println(analogRead(WiredAnalogInputPin_1+Par1-1),DEC);
             t=analogRead(WiredAnalogInputPin_1+Par1-1);
-            Serial.print("*** debug:1 t=");Serial.println(t);
             if(GetArgv(Command,TmpStr,4))
               {
-              v=str2val(TmpStr);
-            Serial.print("*** debug:2 t=");Serial.println(t);
               if(Par2==VALUE_HIGH)
                 {
-            Serial.print("*** debug:3 t=");Serial.println(t);
                 S.WiredInput_Calibration_IH[Par1-1]=t;
-                S.WiredInput_Calibration_OH[Par1-1]=v;
-                Serial.print("*** debug: Calibratie voltooid. IH=");Serial.print(t,DEC);Serial.print(", OH=");Serial.println(v,DEC);//??? Debug
+                S.WiredInput_Calibration_OH[Par1-1]=str2wiredint(TmpStr);
+//???                Serial.print("*** debug: Calibratie voltooid. IH=");Serial.print(t,DEC);Serial.print(", OH=");Serial.println(wiredint2str(S.WiredInput_Calibration_OH[Par1-1]));//??? Debug
                 }
               if(Par2==VALUE_LOW)
                 {
                 S.WiredInput_Calibration_IL[Par1-1]=t;
-                S.WiredInput_Calibration_OL[Par1-1]=v;
-                Serial.print("*** debug: Calibratie voltooid. IL=");Serial.print(t,DEC);Serial.print(", OL=");Serial.println(v,DEC);//??? Debug
+                S.WiredInput_Calibration_OL[Par1-1]=str2wiredint(TmpStr);
+//???                Serial.print("*** debug: Calibratie voltooid. IL=");Serial.print(t,DEC);Serial.print(", OL=");Serial.println(wiredint2str(S.WiredInput_Calibration_OL[Par1-1]));//??? Debug
                 }
               }
             v=0;
+            SaveSettings();
             break;
             }
             
@@ -756,17 +744,25 @@ Serial.println("*** debug: 2");//???
             Eventlist_Write(1,0L,0L); // maak de eventlist leeg.
             break;        
 
-          case CMD_HTTP_REQUEST:
+          case CMD_URL:
             // zoek in de regel waar de string met het http request begint.
-            x=StringFind(Line,cmd2str(CMD_HTTP_REQUEST))+strlen(cmd2str(CMD_HTTP_REQUEST));
+            x=StringFind(Line,cmd2str(CMD_URL))+strlen(cmd2str(CMD_URL));
             while(Line[x]==32)x++;
-
-            HTTPRequestSave(&Line[0]+x); 
+            strcpy(S.url,&Line[0]+x);
+            SaveSettings(); 
             break;
 
           case CMD_PASSWORD:
             {
             if(GetArgv(Command,S.Password,2))
+            SaveSettings();
+            break;
+            }  
+
+          case CMD_ID:
+            {
+            if(GetArgv(Command,TempString,2))
+            S.ID=str2val(TempString);
             SaveSettings();
             break;
             }  
@@ -790,7 +786,11 @@ Serial.println("*** debug: 2");//???
             
           default:
             {              
-Serial.println("*** debug: 3");//???
+            if(GetArgv(Command,TmpStr,2))
+              Par1=str2val(TmpStr);
+              
+            if(GetArgv(Command,TmpStr,3))
+              Par2=str2val(TmpStr);
 
             //Serial.print("*** debug: Cmd =");Serial.println(Cmd,DEC);//??? Debug
             //Serial.print("*** debug: Par1=");Serial.println(Par1,DEC);//??? Debug
@@ -801,14 +801,13 @@ Serial.println("*** debug: 3");//???
             Error=CommandError(v);
             }
           }
-Serial.println("*** debug: 4");//???
         }
 
       if(v && Error==0)
         {
-Serial.println("*** debug: 5");//???
         if(State_EventlistWrite==0)// Gewoon uitvoeren
           {
+          // Serial.print("*** debug: ProcesEvent(); Event=");Serial.println(v,HEX);//??? Debug
           ProcessEvent(v,VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
           continue;
           }
@@ -832,9 +831,6 @@ Serial.println("*** debug: 5");//???
           }
         }
 
-Serial.println("*** debug: 6");//???
-
-
       if(Error) // er heeft zich een fout voorgedaan
         {
         strcpy(TempString,Command);
@@ -843,12 +839,13 @@ Serial.println("*** debug: 6");//???
         RaiseError(Error);
         Line[0]=0;
         }          
-Serial.println("*** debug: 7");//???
+      // Serial.println("*** debug: Einde behandeling commando;");
       }
-    else
-      Command[PosCommand++]=x;
+
+    // printbare tekens toevoegen aan commando zolang er nog ruimte is in de string
+    if(isprint(x) && x!=';' && PosCommand<MaxCommandLength)
+      Command[PosCommand++]=x;      
     }
-Serial.println("*** debug: 8");//???
   }
   
   

@@ -152,12 +152,13 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       *Par2=(WiredInputStatus[xPar1-1])?VALUE_ON:VALUE_OFF;
       break;
 
-    case CMD_WIRED_ANALOG:
-
-Serial.print("*** debug: Poort status uitvraag=");Serial.println(analogRead(WiredAnalogInputPin_1+xPar1-1),DEC);//??? Debug
-
-      int2calibrated(Par1,Par2,xPar1-1,analogRead(WiredAnalogInputPin_1+xPar1-1));// Call by reference voor Par1 en Par2
-      break;
+/// ??? nog uitwerken: status opvraag
+//    case CMD_WIRED_ANALOG:
+//
+//Serial.print("*** debug: Poort status uitvraag=");Serial.println(analogRead(WiredAnalogInputPin_1+xPar1-1),DEC);//??? Debug
+//
+//      int2calibrated(Par1,Par2,xPar1-1,analogRead(WiredAnalogInputPin_1+xPar1-1));// Call by reference voor Par1 en Par2
+//      break;
       
     case CMD_WIRED_OUT:
       *Par1=xPar1;
@@ -174,33 +175,33 @@ Serial.print("*** debug: Poort status uitvraag=");Serial.println(analogRead(Wire
  /**********************************************************************************************\
  * Deze functie haalt een tekst op uit PROGMEM en geeft als string terug
  * BUILD 01, 09-01-2010, P.K.Tonkes@gmail.com
- \*********************************************************************************************/
- char* ProgmemString(prog_char* text)
-  {
-  byte x=0;
-  static char buffer[40];
-
-  do
+   \*********************************************************************************************/
+   char* ProgmemString(prog_char* text)
     {
-    buffer[x]=pgm_read_byte_near(text+x);
-    }while(buffer[x++]!=0);
-  return buffer;
-  }
-
-
- /*********************************************************************************************\
- * Sla alle settings op in het EEPROM geheugen.
- \*********************************************************************************************/
-void SaveSettings(void)  
-  {
-  char ByteToSave,*pointerToByteToSave=pointerToByteToSave=(char*)&S;    //pointer verwijst nu naar startadres van de struct. 
+    byte x=0;
+    static char buffer[40];
   
-  for(int x=0; x<sizeof(struct Settings) ;x++)
+    do
+      {
+      buffer[x]=pgm_read_byte_near(text+x);
+      }while(buffer[x++]!=0);
+    return buffer;
+    }
+  
+  
+   /*********************************************************************************************\
+   * Sla alle settings op in het EEPROM geheugen.
+   \*********************************************************************************************/
+  void SaveSettings(void)  
     {
-    EEPROM.write(x,*pointerToByteToSave); 
-    pointerToByteToSave++;
-    }  
-  }
+    char ByteToSave,*pointerToByteToSave=pointerToByteToSave=(char*)&S;    //pointer verwijst nu naar startadres van de struct. 
+    
+    for(int x=0; x<sizeof(struct Settings) ;x++)
+      {
+      EEPROM.write(x,*pointerToByteToSave); 
+      pointerToByteToSave++;
+      }  
+    }
 
  /*********************************************************************************************\
  * Laad de settings uit het EEPROM geheugen.
@@ -211,9 +212,7 @@ boolean LoadSettings()
     
   char ByteToSave,*pointerToByteToRead=(char*)&S;    //pointer verwijst nu naar startadres van de struct.
 
-Serial.print("*** debug: struct Setting=");Serial.println(sizeof(struct Settings),DEC);//??? Debug
-
-
+  /// Serial.print("*** debug: struct Setting=");Serial.println(sizeof(struct Settings),DEC);//??? Debug
   for(int x=0; x<sizeof(struct Settings);x++)
     {
     *pointerToByteToRead=EEPROM.read(x);
@@ -257,7 +256,8 @@ void ResetFactory(void)
   S.EventGhostServer_IP[1]     = 0; // IP adres van de EventGhost server
   S.EventGhostServer_IP[2]     = 0; // IP adres van de EventGhost server
   S.EventGhostServer_IP[3]     = 0; // IP adres van de EventGhost server
-  
+  S.url[0]             = 0; // string van het HTTP adres leeg maken
+  S.ID                         = 0;   
   strcpy(S.Password,"Nodo");
   
   // zet analoge waarden op default
@@ -415,8 +415,10 @@ void Status(boolean ToSerial, byte Par1, byte Par2) //??? waaromnog de ToSerial 
 
 
 /*********************************************************************************************\
-* Deze routine parsed string en geeft het opgegeven argument Argc terug in Argv
-* argumenten worden van elkaar gescheiden door een puntkomma, komma of een spatie.
+* Deze routine parsed een string en geeft het opgegeven argument Argc terug in Argv
+* argumenten worden van elkaar gescheiden door een komma of een spatie.
+* Let op dat de ruimte in de doelstring voldoende is EN dat de bron string netjes is afgesloten 
+* met een 0-byte.
 \*********************************************************************************************/
 boolean GetArgv(char *string, char *argv, byte argc)
   {
@@ -428,7 +430,7 @@ boolean GetArgv(char *string, char *argv, byte argc)
   
   while(string[string_pos]!=0 && argc_pos<=argc)
     {
-    if(string[string_pos]=='.' || string[string_pos]==','|| string[string_pos]==';' || string[string_pos]==32)
+    if(string[string_pos]==','|| string[string_pos]==32)
       {
       while(string[string_pos+1]==32)string_pos++;   // sla voorloopspaties over
       argc_pos++;
@@ -823,7 +825,7 @@ void RaiseError(byte ErrorCode)
   unsigned long eventcode;
 
   eventcode=command2event(CMD_ERROR,ErrorCode,0);
-  TransmitCode(eventcode,SIGNAL_TYPE_NODO);    
+  //??? TransmitCode(eventcode,SIGNAL_TYPE_NODO);    // ??? Is het wel handig om errors ook naar alle kanalen te versturen of kan het ook zonder?
   PrintEvent(eventcode,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM);  // geef event weer op Serial
   }
     
@@ -859,38 +861,4 @@ boolean LogSDCard(char *Line)
   }
 
 
- /*********************************************************************************************\
- * Sla de regel op die gebruikt wordt bij verzenden va een HTTP request (OutputHTTP)
- \*********************************************************************************************/
-boolean HTTPRequestSave(char *Request)
-  {
-  boolean error=false;
-
-  // Serial.print("*** debug: HTTPRequestSave(); Schrijven naar bestand=");Serial.println(Request);//??? Debug
-
-  if(SDCardPresent)
-    {
-    // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-    digitalWrite(Ethernetshield_CS_W5100, HIGH);
-    digitalWrite(EthernetShield_CS_SDCard,LOW);
-
-    SD.remove(ProgmemString(Text_29)); // eventueel bestaande file wissen, anders wordt de data toegevoegd.    
-    File dataFile = SD.open(ProgmemString(Text_29), FILE_WRITE);
-    if(dataFile) 
-      {
-      dataFile.write(Request);
-      dataFile.close();
-      }
-    else
-      {
-      TransmitCode(command2event(CMD_ERROR,ERROR_03,0),SIGNAL_TYPE_NODO);
-      error=true;
-      }
-
-    // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
-    digitalWrite(Ethernetshield_CS_W5100, LOW);
-    digitalWrite(EthernetShield_CS_SDCard,HIGH);
-    }
-  return error;
-  }
 

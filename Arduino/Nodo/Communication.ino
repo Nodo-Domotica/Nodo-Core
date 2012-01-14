@@ -384,47 +384,42 @@ boolean TerminalReceive(char *Buffer)
  \*******************************************************************************************************/
 boolean HTTP_Request(char* event)
   {
-  boolean error=0;
-  int y=0;
+  byte y=0;
+  char s[2]={0,0};
+  
+  strcpy(TempString,S.url);
+  strcat(TempString,"?ID=");
+  strcat(TempString,int2str(S.ID));
+  strcat(TempString,"&Event=");
 
-  if(SDCardPresent)
+  // event toevoegen aan tijdelijke string, echter alle spaties vervangen door %20 conform URL notatie
+  for(byte x=0;x<strlen(event);x++)
     {
-    // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-    digitalWrite(Ethernetshield_CS_W5100, HIGH);
-    digitalWrite(EthernetShield_CS_SDCard,LOW);      
-
-    File dataFile=SD.open(ProgmemString(Text_29));
-    if(dataFile) 
-      {
-      TempString[0]=0; // maak tijdelijke string leeg
-      while(dataFile.available() && y<INPUT_BUFFER_SIZE)
-          TempString[y++]=dataFile.read();
-      TempString[y]=0; // sluit de string af
-      dataFile.close();
-      }
+    if(event[x]==32)
+      strcat(TempString,"%20");
     else
       {
-      S.TransmitHTTP=VALUE_OFF;
-      error=ERROR_03;
+      s[0]=event[x];
+      strcat(TempString,s);
       }
+    }      
 
-    // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
-    digitalWrite(Ethernetshield_CS_W5100, LOW);
-    digitalWrite(EthernetShield_CS_SDCard,HIGH);
-    }
+  Serial.print("*** debug: HTTP Request=");Serial.println(TempString);//??? Debug
 
-  // TempString bevat nu de HTTP regel.
-  
-  if(!error)
-    {
-    strcat(TempString,event);
-    Serial.print("*** debug: HTTP Request=");Serial.println(TempString);//??? Debug
-    }
-    
-  if(error)
-    {     
-    RaiseError(error);
-    return false;
-    }
-  return true;  
-  }
+//  //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//  
+//  EthernetClient client;
+//  
+//  if (client.connect(TempString, 80)) 
+//    {
+//    Serial.println("*** Debug: HTTP connected");
+//    // Make a HTTP request:
+//    client.println("GET /search?q=arduino HTTP/1.0");
+//    client.println();
+//    client.stop();
+//    } 
+//  else 
+//    {
+//    Serial.println("*** Debug: HTTP connection failed.");
+//  }
+}

@@ -47,58 +47,14 @@ unsigned long command2event(int Command, byte Par1, byte Par2)
  \*********************************************************************************************/
 unsigned long str2val(char *string)
   {
-  byte v,w,x,y,c;
-  unsigned long Value;
+  int x;
   
-  // Check of het een DEC waarde is.
-  Value=0;
-  x=0;
-  do
-    {
-    if(string[x]>='0' && string[x]<='9')
-      {
-      Value=Value*10;
-      Value+=string[x]-48;
-      }
-    else
-      {
-      x=false; // geen geldig DEC getal
-      break;
-      }
-    x++;
-    }while(string[x]!=0);
-  if(x)return Value;
+  x=str2cmd(string);
+  if(x>0)
+    return x;
 
-  // check of het een HEX code is.
-  Value=0;
-  x=0;
-  do
-    {
-    if(string[x]>='0' && string[x]<='9')
-      {
-      Value=Value<<4;
-      Value+=string[x]-48;
-      }
-    else
-      {
-      if(string[x]>='a' && string[x]<='f')
-        {
-        Value=Value<<4;
-        Value+=string[x]-87;
-        }
-      else
-        {
-        if(x<1 || string[x-1]!='0' || string[x]!='x')
-          {
-          x=false; // geen geldig HEX getal
-          break;
-          }
-        }
-      }
-    x++;
-    }while(string[x]!=0);
-  if(x)return Value;
-  return str2cmd(string);
+  return(strtol(string,NULL,0));
+  
   }
 
 /**********************************************************************************************\
@@ -195,3 +151,134 @@ char* int2str(unsigned long x)
   return OutputLinePosPtr;
   }
 
+
+ /**********************************************************************************************\
+ * De Nodo gebruikt voor metingen analoge waarden. Deze analoge waarden worden zodanig in een 
+ * int vastgelegd dat zij naar de gebruiker kunnen worden getoond als een getal met cijfers achter
+ * komma. Dit wordt do gedaan ondat gebruik van floats erg veel geheugen vraagt.
+ * een int voor analoge waarden bevat de analoge waarde maal honderd, zodat deze later kunnen
+ * worden getoond met twee cijfers achter de komma.
+ * Voor uitwisseling van events met analoge waarden worden Par1 en Par2 anders gebruikt. Zij worden
+ * samengevoegd tot een 16-bit waarde met de volgende indeling:
+ *
+ * WWWWhsnnnnnnnnnn, waarbij W de Wired poort is en n de analoge waarde en s de sign-bit voor negatieve getallen
+ * h= high/low bit. als h=1 dan bereik 0.0-100.0, als h=0 dan bereik 0.00-10.00
+ * 
+ * De volgende conversiefunkties worden gebruikt:
+ *
+ * str2wiredint();    converteert een string "-nnn.nn" naar een int
+ * wiredint2str();    converteert een int naar een string met format "-nnn.nnn"
+ * event2wiredint();  converteert een eventcode naar een int
+ * wiredint2event();  converteert een wiredint + poort naar een eventcode
+ *
+ * verder:
+ *   (event>>12)&0x0f haalt de wired poort uit een eventcode
+ \*********************************************************************************************/
+
+char* wiredint2str(int wi)
+  {
+  static char rString[10];
+  if(abs(wi)>10230)
+    strcpy(rString,"Overflow");
+  else
+    {
+    if(abs(wi)>=1000)
+      {
+      wi/=10;
+      sprintf(rString,"%d.%01d",wi/10,abs(wi)%10);
+      }
+    else
+      {
+      sprintf(rString,"%d.%02d",wi/100,abs(wi)%100);
+      }
+    }
+  return rString;
+  }
+
+int str2wiredint(char* string)
+  {
+  byte x,c;
+  int dot=100;
+  int result=0;           // resultaatwaarde achter de decimale punt
+  boolean negative=false;  // vlag staat als het sign teken is gevonden is.
+  byte digit=0;
+  
+  for(byte pos=0; pos<=strlen(string); pos++)
+    {
+    c=string[pos];
+    if(c=='-')
+      negative=true;
+    
+    else if(c=='.')
+      dot=10;
+
+    else if(isdigit(c) && digit<4)
+      {
+      digit++;
+      if(dot==100)
+        {
+        result=result*10;
+        result=result+(c-'0')*dot;        
+        }
+      else
+        {
+        result=result+(c-'0')*dot;        
+        dot=dot/10;
+        }
+      }
+    }
+        
+  if(result>10230)
+    {
+    Serial.println("*** debug: str2analogint(); Overflow!");//???
+    return 0;
+    }      
+  
+  if(negative)
+    result=-result;
+
+  //  Serial.print("*** debug: str2wiredint()=");Serial.println(result,DEC);//??? Debug         
+  return result;
+  }
+
+
+unsigned long wiredint2event(int wi, byte port, byte cmd)
+  {
+  boolean high=false;
+  boolean sign=false;
+  
+  if(wi<0)
+    {
+    sign=true;
+    wi=-wi;
+    }
+    
+  if(wi>=1000)
+    {
+    high=true;
+    wi=wi/10;
+    }
+  
+  return ((unsigned long)SIGNAL_TYPE_NODO)<<28   |
+         ((unsigned long)S.Unit)<<24             | 
+         ((unsigned long)cmd)<<16                |
+         ((unsigned long)port<<12)               |
+         ((unsigned long)high<<11)               |
+         ((unsigned long)sign<<10)               |
+         ((unsigned long)(wi & 0x3ff));
+  }
+  
+int event2wiredint(unsigned long event)
+  {
+  int wi; 
+  
+  wi=event&0x3ff;    // 10-bits waarde
+
+  if(event & (1<<11)) // als high bit staat
+    wi=wi*10;
+  
+  if(event & (1<<10)) // als sign bit staat
+    wi=-wi;
+  
+  return wi;
+  }

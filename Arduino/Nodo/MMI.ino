@@ -150,8 +150,14 @@ void PrintWelcome(void)
   PrintLine(ProgmemString(Text_01));
   PrintLine(ProgmemString(Text_02));
 
-  // print versienummer
+  // print versienummer, unit en indien gevuld het ID
   sprintf(TempString,"Version= (Beta) %d.%d.%d, ThisUnit=%d",S.Version/100, (S.Version%100)/10, S.Version%10,S.Unit); //??? beta tekst verwijderen
+  if(S.ID)
+    {
+    strcat(TempString,", ID=");
+    strcat(TempString,int2str(S.ID));
+    }
+    
   PrintLine(TempString);
 
   // Geef datum en tijd weer.
@@ -188,6 +194,7 @@ void PrintWelcome(void)
  \*********************************************************************************************/
 void PrintLine(String LineToPrint)
   {
+  // FreeMemory(0); //??? debug
   if(SerialConnected)
     Serial.println(LineToPrint);
     
@@ -246,14 +253,8 @@ char* Event2str(unsigned long Code)
     switch(Command)
       {
       case CMD_WIRED_ANALOG:
-
-        // sprintf(EventString,"( %d,%d.%d)",cmd2str(Command),int2str(y+1),int2str(x/10) ??? onderstaande simpeler maken met sprintf?
-
-        strcat(EventString," ");                      
-        strcat(EventString,int2str(analog2port(Par1,Par2)+1));// wired poort: voor gebruiker 1..8
-        strcat(EventString,", ");        
-        strcat(EventString,calibrated2str(Par1,Par2));        
-        return EventString; // deze functie niet verder afwerken. Dit CMD_WIRED_ANALOG heeft een afwijkende MMI
+        P1=P_ANALOG;
+        P2=P_NOT;
         break;
 
       // Par1 als KAKU adres [A0..P16] en Par2 als [On,Off]
@@ -296,6 +297,7 @@ char* Event2str(unsigned long Code)
         break;
   
       // Par1 als tekst en par2 niet
+      case CMD_ERROR:
       case CMD_TERMINAL:
       case CMD_DLS_EVENT:
       case CMD_BUSY:
@@ -336,6 +338,11 @@ char* Event2str(unsigned long Code)
       strcat(EventString," ");
       switch(P1)
         {
+        case P_ANALOG:
+          strcat(EventString,int2str(((Code>>12)&0x0f)+1));// wired poort: voor gebruiker 1..8
+          strcat(EventString,",");
+          strcat(EventString,wiredint2str(event2wiredint(Code)));        
+          break;
         case P_TEXT:
           strcat(EventString,cmd2str(Par1));
           break;

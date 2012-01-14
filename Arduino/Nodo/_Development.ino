@@ -2,25 +2,30 @@
 
 
 Known Errors / ToDo:
+
+- Found in r310: Date=2012-01-14, Time=20:31, Input=Wired, Unit=1, Event=(WiredIn 9,On) event ?? na verzenden met WiredAnalogSend.
+- Check / aanpassing werking WiredSmittTrigger
+- Check / aanpassing werking WiredTreshold
+- Commaando toegevoegd "WiredAnalogSend". Leest analoge waarde van poort uit en verstuurt event met analoge waarde, getransponeert volgens ijkwaarden.
+- Found in r310: Na een RaiseError() na invoer niet bestaand command loopt de Arduino vast. 
 - Found in r306: als ethernet niet aangesloten dan start de nodo (soms) niet op.
-- Found in r306: ijk/kalibreer procedure werkt nog niet goed
 - Found in r306: Nodo due compatibel maken n.a.v. omnummeren CMD_...
 - Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue testen
 - Wired poorten testen incl. Trigger, Threshold.
 - Found in r306: Na volledig volschrijven van de eventlist blijft Nodo hangen in continue uitvoeren van het reboot event.
 - Found in r306: Na een RaiseError vanuit een TelNet sessie werkt invoer commando eerst daarop volgende keer niet. Eerste commando wordt overgeslagen.
 - Gevoelige commando's verhuizen van ExecuteCommand naar ExecuteLine
-- Commando "OutputHTTP"
+- Commando "OutputHTTP". Hiermee kan worden ingesteld of ieder event ook word verstuurd als een HTTP-request. Het url adres van de server kan worden worden ingesteld met commando "URL <web address>"
 - Commando "OutputPachube"
 
 Minor:
 - Found in r306: Status WiredAnalog 22 is mogelijk
 
-
-
 Ideeën:
-- versturen eventlist naar andere Nodo (over IR/RF)
-- Moet een self-learned IP adres in de settings worden opgeslagen of niet??? Nu niet het geval.
+
+Aanpassingen vanaf r310:
+- Commaando toegevoegd "WiredAnalogCalibrate <poort> <High|Low> <ijkwaarde>"
+- Toevoeging commando "URL <line>", hiermee kan de URL van de server worden ingesteld waar de events (via HTTP-Poort 80) naar toegezonden moeten worden. (max. 40 tekens)
 
 Aanpassingen vanaf r306:
 - Toevoeging commando "HTTPRequest <line>"
@@ -42,8 +47,9 @@ Aanpassingen vanaf r305:
 
 
 Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
+- Commaando toegevoegd "WiredAnalogCalibrate <poort> <High|Low> <ijkwaarde>"
 - Ethernet intergratie. Events van EventGhost (PC, Android) ontvangen en verzenden over IP;
-- Toevoeging commando "HTTPRequest <line>"
+- Toevoeging commando "URL <line>", hiermee kan de URL van de server worden ingesteld waar de events (via HTTP-Poort 80) naar toegezonden moeten worden. (max. 40 tekens)
 - Nieuw commando "OutputEG <On|Off> , <SaveIP Save|On|Off>"
 - Bij opstarten de melding "Booting..." omdat wachten op IP adres van de router de eerste keer even tijd in beslag kan nemen.
 - Indien SDCard geplaatst, dan logging naar Log.txt.
@@ -80,8 +86,6 @@ Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - Een EventlistWrite commando met bijhehorende event en actie moeten zich binnen 1 regel bevinden die wordt afgesloten met een \n
 - Verzenden naar Serial vindt pas plaats als er door ontvangst van een teken gecontroleerd is dat seriele verbinding nodig is;
 - Commando "VariableSetWiredAnalog" vervallen. Past niet meer bij 10-bit berwerking en calibratie/ijking
-- Commaando toegevoegd "WiredAnalogSend"
-- Commaando toegevoegd "WiredAnalogCalibrate <poort> <High|Low> <ijkwaarde>"
 - Commando "WiredRange" vervallen. Overbodig geworden n.a.v. calibratie/ijking funktionaliteit.
 - Event aangepast "WiredAnalog". Geeft nu gecalibreerde waarde weer metdecimalen achter de komma
 - Verzenden van IR staat default op Off na een reset.
@@ -91,103 +95,4 @@ Onder de motorkap:
 
 \**************************************************************************************************************************/
 
-//void PrintRawSignal(void)
-//  {
-//  Serial.print("*** RawSignal=");//???
-//  for(int x=1;x<=RawSignal.Number;x++)
-//    {
-//    Serial.print(RawSignal.Pulses[x],DEC);//??? Debug  
-//    Serial.print(",");//???
-//    }
-//  Serial.println();//???    
-//  Serial.print("*** RawSignal.Number=");Serial.println(RawSignal.Number,DEC);//??? Debug
-//  }
-  
-  // De WiredAnalog heeft een afwijkende opbouw van Par1 en Par2. Dit omdat er in één parameter van 8-bits niet voldoende ruimte is om
-  // een 10-bits analoge waarde vast te houden. Om deze reden worden Par1 en Par2 samengevoegd tot één 16-bit waarde die vervolgens
-  // de volgende opbouw heeft: WWWWxsnnnnnnnnnn, waarbij W de Wired poort is en n de analoge waarde en s de sign-bit voor negatieve getallen
 
-
-int calibrated2int(byte Par1, byte Par2)
-  {
-  int Value;
-  
-//Serial.print("3*** Par1=");Serial.println(Par1,BIN);//??? Debug
-//Serial.print("3*** Par2=");Serial.println(Par2,BIN);//??? Debug  
-  
-  Value=(Par1 | Par2<<8) & 0x3ff; // 10-bit waarde
-  if(Par2&0x4) // 11e bit in de 16-bits combinatie van Par2 Par1 is het sign-teken.
-    Value=-(Value);
-
-Serial.print("3*** Value=");Serial.println(Value,DEC);//??? Debug
-
-  return Value;
-  }
-
-
-
-int analog2port(byte Par1, byte Par2)
-  {
-  //Serial.print("2*** Par1=");Serial.println(Par1,BIN);//??? Debug
-  //Serial.print("2*** Par2=");Serial.println(Par2,BIN);//??? Debug
-  //Serial.print("2*** Port=");Serial.println(((Par2>>4)&0xf)+1,DEC);//??? Debug
-  return ((Par2>>4)&0xf);    
-  }
-
-void int2calibrated(byte *Par1, byte *Par2, int Port, int Value)
-  {
-  byte P1,P2;
-
-  // mapping en calibratie nog inbouwen  
-  //  Serial.print("4*** Port=");Serial.println(Port,DEC);//??? Debug
-  //  Serial.print("4*** Value=");Serial.println(Value,DEC);//??? Debug
-  
-  P1=(Value   )&0xff; // 1e acht bits
-  P2=(Value>>8)&0x03; // laatste twee bits 
-  
-//  Serial.print("4a*** Par1=");Serial.println(P1,BIN);//??? Debug
-//  Serial.print("4a*** Par2=");Serial.println(P2,BIN);//??? Debug
-
-  if(Value<0)
-    P2=P2 | 0x04; // set 11e bit om aan te geven dat de waarde negaief is
-
-//  Serial.print("4b*** Par1=");Serial.println(P1,BIN);//??? Debug
-//  Serial.print("4b*** Par2=");Serial.println(P2,BIN);//??? Debug
-    
-  P2=P2 | (Port<<4); // poort op bit 13..16 plaatsen. 
-  
-//  Serial.print("4c*** Par1=");Serial.println(P1,BIN);//??? Debug
-//  Serial.print("4c*** Par2=");Serial.println(P2,BIN);//??? Debug
-  
-  *Par1=P1;
-  *Par2=P2;
-  }
-
-char* calibrated2str(byte Par1, byte Par2)
-  {
-  static char str[15];
-  int x;
-  
- // nog uitwerken: aantal decimalen achter de komma afhankelijk maken van grootte van de waarde
-
-  x=(Par1 | Par2<<8) & 0x3ff; // 10-bit waarde
-
-  str[0]=0;
-  if(Par2&0x4) // 11e bit in de 16-bits combinatie van Par2 Par1 is het sign-teken.
-    strcat(str,"-");
-    
-  strcat(str,int2str(x/10));
-  strcat(str,".");
-  x%=10;
-  strcat(str,int2str(abs(x)));              
-  strcat(str,")");
-
-  return str;
-  }
-
-
-void Trace(int x)//???
-  {
-  Serial.print("*** Debug: ");
-  Serial.println(x,DEC);
-  }

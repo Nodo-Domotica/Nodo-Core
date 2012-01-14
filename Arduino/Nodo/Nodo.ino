@@ -28,11 +28,14 @@
  *
  \****************************************************************************************************************************/
 
-#define VERSION        309        // Nodo Version nummer:
+#define VERSION        1          // Nodo Version nummer:
                                   // Major.Minor.Patch
                                   // Major: Grote veranderingen aan concept, besturing, werking.
                                   // Minor: Uitbreiding/aanpassing van commando's, functionaliteit en MMI aanpassingen
                                   // Patch: Herstel van bugs zonder (ingrijpende) functionele veranderingen.
+
+
+#define DEBUG 1
 
 #include "pins_arduino.h"
 #include <EEPROM.h>
@@ -76,7 +79,7 @@ prog_char PROGMEM Text_25[] = "System=";
 prog_char PROGMEM Text_26[] = "Event received from: ";
 prog_char PROGMEM Text_27[] = "Raw/Key"; // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_28[] = "Raw/Hex"; // Directory op de SDCard voor opslag RawSignal
-prog_char PROGMEM Text_29[] = "HTTP.dat"; // bestandsnaam waar het HTTP adres in staat waar events naar toe gestuurd moeten worden
+//prog_char PROGMEM Text_29[] = "HTTP.dat"; // bestandsnaam waar het HTTP adres in staat waar events naar toe gestuurd moeten worden
 prog_char PROGMEM Text_30[] = "No access!";
  
 // Commando's:
@@ -110,7 +113,7 @@ prog_char PROGMEM Cmd_026[]="UserPlugin";
 prog_char PROGMEM Cmd_027[]="TimerRandom";
 prog_char PROGMEM Cmd_028[]="TimerSetSec";
 prog_char PROGMEM Cmd_029[]="TimerSetMin";
-prog_char PROGMEM Cmd_030[]="";//???
+prog_char PROGMEM Cmd_030[]="ID";
 prog_char PROGMEM Cmd_031[]="Unit";
 prog_char PROGMEM Cmd_032[]="WaitBusy";
 prog_char PROGMEM Cmd_033[]="VariableDec";
@@ -133,7 +136,7 @@ prog_char PROGMEM Cmd_049[]="Password";
 prog_char PROGMEM Cmd_050[]="VariableUserEvent";
 prog_char PROGMEM Cmd_051[]="WiredAnalogCalibrate";
 prog_char PROGMEM Cmd_052[]="Reboot";
-prog_char PROGMEM Cmd_053[]="HTTPRequest";
+prog_char PROGMEM Cmd_053[]="URL";
 prog_char PROGMEM Cmd_054[]="WiredAnalogSend";
 prog_char PROGMEM Cmd_055[]="";
 prog_char PROGMEM Cmd_056[]="AnalyseSettings";
@@ -329,7 +332,7 @@ prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 #define CMD_TIMER_RANDOM                27
 #define CMD_TIMER_SET_SEC               28
 #define CMD_TIMER_SET_MIN               29
-#define CMD_RES30                       30
+#define CMD_ID                          30
 #define CMD_UNIT                        31
 #define CMD_WAITBUSY                    32
 #define CMD_VARIABLE_DEC                33
@@ -352,7 +355,7 @@ prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 #define CMD_VARIABLE_USEREVENT          50
 #define CMD_WIRED_ANALOG_CALIBRATE      51
 #define CMD_REBOOT                      52
-#define CMD_HTTP_REQUEST                53
+#define CMD_URL                         53
 #define CMD_WIRED_ANALOG_SEND           54
 #define CMD_RES55                       55
 #define CMD_ANALYSE_SETTINGS            56
@@ -520,7 +523,7 @@ prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 #define ERROR_10                       210
 #define ERROR_11                       211
 #define LAST_VALUE                     211 // laatste VALUE uit de commando tabel
-#define COMMAND_MAX                    212 // aantal commando's (dus geteld vanaf 0)
+#define COMMAND_MAX                    211 // hoogste commando
 
 
 // tabel die refereert aan de commando strings
@@ -599,7 +602,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define BAUD                     19200 // Baudrate voor seriële communicatie.
 #define SERIAL_TERMINATOR_1       0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>, default voor EventGhost
 #define SERIAL_TERMINATOR_2       0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
-#define INPUT_BUFFER_SIZE          128 // Buffer waar de karakters van de seriele /IP poort in worden opgeslagen.
+#define INPUT_BUFFER_SIZE           80 // Buffer waar de karakters van de seriele /IP poort in worden opgeslagen.
 #define TIMER_MAX                   16 // aantal beschikbare timers voor de user, gerekend vanaf 
 #define Loop_INTERVAL_1            250 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
 #define Loop_INTERVAL_2           5000 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
@@ -644,6 +647,8 @@ struct Settings
   boolean DaylightSaving;                                   // Vlag die aangeeft of het zomertijd of wintertijd is
   int     DaylightSavingSet;                                // Vlag voor correct automatisch kunnen overschakelen van zomertijd naar wintertijd of vice-versa
   char    Password[25];                                     // String met wachtwoord.
+  unsigned long ID;                                         // unieke 32bit code waar de Nodo uniek mee geïdentificeerd kan worden in een netwerk
+  char    url[80];                                          // HTTP address waar de request line aan wordt toegevoegd;
   byte    TransmitEventGhost;
   byte    EventGhostServer_IP[4];                           // IP adres van waar EventGhost Events naar verstuurd moeten worden.
   byte    AutoSaveEventGhostIP;                             // Automatisch IP adres opslaan na ontvangst van een EG event of niet.
@@ -878,16 +883,13 @@ void loop()
           SerialHold(true);
           Inputbuffer_Serial[Pos]=0; // serieel ontvangen regel is compleet
           SerialConnected=true;
-Serial.println("*** debug: 0a");//???
           ExecuteLine(Inputbuffer_Serial, VALUE_SOURCE_SERIAL);
-Serial.println("*** debug: 9a");//???
           Pos=0;  
           Inputbuffer_Serial[0]=0; // serieel ontvangen regel is compleet
           SerialHold(false);
           StaySharpTimer=millis()+SHARP_TIME;      
           }
         }while(Serial.available() || StaySharpTimer>millis());
-Serial.println("*** debug: 10a");//???
       }
 
     // IR: *************** kijk of er data staat op IR en genereer een event als er een code ontvangen is **********************
