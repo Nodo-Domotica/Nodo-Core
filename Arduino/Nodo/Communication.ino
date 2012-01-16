@@ -345,35 +345,56 @@ boolean SendEventGhost(char* event, byte* SendToIP)
  * Deze routine leest een regel die van een terminal client over IP binnenkomt.
  * Timeout is de tijd in milliseconden dat de functie moet wachten op afronding van de verzending
  * door de client. Is Timeout gelijk aan nul, dan is deze functie non-blocking
- * Let op dat het aantal opgegeven tekens in Buffersie niet de werkelijk beschikbare ruimte
+ * Let op dat het aantal opgegeven tekens in Buffersize niet de werkelijk beschikbare ruimte
  * overschrijdt!
- *
  \*********************************************************************************************/
+
+int TerminalInByte=0;
 
 boolean TerminalReceive(char *Buffer)
   {
   int InByteIP;
-  static int InByteIPCount=0;
   
-  // check even of ergens buiten deze funktie om de inputbuffer leeg is gemaak
-  if(Buffer[0]==0)
-    InByteIP=0;
-  
-  while(TerminalClient.available())
+  if(TerminalServer.available())
     {
-    InByteIP=TerminalClient.read();
-    if(InByteIP==0x0a || InByteIP==0x0d)
+    if(!TerminalConnected)
       {
-      Buffer[InByteIPCount]=0;
-      InByteIPCount=0;
-      return true;
+      // we hebben een nieuwe Terminal client
+      TerminalConnected=true;
+      TerminalInByte=0;
+      TerminalClient=TerminalServer.available();
+      if(S.Terminal_Enabled==VALUE_ON)
+        PrintWelcome();
+      else
+        {
+        TerminalClient.println(cmd2str(ERROR_10));
+        RaiseError(ERROR_10); 
+        }              
       }
-    if(isprint(InByteIP))
+
+    if(TerminalClient.connected() && TerminalClient.available()) // er staat data van de terminal klaar
       {
-      Buffer[InByteIPCount++]=InByteIP;
+      while(TerminalClient.available())
+        {
+        InByteIP=TerminalClient.read();
+        if(InByteIP==0x0a || InByteIP==0x0d)
+          {
+          Buffer[TerminalInByte]=0;
+          TerminalInByte=0;
+          if(S.Terminal_Prompt==VALUE_ON)
+            TerminalClient.println();
+          return true;
+          }
+        if(isprint(InByteIP))
+          {
+          Buffer[TerminalInByte++]=InByteIP;
+          if(S.Terminal_Prompt==VALUE_ON)
+            TerminalClient.write(InByteIP);
+          }
+        }
       }
     }
-  return false;
+  return false; // geen data gereed of de regel is nog niet compleet
   }
 
 

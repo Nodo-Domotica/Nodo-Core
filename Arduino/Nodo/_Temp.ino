@@ -1,3 +1,6 @@
+
+
+
 /*
 
 AI=is een unsigned int waarin signed analoge waarde verwerkt
@@ -213,4 +216,43 @@ int ppp2analogint(byte Par1, byte Par2)
   return error;
   }
 
+
+    
+      
+
+      if(TerminalServer.available())
+        {
+        if(!TerminalConnected)
+          {
+          // we hebben een nieuwe Terminal client
+          TerminalConnected=true;
+          TerminalClient=TerminalServer.available();
+          if(S.Terminal_Enabled==VALUE_ON)
+            {
+            PrintWelcome();
+            }
+          else
+            {
+            TerminalClient.println(cmd2str(ERROR_10));
+            RaiseError(ERROR_10); 
+            }              
+          }
+  
+        if(TerminalClient.connected() && TerminalClient.available()) // er staat data van de terminal klaar
+          {
+          if(TerminalReceive(Inputbuffer_Terminal))
+            {
+            if(S.Terminal_Enabled==VALUE_ON)
+              {
+              ExecuteLine(Inputbuffer_Terminal, VALUE_SOURCE_TERMINAL);    
+              Serial.print("*** debug: Inputbuffer_Terminal=");Serial.println(Inputbuffer_Terminal);//??? Debug
+              }
+            else
+              {
+              TerminalClient.println(cmd2str(ERROR_10));
+              RaiseError(ERROR_10); 
+              }
+            }
+          }
+  
 */

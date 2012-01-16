@@ -1,30 +1,28 @@
 /**************************************************************************************************************************\
 
-
 Known Errors / ToDo:
 
-- Found in r310: Date=2012-01-14, Time=20:31, Input=Wired, Unit=1, Event=(WiredIn 9,On) event ?? na verzenden met WiredAnalogSend.
-- Check / aanpassing werking WiredSmittTrigger
-- Check / aanpassing werking WiredTreshold
-- Commaando toegevoegd "WiredAnalogSend". Leest analoge waarde van poort uit en verstuurt event met analoge waarde, getransponeert volgens ijkwaarden.
-- Found in r310: Na een RaiseError() na invoer niet bestaand command loopt de Arduino vast. 
+- Logging op SDCard OK?
+- Terminal verwerking regels loopt niet goed: oude regel wordt steeds herhaald
+- Found in r310: Date=2012-01-14, Time=20:31, Input=Wired, Unit=1, Event=(WiredIn 9,On) event ?? na verzenden .
 - Found in r306: als ethernet niet aangesloten dan start de nodo (soms) niet op.
 - Found in r306: Nodo due compatibel maken n.a.v. omnummeren CMD_...
 - Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue testen
-- Wired poorten testen incl. Trigger, Threshold.
 - Found in r306: Na volledig volschrijven van de eventlist blijft Nodo hangen in continue uitvoeren van het reboot event.
-- Found in r306: Na een RaiseError vanuit een TelNet sessie werkt invoer commando eerst daarop volgende keer niet. Eerste commando wordt overgeslagen.
-- Gevoelige commando's verhuizen van ExecuteCommand naar ExecuteLine
 - Commando "OutputHTTP". Hiermee kan worden ingesteld of ieder event ook word verstuurd als een HTTP-request. Het url adres van de server kan worden worden ingesteld met commando "URL <web address>"
-- Commando "OutputPachube"
 
 Minor:
 - Found in r306: Status WiredAnalog 22 is mogelijk
 
-Ideeën:
-
 Aanpassingen vanaf r310:
-- Commaando toegevoegd "WiredAnalogCalibrate <poort> <High|Low> <ijkwaarde>"
+- Sound: als Par1 groter dan 8, dan tijdsduur=Par2*100 milliseconde, toonhoogte=Par2*100 Hz
+- Aanpassing "WiredSmittTrigger": invoer analoge decimale waarde. 
+- Aanpassing "WiredTreshold": invoer analoge decimale waarde.
+- Commando status aagepast naar analoge weergave voor WiredAnalog, WiredSmittTrigger,WiredThreshold.
+- Found in r306: Na een RaiseError vanuit een TelNet sessie werkt invoer commando eerst daarop volgende keer niet. Eerste commando wordt overgeslagen.
+
+Aanpassingen vanaf r309:
+- Commaando toegevoegd "WiredCalibrate <poort> <High|Low> <ijkwaarde>"
 - Toevoeging commando "URL <line>", hiermee kan de URL van de server worden ingesteld waar de events (via HTTP-Poort 80) naar toegezonden moeten worden. (max. 40 tekens)
 
 Aanpassingen vanaf r306:
@@ -47,7 +45,7 @@ Aanpassingen vanaf r305:
 
 
 Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
-- Commaando toegevoegd "WiredAnalogCalibrate <poort> <High|Low> <ijkwaarde>"
+- Commaando toegevoegd "WiredCalibrate <poort> <High|Low> <ijkwaarde>"
 - Ethernet intergratie. Events van EventGhost (PC, Android) ontvangen en verzenden over IP;
 - Toevoeging commando "URL <line>", hiermee kan de URL van de server worden ingesteld waar de events (via HTTP-Poort 80) naar toegezonden moeten worden. (max. 40 tekens)
 - Nieuw commando "OutputEG <On|Off> , <SaveIP Save|On|Off>"
@@ -58,6 +56,8 @@ Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - Aantal gebruikersvariabelen verhoogd van 15 naar 32
 - 8 digitale wired poorten i.p.v. 4
 - 8 analoge wired poorten i.p.v. 4
+- Aanpassing "WiredSmittTrigger": invoer analoge decimale waarde. 
+- Aanpassing "WiredTreshold": invoer analoge decimale waarde.
 - Eventlist uitgebreid van 120 posities naar 256
 - queue voor opvangen events tijdens delay van 15 uitgebreid naar 32 events.
 - Welkomsttekst uitgebreid met de IP-settings
@@ -89,6 +89,8 @@ Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - Commando "WiredRange" vervallen. Overbodig geworden n.a.v. calibratie/ijking funktionaliteit.
 - Event aangepast "WiredAnalog". Geeft nu gecalibreerde waarde weer metdecimalen achter de komma
 - Verzenden van IR staat default op Off na een reset.
+- Sound: als Par1 groter dan 8, dan tijdsduur=Par2*100 milliseconde, toonhoogte=Par2*100 Hz
+
 Onder de motorkap:
 - Verwerken van seriele gegevens volledig herschreven
 - omnummeren van tabel met events,commando en waarden om plaats te maken voor uitbreiding commandoset. LET OP: niet meer compatibel met de Uno 1.2.1 en lagere versies!

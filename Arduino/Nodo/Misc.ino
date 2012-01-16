@@ -44,7 +44,8 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
  { 
   int x;
   byte xPar1=*Par1,xPar2=*Par2;
-  
+  unsigned long event;
+
   *Par1=0;
   *Par2=0;
   switch (*Command)
@@ -53,7 +54,6 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       *Par1=S.TransmitEventGhost;
       *Par2=S.AutoSaveEventGhostIP;
       break;
-
 
     case CMD_WAITFREERF: 
       *Par1=S.WaitFreeRF_Delay;
@@ -132,19 +132,32 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
         *Par2=0;
       break;
 
-    case CMD_WIRED_THRESHOLD:
-      *Par1=xPar1;
-      *Par2=S.WiredInputThreshold[xPar1-1];
-      break;
 
     case CMD_WIRED_PULLUP:
       *Par1=xPar1;
       *Par2=(S.WiredInputPullUp[xPar1-1])?VALUE_ON:VALUE_OFF;
       break;
 
+    case CMD_WIRED_ANALOG:
+      // lees analoge waarde. Dit is een 10-bit waarde, unsigned 0..1023
+      // vervolgens met map() omrekenen naar gekalibreerde waarde        
+      x=map(analogRead(WiredAnalogInputPin_1+xPar1-1),S.WiredInput_Calibration_IL[xPar1-1],S.WiredInput_Calibration_IH[xPar1-1],S.WiredInput_Calibration_OL[xPar1-1],S.WiredInput_Calibration_OH[xPar1-1]);
+      event=wiredint2event(x, xPar1-1, CMD_WIRED_ANALOG);
+      *Par1=(byte)((event>>8) & 0xff);
+      *Par2=(byte)(event & 0xff);
+
+      break;
+
+    case CMD_WIRED_THRESHOLD:
+      event=wiredint2event(S.WiredInputThreshold[xPar1-1], xPar1-1,0);
+      *Par1=(byte)((event>>8) & 0xff);
+      *Par2=(byte)(event & 0xff);
+      break;
+
     case CMD_WIRED_SMITTTRIGGER:
-      *Par1=xPar1;
-      *Par2=S.WiredInputSmittTrigger[xPar1-1];
+      event=wiredint2event(S.WiredInputSmittTrigger[xPar1-1], xPar1-1,0);
+      *Par1=(byte)((event>>8) & 0xff);
+      *Par2=(byte)(event & 0xff);
       break;
 
     case CMD_WIRED_IN_EVENT:
@@ -152,13 +165,6 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       *Par2=(WiredInputStatus[xPar1-1])?VALUE_ON:VALUE_OFF;
       break;
 
-/// ??? nog uitwerken: status opvraag
-//    case CMD_WIRED_ANALOG:
-//
-//Serial.print("*** debug: Poort status uitvraag=");Serial.println(analogRead(WiredAnalogInputPin_1+xPar1-1),DEC);//??? Debug
-//
-//      int2calibrated(Par1,Par2,xPar1-1,analogRead(WiredAnalogInputPin_1+xPar1-1));// Call by reference voor Par1 en Par2
-//      break;
       
     case CMD_WIRED_OUT:
       *Par1=xPar1;
@@ -263,12 +269,12 @@ void ResetFactory(void)
   // zet analoge waarden op default
   for(x=0;x<WIRED_PORTS;x++)
     {
-    S.WiredInputThreshold[x]=512; 
-    S.WiredInputSmittTrigger[x]=10;
+    S.WiredInputThreshold[x]=5000; 
+    S.WiredInputSmittTrigger[x]=0;
     S.WiredInputPullUp[x]=true;
     S.WiredInput_Calibration_IH[x]=1023;
     S.WiredInput_Calibration_IL[x]=0;
-    S.WiredInput_Calibration_OH[x]=1023;
+    S.WiredInput_Calibration_OH[x]=10000;
     S.WiredInput_Calibration_OL[x]-0;
     }
 
@@ -316,10 +322,11 @@ void FreeMemory(int x)
 
  /**********************************************************************************************\
   * Geeft de status weer of verzendt deze.
-  *
-  *
+  * verzend de status van een setting als event.
+  * Par1 = Command
+  * Par2 = selectie (poort, variabele, timer) Als nul, dan walidcard voor alle.
  \**********************************************************************************************/
-void Status(boolean ToSerial, byte Par1, byte Par2) //??? waaromnog de ToSerial ? kan dit komen te vervallen?
+void Status(byte Par1, byte Par2, boolean SendEvent)
   {
   byte CMD_Start,CMD_End;
   byte Par1_Start,Par1_End;
@@ -340,26 +347,20 @@ void Status(boolean ToSerial, byte Par1, byte Par2) //??? waaromnog de ToSerial 
   if(Par1==VALUE_ALL)
     {
     Par2=0;
-    if(ToSerial)
-      PrintWelcome();
     CMD_Start=FIRST_COMMAND;
     CMD_End=LAST_COMMAND;
     }
   else
     {
-    if(!GetStatus(&Par1,&P1,&P2)) // P1 en P2 even gebruikt als dummy
+    if(!GetStatus(&Par1,&P1,&P2))// x is hier even een dummy voor vulling call by reference
       return;
     CMD_Start=Par1;
     CMD_End=Par1;
     }
 
-  // tijdelijk logging naar de SDCard uitzetten omdat anders alle status informatie ook wordt opgeslagen op de SDCard door de PrintEvent routine.
-  boolean SDCardPresentBackup=SDCardPresent;
-  SDCardPresent=false;
-
   for(x=CMD_Start; x<=CMD_End; x++)
     {
-    if(GetStatus(&x,&Par1_Start,&Par1_Start)) // Als het een geldige uitvraag is. let op: call by reference ! Par1_Start is gebruikt als dummy.
+    if(GetStatus(&x,&P1,&P2)) // Als het een geldige uitvraag is. let op: call by reference !
       {
       if(Par2==0) // Als in het commando 'Status Par1, Par2' Par2 niet is gevuld met een waarde
         {
@@ -374,14 +375,17 @@ void Status(boolean ToSerial, byte Par1, byte Par2) //??? waaromnog de ToSerial 
             Par1_Start=1;
             Par1_End=WIRED_PORTS;
             break;      
+
           case CMD_VARIABLE_SET:
             Par1_Start=1;
             Par1_End=USER_VARIABLES_MAX;
             break;
+
           case CMD_TIMER_SET_MIN:
             Par1_Start=1;
             Par1_End=TIMER_MAX;
             break;
+
           default:
             Par1_Start=0;
             Par1_End=0;
@@ -398,19 +402,13 @@ void Status(boolean ToSerial, byte Par1, byte Par2) //??? waaromnog de ToSerial 
           P1=y;
           P2=0;
           GetStatus(&x,&P1,&P2); // haal status op. Call by Reference!
-          if(ToSerial)
-            PrintEvent(command2event(x,P1,P2),CMD_STATUS,VALUE_DIRECTION_OUTPUT);  // geef event weer op Serial
+          if(SendEvent)
+            TransmitCode(command2event(x,P1,P2),SIGNAL_TYPE_NODO); // verzend als event
           else
-            TransmitCode(command2event(x,P1,P2),SIGNAL_TYPE_NODO);
+            PrintEvent(command2event(x,P1,P2),VALUE_SOURCE_SERIAL,VALUE_DIRECTION_OUTPUT);  // geef event weer op Serial
           }
       }// if Getstatus
     }// for x
-
-  if(ToSerial && CMD_Start!=CMD_End) 
-    PrintLine(ProgmemString(Text_22));
-
-  // logging naar SDCard weer inschakelen indien deze actief was.
-  SDCardPresent=SDCardPresentBackup;
   }
 
 
@@ -464,6 +462,8 @@ void Beep(int frequency, int duration)//Herz,millisec
   {
   long halfperiod=500000L/frequency;
   long loops=(long)duration*frequency/(long)1000;
+  
+  noInterrupts();
   for(loops;loops>0;loops--) 
     {
     digitalWrite(BuzzerPin, HIGH);
@@ -471,21 +471,21 @@ void Beep(int frequency, int duration)//Herz,millisec
     digitalWrite(BuzzerPin, LOW);
     delayMicroseconds(halfperiod);
     }
+  interrupts();
   }
  
  /**********************************************************************************************\
  * Geeft een belsignaal.
  * Revision 01, 09-03-2009, P.K.Tonkes@gmail.com
  \*********************************************************************************************/
-void Alarm(int Variant,int Duration)
+void Alarm(int Variant,int Option)
   {
    byte x,y;
-   if(Duration==0)Duration=1;
 
    switch (Variant)
     { 
     case 1:// four beeps
-      for(y=1;y<=(Duration>1?Duration:1);y++)
+      for(y=1;y<=(Option>1?Option:1);y++)
         {
         Beep(3000,30);
         delay(100);
@@ -499,7 +499,7 @@ void Alarm(int Variant,int Duration)
       break;
 
     case 2: // whoop up
-      for(y=1;y<=(Duration>1?Duration:1);y++)
+      for(y=1;y<=(Option>1?Option:1);y++)
         {
         for(x=1;x<=50;x++)
             Beep(250*x/4,20);
@@ -507,7 +507,7 @@ void Alarm(int Variant,int Duration)
       break;
 
     case 3: // whoop down
-      for(y=1;y<=(Duration>1?Duration:1);y++)
+      for(y=1;y<=(Option>1?Option:1);y++)
         {
         for(x=50;x>0;x--)
             Beep(250*x/4,20);
@@ -515,7 +515,7 @@ void Alarm(int Variant,int Duration)
       break;
 
     case 4:// S.O.S.
-      for(y=1;y<=(Duration>1?Duration:1);y++)
+      for(y=1;y<=(Option>1?Option:1);y++)
         {
           Beep(1200,50);
           delay(100);
@@ -534,12 +534,12 @@ void Alarm(int Variant,int Duration)
           Beep(1200,50);
           delay(100);
           Beep(1200,50);
-          if(Duration>1)delay(500);
+          if(Option>1)delay(500);
         }
       break;
           
      case 5:// ding-dong
-       for(x=0;x<Duration;x++)
+       for(x=0;x<=(Option>1?Option:1);x++)
          {
          if(x>0)delay(2000);
          Beep(1500,500);
@@ -548,7 +548,7 @@ void Alarm(int Variant,int Duration)
        break;
 
     case 6: // phone ring
-      for(x=0;x<(15*Duration);x++)
+      for(x=0;x<(15*(Option>1?Option:1));x++)
         {
           Beep(1000,40);
           Beep(750,40);
@@ -559,9 +559,15 @@ void Alarm(int Variant,int Duration)
         Beep(1500,100);
         Beep(1000,100);
         break;
-                       
+
     default:// beep
-       Beep(2000,20*(Duration>1?Duration:1));
+       if(Variant==0)
+          Variant=5; // tijdsduur
+          
+       if(Option==0)
+         Option=20; // toonhoogte
+
+       Beep(100*Option,Variant*10);
        break;
     }
   }
@@ -860,5 +866,11 @@ boolean LogSDCard(char *Line)
   return SDCardPresent;
   }
 
+void Led(boolean R, boolean G, boolean B)
+  {
+//  #define LED_RGB_R                   5  // RGB-Led, aansluiting rood
+//  #define LED_RGB_G                   6  // RGB-Led, aansluiting groen
+//  #define LED_RGB_B                   7  // RGB-Led, aansluiting blauw
 
 
+  }

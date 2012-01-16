@@ -76,6 +76,7 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
     }
   else
     {
+    // ??? statussen worden nu nog weergegeven als event. 
     strcat(TempString, ProgmemString(Text_14));
     strcat(TempString, Event2str(Content));
     }
@@ -230,11 +231,6 @@ char* Event2str(unsigned long Code)
   byte Par2     = (Code)&0xff;
   static char EventString[50]; 
 
-  //  Serial.print("*** debug: Event   =");Serial.println(Code,HEX);//??? Debug
-  //  Serial.print("*** debug: Command =");Serial.println(Command,DEC);//??? Debug
-  //  Serial.print("*** debug: Par1    =");Serial.println(Par1,DEC);//??? Debug
-  //  Serial.print("*** debug: Par2    =");Serial.println(Par2,DEC);//??? Debug
-  
   strcpy(EventString, "(");
 
   if(Type==SIGNAL_TYPE_NEWKAKU)
@@ -252,6 +248,9 @@ char* Event2str(unsigned long Code)
     strcat(EventString,cmd2str(Command));
     switch(Command)
       {
+      // Par1 en Par2 samengesteld voor weergave van COMMAND <Wired poort> , <analoge waarde
+      case CMD_WIRED_SMITTTRIGGER:
+      case CMD_WIRED_THRESHOLD:
       case CMD_WIRED_ANALOG:
         P1=P_ANALOG;
         P2=P_NOT;
@@ -282,6 +281,7 @@ char* Event2str(unsigned long Code)
   
       // Par1 als tekst en par2 als tekst
       case CMD_TRANSMIT_EVENTGHOST:
+      case CMD_TERMINAL:
       case CMD_COMMAND_WILDCARD:
         P1=P_TEXT;
         P2=P_TEXT;
@@ -298,7 +298,6 @@ char* Event2str(unsigned long Code)
   
       // Par1 als tekst en par2 niet
       case CMD_ERROR:
-      case CMD_TERMINAL:
       case CMD_DLS_EVENT:
       case CMD_BUSY:
       case CMD_TRANSMIT_HTTP:

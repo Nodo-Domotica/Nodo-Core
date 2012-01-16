@@ -108,7 +108,7 @@ prog_char PROGMEM Cmd_021[]="";
 prog_char PROGMEM Cmd_022[]="Terminal";
 prog_char PROGMEM Cmd_023[]="SimulateDay";
 prog_char PROGMEM Cmd_024[]="Sound";
-prog_char PROGMEM Cmd_025[]="Status";
+prog_char PROGMEM Cmd_025[]="";
 prog_char PROGMEM Cmd_026[]="UserPlugin";
 prog_char PROGMEM Cmd_027[]="TimerRandom";
 prog_char PROGMEM Cmd_028[]="TimerSetSec";
@@ -134,11 +134,11 @@ prog_char PROGMEM Cmd_047[]="SendBusy";
 prog_char PROGMEM Cmd_048[]="VariableSendUserEvent";
 prog_char PROGMEM Cmd_049[]="Password";
 prog_char PROGMEM Cmd_050[]="VariableUserEvent";
-prog_char PROGMEM Cmd_051[]="WiredAnalogCalibrate";
+prog_char PROGMEM Cmd_051[]="WiredCalibrate";
 prog_char PROGMEM Cmd_052[]="Reboot";
 prog_char PROGMEM Cmd_053[]="URL";
-prog_char PROGMEM Cmd_054[]="WiredAnalogSend";
-prog_char PROGMEM Cmd_055[]="";
+prog_char PROGMEM Cmd_054[]="Status";
+prog_char PROGMEM Cmd_055[]="SendStatus";
 prog_char PROGMEM Cmd_056[]="AnalyseSettings";
 prog_char PROGMEM Cmd_057[]="OutputHTTP"; // nog uitwerken
 prog_char PROGMEM Cmd_058[]="OutputIR";
@@ -254,7 +254,7 @@ prog_char PROGMEM Cmd_162[]="Variables";
 prog_char PROGMEM Cmd_163[]="Clock";
 prog_char PROGMEM Cmd_164[]="Terminal";
 prog_char PROGMEM Cmd_165[]="EventGhost";
-prog_char PROGMEM Cmd_166[]="Time";
+prog_char PROGMEM Cmd_166[]="Status";
 prog_char PROGMEM Cmd_167[]="Save";
 prog_char PROGMEM Cmd_168[]="Input";
 prog_char PROGMEM Cmd_169[]="Output";
@@ -327,7 +327,7 @@ prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 #define CMD_TERMINAL                    22
 #define CMD_SIMULATE_DAY                23
 #define CMD_SOUND                       24
-#define CMD_STATUS                      25
+#define CMD_RES25                       25
 #define CMD_USERPLUGIN                  26
 #define CMD_TIMER_RANDOM                27
 #define CMD_TIMER_SET_SEC               28
@@ -356,8 +356,8 @@ prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 #define CMD_WIRED_ANALOG_CALIBRATE      51
 #define CMD_REBOOT                      52
 #define CMD_URL                         53
-#define CMD_WIRED_ANALOG_SEND           54
-#define CMD_RES55                       55
+#define CMD_STATUS                      54
+#define CMD_STATUS_SEND                 55
 #define CMD_ANALYSE_SETTINGS            56
 #define CMD_TRANSMIT_HTTP               57
 #define CMD_TRANSMIT_IR                 58
@@ -476,7 +476,7 @@ prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 #define VALUE_SOURCE_CLOCK             163
 #define VALUE_SOURCE_TERMINAL          164
 #define VALUE_SOURCE_EVENTGHOST        165
-#define VALUE_TIMESTAMP                166
+#define VALUE_SOURCE_STATUS            166
 #define VALUE_SAVE                     167
 #define VALUE_DIRECTION_INPUT          168
 #define VALUE_DIRECTION_OUTPUT         169
@@ -490,7 +490,7 @@ prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 #define VALUE_NESTING                  177
 #define VALUE_SOURCE_QUEUE             178
 #define VALUE_TRACE                    179
-#define VALUE_RES180                   180
+#define VALUE_TIMESTAMP                180
 #define VALUE_RES181                   181
 #define VALUE_HIGH                     182
 #define VALUE_LOW                      183
@@ -604,7 +604,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define SERIAL_TERMINATOR_2       0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
 #define INPUT_BUFFER_SIZE           80 // Buffer waar de karakters van de seriele /IP poort in worden opgeslagen.
 #define TIMER_MAX                   16 // aantal beschikbare timers voor de user, gerekend vanaf 
-#define Loop_INTERVAL_1            250 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
+#define Loop_INTERVAL_1           1000 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
 #define Loop_INTERVAL_2           5000 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
 #define EVENT_QUEUE_MAX             32 // maximaal aantal plaatsen in de queue
 #define ENDSIGNAL_TIME            1500 // Dit is de tijd in milliseconden waarna wordt aangenomen dat het ontvangen één reeks signalen beëindigd is
@@ -665,7 +665,6 @@ boolean WiredOutputStatus[WIRED_PORTS];                     // Wired variabelen.
 int BusyNodo;                                               // in deze variabele de status van het event 'Busy' van de betreffende units 1 t/m 15. bit-1 = unit-1.
 byte UserVarPrevious[USER_VARIABLES_MAX];                   // Vorige versie van de UserVariablles: om wisselingen te kunnen vaststellen.
 byte DaylightPrevious;                                      // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet.
-byte WiredCounter=0, VariableCounter;                       // tellers.
 byte EventlistDepth=0;                                      // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's.
 byte Hold=false;
 unsigned long HoldTimer;
@@ -680,7 +679,7 @@ boolean TerminalConnected=false;                            // Vlag geeft aan of
 boolean SerialConnected=true;                               // Vlag geeft aan of er een verbinding USB-poort.
 boolean TemporyEventGhostError=false;                       // Vlag om tijdelijk evetghost verzending stil te leggen na een communicatie probleem
 
-byte Ethernet_MAC_Address[]={0xDE,0xAD,0xBE,0xEF,0xFE,0xED};// MAC adres van de Nodo.
+byte Ethernet_MAC_Address[]={0x00,0x06,0x39,0x46,0x55,0x29};// MAC adres van de Nodo.
 EthernetServer EventServer(1024);                           // Globale Server class voor ontvangen van Events van een EventGhost applicatie
 EthernetServer TerminalServer(23);                           // Server class voor Terminal sessie.
 EthernetClient TerminalClient=false;                        // Client class voor Terminal sessie.
@@ -796,9 +795,9 @@ void loop()
   
   SerialHold(false); // er mogen weer tekens binnen komen van SERIAL
 
-  char Inputbuffer_Serial[INPUT_BUFFER_SIZE];                 // Buffer voor input
-  char InputBuffer_IPEvent[INPUT_BUFFER_SIZE];                // Buffer voor input
-  char Inputbuffer_Terminal[INPUT_BUFFER_SIZE];               // Buffer voor input
+  char Inputbuffer_Serial[INPUT_BUFFER_SIZE];                 // Buffer voor input Seriele date
+  char InputBuffer_EventGhost[INPUT_BUFFER_SIZE];             // Buffer voor input EventGhsot events
+  char Inputbuffer_Terminal[INPUT_BUFFER_SIZE];               // Buffer voor input terminal verbinding Telnes sessie
 
   // hoofdloop: scannen naar signalen
   // dit is een tijdkritische loop die wacht tot binnengekomen event op IR, RF, SERIAL, CLOCK, DAYLIGHT, TIMER
@@ -827,44 +826,14 @@ void loop()
     // Ethernet alleen als verkrijgen van IP adres correct is verlopen
     if(EthernetEnabled)
       {
-      // IP (Event) : *************** kijk of er een Event klaar staat op het ethernet shield **********************    
-      if(EventGhostReceive(InputBuffer_IPEvent))
-        ExecuteLine(InputBuffer_IPEvent, VALUE_SOURCE_EVENTGHOST);
+      // IP Event van EventGhost : *************** kijk of er een Event van een eventghost client binnenkomt **********************    
+      if(EventGhostReceive(InputBuffer_EventGhost))
+        ExecuteLine(InputBuffer_EventGhost, VALUE_SOURCE_EVENTGHOST);
 
-        
-      // IP (Terminal) : *************** kijk of er verzoek tot verbinding vanuit een terminal is **********************    
-      if(TerminalServer.available())
-        {
-        if(!TerminalConnected)
-          {
-          // we hebben een nieuwe Terminal client
-          TerminalConnected=true;
-          TerminalClient=TerminalServer.available();
-          if(S.Terminal_Enabled==VALUE_ON)
-            {
-            PrintWelcome();
-            }
-          else
-            {
-            TerminalClient.println(cmd2str(ERROR_10));
-            RaiseError(ERROR_10); 
-            }              
-          }
-  
-        if(TerminalClient.connected() && TerminalClient.available()) // er staat data van de terminal klaar
-          {
-          if(TerminalReceive(Inputbuffer_Terminal))
-            {
-            if(S.Terminal_Enabled==VALUE_ON)
-              ExecuteLine(Inputbuffer_Terminal, VALUE_SOURCE_TERMINAL);    
-            else
-              {
-              TerminalClient.println(cmd2str(ERROR_10));
-              RaiseError(ERROR_10); 
-              }
-            }
-          }
-        }
+      // IP Telnet verbinding : *************** kijk of er verzoek tot verbinding vanuit een terminal is **********************    
+      if(TerminalReceive(Inputbuffer_Terminal))
+        ExecuteLine(Inputbuffer_Terminal, VALUE_SOURCE_TERMINAL);
+
       }
       
     // SERIAL: *************** kijk of er data klaar staat op de seriële poort **********************
@@ -946,31 +915,7 @@ void loop()
         }
       }while(millis()<StaySharpTimer);
      
-    // 2: niet tijdkritische processen die periodiek uitgevoerd moeten worden
-    if(LoopIntervalTimer_2<millis()) // lange interval
-      {
-      LoopIntervalTimer_2=millis()+Loop_INTERVAL_2; // reset de timer
-
-      // CLOCK: **************** Lees periodiek de realtime klok uit en check op events  ***********************
-      Content=ClockRead(); // Lees de Real Time Clock waarden in de struct Time
-      if(CheckEventlist(Content,VALUE_SOURCE_CLOCK) && EventTimeCodePrevious!=Content)
-        {
-        EventTimeCodePrevious=Content; 
-        ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
-        }
-      else
-        Content=0L;
-              
-      // DAYLIGHT: **************** Check zonsopkomst & zonsondergang  ***********************
-      SetDaylight();
-      if(Time.Daylight!=DaylightPrevious)// er heeft een zonsondergang of zonsopkomst event voorgedaan
-        {
-        Content=command2event(CMD_CLOCK_EVENT_DAYLIGHT,Time.Daylight,0L);
-        DaylightPrevious=Time.Daylight;
-        ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
-        }
-      }// lange interval
-
+     
     // 1: niet tijdkritische processen die periodiek uitgevoerd moeten worden
     if(LoopIntervalTimer_1<millis())// korte interval
       {
@@ -1004,31 +949,51 @@ void loop()
       // WIRED: *************** kijk of statussen gewijzigd zijn op WIRED **********************
 
       // als de huidige waarde groter dan threshold EN de vorige keer was dat nog niet zo DAN verstuur code
-      z=false; // vlag om te kijken of er een wijziging is die verzonden moet worden.
-      y=analogRead(WiredAnalogInputPin_1+WiredCounter);
-     
-      if(y>S.WiredInputThreshold[WiredCounter]+S.WiredInputSmittTrigger[WiredCounter] && !WiredInputStatus[WiredCounter])
+      for(x=0;x<WIRED_PORTS;x++)
         {
-        WiredInputStatus[WiredCounter]=true;
-        z=true;
+        // lees analoge waarde. Dit is een 10-bit waarde, unsigned 0..1023
+        // vervolgens met map() omrekenen naar gekalibreerde waarde        
+        y=map(analogRead(WiredAnalogInputPin_1+x),S.WiredInput_Calibration_IL[x],S.WiredInput_Calibration_IH[x],S.WiredInput_Calibration_OL[x],S.WiredInput_Calibration_OH[x]);        
+             
+        if(!WiredInputStatus[x] && y>(S.WiredInputThreshold[x]+S.WiredInputSmittTrigger[x]))
+          {
+          WiredInputStatus[x]=true;
+          Content=command2event(CMD_WIRED_IN_EVENT,x+1,WiredInputStatus[x]?VALUE_ON:VALUE_OFF);
+          ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
+          }
+  
+        if(WiredInputStatus[x] && y<(S.WiredInputThreshold[x]-S.WiredInputSmittTrigger[x]))
+          {
+          WiredInputStatus[x]=false;
+          Content=command2event(CMD_WIRED_IN_EVENT,x+1,WiredInputStatus[x]?VALUE_ON:VALUE_OFF);
+          ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
+          }
         }
 
-      if(y<S.WiredInputThreshold[WiredCounter]-S.WiredInputSmittTrigger[WiredCounter] && WiredInputStatus[WiredCounter])
+      // 2: niet tijdkritische processen die periodiek uitgevoerd moeten worden
+      if(LoopIntervalTimer_2<millis()) // lange interval
         {
-        WiredInputStatus[WiredCounter]=false;
-        z=true;
-        }
-
-      if(z)// er is een verandering van status op de ingang. 
-        {    
-        Content=command2event(CMD_WIRED_IN_EVENT,WiredCounter+1,WiredInputStatus[WiredCounter]?VALUE_ON:VALUE_OFF);
-        ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
-        }
-
-      if(WiredCounter<WIRED_PORTS)
-        WiredCounter++;
-      else
-        WiredCounter=0;
+        LoopIntervalTimer_2=millis()+Loop_INTERVAL_2; // reset de timer
+  
+        // CLOCK: **************** Lees periodiek de realtime klok uit en check op events  ***********************
+        Content=ClockRead(); // Lees de Real Time Clock waarden in de struct Time
+        if(CheckEventlist(Content,VALUE_SOURCE_CLOCK) && EventTimeCodePrevious!=Content)
+          {
+          EventTimeCodePrevious=Content; 
+          ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
+          }
+        else
+          Content=0L;
+                
+        // DAYLIGHT: **************** Check zonsopkomst & zonsondergang  ***********************
+        SetDaylight();
+        if(Time.Daylight!=DaylightPrevious)// er heeft een zonsondergang of zonsopkomst event voorgedaan
+          {
+          Content=command2event(CMD_CLOCK_EVENT_DAYLIGHT,Time.Daylight,0L);
+          DaylightPrevious=Time.Daylight;
+          ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
+          }
+        }// lange interval
       }// korte interval
-    }// // while 
+    }// while 
   }

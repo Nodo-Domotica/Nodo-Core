@@ -258,13 +258,13 @@ unsigned long wiredint2event(int wi, byte port, byte cmd)
     high=true;
     wi=wi/10;
     }
-  
+
   return ((unsigned long)SIGNAL_TYPE_NODO)<<28   |
          ((unsigned long)S.Unit)<<24             | 
          ((unsigned long)cmd)<<16                |
-         ((unsigned long)port<<12)               |
-         ((unsigned long)high<<11)               |
-         ((unsigned long)sign<<10)               |
+         ((unsigned long)port)<<12               |
+         ((unsigned long)high)<<11               |
+         ((unsigned long)sign)<<10               |
          ((unsigned long)(wi & 0x3ff));
   }
   

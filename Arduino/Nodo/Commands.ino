@@ -76,6 +76,7 @@ byte CommandError(unsigned long Content)
     case CMD_CLOCK_EVENT_FRI:
     case CMD_CLOCK_EVENT_SAT:
     case CMD_STATUS:
+    case CMD_STATUS_SEND:
     case CMD_DELAY:
     case CMD_SOUND: 
     case CMD_USEREVENT:
@@ -159,7 +160,6 @@ byte CommandError(unsigned long Content)
     // test:Par1 binnen bereik maximaal beschikbare wired poorten.
     case CMD_WIRED_IN_EVENT:
     case CMD_WIRED_ANALOG:
-    case CMD_WIRED_ANALOG_SEND:
     case CMD_WIRED_THRESHOLD:
     case CMD_WIRED_SMITTTRIGGER:
       if(Par1<1 || Par1>WIRED_PORTS)return ERROR_02;
@@ -347,14 +347,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         ProcessEvent(Event,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM,0,0);
         break;
 
-      case CMD_WIRED_ANALOG_SEND:
-        // Lees de analoge waarde uit en verzend deze
-        // lees analoge waarde. Dit is een 10-bit waarde, unsigned 0..1023
-        // vervolgens met map() omrekenen naar gekalibreerde waarde        
-        x=map(analogRead(Par1+WiredAnalogInputPin_1-1),S.WiredInput_Calibration_IL[Par1-1],S.WiredInput_Calibration_IH[Par1-1],S.WiredInput_Calibration_OL[Par1-1],S.WiredInput_Calibration_OH[Par1-1]);        
-        TransmitCode(wiredint2event(x,Par1-1,CMD_WIRED_ANALOG),SIGNAL_TYPE_NODO);
-        break;
-
       case CMD_SIMULATE_DAY:
         if(Par1==0)Par1=1;
         SimulateDay(Par1); 
@@ -439,22 +431,12 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         SaveSettings();
         break;
                    
-      case CMD_WIRED_THRESHOLD:
-        S.WiredInputThreshold[Par1-1]=Par2; // Par1 is de poort[1..4], Par2 is de waarde [0..255]
-        SaveSettings();
-        break;
-          
       case CMD_WIRED_OUT:
         digitalWrite(WiredDigitalOutputPin_1+Par1-1,Par2==VALUE_ON);
         WiredOutputStatus[Par1-1]=Par2==VALUE_ON;
         PrintEvent(Content,VALUE_SOURCE_WIRED,VALUE_DIRECTION_OUTPUT);
         break;
-                    
-      case CMD_WIRED_SMITTTRIGGER:
-        S.WiredInputSmittTrigger[Par1-1]=Par2; // Par1 is de poort[1..4], Par2 is de waarde [0..255]
-        SaveSettings();
-        break;
-       
+                           
       case CMD_WAITFREERF: 
         S.WaitFreeRF_Delay=Par1;
         S.WaitFreeRF_Window=Par2;
@@ -500,6 +482,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
         SaveSettings();
         PrintWelcome();//??? debug.
+        break;
         
       case CMD_WAITBUSY:
         if(Par1==VALUE_ALL)
@@ -535,9 +518,24 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         UserPlugin_Command(Par1,Par2);
         break;        
 
+      case CMD_WIRED_THRESHOLD:
+        // Dit commando wordt ook afgevangen in ExecuteLine(). Hier opgenomen i.g.v. ontvangst via RF of IR
+        S.WiredInputThreshold[Par1-1]=event2wiredint(Content);
+        SaveSettings();
+        break;                  
+        
+      case CMD_WIRED_SMITTTRIGGER:
+        // Dit commando wordt ook afgevangen in ExecuteLine(). Hier opgenomen i.g.v. ontvangst via RF of IR
+        S.WiredInputSmittTrigger[Par1-1]=event2wiredint(Content);
+        SaveSettings();
+        break;                  
+
       case CMD_STATUS:
-        x=(Src==VALUE_SOURCE_SERIAL) || (Src==VALUE_SOURCE_TERMINAL);        
-        Status(x, Par1, Par2);
+        Status(Par1, Par2, false);
+        break;
+
+      case CMD_STATUS_SEND:
+        Status(Par1, Par2, true);
         break;
 
       case CMD_EVENTLIST_SHOW:
@@ -546,33 +544,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           PrintEventlistEntry(x,0);
         PrintLine(ProgmemString(Text_22));
         break;
-            
-      case CMD_UNIT:
-        S.Unit=Par1;
-        if(Par1>1)
-           {
-           S.WaitFreeRF_Delay=3 + Par1*3;
-           S.WaitFreeRF_Window=3; // 1 eenheid = 100 ms.
-           }
-        else
-           {
-           S.WaitFreeRF_Delay=0;
-           S.WaitFreeRF_Window=0;
-           }
-        SaveSettings();
-        FactoryEventlist();
-        Reset();
-    
-      case CMD_LOGFILE_ERASE:      
-        // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-        digitalWrite(Ethernetshield_CS_W5100, HIGH);
-        digitalWrite(EthernetShield_CS_SDCard,LOW);
-        SD.remove(ProgmemString(Text_23));
-        // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
-        digitalWrite(Ethernetshield_CS_W5100, LOW);
-        digitalWrite(EthernetShield_CS_SDCard,HIGH);
-        break;
-
+                
       case CMD_REBOOT:
         delay(1000);
         Reset();
@@ -620,10 +592,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         SaveSettings();
         break;
 
-      case CMD_TERMINAL:
-        S.Terminal_Enabled=Par1;
-        SaveSettings();
-        break;
       }
     }
   return error?false:true;
@@ -672,9 +640,50 @@ void ExecuteLine(char *Line, byte Port)
         {
         Cmd=(byte)v;
         v=0;          
-
+        
+        if(GetArgv(Command,TmpStr,2))
+          Par1=str2val(TmpStr);
+  
+        if(GetArgv(Command,TmpStr,3))
+          Par2=str2val(TmpStr);
+  
         switch(Cmd)
           {
+          // Hier worden de commando's verwerkt die een afwijkende MMI hebben of die uitsluitend mogen worden uitgevoerd
+          // als ze via Serial of ethernet wrden verzonden. (i.v.m. veiligheid)
+          
+          case CMD_UNIT:
+            S.Unit=Par1;
+            if(Par1>1)
+               {
+               S.WaitFreeRF_Delay=3 + Par1*3;
+               S.WaitFreeRF_Window=3; // 1 eenheid = 100 ms.
+               }
+            else
+               {
+               S.WaitFreeRF_Delay=0;
+               S.WaitFreeRF_Window=0;
+               }
+            SaveSettings();
+            FactoryEventlist();
+            Reset();
+    
+          case CMD_LOGFILE_ERASE:      
+            // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+            digitalWrite(Ethernetshield_CS_W5100, HIGH);
+            digitalWrite(EthernetShield_CS_SDCard,LOW);
+            SD.remove(ProgmemString(Text_23));
+            // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
+            digitalWrite(Ethernetshield_CS_W5100, LOW);
+            digitalWrite(EthernetShield_CS_SDCard,HIGH);
+            break;
+    
+          case CMD_TERMINAL:
+            S.Terminal_Enabled=Par1;
+            S.Terminal_Prompt=Par2;
+            SaveSettings();
+            break;
+    
           case CMD_EVENTLIST_WRITE:
             State_EventlistWrite=1;
             break;
@@ -684,9 +693,6 @@ void ExecuteLine(char *Line, byte Port)
             {
             if(GetArgv(Command,TmpStr,2))
               v=str2val(TmpStr);
-              
-            if(GetArgv(Command,TmpStr,3))
-              Par2=str2val(TmpStr);
               
             if(v>255)
               {
@@ -699,16 +705,28 @@ void ExecuteLine(char *Line, byte Port)
               Error=CommandError(v);
               }
             break;
-            }  
+            }
+
+          case CMD_WIRED_THRESHOLD:
+            if(GetArgv(Command,TmpStr,3))
+              {
+              S.WiredInputThreshold[Par1-1]=str2wiredint(TmpStr);
+              SaveSettings();
+              Serial.print("*** debug: Threshold ingesteld op ");Serial.println(wiredint2str(S.WiredInputThreshold[Par1-1]));//??? Debug
+              }
+            break;                  
+            
+          case CMD_WIRED_SMITTTRIGGER:
+            if(GetArgv(Command,TmpStr,3))
+              {
+              S.WiredInputSmittTrigger[Par1-1]=str2wiredint(TmpStr);
+              SaveSettings();
+              Serial.print("*** debug: SmittTrigger ingesteld op ");Serial.println(wiredint2str(S.WiredInputSmittTrigger[Par1-1]));//??? Debug
+              }
+            break;            
                   
           case CMD_WIRED_ANALOG_CALIBRATE:
             {
-            if(GetArgv(Command,TmpStr,2))
-              Par1=str2val(TmpStr);
-              
-            if(GetArgv(Command,TmpStr,3))
-              Par2=str2val(TmpStr);
-
             int t;              
             t=analogRead(WiredAnalogInputPin_1+Par1-1);
             if(GetArgv(Command,TmpStr,4))
@@ -717,13 +735,13 @@ void ExecuteLine(char *Line, byte Port)
                 {
                 S.WiredInput_Calibration_IH[Par1-1]=t;
                 S.WiredInput_Calibration_OH[Par1-1]=str2wiredint(TmpStr);
-//???                Serial.print("*** debug: Calibratie voltooid. IH=");Serial.print(t,DEC);Serial.print(", OH=");Serial.println(wiredint2str(S.WiredInput_Calibration_OH[Par1-1]));//??? Debug
+                //??? Serial.print("*** debug: Calibratie voltooid. IH=");Serial.print(t,DEC);Serial.print(", OH=");Serial.println(wiredint2str(S.WiredInput_Calibration_OH[Par1-1]));//??? Debug
                 }
               if(Par2==VALUE_LOW)
                 {
                 S.WiredInput_Calibration_IL[Par1-1]=t;
                 S.WiredInput_Calibration_OL[Par1-1]=str2wiredint(TmpStr);
-//???                Serial.print("*** debug: Calibratie voltooid. IL=");Serial.print(t,DEC);Serial.print(", OL=");Serial.println(wiredint2str(S.WiredInput_Calibration_OL[Par1-1]));//??? Debug
+                //??? Serial.print("*** debug: Calibratie voltooid. IL=");Serial.print(t,DEC);Serial.print(", OL=");Serial.println(wiredint2str(S.WiredInput_Calibration_OL[Par1-1]));//??? Debug
                 }
               }
             v=0;
@@ -786,12 +804,6 @@ void ExecuteLine(char *Line, byte Port)
             
           default:
             {              
-            if(GetArgv(Command,TmpStr,2))
-              Par1=str2val(TmpStr);
-              
-            if(GetArgv(Command,TmpStr,3))
-              Par2=str2val(TmpStr);
-
             //Serial.print("*** debug: Cmd =");Serial.println(Cmd,DEC);//??? Debug
             //Serial.print("*** debug: Par1=");Serial.println(Par1,DEC);//??? Debug
             //Serial.print("*** debug: Par2=");Serial.println(Par2,DEC);//??? Debug
