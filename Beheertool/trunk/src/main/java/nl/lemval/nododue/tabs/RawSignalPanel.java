@@ -383,7 +383,11 @@ public class RawSignalPanel extends NodoBasePanel {
 
     @Action
     public void retrieveRawSignal() {
-        if (NodoDueManager.hasConnection()) {
+        // Clean the screen
+        int[] result = new int[0];
+        update(result);
+
+       if (NodoDueManager.hasConnection()) {
             SerialCommunicator comm =
                     NodoDueManager.getApplication().getSerialCommunicator();
             final StringBuilder data = new StringBuilder();
@@ -418,6 +422,7 @@ public class RawSignalPanel extends NodoBasePanel {
             } catch (Exception e) {
                 getListener().showStatusMessage(getResourceString("update_fail.margin", e.getMessage()));
             }
+            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
             
             String[] split = data.toString().split(", ?");
             int[] values = new int[split.length];
@@ -436,11 +441,9 @@ public class RawSignalPanel extends NodoBasePanel {
                     values[counter++] = value;
                 }
             }
-            int[] result = new int[counter];
+            result = new int[counter];
             System.arraycopy(values, 0, result, 0, counter);
             update(result);
-
-            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
         }
     }
 
@@ -492,6 +495,7 @@ public class RawSignalPanel extends NodoBasePanel {
         RawSignalGraphPanel graph = (RawSignalGraphPanel) lineGraph;
         graph.setSignal(data);
         updateSignalText();
+        graph.invalidate();
         graph.repaint();
     }
 

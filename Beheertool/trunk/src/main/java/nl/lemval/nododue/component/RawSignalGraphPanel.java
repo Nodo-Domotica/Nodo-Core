@@ -39,6 +39,10 @@ public class RawSignalGraphPanel extends JPanel {
     public void setSignal(int[] data) {
         signal = data.clone();
         if (signal.length == 0) {
+            total = 0;
+            signal = new int[0];
+            points = new int[0];
+            values = new int[0];
             return;
         }
         points = new int[2 * signal.length + 1];
