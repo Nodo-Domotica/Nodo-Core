@@ -3,39 +3,23 @@
  */
 package nl.lemval.nododue;
 
-import nl.lemval.nododue.dialog.NodoDueManagerOptionBox;
-import nl.lemval.nododue.dialog.NodoDueManagerAboutBox;
-import nl.lemval.nododue.util.listeners.StatusMessageListener;
-import org.jdesktop.application.Action;
-import org.jdesktop.application.ResourceMap;
-import org.jdesktop.application.SingleFrameApplication;
-import org.jdesktop.application.FrameView;
-import org.jdesktop.application.TaskMonitor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.util.Collection;
-import javax.swing.Timer;
-import javax.swing.Icon;
-import javax.swing.JDialog;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.KeyStroke;
+import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileFilter;
-import nl.lemval.nododue.dialog.CommandHistoryBox;
-import nl.lemval.nododue.dialog.ConfigDateBox;
-import nl.lemval.nododue.dialog.DevicesBox;
-import nl.lemval.nododue.dialog.LearnCommandBox;
-import nl.lemval.nododue.dialog.UnitSelectorBox;
+import nl.lemval.nododue.dialog.*;
 import nl.lemval.nododue.tabs.*;
 import nl.lemval.nododue.util.NodoSetting;
 import nl.lemval.nododue.util.SerialCommunicator;
-import org.jdesktop.application.TaskService;
+import nl.lemval.nododue.util.listeners.StatusMessageListener;
+import org.jdesktop.application.Action;
+import org.jdesktop.application.*;
 
 /**
  * The application's main frame.

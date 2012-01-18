@@ -78,21 +78,21 @@ public class NodoDueManagerStarter {
 
         if (osName.contains("windows")) {
             if (osArch.contains("64")) {
-                return "win64";
+                return "ch-win64";
             }
-            return "win32";
+            return "ch-win32";
         }
 
         if (osName.contains("linux")) {
             NodoDueManager.linux = true;
             if (osArch.contains("64")) {
-                return "linux64";
+                return "ch-linux64";
             }
-            return "linux32";
+            return "ch-linux32";
         }
 
         if (osName.contains("mac")) {
-            return "mac";
+            return "mac-10.5";
         }
 
         System.out.println(MessageFormat.format(bundle.getString("run.no_architecture"), osName, osArch));
