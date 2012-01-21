@@ -29,8 +29,6 @@ uitbreidingen.
 3. Alle Nodo's die met elkaar samen moeten werken MOETEN dezelfde versienummers hebben. De nieuwe Nodo Tre kan niet samenwerken
 met voorgaande versies. 
 
-4. De penbezetting is TIJDELIJK. Dit in afwachting van het ontwerp van de nieuwe definitieve printplaatjes voor de Nodo.
-
 Er wordt geen support geleverd op de betaversies zoals hier aanwezig. De beta releases zijn uitsluitend bedoeld voor een selecte groep
 gebruikers/testers.
 
@@ -58,17 +56,6 @@ Arduino compiler ..Program Files/Arduino/Libraries/..
 
 5. Plaats de Ethernet shield op de arduino Mega en stop eventueel een een vers geformatteerd SD-kaartje in het slot.
 Verbind de Nodo hardware met de Arduino Mega!  
-
-WiredAnalogInputPin_1       8   // Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-IR_ReceiveDataPin           3   // Op deze input komt het IR signaal binnen van de TSOP. Bij HIGH bij geen signaal.
-MonitorLedPin               5   // bij iedere ontvangst of verzending licht deze led kort op.
-BuzzerPin                   8   // luidspreker aansluiting
-IR_TransmitDataPin          9   // Aan deze PWM pin zit een zender IR-Led. (gebufferd via transistor i.v.m. hogere stroom die nodig is voor IR-led)
-RF_TransmitPowerPin         14  // +5 volt Vcc spanning naar de zender.
-RF_TransmitDataPin          15  // data naar de zender
-RF_ReceivePowerPin          16  // Spanning naar de ontvanger via deze pin.
-RF_ReceiveDataPin           17  // Op deze input komt het 433Mhz-RF signaal binnen. LOW bij geen signaal.
-WiredDigitalOutputPin_1     22  // 8 digitale outputs D22 t/m D29 worden gebruikt voor WiredOut 1 tot en met 8
 
 6. Gaan met de banaan...
 
