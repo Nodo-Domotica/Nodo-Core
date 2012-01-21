@@ -4,12 +4,12 @@
     <groupId>nl.lemval</groupId>
     <artifactId>Nodo</artifactId>
     <packaging>jar</packaging>
-    <version>1.2.2-SNAPSHOT</version>
+    <version>1.2.2</version>
     <name>Nodo Beheer</name>
 
     <scm>
-        <connection>scm:svn:http://arduino-nodo.googlecode.com/svn/Beheertool/trunk</connection>
-        <developerConnection>scm:svn:https://arduino-nodo.googlecode.com/svn/Beheertool/trunk</developerConnection>
+        <connection>scm:svn:http://arduino-nodo.googlecode.com/svn/Beheertool/tags/Nodo-1.2.2</connection>
+        <developerConnection>scm:svn:https://arduino-nodo.googlecode.com/svn/Beheertool/tags/Nodo-1.2.2</developerConnection>
     </scm>
 
 <!--
