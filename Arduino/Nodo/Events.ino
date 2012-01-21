@@ -11,7 +11,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   SerialHold(true);  // als er een regel ontvangen is, dan binnenkomst van signalen stopzetten
   boolean SetBusyOff=false;
   
-  digitalWrite(MonitorLedPin,HIGH);           // LED aan als er iets verwerkt wordt  
+  digitalWrite(PIN_LED_RGB_R,HIGH);           // LED aan als er iets verwerkt wordt  
 
 // uitwerken dat de wordt weergegeven dat dit de queue in gaat en niet feitelijk verwerkt wordt.
 //  if(CommandForThisNodo && Hold)
@@ -58,7 +58,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     // verzend 'Busy On;'
     if(S.SendBusy==VALUE_ALL && !Hold)
       {
-      TransmitCode(command2event(CMD_BUSY,VALUE_ON,0),SIGNAL_TYPE_NODO);
+      TransmitCode(command2event(CMD_BUSY,VALUE_ON,0),VALUE_ALL);
       SetBusyOff=true;
       }
 
@@ -107,7 +107,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   if(SetBusyOff)
     {
     SetBusyOff=false;
-    TransmitCode(command2event(CMD_BUSY,VALUE_OFF,0),SIGNAL_TYPE_NODO);
+    TransmitCode(command2event(CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
     }
   }
 

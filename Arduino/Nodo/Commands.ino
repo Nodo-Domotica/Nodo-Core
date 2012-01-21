@@ -51,10 +51,12 @@ byte CommandError(unsigned long Content)
   byte Par1         = (Content>>8)&0xff;
   byte Par2         = Content&0xff;
  
+
+
   switch(Command)
     {
     //test; geen, altijd goed
-    case CMD_TRANSMIT_EVENTGHOST:
+    case CMD_TRANSMIT_EVENTGHOST://??? nog gebruikt?
     case CMD_RAWSIGNAL_SAVE:
     case CMD_RAWSIGNAL_SEND:
     case CMD_LOGFILE_SHOW:
@@ -185,12 +187,28 @@ byte CommandError(unsigned long Content)
       if(Par1!=VALUE_HIGH && Par1!=VALUE_LOW)return ERROR_02;
       return false;
 
+    case CMD_SEND_EVENT:// ??? opties niet gellijk aan wildcard!
+      switch(Par1)
+        {
+        case VALUE_ALL:
+        case VALUE_SOURCE_IR:
+        case VALUE_SOURCE_RF:
+        case VALUE_SOURCE_EVENTGHOST:
+        case VALUE_SOURCE_HTTP:
+        case VALUE_SOURCE_SERIAL:
+          break;
+        default:
+          return ERROR_02;
+        }
+      return false;
+
     case CMD_COMMAND_WILDCARD:
       switch(Par1)
         {
         case VALUE_ALL:
-        //??? moet EventGhost hier nog bij
         case VALUE_SOURCE_IR:
+        case VALUE_SOURCE_EVENTGHOST:
+        case VALUE_SOURCE_HTTP:
         case VALUE_SOURCE_RF:
         case VALUE_SOURCE_SERIAL:
         case VALUE_SOURCE_WIRED:
@@ -276,11 +294,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     switch(Command)
       {   
       case CMD_SEND_KAKU:
-        TransmitCode(command2event(CMD_KAKU,Par1,Par2),SIGNAL_TYPE_KAKU);
+        TransmitCode(command2event(CMD_KAKU,Par1,Par2),VALUE_ALL);
         break;
         
       case CMD_SEND_KAKU_NEW:
-        TransmitCode(command2event(CMD_KAKU_NEW,Par1,Par2),SIGNAL_TYPE_NEWKAKU);
+        TransmitCode(command2event(CMD_KAKU_NEW,Par1,Par2),VALUE_ALL);
         break;
         
       case CMD_VARIABLE_INC: 
@@ -333,12 +351,12 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   
       case CMD_SEND_USEREVENT:
         // Voeg Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
-        TransmitCode(command2event(CMD_USEREVENT,Par1,Par2),SIGNAL_TYPE_NODO);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
+        TransmitCode(command2event(CMD_USEREVENT,Par1,Par2),VALUE_ALL);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
         break;
   
       case CMD_VARIABLE_SEND_USEREVENT:
         // Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
-        TransmitCode(command2event(CMD_USEREVENT,UserVar[Par1-1],UserVar[Par2-1])&0xf0ffffff,SIGNAL_TYPE_NODO);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
+        TransmitCode(command2event(CMD_USEREVENT,UserVar[Par1-1],UserVar[Par2-1])&0xf0ffffff,VALUE_ALL);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
         break;
 
       case CMD_VARIABLE_USEREVENT:
@@ -352,11 +370,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         SimulateDay(Par1); 
         break;     
   
-      case CMD_RAWSIGNAL_SEND:
+      case CMD_RAWSIGNAL_SEND://??? hebben we deze nog nodig ivm SendEvent?
         if(Par1!=0)
           RawSignalGet(Par1);
         //??? PrintRawSignal();
-        TransmitCode(AnalyzeRawSignal(),SIGNAL_TYPE_UNKNOWN);
+        TransmitCode(AnalyzeRawSignal(),VALUE_ALL);
         break;        
   
       case CMD_CLOCK_YEAR:
@@ -406,7 +424,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           if(Par2==VALUE_OFF) // Niet opslaan in de queue, maar direct een 'dode' pause uitvoeren.
             {
             while(HoldTimer>millis())        
-              digitalWrite(MonitorLedPin,(millis()>>7)&0x01);
+              digitalWrite(PIN_LED_RGB_R,(millis()>>7)&0x01);
             }
           else
             {
@@ -420,19 +438,23 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           HoldTimer=0L; //  Wachttijd is afgelopen;
         break;        
         
+      case CMD_SEND_EVENT:
+        TransmitCode(PreviousContent,Par1);
+        break;        
+
       case CMD_SOUND: 
         Alarm(Par1,Par2);
         break;     
     
       case CMD_WIRED_PULLUP:
         S.WiredInputPullUp[Par1-1]=Par2==VALUE_ON; // Par1 is de poort[1..4], Par2 is de waarde [0..1]
-        digitalWrite(14+WiredAnalogInputPin_1+Par1-1,S.WiredInputPullUp[Par1-1]==VALUE_ON);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14 
+        digitalWrite(14+PIN_WIRED_IN_1+Par1-1,S.WiredInputPullUp[Par1-1]==VALUE_ON);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14 
         // ??? uitzoeken hoe bovenstaande werkt voor de ATMega2260 !
         SaveSettings();
         break;
                    
       case CMD_WIRED_OUT:
-        digitalWrite(WiredDigitalOutputPin_1+Par1-1,Par2==VALUE_ON);
+        digitalWrite(PIN_WIRED_OUT_1+Par1-1,Par2==VALUE_ON);
         WiredOutputStatus[Par1-1]=Par2==VALUE_ON;
         PrintEvent(Content,VALUE_SOURCE_WIRED,VALUE_DIRECTION_OUTPUT);
         break;
@@ -461,7 +483,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
             SaveSettings();
             }
           else
-            TransmitCode(command2event(CMD_BUSY,Par1,0),SIGNAL_TYPE_NODO);
+            TransmitCode(command2event(CMD_BUSY,Par1,0),VALUE_ALL);
         break;
         
       case CMD_TRANSMIT_EVENTGHOST:
@@ -471,10 +493,10 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         if(Par2==VALUE_SAVE)
           {
           // Sla IP van de EventGhost Client op die het laatste een event heeft verstuurd
-          S.EventGhostServer_IP[0]=EventClientIP[0];
-          S.EventGhostServer_IP[1]=EventClientIP[1];
-          S.EventGhostServer_IP[2]=EventClientIP[2];
-          S.EventGhostServer_IP[3]=EventClientIP[3];          
+          S.EventGhostServer_IP[0]=EventGhostClientIP[0];
+          S.EventGhostServer_IP[1]=EventGhostClientIP[1];
+          S.EventGhostServer_IP[2]=EventGhostClientIP[2];
+          S.EventGhostServer_IP[3]=EventGhostClientIP[3];          
           }
           
         if(Par2==VALUE_ON || Par2==VALUE_OFF)
@@ -728,7 +750,7 @@ void ExecuteLine(char *Line, byte Port)
           case CMD_WIRED_ANALOG_CALIBRATE:
             {
             int t;              
-            t=analogRead(WiredAnalogInputPin_1+Par1-1);
+            t=analogRead(PIN_WIRED_IN_1+Par1-1);
             if(GetArgv(Command,TmpStr,4))
               {
               if(Par2==VALUE_HIGH)
@@ -762,11 +784,11 @@ void ExecuteLine(char *Line, byte Port)
             Eventlist_Write(1,0L,0L); // maak de eventlist leeg.
             break;        
 
-          case CMD_URL:
+          case CMD_HTTP_REQUEST:
             // zoek in de regel waar de string met het http request begint.
-            x=StringFind(Line,cmd2str(CMD_URL))+strlen(cmd2str(CMD_URL));
+            x=StringFind(Line,cmd2str(CMD_HTTP_REQUEST))+strlen(cmd2str(CMD_HTTP_REQUEST));
             while(Line[x]==32)x++;
-            strcpy(S.url,&Line[0]+x);
+            strcpy(S.HTTPRequest,&Line[0]+x);
             SaveSettings(); 
             break;
 

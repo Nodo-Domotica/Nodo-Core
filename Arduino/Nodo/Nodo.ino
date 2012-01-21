@@ -60,7 +60,7 @@ prog_char PROGMEM Text_06[] = "Error=";
 prog_char PROGMEM Text_07[] = "Waiting for signal...";
 prog_char PROGMEM Text_08[] = "Queue=Out, ";
 prog_char PROGMEM Text_09[] = "Queue=In, ";
-prog_char PROGMEM Text_10[] = "EventClientIP"; // nog nodig ???
+//prog_char PROGMEM Text_10[] = "EventGhostClientIP"; // nog nodig ???
 prog_char PROGMEM Text_11[] = "Output=";
 prog_char PROGMEM Text_12[] = "Input=";
 prog_char PROGMEM Text_13[] = "Ok.";
@@ -79,7 +79,7 @@ prog_char PROGMEM Text_25[] = "System=";
 prog_char PROGMEM Text_26[] = "Event received from: ";
 prog_char PROGMEM Text_27[] = "Raw/Key"; // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_28[] = "Raw/Hex"; // Directory op de SDCard voor opslag RawSignal
-//prog_char PROGMEM Text_29[] = "HTTP.dat"; // bestandsnaam waar het HTTP adres in staat waar events naar toe gestuurd moeten worden
+prog_char PROGMEM Text_29[] = "www.nodo-domotica.nl/test/NodoEvent.php"; // Host waar de events in de vorm van een HTTP request naar toe gestuurd moeten worden
 prog_char PROGMEM Text_30[] = "No access!";
  
 // Commando's:
@@ -120,7 +120,7 @@ prog_char PROGMEM Cmd_033[]="VariableDec";
 prog_char PROGMEM Cmd_034[]="VariableInc";
 prog_char PROGMEM Cmd_035[]="VariableSet";
 prog_char PROGMEM Cmd_036[]="VariableVariable";
-prog_char PROGMEM Cmd_037[]="";
+prog_char PROGMEM Cmd_037[]="SendEvent";
 prog_char PROGMEM Cmd_038[]="WaitFreeRF";
 prog_char PROGMEM Cmd_039[]="WiredAnalog";
 prog_char PROGMEM Cmd_040[]="WiredOut";
@@ -136,7 +136,7 @@ prog_char PROGMEM Cmd_049[]="Password";
 prog_char PROGMEM Cmd_050[]="VariableUserEvent";
 prog_char PROGMEM Cmd_051[]="WiredCalibrate";
 prog_char PROGMEM Cmd_052[]="Reboot";
-prog_char PROGMEM Cmd_053[]="URL";
+prog_char PROGMEM Cmd_053[]="HTTPRequest";
 prog_char PROGMEM Cmd_054[]="Status";
 prog_char PROGMEM Cmd_055[]="SendStatus";
 prog_char PROGMEM Cmd_056[]="AnalyseSettings";
@@ -339,7 +339,7 @@ prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 #define CMD_VARIABLE_INC                34
 #define CMD_VARIABLE_SET                35
 #define CMD_VARIABLE_VARIABLE           36
-#define CMD_Res                         37
+#define CMD_SEND_EVENT                  37
 #define CMD_WAITFREERF                  38
 #define CMD_WIRED_ANALOG                39
 #define CMD_WIRED_OUT                   40
@@ -355,7 +355,7 @@ prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 #define CMD_VARIABLE_USEREVENT          50
 #define CMD_WIRED_ANALOG_CALIBRATE      51
 #define CMD_REBOOT                      52
-#define CMD_URL                         53
+#define CMD_HTTP_REQUEST                53
 #define CMD_STATUS                      54
 #define CMD_STATUS_SEND                 55
 #define CMD_ANALYSE_SETTINGS            56
@@ -561,37 +561,24 @@ PROGMEM prog_uint16_t Sunset[]={999,1010,1026,1044,1062,1081,1099,1117,1135,1152
 PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,3127};
 
 // Declaratie aansluitingen I/O-pennen op de Arduino ATMega2560 voorzien van een Wiznet EthernetShield met SDCard
+// gebaseerd op Nodo schema versie 2.0 voor de ATMega1280 / ATMega2560
 
-// Future use                       6,7// Future use
-#define WiredAnalogInputPin_1       8  // Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-// Future use                  A0..A5  // Future use.
-// Gereserveerd                     0  // USB-RX
-// Gereserveerd                     1  // USB-TX
-// Gereseveerd                      2  // IRQ,Ethernet
-#define IR_ReceiveDataPin           3  // Op deze input komt het IR signaal binnen van de TSOP. Bij HIGH bij geen signaal.
-#define EthernetShield_CS_SDCard    4  // Chipselect van de SDCard. Niet gebruiken voor andere doeleinden
-#define MonitorLedPin               5  // bij iedere ontvangst of verzending licht deze led kort op.
-#define LED_RGB_R                   5  // RGB-Led, aansluiting rood
-#define LED_RGB_G                   6  // RGB-Led, aansluiting groen
-#define LED_RGB_B                   7  // RGB-Led, aansluiting blauw
-#define BuzzerPin                   8  // luidspreker aansluiting
-#define IR_TransmitDataPin          9  // Aan deze PWM pin zit een zender IR-Led. (gebufferd via transistor i.v.m. hogere stroom die nodig is voor IR-led)
-#define Ethernetshield_CS_W5100     10 // D10..D13  // gereserveerd voor Ethernet & SDCard
-#define RF_TransmitPowerPin         14 // +5 volt / Vcc spanning naar de zender.
-#define RF_TransmitDataPin          15 // data naar de zender
-#define RF_ReceivePowerPin          16 // Spanning naar de ontvanger via deze pin.
-#define RF_ReceiveDataPin           17 // Op deze input komt het 433Mhz-RF signaal binnen. LOW bij geen signaal.
-#define Serial_TX                   18 // Future use: TX serial communication
-#define Serial_RX                   19 // Future use: RX serial communication
-// gereserveerd                     20 // I2C-SDA
-// gereserveerd                     21 // I2C-SLC
-#define WiredDigitalOutputPin_1     22 // 8 digitale outputs D22 t/m D29 worden gebruikt voor WiredIn 1 tot en met 8
-// Future use                 D30..D49 // Future use
-// Gereserveerd               D50..D53 // Ethernet / SPI
-#define EthernetShield_CS_SDCardH   53 // Gereserveerd voor correct funktioneren van de SDCard: Hardware CS/SPI ChipSelect
+#define PIN_WIRED_IN_1               8  // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_LED_RGB_R               45  // RGB-Led, aansluiting rood
+#define PIN_LED_RGB_G               46  // RGB-Led, aansluiting groen
+#define PIN_LED_RGB_B               47  // RGB-Led, aansluiting blauw
+#define PIN_SPEAKER                 42  // luidspreker aansluiting
+#define PIN_IR_TX_DATA              17  // NIET VERANDEREN. Aan deze pin zit een zender IR-Led. (gebufferd via transistor i.v.m. hogere stroom die nodig is voor IR-led)
+#define PIN_IR_RX_DATA              18  // Op deze input komt het IR signaal binnen van de TSOP. Bij HIGH bij geen signaal.
+#define PIN_RF_TX_VCC               15  // +5 volt / Vcc spanning naar de zender.
+#define PIN_RF_TX_DATA              14  // data naar de zender
+#define PIN_RF_RX_VCC               16  // Spanning naar de ontvanger via deze pin.
+#define PIN_RF_RX_DATA              19  // Op deze input komt het 433Mhz-RF signaal binnen. LOW bij geen signaal.
+#define PIN_WIRED_OUT_1             30  // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
+#define EthernetShield_CS_SDCardH   53  // NIET VERANDEREN. Ethernet shield: Gereserveerd voor correct funktioneren van de SDCard: Hardware CS/SPI ChipSelect
+#define EthernetShield_CS_SDCard     4  // NIET VERANDEREN. Ethernet shield: Chipselect van de SDCard. Niet gebruiken voor andere doeleinden
+#define Ethernetshield_CS_W5100     10  // NIET VERANDEREN. Ethernet shield: D10..D13  // gereserveerd voor Ethernet & SDCard
 
-
-#define SERVER_IP_MAX                8 // maximaal aantal servers in de tebel met IP adressen 
 #define UNIT                       0x1 // Unit nummer van de Nodo. Bij gebruik van meerdere nodo's deze uniek toewijzen [1..F]
 #define EVENTLIST_MAX              256 // aantal events dat de lijst bevat in het EEPROM geheugen van de ATMega328. Iedere regel in de eventlist heeft 8 bytes nodig. eerste adres is 0
 #define USER_VARIABLES_MAX          32 // aantal beschikbare gebruikersvariabelen voor de user.
@@ -602,10 +589,10 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define BAUD                     19200 // Baudrate voor seriële communicatie.
 #define SERIAL_TERMINATOR_1       0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>, default voor EventGhost
 #define SERIAL_TERMINATOR_2       0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
-#define INPUT_BUFFER_SIZE           80 // Buffer waar de karakters van de seriele /IP poort in worden opgeslagen.
+#define INPUT_BUFFER_SIZE           80 // Buffer waar de karakters van de seriele/IP poort in worden opgeslagen.
 #define TIMER_MAX                   16 // aantal beschikbare timers voor de user, gerekend vanaf 
-#define Loop_INTERVAL_1           1000 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
-#define Loop_INTERVAL_2           5000 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
+#define Loop_INTERVAL_1              5 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
+#define Loop_INTERVAL_2            100 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
 #define EVENT_QUEUE_MAX             32 // maximaal aantal plaatsen in de queue
 #define ENDSIGNAL_TIME            1500 // Dit is de tijd in milliseconden waarna wordt aangenomen dat het ontvangen één reeks signalen beëindigd is
 #define SIGNAL_TIMEOUT_RF         5000 // na deze tijd in uSec. wordt één RF signaal als beëindigd beschouwd.
@@ -648,7 +635,7 @@ struct Settings
   int     DaylightSavingSet;                                // Vlag voor correct automatisch kunnen overschakelen van zomertijd naar wintertijd of vice-versa
   char    Password[25];                                     // String met wachtwoord.
   unsigned long ID;                                         // unieke 32bit code waar de Nodo uniek mee geïdentificeerd kan worden in een netwerk
-  char    url[80];                                          // HTTP address waar de request line aan wordt toegevoegd;
+  char    HTTPRequest[80];                                  // HTTP request;
   byte    TransmitEventGhost;
   byte    EventGhostServer_IP[4];                           // IP adres van waar EventGhost Events naar verstuurd moeten worden.
   byte    AutoSaveEventGhostIP;                             // Automatisch IP adres opslaan na ontvangst van een EG event of niet.
@@ -679,11 +666,15 @@ boolean TerminalConnected=false;                            // Vlag geeft aan of
 boolean SerialConnected=true;                               // Vlag geeft aan of er een verbinding USB-poort.
 boolean TemporyEventGhostError=false;                       // Vlag om tijdelijk evetghost verzending stil te leggen na een communicatie probleem
 
+// ethernet classes voor IP communicatie EventGhost, Telnet terminal en HTTP.
 byte Ethernet_MAC_Address[]={0x00,0x06,0x39,0x46,0x55,0x29};// MAC adres van de Nodo.
-EthernetServer EventServer(1024);                           // Globale Server class voor ontvangen van Events van een EventGhost applicatie
-EthernetServer TerminalServer(23);                           // Server class voor Terminal sessie.
+//EthernetServer HTTPServer(80);                              // Server class voor HTTP sessie.
+//EthernetClient HTTPClient=false;                            // Client class voor HTTP sessie.
+EthernetServer EventGhostServer(1024);                      // Globale Server class voor ontvangen van Events van een EventGhost applicatie
+EthernetClient EventGhostClient=false;
+EthernetServer TerminalServer(23);                          // Server class voor Terminal sessie.
 EthernetClient TerminalClient=false;                        // Client class voor Terminal sessie.
-byte EventClientIP[4];                                      // IP adres van de EventGhost client die verbinding probeert te maken c.q. verbonden is.
+byte EventGhostClientIP[4];                                 // IP adres van de EventGhost client die verbinding probeert te maken c.q. verbonden is.
 
 // RealTimeclock DS1307
 struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight; int Year,DaylightSaving;}Time; // Hier wordt datum & tijd in opgeslagen afkomstig van de RTC.
@@ -697,7 +688,6 @@ struct RawsignalStruct
   byte Type;                                                // Type signaal dan ontvangen is.
   }RawSignal;
   
-
 void setup() 
   {    
   byte x;
@@ -709,31 +699,31 @@ void setup()
   if(S.Version!=VERSION)ResetFactory(); // Als versienummer in EEPROM niet correct is, dan een ResetFactory.
   
   // Initialiseer in/output poorten.
-  pinMode(IR_ReceiveDataPin,INPUT);
-  pinMode(RF_ReceiveDataPin,INPUT);
-  pinMode(RF_TransmitDataPin,OUTPUT);
-  pinMode(RF_TransmitPowerPin,OUTPUT);
-  pinMode(RF_ReceivePowerPin,OUTPUT);
-  pinMode(IR_TransmitDataPin,OUTPUT);
-  pinMode(MonitorLedPin,OUTPUT);
-  pinMode(BuzzerPin, OUTPUT);
+
+  pinMode(PIN_IR_RX_DATA, INPUT);
+  pinMode(PIN_RF_RX_DATA, INPUT);
+  pinMode(PIN_RF_TX_DATA, OUTPUT);
+  pinMode(PIN_RF_TX_VCC,  OUTPUT);
+  pinMode(PIN_RF_RX_VCC,  OUTPUT);
+  pinMode(PIN_IR_TX_DATA, OUTPUT);
+  pinMode(PIN_LED_RGB_R,  OUTPUT);
+  pinMode(PIN_SPEAKER,    OUTPUT);
   pinMode(EthernetShield_CS_SDCardH, OUTPUT); // CS/SPI: nodig voor correct funktioneren van de SDCard!
-  digitalWrite(IR_ReceiveDataPin,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
-  digitalWrite(RF_ReceiveDataPin,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
-  digitalWrite(RF_ReceivePowerPin,HIGH); // Spanning naar de RF ontvanger aann
-  RFbit=digitalPinToBitMask(RF_ReceiveDataPin);
-  RFport=digitalPinToPort(RF_ReceiveDataPin);  
-  IRbit=digitalPinToBitMask(IR_ReceiveDataPin);
-  IRport=digitalPinToPort(IR_ReceiveDataPin);
+  digitalWrite(PIN_IR_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
+  digitalWrite(PIN_RF_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
+  digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger aann
+  RFbit=digitalPinToBitMask(PIN_RF_RX_DATA);
+  RFport=digitalPinToPort(PIN_RF_RX_DATA);  
+  IRbit=digitalPinToBitMask(PIN_IR_RX_DATA);
+  IRport=digitalPinToPort(PIN_IR_RX_DATA);
 
   // initialiseer de Wired ingangen.
   for(x=0;x<WIRED_PORTS;x++)
     {
-    digitalWrite(A0+WiredAnalogInputPin_1+x,S.WiredInputPullUp[x]?HIGH:LOW);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14
-    pinMode(WiredDigitalOutputPin_1+x,OUTPUT); // definieer Arduino pin's voor Wired-Out
+    digitalWrite(A0+PIN_WIRED_IN_1+x,S.WiredInputPullUp[x]?HIGH:LOW);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14
+    pinMode(PIN_WIRED_OUT_1+x,OUTPUT); // definieer Arduino pin's voor Wired-Out
     }
 
-  IR_PWM_INIT();// initialiseer 38Khz PWM voor verzenden van IR signalen.
   Wire.begin();        // zet I2C communicatie gereed voor uitlezen van de realtime clock.
 
   // SDCard initialiseren:
@@ -769,7 +759,7 @@ void setup()
   if(Ethernet.begin(Ethernet_MAC_Address)!=0)
     {
     // MAC en IP adres van de Nodo
-    EventServer.begin();                                // Start Server voor ontvangst van Events
+    EventGhostServer.begin();                                // Start Server voor ontvangst van Events
     TerminalServer.begin();                             // Start server voor Terminalsessies via TelNet
     EthernetEnabled=true;
     }
@@ -784,7 +774,8 @@ void loop()
   int x,y,z;
   int InByte;
   int Pos=0;  
-
+  byte Slice_1,Slice_2;
+  
   unsigned long StaySharpTimer=millis();                      // timer die start bij ontvangn van een signaal. Dwingt om enige tijd te luisteren naar dezelfde poort.
   unsigned long LoopIntervalTimer_1=millis();                 // Timer voor periodieke verwerking. millis() maakt dat de intervallen van 1 en 2 niet op zelfde moment vallen => 1 en 2 nu asynchroon.
   unsigned long LoopIntervalTimer_2=0L;                       // Timer voor periodieke verwerking.
@@ -800,73 +791,20 @@ void loop()
   char Inputbuffer_Terminal[INPUT_BUFFER_SIZE];               // Buffer voor input terminal verbinding Telnes sessie
 
   // hoofdloop: scannen naar signalen
-  // dit is een tijdkritische loop die wacht tot binnengekomen event op IR, RF, SERIAL, CLOCK, DAYLIGHT, TIMER
+  // dit is een tijdkritische loop die wacht tot binnengekomen event op IR, RF, SERIAL, CLOCK, DAYLIGHT, TIMER, etc
+  // Er is bewist niet gekozen voor opvangen van signalen via IRQ's omdat er dan bij ontvangst van seriele gegevens
+  // tekens verloren gaan. Deze hoofdloop duurt normaal ongeveer 27 microseconden en bij kijken naar Ethernet 
+  // maximaal 95Sec. Snel genoeg om een startbit van een binnenkomend RF of IR niet te hoeven missen omdat die
+  // van de orde groote zijn tussen 500..3000 microseconden.
+
   while(true)
     {
-    if(Hold)
-      {
-      digitalWrite(MonitorLedPin,(millis()>>7)&0x01);
-      // als in de hold-modus met reden het Delay commando EN de tijd is om, dan geneste call naar loop() verlaten.
-      if(Hold==CMD_DELAY && HoldTimer<millis())
-        {
-        Hold=false;
-        return;
-        }
-        
-      // als in de hold-modus met reden Busy commando EN de er zijn geen Nodo's meer met status Busy, dan geneste aanroop loop() verlaten.
-      if(Hold==CMD_BUSY && (!BusyNodo || HoldTimer<millis()))
-        {
-        Hold=false;
-        return;
-        }
-      }
-    else
-      digitalWrite(MonitorLedPin,LOW);           // LED weer uit
-
-    // Ethernet alleen als verkrijgen van IP adres correct is verlopen
-    if(EthernetEnabled)
-      {
-      // IP Event van EventGhost : *************** kijk of er een Event van een eventghost client binnenkomt **********************    
-      if(EventGhostReceive(InputBuffer_EventGhost))
-        ExecuteLine(InputBuffer_EventGhost, VALUE_SOURCE_EVENTGHOST);
-
-      // IP Telnet verbinding : *************** kijk of er verzoek tot verbinding vanuit een terminal is **********************    
-      if(TerminalReceive(Inputbuffer_Terminal))
-        ExecuteLine(Inputbuffer_Terminal, VALUE_SOURCE_TERMINAL);
-
-      }
-      
-    // SERIAL: *************** kijk of er data klaar staat op de seriële poort **********************
-    if(Serial.available())
-      {
-      do
-        {
-        InByte=Serial.read();
-        if(isprint(InByte) && Pos<INPUT_BUFFER_SIZE) // alleen de printbare tekens zijn zinvol.
-          {
-          StaySharpTimer=millis()+SHARP_TIME;      
-          Inputbuffer_Serial[Pos++]=InByte;
-          }
-        else if(InByte=='\n') 
-          {
-          SerialHold(true);
-          Inputbuffer_Serial[Pos]=0; // serieel ontvangen regel is compleet
-          SerialConnected=true;
-          ExecuteLine(Inputbuffer_Serial, VALUE_SOURCE_SERIAL);
-          Pos=0;  
-          Inputbuffer_Serial[0]=0; // serieel ontvangen regel is compleet
-          SerialHold(false);
-          StaySharpTimer=millis()+SHARP_TIME;      
-          }
-        }while(Serial.available() || StaySharpTimer>millis());
-      }
-
     // IR: *************** kijk of er data staat op IR en genereer een event als er een code ontvangen is **********************
     do
       {
       if((*portInputRegister(IRport)&IRbit)==0)// Kijk if er iets op de IR poort binnenkomt. (Pin=LAAG als signaal in de ether). 
         {
-        if(FetchSignal(IR_ReceiveDataPin,LOW,S.AnalyseTimeOut))// Als het een duidelijk IR signaal was
+        if(FetchSignal(PIN_IR_RX_DATA,LOW,S.AnalyseTimeOut))// Als het een duidelijk IR signaal was
           {
           Content=AnalyzeRawSignal(); // Bereken uit de tabel met de pulstijden de 32-bit code. 
           if(Content)// als AnalyzeRawSignal een event heeft opgeleverd
@@ -888,13 +826,12 @@ void loop()
         }
       }while(StaySharpTimer>millis());
   
-  
     // RF: *************** kijk of er data start op RF en genereer een event als er een code ontvangen is **********************
     do// met StaySharp wordt focus gezet op luisteren naar RF, doordat andere input niet wordt opgepikt
       {
       if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
         {
-        if(FetchSignal(RF_ReceiveDataPin,HIGH,SIGNAL_TIMEOUT_RF))// Als het een duidelijk RF signaal was
+        if(FetchSignal(PIN_RF_RX_DATA,HIGH,SIGNAL_TIMEOUT_RF))// Als het een duidelijk RF signaal was
           {
           Content=AnalyzeRawSignal(); // Bereken uit de tabel met de pulstijden de 32-bit code. 
           if(Content)// als AnalyzeRawSignal een event heeft opgeleverd
@@ -904,7 +841,6 @@ void loop()
                {
                RawSignal.Source=VALUE_SOURCE_RF;
                CheckRawSignalKey(&Content); // check of er een RawSignal key op de SDCard aanwezig is en vul met Nodo Event. Call by reference!
-
                SupressRepeatTimer=millis()+ENDSIGNAL_TIME; // zodat herhalingen niet opnieuw opgepikt worden
                ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_RF,0,0); // verwerk binnengekomen event.
                ContentPrevious=Content;
@@ -914,86 +850,205 @@ void loop()
           }
         }
       }while(millis()<StaySharpTimer);
-     
-     
+
     // 1: niet tijdkritische processen die periodiek uitgevoerd moeten worden
     if(LoopIntervalTimer_1<millis())// korte interval
       {
-      LoopIntervalTimer_1=millis()+Loop_INTERVAL_1; // reset de timer
-
-      // TIMER: **************** Genereer event als één van de Timers voor de gebruiker afgelopen is ***********************    
-      for(x=0;x<TIMER_MAX;x++)
+      LoopIntervalTimer_1=millis()+Loop_INTERVAL_1; // reset de timer  
+      switch(Slice_1++)
         {
-        if(UserTimer[x]!=0L)// als de timer actief is
+        case 0: // binnen Slice_1
           {
-          if(UserTimer[x]<millis()) // als de timer is afgelopen.
+          if(Hold)
             {
-            UserTimer[x]=0;// zet de timer op inactief.
-            Content=command2event(CMD_TIMER_EVENT,x+1,0);
-            ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_TIMER,0,0);      // verwerk binnengekomen event.
+            digitalWrite(PIN_LED_RGB_R,(millis()>>7)&0x01);
+            // als in de hold-modus met reden het Delay commando EN de tijd is om, dan geneste call naar loop() verlaten.
+            if(Hold==CMD_DELAY && HoldTimer<millis())
+              {
+              Hold=false;
+              return;
+              }
+              
+            // als in de hold-modus met reden Busy commando EN de er zijn geen Nodo's meer met status Busy, dan geneste aanroop loop() verlaten.
+            if(Hold==CMD_BUSY && (!BusyNodo || HoldTimer<millis()))
+              {
+              Hold=false;
+              return;
+              }
             }
+          else
+            digitalWrite(PIN_LED_RGB_R,LOW);           // LED weer uit
+          break;
           }
+          
+        case 1: // binnen Slice_1
+          {        
+          if(EthernetEnabled)
+            {
+            // IP Event van EventGhost : *************** kijk of er een Event van een eventghost client binnenkomt **********************    
+            EventGhostClient=EventGhostServer.available(); // deze call vraagt veel tijd: +/- 90uSec.
+            if(EventGhostClient)
+              {
+              EventGhostReceive(InputBuffer_EventGhost);
+              ExecuteLine(InputBuffer_EventGhost, VALUE_SOURCE_EVENTGHOST);
+              }
+            }
+          break;
+          }
+    
+        case 2: // binnen Slice_1
+          {
+          if(EthernetEnabled)
+            {
+            // IP Telnet verbinding : *************** kijk of er verzoek tot verbinding vanuit een terminal is **********************    
+            if(TerminalReceive(Inputbuffer_Terminal)) // Terminalreceive is non-blocking
+              ExecuteLine(Inputbuffer_Terminal, VALUE_SOURCE_TERMINAL);
+            }
+          break;
+          }
+          
+        case 3: // binnen Slice_1
+          {
+          if(EthernetEnabled)
+            {
+            //??? voor testdoeleinden tijdmeting. Hier komt later de HTTP server te scannen
+            // IP Telnet verbinding : *************** kijk of er verzoek tot verbinding vanuit een terminal is **********************    
+            if(TerminalReceive(Inputbuffer_Terminal)) // Terminalreceive is non-blocking
+              ExecuteLine(Inputbuffer_Terminal, VALUE_SOURCE_TERMINAL);
+            }
+          break;
+          }
+          
+        case 4: // binnen Slice_1
+          {
+          // SERIAL: *************** kijk of er data klaar staat op de seriële poort **********************
+          if(Serial.available())
+            {
+            do
+              {
+              InByte=Serial.read();
+              if(isprint(InByte) && Pos<INPUT_BUFFER_SIZE) // alleen de printbare tekens zijn zinvol.
+                {
+                StaySharpTimer=millis()+SHARP_TIME;      
+                Inputbuffer_Serial[Pos++]=InByte;
+                }
+              else if(InByte=='\n') 
+                {
+                SerialHold(true);
+                Inputbuffer_Serial[Pos]=0; // serieel ontvangen regel is compleet
+                SerialConnected=true;
+                ExecuteLine(Inputbuffer_Serial, VALUE_SOURCE_SERIAL);
+                Pos=0;  
+                Inputbuffer_Serial[0]=0; // serieel ontvangen regel is compleet
+                SerialHold(false);
+                StaySharpTimer=millis()+SHARP_TIME;      
+                }
+              }while(Serial.available() || StaySharpTimer>millis());
+            }
+          break;
+          }
+    
+        default:  // binnen Slice_1
+          Slice_1=0;
+          break;
         }
+      }// switch(Slice_1)
 
-      // VARIABLE: *************** Behandel gewijzigde variabelen als en binnengekomen event ******************************
-      for(x=0;x<USER_VARIABLES_MAX;x++)
+    // 2: niet tijdkritische processen die periodiek uitgevoerd moeten worden
+    if(LoopIntervalTimer_2<millis())// lange interval
+      {
+      LoopIntervalTimer_2=millis()+Loop_INTERVAL_2; // reset de timer  
+      switch(Slice_2++)
         {
-        if(UserVar[x]!=UserVarPrevious[x]) // de eerste gewijzigde variabele
+        case 0:
           {
-          UserVarPrevious[x]=UserVar[x];
-          Content=command2event(CMD_VARIABLE_EVENT,x+1,UserVar[x]);
-          ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_VARIABLE,0,0);      // verwerk binnengekomen event.
+          // CLOCK: **************** Lees periodiek de realtime klok uit en check op events  ***********************
+          Content=ClockRead(); // Lees de Real Time Clock waarden in de struct Time
+          if(CheckEventlist(Content,VALUE_SOURCE_CLOCK) && EventTimeCodePrevious!=Content)
+            {
+            EventTimeCodePrevious=Content; 
+            ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
+            }
+          else
+            Content=0L;
+          break;
           }
+
+        case 1:
+          {    
+          // DAYLIGHT: **************** Check zonsopkomst & zonsondergang  ***********************
+          SetDaylight();
+          if(Time.Daylight!=DaylightPrevious)// er heeft een zonsondergang of zonsopkomst event voorgedaan
+            {
+            Content=command2event(CMD_CLOCK_EVENT_DAYLIGHT,Time.Daylight,0L);
+            DaylightPrevious=Time.Daylight;
+            ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
+            }
+          break;
+          }
+          
+        case 2:
+          {
+          // WIRED: *************** kijk of statussen gewijzigd zijn op WIRED **********************  
+          // als de huidige waarde groter dan threshold EN de vorige keer was dat nog niet zo DAN verstuur code
+          for(x=0;x<WIRED_PORTS;x++)
+            {
+            // lees analoge waarde. Dit is een 10-bit waarde, unsigned 0..1023
+            // vervolgens met map() omrekenen naar gekalibreerde waarde        
+            y=map(analogRead(PIN_WIRED_IN_1+x),S.WiredInput_Calibration_IL[x],S.WiredInput_Calibration_IH[x],S.WiredInput_Calibration_OL[x],S.WiredInput_Calibration_OH[x]);        
+                 
+            if(!WiredInputStatus[x] && y>(S.WiredInputThreshold[x]+S.WiredInputSmittTrigger[x]))
+              {
+              WiredInputStatus[x]=true;
+              Content=command2event(CMD_WIRED_IN_EVENT,x+1,WiredInputStatus[x]?VALUE_ON:VALUE_OFF);
+              ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
+              }
+      
+            if(WiredInputStatus[x] && y<(S.WiredInputThreshold[x]-S.WiredInputSmittTrigger[x]))
+              {
+              WiredInputStatus[x]=false;
+              Content=command2event(CMD_WIRED_IN_EVENT,x+1,WiredInputStatus[x]?VALUE_ON:VALUE_OFF);
+              ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
+              }
+            }
+          break;
+          }
+
+        case 3:
+          {
+          // VARIABLE: *************** Behandel gewijzigde variabelen als en binnengekomen event ******************************
+          for(x=0;x<USER_VARIABLES_MAX;x++)
+            {
+            if(UserVar[x]!=UserVarPrevious[x]) // de eerste gewijzigde variabele
+              {
+              UserVarPrevious[x]=UserVar[x];
+              Content=command2event(CMD_VARIABLE_EVENT,x+1,UserVar[x]);
+              ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_VARIABLE,0,0);      // verwerk binnengekomen event.
+              }
+            }
+          break;
+          }
+
+        case 4:
+          {
+          // TIMER: **************** Genereer event als één van de Timers voor de gebruiker afgelopen is ***********************    
+          for(x=0;x<TIMER_MAX;x++)
+            {
+            if(UserTimer[x]!=0L)// als de timer actief is
+              {
+              if(UserTimer[x]<millis()) // als de timer is afgelopen.
+                {
+                UserTimer[x]=0;// zet de timer op inactief.
+                Content=command2event(CMD_TIMER_EVENT,x+1,0);
+                ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_TIMER,0,0);      // verwerk binnengekomen event.
+                }
+              }
+            }
+          break;
+          }
+        default:
+          Slice_2=0;
         }
-        
-      // WIRED: *************** kijk of statussen gewijzigd zijn op WIRED **********************
-
-      // als de huidige waarde groter dan threshold EN de vorige keer was dat nog niet zo DAN verstuur code
-      for(x=0;x<WIRED_PORTS;x++)
-        {
-        // lees analoge waarde. Dit is een 10-bit waarde, unsigned 0..1023
-        // vervolgens met map() omrekenen naar gekalibreerde waarde        
-        y=map(analogRead(WiredAnalogInputPin_1+x),S.WiredInput_Calibration_IL[x],S.WiredInput_Calibration_IH[x],S.WiredInput_Calibration_OL[x],S.WiredInput_Calibration_OH[x]);        
-             
-        if(!WiredInputStatus[x] && y>(S.WiredInputThreshold[x]+S.WiredInputSmittTrigger[x]))
-          {
-          WiredInputStatus[x]=true;
-          Content=command2event(CMD_WIRED_IN_EVENT,x+1,WiredInputStatus[x]?VALUE_ON:VALUE_OFF);
-          ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
-          }
-  
-        if(WiredInputStatus[x] && y<(S.WiredInputThreshold[x]-S.WiredInputSmittTrigger[x]))
-          {
-          WiredInputStatus[x]=false;
-          Content=command2event(CMD_WIRED_IN_EVENT,x+1,WiredInputStatus[x]?VALUE_ON:VALUE_OFF);
-          ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
-          }
-        }
-
-      // 2: niet tijdkritische processen die periodiek uitgevoerd moeten worden
-      if(LoopIntervalTimer_2<millis()) // lange interval
-        {
-        LoopIntervalTimer_2=millis()+Loop_INTERVAL_2; // reset de timer
-  
-        // CLOCK: **************** Lees periodiek de realtime klok uit en check op events  ***********************
-        Content=ClockRead(); // Lees de Real Time Clock waarden in de struct Time
-        if(CheckEventlist(Content,VALUE_SOURCE_CLOCK) && EventTimeCodePrevious!=Content)
-          {
-          EventTimeCodePrevious=Content; 
-          ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
-          }
-        else
-          Content=0L;
-                
-        // DAYLIGHT: **************** Check zonsopkomst & zonsondergang  ***********************
-        SetDaylight();
-        if(Time.Daylight!=DaylightPrevious)// er heeft een zonsondergang of zonsopkomst event voorgedaan
-          {
-          Content=command2event(CMD_CLOCK_EVENT_DAYLIGHT,Time.Daylight,0L);
-          DaylightPrevious=Time.Daylight;
-          ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
-          }
-        }// lange interval
-      }// korte interval
+      }
     }// while 
   }

@@ -112,29 +112,9 @@ unsigned long RawSignal_2_32bit(void)
  if(Counter_pulse>=1 && Counter_space<=1)return CodeP; // data zat in de pulsbreedte
  if(Counter_pulse<=1 && Counter_space>=1)return CodeS; // data zat in de pulse afstand
  RawSignal.Type=SIGNAL_TYPE_UNKNOWN;
- return (CodeS^CodeP); // data zat in beide = bi-phase, maak er een leuke mix van.
+ return ((CodeS^CodeP)&(0x0fffffff))|(SIGNAL_TYPE_UNKNOWN<<28); // data zat in beide = bi-phase, maak er een leuke mix van.
+ //??? is vullen van SIGNAL_TYPE_UNKNOWN nog te omzeilen?
  }
-
- 
- /**********************************************************************************************\
- * Opwekken draaggolf van 38Khz voor verzenden IR. 
- * Klaar zetten van de timer / PWM
- * PWM-9 moet als output gedefinieerd staan. PWM-9 = OC2B, verbonden met Timer-2
- \*********************************************************************************************/
-static void IR_PWM_INIT(void)  
-  {
-  #define top  207; // Frequentie draaggolf is 38Khz. Pulstijd is dan 1000000/38000Khz =26uSec. De ATMega heeft 16 ClockCyclesPerMicrosec. Period = (16 * 26)/2 = 208. Min 1 omdat er altijd een cycle extra nodig is  
-  #define prescaler 1; // Clock niet laten delen door de prescaler. Dit is nit nodig voor deze frequentie
-
-
-  TCCR2A=0;
-  TCCR2B=0;
-  TCNT2=0;             // Set counter to zero, fresh start.
-  ASSR&=~_BV(AS2);     // clock is input for prescaler:
-  OCR2A=top;           // Set Output Compare register
-  TCCR2A=_BV(WGM21);   // Write to register A: CTC-mode: 010 = clear timer on compare match. 
-  TCCR2B=prescaler;    // Write to register B: 001 = No prescaling
-  }
 
 
  /**********************************************************************************************\
@@ -150,7 +130,7 @@ void WaitFreeRF(int Delay, int Window)
   // eerst de 'dode' wachttijd
   Timer=millis()+Delay; // set de timer.
   while(Timer>millis())
-    digitalWrite(MonitorLedPin,(millis()>>7)&0x01);
+    digitalWrite(PIN_LED_RGB_R,(millis()>>7)&0x01);
   
   // dan kijken of de ether vrij is.
   Timer=millis()+Window; // reset de timer.
@@ -160,10 +140,10 @@ void WaitFreeRF(int Delay, int Window)
     {
     if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
       {
-      if(FetchSignal(RF_ReceiveDataPin,HIGH,SIGNAL_TIMEOUT_RF))// Als het een duidelijk signaal was
+      if(FetchSignal(PIN_RF_RX_DATA,HIGH,SIGNAL_TIMEOUT_RF))// Als het een duidelijk signaal was
         Timer=millis()+Window; // reset de timer weer.
       }
-    digitalWrite(MonitorLedPin,(millis()>>7)&0x01);
+    digitalWrite(PIN_LED_RGB_R,(millis()>>7)&0x01);
     }
   }
 
@@ -193,13 +173,12 @@ unsigned long WaitForChangeState(uint8_t pin, uint8_t state, unsigned long timeo
  * De inhoud van de buffer RawSignal moet de pulstijden bevatten. 
  * RawSignal.Number het aantal pulsen*2
  \*********************************************************************************************/
-
 void RawSendRF(void)
   {
   int x;
     
-  digitalWrite(RF_ReceivePowerPin,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
-  digitalWrite(RF_TransmitPowerPin,HIGH); // zet de 433Mhz zender aan
+  digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
+  digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan
   delay(5);// kleine pause om de zender de tijd te geven om stabiel te worden 
   
   for(byte y=0; y<S.TransmitRepeatRF; y++) // herhaal verzenden RF code
@@ -207,14 +186,14 @@ void RawSendRF(void)
     x=1;
     while(x<=RawSignal.Number)
       {
-      digitalWrite(RF_TransmitDataPin,HIGH); // 1
+      digitalWrite(PIN_RF_TX_DATA,HIGH); // 1
       delayMicroseconds(RawSignal.Pulses[x++]); 
-      digitalWrite(RF_TransmitDataPin,LOW); // 0
+      digitalWrite(PIN_RF_TX_DATA,LOW); // 0
       delayMicroseconds(RawSignal.Pulses[x++]); 
       }
     }
-  digitalWrite(RF_TransmitPowerPin,LOW); // zet de 433Mhz zender weer uit
-  digitalWrite(RF_ReceivePowerPin,HIGH); // Spanning naar de RF ontvanger weer aan.
+  digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
+  digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger weer aan.
   }
 
 
@@ -223,22 +202,43 @@ void RawSendRF(void)
  * De inhoud van de buffer RawSignal moet de pulstijden bevatten. 
  * RawSignal.Number het aantal pulsen*2
  * Pulsen worden verzonden op en draaggolf van 38Khz.
+ *
+ * LET OP: Deze routine is speciaal geschreven voor de Arduino Mega1280 of Mega2560 met een
+ * klokfrequentie van 16Mhz. De IR pin is D17.
  \*********************************************************************************************/
 
 void RawSendIR(void)
   {
-  int x,y;
+  int pulse;  // pulse (bestaande uit een mark en een space) uit de RawSignal tabel die moet worden verzonden
+  int mod;    // pulsenteller van het 38Khz modulatie signaal
 
-  for(y=0; y<S.TransmitRepeatIR; y++) // herhaal verzenden IR code
+  // kleine pause zodat verzenden event naar de USB poort gereed is, immers de IRQ's worden tijdelijk uitgezet
+  delay(10);
+
+  for(int repeat=0; repeat<S.TransmitRepeatIR; repeat++) // herhaal verzenden IR code
     {
-    x=1;
-    while(x<=RawSignal.Number)
+    pulse=1;
+    noInterrupts(); // interrupts tijdelijk uitschakelen om zo en zuiverder signaal te krijgen
+    while(pulse<=RawSignal.Number)
       {
-      TCCR2A|=_BV(COM2B0); // zet IR-modulatie AAN
-      delayMicroseconds(RawSignal.Pulses[x++]); 
-      TCCR2A&=~_BV(COM2B0); // zet IR-modulatie UIT
-      delayMicroseconds(RawSignal.Pulses[x++]); 
+      // Mark verzenden. Bereken hoeveel pulsen van 26uSec er nodig zijn die samen de lenge van de mark zijn.
+      mod=RawSignal.Pulses[pulse++]/26; // delen om aantal pulsen uit te rekenen
+
+      do
+        {
+        // Hoog
+        bitWrite(PORTH,0, (HIGH));
+        delayMicroseconds(12);
+        __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");// per nop 62.6 nano sec. @16Mhz
+        bitWrite(PORTH,0, (LOW));
+        delayMicroseconds(12);
+        __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");// per nop 62.6 nano sec. @16Mhz
+        }while(--mod);
+  
+      // Laag
+      delayMicroseconds(RawSignal.Pulses[pulse++]);
       }
+    interrupts(); // interupts weer inschakelen.
     }
   }
 
@@ -251,9 +251,9 @@ void Nodo_2_RawSignal(unsigned long Code)
   {
   byte BitCounter,y=1;
 
-  // begin met een startbit. 
+  // begin met een lange startbit. Veilige timing gekozen zodat deze niet gemist kan worden
   RawSignal.Pulses[y++]=NODO_PULSE_1*2; 
-  RawSignal.Pulses[y++]=NODO_SPACE*4;
+  RawSignal.Pulses[y++]=NODO_SPACE*2;
 
   // de rest van de bits LSB als eerste de lucht in
   for(BitCounter=0; BitCounter<=31; BitCounter++)
@@ -308,15 +308,15 @@ void CopySignalIR2RF(byte Window)
   {
   unsigned long Timer=millis()+((unsigned long)Window)*1000; // reset de timer.  
 
-  digitalWrite(RF_ReceivePowerPin,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
-  digitalWrite(RF_TransmitPowerPin,HIGH); // zet de 433Mhz zender aan   
+  digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
+  digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan   
   while(Timer>millis())
     {
-    digitalWrite(RF_TransmitDataPin,(*portInputRegister(IRport)&IRbit)==0);// Kijk if er iets op de IR poort binnenkomt. (Pin=LAAG als signaal in de ether). 
-    digitalWrite(MonitorLedPin,(millis()>>7)&0x01);
+    digitalWrite(PIN_RF_TX_DATA,(*portInputRegister(IRport)&IRbit)==0);// Kijk if er iets op de IR poort binnenkomt. (Pin=LAAG als signaal in de ether). 
+    digitalWrite(PIN_LED_RGB_R,(millis()>>7)&0x01);
     }
-  digitalWrite(RF_TransmitPowerPin,LOW); // zet de 433Mhz zender weer uit
-  digitalWrite(RF_ReceivePowerPin,HIGH); // Spanning naar de RF ontvanger weer aan.
+  digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
+  digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger weer aan.
   }
 
 /**********************************************************************************************\
@@ -326,28 +326,30 @@ void CopySignalIR2RF(byte Window)
 #define MAXPULSETIME 50 // maximale zendtijd van de IR-LED in mSec. Ter voorkoming van overbelasting
 void CopySignalRF2IR(byte Window)
   {
-  unsigned long Timer=millis()+((unsigned long)Window)*1000; // reset de timer.  
-  unsigned long PulseTimer;
-  
-  while(Timer>millis())// voor de duur van het opgegeven tijdframe
-    {
-    while((*portInputRegister(RFport)&RFbit)==RFbit)// Zolang de RF-pulse duurt. (Pin=HOOG bij puls, laag bij SPACE). 
-      {      
-      if(PulseTimer>millis())// als de maximale zendtijd van IR nog niet verstreken
-        {
-        digitalWrite(MonitorLedPin,HIGH);
-        TCCR2A|=_BV(COM2A0);  // zet IR-modulatie AAN
-        }
-      else // zendtijd IR voorbij, zet IR uit.
-        {
-        digitalWrite(MonitorLedPin,LOW);
-        TCCR2A&=~_BV(COM2A0); // zet IR-modulatie UIT
-        }
-      }
-    PulseTimer=millis()+MAXPULSETIME;
-    }
-  digitalWrite(MonitorLedPin,LOW);
-  TCCR2A&=~_BV(COM2A0);
+// ??? aanpassen aan nieuwe IR transmissie
+    
+//  unsigned long Timer=millis()+((unsigned long)Window)*1000; // reset de timer.  
+//  unsigned long PulseTimer;
+//  
+//  while(Timer>millis())// voor de duur van het opgegeven tijdframe
+//    {
+//    while((*portInputRegister(RFport)&RFbit)==RFbit)// Zolang de RF-pulse duurt. (Pin=HOOG bij puls, laag bij SPACE). 
+//      {      
+//      if(PulseTimer>millis())// als de maximale zendtijd van IR nog niet verstreken
+//        {
+//        digitalWrite(PIN_LED_RGB_R,HIGH);
+//        TCCR2A|=_BV(COM2A0);  // zet IR-modulatie AAN
+//        }
+//      else // zendtijd IR voorbij, zet IR uit.
+//        {
+//        digitalWrite(PIN_LED_RGB_R,LOW);
+//        TCCR2A&=~_BV(COM2A0); // zet IR-modulatie UIT
+//        }
+//      }
+//    PulseTimer=millis()+MAXPULSETIME;
+//    }
+//  digitalWrite(PIN_LED_RGB_R,LOW);
+//  TCCR2A&=~_BV(COM2A0);
   }
   
 /**********************************************************************************************\
@@ -356,9 +358,10 @@ void CopySignalRF2IR(byte Window)
 * verzonden.
 \**********************************************************************************************/
 
-boolean TransmitCode(unsigned long Event,byte SignalType)
+boolean TransmitCode(unsigned long Event, byte Dest)
   {  
   int x;
+  byte SignalType=(Event>>28)&0xf;
   
   if(SignalType!=SIGNAL_TYPE_UNKNOWN)
     if((S.WaitFreeRF_Window + S.WaitFreeRF_Delay)>=0)
@@ -382,43 +385,43 @@ boolean TransmitCode(unsigned long Event,byte SignalType)
       break;
     
     default:
+      Serial.print("*** debug: Interne fout. Ongeldig signaal in TransmitSignal() = ");Serial.println(Event,HEX);//??? Debug
       return false;
     }
 
-  if(S.TransmitRF==VALUE_ON)
+  // VALUE_SOURCE_SERIAL: // principiële discussie: is SERIAL ook een poort???
+
+  if(Dest==VALUE_SOURCE_RF || (S.TransmitRF==VALUE_ON && Dest==VALUE_ALL))
     {
     PrintEvent(Event,VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT);
     RawSendRF();
     }
 
-  if(S.TransmitIR==VALUE_ON)
+  if(Dest==VALUE_SOURCE_IR || (S.TransmitIR==VALUE_ON && Dest==VALUE_ALL))
     { 
     PrintEvent(Event,VALUE_SOURCE_IR,VALUE_DIRECTION_OUTPUT);
     RawSendIR();
     } 
 
   // Het event verzenden naar de EventGhostServer
-  if(S.TransmitEventGhost==VALUE_ON && !TemporyEventGhostError)
+  if((Dest==VALUE_SOURCE_EVENTGHOST && !TemporyEventGhostError) || (S.TransmitEventGhost==VALUE_ON && !TemporyEventGhostError && Dest==VALUE_ALL))
     {
     // IP adres waar event naar toe moet even in de globale IP variabele plaatsen om de regel te kunnen printen.
-    EventClientIP[0]=S.EventGhostServer_IP[0];
-    EventClientIP[1]=S.EventGhostServer_IP[1];
-    EventClientIP[2]=S.EventGhostServer_IP[2];
-    EventClientIP[3]=S.EventGhostServer_IP[3];
+    EventGhostClientIP[0]=S.EventGhostServer_IP[0];
+    EventGhostClientIP[1]=S.EventGhostServer_IP[1];
+    EventGhostClientIP[2]=S.EventGhostServer_IP[2];
+    EventGhostClientIP[3]=S.EventGhostServer_IP[3];
 
     PrintEvent(Event,VALUE_SOURCE_EVENTGHOST,VALUE_DIRECTION_OUTPUT);
     
     if(!SendEventGhost(Event2str(Event),S.EventGhostServer_IP))
       {
       Serial.println("*** debug: EventGhost communicatie tijdelijk opgeheven i.v.m. fout.");//???
-//      S.TransmitEventGhost==VALUE_OFF;
-//      RaiseError(ERROR_11);
-//      S.TransmitEventGhost==VALUE_ON;
       TemporyEventGhostError=true;
       }
     }
 
-  if(S.TransmitHTTP==VALUE_ON)
+  if(Dest==VALUE_SOURCE_HTTP || (S.TransmitHTTP==VALUE_ON && Dest==VALUE_ALL))
     {
     PrintEvent(Event,VALUE_SOURCE_HTTP,VALUE_DIRECTION_OUTPUT);
     HTTP_Request(Event2str(Event));
@@ -542,7 +545,7 @@ boolean SaveRawSignal(byte Key)
     
   if(error)
     {
-    TransmitCode(command2event(CMD_ERROR,ERROR_03,0),SIGNAL_TYPE_NODO);
+    TransmitCode(command2event(CMD_ERROR,ERROR_03,0),VALUE_ALL);
     return false;
     }
   return true;

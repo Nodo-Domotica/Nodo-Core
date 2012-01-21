@@ -2,17 +2,21 @@
 
 Known Errors / ToDo:
 
-- Logging op SDCard OK?
-- Terminal verwerking regels loopt niet goed: oude regel wordt steeds herhaald
+- Terminal: melding geean autorisatie komt onterecht.
 - Found in r310: Date=2012-01-14, Time=20:31, Input=Wired, Unit=1, Event=(WiredIn 9,On) event ?? na verzenden .
 - Found in r306: als ethernet niet aangesloten dan start de nodo (soms) niet op.
 - Found in r306: Nodo due compatibel maken n.a.v. omnummeren CMD_...
 - Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue testen
 - Found in r306: Na volledig volschrijven van de eventlist blijft Nodo hangen in continue uitvoeren van het reboot event.
-- Commando "OutputHTTP". Hiermee kan worden ingesteld of ieder event ook word verstuurd als een HTTP-request. Het url adres van de server kan worden worden ingesteld met commando "URL <web address>"
+- Found in r306: Status WiredAnalog groter dan toegestane poort
 
-Minor:
-- Found in r306: Status WiredAnalog 22 is mogelijk
+Aanpassingen vanar r3xx:
+- TimeSlicing techniek voor sneller langs de IR en RF routines lopen i.v.m. doorlooptijden server.available ethernet 
+- nieuwe penbezetting.
+- Commando "SendEvent <poort>" toegevoegd. Vervangt oude SendSignal. Stuurt laatst ontvangen event door. Par1 bevat de poort( EventGhost, IR, RF, HTTP, All)
+- Commando "OutputHTTP". Hiermee kan worden ingesteld of ieder event ook wordt verstuurd als een HTTP-request. Het url adres van de server kan worden worden ingesteld met commando "URL <web address>"
+- Onbekende hex-events worden mogelijk door andere waarde weergegeven a.g.v. interne filtering aan Nodo gelijke events. ??? wenselijk/noodzakelijk?
+
 
 Aanpassingen vanaf r310:
 - Sound: als Par1 groter dan 8, dan tijdsduur=Par2*100 milliseconde, toonhoogte=Par2*100 Hz
@@ -26,7 +30,7 @@ Aanpassingen vanaf r309:
 - Toevoeging commando "URL <line>", hiermee kan de URL van de server worden ingesteld waar de events (via HTTP-Poort 80) naar toegezonden moeten worden. (max. 40 tekens)
 
 Aanpassingen vanaf r306:
-- Toevoeging commando "HTTPRequest <line>"
+- Toevoeging commando "HTTPRequest <line>". Vul in als "HTTPRequest www.mijnhost.nl/pad/mijnscript.php"
 - Opgelost: status weergaven van OutputEG wordt niet goed wergegeven
 - Verwijderen commando "IPNodo" IP adres. Gaat nu via DHCP.
 - Bug: Found in r306: Events naar IP adressen worden niet correct verzonden als tegelijkertijd een TelNet sessie actief is.
@@ -42,7 +46,6 @@ Aanpassingen vanaf r305:
 - Funktioneel: prompt teken weggehaald uit terminal venster. lasig altijd weer te geven en voegt niets toe.
 - Funktioneel: Terminal On setting niet bewaard na reboot.
 - Technisch: Invoer commando via telnet werkt niet lekker;
-
 
 Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - Commaando toegevoegd "WiredCalibrate <poort> <High|Low> <ijkwaarde>"
@@ -82,7 +85,10 @@ Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - Errors worden nu weergeven met een tekstuele toelichting wat de fout veroorzaakte: "Error=<tekst>". 
 - "Timestamp=" wordt nu iets anders weergegeven als "Date=yyyy-mm-dd, Time=hh:mm".
 - Variabelen worden na wijzigen niet meer automatisch opgeslagen in het EEPROM geheugen. Opslaan kan nu met commando "VariableSave"
-- Tag Direction vervangen door Input, Output, Internal
+- Toevoeging commando "HTTPRequest <line>". Vul in als "HTTPRequest www.mijnhost.nl/pad/mijnscript.php"
+- Tag 'Direction' vervangen door Input, Output, Internal
+- Commando "SendEvent <poort>" toegevoegd. Vervangt oude SendSignal. Stuurt laatst ontvangen event door. Par1 bevat de poort( EventGhost, IR, RF, HTTP, All)
+- Onbekende hex-events worden mogelijk door andere waarde weergegeven a.g.v. filtering aan Nodo gelijke events. ??? wenselijk/noodzakelijk?
 - Een EventlistWrite commando met bijhehorende event en actie moeten zich binnen 1 regel bevinden die wordt afgesloten met een \n
 - Verzenden naar Serial vindt pas plaats als er door ontvangst van een teken gecontroleerd is dat seriele verbinding nodig is;
 - Commando "VariableSetWiredAnalog" vervallen. Past niet meer bij 10-bit berwerking en calibratie/ijking

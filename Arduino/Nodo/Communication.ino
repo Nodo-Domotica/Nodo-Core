@@ -55,7 +55,7 @@ int GetLineSerial(char *Buffer)
 
 
  /**********************************************************************************************\
- * Deze routine leest een regel die van een willekeurige EventClient over IP binnenkomt.
+ * Deze routine leest een regel die van een willekeurige EventGhostClient over IP binnenkomt.
  * Let op dat het aantal opgegeven tekens in Buffersie niet de werkelijk beschikbare ruimte
  * overschrijdt!
  *
@@ -69,22 +69,23 @@ boolean EventGhostReceive(char *ResultString)
   byte EGState=0;
   int x,y,z;
   char str_2[INPUT_BUFFER_SIZE];
-  char IPInputBuffer[INPUT_BUFFER_SIZE];//???
+  char IPInputBuffer[INPUT_BUFFER_SIZE];//??? kan hier nog wat RAM worden bespaard?
   char Cookie[8];
   
-  // Luister of er een EventClient is die verbinding wil maken met de Nodo EG EventServer
   TimeoutTimer=millis()+TimeOut;  
-  EthernetClient EventClient=EventServer.available();
-  if(EventClient) 
+  
+//  EventGhostClient=EventGhostServer.available();???
+//  if(EventGhostClient) 
+
+  if(EventGhostServer.available()) 
     {
-    // we hebben een EventClient. 
-    
+    // we hebben een EventGhostClient.     
     // Kijk vervolgens of er data binnen komt.
     while((InByteIPCount<INPUT_BUFFER_SIZE) && TimeoutTimer>millis() )
       {
-      if(EventClient.available())
+      if(EventGhostClient.available())
         {
-        InByteIP=EventClient.read();
+        InByteIP=EventGhostClient.read();
 
         if(InByteIP==0x0a)
           {
@@ -109,7 +110,7 @@ boolean EventGhostReceive(char *ResultString)
               {
               // Regel "close", dan afsluiten van de communicatie met EventGhost
 
-              EventClient.stop();
+              EventGhostClient.stop();
 //??? debug
               if(TemporyEventGhostError)
                   Serial.println("*** debug: Tijdelijk opgeheven EventGhost communicatie hersteld.");//???
@@ -141,27 +142,27 @@ boolean EventGhostReceive(char *ResultString)
               }
             TempString[y]=0;
         
-            // vergelijk hash-waarden en bevestig de EventClient bij akkoord
+            // vergelijk hash-waarden en bevestig de EventGhostClient bij akkoord
             if(strcasecmp(TempString,IPInputBuffer)==0)
               {
-              // MD5-hash code matched de we hebben een geverifiëerde EventClient
+              // MD5-hash code matched de we hebben een geverifiëerde EventGhostClient
               strcpy(TempString,PROGMEM2str(Text_18));
               strcat(TempString,"\n");
-              EventClient.print(TempString); // "accept"
+              EventGhostClient.print(TempString); // "accept"
 
               // Wachtwoord correct. Bewaar IP adres indien nodig
-              EventClient.getRemoteIP(EventClientIP);  
+              EventGhostClient.getRemoteIP(EventGhostClientIP);  
               if(S.AutoSaveEventGhostIP==VALUE_ON)
                 {
-                if( S.EventGhostServer_IP[0]!=EventClientIP[0] ||
-                    S.EventGhostServer_IP[1]!=EventClientIP[1] ||
-                    S.EventGhostServer_IP[2]!=EventClientIP[2] ||
-                    S.EventGhostServer_IP[3]!=EventClientIP[3] )
+                if( S.EventGhostServer_IP[0]!=EventGhostClientIP[0] ||
+                    S.EventGhostServer_IP[1]!=EventGhostClientIP[1] ||
+                    S.EventGhostServer_IP[2]!=EventGhostClientIP[2] ||
+                    S.EventGhostServer_IP[3]!=EventGhostClientIP[3] )
                   {
-                  S.EventGhostServer_IP[0]=EventClientIP[0];
-                  S.EventGhostServer_IP[1]=EventClientIP[1];
-                  S.EventGhostServer_IP[2]=EventClientIP[2];
-                  S.EventGhostServer_IP[3]=EventClientIP[3];
+                  S.EventGhostServer_IP[0]=EventGhostClientIP[0];
+                  S.EventGhostServer_IP[1]=EventGhostClientIP[1];
+                  S.EventGhostServer_IP[2]=EventGhostClientIP[2];
+                  S.EventGhostServer_IP[3]=EventGhostClientIP[3];
                   SaveSettings();
                   }
                 }
@@ -177,16 +178,16 @@ boolean EventGhostReceive(char *ResultString)
             
           else if(EGState==0)
             {
-            EventClient.read(); // er kan nog een \r in de buffer zitten.
+            EventGhostClient.read(); // er kan nog een \r in de buffer zitten.
 
             // Kijk of de input een connect verzoek is vanuit EventGhost
             if(strcasecmp(IPInputBuffer,PROGMEM2str(Text_20))==0) // "quintessence" 
               { 
-              // sprintf(TempString,"*** debug: EventGhost client maakt verbinding: %u.%u.%u.%u",EventClientIP[0],EventClientIP[1],EventClientIP[2],EventClientIP[3]);//??? Debug
+              // sprintf(TempString,"*** debug: EventGhost client maakt verbinding: %u.%u.%u.%u",EventGhostClientIP[0],EventGhostClientIP[1],EventGhostClientIP[2],EventGhostClientIP[3]);//??? Debug
               // PrintLine(TempString); //??? Debug
 
-              // Een wachtwoord beveiligd verzoek vanuit een EventGhost EventClient (PC, Andoid, IPhone)
-              // De EventClient is een EventGhost sender.  
+              // Een wachtwoord beveiligd verzoek vanuit een EventGhost EventGhostClient (PC, Andoid, IPhone)
+              // De EventGhostClient is een EventGhost sender.  
               // maak een 16-bits cookie en verzend deze
               strcpy(str_2,PROGMEM2str(Text_05));
               for(x=0;x<4;x++)
@@ -194,7 +195,7 @@ boolean EventGhostReceive(char *ResultString)
               Cookie[x]=0; // sluit string af;
               strcpy(TempString,Cookie);
               strcat(TempString,"\n");
-              EventClient.print(TempString);          
+              EventGhostClient.print(TempString);          
   
               // ga naar volgende state: Haal MD5 en verwerk deze
               EGState=1;
@@ -209,7 +210,7 @@ boolean EventGhostReceive(char *ResultString)
           }
         }
       }
-    EventClient.flush();
+    EventGhostClient.flush();
     return false;
     }
   else
@@ -218,8 +219,8 @@ boolean EventGhostReceive(char *ResultString)
 
 
  /*******************************************************************************************************\
- * Deze functie verzendt een regel als event naar een EventGhost EventServer. De Payload wordt niet
- * gebruikt en is leeg. Er wordt een false teruggegeven als de communicatie met de EventGhost EventServer
+ * Deze functie verzendt een regel als event naar een EventGhost EventGhostServer. De Payload wordt niet
+ * gebruikt en is leeg. Er wordt een false teruggegeven als de communicatie met de EventGhost EventGhostServer
  * niet tot stand gebracht kon worden.
  \*******************************************************************************************************/
 boolean SendEventGhost(char* event, byte* SendToIP)
@@ -399,48 +400,105 @@ boolean TerminalReceive(char *Buffer)
 
 
  /*******************************************************************************************************\
- * Deze functie verzendt een regel als event naar een EventGhost EventServer. De Payload wordt niet
- * gebruikt en is leeg. Er wordt een false teruggegeven als de communicatie met de EventGhost EventServer
+ * Deze functie verzendt een regel als event naar een EventGhost EventGhostServer. De Payload wordt niet
+ * gebruikt en is leeg. Er wordt een false teruggegeven als de communicatie met de EventGhost EventGhostServer
  * niet tot stand gebracht kon worden.
  \*******************************************************************************************************/
 boolean HTTP_Request(char* event)
   {
-  byte y=0;
-  char s[2]={0,0};
+  int InByteCounter;
+  byte InByte,x;
+  unsigned long TimeoutTimer;
+  char HTTPInputString[INPUT_BUFFER_SIZE];
+  char Host[INPUT_BUFFER_SIZE];//??? kan hier op worden bespaard?
+  boolean Ok;
+  char s[2];
+
+EthernetServer HTTPServer(80);                              // Server class voor HTTP sessie.
+EthernetClient HTTPClient;                            // Client class voor HTTP sessie.
   
-  strcpy(TempString,S.url);
-  strcat(TempString,"?ID=");
-  strcat(TempString,int2str(S.ID));
-  strcat(TempString,"&Event=");
+  // Haal uit het HTTP request URL de Host. Alles tot aan het '/' teken.
+  strcpy(Host,S.HTTPRequest);
+  x=StringFind(Host,"/");
+  Host[x]=0;
+  // Serial.print("*** debug: Host=");Serial.println(Host);//??? Debug
 
-  // event toevoegen aan tijdelijke string, echter alle spaties vervangen door %20 conform URL notatie
-  for(byte x=0;x<strlen(event);x++)
+  if(HTTPClient.connect(Host,80))
     {
-    if(event[x]==32)
-      strcat(TempString,"%20");
-    else
+
+//  client.println("GET /test/NodoEvent.php?event=EventTest%20111,222 HTTP/1.1");
+
+    strcpy(TempString,"GET ");
+    strcat(TempString,S.HTTPRequest+x);
+    strcat(TempString,"?event=");
+    
+    // event toevoegen aan tijdelijke string, echter alle spaties vervangen door + conform URL notatie
+    for(x=0;x<strlen(event);x++)
+      {            
+      if(event[x]==32)
+        strcat(TempString,"%20");
+      else
+        {
+        s[0]=event[x];
+        s[1]=0;
+        strcat(TempString,s);
+        }
+      }      
+
+//    strcat(TempString,"&id="); ???
+//    strcat(TempString,int2str(S.ID));
+    strcat(TempString," HTTP/1.1");
+    HTTPClient.println(TempString);
+    // Serial.print("*** debug: HTTP Request_1=");Serial.println(TempString);//??? Debug
+
+    strcpy(TempString,"Host: ");
+    strcat(TempString,Host);
+    HTTPClient.println(TempString);
+    // Serial.print("*** debug: HTTP Request_2=");Serial.println(TempString);//??? Debug
+    HTTPClient.println();
+
+    TimeoutTimer=millis()+2000;
+    HTTPInputString[0]=0;
+    InByteCounter=0;
+    
+    Ok=false;
+    while(TimeoutTimer>millis() && HTTPClient.connected())
       {
-      s[0]=event[x];
-      strcat(TempString,s);
+      if(HTTPClient.available()) 
+        {
+        InByte=HTTPClient.read();
+        
+        if(isprint(InByte) && InByteCounter<INPUT_BUFFER_SIZE)
+          HTTPInputString[InByteCounter++]=InByte;
+          
+        else if(InByte==0x0D || InByte==0x0A)
+          {
+          HTTPInputString[InByteCounter]=0;
+          InByteCounter=0;
+          // Serial.print("*** debug: HTTP Response=");Serial.println(HTTPInputString);//??? Debug
+          // De regel is binnen
+          
+          if(StringFind(HTTPInputString,"HTTP")!=-1)
+            {
+            // Response n.a.v. HTTP-request is ontvangen
+            if(StringFind(HTTPInputString,"200")!=-1)
+              {
+              // Serial.println("****** Request received ! *******");
+              Ok=true;
+              }
+            else
+              {
+              Serial.println();
+              Serial.print("****** Error: ");            
+              Serial.print(HTTPInputString);
+              Serial.println("*******");            
+              }
+            HTTPInputString[InByteCounter]=0;
+            }
+          }
+        }
       }
-    }      
-
-  Serial.print("*** debug: HTTP Request=");Serial.println(TempString);//??? Debug
-
-//  //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-//  
-//  EthernetClient client;
-//  
-//  if (client.connect(TempString, 80)) 
-//    {
-//    Serial.println("*** Debug: HTTP connected");
-//    // Make a HTTP request:
-//    client.println("GET /search?q=arduino HTTP/1.0");
-//    client.println();
-//    client.stop();
-//    } 
-//  else 
-//    {
-//    Serial.println("*** Debug: HTTP connection failed.");
-//  }
-}
+    }
+  HTTPClient.stop();
+  return Ok;
+  }

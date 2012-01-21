@@ -52,7 +52,7 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
   if(Port==VALUE_SOURCE_EVENTGHOST)
     {
     strcat(TempString, " ");
-    strcat(TempString, ip2str(EventClientIP));
+    strcat(TempString, ip2str(EventGhostClientIP));
     }
 
   // geef unit weer
@@ -231,7 +231,8 @@ char* Event2str(unsigned long Code)
   byte Par2     = (Code)&0xff;
   static char EventString[50]; 
 
-  strcpy(EventString, "(");
+  EventString[0]=0;
+
 
   if(Type==SIGNAL_TYPE_NEWKAKU)
     {
@@ -297,6 +298,7 @@ char* Event2str(unsigned long Code)
         break;
   
       // Par1 als tekst en par2 niet
+      case CMD_SEND_EVENT:
       case CMD_ERROR:
       case CMD_DLS_EVENT:
       case CMD_BUSY:
@@ -396,7 +398,6 @@ char* Event2str(unsigned long Code)
     {
     strcat(EventString,int2str(Code));
     }
-  strcat(EventString,")");
   return EventString;
   }
 

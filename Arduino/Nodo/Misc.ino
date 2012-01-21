@@ -141,7 +141,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
     case CMD_WIRED_ANALOG:
       // lees analoge waarde. Dit is een 10-bit waarde, unsigned 0..1023
       // vervolgens met map() omrekenen naar gekalibreerde waarde        
-      x=map(analogRead(WiredAnalogInputPin_1+xPar1-1),S.WiredInput_Calibration_IL[xPar1-1],S.WiredInput_Calibration_IH[xPar1-1],S.WiredInput_Calibration_OL[xPar1-1],S.WiredInput_Calibration_OH[xPar1-1]);
+      x=map(analogRead(PIN_WIRED_IN_1+xPar1-1),S.WiredInput_Calibration_IL[xPar1-1],S.WiredInput_Calibration_IH[xPar1-1],S.WiredInput_Calibration_OL[xPar1-1],S.WiredInput_Calibration_OH[xPar1-1]);
       event=wiredint2event(x, xPar1-1, CMD_WIRED_ANALOG);
       *Par1=(byte)((event>>8) & 0xff);
       *Par2=(byte)(event & 0xff);
@@ -236,7 +236,7 @@ boolean LoadSettings()
  \*********************************************************************************************/
 void ResetFactory(void)
   {
-  Beep(2000,2000);
+//  Beep(2000,2000);//??? herstel
   int x,y;
   ClockRead();
 
@@ -262,9 +262,11 @@ void ResetFactory(void)
   S.EventGhostServer_IP[1]     = 0; // IP adres van de EventGhost server
   S.EventGhostServer_IP[2]     = 0; // IP adres van de EventGhost server
   S.EventGhostServer_IP[3]     = 0; // IP adres van de EventGhost server
-  S.url[0]             = 0; // string van het HTTP adres leeg maken
+  S.HTTPRequest[0]             = 0; // string van het HTTP adres leeg maken
   S.ID                         = 0;   
+
   strcpy(S.Password,"Nodo");
+  strcpy(S.HTTPRequest,ProgmemString(Text_29));//??? default vullen of niet?
   
   // zet analoge waarden op default
   for(x=0;x<WIRED_PORTS;x++)
@@ -403,7 +405,7 @@ void Status(byte Par1, byte Par2, boolean SendEvent)
           P2=0;
           GetStatus(&x,&P1,&P2); // haal status op. Call by Reference!
           if(SendEvent)
-            TransmitCode(command2event(x,P1,P2),SIGNAL_TYPE_NODO); // verzend als event
+            TransmitCode(command2event(x,P1,P2),VALUE_ALL); // verzend als event
           else
             PrintEvent(command2event(x,P1,P2),VALUE_SOURCE_SERIAL,VALUE_DIRECTION_OUTPUT);  // geef event weer op Serial
           }
@@ -451,9 +453,9 @@ boolean GetArgv(char *string, char *argv, byte argc)
  * LET OP: toonhoogte is slechts een grove indicatie. Deze routine is bedoeld als signaalfunctie
  * en is niet bruikbaar voor toepassingen waar de toonhoogte zuiver/exact moet zijn. Geen PWM.
  * Definieer de constante:
- * #define BuzzerPin <LuidsprekerAansluiting>
+ * #define PIN_SPEAKER <LuidsprekerAansluiting>
  * Neem in setup() de volgende regel op:
- * pinMode(BuzzerPin, OUTPUT);
+ * pinMode(PIN_SPEAKER, OUTPUT);
  * Routine wordt verlaten na beeindiging van de pieptoon.
  * Revision 01, 13-02-2009, P.K.Tonkes@gmail.com
  \*********************************************************************************************/
@@ -466,9 +468,9 @@ void Beep(int frequency, int duration)//Herz,millisec
   noInterrupts();
   for(loops;loops>0;loops--) 
     {
-    digitalWrite(BuzzerPin, HIGH);
+    digitalWrite(PIN_SPEAKER, HIGH);
     delayMicroseconds(halfperiod);
-    digitalWrite(BuzzerPin, LOW);
+    digitalWrite(PIN_SPEAKER, LOW);
     delayMicroseconds(halfperiod);
     }
   interrupts();
@@ -582,6 +584,9 @@ int StringFind(char *string, char *keyword)
   int x,y;
   int keyword_len=strlen(keyword);
   int string_len=strlen(string);
+  
+  if(keyword_len>string_len) // doe geen moeite als het te vinden eyword langer is dan de string.
+    return -1;
   
   for(x=0; x<=(string_len-keyword_len); x++)
     {
@@ -831,7 +836,7 @@ void RaiseError(byte ErrorCode)
   unsigned long eventcode;
 
   eventcode=command2event(CMD_ERROR,ErrorCode,0);
-  //??? TransmitCode(eventcode,SIGNAL_TYPE_NODO);    // ??? Is het wel handig om errors ook naar alle kanalen te versturen of kan het ook zonder?
+  //??? TransmitCode(eventcode,NODO,VALUE_ALL);    // ??? Is het wel handig om errors ook naar alle kanalen te versturen of kan het ook zonder?
   PrintEvent(eventcode,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM);  // geef event weer op Serial
   }
     
@@ -856,7 +861,7 @@ boolean LogSDCard(char *Line)
     else 
       {
       SDCardPresent=false; // niet meer weer proberen weg te schrijven.
-      TransmitCode(command2event(CMD_ERROR,ERROR_03,0),SIGNAL_TYPE_NODO);
+      TransmitCode(command2event(CMD_ERROR,ERROR_03,0),VALUE_ALL);
       }
 
     // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip

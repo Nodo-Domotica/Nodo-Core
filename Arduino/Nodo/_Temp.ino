@@ -18,6 +18,10 @@ Serial.println("*** debug: ");//???
 if((millis()>>12)&0x01==1)Serial.println("*** debug: ...");//???
 
 
+//  pinMode(22, OUTPUT);//???
+//  digitalWrite(22,HIGH);           // LED weer uit???? debug
+//  digitalWrite(22,LOW);           // LED weer uit???? debug
+
 
 
 void PrintRawSignal(void)
@@ -255,4 +259,20 @@ int ppp2analogint(byte Par1, byte Par2)
             }
           }
   
+
+  
+    // event toevoegen aan tijdelijke string, echter alle spaties vervangen door %20 conform URL notatie
+    for(byte x=0;x<strlen(event);x++)
+      {
+      if(event[x]==32)
+        strcat(TempString,"%20");
+      else
+        {
+        s[0]=event[x];
+        strcat(TempString,s);
+        }
+      }      
+
+
+
 */
