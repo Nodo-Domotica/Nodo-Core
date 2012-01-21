@@ -32,6 +32,11 @@ public class RawSignalPanel extends NodoBasePanel {
 
     private double dividerValue;
     private int thresholdValue;
+    private static final double[] DIVIDERS = {
+        0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.25, 
+        1.5, 1.75, 2, 2.5, 3, 4, 5, 7.5, 10
+    };
+    private int[] backupSignal = null;
 
     /** Creates new form RawSignalPanel */
     public RawSignalPanel(final NodoDueManagerView view) {
@@ -58,15 +63,16 @@ public class RawSignalPanel extends NodoBasePanel {
             if (value == 0) {
                 break;
             }
-            data.append(value);
+            data.append("0x");
+            data.append(Integer.toHexString(value).toUpperCase());
             data.append(',');
             size++;
         }
         // Close with 0, need at least even number without 0
         if (size % 2 == 1) {
-            data.append("0,0;");
+            data.append("0x0,0x0;");
         } else {
-            data.append("0;");
+            data.append("0x0;");
         }
         return data;
     }
@@ -111,7 +117,7 @@ public class RawSignalPanel extends NodoBasePanel {
         lineGraph.setLayout(lineGraphLayout);
         lineGraphLayout.setHorizontalGroup(
             lineGraphLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 536, Short.MAX_VALUE)
+            .addGap(0, 539, Short.MAX_VALUE)
         );
         lineGraphLayout.setVerticalGroup(
             lineGraphLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -174,13 +180,12 @@ public class RawSignalPanel extends NodoBasePanel {
         jPanel1.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
 
         divider.setMajorTickSpacing(1);
-        divider.setMaximum(10);
-        divider.setMinimum(-9);
+        divider.setMaximum(15);
         divider.setMinorTickSpacing(1);
         divider.setPaintTicks(true);
         divider.setSnapToTicks(true);
         divider.setToolTipText(resourceMap.getString("divider.toolTipText")); // NOI18N
-        divider.setValue(2);
+        divider.setValue(6);
         divider.setName("divider"); // NOI18N
         divider.addChangeListener(new javax.swing.event.ChangeListener() {
             public void stateChanged(javax.swing.event.ChangeEvent evt) {
@@ -231,13 +236,13 @@ public class RawSignalPanel extends NodoBasePanel {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(buttonPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 538, Short.MAX_VALUE)
+                    .addComponent(buttonPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 541, Short.MAX_VALUE)
                     .addComponent(lineGraph, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(nameLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 131, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(startSlider, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 538, Short.MAX_VALUE)
-                    .addComponent(endSlider, javax.swing.GroupLayout.DEFAULT_SIZE, 538, Short.MAX_VALUE)
+                    .addComponent(startSlider, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 541, Short.MAX_VALUE)
+                    .addComponent(endSlider, javax.swing.GroupLayout.DEFAULT_SIZE, 541, Short.MAX_VALUE)
                     .addComponent(valueLabel)
-                    .addComponent(rawSignalText, javax.swing.GroupLayout.DEFAULT_SIZE, 538, Short.MAX_VALUE)
+                    .addComponent(rawSignalText, javax.swing.GroupLayout.DEFAULT_SIZE, 541, Short.MAX_VALUE)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addComponent(invert)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 138, Short.MAX_VALUE)
@@ -316,18 +321,9 @@ public class RawSignalPanel extends NodoBasePanel {
     }//GEN-LAST:event_thresholdStateChanged
 
     private void updateDividerValue() {
-        double value = divider.getValue() / 2.0;
-        if (value == 0) {
-            dividerValue = 0;
-            dividerText.setText("--");
-        } else if (value < 0) {
-            double fraction = -1.0 * value + 1;
-            dividerValue = Math.round(100 / fraction) / 100.0;
-            dividerText.setText("" + dividerValue);
-        } else if (value > 0) {
-            dividerValue = value;
-            dividerText.setText("" + dividerValue);
-        }
+        int value = divider.getValue();
+        dividerValue = DIVIDERS[value];
+        dividerText.setText(""+dividerValue);
     }
 
     private void updateThresholdValue() {
@@ -386,6 +382,7 @@ public class RawSignalPanel extends NodoBasePanel {
         // Clean the screen
         int[] result = new int[0];
         update(result);
+        backupSignal = null;
 
        if (NodoDueManager.hasConnection()) {
             SerialCommunicator comm =
@@ -449,11 +446,18 @@ public class RawSignalPanel extends NodoBasePanel {
 
     @Action
     public void cleanRawSignal() {
-        if (dividerValue == 0) {
-            return;
-        }
         RawSignalGraphPanel graph = (RawSignalGraphPanel) lineGraph;
         int[] signal = graph.getSignal();
+        if (dividerValue == 0 || signal == null || signal.length == 0) {
+            return;
+        }
+        if ( backupSignal != null ) {
+            signal = new int[backupSignal.length];
+            System.arraycopy(backupSignal, 0, signal, 0, backupSignal.length);
+        } else if ( signal != null ) {
+            backupSignal = new int[signal.length];
+            System.arraycopy(signal, 0, backupSignal, 0, signal.length);
+        }
 
         // Find smallest value and divide by 3
         int smallest = Integer.MAX_VALUE;
@@ -467,6 +471,7 @@ public class RawSignalPanel extends NodoBasePanel {
         smallest = (int) (smallest / dividerValue);
         if (smallest > 1) {
             for (int i = 0; i < signal.length; i++) {
+                // Round value to a multiple of the smalest
                 signal[i] = smallest * ((signal[i] + smallest / 2) / smallest);
             }
             update(signal);
