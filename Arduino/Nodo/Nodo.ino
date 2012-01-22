@@ -28,7 +28,7 @@
  *
  \****************************************************************************************************************************/
 
-#define VERSION        1          // Nodo Version nummer:
+#define VERSION        2          // Nodo Version nummer:
                                   // Major.Minor.Patch
                                   // Major: Grote veranderingen aan concept, besturing, werking.
                                   // Minor: Uitbreiding/aanpassing van commando's, functionaliteit en MMI aanpassingen
@@ -53,7 +53,7 @@
 // strings met vaste tekst naar PROGMEM om hiermee RAM-geheugen te sparen.
 prog_char PROGMEM Text_01[] = "Nodo Domotica controller (c) Copyright 2011 P.K.Tonkes.";
 prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
-prog_char PROGMEM Text_03[] = "Line=";
+//prog_char PROGMEM Text_03[] = "Line=";
 prog_char PROGMEM Text_04[] = "SunMonThuWedThuFriSat";
 prog_char PROGMEM Text_05[] = "0123456789abcdef";
 prog_char PROGMEM Text_06[] = "Error=";
@@ -64,9 +64,9 @@ prog_char PROGMEM Text_09[] = "Queue=In, ";
 prog_char PROGMEM Text_11[] = "Output=";
 prog_char PROGMEM Text_12[] = "Input=";
 prog_char PROGMEM Text_13[] = "Ok.";
-prog_char PROGMEM Text_14[] = "Event=";
+//prog_char PROGMEM Text_14[] = "Event=";
 prog_char PROGMEM Text_15[] = "Booting...";
-prog_char PROGMEM Text_16[] = "Action=";
+//prog_char PROGMEM Text_16[] = "Action=";
 prog_char PROGMEM Text_17[] = "payload";
 prog_char PROGMEM Text_18[] = "accept";
 prog_char PROGMEM Text_19[] = "close";
@@ -80,7 +80,6 @@ prog_char PROGMEM Text_26[] = "Event received from: ";
 prog_char PROGMEM Text_27[] = "Raw/Key"; // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_28[] = "Raw/Hex"; // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_29[] = "www.nodo-domotica.nl/test/NodoEvent.php"; // Host waar de events in de vorm van een HTTP request naar toe gestuurd moeten worden
-prog_char PROGMEM Text_30[] = "No access!";
  
 // Commando's:
 prog_char PROGMEM Cmd_000[]=""; // dummy. Niet gebruiken
@@ -104,7 +103,7 @@ prog_char PROGMEM Cmd_017[]="RawSignalSend";
 prog_char PROGMEM Cmd_018[]="Reset";
 prog_char PROGMEM Cmd_019[]="SendKAKU";
 prog_char PROGMEM Cmd_020[]="SendNewKAKU";
-prog_char PROGMEM Cmd_021[]="";
+prog_char PROGMEM Cmd_021[]="IPSettings";
 prog_char PROGMEM Cmd_022[]="Terminal";
 prog_char PROGMEM Cmd_023[]="SimulateDay";
 prog_char PROGMEM Cmd_024[]="Sound";
@@ -295,7 +294,7 @@ prog_char PROGMEM Cmd_203[]="Unable to open file on SDCard.";
 prog_char PROGMEM Cmd_204[]="Queue overflow.";
 prog_char PROGMEM Cmd_205[]="Eventlist nesting error.";
 prog_char PROGMEM Cmd_206[]="Writing to eventlist failed.";
-prog_char PROGMEM Cmd_207[]="Error <???>";
+prog_char PROGMEM Cmd_207[]="No Ethernet connection.";
 prog_char PROGMEM Cmd_208[]="Incorrect password.";
 prog_char PROGMEM Cmd_209[]="Command not supported in this Nodo version.";
 prog_char PROGMEM Cmd_210[]="Terminal access not allowed.";
@@ -323,7 +322,7 @@ prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 #define CMD_RESET                       18
 #define CMD_SEND_KAKU                   19
 #define CMD_SEND_KAKU_NEW               20
-#define CMDRES                          21
+#define CMD_IP_SETTINGS                 21
 #define CMD_TERMINAL                    22
 #define CMD_SIMULATE_DAY                23
 #define CMD_SOUND                       24
@@ -634,7 +633,7 @@ struct Settings
   boolean DaylightSaving;                                   // Vlag die aangeeft of het zomertijd of wintertijd is
   int     DaylightSavingSet;                                // Vlag voor correct automatisch kunnen overschakelen van zomertijd naar wintertijd of vice-versa
   char    Password[25];                                     // String met wachtwoord.
-  unsigned long ID;                                         // unieke 32bit code waar de Nodo uniek mee geïdentificeerd kan worden in een netwerk
+  char    ID[25];                                           // code waar de Nodo uniek mee geïdentificeerd kan worden in een netwerk
   char    HTTPRequest[80];                                  // HTTP request;
   byte    TransmitEventGhost;
   byte    EventGhostServer_IP[4];                           // IP adres van waar EventGhost Events naar verstuurd moeten worden.
@@ -699,6 +698,8 @@ void setup()
   if(S.Version!=VERSION)ResetFactory(); // Als versienummer in EEPROM niet correct is, dan een ResetFactory.
   
   // Initialiseer in/output poorten.
+
+  pinMode(22, OUTPUT);//??? t.b.v. tijdmetingen met Logic analy
 
   pinMode(PIN_IR_RX_DATA, INPUT);
   pinMode(PIN_RF_RX_DATA, INPUT);
@@ -889,8 +890,8 @@ void loop()
             EventGhostClient=EventGhostServer.available(); // deze call vraagt veel tijd: +/- 90uSec.
             if(EventGhostClient)
               {
-              EventGhostReceive(InputBuffer_EventGhost);
-              ExecuteLine(InputBuffer_EventGhost, VALUE_SOURCE_EVENTGHOST);
+              if(EventGhostReceive(InputBuffer_EventGhost))
+                ExecuteLine(InputBuffer_EventGhost, VALUE_SOURCE_EVENTGHOST);
               }
             }
           break;
@@ -902,7 +903,15 @@ void loop()
             {
             // IP Telnet verbinding : *************** kijk of er verzoek tot verbinding vanuit een terminal is **********************    
             if(TerminalReceive(Inputbuffer_Terminal)) // Terminalreceive is non-blocking
-              ExecuteLine(Inputbuffer_Terminal, VALUE_SOURCE_TERMINAL);
+              {
+              if(S.Terminal_Enabled==VALUE_ON)
+                ExecuteLine(Inputbuffer_Terminal, VALUE_SOURCE_TERMINAL);
+              else
+                {
+                TerminalClient.println(cmd2str(ERROR_10));              
+                PrintLine(cmd2str(ERROR_10));
+                }
+              }
             }
           break;
           }
@@ -911,10 +920,7 @@ void loop()
           {
           if(EthernetEnabled)
             {
-            //??? voor testdoeleinden tijdmeting. Hier komt later de HTTP server te scannen
-            // IP Telnet verbinding : *************** kijk of er verzoek tot verbinding vanuit een terminal is **********************    
-            if(TerminalReceive(Inputbuffer_Terminal)) // Terminalreceive is non-blocking
-              ExecuteLine(Inputbuffer_Terminal, VALUE_SOURCE_TERMINAL);
+            // Hier HTTP server ???
             }
           break;
           }

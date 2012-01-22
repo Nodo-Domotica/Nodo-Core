@@ -114,7 +114,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
 boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, unsigned long PreviousContent, byte PreviousPort)
   {
   unsigned long Event_1, Event_2;
-  byte w,x;
+  int w,x;
 
   // print regel. Als trace aan, dan alle regels die vanuit de eventlist worden verwerkt weergeven
   if(EventlistDepth>0 && S.Trace)
@@ -139,9 +139,10 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
     }
   else
     {// Er is een Event binnengekomen  
-    // loop de gehele eventlist langs om te kijken of er een treffer is.    
-    for(x=1; x<=EVENTLIST_MAX && Eventlist_Read(x,&Event_1,&Event_2); x++)
+    // loop de gehele eventlist langs om te kijken of er een treffer is. 255 regels checken duurt 180 milliseconde
+    for(x=1; x<=EVENTLIST_MAX; x++)
       {
+      Eventlist_Read(x,&Event_1,&Event_2);
       if(CheckEvent(IncommingEvent,Event_1,Port))
         {
         if(S.Trace)
@@ -169,7 +170,7 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
             }
           }
         }
-      }
+      }// for
     }
   EventlistDepth--;
   return true;
@@ -178,18 +179,17 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
 
  /**********************************************************************************************\
  * Toetst of de Code ergens voorkomt in de Eventlist. Geeft False als de opgegeven code niet bestaat.
+ * Een eventlist met een lengte van 255 regels is volledig gechecked binnen 10milliseconden
  \*********************************************************************************************/
 boolean CheckEventlist(unsigned long Code,byte Port)
   {
   unsigned long Event, Action;
 
-  for(byte x=1; x<=EVENTLIST_MAX;x++)
+  for(int x=1; x<=EVENTLIST_MAX;x++)
     {
     Eventlist_Read(x,&Event,&Action);
     if(CheckEvent(Code,Event,Port))
       return true; // match gevonden
-    if(Event==0L)
-      break;
     }
   return false;
   }
@@ -203,11 +203,15 @@ boolean CheckEvent(unsigned long Event, unsigned long MacroEvent, byte Port)
   byte x,z;
   byte Command; 
   // Serial.print("CheckEvent() > Event=0x");Serial.print(Event,HEX);Serial.print(", MacroEvent=0x");Serial.print(MacroEvent,HEX);PrintTerm();//???debugging
-  
+
+  // geen lege events zoeken en verwerken
+  if(MacroEvent==0 || Event==0)
+    return false;  
   
   // ### exacte match: 
   // als huidige event exact overeenkomt met het event in de regel uit de Eventlist, dan een match
-  if(MacroEvent==Event)return true; 
+  if(MacroEvent==Event)
+     return true; 
 
 
   // ### excate match zonder type/unit.  
@@ -235,7 +239,7 @@ boolean CheckEvent(unsigned long Event, unsigned long MacroEvent, byte Port)
     z=(MacroEvent>>8)&0xff; // Par1 deel van de Wildcard bevat de poort
     if(z!=VALUE_ALL && z!=Port)return false;
 
-    switch(Command) // Command deel van binnengekomen event.
+    switch(Command) // Command deel van binnengekomen event. //??? staan ze er allemaal in?
       {
       case CMD_KAKU:
       case CMD_KAKU_NEW:

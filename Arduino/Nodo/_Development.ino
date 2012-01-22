@@ -2,52 +2,21 @@
 
 Known Errors / ToDo:
 
-- Terminal: melding geean autorisatie komt onterecht.
 - Found in r310: Date=2012-01-14, Time=20:31, Input=Wired, Unit=1, Event=(WiredIn 9,On) event ?? na verzenden .
-- Found in r306: als ethernet niet aangesloten dan start de nodo (soms) niet op.
 - Found in r306: Nodo due compatibel maken n.a.v. omnummeren CMD_...
 - Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue testen
-- Found in r306: Na volledig volschrijven van de eventlist blijft Nodo hangen in continue uitvoeren van het reboot event.
 - Found in r306: Status WiredAnalog groter dan toegestane poort
 
-Aanpassingen vanar r3xx:
-- TimeSlicing techniek voor sneller langs de IR en RF routines lopen i.v.m. doorlooptijden server.available ethernet 
-- nieuwe penbezetting.
-- Commando "SendEvent <poort>" toegevoegd. Vervangt oude SendSignal. Stuurt laatst ontvangen event door. Par1 bevat de poort( EventGhost, IR, RF, HTTP, All)
-- Commando "OutputHTTP". Hiermee kan worden ingesteld of ieder event ook wordt verstuurd als een HTTP-request. Het url adres van de server kan worden worden ingesteld met commando "URL <web address>"
-- Onbekende hex-events worden mogelijk door andere waarde weergegeven a.g.v. interne filtering aan Nodo gelijke events. ??? wenselijk/noodzakelijk?
-
-
-Aanpassingen vanaf r310:
-- Sound: als Par1 groter dan 8, dan tijdsduur=Par2*100 milliseconde, toonhoogte=Par2*100 Hz
-- Aanpassing "WiredSmittTrigger": invoer analoge decimale waarde. 
-- Aanpassing "WiredTreshold": invoer analoge decimale waarde.
-- Commando status aagepast naar analoge weergave voor WiredAnalog, WiredSmittTrigger,WiredThreshold.
-- Found in r306: Na een RaiseError vanuit een TelNet sessie werkt invoer commando eerst daarop volgende keer niet. Eerste commando wordt overgeslagen.
-
-Aanpassingen vanaf r309:
-- Commaando toegevoegd "WiredCalibrate <poort> <High|Low> <ijkwaarde>"
-- Toevoeging commando "URL <line>", hiermee kan de URL van de server worden ingesteld waar de events (via HTTP-Poort 80) naar toegezonden moeten worden. (max. 40 tekens)
-
-Aanpassingen vanaf r306:
-- Toevoeging commando "HTTPRequest <line>". Vul in als "HTTPRequest www.mijnhost.nl/pad/mijnscript.php"
-- Opgelost: status weergaven van OutputEG wordt niet goed wergegeven
-- Verwijderen commando "IPNodo" IP adres. Gaat nu via DHCP.
-- Bug: Found in r306: Events naar IP adressen worden niet correct verzonden als tegelijkertijd een TelNet sessie actief is.
-- Funktioneel: Echo tekens bij TelNet sessie verwijderd. Dit regelen de meeste Terminal programma's
-- Technisch: Telnet, Serial en EventGhost hebben ieder een eigen inputbuffer
-- Technisch: Verzenden van een EventGhost Event naar IP nu voorzien van retry bij fout in verzending.
-- Nieuw commando "SendEG <On|Off> , <AutoSaveIP On|Off>"
-
-Aanpassingen vanaf r305:
-- Bug: Terugsturen events naar bekende IP adressen werkt niet goed. (self-learning)
-- Bug: EventlistWrite werkt niet
-- Bug: Hex-events worden niet geaccepteerd.
-- Funktioneel: prompt teken weggehaald uit terminal venster. lasig altijd weer te geven en voegt niets toe.
-- Funktioneel: Terminal On setting niet bewaard na reboot.
-- Technisch: Invoer commando via telnet werkt niet lekker;
+Aanpassingen:
+- EventListshow, eventListWrite,eventListErase hebben nu als parameter-1 de regel waar het betrekking op heeft (<eventlistregel>, ALL, 0=All)
+- Toevoeging commando "IPSettings".
+- bug uit terminal toegang gehaald.
+- Aanpassing weergave van EventList zodat deze direct weer gebruikt kan worden om weg te schrijven
+- Commando's/Events worden niet meer tussen "(" en ")" haken weergegeven.
 
 Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
+- EventListshow, eventListWrite,eventListErase hebben nu als parameter-1 de regel waar het betrekking op heeft (regel, ALL, 0=All)
+- Toevoeging commando "IPSettings".
 - Commaando toegevoegd "WiredCalibrate <poort> <High|Low> <ijkwaarde>"
 - Ethernet intergratie. Events van EventGhost (PC, Android) ontvangen en verzenden over IP;
 - Toevoeging commando "URL <line>", hiermee kan de URL van de server worden ingesteld waar de events (via HTTP-Poort 80) naar toegezonden moeten worden. (max. 40 tekens)
@@ -96,6 +65,8 @@ Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - Event aangepast "WiredAnalog". Geeft nu gecalibreerde waarde weer metdecimalen achter de komma
 - Verzenden van IR staat default op Off na een reset.
 - Sound: als Par1 groter dan 8, dan tijdsduur=Par2*100 milliseconde, toonhoogte=Par2*100 Hz
+- Aanpassing weergave van EventList zodat deze direct weer gebruikt kan worden om weg te schrijven
+- Commando's/Events worden niet meer tussen "(" en ")" haken weergegeven.
 
 Onder de motorkap:
 - Verwerken van seriele gegevens volledig herschreven

@@ -378,6 +378,7 @@ boolean TerminalReceive(char *Buffer)
       while(TerminalClient.available())
         {
         InByteIP=TerminalClient.read();
+        
         if(InByteIP==0x0a || InByteIP==0x0d)
           {
           Buffer[TerminalInByte]=0;
@@ -386,12 +387,14 @@ boolean TerminalReceive(char *Buffer)
             TerminalClient.println();
           return true;
           }
+        
         if(isprint(InByteIP))
           {
           Buffer[TerminalInByte++]=InByteIP;
           if(S.Terminal_Prompt==VALUE_ON)
             TerminalClient.write(InByteIP);
           }
+
         }
       }
     }
@@ -462,7 +465,7 @@ EthernetClient HTTPClient;                            // Client class voor HTTP 
     InByteCounter=0;
     
     Ok=false;
-    while(TimeoutTimer>millis() && HTTPClient.connected())
+    while(TimeoutTimer>millis() && HTTPClient.connected() && !Ok)
       {
       if(HTTPClient.available()) 
         {

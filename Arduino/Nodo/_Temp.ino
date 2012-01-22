@@ -19,9 +19,8 @@ if((millis()>>12)&0x01==1)Serial.println("*** debug: ...");//???
 
 
 //  pinMode(22, OUTPUT);//???
-//  digitalWrite(22,HIGH);           // LED weer uit???? debug
-//  digitalWrite(22,LOW);           // LED weer uit???? debug
-
+//  digitalWrite(22,HIGH);           // ??? Debug: T.b.v. verrichten meting met Logic Analyser
+//  digitalWrite(22,LOW);            // ??? Debug: T.b.v. verrichten meting met Logic Analyser
 
 
 void PrintRawSignal(void)

@@ -77,7 +77,7 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
   else
     {
     // ??? statussen worden nu nog weergegeven als event. 
-    strcat(TempString, ProgmemString(Text_14));
+//???    strcat(TempString, ProgmemString(Text_14));
     strcat(TempString, Event2str(Content));
     }
 
@@ -100,28 +100,26 @@ void PrintEventlistEntry(int entry, byte d)
   String Line;
   
   Eventlist_Read(entry,&Event,&Action); // leesregel uit de Eventlist.    
+  if(Event==0)
+    return;
 
   // Geef de entry van de eventlist weer
-  Line=ProgmemString(Text_03);
-    
-  if(d>1)
-    {
-    Line+=d;
-    Line+='.';
-    }
+  Line=cmd2str(CMD_EVENTLIST_WRITE);
+  Line+=' ';
   Line+=entry;
 
   // geef het event weer
-  Line+=", ";
-  Line+=ProgmemString(Text_14);
+  Line+="; ";
+//???  Line+=ProgmemString(Text_14);
   Line+=Event2str(Event);
 
   // geef het action weer
-  Line+=", ";
-  Line+=ProgmemString(Text_16);
+  Line+="; ";
+//???  Line+=ProgmemString(Text_16);
   Line+=Event2str(Action);
   PrintLine(Line);
   }
+  //???@1
   
  /**********************************************************************************************\
  * Print actuele dag, datum, tijd.
@@ -156,7 +154,7 @@ void PrintWelcome(void)
   if(S.ID)
     {
     strcat(TempString,", ID=");
-    strcat(TempString,int2str(S.ID));
+    strcat(TempString,S.ID);
     }
     
   PrintLine(TempString);
@@ -171,17 +169,10 @@ void PrintWelcome(void)
   // print IP adres van de Nodo
   if(EthernetEnabled)
     {
-    sprintf(TempString,"Nodo_IP=%u.%u.%u.%u, Terminal_Port=23, EventGhost_Server_Port=1024",Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
+    sprintf(TempString,"NodoIP=%u.%u.%u.%u, TerminalPort=23, EventGhostServerPort=1024",Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
     PrintLine(TempString);
     }
- 
-  // print EventGhost server IP adres
-  if(S.TransmitEventGhost==VALUE_ON)
-    {
-    sprintf(TempString,"EventGhost_Client_IP=%u.%u.%u.%u, EventGhost_Client_Port=1024",S.EventGhostServer_IP[0],S.EventGhostServer_IP[1],S.EventGhostServer_IP[2],S.EventGhostServer_IP[3]);
-    PrintLine(TempString);
-    } 
- 
+  
   // geef melding als de SDCard goed geconnect is
   if(SDCardPresent)
     PrintLine(ProgmemString(Text_24));
@@ -401,6 +392,61 @@ char* Event2str(unsigned long Code)
   return EventString;
   }
 
+void PrintIPSettings(void)
+  {
+  PrintLine(ProgmemString(Text_22));
 
+  // print IP adres van de Nodo
+  if(EthernetEnabled)
+    {
+    // Nodo IP
+    sprintf(TempString,"NodoIP=%u.%u.%u.%u",Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
+    PrintLine(TempString);
 
+    // HTTP request line
+    sprintf(TempString,"HTTPRequest=%s",S.HTTPRequest);
+    PrintLine(TempString);
+
+    // TransmitHTTP
+    sprintf(TempString,"OutputHTTP=%s",cmd2str(S.TransmitHTTP));
+    PrintLine(TempString);
+
+    // ID
+    sprintf(TempString,"ID=%s",S.ID);
+    PrintLine(TempString);
+
+    // EventGhostPort
+    PrintLine("EventGhostServerPort=1024");
+
+    // TransmitEventGhost
+    sprintf(TempString,"OutputEG=%s,%s",cmd2str(S.TransmitEventGhost),cmd2str(S.AutoSaveEventGhostIP));
+    PrintLine(TempString);
+
+    // EvetGhost client
+    if(S.TransmitEventGhost==VALUE_ON)
+      {
+      sprintf(TempString,"EventGhostClientIP=%u.%u.%u.%u, EventGhost_Client_Port=1024",S.EventGhostServer_IP[0],S.EventGhostServer_IP[1],S.EventGhostServer_IP[2],S.EventGhostServer_IP[3]);
+      PrintLine(TempString);
+      } 
+
+    // EvetGhost client IP
+    if(S.TransmitEventGhost==VALUE_ON)
+      {
+      sprintf(TempString,"EventGhostClientIP=%u.%u.%u.%u",S.EventGhostServer_IP[0],S.EventGhostServer_IP[1],S.EventGhostServer_IP[2],S.EventGhostServer_IP[3]);
+      PrintLine(TempString);
+      } 
+
+    // Nodo terminal Port
+    PrintLine("TerminalPort=23");
+
+    // Terminal
+    sprintf(TempString,"Terminal=%s,%s",cmd2str(S.Terminal_Enabled),cmd2str(S.Terminal_Prompt));
+    PrintLine(TempString);
+    }
+  else
+    {
+    PrintLine(cmd2str(ERROR_07));
+    }    
+  PrintLine(ProgmemString(Text_22));
+  }
 

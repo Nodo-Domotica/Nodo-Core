@@ -56,7 +56,7 @@ byte CommandError(unsigned long Content)
   switch(Command)
     {
     //test; geen, altijd goed
-    case CMD_TRANSMIT_EVENTGHOST://??? nog gebruikt?
+    case CMD_IP_SETTINGS:
     case CMD_RAWSIGNAL_SAVE:
     case CMD_RAWSIGNAL_SEND:
     case CMD_LOGFILE_SHOW:
@@ -559,13 +559,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       case CMD_STATUS_SEND:
         Status(Par1, Par2, true);
         break;
-
-      case CMD_EVENTLIST_SHOW:
-        PrintLine(ProgmemString(Text_22));
-        for(x=1;x<=EVENTLIST_MAX && Eventlist_Read(x,&Event,&Action);x++)
-          PrintEventlistEntry(x,0);
-        PrintLine(ProgmemString(Text_22));
-        break;
                 
       case CMD_REBOOT:
         delay(1000);
@@ -631,6 +624,7 @@ void ExecuteLine(char *Line, byte Port)
   int PosLine;
   int L=strlen(Line);
   int x,y;
+  int EventlistWriteLine=0;
   byte Error=0,Par1,Par2,Cmd;
   byte State_EventlistWrite=0;
   unsigned long v,event,action; 
@@ -689,7 +683,7 @@ void ExecuteLine(char *Line, byte Port)
             SaveSettings();
             FactoryEventlist();
             Reset();
-    
+        
           case CMD_LOGFILE_ERASE:      
             // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
             digitalWrite(Ethernetshield_CS_W5100, HIGH);
@@ -705,8 +699,13 @@ void ExecuteLine(char *Line, byte Port)
             S.Terminal_Prompt=Par2;
             SaveSettings();
             break;
+
+          case CMD_IP_SETTINGS:
+            PrintIPSettings();
+            break;
     
           case CMD_EVENTLIST_WRITE:
+            EventlistWriteLine=Par1;
             State_EventlistWrite=1;
             break;
             
@@ -780,8 +779,27 @@ void ExecuteLine(char *Line, byte Port)
             RawSignal.Key=str2val(TmpStr);
             break;        
 
+          case CMD_EVENTLIST_SHOW:
+            PrintLine(ProgmemString(Text_22));
+            if(Par1==VALUE_ALL || Par1==0)
+              {
+              for(x=1;x<=EVENTLIST_MAX;x++)
+                PrintEventlistEntry(x,0);
+              }
+            else
+              PrintEventlistEntry(Par1,0);
+            PrintLine(ProgmemString(Text_22));
+            break;
+
           case CMD_EVENTLIST_ERASE:
-            Eventlist_Write(1,0L,0L); // maak de eventlist leeg.
+            if(Par1==VALUE_ALL || Par1==0)
+              {
+              for(x=1;x<=EVENTLIST_MAX;x++)
+                Eventlist_Write(x,0L,0L);
+              }
+            else
+                Eventlist_Write(Par1,0L,0L);
+
             break;        
 
           case CMD_HTTP_REQUEST:
@@ -801,8 +819,7 @@ void ExecuteLine(char *Line, byte Port)
 
           case CMD_ID:
             {
-            if(GetArgv(Command,TempString,2))
-            S.ID=str2val(TempString);
+            if(GetArgv(Command,S.ID,2))
             SaveSettings();
             break;
             }  
@@ -849,7 +866,7 @@ void ExecuteLine(char *Line, byte Port)
         if(State_EventlistWrite==2)
           {
           action=v;
-          if(!Eventlist_Write(0,event,action))
+          if(!Eventlist_Write(EventlistWriteLine,event,action))
             {
             RaiseError(ERROR_06);    
             return;

@@ -263,7 +263,9 @@ void ResetFactory(void)
   S.EventGhostServer_IP[2]     = 0; // IP adres van de EventGhost server
   S.EventGhostServer_IP[3]     = 0; // IP adres van de EventGhost server
   S.HTTPRequest[0]             = 0; // string van het HTTP adres leeg maken
-  S.ID                         = 0;   
+  S.ID[0]                      = 0;   
+  S.Terminal_Enabled           = VALUE_OFF;
+  S.Terminal_Prompt            = VALUE_OFF;
 
   strcpy(S.Password,"Nodo");
   strcpy(S.HTTPRequest,ProgmemString(Text_29));//??? default vullen of niet?
@@ -627,11 +629,11 @@ boolean Eventlist_Write(int address, unsigned long Event, unsigned long Action)/
   EEPROM.write(address++,(Action>> 8 & 0xFF));
   EEPROM.write(address++,(Action     & 0xFF));
 
-  // Eerste volgende Event vullen met een 0. Dit markeert het einde van de Eventlist.
-  EEPROM.write(address++,0);
-  EEPROM.write(address++,0);
-  EEPROM.write(address++,0);
-  EEPROM.write(address  ,0);
+//  // Eerste volgende Event vullen met een 0. Dit markeert het einde van de Eventlist.
+//  EEPROM.write(address++,0);
+//  EEPROM.write(address++,0);
+//  EEPROM.write(address++,0);
+//  EEPROM.write(address  ,0);
   
   return true;
   }
@@ -643,6 +645,7 @@ boolean Eventlist_Write(int address, unsigned long Event, unsigned long Action)/
 boolean Eventlist_Read(int address, unsigned long *Event, unsigned long *Action)// LET OP: eerste adres=1
   {
   if(address>EVENTLIST_MAX)return(false);
+
   address--;// echte adressering begint vanaf nul. voor de user vanaf 1.
   address=address*8+sizeof(struct Settings);     // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer deze bytes. Deze niet te gebruiken voor de Eventlist!
 
