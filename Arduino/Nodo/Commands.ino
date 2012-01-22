@@ -183,6 +183,11 @@ byte CommandError(unsigned long Content)
       if(Par1!=VALUE_OFF && Par1!=VALUE_ON && Par1!=VALUE_ALL)return ERROR_02;
       return false;
 
+    case CMD_TRANSMIT_EVENTGHOST:
+      if(Par1!=VALUE_OFF && Par1!=VALUE_ON)return ERROR_02;
+      if(Par2!=0 && Par2!=VALUE_OFF && Par2!=VALUE_ON && Par2!=VALUE_SAVE)return ERROR_02;
+      return false;
+
     case CMD_WIRED_ANALOG_CALIBRATE:
       if(Par1!=VALUE_HIGH && Par1!=VALUE_LOW)return ERROR_02;
       return false;
@@ -503,7 +508,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           S.AutoSaveEventGhostIP=Par2;
 
         SaveSettings();
-        PrintWelcome();//??? debug.
         break;
         
       case CMD_WAITBUSY:

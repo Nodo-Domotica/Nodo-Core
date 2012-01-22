@@ -422,13 +422,6 @@ void PrintIPSettings(void)
     sprintf(TempString,"OutputEG=%s,%s",cmd2str(S.TransmitEventGhost),cmd2str(S.AutoSaveEventGhostIP));
     PrintLine(TempString);
 
-    // EvetGhost client
-    if(S.TransmitEventGhost==VALUE_ON)
-      {
-      sprintf(TempString,"EventGhostClientIP=%u.%u.%u.%u, EventGhost_Client_Port=1024",S.EventGhostServer_IP[0],S.EventGhostServer_IP[1],S.EventGhostServer_IP[2],S.EventGhostServer_IP[3]);
-      PrintLine(TempString);
-      } 
-
     // EvetGhost client IP
     if(S.TransmitEventGhost==VALUE_ON)
       {
