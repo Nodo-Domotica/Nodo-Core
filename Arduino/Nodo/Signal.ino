@@ -180,7 +180,6 @@ void RawSendRF(void)
   digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
   digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan
   delay(5);// kleine pause om de zender de tijd te geven om stabiel te worden 
-Serial.println("*** debug: RawSendRF();");//???
   
   for(byte y=0; y<S.TransmitRepeatRF; y++) // herhaal verzenden RF code
     {
