@@ -236,7 +236,7 @@ boolean LoadSettings()
  \*********************************************************************************************/
 void ResetFactory(void)
   {
-//  Beep(2000,2000);//??? herstel
+  Beep(2000,2000);
   int x,y;
   ClockRead();
 
@@ -263,11 +263,11 @@ void ResetFactory(void)
   S.EventGhostServer_IP[2]     = 0; // IP adres van de EventGhost server
   S.EventGhostServer_IP[3]     = 0; // IP adres van de EventGhost server
   S.HTTPRequest[0]             = 0; // string van het HTTP adres leeg maken
-  S.ID[0]                      = 0;   
   S.Terminal_Enabled           = VALUE_OFF;
   S.Terminal_Prompt            = VALUE_OFF;
 
-  strcpy(S.Password,"Nodo");
+  strcpy(S.Password,ProgmemString(Text_10));
+  strcpy(S.ID,ProgmemString(Text_16));
   strcpy(S.HTTPRequest,ProgmemString(Text_29));//??? default vullen of niet?
   
   // zet analoge waarden op default
@@ -407,7 +407,7 @@ void Status(byte Par1, byte Par2, boolean SendEvent)
           P2=0;
           GetStatus(&x,&P1,&P2); // haal status op. Call by Reference!
           if(SendEvent)
-            TransmitCode(command2event(x,P1,P2),VALUE_ALL); // verzend als event
+            TransmitCode(command2event(x,P1,P2),SIGNAL_TYPE_NODO,VALUE_ALL); // verzend als event
           else
             PrintEvent(command2event(x,P1,P2),VALUE_SOURCE_SERIAL,VALUE_DIRECTION_OUTPUT);  // geef event weer op Serial
           }
@@ -864,7 +864,7 @@ boolean LogSDCard(char *Line)
     else 
       {
       SDCardPresent=false; // niet meer weer proberen weg te schrijven.
-      TransmitCode(command2event(CMD_ERROR,ERROR_03,0),VALUE_ALL);
+      TransmitCode(command2event(CMD_ERROR,ERROR_03,0),SIGNAL_TYPE_NODO,VALUE_ALL);
       }
 
     // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip

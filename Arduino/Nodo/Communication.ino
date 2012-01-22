@@ -238,9 +238,6 @@ boolean SendEventGhost(char* event, byte* SendToIP)
   EthernetClient EGclient;
   IPAddress EGserver(SendToIP[0],SendToIP[1],SendToIP[2],SendToIP[3]);
 
- // sprintf(TempString,"*** debug: SendEventGhost(): Verzenden event naar IP: %u.%u.%u.%u",SendToIP[0],SendToIP[1],SendToIP[2],SendToIP[3]);//??? debugging
- // Serial.println(TempString);
-
   Try=0;
   do
     {
@@ -448,11 +445,12 @@ EthernetClient HTTPClient;                            // Client class voor HTTP 
         }
       }      
 
-//    strcat(TempString,"&id="); ???
-//    strcat(TempString,int2str(S.ID));
+    strcat(TempString,"&id=");
+    strcat(TempString,S.ID);
     strcat(TempString," HTTP/1.1");
     HTTPClient.println(TempString);
-    // Serial.print("*** debug: HTTP Request_1=");Serial.println(TempString);//??? Debug
+
+    //??? Serial.print("*** debug: HTTP Request=");Serial.println(TempString);//??? Debug
 
     strcpy(TempString,"Host: ");
     strcat(TempString,Host);

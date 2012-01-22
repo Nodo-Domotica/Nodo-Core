@@ -110,7 +110,7 @@ void PrintEventlistEntry(int entry, byte d)
 
   // geef het event weer
   Line+="; ";
-//???  Line+=ProgmemString(Text_14);
+  Line+=ProgmemString(Text_14);
   Line+=Event2str(Event);
 
   // geef het action weer

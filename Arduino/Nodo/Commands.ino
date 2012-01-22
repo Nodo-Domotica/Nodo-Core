@@ -294,11 +294,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     switch(Command)
       {   
       case CMD_SEND_KAKU:
-        TransmitCode(command2event(CMD_KAKU,Par1,Par2),VALUE_ALL);
+        TransmitCode(command2event(CMD_KAKU,Par1,Par2),SIGNAL_TYPE_KAKU,VALUE_ALL);
         break;
         
       case CMD_SEND_KAKU_NEW:
-        TransmitCode(command2event(CMD_KAKU_NEW,Par1,Par2),VALUE_ALL);
+        TransmitCode(command2event(CMD_KAKU_NEW,Par1,Par2),SIGNAL_TYPE_NEWKAKU,VALUE_ALL);
         break;
         
       case CMD_VARIABLE_INC: 
@@ -351,12 +351,12 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   
       case CMD_SEND_USEREVENT:
         // Voeg Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
-        TransmitCode(command2event(CMD_USEREVENT,Par1,Par2),VALUE_ALL);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
+        TransmitCode(command2event(CMD_USEREVENT,Par1,Par2),SIGNAL_TYPE_NODO,VALUE_ALL);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
         break;
   
       case CMD_VARIABLE_SEND_USEREVENT:
         // Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
-        TransmitCode(command2event(CMD_USEREVENT,UserVar[Par1-1],UserVar[Par2-1])&0xf0ffffff,VALUE_ALL);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
+        TransmitCode(command2event(CMD_USEREVENT,UserVar[Par1-1],UserVar[Par2-1])&0xf0ffffff,SIGNAL_TYPE_NODO,VALUE_ALL);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
         break;
 
       case CMD_VARIABLE_USEREVENT:
@@ -374,7 +374,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         if(Par1!=0)
           RawSignalGet(Par1);
         //??? PrintRawSignal();
-        TransmitCode(AnalyzeRawSignal(),VALUE_ALL);
+        TransmitCode(AnalyzeRawSignal(),SIGNAL_TYPE_UNKNOWN,VALUE_ALL);
         break;        
   
       case CMD_CLOCK_YEAR:
@@ -439,7 +439,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;        
         
       case CMD_SEND_EVENT:
-        TransmitCode(PreviousContent,Par1);
+        TransmitCode(PreviousContent,SIGNAL_TYPE_NODO,Par1);
         break;        
 
       case CMD_SOUND: 
@@ -483,7 +483,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
             SaveSettings();
             }
           else
-            TransmitCode(command2event(CMD_BUSY,Par1,0),VALUE_ALL);
+            TransmitCode(command2event(CMD_BUSY,Par1,0),SIGNAL_TYPE_NODO,VALUE_ALL);
         break;
         
       case CMD_TRANSMIT_EVENTGHOST:

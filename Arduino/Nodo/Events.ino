@@ -58,7 +58,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     // verzend 'Busy On;'
     if(S.SendBusy==VALUE_ALL && !Hold)
       {
-      TransmitCode(command2event(CMD_BUSY,VALUE_ON,0),VALUE_ALL);
+      TransmitCode(command2event(CMD_BUSY,VALUE_ON,0),SIGNAL_TYPE_NODO,VALUE_ALL);
       SetBusyOff=true;
       }
 
@@ -107,7 +107,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   if(SetBusyOff)
     {
     SetBusyOff=false;
-    TransmitCode(command2event(CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
+    TransmitCode(command2event(CMD_BUSY,VALUE_OFF,0),SIGNAL_TYPE_NODO,VALUE_ALL);
     }
   }
 

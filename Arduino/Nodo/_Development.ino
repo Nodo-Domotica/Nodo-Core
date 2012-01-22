@@ -8,11 +8,8 @@ Known Errors / ToDo:
 - Found in r306: Status WiredAnalog groter dan toegestane poort
 
 Aanpassingen:
-- EventListshow, eventListWrite,eventListErase hebben nu als parameter-1 de regel waar het betrekking op heeft (<eventlistregel>, ALL, 0=All)
-- Toevoeging commando "IPSettings".
-- bug uit terminal toegang gehaald.
-- Aanpassing weergave van EventList zodat deze direct weer gebruikt kan worden om weg te schrijven
-- Commando's/Events worden niet meer tussen "(" en ")" haken weergegeven.
+- ID toegevoegd aan het HTTP request.
+- NewKAKU en KAKU send bug verwijderd.
 
 Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - EventListshow, eventListWrite,eventListErase hebben nu als parameter-1 de regel waar het betrekking op heeft (regel, ALL, 0=All)

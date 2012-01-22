@@ -180,6 +180,7 @@ void RawSendRF(void)
   digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
   digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan
   delay(5);// kleine pause om de zender de tijd te geven om stabiel te worden 
+Serial.println("*** debug: RawSendRF();");//???
   
   for(byte y=0; y<S.TransmitRepeatRF; y++) // herhaal verzenden RF code
     {
@@ -358,10 +359,9 @@ void CopySignalRF2IR(byte Window)
 * verzonden.
 \**********************************************************************************************/
 
-boolean TransmitCode(unsigned long Event, byte Dest)
+boolean TransmitCode(unsigned long Event, byte SignalType, byte Dest)
   {  
   int x;
-  byte SignalType=(Event>>28)&0xf;
   
   if(SignalType!=SIGNAL_TYPE_UNKNOWN)
     if((S.WaitFreeRF_Window + S.WaitFreeRF_Delay)>=0)
@@ -388,8 +388,6 @@ boolean TransmitCode(unsigned long Event, byte Dest)
       Serial.print("*** debug: Interne fout. Ongeldig signaal in TransmitSignal() = ");Serial.println(Event,HEX);//??? Debug
       return false;
     }
-
-  // VALUE_SOURCE_SERIAL: // principiële discussie: is SERIAL ook een poort???
 
   if(Dest==VALUE_SOURCE_RF || (S.TransmitRF==VALUE_ON && Dest==VALUE_ALL))
     {
@@ -545,7 +543,7 @@ boolean SaveRawSignal(byte Key)
     
   if(error)
     {
-    TransmitCode(command2event(CMD_ERROR,ERROR_03,0),VALUE_ALL);
+    TransmitCode(command2event(CMD_ERROR,ERROR_03,0),SIGNAL_TYPE_NODO,VALUE_ALL);
     return false;
     }
   return true;

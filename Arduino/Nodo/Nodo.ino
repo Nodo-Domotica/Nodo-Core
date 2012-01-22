@@ -53,20 +53,20 @@
 // strings met vaste tekst naar PROGMEM om hiermee RAM-geheugen te sparen.
 prog_char PROGMEM Text_01[] = "Nodo Domotica controller (c) Copyright 2011 P.K.Tonkes.";
 prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
-//prog_char PROGMEM Text_03[] = "Line=";
+prog_char PROGMEM Text_03[] = "";
 prog_char PROGMEM Text_04[] = "SunMonThuWedThuFriSat";
 prog_char PROGMEM Text_05[] = "0123456789abcdef";
 prog_char PROGMEM Text_06[] = "Error=";
 prog_char PROGMEM Text_07[] = "Waiting for signal...";
 prog_char PROGMEM Text_08[] = "Queue=Out, ";
 prog_char PROGMEM Text_09[] = "Queue=In, ";
-//prog_char PROGMEM Text_10[] = "EventGhostClientIP"; // nog nodig ???
+prog_char PROGMEM Text_10[] = "Nodo"; // Default wachtwoord na een reset
 prog_char PROGMEM Text_11[] = "Output=";
 prog_char PROGMEM Text_12[] = "Input=";
 prog_char PROGMEM Text_13[] = "Ok.";
-//prog_char PROGMEM Text_14[] = "Event=";
+prog_char PROGMEM Text_14[] = "Event=";
 prog_char PROGMEM Text_15[] = "Booting...";
-//prog_char PROGMEM Text_16[] = "Action=";
+prog_char PROGMEM Text_16[] = "00000000"; // default ID na een reset
 prog_char PROGMEM Text_17[] = "payload";
 prog_char PROGMEM Text_18[] = "accept";
 prog_char PROGMEM Text_19[] = "close";
