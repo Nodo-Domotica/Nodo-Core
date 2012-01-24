@@ -299,11 +299,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     switch(Command)
       {   
       case CMD_SEND_KAKU:
-        TransmitCode(command2event(CMD_KAKU,Par1,Par2),SIGNAL_TYPE_KAKU,VALUE_ALL);
+        TransmitCode(command2event(CMD_KAKU,Par1,Par2),VALUE_ALL);
         break;
         
       case CMD_SEND_KAKU_NEW:
-        TransmitCode(command2event(CMD_KAKU_NEW,Par1,Par2),SIGNAL_TYPE_NEWKAKU,VALUE_ALL);
+        TransmitCode(command2event(CMD_KAKU_NEW,Par1,Par2),VALUE_ALL);
         break;
         
       case CMD_VARIABLE_INC: 
@@ -356,12 +356,12 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   
       case CMD_SEND_USEREVENT:
         // Voeg Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
-        TransmitCode(command2event(CMD_USEREVENT,Par1,Par2),SIGNAL_TYPE_NODO,VALUE_ALL);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
+        TransmitCode(command2event(CMD_USEREVENT,Par1,Par2),VALUE_ALL);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
         break;
   
       case CMD_VARIABLE_SEND_USEREVENT:
         // Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
-        TransmitCode(command2event(CMD_USEREVENT,UserVar[Par1-1],UserVar[Par2-1])&0xf0ffffff,SIGNAL_TYPE_NODO,VALUE_ALL);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
+        TransmitCode(command2event(CMD_USEREVENT,UserVar[Par1-1],UserVar[Par2-1])&0xf0ffffff,VALUE_ALL);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
         break;
 
       case CMD_VARIABLE_USEREVENT:
@@ -375,11 +375,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         SimulateDay(Par1); 
         break;     
   
-      case CMD_RAWSIGNAL_SEND://??? hebben we deze nog nodig ivm SendEvent?
+      case CMD_RAWSIGNAL_SEND:
         if(Par1!=0)
           RawSignalGet(Par1);
         //??? PrintRawSignal();
-        TransmitCode(AnalyzeRawSignal(),SIGNAL_TYPE_UNKNOWN,VALUE_ALL);
+        TransmitCode(AnalyzeRawSignal(),VALUE_ALL);
         break;        
   
       case CMD_CLOCK_YEAR:
@@ -444,7 +444,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;        
         
       case CMD_SEND_EVENT:
-        TransmitCode(PreviousContent,SIGNAL_TYPE_NODO,Par1);
+        TransmitCode(PreviousContent,Par1);
         break;        
 
       case CMD_SOUND: 
@@ -488,7 +488,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
             SaveSettings();
             }
           else
-            TransmitCode(command2event(CMD_BUSY,Par1,0),SIGNAL_TYPE_NODO,VALUE_ALL);
+            TransmitCode(command2event(CMD_BUSY,Par1,0),VALUE_ALL);
         break;
         
       case CMD_TRANSMIT_EVENTGHOST:
@@ -638,8 +638,20 @@ void ExecuteLine(char *Line, byte Port)
     {
     x=Line[PosLine];
 
+    // Comment teken. niets doen.
+    if(x=='!') 
+      PosLine=L+1; // ga direct naar einde van de regel.
+    
+    // chat teken als eerste teken?
+    if(x=='>' && PosLine==0) 
+      {
+      SerialConnected=true;
+      PrintLine(Line+PosLine);
+      return;
+      }
+    
     // als puntkomma (scheidt opdachten) of einde string(0), en het commando groter dan drie tekens
-    if((x==';' || x==0) && PosCommand>3)
+    if((x=='!' || x==';' || x==0) && PosCommand>3)
       {
       Command[PosCommand]=0;
       PosCommand=0;

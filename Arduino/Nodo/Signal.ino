@@ -112,8 +112,7 @@ unsigned long RawSignal_2_32bit(void)
  if(Counter_pulse>=1 && Counter_space<=1)return CodeP; // data zat in de pulsbreedte
  if(Counter_pulse<=1 && Counter_space>=1)return CodeS; // data zat in de pulse afstand
  RawSignal.Type=SIGNAL_TYPE_UNKNOWN;
- return ((CodeS^CodeP)&(0x0fffffff))|(SIGNAL_TYPE_UNKNOWN<<28); // data zat in beide = bi-phase, maak er een leuke mix van.
- //??? is vullen van SIGNAL_TYPE_UNKNOWN nog te omzeilen?
+ return ((CodeS^CodeP)&(0x7fffffff))|((unsigned long)SIGNAL_TYPE_UNKNOWN<<28); // data zat in beide = bi-phase, maak er een leuke mix van.
  }
 
 
@@ -358,35 +357,24 @@ void CopySignalRF2IR(byte Window)
 * verzonden.
 \**********************************************************************************************/
 
-boolean TransmitCode(unsigned long Event, byte SignalType, byte Dest)
+boolean TransmitCode(unsigned long Event, byte Dest)
   {  
   int x;
+  byte SignalType=(Event>>28) & 0x0f;
+  byte Command   =(Event>>16) & 0xff;
   
   if(SignalType!=SIGNAL_TYPE_UNKNOWN)
     if((S.WaitFreeRF_Window + S.WaitFreeRF_Delay)>=0)
         WaitFreeRF(S.WaitFreeRF_Delay*100, S.WaitFreeRF_Window*100); // alleen WaitFreeRF als type bekend is, anders gaat SendSignal niet goed a.g.v. overschrijven buffer
 
-  switch(SignalType)
-    {
-    case SIGNAL_TYPE_KAKU:
-      KAKU_2_RawSignal(Event);
-      break;
+  if(Command==CMD_KAKU)
+    KAKU_2_RawSignal(Event);
 
-    case SIGNAL_TYPE_NEWKAKU:
-      NewKAKU_2_RawSignal(Event);
-      break;
-      
-    case SIGNAL_TYPE_NODO:
-      Nodo_2_RawSignal(Event);
-      break;
+  else if(Command==CMD_KAKU_NEW)
+    NewKAKU_2_RawSignal(Event);
 
-    case SIGNAL_TYPE_UNKNOWN:
-      break;
-    
-    default:
-      Serial.print("*** debug: Interne fout. Ongeldig signaal in TransmitSignal() = ");Serial.println(Event,HEX);//??? Debug
-      return false;
-    }
+  else if(SignalType==SIGNAL_TYPE_NODO)
+    Nodo_2_RawSignal(Event);
 
   if(Dest==VALUE_SOURCE_RF || (S.TransmitRF==VALUE_ON && Dest==VALUE_ALL))
     {
@@ -542,7 +530,7 @@ boolean SaveRawSignal(byte Key)
     
   if(error)
     {
-    TransmitCode(command2event(CMD_ERROR,ERROR_03,0),SIGNAL_TYPE_NODO,VALUE_ALL);
+    TransmitCode(command2event(CMD_ERROR,ERROR_03,0),VALUE_ALL);
     return false;
     }
   return true;

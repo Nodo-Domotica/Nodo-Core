@@ -110,12 +110,10 @@ void PrintEventlistEntry(int entry, byte d)
 
   // geef het event weer
   Line+="; ";
-  Line+=ProgmemString(Text_14);
   Line+=Event2str(Event);
 
   // geef het action weer
   Line+="; ";
-//???  Line+=ProgmemString(Text_16);
   Line+=Event2str(Action);
   PrintLine(Line);
   }
@@ -192,7 +190,7 @@ void PrintLine(String LineToPrint)
     
   if(EthernetEnabled)
     {
-    if(S.Terminal_Enabled==VALUE_ON && TerminalConnected)
+    if(S.Terminal_Enabled==VALUE_ON && TerminalConnected && TerminalUnlocked)
       {
       if(TerminalClient.connected())
         {

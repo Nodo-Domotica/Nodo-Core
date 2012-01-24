@@ -297,7 +297,11 @@ void ResetFactory(void)
  \*********************************************************************************************/
 void FactoryEventlist(void)
   {
-  Eventlist_Write(1,0L,0L); // maak de eventlist leeg.
+  // maak de eventlist leeg.
+  for(int x=1;x<=EVENTLIST_MAX;x++)
+    Eventlist_Write(x,0L,0L);
+
+  // schrijf default regels.
   Eventlist_Write(0,command2event(CMD_BOOT_EVENT,0,0),command2event(CMD_SOUND,7,0)); // geluidssignaal na opstarten Nodo
   Eventlist_Write(0,command2event(CMD_COMMAND_WILDCARD,VALUE_SOURCE_IR,CMD_KAKU),command2event(CMD_RAWSIGNAL_SEND,0,0)); // Kort geluidssignaal bij ieder binnenkomend event
   }
@@ -407,7 +411,7 @@ void Status(byte Par1, byte Par2, boolean SendEvent)
           P2=0;
           GetStatus(&x,&P1,&P2); // haal status op. Call by Reference!
           if(SendEvent)
-            TransmitCode(command2event(x,P1,P2),SIGNAL_TYPE_NODO,VALUE_ALL); // verzend als event
+            TransmitCode(command2event(x,P1,P2),VALUE_ALL); // verzend als event
           else
             PrintEvent(command2event(x,P1,P2),VALUE_SOURCE_SERIAL,VALUE_DIRECTION_OUTPUT);  // geef event weer op Serial
           }
@@ -839,7 +843,7 @@ void RaiseError(byte ErrorCode)
   unsigned long eventcode;
 
   eventcode=command2event(CMD_ERROR,ErrorCode,0);
-  //??? TransmitCode(eventcode,NODO,VALUE_ALL);    // ??? Is het wel handig om errors ook naar alle kanalen te versturen of kan het ook zonder?
+  //??? TransmitCode(eventcode,VALUE_ALL);    // ??? Is het wel handig om errors ook naar alle kanalen te versturen of kan het ook zonder?
   PrintEvent(eventcode,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM);  // geef event weer op Serial
   }
     
@@ -864,7 +868,7 @@ boolean LogSDCard(char *Line)
     else 
       {
       SDCardPresent=false; // niet meer weer proberen weg te schrijven.
-      TransmitCode(command2event(CMD_ERROR,ERROR_03,0),SIGNAL_TYPE_NODO,VALUE_ALL);
+      TransmitCode(command2event(CMD_ERROR,ERROR_03,0),VALUE_ALL);
       }
 
     // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip

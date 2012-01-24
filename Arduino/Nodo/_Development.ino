@@ -2,14 +2,19 @@
 
 Known Errors / ToDo:
 
+- Vreemde tijdweergave als RTC niet is aangesloten. 
 - Found in r310: Date=2012-01-14, Time=20:31, Input=Wired, Unit=1, Event=(WiredIn 9,On) event ?? na verzenden .
 - Found in r306: Nodo due compatibel maken n.a.v. omnummeren CMD_...
 - Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue testen
 - Found in r306: Status WiredAnalog groter dan toegestane poort
 
 Aanpassingen:
-- ID toegevoegd aan het HTTP request.
-- NewKAKU en KAKU send bug verwijderd.
+- Commentaar teken toegevoegd '!'. Alle tekens na deze worden genegeerd en dus beschouwd als commentaar.
+- Chat teken toegevoegd '>'. Begint een regel met dit teken dan wordt deze van Serial weergegeven naar Terminal of vice versa.
+- Bug: reset maakte eventist niet volledig leeg.
+- Weergave 'EventlistErase' aangepast.
+- Wachtwoord voor toegaang tot telnet sessie.
+
 
 Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - EventListshow, eventListWrite,eventListErase hebben nu als parameter-1 de regel waar het betrekking op heeft (regel, ALL, 0=All)

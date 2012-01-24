@@ -53,7 +53,7 @@
 // strings met vaste tekst naar PROGMEM om hiermee RAM-geheugen te sparen.
 prog_char PROGMEM Text_01[] = "Nodo Domotica controller (c) Copyright 2011 P.K.Tonkes.";
 prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
-prog_char PROGMEM Text_03[] = "";
+prog_char PROGMEM Text_03[] = "Enter your password: ";
 prog_char PROGMEM Text_04[] = "SunMonThuWedThuFriSat";
 prog_char PROGMEM Text_05[] = "0123456789abcdef";
 prog_char PROGMEM Text_06[] = "Error=";
@@ -664,6 +664,7 @@ char TempString[INPUT_BUFFER_SIZE];                         // Globale, tijdelij
 boolean TerminalConnected=false;                            // Vlag geeft aan of er een verbinding is met een Terminal.
 boolean SerialConnected=true;                               // Vlag geeft aan of er een verbinding USB-poort.
 boolean TemporyEventGhostError=false;                       // Vlag om tijdelijk evetghost verzending stil te leggen na een communicatie probleem
+boolean TerminalUnlocked=false;
 
 // ethernet classes voor IP communicatie EventGhost, Telnet terminal en HTTP.
 byte Ethernet_MAC_Address[]={0x00,0x06,0x39,0x46,0x55,0x29};// MAC adres van de Nodo.
@@ -905,7 +906,18 @@ void loop()
             if(TerminalReceive(Inputbuffer_Terminal)) // Terminalreceive is non-blocking
               {
               if(S.Terminal_Enabled==VALUE_ON)
-                ExecuteLine(Inputbuffer_Terminal, VALUE_SOURCE_TERMINAL);
+                {
+                if(TerminalUnlocked)
+                  ExecuteLine(Inputbuffer_Terminal, VALUE_SOURCE_TERMINAL);
+                else
+                  {
+                  if(strcmp(Inputbuffer_Terminal,S.Password)==0)
+                    {
+                    TerminalClient.println(ProgmemString(Text_13));
+                    TerminalUnlocked=true;
+                    }
+                  }
+                }
               else
                 {
                 TerminalClient.println(cmd2str(ERROR_10));              

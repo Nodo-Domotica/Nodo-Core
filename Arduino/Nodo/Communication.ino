@@ -362,7 +362,12 @@ boolean TerminalReceive(char *Buffer)
       TerminalInByte=0;
       TerminalClient=TerminalServer.available();
       if(S.Terminal_Enabled==VALUE_ON)
+        {
         PrintWelcome();
+        TerminalClient.println();
+        TerminalClient.print(ProgmemString(Text_03));
+        TerminalUnlocked=false;
+        }
       else
         {
         TerminalClient.println(cmd2str(ERROR_10));
@@ -380,7 +385,7 @@ boolean TerminalReceive(char *Buffer)
           {
           Buffer[TerminalInByte]=0;
           TerminalInByte=0;
-          if(S.Terminal_Prompt==VALUE_ON)
+          if(S.Terminal_Prompt==VALUE_ON  && TerminalUnlocked)
             TerminalClient.println();
           return true;
           }
@@ -388,10 +393,9 @@ boolean TerminalReceive(char *Buffer)
         if(isprint(InByteIP))
           {
           Buffer[TerminalInByte++]=InByteIP;
-          if(S.Terminal_Prompt==VALUE_ON)
+          if(S.Terminal_Prompt==VALUE_ON  && TerminalUnlocked)
             TerminalClient.write(InByteIP);
           }
-
         }
       }
     }
