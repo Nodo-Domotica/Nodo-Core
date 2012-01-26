@@ -28,6 +28,8 @@
  *
  \****************************************************************************************************************************/
 
+#define MAC_ADDRESS 0x00,0x06,0x39,0x46,0x55,0x29
+
 #define VERSION        2          // Nodo Version nummer:
                                   // Major.Minor.Patch
                                   // Major: Grote veranderingen aan concept, besturing, werking.
@@ -36,6 +38,7 @@
 
 
 #define DEBUG 1
+#define NODO_PLUGIN 1
 
 #include "pins_arduino.h"
 #include <EEPROM.h>
@@ -104,7 +107,7 @@ prog_char PROGMEM Cmd_018[]="Reset";
 prog_char PROGMEM Cmd_019[]="SendKAKU";
 prog_char PROGMEM Cmd_020[]="SendNewKAKU";
 prog_char PROGMEM Cmd_021[]="IPSettings";
-prog_char PROGMEM Cmd_022[]="Terminal";
+prog_char PROGMEM Cmd_022[]="";
 prog_char PROGMEM Cmd_023[]="SimulateDay";
 prog_char PROGMEM Cmd_024[]="Sound";
 prog_char PROGMEM Cmd_025[]="";
@@ -323,7 +326,7 @@ prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 #define CMD_SEND_KAKU                   19
 #define CMD_SEND_KAKU_NEW               20
 #define CMD_IP_SETTINGS                 21
-#define CMD_TERMINAL                    22
+#define CMD_res22                       22
 #define CMD_SIMULATE_DAY                23
 #define CMD_SOUND                       24
 #define CMD_RES25                       25
@@ -578,6 +581,9 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define EthernetShield_CS_SDCard     4  // NIET VERANDEREN. Ethernet shield: Chipselect van de SDCard. Niet gebruiken voor andere doeleinden
 #define Ethernetshield_CS_W5100     10  // NIET VERANDEREN. Ethernet shield: D10..D13  // gereserveerd voor Ethernet & SDCard
 
+#define HTTP_PORT                   80
+#define TERMINAL_PORT               23
+#define EVENTGHOST_PORT           1024
 #define UNIT                       0x1 // Unit nummer van de Nodo. Bij gebruik van meerdere nodo's deze uniek toewijzen [1..F]
 #define EVENTLIST_MAX              256 // aantal events dat de lijst bevat in het EEPROM geheugen van de ATMega328. Iedere regel in de eventlist heeft 8 bytes nodig. eerste adres is 0
 #define USER_VARIABLES_MAX          32 // aantal beschikbare gebruikersvariabelen voor de user.
@@ -592,6 +598,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define TIMER_MAX                   16 // aantal beschikbare timers voor de user, gerekend vanaf 
 #define Loop_INTERVAL_1              5 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
 #define Loop_INTERVAL_2            100 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
+#define Loop_INTERVAL_3           1000 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
 #define EVENT_QUEUE_MAX             32 // maximaal aantal plaatsen in de queue
 #define ENDSIGNAL_TIME            1500 // Dit is de tijd in milliseconden waarna wordt aangenomen dat het ontvangen één reeks signalen beëindigd is
 #define SIGNAL_TIMEOUT_RF         5000 // na deze tijd in uSec. wordt één RF signaal als beëindigd beschouwd.
@@ -606,7 +613,9 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define SIGNAL_TYPE_NEWKAKU          3 // Type ontvangen of te verzenden signaal in de eventcode
 #define NODO_TYPE_EVENT              1
 #define NODO_TYPE_COMMAND            2
-
+#define PASSWORD_MAX_RETRY           5 // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
+#define PASSWORD_TIMEOUT           300 // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
+#define TERMINAL_TIMEOUT           300 // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
 //****************************************************************************************************************************************
 
 struct Settings
@@ -638,8 +647,6 @@ struct Settings
   byte    TransmitEventGhost;
   byte    EventGhostServer_IP[4];                           // IP adres van waar EventGhost Events naar verstuurd moeten worden.
   byte    AutoSaveEventGhostIP;                             // Automatisch IP adres opslaan na ontvangst van een EG event of niet.
-  byte    Terminal_Enabled;                                 // vlag geeft aan of Telnet sessies toegestaan zijn.
-  byte    Terminal_Prompt;                                  // vlag geeft aan of er een prompt getoond moet worden tijdens de telnet sessie
   }S;
 
 unsigned long UserTimer[TIMER_MAX];                         // Timers voor de gebruiker.
@@ -661,18 +668,20 @@ boolean SDCardPresent = false;                              // Vlag die aangeeft
 boolean EthernetEnabled = false;                            // Vlag die aangeeft of er een Ethernetverbinding is.
 byte UserVar[USER_VARIABLES_MAX];
 char TempString[INPUT_BUFFER_SIZE];                         // Globale, tijdelijke string voor algemeen gebruik in diverste functies. ??? Nodig?
-boolean TerminalConnected=false;                            // Vlag geeft aan of er een verbinding is met een Terminal.
+int TerminalConnected=0;                                    // Vlag geeft aan of en hoe lang nog (seconden) er verbinding is met een Terminal.
 boolean SerialConnected=true;                               // Vlag geeft aan of er een verbinding USB-poort.
 boolean TemporyEventGhostError=false;                       // Vlag om tijdelijk evetghost verzending stil te leggen na een communicatie probleem
-boolean TerminalUnlocked=false;
+int TerminalLocked=1;                                       // 0 als als gebruiker van een telnet terminalsessie juiste wachtwoord heeft ingetoetst
+volatile int PulseCount=0;                                  // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
 
 // ethernet classes voor IP communicatie EventGhost, Telnet terminal en HTTP.
-byte Ethernet_MAC_Address[]={0x00,0x06,0x39,0x46,0x55,0x29};// MAC adres van de Nodo.
+
+byte Ethernet_MAC_Address[]={MAC_ADDRESS};// MAC adres van de Nodo.
 //EthernetServer HTTPServer(80);                              // Server class voor HTTP sessie.
 //EthernetClient HTTPClient=false;                            // Client class voor HTTP sessie.
-EthernetServer EventGhostServer(1024);                      // Globale Server class voor ontvangen van Events van een EventGhost applicatie
+EthernetServer EventGhostServer(EVENTGHOST_PORT);             // Globale Server class voor ontvangen van Events van een EventGhost applicatie
 EthernetClient EventGhostClient=false;
-EthernetServer TerminalServer(23);                          // Server class voor Terminal sessie.
+EthernetServer TerminalServer(TERMINAL_PORT);               // Server class voor Terminal sessie.
 EthernetClient TerminalClient=false;                        // Client class voor Terminal sessie.
 byte EventGhostClientIP[4];                                 // IP adres van de EventGhost client die verbinding probeert te maken c.q. verbonden is.
 
@@ -700,7 +709,7 @@ void setup()
   
   // Initialiseer in/output poorten.
 
-  pinMode(22, OUTPUT);//??? t.b.v. tijdmetingen met Logic analy
+  pinMode(22, OUTPUT);//??? t.b.v. tijdmetingen met Logic analyser
 
   pinMode(PIN_IR_RX_DATA, INPUT);
   pinMode(PIN_RF_RX_DATA, INPUT);
@@ -711,6 +720,7 @@ void setup()
   pinMode(PIN_LED_RGB_R,  OUTPUT);
   pinMode(PIN_SPEAKER,    OUTPUT);
   pinMode(EthernetShield_CS_SDCardH, OUTPUT); // CS/SPI: nodig voor correct funktioneren van de SDCard!
+  attachInterrupt(5,PulseCounterISR,FALLING); // IRQ-5 is specifiek voor Pen 18 van de ATMega. ??? aanpassen voor de UNO
   digitalWrite(PIN_IR_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
   digitalWrite(PIN_RF_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
   digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger aann
@@ -781,6 +791,7 @@ void loop()
   unsigned long StaySharpTimer=millis();                      // timer die start bij ontvangn van een signaal. Dwingt om enige tijd te luisteren naar dezelfde poort.
   unsigned long LoopIntervalTimer_1=millis();                 // Timer voor periodieke verwerking. millis() maakt dat de intervallen van 1 en 2 niet op zelfde moment vallen => 1 en 2 nu asynchroon.
   unsigned long LoopIntervalTimer_2=0L;                       // Timer voor periodieke verwerking.
+  unsigned long LoopIntervalTimer_3=0L;                       // Timer voor periodieke verwerking.
   unsigned long Content=0L,ContentPrevious;                   // Ontvangen event van RF, IR, ... Tevens buffer voor het vorige ontvangen Event
   unsigned long Checksum=0L;                                  // Als gelijk aan Event dan tweemaal dezelfde code ontvangen: checksum funktie.
   unsigned long SupressRepeatTimer;
@@ -905,23 +916,29 @@ void loop()
             // IP Telnet verbinding : *************** kijk of er verzoek tot verbinding vanuit een terminal is **********************    
             if(TerminalReceive(Inputbuffer_Terminal)) // Terminalreceive is non-blocking
               {
-              if(S.Terminal_Enabled==VALUE_ON)
-                {
-                if(TerminalUnlocked)
-                  ExecuteLine(Inputbuffer_Terminal, VALUE_SOURCE_TERMINAL);
-                else
-                  {
-                  if(strcmp(Inputbuffer_Terminal,S.Password)==0)
-                    {
-                    TerminalClient.println(ProgmemString(Text_13));
-                    TerminalUnlocked=true;
-                    }
-                  }
-                }
+              if(TerminalLocked==0) // als op niet op slot
+                ExecuteLine(Inputbuffer_Terminal, VALUE_SOURCE_TERMINAL);
               else
                 {
-                TerminalClient.println(cmd2str(ERROR_10));              
-                PrintLine(cmd2str(ERROR_10));
+                if(TerminalLocked<=PASSWORD_MAX_RETRY)// teller is wachtloop bij herhaaldelijke pogingen foutief wachtwoord. Bij >3 pogingen niet meer toegestaan
+                  {
+                  if(strcmp(Inputbuffer_Terminal,S.Password)==0)// als wachtwoord goed is, dan slot er af
+                    {
+                    TerminalLocked=0;
+                    TerminalClient.println("Ok.");
+                    }
+                  else// als foutief wachtwoord, dan teller @1
+                    {
+                    TerminalLocked++;
+                    TerminalClient.println("?");
+                    TerminalClient.print(ProgmemString(Text_03));
+                    if(TerminalLocked>PASSWORD_MAX_RETRY)TerminalLocked=PASSWORD_TIMEOUT; // blokkeer tijd terminal
+                    }
+                  }
+                else
+                  {
+                  TerminalClient.println(cmd2str(ERROR_10));
+                  }
                 }
               }
             }
@@ -976,6 +993,7 @@ void loop()
     if(LoopIntervalTimer_2<millis())// lange interval
       {
       LoopIntervalTimer_2=millis()+Loop_INTERVAL_2; // reset de timer  
+      
       switch(Slice_2++)
         {
         case 0:
@@ -1067,6 +1085,32 @@ void loop()
         default:
           Slice_2=0;
         }
+      }
+
+    // 3: niet tijdkritische processen die periodiek uitgevoerd moeten worden
+    if(LoopIntervalTimer_3<millis())// lange interval Iedere seconde.
+      {
+      LoopIntervalTimer_3=millis()+Loop_INTERVAL_3; // reset de timer  
+
+      // Terminal onderhoudstaken
+      // tel seconden terug nadat de gebruiker driemaal foutief wachtwoord ingegeven
+      if(TerminalLocked>PASSWORD_MAX_RETRY)
+        if(--TerminalLocked==PASSWORD_MAX_RETRY)TerminalLocked=1;
+
+      if(TerminalConnected)
+        {
+        if(--TerminalConnected==0)
+          {
+          // TerminalSessie timeout, dan de verbinding netjes afsluiten
+          TerminalClient.flush();
+          TerminalClient.stop();
+          }
+        }
+        
+      // loop periodiek langs de userplugin
+      #ifdef NODO_PLUGIN
+        UserPlugin_Periodically();
+      #endif
       }
     }// while 
   }

@@ -1,12 +1,13 @@
 /**************************************************************************************************************************\
 
 Known Errors / ToDo:
-
-- Vreemde tijdweergave als RTC niet is aangesloten. 
+/
+- Vreemde tijdweergave als RTC niet is aangesloten
 - Found in r310: Date=2012-01-14, Time=20:31, Input=Wired, Unit=1, Event=(WiredIn 9,On) event ?? na verzenden .
 - Found in r306: Nodo due compatibel maken n.a.v. omnummeren CMD_...
 - Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue testen
 - Found in r306: Status WiredAnalog groter dan toegestane poort
+- LogShow gestart vanaf terminalsessie geeft alleen weer op SERIAL. 
 
 Aanpassingen:
 - Commentaar teken toegevoegd '!'. Alle tekens na deze worden genegeerd en dus beschouwd als commentaar.
@@ -14,6 +15,8 @@ Aanpassingen:
 - Bug: reset maakte eventist niet volledig leeg.
 - Weergave 'EventlistErase' aangepast.
 - Wachtwoord voor toegaang tot telnet sessie.
+- Timeout als Terminal sessie ongebruikt open blijft staan
+- Issue 239 in arduino-nodo: Fout in verwerking KAKU codes met hoofdletters
 
 
 Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release

@@ -1,7 +1,8 @@
-
-
-
 /*
+
+          // terugtellen blokkade voor invoer wachtwoord.
+          if(TerminalLocked>3)TerminalLocked--;
+
 
 AI=is een unsigned int waarin signed analoge waarde verwerkt
 

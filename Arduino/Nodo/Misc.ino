@@ -72,11 +72,6 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       *Par1=S.SendBusy;
       break;
 
-    case CMD_TERMINAL:
-      *Par1=S.Terminal_Enabled;
-      *Par2=S.Terminal_Prompt;
-      break;
-      
     case CMD_WAITBUSY:
       *Par1=S.WaitBusy?VALUE_ALL:VALUE_OFF;
       break;
@@ -255,7 +250,6 @@ void ResetFactory(void)
   S.WaitFreeRF_Window          = 0;
   S.WaitFreeRF_Delay           = 0;
   S.DaylightSaving             = Time.DaylightSaving;
-  S.Terminal_Enabled           = VALUE_OFF;
   S.AutoSaveEventGhostIP       = VALUE_OFF;
   S.TransmitEventGhost         = VALUE_OFF;
   S.EventGhostServer_IP[0]     = 0; // IP adres van de EventGhost server
@@ -263,8 +257,6 @@ void ResetFactory(void)
   S.EventGhostServer_IP[2]     = 0; // IP adres van de EventGhost server
   S.EventGhostServer_IP[3]     = 0; // IP adres van de EventGhost server
   S.HTTPRequest[0]             = 0; // string van het HTTP adres leeg maken
-  S.Terminal_Enabled           = VALUE_OFF;
-  S.Terminal_Prompt            = VALUE_OFF;
 
   strcpy(S.Password,ProgmemString(Text_10));
   strcpy(S.ID,ProgmemString(Text_16));
@@ -883,6 +875,13 @@ void Led(boolean R, boolean G, boolean B)
 //  #define LED_RGB_R                   5  // RGB-Led, aansluiting rood
 //  #define LED_RGB_G                   6  // RGB-Led, aansluiting groen
 //  #define LED_RGB_B                   7  // RGB-Led, aansluiting blauw
-
-
   }
+  
+ 
+ 
+ void PulseCounterISR()
+   {
+   PulseCount++;
+   }     
+   
+   

@@ -7,7 +7,7 @@
 boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, unsigned long PreviousContent, byte PreviousPort)
   {
   byte x;
-  boolean CommandForThisNodo=CheckEventlist(IncommingEvent,Port) || NodoType(IncommingEvent)==NODO_TYPE_COMMAND;
+  boolean CommandForThisNodo=CheckEventlist(IncommingEvent,Port) || NodoType(IncommingEvent)==NODO_TYPE_COMMAND;// kan deze er uit worden geprogrammeerd???? vraagt veel tijd.
   SerialHold(true);  // als er een regel ontvangen is, dan binnenkomst van signalen stopzetten
   boolean SetBusyOff=false;
   
@@ -17,9 +17,11 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
 //  if(CommandForThisNodo && Hold)
 //    PrintLinePB_AddProgMemString(Text_09);
 
+  #ifdef USER_PLUGIN
   if(!UserPlugin_Receive(IncommingEvent))
     return true;
- 
+  #endif
+   
   PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
 
   // houdt bij wat de busy status van andere Nodo's is.

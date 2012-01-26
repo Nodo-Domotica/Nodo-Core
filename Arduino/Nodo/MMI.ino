@@ -167,7 +167,7 @@ void PrintWelcome(void)
   // print IP adres van de Nodo
   if(EthernetEnabled)
     {
-    sprintf(TempString,"NodoIP=%u.%u.%u.%u, TerminalPort=23, EventGhostServerPort=1024",Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
+    sprintf(TempString,"NodoIP=%u.%u.%u.%u",Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
     PrintLine(TempString);
     }
   
@@ -187,24 +187,11 @@ void PrintLine(String LineToPrint)
   // FreeMemory(0); //??? debug
   if(SerialConnected)
     Serial.println(LineToPrint);
-    
+ 
   if(EthernetEnabled)
     {
-    if(S.Terminal_Enabled==VALUE_ON && TerminalConnected && TerminalUnlocked)
-      {
-      if(TerminalClient.connected())
-        {
-        TerminalClient.println(LineToPrint);
-        }
-      else
-        {
-        // als de client niet meer verbonden is, maar deze was dat wel,
-        // dan de verbinding netjes afsluiten
-        TerminalClient.flush();
-        TerminalClient.stop();
-        TerminalConnected=false;
-        }
-      }
+    if(TerminalConnected>0 && TerminalLocked==0)
+      TerminalClient.println(LineToPrint);
     }
   }
 
@@ -271,7 +258,6 @@ char* Event2str(unsigned long Code)
   
       // Par1 als tekst en par2 als tekst
       case CMD_TRANSMIT_EVENTGHOST:
-      case CMD_TERMINAL:
       case CMD_COMMAND_WILDCARD:
         P1=P_TEXT;
         P2=P_TEXT;
@@ -430,9 +416,6 @@ void PrintIPSettings(void)
     // Nodo terminal Port
     PrintLine("TerminalPort=23");
 
-    // Terminal
-    sprintf(TempString,"Terminal=%s,%s",cmd2str(S.Terminal_Enabled),cmd2str(S.Terminal_Prompt));
-    PrintLine(TempString);
     }
   else
     {

@@ -66,7 +66,7 @@ int HA2address(char* HA, byte *group)
   byte c;   // teken uit de string die behandeld wordt
   byte Home=0,Address=0;// KAKU-Home en KAKU-adres
  
-  while((c=HA[x++])!=0)
+  while((c=tolower(HA[x++]))!=0)
     {
     if(c>='0' && c<='9'){Address=Address*10;Address=Address+c-'0';}
     if(c>='a' && c<='p'){Home=c-'a';y=true;} // KAKU home A is intern 0

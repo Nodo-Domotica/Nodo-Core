@@ -20,6 +20,7 @@
  * Datum        :
  * Versie       :
  * Nodo versie  :
+ * Doel         :
  * Beschrijving :
  *
  *
@@ -81,5 +82,23 @@ boolean UserPlugin_Receive(unsigned long Event)
   // true = Nodo gaat verder met verwerking van het event
   // false = Event wordt niet verder behandeld.
   return true; 
+  }
+  
+ /*********************************************************************************************\ 
+ * UserPlugin_Periodically() wordt ongeveer eenmaal per seconde aangeroepen.
+ * Het het bedoeld voor taken die korte doorlooptijd vragen zoals checken van zaken.
+ *
+ * TIPS:
+ * - door millis() op te slaan in variabelen, kunnen exacte tijden worden berekend.
+ * - De variabele PulseCounter houdt bij hoeveel pulsen hoog-laag-hoog pulsen er zijn geweest.
+ * - In deze functie geen tijdrovende taken verrichten anders worden en RF of IR signalen gemist
+ \*********************************************************************************************/
+
+void UserPlugin_Periodically()
+  {
+    // VOORBEELD-1: Kookwekker die (ongeveer) iedere minuut af gaat
+
+    
+  return;
   }
   

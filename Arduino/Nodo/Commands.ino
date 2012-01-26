@@ -242,7 +242,6 @@ byte CommandError(unsigned long Content)
 
      // par1 alleen On of Off.
      // par2 alleen 0, On of Off.
-    case CMD_TERMINAL:
     case CMD_TRANSMIT_RF:
     case CMD_TRANSMIT_HTTP:
     case CMD_TRANSMIT_IR:
@@ -541,7 +540,9 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;
         
       case CMD_USERPLUGIN:
-        UserPlugin_Command(Par1,Par2);
+        #ifdef USER_PLUGIN
+          UserPlugin_Command(Par1,Par2);
+        #endif
         break;        
 
       case CMD_WIRED_THRESHOLD:
@@ -710,12 +711,6 @@ void ExecuteLine(char *Line, byte Port)
             digitalWrite(EthernetShield_CS_SDCard,HIGH);
             break;
     
-          case CMD_TERMINAL:
-            S.Terminal_Enabled=Par1;
-            S.Terminal_Prompt=Par2;
-            SaveSettings();
-            break;
-
           case CMD_IP_SETTINGS:
             PrintIPSettings();
             break;

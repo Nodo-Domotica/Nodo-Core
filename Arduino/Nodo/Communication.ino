@@ -244,7 +244,7 @@ boolean SendEventGhost(char* event, byte* SendToIP)
     long Timeout=millis()+1000; //binnen deze tijd moet de gehele verzending gereed zijn, anders is er iets fout gegaan
     while(Timeout > millis())
       {
-      if(EGclient.connect(EGserver,1024))
+      if(EGclient.connect(EGserver,EVENTGHOST_PORT))
         {
         EGclient.flush();
   
@@ -346,56 +346,54 @@ boolean SendEventGhost(char* event, byte* SendToIP)
  * Let op dat het aantal opgegeven tekens in Buffersize niet de werkelijk beschikbare ruimte
  * overschrijdt!
  \*********************************************************************************************/
-
 int TerminalInByte=0;
-
 boolean TerminalReceive(char *Buffer)
   {
-  int InByteIP;
+  int InByteIP,x,y;
   
   if(TerminalServer.available())
     {
     if(!TerminalConnected)
       {
-      // we hebben een nieuwe Terminal client
-      TerminalConnected=true;
+      TerminalClient=TerminalServer.available();      // we hebben een nieuwe Terminal client
+      TerminalConnected=TERMINAL_TIMEOUT;
       TerminalInByte=0;
-      TerminalClient=TerminalServer.available();
-      if(S.Terminal_Enabled==VALUE_ON)
-        {
-        PrintWelcome();
-        TerminalClient.println();
-        TerminalClient.print(ProgmemString(Text_03));
-        TerminalUnlocked=false;
-        }
-      else
-        {
-        TerminalClient.println(cmd2str(ERROR_10));
-        RaiseError(ERROR_10); 
-        }              
-      }
+      
+      // Welkomsttekst wergeven, maar TerminalLocked en SerialConnected waarden eerst even veilig stellen
+      x=TerminalLocked;
+      y=SerialConnected;
+      SerialConnected=false;
+      TerminalLocked=0;
+      PrintWelcome();
+      TerminalLocked=x;
+      SerialConnected=y;
 
-    if(TerminalClient.connected() && TerminalClient.available()) // er staat data van de terminal klaar
+      TerminalClient.flush(); // schoon beginnen.
+      
+      if(TerminalLocked==0)
+        TerminalLocked=1;
+        
+      if(TerminalLocked<=PASSWORD_MAX_RETRY)
+        TerminalClient.print(ProgmemString(Text_03));
+      else
+        RaiseError(ERROR_10);
+      }
+  
+    if(TerminalClient.available())
       {
-      while(TerminalClient.available())
+      InByteIP=TerminalClient.read();
+             
+      if(InByteIP==0x0a) // || InByteIP==0x0d)
         {
-        InByteIP=TerminalClient.read();
-        
-        if(InByteIP==0x0a || InByteIP==0x0d)
-          {
-          Buffer[TerminalInByte]=0;
-          TerminalInByte=0;
-          if(S.Terminal_Prompt==VALUE_ON  && TerminalUnlocked)
-            TerminalClient.println();
-          return true;
-          }
-        
-        if(isprint(InByteIP))
-          {
-          Buffer[TerminalInByte++]=InByteIP;
-          if(S.Terminal_Prompt==VALUE_ON  && TerminalUnlocked)
-            TerminalClient.write(InByteIP);
-          }
+        Buffer[TerminalInByte]=0;
+        TerminalInByte=0;
+        TerminalConnected=TERMINAL_TIMEOUT;
+        return true;
+        }
+                 
+      if(isprint(InByteIP))
+        {
+        Buffer[TerminalInByte++]=InByteIP;
         }
       }
     }
@@ -418,7 +416,7 @@ boolean HTTP_Request(char* event)
   boolean Ok;
   char s[2];
 
-EthernetServer HTTPServer(80);                              // Server class voor HTTP sessie.
+EthernetServer HTTPServer(HTTP_PORT);                 // Server class voor HTTP sessie.
 EthernetClient HTTPClient;                            // Client class voor HTTP sessie.
   
   // Haal uit het HTTP request URL de Host. Alles tot aan het '/' teken.
@@ -429,9 +427,6 @@ EthernetClient HTTPClient;                            // Client class voor HTTP 
 
   if(HTTPClient.connect(Host,80))
     {
-
-//  client.println("GET /test/NodoEvent.php?event=EventTest%20111,222 HTTP/1.1");
-
     strcpy(TempString,"GET ");
     strcat(TempString,S.HTTPRequest+x);
     strcat(TempString,"?event=");
@@ -448,10 +443,13 @@ EthernetClient HTTPClient;                            // Client class voor HTTP 
         strcat(TempString,s);
         }
       }      
-
     strcat(TempString,"&id=");
     strcat(TempString,S.ID);
+    strcat(TempString,"&password=");
+    strcat(TempString,S.Password);
+
     strcat(TempString," HTTP/1.1");
+
     HTTPClient.println(TempString);
 
     //??? Serial.print("*** debug: HTTP Request=");Serial.println(TempString);//??? Debug
@@ -459,7 +457,6 @@ EthernetClient HTTPClient;                            // Client class voor HTTP 
     strcpy(TempString,"Host: ");
     strcat(TempString,Host);
     HTTPClient.println(TempString);
-    // Serial.print("*** debug: HTTP Request_2=");Serial.println(TempString);//??? Debug
     HTTPClient.println();
 
     TimeoutTimer=millis()+2000;
@@ -481,8 +478,8 @@ EthernetClient HTTPClient;                            // Client class voor HTTP 
           HTTPInputString[InByteCounter]=0;
           InByteCounter=0;
           // Serial.print("*** debug: HTTP Response=");Serial.println(HTTPInputString);//??? Debug
-          // De regel is binnen
-          
+
+          // De regel is binnen          
           if(StringFind(HTTPInputString,"HTTP")!=-1)
             {
             // Response n.a.v. HTTP-request is ontvangen
