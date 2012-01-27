@@ -1,28 +1,23 @@
 /**************************************************************************************************************************\
 
 Known Errors / ToDo:
-/
+
+- Niet zeker of ontvangst IR het wel goed doet. Problemen geconstateerd.
 - Vreemde tijdweergave als RTC niet is aangesloten
-- Found in r310: Date=2012-01-14, Time=20:31, Input=Wired, Unit=1, Event=(WiredIn 9,On) event ?? na verzenden .
-- Found in r306: Nodo due compatibel maken n.a.v. omnummeren CMD_...
 - Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue testen
 - Found in r306: Status WiredAnalog groter dan toegestane poort
 - LogShow gestart vanaf terminalsessie geeft alleen weer op SERIAL. 
 
 Aanpassingen:
-- Commentaar teken toegevoegd '!'. Alle tekens na deze worden genegeerd en dus beschouwd als commentaar.
-- Chat teken toegevoegd '>'. Begint een regel met dit teken dan wordt deze van Serial weergegeven naar Terminal of vice versa.
-- Bug: reset maakte eventist niet volledig leeg.
-- Weergave 'EventlistErase' aangepast.
-- Wachtwoord voor toegaang tot telnet sessie.
-- Timeout als Terminal sessie ongebruikt open blijft staan
-- Issue 239 in arduino-nodo: Fout in verwerking KAKU codes met hoofdletters
+
+- Nodo ontvangt events via http. Voorbeeld: http://192.168.1.110/?event=sound&passwoord=Nodo&id=00000000
 
 
 Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - EventListshow, eventListWrite,eventListErase hebben nu als parameter-1 de regel waar het betrekking op heeft (regel, ALL, 0=All)
 - Toevoeging commando "IPSettings".
 - Commaando toegevoegd "WiredCalibrate <poort> <High|Low> <ijkwaarde>"
+- Nodo ontvangt events via http. Voorbeeld: http://192.168.1.110/?event=sound&passwoord=Nodo&id=00000000
 - Ethernet intergratie. Events van EventGhost (PC, Android) ontvangen en verzenden over IP;
 - Toevoeging commando "URL <line>", hiermee kan de URL van de server worden ingesteld waar de events (via HTTP-Poort 80) naar toegezonden moeten worden. (max. 40 tekens)
 - Nieuw commando "OutputEG <On|Off> , <SaveIP Save|On|Off>"

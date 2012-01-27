@@ -677,10 +677,8 @@ volatile int PulseCount=0;                                  // Pulsenteller van 
 // ethernet classes voor IP communicatie EventGhost, Telnet terminal en HTTP.
 
 byte Ethernet_MAC_Address[]={MAC_ADDRESS};// MAC adres van de Nodo.
-//EthernetServer HTTPServer(80);                              // Server class voor HTTP sessie.
-//EthernetClient HTTPClient=false;                            // Client class voor HTTP sessie.
-EthernetServer EventGhostServer(EVENTGHOST_PORT);             // Globale Server class voor ontvangen van Events van een EventGhost applicatie
-EthernetClient EventGhostClient=false;
+EthernetServer HTTPServer(HTTP_PORT);                       // Server class voor HTTP sessie.
+EthernetServer EventGhostServer(EVENTGHOST_PORT);           // Globale Server class voor ontvangen van Events van een EventGhost applicatie
 EthernetServer TerminalServer(TERMINAL_PORT);               // Server class voor Terminal sessie.
 EthernetClient TerminalClient=false;                        // Client class voor Terminal sessie.
 byte EventGhostClientIP[4];                                 // IP adres van de EventGhost client die verbinding probeert te maken c.q. verbonden is.
@@ -720,7 +718,7 @@ void setup()
   pinMode(PIN_LED_RGB_R,  OUTPUT);
   pinMode(PIN_SPEAKER,    OUTPUT);
   pinMode(EthernetShield_CS_SDCardH, OUTPUT); // CS/SPI: nodig voor correct funktioneren van de SDCard!
-  attachInterrupt(5,PulseCounterISR,FALLING); // IRQ-5 is specifiek voor Pen 18 van de ATMega. ??? aanpassen voor de UNO
+ //???  attachInterrupt(5,PulseCounterISR,FALLING); // IRQ-5 is specifiek voor Pen 18 van de ATMega. ??? aanpassen voor de UNO
   digitalWrite(PIN_IR_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
   digitalWrite(PIN_RF_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
   digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger aann
@@ -800,7 +798,7 @@ void loop()
   SerialHold(false); // er mogen weer tekens binnen komen van SERIAL
 
   char Inputbuffer_Serial[INPUT_BUFFER_SIZE];                 // Buffer voor input Seriele date
-  char InputBuffer_EventGhost[INPUT_BUFFER_SIZE];             // Buffer voor input EventGhsot events
+  char InputBuffer_IP[INPUT_BUFFER_SIZE];                     // Buffer voor input EventGhsot events
   char Inputbuffer_Terminal[INPUT_BUFFER_SIZE];               // Buffer voor input terminal verbinding Telnes sessie
 
   // hoofdloop: scannen naar signalen
@@ -899,11 +897,10 @@ void loop()
           if(EthernetEnabled)
             {
             // IP Event van EventGhost : *************** kijk of er een Event van een eventghost client binnenkomt **********************    
-            EventGhostClient=EventGhostServer.available(); // deze call vraagt veel tijd: +/- 90uSec.
-            if(EventGhostClient)
+            if(EventGhostServer.available())// deze call vraagt veel tijd: +/- 90uSec.  
               {
-              if(EventGhostReceive(InputBuffer_EventGhost))
-                ExecuteLine(InputBuffer_EventGhost, VALUE_SOURCE_EVENTGHOST);
+              if(EventGhostReceive(InputBuffer_IP))
+                ExecuteLine(InputBuffer_IP, VALUE_SOURCE_EVENTGHOST);
               }
             }
           break;
@@ -946,10 +943,15 @@ void loop()
           }
           
         case 3: // binnen Slice_1
-          {
+          {        
           if(EthernetEnabled)
             {
-            // Hier HTTP server ???
+            // HTTP-request : *************** kijk of er een HTTP-request  binnenkomt **********************    
+            if(HTTPServer.available())
+              {
+              if(HTTPReceive(InputBuffer_IP)) //??? Variabele InputBuffer_IP hier even geleend.
+                ExecuteLine(InputBuffer_IP, VALUE_SOURCE_HTTP);
+              }
             }
           break;
           }

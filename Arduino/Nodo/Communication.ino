@@ -71,16 +71,13 @@ boolean EventGhostReceive(char *ResultString)
   char str_2[INPUT_BUFFER_SIZE];
   char IPInputBuffer[INPUT_BUFFER_SIZE];//??? kan hier nog wat RAM worden bespaard?
   char Cookie[8];
-  
-  TimeoutTimer=millis()+TimeOut;  
-  
-//  EventGhostClient=EventGhostServer.available();???
-//  if(EventGhostClient) 
+
 
   if(EventGhostServer.available()) 
     {
     // we hebben een EventGhostClient.     
     // Kijk vervolgens of er data binnen komt.
+    EthernetClient EventGhostClient=EventGhostServer.available();
     while((InByteIPCount<INPUT_BUFFER_SIZE) && TimeoutTimer>millis() )
       {
       if(EventGhostClient.available())
@@ -383,11 +380,12 @@ boolean TerminalReceive(char *Buffer)
       {
       InByteIP=TerminalClient.read();
              
-      if(InByteIP==0x0a) // || InByteIP==0x0d)
+      if(InByteIP==0x0a || InByteIP==0x0d)
         {
-        Buffer[TerminalInByte]=0;
-        TerminalInByte=0;
         TerminalConnected=TERMINAL_TIMEOUT;
+        Buffer[TerminalInByte]=0;
+        if(TerminalInByte==0)return false; // als de string leeg is, dan niets verwerken.
+        TerminalInByte=0;
         return true;
         }
                  
@@ -406,12 +404,12 @@ boolean TerminalReceive(char *Buffer)
  * gebruikt en is leeg. Er wordt een false teruggegeven als de communicatie met de EventGhost EventGhostServer
  * niet tot stand gebracht kon worden.
  \*******************************************************************************************************/
-boolean HTTP_Request(char* event)
+boolean SendHTTPRequest(char* event)
   {
   int InByteCounter;
   byte InByte,x;
   unsigned long TimeoutTimer;
-  char HTTPInputString[INPUT_BUFFER_SIZE];
+  char InputBuffer_IP[INPUT_BUFFER_SIZE];
   char Host[INPUT_BUFFER_SIZE];//??? kan hier op worden bespaard?
   boolean Ok;
   char s[2];
@@ -425,7 +423,7 @@ EthernetClient HTTPClient;                            // Client class voor HTTP 
   Host[x]=0;
   // Serial.print("*** debug: Host=");Serial.println(Host);//??? Debug
 
-  if(HTTPClient.connect(Host,80))
+  if(HTTPClient.connect(Host,HTTP_PORT))
     {
     strcpy(TempString,"GET ");
     strcat(TempString,S.HTTPRequest+x);
@@ -447,20 +445,16 @@ EthernetClient HTTPClient;                            // Client class voor HTTP 
     strcat(TempString,S.ID);
     strcat(TempString,"&password=");
     strcat(TempString,S.Password);
-
     strcat(TempString," HTTP/1.1");
-
     HTTPClient.println(TempString);
-
     //??? Serial.print("*** debug: HTTP Request=");Serial.println(TempString);//??? Debug
-
     strcpy(TempString,"Host: ");
     strcat(TempString,Host);
     HTTPClient.println(TempString);
     HTTPClient.println();
 
     TimeoutTimer=millis()+2000;
-    HTTPInputString[0]=0;
+    InputBuffer_IP[0]=0;
     InByteCounter=0;
     
     Ok=false;
@@ -471,19 +465,19 @@ EthernetClient HTTPClient;                            // Client class voor HTTP 
         InByte=HTTPClient.read();
         
         if(isprint(InByte) && InByteCounter<INPUT_BUFFER_SIZE)
-          HTTPInputString[InByteCounter++]=InByte;
+          InputBuffer_IP[InByteCounter++]=InByte;
           
         else if(InByte==0x0D || InByte==0x0A)
           {
-          HTTPInputString[InByteCounter]=0;
+          InputBuffer_IP[InByteCounter]=0;
           InByteCounter=0;
-          // Serial.print("*** debug: HTTP Response=");Serial.println(HTTPInputString);//??? Debug
+          // Serial.print("*** debug: HTTP Response=");Serial.println(InputBuffer_IP);//??? Debug
 
           // De regel is binnen          
-          if(StringFind(HTTPInputString,"HTTP")!=-1)
+          if(StringFind(InputBuffer_IP,"HTTP")!=-1)
             {
             // Response n.a.v. HTTP-request is ontvangen
-            if(StringFind(HTTPInputString,"200")!=-1)
+            if(StringFind(InputBuffer_IP,"200")!=-1)
               {
               // Serial.println("****** Request received ! *******");
               Ok=true;
@@ -492,10 +486,10 @@ EthernetClient HTTPClient;                            // Client class voor HTTP 
               {
               Serial.println();
               Serial.print("****** Error: ");            
-              Serial.print(HTTPInputString);
+              Serial.print(InputBuffer_IP);
               Serial.println("*******");            
               }
-            HTTPInputString[InByteCounter]=0;
+            InputBuffer_IP[InByteCounter]=0;
             }
           }
         }
@@ -504,3 +498,135 @@ EthernetClient HTTPClient;                            // Client class voor HTTP 
   HTTPClient.stop();
   return Ok;
   }
+  
+  
+/*********************************************************************************************\
+* Deze routine haalt uit een http request de waarden die bij de opgegeven parameter hoort
+* Niet case-sinsitive.
+\*********************************************************************************************/
+boolean ParseHTTPRequest(char* HTTPRequest,char* Keyword, char* ResultString)
+  {
+  int x,y,z;
+  int Keyword_len=strlen(Keyword);
+  int HTTPRequest_len=strlen(HTTPRequest);
+
+  if(HTTPRequest_len<10) // doe geen moeite als de string te weinig tekens heeft
+    return -1;
+  
+  for(x=0; x<=(HTTPRequest_len-Keyword_len); x++)
+    {
+    y=0;
+    while(y<Keyword_len && (tolower(HTTPRequest[x+y])==tolower(Keyword[y])))
+      y++;
+
+    z=x+y;
+    if(y==Keyword_len && HTTPRequest[z]=='=') // als tekst met een opvolgend '=' teken is gevonden
+      {
+      // Keyword gevonden. sla spaties en '=' teken over.
+      while(z<HTTPRequest_len && (HTTPRequest[z]=='=' || HTTPRequest[z]==' '))z++;
+
+      x=0; // we komen niet meer terug in de 'for'-loop, daarom kunnen we x hier even gebruiken.
+
+      while(z<HTTPRequest_len && HTTPRequest[z]!='&' && HTTPRequest[z]!=' ')
+        {
+        if(HTTPRequest[z]=='+')
+          ResultString[x]=' ';
+        else if(HTTPRequest[z]=='%' && HTTPRequest[z+1]=='2' && HTTPRequest[z+2]=='0')
+          {
+          ResultString[x]=' ';
+          z+=2;
+          }
+        else
+          ResultString[x]=HTTPRequest[z];
+
+        z++;
+        x++;
+        }
+      ResultString[x]=0;
+      return true;
+      }
+    }
+  return false;
+  }
+
+
+ /**********************************************************************************************\
+ *
+ *
+ *
+ *
+ \*********************************************************************************************/
+
+boolean HTTPReceive(char *Event)
+  {
+  char InByte;
+  boolean RequestCompleted=false;  
+  boolean LineCompleted=false;
+  int InByteCounter;
+  char InputBuffer_IP[INPUT_BUFFER_SIZE];//??? kan hier nog wat RAM worden bespaard?
+
+  EthernetClient HTTPClient = HTTPServer.available();
+  if(HTTPClient)
+    {
+    InByteCounter=0;
+    Event[0]=0;
+    
+    while(HTTPClient.connected()  && !LineCompleted)
+      {
+      if(HTTPClient.available()) 
+        {
+        InByte=HTTPClient.read();
+        // Serial.write(InByte);//??? Debug
+      
+        if(isprint(InByte) && InByteCounter<INPUT_BUFFER_SIZE)
+          InputBuffer_IP[InByteCounter++]=InByte;
+    
+        else if((InByte==0x0D || InByte==0x0A))
+          {
+          InputBuffer_IP[InByteCounter]=0;
+          InByteCounter=0;
+
+          // Serial.print("*** debug: Request=");Serial.println(InputBuffer_IP);//??? Deb          
+          LineCompleted=true;
+            
+          if(!RequestCompleted && StringFind(InputBuffer_IP,"GET")!=-1)
+            {
+            if(ParseHTTPRequest(InputBuffer_IP,"password",TempString))
+              {
+              if(strcmp(S.Password,TempString)!=0)
+                {
+                HTTPClient.println(F("HTTP/1.1 403 Forbidden"));
+                }
+              else
+                {    
+                if(ParseHTTPRequest(InputBuffer_IP,"id",TempString))
+                  {
+                  if(strcmp(S.ID,TempString)!=0)
+                    {
+                    HTTPClient.println(F("HTTP/1.1 403 Forbidden"));
+                    }
+                  else
+                    {      
+                    if(ParseHTTPRequest(InputBuffer_IP,"event",Event))
+                      {
+                      RequestCompleted=true;
+                      HTTPClient.println(F("HTTP/1.1 200 Ok"));
+                      }
+                    else
+                      HTTPClient.println(F("HTTP/1.1 400 Bad Request"));
+                    }
+                  }
+                }
+              }
+            }
+          HTTPClient.println(F("Content-Type: text/html"));    // HTTP Request wordt altijd afgesloten met een lege regel
+          HTTPClient.println();            
+          }
+        }
+      }
+    }
+  delay(1);  // give the web browser time to receive the data
+  HTTPClient.stop();
+  return RequestCompleted;
+  }
+

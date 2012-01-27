@@ -409,7 +409,7 @@ boolean TransmitCode(unsigned long Event, byte Dest)
   if(Dest==VALUE_SOURCE_HTTP || (S.TransmitHTTP==VALUE_ON && Dest==VALUE_ALL))
     {
     PrintEvent(Event,VALUE_SOURCE_HTTP,VALUE_DIRECTION_OUTPUT);
-    HTTP_Request(Event2str(Event));
+    SendHTTPRequest(Event2str(Event));
     }
   }
 
