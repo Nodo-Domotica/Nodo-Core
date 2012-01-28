@@ -1,9 +1,9 @@
 <?php
 
 require_once('connections/tc.php'); 
-
+require_once('/include/auth.php'); 
   
- $result = mysql_query("SELECT * FROM nodo_tbl_setup WHERE id=1") or die(mysql_error());  
+ $result = mysql_query("SELECT * FROM nodo_tbl_setup WHERE user_id='$userId'") or die(mysql_error());  
  $row = mysql_fetch_array($result);
  
 
