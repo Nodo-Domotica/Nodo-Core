@@ -1,10 +1,11 @@
 <?php
 
 require_once('connections/tc.php'); 
-require_once('/include/auth.php'); 
+require_once('include/auth.php'); 
+require_once('include/settings.php'); 
   
- $result = mysql_query("SELECT * FROM nodo_tbl_setup WHERE user_id='$userId'") or die(mysql_error());  
- $row = mysql_fetch_array($result);
+ //$result = mysql_query("SELECT * FROM nodo_tbl_users WHERE id='$userId'") or die(mysql_error());  
+ //$row = mysql_fetch_array($result);
  
 
 function sendMsg($args)
@@ -90,9 +91,9 @@ if (isset($_GET))
     if(isset($_GET['host']))
         $args['host'] = urldecode($_GET['host']);
     else
-        $args['host'] = $row['host'];
-    $args['port'] = $row['port'];
-    $args['password'] = $row['password'];
+        $args['host'] = $nodo_ip;
+    $args['port'] = $nodo_port;
+    $args['password'] = $nodo_password;
     $args['eventstring'] =  urldecode($_GET['event']);
     foreach($_GET as $key => $value)
         if(strcasecmp(substr($key, 0, 3), 'pld') == 0)

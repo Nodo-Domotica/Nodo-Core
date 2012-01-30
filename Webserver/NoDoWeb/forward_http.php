@@ -3,9 +3,6 @@
 require_once('/connections/tc.php'); 
 require_once('/include/auth.php'); 
 
-mysql_select_db($database_tc, $tc); 
-$result = mysql_query("SELECT * FROM nodo_tbl_setup WHERE user_id='$userId'") or die(mysql_error());  
-$rowSetup = mysql_fetch_array($result);
 
 mysql_select_db($database_tc, $tc); 
 $result = mysql_query("SELECT * FROM nodo_tbl_users WHERE id='$userId'") or die(mysql_error());  
@@ -25,12 +22,14 @@ function get_data($url)
 	}
 
 $id_1 = str_replace ( ' ', '%20',$_GET["event"]);
+$nodo_ip = $rowUsers['nodo_ip'];
+$nodo_port = $rowUsers['nodo_port'];
 $nodo_id = $rowUsers['nodo_id'];
 $nodo_password = $rowUsers['nodo_password'];
 
 if ($id_1 != NULL) { 
 //get_data('http://'.$row['host'].':'.$row['port']."/?$id_1");
-get_data('http://'.$rowSetup['host'].':'.$rowSetup['port']."/?event=$id_1&password=$nodo_password&id=$nodo_id");
+get_data("http://$nodo_ip:$nodo_port/?event=$id_1&password=$nodo_password&id=$nodo_id");
 }
 
 ?>

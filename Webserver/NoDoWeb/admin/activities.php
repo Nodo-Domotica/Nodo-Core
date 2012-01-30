@@ -1,29 +1,39 @@
-<?php require_once('../connections/tc.php'); 
-require_once('../include/auth.php'); 
+<?php 
+
+require_once('../connections/tc.php'); 
+require_once('../include/auth.php');
+require_once('../include/settings.php');
+
+$page_title = "Setup: Activiteiten";	  
+
+
+
 // check if the form has been submitted. If it has, process the form and save it to the database if 
 
 if (isset($_POST['submit'])) 
 {  
  
  // get form data, making sure it is valid 
- $host = mysql_real_escape_string(htmlspecialchars($_POST['host'])); 
- $port = mysql_real_escape_string(htmlspecialchars($_POST['port']));  
- $howto_send_command = mysql_real_escape_string(htmlspecialchars($_POST['howto_send_command']));
- $password = mysql_real_escape_string(htmlspecialchars($_POST['password']));
+ $name = mysql_real_escape_string(htmlspecialchars($_POST['name'])); 
+ $events = mysql_real_escape_string(htmlspecialchars($_POST['events']));  
+ 
  
  
   
  // save the data to the database 
  mysql_select_db($database_tc, $tc);
- mysql_query("UPDATE nodo_tbl_activities SET host='$host', port='$port', howto_send_command='$howto_send_command', password='$password' WHERE user_id='$userId'") or die(mysql_error());   
+ 
+   
+ mysql_query("INSERT INTO nodo_tbl_activities (name, events, user_id) 
+ VALUES 
+ ('$name','$events','$userId')");
  // once saved, redirect back to the view page 
- header("Location: setup_connection.php#saved");   }
+ header("Location: activities.php#saved");    }
  
 else 
 {
 mysql_select_db($database_tc, $tc);
-$result = mysql_query("SELECT * FROM NODO_tbl_setup WHERE user_id='$userId'") or die(mysql_error());  
-$row = mysql_fetch_array($result);
+$result = mysql_query("SELECT * FROM nodo_tbl_activities WHERE user_id='$userId'") or die(mysql_error());  
 }?>
 
 
@@ -35,10 +45,8 @@ $row = mysql_fetch_array($result);
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1"> 
-	<title>Setup activiteiten</title> 
-	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.css" />
-	<script src="http://code.jquery.com/jquery-1.6.4.min.js"></script>
-	<script src="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.js"></script>
+	<title><?php echo $title ?></title> 
+	<?php require_once('../include/jquery_mobile.php'); ?>
 </head> 
  
 <body> 
@@ -47,17 +55,12 @@ $row = mysql_fetch_array($result);
 
 <div data-role="page" pageid="main">
  
-	<div data-role="header">
-		<h1>Setup activiteiten</h1>
-		<a href="/admin/index.php" data-icon="gear" class="ui-btn-right" data-ajax="false">Setup</a>
-		<a href="/index.php" data-icon="home" class="ui-btn-left" data-ajax="false" data-iconpos="notext">Home</a>
-	
-	</div><!-- /header -->
+	<?php require_once('../include/header_admin.php'); ?>
  
 	<div data-role="content">	
 
-	!!!!!Nog uitwerken!!!!!!!
-	
+	<div data-role="collapsible">
+			<h3>Toevoegen</h3>
 	<form action="activities.php" data-ajax="false" method="post"> 
 	
 	 
@@ -67,44 +70,62 @@ $row = mysql_fetch_array($result);
 		<label for="name">Naam: </label>
 		<input type="text" name="name" id="name" value=""  />
 		<br>
-		<label for="name">Event(s): (voorbeeld: sendkaku a1,on;sendkaku a2,on)</label>
-		<input type="text" name="event" id="event" value=""  />
+		<label for="name">Event(s): (voorbeeld: userevent 100,100)</label>
+		<input type="text" name="events" id="events" value=""  />
 	
-	   
+	    <br>
         
-		<input type="submit" name="submit" value="Opslaan" disabled="disabled">
+		<input type="submit" name="submit" value="Toevoegen" >
 
 		
 	
 	</form> 
-
+	</div>
+	
+	
+		<div data-role="collapsible" data-collapsed="false">
+			<h3>Aanpassen</h3>
+			<?php
+			 
+								   
+			echo '<ul data-role="listview" data-split-icon="delete" data-split-theme="a">';
+	  
+			echo '<br>';   
+			// loop through results of database query, displaying them in the table        
+			while($row = mysql_fetch_array($result)) 
+			{                                
+					   
+			echo '<li><a href="activities_edit.php?id=' . $row['id'] . '" title=Aanpassen data-ajax="false">'. $row['name'] .'</a>';                
+			echo '<a href="activities_delete_confirm.php?id=' . $row['id'] . '" data-rel="dialog">Verwijderen</a></li>';
+			
+			}         
+			?>
+		</div>
 	
 
 	
 	</div><!-- /content -->
 	
-	<div data-role="footer">
-		<h4></h4>
-	</div><!-- /footer -->
+	<?php require_once('../include/footer_admin.php'); ?>
 	
 </div><!-- /main page -->
 
 <!-- Start of saved page: -->
-<div data-role="page" id="saved">
+<div data-role="dialog" id="saved">
 
 	<div data-role="header">
-		<h1>Communicatie</h1>
+		<h1><?php echo $page_title?></h1>
 	</div><!-- /header -->
 
 	<div data-role="content">	
 		<h2> De wijzigingen zijn opgeslagen.</h2>
 				
-		<p><a href="#main" data-rel="back" data-role="button" data-inline="true" data-icon="back">Ok</a></p>	
+		<p><a href="activities.php" data-role="button" data-inline="true" data-icon="back">Ok</a></p>	
+	
+	
 	</div><!-- /content -->
 	
-	<div data-role="footer">
-		<h4></h4>
-	</div><!-- /footer -->
+	
 </div><!-- /page saved -->
  
 </body>

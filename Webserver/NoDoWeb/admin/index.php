@@ -1,3 +1,12 @@
+<?php 
+
+require_once('../connections/tc.php'); 
+require_once('../include/auth.php');
+require_once('../include/settings.php');
+$page_title = "Setup"; 
+
+?>
+
 <!DOCTYPE html> 
 <html> 
 
@@ -6,10 +15,7 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1"> 
 	<title>Setup</title> 
-	
-	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.css" />
-	<script src="http://code.jquery.com/jquery-1.6.4.min.js"></script>
-	<script src="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.js"></script>
+	<?php require_once('../include/jquery_mobile.php'); ?>
 	
 </head> 
 
@@ -17,21 +23,16 @@
 
 <div data-role="page">
 
-	<div data-role="header" >
-		<h1>Setup</h1>
-		<a href="/index.php" data-icon="home" class="ui-btn-right" data-ajax="false" data-iconpos="notext">Home</a>
-	</div><!-- /header -->
+	<?php require_once('../include/header_admin.php'); ?>
 
 	<div data-role="content">	
 	  <p><a href="setup_connection.php" data-role="button" data-ajax="false">Communicatie</a></p>
-	  <p><a href="switch.php" data-role="button" data-ajax="false">Apparaten</a></p>
+	  <p><a href="devices.php" data-role="button" data-ajax="false">Apparaten</a></p>
 	  <p><a href="activities.php" data-role="button" data-ajax="false">Activiteiten</a></p>
-   	  <p><a href="setup_nodoweb.php" data-role="button" data-ajax="false">NoDoWeb</a></p>
+   	  <p><a href="setup_nodoweb.php" data-role="button" data-ajax="false">Uiterlijk</a></p>
 	</div><!-- /content -->
 	
-	<div data-role="footer">
-		<h4></h4>
-	</div><!-- /footer -->
+	<?php require_once('../include/footer_admin.php'); ?>
 	
 </div><!-- /page -->
 

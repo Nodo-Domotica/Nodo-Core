@@ -44,6 +44,14 @@ $userId = $row['id'];
  
 			 if (isset($_GET['event'])){
 
+			 //Event in nodo_tbl_event_log opslaan
+			 
+			 $eventraw = $_GET['event'];
+			 mysql_select_db($database_tc, $tc);
+			 mysql_query("INSERT INTO nodo_tbl_event_log (user_id, event, timestamp) VALUES ('$userId','$eventraw',now() )") or die(mysql_error());
+			 
+			 
+			 
 			$event = str_replace(" ",",",$_GET['event']); 
 
 			$cmd_array = explode(',', $event);
