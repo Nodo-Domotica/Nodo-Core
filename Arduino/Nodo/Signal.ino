@@ -279,6 +279,9 @@ boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
   {
   int RawCodeLength=1;
   unsigned long PulseLength;
+
+  return false; //??? @1 STUB...!
+
   
   do{// lees de pulsen in microseconden en plaats deze in een tijdelijke buffer
     PulseLength=WaitForChangeState(DataPin, StateSignal, TimeOut); // meet hoe lang signaal LOW (= PULSE van IR signaal)

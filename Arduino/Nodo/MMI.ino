@@ -190,7 +190,7 @@ void PrintLine(String LineToPrint)
  
   if(EthernetEnabled)
     {
-    if(TerminalConnected>0 && TerminalLocked==0)
+    if(TerminalClient.connected() && TerminalConnected>0 && TerminalLocked==0)
       TerminalClient.println(LineToPrint);
     }
   }

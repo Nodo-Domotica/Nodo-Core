@@ -28,7 +28,7 @@
  *
  \****************************************************************************************************************************/
 
-#define MAC_ADDRESS 0x00,0x06,0x39,0x46,0x55,0x29
+#define MAC_ADDRESS 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
 
 #define VERSION        2          // Nodo Version nummer:
                                   // Major.Minor.Patch
@@ -68,7 +68,7 @@ prog_char PROGMEM Text_11[] = "Output=";
 prog_char PROGMEM Text_12[] = "Input=";
 prog_char PROGMEM Text_13[] = "Ok.";
 prog_char PROGMEM Text_14[] = "Event=";
-prog_char PROGMEM Text_15[] = "Booting...";
+// prog_char PROGMEM Text_15[] = "Booting...";
 prog_char PROGMEM Text_16[] = "00000000"; // default ID na een reset
 prog_char PROGMEM Text_17[] = "payload";
 prog_char PROGMEM Text_18[] = "accept";
@@ -83,6 +83,7 @@ prog_char PROGMEM Text_26[] = "Event received from: ";
 prog_char PROGMEM Text_27[] = "Raw/Key"; // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_28[] = "Raw/Hex"; // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_29[] = "www.nodo-domotica.nl/test/NodoEvent.php"; // Host waar de events in de vorm van een HTTP request naar toe gestuurd moeten worden
+prog_char PROGMEM Text_30[] = "Terminal connection closed.";
  
 // Commando's:
 prog_char PROGMEM Cmd_000[]=""; // dummy. Niet gebruiken
@@ -138,7 +139,7 @@ prog_char PROGMEM Cmd_049[]="Password";
 prog_char PROGMEM Cmd_050[]="VariableUserEvent";
 prog_char PROGMEM Cmd_051[]="WiredCalibrate";
 prog_char PROGMEM Cmd_052[]="Reboot";
-prog_char PROGMEM Cmd_053[]="HTTPRequest";
+prog_char PROGMEM Cmd_053[]="HTTPHost";
 prog_char PROGMEM Cmd_054[]="Status";
 prog_char PROGMEM Cmd_055[]="SendStatus";
 prog_char PROGMEM Cmd_056[]="AnalyseSettings";
@@ -580,6 +581,8 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define EthernetShield_CS_SDCardH   53  // NIET VERANDEREN. Ethernet shield: Gereserveerd voor correct funktioneren van de SDCard: Hardware CS/SPI ChipSelect
 #define EthernetShield_CS_SDCard     4  // NIET VERANDEREN. Ethernet shield: Chipselect van de SDCard. Niet gebruiken voor andere doeleinden
 #define Ethernetshield_CS_W5100     10  // NIET VERANDEREN. Ethernet shield: D10..D13  // gereserveerd voor Ethernet & SDCard
+#define PIN_CLOCK_SDA               20  // I2C communicatie lijn voor de realtime clock.
+#define PIN_CLOCK_SLC               21  // I2C communicatie lijn voor de realtime clock.
 
 #define HTTP_PORT                   80
 #define TERMINAL_PORT               23
@@ -700,7 +703,7 @@ void setup()
   byte x;
 
   Serial.begin(BAUD);  // Initialiseer de seriële poort
-  Serial.println(ProgmemString(Text_15));
+  Serial.println("Booting...");
   SerialHold(true);// XOFF verzenden zodat PC even wacht met versturen van data via Serial (Xon/Xoff-handshaking)
   LoadSettings();      // laad alle settings zoals deze in de EEPROM zijn opgeslagen
   if(S.Version!=VERSION)ResetFactory(); // Als versienummer in EEPROM niet correct is, dan een ResetFactory.
@@ -718,10 +721,13 @@ void setup()
   pinMode(PIN_LED_RGB_R,  OUTPUT);
   pinMode(PIN_SPEAKER,    OUTPUT);
   pinMode(EthernetShield_CS_SDCardH, OUTPUT); // CS/SPI: nodig voor correct funktioneren van de SDCard!
- //???  attachInterrupt(5,PulseCounterISR,FALLING); // IRQ-5 is specifiek voor Pen 18 van de ATMega. ??? aanpassen voor de UNO
+
   digitalWrite(PIN_IR_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
   digitalWrite(PIN_RF_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
-  digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger aann
+  digitalWrite(PIN_RF_RX_VCC,HIGH);   // Spanning naar de RF ontvanger aann
+
+ //???  attachInterrupt(5,PulseCounterISR,FALLING); // IRQ-5 is specifiek voor Pen 18 van de ATMega. ??? aanpassen voor de UNO
+
   RFbit=digitalPinToBitMask(PIN_RF_RX_DATA);
   RFport=digitalPinToPort(PIN_RF_RX_DATA);  
   IRbit=digitalPinToBitMask(PIN_IR_RX_DATA);
@@ -782,8 +788,10 @@ void setup()
 void loop() 
   {
   int x,y,z;
-  int InByte;
-  int Pos=0;  
+  byte SerialInByte;
+  byte TerminalInByte;
+  int SerialInByteCounter;
+  int TerminalInbyteCounter;
   byte Slice_1,Slice_2;
   
   unsigned long StaySharpTimer=millis();                      // timer die start bij ontvangn van een signaal. Dwingt om enige tijd te luisteren naar dezelfde poort.
@@ -906,35 +914,88 @@ void loop()
           break;
           }
     
-        case 2: // binnen Slice_1
+        case 2: // binnen Slice_1 @1
           {
+          // IP Telnet verbinding : *************** kijk of er verzoek tot verbinding vanuit een terminal is **********************    
           if(EthernetEnabled)
             {
-            // IP Telnet verbinding : *************** kijk of er verzoek tot verbinding vanuit een terminal is **********************    
-            if(TerminalReceive(Inputbuffer_Terminal)) // Terminalreceive is non-blocking
-              {
-              if(TerminalLocked==0) // als op niet op slot
-                ExecuteLine(Inputbuffer_Terminal, VALUE_SOURCE_TERMINAL);
-              else
+            if(TerminalServer.available())
+              {          
+              if(TerminalConnected==0)
                 {
-                if(TerminalLocked<=PASSWORD_MAX_RETRY)// teller is wachtloop bij herhaaldelijke pogingen foutief wachtwoord. Bij >3 pogingen niet meer toegestaan
-                  {
-                  if(strcmp(Inputbuffer_Terminal,S.Password)==0)// als wachtwoord goed is, dan slot er af
-                    {
-                    TerminalLocked=0;
-                    TerminalClient.println("Ok.");
-                    }
-                  else// als foutief wachtwoord, dan teller @1
-                    {
-                    TerminalLocked++;
-                    TerminalClient.println("?");
-                    TerminalClient.print(ProgmemString(Text_03));
-                    if(TerminalLocked>PASSWORD_MAX_RETRY)TerminalLocked=PASSWORD_TIMEOUT; // blokkeer tijd terminal
-                    }
-                  }
+                // we hebben een nieuwe Terminal client
+                TerminalClient=TerminalServer.available();
+                TerminalConnected=TERMINAL_TIMEOUT;
+                Inputbuffer_Terminal[0]=0;
+                TerminalInbyteCounter=0;
+                
+                // Welkomsttekst weergeven, maar TerminalLocked en SerialConnected waarden eerst even veilig stellen
+                x=TerminalLocked;
+                y=SerialConnected;
+                SerialConnected=false;
+                TerminalLocked=0;
+                PrintWelcome();
+                TerminalLocked=x;
+                SerialConnected=y;
+                TerminalClient.flush(); // schoon beginnen.
+                
+                if(TerminalLocked==0)
+                  TerminalLocked=1;
+                  
+                if(TerminalLocked<=PASSWORD_MAX_RETRY)
+                  TerminalClient.print(ProgmemString(Text_03));
                 else
+                  RaiseError(ERROR_10);
+                }
+  
+              if(TerminalClient.available())    
+                {
+                TerminalInByte=TerminalClient.read();
+                if(isprint(TerminalInByte))
+                  Inputbuffer_Terminal[TerminalInbyteCounter++]=TerminalInByte;
+                  
+                if(TerminalInByte==0x03 || TerminalInByte==0x18)
                   {
-                  TerminalClient.println(cmd2str(ERROR_10));
+                  // TerminalSessie timeout, dan de verbinding netjes afsluiten
+                  TerminalClient.println(ProgmemString(Text_30));
+                  delay(100); // geef de client even de gelegenheid de tekst te ontvangen
+                  TerminalClient.flush();
+                  TerminalClient.stop();
+                  TerminalConnected=0;
+                  break;
+                  }
+                  
+                if(TerminalInByte==0x0a || TerminalInByte==0x0d)
+                  {
+                  TerminalConnected=TERMINAL_TIMEOUT;
+                  Inputbuffer_Terminal[TerminalInbyteCounter]=0;
+                  if(TerminalInbyteCounter==0)break; // als de string leeg is, dan niets verwerken.
+                  TerminalInbyteCounter=0;
+  
+                  if(TerminalLocked==0) // als op niet op slot
+                    ExecuteLine(Inputbuffer_Terminal, VALUE_SOURCE_TERMINAL);
+                  else
+                    {
+                    if(TerminalLocked<=PASSWORD_MAX_RETRY)// teller is wachtloop bij herhaaldelijke pogingen foutief wachtwoord. Bij >3 pogingen niet meer toegestaan
+                      {
+                      if(strcmp(Inputbuffer_Terminal,S.Password)==0)// als wachtwoord goed is, dan slot er af
+                        {
+                        TerminalLocked=0;
+                        TerminalClient.println("Ok.");
+                        }
+                      else// als foutief wachtwoord, dan teller @1
+                        {
+                        TerminalLocked++;
+                        TerminalClient.println("?");
+                        TerminalClient.print(ProgmemString(Text_03));
+                        if(TerminalLocked>PASSWORD_MAX_RETRY)TerminalLocked=PASSWORD_TIMEOUT; // blokkeer tijd terminal
+                        }
+                      }
+                    else
+                      {
+                      TerminalClient.println(cmd2str(ERROR_10));
+                      }
+                    }
                   }
                 }
               }
@@ -963,19 +1024,19 @@ void loop()
             {
             do
               {
-              InByte=Serial.read();
-              if(isprint(InByte) && Pos<INPUT_BUFFER_SIZE) // alleen de printbare tekens zijn zinvol.
+              SerialInByte=Serial.read();
+              if(isprint(SerialInByte) && SerialInByteCounter<INPUT_BUFFER_SIZE) // alleen de printbare tekens zijn zinvol.
                 {
                 StaySharpTimer=millis()+SHARP_TIME;      
-                Inputbuffer_Serial[Pos++]=InByte;
+                Inputbuffer_Serial[SerialInByteCounter++]=SerialInByte;
                 }
-              else if(InByte=='\n') 
+              else if(SerialInByte=='\n') 
                 {
                 SerialHold(true);
-                Inputbuffer_Serial[Pos]=0; // serieel ontvangen regel is compleet
+                Inputbuffer_Serial[SerialInByteCounter]=0; // serieel ontvangen regel is compleet
                 SerialConnected=true;
                 ExecuteLine(Inputbuffer_Serial, VALUE_SOURCE_SERIAL);
-                Pos=0;  
+                SerialInByteCounter=0;  
                 Inputbuffer_Serial[0]=0; // serieel ontvangen regel is compleet
                 SerialHold(false);
                 StaySharpTimer=millis()+SHARP_TIME;      
@@ -1002,13 +1063,16 @@ void loop()
           {
           // CLOCK: **************** Lees periodiek de realtime klok uit en check op events  ***********************
           Content=ClockRead(); // Lees de Real Time Clock waarden in de struct Time
-          if(CheckEventlist(Content,VALUE_SOURCE_CLOCK) && EventTimeCodePrevious!=Content)
+          if(Time.Day)//check of de klok we aanwzig is
             {
-            EventTimeCodePrevious=Content; 
-            ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
+            if(CheckEventlist(Content,VALUE_SOURCE_CLOCK) && EventTimeCodePrevious!=Content)
+              {
+              EventTimeCodePrevious=Content; 
+              ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
+              }
+            else
+              Content=0L;
             }
-          else
-            Content=0L;
           break;
           }
 
@@ -1099,14 +1163,19 @@ void loop()
       if(TerminalLocked>PASSWORD_MAX_RETRY)
         if(--TerminalLocked==PASSWORD_MAX_RETRY)TerminalLocked=1;
 
-      if(TerminalConnected)
+      if(TerminalConnected)// Sessie duurt nog TerminalConnected seconden. Als 0 dan is er geen verbinding meer
         {
-        if(--TerminalConnected==0)
+        TerminalConnected--;
+
+        if(!TerminalClient.connected())
+          TerminalConnected=0;
+
+        if(!TerminalConnected)
           {
-          // TerminalSessie timeout, dan de verbinding netjes afsluiten
           TerminalClient.flush();
           TerminalClient.stop();
           }
+          
         }
         
       // loop periodiek langs de userplugin

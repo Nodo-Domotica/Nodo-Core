@@ -335,69 +335,6 @@ boolean SendEventGhost(char* event, byte* SendToIP)
   return false;
   }
     
-  
- /**********************************************************************************************\
- * Deze routine leest een regel die van een terminal client over IP binnenkomt.
- * Timeout is de tijd in milliseconden dat de functie moet wachten op afronding van de verzending
- * door de client. Is Timeout gelijk aan nul, dan is deze functie non-blocking
- * Let op dat het aantal opgegeven tekens in Buffersize niet de werkelijk beschikbare ruimte
- * overschrijdt!
- \*********************************************************************************************/
-int TerminalInByte=0;
-boolean TerminalReceive(char *Buffer)
-  {
-  int InByteIP,x,y;
-  
-  if(TerminalServer.available())
-    {
-    if(!TerminalConnected)
-      {
-      TerminalClient=TerminalServer.available();      // we hebben een nieuwe Terminal client
-      TerminalConnected=TERMINAL_TIMEOUT;
-      TerminalInByte=0;
-      
-      // Welkomsttekst wergeven, maar TerminalLocked en SerialConnected waarden eerst even veilig stellen
-      x=TerminalLocked;
-      y=SerialConnected;
-      SerialConnected=false;
-      TerminalLocked=0;
-      PrintWelcome();
-      TerminalLocked=x;
-      SerialConnected=y;
-
-      TerminalClient.flush(); // schoon beginnen.
-      
-      if(TerminalLocked==0)
-        TerminalLocked=1;
-        
-      if(TerminalLocked<=PASSWORD_MAX_RETRY)
-        TerminalClient.print(ProgmemString(Text_03));
-      else
-        RaiseError(ERROR_10);
-      }
-  
-    if(TerminalClient.available())
-      {
-      InByteIP=TerminalClient.read();
-             
-      if(InByteIP==0x0a || InByteIP==0x0d)
-        {
-        TerminalConnected=TERMINAL_TIMEOUT;
-        Buffer[TerminalInByte]=0;
-        if(TerminalInByte==0)return false; // als de string leeg is, dan niets verwerken.
-        TerminalInByte=0;
-        return true;
-        }
-                 
-      if(isprint(InByteIP))
-        {
-        Buffer[TerminalInByte++]=InByteIP;
-        }
-      }
-    }
-  return false; // geen data gereed of de regel is nog niet compleet
-  }
-
 
  /*******************************************************************************************************\
  * Deze functie verzendt een regel als event naar een EventGhost EventGhostServer. De Payload wordt niet
@@ -510,6 +447,8 @@ boolean ParseHTTPRequest(char* HTTPRequest,char* Keyword, char* ResultString)
   int Keyword_len=strlen(Keyword);
   int HTTPRequest_len=strlen(HTTPRequest);
 
+  ResultString[0]=0;
+  
   if(HTTPRequest_len<10) // doe geen moeite als de string te weinig tekens heeft
     return -1;
   
@@ -523,6 +462,12 @@ boolean ParseHTTPRequest(char* HTTPRequest,char* Keyword, char* ResultString)
     if(y==Keyword_len && HTTPRequest[z]=='=') // als tekst met een opvolgend '=' teken is gevonden
       {
       // Keyword gevonden. sla spaties en '=' teken over.
+      
+      //Test tekens voor Keyword
+Serial.print("*** debug: x=");Serial.println(x,DEC);//??? Debug
+Serial.print("*** debug: y=");Serial.println(y,DEC);//??? Debug
+Serial.print("*** debug: z=");Serial.println(z,DEC);//??? Debug
+      
       while(z<HTTPRequest_len && (HTTPRequest[z]=='=' || HTTPRequest[z]==' '))z++;
 
       x=0; // we komen niet meer terug in de 'for'-loop, daarom kunnen we x hier even gebruiken.
@@ -565,11 +510,12 @@ boolean HTTPReceive(char *Event)
   int InByteCounter;
   char InputBuffer_IP[INPUT_BUFFER_SIZE];//??? kan hier nog wat RAM worden bespaard?
 
+  Event[0]=0; // maak de string leeg.
+  
   EthernetClient HTTPClient = HTTPServer.available();
   if(HTTPClient)
     {
     InByteCounter=0;
-    Event[0]=0;
     
     while(HTTPClient.connected()  && !LineCompleted)
       {
@@ -586,7 +532,7 @@ boolean HTTPReceive(char *Event)
           InputBuffer_IP[InByteCounter]=0;
           InByteCounter=0;
 
-          // Serial.print("*** debug: Request=");Serial.println(InputBuffer_IP);//??? Deb          
+          Serial.print("*** debug: Request=");Serial.println(InputBuffer_IP);//??? Debug
           LineCompleted=true;
             
           if(!RequestCompleted && StringFind(InputBuffer_IP,"GET")!=-1)

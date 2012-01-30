@@ -163,6 +163,18 @@ unsigned long ClockRead(void)
   Time.Hour    =(10*((rtc[DS1307_HR] & DS1307_HI_HR)>>4))+(rtc[DS1307_HR] & DS1307_LO_BCD);
   Time.Day     =rtc[DS1307_DOW] & DS1307_LO_DOW;
 
+  // Het kan zijn als de klok niet aangesloten is, dat er 'rommel' gelezen is. Doe eenvoudige check.
+  if(Time.Minutes>60 || Time.Hour>23 || Time.Day>8 || Time.Month>12 || Time.Date>31)
+    {
+    Time.Day     =0; // De dag wordt gebruikt als checksum of de klok aanwezig is. Deze nooit op 0 als klok juist aangesloten
+    Time.Seconds =0;
+    Time.Minutes =0;
+    Time.Date    =0;
+    Time.Month   =0;
+    Time.Year    =0;
+    Time.Hour    =0;
+    }
+    
   long x=(long)pgm_read_word_near(DLSDate+Time.Year-DLSBase);
   long y=(long)((long)(Time.Date*100L)+(long)(Time.Month*10000L)+(long)Time.Hour);
   Time.DaylightSaving=(y>=((x/100L)*100L+30002L) && y<((x%100L)*100L+100003L));  

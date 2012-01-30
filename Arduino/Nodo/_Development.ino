@@ -1,17 +1,20 @@
 /**************************************************************************************************************************\
 
+STUB VERWIJDEREN! @1 in Singnal!
+
 Known Errors / ToDo:
 
 - Niet zeker of ontvangst IR het wel goed doet. Problemen geconstateerd.
-- Vreemde tijdweergave als RTC niet is aangesloten
 - Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue testen
 - Found in r306: Status WiredAnalog groter dan toegestane poort
-- LogShow gestart vanaf terminalsessie geeft alleen weer op SERIAL. 
+- LogShow gestart vanaf terminalsessie geeft alleen weer op SERIAL.
+- OutputHTTP komt niet voor in status overzicht
 
 Aanpassingen:
 
-- Nodo ontvangt events via http. Voorbeeld: http://192.168.1.110/?event=sound&passwoord=Nodo&id=00000000
-
+- Commando "HTTPRequest" renamed naar "HTTPHost"
+- Vreemde tijdweergave als RTC niet is aangesloten => Softwarematig niet 100% uit te sluiten, maar kans nu wel erg klein gemaakt.
+- Terminalsessie werd niet goed afgesloten waardoor er soms een volledige vastloper ontstond
 
 Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - EventListshow, eventListWrite,eventListErase hebben nu als parameter-1 de regel waar het betrekking op heeft (regel, ALL, 0=All)
@@ -54,7 +57,7 @@ Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - Errors worden nu weergeven met een tekstuele toelichting wat de fout veroorzaakte: "Error=<tekst>". 
 - "Timestamp=" wordt nu iets anders weergegeven als "Date=yyyy-mm-dd, Time=hh:mm".
 - Variabelen worden na wijzigen niet meer automatisch opgeslagen in het EEPROM geheugen. Opslaan kan nu met commando "VariableSave"
-- Toevoeging commando "HTTPRequest <line>". Vul in als "HTTPRequest www.mijnhost.nl/pad/mijnscript.php"
+- Toevoeging commando "HTTPHost <line>". Vul in als "HTTPHost www.mijnhost.nl/pad/mijnscript.php"
 - Tag 'Direction' vervangen door Input, Output, Internal
 - Commando "SendEvent <poort>" toegevoegd. Vervangt oude SendSignal. Stuurt laatst ontvangen event door. Par1 bevat de poort( EventGhost, IR, RF, HTTP, All)
 - Onbekende hex-events worden mogelijk door andere waarde weergegeven a.g.v. filtering aan Nodo gelijke events. ??? wenselijk/noodzakelijk?
