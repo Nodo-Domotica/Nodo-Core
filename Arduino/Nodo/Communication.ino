@@ -108,10 +108,6 @@ boolean EventGhostReceive(char *ResultString)
               // Regel "close", dan afsluiten van de communicatie met EventGhost
 
               EventGhostClient.stop();
-//??? debug
-              if(TemporyEventGhostError)
-                  Serial.println("*** debug: Tijdelijk opgeheven EventGhost communicatie hersteld.");//???
-//??? debug
               TemporyEventGhostError=false; 
               return true;
               }
@@ -341,7 +337,7 @@ boolean SendEventGhost(char* event, byte* SendToIP)
  * gebruikt en is leeg. Er wordt een false teruggegeven als de communicatie met de EventGhost EventGhostServer
  * niet tot stand gebracht kon worden.
  \*******************************************************************************************************/
-boolean SendHTTPRequest(char* event)
+boolean SendHTTPRequest(unsigned long event)
   {
   int InByteCounter;
   byte InByte,x;
@@ -351,8 +347,8 @@ boolean SendHTTPRequest(char* event)
   boolean Ok;
   char s[2];
 
-EthernetServer HTTPServer(HTTP_PORT);                 // Server class voor HTTP sessie.
-EthernetClient HTTPClient;                            // Client class voor HTTP sessie.
+  EthernetServer HTTPServer(HTTP_PORT);                 // Server class voor HTTP sessie.
+  EthernetClient HTTPClient;                            // Client class voor HTTP sessie.
   
   // Haal uit het HTTP request URL de Host. Alles tot aan het '/' teken.
   strcpy(Host,S.HTTPRequest);
@@ -365,26 +361,34 @@ EthernetClient HTTPClient;                            // Client class voor HTTP 
     strcpy(TempString,"GET ");
     strcat(TempString,S.HTTPRequest+x);
     strcat(TempString,"?event=");
+    strcat(TempString,Event2str(event));
     
-    // event toevoegen aan tijdelijke string, echter alle spaties vervangen door + conform URL notatie
-    for(x=0;x<strlen(event);x++)
-      {            
-      if(event[x]==32)
-        strcat(TempString,"%20");
-      else
-        {
-        s[0]=event[x];
-        s[1]=0;
-        strcat(TempString,s);
-        }
-      }      
+//    // event toevoegen aan tijdelijke string, echter alle spaties vervangen door + conform URL notatie
+//    for(x=0;x<strlen(event2str(event));x++)
+//      {            
+//      if(event[x]==32)
+//        strcat(TempString,"%20");
+//      else
+//        {
+//        s[0]=event[x];
+//        s[1]=0;
+//        strcat(TempString,s);
+//        }
+//      }      
+
     strcat(TempString,"&id=");
     strcat(TempString,S.ID);
+    strcat(TempString,"&unit=");
+    strcat(TempString,int2str((event>>24)&0xf));
     strcat(TempString,"&password=");
     strcat(TempString,S.Password);
     strcat(TempString," HTTP/1.1");
     HTTPClient.println(TempString);
-    //??? Serial.print("*** debug: HTTP Request=");Serial.println(TempString);//??? Debug
+    if(S.Debug==VALUE_ON)
+      {
+      Serial.print(F("*** HTTP Request sent="));
+      Serial.println(TempString);
+      }
     strcpy(TempString,"Host: ");
     strcat(TempString,Host);
     HTTPClient.println(TempString);
@@ -408,24 +412,18 @@ EthernetClient HTTPClient;                            // Client class voor HTTP 
           {
           InputBuffer_IP[InByteCounter]=0;
           InByteCounter=0;
-          // Serial.print("*** debug: HTTP Response=");Serial.println(InputBuffer_IP);//??? Debug
-
+          if(S.Debug==VALUE_ON)
+            {
+            Serial.print("*** HTTP received=");
+            Serial.println(InputBuffer_IP);
+            }
           // De regel is binnen          
           if(StringFind(InputBuffer_IP,"HTTP")!=-1)
             {
             // Response n.a.v. HTTP-request is ontvangen
             if(StringFind(InputBuffer_IP,"200")!=-1)
-              {
-              // Serial.println("****** Request received ! *******");
               Ok=true;
-              }
-            else
-              {
-              Serial.println();
-              Serial.print("****** Error: ");            
-              Serial.print(InputBuffer_IP);
-              Serial.println("*******");            
-              }
+
             InputBuffer_IP[InByteCounter]=0;
             }
           }
@@ -459,15 +457,11 @@ boolean ParseHTTPRequest(char* HTTPRequest,char* Keyword, char* ResultString)
       y++;
 
     z=x+y;
-    if(y==Keyword_len && HTTPRequest[z]=='=') // als tekst met een opvolgend '=' teken is gevonden
+    if(y==Keyword_len && HTTPRequest[z]=='=' && (HTTPRequest[x-1]=='?' || HTTPRequest[x-1]=='&' || HTTPRequest[x-1]==' ')) // als tekst met een opvolgend '=' teken is gevonden
       {
       // Keyword gevonden. sla spaties en '=' teken over.
       
       //Test tekens voor Keyword
-Serial.print("*** debug: x=");Serial.println(x,DEC);//??? Debug
-Serial.print("*** debug: y=");Serial.println(y,DEC);//??? Debug
-Serial.print("*** debug: z=");Serial.println(z,DEC);//??? Debug
-      
       while(z<HTTPRequest_len && (HTTPRequest[z]=='=' || HTTPRequest[z]==' '))z++;
 
       x=0; // we komen niet meer terug in de 'for'-loop, daarom kunnen we x hier even gebruiken.
@@ -531,12 +525,16 @@ boolean HTTPReceive(char *Event)
           {
           InputBuffer_IP[InByteCounter]=0;
           InByteCounter=0;
-
-          Serial.print("*** debug: Request=");Serial.println(InputBuffer_IP);//??? Debug
+            
           LineCompleted=true;
             
           if(!RequestCompleted && StringFind(InputBuffer_IP,"GET")!=-1)
             {
+            if(S.Debug==VALUE_ON)
+              {
+              Serial.print(F("*** HTTP Request received="));
+              Serial.println(InputBuffer_IP);
+              }
             if(ParseHTTPRequest(InputBuffer_IP,"password",TempString))
               {
               if(strcmp(S.Password,TempString)!=0)

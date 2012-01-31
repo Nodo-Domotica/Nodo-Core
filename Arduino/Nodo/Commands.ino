@@ -242,6 +242,7 @@ byte CommandError(unsigned long Content)
 
      // par1 alleen On of Off.
      // par2 alleen 0, On of Off.
+    case CMD_TRACE:
     case CMD_TRANSMIT_RF:
     case CMD_TRANSMIT_HTTP:
     case CMD_TRANSMIT_IR:
@@ -466,6 +467,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       case CMD_WAITFREERF: 
         S.WaitFreeRF_Delay=Par1;
         S.WaitFreeRF_Window=Par2;
+        SaveSettings();
+        break;
+
+      case CMD_TRACE: 
+        S.Debug=Par1;
         SaveSettings();
         break;
   
@@ -753,7 +759,7 @@ void ExecuteLine(char *Line, byte Port)
               {
               S.WiredInputSmittTrigger[Par1-1]=str2wiredint(TmpStr);
               SaveSettings();
-              Serial.print("*** debug: SmittTrigger ingesteld op ");Serial.println(wiredint2str(S.WiredInputSmittTrigger[Par1-1]));//??? Debug
+              // Serial.print("*** debug: SmittTrigger ingesteld op ");Serial.println(wiredint2str(S.WiredInputSmittTrigger[Par1-1]));//??? Debug
               }
             break;            
                   

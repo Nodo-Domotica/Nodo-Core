@@ -275,6 +275,7 @@ char* Event2str(unsigned long Code)
       // Par1 als tekst en par2 niet
       case CMD_SEND_EVENT:
       case CMD_ERROR:
+      case CMD_TRACE:
       case CMD_DLS_EVENT:
       case CMD_BUSY:
       case CMD_TRANSMIT_HTTP:
@@ -388,7 +389,7 @@ void PrintIPSettings(void)
     PrintLine(TempString);
 
     // HTTP request line
-    sprintf(TempString,"HTTPRequest=%s",S.HTTPRequest);
+    sprintf(TempString,"HTTPHost=%s",S.HTTPRequest);
     PrintLine(TempString);
 
     // TransmitHTTP

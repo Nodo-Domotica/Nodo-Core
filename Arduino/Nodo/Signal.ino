@@ -279,9 +279,6 @@ boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
   {
   int RawCodeLength=1;
   unsigned long PulseLength;
-
-  return false; //??? @1 STUB...!
-
   
   do{// lees de pulsen in microseconden en plaats deze in een tijdelijke buffer
     PulseLength=WaitForChangeState(DataPin, StateSignal, TimeOut); // meet hoe lang signaal LOW (= PULSE van IR signaal)
@@ -412,7 +409,7 @@ boolean TransmitCode(unsigned long Event, byte Dest)
   if(Dest==VALUE_SOURCE_HTTP || (S.TransmitHTTP==VALUE_ON && Dest==VALUE_ALL))
     {
     PrintEvent(Event,VALUE_SOURCE_HTTP,VALUE_DIRECTION_OUTPUT);
-    SendHTTPRequest(Event2str(Event));
+    SendHTTPRequest(Event);
     }
   }
 

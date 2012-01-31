@@ -119,7 +119,7 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
   int w,x;
 
   // print regel. Als trace aan, dan alle regels die vanuit de eventlist worden verwerkt weergeven
-  if(EventlistDepth>0 && S.Trace)
+  if(EventlistDepth>0 && S.Debug==VALUE_ON)
     PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
 
   if(EventlistDepth++>=MACRO_EXECUTION_DEPTH)
@@ -147,7 +147,7 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
       Eventlist_Read(x,&Event_1,&Event_2);
       if(CheckEvent(IncommingEvent,Event_1,Port))
         {
-        if(S.Trace)
+        if(S.Debug==VALUE_ON)
           {
           PrintEventlistEntry(x,EventlistDepth);
           }

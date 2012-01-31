@@ -68,7 +68,7 @@ prog_char PROGMEM Text_11[] = "Output=";
 prog_char PROGMEM Text_12[] = "Input=";
 prog_char PROGMEM Text_13[] = "Ok.";
 prog_char PROGMEM Text_14[] = "Event=";
-// prog_char PROGMEM Text_15[] = "Booting...";
+prog_char PROGMEM Text_15[] = ""; // reserve
 prog_char PROGMEM Text_16[] = "00000000"; // default ID na een reset
 prog_char PROGMEM Text_17[] = "payload";
 prog_char PROGMEM Text_18[] = "accept";
@@ -111,7 +111,7 @@ prog_char PROGMEM Cmd_021[]="IPSettings";
 prog_char PROGMEM Cmd_022[]="";
 prog_char PROGMEM Cmd_023[]="SimulateDay";
 prog_char PROGMEM Cmd_024[]="Sound";
-prog_char PROGMEM Cmd_025[]="";
+prog_char PROGMEM Cmd_025[]="Debug";
 prog_char PROGMEM Cmd_026[]="UserPlugin";
 prog_char PROGMEM Cmd_027[]="TimerRandom";
 prog_char PROGMEM Cmd_028[]="TimerSetSec";
@@ -143,7 +143,7 @@ prog_char PROGMEM Cmd_053[]="HTTPHost";
 prog_char PROGMEM Cmd_054[]="Status";
 prog_char PROGMEM Cmd_055[]="SendStatus";
 prog_char PROGMEM Cmd_056[]="AnalyseSettings";
-prog_char PROGMEM Cmd_057[]="OutputHTTP"; // nog uitwerken
+prog_char PROGMEM Cmd_057[]="OutputHTTP";
 prog_char PROGMEM Cmd_058[]="OutputIR";
 prog_char PROGMEM Cmd_059[]="OutputRF";
 prog_char PROGMEM Cmd_060[]="OutputEG";
@@ -270,7 +270,7 @@ prog_char PROGMEM Cmd_175[]="All";
 prog_char PROGMEM Cmd_176[]="Output_RAW";//??? nog in gebruik?
 prog_char PROGMEM Cmd_177[]="Nesting"; //??? kan weg?
 prog_char PROGMEM Cmd_178[]="Queue"; //??? kan weg ?
-prog_char PROGMEM Cmd_179[]="Trace"; //??? waar wordt trace nu geregeld? commando of value?
+prog_char PROGMEM Cmd_179[]=""; //??? waar wordt trace nu geregeld? commando of value?
 prog_char PROGMEM Cmd_180[]="";
 prog_char PROGMEM Cmd_181[]="";
 prog_char PROGMEM Cmd_182[]="High";
@@ -330,7 +330,7 @@ prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 #define CMD_res22                       22
 #define CMD_SIMULATE_DAY                23
 #define CMD_SOUND                       24
-#define CMD_RES25                       25
+#define CMD_TRACE                       25
 #define CMD_USERPLUGIN                  26
 #define CMD_TIMER_RANDOM                27
 #define CMD_TIMER_SET_SEC               28
@@ -492,7 +492,7 @@ prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 #define VALUE_DIRECTION_OUTPUT_RAW     176
 #define VALUE_NESTING                  177
 #define VALUE_SOURCE_QUEUE             178
-#define VALUE_TRACE                    179
+#define VALUE_res                      179
 #define VALUE_TIMESTAMP                180
 #define VALUE_RES181                   181
 #define VALUE_HIGH                     182
@@ -641,7 +641,7 @@ struct Settings
   byte    WaitFreeRF_Delay;
   byte    SendBusy;
   byte    WaitBusy;
-  boolean Trace;                                            // Weergeven van extra gegevens t.b.v. beter inzicht verloop van de verwerking
+  byte    Debug;                                            // Weergeven van extra gegevens t.b.v. beter inzicht verloop van de verwerking
   boolean DaylightSaving;                                   // Vlag die aangeeft of het zomertijd of wintertijd is
   int     DaylightSavingSet;                                // Vlag voor correct automatisch kunnen overschakelen van zomertijd naar wintertijd of vice-versa
   char    Password[25];                                     // String met wachtwoord.
@@ -1079,12 +1079,15 @@ void loop()
         case 1:
           {    
           // DAYLIGHT: **************** Check zonsopkomst & zonsondergang  ***********************
-          SetDaylight();
-          if(Time.Daylight!=DaylightPrevious)// er heeft een zonsondergang of zonsopkomst event voorgedaan
+          if(Time.Day)
             {
-            Content=command2event(CMD_CLOCK_EVENT_DAYLIGHT,Time.Daylight,0L);
-            DaylightPrevious=Time.Daylight;
-            ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
+            SetDaylight();
+            if(Time.Daylight!=DaylightPrevious)// er heeft een zonsondergang of zonsopkomst event voorgedaan
+              {
+              Content=command2event(CMD_CLOCK_EVENT_DAYLIGHT,Time.Daylight,0L);
+              DaylightPrevious=Time.Daylight;
+              ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
+              }
             }
           break;
           }
