@@ -1,3 +1,4 @@
+#define IP_INPUT_BUFFER_SIZE      512
 #define XON                       0x11
 #define XOFF                      0x13
 
@@ -17,42 +18,6 @@ void SerialHold(boolean x)
     }
   }
   
- /*******************************************************************************************************\
- * Deze functie luistert naar de seriële poort en vult de globale array SerialBuffer[]
- * Als een complete regel ontvangen (afgesloten met CR / LF) is wordt true teruggeven.
- \*******************************************************************************************************/
-int GetLineSerial(char *Buffer)
-  {
-  #define SERIAL_TIMEOUT 10000 
-    
-  if(!Serial.available())
-    return false;
-
-  unsigned long TimeoutTimer=millis()+SERIAL_TIMEOUT;
-  int InByte;
-  int Pos=0;  
-
-  while(millis()<TimeoutTimer)
-    {
-    if(Serial.available())
-      {
-      InByte=Serial.read();
-      if(isprint(InByte) && Pos<INPUT_BUFFER_SIZE) // alleen de printbare tekens zijn zinvol.
-        {
-        Buffer[Pos++]=InByte;
-        TimeoutTimer=millis()+SERIAL_TIMEOUT;
-        }
-      else if(InByte=='\n') 
-        {
-        Buffer[Pos]=0; // serieel ontvangen regel is compleet
-        return true; // Regel gereed
-        }
-      }
-    }
-  Buffer[Pos]=0; // serieel ontvangen regel is compleet
-  return false; // er stonden geen tekens klaar in de serial buffer.
-  }
-
 
  /**********************************************************************************************\
  * Deze routine leest een regel die van een willekeurige EventGhostClient over IP binnenkomt.
@@ -68,8 +33,8 @@ boolean EventGhostReceive(char *ResultString)
   int InByteIP,InByteIPCount=0;
   byte EGState=0;
   int x,y,z;
-  char str_2[INPUT_BUFFER_SIZE];
-  char IPInputBuffer[INPUT_BUFFER_SIZE];//??? kan hier nog wat RAM worden bespaard?
+  char str_2[INPUT_BUFFER_SIZE+1];
+  char IPInputBuffer[INPUT_BUFFER_SIZE+1];//??? kan hier nog wat RAM worden bespaard?
   char Cookie[8];
 
 
@@ -342,60 +307,63 @@ boolean SendHTTPRequest(unsigned long event)
   int InByteCounter;
   byte InByte,x;
   unsigned long TimeoutTimer;
-  char InputBuffer_IP[INPUT_BUFFER_SIZE];
-  char Host[INPUT_BUFFER_SIZE];//??? kan hier op worden bespaard?
+  char *IPBuffer;
+  char *Host;
   boolean Ok;
   char s[2];
 
   EthernetServer HTTPServer(HTTP_PORT);                 // Server class voor HTTP sessie.
   EthernetClient HTTPClient;                            // Client class voor HTTP sessie.
+
+  IPBuffer=(char*)malloc(IP_INPUT_BUFFER_SIZE+1);
+  Host=(char*)malloc(INPUT_BUFFER_SIZE+1);
   
   // Haal uit het HTTP request URL de Host. Alles tot aan het '/' teken.
   strcpy(Host,S.HTTPRequest);
   x=StringFind(Host,"/");
   Host[x]=0;
-  // Serial.print("*** debug: Host=");Serial.println(Host);//??? Debug
 
   if(HTTPClient.connect(Host,HTTP_PORT))
     {
-    strcpy(TempString,"GET ");
-    strcat(TempString,S.HTTPRequest+x);
-    strcat(TempString,"?event=");
-    strcat(TempString,Event2str(event));
-    
-//    // event toevoegen aan tijdelijke string, echter alle spaties vervangen door + conform URL notatie
-//    for(x=0;x<strlen(event2str(event));x++)
-//      {            
-//      if(event[x]==32)
-//        strcat(TempString,"%20");
-//      else
-//        {
-//        s[0]=event[x];
-//        s[1]=0;
-//        strcat(TempString,s);
-//        }
-//      }      
+    strcpy(IPBuffer,"GET ");
+    strcat(IPBuffer,S.HTTPRequest+x);
+    strcat(IPBuffer,"?event=");
 
+    strcpy(TempString,Event2str(event));
     strcat(TempString,"&id=");
     strcat(TempString,S.ID);
-    strcat(TempString,"&unit=");
-    strcat(TempString,int2str((event>>24)&0xf));
     strcat(TempString,"&password=");
     strcat(TempString,S.Password);
-    strcat(TempString," HTTP/1.1");
-    HTTPClient.println(TempString);
+    
+    // event toevoegen aan tijdelijke string, echter alle spaties vervangen door + conform URL notatie ??? nodig?  
+    for(x=0;x<strlen(TempString);x++)
+      {            
+      if(TempString[x]==32)
+        strcat(IPBuffer,"%20");
+      else
+        {
+        s[0]=TempString[x];
+        s[1]=0;
+        strcat(IPBuffer,s);
+        }
+      }      
+
+    strcat(IPBuffer," HTTP/1.1");
+    HTTPClient.println(IPBuffer);
+
     if(S.Debug==VALUE_ON)
       {
-      Serial.print(F("*** HTTP Request sent="));
-      Serial.println(TempString);
+      Serial.print("*** debug: HTTP Request=");
+      Serial.println(IPBuffer);
       }
-    strcpy(TempString,"Host: ");
-    strcat(TempString,Host);
-    HTTPClient.println(TempString);
+
+    strcpy(IPBuffer,"Host: ");
+    strcat(IPBuffer,Host);
+    HTTPClient.println(IPBuffer);
     HTTPClient.println();
 
     TimeoutTimer=millis()+2000;
-    InputBuffer_IP[0]=0;
+    IPBuffer[0]=0;
     InByteCounter=0;
     
     Ok=false;
@@ -406,30 +374,42 @@ boolean SendHTTPRequest(unsigned long event)
         InByte=HTTPClient.read();
         
         if(isprint(InByte) && InByteCounter<INPUT_BUFFER_SIZE)
-          InputBuffer_IP[InByteCounter++]=InByte;
+          IPBuffer[InByteCounter++]=InByte;
           
         else if(InByte==0x0D || InByte==0x0A)
           {
-          InputBuffer_IP[InByteCounter]=0;
+          IPBuffer[InByteCounter]=0;
           InByteCounter=0;
           if(S.Debug==VALUE_ON)
             {
-            Serial.print("*** HTTP received=");
-            Serial.println(InputBuffer_IP);
+            Serial.print("*** debug: HTTP Response=");
+            Serial.println(IPBuffer);//??? Debug
             }
+
           // De regel is binnen          
-          if(StringFind(InputBuffer_IP,"HTTP")!=-1)
+          if(StringFind(IPBuffer,"HTTP")!=-1)
             {
             // Response n.a.v. HTTP-request is ontvangen
-            if(StringFind(InputBuffer_IP,"200")!=-1)
+            if(StringFind(IPBuffer,"200")!=-1)
+              {
+              // Serial.println("****** Request received ! *******");
               Ok=true;
-
-            InputBuffer_IP[InByteCounter]=0;
+              }
+            else
+              {
+              Serial.println();
+              Serial.print("****** Error sending HTTP Request: "); /// ??? Nog mooi weergeven en loggen.
+              Serial.print(IPBuffer);
+              Serial.println("*******");            
+              }
+            IPBuffer[InByteCounter]=0;
             }
           }
         }
       }
     }
+  free(Host);
+  free(IPBuffer);
   HTTPClient.stop();
   return Ok;
   }
@@ -502,7 +482,10 @@ boolean HTTPReceive(char *Event)
   boolean RequestCompleted=false;  
   boolean LineCompleted=false;
   int InByteCounter;
-  char InputBuffer_IP[INPUT_BUFFER_SIZE];//??? kan hier nog wat RAM worden bespaard?
+  
+  // reserver een inputbuffer
+  char *InputBuffer_IP;
+  InputBuffer_IP=(char*)malloc(IP_INPUT_BUFFER_SIZE+1);
 
   Event[0]=0; // maak de string leeg.
   
@@ -518,7 +501,7 @@ boolean HTTPReceive(char *Event)
         InByte=HTTPClient.read();
         // Serial.write(InByte);//??? Debug
       
-        if(isprint(InByte) && InByteCounter<INPUT_BUFFER_SIZE)
+        if(isprint(InByte) && InByteCounter<IP_INPUT_BUFFER_SIZE)
           InputBuffer_IP[InByteCounter++]=InByte;
     
         else if((InByte==0x0D || InByte==0x0A))
@@ -571,6 +554,7 @@ boolean HTTPReceive(char *Event)
     }
   delay(1);  // give the web browser time to receive the data
   HTTPClient.stop();
+  free(InputBuffer_IP);
   return RequestCompleted;
   }
 

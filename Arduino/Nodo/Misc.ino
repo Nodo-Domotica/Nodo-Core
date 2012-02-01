@@ -279,7 +279,7 @@ void ResetFactory(void)
     S.WiredInput_Calibration_IH[x]=1023;
     S.WiredInput_Calibration_IL[x]=0;
     S.WiredInput_Calibration_OH[x]=10000;
-    S.WiredInput_Calibration_OL[x]-0;
+    S.WiredInput_Calibration_OL[x]=0;
     }
 
   // maak alle variabelen leeg

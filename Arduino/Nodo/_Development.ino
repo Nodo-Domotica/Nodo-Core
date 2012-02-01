@@ -1,21 +1,16 @@
 /**************************************************************************************************************************\
 
+Aanpassingen:
+
+- Issue 245: analoge input kan verkeerde waarde krijgen
+- Issue 241: Nodo loopt vast bij meerdere commando's via HTTP
+
 Known Errors / ToDo:
 
 - Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue testen
 - Found in r306: Status WiredAnalog groter dan toegestane poort
 - OutputHTTP komt niet voor in status overzicht
 
-Aanpassingen:
-
-- Commando "HTTPRequest" renamed naar "HTTPHost"
-- Vreemde tijdweergave als RTC niet is aangesloten => Softwarematig niet 100% uit te sluiten, maar kans nu wel erg klein gemaakt.
-- Klok gerelateerde commando's niet meer met status uitvraagbaar als er geen RC klok aanwezig is.
-- Terminalsessie werd niet goed afgesloten waardoor er soms een volledige vastloper ontstond
-- Commando "Debug" toegevoegd. Geeft extra informatie over de verwerking van events door de Nodo. Was vroeger de parameter "Trace" van het vervallen commando "Display"
-- Unitnummer uit event toegevoegd aan HTTP request
-- Binnen de HTTP reguest geen + of %20 meer, maar gewoon spaties.
-- Als "Debug On" verstuurd, dan worden ontvangen HTTP requests en regels weergegeven.
 
 Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - EventListshow, eventListWrite,eventListErase hebben nu als parameter-1 de regel waar het betrekking op heeft (regel, ALL, 0=All)

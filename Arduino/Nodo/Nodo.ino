@@ -597,7 +597,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define BAUD                     19200 // Baudrate voor seriële communicatie.
 #define SERIAL_TERMINATOR_1       0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>, default voor EventGhost
 #define SERIAL_TERMINATOR_2       0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
-#define INPUT_BUFFER_SIZE           80 // Buffer waar de karakters van de seriele/IP poort in worden opgeslagen.
+#define INPUT_BUFFER_SIZE          128 // Buffer waar de karakters van de seriele/IP poort in worden opgeslagen.
 #define TIMER_MAX                   16 // aantal beschikbare timers voor de user, gerekend vanaf 
 #define Loop_INTERVAL_1              5 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
 #define Loop_INTERVAL_2            100 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
@@ -670,7 +670,7 @@ uint8_t MD5HashCode[16];                                    // tabel voor bereke
 boolean SDCardPresent = false;                              // Vlag die aangeeft of er een SDCard is gevonden die kan worden beschreven.
 boolean EthernetEnabled = false;                            // Vlag die aangeeft of er een Ethernetverbinding is.
 byte UserVar[USER_VARIABLES_MAX];
-char TempString[INPUT_BUFFER_SIZE];                         // Globale, tijdelijke string voor algemeen gebruik in diverste functies. ??? Nodig?
+char TempString[INPUT_BUFFER_SIZE+1];                         // Globale, tijdelijke string voor algemeen gebruik in diverste functies. ??? Nodig?
 int TerminalConnected=0;                                    // Vlag geeft aan of en hoe lang nog (seconden) er verbinding is met een Terminal.
 boolean SerialConnected=true;                               // Vlag geeft aan of er een verbinding USB-poort.
 boolean TemporyEventGhostError=false;                       // Vlag om tijdelijk evetghost verzending stil te leggen na een communicatie probleem
@@ -805,9 +805,9 @@ void loop()
   
   SerialHold(false); // er mogen weer tekens binnen komen van SERIAL
 
-  char Inputbuffer_Serial[INPUT_BUFFER_SIZE];                 // Buffer voor input Seriele date
-  char InputBuffer_IP[INPUT_BUFFER_SIZE];                     // Buffer voor input EventGhsot events
-  char Inputbuffer_Terminal[INPUT_BUFFER_SIZE];               // Buffer voor input terminal verbinding Telnes sessie
+  char InputBuffer_Serial[INPUT_BUFFER_SIZE+1];                 // Buffer voor input Seriele data
+  char InputBuffer_Terminal[INPUT_BUFFER_SIZE+1];               // Buffer voor input terminal verbinding Telnes sessie
+  char InputBuffer_IP[INPUT_BUFFER_SIZE+1];                     // Buffer voor input HTTP en EventGhost events
 
   // hoofdloop: scannen naar signalen
   // dit is een tijdkritische loop die wacht tot binnengekomen event op IR, RF, SERIAL, CLOCK, DAYLIGHT, TIMER, etc
@@ -926,7 +926,7 @@ void loop()
                 // we hebben een nieuwe Terminal client
                 TerminalClient=TerminalServer.available();
                 TerminalConnected=TERMINAL_TIMEOUT;
-                Inputbuffer_Terminal[0]=0;
+                InputBuffer_Terminal[0]=0;
                 TerminalInbyteCounter=0;
                 
                 // Welkomsttekst weergeven, maar TerminalLocked en SerialConnected waarden eerst even veilig stellen
@@ -952,7 +952,7 @@ void loop()
                 {
                 TerminalInByte=TerminalClient.read();
                 if(isprint(TerminalInByte))
-                  Inputbuffer_Terminal[TerminalInbyteCounter++]=TerminalInByte;
+                  InputBuffer_Terminal[TerminalInbyteCounter++]=TerminalInByte;
                   
                 if(TerminalInByte==0x03 || TerminalInByte==0x18)
                   {
@@ -968,17 +968,17 @@ void loop()
                 if(TerminalInByte==0x0a || TerminalInByte==0x0d)
                   {
                   TerminalConnected=TERMINAL_TIMEOUT;
-                  Inputbuffer_Terminal[TerminalInbyteCounter]=0;
+                  InputBuffer_Terminal[TerminalInbyteCounter]=0;
                   if(TerminalInbyteCounter==0)break; // als de string leeg is, dan niets verwerken.
                   TerminalInbyteCounter=0;
   
                   if(TerminalLocked==0) // als op niet op slot
-                    ExecuteLine(Inputbuffer_Terminal, VALUE_SOURCE_TERMINAL);
+                    ExecuteLine(InputBuffer_Terminal, VALUE_SOURCE_TERMINAL);
                   else
                     {
                     if(TerminalLocked<=PASSWORD_MAX_RETRY)// teller is wachtloop bij herhaaldelijke pogingen foutief wachtwoord. Bij >3 pogingen niet meer toegestaan
                       {
-                      if(strcmp(Inputbuffer_Terminal,S.Password)==0)// als wachtwoord goed is, dan slot er af
+                      if(strcmp(InputBuffer_Terminal,S.Password)==0)// als wachtwoord goed is, dan slot er af
                         {
                         TerminalLocked=0;
                         TerminalClient.println("Ok.");
@@ -1007,7 +1007,7 @@ void loop()
           {        
           if(EthernetEnabled)
             {
-            // HTTP-request : *************** kijk of er een HTTP-request  binnenkomt **********************    
+            // HTTP-request : *************** kijk of er een HTTP-request binnenkomt **********************    
             if(HTTPServer.available())
               {
               if(HTTPReceive(InputBuffer_IP)) //??? Variabele InputBuffer_IP hier even geleend.
@@ -1028,16 +1028,16 @@ void loop()
               if(isprint(SerialInByte) && SerialInByteCounter<INPUT_BUFFER_SIZE) // alleen de printbare tekens zijn zinvol.
                 {
                 StaySharpTimer=millis()+SHARP_TIME;      
-                Inputbuffer_Serial[SerialInByteCounter++]=SerialInByte;
+                InputBuffer_Serial[SerialInByteCounter++]=SerialInByte;
                 }
               else if(SerialInByte=='\n') 
                 {
                 SerialHold(true);
-                Inputbuffer_Serial[SerialInByteCounter]=0; // serieel ontvangen regel is compleet
+                InputBuffer_Serial[SerialInByteCounter]=0; // serieel ontvangen regel is compleet
                 SerialConnected=true;
-                ExecuteLine(Inputbuffer_Serial, VALUE_SOURCE_SERIAL);
+                ExecuteLine(InputBuffer_Serial, VALUE_SOURCE_SERIAL);
                 SerialInByteCounter=0;  
-                Inputbuffer_Serial[0]=0; // serieel ontvangen regel is compleet
+                InputBuffer_Serial[0]=0; // serieel ontvangen regel is compleet
                 SerialHold(false);
                 StaySharpTimer=millis()+SHARP_TIME;      
                 }
