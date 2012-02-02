@@ -43,6 +43,8 @@ $userId = $row['id'];
  if($userId > 0) {
  
 			 if (isset($_GET['event'])){
+			 
+			 
 
 			 //Event in nodo_tbl_event_log opslaan
 			 

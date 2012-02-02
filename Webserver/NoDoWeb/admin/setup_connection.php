@@ -91,7 +91,7 @@ $nodo_id = $unique_ref;
 else 
 {
 mysql_select_db($database_tc, $tc);
-$result = mysql_query("SELECT * FROM NODO_tbl_users WHERE id='$userId'") or die(mysql_error());  
+$result = mysql_query("SELECT * FROM nodo_tbl_users WHERE id='$userId'") or die(mysql_error());  
 $row = mysql_fetch_array($result);
 }?>
 

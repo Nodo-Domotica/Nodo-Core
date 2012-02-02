@@ -119,7 +119,7 @@ switch ($type)
 			
 			<div  data-role="fieldcontain" id="element-distSlider">
 			<label  id="distSlider-label" for="distSlider">Dim: </label>
-			<input  name="distSlider" id="distSlider<?php echo $row_RSswitch['id']; ?>" value="0" min="0" max="16" data-type="range" onChange='update_distance_timer_<?php echo $row_RSswitch['id']; ?>()'>
+			<input  name="distSlider" id="distSlider<?php echo $row_RSswitch['id']; ?>" value="1" min="1" max="16" data-type="range" onChange='update_distance_timer_<?php echo $row_RSswitch['id']; ?>()'>
 			</div>
 			<!-- /Dim slider -->
 

@@ -12,8 +12,8 @@ $totalRows_RSdevice = mysql_num_rows($RSdevice);
 ?>
 <?php if ($row_RSdevice != NULL){
 do { ?>document.getElementById('switch_<?php echo $row_RSdevice['id'];?>').innerHTML = <?php 
-   if ($row_RSdevice['status'] == 0){ echo "'<IMG SRC=\"/media/off.png\" WIDTH=20 ALIGN=right>';"; } 
-		else {echo "'<IMG SRC=\"/media/on.png\" WIDTH=20 ALIGN=right>';";}
+   if ($row_RSdevice['status'] == 0){ echo "'<IMG SRC=\"media/off.png\" WIDTH=20 ALIGN=right>';"; } 
+		else {echo "'<IMG SRC=\"media/on.png\" WIDTH=20 ALIGN=right>';";}
 	?>
 <?php } while ($row_RSdevice = mysql_fetch_assoc($RSdevice)); }?>
 <?php

@@ -1,7 +1,7 @@
 <?php
 
-require_once('/connections/tc.php'); 
-require_once('/include/auth.php'); 
+require_once('connections/tc.php'); 
+require_once('include/auth.php'); 
 
 
 mysql_select_db($database_tc, $tc); 
@@ -28,7 +28,7 @@ $nodo_id = $rowUsers['nodo_id'];
 $nodo_password = $rowUsers['nodo_password'];
 
 if ($id_1 != NULL) { 
-//get_data('http://'.$row['host'].':'.$row['port']."/?$id_1");
+
 get_data("http://$nodo_ip:$nodo_port/?event=$id_1&password=$nodo_password&id=$nodo_id");
 }
 
