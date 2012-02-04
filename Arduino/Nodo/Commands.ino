@@ -56,6 +56,7 @@ byte CommandError(unsigned long Content)
   switch(Command)
     {
     //test; geen, altijd goed
+    case CMD_VARIABLE_SET:   //??? nog afvangen bij foute invoer
     case CMD_IP_SETTINGS:
     case CMD_RAWSIGNAL_SAVE:
     case CMD_RAWSIGNAL_SEND:
@@ -105,7 +106,6 @@ byte CommandError(unsigned long Content)
       if(Par2!=0)return ERROR_02;    
       return false; 
       
-    case CMD_VARIABLE_SET:   
     case CMD_TIMER_SET_SEC:
     case CMD_TIMER_SET_MIN:
       if(Par1>USER_VARIABLES_MAX)return ERROR_02;
@@ -118,12 +118,10 @@ byte CommandError(unsigned long Content)
     case CMD_BREAK_ON_VAR_MORE:
     case CMD_BREAK_ON_VAR_LESS:
     case CMD_BREAK_ON_VAR_EQU:
-      if(Par1<1 || Par1>USER_VARIABLES_MAX)return ERROR_02;
+//      if(Par1<1 || Par1>USER_VARIABLES_MAX)return ERROR_02; nog afvangen n.a.v. analoog maken.
       return false;
       
     // test:Par1 en Par2 binnen bereik maximaal beschikbare variabelen
-    case CMD_VARIABLE_USEREVENT:
-    case CMD_VARIABLE_SEND_USEREVENT:
     case CMD_VARIABLE_VARIABLE:
       if(Par1<1 || Par1>USER_VARIABLES_MAX)return ERROR_02;
       if(Par2<1 || Par2>USER_VARIABLES_MAX)return ERROR_02;
@@ -160,7 +158,12 @@ byte CommandError(unsigned long Content)
     case CMD_CLOCK_DOW:
       if(Par1<1 || Par1>7)return ERROR_02;
       return false;
-       
+
+    case CMD_WIREDANALOG_VARIABLE:
+      if(Par1<1 || Par1>WIRED_PORTS)return ERROR_02;
+      if(Par2<1 || Par2>USER_VARIABLES_MAX)return ERROR_02;
+      return false;
+      
     // test:Par1 binnen bereik maximaal beschikbare wired poorten.
     case CMD_WIRED_IN_EVENT:
     case CMD_WIRED_ANALOG:
@@ -275,7 +278,7 @@ byte CommandError(unsigned long Content)
 boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousContent, int PreviousSrc)
   {
   unsigned long Event, Action;  
-  int x,y;
+  int x,y,z;
 
   byte error        = false;
   byte Command      = (Content>>16)&0xff;
@@ -307,70 +310,75 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         TransmitCode(command2event(CMD_KAKU_NEW,Par1,Par2),VALUE_ALL);
         break;
         
-      case CMD_VARIABLE_INC: 
-        if((UserVar[Par1-1]+Par2)<=255) // alleen ophogen als variabele nog niet de maximale waarde heeft.
-          UserVar[Par1-1]+=Par2;
+      case CMD_VARIABLE_INC:
+        Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
+        z=UserVar[y]+x;
+        if(abs(z)<=10000)
+          UserVar[y]+=x;
         break;        
   
       case CMD_VARIABLE_DEC: 
-        if((UserVar[Par1-1]-Par2)>=0) // alleen decrement als variabele hierdoor niet negatief wordt
-          UserVar[Par1-1]-=Par2;
+        Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
+        z=UserVar[y]-x;
+        if(abs(z)<=10000)
+          UserVar[y]-=x;
         break;        
   
       case CMD_VARIABLE_SAVE:   
-        for(byte x=0;x<USER_VARIABLES_MAX;x++)
-          S.UserVar[x]=UserVar[x];
+        if(Par1==0)
+          for(x=0;x<USER_VARIABLES_MAX;x++)
+            S.UserVar[x]=UserVar[x];
+        else
+          S.UserVar[Par1]=UserVar[Par1];            
         SaveSettings();
         break;        
     
-      case CMD_VARIABLE_SET:   
-        if(Par1==0)
-          for(byte x=0;x<USER_VARIABLES_MAX;x++)
-            UserVar[x]=Par2;
+      case CMD_VARIABLE_SET:
+        Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
+        if(y==0)
+          for(z=0;z<USER_VARIABLES_MAX;z++)
+            UserVar[z]=x;
         else
-          UserVar[Par1-1]=Par2;
+          UserVar[y-1]=x;
         break;        
     
+      case CMD_WIREDANALOG_VARIABLE:
+        UserVar[Par2-1]=map(analogRead(PIN_WIRED_IN_1+Par1-1),S.WiredInput_Calibration_IL[Par1-1],S.WiredInput_Calibration_IH[Par1-1],S.WiredInput_Calibration_OL[Par1-1],S.WiredInput_Calibration_OH[Par1-1]);
+        break;
+        
       case CMD_VARIABLE_VARIABLE:
         UserVar[Par1-1]=UserVar[Par2-1];
         break;        
   
       case CMD_BREAK_ON_VAR_EQU:
-        if(UserVar[Par1-1]==Par2)
+        Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
+        if(UserVar[y-1]==x)
           error=true;
         break;
         
       case CMD_BREAK_ON_VAR_NEQU:
-        if(UserVar[Par1-1]!=Par2)
+        Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
+        if(UserVar[y-1]!=x)
           error=true;
-        break;        
+        break;
   
       case CMD_BREAK_ON_VAR_MORE:
-        if(UserVar[Par1-1]>Par2)
+        Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
+        if(UserVar[y-1]>x)
           error=true;
-        break;        
-  
+        break;
+
       case CMD_BREAK_ON_VAR_LESS:
-        if(UserVar[Par1-1]<Par2)
+        Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
+        if(UserVar[y-1]<x)
           error=true;
-        break;  
+        break;
   
       case CMD_SEND_USEREVENT:
         // Voeg Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
         TransmitCode(command2event(CMD_USEREVENT,Par1,Par2),VALUE_ALL);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
         break;
   
-      case CMD_VARIABLE_SEND_USEREVENT:
-        // Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
-        TransmitCode(command2event(CMD_USEREVENT,UserVar[Par1-1],UserVar[Par2-1])&0xf0ffffff,VALUE_ALL);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
-        break;
-
-      case CMD_VARIABLE_USEREVENT:
-        // stel een nieuw userevent samen uit twee variabelen en voer deze uit.
-        Event=command2event(CMD_USEREVENT,UserVar[Par1-1],UserVar[Par2-1])&0xf0ffffff;
-        ProcessEvent(Event,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM,0,0);
-        break;
-
       case CMD_SIMULATE_DAY:
         if(Par1==0)Par1=1;
         SimulateDay(Par1); 
@@ -533,15 +541,16 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         #endif
         break;        
 
+
       case CMD_WIRED_THRESHOLD:
         // Dit commando wordt ook afgevangen in ExecuteLine(). Hier opgenomen i.g.v. ontvangst via RF of IR
-        S.WiredInputThreshold[Par1-1]=event2wiredint(Content);
+        S.WiredInputThreshold[Par1-1]=event2AnalogInt(Content);
         SaveSettings();
         break;                  
         
       case CMD_WIRED_SMITTTRIGGER:
         // Dit commando wordt ook afgevangen in ExecuteLine(). Hier opgenomen i.g.v. ontvangst via RF of IR
-        S.WiredInputSmittTrigger[Par1-1]=event2wiredint(Content);
+        S.WiredInputSmittTrigger[Par1-1]=event2AnalogInt(Content);
         SaveSettings();
         break;                  
 
@@ -747,18 +756,18 @@ void ExecuteLine(char *Line, byte Port)
           case CMD_WIRED_THRESHOLD:
             if(GetArgv(Command,TmpStr,3))
               {
-              S.WiredInputThreshold[Par1-1]=str2wiredint(TmpStr);
+              S.WiredInputThreshold[Par1-1]=str2AnalogInt(TmpStr);
               SaveSettings();
-              Serial.print("*** debug: Threshold ingesteld op ");Serial.println(wiredint2str(S.WiredInputThreshold[Par1-1]));//??? Debug
+              // Serial.print("*** debug: Threshold ingesteld op ");Serial.println(AnalogInt2str(S.WiredInputThreshold[Par1-1]));//??? Debug
               }
             break;                  
             
           case CMD_WIRED_SMITTTRIGGER:
             if(GetArgv(Command,TmpStr,3))
               {
-              S.WiredInputSmittTrigger[Par1-1]=str2wiredint(TmpStr);
+              S.WiredInputSmittTrigger[Par1-1]=str2AnalogInt(TmpStr);
               SaveSettings();
-              // Serial.print("*** debug: SmittTrigger ingesteld op ");Serial.println(wiredint2str(S.WiredInputSmittTrigger[Par1-1]));//??? Debug
+              // Serial.print("*** debug: SmittTrigger ingesteld op ");Serial.println(AnalogInt2str(S.WiredInputSmittTrigger[Par1-1]));//??? Debug
               }
             break;            
                   
@@ -771,14 +780,14 @@ void ExecuteLine(char *Line, byte Port)
               if(Par2==VALUE_HIGH)
                 {
                 S.WiredInput_Calibration_IH[Par1-1]=t;
-                S.WiredInput_Calibration_OH[Par1-1]=str2wiredint(TmpStr);
-                //??? Serial.print("*** debug: Calibratie voltooid. IH=");Serial.print(t,DEC);Serial.print(", OH=");Serial.println(wiredint2str(S.WiredInput_Calibration_OH[Par1-1]));//??? Debug
+                S.WiredInput_Calibration_OH[Par1-1]=str2AnalogInt(TmpStr);
+                //??? Serial.print("*** debug: Calibratie voltooid. IH=");Serial.print(t,DEC);Serial.print(", OH=");Serial.println(AnalogInt2str(S.WiredInput_Calibration_OH[Par1-1]));//??? Debug
                 }
               if(Par2==VALUE_LOW)
                 {
                 S.WiredInput_Calibration_IL[Par1-1]=t;
-                S.WiredInput_Calibration_OL[Par1-1]=str2wiredint(TmpStr);
-                //??? Serial.print("*** debug: Calibratie voltooid. IL=");Serial.print(t,DEC);Serial.print(", OL=");Serial.println(wiredint2str(S.WiredInput_Calibration_OL[Par1-1]));//??? Debug
+                S.WiredInput_Calibration_OL[Par1-1]=str2AnalogInt(TmpStr);
+                //??? Serial.print("*** debug: Calibratie voltooid. IL=");Serial.print(t,DEC);Serial.print(", OL=");Serial.println(AnalogInt2str(S.WiredInput_Calibration_OL[Par1-1]));//??? Debug
                 }
               }
             v=0;
@@ -866,6 +875,17 @@ void ExecuteLine(char *Line, byte Port)
               }
             break;
             }
+            
+          case CMD_BREAK_ON_VAR_EQU:
+          case CMD_BREAK_ON_VAR_LESS:
+          case CMD_BREAK_ON_VAR_MORE:
+          case CMD_BREAK_ON_VAR_NEQU:
+          case CMD_VARIABLE_DEC:
+          case CMD_VARIABLE_SET:
+          case CMD_VARIABLE_INC:
+            if(GetArgv(Command,TmpStr,3));        
+              v=AnalogInt2event(str2AnalogInt(TmpStr), Par1, Cmd);      // verwerk binnengekomen event.            
+            break;
             
           default:
             {              

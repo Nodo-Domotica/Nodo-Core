@@ -2,16 +2,13 @@
 
 Aanpassingen:
 
-- Bug opgelost dat bij openstaande telnet sessie heen HTTP events worden verzonden.
-- Bij ontvangst van een HTTP event wordt nu ook het IP adres getoond en gelogd.
-- bij verzenden HTTP wordt nu ook IP adres getoond en gelogd.
-- bij verzenden HTTP wordt nu ook unit nummer van het event meegegeven;
-- bij verzenden HTTP wordt nu ook versienummer van de Nodo meegegeven;
-- Commando "OutputHTTP" en "OutputEG" vervangen door "OutputIP <http | EventGhost>"
-- commando "Port" toegevoed voor instellen van de IP-poort.
-- Bij ontvangst van event van een TelnetSessie wordt nu ook het IP adres weergegeven en gelogd.
-- Commando "EventGhostServer" toegevoegd. Hiermee kun je het IP adres van een EG-server opgeven waar events naar toe moeten worden verstuurd. 'Auto,On' slaat laatste client op als een server.
-- Bij weergave van een regel uit de Eventlist wordt nu "Eventlist <nummer>" weergegeven i.p.v. "EventlistWrite <nummer>"
+- Alle commando's die werken met gebruikersvariabelen zijn geschikt gemaakt voor bereik van +100..-100
+- Toevoeging commando "WiredAnalogVariable <wiredpoort>,<variabele>". Kent de meetwaarde van een WiredIn toe aan een variabele
+- (New)KAKU signaal geeft een unit-0. (NIET KUNNEN TESTEN!)
+- Commando "VariableUserEvent" vervallen. Niet meer compatibel met analoge waarden in variabelen,
+- Commando "VariableSendUserEvent" vervallen. Niet meer compatibel met analoge waarden in variabelen,
+- VariableSave nu ook per individuele variabele mogelijk. 0=alle;
+
 
 Known Errors / ToDo:
 
@@ -30,8 +27,6 @@ Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - Bij opstarten de melding "Booting..." omdat wachten op IP adres van de router de eerste keer even tijd in beslag kan nemen.
 - Indien SDCard geplaatst, dan logging naar Log.txt.
 - UserPlugin maakt mogelijk om gebruiker zelf code aan de Nodo code toe te voegen.
-- Aantal timers verhoogd van 15 naar 32
-- Aantal gebruikersvariabelen verhoogd van 15 naar 32
 - 8 digitale wired poorten i.p.v. 4
 - 8 analoge wired poorten i.p.v. 4
 - Aanpassing "WiredSmittTrigger": invoer analoge decimale waarde. 
@@ -46,7 +41,7 @@ Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - commando "Port" toegevoed voor instellen van de IP-poort.
 - Commando "Display" Vervallen.
 - Commando hoeft niet meer te worden afgesloten met een puntkomma. Puntkomma wordt alleen gebruikt om meerdere commandos per regel te scheiden.
-- Toevoeging commando "VariableSave", slaat alle variabelen op zodat deze na een herstart weer worden geladen. Opslaan gebeurt NIET meer automatisch.
+- Toevoeging commando "VariableSave <variabele>", slaat variabelen op zodat deze na een herstart weer worden geladen. 0=alle, Opslaan gebeurt NIET meer automatisch.
 - Toevoeging commando "LogShow": laat de inhoud van de log op SDCard zien
 - Toevoeging commando "LogErase": wist de logfile
 - Commando "RawSignalGet" en "RawSignlPut" vervallen;
@@ -75,6 +70,12 @@ Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - Commando's/Events worden niet meer tussen "(" en ")" haken weergegeven.
 - Commando "EventGhostServer" toegevoegd. Hiermee kun je het IP adres van een EG-server opgeven waar events naar toe moeten worden verstuurd. 'Auto,On' slaat laatste client op als een server.
 - Commando "Debug" toegevoegd. Geeft extra informatie over de verwerking van events door de Nodo. Was vroeger de parameter "Trace" van het vervallen commando "Display"
+- Commando "VariableUserEvent" vervallen. Niet meer compatibel met analoge waarden in variabelen,
+- Commando "VariableSendUserEvent" vervallen. Niet meer compatibel met analoge waarden in variabelen,
+- VariableSave nu ook per individuele variabele mogelijk. 0=alle;
+- Alle commando's die werken met gebruikersvariabelen zijn geschikt gemaakt voor bereik van +100..-100
+- Toevoeging commando "WiredAnalogVariable <wiredpoort>,<variabele>". Kent de meetwaarde van een WiredIn toe aan een variabele
+- (New)KAKU signaal geeft een unit-0. (NIET KUNNEN TESTEN!)
 
 Onder de motorkap:
 - Verwerken van seriele gegevens volledig herschreven

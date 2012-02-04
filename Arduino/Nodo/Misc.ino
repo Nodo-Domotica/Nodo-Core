@@ -100,8 +100,9 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       break;
 
     case CMD_VARIABLE_SET:
-      *Par1=xPar1;
-      *Par2=UserVar[xPar1-1];
+      event=AnalogInt2event(UserVar[xPar1-1], xPar1, 0);
+      *Par1=(event>>8)&0xff;
+      *Par2=event&0xff;
       break;
 
     case CMD_CLOCK_DATE:
@@ -135,7 +136,6 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
         *Par2=0;
       break;
 
-
     case CMD_WIRED_PULLUP:
       *Par1=xPar1;
       *Par2=(S.WiredInputPullUp[xPar1-1])?VALUE_ON:VALUE_OFF;
@@ -145,20 +145,19 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       // lees analoge waarde. Dit is een 10-bit waarde, unsigned 0..1023
       // vervolgens met map() omrekenen naar gekalibreerde waarde        
       x=map(analogRead(PIN_WIRED_IN_1+xPar1-1),S.WiredInput_Calibration_IL[xPar1-1],S.WiredInput_Calibration_IH[xPar1-1],S.WiredInput_Calibration_OL[xPar1-1],S.WiredInput_Calibration_OH[xPar1-1]);
-      event=wiredint2event(x, xPar1-1, CMD_WIRED_ANALOG);
+      event=AnalogInt2event(x, xPar1, CMD_WIRED_ANALOG);
       *Par1=(byte)((event>>8) & 0xff);
       *Par2=(byte)(event & 0xff);
-
       break;
 
     case CMD_WIRED_THRESHOLD:
-      event=wiredint2event(S.WiredInputThreshold[xPar1-1], xPar1-1,0);
+      event=AnalogInt2event(S.WiredInputThreshold[xPar1-1], xPar1,0);
       *Par1=(byte)((event>>8) & 0xff);
       *Par2=(byte)(event & 0xff);
       break;
 
     case CMD_WIRED_SMITTTRIGGER:
-      event=wiredint2event(S.WiredInputSmittTrigger[xPar1-1], xPar1-1,0);
+      event=AnalogInt2event(S.WiredInputSmittTrigger[xPar1-1], xPar1,0);
       *Par1=(byte)((event>>8) & 0xff);
       *Par2=(byte)(event & 0xff);
       break;

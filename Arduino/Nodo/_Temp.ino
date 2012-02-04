@@ -1,8 +1,5 @@
-
-
-
 /*
-HTTPHost=nodo2.powerkite.nl/events.php
+HTTPHost nodo2.powerkite.nl/events.php
 
           
         if(Par2==VALUE_ON || Par2==VALUE_OFF)

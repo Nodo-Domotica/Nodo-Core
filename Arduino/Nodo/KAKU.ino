@@ -107,7 +107,7 @@ unsigned long RawSignal_2_KAKU(void)
   
   RawSignal.Type=SIGNAL_TYPE_KAKU;
   
-  return SetEventType(command2event(CMD_KAKU, (Home << 4 | Unit), Command),SIGNAL_TYPE_KAKU); 
+  return SetEventType(command2event(CMD_KAKU, (Home << 4 | Unit), Command),SIGNAL_TYPE_KAKU)  & 0xf0ffffff;// unit gelijk aan 0 maken.; 
   }
 
 
@@ -250,13 +250,12 @@ unsigned long RawSignal_2_NewKAKU(void)
     RawSignal.Type=SIGNAL_TYPE_NODO;
     // het is van een andere Nodo afkomstig. Maak er een Nodo commando van.
     if(i>140)
-      return command2event(CMD_KAKU_NEW, (bitstream>>6)&0xff,Level+1);
+      return command2event(CMD_KAKU_NEW, (bitstream>>6)&0xff,Level+1) & 0xf0ffffff;// unit gelijk aan 0 maken.
     else
       {
       i=((bitstream>>4)&0x01)?VALUE_ON:VALUE_OFF;
-      return command2event(CMD_KAKU_NEW, (bitstream>>6)&0xff,i);
+      return command2event(CMD_KAKU_NEW, (bitstream>>6)&0xff,i) & 0xf0ffffff;// unit gelijk aan 0 maken.
       }
     }
-  // ??? kan weg ?return bitstream;
   }
 

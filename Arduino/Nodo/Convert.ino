@@ -211,16 +211,53 @@ char* int2str(unsigned long x)
  * 
  * De volgende conversiefunkties worden gebruikt:
  *
- * str2wiredint();    converteert een string "-nnn.nn" naar een int
- * wiredint2str();    converteert een int naar een string met format "-nnn.nnn"
- * event2wiredint();  converteert een eventcode naar een int
- * wiredint2event();  converteert een wiredint + poort naar een eventcode
+ * str2AnalogInt();    converteert een string "-nnn.nn" naar een int
+ * AnalogInt2str();    converteert een int naar een string met format "-nnn.nnn"
+ * event2AnalogInt();  converteert een eventcode naar een int
+ * AnalogInt2event();  converteert een AnalogInt + poort naar een eventcode
+ * Par2PortAnalog();  converteert een set Par1 en Par2 met integer waarden naar Poort en Analoge waarde
+ * PortAnalog2Par();  converteert een poort en analoge waarde naar Par1 en Par2
  *
  * verder:
  *   (event>>12)&0x0f haalt de wired poort uit een eventcode
  \*********************************************************************************************/
 
-char* wiredint2str(int wi)
+void Par2PortAnalog(byte Par1, byte Par2, int *port, int *wi)
+  {
+  *port=(Par1>>4)&0xf;
+
+  *wi=((Par1<<8)|Par2)&0x3ff;    // 10-bits waarde
+
+  if(Par1 & B1000) // als high bit staat
+    *wi=*wi*10;
+  
+  if(Par1 & B0100) // als sign bit staat
+    *wi=-(*wi);
+  }
+  
+void PortAnalog2Par(byte *Par1, byte *Par2, int port, int wi)
+  {
+  boolean high=false;
+  boolean sign=false;
+  
+  if(wi<0)
+    {
+    sign=true;
+    wi=-wi;
+    }
+    
+  if(wi>=1000)
+    {
+    high=true;
+    wi=wi/10;
+    }
+
+  *Par1=(port<<4) |  (high<<3) | (sign<<2) | ((wi>>8)&3);
+  *Par2=wi & 0xff;    
+  }
+  
+
+char* AnalogInt2str(int wi)
   {
   static char rString[10];
   if(abs(wi)>10230)
@@ -240,7 +277,7 @@ char* wiredint2str(int wi)
   return rString;
   }
 
-int str2wiredint(char* string)
+int str2AnalogInt(char* string)
   {
   byte x,c;
   int dot=100;
@@ -282,12 +319,12 @@ int str2wiredint(char* string)
   if(negative)
     result=-result;
 
-  //  Serial.print("*** debug: str2wiredint()=");Serial.println(result,DEC);//??? Debug         
+  //  Serial.print("*** debug: str2AnalogInt()=");Serial.println(result,DEC);//??? Debug         
   return result;
   }
 
 
-unsigned long wiredint2event(int wi, byte port, byte cmd)
+unsigned long AnalogInt2event(int wi, byte port, byte cmd)
   {
   boolean high=false;
   boolean sign=false;
@@ -313,7 +350,7 @@ unsigned long wiredint2event(int wi, byte port, byte cmd)
          ((unsigned long)(wi & 0x3ff));
   }
   
-int event2wiredint(unsigned long event)
+int event2AnalogInt(unsigned long event)
   {
   int wi; 
   

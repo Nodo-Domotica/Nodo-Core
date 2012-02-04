@@ -61,13 +61,10 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
   // geef unit weer
   if(x)
     {
-    if(((Content>>28)&0xf)==SIGNAL_TYPE_NODO && ((Content>>16)&0xff)!=CMD_KAKU_NEW && ((Content>>16)&0xff)!=CMD_KAKU)
-      {
-      strcat(TempString, ", "); 
-      strcat(TempString, cmd2str(CMD_UNIT));
-      strcat(TempString, "=");
-      strcat(TempString, int2str((Content>>24)&0xf)); 
-      }
+    strcat(TempString, ", "); 
+    strcat(TempString, cmd2str(CMD_UNIT));
+    strcat(TempString, "=");
+    strcat(TempString, int2str((Content>>24)&0xf)); 
     }
     
   // geef het event weer
@@ -228,7 +225,14 @@ char* Event2str(unsigned long Code)
     strcat(EventString,cmd2str(Command));
     switch(Command)
       {
-      // Par1 en Par2 samengesteld voor weergave van COMMAND <Wired poort> , <analoge waarde
+      // Par1 en Par2 samengesteld voor weergave van COMMAND <nummer> , <analoge waarde>
+      case CMD_BREAK_ON_VAR_EQU:
+      case CMD_BREAK_ON_VAR_LESS:
+      case CMD_BREAK_ON_VAR_MORE:
+      case CMD_BREAK_ON_VAR_NEQU:
+      case CMD_VARIABLE_SET:
+      case CMD_VARIABLE_INC:
+      case CMD_VARIABLE_EVENT:
       case CMD_WIRED_SMITTTRIGGER:
       case CMD_WIRED_THRESHOLD:
       case CMD_WIRED_ANALOG:
@@ -318,9 +322,9 @@ char* Event2str(unsigned long Code)
       switch(P1)
         {
         case P_ANALOG:
-          strcat(EventString,int2str(((Code>>12)&0x0f)+1));// wired poort: voor gebruiker 1..8
-          strcat(EventString,",");
-          strcat(EventString,wiredint2str(event2wiredint(Code)));        
+          strcat(EventString,int2str(((Code>>12)&0x0f)));
+          strcat(EventString,", ");
+          strcat(EventString,AnalogInt2str(event2AnalogInt(Code))); // waarde analoog
           break;
         case P_TEXT:
           strcat(EventString,cmd2str(Par1));

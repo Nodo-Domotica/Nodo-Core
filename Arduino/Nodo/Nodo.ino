@@ -134,9 +134,9 @@ prog_char PROGMEM Cmd_044[]="SendUserEvent";
 prog_char PROGMEM Cmd_045[]="RawSignalCopy";
 prog_char PROGMEM Cmd_046[]="WildCard";
 prog_char PROGMEM Cmd_047[]="SendBusy";
-prog_char PROGMEM Cmd_048[]="VariableSendUserEvent";
+prog_char PROGMEM Cmd_048[]="";
 prog_char PROGMEM Cmd_049[]="Password";
-prog_char PROGMEM Cmd_050[]="VariableUserEvent";
+prog_char PROGMEM Cmd_050[]="";
 prog_char PROGMEM Cmd_051[]="WiredCalibrate";
 prog_char PROGMEM Cmd_052[]="Reboot";
 prog_char PROGMEM Cmd_053[]="HTTPHost";
@@ -147,7 +147,7 @@ prog_char PROGMEM Cmd_057[]="OutputIP";
 prog_char PROGMEM Cmd_058[]="OutputIR";
 prog_char PROGMEM Cmd_059[]="OutputRF";
 prog_char PROGMEM Cmd_060[]="EventGhostServer";
-prog_char PROGMEM Cmd_061[]="";
+prog_char PROGMEM Cmd_061[]="WiredAnalogVariable";
 prog_char PROGMEM Cmd_062[]="LogErase";
 prog_char PROGMEM Cmd_063[]="LogShow";
 prog_char PROGMEM Cmd_064[]="";
@@ -353,9 +353,9 @@ prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 #define CMD_RAWSIGNAL_COPY              45
 #define CMD_COMMAND_WILDCARD            46
 #define CMD_SENDBUSY                    47
-#define CMD_VARIABLE_SEND_USEREVENT     48
+#define CMD_RES48                       48
 #define CMD_PASSWORD                    49
-#define CMD_VARIABLE_USEREVENT          50
+#define CMD_RES50                       50
 #define CMD_WIRED_ANALOG_CALIBRATE      51
 #define CMD_REBOOT                      52
 #define CMD_HTTP_REQUEST                53
@@ -366,7 +366,7 @@ prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 #define CMD_TRANSMIT_IR                 58
 #define CMD_TRANSMIT_RF                 59
 #define CMD_EVENTGHOST_SERVER           60
-#define CMD_RES61                       61
+#define CMD_WIREDANALOG_VARIABLE        61
 #define CMD_LOGFILE_ERASE               62
 #define CMD_LOGFILE_SHOW                63
 #define CMD_RES064                      64
@@ -587,7 +587,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define TERMINAL_PORT               23
 #define UNIT                       0x1 // Unit nummer van de Nodo. Bij gebruik van meerdere nodo's deze uniek toewijzen [1..F]
 #define EVENTLIST_MAX              256 // aantal events dat de lijst bevat in het EEPROM geheugen van de ATMega328. Iedere regel in de eventlist heeft 8 bytes nodig. eerste adres is 0
-#define USER_VARIABLES_MAX          16 // aantal beschikbare gebruikersvariabelen voor de user.
+#define USER_VARIABLES_MAX          15 // aantal beschikbare gebruikersvariabelen voor de user.
 #define RAW_BUFFER_SIZE            256 // Maximaal aantal te ontvangen 128 bits.
 #define UNIT_MAX                    15 // Hoogst mogelijke unit nummer van een Nodo
 #define MACRO_EXECUTION_DEPTH       10 // maximale nesting van macro's.
@@ -596,7 +596,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define SERIAL_TERMINATOR_1       0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>, default voor EventGhost
 #define SERIAL_TERMINATOR_2       0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
 #define INPUT_BUFFER_SIZE          128 // Buffer waar de karakters van de seriele/IP poort in worden opgeslagen.
-#define TIMER_MAX                   16 // aantal beschikbare timers voor de user, gerekend vanaf 
+#define TIMER_MAX                   15 // aantal beschikbare timers voor de user, gerekend vanaf 1
 #define Loop_INTERVAL_1              5 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
 #define Loop_INTERVAL_2            100 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
 #define Loop_INTERVAL_3           1000 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
@@ -628,7 +628,7 @@ struct Settings
   boolean WiredInputPullUp[WIRED_PORTS];
   byte    AnalyseSharpness;
   int     AnalyseTimeOut;
-  byte    UserVar[USER_VARIABLES_MAX];
+  int     UserVar[USER_VARIABLES_MAX];
   byte    Unit;
   byte    TransmitIR;
   byte    TransmitRepeatIR;
@@ -657,7 +657,7 @@ byte QueuePos;                                              // teller die wijst 
 boolean WiredInputStatus[WIRED_PORTS];                      // Status van de WiredIn worden hierin opgeslagen.
 boolean WiredOutputStatus[WIRED_PORTS];                     // Wired variabelen.
 int BusyNodo;                                               // in deze variabele de status van het event 'Busy' van de betreffende units 1 t/m 15. bit-1 = unit-1.
-byte UserVarPrevious[USER_VARIABLES_MAX];                   // Vorige versie van de UserVariablles: om wisselingen te kunnen vaststellen.
+int UserVarPrevious[USER_VARIABLES_MAX];                   // Vorige versie van de UserVariablles: om wisselingen te kunnen vaststellen.
 byte DaylightPrevious;                                      // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet.
 byte EventlistDepth=0;                                      // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's.
 byte Hold=false;
@@ -667,7 +667,7 @@ uint8_t RFbit,RFport,IRbit,IRport;                          // t.b.v. verwerking
 uint8_t MD5HashCode[16];                                    // tabel voor berekenen van MD5 hash codes t.b.v. uitwisselen wachtwoord EventGhost.
 boolean SDCardPresent = false;                              // Vlag die aangeeft of er een SDCard is gevonden die kan worden beschreven.
 boolean EthernetEnabled = false;                            // Vlag die aangeeft of er een Ethernetverbinding is.
-byte UserVar[USER_VARIABLES_MAX];
+int UserVar[USER_VARIABLES_MAX];
 char TempString[INPUT_BUFFER_SIZE+1];                         // Globale, tijdelijke string voor algemeen gebruik in diverste functies. ??? Nodig?
 int TerminalConnected=0;                                    // Vlag geeft aan of en hoe lang nog (seconden) er verbinding is met een Terminal.
 boolean SerialConnected=true;                               // Vlag geeft aan of er een verbinding USB-poort.
@@ -1120,8 +1120,8 @@ void loop()
             if(UserVar[x]!=UserVarPrevious[x]) // de eerste gewijzigde variabele
               {
               UserVarPrevious[x]=UserVar[x];
-              Content=command2event(CMD_VARIABLE_EVENT,x+1,UserVar[x]);
-              ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_VARIABLE,0,0);      // verwerk binnengekomen event.
+              Content=AnalogInt2event(UserVar[x], x+1, CMD_VARIABLE_EVENT);
+              ProcessEvent(Content, VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
               }
             }
           break;
