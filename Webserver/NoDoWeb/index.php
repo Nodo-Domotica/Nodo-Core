@@ -9,10 +9,10 @@ $page_title = "Apparaten";
 
 //Lees schakelaars uit
 mysql_select_db($database_tc, $tc);
-$query_RSswitch = "SELECT * FROM nodo_tbl_devices WHERE user_id='$userId'";
-$RSswitch = mysql_query($query_RSswitch, $tc) or die(mysql_error());
-$row_RSswitch = mysql_fetch_assoc($RSswitch);
-$totalRows_RSswitch = mysql_num_rows($RSswitch);
+$query_RSdevices = "SELECT * FROM nodo_tbl_devices WHERE user_id='$userId'";
+$RSdevices = mysql_query($query_RSdevices, $tc) or die(mysql_error());
+$row_RSdevices = mysql_fetch_assoc($RSdevices);
+$totalRows_RSdevices = mysql_num_rows($RSdevices);
 
 
 ?>
@@ -50,15 +50,15 @@ $totalRows_RSswitch = mysql_num_rows($RSswitch);
 	<?php do { ?>
          <div data-role="collapsible">
 		 
-		<h3><span id='switch_<?php echo $row_RSswitch['id']; ?>'></span><?php echo $row_RSswitch['naam']; ?></h3>
+		<h3><span id='switch_<?php echo $row_RSdevices['id']; ?>'></span><?php echo $row_RSdevices['naam']; ?></h3>
 		
 		 <p>
-          <?php $id = $row_RSswitch['id']; ?>
+          <?php $id = $row_RSdevices['id']; ?>
           
 		  
 
-<?php $type = $row_RSswitch['type'];
-	  $dim = $row_RSswitch['dim'];
+<?php $type = $row_RSdevices['type'];
+	  $dim = $row_RSdevices['dim'];
 
 
 switch ($type)
@@ -66,8 +66,8 @@ switch ($type)
 			case "1":?>
 			
 			<!-- aan/uit kaku buttons -->
-			<a href="javascript:send_event(&quot;sendkaku <?php echo $row_RSswitch['homecode'] . $row_RSswitch['address'] ;?>,on&quot;)" data-role="button" data-icon="check" >Aan</a>
-			<a href="javascript:send_event(&quot;sendkaku <?php echo $row_RSswitch['homecode'] . $row_RSswitch['address'] ;?>,off&quot;)" data-role="button" data-icon="delete">Uit</a>
+			<a href="javascript:send_event(&quot;sendkaku <?php echo $row_RSdevices['homecode'] . $row_RSdevices['address'] ;?>,on&quot;)" data-role="button" data-icon="check" >Aan</a>
+			<a href="javascript:send_event(&quot;sendkaku <?php echo $row_RSdevices['homecode'] . $row_RSdevices['address'] ;?>,off&quot;)" data-role="button" data-icon="delete">Uit</a>
 			<!-- /aan/uit kaku buttons -->
 			
 			<?php  break; ?>  
@@ -76,8 +76,8 @@ switch ($type)
 			<?php case "2":?>
 			
 			<!-- aan/uit newkaku buttons -->
-			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSswitch['address']; ?>,on&quot;)" data-role="button"  data-icon="check" >Aan</a>
-			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSswitch['address']; ?>,off&quot;)" data-role="button"  data-icon="delete" >Uit</a>
+			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSdevices['address']; ?>,on&quot;)" data-role="button"  data-icon="check" >Aan</a>
+			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSdevices['address']; ?>,off&quot;)" data-role="button"  data-icon="delete" >Uit</a>
 			<!-- /aan/uit newkaku buttons -->
 			
 			<br>
@@ -85,16 +85,16 @@ switch ($type)
 			<?php if ( $dim == "1" ) { ?>
 	
 			<!-- Dim buttons -->
-			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSswitch['address']; ?>,1&quot;)" data-role="button" data-inline="true">10%</a>
-			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSswitch['address']; ?>,2&quot;)" data-role="button" data-inline="true">20%</a>
-			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSswitch['address']; ?>,4&quot;)" data-role="button" data-inline="true">30%</a>
-			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSswitch['address']; ?>,6&quot;)" data-role="button" data-inline="true">40%</a>
-			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSswitch['address']; ?>,8&quot;)" data-role="button" data-inline="true">50%</a>
-			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSswitch['address']; ?>,10&quot;)" data-role="button" data-inline="true">60%</a>
-			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSswitch['address']; ?>,12&quot;)" data-role="button" data-inline="true">70%</a>
-			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSswitch['address']; ?>,14&quot;)" data-role="button" data-inline="true">80%</a>
-			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSswitch['address']; ?>,15&quot;)" data-role="button" data-inline="true">90%</a>
-			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSswitch['address']; ?>,16&quot;)" data-role="button" data-inline="true">100%</a>
+			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSdevices['address']; ?>,1&quot;)" data-role="button" data-inline="true">10%</a>
+			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSdevices['address']; ?>,2&quot;)" data-role="button" data-inline="true">20%</a>
+			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSdevices['address']; ?>,4&quot;)" data-role="button" data-inline="true">30%</a>
+			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSdevices['address']; ?>,6&quot;)" data-role="button" data-inline="true">40%</a>
+			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSdevices['address']; ?>,8&quot;)" data-role="button" data-inline="true">50%</a>
+			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSdevices['address']; ?>,10&quot;)" data-role="button" data-inline="true">60%</a>
+			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSdevices['address']; ?>,12&quot;)" data-role="button" data-inline="true">70%</a>
+			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSdevices['address']; ?>,14&quot;)" data-role="button" data-inline="true">80%</a>
+			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSdevices['address']; ?>,15&quot;)" data-role="button" data-inline="true">90%</a>
+			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSdevices['address']; ?>,16&quot;)" data-role="button" data-inline="true">100%</a>
 			<!-- /Dim buttons -->
 			<?php } 
 			
@@ -103,24 +103,24 @@ switch ($type)
 			
 			<!-- Dim slider -->
 			<script>
-				var t<?php echo $row_RSswitch['id']; ?>;
-				function update_distance_timer_<?php echo $row_RSswitch['id']; ?>()
+				var t<?php echo $row_RSdevices['id']; ?>;
+				function update_distance_timer_<?php echo $row_RSdevices['id']; ?>()
 					{
-					clearTimeout(t<?php echo $row_RSswitch['id']; ?>);
-					t<?php echo $row_RSswitch['id']; ?>=setTimeout("update_distance_<?php echo $row_RSswitch['id']; ?>()",200);
+					clearTimeout(t<?php echo $row_RSdevices['id']; ?>);
+					t<?php echo $row_RSdevices['id']; ?>=setTimeout("update_distance_<?php echo $row_RSdevices['id']; ?>()",200);
 					}
-				function update_distance_<?php echo $row_RSswitch['id']; ?>()
+				function update_distance_<?php echo $row_RSdevices['id']; ?>()
 					{
-					var val<?php echo $row_RSswitch['id']; ?> = $('#distSlider<?php echo $row_RSswitch['id']; ?>').val();
+					var val<?php echo $row_RSdevices['id']; ?> = $('#distSlider<?php echo $row_RSdevices['id']; ?>').val();
 					//alert(val);
-					send_event('sendnewkaku <?php echo $row_RSswitch['address']; ?>,' + val<?php echo $row_RSswitch['id']; ?>)
+					send_event('sendnewkaku <?php echo $row_RSdevices['address']; ?>,' + val<?php echo $row_RSdevices['id']; ?>)
 					}
 			</script>
 			
-			<div  data-role="fieldcontain" id="element-distSlider">
+			
 			<label  id="distSlider-label" for="distSlider">Dim: </label>
-			<input  name="distSlider" id="distSlider<?php echo $row_RSswitch['id']; ?>" value="1" min="1" max="16" data-type="range" onChange='update_distance_timer_<?php echo $row_RSswitch['id']; ?>()'>
-			</div>
+			<input  name="distSlider" id="distSlider<?php echo $row_RSdevices['id']; ?>" value="<?php echo $row_RSdevices['dim_value'];?>" min="1" max="16" data-type="range" onChange='update_distance_timer_<?php echo $row_RSdevices['id']; ?>()'>
+			
 			<!-- /Dim slider -->
 
 			<?php } break; }?>   
@@ -128,7 +128,7 @@ switch ($type)
 			 
 		
 		</p></div>
-    <?php } while ($row_RSswitch = mysql_fetch_assoc($RSswitch)); ?>
+    <?php } while ($row_RSdevices = mysql_fetch_assoc($RSdevices)); ?>
 
 
 	</div><!-- /content -->

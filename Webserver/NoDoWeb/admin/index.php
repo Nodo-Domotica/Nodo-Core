@@ -29,6 +29,7 @@ $page_title = "Setup";
 	  <p><a href="setup_connection.php" data-role="button" data-ajax="false">Communicatie</a></p>
 	  <p><a href="devices.php" data-role="button" data-ajax="false">Apparaten</a></p>
 	  <p><a href="activities.php" data-role="button" data-ajax="false">Activiteiten</a></p>
+	  <p><a href="measurements.php" data-role="button" data-ajax="false">Metingen</a></p>
    	  <p><a href="setup_nodoweb.php" data-role="button" data-ajax="false">Uiterlijk</a></p>
 	</div><!-- /content -->
 	

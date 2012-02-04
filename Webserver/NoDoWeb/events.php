@@ -89,13 +89,11 @@ $userId = $row['id'];
 					
 					$homecode = substr($par1, 0,1);
 					$address =  substr($par1, 1);
-					echo $homecode;
+					
 					// save the data to the database 
 					mysql_select_db($database_tc, $tc);
 					mysql_query("UPDATE nodo_tbl_devices SET status='$status' WHERE address='$address' AND homecode='$homecode' AND user_id='$userId'") or die(mysql_error());   
-					
-				
-				
+								
 				break;
 
 				case "newkaku" :
@@ -104,14 +102,23 @@ $userId = $row['id'];
 
 						case "on" :
 							$status = 1;
+							// save the data to the database 
+							mysql_select_db($database_tc, $tc);
+							mysql_query("UPDATE nodo_tbl_devices SET status='$status' WHERE address='$par1' AND homecode='0' AND user_id='$userId'") or die(mysql_error()); 
 						break;
 						
 						case "off" :
 							$status = 0;
+							// save the data to the database 
+							mysql_select_db($database_tc, $tc);
+							mysql_query("UPDATE nodo_tbl_devices SET status='$status' WHERE address='$par1' AND homecode='0' AND user_id='$userId'") or die(mysql_error()); 
 						break;
 						
 						case 0 :
 							$status = 0;
+							// save the data to the database 
+							mysql_select_db($database_tc, $tc);
+							mysql_query("UPDATE nodo_tbl_devices SET status='$status' WHERE address='$par1' AND homecode='0' AND user_id='$userId'") or die(mysql_error()); 
 						break;
 						
 						case 1:
@@ -131,12 +138,13 @@ $userId = $row['id'];
 						case 15:
 						case 16:
 							$status = 1;
+							// save the data to the database 
+							mysql_select_db($database_tc, $tc);
+							mysql_query("UPDATE nodo_tbl_devices SET status='$status', dim_value='$par2' WHERE address='$par1' AND homecode='0' AND user_id='$userId'") or die(mysql_error()); 
 						break;
 					}
-					$address = $par1;
-					// save the data to the database 
-					mysql_select_db($database_tc, $tc);
-					mysql_query("UPDATE nodo_tbl_devices SET status='$status' WHERE address='$address' AND homecode='0' AND user_id='$userId'") or die(mysql_error());   
+					
+					  
 					
 				break;
 
