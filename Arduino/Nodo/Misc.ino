@@ -50,9 +50,9 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
   *Par2=0;
   switch (*Command)
     {
-    case CMD_TRANSMIT_EVENTGHOST:
-      *Par1=S.TransmitEventGhost;
-      *Par2=S.AutoSaveEventGhostIP;
+    case CMD_TRANSMIT_IP:
+      *Par1=S.TransmitIP;
+      *Par2=S.TransmitIP==VALUE_SOURCE_HTTP?0:S.AutoSaveEventGhostIP;
       break;
 
     case CMD_WAITFREERF: 
@@ -250,22 +250,23 @@ void ResetFactory(void)
   S.AnalyseTimeOut             = SIGNAL_TIMEOUT_IR;
   S.TransmitIR                 = VALUE_OFF;
   S.TransmitRF                 = VALUE_ON;
-  S.TransmitHTTP               = VALUE_OFF;
+  S.TransmitIP                 = VALUE_OFF;
   S.TransmitRepeatIR           = TX_REPEATS;
   S.TransmitRepeatRF           = TX_REPEATS;
   S.SendBusy                   = VALUE_OFF;
   S.WaitBusy                   = VALUE_OFF;
+  S.Debug                      = VALUE_OFF;
   S.WaitFreeRF_Window          = 0;
   S.WaitFreeRF_Delay           = 0;
   S.DaylightSaving             = Time.DaylightSaving;
   S.AutoSaveEventGhostIP       = VALUE_OFF;
-  S.TransmitEventGhost         = VALUE_OFF;
   S.EventGhostServer_IP[0]     = 0; // IP adres van de EventGhost server
   S.EventGhostServer_IP[1]     = 0; // IP adres van de EventGhost server
   S.EventGhostServer_IP[2]     = 0; // IP adres van de EventGhost server
   S.EventGhostServer_IP[3]     = 0; // IP adres van de EventGhost server
   S.HTTPRequest[0]             = 0; // string van het HTTP adres leeg maken
-
+  S.Port                       = 80;
+  
   strcpy(S.Password,ProgmemString(Text_10));
   strcpy(S.ID,ProgmemString(Text_16));
   strcpy(S.HTTPRequest,ProgmemString(Text_29));//??? default vullen of niet?

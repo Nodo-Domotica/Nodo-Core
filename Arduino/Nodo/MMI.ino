@@ -48,15 +48,18 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
     }
   
   // geef poort weer
+  x=true;
   strcat(TempString, cmd2str(Port));
-  if(Port==VALUE_SOURCE_EVENTGHOST)
+  if(Port==VALUE_SOURCE_EVENTGHOST || Port==VALUE_SOURCE_HTTP || Port==VALUE_SOURCE_TERMINAL)
     {
-    strcat(TempString, " ");
-    strcat(TempString, ip2str(EventGhostClientIP));
+    strcat(TempString, "(");
+    strcat(TempString, ip2str(ClientIPAddress));
+    strcat(TempString, ")");
+    x=false;
     }
 
   // geef unit weer
-  if(Port!=VALUE_SOURCE_EVENTGHOST)
+  if(x)
     {
     if(((Content>>28)&0xf)==SIGNAL_TYPE_NODO && ((Content>>16)&0xff)!=CMD_KAKU_NEW && ((Content>>16)&0xff)!=CMD_KAKU)
       {
@@ -104,7 +107,7 @@ void PrintEventlistEntry(int entry, byte d)
     return;
 
   // Geef de entry van de eventlist weer
-  Line=cmd2str(CMD_EVENTLIST_WRITE);
+  Line=cmd2str(VALUE_SOURCE_EVENTLIST);
   Line+=' ';
   Line+=entry;
 
@@ -185,7 +188,7 @@ void PrintWelcome(void)
 void PrintLine(String LineToPrint)
   {
   // FreeMemory(0); //??? debug
-  if(SerialConnected)
+//  if(SerialConnected)//??? weer terugzetten
     Serial.println(LineToPrint);
  
   if(EthernetEnabled)
@@ -257,7 +260,7 @@ char* Event2str(unsigned long Code)
         break;
   
       // Par1 als tekst en par2 als tekst
-      case CMD_TRANSMIT_EVENTGHOST:
+      case CMD_TRANSMIT_IP:
       case CMD_COMMAND_WILDCARD:
         P1=P_TEXT;
         P2=P_TEXT;
@@ -278,7 +281,6 @@ char* Event2str(unsigned long Code)
       case CMD_TRACE:
       case CMD_DLS_EVENT:
       case CMD_BUSY:
-      case CMD_TRANSMIT_HTTP:
       case CMD_SENDBUSY:
       case CMD_WAITBUSY:
         P1=P_TEXT;
@@ -389,28 +391,29 @@ void PrintIPSettings(void)
     PrintLine(TempString);
 
     // HTTP request line
-    sprintf(TempString,"HTTPHost=%s",S.HTTPRequest);
+    sprintf(TempString,"Host=%s",S.HTTPRequest);
     PrintLine(TempString);
 
-    // TransmitHTTP
-    sprintf(TempString,"OutputHTTP=%s",cmd2str(S.TransmitHTTP));
+    // OutputIP
+    strcpy(TempString,"OutputIP=");
+    strcat(TempString,cmd2str(S.TransmitIP));
+    PrintLine(TempString);
+
+    // Port
+    sprintf(TempString,"Port=%d",S.Port);
     PrintLine(TempString);
 
     // ID
     sprintf(TempString,"ID=%s",S.ID);
     PrintLine(TempString);
 
-    // EventGhostPort
-    PrintLine("EventGhostServerPort=1024");
-
-    // TransmitEventGhost
-    sprintf(TempString,"OutputEG=%s,%s",cmd2str(S.TransmitEventGhost),cmd2str(S.AutoSaveEventGhostIP));
-    PrintLine(TempString);
-
     // EvetGhost client IP
-    if(S.TransmitEventGhost==VALUE_ON)
+    if(S.TransmitIP==VALUE_SOURCE_EVENTGHOST)
       {
-      sprintf(TempString,"EventGhostClientIP=%u.%u.%u.%u",S.EventGhostServer_IP[0],S.EventGhostServer_IP[1],S.EventGhostServer_IP[2],S.EventGhostServer_IP[3]);
+      sprintf(TempString,"%s=%u.%u.%u.%u ",cmd2str(CMD_EVENTGHOST_SERVER),S.EventGhostServer_IP[0],S.EventGhostServer_IP[1],S.EventGhostServer_IP[2],S.EventGhostServer_IP[3]);
+      if(S.AutoSaveEventGhostIP==VALUE_AUTO)
+        strcat(TempString,"(Auto)");
+
       PrintLine(TempString);
       } 
 

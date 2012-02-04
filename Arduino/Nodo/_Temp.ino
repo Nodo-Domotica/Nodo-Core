@@ -1,17 +1,12 @@
 
+
+
 /*
+HTTPHost=nodo2.powerkite.nl/events.php
 
-          // terugtellen blokkade voor invoer wachtwoord.
-          if(TerminalLocked>3)TerminalLocked--;
-
-
-AI=is een unsigned int waarin signed analoge waarde verwerkt
-
-string => AI
-
-
-
-wiredanalogcalibrate 1 high 10
+          
+        if(Par2==VALUE_ON || Par2==VALUE_OFF)
+          S.AutoSaveEventGhostIP=Par2;
 
 
 Serial.print("*** debug: =");Serial.println(,DEC);//??? Debug

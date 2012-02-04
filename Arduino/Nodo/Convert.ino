@@ -45,7 +45,7 @@ unsigned long command2event(int Command, byte Par1, byte Par2)
  * De string moet beginnen met het eerste teken(dus geen voorloop spaties).
  * bij ongeldige tekens in de string wordt een false terug gegeven.
  \*********************************************************************************************/
-unsigned long str2val(char *string)
+unsigned long str2int(char *string)
   {
   int x;
   
@@ -102,6 +102,9 @@ char* PROGMEM2str(prog_char* text)
   return buffer;  
   }
 
+ /**********************************************************************************************\
+ * Converteert een 4byte array IP adres naar een string.
+ \*********************************************************************************************/
 char* ip2str(byte* IP)
   {
   static char str[20];
@@ -109,6 +112,48 @@ char* ip2str(byte* IP)
   return str;
   }
 
+ /**********************************************************************************************\
+ * Converteert een string naar een 4byte array IP adres
+ * 
+ \*********************************************************************************************/
+boolean str2ip(char *string, byte* IP)
+  {
+  byte c;
+  byte part=0;
+  int value=0;
+  
+  for(int x=0;x<=strlen(string);x++)
+    {
+    c=string[x];
+    if(isdigit(c))
+      {
+      value*=10;
+      value+=c-'0';
+      }
+      
+    else if(c=='.' || c==0) // volgende deel uit IP adres
+      {
+      if(value<=255)
+        IP[part++]=value;
+      else 
+        return false;
+      value=0;
+      }
+    else if(c==' ') // deze tekens negeren
+      ;
+    else // ongeldig teken
+      return false;
+    }
+  if(part==4)// correct aantal delen van het IP adres
+    return true;
+  return false;
+  }
+
+
+ /**********************************************************************************************\
+ * Converteert een unsigned long naar een integer.
+ * als waarde groter dan 10.000, dan resultaat in hexadecimaal formaat.
+ \*********************************************************************************************/
 char* int2str(unsigned long x)
   {
   static char OutputLine[10];

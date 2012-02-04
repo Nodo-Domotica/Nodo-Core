@@ -30,7 +30,7 @@
 
 #define MAC_ADDRESS 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
 
-#define VERSION        2          // Nodo Version nummer:
+#define VERSION        3          // Nodo Version nummer:
                                   // Major.Minor.Patch
                                   // Major: Grote veranderingen aan concept, besturing, werking.
                                   // Minor: Uitbreiding/aanpassing van commando's, functionaliteit en MMI aanpassingen
@@ -108,7 +108,7 @@ prog_char PROGMEM Cmd_018[]="Reset";
 prog_char PROGMEM Cmd_019[]="SendKAKU";
 prog_char PROGMEM Cmd_020[]="SendNewKAKU";
 prog_char PROGMEM Cmd_021[]="IPSettings";
-prog_char PROGMEM Cmd_022[]="";
+prog_char PROGMEM Cmd_022[]="Port";
 prog_char PROGMEM Cmd_023[]="SimulateDay";
 prog_char PROGMEM Cmd_024[]="Sound";
 prog_char PROGMEM Cmd_025[]="Debug";
@@ -143,10 +143,10 @@ prog_char PROGMEM Cmd_053[]="HTTPHost";
 prog_char PROGMEM Cmd_054[]="Status";
 prog_char PROGMEM Cmd_055[]="SendStatus";
 prog_char PROGMEM Cmd_056[]="AnalyseSettings";
-prog_char PROGMEM Cmd_057[]="OutputHTTP";
+prog_char PROGMEM Cmd_057[]="OutputIP";
 prog_char PROGMEM Cmd_058[]="OutputIR";
 prog_char PROGMEM Cmd_059[]="OutputRF";
-prog_char PROGMEM Cmd_060[]="OutputEG";
+prog_char PROGMEM Cmd_060[]="EventGhostServer";
 prog_char PROGMEM Cmd_061[]="";
 prog_char PROGMEM Cmd_062[]="LogErase";
 prog_char PROGMEM Cmd_063[]="LogShow";
@@ -208,7 +208,7 @@ prog_char PROGMEM Cmd_115[]="Variable";
 prog_char PROGMEM Cmd_116[]="Busy";
 prog_char PROGMEM Cmd_117[]="";
 prog_char PROGMEM Cmd_118[]="Error";
-prog_char PROGMEM Cmd_119[]="Boot"; // ??? nog nodig?
+prog_char PROGMEM Cmd_119[]="Boot";
 prog_char PROGMEM Cmd_120[]="DaylightSaving";
 prog_char PROGMEM Cmd_121[]="";
 prog_char PROGMEM Cmd_122[]="";
@@ -258,7 +258,7 @@ prog_char PROGMEM Cmd_163[]="Clock";
 prog_char PROGMEM Cmd_164[]="Terminal";
 prog_char PROGMEM Cmd_165[]="EventGhost";
 prog_char PROGMEM Cmd_166[]="Status";
-prog_char PROGMEM Cmd_167[]="Save";
+prog_char PROGMEM Cmd_167[]="Auto";
 prog_char PROGMEM Cmd_168[]="Input";
 prog_char PROGMEM Cmd_169[]="Output";
 prog_char PROGMEM Cmd_170[]="Internal";
@@ -327,7 +327,7 @@ prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 #define CMD_SEND_KAKU                   19
 #define CMD_SEND_KAKU_NEW               20
 #define CMD_IP_SETTINGS                 21
-#define CMD_res22                       22
+#define CMD_PORT                        22
 #define CMD_SIMULATE_DAY                23
 #define CMD_SOUND                       24
 #define CMD_TRACE                       25
@@ -362,10 +362,10 @@ prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 #define CMD_STATUS                      54
 #define CMD_STATUS_SEND                 55
 #define CMD_ANALYSE_SETTINGS            56
-#define CMD_TRANSMIT_HTTP               57
+#define CMD_TRANSMIT_IP                 57
 #define CMD_TRANSMIT_IR                 58
 #define CMD_TRANSMIT_RF                 59
-#define CMD_TRANSMIT_EVENTGHOST         60
+#define CMD_EVENTGHOST_SERVER           60
 #define CMD_RES61                       61
 #define CMD_LOGFILE_ERASE               62
 #define CMD_LOGFILE_SHOW                63
@@ -480,7 +480,7 @@ prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 #define VALUE_SOURCE_TERMINAL          164
 #define VALUE_SOURCE_EVENTGHOST        165
 #define VALUE_SOURCE_STATUS            166
-#define VALUE_SAVE                     167
+#define VALUE_AUTO                     167
 #define VALUE_DIRECTION_INPUT          168
 #define VALUE_DIRECTION_OUTPUT         169
 #define VALUE_DIRECTION_INTERNAL       170
@@ -584,12 +584,10 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define PIN_CLOCK_SDA               20  // I2C communicatie lijn voor de realtime clock.
 #define PIN_CLOCK_SLC               21  // I2C communicatie lijn voor de realtime clock.
 
-#define HTTP_PORT                   80
 #define TERMINAL_PORT               23
-#define EVENTGHOST_PORT           1024
 #define UNIT                       0x1 // Unit nummer van de Nodo. Bij gebruik van meerdere nodo's deze uniek toewijzen [1..F]
 #define EVENTLIST_MAX              256 // aantal events dat de lijst bevat in het EEPROM geheugen van de ATMega328. Iedere regel in de eventlist heeft 8 bytes nodig. eerste adres is 0
-#define USER_VARIABLES_MAX          32 // aantal beschikbare gebruikersvariabelen voor de user.
+#define USER_VARIABLES_MAX          16 // aantal beschikbare gebruikersvariabelen voor de user.
 #define RAW_BUFFER_SIZE            256 // Maximaal aantal te ontvangen 128 bits.
 #define UNIT_MAX                    15 // Hoogst mogelijke unit nummer van een Nodo
 #define MACRO_EXECUTION_DEPTH       10 // maximale nesting van macro's.
@@ -636,7 +634,7 @@ struct Settings
   byte    TransmitRepeatIR;
   byte    TransmitRF;
   byte    TransmitRepeatRF;
-  byte    TransmitHTTP;
+  byte    TransmitIP;                                       // Definitie van het gebruik van de IP-poort: Off, EventGhost of HTTP
   byte    WaitFreeRF_Window;
   byte    WaitFreeRF_Delay;
   byte    SendBusy;
@@ -647,9 +645,9 @@ struct Settings
   char    Password[25];                                     // String met wachtwoord.
   char    ID[25];                                           // code waar de Nodo uniek mee geïdentificeerd kan worden in een netwerk
   char    HTTPRequest[80];                                  // HTTP request;
-  byte    TransmitEventGhost;
   byte    EventGhostServer_IP[4];                           // IP adres van waar EventGhost Events naar verstuurd moeten worden.
   byte    AutoSaveEventGhostIP;                             // Automatisch IP adres opslaan na ontvangst van een EG event of niet.
+  int     Port;                                             // IP port.
   }S;
 
 unsigned long UserTimer[TIMER_MAX];                         // Timers voor de gebruiker.
@@ -680,11 +678,10 @@ volatile int PulseCount=0;                                  // Pulsenteller van 
 // ethernet classes voor IP communicatie EventGhost, Telnet terminal en HTTP.
 
 byte Ethernet_MAC_Address[]={MAC_ADDRESS};// MAC adres van de Nodo.
-EthernetServer HTTPServer(HTTP_PORT);                       // Server class voor HTTP sessie.
-EthernetServer EventGhostServer(EVENTGHOST_PORT);           // Globale Server class voor ontvangen van Events van een EventGhost applicatie
-EthernetServer TerminalServer(TERMINAL_PORT);               // Server class voor Terminal sessie.
-EthernetClient TerminalClient=false;                        // Client class voor Terminal sessie.
-byte EventGhostClientIP[4];                                 // IP adres van de EventGhost client die verbinding probeert te maken c.q. verbonden is.
+EthernetServer IPServer(80);                                    // Server class voor HTTP sessie.
+EthernetServer TerminalServer(23);               // Server class voor Terminal sessie.
+EthernetClient TerminalClient;                            // Client class voor Terminal sessie.
+byte ClientIPAddress[4];                                    // IP adres van de EventGhost client die verbinding probeert te maken c.q. verbonden is.
 
 // RealTimeclock DS1307
 struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight; int Year,DaylightSaving;}Time; // Hier wordt datum & tijd in opgeslagen afkomstig van de RTC.
@@ -710,7 +707,7 @@ void setup()
   
   // Initialiseer in/output poorten.
 
-  pinMode(22, OUTPUT);//??? t.b.v. tijdmetingen met Logic analyser
+  pinMode(28, OUTPUT);//??? t.b.v. tijdmetingen met Logic analyser
 
   pinMode(PIN_IR_RX_DATA, INPUT);
   pinMode(PIN_RF_RX_DATA, INPUT);
@@ -772,10 +769,12 @@ void setup()
   for(x=0;x<WIRED_PORTS;x++){WiredInputStatus[x]=true;}
 
   // Initialiseer ethernet device
+  IPServer = EthernetServer(S.Port);
+  TerminalServer = EthernetServer(23);
   if(Ethernet.begin(Ethernet_MAC_Address)!=0)
     {
     // MAC en IP adres van de Nodo
-    EventGhostServer.begin();                                // Start Server voor ontvangst van Events
+    IPServer.begin();                                // Start Server voor ontvangst van Events
     TerminalServer.begin();                             // Start server voor Terminalsessies via TelNet
     EthernetEnabled=true;
     }
@@ -904,17 +903,17 @@ void loop()
           {        
           if(EthernetEnabled)
             {
-            // IP Event van EventGhost : *************** kijk of er een Event van een eventghost client binnenkomt **********************    
-            if(EventGhostServer.available())// deze call vraagt veel tijd: +/- 90uSec.  
+            // IP Event: *************** kijk of er een Event van IP  **********************    
+            if(IPServer.available())// deze call duurt +/- 90uSec.  
               {
-              if(EventGhostReceive(InputBuffer_IP))
-                ExecuteLine(InputBuffer_IP, VALUE_SOURCE_EVENTGHOST);
+              if(x=IPReceive(InputBuffer_IP))
+                ExecuteLine(InputBuffer_IP, x);
               }
             }
           break;
           }
     
-        case 2: // binnen Slice_1 @1
+        case 2: // binnen Slice_1 
           {
           // IP Telnet verbinding : *************** kijk of er verzoek tot verbinding vanuit een terminal is **********************    
           if(EthernetEnabled)
@@ -938,7 +937,7 @@ void loop()
                 TerminalLocked=x;
                 SerialConnected=y;
                 TerminalClient.flush(); // schoon beginnen.
-                
+
                 if(TerminalLocked==0)
                   TerminalLocked=1;
                   
@@ -973,7 +972,10 @@ void loop()
                   TerminalInbyteCounter=0;
   
                   if(TerminalLocked==0) // als op niet op slot
+                    {
+                    TerminalClient.getRemoteIP(ClientIPAddress);  
                     ExecuteLine(InputBuffer_Terminal, VALUE_SOURCE_TERMINAL);
+                    }
                   else
                     {
                     if(TerminalLocked<=PASSWORD_MAX_RETRY)// teller is wachtloop bij herhaaldelijke pogingen foutief wachtwoord. Bij >3 pogingen niet meer toegestaan
@@ -983,7 +985,7 @@ void loop()
                         TerminalLocked=0;
                         TerminalClient.println("Ok.");
                         }
-                      else// als foutief wachtwoord, dan teller @1
+                      else// als foutief wachtwoord, dan teller 
                         {
                         TerminalLocked++;
                         TerminalClient.println("?");
@@ -1005,15 +1007,6 @@ void loop()
           
         case 3: // binnen Slice_1
           {        
-          if(EthernetEnabled)
-            {
-            // HTTP-request : *************** kijk of er een HTTP-request binnenkomt **********************    
-            if(HTTPServer.available())
-              {
-              if(HTTPReceive(InputBuffer_IP)) //??? Variabele InputBuffer_IP hier even geleend.
-                ExecuteLine(InputBuffer_IP, VALUE_SOURCE_HTTP);
-              }
-            }
           break;
           }
           

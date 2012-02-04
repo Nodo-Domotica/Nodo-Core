@@ -61,6 +61,7 @@ byte CommandError(unsigned long Content)
     case CMD_RAWSIGNAL_SEND:
     case CMD_LOGFILE_SHOW:
     case CMD_LOGFILE_ERASE:
+    case CMD_PORT:
     case CMD_ERROR:
     case CMD_REBOOT:
     case CMD_VARIABLE_SAVE:
@@ -86,6 +87,7 @@ byte CommandError(unsigned long Content)
     case CMD_ANALYSE_SETTINGS:
     case CMD_KAKU:
     case CMD_SEND_KAKU:
+    case CMD_EVENTGHOST_SERVER:
       return false;
  
     case CMD_SEND_KAKU_NEW:
@@ -183,16 +185,16 @@ byte CommandError(unsigned long Content)
       if(Par1!=VALUE_OFF && Par1!=VALUE_ON && Par1!=VALUE_ALL)return ERROR_02;
       return false;
 
-    case CMD_TRANSMIT_EVENTGHOST:
-      if(Par1!=VALUE_OFF && Par1!=VALUE_ON)return ERROR_02;
-      if(Par2!=0 && Par2!=VALUE_OFF && Par2!=VALUE_ON && Par2!=VALUE_SAVE)return ERROR_02;
+    case CMD_TRANSMIT_IP:
+      if(Par1!=VALUE_OFF && Par1!=VALUE_SOURCE_HTTP && Par1!=VALUE_SOURCE_EVENTGHOST)return ERROR_02;
+      if(Par2!=0 && Par2!=VALUE_OFF && Par2!=VALUE_ON)return ERROR_02;
       return false;
 
     case CMD_WIRED_ANALOG_CALIBRATE:
       if(Par1!=VALUE_HIGH && Par1!=VALUE_LOW)return ERROR_02;
       return false;
 
-    case CMD_SEND_EVENT:// ??? opties niet gellijk aan wildcard!
+    case CMD_SEND_EVENT:// ??? opties niet gellijk aan wildcard! moet EG hier bij?
       switch(Par1)
         {
         case VALUE_ALL:
@@ -244,7 +246,6 @@ byte CommandError(unsigned long Content)
      // par2 alleen 0, On of Off.
     case CMD_TRACE:
     case CMD_TRANSMIT_RF:
-    case CMD_TRANSMIT_HTTP:
     case CMD_TRANSMIT_IR:
       if(Par1!=VALUE_OFF && Par1!=VALUE_ON)return ERROR_02;
       if(Par2!=VALUE_OFF && Par2!=VALUE_ON && Par2!=0)return ERROR_02;
@@ -496,22 +497,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
             TransmitCode(command2event(CMD_BUSY,Par1,0),VALUE_ALL);
         break;
         
-      case CMD_TRANSMIT_EVENTGHOST:
-        if(Par1==VALUE_ON || Par1==VALUE_OFF)
-          S.TransmitEventGhost=Par1;        
-
-        if(Par2==VALUE_SAVE)
-          {
-          // Sla IP van de EventGhost Client op die het laatste een event heeft verstuurd
-          S.EventGhostServer_IP[0]=EventGhostClientIP[0];
-          S.EventGhostServer_IP[1]=EventGhostClientIP[1];
-          S.EventGhostServer_IP[2]=EventGhostClientIP[2];
-          S.EventGhostServer_IP[3]=EventGhostClientIP[3];          
-          }
-          
-        if(Par2==VALUE_ON || Par2==VALUE_OFF)
-          S.AutoSaveEventGhostIP=Par2;
-
+      case CMD_TRANSMIT_IP:
+        S.TransmitIP=Par1;        
         SaveSettings();
         break;
         
@@ -537,11 +524,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       case CMD_TRANSMIT_RF:
         S.TransmitRF=Par1;
         if(Par2)S.TransmitRepeatRF=Par2;
-        SaveSettings();
-        break;
-        
-      case CMD_TRANSMIT_HTTP:
-        S.TransmitHTTP=Par1;
         SaveSettings();
         break;
         
@@ -672,7 +654,7 @@ void ExecuteLine(char *Line, byte Port)
 
       // maak van de string een commando waarde. Het kan ook zijn dat het een hex-event is.
       if(GetArgv(Command,TmpStr,1));
-        v=str2val(TmpStr);
+        v=str2int(TmpStr);
 
       // kleiner of gelijk aan een bestaand commando. Dan behandelen als een commando. Anders is het een hex-event.
       if(v<=COMMAND_MAX)
@@ -681,10 +663,10 @@ void ExecuteLine(char *Line, byte Port)
         v=0;          
         
         if(GetArgv(Command,TmpStr,2))
-          Par1=str2val(TmpStr);
+          Par1=str2int(TmpStr);
   
         if(GetArgv(Command,TmpStr,3))
-          Par2=str2val(TmpStr);
+          Par2=str2int(TmpStr);
   
         switch(Cmd)
           {
@@ -720,7 +702,24 @@ void ExecuteLine(char *Line, byte Port)
           case CMD_IP_SETTINGS:
             PrintIPSettings();
             break;
-    
+
+          case CMD_EVENTGHOST_SERVER:
+            if(Par1==VALUE_AUTO)
+              { 
+              if(Par2==VALUE_ON)
+                S.AutoSaveEventGhostIP=VALUE_AUTO;  // Automatisch IP adres opslaan na ontvangst van een EG event of niet.
+              else
+                S.AutoSaveEventGhostIP=0;
+              }
+            else
+              {
+              if(GetArgv(Command,TempString,2))
+                if(!str2ip(TempString,S.EventGhostServer_IP))
+                  Error=ERROR_02;
+              }
+            SaveSettings();
+            break;
+            
           case CMD_EVENTLIST_WRITE:
             EventlistWriteLine=Par1;
             State_EventlistWrite=1;
@@ -730,7 +729,7 @@ void ExecuteLine(char *Line, byte Port)
           case CMD_KAKU_NEW:
             {
             if(GetArgv(Command,TmpStr,2))
-              v=str2val(TmpStr);
+              v=str2int(TmpStr);
               
             if(v>255)
               {
@@ -793,7 +792,7 @@ void ExecuteLine(char *Line, byte Port)
           case CMD_RAWSIGNAL_SAVE:
             PrintLine(ProgmemString(Text_07));
             GetArgv(Command,TmpStr,2);
-            RawSignal.Key=str2val(TmpStr);
+            RawSignal.Key=str2int(TmpStr);
             break;        
 
           case CMD_EVENTLIST_SHOW:
@@ -830,14 +829,24 @@ void ExecuteLine(char *Line, byte Port)
           case CMD_PASSWORD:
             {
             if(GetArgv(Command,S.Password,2))
-            SaveSettings();
+              SaveSettings();
             break;
             }  
 
           case CMD_ID:
             {
             if(GetArgv(Command,S.ID,2))
-            SaveSettings();
+              SaveSettings();
+            break;
+            }  
+
+          case CMD_PORT:
+            {
+            if(GetArgv(Command,TempString,2))
+              {
+              S.Port=str2int(TempString);
+              SaveSettings();
+              }
             break;
             }  
 
@@ -850,7 +859,7 @@ void ExecuteLine(char *Line, byte Port)
               Par1=HA2address(TmpStr,&z); // Parameter-1 bevat [A1..P16]. Omzetten naar absolute waarde. z=groep commando
               if(GetArgv(Command,TmpStr,3))
                 {
-                Par2=(str2val(TmpStr)==VALUE_ON) | (z<<1); // Parameter-2 bevat [On,Off]. Omzetten naar 1,0. tevens op bit-2 het groepcommando zetten.
+                Par2=(str2int(TmpStr)==VALUE_ON) | (z<<1); // Parameter-2 bevat [On,Off]. Omzetten naar 1,0. tevens op bit-2 het groepcommando zetten.
                 v=command2event(Cmd,Par1,Par2);
                 Error=CommandError(v);
                 }

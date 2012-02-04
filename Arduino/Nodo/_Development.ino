@@ -2,14 +2,21 @@
 
 Aanpassingen:
 
-- Issue 245: analoge input kan verkeerde waarde krijgen
-- Issue 241: Nodo loopt vast bij meerdere commando's via HTTP
+- Bug opgelost dat bij openstaande telnet sessie heen HTTP events worden verzonden.
+- Bij ontvangst van een HTTP event wordt nu ook het IP adres getoond en gelogd.
+- bij verzenden HTTP wordt nu ook IP adres getoond en gelogd.
+- bij verzenden HTTP wordt nu ook unit nummer van het event meegegeven;
+- bij verzenden HTTP wordt nu ook versienummer van de Nodo meegegeven;
+- Commando "OutputHTTP" en "OutputEG" vervangen door "OutputIP <http | EventGhost>"
+- commando "Port" toegevoed voor instellen van de IP-poort.
+- Bij ontvangst van event van een TelnetSessie wordt nu ook het IP adres weergegeven en gelogd.
+- Commando "EventGhostServer" toegevoegd. Hiermee kun je het IP adres van een EG-server opgeven waar events naar toe moeten worden verstuurd. 'Auto,On' slaat laatste client op als een server.
+- Bij weergave van een regel uit de Eventlist wordt nu "Eventlist <nummer>" weergegeven i.p.v. "EventlistWrite <nummer>"
 
 Known Errors / ToDo:
 
 - Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue testen
 - Found in r306: Status WiredAnalog groter dan toegestane poort
-- OutputHTTP komt niet voor in status overzicht
 
 
 Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
@@ -19,7 +26,7 @@ Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - Nodo ontvangt events via http. Voorbeeld: http://192.168.1.110/?event=sound&passwoord=Nodo&id=00000000
 - Ethernet intergratie. Events van EventGhost (PC, Android) ontvangen en verzenden over IP;
 - Toevoeging commando "URL <line>", hiermee kan de URL van de server worden ingesteld waar de events (via HTTP-Poort 80) naar toegezonden moeten worden. (max. 40 tekens)
-- Nieuw commando "OutputEG <On|Off> , <SaveIP Save|On|Off>"
+- Nieuw commando "OutputIP <HTTP|EventGhost|Off> , <SaveIP Save|On|Off>"
 - Bij opstarten de melding "Booting..." omdat wachten op IP adres van de router de eerste keer even tijd in beslag kan nemen.
 - Indien SDCard geplaatst, dan logging naar Log.txt.
 - UserPlugin maakt mogelijk om gebruiker zelf code aan de Nodo code toe te voegen.
@@ -36,7 +43,7 @@ Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - Toevoeging commando "Password"
 - Toevoeging commando "Reboot"
 - Ccommando "Status" geeft in als resultaat in de tag "output=Status"
-- Toevoeging commando "Terminal <[On|Off]>,<prompt [On|Off]>". tevens "Status" commando uitgebreid met setting "Terminal"
+- commando "Port" toegevoed voor instellen van de IP-poort.
 - Commando "Display" Vervallen.
 - Commando hoeft niet meer te worden afgesloten met een puntkomma. Puntkomma wordt alleen gebruikt om meerdere commandos per regel te scheiden.
 - Toevoeging commando "VariableSave", slaat alle variabelen op zodat deze na een herstart weer worden geladen. Opslaan gebeurt NIET meer automatisch.
@@ -47,13 +54,13 @@ Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - Toevoeging commando "RawSignalSend <key>". Verzend een eerder onder <key> opgeslagen pulsenreeks. Als <key> = 0, dan wordt huidige inhoud verzonden
 - "SendVarUserEvent" renamed naar "VariableSendUserEvent"
 - nieuw commando: "VariableUserEvent" genereert een userevent op basis van de inhoud van twee variabelen.
-- Commando "TransmitSettings" vervallen. Vervangen door "TransmitIR", "TransmitRF"
-- Commando "Simulate" vervallen. Kan worden opgelost met de nieuwe commandos "TransmitIR" en "TransmitRF".
+- Commando "TransmitSettings" vervallen. Vervangen door "OutputIR", "OutputRF"
+- Commando "Simulate" vervallen. Kan worden opgelost met de nieuwe commandos "Output...".
 - Aanpassing weergave van datum/tijd. De dag wordt na NA de datum weergegeven ipv VOOR (ivm kunnen sorteren logfile).
 - Errors worden nu weergeven met een tekstuele toelichting wat de fout veroorzaakte: "Error=<tekst>". 
 - "Timestamp=" wordt nu iets anders weergegeven als "Date=yyyy-mm-dd, Time=hh:mm".
 - Variabelen worden na wijzigen niet meer automatisch opgeslagen in het EEPROM geheugen. Opslaan kan nu met commando "VariableSave"
-- Toevoeging commando "HTTPHost <line>". Vul in als "HTTPHost www.mijnhost.nl/pad/mijnscript.php"
+- Toevoeging commando "Host <hostadres>". Vul in als "Host www.mijnhost.nl/pad/mijnscript.php"
 - Tag 'Direction' vervangen door Input, Output, Internal
 - Commando "SendEvent <poort>" toegevoegd. Vervangt oude SendSignal. Stuurt laatst ontvangen event door. Par1 bevat de poort( EventGhost, IR, RF, HTTP, All)
 - Onbekende hex-events worden mogelijk door andere waarde weergegeven a.g.v. filtering aan Nodo gelijke events. ??? wenselijk/noodzakelijk?
@@ -66,6 +73,7 @@ Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - Sound: als Par1 groter dan 8, dan tijdsduur=Par2*100 milliseconde, toonhoogte=Par2*100 Hz
 - Aanpassing weergave van EventList zodat deze direct weer gebruikt kan worden om weg te schrijven
 - Commando's/Events worden niet meer tussen "(" en ")" haken weergegeven.
+- Commando "EventGhostServer" toegevoegd. Hiermee kun je het IP adres van een EG-server opgeven waar events naar toe moeten worden verstuurd. 'Auto,On' slaat laatste client op als een server.
 - Commando "Debug" toegevoegd. Geeft extra informatie over de verwerking van events door de Nodo. Was vroeger de parameter "Trace" van het vervallen commando "Display"
 
 Onder de motorkap:

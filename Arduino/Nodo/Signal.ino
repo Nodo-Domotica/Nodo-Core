@@ -389,27 +389,30 @@ boolean TransmitCode(unsigned long Event, byte Dest)
     } 
 
   // Het event verzenden naar de EventGhostServer
-  if((Dest==VALUE_SOURCE_EVENTGHOST && !TemporyEventGhostError) || (S.TransmitEventGhost==VALUE_ON && !TemporyEventGhostError && Dest==VALUE_ALL))
+  if((Dest==VALUE_SOURCE_EVENTGHOST) || (Dest==VALUE_ALL && S.TransmitIP==VALUE_SOURCE_EVENTGHOST))
     {
-    // IP adres waar event naar toe moet even in de globale IP variabele plaatsen om de regel te kunnen printen.
-    EventGhostClientIP[0]=S.EventGhostServer_IP[0];
-    EventGhostClientIP[1]=S.EventGhostServer_IP[1];
-    EventGhostClientIP[2]=S.EventGhostServer_IP[2];
-    EventGhostClientIP[3]=S.EventGhostServer_IP[3];
-
-    PrintEvent(Event,VALUE_SOURCE_EVENTGHOST,VALUE_DIRECTION_OUTPUT);
-    
-    if(!SendEventGhost(Event2str(Event),S.EventGhostServer_IP))
+    if(!TemporyEventGhostError)
       {
-      Serial.println("*** debug: EventGhost communicatie tijdelijk opgeheven i.v.m. fout.");//???
-      TemporyEventGhostError=true;
+      // IP adres waar event naar toe moet even in de globale IP variabele plaatsen om de regel te kunnen printen.
+      ClientIPAddress[0]=S.EventGhostServer_IP[0];
+      ClientIPAddress[1]=S.EventGhostServer_IP[1];
+      ClientIPAddress[2]=S.EventGhostServer_IP[2];
+      ClientIPAddress[3]=S.EventGhostServer_IP[3];
+  
+      PrintEvent(Event,VALUE_SOURCE_EVENTGHOST,VALUE_DIRECTION_OUTPUT);
+      
+      if(!SendEventGhost(Event2str(Event),S.EventGhostServer_IP))
+        {
+        Serial.println("*** debug: EventGhost communicatie tijdelijk opgeheven i.v.m. fout.");//???
+        TemporyEventGhostError=true;
+        }
       }
     }
 
-  if(Dest==VALUE_SOURCE_HTTP || (S.TransmitHTTP==VALUE_ON && Dest==VALUE_ALL))
+  if(Dest==VALUE_SOURCE_HTTP || (Dest==VALUE_ALL && S.TransmitIP==VALUE_SOURCE_HTTP))
     {
-    PrintEvent(Event,VALUE_SOURCE_HTTP,VALUE_DIRECTION_OUTPUT);
     SendHTTPRequest(Event);
+    PrintEvent(Event,S.TransmitIP,VALUE_DIRECTION_OUTPUT);
     }
   }
 
@@ -451,7 +454,7 @@ void CheckRawSignalKey(unsigned long *Code)
           TempString[y]=0;
           y=0;
           // Serial.print("*** debug: Key op SDCard=");Serial.println(TempString);//??? Debug  
-          *Code=command2event(CMD_RAWSIGNAL,str2val(TempString),0);
+          *Code=command2event(CMD_RAWSIGNAL,str2int(TempString),0);
           return;
           }
         }
@@ -568,7 +571,7 @@ void RawSignalGet(int Key)
           {
           TempString[y]=0;
           y=0;
-          RawSignal.Pulses[z++]=str2val(TempString);
+          RawSignal.Pulses[z++]=str2int(TempString);
           }
         }
       dataFile.close();
