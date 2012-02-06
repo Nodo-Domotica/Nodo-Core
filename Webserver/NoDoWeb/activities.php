@@ -3,7 +3,7 @@ require_once('connections/tc.php');
 require_once('include/auth.php');
 require_once('include/settings.php'); 
 
-$page_title = "Activiteiten";
+$page_title = "Activities";
 
 ?>
 
@@ -42,7 +42,7 @@ $RSactivities = mysql_query("SELECT * FROM nodo_tbl_activities WHERE user_id='$u
 		while($row = mysql_fetch_array($RSactivities)) 
 		{                                
 ?>		           
-		<a href="javascript:send_event(&quot;<?php echo $row['events']; ?>&quot;)" data-role="button" data-icon="star"><?php echo $row['name']; ?></a>               
+		<a href="javascript:send_event(&quot;<?php echo $row['events']; ?>&quot;)" data-role="button" data-icon="star" ><?php echo $row['name']; ?></a>               
 		
 <?php		
 		}         

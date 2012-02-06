@@ -26,7 +26,7 @@ $id = $row['id'];
 	else
 	
 	{ 
-	$message = "<h4>Gebruikersnaam of wachtwoord is onjuist.</h4>";
+	$message = "<h4>Username or password is incorrect.</h4>";
 	
 	}
  
@@ -57,11 +57,11 @@ $id = $row['id'];
 		<?php echo $message ?>
 		
 		<form action="login.php" data-ajax="false" method="post">		
-			<label for="basic">Gebruikersnaam:</label>
+			<label for="basic">Username:</label>
 			<input type="text" name="username" id="username" value=""  />
-			<label for="basic">Wachtwoord:</label>
+			<label for="basic">Password:</label>
 			<input type="password" name="password" id="password" value=""  />
-			<input type="submit" name="submit" value="Inloggen" >
+			<input type="submit" name="submit" value="Login" >
 		</form>
 		 
 		 

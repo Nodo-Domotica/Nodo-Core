@@ -4,7 +4,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1"> 
-	<title>Delete device</title> 
+	<title>Delete sensor</title> 
 	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.css" />
 	<script src="http://code.jquery.com/jquery-1.6.4.min.js"></script>
 	<script src="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.js"></script>
@@ -19,10 +19,10 @@
 	</div><!-- /header -->
 
 	<div data-role="content">	
-		<h2>Delete device?</h2>
+		<h2>Delete sensor?</h2>
 		<br>
-		<a href="devices_delete.php?id=<?php echo $_GET["id"];?> " data-role="button" data-inline="true" data-ajax="false">Yes</a>
-		<a href="devices.php" data-role="button" data-inline="true" data-ajax="false">No</a>
+		<a href="sensor_delete.php?id=<?php echo $_GET["id"];?> " data-role="button" data-inline="true" data-ajax="false">Yes</a>
+		<a href="sensor.php" data-role="button" data-inline="true" data-ajax="false">No</a>
 	</div><!-- /content -->
 	
 	

@@ -4,7 +4,7 @@ require_once('../connections/tc.php');
 require_once('../include/auth.php');
 require_once('../include/settings.php');
 
-$page_title = "Setup: Activiteiten";	  
+$page_title = "Setup: Activities";	  
 
 
 
@@ -60,22 +60,22 @@ $result = mysql_query("SELECT * FROM nodo_tbl_activities WHERE user_id='$userId'
 	<div data-role="content">	
 
 	<div data-role="collapsible">
-			<h3>Toevoegen</h3>
+			<h3>Add</h3>
 	<form action="activities.php" data-ajax="false" method="post"> 
 	
 	 
 				
 	<br>
 	
-		<label for="name">Naam: </label>
+		<label for="name">Name: </label>
 		<input type="text" name="name" id="name" value=""  />
 		<br>
-		<label for="name">Event(s): (voorbeeld: userevent 100,100)</label>
+		<label for="name">Event(s): (Example: userevent 1;sendkaku a1,on)</label>
 		<input type="text" name="events" id="events" value=""  />
 	
 	    <br>
         
-		<input type="submit" name="submit" value="Toevoegen" >
+		<input type="submit" name="submit" value="Add" >
 
 		
 	
@@ -84,7 +84,7 @@ $result = mysql_query("SELECT * FROM nodo_tbl_activities WHERE user_id='$userId'
 	
 	
 		<div data-role="collapsible" data-collapsed="false">
-			<h3>Aanpassen</h3>
+			<h3>Edit</h3>
 			<?php
 			 
 								   
@@ -95,8 +95,8 @@ $result = mysql_query("SELECT * FROM nodo_tbl_activities WHERE user_id='$userId'
 			while($row = mysql_fetch_array($result)) 
 			{                                
 					   
-			echo '<li><a href="activities_edit.php?id=' . $row['id'] . '" title=Aanpassen data-ajax="false">'. $row['name'] .'</a>';                
-			echo '<a href="activities_delete_confirm.php?id=' . $row['id'] . '" data-rel="dialog">Verwijderen</a></li>';
+			echo '<li><a href="activities_edit.php?id=' . $row['id'] . '" title=Edit data-ajax="false">'. $row['name'] .'</a>';                
+			echo '<a href="activities_delete_confirm.php?id=' . $row['id'] . '" data-rel="dialog">Delete</a></li>';
 			
 			}         
 			?>
@@ -118,7 +118,7 @@ $result = mysql_query("SELECT * FROM nodo_tbl_activities WHERE user_id='$userId'
 	</div><!-- /header -->
 
 	<div data-role="content">	
-		<h2> De wijzigingen zijn opgeslagen.</h2>
+		<h2>Settings saved.</h2>
 				
 		<p><a href="activities.php" data-role="button" data-inline="true" data-icon="back">Ok</a></p>	
 	

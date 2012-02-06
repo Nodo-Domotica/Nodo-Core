@@ -4,7 +4,7 @@ require_once('../connections/tc.php');
 require_once('../include/auth.php');
 require_once('../include/settings.php');
 
-$page_title = "Setup: Apparaten";
+$page_title = "Setup: Devices";
 
 // check if the form has been submitted. If it has, process the form and save it to the database if 
 
@@ -62,51 +62,51 @@ else
 		 
 	<div data-role="collapsible">
 			
-		<h3>Toevoegen</h3>
-			<label for="select-choice-0" class="select" >Type apparaat:</label>
+		<h3>Add</h3>
+			<label for="select-choice-0" class="select" >Type of device:</label>
 		    <select name="type" id="type" data-native-menu="false" >
-				<option value="0" data-placeholder="true">Kies apparaat....</option>
+				<option value="0" data-placeholder="true">Select device</option>
 				<option value="2">New Kaku</option>
 				<option value="1">Kaku</option>
 			</select>
 	<br>
 		
 		<div id="name_div"> 		
-		<label for="name">Naam:</label>
+		<label for="name">Device name:</label>
 		<input type="text" name="naam" id="naam" value=""  />
 		</div>
 	
 	<br>
 		
 		<div id="dim_div">
-			<label for="select-choice-1" class="select">Dim mogelijkheid:</label>
+			<label for="select-choice-1" class="select">Dim option:</label>
 			<select name="dim" id="dim" data-native-menu="false">
-				<option value="0">Nee</option>
-				<option value="1">Ja - Knoppen</option>
-				<option value="2">Ja - Slider</option>
+				<option value="0">No</option>
+				<option value="1">Yes - buttons</option>
+				<option value="2">Yes - slider</option>
 			</select>
 			<br>
 		</div>
      
 		<div id="homecode_div">
-		<label for="name" >Home code: (A t/m P)</label>
+		<label for="name" >Home code: (A until P)</label>
 		<input type="text" name="homecode" id="homecode" value=""  />
 		<br>
 		</div>
    
 		<div id="adres_div">
 		<div id="label_adres_newkaku">
-		<label for="name">Adres: (1 t/m 255)</label>
+		<label for="name">Address (1 until 255)</label>
 		</div>
 		<div id="label_adres_kaku">
-		<label for="name">Adres: (1 t/m 16)</label>
+		<label for="name">Address: (1 until 16)</label>
 		</div>
 		<input type="text" name="address" id="address" value=""  />
 		<br>
 		</div>
      
 		<div id="submit_div">
-		<input type="submit" name="submit" value="Toevoegen" >
+		<input type="submit" name="submit" value="Add" >
 		</div>
 		
 </form> 
@@ -114,7 +114,7 @@ else
 	</div>
 
 	<div data-role="collapsible" data-collapsed="false">
-		<h3>Aanpassen</h3>
+		<h3>Edit</h3>
 		<?php
 		// get results from database        
 		mysql_select_db($database_tc, $tc);
@@ -127,8 +127,8 @@ else
 		while($row = mysql_fetch_array($result)) 
 		{                                
 		           
-		echo '<li><a href="devices_edit.php?id=' . $row['id'] . '" title=Aanpassen data-ajax="false">'. $row['naam'] .'</a>';                
-		echo '<a href="devices_delete_confirm.php?id=' . $row['id'] . '" data-rel="dialog">Verwijderen</a></li>';
+		echo '<li><a href="devices_edit.php?id=' . $row['id'] . '" title=Edit data-ajax="false">'. $row['naam'] .'</a>';                
+		echo '<a href="devices_delete_confirm.php?id=' . $row['id'] . '" data-rel="dialog">Delete</a></li>';
 		
 		}         
 		?>
@@ -149,7 +149,7 @@ else
 	</div><!-- /header -->
 
 	<div data-role="content">	
-		<h2> De wijzigingen zijn opgeslagen.</h2>
+		<h2>Settings saved</h2>
 				
 		<p><a href="#main" data-role="button" data-inline="true" data-icon="back">Ok</a></p>	
 	</div><!-- /content -->

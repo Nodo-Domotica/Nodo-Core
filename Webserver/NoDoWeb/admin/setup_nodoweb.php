@@ -2,7 +2,7 @@
 require_once('../connections/tc.php'); 
 require_once('../include/auth.php'); 
 
-$page_title = "Setup: Uiterlijk";
+$page_title = "Setup: Look & Feel";
 
 
 if (isset($_POST['submit'])) 
@@ -76,31 +76,31 @@ $theme = $row['webapp_theme'];
 	<form action="setup_nodoweb.php" data-ajax="false" method="post"> 
 	
 			
-			<label for="title">Titel:</label>
+			<label for="title">Title:</label>
 			<input type="text" name="title" id="title" value="<?php echo $row['webapp_title'];?>"  />
 			
 			<br>
 	 
-			<label for="theme" class="select">Thema:</label>
+			<label for="theme" class="select">Theme:</label>
 		    <select name="theme" id="theme" data-placeholder="true" data-native-menu="false">
-				<option value="a" <?php if ($row['webapp_theme'] == "a") {echo 'selected="selected"';}?>>Zwart</option>
-				<option value="b" <?php if ($row['webapp_theme'] == "b") {echo 'selected="selected"';}?>>Blauw</option>
-				<option value="c" <?php if ($row['webapp_theme'] == "c") {echo 'selected="selected"';}?>>Grijs</option>
-				<option value="d" <?php if ($row['webapp_theme'] == "d") {echo 'selected="selected"';}?>>Wit</option>
-				<option value="e" <?php if ($row['webapp_theme'] == "e") {echo 'selected="selected"';}?>>Geel</option>
+				<option value="a" <?php if ($row['webapp_theme'] == "a") {echo 'selected="selected"';}?>>Black</option>
+				<option value="b" <?php if ($row['webapp_theme'] == "b") {echo 'selected="selected"';}?>>Blue</option>
+				<option value="c" <?php if ($row['webapp_theme'] == "c") {echo 'selected="selected"';}?>>Grey</option>
+				<option value="d" <?php if ($row['webapp_theme'] == "d") {echo 'selected="selected"';}?>>White</option>
+				<option value="e" <?php if ($row['webapp_theme'] == "e") {echo 'selected="selected"';}?>>Yellow</option>
 			</select>
 			
-			<label for="theme_header" class="select">Thema balken:</label>
+			<label for="theme_header" class="select">Theme headers:</label>
 		    <select name="theme_header" id="theme_header" data-placeholder="true" data-native-menu="false">
-				<option value="a" <?php if ($row['webapp_theme_header'] == "a") {echo 'selected="selected"';}?>>Zwart</option>
-				<option value="b" <?php if ($row['webapp_theme_header'] == "b") {echo 'selected="selected"';}?>>Blauw</option>
-				<option value="c" <?php if ($row['webapp_theme_header'] == "c") {echo 'selected="selected"';}?>>Licht Grijs</option>
-				<option value="d" <?php if ($row['webapp_theme_header'] == "d") {echo 'selected="selected"';}?>>Donker Grijs</option>
-				<option value="e" <?php if ($row['webapp_theme_header'] == "e") {echo 'selected="selected"';}?>>Geel</option>
+				<option value="a" <?php if ($row['webapp_theme_header'] == "a") {echo 'selected="selected"';}?>>Black</option>
+				<option value="b" <?php if ($row['webapp_theme_header'] == "b") {echo 'selected="selected"';}?>>Blue</option>
+				<option value="c" <?php if ($row['webapp_theme_header'] == "c") {echo 'selected="selected"';}?>>Light grey</option>
+				<option value="d" <?php if ($row['webapp_theme_header'] == "d") {echo 'selected="selected"';}?>>Dark grey</option>
+				<option value="e" <?php if ($row['webapp_theme_header'] == "e") {echo 'selected="selected"';}?>>Yellow</option>
 			</select>
 			<br>
 	        
-		<input type="submit" name="submit" value="Opslaan" >
+		<input type="submit" name="submit" value="Save" >
 
 			
 	</form> 
@@ -116,11 +116,11 @@ $theme = $row['webapp_theme'];
 <div data-role="dialog" id="saved">
 
 	<div data-role="header">
-		<h1>Setup: Uiterlijk</h1>
+		<h1></h1>
 	</div><!-- /header -->
 
 	<div data-role="content">	
-		<h2> De wijzigingen zijn opgeslagen.</h2>
+		<h2>Settings saved</h2>
 				
 		<p><a href="#main" data-rel="back" data-role="button" data-inline="true" data-icon="back">Ok</a></p>	
 	</div><!-- /content -->

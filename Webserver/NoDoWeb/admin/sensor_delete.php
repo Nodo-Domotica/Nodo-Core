@@ -1,5 +1,8 @@
-<?php require_once('../Connections/tc.php'); ?>
-<?php
+<?php 
+
+require_once('../connections/tc.php');
+require_once('../include/auth.php'); 
+
 if (!function_exists("GetSQLValueString")) {
 function GetSQLValueString($theValue, $theType, $theDefinedValue = "", $theNotDefinedValue = "") 
 {
@@ -30,7 +33,7 @@ function GetSQLValueString($theValue, $theType, $theDefinedValue = "", $theNotDe
 }
 
 if ((isset($_GET['id'])) && ($_GET['id'] != "")) {
-  $deleteSQL = sprintf("DELETE FROM NODO_tbl_sensor WHERE id=%s",
+  $deleteSQL = sprintf("DELETE FROM nodo_tbl_sensor WHERE id=%s AND user_id='$userId'",
                        GetSQLValueString($_GET['id'], "int"));
 
   mysql_select_db($database_tc, $tc);

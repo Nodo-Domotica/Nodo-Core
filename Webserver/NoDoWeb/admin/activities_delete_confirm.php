@@ -15,14 +15,14 @@
 <div data-role="page" data-theme="c">
 
 	<div data-role="header">
-		<h1>Activiteit verwijderen?</h1>
+		<h1></h1>
 	</div><!-- /header -->
 
 	<div data-role="content">	
-		<h2>Verwijderen?</h2>
+		<h2>Delete activity?</h2>
 		<br>
-		<a href="activities_delete.php?id=<?php echo $_GET["id"];?> " data-role="button" data-inline="true" data-ajax="false">Ja</a>
-		<a href="activities.php" data-role="button" data-inline="true" data-ajax="false">Nee</a>
+		<a href="activities_delete.php?id=<?php echo $_GET["id"];?> " data-role="button" data-inline="true" data-ajax="false">Yes</a>
+		<a href="activities.php" data-role="button" data-inline="true" data-ajax="false">No</a>
 	</div><!-- /content -->
 	
 	

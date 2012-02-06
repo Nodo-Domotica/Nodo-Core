@@ -4,10 +4,10 @@ require_once('../connections/tc.php');
 require_once('../include/auth.php');
 require_once('../include/settings.php');
 
-$page_title = "Setup: Communicatie";	
+$page_title = "Setup: Communication";	
 // check if the form has been submitted. If it has, process the form and save it to the database if 
 
-if (isset($_POST['submit'])) 
+if (isset($_POST['save'])) 
 {  
  
  // get form data, making sure it is valid 
@@ -121,7 +121,7 @@ $row = mysql_fetch_array($result);
 	<form action="setup_connection.php" data-ajax="false" method="post"> 
 	
 	 
-				<label for="sendmethod" class="select">Nodo opdrachten verzenden via:</label>
+				<label for="sendmethod" class="select">Send NoDo commands through:</label>
 		    <select name="send_method" id="send_method" data-placeholder="true" data-native-menu="false">
 				<option value="1" <?php if ($row['send_method'] == 1) {echo 'selected="selected"';}?>>Network Event client (APOP)</option>
 				<option value="2" <?php if ($row['send_method'] == 2 || $row['send_method'] == 0 ) {echo 'selected="selected"';}?>>HTTP</option>
@@ -134,19 +134,19 @@ $row = mysql_fetch_array($result);
 	
 	<br>   
       
-		<label for="name">TCP poort:</label>
+		<label for="name">TCP port:</label>
 		<input type="text" name="nodo_port" id="nodo_port" value="<?php echo $row['nodo_port']?>"  />
 
 			
 	<br>
       
-		<label for="name">Nodo wachtwoord:</label>
+		<label for="name">NoDo password:</label>
 		<input type="password" name="nodo_password" id="nodo_password" value="<?php echo $row['nodo_password']?>"  />
 		
 	<br>
 	   	   	
 		<input type="checkbox" name="checkbox-1" id="checkbox-0" class="custom" />
-		<label for="checkbox-0">Genereer een (nieuw) Nodo ID</label>
+		<label for="checkbox-0">Generate NoDo ID</label>
 	 
 	 <br>  
       
@@ -155,7 +155,7 @@ $row = mysql_fetch_array($result);
     
 	<br><br>
         
-		<input type="submit" name="submit" value="Opslaan" >
+		<input type="submit" name="save" value="Save" >
 
 		
 	
@@ -178,7 +178,7 @@ $row = mysql_fetch_array($result);
 	</div><!-- /header -->
 
 	<div data-role="content">	
-		<h2> De wijzigingen zijn opgeslagen.</h2>
+		<h2>Settings saved.</h2>
 				
 		<p><a href="#main" data-rel="back" data-role="button" data-inline="true" data-icon="back">Ok</a></p>	
 	</div><!-- /content -->

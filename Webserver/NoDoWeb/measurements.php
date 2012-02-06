@@ -3,7 +3,13 @@ require_once('connections/tc.php');
 require_once('include/auth.php'); 
 require_once('include/settings.php'); 
 
-$page_title = "Metingen";
+$page_title = "Measurements";
+
+//lees sensoren uit
+mysql_select_db($database_tc, $tc);
+$query_RSsensor = "SELECT * FROM nodo_tbl_sensor WHERE user_id='$userId'";
+$RSsensor = mysql_query($query_RSsensor, $tc) or die(mysql_error());
+
 
 ?>
 
@@ -27,7 +33,23 @@ $page_title = "Metingen";
 <?php require_once('include/header.php'); ?>
 
 	<div data-role="content">	
+
+	<?php	while($row_RSsensor = mysql_fetch_array($RSsensor))
 	
+	
+
+	{
+		echo "<h4>";
+		echo $row_RSsensor['sensor_name'];
+		echo " ";
+		echo $row_RSsensor['data'];
+		echo " ";
+		echo $row_RSsensor['sensor_suffix'];
+		echo "</h4>";
+	}
+	
+	?>
+
 	
 		
 

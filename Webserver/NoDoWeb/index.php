@@ -4,10 +4,10 @@ require_once('connections/tc.php');
 require_once('include/auth.php'); 
 require_once('include/settings.php'); 
 
-$page_title = "Apparaten";
+$page_title = "Devices";
 
 
-//Lees schakelaars uit
+//Lees schakelaars Off
 mysql_select_db($database_tc, $tc);
 $query_RSdevices = "SELECT * FROM nodo_tbl_devices WHERE user_id='$userId'";
 $RSdevices = mysql_query($query_RSdevices, $tc) or die(mysql_error());
@@ -65,20 +65,20 @@ switch ($type)
 			{
 			case "1":?>
 			
-			<!-- aan/uit kaku buttons -->
-			<a href="javascript:send_event(&quot;sendkaku <?php echo $row_RSdevices['homecode'] . $row_RSdevices['address'] ;?>,on&quot;)" data-role="button" data-icon="check" >Aan</a>
-			<a href="javascript:send_event(&quot;sendkaku <?php echo $row_RSdevices['homecode'] . $row_RSdevices['address'] ;?>,off&quot;)" data-role="button" data-icon="delete">Uit</a>
-			<!-- /aan/uit kaku buttons -->
+			<!-- On/Off kaku buttons -->
+			<a href="javascript:send_event(&quot;sendkaku <?php echo $row_RSdevices['homecode'] . $row_RSdevices['address'] ;?>,on&quot;)" data-role="button" data-icon="check" >On</a>
+			<a href="javascript:send_event(&quot;sendkaku <?php echo $row_RSdevices['homecode'] . $row_RSdevices['address'] ;?>,off&quot;)" data-role="button" data-icon="delete">Off</a>
+			<!-- /On/Off kaku buttons -->
 			
 			<?php  break; ?>  
 			
 			//newkaku
 			<?php case "2":?>
 			
-			<!-- aan/uit newkaku buttons -->
-			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSdevices['address']; ?>,on&quot;)" data-role="button"  data-icon="check" >Aan</a>
-			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSdevices['address']; ?>,off&quot;)" data-role="button"  data-icon="delete" >Uit</a>
-			<!-- /aan/uit newkaku buttons -->
+			<!-- On/Off newkaku buttons -->
+			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSdevices['address']; ?>,on&quot;)" data-role="button"  data-icon="check" >On</a>
+			<a href="javascript:send_event(&quot;sendnewkaku <?php echo $row_RSdevices['address']; ?>,off&quot;)" data-role="button"  data-icon="delete" >Off</a>
+			<!-- /On/Off newkaku buttons -->
 			
 			<br>
 			

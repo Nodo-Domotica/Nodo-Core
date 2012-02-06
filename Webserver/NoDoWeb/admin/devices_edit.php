@@ -4,7 +4,7 @@ require_once('../connections/tc.php');
 require_once('../include/auth.php'); 
 require_once('../include/settings.php'); 
 
-$page_title="Setup: Apparaten aanpassen";
+$page_title="Setup: Edit device";
 
 
 
@@ -74,7 +74,7 @@ $page_title="Setup: Apparaten aanpassen";
 	<br>
 	
 		
-			<label for="select-choice-0" class="select">Type schakelaar:</label>
+			<label for="select-choice-0" class="select">Type of device:</label>
 		    <select name="type" id="type" data-native-menu="false">
 				<option value="1"<?php if ($row['type'] == 1) {echo 'selected="selected"';}?>>Kaku</option>
 				<option value="2" <?php if ($row['type'] == 2) {echo 'selected="selected"';}?>>New kaku</option>
@@ -82,32 +82,32 @@ $page_title="Setup: Apparaten aanpassen";
 	
 	<br>
 	
-		<label for="name">Schakelaar naam:</label>
+		<label for="name">Device name:</label>
 		<input type="text" name="naam" id="naam" value="<?php echo $row['naam'] ;?>"  />
 	
 	<br>
 	<div id="dim_div">
-		<label for="select-choice-1" class="select" >Dim mogelijkheid:</label>
+		<label for="select-choice-1" class="select" >Dim option:</label>
 		<select name="dim" id="dim" data-placeholder="true" data-native-menu="false">
-			<option value="0"<?php if ($row['dim'] == 0) {echo 'selected="selected"';}?>>Nee</option>
-			<option value="1"<?php if ($row['dim'] == 1) {echo 'selected="selected"';}?>>Ja - Knoppen</option>
-			<option value="2"<?php if ($row['dim'] == 2) {echo 'selected="selected"';}?>>Ja - Slider</option>
+			<option value="0"<?php if ($row['dim'] == 0) {echo 'selected="selected"';}?>>No</option>
+			<option value="1"<?php if ($row['dim'] == 1) {echo 'selected="selected"';}?>>Yes - buttons</option>
+			<option value="2"<?php if ($row['dim'] == 2) {echo 'selected="selected"';}?>>Yes - slider</option>
 		</select>
 		<br>
 		</div>
     
 	<div id="homecode_div">
-		<label for="name">Home code: (A t/m P)</label>
+		<label for="name">Home code: (A until P)</label>
 		<input type="text" name="homecode" id="homecode" value="<?php echo $row['homecode'] ;?>"  />
     <br>
 	</div>
    
     <div id="adres_div">
 		<div id="label_adres_newkaku">
-		<label for="name">Adres: (1 t/m 255)</label>
+		<label for="name">Address: (1 until 255)</label>
 		</div>
 		<div id="label_adres_kaku">
-		<label for="name">Adres: (1 t/m 16)</label>
+		<label for="name">Address: (1 until 16)</label>
 		</div>
 		<input type="text" name="address" id="address" value="<?php echo $row['address'] ;?>"  />
 		<br>
@@ -115,7 +115,7 @@ $page_title="Setup: Apparaten aanpassen";
 		
 		
 		    
-		<input type="submit" name="submit" value="Schakelaar aanpassen" >
+		<input type="submit" name="submit" value="Edit" >
 
 		
 	

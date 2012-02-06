@@ -4,7 +4,7 @@ require_once('../connections/tc.php');
 require_once('../include/auth.php'); 
 require_once('../include/settings.php'); 
 
-$page_title="Setup: Activiteit aanpassen";
+$page_title="Setup: Edit activity";
 
 
 
@@ -66,15 +66,15 @@ $page_title="Setup: Activiteit aanpassen";
 	
 		<br>
 	
-		<label for="name">Naam: </label>
+		<label for="name">Name: </label>
 		<input type="text" name="name" id="name" value="<?php echo $row['name'] ;?>"  />
 		<br>
-		<label for="name">Event(s): (voorbeeld: userevent 100,100)</label>
+		<label for="name">Event(s): (example: userevent 100,100;sendkaku a1,on)</label>
 		<input type="text" name="events" id="events" value="<?php echo $row['events'] ;?>"  />
 	
 	   
         
-		<input type="submit" name="submit" value="Aanpassen" >
+		<input type="submit" name="submit" value="Edit" >
 
 		
 	

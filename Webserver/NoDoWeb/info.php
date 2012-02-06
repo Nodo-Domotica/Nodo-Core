@@ -5,7 +5,7 @@ require_once('include/settings.php');
 
 
 
-$page_title = "Informatie";
+$page_title = "Information";
  
 
 
@@ -43,24 +43,40 @@ $RSevent_log = mysql_query("SELECT * FROM (SELECT * FROM nodo_tbl_event_log WHER
 ?>
 
 	<div data-role="collapsible" data-collapsed="false">
-	<h3>Laatste 25 events</h3>
+	<h3>Last 25 events</h3>
 
+<table>    
+   
+ <thead>     
+ <tr>      
+ <th scope="col" align="left">Unit</th>      
+<th scope="col" align="left">Event</th>      
+<th scope="col" align="left">Timestamp</th>
+    </tr>    
+	</thead>    
+	   
+	<tbody>
+
+ 
 
 <?php		
 		while($row = mysql_fetch_array($RSevent_log)) 
 		{                                
-?>		           
-		<?php echo $row['timestamp'];?> - <?php echo $row['event']; ?> <br>		
-		
+?>		 
+		<tr>	
+		<td width="50"><?php echo $row['nodo_unit_nr'];?></td> <td width="200"><?php echo $row['event'];?></td><td><?php echo $row['timestamp'];?></td>		
+		</tr>
 <?php		
 		}         
 		?>
+	</tbody>
+	</table>
 	<br>
 	
 	
 	</div>	
 
-	<a href="export_csv.php" data-role="button" data-inline="true" data-ajax="false">Exporteer alle events naar csv</a>
+	<a href="export_csv.php" data-role="button" data-inline="true" data-ajax="false">Export all events to csv</a>
 	</div><!-- /content -->
 	
 	<?php require_once('include/footer.php'); ?>

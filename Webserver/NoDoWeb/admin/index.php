@@ -26,11 +26,11 @@ $page_title = "Setup";
 	<?php require_once('../include/header_admin.php'); ?>
 
 	<div data-role="content">	
-	  <p><a href="setup_connection.php" data-role="button" data-ajax="false">Communicatie</a></p>
-	  <p><a href="devices.php" data-role="button" data-ajax="false">Apparaten</a></p>
-	  <p><a href="activities.php" data-role="button" data-ajax="false">Activiteiten</a></p>
-	  <p><a href="measurements.php" data-role="button" data-ajax="false">Metingen</a></p>
-   	  <p><a href="setup_nodoweb.php" data-role="button" data-ajax="false">Uiterlijk</a></p>
+	  <p><a href="setup_connection.php" data-role="button" data-ajax="false">Communication</a></p>
+	  <p><a href="devices.php" data-role="button" data-ajax="false">Devices</a></p>
+	  <p><a href="activities.php" data-role="button" data-ajax="false">Activities</a></p>
+	  <p><a href="sensor.php" data-role="button" data-ajax="false">Sensors</a></p>
+   	  <p><a href="setup_nodoweb.php" data-role="button" data-ajax="false">Look & Feel</a></p>
 	</div><!-- /content -->
 	
 	<?php require_once('../include/footer_admin.php'); ?>
