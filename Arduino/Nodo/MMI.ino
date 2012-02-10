@@ -15,6 +15,8 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
   {
   byte x;
 
+  // Serial.print("*** debug: PrintEvent(); ");Serial.println(Content,HEX);//??? Debug
+
   TempString[0]=0; // als start een lege string
 
   // datum en tijd weergeven
@@ -77,7 +79,7 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
   else
     {
     // ??? statussen worden nu nog weergegeven als event. 
-//???    strcat(TempString, ProgmemString(Text_14));
+    strcat(TempString, ProgmemString(Text_14));
     strcat(TempString, Event2str(Content));
     }
 
@@ -86,38 +88,10 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
 
   // Indien er een SDCard gevonden is, dan loggen naar file
   if(SDCardPresent)
-    LogSDCard(TempString);
+    AddFileSDCard(ProgmemString(Text_23),TempString);
   } 
       
 
-  
- /**********************************************************************************************\
- * Print een regel uit de Eventlist.
- \*********************************************************************************************/
-void PrintEventlistEntry(int entry, byte d)
-  {
-  unsigned long Event, Action;
-  String Line;
-  
-  Eventlist_Read(entry,&Event,&Action); // leesregel uit de Eventlist.    
-  if(Event==0)
-    return;
-
-  // Geef de entry van de eventlist weer
-  Line=cmd2str(VALUE_SOURCE_EVENTLIST);
-  Line+=' ';
-  Line+=entry;
-
-  // geef het event weer
-  Line+="; ";
-  Line+=Event2str(Event);
-
-  // geef het action weer
-  Line+="; ";
-  Line+=Event2str(Action);
-  PrintLine(Line);
-  }
-  //???@1
   
  /**********************************************************************************************\
  * Print actuele dag, datum, tijd.
@@ -143,6 +117,7 @@ char* DateTimeString(void)
 void PrintWelcome(void)
   {
   // Print Welkomsttekst
+  PrintLine("");
   PrintLine(ProgmemString(Text_22));
   PrintLine(ProgmemString(Text_01));
   PrintLine(ProgmemString(Text_02));
@@ -182,16 +157,18 @@ void PrintWelcome(void)
  /**********************************************************************************************\
  * Verzend teken(s) naar de Terminal
  \*********************************************************************************************/
-void PrintLine(String LineToPrint)
+void PrintLine(char* LineToPrint)
   {
   // FreeMemory(0); //??? debug
-//  if(SerialConnected)//??? weer terugzetten
+  if(SerialConnected)
     Serial.println(LineToPrint);
  
   if(EthernetEnabled)
     {
     if(TerminalClient.connected() && TerminalConnected>0 && TerminalLocked==0)
       TerminalClient.println(LineToPrint);
+    if(ConfirmHTTP==true && S.TransmitIP==VALUE_SOURCE_HTTP)
+      SendHTTPRequestResponse(LineToPrint);
     }
   }
 
@@ -295,7 +272,7 @@ char* Event2str(unsigned long Code)
       case CMD_UNIT:
       case CMD_RAWSIGNAL:
       case CMD_RAWSIGNAL_SEND:
-      case CMD_DIVERT:
+      //??? case CMD_DIVERT:
       case CMD_SIMULATE_DAY:
       case CMD_CLOCK_DOW:
         P1=P_VALUE;
@@ -323,7 +300,7 @@ char* Event2str(unsigned long Code)
         {
         case P_ANALOG:
           strcat(EventString,int2str(((Code>>12)&0x0f)));
-          strcat(EventString,", ");
+          strcat(EventString,",");
           strcat(EventString,AnalogInt2str(event2AnalogInt(Code))); // waarde analoog
           break;
         case P_TEXT:

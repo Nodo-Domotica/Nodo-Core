@@ -60,15 +60,20 @@ byte CommandError(unsigned long Content)
     case CMD_IP_SETTINGS:
     case CMD_RAWSIGNAL_SAVE:
     case CMD_RAWSIGNAL_SEND:
-    case CMD_LOGFILE_SHOW:
-    case CMD_LOGFILE_ERASE:
+    case CMD_FILE_SHOW:
+    case CMD_FILE_ERASE:
+    case CMD_FILE_EXECUTE:
+    case CMD_FILE_WRITE:
+    case CMD_FILE_LIST:
     case CMD_PORT:
+    case CMD_SEND: //??? t.b.v. test/ontwikkeling. nog niet operationeel.
     case CMD_ERROR:
     case CMD_REBOOT:
     case CMD_VARIABLE_SAVE:
     case CMD_WAITFREERF: 
     case CMD_USERPLUGIN: 
     case CMD_VARIABLE_EVENT:    
+    case CMD_NODO_IP:    
     case CMD_DLS_EVENT:
     case CMD_CLOCK_EVENT_DAYLIGHT:
     case CMD_CLOCK_EVENT_ALL:
@@ -190,7 +195,6 @@ byte CommandError(unsigned long Content)
 
     case CMD_TRANSMIT_IP:
       if(Par1!=VALUE_OFF && Par1!=VALUE_SOURCE_HTTP && Par1!=VALUE_SOURCE_EVENTGHOST)return ERROR_02;
-      if(Par2!=0 && Par2!=VALUE_OFF && Par2!=VALUE_ON)return ERROR_02;
       return false;
 
     case CMD_WIRED_ANALOG_CALIBRATE:
@@ -254,9 +258,9 @@ byte CommandError(unsigned long Content)
       if(Par2!=VALUE_OFF && Par2!=VALUE_ON && Par2!=0)return ERROR_02;
       return false;
 
-    case CMD_DIVERT:   
-     if(Par1>UNIT_MAX)return ERROR_02;
-     return false;
+//    case CMD_DIVERT:   //???
+//     if(Par1>UNIT_MAX)return ERROR_02;
+//     return false;
 
     case CMD_UNIT:
       if(Par1<1 || Par1>UNIT_MAX)return ERROR_02;
@@ -286,6 +290,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   byte Par2         = Content&0xff;
   byte Type         = (Content>>28)&0x0f;
   byte PreviousType = (PreviousContent>>28)&0x0f;
+
+  // Serial.print("*** debug: ExecuteCommand(); ");Serial.println(Content,HEX); //??? Debug
 
   error=CommandError(Content);
   if(error)
@@ -567,42 +573,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         Reset();
         break;        
 
-      case CMD_LOGFILE_SHOW:
-        {
-        PrintLine(ProgmemString(Text_22));
-        // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-        digitalWrite(Ethernetshield_CS_W5100, HIGH);
-        digitalWrite(EthernetShield_CS_SDCard,LOW);
-        File dataFile=SD.open(ProgmemString(Text_23));
-        if(dataFile) 
-          {
-          y=0;       
-          while(dataFile.available())
-            {
-            x=dataFile.read();
-            if(isprint(x) && y<INPUT_BUFFER_SIZE)
-              {
-              TempString[y++]=x;
-              }
-            else
-              {
-              TempString[y]=0;
-              y=0;
-              PrintLine(TempString);
-              }
-            }
-          dataFile.close();
-          }  
-        else 
-          RaiseError(ERROR_03);    
-
-        // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
-        digitalWrite(Ethernetshield_CS_W5100, LOW);
-        digitalWrite(EthernetShield_CS_SDCard,HIGH);
-        PrintLine(ProgmemString(Text_22));
-        break;
-        }
-
       case CMD_ANALYSE_SETTINGS:
         S.AnalyseTimeOut=Par1;
         S.AnalyseSharpness=Par2*1000;
@@ -621,7 +591,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 void ExecuteLine(char *Line, byte Port)
   {
   const int MaxCommandLength=80; // maximaal aantal tekens van een commando
-  char Command[MaxCommandLength], TmpStr[MaxCommandLength];//??? erg veel. kan dit ook anders / kleiner
+  char Command[MaxCommandLength]; 
+  char TmpStr[INPUT_BUFFER_SIZE+1];
   int PosCommand;
   int PosLine;
   int L=strlen(Line);
@@ -630,7 +601,9 @@ void ExecuteLine(char *Line, byte Port)
   byte Error=0,Par1,Par2,Cmd;
   byte State_EventlistWrite=0;
   unsigned long v,event,action; 
-  
+
+  // Serial.print("*** debug: executeLine(); start= ");Serial.println(Command); //??? Debug
+
   PosCommand=0;
   for(PosLine=0;PosLine<=L && Error==0 ;PosLine++)
     {
@@ -659,8 +632,6 @@ void ExecuteLine(char *Line, byte Port)
       v=0;
       // string met commando compleet
       
-      // Serial.print("*** debug: Command=");Serial.println(Command);//??? Debug
-
       // maak van de string een commando waarde. Het kan ook zijn dat het een hex-event is.
       if(GetArgv(Command,TmpStr,1));
         v=str2int(TmpStr);
@@ -698,20 +669,106 @@ void ExecuteLine(char *Line, byte Port)
             FactoryEventlist();
             Reset();
         
-          case CMD_LOGFILE_ERASE:      
-            // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-            digitalWrite(Ethernetshield_CS_W5100, HIGH);
-            digitalWrite(EthernetShield_CS_SDCard,LOW);
-            SD.remove(ProgmemString(Text_23));
-            // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
-            digitalWrite(Ethernetshield_CS_W5100, LOW);
-            digitalWrite(EthernetShield_CS_SDCard,HIGH);
+          case CMD_FILE_ERASE:      
+            if(GetArgv(Command,TmpStr,2))
+              {
+              strcat(TmpStr,".dat");
+
+              // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+              digitalWrite(Ethernetshield_CS_W5100, HIGH);
+              digitalWrite(EthernetShield_CS_SDCard,LOW);
+              SD.remove(TmpStr);
+              // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
+              digitalWrite(EthernetShield_CS_SDCard,HIGH);
+              digitalWrite(Ethernetshield_CS_W5100, LOW);
+              }
             break;
     
           case CMD_IP_SETTINGS:
             PrintIPSettings();
             break;
 
+          case CMD_FILE_SHOW:
+            {
+            if(GetArgv(Command,TmpStr,2))
+              {
+              PrintLine(ProgmemString(Text_22));
+              strcat(TmpStr,".dat");
+              // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+              digitalWrite(Ethernetshield_CS_W5100, HIGH);
+              digitalWrite(EthernetShield_CS_SDCard,LOW);
+              File dataFile=SD.open(TmpStr);
+              if(dataFile) 
+                {
+                y=0;       
+                while(dataFile.available())
+                  {
+                  x=dataFile.read();
+                  if(isprint(x) && y<INPUT_BUFFER_SIZE)
+                    {
+                    TmpStr[y++]=x;
+                    }
+                  else
+                    {
+                    TmpStr[y]=0;
+                    y=0;
+                    PrintLine(TmpStr);
+                    }
+                  }
+                dataFile.close();
+                }  
+              else 
+                RaiseError(ERROR_03);    
+      
+              // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
+              digitalWrite(Ethernetshield_CS_W5100, LOW);
+              digitalWrite(EthernetShield_CS_SDCard,HIGH);
+              PrintLine(ProgmemString(Text_22));
+              }
+            break;
+            }
+    
+          case CMD_FILE_EXECUTE:
+            {
+            if(GetArgv(Command,TmpStr,2))
+              {
+              strcat(TmpStr,".dat");
+              // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+              digitalWrite(Ethernetshield_CS_W5100, HIGH);
+              digitalWrite(EthernetShield_CS_SDCard,LOW);
+              File dataFile=SD.open(TmpStr);
+              if(dataFile) 
+                {
+                y=0;       
+                while(dataFile.available())
+                  {
+                  x=dataFile.read();
+                  if(isprint(x) && y<INPUT_BUFFER_SIZE)
+                    TmpStr[y++]=x;
+                  else
+                    {
+                    TmpStr[y]=0;
+                    y=0;
+                    //Serial.print("*** debug: Regel uit file voor execute=");Serial.println(TmpStr);//??? Debug
+                    digitalWrite(EthernetShield_CS_SDCard,HIGH);
+                    digitalWrite(Ethernetshield_CS_W5100, LOW);
+                    ExecuteLine(TmpStr,VALUE_SOURCE_FILE);
+                    digitalWrite(EthernetShield_CS_SDCard,LOW);
+                    digitalWrite(Ethernetshield_CS_W5100, HIGH);
+                    }
+                  }
+                dataFile.close();
+                }  
+              else 
+                RaiseError(ERROR_03);    
+      
+              // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
+              digitalWrite(EthernetShield_CS_SDCard,HIGH);
+              digitalWrite(Ethernetshield_CS_W5100, LOW);
+              }
+            break;
+            }
+    
           case CMD_EVENTGHOST_SERVER:
             if(Par1==VALUE_AUTO)
               { 
@@ -722,10 +779,17 @@ void ExecuteLine(char *Line, byte Port)
               }
             else
               {
-              if(GetArgv(Command,TempString,2))
-                if(!str2ip(TempString,S.EventGhostServer_IP))
+              if(GetArgv(Command,TmpStr,2))
+                if(!str2ip(TmpStr,S.EventGhostServer_IP))
                   Error=ERROR_02;
               }
+            SaveSettings();
+            break;
+            
+          case CMD_NODO_IP:
+            if(GetArgv(Command,TmpStr,2))
+              if(!str2ip(TmpStr,S.Nodo_IP))
+                Error=ERROR_02;
             SaveSettings();
             break;
             
@@ -809,11 +873,26 @@ void ExecuteLine(char *Line, byte Port)
             if(Par1==VALUE_ALL || Par1==0)
               {
               for(x=1;x<=EVENTLIST_MAX;x++)
-                PrintEventlistEntry(x,0);
+                {
+                if(EventlistEntry2str(x,0,TmpStr))
+                  PrintLine(TmpStr);
+                }
               }
             else
-              PrintEventlistEntry(Par1,0);
+              {
+              EventlistEntry2str(Par1,0,TmpStr);
+              PrintLine(TmpStr);
+              }
             PrintLine(ProgmemString(Text_22));
+            break;
+
+          case CMD_EVENTLIST_FILE:
+            if(GetArgv(Command,TmpStr,2))
+              {
+              strcat(TmpStr,".dat");
+              if(!SaveEventlistSDCard(TmpStr))
+                Error=ERROR_03;
+              }
             break;
 
           case CMD_EVENTLIST_ERASE:
@@ -827,12 +906,37 @@ void ExecuteLine(char *Line, byte Port)
 
             break;        
 
+          case CMD_FILE_LIST:
+            if(!FileList())
+              Error=ERROR_03;
+            break;
+
+          case CMD_FILE_WRITE:
+            if(GetArgv(Command,TmpStr,2))
+              {
+              strcat(TmpStr,".dat");
+              // zoek in de regel waar de weg te schrijven tekst zich bevindt. Dit is alles na de eerstvolgende ';'
+              x=StringFind(Line,";");
+              AddFileSDCard(TmpStr, &Line[0]+x+1);
+              PosLine=L+1; // ga direct naar einde van de regel.
+              }
+            else
+              Error=ERROR_02;
+            break;
+
           case CMD_HTTP_REQUEST:
             // zoek in de regel waar de string met het http request begint.
             x=StringFind(Line,cmd2str(CMD_HTTP_REQUEST))+strlen(cmd2str(CMD_HTTP_REQUEST));
             while(Line[x]==32)x++;
             strcpy(S.HTTPRequest,&Line[0]+x);
             SaveSettings(); 
+            break;
+
+          case CMD_SEND:
+            // zoek in de regel waar de string met het http request begint.
+            x=StringFind(Line,cmd2str(CMD_SEND))+strlen(cmd2str(CMD_SEND));
+            while(Line[x]==32)x++;
+            SendStringRF(&Line[0]+x);
             break;
 
           case CMD_PASSWORD:
@@ -851,9 +955,9 @@ void ExecuteLine(char *Line, byte Port)
 
           case CMD_PORT:
             {
-            if(GetArgv(Command,TempString,2))
+            if(GetArgv(Command,TmpStr,2))
               {
-              S.Port=str2int(TempString);
+              S.Port=str2int(TmpStr);
               SaveSettings();
               }
             break;
@@ -930,9 +1034,9 @@ void ExecuteLine(char *Line, byte Port)
 
       if(Error) // er heeft zich een fout voorgedaan
         {
-        strcpy(TempString,Command);
-        strcat(TempString, " ?");
-        PrintLine(TempString);
+        strcpy(TmpStr,Command);
+        strcat(TmpStr, " ?");
+        PrintLine(TmpStr);
         RaiseError(Error);
         Line[0]=0;
         }          

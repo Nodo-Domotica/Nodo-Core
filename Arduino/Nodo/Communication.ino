@@ -1,4 +1,4 @@
-#define IP_INPUT_BUFFER_SIZE      512
+#define IP_INPUT_BUFFER_SIZE      256
 #define XON                       0x11
 #define XOFF                      0x13
 
@@ -143,11 +143,44 @@ boolean SendEventGhost(char* event, byte* SendToIP)
     
 
  /*******************************************************************************************************\
- * Deze functie verzendt een regel als event naar een EventGhost EventGhostServer. De Payload wordt niet
- * gebruikt en is leeg. Er wordt een false teruggegeven als de communicatie met de EventGhost EventGhostServer
- * niet tot stand gebracht kon worden.
+ *
+ *
  \*******************************************************************************************************/
-boolean SendHTTPRequest(unsigned long event)
+boolean SendHTTPRequestResponse(char* Response)
+  {
+  boolean r;
+  char* ResponseString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+
+  strcpy(ResponseString,"&response=");
+  strcat(ResponseString,Response);
+  r=SendHTTPRequestStr(ResponseString);
+
+  free(ResponseString);
+  
+  return r;
+  }
+
+ /*******************************************************************************************************\
+ *
+ *
+ \*******************************************************************************************************/
+boolean SendHTTPRequestEvent(unsigned long event)
+  {
+  boolean r;
+  char* EventString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+
+  strcpy(EventString,"&event=");
+  strcat(EventString,Event2str(event));
+  strcat(EventString,"&unit=");
+  strcat(EventString,int2str((event>>28)&0x0f));
+  r=SendHTTPRequestStr(Event2str(event));
+
+  free(EventString);
+  return r;
+  }
+
+
+boolean SendHTTPRequestStr(char* StringToSend)
   {
   int InByteCounter;
   byte InByte,x;
@@ -173,17 +206,14 @@ boolean SendHTTPRequest(unsigned long event)
 
     strcpy(IPBuffer,"GET ");
     strcat(IPBuffer,S.HTTPRequest+x);
-    strcat(IPBuffer,"?event=");
-
-    strcpy(TempString,Event2str(event));
-    strcat(TempString,"&id=");
+    strcpy(TempString,"&id=");
     strcat(TempString,S.ID);
-    strcat(TempString,"&unit=");
-    strcat(TempString,int2str((event>>28)&0x0f));
     strcat(TempString,"&password=");
     strcat(TempString,S.Password);
     strcat(TempString,"&version=");
     strcat(TempString,int2str(S.Version));
+    strcat(TempString,"&event=");
+    strcat(TempString,StringToSend);
     
     // event toevoegen aan tijdelijke string, echter alle spaties vervangen door + conform URL notatie ??? nodig?  
     for(x=0;x<strlen(TempString);x++)
@@ -226,7 +256,7 @@ boolean SendHTTPRequest(unsigned long event)
         if(isprint(InByte) && InByteCounter<INPUT_BUFFER_SIZE)
           IPBuffer[InByteCounter++]=InByte;
           
-        else if(InByte==0x0D || InByte==0x0A)
+        else if((InByte==0x0D || InByte==0x0A) && InByteCounter>0)
           {
           IPBuffer[InByteCounter]=0;
           InByteCounter=0;
@@ -326,7 +356,7 @@ boolean ParseHTTPRequest(char* HTTPRequest,char* Keyword, char* ResultString)
  *
  \*********************************************************************************************/
 
-boolean IPReceive(char *Event)
+void ExecuteIP(void)
   {
   char InByte;
   boolean RequestCompleted=false;  
@@ -335,15 +365,16 @@ boolean IPReceive(char *Event)
   byte Protocol=0;
   byte EGState;
   char Cookie[8];
+  char FileName[15];
+  boolean RequestEvent=false;
+  boolean RequestFile=false;
   int x,y;
   unsigned long TimeoutTimer=millis()+2000; // Na twee seconden moet de gehele transactie gereed zijn, anders 'hik' in de lijn.
-  char *str_2;
-  char *InputBuffer_IP;
-  
 
   // reserver een inputbuffer
-  InputBuffer_IP=(char*)malloc(IP_INPUT_BUFFER_SIZE+1);
-  str_2=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  char *Event=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  char *InputBuffer_IP=(char*)malloc(IP_INPUT_BUFFER_SIZE+1);
+  char *str_2=(char*)malloc(INPUT_BUFFER_SIZE+1);
 
   Event[0]=0; // maak de string leeg.
   
@@ -405,11 +436,27 @@ boolean IPReceive(char *Event)
                       IPClient.println(F("HTTP/1.1 403 Forbidden"));
                       }
                     else
-                      {      
+                      {
                       if(ParseHTTPRequest(InputBuffer_IP,"event",Event))
+                        RequestEvent=true;
+                       
+                      if(ParseHTTPRequest(InputBuffer_IP,"file",TempString))
+                        {
+                        TempString[9]=0; // voorkom dat een file meer dan 8 posities heeft (en een afsluitende 0)
+                        strcpy(FileName,TempString);
+                        strcat(FileName,".dat");
+                        RequestFile=true;
+                        }
+                        
+                      if(ParseHTTPRequest(InputBuffer_IP,"confirm",TempString))
+                        ConfirmHTTP=true;
+                        
+                      if(RequestFile || RequestEvent)
                         {
                         RequestCompleted=true;
-                        IPClient.println(F("HTTP/1.1 200 Ok"));
+                        strcpy(TempString,"HTTP/1.1 200 Ok"); //??? omzetten naar ProgMEM
+                        strcat(TempString,S.ID);
+                        IPClient.println(TempString);
                         }
                       else
                         IPClient.println(F("HTTP/1.1 400 Bad Request"));
@@ -418,9 +465,65 @@ boolean IPReceive(char *Event)
                   }
                 }
               }
-            IPClient.println(F("Content-Type: text/html"));    // HTTP Request wordt altijd afgesloten met een lege regel
-            IPClient.println();            
-            } // einde HTTP-protocol
+            IPClient.println(F("Content-Type: text/html"));
+            IPClient.print(F("Server: Nodo/"));
+            IPClient.println(int2str(S.Version));             
+            if(Time.Day)
+              {
+              IPClient.print(F("Date: "));
+              IPClient.println(DateTimeString());             
+              }
+            IPClient.println(""); // HTTP Request wordt altijd afgesloten met een lege regel
+
+            if(RequestFile)
+              {
+              // Verzend de body van het HTTP-request
+//              strcpy(TempString,ProgmemString(Text_15));
+//              strcat(TempString,FileName);              
+//              IPClient.println(TempString);
+//              IPClient.println("<br />");
+              
+              // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+              digitalWrite(Ethernetshield_CS_W5100, HIGH);
+              digitalWrite(EthernetShield_CS_SDCard,LOW);
+              File dataFile=SD.open(FileName);
+              if(dataFile) 
+                {
+                y=0;       
+                while(dataFile.available())
+                  {
+                  x=dataFile.read();
+                  if(isprint(x) && y<INPUT_BUFFER_SIZE)
+                    {
+                    TempString[y++]=x;
+                    }
+                  else
+                    {
+                    TempString[y]=0;
+                    y=0;
+                    digitalWrite(EthernetShield_CS_SDCard,HIGH);
+                    digitalWrite(Ethernetshield_CS_W5100, LOW);
+                    if(RequestFile)
+                      {
+                      IPClient.println(ProgmemString(Text_22));
+                      IPClient.println("<br />");
+                      RequestFile=false;// gebruiken we even als vlag om de eerste keer de regel met asteriks af te drukken omdat deze variabele toch verder niet meer nodig is
+                      }
+                    IPClient.print(TempString);
+                    IPClient.println("<br />");
+                    digitalWrite(Ethernetshield_CS_W5100, HIGH);
+                    digitalWrite(EthernetShield_CS_SDCard,LOW);
+                    }
+                  }
+                dataFile.close();
+                digitalWrite(EthernetShield_CS_SDCard,HIGH);
+                digitalWrite(Ethernetshield_CS_W5100, LOW);
+                IPClient.println(ProgmemString(Text_22));
+                }  
+              else 
+                IPClient.println(cmd2str(ERROR_03));
+              }
+            } // einde HTTP-request
 
           if(Protocol==VALUE_SOURCE_EVENTGHOST) // EventGhost
             {
@@ -538,6 +641,11 @@ boolean IPReceive(char *Event)
   IPClient.stop();
   free(str_2);
   free(InputBuffer_IP);
-  return Protocol;
+
+  ExecuteLine(InputBuffer_IP, Protocol);
+  ConfirmHTTP=false; // geen monitor weergave meer als HTTP-request versturen.
+
+  free(Event);
+  return;
   }
 

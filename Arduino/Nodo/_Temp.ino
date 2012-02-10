@@ -1,15 +1,14 @@
 /*
-HTTPHost nodo2.powerkite.nl/events.php
 
-          
-        if(Par2==VALUE_ON || Par2==VALUE_OFF)
-          S.AutoSaveEventGhostIP=Par2;
+Serial.print("*** debug: executeLine(); start= ");Serial.println(Command); //??? Debug
 
-
-Serial.print("*** debug: =");Serial.println(,DEC);//??? Debug
 Serial.println("*** debug: ");//???
 
-if((millis()>>12)&0x01==1)Serial.println("*** debug: ...");//???
+
+HTTPHost nodo2.powerkite.nl/events.php
+
+        if(Par2==VALUE_ON || Par2==VALUE_OFF)
+          S.AutoSaveEventGhostIP=Par2;
 
 
 //  pinMode(22, OUTPUT);//???

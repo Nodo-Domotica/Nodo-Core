@@ -2,13 +2,19 @@
 
 Aanpassingen:
 
-- Alle commando's die werken met gebruikersvariabelen zijn geschikt gemaakt voor bereik van +100..-100
-- Toevoeging commando "WiredAnalogVariable <wiredpoort>,<variabele>". Kent de meetwaarde van een WiredIn toe aan een variabele
-- (New)KAKU signaal geeft een unit-0. (NIET KUNNEN TESTEN!)
-- Commando "VariableUserEvent" vervallen. Niet meer compatibel met analoge waarden in variabelen,
-- Commando "VariableSendUserEvent" vervallen. Niet meer compatibel met analoge waarden in variabelen,
-- VariableSave nu ook per individuele variabele mogelijk. 0=alle;
-
+- LET OP: MAC adres even naar je egen vaste IP adres wijzigen
+- Nieuw commando "EventlistFile <filename>". Slaat de eventlist op in een bestand op SDCard. Naam max. acht posities ZONDER EXTENTIE.
+- Nieuw commando "FileShow <filename>". Geeft de inhoud van een file weer.
+- Nieuw commando "FileErase <filename>". Verwijderd een file van SDCard.
+- Nieuw commando "FileExecute <filename>". Voert alle regels in een file uit.
+- Nieuw commando "FileWrite <filename>". Voegt alle tekst na dit commando toe aan bestand <filename>
+- Verwijderd commando "LogShow". Overbodig geworden. Gebruik nu "FileShow Log". Log is immers gewoon een bestand.
+- HTTP-request dat de Nodo ontvangt kan worden gebruikt om een file terug te laten sturen. ?password=<password>&id=<id>&file=<filename>
+- extra spatie voorafgaand aan analoge waarde verwijderd.
+- Nodo welkomsttekst komt bij TelNet sessie pas nadat wachtwoord is ingegeven, niet vooraf.
+- Commando "NodoIP <ip_address>" toegevoegd. Hiermee kan handmatig aan de Nodo een IP adres worden toegekend. Als adres 0.0.0.0, dan wordt IP adres verkregen via DHCP.
+- Commando "Divert" verwijderd. wordt mogelijk vervangen door "Send <unit>,<poort>" TIJDELIJK T.B.V. TEST OP BRUIKBAARHEID, NOG IN ONTWIKKELING.
+- LET OP: Bij versturen van een HTTP request zijn de labels van volgorde gewijzigd.
 
 Known Errors / ToDo:
 
@@ -17,7 +23,7 @@ Known Errors / ToDo:
 
 
 Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
-- EventListshow, eventListWrite,eventListErase hebben nu als parameter-1 de regel waar het betrekking op heeft (regel, ALL, 0=All)
+- EventListshow, eventListWrite, eventListErase hebben nu als parameter-1 de regel waar het betrekking op heeft (regel, ALL, 0=All)
 - Toevoeging commando "IPSettings".
 - Commaando toegevoegd "WiredCalibrate <poort> <High|Low> <ijkwaarde>"
 - Nodo ontvangt events via http. Voorbeeld: http://192.168.1.110/?event=sound&passwoord=Nodo&id=00000000
@@ -42,8 +48,7 @@ Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - Commando "Display" Vervallen.
 - Commando hoeft niet meer te worden afgesloten met een puntkomma. Puntkomma wordt alleen gebruikt om meerdere commandos per regel te scheiden.
 - Toevoeging commando "VariableSave <variabele>", slaat variabelen op zodat deze na een herstart weer worden geladen. 0=alle, Opslaan gebeurt NIET meer automatisch.
-- Toevoeging commando "LogShow": laat de inhoud van de log op SDCard zien
-- Toevoeging commando "LogErase": wist de logfile
+- Logging naar SDCard naar bestand log.dat. 
 - Commando "RawSignalGet" en "RawSignlPut" vervallen;
 - Toevoeging commando "RawSignalSave <key>". Slaat pulsenreeks van het eerstvolgende ontvangen signaal op op SDCard onder opgegeven nummer
 - Toevoeging commando "RawSignalSend <key>". Verzend een eerder onder <key> opgeslagen pulsenreeks. Als <key> = 0, dan wordt huidige inhoud verzonden
@@ -76,6 +81,16 @@ Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - Alle commando's die werken met gebruikersvariabelen zijn geschikt gemaakt voor bereik van +100..-100
 - Toevoeging commando "WiredAnalogVariable <wiredpoort>,<variabele>". Kent de meetwaarde van een WiredIn toe aan een variabele
 - (New)KAKU signaal geeft een unit-0. (NIET KUNNEN TESTEN!)
+- LET OP: MAC adres even naar je egen vaste IP adres wijzigen
+- Nieuw commando "EventlistFile <filename>". Slaat de eventlist op in een bestand op SDCard. Naam max. acht posities ZONDER EXTENTIE.
+- Nieuw commando "FileShow <filename>". Geeft de inhoud van een file weer.
+- Nieuw commando "FileErase <filename>". Verwijderd een file van SDCard.
+- Nieuw commando "FileExecute <filename>". Voert alle regels in een file uit.
+- Nieuw commando "FileWrite <filename>". Voegt alle tekst na dit commando toe aan bestand <filename>
+- HTTP-request dat de Nodo ontvangt kan worden gebruikt om een file terug te laten sturen. ?password=<password>&id=<id>&file=<filename>
+- Commando "NodoIP <ip_address>" toegevoegd. Hiermee kan handmatig aan de Nodo een IP adres worden toegekend. Als adres 0.0.0.0, dan wordt IP adres verkregen via DHCP.
+- Commando "Divert" verwijderd. wordt mogelijk vervangen door "Send <unit>,<poort>" TIJDELIJK T.B.V. TEST OP BRUIKBAARHEID, NOG IN ONTWIKKELING.???
+
 
 Onder de motorkap:
 - Verwerken van seriele gegevens volledig herschreven

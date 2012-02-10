@@ -265,6 +265,10 @@ void ResetFactory(void)
   S.EventGhostServer_IP[3]     = 0; // IP adres van de EventGhost server
   S.HTTPRequest[0]             = 0; // string van het HTTP adres leeg maken
   S.Port                       = 80;
+  S.Nodo_IP[0]                 = 192;
+  S.Nodo_IP[1]                 = 168;
+  S.Nodo_IP[2]                 = 1;
+  S.Nodo_IP[3]                 = 150;
   
   strcpy(S.Password,ProgmemString(Text_10));
   strcpy(S.ID,ProgmemString(Text_16));
@@ -850,7 +854,7 @@ void RaiseError(byte ErrorCode)
  /**********************************************************************************************\
  * Voeg een regel toe aan de logfile.
  \*********************************************************************************************/
-boolean LogSDCard(char *Line)
+boolean AddFileSDCard(char *FileName, char *Line)
   {
   if(SDCardPresent)
     {
@@ -858,12 +862,53 @@ boolean LogSDCard(char *Line)
     digitalWrite(Ethernetshield_CS_W5100, HIGH);
     digitalWrite(EthernetShield_CS_SDCard,LOW);
 
-    File LogFile = SD.open(ProgmemString(Text_23), FILE_WRITE);
+    File LogFile = SD.open(FileName, FILE_WRITE);
     if(LogFile) 
       {
       LogFile.write((uint8_t*)Line,strlen(Line));      
       LogFile.write('\n'); // nieuwe regel
       LogFile.close();
+      }
+    else 
+      {
+      SDCardPresent=false; // niet meer weer proberen weg te schrijven.
+      TransmitCode(command2event(CMD_ERROR,ERROR_03,0),VALUE_ALL);
+      }
+
+    // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip
+    digitalWrite(Ethernetshield_CS_W5100, LOW);
+    digitalWrite(EthernetShield_CS_SDCard,HIGH);
+    }
+  return SDCardPresent;
+  }
+
+ /**********************************************************************************************\
+ * Voeg een regel toe aan de logfile.
+ \*********************************************************************************************/
+boolean SaveEventlistSDCard(char *FileName)
+  {
+  int x;
+  
+  if(SDCardPresent)
+    {
+    // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+    digitalWrite(Ethernetshield_CS_W5100, HIGH);
+    digitalWrite(EthernetShield_CS_SDCard,LOW);
+
+    SD.remove(FileName); // eerst bestand wissen, anders wordt de data toegevoegd
+
+    File EventlistFile = SD.open(FileName, FILE_WRITE);
+    if(EventlistFile) 
+      {
+      for(x=1;x<=EVENTLIST_MAX;x++)
+        {
+        if(EventlistEntry2str(x,0,TempString))
+          {
+          EventlistFile.write((uint8_t*)TempString,strlen(TempString));      
+          EventlistFile.write('\n'); // nieuwe regel
+          }
+        }
+      EventlistFile.close();
       }
     else 
       {
@@ -891,5 +936,36 @@ void Led(boolean R, boolean G, boolean B)
    {
    PulseCount++;
    }     
-   
+
+boolean FileList(void)
+  { 
+  boolean x=false;
+  
+  digitalWrite(Ethernetshield_CS_W5100, HIGH);
+  digitalWrite(EthernetShield_CS_SDCard,LOW);
+
+  if(File root = SD.open("/"))
+    {
+    while(File entry = root.openNextFile())
+      {
+      if(!entry.isDirectory())
+        {
+        digitalWrite(EthernetShield_CS_SDCard,HIGH);
+        digitalWrite(Ethernetshield_CS_W5100, LOW);
+
+        strcpy(TempString,entry.name());
+        TempString[StringFind(TempString,".")]=0;
+        PrintLine(TempString);
+
+        digitalWrite(Ethernetshield_CS_W5100, HIGH);
+        digitalWrite(EthernetShield_CS_SDCard,LOW);
+        }
+      }
+    x=true;
+    }
+
+  digitalWrite(EthernetShield_CS_SDCard,HIGH);
+  digitalWrite(Ethernetshield_CS_W5100, LOW);
+  return x;
+  }
    

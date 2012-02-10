@@ -403,16 +403,19 @@ boolean TransmitCode(unsigned long Event, byte Dest)
       
       if(!SendEventGhost(Event2str(Event),S.EventGhostServer_IP))
         {
-        Serial.println("*** debug: EventGhost communicatie tijdelijk opgeheven i.v.m. fout.");//???
+        Serial.println("*** debug: EventGhost communicatie tijdelijk opgeheven i.v.m. communicatiefout.");//???
         TemporyEventGhostError=true;
         }
       }
     }
 
-  if(Dest==VALUE_SOURCE_HTTP || (Dest==VALUE_ALL && S.TransmitIP==VALUE_SOURCE_HTTP))
+  if(EthernetEnabled)
     {
-    SendHTTPRequest(Event);
-    PrintEvent(Event,S.TransmitIP,VALUE_DIRECTION_OUTPUT);
+    if(Dest==VALUE_SOURCE_HTTP || (Dest==VALUE_ALL && S.TransmitIP==VALUE_SOURCE_HTTP))
+      {
+      SendHTTPRequestEvent(Event);
+      PrintEvent(Event,VALUE_SOURCE_HTTP,VALUE_DIRECTION_OUTPUT);
+      }
     }
   }
 
@@ -589,4 +592,43 @@ void RawSignalGet(int Key)
   }
 
 
+boolean SendStringRF(char* string)
+  {
+  int length=strlen(string);
+  byte checksum=0;
+  int x;
+  byte state=0;
+ 
+  // verzend de volgende bytes:
+  // blokgrootte 0.255
+  // string[0] .. string[laatste teken +1] ; dus de afsluitende nul van de string wordt meegezonden
+  // checksum byte
+   
+  SendFrameRF(length&0xff);
+  for(x=0;x<length;x++)
+    {
+    SendFrameRF(string[x]);
+    checksum=(checksum + string[x])%256; // bereken checksum (crc-8)
+    }
+  SendFrameRF(checksum);
+  }
+
+void SendFrameRF(byte c)
+  {
+  byte x;
+  Serial.print("*** SendFrame: ");
+  Serial.write(c);
+  Serial.print("(");
+  Serial.print(c,DEC);
+  Serial.print(") = ");
+  
+  for(x=0;x<=7;x++)
+    {
+    if(c>>x&1)
+      Serial.print("1");
+    else
+      Serial.print("0");
+    }  
+  Serial.println();
+  }
 

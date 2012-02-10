@@ -364,3 +364,31 @@ int event2AnalogInt(unsigned long event)
   
   return wi;
   }
+  
+
+ /**********************************************************************************************\
+ * vult een string met een regel uit de Eventlist.
+ * geeft false terug als de regel leeg is
+ \*********************************************************************************************/
+boolean EventlistEntry2str(int entry, byte d, char* Line)
+  {
+  unsigned long Event, Action;
+    
+  Eventlist_Read(entry,&Event,&Action); // leesregel uit de Eventlist.    
+  if(Event==0)
+    return false;
+
+  // Geef de entry van de eventlist weer
+  strcpy(Line,cmd2str(VALUE_SOURCE_EVENTLIST));
+  strcat(Line," ");
+  strcat(Line,int2str(entry));
+
+  // geef het event weer
+  strcat(Line,"; ");
+  strcat(Line,Event2str(Event));
+
+  // geef het action weer
+  strcat(Line,"; ");
+  strcat(Line,Event2str(Action));
+  return true;
+  }

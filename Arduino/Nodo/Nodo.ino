@@ -28,7 +28,6 @@
  *
  \****************************************************************************************************************************/
 
-#define MAC_ADDRESS 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
 
 #define VERSION        3          // Nodo Version nummer:
                                   // Major.Minor.Patch
@@ -59,7 +58,7 @@ prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
 prog_char PROGMEM Text_03[] = "Enter your password: ";
 prog_char PROGMEM Text_04[] = "SunMonThuWedThuFriSat";
 prog_char PROGMEM Text_05[] = "0123456789abcdef";
-prog_char PROGMEM Text_06[] = "Error=";
+prog_char PROGMEM Text_06[] = "Message=";
 prog_char PROGMEM Text_07[] = "Waiting for signal...";
 prog_char PROGMEM Text_08[] = "Queue=Out, ";
 prog_char PROGMEM Text_09[] = "Queue=In, ";
@@ -68,7 +67,7 @@ prog_char PROGMEM Text_11[] = "Output=";
 prog_char PROGMEM Text_12[] = "Input=";
 prog_char PROGMEM Text_13[] = "Ok.";
 prog_char PROGMEM Text_14[] = "Event=";
-prog_char PROGMEM Text_15[] = ""; // reserve
+prog_char PROGMEM Text_15[] = "File="; // reserve
 prog_char PROGMEM Text_16[] = "00000000"; // default ID na een reset
 prog_char PROGMEM Text_17[] = "payload";
 prog_char PROGMEM Text_18[] = "accept";
@@ -76,13 +75,13 @@ prog_char PROGMEM Text_19[] = "close";
 prog_char PROGMEM Text_20[] = "quintessence";
 prog_char PROGMEM Text_21[] = "payload withoutRelease";
 prog_char PROGMEM Text_22[] = "********************************************************************************";
-prog_char PROGMEM Text_23[] = "Log.txt";
+prog_char PROGMEM Text_23[] = "Log.dat";
 prog_char PROGMEM Text_24[] = "Logging on SDCard enabled.";
 prog_char PROGMEM Text_25[] = "System=";
 prog_char PROGMEM Text_26[] = "Event received from: ";
 prog_char PROGMEM Text_27[] = "Raw/Key"; // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_28[] = "Raw/Hex"; // Directory op de SDCard voor opslag RawSignal
-prog_char PROGMEM Text_29[] = "www.nodo-domotica.nl/test/NodoEvent.php"; // Host waar de events in de vorm van een HTTP request naar toe gestuurd moeten worden
+prog_char PROGMEM Text_29[] = ""; // Host waar de events in de vorm van een HTTP request naar toe gestuurd moeten worden
 prog_char PROGMEM Text_30[] = "Terminal connection closed.";
  
 // Commando's:
@@ -97,7 +96,7 @@ prog_char PROGMEM Cmd_007[]="ClockSetYear";
 prog_char PROGMEM Cmd_008[]="ClockSetTime";
 prog_char PROGMEM Cmd_009[]="ClockSetDOW";
 prog_char PROGMEM Cmd_010[]="Delay";
-prog_char PROGMEM Cmd_011[]="Divert";
+prog_char PROGMEM Cmd_011[]="Send";
 prog_char PROGMEM Cmd_012[]="EventlistErase";
 prog_char PROGMEM Cmd_013[]="EventlistShow";
 prog_char PROGMEM Cmd_014[]="EventlistWrite";
@@ -134,9 +133,9 @@ prog_char PROGMEM Cmd_044[]="SendUserEvent";
 prog_char PROGMEM Cmd_045[]="RawSignalCopy";
 prog_char PROGMEM Cmd_046[]="WildCard";
 prog_char PROGMEM Cmd_047[]="SendBusy";
-prog_char PROGMEM Cmd_048[]="";
+prog_char PROGMEM Cmd_048[]="NodoIP";
 prog_char PROGMEM Cmd_049[]="Password";
-prog_char PROGMEM Cmd_050[]="";
+prog_char PROGMEM Cmd_050[]="EventlistFile";
 prog_char PROGMEM Cmd_051[]="WiredCalibrate";
 prog_char PROGMEM Cmd_052[]="Reboot";
 prog_char PROGMEM Cmd_053[]="HTTPHost";
@@ -148,11 +147,11 @@ prog_char PROGMEM Cmd_058[]="OutputIR";
 prog_char PROGMEM Cmd_059[]="OutputRF";
 prog_char PROGMEM Cmd_060[]="EventGhostServer";
 prog_char PROGMEM Cmd_061[]="WiredAnalogVariable";
-prog_char PROGMEM Cmd_062[]="LogErase";
-prog_char PROGMEM Cmd_063[]="LogShow";
-prog_char PROGMEM Cmd_064[]="";
-prog_char PROGMEM Cmd_065[]="";
-prog_char PROGMEM Cmd_066[]="";
+prog_char PROGMEM Cmd_062[]="FileErase";
+prog_char PROGMEM Cmd_063[]="FileShow";
+prog_char PROGMEM Cmd_064[]="FileExecute";
+prog_char PROGMEM Cmd_065[]="FileWrite";
+prog_char PROGMEM Cmd_066[]="FileList";
 prog_char PROGMEM Cmd_067[]="";
 prog_char PROGMEM Cmd_068[]="";
 prog_char PROGMEM Cmd_069[]="";
@@ -258,7 +257,7 @@ prog_char PROGMEM Cmd_163[]="Clock";
 prog_char PROGMEM Cmd_164[]="Terminal";
 prog_char PROGMEM Cmd_165[]="EventGhost";
 prog_char PROGMEM Cmd_166[]="Status";
-prog_char PROGMEM Cmd_167[]="Auto";
+prog_char PROGMEM Cmd_167[]="File";
 prog_char PROGMEM Cmd_168[]="Input";
 prog_char PROGMEM Cmd_169[]="Output";
 prog_char PROGMEM Cmd_170[]="Internal";
@@ -269,8 +268,8 @@ prog_char PROGMEM Cmd_174[]="IR2RF";
 prog_char PROGMEM Cmd_175[]="All";
 prog_char PROGMEM Cmd_176[]="Output_RAW";//??? nog in gebruik?
 prog_char PROGMEM Cmd_177[]="Nesting"; //??? kan weg?
-prog_char PROGMEM Cmd_178[]="Queue"; //??? kan weg ?
-prog_char PROGMEM Cmd_179[]=""; //??? waar wordt trace nu geregeld? commando of value?
+prog_char PROGMEM Cmd_178[]="Queue";
+prog_char PROGMEM Cmd_179[]="Auto";
 prog_char PROGMEM Cmd_180[]="";
 prog_char PROGMEM Cmd_181[]="";
 prog_char PROGMEM Cmd_182[]="High";
@@ -291,18 +290,18 @@ prog_char PROGMEM Cmd_196[]="";
 prog_char PROGMEM Cmd_197[]="";
 prog_char PROGMEM Cmd_198[]="";
 prog_char PROGMEM Cmd_199[]="";
-prog_char PROGMEM Cmd_200[]="";
-prog_char PROGMEM Cmd_201[]="Unknown command.";
-prog_char PROGMEM Cmd_202[]="Invalid parameter in command.";
-prog_char PROGMEM Cmd_203[]="Unable to open file on SDCard.";
-prog_char PROGMEM Cmd_204[]="Queue overflow.";
-prog_char PROGMEM Cmd_205[]="Eventlist nesting error.";
-prog_char PROGMEM Cmd_206[]="Writing to eventlist failed.";
-prog_char PROGMEM Cmd_207[]="No Ethernet connection.";
-prog_char PROGMEM Cmd_208[]="Incorrect password.";
-prog_char PROGMEM Cmd_209[]="Command not supported in this Nodo version.";
-prog_char PROGMEM Cmd_210[]="Terminal access not allowed.";
-prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
+prog_char PROGMEM Cmd_200[]="Ok.";
+prog_char PROGMEM Cmd_201[]="Error: Unknown command.";
+prog_char PROGMEM Cmd_202[]="Error: Invalid parameter in command.";
+prog_char PROGMEM Cmd_203[]="Error: Unable to open file on SDCard.";
+prog_char PROGMEM Cmd_204[]="Error: Queue overflow.";
+prog_char PROGMEM Cmd_205[]="Error: Eventlist nested to deep.";
+prog_char PROGMEM Cmd_206[]="Error: Writing to eventlist failed.";
+prog_char PROGMEM Cmd_207[]="Error: No Ethernet connection.";
+prog_char PROGMEM Cmd_208[]="Error: Incorrect password.";
+prog_char PROGMEM Cmd_209[]="Error: Command not supported in this Nodo version.";
+prog_char PROGMEM Cmd_210[]="Error: Terminal access not allowed.";
+prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
 
 // commando:
 #define FIRST_COMMAND                    0 // Eerste COMMANDO uit de commando tabel
@@ -316,7 +315,7 @@ prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 #define CMD_CLOCK_TIME                   8
 #define CMD_CLOCK_DOW                    9
 #define CMD_DELAY                       10
-#define CMD_DIVERT                      11
+#define CMD_SEND                        11
 #define CMD_EVENTLIST_ERASE             12
 #define CMD_EVENTLIST_SHOW              13
 #define CMD_EVENTLIST_WRITE             14
@@ -353,9 +352,9 @@ prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 #define CMD_RAWSIGNAL_COPY              45
 #define CMD_COMMAND_WILDCARD            46
 #define CMD_SENDBUSY                    47
-#define CMD_RES48                       48
+#define CMD_NODO_IP                     48
 #define CMD_PASSWORD                    49
-#define CMD_RES50                       50
+#define CMD_EVENTLIST_FILE              50
 #define CMD_WIRED_ANALOG_CALIBRATE      51
 #define CMD_REBOOT                      52
 #define CMD_HTTP_REQUEST                53
@@ -367,11 +366,11 @@ prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 #define CMD_TRANSMIT_RF                 59
 #define CMD_EVENTGHOST_SERVER           60
 #define CMD_WIREDANALOG_VARIABLE        61
-#define CMD_LOGFILE_ERASE               62
-#define CMD_LOGFILE_SHOW                63
-#define CMD_RES064                      64
-#define CMD_RES065                      65
-#define CMD_RES066                      66
+#define CMD_FILE_ERASE                  62
+#define CMD_FILE_SHOW                   63
+#define CMD_FILE_EXECUTE                64
+#define CMD_FILE_WRITE                  65
+#define CMD_FILE_LIST                   66
 #define CMD_RES067                      67
 #define CMD_RES068                      68
 #define CMD_RES069                      69
@@ -480,7 +479,7 @@ prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 #define VALUE_SOURCE_TERMINAL          164
 #define VALUE_SOURCE_EVENTGHOST        165
 #define VALUE_SOURCE_STATUS            166
-#define VALUE_AUTO                     167
+#define VALUE_SOURCE_FILE              167
 #define VALUE_DIRECTION_INPUT          168
 #define VALUE_DIRECTION_OUTPUT         169
 #define VALUE_DIRECTION_INTERNAL       170
@@ -492,7 +491,7 @@ prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 #define VALUE_DIRECTION_OUTPUT_RAW     176
 #define VALUE_NESTING                  177
 #define VALUE_SOURCE_QUEUE             178
-#define VALUE_res                      179
+#define VALUE_AUTO                     179
 #define VALUE_TIMESTAMP                180
 #define VALUE_RES181                   181
 #define VALUE_HIGH                     182
@@ -513,7 +512,7 @@ prog_char PROGMEM Cmd_211[]="Error sending/receiving EventGhost event.";
 #define VALUE_RES197                   197
 #define VALUE_RES198                   198
 #define VALUE_RES199                   199
-#define VALUE_RES200                   200
+#define ERROR_00                       200
 #define ERROR_01                       201
 #define ERROR_02                       202
 #define ERROR_03                       203
@@ -648,6 +647,7 @@ struct Settings
   byte    EventGhostServer_IP[4];                           // IP adres van waar EventGhost Events naar verstuurd moeten worden.
   byte    AutoSaveEventGhostIP;                             // Automatisch IP adres opslaan na ontvangst van een EG event of niet.
   int     Port;                                             // IP port.
+  byte    Nodo_IP[4];                                       // IP adres van van de Nodo. als 0.0.0.0 ingevuld, dan IP toekenning o.b.v. DHCP
   }S;
 
 unsigned long UserTimer[TIMER_MAX];                         // Timers voor de gebruiker.
@@ -668,16 +668,17 @@ uint8_t MD5HashCode[16];                                    // tabel voor bereke
 boolean SDCardPresent = false;                              // Vlag die aangeeft of er een SDCard is gevonden die kan worden beschreven.
 boolean EthernetEnabled = false;                            // Vlag die aangeeft of er een Ethernetverbinding is.
 int UserVar[USER_VARIABLES_MAX];
-char TempString[INPUT_BUFFER_SIZE+1];                         // Globale, tijdelijke string voor algemeen gebruik in diverste functies. ??? Nodig?
+char TempString[INPUT_BUFFER_SIZE+1];                       // Globale, tijdelijke string voor algemeen gebruik in diverste functies. ??? Nodig?
 int TerminalConnected=0;                                    // Vlag geeft aan of en hoe lang nog (seconden) er verbinding is met een Terminal.
-boolean SerialConnected=true;                               // Vlag geeft aan of er een verbinding USB-poort.
+boolean ConfirmHTTP=false;                                  // Als true, dan wordt een output naar Serial/Telnet eveneens per regel verzonden als HTTP-requenst  
+boolean SerialConnected;                                    // Vlag geeft aan of er een verbinding USB-poort.
 boolean TemporyEventGhostError=false;                       // Vlag om tijdelijk evetghost verzending stil te leggen na een communicatie probleem
 int TerminalLocked=1;                                       // 0 als als gebruiker van een telnet terminalsessie juiste wachtwoord heeft ingetoetst
 volatile int PulseCount=0;                                  // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
 
 // ethernet classes voor IP communicatie EventGhost, Telnet terminal en HTTP.
 
-byte Ethernet_MAC_Address[]={MAC_ADDRESS};// MAC adres van de Nodo.
+byte Ethernet_MAC_Address[]={0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x02};// MAC adres van de Nodo.
 EthernetServer IPServer(80);                                    // Server class voor HTTP sessie.
 EthernetServer TerminalServer(23);               // Server class voor Terminal sessie.
 EthernetClient TerminalClient;                            // Client class voor Terminal sessie.
@@ -706,9 +707,7 @@ void setup()
   if(S.Version!=VERSION)ResetFactory(); // Als versienummer in EEPROM niet correct is, dan een ResetFactory.
   
   // Initialiseer in/output poorten.
-
-  pinMode(28, OUTPUT);//??? t.b.v. tijdmetingen met Logic analyser
-
+  pinMode(28, OUTPUT);//??? t.b.v. tijdmetingen met Logic analyser DEBUGGING
   pinMode(PIN_IR_RX_DATA, INPUT);
   pinMode(PIN_RF_RX_DATA, INPUT);
   pinMode(PIN_RF_TX_DATA, OUTPUT);
@@ -744,21 +743,22 @@ void setup()
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
   digitalWrite(Ethernetshield_CS_W5100, HIGH);
   digitalWrite(EthernetShield_CS_SDCard,LOW);
+  delay(10);
   if(SD.begin(EthernetShield_CS_SDCard))
     {
     SD.mkdir(ProgmemString(Text_27)); // maak drectory aan waar de Rawsignal HEX bestanden in worden opgeslagen
     SD.mkdir(ProgmemString(Text_28)); // maak drectory aan waar de Rawsignal KEY bestanden in worden opgeslagen
     
     File dataFile = SD.open(ProgmemString(Text_23), FILE_WRITE);
-    if (dataFile) 
+    if(dataFile) 
       {
       dataFile.close();
       SDCardPresent=true; // Als logfile kon worden geopend, dan is alles voor elkaar kan de vlag SDCardPresent op true worden gezet.
       }    
     }
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
-  digitalWrite(Ethernetshield_CS_W5100, LOW);
   digitalWrite(EthernetShield_CS_SDCard,HIGH);
+  digitalWrite(Ethernetshield_CS_W5100, LOW);
   
   //Zorg ervoor dat er niet direct na een boot een CMD_CLOCK_DAYLIGHT event optreedt
   ClockRead();
@@ -771,16 +771,23 @@ void setup()
   // Initialiseer ethernet device
   IPServer = EthernetServer(S.Port);
   TerminalServer = EthernetServer(23);
-  if(Ethernet.begin(Ethernet_MAC_Address)!=0)
+
+  if((S.Nodo_IP[0] + S.Nodo_IP[1] + S.Nodo_IP[2] + S.Nodo_IP[3])==0)
     {
-    // MAC en IP adres van de Nodo
-    IPServer.begin();                                // Start Server voor ontvangst van Events
-    TerminalServer.begin();                             // Start server voor Terminalsessies via TelNet
-    EthernetEnabled=true;
+    if(Ethernet.begin(Ethernet_MAC_Address)!=0) // maak verbinding en verzoek IP via DHCP
+      Serial.println(F("Failed to configure Ethernet using DHCP"));
     }
-    
+  else
+    Ethernet.begin(Ethernet_MAC_Address,S.Nodo_IP);
+
+  EthernetEnabled=true; //??? aanwezigheid ethernetshield testen
+  IPServer.begin();                                // Start Server voor ontvangst van Events
+  TerminalServer.begin();                             // Start server voor Terminalsessies via TelNet
+  
+  SerialConnected=true;// zonder deze vlag vindt er geen output naar de Erial poort plaats. Tijdelijk even inschakelen.
   PrintWelcome(); // geef de welkomsttekst weer
-  SerialConnected=false;
+  SerialConnected=true;//??? weer terugzetten naar false in definitieve release
+
   ProcessEvent(command2event(CMD_BOOT_EVENT,0,0),VALUE_DIRECTION_INTERNAL,CMD_BOOT_EVENT,0,0);  // Voer het 'Boot' event uit.
   }
 
@@ -789,10 +796,9 @@ void loop()
   int x,y,z;
   byte SerialInByte;
   byte TerminalInByte;
-  int SerialInByteCounter;
-  int TerminalInbyteCounter;
-  byte Slice_1,Slice_2;
-  
+  int SerialInByteCounter=0;
+  int TerminalInbyteCounter=0;
+  byte Slice_1,Slice_2;    
   unsigned long StaySharpTimer=millis();                      // timer die start bij ontvangn van een signaal. Dwingt om enige tijd te luisteren naar dezelfde poort.
   unsigned long LoopIntervalTimer_1=millis();                 // Timer voor periodieke verwerking. millis() maakt dat de intervallen van 1 en 2 niet op zelfde moment vallen => 1 en 2 nu asynchroon.
   unsigned long LoopIntervalTimer_2=0L;                       // Timer voor periodieke verwerking.
@@ -801,12 +807,12 @@ void loop()
   unsigned long Checksum=0L;                                  // Als gelijk aan Event dan tweemaal dezelfde code ontvangen: checksum funktie.
   unsigned long SupressRepeatTimer;
   unsigned long EventTimeCodePrevious;                        // t.b.v. voorkomen herhaald ontvangen van dezelfde code binnen ingestelde tijd.
-  
-  SerialHold(false); // er mogen weer tekens binnen komen van SERIAL
-
   char InputBuffer_Serial[INPUT_BUFFER_SIZE+1];                 // Buffer voor input Seriele data
   char InputBuffer_Terminal[INPUT_BUFFER_SIZE+1];               // Buffer voor input terminal verbinding Telnes sessie
-  char InputBuffer_IP[INPUT_BUFFER_SIZE+1];                     // Buffer voor input HTTP en EventGhost events
+  
+  SerialHold(false); // er mogen weer tekens binnen komen van SERIAL
+  InputBuffer_Serial[0]=0; // serieel buffer string leeg maken
+
 
   // hoofdloop: scannen naar signalen
   // dit is een tijdkritische loop die wacht tot binnengekomen event op IR, RF, SERIAL, CLOCK, DAYLIGHT, TIMER, etc
@@ -905,10 +911,7 @@ void loop()
             {
             // IP Event: *************** kijk of er een Event van IP  **********************    
             if(IPServer.available())// deze call duurt +/- 90uSec.  
-              {
-              if(x=IPReceive(InputBuffer_IP))
-                ExecuteLine(InputBuffer_IP, x);
-              }
+              ExecuteIP();
             }
           break;
           }
@@ -927,15 +930,6 @@ void loop()
                 TerminalConnected=TERMINAL_TIMEOUT;
                 InputBuffer_Terminal[0]=0;
                 TerminalInbyteCounter=0;
-                
-                // Welkomsttekst weergeven, maar TerminalLocked en SerialConnected waarden eerst even veilig stellen
-                x=TerminalLocked;
-                y=SerialConnected;
-                SerialConnected=false;
-                TerminalLocked=0;
-                PrintWelcome();
-                TerminalLocked=x;
-                SerialConnected=y;
                 TerminalClient.flush(); // schoon beginnen.
 
                 if(TerminalLocked==0)
@@ -947,7 +941,7 @@ void loop()
                   RaiseError(ERROR_10);
                 }
   
-              if(TerminalClient.available())    
+              while(TerminalClient.available()) 
                 {
                 TerminalInByte=TerminalClient.read();
                 if(isprint(TerminalInByte))
@@ -983,7 +977,10 @@ void loop()
                       if(strcmp(InputBuffer_Terminal,S.Password)==0)// als wachtwoord goed is, dan slot er af
                         {
                         TerminalLocked=0;
-                        TerminalClient.println("Ok.");
+                        y=SerialConnected;
+                        SerialConnected=false;
+                        PrintWelcome();
+                        SerialConnected=y;
                         }
                       else// als foutief wachtwoord, dan teller 
                         {
@@ -1017,6 +1014,7 @@ void loop()
             {
             do
               {
+              SerialConnected=true;
               SerialInByte=Serial.read();
               if(isprint(SerialInByte) && SerialInByteCounter<INPUT_BUFFER_SIZE) // alleen de printbare tekens zijn zinvol.
                 {
@@ -1027,7 +1025,6 @@ void loop()
                 {
                 SerialHold(true);
                 InputBuffer_Serial[SerialInByteCounter]=0; // serieel ontvangen regel is compleet
-                SerialConnected=true;
                 ExecuteLine(InputBuffer_Serial, VALUE_SOURCE_SERIAL);
                 SerialInByteCounter=0;  
                 InputBuffer_Serial[0]=0; // serieel ontvangen regel is compleet

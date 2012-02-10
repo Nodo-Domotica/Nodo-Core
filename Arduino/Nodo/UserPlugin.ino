@@ -56,7 +56,7 @@ void UserPlugin_Command(int Par1, int Par2)
 
 
   // VOORBEELD-4: Loggen naar de SDCard
-  LogSDCard("Hello, UserPlugin was here.");
+  AddFileSDCard("log.dat","Hello, UserPlugin was here.");
 
   }
 

@@ -17,6 +17,9 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
 //  if(CommandForThisNodo && Hold)
 //    PrintLinePB_AddProgMemString(Text_09);
 
+//??? Serial.println("*** debug: ProcessEvent();");//???
+
+
   #ifdef USER_PLUGIN
   if(!UserPlugin_Receive(IncommingEvent))
     return true;
@@ -149,7 +152,8 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
         {
         if(S.Debug==VALUE_ON)
           {
-          PrintEventlistEntry(x,EventlistDepth);
+          EventlistEntry2str(x,EventlistDepth,TempString);
+          PrintLine(TempString);
           }
           
         if(NodoType(Event_2)==NODO_TYPE_COMMAND) // is de ontvangen code een uitvoerbaar commando?
@@ -270,4 +274,30 @@ boolean CheckEvent(unsigned long Event, unsigned long MacroEvent, byte Port)
   }
 
 
+// /**********************************************************************************************\
+// * vult een string met een regel uit de Eventlist.
+// * geeft false terug als de regel leeg is
+// \*********************************************************************************************/
+//boolean EventlistEntry2str(int entry, byte d, char* Line)
+//  {
+//  unsigned long Event, Action;
+//    
+//  Eventlist_Read(entry,&Event,&Action); // leesregel uit de Eventlist.    
+//  if(Event==0)
+//    return false;
+//
+//  // Geef de entry van de eventlist weer
+//  strcpy(Line,cmd2str(VALUE_SOURCE_EVENTLIST));
+//  strcat(Line," ");
+//  strcat(Line,int2str(entry));
+//
+//  // geef het event weer
+//  strcat(Line,"; ");
+//  strcat(Line,Event2str(Event));
+//
+//  // geef het action weer
+//  strcat(Line,"; ");
+//  strcat(Line,Event2str(Action));
+//  return true;
+//  }
 
