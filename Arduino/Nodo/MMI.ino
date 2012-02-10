@@ -252,6 +252,7 @@ char* Event2str(unsigned long Code)
       case CMD_TRANSMIT_IR:
       case CMD_TRANSMIT_RF:
       case CMD_STATUS:
+      case CMD_STATUS_SEND:
         P1=P_TEXT;
         P2=P_VALUE;
         break;

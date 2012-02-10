@@ -153,7 +153,7 @@ boolean SendHTTPRequestResponse(char* Response)
 
   strcpy(ResponseString,"&response=");
   strcat(ResponseString,Response);
-  r=SendHTTPRequestStr(ResponseString);
+  r=xSendHTTPRequestStr(ResponseString);
 
   free(ResponseString);
   
@@ -169,18 +169,18 @@ boolean SendHTTPRequestEvent(unsigned long event)
   boolean r;
   char* EventString=(char*)malloc(INPUT_BUFFER_SIZE+1);
 
-  strcpy(EventString,"&event=");
-  strcat(EventString,Event2str(event));
-  strcat(EventString,"&unit=");
+  strcpy(EventString,"&unit=");
   strcat(EventString,int2str((event>>28)&0x0f));
-  r=SendHTTPRequestStr(Event2str(event));
+  strcat(EventString,"&event=");
+  strcat(EventString,Event2str(event));
+  r=xSendHTTPRequestStr(EventString);
 
   free(EventString);
   return r;
   }
 
 
-boolean SendHTTPRequestStr(char* StringToSend)
+boolean xSendHTTPRequestStr(char* StringToSend)
   {
   int InByteCounter;
   byte InByte,x;
@@ -212,9 +212,8 @@ boolean SendHTTPRequestStr(char* StringToSend)
     strcat(TempString,S.Password);
     strcat(TempString,"&version=");
     strcat(TempString,int2str(S.Version));
-    strcat(TempString,"&event=");
     strcat(TempString,StringToSend);
-    
+
     // event toevoegen aan tijdelijke string, echter alle spaties vervangen door + conform URL notatie ??? nodig?  
     for(x=0;x<strlen(TempString);x++)
       {            
@@ -229,13 +228,13 @@ boolean SendHTTPRequestStr(char* StringToSend)
       }      
       
     strcat(IPBuffer," HTTP/1.1");
-    IPClient.println(IPBuffer);
     
     if(S.Debug==VALUE_ON)
       {
-      Serial.print("*** debug: HTTP Request=");
-      Serial.println(IPBuffer);
+      Serial.print("*** debug: HTTP Request=");Serial.println(IPBuffer);//??? nog toonbaar maken voor de user.
       }
+
+    IPClient.println(IPBuffer);
 
     strcpy(IPBuffer,"Host: ");
     strcat(IPBuffer,Host);
@@ -455,7 +454,6 @@ void ExecuteIP(void)
                         {
                         RequestCompleted=true;
                         strcpy(TempString,"HTTP/1.1 200 Ok"); //??? omzetten naar ProgMEM
-                        strcat(TempString,S.ID);
                         IPClient.println(TempString);
                         }
                       else
@@ -642,9 +640,9 @@ void ExecuteIP(void)
   free(str_2);
   free(InputBuffer_IP);
 
-  ExecuteLine(InputBuffer_IP, Protocol);
+  if(RequestEvent)
+    ExecuteLine(Event, Protocol);
   ConfirmHTTP=false; // geen monitor weergave meer als HTTP-request versturen.
-
   free(Event);
   return;
   }
