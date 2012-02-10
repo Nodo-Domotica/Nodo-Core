@@ -74,7 +74,7 @@ prog_char PROGMEM Text_18[] = "accept";
 prog_char PROGMEM Text_19[] = "close";
 prog_char PROGMEM Text_20[] = "quintessence";
 prog_char PROGMEM Text_21[] = "payload withoutRelease";
-prog_char PROGMEM Text_22[] = "********************************************************************************";
+prog_char PROGMEM Text_22[] = "!*******************************************************************************";
 prog_char PROGMEM Text_23[] = "Log.dat";
 prog_char PROGMEM Text_24[] = "Logging on SDCard enabled.";
 prog_char PROGMEM Text_25[] = "System=";

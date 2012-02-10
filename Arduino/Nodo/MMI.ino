@@ -372,7 +372,7 @@ void PrintIPSettings(void)
     PrintLine(TempString);
 
     // HTTP request line
-    sprintf(TempString,"Host=%s",S.HTTPRequest);
+    sprintf(TempString,"HTTPHost=%s",S.HTTPRequest);
     PrintLine(TempString);
 
     // OutputIP

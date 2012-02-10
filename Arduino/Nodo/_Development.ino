@@ -2,19 +2,6 @@
 
 Aanpassingen:
 
-- LET OP: MAC adres even naar je egen vaste IP adres wijzigen
-- Nieuw commando "EventlistFile <filename>". Slaat de eventlist op in een bestand op SDCard. Naam max. acht posities ZONDER EXTENTIE.
-- Nieuw commando "FileShow <filename>". Geeft de inhoud van een file weer.
-- Nieuw commando "FileErase <filename>". Verwijderd een file van SDCard.
-- Nieuw commando "FileExecute <filename>". Voert alle regels in een file uit.
-- Nieuw commando "FileWrite <filename>". Voegt alle tekst na dit commando toe aan bestand <filename>
-- Verwijderd commando "LogShow". Overbodig geworden. Gebruik nu "FileShow Log". Log is immers gewoon een bestand.
-- HTTP-request dat de Nodo ontvangt kan worden gebruikt om een file terug te laten sturen. ?password=<password>&id=<id>&file=<filename>
-- extra spatie voorafgaand aan analoge waarde verwijderd.
-- Nodo welkomsttekst komt bij TelNet sessie pas nadat wachtwoord is ingegeven, niet vooraf.
-- Commando "NodoIP <ip_address>" toegevoegd. Hiermee kan handmatig aan de Nodo een IP adres worden toegekend. Als adres 0.0.0.0, dan wordt IP adres verkregen via DHCP.
-- Commando "Divert" verwijderd. wordt mogelijk vervangen door "Send <unit>,<poort>" TIJDELIJK T.B.V. TEST OP BRUIKBAARHEID, NOG IN ONTWIKKELING.
-- LET OP: Bij versturen van een HTTP request zijn de labels van volgorde gewijzigd.
 
 Known Errors / ToDo:
 

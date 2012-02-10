@@ -206,7 +206,7 @@ boolean SendHTTPRequestStr(char* StringToSend)
 
     strcpy(IPBuffer,"GET ");
     strcat(IPBuffer,S.HTTPRequest+x);
-    strcpy(TempString,"&id=");
+    strcpy(TempString,"?id=");
     strcat(TempString,S.ID);
     strcat(TempString,"&password=");
     strcat(TempString,S.Password);
@@ -227,10 +227,10 @@ boolean SendHTTPRequestStr(char* StringToSend)
         strcat(IPBuffer,s);
         }
       }      
-
+      
     strcat(IPBuffer," HTTP/1.1");
     IPClient.println(IPBuffer);
-
+    
     if(S.Debug==VALUE_ON)
       {
       Serial.print("*** debug: HTTP Request=");
