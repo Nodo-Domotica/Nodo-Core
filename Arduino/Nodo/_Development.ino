@@ -1,12 +1,19 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-
+- Alle invoerregels in een Terminalsessie worden nu ook weergegeven. 
+- Aanpassing commando "FileWrite <filename>". Schrijft alle via TelNet of Serial binnenkomende regels naar bestand <filename> totdat FileWrite weerals tekst voorbij komt of er 60sec. voorbij is
+- bij ophalen file een <br> / CRLF teveel in de bodytekst. Verwijderd.
+- Alle invoerregels in een Terminalsessie worden nu ook in de logfile op SDCard vastgelegd.
 
 Known Errors / ToDo:
 
 - Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue testen
 - Found in r306: Status WiredAnalog groter dan toegestane poort
+- Status naar file op SDCard
+- Geeft FileList een bestand te weinig aan???
+- In de output naar terminal wordt een komma gebruikt als scheiding tussen de delen. Niet consequent, zou puntkomma moeten zijn.
+- capture/upload mogelijkheid om snel een bestand aan te kunnen maken op sd.
 
 
 Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
@@ -73,7 +80,7 @@ Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
 - Nieuw commando "FileShow <filename>". Geeft de inhoud van een file weer.
 - Nieuw commando "FileErase <filename>". Verwijderd een file van SDCard.
 - Nieuw commando "FileExecute <filename>". Voert alle regels in een file uit.
-- Nieuw commando "FileWrite <filename>". Voegt alle tekst na dit commando toe aan bestand <filename>
+- Nieuw commando "FileWrite <filename>". Schrijft alle via TelNet of Serial binnenkomende regels naar bestand <filename> totdat FileWrite weerals tekst voorbij komt of er 60sec. voorbij is
 - HTTP-request dat de Nodo ontvangt kan worden gebruikt om een file terug te laten sturen. ?password=<password>&id=<id>&file=<filename>
 - Commando "NodoIP <ip_address>" toegevoegd. Hiermee kan handmatig aan de Nodo een IP adres worden toegekend. Als adres 0.0.0.0, dan wordt IP adres verkregen via DHCP.
 - Commando "Divert" verwijderd. wordt mogelijk vervangen door "Send <unit>,<poort>" TIJDELIJK T.B.V. TEST OP BRUIKBAARHEID, NOG IN ONTWIKKELING.???

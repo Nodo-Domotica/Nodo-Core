@@ -474,13 +474,7 @@ void ExecuteIP(void)
             IPClient.println(""); // HTTP Request wordt altijd afgesloten met een lege regel
 
             if(RequestFile)
-              {
-              // Verzend de body van het HTTP-request
-//              strcpy(TempString,ProgmemString(Text_15));
-//              strcat(TempString,FileName);              
-//              IPClient.println(TempString);
-//              IPClient.println("<br />");
-              
+              {              
               // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
               digitalWrite(Ethernetshield_CS_W5100, HIGH);
               digitalWrite(EthernetShield_CS_SDCard,LOW);
@@ -503,7 +497,7 @@ void ExecuteIP(void)
                     digitalWrite(Ethernetshield_CS_W5100, LOW);
                     if(RequestFile)
                       {
-                      IPClient.println(ProgmemString(Text_22));
+                      IPClient.print(ProgmemString(Text_22));
                       IPClient.println("<br />");
                       RequestFile=false;// gebruiken we even als vlag om de eerste keer de regel met asteriks af te drukken omdat deze variabele toch verder niet meer nodig is
                       }

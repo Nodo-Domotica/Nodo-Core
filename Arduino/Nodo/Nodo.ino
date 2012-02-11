@@ -74,9 +74,9 @@ prog_char PROGMEM Text_18[] = "accept";
 prog_char PROGMEM Text_19[] = "close";
 prog_char PROGMEM Text_20[] = "quintessence";
 prog_char PROGMEM Text_21[] = "payload withoutRelease";
-prog_char PROGMEM Text_22[] = "!*******************************************************************************";
-prog_char PROGMEM Text_23[] = "Log.dat";
-prog_char PROGMEM Text_24[] = "Logging on SDCard enabled.";
+prog_char PROGMEM Text_22[] = "!******************************************************************************!";
+prog_char PROGMEM Text_23[] = "log.dat";
+prog_char PROGMEM Text_24[] = "";
 prog_char PROGMEM Text_25[] = "System=";
 prog_char PROGMEM Text_26[] = "Event received from: ";
 prog_char PROGMEM Text_27[] = "Raw/Key"; // Directory op de SDCard voor opslag RawSignal
@@ -152,7 +152,7 @@ prog_char PROGMEM Cmd_063[]="FileShow";
 prog_char PROGMEM Cmd_064[]="FileExecute";
 prog_char PROGMEM Cmd_065[]="FileWrite";
 prog_char PROGMEM Cmd_066[]="FileList";
-prog_char PROGMEM Cmd_067[]="";
+prog_char PROGMEM Cmd_067[]="FileLog";
 prog_char PROGMEM Cmd_068[]="";
 prog_char PROGMEM Cmd_069[]="";
 prog_char PROGMEM Cmd_070[]="";
@@ -371,7 +371,7 @@ prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
 #define CMD_FILE_EXECUTE                64
 #define CMD_FILE_WRITE                  65
 #define CMD_FILE_LIST                   66
-#define CMD_RES067                      67
+#define CMD_FILE_LOG                    67
 #define CMD_RES068                      68
 #define CMD_RES069                      69
 #define CMD_RES070                      70
@@ -657,7 +657,7 @@ byte QueuePos;                                              // teller die wijst 
 boolean WiredInputStatus[WIRED_PORTS];                      // Status van de WiredIn worden hierin opgeslagen.
 boolean WiredOutputStatus[WIRED_PORTS];                     // Wired variabelen.
 int BusyNodo;                                               // in deze variabele de status van het event 'Busy' van de betreffende units 1 t/m 15. bit-1 = unit-1.
-int UserVarPrevious[USER_VARIABLES_MAX];                   // Vorige versie van de UserVariablles: om wisselingen te kunnen vaststellen.
+int UserVarPrevious[USER_VARIABLES_MAX];                    // Vorige versie van de UserVariablles: om wisselingen te kunnen vaststellen.
 byte DaylightPrevious;                                      // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet.
 byte EventlistDepth=0;                                      // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's.
 byte Hold=false;
@@ -665,7 +665,6 @@ unsigned long HoldTimer;
 void(*Reset)(void)=0;                                       // reset functie op adres 0.
 uint8_t RFbit,RFport,IRbit,IRport;                          // t.b.v. verwerking IR/FR signalen.
 uint8_t MD5HashCode[16];                                    // tabel voor berekenen van MD5 hash codes t.b.v. uitwisselen wachtwoord EventGhost.
-boolean SDCardPresent = false;                              // Vlag die aangeeft of er een SDCard is gevonden die kan worden beschreven.
 boolean EthernetEnabled = false;                            // Vlag die aangeeft of er een Ethernetverbinding is.
 int UserVar[USER_VARIABLES_MAX];
 char TempString[INPUT_BUFFER_SIZE+1];                       // Globale, tijdelijke string voor algemeen gebruik in diverste functies. ??? Nodig?
@@ -675,13 +674,16 @@ boolean SerialConnected;                                    // Vlag geeft aan of
 boolean TemporyEventGhostError=false;                       // Vlag om tijdelijk evetghost verzending stil te leggen na een communicatie probleem
 int TerminalLocked=1;                                       // 0 als als gebruiker van een telnet terminalsessie juiste wachtwoord heeft ingetoetst
 volatile int PulseCount=0;                                  // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
+char TempLogFile[13];                                       // Naam van de Logfile waar (naast de standaard logging) de verwerking in gelogd moet worden.
+int FileWriteMode=0;                                   // Het aantal seconden dat deze timer ingesteld staat zal er geen verwerking plaats vinden van TerminalInvoer. Iedere seconde --.
+char InputBuffer_Serial[INPUT_BUFFER_SIZE+1];               // Buffer voor input Seriele data
+char InputBuffer_Terminal[INPUT_BUFFER_SIZE+1];             // Buffer voor input terminal verbinding Telnes sessie
 
 // ethernet classes voor IP communicatie EventGhost, Telnet terminal en HTTP.
-
 byte Ethernet_MAC_Address[]={0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x02};// MAC adres van de Nodo.
-EthernetServer IPServer(80);                                    // Server class voor HTTP sessie.
-EthernetServer TerminalServer(23);               // Server class voor Terminal sessie.
-EthernetClient TerminalClient;                            // Client class voor Terminal sessie.
+EthernetServer IPServer(80);                                // Server class voor HTTP sessie.
+EthernetServer TerminalServer(23);                          // Server class voor Terminal sessie.
+EthernetClient TerminalClient;                              // Client class voor Terminal sessie.
 byte ClientIPAddress[4];                                    // IP adres van de EventGhost client die verbinding probeert te maken c.q. verbonden is.
 
 // RealTimeclock DS1307
@@ -748,13 +750,6 @@ void setup()
     {
     SD.mkdir(ProgmemString(Text_27)); // maak drectory aan waar de Rawsignal HEX bestanden in worden opgeslagen
     SD.mkdir(ProgmemString(Text_28)); // maak drectory aan waar de Rawsignal KEY bestanden in worden opgeslagen
-    
-    File dataFile = SD.open(ProgmemString(Text_23), FILE_WRITE);
-    if(dataFile) 
-      {
-      dataFile.close();
-      SDCardPresent=true; // Als logfile kon worden geopend, dan is alles voor elkaar kan de vlag SDCardPresent op true worden gezet.
-      }    
     }
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
   digitalWrite(EthernetShield_CS_SDCard,HIGH);
@@ -806,13 +801,11 @@ void loop()
   unsigned long Content=0L,ContentPrevious;                   // Ontvangen event van RF, IR, ... Tevens buffer voor het vorige ontvangen Event
   unsigned long Checksum=0L;                                  // Als gelijk aan Event dan tweemaal dezelfde code ontvangen: checksum funktie.
   unsigned long SupressRepeatTimer;
-  unsigned long EventTimeCodePrevious;                        // t.b.v. voorkomen herhaald ontvangen van dezelfde code binnen ingestelde tijd.
-  char InputBuffer_Serial[INPUT_BUFFER_SIZE+1];                 // Buffer voor input Seriele data
-  char InputBuffer_Terminal[INPUT_BUFFER_SIZE+1];               // Buffer voor input terminal verbinding Telnes sessie
-  
+  unsigned long EventTimeCodePrevious;                        // t.b.v. voorkomen herhaald ontvangen van dezelfde code binnen ingestelde tijd.  
+
   SerialHold(false); // er mogen weer tekens binnen komen van SERIAL
   InputBuffer_Serial[0]=0; // serieel buffer string leeg maken
-
+  TempLogFile[0]=0; // geen extra logging
 
   // hoofdloop: scannen naar signalen
   // dit is een tijdkritische loop die wacht tot binnengekomen event op IR, RF, SERIAL, CLOCK, DAYLIGHT, TIMER, etc
@@ -838,9 +831,7 @@ void loop()
                {
                RawSignal.Source=VALUE_SOURCE_IR;
                CheckRawSignalKey(&Content); // check of er een RawSignal key op de SDCard aanwezig is en vul met Nodo Event. Call by reference!
-
                SupressRepeatTimer=millis()+ENDSIGNAL_TIME; // zodat herhalingen niet opnieuw opgepikt worden
-                
                ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_IR,0,0); // verwerk binnengekomen event.
                ContentPrevious=Content;
                }
@@ -952,7 +943,6 @@ void loop()
                   // TerminalSessie timeout, dan de verbinding netjes afsluiten
                   TerminalClient.println(ProgmemString(Text_30));
                   delay(100); // geef de client even de gelegenheid de tekst te ontvangen
-                  TerminalClient.flush();
                   TerminalClient.stop();
                   TerminalConnected=0;
                   break;
@@ -1159,18 +1149,25 @@ void loop()
       if(TerminalConnected)// Sessie duurt nog TerminalConnected seconden. Als 0 dan is er geen verbinding meer
         {
         TerminalConnected--;
-
         if(!TerminalClient.connected())
           TerminalConnected=0;
-
         if(!TerminalConnected)
           {
           TerminalClient.flush();
           TerminalClient.stop();
-          }
-          
+          }        
         }
-        
+      
+      // Timer voor blokkeren verwerking. teller verlagen
+      if(FileWriteMode>0)
+        {
+        FileWriteMode--;
+        if(FileWriteMode==0)
+          {
+          TempLogFile[0]=0;
+          Serial.print("*** Debug: FileWrite timeout!");Serial.println(); //??? Debug
+          }
+        }
       // loop periodiek langs de userplugin
       #ifdef NODO_PLUGIN
         UserPlugin_Periodically();

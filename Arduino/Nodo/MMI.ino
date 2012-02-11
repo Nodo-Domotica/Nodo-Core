@@ -86,9 +86,10 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
   // stuur de regel naar Serial en/of naar Ethernet
   PrintLine(TempString);
 
-  // Indien er een SDCard gevonden is, dan loggen naar file
-  if(SDCardPresent)
-    AddFileSDCard(ProgmemString(Text_23),TempString);
+  // loggen naar file
+  AddFileSDCard(ProgmemString(Text_23),TempString); // standaard logging naar log.dat
+  if(TempLogFile[0]!=0)
+    AddFileSDCard(TempLogFile,TempString); // Extra logfile op verzoek van gebruiker
   } 
       
 
@@ -145,11 +146,7 @@ void PrintWelcome(void)
     sprintf(TempString,"NodoIP=%u.%u.%u.%u",Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
     PrintLine(TempString);
     }
-  
-  // geef melding als de SDCard goed geconnect is
-  if(SDCardPresent)
-    PrintLine(ProgmemString(Text_24));
-    
+      
   PrintLine(ProgmemString(Text_22));
   }
 

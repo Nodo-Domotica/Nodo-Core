@@ -11,6 +11,10 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   SerialHold(true);  // als er een regel ontvangen is, dan binnenkomst van signalen stopzetten
   boolean SetBusyOff=false;
   
+  // geen events oppikken als er een file wordt ontvangen voor de SDCard
+  if(FileWriteMode>0)
+    return true;
+
   digitalWrite(PIN_LED_RGB_R,HIGH);           // LED aan als er iets verwerkt wordt  
 
 // uitwerken dat de wordt weergegeven dat dit de queue in gaat en niet feitelijk verwerkt wordt.
@@ -18,7 +22,6 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
 //    PrintLinePB_AddProgMemString(Text_09);
 
 //??? Serial.println("*** debug: ProcessEvent();");//???
-
 
   #ifdef USER_PLUGIN
   if(!UserPlugin_Receive(IncommingEvent))

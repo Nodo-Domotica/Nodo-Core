@@ -65,6 +65,7 @@ byte CommandError(unsigned long Content)
     case CMD_FILE_EXECUTE:
     case CMD_FILE_WRITE:
     case CMD_FILE_LIST:
+    case CMD_FILE_LOG:
     case CMD_PORT:
     case CMD_SEND: //??? t.b.v. test/ontwikkeling. nog niet operationeel.
     case CMD_ERROR:
@@ -602,7 +603,33 @@ void ExecuteLine(char *Line, byte Port)
   byte State_EventlistWrite=0;
   unsigned long v,event,action; 
 
-  // Serial.print("*** debug: executeLine(); start= ");Serial.println(Command); //??? Debug
+  // geef invoer regel weer 
+  strcpy(TmpStr,">");
+  strcat(TmpStr,Line);
+  PrintLine(TmpStr);
+
+  // verwerking van commando's is door gebruiker tijdelijk geblokkeerd door FileWrite commando
+  if(FileWriteMode>0)
+    {
+    if(StringFind(Line,cmd2str(CMD_FILE_WRITE))!=-1)// string gevonden!
+      {
+      FileWriteMode=0;
+      TempLogFile[0]=0;
+      Serial.print("*** Debug: FileWrite ready.");Serial.println(); //??? Debug
+      return;
+      }
+    }
+    
+  // loggen naar file
+  if(AddFileSDCard(ProgmemString(Text_23),Line)) // standaard logging naar log.dat
+    {
+    if(TempLogFile[0]!=0) // als de vorige AddFileSDCard() niet is gelukt, dan lukt deze ook niet
+      AddFileSDCard(TempLogFile,Line); // Extra logfile op verzoek van gebruiker
+    }
+
+  if(FileWriteMode>0)
+    return;
+
 
   PosCommand=0;
   for(PosLine=0;PosLine<=L && Error==0 ;PosLine++)
@@ -669,6 +696,16 @@ void ExecuteLine(char *Line, byte Port)
             FactoryEventlist();
             Reset();
         
+          case CMD_FILE_LOG:
+            if(GetArgv(Command,TmpStr,2))
+              {
+              strcat(TmpStr,".dat");
+              strcpy(TempLogFile,TmpStr);
+              }
+            else
+              TempLogFile[0]=0;
+            break;
+          
           case CMD_FILE_ERASE:      
             if(GetArgv(Command,TmpStr,2))
               {
@@ -718,7 +755,7 @@ void ExecuteLine(char *Line, byte Port)
                 dataFile.close();
                 }  
               else 
-                RaiseError(ERROR_03);    
+                TransmitCode(command2event(CMD_ERROR,ERROR_03,0),VALUE_ALL);
       
               // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
               digitalWrite(Ethernetshield_CS_W5100, LOW);
@@ -733,6 +770,13 @@ void ExecuteLine(char *Line, byte Port)
             if(GetArgv(Command,TmpStr,2))
               {
               strcat(TmpStr,".dat");
+
+              // zet (eventueel) de extra logging aan
+              GetArgv(Command,TempString,3);
+              strcat(TempString,".dat");
+              TempString[14]=0; // voor het geval de gebruiker een te lange naam heeft ingegeven
+              strcpy(TempLogFile,TempString);
+
               // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
               digitalWrite(Ethernetshield_CS_W5100, HIGH);
               digitalWrite(EthernetShield_CS_SDCard,LOW);
@@ -760,12 +804,13 @@ void ExecuteLine(char *Line, byte Port)
                 dataFile.close();
                 }  
               else 
-                RaiseError(ERROR_03);    
+                TransmitCode(command2event(CMD_ERROR,ERROR_03,0),VALUE_ALL);
       
               // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
               digitalWrite(EthernetShield_CS_SDCard,HIGH);
               digitalWrite(Ethernetshield_CS_W5100, LOW);
               }
+            TempLogFile[0]=0;
             break;
             }
     
@@ -891,7 +936,7 @@ void ExecuteLine(char *Line, byte Port)
               {
               strcat(TmpStr,".dat");
               if(!SaveEventlistSDCard(TmpStr))
-                Error=ERROR_03;
+                TransmitCode(command2event(CMD_ERROR,ERROR_03,0),VALUE_ALL);
               }
             break;
 
@@ -915,10 +960,9 @@ void ExecuteLine(char *Line, byte Port)
             if(GetArgv(Command,TmpStr,2))
               {
               strcat(TmpStr,".dat");
-              // zoek in de regel waar de weg te schrijven tekst zich bevindt. Dit is alles na de eerstvolgende ';'
-              x=StringFind(Line,";");
-              AddFileSDCard(TmpStr, &Line[0]+x+1);
-              PosLine=L+1; // ga direct naar einde van de regel.
+              strcpy(TempLogFile,TmpStr);
+              FileWriteMode=60;
+              Serial.print("*** FileWrite: Filename=");Serial.println(TempLogFile); //??? Debug
               }
             else
               Error=ERROR_02;

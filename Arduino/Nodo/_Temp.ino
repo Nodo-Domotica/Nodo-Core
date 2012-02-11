@@ -1,6 +1,6 @@
 /*
 
-Serial.print("*** debug: executeLine(); start= ");Serial.println(Command); //??? Debug
+Serial.print("*** debug: =");Serial.println(); //??? Debug
 
 Serial.println("*** debug: ");//???
 
