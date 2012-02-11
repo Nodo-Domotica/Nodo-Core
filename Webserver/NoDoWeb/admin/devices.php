@@ -15,16 +15,9 @@ if (isset($_POST['submit']))
 $naam = mysql_real_escape_string(htmlspecialchars($_POST['naam'])); 
 $address = mysql_real_escape_string(htmlspecialchars($_POST['address']));  
 $type = mysql_real_escape_string(htmlspecialchars($_POST['type']));
+$dim = mysql_real_escape_string(htmlspecialchars($_POST['dim'])); 
+$homecode = mysql_real_escape_string(htmlspecialchars($_POST['homecode']));
  
-  //Als de schakelaar een newkaku schakelaar is dan is homecode 0
- if ($type == 2) {
-	$homecode = 0; 
- }
- else {
- 	$homecode = mysql_real_escape_string(htmlspecialchars($_POST['homecode']));
- }
- 
- $dim = mysql_real_escape_string(htmlspecialchars($_POST['dim']));  
   
 mysql_select_db($database_tc, $tc);
 mysql_query("INSERT INTO nodo_tbl_devices(naam, type, dim, homecode, address, user_id)
@@ -66,8 +59,9 @@ else
 			<label for="select-choice-0" class="select" >Type of device:</label>
 		    <select name="type" id="type" data-native-menu="false" >
 				<option value="0" data-placeholder="true">Select device</option>
-				<option value="2">New Kaku</option>
 				<option value="1">Kaku</option>
+				<option value="2">New Kaku</option>
+				<option value="3">WiredOut</option>
 			</select>
 	<br>
 		
@@ -100,6 +94,9 @@ else
 		</div>
 		<div id="label_adres_kaku">
 		<label for="name">Address: (1 until 16)</label>
+		</div>
+		<div id="label_adres_wiredout">
+		<label for="name">Port: (1 until 8)</label>
 		</div>
 		<input type="text" name="address" id="address" value=""  />
 		<br>
@@ -156,7 +153,7 @@ else
 	
 </div><!-- /page saved -->
 
-<script>	
+<script type="text/javascript">		
 
 $(document).ready(function() {
 
@@ -183,6 +180,7 @@ $('#homecode_div').show();
 $('#submit_div').show();
 
 $('#label_adres_kaku').show();
+$('#label_adres_wiredout').hide();
 $('#label_adres_newkaku').hide();
 }
    //alert('Value change to ' + $(this).attr('value'));
@@ -195,7 +193,22 @@ $('#homecode_div').hide();
 $('#submit_div').show();
 
 $('#label_adres_kaku').hide();
+$('#label_adres_wiredout').hide();
 $('#label_adres_newkaku').show();
+
+}
+
+if ($(this).attr('value')==3) {   
+
+$('#name_div').show();  
+$('#adres_div').show();
+$('#dim_div').hide();
+$('#homecode_div').hide();
+$('#submit_div').show();
+
+$('#label_adres_kaku').hide();
+$('#label_adres_wiredout').show();
+$('#label_adres_newkaku').hide();
 
 }
    

@@ -7,7 +7,7 @@ require_once('include/settings.php');
 $page_title = "Devices";
 
 
-//Lees schakelaars Off
+
 mysql_select_db($database_tc, $tc);
 $query_RSdevices = "SELECT * FROM nodo_tbl_devices WHERE user_id='$userId'";
 $RSdevices = mysql_query($query_RSdevices, $tc) or die(mysql_error());
@@ -42,9 +42,8 @@ $totalRows_RSdevices = mysql_num_rows($RSdevices);
 <div data-role="page" data-theme="<?php echo $theme?>" data-title="<?php echo $title ?>">
 
 <?php require_once('include/header.php'); ?>
-	
-	
-	<div data-role="content" >	
+
+	<div data-role="content">	
 	  
 	
 	<?php do { ?>
@@ -123,7 +122,16 @@ switch ($type)
 			
 			<!-- /Dim slider -->
 
-			<?php } break; }?>   
+			<?php } break;    
+			
+			case 3:?>
+			<!-- On/Off WiredOut buttons -->
+			<a href="javascript:send_event(&quot;wiredout <?php echo $row_RSdevices['address']; ?>,on;sendstatus wiredout,<?php echo $row_RSdevices['address']; ?>&quot;)" data-role="button"  data-icon="check" >On</a>
+			<a href="javascript:send_event(&quot;wiredout <?php echo $row_RSdevices['address']; ?>,off;sendstatus wiredout,<?php echo $row_RSdevices['address']; ?>&quot;)" data-role="button"  data-icon="delete" >Off</a>
+			<!-- /On/Off WiredOut buttons -->
+			
+			<?php  break;
+			}?>
 
 			 
 		

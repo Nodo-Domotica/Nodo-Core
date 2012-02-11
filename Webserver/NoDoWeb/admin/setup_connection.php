@@ -5,7 +5,8 @@ require_once('../include/auth.php');
 require_once('../include/settings.php');
 
 $page_title = "Setup: Communication";	
-// check if the form has been submitted. If it has, process the form and save it to the database if 
+
+
 
 if (isset($_POST['save'])) 
 {  
@@ -78,14 +79,52 @@ $nodo_id = $unique_ref;
   
   }
    
-   
+	 //Check connection
+	 // Initialize cURL
+     $ch = curl_init();
+     
+     // Set some options
+     curl_setopt ( $ch, CURLOPT_URL, ("http://$nodo_ip/?event=userevent%20255,255&password=$nodo_password&id=$nodo_id"));
+     curl_setopt ( $ch, CURLOPT_HEADER, true);
+     curl_setopt ( $ch, CURLOPT_RETURNTRANSFER, true);
+     curl_setopt ( $ch, CURLOPT_PORT, $nodo_port );
+     curl_setopt ( $ch, CURLOPT_TIMEOUT, 2);
+     
+     // Set user agent
+     $agent = 'NoDo WebApp';
+     curl_setopt ( $ch, CURLOPT_USERAGENT, $agent);
+     
+     // Perform HTTP request
+     $response = curl_exec($ch);
+     
+     // Split headers
+     $headers = explode( "\n", $response );
+     
+         
+     
+    //echo $headers[0];
+
+	$response = "not_ok";
+	 
+	if ($headers[0] == '') {
+	$response = "not_ok";
+	}
+	
+	if (strpos($headers[0], 'HTTP/1.1 200 Ok') !== false) {
+	$response = "ok";
+	}
+	
+	if (strpos($headers[0], 'HTTP/1.1 403 Forbidden') !== false) {
+	$response = "forbidden";
+	}
+	  
 
   
  // save the data to the database 
  mysql_select_db($database_tc, $tc);
  mysql_query("UPDATE NODO_tbl_users SET nodo_ip='$nodo_ip', nodo_port='$nodo_port', send_method='$send_method', nodo_password='$nodo_password', nodo_id='$nodo_id' WHERE id='$userId'") or die(mysql_error());   
  // once saved, redirect back to the view page 
- header("Location: setup_connection.php#saved");   
+ header("Location: setup_connection.php/?response=$response#saved");   
  }
  
 else 
@@ -155,7 +194,7 @@ $row = mysql_fetch_array($result);
     
 	<br><br>
         
-		<input type="submit" name="save" value="Save" >
+		<input type="submit" name="save" value="Save & check connection" >
 
 		
 	
@@ -179,12 +218,32 @@ $row = mysql_fetch_array($result);
 
 	<div data-role="content">	
 		<h2>Settings saved.</h2>
-				
+			
+			<h2>
+			<?php
+			switch ($_GET['response'])
+			{
+			case 'not_ok':
+			echo "Connection failed!";
+			break;
+			case 'ok':
+			echo "Connection succeeded!";
+			break;
+			case 'forbidden':
+			echo "Authentication failed!";
+			break;
+			default:
+			echo "Connection failed!";
+			}	
+			?>	
+			</h2>
 		<p><a href="#main" data-rel="back" data-role="button" data-inline="true" data-icon="back">Ok</a></p>	
 	</div><!-- /content -->
 	
 	
 </div><!-- /dialog saved -->
+
+
  
 <script>	 
  

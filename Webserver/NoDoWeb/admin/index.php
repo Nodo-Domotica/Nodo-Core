@@ -30,6 +30,7 @@ $page_title = "Setup";
 	  <p><a href="devices.php" data-role="button" data-ajax="false">Devices</a></p>
 	  <p><a href="activities.php" data-role="button" data-ajax="false">Activities</a></p>
 	  <p><a href="sensor.php" data-role="button" data-ajax="false">Sensors</a></p>
+	  <p><a href="eventlist.php" data-role="button" data-ajax="false">Eventlist</a></p>
    	  <p><a href="setup_nodoweb.php" data-role="button" data-ajax="false">Look & Feel</a></p>
 	</div><!-- /content -->
 	

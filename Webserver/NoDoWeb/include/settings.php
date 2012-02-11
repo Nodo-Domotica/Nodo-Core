@@ -30,5 +30,5 @@ $send_method = $row_RSsetup['send_method'];
 $nodo_ip = $row_RSsetup['nodo_ip'];
 $nodo_port = $row_RSsetup['nodo_port'];
 $nodo_password = $row_RSsetup['nodo_password'];
-
+$nodo_id = $row_RSsetup['nodo_id'];
 ?>

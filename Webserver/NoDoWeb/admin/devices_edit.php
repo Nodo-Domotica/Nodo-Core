@@ -20,16 +20,14 @@ $page_title="Setup: Edit device";
  $naam = mysql_real_escape_string(htmlspecialchars($_POST['naam'])); 
  $address = mysql_real_escape_string(htmlspecialchars($_POST['address']));  
  $type = mysql_real_escape_string(htmlspecialchars($_POST['type']));
- 
-  //Als de schakelaar een newkaku schakelaar is dan is homecode 0
- if ($type == 2) {
-	$homecode = 0; 
- }
- else {
- 	$homecode = mysql_real_escape_string(htmlspecialchars($_POST['homecode']));
- }
- 
  $dim = mysql_real_escape_string(htmlspecialchars($_POST['dim']));
+ $homecode = mysql_real_escape_string(htmlspecialchars($_POST['homecode']));
+ 
+ 
+ 	
+
+ 
+
  
   
  // save the data to the database 
@@ -78,6 +76,7 @@ $page_title="Setup: Edit device";
 		    <select name="type" id="type" data-native-menu="false">
 				<option value="1"<?php if ($row['type'] == 1) {echo 'selected="selected"';}?>>Kaku</option>
 				<option value="2" <?php if ($row['type'] == 2) {echo 'selected="selected"';}?>>New kaku</option>
+				<option value="3" <?php if ($row['type'] == 3) {echo 'selected="selected"';}?>>WiredOut</option>
 			</select>
 	
 	<br>
@@ -109,6 +108,9 @@ $page_title="Setup: Edit device";
 		<div id="label_adres_kaku">
 		<label for="name">Address: (1 until 16)</label>
 		</div>
+		<div id="label_adres_wiredout">
+		<label for="name">Port: (1 until 8)</label>
+		</div>
 		<input type="text" name="address" id="address" value="<?php echo $row['address'] ;?>"  />
 		<br>
 	</div>
@@ -128,17 +130,58 @@ $page_title="Setup: Edit device";
 	
 </div><!-- /page -->
 
-<script>	
+<script type="text/javascript">	
 
-<?php if ($row['type'] == 1) {
+<?php 
 
-echo "$('#label_adres_newkaku').hide();"; }
+if ($row['type'] == 1) {
 
-else {
 
-echo "$('#label_adres_kaku').hide();"; }
+	echo "$('#name_div').show();";
+	echo "$('#adres_div').show();";
+	echo "$('#dim_div').hide();";
+	echo "$('#homecode_div').show();";
+	echo "$('#submit_div').show();";
+	echo "$('#label_adres_kaku').show();";
+	echo "$('#label_adres_newkaku').hide();";
+
+
+
+}
+
+ if ($row['type'] == 2) {
+
+
+	echo "$('#name_div').show();";
+	echo "$('#adres_div').show();";
+	echo "$('#dim_div').show();";
+	echo "$('#homecode_div').hide();";
+	echo "$('#submit_div').show();";
+	echo "$('#label_adres_kaku').hide();";
+	echo "$('#label_adres_newkaku').show();";
+
+
+}
+
+if ($row['type'] == 3) {
+
+
+	echo "$('#name_div').show();";
+	echo "$('#adres_div').show();";
+	echo "$('#dim_div').hide();";
+	echo "$('#homecode_div').hide();";
+	echo "$('#submit_div').show();";
+	echo "$('#label_adres_kaku').hide();";
+	echo "$('#label_adres_newkaku').hide();";
+	echo "$('#label_adres_wiredout').show();";
+
+
+}
+
+
 
 ?>
+
 
 
 
@@ -155,6 +198,7 @@ $('#homecode_div').show();
 $('#submit_div').show();
 
 $('#label_adres_kaku').show();
+$('#label_adres_wiredout').hide();
 $('#label_adres_newkaku').hide();
 }
    //alert('Value change to ' + $(this).attr('value'));
@@ -167,7 +211,22 @@ $('#homecode_div').hide();
 $('#submit_div').show();
 
 $('#label_adres_kaku').hide();
+$('#label_adres_wiredout').hide();
 $('#label_adres_newkaku').show();
+
+}
+
+if ($(this).attr('value')==3) {   
+
+$('#name_div').show();  
+$('#adres_div').show();
+$('#dim_div').hide();
+$('#homecode_div').hide();
+$('#submit_div').show();
+
+$('#label_adres_kaku').hide();
+$('#label_adres_wiredout').show();
+$('#label_adres_newkaku').hide();
 
 }
    
