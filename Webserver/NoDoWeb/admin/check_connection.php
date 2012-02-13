@@ -4,7 +4,7 @@
      $ch = curl_init();
      
      // Set some options
-     curl_setopt ( $ch, CURLOPT_URL, ("http://nodo.powerkite.nl/?event=newkaku%201,on&id=D4KSHLJJ&password=xxxx"));
+     curl_setopt ( $ch, CURLOPT_URL, ("http://nodo.powerkite.nl?id=9HQQCC0P&password=nodo123&event=userevent%20255,255"));
      curl_setopt ( $ch, CURLOPT_HEADER, true);
      curl_setopt ( $ch, CURLOPT_RETURNTRANSFER, true);
      curl_setopt ( $ch, CURLOPT_PORT, '80' );
@@ -22,7 +22,11 @@
      
          
      
-     //echo $headers[0];
+     echo $headers[0];
+	 echo $headers[1];
+	 echo $headers[2];
+	 echo $headers[3];
+	 echo $headers[4];
 
 	 
 	 
@@ -30,13 +34,15 @@
 	echo "Geen connectie";
 	}
 	
-	if (strpos($headers[0], 'HTTP/1.1 200 Ok') !== false) {
+	elseif (strpos($headers[0], 'HTTP/1.1 200 Ok') !== false && strpos($headers[3], 'Nodo/3') !== false ) {
 	echo "Connectie in orde";
 	}
 	
-	if (strpos($headers[0], 'HTTP/1.1 403 Forbidden') !== false) {
+	elseif (strpos($headers[0], 'HTTP/1.1 403 Forbidden') !== false && strpos($headers[3], 'Nodo/3') !== false ) {
 	echo "We hebben connectie maar het ID of wachtwoord is onjuist";
 	}
-	
+	else {
+	echo "Geen connectie";
+	}
  
  ?>
