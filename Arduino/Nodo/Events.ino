@@ -155,7 +155,7 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
         {
         if(S.Debug==VALUE_ON)
           {
-          EventlistEntry2str(x,EventlistDepth,TempString);
+          EventlistEntry2str(x,EventlistDepth,TempString,false);
           PrintLine(TempString);
           }
           

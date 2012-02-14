@@ -914,13 +914,13 @@ void ExecuteLine(char *Line, byte Port)
               {
               for(x=1;x<=EVENTLIST_MAX;x++)
                 {
-                if(EventlistEntry2str(x,0,TmpStr))
+                if(EventlistEntry2str(x,0,TmpStr, false))
                   PrintLine(TmpStr);
                 }
               }
             else
               {
-              EventlistEntry2str(Par1,0,TmpStr);
+              EventlistEntry2str(Par1,0,TmpStr, false);
               PrintLine(TmpStr);
               }
             PrintLine(ProgmemString(Text_22));

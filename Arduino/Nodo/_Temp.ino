@@ -1,5 +1,7 @@
 /*
 
+EventlistEntry2str
+
 Serial.print("*** debug: =");Serial.println(); //??? Debug
 
 Serial.println("*** debug: ");//???

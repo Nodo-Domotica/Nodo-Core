@@ -898,9 +898,13 @@ boolean SaveEventlistSDCard(char *FileName)
   File EventlistFile = SD.open(FileName, FILE_WRITE);
   if(EventlistFile) 
     {
+    strcpy(TempString,cmd2str(CMD_EVENTLIST_ERASE));
+    EventlistFile.write((uint8_t*)TempString,strlen(TempString));      
+    EventlistFile.write('\n'); // nieuwe regel
+
     for(x=1;x<=EVENTLIST_MAX;x++)
       {
-      if(EventlistEntry2str(x,0,TempString))
+      if(EventlistEntry2str(x,0,TempString,true))
         {
         EventlistFile.write((uint8_t*)TempString,strlen(TempString));      
         EventlistFile.write('\n'); // nieuwe regel

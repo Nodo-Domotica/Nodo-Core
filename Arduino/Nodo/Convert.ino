@@ -370,7 +370,7 @@ int event2AnalogInt(unsigned long event)
  * vult een string met een regel uit de Eventlist.
  * geeft false terug als de regel leeg is
  \*********************************************************************************************/
-boolean EventlistEntry2str(int entry, byte d, char* Line)
+boolean EventlistEntry2str(int entry, byte d, char* Line, boolean Script)
   {
   unsigned long Event, Action;
     
@@ -379,9 +379,12 @@ boolean EventlistEntry2str(int entry, byte d, char* Line)
     return false;
 
   // Geef de entry van de eventlist weer
-  strcpy(Line,cmd2str(VALUE_SOURCE_EVENTLIST));
-  strcat(Line," ");
-  strcat(Line,int2str(entry));
+  strcpy(Line,cmd2str(Script?CMD_EVENTLIST_WRITE:VALUE_SOURCE_EVENTLIST));
+  if(!Script)
+    {
+    strcat(Line," ");
+    strcat(Line,int2str(entry));
+    }
 
   // geef het event weer
   strcat(Line,"; ");
