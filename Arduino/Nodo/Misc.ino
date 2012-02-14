@@ -940,7 +940,7 @@ boolean FileList(void)
   boolean x=false;
   File root;
   File entry;
-  
+
   digitalWrite(Ethernetshield_CS_W5100, HIGH);
   digitalWrite(EthernetShield_CS_SDCard,LOW);
 
@@ -965,9 +965,9 @@ boolean FileList(void)
     entry.close();
     x=true;
     }
-
   digitalWrite(EthernetShield_CS_SDCard,HIGH);
   digitalWrite(Ethernetshield_CS_W5100, LOW);
+  
   return x;
   }
    

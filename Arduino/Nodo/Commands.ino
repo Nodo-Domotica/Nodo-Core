@@ -603,10 +603,10 @@ void ExecuteLine(char *Line, byte Port)
   byte State_EventlistWrite=0;
   unsigned long v,event,action; 
 
-  // geef invoer regel weer 
-  strcpy(TmpStr,">");
-  strcat(TmpStr,Line);
-  PrintLine(TmpStr);
+//  // geef invoer regel weer 
+//  strcpy(TmpStr,">");
+//  strcat(TmpStr,Line);
+//  PrintLine(TmpStr);
 
   // verwerking van commando's is door gebruiker tijdelijk geblokkeerd door FileWrite commando
   if(FileWriteMode>0)
@@ -616,20 +616,15 @@ void ExecuteLine(char *Line, byte Port)
       FileWriteMode=0;
       TempLogFile[0]=0;
       Serial.print("*** Debug: FileWrite ready.");Serial.println(); //??? Debug
+      }
+    else if(TempLogFile[0]!=0)
+      {
+      AddFileSDCard(TempLogFile,Line); // Extra logfile op verzoek van gebruiker
       return;
       }
     }
     
-  // loggen naar file
-  if(AddFileSDCard(ProgmemString(Text_23),Line)) // standaard logging naar log.dat
-    {
-    if(TempLogFile[0]!=0) // als de vorige AddFileSDCard() niet is gelukt, dan lukt deze ook niet
-      AddFileSDCard(TempLogFile,Line); // Extra logfile op verzoek van gebruiker
-    }
-
-  if(FileWriteMode>0)
-    return;
-
+  PrintLine(Line);
 
   PosCommand=0;
   for(PosLine=0;PosLine<=L && Error==0 ;PosLine++)

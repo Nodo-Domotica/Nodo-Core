@@ -85,11 +85,7 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
 
   // stuur de regel naar Serial en/of naar Ethernet
   PrintLine(TempString);
-
-  // loggen naar file
   AddFileSDCard(ProgmemString(Text_23),TempString); // standaard logging naar log.dat
-  if(TempLogFile[0]!=0)
-    AddFileSDCard(TempLogFile,TempString); // Extra logfile op verzoek van gebruiker
   } 
       
 
@@ -167,6 +163,10 @@ void PrintLine(char* LineToPrint)
     if(ConfirmHTTP==true && S.TransmitIP==VALUE_SOURCE_HTTP)
       SendHTTPRequestResponse(LineToPrint);
     }
+    
+  // loggen naar file
+  if(TempLogFile[0]!=0)
+    AddFileSDCard(TempLogFile,LineToPrint); // Extra logfile op verzoek van gebruiker
   }
 
 char* Event2str(unsigned long Code)

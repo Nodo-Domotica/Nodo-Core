@@ -29,7 +29,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   #endif
    
   PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
-
+  
   // houdt bij wat de busy status van andere Nodo's is.
   if(((IncommingEvent>>16)&0xff)==CMD_BUSY) // command
     {
