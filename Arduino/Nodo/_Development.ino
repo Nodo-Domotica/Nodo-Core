@@ -1,10 +1,7 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- Alle invoerregels in een Terminalsessie worden nu ook weergegeven. 
-- Aanpassing commando "FileWrite <filename>". Schrijft alle via TelNet of Serial binnenkomende regels naar bestand <filename> totdat FileWrite weerals tekst voorbij komt of er 60sec. voorbij is
-- bij ophalen file een <br> / CRLF teveel in de bodytekst. Verwijderd.
-- Alle invoerregels in een Terminalsessie worden nu ook in de logfile op SDCard vastgelegd.
+- Nieuw commando "FileGetHTTP"
 
 Known Errors / ToDo:
 

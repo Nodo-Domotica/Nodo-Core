@@ -862,7 +862,7 @@ boolean AddFileSDCard(char *FileName, char *Line)
   digitalWrite(Ethernetshield_CS_W5100, HIGH);
   digitalWrite(EthernetShield_CS_SDCard,LOW);
 
-  // Serial.print("*** debug: AddFileSDCard(); FileName=");Serial.print(FileName);Serial.print(", Line=");Serial.println(Line); //??? Debug
+ // Serial.print("*** debug: AddFileSDCard(); FileName=");Serial.print(FileName);Serial.print(", Line=");Serial.println(Line); //??? Debug
 
   File LogFile = SD.open(FileName, FILE_WRITE);
   if(LogFile) 

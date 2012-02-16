@@ -153,7 +153,7 @@ prog_char PROGMEM Cmd_064[]="FileExecute";
 prog_char PROGMEM Cmd_065[]="FileWrite";
 prog_char PROGMEM Cmd_066[]="FileList";
 prog_char PROGMEM Cmd_067[]="FileLog";
-prog_char PROGMEM Cmd_068[]="";
+prog_char PROGMEM Cmd_068[]="FileGetHTTP";
 prog_char PROGMEM Cmd_069[]="";
 prog_char PROGMEM Cmd_070[]="";
 prog_char PROGMEM Cmd_071[]="";
@@ -297,7 +297,7 @@ prog_char PROGMEM Cmd_203[]="Error: Unable to open file on SDCard.";
 prog_char PROGMEM Cmd_204[]="Error: Queue overflow.";
 prog_char PROGMEM Cmd_205[]="Error: Eventlist nested to deep.";
 prog_char PROGMEM Cmd_206[]="Error: Writing to eventlist failed.";
-prog_char PROGMEM Cmd_207[]="Error: No Ethernet connection.";
+prog_char PROGMEM Cmd_207[]="Error: Unable to establish Ethernet connection.";
 prog_char PROGMEM Cmd_208[]="Error: Incorrect password.";
 prog_char PROGMEM Cmd_209[]="Error: Command not supported in this Nodo version.";
 prog_char PROGMEM Cmd_210[]="Error: Terminal access not allowed.";
@@ -372,7 +372,7 @@ prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
 #define CMD_FILE_WRITE                  65
 #define CMD_FILE_LIST                   66
 #define CMD_FILE_LOG                    67
-#define CMD_RES068                      68
+#define CMD_FILE_GET_HTTP               68
 #define CMD_RES069                      69
 #define CMD_RES070                      70
 #define CMD_RES071                      71

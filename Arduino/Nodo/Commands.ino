@@ -57,6 +57,7 @@ byte CommandError(unsigned long Content)
     {
     //test; geen, altijd goed
     case CMD_VARIABLE_SET:   //??? nog afvangen bij foute invoer
+    case CMD_FILE_GET_HTTP:
     case CMD_IP_SETTINGS:
     case CMD_RAWSIGNAL_SAVE:
     case CMD_RAWSIGNAL_SEND:
@@ -644,7 +645,7 @@ void ExecuteLine(char *Line, byte Port)
       }
     
     // als puntkomma (scheidt opdachten) of einde string(0), en het commando groter dan drie tekens
-    if((x=='!' || x==';' || x==0) && PosCommand>3)
+    if(x=='!' || x==';' || x==0 && PosCommand>3)
       {
       Command[PosCommand]=0;
       PosCommand=0;
@@ -720,6 +721,19 @@ void ExecuteLine(char *Line, byte Port)
             PrintIPSettings();
             break;
 
+          case CMD_FILE_GET_HTTP:
+            {
+            if(GetArgv(Command,TempString,2))
+              {
+              strcpy(TmpStr,"&file=");
+              strcat(TmpStr,TempString);
+              xSendHTTPRequestStr(TmpStr);
+              }
+            else
+              Error=ERROR_02;            
+            break; 
+            }
+            
           case CMD_FILE_SHOW:
             {
             if(GetArgv(Command,TmpStr,2))
