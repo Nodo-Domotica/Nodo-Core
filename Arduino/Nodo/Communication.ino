@@ -188,7 +188,7 @@ byte xSendHTTPRequestStr(char* StringToSend)
   byte InByte,x;
   unsigned long TimeoutTimer;
   char s[2];
-  const int TimeOut=1500; // 1 seconde
+  const int TimeOut=5000;
   EthernetClient IPClient;                            // Client class voor HTTP sessie.
   char *IPBuffer=(char*)malloc(IP_INPUT_BUFFER_SIZE+1);
   char *TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
@@ -198,7 +198,6 @@ byte xSendHTTPRequestStr(char* StringToSend)
                // 2 als &file= is gevonden en eerstvolgende lege regel moet worden gedetecteerd
                // 3 als lege regel is gevonden en capture moet starten. 
                
-  
   // Haal uit het HTTP request URL de Host. Alles tot aan het '/' teken.
   strcpy(TmpStr,S.HTTPRequest);
   x=StringFind(TmpStr,"/");
@@ -247,8 +246,8 @@ byte xSendHTTPRequestStr(char* StringToSend)
     InByteCounter=0;
     
     while(TimeoutTimer>millis() && IPClient.connected())
-      {      
-      if(IPClient.available()) 
+      {
+      if(IPClient.available())
         {
         InByte=IPClient.read();
         if(S.Debug==VALUE_ON)
@@ -260,18 +259,14 @@ byte xSendHTTPRequestStr(char* StringToSend)
         else if(InByte==0x0A)
           {
           IPBuffer[InByteCounter]=0;
+          TimeoutTimer=millis()+TimeOut; // er is nog data transport, dus de timeout timer weer op max. zetten.
           // De regel is binnen
   
           if(State==2 && InByteCounter==0) // als lege regel in HTTP request gevonden
-            {
             State=3;
-            }
             
           else if(State==3)
-            {
             AddFileSDCard(TmpStr,IPBuffer); // Extra logfile op verzoek van gebruiker   @1
-            TimeoutTimer=millis()+TimeOut; // er is nog data transport, dus de timeout timer weer op max. zetten.
-            }
           
           else if(State==0 && StringFind(IPBuffer,"HTTP")!=-1)
             {
