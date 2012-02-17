@@ -604,11 +604,6 @@ void ExecuteLine(char *Line, byte Port)
   byte State_EventlistWrite=0;
   unsigned long v,event,action; 
 
-//  // geef invoer regel weer 
-//  strcpy(TmpStr,">");
-//  strcat(TmpStr,Line);
-//  PrintLine(TmpStr);
-
   // verwerking van commando's is door gebruiker tijdelijk geblokkeerd door FileWrite commando
   if(FileWriteMode>0)
     {
@@ -617,6 +612,7 @@ void ExecuteLine(char *Line, byte Port)
       FileWriteMode=0;
       TempLogFile[0]=0;
       Serial.print("*** Debug: FileWrite ready.");Serial.println(); //??? Debug
+      return;
       }
     else if(TempLogFile[0]!=0)
       {
@@ -625,27 +621,22 @@ void ExecuteLine(char *Line, byte Port)
       }
     }
     
-  PrintLine(Line);
+  // geef invoer regel weer 
+  strcpy(TmpStr,">");
+  strcat(TmpStr,Line);
+  PrintTerminal(TmpStr);
 
   PosCommand=0;
   for(PosLine=0;PosLine<=L && Error==0 ;PosLine++)
     {
     x=Line[PosLine];
 
-    // Comment teken. niets doen.
+    // Comment teken. hierna verdier niets meer doen.
     if(x=='!') 
       PosLine=L+1; // ga direct naar einde van de regel.
-    
-    // chat teken als eerste teken?
-    if(x=='>' && PosLine==0) 
-      {
-      SerialConnected=true;
-      PrintLine(Line+PosLine);
-      return;
-      }
-    
+       
     // als puntkomma (scheidt opdachten) of einde string(0), en het commando groter dan drie tekens
-    if(x=='!' || x==';' || x==0 && PosCommand>3)
+    if((x=='!' || x==';' || x==0) && PosCommand>3)
       {
       Command[PosCommand]=0;
       PosCommand=0;
@@ -738,7 +729,7 @@ void ExecuteLine(char *Line, byte Port)
             {
             if(GetArgv(Command,TmpStr,2))
               {
-              PrintLine(ProgmemString(Text_22));
+              PrintTerminal(ProgmemString(Text_22));
               strcat(TmpStr,".dat");
               // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
               digitalWrite(Ethernetshield_CS_W5100, HIGH);
@@ -758,7 +749,7 @@ void ExecuteLine(char *Line, byte Port)
                     {
                     TmpStr[y]=0;
                     y=0;
-                    PrintLine(TmpStr);
+                    PrintTerminal(TmpStr);
                     }
                   }
                 dataFile.close();
@@ -769,7 +760,7 @@ void ExecuteLine(char *Line, byte Port)
               // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
               digitalWrite(Ethernetshield_CS_W5100, LOW);
               digitalWrite(EthernetShield_CS_SDCard,HIGH);
-              PrintLine(ProgmemString(Text_22));
+              PrintTerminal(ProgmemString(Text_22));
               }
             break;
             }
@@ -917,27 +908,27 @@ void ExecuteLine(char *Line, byte Port)
             ResetFactory();
               
           case CMD_RAWSIGNAL_SAVE:
-            PrintLine(ProgmemString(Text_07));
+            PrintTerminal(ProgmemString(Text_07));
             GetArgv(Command,TmpStr,2);
             RawSignal.Key=str2int(TmpStr);
             break;        
 
           case CMD_EVENTLIST_SHOW:
-            PrintLine(ProgmemString(Text_22));
+            PrintTerminal(ProgmemString(Text_22));
             if(Par1==VALUE_ALL || Par1==0)
               {
               for(x=1;x<=EVENTLIST_MAX;x++)
                 {
                 if(EventlistEntry2str(x,0,TmpStr, false))
-                  PrintLine(TmpStr);
+                  PrintTerminal(TmpStr);
                 }
               }
             else
               {
               EventlistEntry2str(Par1,0,TmpStr, false);
-              PrintLine(TmpStr);
+              PrintTerminal(TmpStr);
               }
-            PrintLine(ProgmemString(Text_22));
+            PrintTerminal(ProgmemString(Text_22));
             break;
 
           case CMD_EVENTLIST_FILE:
@@ -1089,7 +1080,7 @@ void ExecuteLine(char *Line, byte Port)
         {
         strcpy(TmpStr,Command);
         strcat(TmpStr, " ?");
-        PrintLine(TmpStr);
+        PrintTerminal(TmpStr);
         RaiseError(Error);
         Line[0]=0;
         }          

@@ -675,12 +675,13 @@ boolean TemporyEventGhostError=false;                       // Vlag om tijdelijk
 int TerminalLocked=1;                                       // 0 als als gebruiker van een telnet terminalsessie juiste wachtwoord heeft ingetoetst
 volatile int PulseCount=0;                                  // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
 char TempLogFile[13];                                       // Naam van de Logfile waar (naast de standaard logging) de verwerking in gelogd moet worden.
-int FileWriteMode=0;                                   // Het aantal seconden dat deze timer ingesteld staat zal er geen verwerking plaats vinden van TerminalInvoer. Iedere seconde --.
+int FileWriteMode=0;                                        // Het aantal seconden dat deze timer ingesteld staat zal er geen verwerking plaats vinden van TerminalInvoer. Iedere seconde --.
 char InputBuffer_Serial[INPUT_BUFFER_SIZE+1];               // Buffer voor input Seriele data
 char InputBuffer_Terminal[INPUT_BUFFER_SIZE+1];             // Buffer voor input terminal verbinding Telnes sessie
 
 // ethernet classes voor IP communicatie EventGhost, Telnet terminal en HTTP.
-byte Ethernet_MAC_Address[]={0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x02};// MAC adres van de Nodo.
+// byte Ethernet_MAC_Address[]={0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};// MAC adres van de Nodo. ??? Productie
+byte Ethernet_MAC_Address[]={0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};// MAC adres van de Nodo. ??? Test
 EthernetServer IPServer(80);                                // Server class voor HTTP sessie.
 EthernetServer TerminalServer(23);                          // Server class voor Terminal sessie.
 EthernetClient TerminalClient;                              // Client class voor Terminal sessie.

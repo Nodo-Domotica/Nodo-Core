@@ -78,7 +78,7 @@ void SimulateDay(byte days)
   Time.Hour=0;
   DaylightPrevious=4;// vullen met 4, dan wordt in de zomertijd 4 niet tweemaal per etmaal weergegeven
   
-  PrintLine(ProgmemString(Text_22));
+  PrintTerminal(ProgmemString(Text_22));
   for(int d=1;d<=days;d++)
     {
     for(int m=0;m<=1439;m++)  // loop alle minuten van één etmaal door
@@ -105,7 +105,7 @@ void SimulateDay(byte days)
       }
     }
 
-  PrintLine(ProgmemString(Text_22));
+  PrintTerminal(ProgmemString(Text_22));
   ClockRead();// klok weer op de juiste tijd zetten.
   SetDaylight();// daglicht status weer terug op de juiste stand zetten
   DaylightPrevious=Time.Daylight;

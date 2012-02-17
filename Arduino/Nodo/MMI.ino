@@ -84,7 +84,7 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
     }
 
   // stuur de regel naar Serial en/of naar Ethernet
-  PrintLine(TempString);
+  PrintTerminal(TempString);
   AddFileSDCard(ProgmemString(Text_23),TempString); // standaard logging naar log.dat
   } 
       
@@ -114,10 +114,10 @@ char* DateTimeString(void)
 void PrintWelcome(void)
   {
   // Print Welkomsttekst
-  PrintLine("");
-  PrintLine(ProgmemString(Text_22));
-  PrintLine(ProgmemString(Text_01));
-  PrintLine(ProgmemString(Text_02));
+  PrintTerminal("");
+  PrintTerminal(ProgmemString(Text_22));
+  PrintTerminal(ProgmemString(Text_01));
+  PrintTerminal(ProgmemString(Text_02));
 
   // print versienummer, unit en indien gevuld het ID
   sprintf(TempString,"Version= (Beta) %d.%d.%d, ThisUnit=%d",S.Version/100, (S.Version%100)/10, S.Version%10,S.Unit); //??? beta tekst verwijderen
@@ -127,30 +127,30 @@ void PrintWelcome(void)
     strcat(TempString,S.ID);
     }
     
-  PrintLine(TempString);
+  PrintTerminal(TempString);
 
   // Geef datum en tijd weer.
   if(Time.Day)
     {
     sprintf(TempString,"%s %s",DateTimeString(), cmd2str(Time.DaylightSaving?CMD_DLS_EVENT:0));
-    PrintLine(TempString);
+    PrintTerminal(TempString);
     }
 
   // print IP adres van de Nodo
   if(EthernetEnabled)
     {
     sprintf(TempString,"NodoIP=%u.%u.%u.%u",Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
-    PrintLine(TempString);
+    PrintTerminal(TempString);
     }
       
-  PrintLine(ProgmemString(Text_22));
+  PrintTerminal(ProgmemString(Text_22));
   }
 
 
  /**********************************************************************************************\
  * Verzend teken(s) naar de Terminal
  \*********************************************************************************************/
-void PrintLine(char* LineToPrint)
+void PrintTerminal(char* LineToPrint)
   {
   // FreeMemory(0); //??? debug
   if(SerialConnected)
@@ -360,31 +360,31 @@ char* Event2str(unsigned long Code)
 
 void PrintIPSettings(void)
   {
-  PrintLine(ProgmemString(Text_22));
+  PrintTerminal(ProgmemString(Text_22));
 
   // print IP adres van de Nodo
   if(EthernetEnabled)
     {
     // Nodo IP
     sprintf(TempString,"NodoIP=%u.%u.%u.%u",Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
-    PrintLine(TempString);
+    PrintTerminal(TempString);
 
     // HTTP request line
     sprintf(TempString,"HTTPHost=%s",S.HTTPRequest);
-    PrintLine(TempString);
+    PrintTerminal(TempString);
 
     // OutputIP
     strcpy(TempString,"OutputIP=");
     strcat(TempString,cmd2str(S.TransmitIP));
-    PrintLine(TempString);
+    PrintTerminal(TempString);
 
     // Port
     sprintf(TempString,"Port=%d",S.Port);
-    PrintLine(TempString);
+    PrintTerminal(TempString);
 
     // ID
     sprintf(TempString,"ID=%s",S.ID);
-    PrintLine(TempString);
+    PrintTerminal(TempString);
 
     // EvetGhost client IP
     if(S.TransmitIP==VALUE_SOURCE_EVENTGHOST)
@@ -393,17 +393,17 @@ void PrintIPSettings(void)
       if(S.AutoSaveEventGhostIP==VALUE_AUTO)
         strcat(TempString,"(Auto)");
 
-      PrintLine(TempString);
+      PrintTerminal(TempString);
       } 
 
     // Nodo terminal Port
-    PrintLine("TerminalPort=23");
+    PrintTerminal("TerminalPort=23");
 
     }
   else
     {
-    PrintLine(cmd2str(ERROR_07));
+    PrintTerminal(cmd2str(ERROR_07));
     }    
-  PrintLine(ProgmemString(Text_22));
+  PrintTerminal(ProgmemString(Text_22));
   }
 

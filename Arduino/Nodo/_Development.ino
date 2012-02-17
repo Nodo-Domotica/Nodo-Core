@@ -1,15 +1,17 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- Nieuw commando "FileGetHTTP"
+- '!' commentteken werkte niet. Weer hersteld.
+- '>' voorafgaand aan weergave van ingevoerde commande was verdwenen. Weer hersteld.
+- '>' als chat teken weer verwijderd. Overbodig. Kan ook door gebruiker worden gedaan door regel te starten met een commentaar teken '!'
+- Er kwamen bij een FileWrite niet meer dan 50 regels over. Werd veroorzaakt door TimeOut bug. 
 
 Known Errors / ToDo:
 
 - Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue testen
 - Found in r306: Status WiredAnalog groter dan toegestane poort
-- Status naar file op SDCard
+- Het lijkt er op dat FileList soms onterecht geen resultaat geeft. Niet duidelijk of dit wordt veroorzaakt door FAT-probleem op de SDCard of dat het in de code zit. Nog uitzoeken
 - In de output naar terminal wordt een komma gebruikt als scheiding tussen de delen. Niet consequent, zou puntkomma moeten zijn.
-- capture/upload mogelijkheid om snel een bestand aan te kunnen maken op sd.
 
 
 Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release

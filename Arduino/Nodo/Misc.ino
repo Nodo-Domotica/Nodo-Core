@@ -959,7 +959,7 @@ boolean FileList(void)
 
         strcpy(TempString,entry.name());
         TempString[StringFind(TempString,".")]=0;
-        PrintLine(TempString);
+        PrintTerminal(TempString);
 
         digitalWrite(Ethernetshield_CS_W5100, HIGH);
         digitalWrite(EthernetShield_CS_SDCard,LOW);

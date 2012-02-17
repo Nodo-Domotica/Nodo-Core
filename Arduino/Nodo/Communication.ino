@@ -131,8 +131,8 @@ boolean SendEventGhost(char* event, byte* SendToIP)
     else
       {
       Serial.println();
-      Serial.print("****** Error connecting EventGhost server."); /// ??? Nog mooi weergeven en loggen.
-      Serial.println("*******");            
+      Serial.print(F("****** Error connecting EventGhost server.")); /// ??? Nog mooi weergeven en loggen.
+      Serial.println(F("*******"));            
       }
     EGclient.stop();    // close the connection:
     EGclient.flush();    // close the connection:
@@ -182,59 +182,59 @@ boolean SendHTTPRequestEvent(unsigned long event)
   }
 
 
-boolean xSendHTTPRequestStr(char* StringToSend)
+byte xSendHTTPRequestStr(char* StringToSend)
   {
   int InByteCounter;
   byte InByte,x;
   unsigned long TimeoutTimer;
-  boolean Ok,Success=false;
-  byte Capture=0;// teller. 0 als start, 1 als 200 OK voorbij is gekomen, 2 als lege regel is geconden en capture moet starten.
   char s[2];
-
+  const int TimeOut=1500; // 1 seconde
   EthernetClient IPClient;                            // Client class voor HTTP sessie.
-
   char *IPBuffer=(char*)malloc(IP_INPUT_BUFFER_SIZE+1);
   char *TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  
+  byte State=0;// 0 als start, 
+               // 1 als 200 OK voorbij is gekomen,
+               // 2 als &file= is gevonden en eerstvolgende lege regel moet worden gedetecteerd
+               // 3 als lege regel is gevonden en capture moet starten. 
+               
   
   // Haal uit het HTTP request URL de Host. Alles tot aan het '/' teken.
   strcpy(TmpStr,S.HTTPRequest);
   x=StringFind(TmpStr,"/");
   TmpStr[x]=0;
 
+  IPClient.getRemoteIP(ClientIPAddress);  
+
+  strcpy(IPBuffer,"GET ");
+  strcat(IPBuffer,S.HTTPRequest+x);
+  strcpy(TempString,"?id=");
+  strcat(TempString,S.ID);
+  strcat(TempString,"&password=");
+  strcat(TempString,S.Password);
+  strcat(TempString,"&version=");
+  strcat(TempString,int2str(S.Version));
+  strcat(TempString,StringToSend);
+
+  // event toevoegen aan tijdelijke string, echter alle spaties vervangen door + conform URL notatie ??? nodig?  
+  for(x=0;x<strlen(TempString);x++)
+    {            
+    if(TempString[x]==32)
+      strcat(IPBuffer,"%20");
+    else
+      {
+      s[0]=TempString[x];
+      s[1]=0;
+      strcat(IPBuffer,s);
+      }
+    }          
+  strcat(IPBuffer," HTTP/1.1");
+  
+  if(S.Debug==VALUE_ON)
+    PrintTerminal(IPBuffer);
+
   if(IPClient.connect(TmpStr,S.Port))
     {
-    IPClient.getRemoteIP(ClientIPAddress);  
-
-    strcpy(IPBuffer,"GET ");
-    strcat(IPBuffer,S.HTTPRequest+x);
-    strcpy(TempString,"?id=");
-    strcat(TempString,S.ID);
-    strcat(TempString,"&password=");
-    strcat(TempString,S.Password);
-    strcat(TempString,"&version=");
-    strcat(TempString,int2str(S.Version));
-    strcat(TempString,StringToSend);
-
-    // event toevoegen aan tijdelijke string, echter alle spaties vervangen door + conform URL notatie ??? nodig?  
-    for(x=0;x<strlen(TempString);x++)
-      {            
-      if(TempString[x]==32)
-        strcat(IPBuffer,"%20");
-      else
-        {
-        s[0]=TempString[x];
-        s[1]=0;
-        strcat(IPBuffer,s);
-        }
-      }      
-      
-    strcat(IPBuffer," HTTP/1.1");
-    
-    if(S.Debug==VALUE_ON)
-      {
-      Serial.print("*** debug: HTTP Request=");Serial.println(IPBuffer);//??? nog toonbaar maken voor de user.
-      }
-
     IPClient.println(IPBuffer);
 
     strcpy(IPBuffer,"Host: ");
@@ -242,72 +242,61 @@ boolean xSendHTTPRequestStr(char* StringToSend)
     IPClient.println(IPBuffer);
     IPClient.println();
 
-    TimeoutTimer=millis()+2000;
+    TimeoutTimer=millis()+TimeOut; // Als er twee seconden geen datatransport is, dan wordt aangenomen dat de verbinding (om wat voor reden dan ook) is afgebroken.
     IPBuffer[0]=0;
     InByteCounter=0;
     
-    Ok=false;
-    while(TimeoutTimer>millis() && IPClient.connected() && !Ok)
-      {
+    while(TimeoutTimer>millis() && IPClient.connected())
+      {      
       if(IPClient.available()) 
         {
         InByte=IPClient.read();
         if(S.Debug==VALUE_ON)
           Serial.write(InByte);
-        
+
         if(isprint(InByte) && InByteCounter<INPUT_BUFFER_SIZE)
           IPBuffer[InByteCounter++]=InByte;
           
         else if(InByte==0x0A)
           {
-          if(Capture==1 && InByteCounter==0)
-            Capture=2;
-          else
+          IPBuffer[InByteCounter]=0;
+          // De regel is binnen
+  
+          if(State==2 && InByteCounter==0) // als lege regel in HTTP request gevonden
             {
-            IPBuffer[InByteCounter]=0;
-            InByteCounter=0;
-          
-            // De regel is binnen
-            if(Capture==2)
-              AddFileSDCard(TmpStr,IPBuffer); // Extra logfile op verzoek van gebruiker   @1
-            
-            if(StringFind(IPBuffer,"HTTP")!=-1)
-              {
-              // Response n.a.v. HTTP-request is ontvangen
-              if(StringFind(IPBuffer,"200")!=-1)
-                {
-                // pluk de filename uit het http request als die er is, dan de body text van het THHP-request opslaan.
-                if(ParseHTTPRequest(StringToSend,"file", TmpStr))
-                  {
-                  strcat(TmpStr,".dat");
-                  
-                  
-                  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-                  digitalWrite(Ethernetshield_CS_W5100, HIGH);
-                  digitalWrite(EthernetShield_CS_SDCard,LOW);
-                  // evntueel vorig bestand wissen
-                  SD.remove(TmpStr);
-                  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
-                  digitalWrite(EthernetShield_CS_SDCard,HIGH);
-                  digitalWrite(Ethernetshield_CS_W5100, LOW);
-                  Capture=1;
-                  }
-                else  
-                  {
-                  Ok=true;
-                  Success=true;
-                  }
-                }
-              else
-                {
-                Serial.println();
-                Serial.print("****** Error sending HTTP Request: "); /// ??? Nog mooi weergeven en loggen.
-                Serial.print(IPBuffer);
-                Serial.println("*******");            
-                }
-              IPBuffer[InByteCounter]=0;
-              }
+            State=3;
             }
+            
+          else if(State==3)
+            {
+            AddFileSDCard(TmpStr,IPBuffer); // Extra logfile op verzoek van gebruiker   @1
+            TimeoutTimer=millis()+TimeOut; // er is nog data transport, dus de timeout timer weer op max. zetten.
+            }
+          
+          else if(State==0 && StringFind(IPBuffer,"HTTP")!=-1)
+            {
+            // Response n.a.v. HTTP-request is ontvangen
+            if(StringFind(IPBuffer,"200")!=-1)
+              {
+              State=1;
+              // pluk de filename uit het http request als die er is, dan de body text van het HTTP-request opslaan.
+              if(ParseHTTPRequest(StringToSend,"file", TmpStr))
+                {
+                State=2;
+                strcat(TmpStr,".dat");
+                // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+                digitalWrite(Ethernetshield_CS_W5100, HIGH);
+                digitalWrite(EthernetShield_CS_SDCard,LOW);
+                // evntueel vorig bestand wissen
+                SD.remove(TmpStr);
+                // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
+                digitalWrite(EthernetShield_CS_SDCard,HIGH);
+                digitalWrite(Ethernetshield_CS_W5100, LOW);
+                }
+              }
+            IPBuffer[InByteCounter]=0;
+            }
+          InByteCounter=0;          
           }
         }
       }
@@ -315,7 +304,7 @@ boolean xSendHTTPRequestStr(char* StringToSend)
   free(TmpStr);
   free(IPBuffer);
   IPClient.stop();
-  return Success;
+  return State;
   }
   
   

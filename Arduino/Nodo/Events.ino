@@ -19,7 +19,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
 
 // uitwerken dat de wordt weergegeven dat dit de queue in gaat en niet feitelijk verwerkt wordt.
 //  if(CommandForThisNodo && Hold)
-//    PrintLinePB_AddProgMemString(Text_09);
+//    PrintTerminalPB_AddProgMemString(Text_09);
 
 //??? Serial.println("*** debug: ProcessEvent();");//???
 
@@ -48,7 +48,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   if(RawSignal.Key!=0)
     {
     if(SaveRawSignal(RawSignal.Key))
-      PrintLine(ProgmemString(Text_13));
+      PrintTerminal(ProgmemString(Text_13));
     RawSignal.Key=0;
     //??? PrintRawSignal();
     return true;
@@ -156,7 +156,7 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
         if(S.Debug==VALUE_ON)
           {
           EventlistEntry2str(x,EventlistDepth,TempString,false);
-          PrintLine(TempString);
+          PrintTerminal(TempString);
           }
           
         if(NodoType(Event_2)==NODO_TYPE_COMMAND) // is de ontvangen code een uitvoerbaar commando?
