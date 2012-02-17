@@ -7,7 +7,7 @@ char* cmd2str(int i)
   static char string[30];
   if(i<COMMAND_MAX)
     {
-    strcpy_P(string,(char*)pgm_read_word(&([i])));
+    strcpy_P(string,(char*)pgm_read_word(&(CommandText_tabel[i])));
     }
   else
     string[0]=0;// als er geen gevonden wordt, dan is de string leeg
