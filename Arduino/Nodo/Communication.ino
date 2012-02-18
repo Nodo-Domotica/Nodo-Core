@@ -161,7 +161,6 @@ boolean SendHTTPRequestResponse(char* Response)
   }
 
 
-
  /*******************************************************************************************************\
  *
  *
@@ -188,7 +187,7 @@ byte xSendHTTPRequestStr(char* StringToSend)
   byte InByte,x;
   unsigned long TimeoutTimer;
   char s[2];
-  const int TimeOut=5000;
+  const int TimeOut=10000;
   EthernetClient IPClient;                            // Client class voor HTTP sessie.
   char *IPBuffer=(char*)malloc(IP_INPUT_BUFFER_SIZE+1);
   char *TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
@@ -239,6 +238,7 @@ byte xSendHTTPRequestStr(char* StringToSend)
     strcpy(IPBuffer,"Host: ");
     strcat(IPBuffer,TmpStr);
     IPClient.println(IPBuffer);
+    IPClient.println(F("Connection: Close"));
     IPClient.println();
 
     TimeoutTimer=millis()+TimeOut; // Als er twee seconden geen datatransport is, dan wordt aangenomen dat de verbinding (om wat voor reden dan ook) is afgebroken.
@@ -302,7 +302,7 @@ byte xSendHTTPRequestStr(char* StringToSend)
   return State;
   }
   
-  
+    
 /*********************************************************************************************\
 * Deze routine haalt uit een http request de waarden die bij de opgegeven parameter hoort
 * Niet case-sinsitive.
