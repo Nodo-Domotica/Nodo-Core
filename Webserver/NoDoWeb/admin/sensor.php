@@ -15,9 +15,9 @@ if (isset($_POST['submit']))
  
  // get form data, making sure it is valid 
  $name = mysql_real_escape_string(htmlspecialchars($_POST['name'])); 
- $suffix = mysql_real_escape_string(htmlspecialchars($_POST['suffix']));
  $unit = mysql_real_escape_string(htmlspecialchars($_POST['unit'])); 
  $port = mysql_real_escape_string(htmlspecialchars($_POST['port'])); 
+ $suffix = mysql_real_escape_string(htmlspecialchars($_POST['suffix']));
  
  
  
@@ -74,13 +74,9 @@ $result = mysql_query("SELECT * FROM nodo_tbl_sensor WHERE user_id='$userId'") o
 		<label for="name">Name: (Example: Temperature outside:)</label>
 		<input type="text" name="name" id="name" value=""  />
 		<br>
-		<label for="select-choice-0" class="select" >Suffix:</label>
-		    <select name="suffix" id="suffix" data-native-menu="false" >
-				<option value="0" data-placeholder="true">Select suffix:</option>
-				<option value="%">%</option>
-				<option value="&deg;C">&deg;C</option>
-				<option value=" ">None</option>
-			</select>
+		
+		<label for="suffix">Suffix: (Example: &deg;C, M&sup3;)</label>
+		<input type="text" name="suffix" id="suffix" value=""  />
 		<br>
 		<label for="select-choice-1" class="select" >NoDo unit:</label>
 		    <select name="unit" id="unit" data-native-menu="false" >

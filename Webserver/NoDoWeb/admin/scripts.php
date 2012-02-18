@@ -47,7 +47,7 @@ if (isset($_POST['Read']))
 
 	if ($_POST['select-script-1'] == 0) {
 	
-		$file = "wasevent"; 
+		$file = 0; 
 
 		//Write eventlist on nodo
 			
@@ -56,13 +56,14 @@ if (isset($_POST['Read']))
 	}
 	else {
 	
-		$scriptnr = $_POST['select-script-1'];
-		$file = "was00$scriptnr";
+		//$scriptnr = $_POST['select-script-1'];
+		$file = $_POST['select-script-1'];
 
 	}
 
 	//Read eventlist to array
 	$scriptraw = explode("\n", HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&file=$file"));
+	
 		
 	//count total lines in $scriptraw
 	$total_script_lines_raw = count($scriptraw);
@@ -98,25 +99,20 @@ if (isset($_POST['Write']))
 {  
 
 
-if ($_POST['select-script-1'] == 0) {
-		
-		$scriptnr = $_POST['select-script-1'];
-		$file = "wasevent"; 
-					
-		
-	}
-	else {
-	
-		$scriptnr = $_POST['select-script-1'];
-		$file = "was00$scriptnr";
 
-	}
+		//$scriptnr = $_POST['select-script-1'];
+		$file = $_POST['select-script-1'];
+
+	
  
  
  // get form data, making sure it is valid 
  $script_id = mysql_real_escape_string(htmlspecialchars($_POST['select-script-1'])); 
- $scriptpost = mysql_real_escape_string(htmlspecialchars($_POST['script']));   
-
+ $scriptpost = mysql_real_escape_string(htmlspecialchars($_POST['script']));
+ 
+ // add line end to end of string
+ //$scriptpost = $scriptpost."\n";
+ 
  
  
  mysql_select_db($database_tc, $tc);
@@ -147,10 +143,10 @@ if ($_POST['select-script-1'] == 0) {
 	
 		
 	//delete current file on Nodo
-	//HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&event=FileErase%20$file");	
+	HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&event=FileErase%20$file");	
 		
 	//Save script on Nodo 
-	HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&event=FileGetHTTP%20$scriptnr");
+	HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&event=FileGetHTTP%20$file");
 	
 	
 	if (ISSET($_POST["checkbox-2"])){
@@ -162,7 +158,7 @@ if ($_POST['select-script-1'] == 0) {
 	
 	
 	
-	//header("Location: scripts.php#saved");
+	header("Location: scripts.php#saved");
 	
 	
 }
@@ -225,16 +221,14 @@ END Script write
 if (isset($script)){  
 
 	for($i=0;$i<$total_script_lines;$i++){
-		//Alleen als de regel met EventList begint behandelen we de regel.
-		//if(strstr($script[$i],"EventList ")){ 
+		
 			
 			//<br /> aan het einde van de regels verwijderen
 			$script[$i] = str_replace("<br />","",$script[$i]);
-			//Eventlist [nr]; aan het begin van de regels verwijderen
-			//$script[$i] = substr($script[$i],strpos($script[$i],";")+2);
+			
 			echo $script[$i];
  
-		//}
+		
 	}
 }
 
@@ -272,7 +266,7 @@ if (isset($script)){
 	</div><!-- /header -->
 
 	<div data-role="content">	
-		<h2>Script saved.</h2>
+		<h2>Script send to Nodo.</h2>
 				
 		<p><a href="scripts.php" data-role="button" data-inline="true" data-icon="back">Ok</a></p>	
 	

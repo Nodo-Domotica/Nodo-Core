@@ -66,7 +66,7 @@ switch ($type)
 			
 			<!-- On/Off kaku buttons -->
 			<a href="javascript:send_event(&quot;sendkaku <?php echo $row_RSdevices['homecode'] . $row_RSdevices['address'] ;?>,on&quot;)" data-role="button" data-icon="check" >On</a>
-			<a href="javascript:send_event(&quot;sendkaku <?php echo $row_RSdevices['homecode'] . $row_RSdevices['address'] ;?>,off&quot;)" data-role="button" data-icon="delete">Off</a>
+			<a href="javascript:send_event(&quot;sendkaku <?php echo $row_RSdevices['homecode'] . $row_RSdevices['address'] ;?>,off&quot;)" data-role="button" data-icon="delete" >Off</a>
 			<!-- /On/Off kaku buttons -->
 			
 			<?php  break; ?>  

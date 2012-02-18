@@ -21,7 +21,7 @@ function Switch_State()
 						if (/4|^complete$/.test($http.readyState)) {
 							eval($http.responseText);
 							
-							setTimeout(function(){$self();}, 1000);
+							setTimeout(function(){$self();}, 2000);
 						}
 					};
 					$http.open('GET', 'get_device_state.php' + '?' + new Date().getTime(), true);

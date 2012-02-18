@@ -115,13 +115,13 @@ END Generate NoDo ID
 Check connection & Nodo config													
 *************************************************************************************************/ 
 if (isset($_POST['auto_config'])){
-	 //Check connection on default NODO and split headers
-     $headers = explode( "\n", HTTPRequest("http://$nodo_ip/?event=userevent%20255,255&password=Nodo&id=00000000") );
+	 //Check connection on default NODO and get headers
+     $headers = (HTTPRequest("http://$nodo_ip/?event=userevent%20255,255&password=Nodo&id=00000000") );
      }
 	else
 	{
-	//Check connection and split headers
-     $headers = explode( "\n", HTTPRequest("http://$nodo_ip/?event=userevent%20255,255&password=$nodo_password&id=$nodo_id") );
+	//Check connection and get headers
+     $headers = (HTTPRequest("http://$nodo_ip/?event=userevent%20255,255&password=$nodo_password&id=$nodo_id") );
       }   
      
     
@@ -131,7 +131,7 @@ if (isset($_POST['auto_config'])){
 	$response = "not_ok";
 	
 	//We have connection with NoDo server
-	if (strpos($headers[0], 'HTTP/1.1 200 Ok') !== false && strpos($headers[3], 'Nodo/3') !== false) {
+	if (strpos($headers, 'HTTP/1.1 200 Ok') !== false && strpos($headers, 'Nodo/') !== false) {
 		
 		$response = "ok";
 		
@@ -162,7 +162,7 @@ if (isset($_POST['auto_config'])){
 		}
 	}
 	
-	if (strpos($headers[0], 'HTTP/1.1 403 Forbidden') !== false && strpos($headers[3], 'Nodo/3') !== false) {
+	if (strpos($headers, 'HTTP/1.1 403 Forbidden') !== false && strpos($headers, 'Nodo/') !== false) {
 		
 		if (isset($_POST['auto_config'])){
 		
@@ -217,7 +217,7 @@ END Check connection & Nodo config
  
 	<div data-role="content">	
 
-	<form action="setup_connection.php" data-ajax="false" method="post"> 
+	<form action="setup_connection.php" data-ajax="false" id="form_connection" method="post"> 
 	
 	 
 		<input type="hidden" name="send_method" id="send_method" value="2" />
@@ -234,7 +234,7 @@ END Check connection & Nodo config
 	
 	<br>
 	
-		<label for="name">NoDo ip/host: (x.x.x.x)</label>
+		<label for="name">Nodo ip/host: (x.x.x.x)</label>
 		<input type="text" name="nodo_ip" id="nodo_ip" value="<?php echo $row['nodo_ip']?>"  />
 	
 	<br>   
@@ -245,7 +245,7 @@ END Check connection & Nodo config
 			
 	<br>
       
-		<label for="name">NoDo password:</label>
+		<label for="name">Nodo password:</label>
 		<input type="password" name="nodo_password" id="nodo_password" value="<?php echo $row['nodo_password']?>"  />
 		
 	<br>
@@ -254,7 +254,7 @@ END Check connection & Nodo config
 		<label for="checkbox-0">Generate NoDo ID</label>
 		 -->
 		 <input type="checkbox" name="auto_config" id="auto_config_2" class="custom" />
-		<label for="auto_config_2">Auto configure default NoDo</label>
+		<label for="auto_config_2">Auto configure your default Nodo</label>
 	 
 	 <br>  
       
@@ -263,14 +263,37 @@ END Check connection & Nodo config
     
 	<br><br>
         
-		<input type="submit" name="save" value="Save & check connection" >
 
+ 
+		
+		<div id="submit_button_div">
+		<input type="submit" name="save" value="Save & check connection" onclick="show_loading()" >
+		</div>
+		<div id="check_connection_div" style="display: none">
+		<h4><img src="../media/loading.gif"/> Checking connection....</h4>
+		</div>
+		</div>
 		
 	
 	</form> 
 
+	<script type="text/javascript">
+ 
+ 
+ 
+ function show_loading()
+ {
+ 
+$('#submit_button_div').hide();
+$('#check_connection_div').show();
+//IE bug!?
+document.getElementById('check_connection_div').innerHTML = document.getElementById('check_connection_div').innerHTML;
+ 
+ 
+ 
+ }
+ </script>
 	
-
 	
 	</div><!-- /content -->
 	
@@ -290,6 +313,8 @@ END Check connection & Nodo config
 			
 			<h2>
 			<?php
+			
+		if (isset($_GET['response'])) {	
 			switch ($_GET['response'])
 			{
 			case 'not_ok':
@@ -312,7 +337,8 @@ END Check connection & Nodo config
 			break;
 			default:
 			echo "Connection failed!";
-			}	
+			}
+		}	
 			?>	
 			</h2>
 		<p><a href="#main" data-rel="back" data-role="button" data-inline="true" data-icon="back">Ok</a></p>	

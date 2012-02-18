@@ -40,7 +40,7 @@ $id = $row['id'];
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1"> 
-	<title>NoDoWeb Login</title> 
+	<title>Nodo Web App Login</title> 
 	<?php require_once('include/jquery_mobile.php'); ?>
 </head> 
 
@@ -49,7 +49,7 @@ $id = $row['id'];
 <div data-role="page">
 
 	<div data-role="header">
-		<h1>NoDoWeB Login</h1>
+		<h1>Nodo Web App Login</h1>
 	</div><!-- /header -->
 
 	<div data-role="content">	
@@ -57,9 +57,9 @@ $id = $row['id'];
 		<?php echo $message ?>
 		
 		<form action="login.php" data-ajax="false" method="post">		
-			<label for="basic">Username:</label>
+			<label for="username">Username:</label>
 			<input type="text" name="username" id="username" value=""  />
-			<label for="basic">Password:</label>
+			<label for="password">Password:</label>
 			<input type="password" name="password" id="password" value=""  />
 			<input type="submit" name="submit" value="Login" >
 		</form>

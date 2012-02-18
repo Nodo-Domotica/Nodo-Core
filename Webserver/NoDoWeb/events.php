@@ -208,12 +208,18 @@ $userId = $row['id'];
 			**********************************************************************************************************************************************************/
 			if (isset($_GET['file'])){
 			
+
+			
 			$script_id = $_GET['file'];
 			
 			mysql_select_db($database_tc, $tc);
 			$result = mysql_query("SELECT * FROM nodo_tbl_scripts WHERE script_id='$script_id' AND user_id='$userId'") or die(mysql_error());  
 			$row = mysql_fetch_array($result);
 			echo $row['script'];
+			echo "\n";
+			
+			
+			
 			
 			}
 			/*********************************************************************************************************************************************************

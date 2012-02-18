@@ -144,7 +144,7 @@ if ($row['type'] == 1) {
 	echo "$('#submit_div').show();";
 	echo "$('#label_adres_kaku').show();";
 	echo "$('#label_adres_newkaku').hide();";
-
+	echo "$('#label_adres_wiredout').hide();";
 
 
 }
@@ -159,6 +159,7 @@ if ($row['type'] == 1) {
 	echo "$('#submit_div').show();";
 	echo "$('#label_adres_kaku').hide();";
 	echo "$('#label_adres_newkaku').show();";
+	echo "$('#label_adres_wiredout').hide();";
 
 
 }

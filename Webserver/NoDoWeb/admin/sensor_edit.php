@@ -65,13 +65,12 @@ $page_title="Setup: Edit sensors";
 		<label for="name">Name: (example: Temperature outside:)</label>
 		<input type="text" name="name" id="name" value="<?php echo $row['sensor_name'] ;?>"  />
 		<br>
-		<label for="select-choice-0" class="select" >Suffix:</label>
-		    <select name="suffix" id="suffix" data-native-menu="false" >
-				<option value="0" data-placeholder="true">Select suffix:....</option>
-				<option value="%"<?php if ($row['sensor_suffix'] == "%") {echo 'selected="selected"';}?>>%</option>
-				<option value="&deg;C"<?php if ($row['sensor_suffix'] == "°C") {echo 'selected="selected"';}?>>&deg;C</option>
-				<option value=" "<?php if ($row['sensor_suffix'] == " ") {echo 'selected="selected"';}?>>None</option>
-			</select>
+		<label for="suffix">Suffix: (example: &deg;C, M&sup3;)</label>
+		<input type="text" name="suffix" id="suffix" value="<?php echo $row['sensor_suffix'] ;?>"  />
+		<br>
+			
+		
+		
 		<br>
 		<label for="select-choice-1" class="select" >NoDo unit:</label>
 		    <select name="unit" id="unit" data-native-menu="false" >
