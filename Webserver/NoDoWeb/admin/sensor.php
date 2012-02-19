@@ -16,9 +16,29 @@ if (isset($_POST['submit']))
  // get form data, making sure it is valid 
  $name = mysql_real_escape_string(htmlspecialchars($_POST['name'])); 
  $unit = mysql_real_escape_string(htmlspecialchars($_POST['unit'])); 
- $port = mysql_real_escape_string(htmlspecialchars($_POST['port'])); 
- $suffix = mysql_real_escape_string(htmlspecialchars($_POST['suffix']));
+ $par1 = mysql_real_escape_string(htmlspecialchars($_POST['par1'])); 
+ $type = mysql_real_escape_string(htmlspecialchars($_POST['type']));
+ $display = mysql_real_escape_string(htmlspecialchars($_POST['display']));
+  
+ if ($_POST['display'] == 1) {
+	$suffix = mysql_real_escape_string(htmlspecialchars($_POST['suffix']));
+	}
+	
+ else {
+	$suffix = "";
+ }
  
+ if ($_POST['display'] == 2) {
+ 
+	 $suffix_true = mysql_real_escape_string(htmlspecialchars($_POST['suffix_true']));
+	 $suffix_false = mysql_real_escape_string(htmlspecialchars($_POST['suffix_false']));
+	 }
+ 
+ else {
+ 
+	 $suffix_true = "";
+	 $suffix_false = "";
+ }
  
  
   
@@ -26,9 +46,9 @@ if (isset($_POST['submit']))
  mysql_select_db($database_tc, $tc);
  
    
- mysql_query("INSERT INTO nodo_tbl_sensor (sensor_name, sensor_suffix, user_id, nodo_unit_nr,port) 
+ mysql_query("INSERT INTO nodo_tbl_sensor (sensor_type, display, sensor_name, sensor_suffix, sensor_suffix_true, sensor_suffix_false, user_id, nodo_unit_nr,par1) 
  VALUES 
- ('$name','$suffix','$userId','$unit','$port')");
+ ('$type','$display','$name','$suffix','$suffix_true','$suffix_false','$userId','$unit','$par1')");
  // once saved, redirect back to the view page 
  header("Location: sensor.php#saved");    }
  
@@ -70,17 +90,44 @@ $result = mysql_query("SELECT * FROM nodo_tbl_sensor WHERE user_id='$userId'") o
 	 
 				
 	<br>
-	
+		<label for="select-choice-0" class="select" >Sensor type:</label>
+		    <select name="type" id="type" data-native-menu="false" >
+				<option value="1" selected="selected">WiredAnalog</option>
+				<option value="2">Variable</option>
+			</select>	
+		<br>
+		<label for="select-choice-1" class="select" >Display:</label>
+		    <select name="display" id="display" data-native-menu="false" >
+				<option value="1" selected="selected">Value</option>
+				<option value="2">State</option>
+			</select>	
+		<br>
+		<div id="label_value_div">
 		<label for="name">Name: (Example: Temperature outside:)</label>
+		</div>
+		<div id="label_state_div">
+		<label for="name">Name: (Example: Door:)</label>
+		</div>
 		<input type="text" name="name" id="name" value=""  />
 		<br>
 		
+		<div id="value_div">
 		<label for="suffix">Suffix: (Example: &deg;C, M&sup3;)</label>
 		<input type="text" name="suffix" id="suffix" value=""  />
 		<br>
-		<label for="select-choice-1" class="select" >NoDo unit:</label>
+		</div>
+		
+		<div id="state_div">
+		<label for="suffix_false">Suffix: >0 (Example: Open)</label>
+		<input type="text" name="suffix_true" id="suffix_true" value=""  />
+		<br>
+		<label for="suffix_true">Suffix: <=0 (Example: Closed)</label>
+		<input type="text" name="suffix_false" id="suffix_false" value=""  />
+		<br>
+		</div>
+		
+		<label for="select-choice-2" class="select" >Nodo unit:</label>
 		    <select name="unit" id="unit" data-native-menu="false" >
-				<option value="0" data-placeholder="true">Select unit nr:</option>
 				<option value="1">1</option>
 				<option value="2">2</option>
 				<option value="3">3</option>
@@ -98,18 +145,14 @@ $result = mysql_query("SELECT * FROM nodo_tbl_sensor WHERE user_id='$userId'") o
 				<option value="15">15</option>
 			</select>
 		<br>
-		<label for="select-choice-2" class="select" >Wiredanalog port:</label>
-		    <select name="port" id="port" data-native-menu="false" >
-				<option value="0" data-placeholder="true">Select port:</option>
-				<option value="1">1</option>
-				<option value="2">2</option>
-				<option value="3">3</option>
-				<option value="4">4</option>
-				<option value="5">5</option>
-				<option value="6">6</option>
-				<option value="7">7</option>
-				<option value="8">8</option>
-			</select>
+		
+		<div id="label_wiredanalog_div">
+		<label for="name">WiredAnalog port (1 until 15)</label>
+		</div>
+		<div id="label_variable_div">
+		<label for="name">Variable (1 until 15)</label>
+		</div>
+		<input type="text" name="par1" id="par1" value=""  />
 		<br>
 	    <br>
         
@@ -164,7 +207,65 @@ $result = mysql_query("SELECT * FROM nodo_tbl_sensor WHERE user_id='$userId'") o
 	
 	
 </div><!-- /page saved -->
- 
+ <script type="text/javascript">		
+
+$(document).ready(function() {
+
+$('#label_variable_div').hide();   
+$('#state_div').hide();
+$('#label_state_div').hide(); 
+	
+});
+
+$('#display').change(function() 
+{
+
+if ($(this).attr('value')==1) {   
+
+$('#state_div').hide(); 
+$('#label_state_div').hide();  
+$('#value_div').show(); 
+$('#label_value_div').show();      
+
+}
+   
+if ($(this).attr('value')==2) {   
+
+$('#state_div').show(); 
+$('#label_state_div').show();
+$('#label_value_div').hide();   
+$('#value_div').hide(); 
+
+}
+
+
+   
+});
+
+
+
+
+$('#type').change(function() 
+{
+
+if ($(this).attr('value')==1) {   
+
+$('#label_wiredanalog_div').show();  
+$('#label_variable_div').hide();   
+
+}
+   //alert('Value change to ' + $(this).attr('value'));
+if ($(this).attr('value')==2) {   
+
+$('#label_wiredanalog_div').hide();  
+$('#label_variable_div').show();   
+
+}
+
+
+   
+});
+</script>
 </body>
 </html>
 

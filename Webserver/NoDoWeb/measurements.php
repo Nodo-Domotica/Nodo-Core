@@ -34,22 +34,33 @@ $RSsensor = mysql_query($query_RSsensor, $tc) or die(mysql_error());
 
 	<div data-role="content">	
 
+<h4>	
 	<?php	while($row_RSsensor = mysql_fetch_array($RSsensor))
 	
 	
 
 	{
-		echo "<h4>";
+		
 		echo $row_RSsensor['sensor_name'];
 		echo " ";
-		echo $row_RSsensor['data'];
-		echo " ";
-		echo $row_RSsensor['sensor_suffix'];
-		echo "</h4>";
+		
+		if ($row_RSsensor['display'] == 1){
+			echo $row_RSsensor['data'];
+			echo " ";
+			echo $row_RSsensor['sensor_suffix'];
+		}
+		
+		if ($row_RSsensor['display'] == 2){
+			if ($row_RSsensor['data'] <=0){	echo $row_RSsensor['sensor_suffix_false'];}
+			if ($row_RSsensor['data'] > 0){	echo $row_RSsensor['sensor_suffix_true'];}
+		}
+		
+		echo "<br>";
+		
 	}
 	
 	?>
-
+</h4>
 	
 		
 

@@ -17,14 +17,14 @@ if (isset($_POST['submit']))
   
  // save the data to the database 
  mysql_select_db($database_tc, $tc);
- mysql_query("UPDATE NODO_tbl_users SET webapp_theme='$theme', webapp_theme_header='$theme_header', webapp_title='$title' WHERE id='$userId'") or die(mysql_error());   
+ mysql_query("UPDATE nodo_tbl_users SET webapp_theme='$theme', webapp_theme_header='$theme_header', webapp_title='$title' WHERE id='$userId'") or die(mysql_error());   
  // once saved, redirect back to the view page 
  header("Location: setup_nodoweb.php#saved");   }
  
 else 
 {
 mysql_select_db($database_tc, $tc);
-$result = mysql_query("SELECT * FROM NODO_tbl_users WHERE id='$userId'") or die(mysql_error());  
+$result = mysql_query("SELECT * FROM nodo_tbl_users WHERE id='$userId'") or die(mysql_error());  
 $row = mysql_fetch_array($result);
 
 

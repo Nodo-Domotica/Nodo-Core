@@ -19,13 +19,15 @@ $page_title="Setup: Edit sensors";
  $id = $_POST['id']; 
  $name = mysql_real_escape_string(htmlspecialchars($_POST['name'])); 
  $suffix = mysql_real_escape_string(htmlspecialchars($_POST['suffix']));
+ $suffix_true = mysql_real_escape_string(htmlspecialchars($_POST['suffix_true']));
+ $suffix_false = mysql_real_escape_string(htmlspecialchars($_POST['suffix_false']));
  $unit = mysql_real_escape_string(htmlspecialchars($_POST['unit'])); 
- $port = mysql_real_escape_string(htmlspecialchars($_POST['port'])); 
+ $par1 = mysql_real_escape_string(htmlspecialchars($_POST['par1'])); 
  
     
  // save the data to the database 
  mysql_select_db($database_tc, $tc);
- mysql_query("UPDATE NODO_tbl_sensor SET sensor_name='$name', sensor_suffix='$suffix', nodo_unit_nr='$unit', port='$port' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
+ mysql_query("UPDATE NODO_tbl_sensor SET sensor_name='$name', sensor_suffix='$suffix', sensor_suffix_true='$suffix_true', sensor_suffix_false='$suffix_false', nodo_unit_nr='$unit', par1='$par1' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
  // once saved, redirect back to the view page 
  header("Location: sensor.php#saved");  
  } 
@@ -62,12 +64,31 @@ $page_title="Setup: Edit sensors";
 				
 	<br>
 	
-		<label for="name">Name: (example: Temperature outside:)</label>
+	
+	<div id="label_value_div">
+		<label for="name">Name: (Example: Temperature outside:)</label>
+		</div>
+		<div id="label_state_div">
+		<label for="name">Name: (Example: Door:)</label>
+		</div>
 		<input type="text" name="name" id="name" value="<?php echo $row['sensor_name'] ;?>"  />
 		<br>
-		<label for="suffix">Suffix: (example: &deg;C, M&sup3;)</label>
+	
+	<div id="value_div">
+		<label for="suffix">Suffix: (Example: &deg;C, M&sup3;)</label>
 		<input type="text" name="suffix" id="suffix" value="<?php echo $row['sensor_suffix'] ;?>"  />
 		<br>
+		</div>
+		
+		<div id="state_div">
+		<label for="suffix_false">Suffix: >0 (Example: Open)</label>
+		<input type="text" name="suffix_true" id="suffix_true" value="<?php echo $row['sensor_suffix_true'] ;?>"  />
+		<br>
+		<label for="suffix_true">Suffix: <=0 (Example: Closed)</label>
+		<input type="text" name="suffix_false" id="suffix_false" value="<?php echo $row['sensor_suffix_false'] ;?>"  />
+		<br>
+		</div>
+		
 			
 		
 		
@@ -92,18 +113,13 @@ $page_title="Setup: Edit sensors";
 				<option value="15"<?php if ($row['nodo_unit_nr'] == 15) {echo 'selected="selected"';}?>>15</option>
 			</select>
 		<br>
-		<label for="select-choice-2" class="select" >Wiredanalog port:</label>
-		    <select name="port" id="port" data-native-menu="false" >
-				<option value="0" data-placeholder="true">Select port:....</option>
-				<option value="1"<?php if ($row['port'] == 1) {echo 'selected="selected"';}?>>1</option>
-				<option value="2"<?php if ($row['port'] == 2) {echo 'selected="selected"';}?>>2</option>
-				<option value="3"<?php if ($row['port'] == 3) {echo 'selected="selected"';}?>>3</option>
-				<option value="4"<?php if ($row['port'] == 4) {echo 'selected="selected"';}?>>4</option>
-				<option value="5"<?php if ($row['port'] == 5) {echo 'selected="selected"';}?>>5</option>
-				<option value="6"<?php if ($row['port'] == 6) {echo 'selected="selected"';}?>>6</option>
-				<option value="7"<?php if ($row['port'] == 7) {echo 'selected="selected"';}?>>7</option>
-				<option value="8"<?php if ($row['port'] == 8) {echo 'selected="selected"';}?>>8</option>
-			</select>
+		<div id="label_wiredanalog_div">
+		<label for="name">WiredAnalog port (1 until 15)</label>
+		</div>
+		<div id="label_variable_div">
+		<label for="name">Variable (1 until 15)</label>
+		</div>
+		<input type="text" name="par1" id="par1" value="<?php echo $row['par1'];?>"  />
 		<br>
 	    <br>
         
@@ -120,50 +136,38 @@ $page_title="Setup: Edit sensors";
 	
 </div><!-- /page -->
 
-<script>	
+<script type="text/javascript">	
 
-<?php if ($row['type'] == 1) {
+<?php 
 
-echo "$('#label_adres_newkaku').hide();"; }
-
-else {
-
-echo "$('#label_adres_kaku').hide();"; }
-
-?>
+if ($row['sensor_type'] == 1) {
 
 
+	echo "$('#state_div').hide();";
+	echo "$('#label_state_div').hide();";
+	//echo "$('#value_div').show(); ";
+	//echo "$('#label_wiredanalog_div').show();";
+	echo "$('#label_variable_div').hide();";
+ 
+ 
 
 
-$('#type').change(function() 
-{
 
-if ($(this).attr('value')==1) {   
-
-$('#name_div').show();  
-$('#adres_div').show();
-$('#dim_div').hide();
-$('#homecode_div').show();
-$('#submit_div').show();
-
-$('#label_adres_kaku').show();
-$('#label_adres_newkaku').hide();
-}
-   //alert('Value change to ' + $(this).attr('value'));
-if ($(this).attr('value')==2) {   
-
-$('#name_div').show();  
-$('#adres_div').show();
-$('#dim_div').show();
-$('#homecode_div').hide();
-$('#submit_div').show();
-
-$('#label_adres_kaku').hide();
-$('#label_adres_newkaku').show();
 
 }
-   
-});
+
+ if ($row['sensor_type'] == 2) {
+
+
+	echo "$('#state_div').show();";
+	echo "$('#label_state_div').show();";
+	echo "$('#value_div').hide(); ";
+	echo "$('#label_wiredanalog_div').hide();";
+	echo "$('#label_variable_div').show();";
+	echo "$('#label_value_div').hide();";
+
+
+} ?>
 </script> 
  
 </body>

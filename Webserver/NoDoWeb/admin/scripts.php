@@ -25,7 +25,7 @@ function HTTPRequest($Url){
     curl_setopt($ch, CURLOPT_HEADER, 0);
 	curl_setopt($ch, CURLOPT_PORT, $nodo_port);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
  
     $output = curl_exec($ch);
     curl_close($ch);
@@ -37,6 +37,18 @@ function HTTPRequest($Url){
 END HTTPRequest function														
 *************************************************************************************************/
 
+/************************************************************************************************
+Eventlist read own files														
+*************************************************************************************************/
+
+//HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&event=FileLog%20Files");
+//HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&event=FileList");
+//HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&event=FileLog");
+/************************************************************************************************
+END Eventlist read own files														
+*************************************************************************************************/
+
+
 
 /************************************************************************************************
 Eventlist script read															
@@ -45,9 +57,9 @@ if (isset($_POST['Read']))
 {  
 
 
-	if ($_POST['select-script-1'] == 0) {
+	if ($_POST['select-script-1'] == "EVENTLST") {
 	
-		$file = 0; 
+		$file = "EVENTLST"; 
 
 		//Write eventlist on nodo
 			
@@ -56,12 +68,12 @@ if (isset($_POST['Read']))
 	}
 	else {
 	
-		//$scriptnr = $_POST['select-script-1'];
+		
 		$file = $_POST['select-script-1'];
 
 	}
 
-	//Read eventlist to array
+	//Read file from Nodo to array
 	$scriptraw = explode("\n", HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&file=$file"));
 	
 		
@@ -98,32 +110,22 @@ Script write or execute
 if (isset($_POST['Write'])) 
 {  
 
-
-
-		//$scriptnr = $_POST['select-script-1'];
-		$file = $_POST['select-script-1'];
-
-	
- 
  
  // get form data, making sure it is valid 
- $script_id = mysql_real_escape_string(htmlspecialchars($_POST['select-script-1'])); 
+ $file = mysql_real_escape_string(htmlspecialchars($_POST['select-script-1'])); 
  $scriptpost = mysql_real_escape_string(htmlspecialchars($_POST['script']));
- 
- // add line end to end of string
- //$scriptpost = $scriptpost."\n";
  
  
  
  mysql_select_db($database_tc, $tc);
- $result = mysql_query("SELECT * FROM nodo_tbl_scripts WHERE user_id='$userId' AND script_id = '$script_id'") or die(mysql_error());  
+ $result = mysql_query("SELECT * FROM nodo_tbl_scripts WHERE user_id='$userId' AND file = '$file'") or die(mysql_error());  
  
 	 if (mysql_affected_rows()==0) {
-	 
-		 mysql_query("INSERT INTO nodo_tbl_scripts (script, script_id, user_id) 
+		// update the data to the database 
+		 mysql_query("INSERT INTO nodo_tbl_scripts (script, file, user_id) 
 		 VALUES 
-		 ('$scriptpost','$script_id','$userId')");
-		 // once saved, redirect back to the view page 
+		 ('$scriptpost','$file','$userId')");
+		 
 		     
 	 
 	 }
@@ -133,17 +135,12 @@ if (isset($_POST['Write']))
 
 		// save the data to the database 
 		 mysql_select_db($database_tc, $tc);
-		 mysql_query("UPDATE NODO_tbl_scripts SET script='$scriptpost' WHERE user_id='$userId' AND script_id='$script_id'") or die(mysql_error());   
-		 // once saved, redirect back to the view page 
+		 mysql_query("UPDATE NODO_tbl_scripts SET script='$scriptpost' WHERE user_id='$userId' AND file='$file'") or die(mysql_error());   
+		  
 		 
 		
 	}
-	
-	
-	
-		
-	//delete current file on Nodo
-	HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&event=FileErase%20$file");	
+			
 		
 	//Save script on Nodo 
 	HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&event=FileGetHTTP%20$file");
@@ -154,7 +151,7 @@ if (isset($_POST['Write']))
 		//Execute script on Nodo
 		HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&event=FileExecute%20$file");
 		
-		}
+	}
 	
 	
 	
@@ -198,12 +195,12 @@ END Script write
 	
 		<label for="select-script" class="select">Choose script:</label>
 		<select name="select-script-1" id="select-script-1">
-		<option value="0" <?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == 0) {echo 'Selected="Selected"';}}?>>Eventlist</option>
-		<option value="1"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == 1) {echo 'Selected="Selected"';}}?>>Script 1</option>
-		<option value="2"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == 2) {echo 'Selected="Selected"';}}?>>Script 2</option>
-		<option value="3"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == 3) {echo 'Selected="Selected"';}}?>>Script 3</option>
-		<option value="4"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == 4) {echo 'Selected="Selected"';}}?>>Script 4</option>
-		<option value="5"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == 5) {echo 'Selected="Selected"';}}?>>Script 5</option>
+		<option value="EVENTLST" <?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "EVENTLST") {echo 'Selected="Selected"';}}?>>Eventlist</option>
+		<option value="SCRIPT_1"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "SCRIPT_1") {echo 'Selected="Selected"';}}?>>Script 1</option>
+		<option value="SCRIPT_2"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "SCRIPT_2") {echo 'Selected="Selected"';}}?>>Script 2</option>
+		<option value="SCRIPT_3"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "SCRIPT_3") {echo 'Selected="Selected"';}}?>>Script 3</option>
+		<option value="SCRIPT_4"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "SCRIPT_4") {echo 'Selected="Selected"';}}?>>Script 4</option>
+		<option value="SCRIPT_5"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "SCRIPT_5") {echo 'Selected="Selected"';}}?>>Script 5</option>
 		</select>
 		
 		

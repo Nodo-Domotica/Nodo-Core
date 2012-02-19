@@ -6,6 +6,7 @@ require_once('../include/settings.php');
 
 $page_title = "Setup: Communication";	
 
+
 /************************************************************************************************
 HTTPRequest function														
 *************************************************************************************************/
@@ -116,7 +117,7 @@ Check connection & Nodo config
 *************************************************************************************************/ 
 if (isset($_POST['auto_config'])){
 	 //Check connection on default NODO and get headers
-     $headers = (HTTPRequest("http://$nodo_ip/?event=userevent%20255,255&password=Nodo&id=00000000") );
+     $headers = (HTTPRequest("http://$nodo_ip/?event=userevent%20255,255&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID") );
      }
 	else
 	{
@@ -138,17 +139,17 @@ if (isset($_POST['auto_config'])){
 		if (isset($_POST['auto_config'])){
 		
 			//Configure NoDo
-			HTTPRequest("http://$nodo_ip/?event=HTTPHost%20nodo2.powerkite.nl/events.php&password=Nodo&id=00000000");
-			HTTPRequest("http://$nodo_ip/?event=Filewrite%20waconfig&password=Nodo&id=00000000");
-			HTTPRequest("http://$nodo_ip/?event=ok&password=Nodo&id=00000000");
-			HTTPRequest("http://$nodo_ip/?event=Filewrite&password=Nodo&id=00000000");
-			HTTPRequest("http://$nodo_ip/?event=OutputIp%20HTTP;id%20$nodo_id;password%20$nodo_password&password=Nodo&id=00000000");
+			HTTPRequest("http://$nodo_ip/?event=HTTPHost%20$WEBAPP_HOST/events.php&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
+			HTTPRequest("http://$nodo_ip/?event=Filewrite%20waconfig&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
+			HTTPRequest("http://$nodo_ip/?event=ok&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
+			HTTPRequest("http://$nodo_ip/?event=Filewrite&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
+			HTTPRequest("http://$nodo_ip/?event=OutputIp%20HTTP;id%20$nodo_id;password%20$nodo_password&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
 			
 			
 			
 			if (strpos(HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&file=waconfig"), 'ok') !== false) {
 			
-				HTTPRequest("http://$nodo_ip/?event=Fileerase waconfig&password=$nodo_password&id=$nodo_id");
+				HTTPRequest("http://$nodo_ip/?event=fileerase%20waconfig&password=$nodo_password&id=$nodo_id");
 				HTTPRequest("http://$nodo_ip/?event=reboot&password=$nodo_password&id=$nodo_id");				
 				$response = "ok_config";	
 			
@@ -177,7 +178,7 @@ if (isset($_POST['auto_config'])){
   
  // save the data to the database 
  mysql_select_db($database_tc, $tc);
- mysql_query("UPDATE NODO_tbl_users SET nodo_ip='$nodo_ip', nodo_port='$nodo_port', send_method='$send_method', nodo_password='$nodo_password', nodo_id='$nodo_id' WHERE id='$userId'") or die(mysql_error());   
+ mysql_query("UPDATE nodo_tbl_users SET nodo_ip='$nodo_ip', nodo_port='$nodo_port', send_method='$send_method', nodo_password='$nodo_password', nodo_id='$nodo_id' WHERE id='$userId'") or die(mysql_error());   
  // once saved, redirect back to the view page 
  header("Location: setup_connection.php/?response=$response#saved");   
  }
@@ -217,7 +218,7 @@ END Check connection & Nodo config
  
 	<div data-role="content">	
 
-	<form action="setup_connection.php" data-ajax="false" id="form_connection" method="post"> 
+	<form action="setup_connection.php" data-ajax="false" id="form_connection" method="post" > 
 	
 	 
 		<input type="hidden" name="send_method" id="send_method" value="2" />
@@ -266,33 +267,27 @@ END Check connection & Nodo config
 
  
 		
-		<div id="submit_button_div">
-		<input type="submit" name="save" value="Save & check connection" onclick="show_loading()" >
-		</div>
-		<div id="check_connection_div" style="display: none">
-		<h4><img src="../media/loading.gif"/> Checking connection....</h4>
-		</div>
-		</div>
 		
-	
+		<input type="submit" name="save" value="Save & check connection" onclick="show_loading();" >
+		
+			
 	</form> 
+	
+	<div align="center" id="check_connection_div" style="display: none">
+	<h4><img src="../media/loading.gif"/> Please wait, checking connection....</h4>
+	</div>
 
-	<script type="text/javascript">
+<script type="text/javascript">
  
+function show_loading() {
+
+	$('#form_connection').hide();
+	$('#check_connection_div').show();
+	//IE bug!?
+	document.getElementById('check_connection_div').innerHTML = document.getElementById('check_connection_div').innerHTML;
  
- 
- function show_loading()
- {
- 
-$('#submit_button_div').hide();
-$('#check_connection_div').show();
-//IE bug!?
-document.getElementById('check_connection_div').innerHTML = document.getElementById('check_connection_div').innerHTML;
- 
- 
- 
- }
- </script>
+}
+</script>
 	
 	
 	</div><!-- /content -->
@@ -341,7 +336,7 @@ document.getElementById('check_connection_div').innerHTML = document.getElementB
 		}	
 			?>	
 			</h2>
-		<p><a href="#main" data-rel="back" data-role="button" data-inline="true" data-icon="back">Ok</a></p>	
+		<p><a href="../../admin/setup_connection.php" data-role="button" data-inline="true" data-icon="back" data-ajax="false">Ok</a></p>	
 	</div><!-- /content -->
 	
 	

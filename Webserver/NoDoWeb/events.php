@@ -85,15 +85,19 @@ $userId = $row['id'];
 			switch ($cmd) {
 				
 				
-				case "wiredanalog" :
+				case "wiredanalog":
+				case "variable":
+					 
+					 if ($cmd == "wiredanalog") {$type=1;}
+					 if ($cmd == "variable") {$type=2;}
 								
 					// Waarde opslaan in sensor log
 					mysql_select_db($database_tc, $tc);
-					mysql_query("INSERT INTO nodo_tbl_sensor_data (port, data, nodo_unit_nr, user_id) VALUES ('$par1', '$par2','$unit','$userId')") or die(mysql_error()); 
+					mysql_query("INSERT INTO nodo_tbl_sensor_data (par1, data, nodo_unit_nr, type, user_id) VALUES ('$par1', '$par2','$unit','$type','$userId')") or die(mysql_error()); 
 
 					// Sensor updaten
 					mysql_select_db($database_tc, $tc);
-					mysql_query("UPDATE nodo_tbl_sensor SET data='$par2' WHERE port='$par1' AND nodo_unit_nr='$unit' AND user_id='$userId'") or die(mysql_error());
+					mysql_query("UPDATE nodo_tbl_sensor SET data='$par2' WHERE par1='$par1' AND nodo_unit_nr='$unit' AND user_id='$userId' AND sensor_type='$type'") or die(mysql_error());
 						
 				break;
 
@@ -210,10 +214,10 @@ $userId = $row['id'];
 			
 
 			
-			$script_id = $_GET['file'];
+			$file = $_GET['file'];
 			
 			mysql_select_db($database_tc, $tc);
-			$result = mysql_query("SELECT * FROM nodo_tbl_scripts WHERE script_id='$script_id' AND user_id='$userId'") or die(mysql_error());  
+			$result = mysql_query("SELECT * FROM nodo_tbl_scripts WHERE file='$file' AND user_id='$userId'") or die(mysql_error());  
 			$row = mysql_fetch_array($result);
 			echo $row['script'];
 			echo "\n";

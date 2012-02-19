@@ -42,20 +42,30 @@ mysql_select_db($database_tc, $tc);
 $RSevent_log = mysql_query("SELECT * FROM (SELECT * FROM nodo_tbl_event_log WHERE user_id='$userId' ORDER BY id DESC LIMIT 25)x ORDER BY id") or die(mysql_error());
 ?>
 
-	<div data-role="collapsible" data-collapsed="false">
-	<h3>Last 25 events</h3>
+<div data-role="collapsible" data-collapsed="true">
+	<h3>Web App details</h3>
+<b>Web App version: </b><?php echo $WEBAPP_VERSION;?><br>
+<b>Nodo ID: </b><?php echo $nodo_id;?><br>
+<b>Connected to Nodo: </b><?php echo $nodo_ip.":".$nodo_port;?><br>
 
-<table>    
+</div>
+
+	<div data-role="collapsible" data-collapsed="true">
+	<h3>Eventlog</h3>
+
+
+ <h3>Last 25 events</h3>	
+ <table>    
    
  <thead>     
  <tr>      
  <th scope="col" align="left">Unit</th>      
-<th scope="col" align="left">Event</th>      
-<th scope="col" align="left">Timestamp</th>
-    </tr>    
-	</thead>    
+ <th scope="col" align="left">Event</th>      
+ <th scope="col" align="left">Timestamp</th>
+ </tr>    
+ </thead>    
 	   
-	<tbody>
+<tbody>
 
  
 
@@ -73,10 +83,10 @@ $RSevent_log = mysql_query("SELECT * FROM (SELECT * FROM nodo_tbl_event_log WHER
 	</table>
 	<br>
 	
-	
+	<a href="export_csv.php" data-role="button" data-inline="true" data-ajax="false">Export all events to csv</a>
 	</div>	
 
-	<a href="export_csv.php" data-role="button" data-inline="true" data-ajax="false">Export all events to csv</a>
+	
 	</div><!-- /content -->
 	
 	<?php require_once('include/footer.php'); ?>
