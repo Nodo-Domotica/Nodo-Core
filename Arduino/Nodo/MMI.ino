@@ -206,6 +206,7 @@ char* Event2str(unsigned long Code)
       case CMD_BREAK_ON_VAR_NEQU:
       case CMD_VARIABLE_SET:
       case CMD_VARIABLE_INC:
+      case CMD_VARIABLE_DEC:
       case CMD_VARIABLE_EVENT:
       case CMD_WIRED_SMITTTRIGGER:
       case CMD_WIRED_THRESHOLD:

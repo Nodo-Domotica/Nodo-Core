@@ -320,16 +320,16 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         
       case CMD_VARIABLE_INC:
         Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
-        z=UserVar[y]+x;
+        z=UserVar[y-1]+x;
         if(abs(z)<=10000)
-          UserVar[y]+=x;
+          UserVar[y-1]+=x;
         break;        
   
       case CMD_VARIABLE_DEC: 
         Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
-        z=UserVar[y]-x;
+        z=UserVar[y-1]-x;
         if(abs(z)<=10000)
-          UserVar[y]-=x;
+          UserVar[y-1]-=x;
         break;        
   
       case CMD_VARIABLE_SAVE:   
@@ -337,7 +337,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           for(x=0;x<USER_VARIABLES_MAX;x++)
             S.UserVar[x]=UserVar[x];
         else
-          S.UserVar[Par1]=UserVar[Par1];            
+          S.UserVar[Par1-1]=UserVar[Par1-1];            
         SaveSettings();
         break;        
     
@@ -1069,7 +1069,7 @@ void ExecuteLine(char *Line, byte Port)
           continue;
           }
   
-        if(State_EventlistWrite=1)
+        if(State_EventlistWrite==1)
           {
           event=v;
           State_EventlistWrite=2;

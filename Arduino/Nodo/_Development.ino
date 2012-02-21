@@ -1,20 +1,13 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- '!' commentteken werkte niet. Weer hersteld.
-- '>' voorafgaand aan weergave van ingevoerde commande was verdwenen. Weer hersteld.
-- '>' als chat teken weer verwijderd. Overbodig. Kan ook door gebruiker worden gedaan door regel te starten met een commentaar teken '!'
-- Er kwamen bij een FileWrite niet meer dan 50 regels over. Werd veroorzaakt door TimeOut bug. 
+- Issue 264:	Verkeerd host ip-adres bij verzenden events naar http
+- Bug: VariableInc en variableDec rekenden met verkeerde waarde en werden niet goed uitgevoerd.
+
 
 Known Errors / ToDo:
 
-- Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue testen
-- Found in r306: Status WiredAnalog groter dan toegestane poort
-- Het lijkt er op dat FileList soms onterecht geen resultaat geeft. Niet duidelijk of dit wordt veroorzaakt door FAT-probleem op de SDCard of dat het in de code zit. Nog uitzoeken
-- In de output naar terminal wordt een komma gebruikt als scheiding tussen de delen. Niet consequent, zou puntkomma moeten zijn.
-
-
-Release V3.0.0: Functionele aanpassingen ten opzichte van de 1.2.1 release
+- Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue tesBease
 - EventListshow, eventListWrite, eventListErase hebben nu als parameter-1 de regel waar het betrekking op heeft (regel, ALL, 0=All)
 - Nodo ontvangt events via http. Voorbeeld: http://192.168.1.110/?event=sound&passwoord=Nodo&id=00000000
 - Ethernet intergratie. Events van EventGhost (PC, Android) ontvangen en verzenden over IP;

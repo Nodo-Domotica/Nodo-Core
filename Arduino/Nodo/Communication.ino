@@ -202,8 +202,6 @@ byte xSendHTTPRequestStr(char* StringToSend)
   x=StringFind(TmpStr,"/");
   TmpStr[x]=0;
 
-  IPClient.getRemoteIP(ClientIPAddress);  
-
   strcpy(IPBuffer,"GET ");
   strcat(IPBuffer,S.HTTPRequest+x);
   strcpy(TempString,"?id=");
@@ -233,6 +231,7 @@ byte xSendHTTPRequestStr(char* StringToSend)
 
   if(IPClient.connect(TmpStr,S.Port))
     {
+    IPClient.getRemoteIP(ClientIPAddress);  
     IPClient.println(IPBuffer);
 
     strcpy(IPBuffer,"Host: ");
