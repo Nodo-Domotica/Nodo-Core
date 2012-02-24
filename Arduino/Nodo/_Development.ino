@@ -1,9 +1,7 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- Issue 264:	Verkeerd host ip-adres bij verzenden events naar http
-- Bug: VariableInc en variableDec rekenden met verkeerde waarde en werden niet goed uitgevoerd.
-
+- 
 
 Known Errors / ToDo:
 

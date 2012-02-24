@@ -75,6 +75,8 @@ byte CommandError(unsigned long Content)
     case CMD_WAITFREERF: 
     case CMD_USERPLUGIN: 
     case CMD_VARIABLE_EVENT:    
+    case CMD_GATEWAY:
+    case CMD_SUBNET:
     case CMD_NODO_IP:    
     case CMD_DLS_EVENT:
     case CMD_CLOCK_EVENT_DAYLIGHT:
@@ -119,6 +121,7 @@ byte CommandError(unsigned long Content)
       return false;
 
     // test:Par1 binnen bereik maximaal beschikbare variabelen
+    case CMD_VARIABLE_PULSE: 
     case CMD_VARIABLE_INC: 
     case CMD_VARIABLE_DEC: 
     case CMD_BREAK_ON_VAR_NEQU:
@@ -442,22 +445,22 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       case CMD_DELAY:
         if(Par1)
           {
-          HoldTimer=millis()+((unsigned long)(Par1))*1000;
-          if(Par2==VALUE_OFF) // Niet opslaan in de queue, maar direct een 'dode' pause uitvoeren.
+          if(Par2==VALUE_OFF || Par2==0) // Niet opslaan in de queue, maar direct een 'dode' pause uitvoeren.
             {
-            while(HoldTimer>millis())        
-              digitalWrite(PIN_LED_RGB_R,(millis()>>7)&0x01);
+            Led(BLUE);
+            delay(Par1*1000);
             }
-          else
+          else if(Par2==VALUE_ON)
             {
             // start een nieuwe recursieve loop() om zo de events die voorbij komen te plaatsen in de queue.
             // deze recursieve aanroep wordt beëindigd als HoldTimer==0L
+            HoldTimer=Par1;
             Hold=CMD_DELAY;
             loop();
             }
           }        
         else
-          HoldTimer=0L; //  Wachttijd is afgelopen;
+          HoldTimer=0; //  Wachttijd is afgelopen;
         break;        
         
       case CMD_SEND_EVENT:
@@ -549,6 +552,12 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         #endif
         break;        
 
+      case CMD_FILE_EXECUTE:
+        strcpy(TempString,int2str(Par1));
+        strcat(TempString,".dat");
+        ExecuteLine(TempString,Src);
+        break;        
+
 
       case CMD_WIRED_THRESHOLD:
         // Dit commando wordt ook afgevangen in ExecuteLine(). Hier opgenomen i.g.v. ontvangst via RF of IR
@@ -604,14 +613,17 @@ void ExecuteLine(char *Line, byte Port)
   byte State_EventlistWrite=0;
   unsigned long v,event,action; 
 
+  Led(RED);
+
   // verwerking van commando's is door gebruiker tijdelijk geblokkeerd door FileWrite commando
   if(FileWriteMode>0)
     {
     if(StringFind(Line,cmd2str(CMD_FILE_WRITE))!=-1)// string gevonden!
       {
+      // beëindig de FileWrite modus alsmede de Hold&Queue mode
       FileWriteMode=0;
+      HoldTimer=0;
       TempLogFile[0]=0;
-      Serial.print("*** Debug: FileWrite ready.");Serial.println(); //??? Debug
       return;
       }
     else if(TempLogFile[0]!=0)
@@ -620,7 +632,7 @@ void ExecuteLine(char *Line, byte Port)
       return;
       }
     }
-    
+  
   // geef invoer regel weer 
   strcpy(TmpStr,">");
   strcat(TmpStr,Line);
@@ -716,6 +728,7 @@ void ExecuteLine(char *Line, byte Port)
             {
             if(GetArgv(Command,TempString,2))
               {
+              Led(BLUE);
               strcpy(TmpStr,"&file=");
               strcat(TmpStr,TempString);
               xSendHTTPRequestStr(TmpStr);
@@ -729,6 +742,7 @@ void ExecuteLine(char *Line, byte Port)
             {
             if(GetArgv(Command,TmpStr,2))
               {
+              Led(BLUE);
               PrintTerminal(ProgmemString(Text_22));
               strcat(TmpStr,".dat");
               // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
@@ -838,6 +852,20 @@ void ExecuteLine(char *Line, byte Port)
             SaveSettings();
             break;
             
+          case CMD_SUBNET:
+            if(GetArgv(Command,TmpStr,2))
+              if(!str2ip(TmpStr,S.Subnet))
+                Error=ERROR_02;
+            SaveSettings();
+            break;
+            
+          case CMD_GATEWAY:
+            if(GetArgv(Command,TmpStr,2))
+              if(!str2ip(TmpStr,S.Gateway))
+                Error=ERROR_02;
+            SaveSettings();
+            break;
+            
           case CMD_EVENTLIST_WRITE:
             EventlistWriteLine=Par1;
             State_EventlistWrite=1;
@@ -932,6 +960,7 @@ void ExecuteLine(char *Line, byte Port)
             break;
 
           case CMD_EVENTLIST_FILE:
+            Led(BLUE);
             if(GetArgv(Command,TmpStr,2))
               {
               strcat(TmpStr,".dat");
@@ -943,8 +972,10 @@ void ExecuteLine(char *Line, byte Port)
           case CMD_EVENTLIST_ERASE:
             if(Par1==VALUE_ALL || Par1==0)
               {
+              Led(BLUE);
               for(x=1;x<=EVENTLIST_MAX;x++)
                 Eventlist_Write(x,0L,0L);
+              Led(RED);
               }
             else
                 Eventlist_Write(Par1,0L,0L);
@@ -961,8 +992,11 @@ void ExecuteLine(char *Line, byte Port)
               {
               strcat(TmpStr,".dat");
               strcpy(TempLogFile,TmpStr);
+
+              // Zet de Nodo tijdelijk in de Hold&Queue modus
+              Hold=CMD_DELAY;
+              HoldTimer=60;
               FileWriteMode=60;
-              Serial.print("*** FileWrite: Filename=");Serial.println(TempLogFile); //??? Debug
               }
             else
               Error=ERROR_02;

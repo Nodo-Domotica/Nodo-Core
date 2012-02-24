@@ -127,9 +127,8 @@ void WaitFreeRF(int Delay, int Window)
   unsigned long Timer, TimeOutTimer;  
   
   // eerst de 'dode' wachttijd
-  Timer=millis()+Delay; // set de timer.
-  while(Timer>millis())
-    digitalWrite(PIN_LED_RGB_R,(millis()>>7)&0x01);
+  Led(BLUE);
+  delay(Delay);
   
   // dan kijken of de ether vrij is.
   Timer=millis()+Window; // reset de timer.
@@ -142,8 +141,8 @@ void WaitFreeRF(int Delay, int Window)
       if(FetchSignal(PIN_RF_RX_DATA,HIGH,SIGNAL_TIMEOUT_RF))// Als het een duidelijk signaal was
         Timer=millis()+Window; // reset de timer weer.
       }
-    digitalWrite(PIN_LED_RGB_R,(millis()>>7)&0x01);
     }
+  Led(RED);
   }
 
 
@@ -309,13 +308,18 @@ void CopySignalIR2RF(byte Window)
 
   digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
   digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan   
+
   while(Timer>millis())
     {
     digitalWrite(PIN_RF_TX_DATA,(*portInputRegister(IRport)&IRbit)==0);// Kijk if er iets op de IR poort binnenkomt. (Pin=LAAG als signaal in de ether). 
-    digitalWrite(PIN_LED_RGB_R,(millis()>>7)&0x01);
+    if((millis()>>7)&0x01)
+      Led(RED);
+    else
+      Led(false);
     }
   digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
   digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger weer aan.
+  Led(RED);
   }
 
 /**********************************************************************************************\

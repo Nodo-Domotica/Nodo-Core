@@ -238,6 +238,7 @@ boolean LoadSettings()
  \*********************************************************************************************/
 void ResetFactory(void)
   {
+  Led(BLUE);
   Beep(2000,2000);
   int x,y;
   ClockRead();
@@ -269,6 +270,15 @@ void ResetFactory(void)
   S.Nodo_IP[1]                 = 168;
   S.Nodo_IP[2]                 = 1;
   S.Nodo_IP[3]                 = 150;
+  S.Gateway[0]                 = 192;
+  S.Gateway[1]                 = 168;
+  S.Gateway[2]                 = 1;
+  S.Gateway[3]                 = 1;
+  S.Subnet[0]                  = 255;
+  S.Subnet[1]                  = 255;
+  S.Subnet[2]                  = 255;
+  S.Subnet[3]                  = 0;
+//  S.Pulse                      = 0;  ???
   
   strcpy(S.Password,ProgmemString(Text_10));
   strcpy(S.ID,ProgmemString(Text_16));
@@ -551,16 +561,16 @@ void Alarm(int Variant,int Option)
       break;
           
      case 5:// ding-dong
-       for(x=0;x<=(Option>1?Option:1);x++)
+       for(x=1;x<=(Option>1?Option:1);x++)
          {
-         if(x>0)delay(2000);
+         if(x>1)delay(2000);
          Beep(1500,500);
          Beep(1200,500);
          }    
        break;
 
     case 6: // phone ring
-      for(x=0;x<(15*(Option>1?Option:1));x++)
+      for(x=1;x<(15*(Option>1?Option:1));x++)
         {
           Beep(1000,40);
           Beep(750,40);
@@ -925,16 +935,23 @@ boolean SaveEventlistSDCard(char *FileName)
   return r;
   }
 
-void Led(boolean R, boolean G, boolean B)
+ /**********************************************************************************************\
+ * Stuur de RGB-led.
+ *
+ * Voor de Nodo geldt:
+ *
+ * Groen = Nodo in rust en wacht op een event.
+ * Rood = Nodo verwerkt event of commando.
+ * Blauw = Bijzondere modus Nodo waarin Nodo niet in staat is om events te ontvangen of genereren.
+ \*********************************************************************************************/
+void Led(byte Color)
   {
-//  #define LED_RGB_R                   5  // RGB-Led, aansluiting rood
-//  #define LED_RGB_G                   6  // RGB-Led, aansluiting groen
-//  #define LED_RGB_B                   7  // RGB-Led, aansluiting blauw
+  digitalWrite(PIN_LED_RGB_R,Color==RED);
+  digitalWrite(PIN_LED_RGB_G,Color==GREEN);
+  digitalWrite(PIN_LED_RGB_B,Color==BLUE);
   }
   
- 
- 
- void PulseCounterISR()
+void PulseCounterISR()
    {
    PulseCount++;
    }     
@@ -950,6 +967,7 @@ boolean FileList(void)
 
   if(root = SD.open("/"))
     {
+    root.rewindDirectory();
     while(entry = root.openNextFile())
       {
       if(!entry.isDirectory())

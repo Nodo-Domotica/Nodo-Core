@@ -154,9 +154,9 @@ prog_char PROGMEM Cmd_065[]="FileWrite";
 prog_char PROGMEM Cmd_066[]="FileList";
 prog_char PROGMEM Cmd_067[]="FileLog";
 prog_char PROGMEM Cmd_068[]="FileGetHTTP";
-prog_char PROGMEM Cmd_069[]="";
-prog_char PROGMEM Cmd_070[]="";
-prog_char PROGMEM Cmd_071[]="";
+prog_char PROGMEM Cmd_069[]="VariablePulse";
+prog_char PROGMEM Cmd_070[]="Gateway";
+prog_char PROGMEM Cmd_071[]="Subnet";
 prog_char PROGMEM Cmd_072[]="";
 prog_char PROGMEM Cmd_073[]="";
 prog_char PROGMEM Cmd_074[]="";
@@ -373,9 +373,9 @@ prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
 #define CMD_FILE_LIST                   66
 #define CMD_FILE_LOG                    67
 #define CMD_FILE_GET_HTTP               68
-#define CMD_RES069                      69
-#define CMD_RES070                      70
-#define CMD_RES071                      71
+#define CMD_VARIABLE_PULSE              69
+#define CMD_GATEWAY                     70
+#define CMD_SUBNET                      71
 #define CMD_RES072                      72
 #define CMD_RES073                      73
 #define CMD_RES074                      74
@@ -566,9 +566,9 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 // gebaseerd op Nodo schema versie 2.0 voor de ATMega1280 / ATMega2560
 
 #define PIN_WIRED_IN_1               8  // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_LED_RGB_R               45  // RGB-Led, aansluiting rood
-#define PIN_LED_RGB_G               46  // RGB-Led, aansluiting groen
-#define PIN_LED_RGB_B               47  // RGB-Led, aansluiting blauw
+#define PIN_LED_RGB_R               47  // RGB-Led, aansluiting rood
+#define PIN_LED_RGB_G               48  // RGB-Led, aansluiting groen
+#define PIN_LED_RGB_B               49  // RGB-Led, aansluiting blauw
 #define PIN_SPEAKER                 42  // luidspreker aansluiting
 #define PIN_IR_TX_DATA              17  // NIET VERANDEREN. Aan deze pin zit een zender IR-Led. (gebufferd via transistor i.v.m. hogere stroom die nodig is voor IR-led)
 #define PIN_IR_RX_DATA              18  // Op deze input komt het IR signaal binnen van de TSOP. Bij HIGH bij geen signaal.
@@ -583,6 +583,9 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define PIN_CLOCK_SDA               20  // I2C communicatie lijn voor de realtime clock.
 #define PIN_CLOCK_SLC               21  // I2C communicatie lijn voor de realtime clock.
 
+#define RED                          1  // Led = Rood
+#define GREEN                        2  // Led = Groen
+#define BLUE                         3  // Led = Blauw
 #define TERMINAL_PORT               23
 #define UNIT                       0x1 // Unit nummer van de Nodo. Bij gebruik van meerdere nodo's deze uniek toewijzen [1..F]
 #define EVENTLIST_MAX              256 // aantal events dat de lijst bevat in het EEPROM geheugen van de ATMega328. Iedere regel in de eventlist heeft 8 bytes nodig. eerste adres is 0
@@ -648,6 +651,9 @@ struct Settings
   byte    AutoSaveEventGhostIP;                             // Automatisch IP adres opslaan na ontvangst van een EG event of niet.
   int     Port;                                             // IP port.
   byte    Nodo_IP[4];                                       // IP adres van van de Nodo. als 0.0.0.0 ingevuld, dan IP toekenning o.b.v. DHCP
+  byte    Subnet[4];                                       // Submask
+  byte    Gateway[4];                                       // Gateway
+  byte    PulseVariable;                                    // Variabele die wordt gebruikt voor tellen van pulsen.
   }S;
 
 unsigned long UserTimer[TIMER_MAX];                         // Timers voor de gebruiker.
@@ -661,7 +667,7 @@ int UserVarPrevious[USER_VARIABLES_MAX];                    // Vorige versie van
 byte DaylightPrevious;                                      // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet.
 byte EventlistDepth=0;                                      // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's.
 byte Hold=false;
-unsigned long HoldTimer;
+int HoldTimer;                                              // Als deze timer staat, dat verkeert de Nodo in de Hold&Queue modus.
 void(*Reset)(void)=0;                                       // reset functie op adres 0.
 uint8_t RFbit,RFport,IRbit,IRport;                          // t.b.v. verwerking IR/FR signalen.
 uint8_t MD5HashCode[16];                                    // tabel voor berekenen van MD5 hash codes t.b.v. uitwisselen wachtwoord EventGhost.
@@ -706,6 +712,7 @@ void setup()
   Serial.begin(BAUD);  // Initialiseer de seriële poort
   Serial.println("Booting...");
   SerialHold(true);// XOFF verzenden zodat PC even wacht met versturen van data via Serial (Xon/Xoff-handshaking)
+  Led(BLUE);
   LoadSettings();      // laad alle settings zoals deze in de EEPROM zijn opgeslagen
   if(S.Version!=VERSION)ResetFactory(); // Als versienummer in EEPROM niet correct is, dan een ResetFactory.
   
@@ -718,6 +725,8 @@ void setup()
   pinMode(PIN_RF_RX_VCC,  OUTPUT);
   pinMode(PIN_IR_TX_DATA, OUTPUT);
   pinMode(PIN_LED_RGB_R,  OUTPUT);
+  pinMode(PIN_LED_RGB_G,  OUTPUT);
+  pinMode(PIN_LED_RGB_B,  OUTPUT);
   pinMode(PIN_SPEAKER,    OUTPUT);
   pinMode(EthernetShield_CS_SDCardH, OUTPUT); // CS/SPI: nodig voor correct funktioneren van de SDCard!
 
@@ -725,7 +734,7 @@ void setup()
   digitalWrite(PIN_RF_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
   digitalWrite(PIN_RF_RX_VCC,HIGH);   // Spanning naar de RF ontvanger aann
 
- //???  attachInterrupt(5,PulseCounterISR,FALLING); // IRQ-5 is specifiek voor Pen 18 van de ATMega. ??? aanpassen voor de UNO
+  attachInterrupt(5,PulseCounterISR,FALLING); // IRQ-5 is specifiek voor Pen 18 (PIN_IR_RX_DATA) van de ATMega. ??? aanpassen voor de UNO
 
   RFbit=digitalPinToBitMask(PIN_RF_RX_DATA);
   RFport=digitalPinToPort(PIN_RF_RX_DATA);  
@@ -775,6 +784,7 @@ void setup()
     }
   else
     Ethernet.begin(Ethernet_MAC_Address,S.Nodo_IP);
+//    Ethernet.begin(Ethernet_MAC_Address,S.Nodo_IP,S.Gateway,S.Subnet);//??? nog operationeel maken
 
   EthernetEnabled=true; //??? aanwezigheid ethernetshield testen
   IPServer.begin();                                // Start Server voor ontvangst van Events
@@ -782,7 +792,6 @@ void setup()
   
   SerialConnected=true;// zonder deze vlag vindt er geen output naar de Erial poort plaats. Tijdelijk even inschakelen.
   PrintWelcome(); // geef de welkomsttekst weer
-  SerialConnected=true;//??? weer terugzetten naar false in definitieve release
 
   ProcessEvent(command2event(CMD_BOOT_EVENT,0,0),VALUE_DIRECTION_INTERNAL,CMD_BOOT_EVENT,0,0);  // Voer het 'Boot' event uit.
   }
@@ -877,23 +886,24 @@ void loop()
           {
           if(Hold)
             {
-            digitalWrite(PIN_LED_RGB_R,(millis()>>7)&0x01);
+            Led(BLUE);
             // als in de hold-modus met reden het Delay commando EN de tijd is om, dan geneste call naar loop() verlaten.
-            if(Hold==CMD_DELAY && HoldTimer<millis())
+            if(Hold==CMD_DELAY && HoldTimer==0)
               {
               Hold=false;
               return;
               }
               
-            // als in de hold-modus met reden Busy commando EN de er zijn geen Nodo's meer met status Busy, dan geneste aanroop loop() verlaten.
-            if(Hold==CMD_BUSY && (!BusyNodo || HoldTimer<millis()))
+            // als in de hold-modus met reden Busy commando EN de er zijn geen Nodo's meer met status Busy, dan geneste aanroep loop() verlaten.
+            if(Hold==CMD_BUSY && (!BusyNodo || HoldTimer==0))
               {
               Hold=false;
               return;
               }
             }
           else
-            digitalWrite(PIN_LED_RGB_R,LOW);           // LED weer uit
+            Led(GREEN);
+
           break;
           }
           
@@ -1164,11 +1174,13 @@ void loop()
         {
         FileWriteMode--;
         if(FileWriteMode==0)
-          {
           TempLogFile[0]=0;
-          Serial.print("*** Debug: FileWrite timeout!");Serial.println(); //??? Debug
-          }
         }
+        
+      // Hold & Queue modus timer verlagen
+      if(HoldTimer>0)
+        HoldTimer--;
+
       // loop periodiek langs de userplugin
       #ifdef NODO_PLUGIN
         UserPlugin_Periodically();

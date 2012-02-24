@@ -232,6 +232,7 @@ char* Event2str(unsigned long Code)
       // Par1 als waarde en par2 als tekst
       case CMD_DELAY:
       case CMD_WIRED_PULLUP:
+//      case CMD_VARIABLE_PULSE: ???
       case CMD_WIRED_OUT:
       case CMD_WIRED_IN_EVENT:
         P1=P_VALUE;
@@ -370,6 +371,17 @@ void PrintIPSettings(void)
     sprintf(TempString,"NodoIP=%u.%u.%u.%u",Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
     PrintTerminal(TempString);
 
+    if((S.Nodo_IP[0] + S.Nodo_IP[1] + S.Nodo_IP[2] + S.Nodo_IP[3])!=0)
+      {
+      // Submask
+      sprintf(TempString,"Subnet=%u.%u.%u.%u",S.Subnet[0],S.Subnet[1],S.Subnet[2],S.Subnet[3]);
+      PrintTerminal(TempString);
+  
+      // Gateway
+      sprintf(TempString,"Gateway=%u.%u.%u.%u",S.Gateway[0],S.Gateway[1],S.Gateway[2],S.Gateway[3]);
+      PrintTerminal(TempString);
+      }
+      
     // HTTP request line
     sprintf(TempString,"HTTPHost=%s",S.HTTPRequest);
     PrintTerminal(TempString);

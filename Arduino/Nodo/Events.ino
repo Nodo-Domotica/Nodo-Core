@@ -7,21 +7,17 @@
 boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, unsigned long PreviousContent, byte PreviousPort)
   {
   byte x;
-  boolean CommandForThisNodo=CheckEventlist(IncommingEvent,Port) || NodoType(IncommingEvent)==NODO_TYPE_COMMAND;// kan deze er uit worden geprogrammeerd???? vraagt veel tijd.
   SerialHold(true);  // als er een regel ontvangen is, dan binnenkomst van signalen stopzetten
   boolean SetBusyOff=false;
   
-  // geen events oppikken als er een file wordt ontvangen voor de SDCard
-  if(FileWriteMode>0)
-    return true;
-
-  digitalWrite(PIN_LED_RGB_R,HIGH);           // LED aan als er iets verwerkt wordt  
+  Led(RED); // LED aan als er iets verwerkt wordt  
 
 // uitwerken dat de wordt weergegeven dat dit de queue in gaat en niet feitelijk verwerkt wordt.
-//  if(CommandForThisNodo && Hold)
-//    PrintTerminalPB_AddProgMemString(Text_09);
+  if(Hold)
+    Serial.print("*** debug: Event gaat de queue in=");Serial.println(Event2str(IncommingEvent)); //??? Debug
 
-//??? Serial.println("*** debug: ProcessEvent();");//???
+    //PrintTerminal(ProgMemString(Text_09));
+
 
   #ifdef USER_PLUGIN
   if(!UserPlugin_Receive(IncommingEvent))
@@ -37,7 +33,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     if(((IncommingEvent>>8)&0xff)==VALUE_ON) // Par1
       {
       BusyNodo|=(1<<x);
-      HoldTimer=millis()+60000; // timeout teller (opnieuw) zetten voor geval er een 'Busy Off;'event gemist wordt
+      HoldTimer=60; // timeout teller (opnieuw) zetten voor geval er een 'Busy Off;'event gemist wordt
       }
     else
       BusyNodo&=~(1<<x);
@@ -60,42 +56,38 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     loop(); // deze recursieve aanroep wordt beëindigd als BusyNodo==0
     }
 
-  // event behandelen als uitvoerbaar commando voor deze Nodo of er een hit is in de eventlist.
-  if(CommandForThisNodo)
+  // verzend 'Busy On;'
+  if(S.SendBusy==VALUE_ALL && !Hold)
     {
-    // verzend 'Busy On;'
-    if(S.SendBusy==VALUE_ALL && !Hold)
-      {
-      TransmitCode(command2event(CMD_BUSY,VALUE_ON,0),VALUE_ALL);
-      SetBusyOff=true;
-      }
+    TransmitCode(command2event(CMD_BUSY,VALUE_ON,0),VALUE_ALL);
+    SetBusyOff=true;
+    }
 
-    // als de Nodo in de hold modus is gezet, verzamel dan events in de queue
-    if(Hold)
+  // als de Nodo in de hold modus is gezet, verzamel dan events in de queue
+  if(Hold)
+    {
+    if((IncommingEvent&0xffffff00)==command2event(CMD_DELAY,0,0) ||
+       (IncommingEvent&0xffffff00)==command2event(CMD_WAITBUSY,0,0)   )
       {
-      if((IncommingEvent&0xffffff00)==command2event(CMD_DELAY,0,0) ||
-         (IncommingEvent&0xffffff00)==command2event(CMD_WAITBUSY,0,0)   )
-        {
-        HoldTimer=0L; //  Zet de wachttijd op afgelopen;        
-        return true;
-        }
-        
-      // als het event voorkomt in de eventlist of het is een Nodo commando voor deze Nodo, dan is het relevant om in queue te plaatsen
-      // als er nog plek is in de queue...
-      if(QueuePos<EVENT_QUEUE_MAX)
-        {
-        QueueEvent[QueuePos]=IncommingEvent;
-        QueuePort[QueuePos]=Port;
-        QueuePos++;           
-        }       
-      else
-        RaiseError(ERROR_04);
+      HoldTimer=0; //  Zet de wachttijd op afgelopen;        
       return true;
       }
-    else // !Hold
+      
+    // als het event voorkomt in de eventlist of het is een Nodo commando voor deze Nodo, dan is het relevant om in queue te plaatsen
+    // als er nog plek is in de queue...
+    if(QueuePos<EVENT_QUEUE_MAX)
       {
-      ProcessEvent2(IncommingEvent,Direction,Port,PreviousContent,PreviousPort);
-      }
+      QueueEvent[QueuePos]=IncommingEvent;
+      QueuePort[QueuePos]=Port;
+      QueuePos++;           
+      }       
+    else
+      RaiseError(ERROR_04);
+    return true;
+    }
+  else // !Hold
+    {
+    ProcessEvent2(IncommingEvent,Direction,Port,PreviousContent,PreviousPort);
     }
     
   // Verwerk de events die in de queue zijn geplaatst.

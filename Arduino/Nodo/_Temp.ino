@@ -1,22 +1,11 @@
 /*
 
-EventlistEntry2str
-
 Serial.print("*** debug: =");Serial.println(); //??? Debug
-
 Serial.println("*** debug: ");//???
 
 
 HTTPHost nodo2.powerkite.nl/events.php
-
-        if(Par2==VALUE_ON || Par2==VALUE_OFF)
-          S.AutoSaveEventGhostIP=Par2;
-
-
-//  pinMode(22, OUTPUT);//???
-//  digitalWrite(22,HIGH);           // ??? Debug: T.b.v. verrichten meting met Logic Analyser
-//  digitalWrite(22,LOW);            // ??? Debug: T.b.v. verrichten meting met Logic Analyser
-
+http://nodo2.powerkite.nl/events.php?id=DFAJC31L&password=Nodo&version=3&unit=1&event=UserEvent%20100,0
 
 void PrintRawSignal(void)
   {
@@ -30,32 +19,6 @@ void PrintRawSignal(void)
   Serial.print("*** RawSignal.Number=");Serial.println(RawSignal.Number,DEC);//??? Debug
   }
   
-
-
-int calibrated2int(byte Par1, byte Par2)
-  {
-  int Value;
-  
-//Serial.print("3*** Par1=");Serial.println(Par1,BIN);//??? Debug
-//Serial.print("3*** Par2=");Serial.println(Par2,BIN);//??? Debug  
-  
-  Value=(Par1 | Par2<<8) & 0x3ff; // 10-bit waarde
-  if(Par2&0x4) // 11e bit in de 16-bits combinatie van Par2 Par1 is het sign-teken.
-    Value=-(Value);
-
-Serial.print("3*** Value=");Serial.println(Value,DEC);//??? Debug
-
-  return Value;
-  }
-
-
-
-int event2wiredport(unsigned long event)
-  {
-  return ((Par2>>12)&0xf);    
-  }
-
-
 
 /*unsigned long AnalogRead2event(int Port)
   {
