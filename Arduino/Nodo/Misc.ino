@@ -278,11 +278,14 @@ void ResetFactory(void)
   S.Subnet[1]                  = 255;
   S.Subnet[2]                  = 255;
   S.Subnet[3]                  = 0;
-//  S.Pulse                      = 0;  ???
-  
+  S.Pulse_Calibration_IH       = 360;
+  S.Pulse_Calibration_IL       = 36000;
+  S.Pulse_Calibration_OH       = 100;
+  S.Pulse_Calibration_OL       = 10;
+
   strcpy(S.Password,ProgmemString(Text_10));
   strcpy(S.ID,ProgmemString(Text_16));
-  strcpy(S.HTTPRequest,ProgmemString(Text_29));//??? default vullen of niet?
+  S.HTTPRequest[0];
   
   // zet analoge waarden op default
   for(x=0;x<WIRED_PORTS;x++)
@@ -953,6 +956,9 @@ void Led(byte Color)
   
 void PulseCounterISR()
    {
+   // in deze interrupt service routine staat millis() stil. Dit is echter geen bezwaar voor de meting.
+   PulseTime=millis()-PulseTimePrevious;
+   PulseTimePrevious=millis();
    PulseCount++;
    }     
 

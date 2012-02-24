@@ -74,7 +74,6 @@ byte CommandError(unsigned long Content)
     case CMD_VARIABLE_SAVE:
     case CMD_WAITFREERF: 
     case CMD_USERPLUGIN: 
-    case CMD_VARIABLE_EVENT:    
     case CMD_GATEWAY:
     case CMD_SUBNET:
     case CMD_NODO_IP:    
@@ -98,6 +97,7 @@ byte CommandError(unsigned long Content)
     case CMD_KAKU:
     case CMD_SEND_KAKU:
     case CMD_EVENTGHOST_SERVER:
+    case CMD_PULSE_CALIBRATE:
       return false;
  
     case CMD_SEND_KAKU_NEW:
@@ -117,13 +117,14 @@ byte CommandError(unsigned long Content)
       
     case CMD_TIMER_SET_SEC:
     case CMD_TIMER_SET_MIN:
-      if(Par1>USER_VARIABLES_MAX)return ERROR_02;
+      if(Par1>USER_VARIABLES_MAX)return ERROR_02;//??? timer!
       return false;
 
     // test:Par1 binnen bereik maximaal beschikbare variabelen
-    case CMD_VARIABLE_PULSE: 
     case CMD_VARIABLE_INC: 
     case CMD_VARIABLE_DEC: 
+    case CMD_VARIABLE_EVENT:    
+    case CMD_VARIABLE_GEN_EVENT:    
     case CMD_BREAK_ON_VAR_NEQU:
     case CMD_BREAK_ON_VAR_MORE:
     case CMD_BREAK_ON_VAR_LESS:
@@ -196,6 +197,11 @@ byte CommandError(unsigned long Content)
     case CMD_WAITBUSY:
     case CMD_SENDBUSY:
       if(Par1!=VALUE_OFF && Par1!=VALUE_ON && Par1!=VALUE_ALL)return ERROR_02;
+      return false;
+
+    case CMD_PULSE_VARIABLE:
+      if(Par1<1 || Par1>USER_VARIABLES_MAX)return ERROR_02;
+      if(Par2!=VALUE_COUNT && Par2!=0)return ERROR_02;
       return false;
 
     case CMD_TRANSMIT_IP:
@@ -356,7 +362,26 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       case CMD_WIREDANALOG_VARIABLE:
         UserVar[Par2-1]=map(analogRead(PIN_WIRED_IN_1+Par1-1),S.WiredInput_Calibration_IL[Par1-1],S.WiredInput_Calibration_IH[Par1-1],S.WiredInput_Calibration_OL[Par1-1],S.WiredInput_Calibration_OH[Par1-1]);
         break;
-        
+
+      case CMD_PULSE_VARIABLE:
+        // als dit de eerste keer is, dan de isr activeren.
+        attachInterrupt(5,PulseCounterISR,FALLING); // IRQ-5 is specifiek voor Pen 18 (PIN_IR_RX_DATA) van de ATMega. ??? aanpassen voor de UNO
+//        Serial.print("*** debug: Aantal pulsen      = ");Serial.println(PulseCount,DEC); //??? Debug
+//        Serial.print("*** debug: Tijd tussen pulsen = ");Serial.println(PulseTime,DEC); //??? Debug
+
+        if(Par2==VALUE_COUNT)
+          {
+          UserVar[Par1-1]=PulseCount*100;
+          PulseCount=0;
+          }
+        else//@1
+          {
+//          Serial.print("*** debug: Calibratie voltooid. IH=");Serial.print(S.Pulse_Calibration_IH,DEC);Serial.print(", OH=");Serial.println(S.Pulse_Calibration_OH);//??? Debug
+//          Serial.print("*** debug: Calibratie voltooid. IL=");Serial.print(S.Pulse_Calibration_IL,DEC);Serial.print(", OL=");Serial.println(S.Pulse_Calibration_OL);//??? Debug
+          UserVar[Par1-1]=map(PulseTime,S.Pulse_Calibration_IL,S.Pulse_Calibration_IH,S.Pulse_Calibration_OL,S.Pulse_Calibration_OH);
+          }
+        break;
+
       case CMD_VARIABLE_VARIABLE:
         UserVar[Par1-1]=UserVar[Par2-1];
         break;        
@@ -463,6 +488,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           HoldTimer=0; //  Wachttijd is afgelopen;
         break;        
         
+      case CMD_VARIABLE_GEN_EVENT:
+        Content=AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT);
+        ProcessEvent(Content, VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk event.
+        break;
+
       case CMD_SEND_EVENT:
         TransmitCode(PreviousContent,Par1);
         break;        
@@ -907,6 +937,36 @@ void ExecuteLine(char *Line, byte Port)
               // Serial.print("*** debug: SmittTrigger ingesteld op ");Serial.println(AnalogInt2str(S.WiredInputSmittTrigger[Par1-1]));//??? Debug
               }
             break;            
+
+          case CMD_PULSE_CALIBRATE: // "PulseCalibrate <High \ Low> , <Milliseconds> , <AnalogValue>"
+            {
+            Error=ERROR_02;
+            if(GetArgv(Command,TmpStr,3))
+              {
+              v=str2int(TmpStr);
+              if(GetArgv(Command,TmpStr,4))
+                {
+                x=str2AnalogInt(TmpStr);
+                if(Par1==VALUE_HIGH)
+                  {
+                  S.Pulse_Calibration_IH=v;
+                  S.Pulse_Calibration_OH=x;
+                  Error=0;
+//                  Serial.print("*** debug: Calibratie voltooid. IH=");Serial.print(S.Pulse_Calibration_IH,DEC);Serial.print(", OH=");Serial.println(S.Pulse_Calibration_OH);//??? Debug
+                  }
+                if(Par1==VALUE_LOW)
+                  {
+                  S.Pulse_Calibration_IL=v;
+                  S.Pulse_Calibration_OL=x;
+                  Error=0;
+//                  Serial.print("*** debug: Calibratie voltooid. IL=");Serial.print(S.Pulse_Calibration_IL,DEC);Serial.print(", OL=");Serial.println(S.Pulse_Calibration_OL);//??? Debug
+                  }
+                }  
+              }
+            v=0;
+            SaveSettings();
+            break;
+            }
                   
           case CMD_WIRED_ANALOG_CALIBRATE:
             {

@@ -1,7 +1,10 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- 
+- Veranderen van een variabele genereerd GEEN automatisch event meer
+- Nieuw commando: "VariableEvent <variable>". Genereert een event met betreffende variabele;
+- Nieuw commando: "PulseCalibrate <high | low>, <pulse_in_mSec>, <value>". Mapt een waarde en de tijd tussen twee pulsen. T.b.v. energiemeting
+- Nieuw commando: "VariablePulse <variable>, <'Count'>". Variabele vullen met gemeten pulstijd of aantal pulsen. 
 
 Known Errors / ToDo:
 
@@ -66,19 +69,8 @@ Known Errors / ToDo:
 - Nieuw commando "FileWrite <filename>". Schrijft alle via TelNet of Serial binnenkomende regels naar bestand <filename> totdat FileWrite weerals tekst voorbij komt of er 60sec. voorbij is
 - HTTP-request dat de Nodo ontvangt kan worden gebruikt om een file terug te laten sturen. ?password=<password>&id=<id>&file=<filename>
 - Commando "Divert" verwijderd. wordt mogelijk vervangen door "Send <unit>,<poort>" TIJDELIJK T.B.V. TEST OP BRUIKBAARHEID, NOG IN ONTWIKKELING.???
-
-Gedocumenteerd
-
-\**************************************************************************************************************************/
-
-/**************************************************************************************************************************\
-- commando "Port" toegevoed voor instellen van de IP-poort.
-- Toevoeging commando "Password"
-- Commaando toegevoegd "WiredCalibrate <poort> <High|Low> <ijkwaarde>"
-- Commando "NodoIP <ip_address>" toegevoegd. Hiermee kan handmatig aan de Nodo een IP adres worden toegekend. Als adres 0.0.0.0, dan wordt IP adres verkregen via DHCP.
-- Toevoeging commando "Host <hostadres>". Vul in als "Host www.mijnhost.nl/pad/mijnscript.php"
-- Toevoeging commando "IPSettings".
-- Toevoeging commando "FileList".
-- Nieuw commando "FileShow <filename>". Geeft de inhoud van een file weer.
-
+- Veranderen van een variabele genereerd GEEN automatisch event meer
+- Nieuw commando: "VariableEvent <variable>". Genereert een event met betreffende variabele;
+- Nieuw commando: "PulseCalibrate <high | low>, <pulse_in_mSec>, <value>". Mapt een waarde en de tijd tussen twee pulsen. T.b.v. energiemeting
+- Nieuw commando: "VariablePulse <variable>, <'Count'>". Variabele vullen met gemeten pulstijd of aantal pulsen. 
 

@@ -29,7 +29,7 @@
  \****************************************************************************************************************************/
 
 
-#define VERSION        3          // Nodo Version nummer:
+#define VERSION        5          // Nodo Version nummer:
                                   // Major.Minor.Patch
                                   // Major: Grote veranderingen aan concept, besturing, werking.
                                   // Minor: Uitbreiding/aanpassing van commando's, functionaliteit en MMI aanpassingen
@@ -146,7 +146,7 @@ prog_char PROGMEM Cmd_057[]="OutputIP";
 prog_char PROGMEM Cmd_058[]="OutputIR";
 prog_char PROGMEM Cmd_059[]="OutputRF";
 prog_char PROGMEM Cmd_060[]="EventGhostServer";
-prog_char PROGMEM Cmd_061[]="VariableWiredAnalog";
+prog_char PROGMEM Cmd_061[]="";
 prog_char PROGMEM Cmd_062[]="FileErase";
 prog_char PROGMEM Cmd_063[]="FileShow";
 prog_char PROGMEM Cmd_064[]="FileExecute";
@@ -154,13 +154,13 @@ prog_char PROGMEM Cmd_065[]="FileWrite";
 prog_char PROGMEM Cmd_066[]="FileList";
 prog_char PROGMEM Cmd_067[]="FileLog";
 prog_char PROGMEM Cmd_068[]="FileGetHTTP";
-prog_char PROGMEM Cmd_069[]="VariablePulse";
+prog_char PROGMEM Cmd_069[]="";
 prog_char PROGMEM Cmd_070[]="Gateway";
 prog_char PROGMEM Cmd_071[]="Subnet";
-prog_char PROGMEM Cmd_072[]="";
-prog_char PROGMEM Cmd_073[]="";
-prog_char PROGMEM Cmd_074[]="";
-prog_char PROGMEM Cmd_075[]="";
+prog_char PROGMEM Cmd_072[]="PulseCalibrate";
+prog_char PROGMEM Cmd_073[]="VariablePulse";
+prog_char PROGMEM Cmd_074[]="VariableWiredAnalog";
+prog_char PROGMEM Cmd_075[]="VariableEvent";
 prog_char PROGMEM Cmd_076[]="";
 prog_char PROGMEM Cmd_077[]="";
 prog_char PROGMEM Cmd_078[]="";
@@ -271,7 +271,7 @@ prog_char PROGMEM Cmd_177[]="Nesting"; //??? kan weg?
 prog_char PROGMEM Cmd_178[]="Queue";
 prog_char PROGMEM Cmd_179[]="Auto";
 prog_char PROGMEM Cmd_180[]="";
-prog_char PROGMEM Cmd_181[]="";
+prog_char PROGMEM Cmd_181[]="Count";
 prog_char PROGMEM Cmd_182[]="High";
 prog_char PROGMEM Cmd_183[]="Low";
 prog_char PROGMEM Cmd_184[]="";
@@ -365,7 +365,7 @@ prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
 #define CMD_TRANSMIT_IR                 58
 #define CMD_TRANSMIT_RF                 59
 #define CMD_EVENTGHOST_SERVER           60
-#define CMD_WIREDANALOG_VARIABLE        61
+#define CMD_RES                         61
 #define CMD_FILE_ERASE                  62
 #define CMD_FILE_SHOW                   63
 #define CMD_FILE_EXECUTE                64
@@ -373,13 +373,13 @@ prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
 #define CMD_FILE_LIST                   66
 #define CMD_FILE_LOG                    67
 #define CMD_FILE_GET_HTTP               68
-#define CMD_VARIABLE_PULSE              69
+#define CMD_RES69                       69
 #define CMD_GATEWAY                     70
 #define CMD_SUBNET                      71
-#define CMD_RES072                      72
-#define CMD_RES073                      73
-#define CMD_RES074                      74
-#define CMD_RES075                      75
+#define CMD_PULSE_CALIBRATE             72
+#define CMD_PULSE_VARIABLE              73
+#define CMD_WIREDANALOG_VARIABLE        74
+#define CMD_VARIABLE_GEN_EVENT          75
 #define CMD_RES076                      76
 #define CMD_RES077                      77
 #define CMD_RES078                      78
@@ -492,8 +492,8 @@ prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
 #define VALUE_NESTING                  177
 #define VALUE_SOURCE_QUEUE             178
 #define VALUE_AUTO                     179
-#define VALUE_TIMESTAMP                180
-#define VALUE_RES181                   181
+#define VALUE_RES180                   180
+#define VALUE_COUNT                    181
 #define VALUE_HIGH                     182
 #define VALUE_LOW                      183
 #define VALUE_RES184                   184
@@ -627,6 +627,8 @@ struct Settings
   int     WiredInputThreshold[WIRED_PORTS], WiredInputSmittTrigger[WIRED_PORTS];
   int     WiredInput_Calibration_IH[WIRED_PORTS], WiredInput_Calibration_IL[WIRED_PORTS];
   int     WiredInput_Calibration_OH[WIRED_PORTS], WiredInput_Calibration_OL[WIRED_PORTS];
+  long    Pulse_Calibration_IH, Pulse_Calibration_IL;
+  int     Pulse_Calibration_OH, Pulse_Calibration_OL;
   boolean WiredInputPullUp[WIRED_PORTS];
   byte    AnalyseSharpness;
   int     AnalyseTimeOut;
@@ -653,7 +655,6 @@ struct Settings
   byte    Nodo_IP[4];                                       // IP adres van van de Nodo. als 0.0.0.0 ingevuld, dan IP toekenning o.b.v. DHCP
   byte    Subnet[4];                                       // Submask
   byte    Gateway[4];                                       // Gateway
-  byte    PulseVariable;                                    // Variabele die wordt gebruikt voor tellen van pulsen.
   }S;
 
 unsigned long UserTimer[TIMER_MAX];                         // Timers voor de gebruiker.
@@ -663,7 +664,6 @@ byte QueuePos;                                              // teller die wijst 
 boolean WiredInputStatus[WIRED_PORTS];                      // Status van de WiredIn worden hierin opgeslagen.
 boolean WiredOutputStatus[WIRED_PORTS];                     // Wired variabelen.
 int BusyNodo;                                               // in deze variabele de status van het event 'Busy' van de betreffende units 1 t/m 15. bit-1 = unit-1.
-int UserVarPrevious[USER_VARIABLES_MAX];                    // Vorige versie van de UserVariablles: om wisselingen te kunnen vaststellen.
 byte DaylightPrevious;                                      // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet.
 byte EventlistDepth=0;                                      // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's.
 byte Hold=false;
@@ -680,6 +680,8 @@ boolean SerialConnected;                                    // Vlag geeft aan of
 boolean TemporyEventGhostError=false;                       // Vlag om tijdelijk evetghost verzending stil te leggen na een communicatie probleem
 int TerminalLocked=1;                                       // 0 als als gebruiker van een telnet terminalsessie juiste wachtwoord heeft ingetoetst
 volatile int PulseCount=0;                                  // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
+volatile unsigned long PulseTime=0;                         // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
+volatile unsigned long PulseTimePrevious=0;                 // Tijdsduur tussen twee pulsen teller in milliseconden: vorige meting
 char TempLogFile[13];                                       // Naam van de Logfile waar (naast de standaard logging) de verwerking in gelogd moet worden.
 int FileWriteMode=0;                                        // Het aantal seconden dat deze timer ingesteld staat zal er geen verwerking plaats vinden van TerminalInvoer. Iedere seconde --.
 char InputBuffer_Serial[INPUT_BUFFER_SIZE+1];               // Buffer voor input Seriele data
@@ -733,8 +735,6 @@ void setup()
   digitalWrite(PIN_IR_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
   digitalWrite(PIN_RF_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
   digitalWrite(PIN_RF_RX_VCC,HIGH);   // Spanning naar de RF ontvanger aann
-
-  attachInterrupt(5,PulseCounterISR,FALLING); // IRQ-5 is specifiek voor Pen 18 (PIN_IR_RX_DATA) van de ATMega. ??? aanpassen voor de UNO
 
   RFbit=digitalPinToBitMask(PIN_RF_RX_DATA);
   RFport=digitalPinToPort(PIN_RF_RX_DATA);  
@@ -1111,19 +1111,7 @@ void loop()
           }
 
         case 3:
-          {
-          // VARIABLE: *************** Behandel gewijzigde variabelen als en binnengekomen event ******************************
-          for(x=0;x<USER_VARIABLES_MAX;x++)
-            {
-            if(UserVar[x]!=UserVarPrevious[x]) // de eerste gewijzigde variabele
-              {
-              UserVarPrevious[x]=UserVar[x];
-              Content=AnalogInt2event(UserVar[x], x+1, CMD_VARIABLE_EVENT);
-              ProcessEvent(Content, VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
-              }
-            }
           break;
-          }
 
         case 4:
           {

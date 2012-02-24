@@ -232,7 +232,7 @@ char* Event2str(unsigned long Code)
       // Par1 als waarde en par2 als tekst
       case CMD_DELAY:
       case CMD_WIRED_PULLUP:
-//      case CMD_VARIABLE_PULSE: ???
+      case CMD_PULSE_VARIABLE:
       case CMD_WIRED_OUT:
       case CMD_WIRED_IN_EVENT:
         P1=P_VALUE;
@@ -269,6 +269,7 @@ char* Event2str(unsigned long Code)
         break;
   
       // Par1 als waarde en par2 niet
+      case CMD_VARIABLE_GEN_EVENT:    
       case CMD_UNIT:
       case CMD_RAWSIGNAL:
       case CMD_RAWSIGNAL_SEND:

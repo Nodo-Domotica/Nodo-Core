@@ -14,10 +14,9 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
 
 // uitwerken dat de wordt weergegeven dat dit de queue in gaat en niet feitelijk verwerkt wordt.
   if(Hold)
+    {
     Serial.print("*** debug: Event gaat de queue in=");Serial.println(Event2str(IncommingEvent)); //??? Debug
-
-    //PrintTerminal(ProgMemString(Text_09));
-
+    }
 
   #ifdef USER_PLUGIN
   if(!UserPlugin_Receive(IncommingEvent))
