@@ -1,10 +1,6 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- Veranderen van een variabele genereerd GEEN automatisch event meer
-- Nieuw commando: "VariableEvent <variable>". Genereert een event met betreffende variabele;
-- Nieuw commando: "PulseCalibrate <high | low>, <pulse_in_mSec>, <value>". Mapt een waarde en de tijd tussen twee pulsen. T.b.v. energiemeting
-- Nieuw commando: "VariablePulse <variable>, <'Count'>". Variabele vullen met gemeten pulstijd of aantal pulsen. 
 
 Known Errors / ToDo:
 

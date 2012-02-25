@@ -29,7 +29,7 @@
  \****************************************************************************************************************************/
 
 
-#define VERSION        5          // Nodo Version nummer:
+#define VERSION        6          // Nodo Version nummer:
                                   // Major.Minor.Patch
                                   // Major: Grote veranderingen aan concept, besturing, werking.
                                   // Minor: Uitbreiding/aanpassing van commando's, functionaliteit en MMI aanpassingen
@@ -628,7 +628,7 @@ struct Settings
   int     WiredInput_Calibration_IH[WIRED_PORTS], WiredInput_Calibration_IL[WIRED_PORTS];
   int     WiredInput_Calibration_OH[WIRED_PORTS], WiredInput_Calibration_OL[WIRED_PORTS];
   long    Pulse_Calibration_IH, Pulse_Calibration_IL;
-  int     Pulse_Calibration_OH, Pulse_Calibration_OL;
+  long    Pulse_Calibration_OH, Pulse_Calibration_OL;
   boolean WiredInputPullUp[WIRED_PORTS];
   byte    AnalyseSharpness;
   int     AnalyseTimeOut;
