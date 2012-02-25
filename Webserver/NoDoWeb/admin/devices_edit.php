@@ -96,20 +96,20 @@ $page_title="Setup: Edit device";
 		</div>
     
 	<div id="homecode_div">
-		<label for="name">Home code: (A until P)</label>
+		<label for="name">Home code: (A...P)</label>
 		<input type="text" name="homecode" id="homecode" value="<?php echo $row['homecode'] ;?>"  />
     <br>
 	</div>
    
     <div id="adres_div">
 		<div id="label_adres_newkaku">
-		<label for="name">Address: (1 until 255)</label>
+		<label for="name">Address: (1...255)</label>
 		</div>
 		<div id="label_adres_kaku">
-		<label for="name">Address: (1 until 16)</label>
+		<label for="name">Address: (1...16)</label>
 		</div>
 		<div id="label_adres_wiredout">
-		<label for="name">Port: (1 until 8)</label>
+		<label for="name">Port: (1...8)</label>
 		</div>
 		<input type="text" name="address" id="address" value="<?php echo $row['address'] ;?>"  />
 		<br>
@@ -117,7 +117,7 @@ $page_title="Setup: Edit device";
 		
 		
 		    
-		<input type="submit" name="submit" value="Edit" >
+		<input type="submit" name="submit" value="Save" >
 
 		
 	

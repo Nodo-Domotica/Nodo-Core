@@ -42,7 +42,7 @@ mysql_select_db($database_tc, $tc);
 $RSevent_log = mysql_query("SELECT * FROM (SELECT * FROM nodo_tbl_event_log WHERE user_id='$userId' ORDER BY id DESC LIMIT 25)x ORDER BY id") or die(mysql_error());
 ?>
 
-<div data-role="collapsible" data-collapsed="true">
+<div data-role="collapsible" data-collapsed="true" data-content-theme="<?php echo $theme?>">
 	<h3>Web App details</h3>
 <b>Web App version: </b><?php echo $WEBAPP_VERSION;?><br>
 <b>Nodo ID: </b><?php echo $nodo_id;?><br>
@@ -50,7 +50,7 @@ $RSevent_log = mysql_query("SELECT * FROM (SELECT * FROM nodo_tbl_event_log WHER
 
 </div>
 
-	<div data-role="collapsible" data-collapsed="true">
+	<div data-role="collapsible" data-collapsed="true" data-content-theme="<?php echo $theme?>">
 	<h3>Eventlog</h3>
 
 

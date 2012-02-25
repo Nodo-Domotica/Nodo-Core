@@ -90,12 +90,20 @@ $userId = $row['id'];
 					 
 					 if ($cmd == "wiredanalog") {$type=1;}
 					 if ($cmd == "variable") {$type=2;}
-								
-					// Waarde opslaan in sensor log
-					mysql_select_db($database_tc, $tc);
-					mysql_query("INSERT INTO nodo_tbl_sensor_data (par1, data, nodo_unit_nr, type, user_id) VALUES ('$par1', '$par2','$unit','$type','$userId')") or die(mysql_error()); 
+					
 
-					// Sensor updaten
+					// Waarde opslaan in value log					
+					//Sensor_id (id) opvragen uit sensor tabel !!!!!!!!!!!! Aanpassen naar 1 insert/select query !!!!!!!!!!!!!
+					mysql_select_db($database_tc, $tc);
+					$RS_sensor = mysql_query("SELECT * FROM nodo_tbl_sensor WHERE user_id='$userId' AND par1='$par1' AND sensor_type='$type'") or die(mysql_error());  
+					$row_RS_sensor = mysql_fetch_array($RS_sensor);
+					$sensor_id=$row_RS_sensor[id]; //$sensor_id gebruiken we om in de tabel sensor_data bij te houden welke data bij welke sensor hoort 
+								
+					mysql_select_db($database_tc, $tc);
+					mysql_query("INSERT INTO nodo_tbl_sensor_data (sensor_id, par1, data, nodo_unit_nr, type, user_id) VALUES ('$sensor_id','$par1','$par2','$unit','$type','$userId')") or die(mysql_error()); 
+					// /Waarde opslaan in value log
+					
+					// Waarde updaten
 					mysql_select_db($database_tc, $tc);
 					mysql_query("UPDATE nodo_tbl_sensor SET data='$par2' WHERE par1='$par1' AND nodo_unit_nr='$unit' AND user_id='$userId' AND sensor_type='$type'") or die(mysql_error());
 						

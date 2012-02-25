@@ -39,7 +39,7 @@ if ((isset($_GET['id'])) && ($_GET['id'] != "")) {
   mysql_select_db($database_tc, $tc);
   $Result1 = mysql_query($deleteSQL, $tc) or die(mysql_error());
 
-  $deleteGoTo = "sensor.php";
+  $deleteGoTo = "values.php";
   if (isset($_SERVER['QUERY_STRING'])) {
     $deleteGoTo .= (strpos($deleteGoTo, '?')) ? "&" : "?";
     $deleteGoTo .= $_SERVER['QUERY_STRING'];

@@ -4,7 +4,7 @@ require_once('../connections/tc.php');
 require_once('../include/auth.php'); 
 require_once('../include/settings.php'); 
 
-$page_title="Setup: Edit sensors";
+$page_title="Setup: Edit values";
 
 
 
@@ -17,7 +17,7 @@ $page_title="Setup: Edit sensors";
  { 
  // get form data, making sure it is valid 
  $id = $_POST['id']; 
- $name = mysql_real_escape_string(htmlspecialchars($_POST['name'])); 
+ $prefix = mysql_real_escape_string(htmlspecialchars($_POST['prefix'])); 
  $suffix = mysql_real_escape_string(htmlspecialchars($_POST['suffix']));
  $suffix_true = mysql_real_escape_string(htmlspecialchars($_POST['suffix_true']));
  $suffix_false = mysql_real_escape_string(htmlspecialchars($_POST['suffix_false']));
@@ -27,9 +27,9 @@ $page_title="Setup: Edit sensors";
     
  // save the data to the database 
  mysql_select_db($database_tc, $tc);
- mysql_query("UPDATE NODO_tbl_sensor SET sensor_name='$name', sensor_suffix='$suffix', sensor_suffix_true='$suffix_true', sensor_suffix_false='$suffix_false', nodo_unit_nr='$unit', par1='$par1' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
+ mysql_query("UPDATE NODO_tbl_sensor SET sensor_prefix='$prefix', sensor_suffix='$suffix', sensor_suffix_true='$suffix_true', sensor_suffix_false='$suffix_false', nodo_unit_nr='$unit', par1='$par1' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
  // once saved, redirect back to the view page 
- header("Location: sensor.php#saved");  
+ header("Location: values.php#saved");  
  } 
  } 
  else {
@@ -58,20 +58,17 @@ $page_title="Setup: Edit sensors";
  
 	<div data-role="content">	
 
-<form action="sensor_edit.php" data-ajax="false" method="post"> 
+<form action="values_edit.php" data-ajax="false" method="post"> 
 	
 	 <input type="hidden" name="id" id="id" value="<?php echo $row['id'] ;?>"  />
 				
 	<br>
 	
 	
-	<div id="label_value_div">
-		<label for="name">Name: (Example: Temperature outside:)</label>
-		</div>
-		<div id="label_state_div">
-		<label for="name">Name: (Example: Door:)</label>
-		</div>
-		<input type="text" name="name" id="name" value="<?php echo $row['sensor_name'] ;?>"  />
+	
+		<label for="prefix">Prefix: (Example: Temperature outside:, Door:)</label>
+		
+		<input type="text" name="prefix" id="prefix" value="<?php echo $row['sensor_prefix'] ;?>"  />
 		<br>
 	
 	<div id="value_div">
@@ -93,7 +90,7 @@ $page_title="Setup: Edit sensors";
 		
 		
 		<br>
-		<label for="select-choice-1" class="select" >NoDo unit:</label>
+		<label for="select-choice-1" class="select" >Nodo unit:</label>
 		    <select name="unit" id="unit" data-native-menu="false" >
 				<option value="0" data-placeholder="true">Select unit nr:....</option>
 				<option value="1"<?php if ($row['nodo_unit_nr'] == 1) {echo 'selected="selected"';}?>>1</option>
@@ -114,16 +111,16 @@ $page_title="Setup: Edit sensors";
 			</select>
 		<br>
 		<div id="label_wiredanalog_div">
-		<label for="name">WiredAnalog port (1 until 15)</label>
+		<label for="name">WiredAnalog port (1...15)</label>
 		</div>
 		<div id="label_variable_div">
-		<label for="name">Variable (1 until 15)</label>
+		<label for="name">Variable (1...15)</label>
 		</div>
 		<input type="text" name="par1" id="par1" value="<?php echo $row['par1'];?>"  />
 		<br>
 	    <br>
         
-		<input type="submit" name="submit" value="Edit" >
+		<input type="submit" name="submit" value="Save" >
 
 		
 	
@@ -142,32 +139,36 @@ $page_title="Setup: Edit sensors";
 
 if ($row['sensor_type'] == 1) {
 
-
-	echo "$('#state_div').hide();";
-	echo "$('#label_state_div').hide();";
-	//echo "$('#value_div').show(); ";
-	//echo "$('#label_wiredanalog_div').show();";
+	echo "$('#label_wiredanalog_div').show();";
 	echo "$('#label_variable_div').hide();";
+	
  
- 
-
-
-
-
 }
 
  if ($row['sensor_type'] == 2) {
 
-
-	echo "$('#state_div').show();";
-	echo "$('#label_state_div').show();";
-	echo "$('#value_div').hide(); ";
 	echo "$('#label_wiredanalog_div').hide();";
 	echo "$('#label_variable_div').show();";
-	echo "$('#label_value_div').hide();";
+	
+	
+}
+
+if ($row['display'] == 1) { 
+
+	echo "$('#state_div').hide();";
+	echo "$('#value_div').show();";
+
+}
+
+if ($row['display'] == 2) { 
+
+	echo "$('#state_div').show();";
+	echo "$('#value_div').hide();";
+
+}
 
 
-} ?>
+?>
 </script> 
  
 </body>

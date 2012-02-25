@@ -74,7 +74,7 @@ $page_title="Setup: Edit activity";
 	
 	   
         
-		<input type="submit" name="submit" value="Edit" >
+		<input type="submit" name="submit" value="Save" >
 
 		
 	

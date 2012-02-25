@@ -1,4 +1,4 @@
-<div data-role="footer" data-theme="<?php echo $theme_header?>" >
+<div data-role="footer" data-theme="a" >
 		
 		<h4></h4>
 	</div><!-- /footer -->

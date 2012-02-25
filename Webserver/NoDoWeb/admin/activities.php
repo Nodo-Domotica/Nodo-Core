@@ -59,7 +59,7 @@ $result = mysql_query("SELECT * FROM nodo_tbl_activities WHERE user_id='$userId'
  
 	<div data-role="content">	
 
-	<div data-role="collapsible">
+	<div data-role="collapsible" data-content-theme="c">
 			<h3>Add</h3>
 	<form action="activities.php" data-ajax="false" method="post"> 
 	
@@ -75,7 +75,7 @@ $result = mysql_query("SELECT * FROM nodo_tbl_activities WHERE user_id='$userId'
 	
 	    <br>
         
-		<input type="submit" name="submit" value="Add" >
+		<input type="submit" name="submit" value="Save" >
 
 		
 	
@@ -83,14 +83,14 @@ $result = mysql_query("SELECT * FROM nodo_tbl_activities WHERE user_id='$userId'
 	</div>
 	
 	
-		<div data-role="collapsible" data-collapsed="false">
+		<div data-role="collapsible" data-collapsed="false" data-content-theme="c">
 			<h3>Edit</h3>
 			<?php
 			 
 								   
-			echo '<ul data-role="listview" data-split-icon="delete" data-split-theme="a">';
+			echo '<ul data-role="listview" data-split-icon="delete" data-split-theme="a" data-inset="true">';
 	  
-			echo '<br>';   
+			//echo '<br>';   
 			// loop through results of database query, displaying them in the table        
 			while($row = mysql_fetch_array($result)) 
 			{                                

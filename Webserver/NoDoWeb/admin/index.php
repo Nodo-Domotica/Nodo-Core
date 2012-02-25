@@ -29,8 +29,9 @@ $page_title = "Setup";
 	  <p><a href="setup_connection.php" data-role="button" data-ajax="false">Communication</a></p>
 	  <p><a href="devices.php" data-role="button" data-ajax="false">Devices</a></p>
 	  <p><a href="activities.php" data-role="button" data-ajax="false">Activities</a></p>
-	  <p><a href="sensor.php" data-role="button" data-ajax="false">Sensors</a></p>
+	  <p><a href="values.php" data-role="button" data-ajax="false">Values</a></p>
 	  <p><a href="scripts.php" data-role="button" data-ajax="false">Scripts</a></p>
+	  <p><a href="nodo_settings.php" data-role="button" data-ajax="false">Nodo settings</a></p>
    	  <p><a href="setup_nodoweb.php" data-role="button" data-ajax="false">Look & Feel</a></p>
 	</div><!-- /content -->
 	

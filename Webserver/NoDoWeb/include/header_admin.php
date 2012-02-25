@@ -1,6 +1,6 @@
 
 
-	<div data-role="header" data-theme="<?php echo $theme_header?>" >
+	<div data-role="header" data-theme="a" >
 		<h1><?php echo $page_title;  ?></h1>
 		<div data-role="navbar" data-iconpos="top">
 		<ul>

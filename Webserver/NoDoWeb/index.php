@@ -28,9 +28,9 @@ $totalRows_RSdevices = mysql_num_rows($RSdevices);
 	
 	<?php require_once('include/jquery_mobile.php'); ?>
 	
-	<!-- NoDoWebapp client side java -->
+	<!-- client side java -->
 	<script src="js/get_device_state.js"></script>
-	<!-- /NoDoWebapp client side java -->
+	<!-- /client side java -->
 	
 	
 	<?php require_once('include/send_event.php'); ?>
@@ -42,12 +42,11 @@ $totalRows_RSdevices = mysql_num_rows($RSdevices);
 <div data-role="page" data-theme="<?php echo $theme?>" data-title="<?php echo $title ?>">
 
 <?php require_once('include/header.php'); ?>
-
 	<div data-role="content">	
 	  
 	
 	<?php do { ?>
-         <div data-role="collapsible">
+         <div data-role="collapsible" data-content-theme="<?php echo $theme?>">
 		 
 		<h3><span id='switch_<?php echo $row_RSdevices['id']; ?>'></span><?php echo $row_RSdevices['naam']; ?></h3>
 		

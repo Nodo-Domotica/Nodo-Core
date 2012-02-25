@@ -53,7 +53,7 @@ else
 
 <form action="devices.php" data-ajax="false" method="post"> 
 		 
-	<div data-role="collapsible">
+	<div data-role="collapsible" data-content-theme="c">
 			
 		<h3>Add</h3>
 			<label for="select-choice-0" class="select" >Type of device:</label>
@@ -83,43 +83,43 @@ else
 		</div>
      
 		<div id="homecode_div">
-		<label for="name" >Home code: (A until P)</label>
+		<label for="name" >Home code: (A...P)</label>
 		<input type="text" name="homecode" id="homecode" value=""  />
 		<br>
 		</div>
    
 		<div id="adres_div">
 		<div id="label_adres_newkaku">
-		<label for="name">Address (1 until 255)</label>
+		<label for="name">Address (1...255)</label>
 		</div>
 		<div id="label_adres_kaku">
-		<label for="name">Address: (1 until 16)</label>
+		<label for="name">Address: (1...16)</label>
 		</div>
 		<div id="label_adres_wiredout">
-		<label for="name">Port: (1 until 8)</label>
+		<label for="name">Port: (1...8)</label>
 		</div>
 		<input type="text" name="address" id="address" value=""  />
 		<br>
 		</div>
      
 		<div id="submit_div">
-		<input type="submit" name="submit" value="Add" >
+		<input type="submit" name="submit" value="Save" >
 		</div>
 		
 </form> 
 
 	</div>
 
-	<div data-role="collapsible" data-collapsed="false">
+	<div data-role="collapsible" data-collapsed="false" data-content-theme="c">
 		<h3>Edit</h3>
 		<?php
 		// get results from database        
 		mysql_select_db($database_tc, $tc);
 		$result = mysql_query("SELECT * FROM nodo_tbl_devices WHERE user_id='$userId'") or die(mysql_error());  
 				               
-		echo '<ul data-role="listview" data-split-icon="delete" data-split-theme="a">';
+		echo '<ul data-role="listview" data-split-icon="delete" data-split-theme="a" data-inset="true">';
   
-		echo '<br>';   
+		//echo '<br>';   
 		// loop through results of database query, displaying them in the table        
 		while($row = mysql_fetch_array($result)) 
 		{                                
@@ -129,6 +129,7 @@ else
 		
 		}         
 		?>
+		
 	</div>
 	
 	</div><!-- /content -->
@@ -146,7 +147,7 @@ else
 	</div><!-- /header -->
 
 	<div data-role="content">	
-		<h2>Settings saved</h2>
+		<h2>Device saved</h2>
 				
 		<p><a href="#main" data-role="button" data-inline="true" data-icon="back">Ok</a></p>	
 	</div><!-- /content -->
