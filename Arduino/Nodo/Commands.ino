@@ -129,7 +129,7 @@ byte CommandError(unsigned long Content)
     case CMD_BREAK_ON_VAR_MORE:
     case CMD_BREAK_ON_VAR_LESS:
     case CMD_BREAK_ON_VAR_EQU:
-//      if(Par1<1 || Par1>USER_VARIABLES_MAX)return ERROR_02; nog afvangen n.a.v. analoog maken.
+      if(Par1<1 || Par1>USER_VARIABLES_MAX)return ERROR_02;
       return false;
       
     // test:Par1 en Par2 binnen bereik maximaal beschikbare variabelen
@@ -171,8 +171,8 @@ byte CommandError(unsigned long Content)
       return false;
 
     case CMD_WIREDANALOG_VARIABLE:
-      if(Par1<1 || Par1>WIRED_PORTS)return ERROR_02;
-      if(Par2<1 || Par2>USER_VARIABLES_MAX)return ERROR_02;
+      if(Par1<1 || Par1>USER_VARIABLES_MAX)return ERROR_02;
+      if(Par2<1 || Par2>WIRED_PORTS)return ERROR_02;
       return false;
       
     // test:Par1 binnen bereik maximaal beschikbare wired poorten.
@@ -360,7 +360,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;        
     
       case CMD_WIREDANALOG_VARIABLE:
-        UserVar[Par2-1]=map(analogRead(PIN_WIRED_IN_1+Par1-1),S.WiredInput_Calibration_IL[Par1-1],S.WiredInput_Calibration_IH[Par1-1],S.WiredInput_Calibration_OL[Par1-1],S.WiredInput_Calibration_OH[Par1-1]);
+        UserVar[Par1-1]=map(analogRead(PIN_WIRED_IN_1+Par2-1),S.WiredInput_Calibration_IL[Par2-1],S.WiredInput_Calibration_IH[Par2-1],S.WiredInput_Calibration_OL[Par2-1],S.WiredInput_Calibration_OH[Par2-1]);
         break;
 
       case CMD_PULSE_VARIABLE:

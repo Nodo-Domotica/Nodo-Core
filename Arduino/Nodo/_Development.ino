@@ -1,6 +1,7 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
+- Issue 277: VariableWiredAnalog parameters niet correct
 
 Known Errors / ToDo:
 
