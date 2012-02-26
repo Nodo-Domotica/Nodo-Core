@@ -29,7 +29,7 @@
  \****************************************************************************************************************************/
 
 
-#define VERSION        6          // Nodo Version nummer:
+#define VERSION        7          // Nodo Version nummer:
                                   // Major.Minor.Patch
                                   // Major: Grote veranderingen aan concept, besturing, werking.
                                   // Minor: Uitbreiding/aanpassing van commando's, functionaliteit en MMI aanpassingen
@@ -157,7 +157,7 @@ prog_char PROGMEM Cmd_068[]="FileGetHTTP";
 prog_char PROGMEM Cmd_069[]="";
 prog_char PROGMEM Cmd_070[]="Gateway";
 prog_char PROGMEM Cmd_071[]="Subnet";
-prog_char PROGMEM Cmd_072[]="PulseCalibrate";
+prog_char PROGMEM Cmd_072[]="PulseCalculate";
 prog_char PROGMEM Cmd_073[]="VariablePulse";
 prog_char PROGMEM Cmd_074[]="VariableWiredAnalog";
 prog_char PROGMEM Cmd_075[]="VariableEvent";
@@ -627,8 +627,9 @@ struct Settings
   int     WiredInputThreshold[WIRED_PORTS], WiredInputSmittTrigger[WIRED_PORTS];
   int     WiredInput_Calibration_IH[WIRED_PORTS], WiredInput_Calibration_IL[WIRED_PORTS];
   int     WiredInput_Calibration_OH[WIRED_PORTS], WiredInput_Calibration_OL[WIRED_PORTS];
-  long    Pulse_Calibration_IH, Pulse_Calibration_IL;
-  long    Pulse_Calibration_OH, Pulse_Calibration_OL;
+  long    PulseFactor;
+  int     PulseOffset;
+  byte    PulseFormula;
   boolean WiredInputPullUp[WIRED_PORTS];
   byte    AnalyseSharpness;
   int     AnalyseTimeOut;
@@ -680,7 +681,7 @@ boolean SerialConnected;                                    // Vlag geeft aan of
 boolean TemporyEventGhostError=false;                       // Vlag om tijdelijk evetghost verzending stil te leggen na een communicatie probleem
 int TerminalLocked=1;                                       // 0 als als gebruiker van een telnet terminalsessie juiste wachtwoord heeft ingetoetst
 volatile int PulseCount=0;                                  // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
-volatile unsigned long PulseTime=0;                         // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
+volatile long PulseTime=0;                         // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
 volatile unsigned long PulseTimePrevious=0;                 // Tijdsduur tussen twee pulsen teller in milliseconden: vorige meting
 char TempLogFile[13];                                       // Naam van de Logfile waar (naast de standaard logging) de verwerking in gelogd moet worden.
 int FileWriteMode=0;                                        // Het aantal seconden dat deze timer ingesteld staat zal er geen verwerking plaats vinden van TerminalInvoer. Iedere seconde --.
@@ -747,6 +748,9 @@ void setup()
     digitalWrite(A0+PIN_WIRED_IN_1+x,S.WiredInputPullUp[x]?HIGH:LOW);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14
     pinMode(PIN_WIRED_OUT_1+x,OUTPUT); // definieer Arduino pin's voor Wired-Out
     }
+
+  if(S.PulseFormula!=0)
+    attachInterrupt(5,PulseCounterISR,FALLING); // IRQ-5 is specifiek voor Pen 18 (PIN_IR_RX_DATA) van de ATMega. ??? aanpassen voor de UNO
 
   Wire.begin();        // zet I2C communicatie gereed voor uitlezen van de realtime clock.
 

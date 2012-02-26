@@ -278,10 +278,9 @@ void ResetFactory(void)
   S.Subnet[1]                  = 255;
   S.Subnet[2]                  = 255;
   S.Subnet[3]                  = 0;
-  S.Pulse_Calibration_IH       = 360;
-  S.Pulse_Calibration_IL       = 36000;
-  S.Pulse_Calibration_OH       = 100;
-  S.Pulse_Calibration_OL       = 10;
+  S.PulseFormula               = 0;
+  S.PulseFactor                = 0;
+  S.PulseOffset                = 0;
 
   strcpy(S.Password,ProgmemString(Text_10));
   strcpy(S.ID,ProgmemString(Text_16));

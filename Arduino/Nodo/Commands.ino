@@ -366,20 +366,35 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       case CMD_PULSE_VARIABLE:
         // als dit de eerste keer is, dan de isr activeren.
         attachInterrupt(5,PulseCounterISR,FALLING); // IRQ-5 is specifiek voor Pen 18 (PIN_IR_RX_DATA) van de ATMega. ??? aanpassen voor de UNO
-//        Serial.print("*** debug: Aantal pulsen      = ");Serial.println(PulseCount,DEC); //??? Debug
-//        Serial.print("*** debug: Tijd tussen pulsen = ");Serial.println(PulseTime,DEC); //??? Debug
-
+        if(S.Debug==VALUE_ON)
+          {
+          Serial.print("*** debug: Aantal pulsen      = ");Serial.println(PulseCount,DEC);//??? Debug
+          Serial.print("*** debug: Tijd tussen pulsen = ");Serial.println(PulseTime,DEC); //??? Debug
+          }
+          
+        x=0;
         if(Par2==VALUE_COUNT)
           {
-          UserVar[Par1-1]=PulseCount*100;
+          x=PulseCount;
           PulseCount=0;
           }
-        else//@1
+        else
           {
-//          Serial.print("*** debug: Calibratie voltooid. IH=");Serial.print(S.Pulse_Calibration_IH,DEC);Serial.print(", OH=");Serial.println(S.Pulse_Calibration_OH);//??? Debug
-//          Serial.print("*** debug: Calibratie voltooid. IL=");Serial.print(S.Pulse_Calibration_IL,DEC);Serial.print(", OL=");Serial.println(S.Pulse_Calibration_OL);//??? Debug
-          UserVar[Par1-1]=map(PulseTime,S.Pulse_Calibration_IL,S.Pulse_Calibration_IH,S.Pulse_Calibration_OL,S.Pulse_Calibration_OH);
+          x=PulseTime;
           }
+          
+        if(S.PulseFormula==1 && S.PulseFactor!=0)
+          UserVar[Par1-1]=constrain((100*x)/S.PulseFactor+S.PulseOffset,-10000,10000);
+        else if(S.PulseFormula==2 && x!=0)
+          UserVar[Par1-1]=constrain((100*S.PulseFactor)/x+S.PulseOffset,-10000,10000);
+
+//        Serial.print("*** debug: Aantal pulsen          = ");Serial.println(PulseCount,DEC);//??? Debug
+//        Serial.print("*** debug: Tijd tussen pulsen     = ");Serial.println(PulseTime,DEC); //??? Debug
+//        Serial.print("*** debug: PulseFactor            = ");Serial.println(S.PulseFactor,DEC);//??? Debug
+//        Serial.print("*** debug: PulseOffset            = ");Serial.println(S.PulseOffset,DEC);//??? Debug
+//        Serial.print("*** debug: PulseFormula           = ");Serial.println(S.PulseFormula,DEC);//??? Debug
+//        Serial.print("*** debug: UserVar[Par1-1]        = ");Serial.println(UserVar[Par1-1],DEC);//??? Debug
+
         break;
 
       case CMD_VARIABLE_VARIABLE:
@@ -941,29 +956,14 @@ void ExecuteLine(char *Line, byte Port)
           case CMD_PULSE_CALIBRATE: // "PulseCalibrate <High \ Low> , <Milliseconds> , <AnalogValue>"
             {
             Error=ERROR_02;
+            S.PulseFormula=Par1;
             if(GetArgv(Command,TmpStr,3))
               {
-              v=str2int(TmpStr);
+              S.PulseFactor=str2int(TmpStr);
+              Error=0;
               if(GetArgv(Command,TmpStr,4))
-                {
-                x=str2AnalogInt(TmpStr);
-                if(Par1==VALUE_HIGH)
-                  {
-                  S.Pulse_Calibration_IH=v;
-                  S.Pulse_Calibration_OH=x;
-                  Error=0;
-//                  Serial.print("*** debug: Calibratie voltooid. IH=");Serial.print(S.Pulse_Calibration_IH,DEC);Serial.print(", OH=");Serial.println(S.Pulse_Calibration_OH);//??? Debug
-                  }
-                if(Par1==VALUE_LOW)
-                  {
-                  S.Pulse_Calibration_IL=v;
-                  S.Pulse_Calibration_OL=x;
-                  Error=0;
-//                  Serial.print("*** debug: Calibratie voltooid. IL=");Serial.print(S.Pulse_Calibration_IL,DEC);Serial.print(", OL=");Serial.println(S.Pulse_Calibration_OL);//??? Debug
-                  }
-                }  
+                S.PulseOffset=str2AnalogInt(TmpStr);
               }
-            v=0;
             SaveSettings();
             break;
             }
