@@ -1,10 +1,18 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- Issue 277: VariableWiredAnalog parameters niet correct
+- Issue 277: VariableWiredAnalog parameters niet correct. 
+- Variable bugjes opgelost die tot "Error in parameter" fout leidde.
+- Automatisch event genereren bij ieder varabele commando.
+- Commando "VariableEvent" weer verwijderd
+- Nieuwe routines voor pulsaantal en pulstijd berekenen.
+- "PulseCalculate" vervangen door "PulseFormula": Zie: http://www.w-a.nl/nodowiki/index.php/PulseFormula
+- Aanpassing commando "VariablePulse". Zie: http://www.w-a.nl/nodowiki/index.php/VariablePulse
 
 Known Errors / ToDo:
+- Divert
 
+Aanpassingen t.o.v. Nodo Due:
 - Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue tesBease
 - EventListshow, eventListWrite, eventListErase hebben nu als parameter-1 de regel waar het betrekking op heeft (regel, ALL, 0=All)
 - Nodo ontvangt events via http. Voorbeeld: http://192.168.1.110/?event=sound&passwoord=Nodo&id=00000000

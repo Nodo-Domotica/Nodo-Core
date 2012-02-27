@@ -41,7 +41,7 @@ byte NodoType(unsigned long Content)
 
 byte CommandError(unsigned long Content)
   {
-  byte x;
+  int x,y;
   
   x=NodoType(Content);
   if(x!=NODO_TYPE_COMMAND && x!=NODO_TYPE_EVENT)
@@ -56,7 +56,6 @@ byte CommandError(unsigned long Content)
   switch(Command)
     {
     //test; geen, altijd goed
-    case CMD_VARIABLE_SET:   //??? nog afvangen bij foute invoer
     case CMD_FILE_GET_HTTP:
     case CMD_IP_SETTINGS:
     case CMD_RAWSIGNAL_SAVE:
@@ -97,7 +96,7 @@ byte CommandError(unsigned long Content)
     case CMD_KAKU:
     case CMD_SEND_KAKU:
     case CMD_EVENTGHOST_SERVER:
-    case CMD_PULSE_CALIBRATE:
+    case CMD_PULSE_CALCULATE:
       return false;
  
     case CMD_SEND_KAKU_NEW:
@@ -117,19 +116,20 @@ byte CommandError(unsigned long Content)
       
     case CMD_TIMER_SET_SEC:
     case CMD_TIMER_SET_MIN:
-      if(Par1>USER_VARIABLES_MAX)return ERROR_02;//??? timer!
+      if(Par1>TIMER_MAX)return ERROR_02;
       return false;
 
     // test:Par1 binnen bereik maximaal beschikbare variabelen
+    case CMD_VARIABLE_SET:
     case CMD_VARIABLE_INC: 
     case CMD_VARIABLE_DEC: 
     case CMD_VARIABLE_EVENT:    
-    case CMD_VARIABLE_GEN_EVENT:    
     case CMD_BREAK_ON_VAR_NEQU:
     case CMD_BREAK_ON_VAR_MORE:
     case CMD_BREAK_ON_VAR_LESS:
     case CMD_BREAK_ON_VAR_EQU:
-      if(Par1<1 || Par1>USER_VARIABLES_MAX)return ERROR_02;
+      Par2PortAnalog(Par1, Par2, &x, &y);
+      if(x<1 || x>USER_VARIABLES_MAX)return ERROR_02;
       return false;
       
     // test:Par1 en Par2 binnen bereik maximaal beschikbare variabelen
@@ -201,7 +201,7 @@ byte CommandError(unsigned long Content)
 
     case CMD_PULSE_VARIABLE:
       if(Par1<1 || Par1>USER_VARIABLES_MAX)return ERROR_02;
-      if(Par2!=VALUE_COUNT && Par2!=0)return ERROR_02;
+      if(Par2!=VALUE_COUNT && Par2!=VALUE_TIME)return ERROR_02;
       return false;
 
     case CMD_TRANSMIT_IP:
@@ -332,6 +332,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         z=UserVar[y-1]+x;
         if(abs(z)<=10000)
           UserVar[y-1]+=x;
+        ProcessEvent(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
         break;        
   
       case CMD_VARIABLE_DEC: 
@@ -339,6 +340,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         z=UserVar[y-1]-x;
         if(abs(z)<=10000)
           UserVar[y-1]-=x;
+        ProcessEvent(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
         break;        
   
       case CMD_VARIABLE_SAVE:   
@@ -354,13 +356,20 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
         if(y==0)
           for(z=0;z<USER_VARIABLES_MAX;z++)
+            {
             UserVar[z]=x;
+            ProcessEvent(AnalogInt2event(UserVar[z], z+1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+            }
         else
+          {
           UserVar[y-1]=x;
+          ProcessEvent(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+          }
         break;        
     
       case CMD_WIREDANALOG_VARIABLE:
         UserVar[Par1-1]=map(analogRead(PIN_WIRED_IN_1+Par2-1),S.WiredInput_Calibration_IL[Par2-1],S.WiredInput_Calibration_IH[Par2-1],S.WiredInput_Calibration_OL[Par2-1],S.WiredInput_Calibration_OH[Par2-1]);
+        ProcessEvent(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
         break;
 
       case CMD_PULSE_VARIABLE:
@@ -371,34 +380,50 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           Serial.print("*** debug: Aantal pulsen      = ");Serial.println(PulseCount,DEC);//??? Debug
           Serial.print("*** debug: Tijd tussen pulsen = ");Serial.println(PulseTime,DEC); //??? Debug
           }
-          
-        x=0;
+
+        //Formule-1: Variable = ( Pulse / A ) * B + C
+        //Formule-2: Variable = ( A / Pulse ) * B + C
+
         if(Par2==VALUE_COUNT)
           {
-          x=PulseCount;
+          x=PulseCount*S.PulseCountMultiplication;
           PulseCount=0;
-          }
-        else
-          {
-          x=PulseTime;
+          if(S.PulseCountFormula==1 && S.PulseCountDivision!=0)
+            UserVar[Par1-1]=constrain(x/S.PulseCountDivision+S.PulseCountOffset,-10000,10000);
+          else if(S.PulseCountFormula==2 && x!=0)
+            UserVar[Par1-1]=constrain(S.PulseCountDivision/x+S.PulseCountOffset,-10000,10000);
+//          Serial.print("*** debug: x       = ");Serial.println(x,DEC);//??? Debug
+//          Serial.print("*** debug: A       = ");Serial.println(S.PulseCountDivision,DEC);//??? Debug
+//          Serial.print("*** debug: B       = ");Serial.println(S.PulseCountMultiplication,DEC);//??? Debug
+//          Serial.print("*** debug: C       = ");Serial.println(S.PulseCountOffset,DEC);//??? Debug
+//          Serial.print("*** debug: Formula = ");Serial.println(S.PulseCountFormula,DEC);//??? Debug
+//          Serial.print("*** debug: UserVar[Par1-1]        = ");Serial.println(UserVar[Par1-1],DEC);//??? Debug  
           }
           
-        if(S.PulseFormula==1 && S.PulseFactor!=0)
-          UserVar[Par1-1]=constrain((100*x)/S.PulseFactor+S.PulseOffset,-10000,10000);
-        else if(S.PulseFormula==2 && x!=0)
-          UserVar[Par1-1]=constrain((100*S.PulseFactor)/x+S.PulseOffset,-10000,10000);
+        if(Par2==VALUE_TIME)
+          {
+          x=PulseTime*S.PulseTimeMultiplication;
+          if(S.PulseTimeFormula==1 && S.PulseTimeDivision!=0)
+            UserVar[Par1-1]=constrain(x/S.PulseTimeDivision+S.PulseTimeOffset,-10000,10000);
+          else if(S.PulseTimeFormula==2 && x!=0)
+            UserVar[Par1-1]=constrain(S.PulseTimeDivision/x+S.PulseTimeOffset,-10000,10000);
+//          Serial.print("*** debug: x       = ");Serial.println(x,DEC);//??? Debug
+//          Serial.print("*** debug: A       = ");Serial.println(S.PulseTimeDivision,DEC);//??? Debug
+//          Serial.print("*** debug: B       = ");Serial.println(S.PulseTimeMultiplication,DEC);//??? Debug
+//          Serial.print("*** debug: C       = ");Serial.println(S.PulseTimeOffset,DEC);//??? Debug
+//          Serial.print("*** debug: Formula = ");Serial.println(S.PulseTimeFormula,DEC);//??? Debug
+//          Serial.print("*** debug: UserVar[Par1-1]        = ");Serial.println(UserVar[Par1-1],DEC);//??? Debug          
+          }
 
-//        Serial.print("*** debug: Aantal pulsen          = ");Serial.println(PulseCount,DEC);//??? Debug
-//        Serial.print("*** debug: Tijd tussen pulsen     = ");Serial.println(PulseTime,DEC); //??? Debug
-//        Serial.print("*** debug: PulseFactor            = ");Serial.println(S.PulseFactor,DEC);//??? Debug
-//        Serial.print("*** debug: PulseOffset            = ");Serial.println(S.PulseOffset,DEC);//??? Debug
-//        Serial.print("*** debug: PulseFormula           = ");Serial.println(S.PulseFormula,DEC);//??? Debug
-//        Serial.print("*** debug: UserVar[Par1-1]        = ");Serial.println(UserVar[Par1-1],DEC);//??? Debug
+        ProcessEvent(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+
+
 
         break;
 
       case CMD_VARIABLE_VARIABLE:
         UserVar[Par1-1]=UserVar[Par2-1];
+        ProcessEvent(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
         break;        
   
       case CMD_BREAK_ON_VAR_EQU:
@@ -503,11 +528,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           HoldTimer=0; //  Wachttijd is afgelopen;
         break;        
         
-      case CMD_VARIABLE_GEN_EVENT:
-        Content=AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT);
-        ProcessEvent(Content, VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk event.
-        break;
-
       case CMD_SEND_EVENT:
         TransmitCode(PreviousContent,Par1);
         break;        
@@ -953,18 +973,50 @@ void ExecuteLine(char *Line, byte Port)
               }
             break;            
 
-          case CMD_PULSE_CALIBRATE: // "PulseCalibrate <High \ Low> , <Milliseconds> , <AnalogValue>"
+          case CMD_PULSE_CALCULATE: // "Pulse  <Time,Count>, <Formula> , <Division>, <Multiplication> , <Offset>"
             {
             Error=ERROR_02;
-            S.PulseFormula=Par1;
-            if(GetArgv(Command,TmpStr,3))
+
+            if(Par1==VALUE_TIME)
               {
-              S.PulseFactor=str2int(TmpStr);
-              Error=0;
+              S.PulseTimeFormula=Par2;
               if(GetArgv(Command,TmpStr,4))
-                S.PulseOffset=str2AnalogInt(TmpStr);
+                {
+                S.PulseTimeDivision=str2int(TmpStr);
+                if(GetArgv(Command,TmpStr,5))
+                  {
+                  S.PulseTimeMultiplication=str2AnalogInt(TmpStr);
+                  if(GetArgv(Command,TmpStr,6))
+                    {
+                    S.PulseTimeOffset=str2AnalogInt(TmpStr);
+                    SaveSettings();
+                    if(S.PulseTimeMultiplication!=0 && S.PulseTimeDivision!=0)
+                      Error=0;
+                    }
+                  }
+                }
               }
-            SaveSettings();
+
+            if(Par1==VALUE_TIME)
+              {
+              S.PulseCountFormula=Par2;
+              if(GetArgv(Command,TmpStr,4))
+                {
+                S.PulseCountDivision=str2int(TmpStr);
+                if(GetArgv(Command,TmpStr,5))
+                  {
+                  S.PulseCountMultiplication=str2AnalogInt(TmpStr);
+                  if(GetArgv(Command,TmpStr,6))
+                    {
+                    S.PulseCountOffset=str2AnalogInt(TmpStr);
+                    SaveSettings();
+                    if(S.PulseCountMultiplication!=0 && S.PulseCountDivision!=0)
+                      Error=0;
+                    }
+                  }
+                }
+              }
+              
             break;
             }
                   
@@ -1125,8 +1177,11 @@ void ExecuteLine(char *Line, byte Port)
           case CMD_VARIABLE_DEC:
           case CMD_VARIABLE_SET:
           case CMD_VARIABLE_INC:
-            if(GetArgv(Command,TmpStr,3));        
-              v=AnalogInt2event(str2AnalogInt(TmpStr), Par1, Cmd);      // verwerk binnengekomen event.            
+            if(GetArgv(Command,TmpStr,3))        
+              {
+              v=AnalogInt2event(str2AnalogInt(TmpStr), Par1, Cmd);
+              Error=CommandError(v);
+              }
             break;
             
           default:

@@ -29,7 +29,7 @@
  \****************************************************************************************************************************/
 
 
-#define VERSION        7          // Nodo Version nummer:
+#define VERSION       10          // Nodo Version nummer:
                                   // Major.Minor.Patch
                                   // Major: Grote veranderingen aan concept, besturing, werking.
                                   // Minor: Uitbreiding/aanpassing van commando's, functionaliteit en MMI aanpassingen
@@ -157,10 +157,10 @@ prog_char PROGMEM Cmd_068[]="FileGetHTTP";
 prog_char PROGMEM Cmd_069[]="";
 prog_char PROGMEM Cmd_070[]="Gateway";
 prog_char PROGMEM Cmd_071[]="Subnet";
-prog_char PROGMEM Cmd_072[]="PulseCalculate";
+prog_char PROGMEM Cmd_072[]="PulseFormula";
 prog_char PROGMEM Cmd_073[]="VariablePulse";
 prog_char PROGMEM Cmd_074[]="VariableWiredAnalog";
-prog_char PROGMEM Cmd_075[]="VariableEvent";
+prog_char PROGMEM Cmd_075[]="";
 prog_char PROGMEM Cmd_076[]="";
 prog_char PROGMEM Cmd_077[]="";
 prog_char PROGMEM Cmd_078[]="";
@@ -270,7 +270,7 @@ prog_char PROGMEM Cmd_176[]="Output_RAW";//??? nog in gebruik?
 prog_char PROGMEM Cmd_177[]="Nesting"; //??? kan weg?
 prog_char PROGMEM Cmd_178[]="Queue";
 prog_char PROGMEM Cmd_179[]="Auto";
-prog_char PROGMEM Cmd_180[]="";
+prog_char PROGMEM Cmd_180[]="Time";
 prog_char PROGMEM Cmd_181[]="Count";
 prog_char PROGMEM Cmd_182[]="High";
 prog_char PROGMEM Cmd_183[]="Low";
@@ -376,10 +376,10 @@ prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
 #define CMD_RES69                       69
 #define CMD_GATEWAY                     70
 #define CMD_SUBNET                      71
-#define CMD_PULSE_CALIBRATE             72
+#define CMD_PULSE_CALCULATE             72
 #define CMD_PULSE_VARIABLE              73
 #define CMD_WIREDANALOG_VARIABLE        74
-#define CMD_VARIABLE_GEN_EVENT          75
+#define CMD_RES075                      75
 #define CMD_RES076                      76
 #define CMD_RES077                      77
 #define CMD_RES078                      78
@@ -492,7 +492,7 @@ prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
 #define VALUE_NESTING                  177
 #define VALUE_SOURCE_QUEUE             178
 #define VALUE_AUTO                     179
-#define VALUE_RES180                   180
+#define VALUE_TIME                     180
 #define VALUE_COUNT                    181
 #define VALUE_HIGH                     182
 #define VALUE_LOW                      183
@@ -627,9 +627,14 @@ struct Settings
   int     WiredInputThreshold[WIRED_PORTS], WiredInputSmittTrigger[WIRED_PORTS];
   int     WiredInput_Calibration_IH[WIRED_PORTS], WiredInput_Calibration_IL[WIRED_PORTS];
   int     WiredInput_Calibration_OH[WIRED_PORTS], WiredInput_Calibration_OL[WIRED_PORTS];
-  long    PulseFactor;
-  int     PulseOffset;
-  byte    PulseFormula;
+  long    PulseTimeDivision;
+  int     PulseTimeOffset;
+  byte    PulseTimeFormula;
+  int     PulseTimeMultiplication;
+  long    PulseCountDivision;
+  int     PulseCountOffset;
+  byte    PulseCountFormula;
+  int     PulseCountMultiplication;
   boolean WiredInputPullUp[WIRED_PORTS];
   byte    AnalyseSharpness;
   int     AnalyseTimeOut;
@@ -681,7 +686,7 @@ boolean SerialConnected;                                    // Vlag geeft aan of
 boolean TemporyEventGhostError=false;                       // Vlag om tijdelijk evetghost verzending stil te leggen na een communicatie probleem
 int TerminalLocked=1;                                       // 0 als als gebruiker van een telnet terminalsessie juiste wachtwoord heeft ingetoetst
 volatile int PulseCount=0;                                  // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
-volatile long PulseTime=0;                         // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
+volatile long PulseTime=0;                                  // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
 volatile unsigned long PulseTimePrevious=0;                 // Tijdsduur tussen twee pulsen teller in milliseconden: vorige meting
 char TempLogFile[13];                                       // Naam van de Logfile waar (naast de standaard logging) de verwerking in gelogd moet worden.
 int FileWriteMode=0;                                        // Het aantal seconden dat deze timer ingesteld staat zal er geen verwerking plaats vinden van TerminalInvoer. Iedere seconde --.
@@ -749,7 +754,7 @@ void setup()
     pinMode(PIN_WIRED_OUT_1+x,OUTPUT); // definieer Arduino pin's voor Wired-Out
     }
 
-  if(S.PulseFormula!=0)
+  if(S.PulseTimeFormula!=0 || S.PulseCountFormula!=0)
     attachInterrupt(5,PulseCounterISR,FALLING); // IRQ-5 is specifiek voor Pen 18 (PIN_IR_RX_DATA) van de ATMega. ??? aanpassen voor de UNO
 
   Wire.begin();        // zet I2C communicatie gereed voor uitlezen van de realtime clock.
