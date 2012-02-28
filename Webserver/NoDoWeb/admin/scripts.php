@@ -194,7 +194,7 @@ END Script write
 	<br>
 	
 		<label for="select-script" class="select">Choose script:</label>
-		<select name="select-script-1" id="select-script-1">
+		<select name="select-script-1" id="select-script-1" data-native-menu="false">
 		<option value="EVENTLST" <?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "EVENTLST") {echo 'Selected="Selected"';}}?>>Eventlist</option>
 		<option value="SCRIPT_1"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "SCRIPT_1") {echo 'Selected="Selected"';}}?>>Script 1</option>
 		<option value="SCRIPT_2"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "SCRIPT_2") {echo 'Selected="Selected"';}}?>>Script 2</option>

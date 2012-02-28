@@ -5,18 +5,40 @@ require_once('include/settings.php');
 
 $page_title = "Values";
 
+
+//Tijdzone nog uitzoeken...
+date_default_timezone_set('Etc/GMT');
+
+//Grafiek lijnkleur instellen
+			
+			
+switch ($theme) {
+	
+		case "a":
+		$graph_line_color = "black";
+		break;
+		case "b":
+		$graph_line_color = "#2065E6"; //blauw
+		break;
+		case "c":
+		$graph_line_color = "black";
+		break;
+		case "d":
+		$graph_line_color = "black";
+		break;
+		case "e":
+		$graph_line_color = "#FFDF0F"; //geel
+		break;
+}
+			
+
+
+
 //lees sensoren uit
 mysql_select_db($database_tc, $tc);
 $query_RSsensor = "SELECT * FROM nodo_tbl_sensor WHERE user_id='$userId'";
 $RSsensor = mysql_query($query_RSsensor, $tc) or die(mysql_error());
 
-//lees maximaal 24 uur aan value data uit
-mysql_select_db($database_tc, $tc);
-$query_RSvalue_data = "SELECT * FROM nodo_tbl_sensor_data WHERE user_id='$userId' AND timestamp >= SYSDATE() - INTERVAL 1 DAY";
-$RSvalue_data = mysql_query($query_RSvalue_data, $tc) or die(mysql_error());
-
-//Tijdzone nog uitzoeken...
-date_default_timezone_set('Etc/GMT');
 
 ?>
 
@@ -49,27 +71,59 @@ date_default_timezone_set('Etc/GMT');
 	
 	<?php while($row_RSsensor = mysql_fetch_array($RSsensor)) {
 		
-		
-		echo "<div data-role=\"collapsible\" data-iconshadow=\"true\" data-content-theme=\"c\">";
-		//Prefix
-		echo "<h3>".$row_RSsensor['sensor_prefix']." ";
-		
-		
-		//Value suffix
-		if ($row_RSsensor['display'] == 1){	echo $row_RSsensor['data']." ".$row_RSsensor['sensor_suffix']."</h3>";}
-		
-		//State suffix
-		if ($row_RSsensor['display'] == 2){
-				if ($row_RSsensor['data'] <=0){	echo $row_RSsensor['sensor_suffix_false']."</h3>";}
-				if ($row_RSsensor['data'] > 0){	echo $row_RSsensor['sensor_suffix_true']."</h3>"; }
-		}
+			$sensor_id = $row_RSsensor['id'];
+			
+			//Maximaal aantal uur welke weergegeven moet worden in de grafiek
+			if ($row_RSsensor['graph_hours'] == 0) {
 				
-				//Controleren of er log data bestaat. Zoniet dan hoeven we niet terug naar het eerste record.
-				if ( mysql_num_rows ( $RSvalue_data ) > 0 ) {
-
-					mysql_data_seek($RSvalue_data, 0);
+				$graph_hours = "24";
+			}
+			else {
 				
-				}
+				$graph_hours = $row_RSsensor['graph_hours'];
+			}
+			
+			switch ($row_RSsensor['graph_min_ticksize']) {
+	
+				case "1":
+				$graph_min_ticksize = "1, \"minute\""; 
+				break;
+				case "2":
+				$graph_min_ticksize = "1, \"hour\"";
+				break;
+				case "3":
+				$graph_min_ticksize = "1, \"day\"";
+				break;
+				case "4":
+				$graph_min_ticksize = "1, \"week\""; 
+				break;
+				case "5":
+				$graph_min_ticksize = "1, \"month\""; 
+				break;
+			}
+			
+					
+			echo "<div data-role=\"collapsible\" data-iconpos=\"right\" data-content-theme=\"c\">";
+			
+			//Input or Ouput icon
+			if ($row_RSsensor['input_output'] == 1) {echo "<h3>Out: ";}
+			if ($row_RSsensor['input_output'] == 2) {echo "<h3>In: ";}
+			
+			
+			//Prefix
+			echo $row_RSsensor['sensor_prefix']." ";
+			
+			
+			//Value suffix
+			if ($row_RSsensor['display'] == 1){	echo $row_RSsensor['data']." ".$row_RSsensor['sensor_suffix']."</h3>";}
+			
+			//State suffix
+			if ($row_RSsensor['display'] == 2){
+					if ($row_RSsensor['data'] <=0){	echo $row_RSsensor['sensor_suffix_false']."</h3>";}
+					if ($row_RSsensor['data'] > 0){	echo $row_RSsensor['sensor_suffix_true']."</h3>"; }
+	}
+				
+				
  
 /**********************************************************************************************************************************************************************************************
 Grafiek: Values
@@ -87,24 +141,28 @@ Grafiek: Values
 					var value_data = [
 					
 					//Grafiek
-					<?php while($row_RSvalue_data = mysql_fetch_array($RSvalue_data)){
+					<?php 
 						
+						//lees maximaal X uur aan value data uit
+						mysql_select_db($database_tc, $tc);
+						$query_RSsensor_value_data = "SELECT * FROM nodo_tbl_sensor_data WHERE user_id='$userId' AND sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR";
+						$RSsensor_value_data = mysql_query($query_RSsensor_value_data, $tc) or die(mysql_error());
 						
-						if ($row_RSsensor['sensor_type'] == $row_RSvalue_data['type'] && $row_RSsensor['nodo_unit_nr'] == $row_RSvalue_data['nodo_unit_nr'] && $row_RSsensor['par1'] == $row_RSvalue_data['par1'])
-						{	
+						while($row_RSsensor_value_data = mysql_fetch_array($RSsensor_value_data))	{
 													
-							echo "[".(strtotime($row_RSvalue_data['timestamp'])*1000).",".$row_RSvalue_data['data']."],";
+							echo "[".(strtotime($row_RSsensor_value_data['timestamp'])*1000).",".$row_RSsensor_value_data['data']."],";
 													
 						}
 						
-					}
-					echo "];";						
+					
+							echo "];";						
 					?>
 											
 					
-					$.plot($("#<?php echo $row_RSsensor['id']; ?>"),[{data: value_data, label: "<?php echo $row_RSsensor['sensor_suffix']; ?>"}], { xaxis: { mode: "time"} });
+					$.plot($("#<?php echo $row_RSsensor['id']; ?>"),[{data: value_data, label: "<?php echo $row_RSsensor['sensor_suffix']; ?>",color: "<?php echo $graph_line_color; ?>"}], { xaxis: { mode: "time",minTickSize: [<?php echo $graph_min_ticksize;?>]}});
 
 
+					
 
 				</script>
 
@@ -119,8 +177,8 @@ Input control
 			//+- Buttons
 			if ($row_RSsensor['input_control'] == 1){
 			?>
-				<a href="javascript:send_event(&quot;variableinc <?php echo $row_RSsensor['par1'];?>,<?php echo $row_RSsensor['input_step'];?>&quot;)" data-role="button" data-inline="true">+</a>
-				<a href="javascript:send_event(&quot;variabledec <?php echo $row_RSsensor['par1'];?>,<?php echo $row_RSsensor['input_step'];?>&quot;)" data-role="button" data-inline="true">-</a>		
+				<a href="javascript:send_event(&quot;variableinc <?php echo $row_RSsensor['par1'];?>,<?php echo $row_RSsensor['input_step'];?>&quot;)" data-role="button">+</a>
+				<a href="javascript:send_event(&quot;variabledec <?php echo $row_RSsensor['par1'];?>,<?php echo $row_RSsensor['input_step'];?>&quot;)" data-role="button">-</a>		
 			<?php
 			}
 			

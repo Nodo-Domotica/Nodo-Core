@@ -188,7 +188,7 @@ $userId = $row['id'];
 					switch ($par2) {
 
 						case "on" :
-						$status = 1;
+							$status = 1;
 						break;
 						
 						case "off" :

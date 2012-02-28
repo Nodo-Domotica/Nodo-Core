@@ -33,11 +33,16 @@ function GetSQLValueString($theValue, $theType, $theDefinedValue = "", $theNotDe
 }
 
 if ((isset($_GET['id'])) && ($_GET['id'] != "")) {
-  $deleteSQL = sprintf("DELETE FROM nodo_tbl_sensor WHERE id=%s AND user_id='$userId'",
+  $delete_sensor_SQL = sprintf("DELETE FROM nodo_tbl_sensor WHERE id=%s AND user_id='$userId'", 
                        GetSQLValueString($_GET['id'], "int"));
+  $delete_sensor_data_SQL = sprintf("DELETE FROM nodo_tbl_sensor_data WHERE sensor_id=%s AND user_id='$userId'", 
+                       GetSQLValueString($_GET['id'], "int"));
+					   
+					   
 
   mysql_select_db($database_tc, $tc);
-  $Result1 = mysql_query($deleteSQL, $tc) or die(mysql_error());
+  $Result1 = mysql_query($delete_sensor_SQL, $tc) or die(mysql_error());
+  $Result2 = mysql_query($delete_sensor_data_SQL, $tc) or die(mysql_error());
 
   $deleteGoTo = "values.php";
   if (isset($_SERVER['QUERY_STRING'])) {
