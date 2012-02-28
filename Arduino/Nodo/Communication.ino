@@ -370,7 +370,7 @@ void ExecuteIP(void)
   boolean Completed=false;
   int InByteCounter;
   byte Protocol=0;
-  byte EGState;
+  byte EGState=0;
   char Cookie[8];
   char FileName[15];
   boolean RequestEvent=false;
@@ -413,9 +413,8 @@ void ExecuteIP(void)
             if(StringFind(InputBuffer_IP,"GET")!=-1)
               Protocol=VALUE_SOURCE_HTTP;// HTTP-Request
 
-//            if(StringFind(InputBuffer_IP,PROGMEM2str(Text_20))!=-1) // "quintessence"??
-            if(StringFind(InputBuffer_IP,"quintessence")!=-1)
-              Protocol=VALUE_SOURCE_EVENTGHOST;// EventGhost              
+            if(StringFind(InputBuffer_IP,PROGMEM2str(Text_20))!=-1) // "quintessence"??
+              Protocol=VALUE_SOURCE_EVENTGHOST;// EventGhost
             }
           
           if(Protocol==VALUE_SOURCE_HTTP)
@@ -552,6 +551,7 @@ void ExecuteIP(void)
                 {
                 // Event van EG ontvangen.
                 strcpy(Event,InputBuffer_IP);
+                RequestEvent=true;
                 }
               }
     
