@@ -292,7 +292,7 @@ byte CommandError(unsigned long Content)
 
 boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousContent, int PreviousSrc)
   {
-  unsigned long Event, Action;  
+  unsigned long Event, a;  
   int x,y,z;
 
   byte error        = false;
@@ -373,8 +373,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;
 
       case CMD_PULSE_VARIABLE:
-        // als dit de eerste keer is, dan de isr activeren.
-        attachInterrupt(5,PulseCounterISR,FALLING); // IRQ-5 is specifiek voor Pen 18 (PIN_IR_RX_DATA) van de ATMega. ??? aanpassen voor de UNO
+        a=0;
         if(S.Debug==VALUE_ON)
           {
           Serial.print("*** debug: Aantal pulsen      = ");Serial.println(PulseCount,DEC);//??? Debug
@@ -386,39 +385,38 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
         if(Par2==VALUE_COUNT)
           {
-          x=PulseCount*S.PulseCountMultiplication;
-          PulseCount=0;
-          if(S.PulseCountFormula==1 && S.PulseCountDivision!=0)
-            UserVar[Par1-1]=constrain(x/S.PulseCountDivision+S.PulseCountOffset,-10000,10000);
-          else if(S.PulseCountFormula==2 && x!=0)
-            UserVar[Par1-1]=constrain(S.PulseCountDivision/x+S.PulseCountOffset,-10000,10000);
-//          Serial.print("*** debug: x       = ");Serial.println(x,DEC);//??? Debug
-//          Serial.print("*** debug: A       = ");Serial.println(S.PulseCountDivision,DEC);//??? Debug
-//          Serial.print("*** debug: B       = ");Serial.println(S.PulseCountMultiplication,DEC);//??? Debug
-//          Serial.print("*** debug: C       = ");Serial.println(S.PulseCountOffset,DEC);//??? Debug
+          a=PulseCount;
+          if(S.PulseCountFormula==1 && S.PulseCount_A!=0)
+            a=(S.PulseCount_B*PulseCount)/S.PulseCount_A+S.PulseCount_C;
+          else if(S.PulseCountFormula==2 && PulseCount!=0)            
+            a=(S.PulseCount_B*S.PulseCount_A)/PulseCount+S.PulseCount_C;
+
+//          Serial.print("*** debug: A       = ");Serial.println(S.PulseCount_A,DEC);//??? Debug
+//          Serial.print("*** debug: B       = ");Serial.println(S.PulseCount_B,DEC);//??? Debug
+//          Serial.print("*** debug: C       = ");Serial.println(S.PulseCount_C,DEC);//??? Debug
 //          Serial.print("*** debug: Formula = ");Serial.println(S.PulseCountFormula,DEC);//??? Debug
-//          Serial.print("*** debug: UserVar[Par1-1]        = ");Serial.println(UserVar[Par1-1],DEC);//??? Debug  
+          PulseCount=0;
           }
           
         if(Par2==VALUE_TIME)
           {
-          x=PulseTime*S.PulseTimeMultiplication;
-          if(S.PulseTimeFormula==1 && S.PulseTimeDivision!=0)
-            UserVar[Par1-1]=constrain(x/S.PulseTimeDivision+S.PulseTimeOffset,-10000,10000);
-          else if(S.PulseTimeFormula==2 && x!=0)
-            UserVar[Par1-1]=constrain(S.PulseTimeDivision/x+S.PulseTimeOffset,-10000,10000);
-//          Serial.print("*** debug: x       = ");Serial.println(x,DEC);//??? Debug
-//          Serial.print("*** debug: A       = ");Serial.println(S.PulseTimeDivision,DEC);//??? Debug
-//          Serial.print("*** debug: B       = ");Serial.println(S.PulseTimeMultiplication,DEC);//??? Debug
-//          Serial.print("*** debug: C       = ");Serial.println(S.PulseTimeOffset,DEC);//??? Debug
-//          Serial.print("*** debug: Formula = ");Serial.println(S.PulseTimeFormula,DEC);//??? Debug
-//          Serial.print("*** debug: UserVar[Par1-1]        = ");Serial.println(UserVar[Par1-1],DEC);//??? Debug          
+          if(S.PulseTimeFormula==1 && S.PulseTime_A!=0)
+            a=(S.PulseTime_B*PulseTime)/S.PulseTime_A+S.PulseTime_C;
+          else if(S.PulseTimeFormula==2 && PulseTime!=0)            
+            a=(S.PulseTime_B*S.PulseTime_A)/PulseTime+S.PulseTime_C;
+
+//          Serial.print("*** debug: A        = ");Serial.println(S.PulseTime_A,DEC);//??? Debug
+//          Serial.print("*** debug: B        = ");Serial.println(S.PulseTime_B,DEC);//??? Debug
+//          Serial.print("*** debug: C        = ");Serial.println(S.PulseTime_C,DEC);//??? Debug
+//          Serial.print("*** debug: Formula  = ");Serial.println(S.PulseTimeFormula,DEC);//??? Debug
           }
 
+        if(abs(a)<=10000)
+          UserVar[Par1-1]=a;
+
+//        Serial.print("*** debug: a                      = ");Serial.println(a,DEC);//??? Debug          
+//        Serial.print("*** debug: UserVar[Par1-1]        = ");Serial.println(UserVar[Par1-1],DEC);//??? Debug          
         ProcessEvent(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
-
-
-
         break;
 
       case CMD_VARIABLE_VARIABLE:
@@ -676,7 +674,7 @@ void ExecuteLine(char *Line, byte Port)
   int EventlistWriteLine=0;
   byte Error=0,Par1,Par2,Cmd;
   byte State_EventlistWrite=0;
-  unsigned long v,event,action; 
+  unsigned long v,event,a; 
 
   Led(RED);
 
@@ -973,7 +971,7 @@ void ExecuteLine(char *Line, byte Port)
               }
             break;            
 
-          case CMD_PULSE_CALCULATE: // "Pulse  <Time,Count>, <Formula> , <Division>, <Multiplication> , <Offset>"
+          case CMD_PULSE_CALCULATE: // "Pulse  <Time,Count>, <Formula> , <_A>, <_B> , <_C>"
             {
             Error=ERROR_02;
 
@@ -982,41 +980,44 @@ void ExecuteLine(char *Line, byte Port)
               S.PulseTimeFormula=Par2;
               if(GetArgv(Command,TmpStr,4))
                 {
-                S.PulseTimeDivision=str2int(TmpStr);
+                S.PulseTime_A=str2int(TmpStr);
                 if(GetArgv(Command,TmpStr,5))
                   {
-                  S.PulseTimeMultiplication=str2AnalogInt(TmpStr);
+                  S.PulseTime_B=str2AnalogInt(TmpStr);
                   if(GetArgv(Command,TmpStr,6))
                     {
-                    S.PulseTimeOffset=str2AnalogInt(TmpStr);
-                    SaveSettings();
-                    if(S.PulseTimeMultiplication!=0 && S.PulseTimeDivision!=0)
+                    S.PulseTime_C=str2AnalogInt(TmpStr);
+                    if(S.PulseTime_B!=0 && S.PulseTime_A!=0)
+                      {
+                      SaveSettings();
                       Error=0;
+                      }
                     }
                   }
                 }
               }
 
-            if(Par1==VALUE_TIME)
+            if(Par1==VALUE_COUNT)
               {
               S.PulseCountFormula=Par2;
               if(GetArgv(Command,TmpStr,4))
                 {
-                S.PulseCountDivision=str2int(TmpStr);
+                S.PulseCount_A=str2int(TmpStr);
                 if(GetArgv(Command,TmpStr,5))
                   {
-                  S.PulseCountMultiplication=str2AnalogInt(TmpStr);
+                  S.PulseCount_B=str2AnalogInt(TmpStr);
                   if(GetArgv(Command,TmpStr,6))
                     {
-                    S.PulseCountOffset=str2AnalogInt(TmpStr);
-                    SaveSettings();
-                    if(S.PulseCountMultiplication!=0 && S.PulseCountDivision!=0)
+                    S.PulseCount_C=str2AnalogInt(TmpStr);
+                    if(S.PulseCount_B!=0 && S.PulseCount_A!=0)
+                      {
+                      SaveSettings();
                       Error=0;
+                      }
                     }
                   }
                 }
               }
-              
             break;
             }
                   
@@ -1208,8 +1209,8 @@ void ExecuteLine(char *Line, byte Port)
   
         if(State_EventlistWrite==2)
           {
-          action=v;
-          if(!Eventlist_Write(EventlistWriteLine,event,action))
+          a=v;
+          if(!Eventlist_Write(EventlistWriteLine,event,a))
             {
             RaiseError(ERROR_06);    
             return;
