@@ -21,15 +21,15 @@ function get_data($url)
 		return $data;
 	}
 
-$event = str_replace ( ' ', '%20',$_GET["event"]);
+$id_1 = str_replace ( ' ', '%20',$_GET["event"]);
 $nodo_ip = $rowUsers['nodo_ip'];
 $nodo_port = $rowUsers['nodo_port'];
 $nodo_id = $rowUsers['nodo_id'];
 $nodo_password = $rowUsers['nodo_password'];
 
-if ($event != NULL) { 
+if ($id_1 != NULL) { 
 //get_data('http://'.$row['host'].':'.$row['port']."/?$id_1");
-get_data("http://$nodo_ip:$nodo_port/?event=$event&password=$nodo_password&id=$nodo_id");
+get_data("http://$nodo_ip:$nodo_port/?event=$id_1&password=$nodo_password&id=$nodo_id");
 }
 
 ?>

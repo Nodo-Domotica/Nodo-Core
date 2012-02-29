@@ -118,7 +118,8 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
 				
 	<br>
 	
-		
+	
+	
 		<form action="values.php" data-ajax="false" method="post"> 
 					
 		<br>

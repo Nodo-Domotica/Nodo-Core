@@ -1,4 +1,4 @@
-<?php require_once('connections/tc.php'); ?>
+<?php require_once('Connections/tc.php'); ?>
 
 
 <?php 
@@ -20,7 +20,7 @@ $id = $row['id'];
 		//log in the user
 		session_start();
 		$_SESSION['userId'] = $id;
-		header("Location: index.php");
+		header("Location: /");
 	}
 	
 	else

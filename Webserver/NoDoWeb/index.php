@@ -28,9 +28,9 @@ $totalRows_RSdevices = mysql_num_rows($RSdevices);
 	
 	<?php require_once('include/jquery_mobile.php'); ?>
 	
-	<!-- client side java -->
+	<!-- NoDoWebapp client side java -->
 	<script src="js/get_device_state.js"></script>
-	<!-- /client side java -->
+	<!-- /NoDoWebapp client side java -->
 	
 	
 	<?php require_once('include/send_event.php'); ?>

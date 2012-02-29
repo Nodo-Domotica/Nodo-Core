@@ -23,7 +23,7 @@
 		<?php
 			
 		switch ($send_method) {
-		 //Apop nog van toepassing via de webapp?
+		 
 		 case 1:
 		 ?>  
 						$http.open('GET', 'forward_apop.php' + '?event=' + event + '&unique=' + new Date().getTime(), true);

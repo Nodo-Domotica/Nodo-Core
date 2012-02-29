@@ -103,7 +103,7 @@ $RSsensor = mysql_query($query_RSsensor, $tc) or die(mysql_error());
 			}
 			
 					
-			echo "<div data-role=\"collapsible\" data-iconpos=\"right\" data-content-theme=\"c\">";
+			echo "<div data-role=\"collapsible\" data-content-theme=\"c\">";
 			
 			//Input or Ouput icon
 			if ($row_RSsensor['input_output'] == 1) {echo "<h3>Out: ";}

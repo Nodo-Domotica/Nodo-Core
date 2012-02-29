@@ -188,7 +188,7 @@ $userId = $row['id'];
 					switch ($par2) {
 
 						case "on" :
-							$status = 1;
+						$status = 1;
 						break;
 						
 						case "off" :
@@ -203,6 +203,40 @@ $userId = $row['id'];
 					mysql_query("UPDATE nodo_tbl_devices SET status='$status' WHERE address='$address' AND type='3' AND user_id='$userId'") or die(mysql_error());   
 								
 				break;
+				
+				//E-mail sturen
+				case "userevent" :
+				
+					
+					$userevent = $par1.",".$par2;
+					
+					
+					
+					
+					mysql_select_db($database_tc, $tc);
+					$RSnotify = mysql_query("SELECT * FROM nodo_tbl_notifications WHERE user_id='$userId' AND userevent='$userevent'") or die(mysql_error());  
+					
+					while($row_RSnotify = mysql_fetch_array($RSnotify)) 
+						{                                
+					   
+							 $to = $row_RSnotify['recipient'];
+							 $subject = $row_RSnotify['subject'];
+							 $message = $row_RSnotify['body'];
+							 $from = "webapp@nodo-domotica.nl";
+							 $headers = "From:" . $from;
+							 mail($to,$subject,$message,$headers);
+							 
+ 
+						}         
+			
+					
+				break;
+				
+				
+				
+				
+				
+				
 				default :
 
 				break;
