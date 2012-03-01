@@ -99,51 +99,6 @@ $page_title="Setup: Edit Notification";
 	
 </div><!-- /page -->
 
-<script>	
-
-<?php if ($row['type'] == 1) {
-
-echo "$('#label_adres_newkaku').hide();"; }
-
-else {
-
-echo "$('#label_adres_kaku').hide();"; }
-
-?>
-
-
-
-
-$('#type').change(function() 
-{
-
-if ($(this).attr('value')==1) {   
-
-$('#name_div').show();  
-$('#adres_div').show();
-$('#dim_div').hide();
-$('#homecode_div').show();
-$('#submit_div').show();
-
-$('#label_adres_kaku').show();
-$('#label_adres_newkaku').hide();
-}
-   //alert('Value change to ' + $(this).attr('value'));
-if ($(this).attr('value')==2) {   
-
-$('#name_div').show();  
-$('#adres_div').show();
-$('#dim_div').show();
-$('#homecode_div').hide();
-$('#submit_div').show();
-
-$('#label_adres_kaku').hide();
-$('#label_adres_newkaku').show();
-
-}
-   
-});
-</script> 
  
 </body>
 </html>

@@ -71,6 +71,7 @@ $userId = $row['id'];
 			$par2 = strtolower($cmd_array[2]);
 			
 			
+			//Debug info
 			echo "cmd: ";
 			echo $cmd;
 			echo "<br>";
@@ -109,8 +110,7 @@ $userId = $row['id'];
 						
 				break;
 
-
-				
+			
 				case "kaku" :
 				
 					switch ($par2) {
@@ -188,7 +188,7 @@ $userId = $row['id'];
 					switch ($par2) {
 
 						case "on" :
-						$status = 1;
+							$status = 1;
 						break;
 						
 						case "off" :
@@ -204,18 +204,18 @@ $userId = $row['id'];
 								
 				break;
 				
-				//E-mail sturen
+				//E-mail sturen als het userevent voorkomt in de tabel nodo_tbl_notifications
 				case "userevent" :
 				
 					
 					$userevent = $par1.",".$par2;
 					
-					
-					
-					
+									
 					mysql_select_db($database_tc, $tc);
 					$RSnotify = mysql_query("SELECT * FROM nodo_tbl_notifications WHERE user_id='$userId' AND userevent='$userevent'") or die(mysql_error());  
 					
+					
+					//Door onderstaande while loop is het mogelijk om hetzelfde userevent naar verschillende e-mail adressen met een verschillende subject en body  te sturen.
 					while($row_RSnotify = mysql_fetch_array($RSnotify)) 
 						{                                
 					   
@@ -226,8 +226,7 @@ $userId = $row['id'];
 							 $headers = "From:" . $from;
 							 mail($to,$subject,$message,$headers);
 							 
- 
-						}         
+ 						}         
 			
 					
 				break;
@@ -256,13 +255,13 @@ $userId = $row['id'];
 			
 
 			
-			$file = $_GET['file'];
-			
-			mysql_select_db($database_tc, $tc);
-			$result = mysql_query("SELECT * FROM nodo_tbl_scripts WHERE file='$file' AND user_id='$userId'") or die(mysql_error());  
-			$row = mysql_fetch_array($result);
-			echo $row['script'];
-			echo "\n";
+				$file = $_GET['file'];
+				
+				mysql_select_db($database_tc, $tc);
+				$result = mysql_query("SELECT * FROM nodo_tbl_scripts WHERE file='$file' AND user_id='$userId'") or die(mysql_error());  
+				$row = mysql_fetch_array($result);
+				echo $row['script'];
+				echo "\n";
 			
 			
 			

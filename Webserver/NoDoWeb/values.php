@@ -57,6 +57,10 @@ $RSsensor = mysql_query($query_RSsensor, $tc) or die(mysql_error());
     <script language="javascript" type="text/javascript" src="js/flot/jquery.flot.js"></script>
 	<script language="javascript" type="text/javascript" src="js/flot/jquery.flot.resize.js"></script>
 	
+	<!-- NoDoWebapp client side java -->
+	<script src="js/get_values.js"></script>
+	<!-- /NoDoWebapp client side java -->
+	
 </head> 
 
 <body> 
@@ -105,7 +109,7 @@ $RSsensor = mysql_query($query_RSsensor, $tc) or die(mysql_error());
 					
 			echo "<div data-role=\"collapsible\" data-content-theme=\"c\">";
 			
-			//Input or Ouput icon
+			//Input or Ouput
 			if ($row_RSsensor['input_output'] == 1) {echo "<h3>Out: ";}
 			if ($row_RSsensor['input_output'] == 2) {echo "<h3>In: ";}
 			
@@ -115,12 +119,12 @@ $RSsensor = mysql_query($query_RSsensor, $tc) or die(mysql_error());
 			
 			
 			//Value suffix
-			if ($row_RSsensor['display'] == 1){	echo $row_RSsensor['data']." ".$row_RSsensor['sensor_suffix']."</h3>";}
+			if ($row_RSsensor['display'] == 1){	echo "<span id='value_".$row_RSsensor['id']."'></span>"." ".$row_RSsensor['sensor_suffix']."</h3>";}
 			
 			//State suffix
 			if ($row_RSsensor['display'] == 2){
-					if ($row_RSsensor['data'] <=0){	echo $row_RSsensor['sensor_suffix_false']."</h3>";}
-					if ($row_RSsensor['data'] > 0){	echo $row_RSsensor['sensor_suffix_true']."</h3>"; }
+					
+					echo "<span id='value_".$row_RSsensor['id']."'></span></h3>";
 	}
 				
 				
@@ -130,8 +134,8 @@ Grafiek: Values
 **********************************************************************************************************************************************************************************************/				
 
 			
-		//Alleen een grafiek weergeven als het een output vanuit de nodo richting webapp betreft
-		if ($row_RSsensor['input_output'] == 2){
+		//Alleen een grafiek weergeven als het een output vanuit de nodo richting webapp betreft en het waarde betreft.
+		if ($row_RSsensor['input_output'] == 2 && $row_RSsensor['display'] == 1){
 		?>
 			<br>
 			<div id="<?php echo $row_RSsensor['id']; ?>" style="width:100%;height:300px;"></div>
@@ -190,12 +194,12 @@ Input control
 				var t<?php echo $row_RSsensor['id']; ?>;
 				function update_distance_timer_<?php echo $row_RSsensor['id']; ?>()	{
 					clearTimeout(t<?php echo $row_RSsensor['id']; ?>);
-					t<?php echo $row_RSsensor['id']; ?>=setTimeout("update_distance_<?php echo $row_RSsensor['id']; ?>()",200);
+					t<?php echo $row_RSsensor['id']; ?>=setTimeout("update_distance_<?php echo $row_RSsensor['id']; ?>()",1000);
 					}
 				function update_distance_<?php echo $row_RSsensor['id']; ?>() {
 					var val<?php echo $row_RSsensor['id']; ?> = $('#distSlider<?php echo $row_RSsensor['id']; ?>').val();
 					//alert(val);
-					send_event('variableset <?php echo $row_RSsensor['par1']; ?>,' + val<?php echo $row_RSsensor['id'];?> + ';VariableEvent,' + <?php echo $row_RSsensor['par1'];?> )
+					send_event('variableset <?php echo $row_RSsensor['par1']; ?>,' + val<?php echo $row_RSsensor['id'];?>)
 					}
 			</script>
 		
@@ -212,7 +216,6 @@ Input control
 /Input control
 **********************************************************************************************************************************************************************************************/		
 ?>
-
 	
 
 </div><!-- /content -->

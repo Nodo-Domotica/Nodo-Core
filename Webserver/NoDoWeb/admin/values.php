@@ -60,9 +60,10 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
  }
  
  if ($_POST['display'] == 2) {
- 
-	 $suffix_true = mysql_real_escape_string(htmlspecialchars($_POST['suffix_true']));
-	 $suffix_false = mysql_real_escape_string(htmlspecialchars($_POST['suffix_false']));
+
+	// ' vervangen door &#8217; omdat we anders met het get_value.js script in de knoei komen als iemand ' gebruikt 
+	 $suffix_true = str_replace("'","&#8217;",mysql_real_escape_string(htmlspecialchars($_POST['suffix_true'])));
+	 $suffix_false = str_replace("'","&#8217;",mysql_real_escape_string(htmlspecialchars($_POST['suffix_false'])));
 	 }
  
  else {
@@ -307,8 +308,7 @@ if ($(this).attr('value')==1) {
 
 $('#state_div').hide(); 
 $('#value_div').show(); 
-//$('#label_wiredanalog_div').show();
-//$('#label_variable_div').hide(); 
+$('#graph_div').show(); 
 
       
 
@@ -318,8 +318,7 @@ if ($(this).attr('value')==2) {
 
 $('#state_div').show(); 
 $('#value_div').hide(); 
-//$('#label_wiredanalog_div').hide(); 
-//$('#label_variable_div').show();
+$('#graph_div').hide(); 
 
  
 

@@ -64,8 +64,9 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
  
  if ($_POST['display'] == 2) {
  
-	 $suffix_true = mysql_real_escape_string(htmlspecialchars($_POST['suffix_true']));
-	 $suffix_false = mysql_real_escape_string(htmlspecialchars($_POST['suffix_false']));
+	 // ' vervangen door &#8217; omdat we anders met het get_value.js script in de knoei komen als iemand ' gebruikt 
+	 $suffix_true = str_replace("'","&#8217;",mysql_real_escape_string(htmlspecialchars($_POST['suffix_true'])));
+	 $suffix_false = str_replace("'","&#8217;",mysql_real_escape_string(htmlspecialchars($_POST['suffix_false'])));
 	 }
  
  else {
@@ -271,34 +272,7 @@ if ($row['sensor_type'] == 1) {
 	
 }
 
-if ($row['display'] == 1) { 
 
-	echo "$('#state_div').hide();";
-	echo "$('#value_div').show();";
-
-}
-
-if ($row['display'] == 2) { 
-
-	echo "$('#state_div').show();";
-	echo "$('#value_div').hide();";
-
-}
-
-if ($row['input_output'] == 1) { 
-	
-	echo "$('#input_output_div').show();";
-	echo "$('#input_div').show();";
-	echo "$('#graph_div').hide();";
-}
-if ($row['input_output'] == 2) { 
-	
-	//echo "$('#input_div').hide();";
-	echo "$('#input_output_div').show();";
-	echo "$('#input_div').hide();";
-	echo "$('#graph_div').show();";
-}
-	
 if ($row['input_control'] == 1) { 
 	
 	echo "$('#slider_min_max_div').hide();";
@@ -311,7 +285,44 @@ if ($row['input_control'] == 2) {
 	
 }	
 
+if ($row['display'] == 1) { 
 
+	echo "$('#state_div').hide();";
+	echo "$('#value_div').show();";
+	echo "$('#graph_div').show();";
+
+}
+
+if ($row['display'] == 2) { 
+
+	echo "$('#state_div').show();";
+	echo "$('#value_div').hide();";
+	echo "$('#graph_div').hide();";
+
+}
+
+if ($row['input_output'] == 1) { 
+	
+	echo "$('#input_output_div').show();";
+	echo "$('#input_div').show();";
+	echo "$('#graph_div').hide();";
+}
+if ($row['input_output'] == 2) { 
+	
+	
+	echo "$('#input_output_div').show();";
+	echo "$('#input_div').hide();";
+	echo "$('#graph_div').show();";
+}
+
+if ($row['input_output'] == 2 && $row['display'] == 2 ) { 
+	
+	
+	echo "$('#state_div').show();";
+	echo "$('#value_div').hide();";
+	echo "$('#graph_div').hide();";
+}
+	
 
 ?>
 
@@ -347,8 +358,7 @@ if ($(this).attr('value')==1) {
 
 $('#state_div').hide(); 
 $('#value_div').show(); 
-//$('#label_wiredanalog_div').show();
-//$('#label_variable_div').hide(); 
+$('#graph_div').show();
 
       
 
@@ -358,8 +368,7 @@ if ($(this).attr('value')==2) {
 
 $('#state_div').show(); 
 $('#value_div').hide(); 
-//$('#label_wiredanalog_div').hide(); 
-//$('#label_variable_div').show();
+$('#graph_div').hide();
 
  
 
