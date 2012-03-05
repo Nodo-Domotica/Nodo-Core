@@ -37,7 +37,7 @@
 
 
 #define DEBUG 1
-#define NODO_PLUGIN 1
+#define USER_PLUGIN 1
 
 #include "pins_arduino.h"
 #include <EEPROM.h>
@@ -685,8 +685,8 @@ boolean ConfirmHTTP=false;                                  // Als true, dan wor
 boolean SerialConnected;                                    // Vlag geeft aan of er een verbinding USB-poort.
 boolean TemporyEventGhostError=false;                       // Vlag om tijdelijk evetghost verzending stil te leggen na een communicatie probleem
 int TerminalLocked=1;                                       // 0 als als gebruiker van een telnet terminalsessie juiste wachtwoord heeft ingetoetst
-volatile int PulseCount=0;                                  // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
-volatile long PulseTime=0;                                  // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
+volatile unsigned long PulseCount=0;                        // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
+volatile unsigned long PulseTime=0;                         // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
 volatile unsigned long PulseTimePrevious=0;                 // Tijdsduur tussen twee pulsen teller in milliseconden: vorige meting
 char TempLogFile[13];                                       // Naam van de Logfile waar (naast de standaard logging) de verwerking in gelogd moet worden.
 int FileWriteMode=0;                                        // Het aantal seconden dat deze timer ingesteld staat zal er geen verwerking plaats vinden van TerminalInvoer. Iedere seconde --.

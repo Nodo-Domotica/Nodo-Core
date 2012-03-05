@@ -1,13 +1,9 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- Issue 277: VariableWiredAnalog parameters niet correct. 
-- Variable bugjes opgelost die tot "Error in parameter" fout leidde.
-- Automatisch event genereren bij ieder varabele commando.
-- Commando "VariableEvent" weer verwijderd
-- Nieuwe routines voor pulsaantal en pulstijd berekenen.
-- "PulseCalculate" vervangen door "PulseFormula": Zie: http://www.w-a.nl/nodowiki/index.php/PulseFormula
-- Aanpassing commando "VariablePulse". Zie: http://www.w-a.nl/nodowiki/index.php/VariablePulse
+- Aanpassing berekening resultaat VariablePulse. 
+- na opgeven formule voor berekenen pulsen geen reset meer nodig.
+- userplugin geactiveerd
 
 Known Errors / ToDo:
 - Divert
