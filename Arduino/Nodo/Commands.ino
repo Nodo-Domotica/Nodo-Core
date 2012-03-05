@@ -376,8 +376,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         a=0;
         if(S.Debug==VALUE_ON)
           {
-          Serial.print("*** debug: Aantal pulsen      = ");Serial.println(PulseCount,DEC);//??? Debug
-          Serial.print("*** debug: Tijd tussen pulsen = ");Serial.println(PulseTime,DEC); //??? Debug
+          Serial.print("*** debug: PulseCount=");Serial.print(PulseCount,DEC);//??? Debug
+          Serial.print(", PulseTime=");Serial.println(PulseTime,DEC); //??? Debug
           }
 
         //Formule-1: Variable = ( Pulse / A ) * B + C
@@ -400,6 +400,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           
         if(Par2==VALUE_TIME)
           {
+          a=PulseTime;
           if(S.PulseTimeFormula==1 && S.PulseTime_A!=0)
             a=(S.PulseTime_B*PulseTime)/S.PulseTime_A+S.PulseTime_C;
           else if(S.PulseTimeFormula==2 && PulseTime!=0)            
@@ -412,7 +413,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           }
 
         if(abs(a)<=10000)
-          UserVar[Par1-1]=a;
+          UserVar[Par1-1]=(int)a;
 
 //        Serial.print("*** debug: a                      = ");Serial.println(a,DEC);//??? Debug          
 //        Serial.print("*** debug: UserVar[Par1-1]        = ");Serial.println(UserVar[Par1-1],DEC);//??? Debug          
@@ -620,7 +621,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         strcat(TempString,".dat");
         ExecuteLine(TempString,Src);
         break;        
-
 
       case CMD_WIRED_THRESHOLD:
         // Dit commando wordt ook afgevangen in ExecuteLine(). Hier opgenomen i.g.v. ontvangst via RF of IR
@@ -990,6 +990,7 @@ void ExecuteLine(char *Line, byte Port)
                     if(S.PulseTime_B!=0 && S.PulseTime_A!=0)
                       {
                       SaveSettings();
+                      attachInterrupt(5,PulseCounterISR,FALLING); // IRQ-5 is specifiek voor Pen 18 (PIN_IR_RX_DATA) van de ATMega. ??? aanpassen voor de UNO
                       Error=0;
                       }
                     }

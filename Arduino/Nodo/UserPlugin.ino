@@ -42,7 +42,7 @@ void UserPlugin_Command(int Par1, int Par2)
   // Schrijf hier je eigen code
   // onderstaand een paar voorbeelden.
   
-  
+    
   // VOORBEELD-1: een gebruikersvariabelen gebruiken:
   UserVar[0]=123;           // Gebruikersvariabele 1 is nu gelijk aan 123. variabelen starten met [0] en mogen max. waarde hebben van 255 
   int MijnVar=UserVar[5];   // MijnVar is gelijk aan de gebruikersvariabele 6 (immers 0 is de eerste)
@@ -57,7 +57,6 @@ void UserPlugin_Command(int Par1, int Par2)
 
   // VOORBEELD-4: Loggen naar de SDCard
   AddFileSDCard("log.dat","Hello, UserPlugin was here.");
-
   }
 
 
@@ -96,7 +95,7 @@ boolean UserPlugin_Receive(unsigned long Event)
 
 void UserPlugin_Periodically()
   {
-    // VOORBEELD-1: Kookwekker die (ongeveer) iedere minuut af gaat
+  // VOORBEELD-1: Kookwekker die (ongeveer) iedere minuut af gaat
 
     
   return;
