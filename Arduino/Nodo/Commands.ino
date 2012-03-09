@@ -57,7 +57,6 @@ byte CommandError(unsigned long Content)
     {
     //test; geen, altijd goed
     case CMD_FILE_GET_HTTP:
-    case CMD_IP_SETTINGS:
     case CMD_RAWSIGNAL_SAVE:
     case CMD_RAWSIGNAL_SEND:
     case CMD_FILE_SHOW:
@@ -66,7 +65,8 @@ byte CommandError(unsigned long Content)
     case CMD_FILE_WRITE:
     case CMD_FILE_LIST:
     case CMD_FILE_LOG:
-    case CMD_PORT:
+    case CMD_PORT_SERVER:
+    case CMD_PORT_CLIENT:
     case CMD_SEND: //??? t.b.v. test/ontwikkeling. nog niet operationeel.
     case CMD_ERROR:
     case CMD_REBOOT:
@@ -96,7 +96,7 @@ byte CommandError(unsigned long Content)
     case CMD_KAKU:
     case CMD_SEND_KAKU:
     case CMD_EVENTGHOST_SERVER:
-    case CMD_PULSE_CALCULATE:
+    case CMD_PULSE_FORMULA:
       return false;
  
     case CMD_SEND_KAKU_NEW:
@@ -783,10 +783,6 @@ void ExecuteLine(char *Line, byte Port)
               }
             break;
     
-          case CMD_IP_SETTINGS:
-            PrintIPSettings();
-            break;
-
           case CMD_FILE_GET_HTTP:
             {
             if(GetArgv(Command,TempString,2))
@@ -922,6 +918,13 @@ void ExecuteLine(char *Line, byte Port)
             SaveSettings();
             break;
             
+          case CMD_DNS_SERVER:
+            if(GetArgv(Command,TmpStr,2))
+              if(!str2ip(TmpStr,S.DnsServer))
+                Error=ERROR_02;
+            SaveSettings();
+            break;
+            
           case CMD_GATEWAY:
             if(GetArgv(Command,TmpStr,2))
               if(!str2ip(TmpStr,S.Gateway))
@@ -971,7 +974,7 @@ void ExecuteLine(char *Line, byte Port)
               }
             break;            
 
-          case CMD_PULSE_CALCULATE: // "Pulse  <Time,Count>, <Formula> , <_A>, <_B> , <_C>"
+          case CMD_PULSE_FORMULA: // "Pulse  <Time,Count>, <Formula> , <_A>, <_B> , <_C>"
             {
             Error=ERROR_02;
 
@@ -1145,11 +1148,21 @@ void ExecuteLine(char *Line, byte Port)
             break;
             }  
 
-          case CMD_PORT:
+          case CMD_PORT_SERVER:
             {
             if(GetArgv(Command,TmpStr,2))
               {
-              S.Port=str2int(TmpStr);
+              S.PortServer=str2int(TmpStr);
+              SaveSettings();
+              }
+            break;
+            }  
+
+          case CMD_PORT_CLIENT:
+            {
+            if(GetArgv(Command,TmpStr,2))
+              {
+              S.PortClient=str2int(TmpStr);
               SaveSettings();
               }
             break;

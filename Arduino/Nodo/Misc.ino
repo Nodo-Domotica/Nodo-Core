@@ -172,6 +172,20 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       *Par1=xPar1;
       *Par2=(WiredOutputStatus[xPar1-1])?VALUE_ON:VALUE_OFF;
       break;
+
+    // pro-forma de commando's die geen fout op mogen leveren omdat deze elders in de statusafhandeling worden weergegeven
+    case CMD_NODO_IP:
+    case CMD_GATEWAY:
+    case CMD_SUBNET:
+    case CMD_DNS_SERVER:
+    case CMD_PORT_SERVER:
+    case CMD_PORT_CLIENT:
+    case CMD_HTTP_REQUEST:
+    case CMD_ID:
+    case CMD_EVENTGHOST_SERVER:
+      *Par1=0;
+      *Par2=0;
+      break;
       
     default:
       return false;
@@ -264,19 +278,22 @@ void ResetFactory(void)
   S.EventGhostServer_IP[2]     = 0; // IP adres van de EventGhost server
   S.EventGhostServer_IP[3]     = 0; // IP adres van de EventGhost server
   S.HTTPRequest[0]             = 0; // string van het HTTP adres leeg maken
-  S.Port                       = 80;
-  S.Nodo_IP[0]                 = 192;
-  S.Nodo_IP[1]                 = 168;
-  S.Nodo_IP[2]                 = 1;
-  S.Nodo_IP[3]                 = 150;
-  S.Gateway[0]                 = 192;
-  S.Gateway[1]                 = 168;
-  S.Gateway[2]                 = 1;
-  S.Gateway[3]                 = 1;
+  S.Nodo_IP[0]                 = 0;
+  S.Nodo_IP[1]                 = 0;
+  S.Nodo_IP[2]                 = 0;
+  S.Nodo_IP[3]                 = 0;
+  S.Gateway[0]                 = 0;
+  S.Gateway[1]                 = 0;
+  S.Gateway[2]                 = 0;
+  S.Gateway[3]                 = 0;
   S.Subnet[0]                  = 255;
   S.Subnet[1]                  = 255;
   S.Subnet[2]                  = 255;
   S.Subnet[3]                  = 0;
+  S.DnsServer[0]               = 0;
+  S.DnsServer[1]               = 0;
+  S.DnsServer[2]               = 0;
+  S.DnsServer[3]               = 0;
   S.PulseTimeFormula           = 0;
   S.PulseTime_A                = 0;
   S.PulseTime_B                = 0;
@@ -285,6 +302,8 @@ void ResetFactory(void)
   S.PulseCount_A               = 0;
   S.PulseCount_C               = 0;
   S.PulseCount_B               = 0;
+  S.PortServer                 = 80;
+  S.PortClient                 = 80;
 
   strcpy(S.Password,ProgmemString(Text_10));
   strcpy(S.ID,ProgmemString(Text_16));
@@ -352,13 +371,14 @@ void FreeMemory(int x)
   * Geeft de status weer of verzendt deze.
   * verzend de status van een setting als event.
   * Par1 = Command
-  * Par2 = selectie (poort, variabele, timer) Als nul, dan walidcard voor alle.
+  * Par2 = selectie (poort, variabele, timer) Als nul, dan waldcard voor alle.
  \**********************************************************************************************/
-void Status(byte Par1, byte Par2, boolean SendEvent)
+void Status(byte Par1, byte Par2, boolean Transmit)
   {
   byte CMD_Start,CMD_End;
   byte Par1_Start,Par1_End;
   byte x,P1,P2; // in deze variabele wordt de waarde geplaats (call by reference)
+  boolean s;
   
   if(Par1==0)
     return;
@@ -380,15 +400,81 @@ void Status(byte Par1, byte Par2, boolean SendEvent)
     }
   else
     {
-    if(!GetStatus(&Par1,&P1,&P2))// x is hier even een dummy voor vulling call by reference
+    if(!GetStatus(&Par1,&P1,&P2))// kijk of voor de opgegeven parameter de status opvraagbaar is. Zo niet dan klaar. Error in parameter???
       return;
     CMD_Start=Par1;
     CMD_End=Par1;
     }
 
+  if(!Transmit)PrintTerminal(ProgmemString(Text_22));
+
   for(x=CMD_Start; x<=CMD_End; x++)
     {
-    if(GetStatus(&x,&P1,&P2)) // Als het een geldige uitvraag is. let op: call by reference !
+    if(!Transmit)
+      {
+      s=true;
+      switch (x)
+        {
+        case CMD_NODO_IP:
+          sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_NODO_IP), Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
+          if((S.Nodo_IP[0] + S.Nodo_IP[1] + S.Nodo_IP[2] + S.Nodo_IP[3])==0)
+            strcat(TempString," (DHCP)");
+          PrintTerminal(TempString);
+          break;
+
+        case CMD_GATEWAY:
+          // Gateway
+          sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_GATEWAY),S.Gateway[0],S.Gateway[1],S.Gateway[2],S.Gateway[3]);
+          PrintTerminal(TempString);
+          break;
+
+        case CMD_SUBNET:
+          // Subnetmask
+          sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_SUBNET),S.Subnet[0],S.Subnet[1],S.Subnet[2],S.Subnet[3]);
+          PrintTerminal(TempString);
+          break;
+
+        case CMD_DNS_SERVER:
+          // DnsServer
+          sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_DNS_SERVER),S.DnsServer[0],S.DnsServer[1],S.DnsServer[2],S.DnsServer[3]);
+          PrintTerminal(TempString);
+          break;
+
+        case CMD_PORT_SERVER:
+          sprintf(TempString,"%s %d",cmd2str(CMD_PORT_SERVER), S.PortServer);
+          PrintTerminal(TempString);
+          break;
+
+        case CMD_PORT_CLIENT:
+          sprintf(TempString,"%s %d",cmd2str(CMD_PORT_CLIENT), S.PortClient);
+          PrintTerminal(TempString);
+          break;
+
+        case CMD_HTTP_REQUEST:
+          sprintf(TempString,"%s %s",cmd2str(CMD_HTTP_REQUEST),S.HTTPRequest);
+          PrintTerminal(TempString);
+          break;
+
+        case CMD_ID:
+          sprintf(TempString,"%s %s",cmd2str(CMD_ID), S.ID);
+          PrintTerminal(TempString);
+          break;
+          
+        case CMD_EVENTGHOST_SERVER:
+          // EvetGhost client IP
+          sprintf(TempString,"%s %u.%u.%u.%u ",cmd2str(CMD_EVENTGHOST_SERVER),S.EventGhostServer_IP[0],S.EventGhostServer_IP[1],S.EventGhostServer_IP[2],S.EventGhostServer_IP[3]);
+          if(S.AutoSaveEventGhostIP==VALUE_AUTO)
+            strcat(TempString," (Auto)");      
+          PrintTerminal(TempString);
+          break;
+
+        default:
+          s=false; 
+          break;
+        }
+      }
+      
+    if(!s && GetStatus(&x,&P1,&P2)) // Als het een geldige uitvraag is. let op: call by reference !
       {
       if(Par2==0) // Als in het commando 'Status Par1, Par2' Par2 niet is gevuld met een waarde
         {
@@ -430,13 +516,14 @@ void Status(byte Par1, byte Par2, boolean SendEvent)
           P1=y;
           P2=0;
           GetStatus(&x,&P1,&P2); // haal status op. Call by Reference!
-          if(SendEvent)
+          if(Transmit)
             TransmitCode(command2event(x,P1,P2),VALUE_ALL); // verzend als event
           else
-            PrintEvent(command2event(x,P1,P2),VALUE_SOURCE_SERIAL,VALUE_DIRECTION_OUTPUT);  // geef event weer op Serial
+            PrintTerminal(Event2str(command2event(x,P1,P2)));
           }
-      }// if Getstatus
-    }// for x
+      }
+    }
+  if(!Transmit)PrintTerminal(ProgmemString(Text_22));
   }
 
 
@@ -653,12 +740,6 @@ boolean Eventlist_Write(int address, unsigned long Event, unsigned long Action)/
   EEPROM.write(address++,(Action>> 8 & 0xFF));
   EEPROM.write(address++,(Action     & 0xFF));
 
-//  // Eerste volgende Event vullen met een 0. Dit markeert het einde van de Eventlist.
-//  EEPROM.write(address++,0);
-//  EEPROM.write(address++,0);
-//  EEPROM.write(address++,0);
-//  EEPROM.write(address  ,0);
-  
   return true;
   }
   

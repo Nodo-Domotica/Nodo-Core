@@ -1,15 +1,24 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- Aanpassing berekening resultaat VariablePulse. 
-- na opgeven formule voor berekenen pulsen geen reset meer nodig.
-- userplugin geactiveerd
+- LET OP: weergave naar Serial pas nadat er tekens via serial zijn ontvangen. Voorkomt zinloze tijdsbesteding als er geen serial aangesloten is!
+- Weergave status nu niet meer volledig zoals een event weergegeven
+- commando "DnsServer" toegevoegd voor instellen van een DNS server.
+- Als IP adres an de Nodo is toegekend door DHCP dan wordt dit met commando "IPSettings" weergegeven
+- Commando "IPSettings" verwijderd. Settings zijn onder gebracht in het commando "Status"
+- Toegevoegd commando "PortServer". Poort voor ontvangst van HTTP en EventGhost events van een Client naar de Nodo als Server. Default 80
+- Toegevoegd commando "PortClient". Poort voor verzenden van HTTP en EventGhost events van de Nodo als client naar een Server. Default 80
+- DNS, GateWay en Submast operationeel gemaakt.
 
 Known Errors / ToDo:
-- Divert
+- Default poort voor "PortServer" nog bepalen. 
+- Divert weer implementeren
+- Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue tesBease
 
 Aanpassingen t.o.v. Nodo Due:
-- Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue tesBease
+- Weergave status nu niet meer volledig zoals een event weergegeven
+- commando "DnsServer" toegevoegd voor instellen van een DNS server.
+- Als IP adres an de Nodo is toegekend door DHCP dan wordt dit in de status weergegeven
 - EventListshow, eventListWrite, eventListErase hebben nu als parameter-1 de regel waar het betrekking op heeft (regel, ALL, 0=All)
 - Nodo ontvangt events via http. Voorbeeld: http://192.168.1.110/?event=sound&passwoord=Nodo&id=00000000
 - Ethernet intergratie. Events van EventGhost (PC, Android) ontvangen en verzenden over IP;
@@ -74,4 +83,5 @@ Aanpassingen t.o.v. Nodo Due:
 - Nieuw commando: "VariableEvent <variable>". Genereert een event met betreffende variabele;
 - Nieuw commando: "PulseCalibrate <high | low>, <pulse_in_mSec>, <value>". Mapt een waarde en de tijd tussen twee pulsen. T.b.v. energiemeting
 - Nieuw commando: "VariablePulse <variable>, <'Count'>". Variabele vullen met gemeten pulstijd of aantal pulsen. 
+- LET OP: weergave naar Serial pas nadat er tekens via serial zijn ontvangen. Voorkomt zinloze tijdsbesteding als er geen serial aangesloten is!
 
