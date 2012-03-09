@@ -2,7 +2,7 @@
 
 require_once('../connections/tc.php'); 
 require_once('../include/auth.php');
-require_once('../include/settings.php');
+require_once('../include/user_settings.php');
 
 $page_title = "Setup: Devices";
 
@@ -84,7 +84,7 @@ else
      
 		<div id="homecode_div">
 		<label for="name" >Home code: (A...P)</label>
-		<input type="text" name="homecode" id="homecode" value=""  />
+		<input type="text" maxLength="1" name="homecode" id="homecode" value=""  />
 		<br>
 		</div>
    
@@ -98,7 +98,7 @@ else
 		<div id="label_adres_wiredout">
 		<label for="name">Port: (1...8)</label>
 		</div>
-		<input type="text" name="address" id="address" value=""  />
+		<input type="text" maxLength="3" name="address" id="address" value=""  />
 		<br>
 		</div>
      

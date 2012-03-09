@@ -2,7 +2,7 @@
 
 require_once('../connections/tc.php'); 
 require_once('../include/auth.php');
-require_once('../include/settings.php');
+require_once('../include/user_settings.php');
 
 $page_title = "Setup: Scripts";	
 
@@ -196,11 +196,11 @@ END Script write
 		<label for="select-script" class="select">Choose script:</label>
 		<select name="select-script-1" id="select-script-1" data-native-menu="false">
 		<option value="EVENTLST" <?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "EVENTLST") {echo 'Selected="Selected"';}}?>>Eventlist</option>
-		<option value="SCRIPT_1"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "SCRIPT_1") {echo 'Selected="Selected"';}}?>>Script 1</option>
-		<option value="SCRIPT_2"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "SCRIPT_2") {echo 'Selected="Selected"';}}?>>Script 2</option>
-		<option value="SCRIPT_3"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "SCRIPT_3") {echo 'Selected="Selected"';}}?>>Script 3</option>
-		<option value="SCRIPT_4"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "SCRIPT_4") {echo 'Selected="Selected"';}}?>>Script 4</option>
-		<option value="SCRIPT_5"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "SCRIPT_5") {echo 'Selected="Selected"';}}?>>Script 5</option>
+		<option value="1"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "1") {echo 'Selected="Selected"';}}?>>Script 1</option>
+		<option value="2"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "2") {echo 'Selected="Selected"';}}?>>Script 2</option>
+		<option value="3"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "3") {echo 'Selected="Selected"';}}?>>Script 3</option>
+		<option value="4"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "4") {echo 'Selected="Selected"';}}?>>Script 4</option>
+		<option value="5"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "5") {echo 'Selected="Selected"';}}?>>Script 5</option>
 		</select>
 		
 		
@@ -263,7 +263,7 @@ if (isset($script)){
 	</div><!-- /header -->
 
 	<div data-role="content">	
-		<h2>Script send to Nodo.</h2>
+		<h2>Script sent to Nodo.</h2>
 				
 		<p><a href="scripts.php" data-role="button" data-inline="true" data-icon="back">Ok</a></p>	
 	

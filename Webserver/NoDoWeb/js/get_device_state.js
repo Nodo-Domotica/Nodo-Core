@@ -1,4 +1,4 @@
-function Switch_State()
+function Device_State()
 //Lees schakelaar status uit
 			{
 				var
@@ -30,7 +30,7 @@ function Switch_State()
 
 			}
 
-Switch_State();
+
 
 
  

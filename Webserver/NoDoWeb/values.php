@@ -1,17 +1,16 @@
 <?php 
+
+ 
 require_once('connections/tc.php'); 
 require_once('include/auth.php'); 
-require_once('include/settings.php'); 
+require_once('include/user_settings.php'); 
 
 $page_title = "Values";
 
-
-//Tijdzone nog uitzoeken...
+//Tijdzone
 date_default_timezone_set('Etc/GMT');
 
 //Grafiek lijnkleur instellen
-			
-			
 switch ($theme) {
 	
 		case "a":
@@ -31,8 +30,6 @@ switch ($theme) {
 		break;
 }
 			
-
-
 
 //lees sensoren uit
 mysql_select_db($database_tc, $tc);
@@ -77,7 +74,7 @@ $RSsensor = mysql_query($query_RSsensor, $tc) or die(mysql_error());
 		
 			$sensor_id = $row_RSsensor['id'];
 			
-			//Maximaal aantal uur welke weergegeven moet worden in de grafiek
+			//Maximaal aantal uur weergegeven in de grafiek
 			if ($row_RSsensor['graph_hours'] == 0) {
 				
 				$graph_hours = "24";
@@ -87,26 +84,82 @@ $RSsensor = mysql_query($query_RSsensor, $tc) or die(mysql_error());
 				$graph_hours = $row_RSsensor['graph_hours'];
 			}
 			
-			switch ($row_RSsensor['graph_min_ticksize']) {
-	
-				case "1":
-				$graph_min_ticksize = "1, \"minute\""; 
-				break;
-				case "2":
-				$graph_min_ticksize = "1, \"hour\"";
-				break;
-				case "3":
-				$graph_min_ticksize = "1, \"day\"";
-				break;
-				case "4":
-				$graph_min_ticksize = "1, \"week\""; 
-				break;
-				case "5":
-				$graph_min_ticksize = "1, \"month\""; 
-				break;
+			
+			
+			//Lijn grafiek
+			if ($row_RSsensor['graph_type'] == 1) {
+			
+				//X-as minimum ticksize
+				switch ($row_RSsensor['graph_min_ticksize']) {
+		
+					case "1":
+					$graph_min_ticksize = "1, \"minute\""; 
+					break;
+					case "2":
+					$graph_min_ticksize = "1, \"hour\"";
+					break;
+					case "3":
+					$graph_min_ticksize = "1, \"day\"";
+					break;
+					case "4":
+					$graph_min_ticksize = "1, \"week\""; 
+					break;
+					case "5":
+					$graph_min_ticksize = "1, \"month\""; 
+					break;
+				}
+								
+				$query_RSsensor_value_data = "SELECT * FROM nodo_tbl_sensor_data WHERE user_id='$userId' AND sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR";
+				//Totalen ophalen gebaseerd op keuze ticksize
+				$RSsensor_value_data = mysql_query($query_RSsensor_value_data, $tc) or die(mysql_error());			
+								
 			}
 			
-					
+				
+			//Staaf grafiek
+			if ($row_RSsensor['graph_type'] == 2) {
+			
+			
+				switch ($row_RSsensor['graph_min_ticksize']) {
+		
+					case "1":
+					$graph_min_ticksize = "1, \"minute\""; 
+					$graph_bar_width = 30000;
+					$query_RSsensor_value_data = "SELECT sensor_id,DATE_FORMAT(timestamp , '%Y-%m-%d %H:%i:00') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE user_id='$userId' AND sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY minute(timestamp)";
+					break;
+					case "2":
+					$graph_min_ticksize = "1, \"hour\"";
+					$graph_bar_width = 1800000;
+					$query_RSsensor_value_data = "SELECT sensor_id,DATE_FORMAT(timestamp , '%Y-%m-%d %H:00') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE user_id='$userId' AND sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY hour(timestamp)";
+					break;
+					case "3":
+					$graph_min_ticksize = "1, \"day\"";
+					$graph_bar_width = 43200000;
+					$query_RSsensor_value_data = "SELECT sensor_id,DATE_FORMAT(timestamp , '%Y-%m-%d') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE user_id='$userId' AND sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY date(timestamp)";
+					break;
+					case "4":
+					$graph_min_ticksize = "1, \"week\""; 
+					$graph_bar_width = 302400000;
+					$query_RSsensor_value_data = "SELECT sensor_id,DATE_FORMAT(timestamp , '%Y-%m-%d') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE user_id='$userId' AND sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY week(timestamp)";
+					break;
+					case "5":
+					$graph_min_ticksize = "1, \"month\""; 
+					$graph_bar_width = 1314000000;
+					$query_RSsensor_value_data = "SELECT sensor_id,DATE_FORMAT(timestamp , '%Y-%m') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE user_id='$userId' AND sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY month(timestamp)";
+					break;
+				}
+				
+				
+				$graph_bars="bars: {show: true, barWidth:".$graph_bar_width.", align: \"center\"},";
+				
+				//Totalen ophalen gebaseerd op keuze ticksize
+				$RSsensor_value_data = mysql_query($query_RSsensor_value_data, $tc) or die(mysql_error());	
+				
+				
+						
+			}			
+			
+								
 			echo "<div data-role=\"collapsible\" data-content-theme=\"c\">";
 			
 			//Input or Ouput
@@ -119,22 +172,22 @@ $RSsensor = mysql_query($query_RSsensor, $tc) or die(mysql_error());
 			
 			
 			//Value suffix
-			if ($row_RSsensor['display'] == 1){	echo "<span id='value_".$row_RSsensor['id']."'></span>"." ".$row_RSsensor['sensor_suffix']."</h3>";}
+			if ($row_RSsensor['display'] == 1){	echo "<span id='value_".$row_RSsensor['id']."'><img src=\"media/loading.gif\" WIDTH=\"15\"></span>"." ".$row_RSsensor['sensor_suffix']."</h3>";}
 			
 			//State suffix
 			if ($row_RSsensor['display'] == 2){
 					
-					echo "<span id='value_".$row_RSsensor['id']."'></span></h3>";
+					echo "<span id='value_".$row_RSsensor['id']."'><img src=\"media/loading.gif\" WIDTH=\"15\"></span></h3>";
 	}
 				
-				
+			
  
 /**********************************************************************************************************************************************************************************************
 Grafiek: Values
 **********************************************************************************************************************************************************************************************/				
 
 			
-		//Alleen een grafiek weergeven als het een output vanuit de nodo richting webapp betreft en het waarde betreft.
+		//Alleen een grafiek weergeven als het een output vanuit de nodo richting webapp betreft en het een waarde betreft.
 		if ($row_RSsensor['input_output'] == 2 && $row_RSsensor['display'] == 1){
 		?>
 			<br>
@@ -149,9 +202,9 @@ Grafiek: Values
 						
 						//lees maximaal X uur aan value data uit
 						mysql_select_db($database_tc, $tc);
-						$query_RSsensor_value_data = "SELECT * FROM nodo_tbl_sensor_data WHERE user_id='$userId' AND sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR";
-						$RSsensor_value_data = mysql_query($query_RSsensor_value_data, $tc) or die(mysql_error());
 						
+											
+												
 						while($row_RSsensor_value_data = mysql_fetch_array($RSsensor_value_data))	{
 													
 							echo "[".(strtotime($row_RSsensor_value_data['timestamp'])*1000).",".$row_RSsensor_value_data['data']."],";
@@ -163,7 +216,7 @@ Grafiek: Values
 					?>
 											
 					
-					$.plot($("#<?php echo $row_RSsensor['id']; ?>"),[{data: value_data, label: "<?php echo $row_RSsensor['sensor_suffix']; ?>",color: "<?php echo $graph_line_color; ?>"}], { xaxis: { mode: "time",minTickSize: [<?php echo $graph_min_ticksize;?>]}});
+					$.plot($("#<?php echo $row_RSsensor['id']; ?>"),[{data: value_data, <?php echo $graph_bars;?> label: "<?php echo $row_RSsensor['sensor_suffix']; ?>",color: "<?php echo $graph_line_color; ?>"}], { xaxis: { mode: "time",minTickSize: [<?php echo $graph_min_ticksize;?>]}});
 
 
 					
@@ -216,6 +269,10 @@ Input control
 /Input control
 **********************************************************************************************************************************************************************************************/		
 ?>
+<script>
+//Eerste maal de functie Get_Value opstarten zodat de loop gaat lopen welke de waarde elke x seconde ververst. 
+Get_Values();
+</script>
 	
 
 </div><!-- /content -->

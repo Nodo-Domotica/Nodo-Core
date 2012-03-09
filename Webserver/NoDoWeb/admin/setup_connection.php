@@ -2,7 +2,7 @@
 
 require_once('../connections/tc.php'); 
 require_once('../include/auth.php');
-require_once('../include/settings.php');
+require_once('../include/user_settings.php');
 
 $page_title = "Setup: Communication";	
 
@@ -19,7 +19,7 @@ function HTTPRequest($Url){
     global $nodo_port;
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $Url);
-    curl_setopt($ch, CURLOPT_USERAGENT, "NoDoWeb");
+    curl_setopt($ch, CURLOPT_USERAGENT, "Nodo Web App");
     curl_setopt($ch, CURLOPT_HEADER, 1);
 	curl_setopt($ch, CURLOPT_PORT, $nodo_port);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -139,13 +139,17 @@ if (isset($_POST['auto_config'])){
 		if (isset($_POST['auto_config'])){
 		
 			//Configure NoDo
+			HTTPRequest("http://$nodo_ip/?event=eventlistwrite;WildCard%20RF,All;SendEvent%20HTTP&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
+			HTTPRequest("http://$nodo_ip/?event=eventlistwrite;WildCard%20IR,All;SendEvent%20HTTP&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
+			HTTPRequest("http://$nodo_ip/?event=eventlistwrite;WildCard%20Variables,All;SendEvent%20HTTP&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
+			HTTPRequest("http://$nodo_ip/?event=eventlistwrite;WildCard%20Wired,All;SendEvent%20HTTP&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
 			HTTPRequest("http://$nodo_ip/?event=HTTPHost%20$WEBAPP_HOST/events.php&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
 			HTTPRequest("http://$nodo_ip/?event=Filewrite%20waconfig&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
 			HTTPRequest("http://$nodo_ip/?event=ok&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
 			HTTPRequest("http://$nodo_ip/?event=Filewrite&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
 			HTTPRequest("http://$nodo_ip/?event=OutputIp%20HTTP;id%20$nodo_id;password%20$nodo_password&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
-			
-			
+		    
+		
 			
 			if (strpos(HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&file=waconfig"), 'ok') !== false) {
 			
@@ -248,6 +252,7 @@ END Check connection & Nodo config
       
 		<label for="name">Nodo password:</label>
 		<input type="password" name="nodo_password" id="nodo_password" value="<?php echo $row['nodo_password']?>"  />
+		In case of auto configuration your Nodo password will be changed to this password!<br>
 		
 	<br>
 	   	   	
@@ -319,16 +324,16 @@ function show_loading() {
 			echo "Connection succeeded!";
 			break;
 			case 'ok_config':
-			echo "Connection succeeded!<br>NoDo configured ok";
+			echo "Connection succeeded!<br>Nodo configured ok";
 			break;
 			case 'error_config':
-			echo "Connection succeeded!<br>Something went wrong configuring Nodo";
+			echo "Connection succeeded!<br>Cannot verify configuration. Reason: no SD card inserted";
 			break;
 			case 'forbidden':
 			echo "Authentication failed!";
 			break;
 			case 'forbidden_config':
-			echo "Cannot configure NoDo!<BR>Make sure your Nodo has default settings.";
+			echo "Cannot configure your Nodo!<BR>Make sure your Nodo has default settings.";
 			break;
 			default:
 			echo "Connection failed!";

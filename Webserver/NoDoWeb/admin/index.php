@@ -2,7 +2,7 @@
 
 require_once('../connections/tc.php'); 
 require_once('../include/auth.php');
-require_once('../include/settings.php');
+require_once('../include/user_settings.php');
 $page_title = "Setup"; 
 
 ?>
@@ -32,7 +32,7 @@ $page_title = "Setup";
 	  <p><a href="values.php" data-role="button" data-ajax="false">Values</a></p>
 	  <p><a href="scripts.php" data-role="button" data-ajax="false">Scripts</a></p>
 	  <p><a href="notifications.php" data-role="button" data-ajax="false">Notifications</a></p>
-	  <p><a href="setup_nodoweb.php" data-role="button" data-ajax="false">Look & Feel</a></p>
+	  <p><a href="personal.php" data-role="button" data-ajax="false">Personal</a></p>
 	</div><!-- /content -->
 	
 	<?php require_once('../include/footer_admin.php'); ?>

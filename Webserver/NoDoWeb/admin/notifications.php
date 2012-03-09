@@ -2,7 +2,7 @@
 
 require_once('../connections/tc.php'); 
 require_once('../include/auth.php');
-require_once('../include/settings.php');
+require_once('../include/user_settings.php');
 
 $page_title = "Setup: Notifications";	  
 
@@ -15,7 +15,7 @@ if (isset($_POST['submit']))
  
  // get form data, making sure it is valid 
  $name = mysql_real_escape_string(htmlspecialchars($_POST['name'])); 
- $userevent = mysql_real_escape_string(htmlspecialchars($_POST['userevent'])); 
+ $event = mysql_real_escape_string(htmlspecialchars($_POST['event'])); 
  $recipient = mysql_real_escape_string(htmlspecialchars($_POST['recipient']));
  $subject = mysql_real_escape_string(htmlspecialchars($_POST['subject'])); 
  $body = mysql_real_escape_string(htmlspecialchars($_POST['body']));  
@@ -27,9 +27,9 @@ if (isset($_POST['submit']))
  mysql_select_db($database_tc, $tc);
  
    
- mysql_query("INSERT INTO nodo_tbl_notifications (name, userevent, recipient, subject, body, user_id) 
+ mysql_query("INSERT INTO nodo_tbl_notifications (name, event, recipient, subject, body, user_id) 
  VALUES 
- ('$name','$userevent','$recipient','$subject','$body','$userId')");
+ ('$name','$event','$recipient','$subject','$body','$userId')");
  // once saved, redirect back to the view page 
  header("Location: notifications.php#saved");    }
  
@@ -72,8 +72,8 @@ $result = mysql_query("SELECT * FROM nodo_tbl_notifications WHERE user_id='$user
 	<label for="name">Name: </label>
 		<input type="text" name="name" id="name" value=""  />
 		<br>
-		<label for="name">Userevent: (Example: 100,0 | 100,100)</label>
-		<input type="text" name="userevent" id="userevent" value=""  />
+		<label for="name">Event: (Example: userevent 100,0 | newkaku 1,on)</label>
+		<input type="text" name="event" id="event" value=""  />
 		<br>
 		<label for="name">Recipient:</label>
 		<input type="text" name="recipient" id="recipient" value=""  />

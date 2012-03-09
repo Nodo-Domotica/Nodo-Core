@@ -2,7 +2,7 @@
 
 require_once('../connections/tc.php'); 
 require_once('../include/auth.php');
-require_once('../include/settings.php');
+require_once('../include/user_settings.php');
 
 $page_title = "Setup: Values";	  
 
@@ -28,6 +28,8 @@ if (isset($_POST['submit']))
  $graph_hours = mysql_real_escape_string(htmlspecialchars($_POST['graph_hours']));
  $graph_min_ticksize = mysql_real_escape_string(htmlspecialchars($_POST['graph_min_ticksize']));
  $graph_type = mysql_real_escape_string(htmlspecialchars($_POST['graph_type']));
+
+
   
 //1=wiredin 2=variable
 //Als het wiredin betreft of een variable met output geselecteerd gaat het om een output gaan dus zetten we alle input velden op 0
@@ -48,6 +50,7 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
 	$graph_type = "";
 	
 	
+	
 	}
 
  
@@ -61,7 +64,7 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
  
  if ($_POST['display'] == 2) {
 
-	// ' vervangen door &#8217; omdat we anders met het get_value.js script in de knoei komen als iemand ' gebruikt 
+	// ' vervangen door &#8217; omdat we anders met het get_value.js script in de knoei komen als iemand ' invoerd 
 	 $suffix_true = str_replace("'","&#8217;",mysql_real_escape_string(htmlspecialchars($_POST['suffix_true'])));
 	 $suffix_false = str_replace("'","&#8217;",mysql_real_escape_string(htmlspecialchars($_POST['suffix_false'])));
 	 }
@@ -199,7 +202,7 @@ $RSsensor_result = mysql_query("SELECT * FROM nodo_tbl_sensor WHERE user_id='$us
 		</div>
 		
 		<label for="unit" >Nodo unit: (1...15)</label>
-		<input type="text" name="unit" id="unit" value=""  />
+		<input type="text" maxLength="2" name="unit" id="unit" value=""  />
 		<br>
 		<div id="label_wiredanalog_div">
 			<label for="name">WiredIn port: (1...8)</label>
@@ -207,13 +210,21 @@ $RSsensor_result = mysql_query("SELECT * FROM nodo_tbl_sensor WHERE user_id='$us
 		<div id="label_variable_div">
 			<label for="name">Variable: (1...15)</label>
 		</div>
-		<input type="text" name="par1" id="par1" value=""  />
+		<input type="text" maxLength="2" name="par1" id="par1" value=""  />
 		<br>
 		<div id="graph_div">
-			<label for="graph_hours">Graph: maximum hours to show:</label>
-			<input type="text" name="graph_hours" id="graph_hours" value="24"  />
+			<label for="select-choice-5" class="select" >Graph: type:</label>
+			<select name="graph_type" id="graph_type" data-native-menu="false" >
+				<option value="1" selected="selected">Line</option>
+				<option value="2">Bar (totals)</option>
+			</select>
 			<br>
-			<label for="select-choice-5" class="select" >Graph: minimum tick size x-axis:</label>
+			
+						
+			<label for="graph_hours">Graph: maximum hours to show:</label>
+			<input type="text" MaxLength="5" name="graph_hours" id="graph_hours" value="24"  />
+			<br>
+			<label for="select-choice-7" class="select" >Graph: minimum tick size x-axis:</label>
 			<select name="graph_min_ticksize" id="graph_min_ticksize" data-native-menu="false" >
 				<option value="1" selected="selected">Minutes</option>
 				<option value="2">Hours</option>
@@ -222,12 +233,7 @@ $RSsensor_result = mysql_query("SELECT * FROM nodo_tbl_sensor WHERE user_id='$us
 				<option value="5">Months</option>
 			</select>
 			<br>
-			<!--<label for="select-choice-6" class="select" >Graph type:</label>
-			<select name="graph_type" id="graph_type" data-native-menu="false" >
-				<option value="1" selected="selected">Line</option>
-				
-			</select> 
-			<br>-->
+			
 		</div>
 		<br>	
 			
@@ -293,6 +299,7 @@ $('#state_div').hide();
 $('#label_variable_div').hide(); 
 $('#input_output_div').hide();
 $('#slider_min_max_div').hide(); 
+$('#graph_bar_width_div').hide(); 
 
 
 
@@ -393,10 +400,12 @@ if ($(this).attr('value')==2) {
 $('#slider_min_max_div').show();   
 
 }
+});
+
 
 
    
-});
+
 </script>
 </body>
 </html>
