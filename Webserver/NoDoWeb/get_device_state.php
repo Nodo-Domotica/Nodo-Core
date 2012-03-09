@@ -5,7 +5,7 @@ require_once('include/auth.php');
 ?>
 <?php 
 mysql_select_db($database_tc, $tc);
-$query_RSdevice = "SELECT * FROM nodo_tbl_devices WHERE user_id='$userId'";
+$query_RSdevice = "SELECT id,user_id,status,dim_value FROM nodo_tbl_devices WHERE user_id='$userId'";
 $RSdevice = mysql_query($query_RSdevice, $tc) or die(mysql_error());
 $row_RSdevice = mysql_fetch_assoc($RSdevice);
 $totalRows_RSdevice = mysql_num_rows($RSdevice);

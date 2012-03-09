@@ -1,7 +1,7 @@
 <?php 
 require_once('connections/tc.php');
 require_once('include/auth.php');
-require_once('include/settings.php'); 
+require_once('include/user_settings.php'); 
 
 $page_title = "Activities";
 

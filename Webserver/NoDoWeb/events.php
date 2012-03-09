@@ -2,36 +2,14 @@
  
 
 
- // Login gegevens controleren
- 
- 
- //checken of id=[nodoID] als url parameter is meegegeven.
- if (isset($_GET['id'])){ 
-	
-		$id = mysql_real_escape_string(htmlspecialchars($_GET['id'])); 
-	}
-	
-	else 
-	
-	{
-	
-		$id = "";
-		
-	}
-//checken of pwd=[wachtwoord] als url parameter is meegegeven.
-if (isset($_GET['password'])){ 
-	
-		$password = mysql_real_escape_string(htmlspecialchars($_GET['password'])); 
-	}
-	
-	else 
-	
-	{
-		$password = "";
-	
-	}
-	
+// Login gegevens controleren
+//checken of id=[nodoID] als url parameter is meegegeven.
+if (isset($_GET['id'])){$id = mysql_real_escape_string(htmlspecialchars($_GET['id']));} else {$id = "";}
 
+ //checken of pwd=[wachtwoord] als url parameter is meegegeven.
+if (isset($_GET['password'])){$password = mysql_real_escape_string(htmlspecialchars($_GET['password']));} else {$password = "";}
+
+	
 
 mysql_select_db($database_tc, $tc);
 $result = mysql_query("SELECT * FROM nodo_tbl_users WHERE nodo_id='$id' AND nodo_password='$password'") or die(mysql_error());  
@@ -39,50 +17,89 @@ $row = mysql_fetch_array($result);
 $userId = $row['id']; 
  
  
- //Als de logingegevens correct zijn dan event= behandelen
- if($userId > 0) {
+//Als de logingegevens correct zijn dan event= behandelen
+if($userId > 0) {
+
+	 //Alle komende output bufferen
+	ob_start();
+
+	/*************************************************************************************************************************************************
+	 Zaken welke output naar de client gegeneren moeten voor het sluiten van de connectie worden geplaatst
+	 *************************************************************************************************************************************************/
+	 	
+	//Als de Nodo een file opvraagt zal onderstaande routine de file sturen zodat de Nodo deze kan parsen
+	if (isset($_GET['file'])){
+	
+		$file = $_GET['file'];
+		
+		mysql_select_db($database_tc, $tc);
+		$result = mysql_query("SELECT * FROM nodo_tbl_scripts WHERE file='$file' AND user_id='$userId'") or die(mysql_error());  
+		$row = mysql_fetch_array($result);
+		echo $row['script'];
+		echo "\n";
+	}
  
-			 
-			 
-			 
-			 /************************************************************************************************************
-			 Process received events
-			 *************************************************************************************************************/
-			 
-			 if (isset($_GET['event'])){
-			 
-			 
+   
+    //Grootte van de output opvragen
+	$size = ob_get_length();
 
-			 //Event in nodo_tbl_event_log opslaan
+	//Headers naar de client sturen zodat deze de verbinding verbreekt.
+	header("Content-Length: $size");
+	header('Connection: close');
+
+	ob_end_flush();
+	ob_flush();
+	flush();	
+
+			
+
+	//Hier begint het achtergrond process, de connectie is op dit moment al verbroken
+					 
 			 
-			 $eventraw = $_GET['event'];
-			 $unit = $_GET['unit'];
-			 mysql_select_db($database_tc, $tc);
-			 mysql_query("INSERT INTO nodo_tbl_event_log (user_id, nodo_unit_nr, event) VALUES ('$userId','$unit','$eventraw')") or die(mysql_error());
 			 
+	 //Ontvangen events verwerken
+	 if (isset($_GET['event'])){
 			 
+			 			 
+			//Url parameters in variablen plaatsen
+			$eventraw = $_GET['event'];
+			$unit = $_GET['unit'];
 			 
+			//Spaties vervangen door , om makkelijk een array te kunnen maken
 			$event = str_replace(" ",",",$eventraw); 
-
+			
+			//Commando en parameters uit event distileren	
 			$cmd_array = explode(',', $event);
-
 			$cmd = strtolower($cmd_array[0]);
 			$par1 = strtolower($cmd_array[1]);
 			$par2 = strtolower($cmd_array[2]);
+			 
+			 
+			//Event in nodo_tbl_event_log opslaan
+			mysql_select_db($database_tc, $tc);
+			mysql_query("INSERT INTO nodo_tbl_event_log (user_id, nodo_unit_nr, event) VALUES ('$userId','$unit','$eventraw')") or die(mysql_error());
+			 
+			 
+			//Kijken of we een notificatie moeten sturen			
+			mysql_select_db($database_tc, $tc);
+			$RSnotify = mysql_query("SELECT * FROM nodo_tbl_notifications WHERE user_id='$userId' AND event='$eventraw'") or die(mysql_error());  
 			
+					
+			while($row_RSnotify = mysql_fetch_array($RSnotify)) 
+				{                                
+			   
+					 $to = $row_RSnotify['recipient'];
+					 $subject = $row_RSnotify['subject'];
+					 $message = $row_RSnotify['body'];
+					 $from = "webapp@nodo-domotica.nl";
+					 $headers = "From:" . $from;
+					 mail($to,$subject,$message,$headers);
+					 
+				}
+
+						
 			
-			//Debug info
-			echo "cmd: ";
-			echo $cmd;
-			echo "<br>";
-			echo "PAR1: ";
-			echo $par1;
-			echo "<br>";
-			echo "PAR2: ";
-			echo $par2;
-		
-			
-			
+								
 			switch ($cmd) {
 				
 				
@@ -95,14 +112,14 @@ $userId = $row['id'];
 
 					// Waarde opslaan in value log					
 					//Sensor_id (id) opvragen uit sensor tabel !!!!!!!!!!!! Aanpassen naar 1 insert/select query !!!!!!!!!!!!!
-					mysql_select_db($database_tc, $tc);
+					//mysql_select_db($database_tc, $tc);
 					$RS_sensor = mysql_query("SELECT * FROM nodo_tbl_sensor WHERE user_id='$userId' AND par1='$par1' AND sensor_type='$type'") or die(mysql_error());  
 					$row_RS_sensor = mysql_fetch_array($RS_sensor);
 					$sensor_id=$row_RS_sensor[id]; //$sensor_id gebruiken we om in de tabel sensor_data bij te houden welke data bij welke sensor hoort 
 								
-					mysql_select_db($database_tc, $tc);
+					//mysql_select_db($database_tc, $tc);
 					mysql_query("INSERT INTO nodo_tbl_sensor_data (sensor_id, par1, data, nodo_unit_nr, type, user_id) VALUES ('$sensor_id','$par1','$par2','$unit','$type','$userId')") or die(mysql_error()); 
-					// /Waarde opslaan in value log
+					
 					
 					// Waarde updaten
 					mysql_select_db($database_tc, $tc);
@@ -204,73 +221,16 @@ $userId = $row['id'];
 								
 				break;
 				
-				//E-mail sturen als het userevent voorkomt in de tabel nodo_tbl_notifications
-				case "userevent" :
-				
-					
-					$userevent = $par1.",".$par2;
-					
-									
-					mysql_select_db($database_tc, $tc);
-					$RSnotify = mysql_query("SELECT * FROM nodo_tbl_notifications WHERE user_id='$userId' AND userevent='$userevent'") or die(mysql_error());  
-					
-					
-					//Door onderstaande while loop is het mogelijk om hetzelfde userevent naar verschillende e-mail adressen met een verschillende subject en body  te sturen.
-					while($row_RSnotify = mysql_fetch_array($RSnotify)) 
-						{                                
-					   
-							 $to = $row_RSnotify['recipient'];
-							 $subject = $row_RSnotify['subject'];
-							 $message = $row_RSnotify['body'];
-							 $from = "webapp@nodo-domotica.nl";
-							 $headers = "From:" . $from;
-							 mail($to,$subject,$message,$headers);
-							 
- 						}         
-			
-					
-				break;
-				
-				
-				
-				
-				
-				
-				default :
-
-				break;
+						
 
 				}
 
 
-			}
-			/*********************************************************************************************************************************************************
-			END Process received events
-			**********************************************************************************************************************************************************/
-			
-			/*********************************************************************************************************************************************************
-			Process received file requests
-			**********************************************************************************************************************************************************/
-			if (isset($_GET['file'])){
-			
-
-			
-				$file = $_GET['file'];
-				
-				mysql_select_db($database_tc, $tc);
-				$result = mysql_query("SELECT * FROM nodo_tbl_scripts WHERE file='$file' AND user_id='$userId'") or die(mysql_error());  
-				$row = mysql_fetch_array($result);
-				echo $row['script'];
-				echo "\n";
+		}
 			
 			
 			
-			
-			}
-			/*********************************************************************************************************************************************************
-			END Process received file requests
-			**********************************************************************************************************************************************************/
-			
+					
 }
 
 

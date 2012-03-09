@@ -6,7 +6,7 @@ $RS_setup = mysql_query("SELECT * FROM nodo_tbl_users WHERE id='$userId'") or di
 $row_RSsetup = mysql_fetch_array($RS_setup);
 
 if($row_RSsetup['webapp_theme'] == "") {  
-	$theme = "a";
+	$theme = "c";
 } 
 else { 
 	$theme = $row_RSsetup['webapp_theme'];
@@ -20,7 +20,7 @@ else {
 }
 
 if($row_RSsetup['webapp_title'] == "") {  
-	$title = "NoDo Webapp";
+	$title = "Nodo Web App";
 } 
 else { 
 	$title = $row_RSsetup['webapp_title'];
@@ -36,6 +36,6 @@ $nodo_id = $row_RSsetup['nodo_id'];
 $DEFAULT_NODO_PWD = "Nodo";
 $DEFAULT_NODO_ID = "00000000";
 $WEBAPP_HOST = "nodo2.powerkite.nl";
-$WEBAPP_VERSION = "0.9.1";
+$WEBAPP_VERSION = "0.9.3";
 
 ?>

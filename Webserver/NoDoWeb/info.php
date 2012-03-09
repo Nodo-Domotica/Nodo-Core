@@ -1,12 +1,15 @@
-<?php 
+<?php
+
+
 require_once('connections/tc.php');
 require_once('include/auth.php');
-require_once('include/settings.php'); 
+require_once('include/user_settings.php'); 
 
 
 
 $page_title = "Information";
  
+
 
 
 
@@ -21,7 +24,10 @@ $page_title = "Information";
 	<meta name="viewport" content="width=device-width, initial-scale=1"> 
 	<title><?php echo $title ?></title> 
 	<?php require_once('include/jquery_mobile.php'); ?>
-	<?php require_once('include/send_event.php'); ?>
+	
+	
+	<script src="js/get_nodo_status.js"></script>
+	<script src="js/get_events.js"></script>
 </head> 
 
 <body> 
@@ -43,7 +49,7 @@ $RSevent_log = mysql_query("SELECT * FROM (SELECT * FROM nodo_tbl_event_log WHER
 ?>
 
 <div data-role="collapsible" data-collapsed="true" data-content-theme="<?php echo $theme?>">
-	<h3>Web App details</h3>
+<h3>Web App details</h3>
 <b>Web App version: </b><?php echo $WEBAPP_VERSION;?><br>
 <b>Nodo ID: </b><?php echo $nodo_id;?><br>
 <b>Connected to Nodo: </b><?php echo $nodo_ip.":".$nodo_port;?><br>
@@ -55,43 +61,38 @@ $RSevent_log = mysql_query("SELECT * FROM (SELECT * FROM nodo_tbl_event_log WHER
 
 
  <h3>Last 25 events</h3>	
- <table>    
-   
- <thead>     
- <tr>      
- <th scope="col" align="left">Unit</th>      
- <th scope="col" align="left">Event</th>      
- <th scope="col" align="left">Timestamp</th>
- </tr>    
- </thead>    
-	   
-<tbody>
 
- 
 
-<?php		
-		while($row = mysql_fetch_array($RSevent_log)) 
-		{                                
-?>		 
-		<tr>	
-		<td width="50"><?php echo $row['nodo_unit_nr'];?></td> <td width="200"><?php echo $row['event'];?></td><td><?php echo $row['timestamp'];?></td>		
-		</tr>
-<?php		
-		}         
-		?>
-	</tbody>
-	</table>
-	<br>
-	
+    <div id="events_div">
+	</div>
+
+
+ 	<br>
+	<a href="javascript:Get_Nodo_Events();" data-role="button" data-ajax="false" data-inline="true" >Refresh events</a>
 	<a href="export_csv.php" data-role="button" data-inline="true" data-ajax="false">Export all events to csv</a>
 	</div>	
-
 	
+	<div data-role="collapsible" data-collapsed="true" data-content-theme="<?php echo $theme?>">
+	<h3>Nodo status</h3>
+	<div id="status_div">
+	
+	</div>
+	
+	<a href="javascript:Get_Nodo_Status();" data-role="button" data-ajax="false" data-inline="true" >Refresh status</a>
+	
+
+	</div>
 	</div><!-- /content -->
 	
 	<?php require_once('include/footer.php'); ?>
 	
 </div><!-- /page -->
+
+<script type="text/javascript">
+//Events bij openen weergeven
+Get_Nodo_Events(); 
+
+</script>
 
 </body>
 </html>
