@@ -42,7 +42,7 @@ boolean SendEventGhost(char* event, byte* SendToIP)
   Try=0;
   do
     {
-    if(EGclient.connect(EGServerIP,S.Port))
+    if(EGclient.connect(EGServerIP,S.PortClient))
       {
       EGclient.flush();
   
@@ -229,7 +229,7 @@ byte xSendHTTPRequestStr(char* StringToSend)
   if(S.Debug==VALUE_ON)
     PrintTerminal(IPBuffer);
 
-  if(IPClient.connect(TmpStr,S.Port))
+  if(IPClient.connect(TmpStr,S.PortClient))
     {
     IPClient.getRemoteIP(ClientIPAddress);  
     IPClient.println(IPBuffer);

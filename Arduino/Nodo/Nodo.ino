@@ -29,7 +29,7 @@
  \****************************************************************************************************************************/
 
 
-#define VERSION       10          // Nodo Version nummer:
+#define VERSION       11          // Nodo Version nummer:
                                   // Major.Minor.Patch
                                   // Major: Grote veranderingen aan concept, besturing, werking.
                                   // Minor: Uitbreiding/aanpassing van commando's, functionaliteit en MMI aanpassingen
@@ -106,8 +106,8 @@ prog_char PROGMEM Cmd_017[]="RawSignalSend";
 prog_char PROGMEM Cmd_018[]="Reset";
 prog_char PROGMEM Cmd_019[]="SendKAKU";
 prog_char PROGMEM Cmd_020[]="SendNewKAKU";
-prog_char PROGMEM Cmd_021[]="IPSettings";
-prog_char PROGMEM Cmd_022[]="Port";
+prog_char PROGMEM Cmd_021[]="";
+prog_char PROGMEM Cmd_022[]="";
 prog_char PROGMEM Cmd_023[]="SimulateDay";
 prog_char PROGMEM Cmd_024[]="Sound";
 prog_char PROGMEM Cmd_025[]="Debug";
@@ -133,7 +133,7 @@ prog_char PROGMEM Cmd_044[]="SendUserEvent";
 prog_char PROGMEM Cmd_045[]="RawSignalCopy";
 prog_char PROGMEM Cmd_046[]="WildCard";
 prog_char PROGMEM Cmd_047[]="SendBusy";
-prog_char PROGMEM Cmd_048[]="NodoIP";
+prog_char PROGMEM Cmd_048[]="";
 prog_char PROGMEM Cmd_049[]="Password";
 prog_char PROGMEM Cmd_050[]="EventlistFile";
 prog_char PROGMEM Cmd_051[]="WiredCalibrate";
@@ -145,7 +145,7 @@ prog_char PROGMEM Cmd_056[]="AnalyseSettings";
 prog_char PROGMEM Cmd_057[]="OutputIP";
 prog_char PROGMEM Cmd_058[]="OutputIR";
 prog_char PROGMEM Cmd_059[]="OutputRF";
-prog_char PROGMEM Cmd_060[]="EventGhostServer";
+prog_char PROGMEM Cmd_060[]="";
 prog_char PROGMEM Cmd_061[]="";
 prog_char PROGMEM Cmd_062[]="FileErase";
 prog_char PROGMEM Cmd_063[]="FileShow";
@@ -154,16 +154,16 @@ prog_char PROGMEM Cmd_065[]="FileWrite";
 prog_char PROGMEM Cmd_066[]="FileList";
 prog_char PROGMEM Cmd_067[]="FileLog";
 prog_char PROGMEM Cmd_068[]="FileGetHTTP";
-prog_char PROGMEM Cmd_069[]="";
+prog_char PROGMEM Cmd_069[]="NodoIP";
 prog_char PROGMEM Cmd_070[]="Gateway";
 prog_char PROGMEM Cmd_071[]="Subnet";
-prog_char PROGMEM Cmd_072[]="PulseFormula";
-prog_char PROGMEM Cmd_073[]="VariablePulse";
-prog_char PROGMEM Cmd_074[]="VariableWiredAnalog";
-prog_char PROGMEM Cmd_075[]="";
-prog_char PROGMEM Cmd_076[]="";
-prog_char PROGMEM Cmd_077[]="";
-prog_char PROGMEM Cmd_078[]="";
+prog_char PROGMEM Cmd_072[]="DnsServer";
+prog_char PROGMEM Cmd_073[]="PortServer";
+prog_char PROGMEM Cmd_074[]="PortClient";
+prog_char PROGMEM Cmd_075[]="EventGhostServer";
+prog_char PROGMEM Cmd_076[]="VariablePulse";
+prog_char PROGMEM Cmd_077[]="PulseFormula";
+prog_char PROGMEM Cmd_078[]="VariableWiredAnalog";
 prog_char PROGMEM Cmd_079[]="";
 prog_char PROGMEM Cmd_080[]="";
 prog_char PROGMEM Cmd_081[]="";
@@ -325,8 +325,8 @@ prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
 #define CMD_RESET                       18
 #define CMD_SEND_KAKU                   19
 #define CMD_SEND_KAKU_NEW               20
-#define CMD_IP_SETTINGS                 21
-#define CMD_PORT                        22
+#define CMD_res21                       21
+#define CMD_res22                       22
 #define CMD_SIMULATE_DAY                23
 #define CMD_SOUND                       24
 #define CMD_TRACE                       25
@@ -352,7 +352,7 @@ prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
 #define CMD_RAWSIGNAL_COPY              45
 #define CMD_COMMAND_WILDCARD            46
 #define CMD_SENDBUSY                    47
-#define CMD_NODO_IP                     48
+#define CMD_RES_48                      48
 #define CMD_PASSWORD                    49
 #define CMD_EVENTLIST_FILE              50
 #define CMD_WIRED_ANALOG_CALIBRATE      51
@@ -364,7 +364,7 @@ prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
 #define CMD_TRANSMIT_IP                 57
 #define CMD_TRANSMIT_IR                 58
 #define CMD_TRANSMIT_RF                 59
-#define CMD_EVENTGHOST_SERVER           60
+#define CMD_RES60                       60
 #define CMD_RES                         61
 #define CMD_FILE_ERASE                  62
 #define CMD_FILE_SHOW                   63
@@ -373,16 +373,16 @@ prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
 #define CMD_FILE_LIST                   66
 #define CMD_FILE_LOG                    67
 #define CMD_FILE_GET_HTTP               68
-#define CMD_RES69                       69
+#define CMD_NODO_IP                     69
 #define CMD_GATEWAY                     70
 #define CMD_SUBNET                      71
-#define CMD_PULSE_CALCULATE             72
-#define CMD_PULSE_VARIABLE              73
-#define CMD_WIREDANALOG_VARIABLE        74
-#define CMD_RES075                      75
-#define CMD_RES076                      76
-#define CMD_RES077                      77
-#define CMD_RES078                      78
+#define CMD_DNS_SERVER                  72
+#define CMD_PORT_SERVER                 73
+#define CMD_PORT_CLIENT                 74
+#define CMD_EVENTGHOST_SERVER           75
+#define CMD_PULSE_VARIABLE              76
+#define CMD_PULSE_FORMULA               77
+#define CMD_WIREDANALOG_VARIABLE        78
 #define CMD_RES079                      79
 #define CMD_RES080                      80
 #define CMD_RES081                      81
@@ -657,10 +657,13 @@ struct Settings
   char    HTTPRequest[80];                                  // HTTP request;
   byte    EventGhostServer_IP[4];                           // IP adres van waar EventGhost Events naar verstuurd moeten worden.
   byte    AutoSaveEventGhostIP;                             // Automatisch IP adres opslaan na ontvangst van een EG event of niet.
-  int     Port;                                             // IP port.
+  int     reserved_1;                                       // reserve
   byte    Nodo_IP[4];                                       // IP adres van van de Nodo. als 0.0.0.0 ingevuld, dan IP toekenning o.b.v. DHCP
-  byte    Subnet[4];                                       // Submask
+  byte    Subnet[4];                                        // Submask
   byte    Gateway[4];                                       // Gateway
+  byte    DnsServer[4];                                     // DNS Server IP adres
+  int     PortServer;                                       // Poort van de inkomende IP communnicatie
+  int     PortClient;                                       // Poort van de uitgaande IP communnicatie
   }S;
 
 unsigned long UserTimer[TIMER_MAX];                         // Timers voor de gebruiker.
@@ -783,7 +786,7 @@ void setup()
   for(x=0;x<WIRED_PORTS;x++){WiredInputStatus[x]=true;}
 
   // Initialiseer ethernet device
-  IPServer = EthernetServer(S.Port);
+  IPServer = EthernetServer(S.PortServer);
   TerminalServer = EthernetServer(23);
 
   if((S.Nodo_IP[0] + S.Nodo_IP[1] + S.Nodo_IP[2] + S.Nodo_IP[3])==0)
@@ -792,17 +795,16 @@ void setup()
       Serial.println(F("Failed to configure Ethernet using DHCP"));
     }
   else
-    Ethernet.begin(Ethernet_MAC_Address,S.Nodo_IP);
-//    Ethernet.begin(Ethernet_MAC_Address,S.Nodo_IP,S.Gateway,S.Subnet);//??? nog operationeel maken
+    Ethernet.begin(Ethernet_MAC_Address, S.Nodo_IP, S.DnsServer, S.Gateway, S.Subnet);
 
-  EthernetEnabled=true; //??? aanwezigheid ethernetshield testen
+  EthernetEnabled=true;                            //??? aanwezigheid ethernetshield testen
   IPServer.begin();                                // Start Server voor ontvangst van Events
   TerminalServer.begin();                             // Start server voor Terminalsessies via TelNet
   
-  SerialConnected=true;// zonder deze vlag vindt er geen output naar de Erial poort plaats. Tijdelijk even inschakelen.
+  SerialConnected=true; // zonder deze vlag vindt er geen output naar de serial poort plaats. Tijdelijk even inschakelen.
   PrintWelcome(); // geef de welkomsttekst weer
-
   ProcessEvent(command2event(CMD_BOOT_EVENT,0,0),VALUE_DIRECTION_INTERNAL,CMD_BOOT_EVENT,0,0);  // Voer het 'Boot' event uit.
+  SerialConnected=false; // Serial weergave uitschakelen.
   }
 
 void loop() 
