@@ -135,7 +135,7 @@ if (isset($_POST['Write']))
 
 		// save the data to the database 
 		 mysql_select_db($database_tc, $tc);
-		 mysql_query("UPDATE NODO_tbl_scripts SET script='$scriptpost' WHERE user_id='$userId' AND file='$file'") or die(mysql_error());   
+		 mysql_query("UPDATE nodo_tbl_scripts SET script='$scriptpost' WHERE user_id='$userId' AND file='$file'") or die(mysql_error());   
 		  
 		 
 		

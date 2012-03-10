@@ -7,7 +7,7 @@ function Get_Nodo_Events()
 					$self = arguments.callee,
 					element = document.getElementById('events_div');
 					
-					element.innerHTML = '<h4><img src="/media/loading.gif"/> Please wait, loading status...</h4>'; 
+					element.innerHTML = '<h4><img src="/media/loading.gif"/> Please wait, loading events...</h4>'; 
 					
 				if (window.XMLHttpRequest) {
 					$http = new XMLHttpRequest();

@@ -13,7 +13,7 @@ $id = $row['id'];
 	if($id > 0) {
 	
 		//Gegevens in de database opslaan
-		//mysql_query("UPDATE NODO_tbl_activities SET name='$name', events='$events' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
+		//mysql_query("UPDATE nodo_tbl_activities SET name='$name', events='$events' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
 		mysql_select_db($database_tc, $tc);
 		mysql_query("UPDATE nodo_tbl_users SET active='1',confirm_code='' WHERE id='$id'") or die(mysql_error());
 		$message = "You account is confirmed<br>";
