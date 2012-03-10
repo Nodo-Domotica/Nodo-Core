@@ -25,7 +25,7 @@ $page_title="Setup: Edit activity";
   
  // save the data to the database 
  mysql_select_db($database_tc, $tc);
- mysql_query("UPDATE NODO_tbl_activities SET name='$name', events='$events' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
+ mysql_query("UPDATE nodo_tbl_activities SET name='$name', events='$events' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
  // once saved, redirect back to the view page 
  header("Location: activities.php#saved");  
  } 

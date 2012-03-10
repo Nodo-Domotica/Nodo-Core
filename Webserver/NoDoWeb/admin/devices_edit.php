@@ -32,7 +32,7 @@ $page_title="Setup: Edit device";
   
  // save the data to the database 
  mysql_select_db($database_tc, $tc);
- mysql_query("UPDATE NODO_tbl_devices SET naam='$naam', address='$address', type='$type', homecode='$homecode', dim='$dim' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
+ mysql_query("UPDATE nodo_tbl_devices SET naam='$naam', address='$address', type='$type', homecode='$homecode', dim='$dim' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
  // once saved, redirect back to the view page 
  header("Location: devices.php#saved");  
  } 

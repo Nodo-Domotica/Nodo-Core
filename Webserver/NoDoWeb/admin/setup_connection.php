@@ -87,7 +87,7 @@ if ($nodo_id == "")  {
 	
 		//ID generated. Check if ID exists in Database
 		mysql_select_db($database_tc, $tc);
-		$result = mysql_query("SELECT 'nodo_id' FROM NODO_tbl_users WHERE nodo_id='$unique_ref'") or die(mysql_error());  
+		$result = mysql_query("SELECT 'nodo_id' FROM nodo_tbl_users WHERE nodo_id='$unique_ref'") or die(mysql_error());  
 		$row = mysql_fetch_array($result);
 		
 		if (mysql_num_rows($result)==0) {

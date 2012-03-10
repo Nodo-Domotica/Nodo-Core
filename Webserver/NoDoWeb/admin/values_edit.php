@@ -80,7 +80,7 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
 	
  // save the data to the database 
  mysql_select_db($database_tc, $tc);
- mysql_query("UPDATE NODO_tbl_sensor SET sensor_type='$type',display='$display',input_output='$input_output',input_control='$input_control',input_step='$input_step'
+ mysql_query("UPDATE nodo_tbl_sensor SET sensor_type='$type',display='$display',input_output='$input_output',input_control='$input_control',input_step='$input_step'
  ,input_min_val='$input_slider_min',input_max_val='$input_slider_max',sensor_prefix='$prefix', sensor_suffix='$suffix', sensor_suffix_true='$suffix_true'
  ,sensor_suffix_false='$suffix_false', nodo_unit_nr='$unit',par1='$par1',graph_hours='$graph_hours',graph_min_ticksize='$graph_min_ticksize',graph_type='$graph_type'
  WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   

@@ -33,7 +33,7 @@ function GetSQLValueString($theValue, $theType, $theDefinedValue = "", $theNotDe
 }
 
 if ((isset($_GET['id'])) && ($_GET['id'] != "")) {
-  $deleteSQL = sprintf("DELETE FROM NODO_tbl_activities WHERE id=%s AND user_id='$userId'",
+  $deleteSQL = sprintf("DELETE FROM nodo_tbl_activities WHERE id=%s AND user_id='$userId'",
                        GetSQLValueString($_GET['id'], "int"));
 
   mysql_select_db($database_tc, $tc);
