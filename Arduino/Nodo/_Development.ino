@@ -1,14 +1,8 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- LET OP: weergave naar Serial pas nadat er tekens via serial zijn ontvangen. Voorkomt zinloze tijdsbesteding als er geen serial aangesloten is!
-- Weergave status nu niet meer volledig zoals een event weergegeven
-- commando "DnsServer" toegevoegd voor instellen van een DNS server.
-- Als IP adres an de Nodo is toegekend door DHCP dan wordt dit met commando "IPSettings" weergegeven
-- Commando "IPSettings" verwijderd. Settings zijn onder gebracht in het commando "Status"
-- Toegevoegd commando "PortServer". Poort voor ontvangst van HTTP en EventGhost events van een Client naar de Nodo als Server. Default 80
-- Toegevoegd commando "PortClient". Poort voor verzenden van HTTP en EventGhost events van de Nodo als client naar een Server. Default 80
-- DNS, GateWay en Submast operationeel gemaakt.
+- Issue 322: Onterechte foutmelding DHCP verwijderd.
+- Issue 300: Dag van de week toegevoegd aan de datum weergave.
 
 Known Errors / ToDo:
 - Default poort voor "PortServer" nog bepalen. 

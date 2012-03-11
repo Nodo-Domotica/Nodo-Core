@@ -98,12 +98,13 @@ char* DateTimeString(void)
     int x;
     static char dt[40];
     char s[5];
-    
+
+    // Print de dag. 1=zondag, 0=geen RTC aanwezig
     for(x=0;x<=2;x++)
       s[x]=(*(ProgmemString(Text_04)+(Time.Day-1)*3+x));
     s[x]=0;
 
-    sprintf(dt,"Date=%d-%02d-%02d, Time=%02d:%02d", Time.Year, Time.Month, Time.Date, Time.Hour, Time.Minutes);
+    sprintf(dt,"Date=%d-%02d-%02d (%s), Time=%02d:%02d", Time.Year, Time.Month, Time.Date, s, Time.Hour, Time.Minutes);
     
     return dt;
     }
