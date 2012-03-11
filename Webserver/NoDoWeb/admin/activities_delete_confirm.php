@@ -1,3 +1,8 @@
+<?php
+require_once('../connections/tc.php'); 
+require_once('../include/auth.php');
+require_once('../include/user_settings.php');
+?>
 <!DOCTYPE html> 
 <html> 
 
@@ -12,7 +17,7 @@
 
 <body> 
 
-<div data-role="page" data-theme="c">
+<div data-role="page" data-theme="<?php echo $theme?>">
 
 	<div data-role="header">
 		<h1></h1>

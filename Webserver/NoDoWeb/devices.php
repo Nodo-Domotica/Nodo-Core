@@ -39,14 +39,10 @@ $RSdevices = mysql_query($query_RSdevices, $tc) or die(mysql_error());
 <?php require_once('include/header.php'); ?>
 	<div data-role="content">	
 	  
-	<?php 
-	//if (mysql_num_rows($RSdevices) == 0) {echo "<h4>No devices available to show.<br>You can add a device via <a href=\"admin\"\>setup</a></h4>";} ?>
 	
-	
-	<?php while ($row_RSdevices = mysql_fetch_assoc($RSdevices)){ ?>
-        
+<?php while ($row_RSdevices = mysql_fetch_assoc($RSdevices)){ ?>
 
-    	<div data-role="collapsible" data-content-theme="<?php echo $theme?>">
+    	<div data-role="collapsible" data-content-theme="<?php echo $theme?>" <?php if($row_RSdevices['collapsed']==1) {echo "data-collapsed=\"false\"";}?> >
 		 
 		<h3><span id='switch_<?php echo $row_RSdevices['id']; ?>'></span><?php echo $row_RSdevices['naam']; ?></h3>
 		
@@ -62,7 +58,6 @@ $RSdevices = mysql_query($query_RSdevices, $tc) or die(mysql_error());
 switch ($row_RSdevices['type'])
 			{
 			case "1":
-			
 			// On/Off kaku buttons
 			echo "<a href=\"javascript:send_event(&quot;sendkaku " . $row_RSdevices['homecode'] . $row_RSdevices['address'] . ",on&quot;)\" data-role=\"button\" data-icon=\"check\" >On</a>\n";
             echo "<a href=\"javascript:send_event(&quot;sendkaku " . $row_RSdevices['homecode'] . $row_RSdevices['address'] . ",off&quot;)\" data-role=\"button\" data-icon=\"delete\" >Off</a>\n";
@@ -73,58 +68,55 @@ switch ($row_RSdevices['type'])
 			echo "<a href=\"javascript:send_event(&quot;sendnewkaku " . $row_RSdevices['address'] . ",on&quot;)\" data-role=\"button\" data-icon=\"check\" >On</a>\n";
 			echo "<a href=\"javascript:send_event(&quot;sendnewkaku " . $row_RSdevices['address'] . ",off&quot;)\" data-role=\"button\"  data-icon=\"delete\" >Off</a>\n";
 			echo "<br>\n";
-						
-			if ( $row_RSdevices['dim'] == 1 ) { 
-
-				//Dim buttons
-				for ($i=1; $i<=10; $i++) {
-				
-					   $dim_percentage = $i * 10;
-					   $dim_level = round($i * 1.6,0);
-					   
-						echo "<a href=\"javascript:send_event(&quot;sendnewkaku ".$row_RSdevices['address'].",".$dim_level."&quot;)\" data-role=\"button\" data-inline=\"true\">".$dim_percentage."%</a>\n";
-				}
-			}		   
+					
+				//Dim buttons		
+				if ( $row_RSdevices['dim'] == 1 ) { 
+					
+					for ($i=1; $i<=10; $i++) {
+					
+						   $dim_percentage = $i * 10;
+						   $dim_level = round($i * 1.6,0);
+						   
+							echo "<a href=\"javascript:send_event(&quot;sendnewkaku ".$row_RSdevices['address'].",".$dim_level."&quot;)\" data-role=\"button\" data-inline=\"true\">".$dim_percentage."%</a>\n";
+					}
+				}		   
  		
-			if ( $row_RSdevices['dim'] == 2 ) { ?>
-			
-			
-			<!-- Dim slider -->
-			<script>
-				var t<?php echo $row_RSdevices['id']; ?>;
-				function update_distance_timer_<?php echo $row_RSdevices['id']; ?>()
-					{
-					clearTimeout(t<?php echo $row_RSdevices['id']; ?>);
-					t<?php echo $row_RSdevices['id']; ?>=setTimeout("update_distance_<?php echo $row_RSdevices['id']; ?>()",200);
-					}
-				function update_distance_<?php echo $row_RSdevices['id']; ?>()
-					{
-					var val<?php echo $row_RSdevices['id']; ?> = $('#distSlider<?php echo $row_RSdevices['id']; ?>').val();
-					//alert(val);
-					send_event('sendnewkaku <?php echo $row_RSdevices['address']; ?>,' + val<?php echo $row_RSdevices['id']; ?>)
-					}
-			</script>			
-			
-			<label  id="distSlider-label" for="distSlider">Dim: </label>
-			<input  name="distSlider" id="distSlider<?php echo $row_RSdevices['id']; ?>" value="<?php echo $row_RSdevices['dim_value'];?>" min="1" max="16" data-type="range" onChange='update_distance_timer_<?php echo $row_RSdevices['id']; ?>()'>
-			
-			<!-- /Dim slider -->
+				//Dim slider
+				if ( $row_RSdevices['dim'] == 2 ) { 
+								
+					
+					echo "<script>\n";
+						echo "var t".$row_RSdevices['id'].";\n";
+						echo "function update_distance_timer_".$row_RSdevices['id']."()\n";
+							echo "{\n";
+							echo "clearTimeout(t".$row_RSdevices['id'].");\n";
+							echo "t".$row_RSdevices['id']."=setTimeout(\"update_distance_".$row_RSdevices['id']."()\",200);\n";
+							echo "}\n";
+						echo "function update_distance_".$row_RSdevices['id']."()\n";
+							echo "{\n";
+							echo "var val".$row_RSdevices['id']." = $('#distSlider".$row_RSdevices['id']. "').val();\n";
+							echo "send_event('sendnewkaku ".$row_RSdevices['address'].",' + val".$row_RSdevices['id'].")\n";
+							echo "}\n";
+					echo "</script>\n";			
+					
+					echo "<label id=\"distSlider-label\" for=\"distSlider\">Dim: </label>\n";
+					echo "<input name=\"distSlider\" id=\"distSlider".$row_RSdevices['id']."\" value=\"".$row_RSdevices['dim_value']."\" min=\"1\" max=\"16\" data-type=\"range\" onChange='update_distance_timer_".$row_RSdevices['id']."()'>\n";
+					
+					
 
-			<?php } break;    
+				 } 
+			break;    
 			
-			case 3:?>
-			<!-- On/Off WiredOut buttons -->
-			<a href="javascript:send_event(&quot;wiredout <?php echo $row_RSdevices['address']; ?>,on;sendstatus wiredout,<?php echo $row_RSdevices['address']; ?>&quot;)" data-role="button"  data-icon="check" >On</a>
-			<a href="javascript:send_event(&quot;wiredout <?php echo $row_RSdevices['address']; ?>,off;sendstatus wiredout,<?php echo $row_RSdevices['address']; ?>&quot;)" data-role="button"  data-icon="delete" >Off</a>
-			<!-- /On/Off WiredOut buttons -->
+			case 3:
+			// On/Off WiredOut buttons
+			echo "<a href=\"javascript:send_event(&quot;wiredout ".$row_RSdevices['address'].",on;sendstatus wiredout,".$row_RSdevices['address']."&quot;)\" data-role=\"button\" data-icon=\"check\" >On</a>\n";
+			echo "<a href=\"javascript:send_event(&quot;wiredout ".$row_RSdevices['address'].",off;sendstatus wiredout,".$row_RSdevices['address']."&quot;)\" data-role=\"button\" data-icon=\"delete\" >Off</a>\n";
 			
-			<?php  break;
-			}?>
-
-			 
-		
-		</p></div>
-    <?php } ?>
+        	 break;
+			}
+	
+			echo "</p></div>";
+     } ?>
 
 
 	</div><!-- /content -->

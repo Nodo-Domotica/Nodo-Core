@@ -108,7 +108,7 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
 <body> 
 
  
-<div data-role="page">
+<div data-role="page" data-theme="<?php echo $theme?>">
  
 	<?php require_once('../include/header_admin.php'); ?>
  
@@ -241,7 +241,7 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
 		</div>
 		<br>	
 			
-	           
+	    <a href="values.php" data-role="button" data-ajax="false">Cancel</a>       
 		<input type="submit" name="submit" value="Save" >
 
 		

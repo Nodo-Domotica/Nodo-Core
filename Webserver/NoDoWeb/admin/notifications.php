@@ -56,13 +56,13 @@ $result = mysql_query("SELECT * FROM nodo_tbl_notifications WHERE user_id='$user
 
 <!-- Start of main page: -->
 
-<div data-role="page" pageid="main">
+<div data-role="page" pageid="main" data-theme="<?php echo $theme?>">
  
 	<?php require_once('../include/header_admin.php'); ?>
  
 	<div data-role="content">	
 
-	<div data-role="collapsible" data-content-theme="c">
+	<div data-role="collapsible" data-content-theme="<?php echo $theme?>">
 			<h3>Add</h3>
 	<form action="notifications.php" data-ajax="false" method="post"> 
 	
@@ -95,12 +95,12 @@ $result = mysql_query("SELECT * FROM nodo_tbl_notifications WHERE user_id='$user
 	</div>
 	
 	
-		<div data-role="collapsible" data-collapsed="false" data-content-theme="c">
+		<div data-role="collapsible" data-collapsed="false" data-content-theme="<?php echo $theme?>">
 			<h3>Edit</h3>
 			<?php
 			 
 								   
-			echo '<ul data-role="listview" data-split-icon="delete" data-split-theme="a" data-inset="true">';
+			echo '<ul data-role="listview" data-split-icon="delete" data-split-theme="$theme" data-inset="true">';
 	  
 			//echo '<br>';   
 			// loop through results of database query, displaying them in the table        
@@ -123,9 +123,9 @@ $result = mysql_query("SELECT * FROM nodo_tbl_notifications WHERE user_id='$user
 </div><!-- /main page -->
 
 <!-- Start of saved page: -->
-<div data-role="dialog" id="saved">
+<div data-role="dialog" id="saved" data-theme="<?php echo $theme?>">
 
-	<div data-role="header">
+	<div data-role="header" data-theme="<?php echo $theme_header?>">
 		<h1><?php echo $page_title?></h1>
 	</div><!-- /header -->
 

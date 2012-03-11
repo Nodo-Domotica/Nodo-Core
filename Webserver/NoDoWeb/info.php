@@ -4,6 +4,7 @@
 require_once('connections/tc.php');
 require_once('include/auth.php');
 require_once('include/user_settings.php'); 
+require_once('include/webapp_settings.php'); 
 
 
 

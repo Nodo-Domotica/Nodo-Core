@@ -54,7 +54,7 @@ $page_title="Setup: Edit Notification";
 <body> 
 
  
-<div data-role="page">
+<div data-role="page" data-theme="<?php echo $theme?>">
  
 	<?php require_once('../include/header_admin.php'); ?>
  
@@ -85,7 +85,7 @@ $page_title="Setup: Edit Notification";
 		<br>		
 	
 	    <br>
-        
+         <a href="notifications.php" data-role="button" data-ajax="false">Cancel</a> 
 		<input type="submit" name="submit" value="Save" >
 
 		

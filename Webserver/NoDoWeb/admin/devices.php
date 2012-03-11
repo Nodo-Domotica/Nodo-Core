@@ -17,12 +17,13 @@ $address = mysql_real_escape_string(htmlspecialchars($_POST['address']));
 $type = mysql_real_escape_string(htmlspecialchars($_POST['type']));
 $dim = mysql_real_escape_string(htmlspecialchars($_POST['dim'])); 
 $homecode = mysql_real_escape_string(htmlspecialchars($_POST['homecode']));
+$collapsed = mysql_real_escape_string(htmlspecialchars($_POST['collapsed']));
  
   
 mysql_select_db($database_tc, $tc);
-mysql_query("INSERT INTO nodo_tbl_devices(naam, type, dim, homecode, address, user_id)
+mysql_query("INSERT INTO nodo_tbl_devices(naam, collapsed, type, dim, homecode, address, user_id)
 VALUES
-('$naam','$type','$dim','$homecode','$address','$userId')") or die(mysql_error());
+('$naam','$collapsed','$type','$dim','$homecode','$address','$userId')") or die(mysql_error());
  header("Location: devices.php#saved");   }
  
 else 
@@ -45,7 +46,7 @@ else
 <body> 
 
  
-<div data-role="page" id="main">
+<div data-role="page" id="main" data-theme="<?php echo $theme?>">
  
 	<?php require_once('../include/header_admin.php');?>
  
@@ -53,7 +54,7 @@ else
 
 <form action="devices.php" data-ajax="false" method="post"> 
 		 
-	<div data-role="collapsible" data-content-theme="c">
+	<div data-role="collapsible" data-content-theme="<?php echo $theme?>">
 			
 		<h3>Add</h3>
 			<label for="select-choice-0" class="select" >Type of device:</label>
@@ -68,12 +69,20 @@ else
 		<div id="name_div"> 		
 		<label for="name">Device name:</label>
 		<input type="text" name="naam" id="naam" value=""  />
+		<br>
+		<label for="select-choice-1" class="select" >Expand on devices page:</label>
+		<select name="collapsed" id="collapsed" data-placeholder="true" data-native-menu="false">
+			<option value="0">No</option>
+			<option value="1">Yes</option>
+		</select>
+		<br>
+		
 		</div>
 	
 	<br>
 		
 		<div id="dim_div">
-			<label for="select-choice-1" class="select">Dim option:</label>
+			<label for="select-choice-2" class="select">Dim option:</label>
 			<select name="dim" id="dim" data-native-menu="false">
 				<option value="0">No</option>
 				<option value="1">Yes - buttons</option>
@@ -110,14 +119,14 @@ else
 
 	</div>
 
-	<div data-role="collapsible" data-collapsed="false" data-content-theme="c">
+	<div data-role="collapsible" data-collapsed="false" data-content-theme="<?php echo $theme?>">
 		<h3>Edit</h3>
 		<?php
 		// get results from database        
 		mysql_select_db($database_tc, $tc);
 		$result = mysql_query("SELECT * FROM nodo_tbl_devices WHERE user_id='$userId'") or die(mysql_error());  
 				               
-		echo '<ul data-role="listview" data-split-icon="delete" data-split-theme="a" data-inset="true">';
+		echo '<ul data-role="listview" data-split-icon="delete" data-split-theme="$theme" data-inset="true">';
   
 		//echo '<br>';   
 		// loop through results of database query, displaying them in the table        
@@ -140,9 +149,9 @@ else
 
 
 <!-- Start of saved page: -->
-<div data-role="dialog" id="saved">
+<div data-role="dialog" id="saved" data-theme="<?php echo $theme?>">
 
-	<div data-role="header">
+	<div data-role="header" data-theme="<?php echo $theme_header?>">
 		<h1><?php echo $page_title;?></h1>
 	</div><!-- /header -->
 

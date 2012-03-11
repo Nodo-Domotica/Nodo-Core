@@ -88,7 +88,7 @@ $theme = $row['webapp_theme'];
 <body> 
 
  
-<div data-role="page" pageid="main">
+<div data-role="page" pageid="main" data-theme="<?php echo $theme?>">
  
 	<?php require_once('../include/header_admin.php'); ?>
  
@@ -128,8 +128,8 @@ $theme = $row['webapp_theme'];
 			<input type="password" name="password2" id="password2" value=""  />
 			
 			<br>
-			<br>
-	        
+			
+	    <a href="index.php" data-role="button" data-ajax="false">Cancel</a>     
 		<input type="submit" id="submit" name="submit" value="Save" >
 
 			
@@ -143,9 +143,9 @@ $theme = $row['webapp_theme'];
 </div><!-- /main page -->
 
 <!-- Start of saved page: -->
-<div data-role="dialog" id="saved">
+<div data-role="dialog" id="saved" data-theme="<?php echo $theme?>">
 
-	<div data-role="header">
+	<div data-role="header" data-theme="<?php echo $theme_header?>">
 		<h1></h1>
 	</div><!-- /header -->
 

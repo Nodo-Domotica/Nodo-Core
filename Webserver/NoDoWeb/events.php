@@ -12,7 +12,7 @@ if (isset($_GET['password'])){$password = mysql_real_escape_string(htmlspecialch
 	
 
 mysql_select_db($database_tc, $tc);
-$result = mysql_query("SELECT * FROM nodo_tbl_users WHERE nodo_id='$id' AND nodo_password='$password'") or die(mysql_error());  
+$result = mysql_query("SELECT id,nodo_id,nodo_password FROM nodo_tbl_users WHERE nodo_id='$id' AND nodo_password='$password'") or die(mysql_error());  
 $row = mysql_fetch_array($result);
 $userId = $row['id']; 
  
@@ -32,7 +32,6 @@ if($userId > 0) {
 	
 		$file = $_GET['file'];
 		
-		mysql_select_db($database_tc, $tc);
 		$result = mysql_query("SELECT * FROM nodo_tbl_scripts WHERE file='$file' AND user_id='$userId'") or die(mysql_error());  
 		$row = mysql_fetch_array($result);
 		echo $row['script'];
@@ -76,12 +75,12 @@ if($userId > 0) {
 			 
 			 
 			//Event in nodo_tbl_event_log opslaan
-			mysql_select_db($database_tc, $tc);
 			mysql_query("INSERT INTO nodo_tbl_event_log (user_id, nodo_unit_nr, event) VALUES ('$userId','$unit','$eventraw')") or die(mysql_error());
+			//Kijken of er meer dan 1000 events gelogd zijn zo ja dan wissen we ze
+			mysql_query("DELETE FROM nodo_tbl_event_log WHERE user_id=$userId AND id<(SELECT min(id) FROM(SELECT id FROM nodo_tbl_event_log WHERE user_id=$userId ORDER BY id DESC LIMIT 1000) AS myselect )") or die(mysql_error());
 			 
 			 
 			//Kijken of we een notificatie moeten sturen			
-			mysql_select_db($database_tc, $tc);
 			$RSnotify = mysql_query("SELECT * FROM nodo_tbl_notifications WHERE user_id='$userId' AND event='$eventraw'") or die(mysql_error());  
 			
 					
@@ -145,7 +144,6 @@ if($userId > 0) {
 					$address =  substr($par1, 1);
 					
 					// save the data to the database 
-					mysql_select_db($database_tc, $tc);
 					mysql_query("UPDATE nodo_tbl_devices SET status='$status' WHERE address='$address' AND homecode='$homecode' AND type='1' AND user_id='$userId'") or die(mysql_error());   
 								
 				break;
@@ -157,21 +155,18 @@ if($userId > 0) {
 						case "on" :
 							$status = 1;
 							// save the data to the database 
-							mysql_select_db($database_tc, $tc);
 							mysql_query("UPDATE nodo_tbl_devices SET status='$status' WHERE address='$par1' AND type='2' AND user_id='$userId'") or die(mysql_error()); 
 						break;
 						
 						case "off" :
 							$status = 0;
 							// save the data to the database 
-							mysql_select_db($database_tc, $tc);
 							mysql_query("UPDATE nodo_tbl_devices SET status='$status' WHERE address='$par1' AND type='2' AND user_id='$userId'") or die(mysql_error()); 
 						break;
 						
 						case 0 :
 							$status = 0;
 							// save the data to the database 
-							mysql_select_db($database_tc, $tc);
 							mysql_query("UPDATE nodo_tbl_devices SET status='$status' WHERE address='$par1' AND type='2' AND user_id='$userId'") or die(mysql_error()); 
 						break;
 						
@@ -193,7 +188,6 @@ if($userId > 0) {
 						case 16:
 							$status = 1;
 							// save the data to the database 
-							mysql_select_db($database_tc, $tc);
 							mysql_query("UPDATE nodo_tbl_devices SET status='$status', dim_value='$par2' WHERE address='$par1' AND type='2' AND user_id='$userId'") or die(mysql_error()); 
 						break;
 					}
@@ -216,7 +210,6 @@ if($userId > 0) {
 					$address =  $par1;
 					
 					// save the data to the database 
-					mysql_select_db($database_tc, $tc);
 					mysql_query("UPDATE nodo_tbl_devices SET status='$status' WHERE address='$address' AND type='3' AND user_id='$userId'") or die(mysql_error());   
 								
 				break;
