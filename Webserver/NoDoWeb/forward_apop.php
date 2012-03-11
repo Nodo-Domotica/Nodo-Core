@@ -4,10 +4,6 @@ require_once('connections/tc.php');
 require_once('include/auth.php'); 
 require_once('include/user_settings.php'); 
   
- //$result = mysql_query("SELECT * FROM nodo_tbl_users WHERE id='$userId'") or die(mysql_error());  
- //$row = mysql_fetch_array($result);
- 
-
 function sendMsg($args)
 {
     $fp = fsockopen($args["host"],$args["port"], $errno, $errstr, 10);

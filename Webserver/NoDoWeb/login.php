@@ -8,6 +8,31 @@ require_once('include/webapp_settings.php');
 
 $message = "";
 
+
+if (isset($_COOKIE['username']) && isset($_COOKIE['password'])) {
+
+	$username = $_COOKIE['username'];
+	$password = $_COOKIE['password'];
+	
+	mysql_select_db($database_tc, $tc);
+	$result = mysql_query("SELECT id,user_login_name,user_password,active FROM nodo_tbl_users WHERE user_login_name='$username' AND user_password='$password'") or die(mysql_error());  
+	$row = mysql_fetch_array($result);
+	$id = $row['id'];
+	$active = $row['active'];
+
+	if($id > 0 && $active == 1) {
+		//log in the user
+		session_start();
+		$_SESSION['userId'] = $id;
+		header("Location: devices.php");
+	}
+	
+}
+
+
+
+
+
 if (isset($_POST['submit'])) 
 {
 
@@ -15,6 +40,15 @@ if (isset($_POST['submit']))
 $username = mysql_real_escape_string(htmlspecialchars($_POST['username'])); 
 $password = $_POST['password']; 
 $password = md5($salt.$password);
+
+
+if (isset($_POST['rememberme'])) {
+
+
+             /* Set cookie to last 1 year */
+             setcookie('username', $username, time()+60*60*24*365);
+             setcookie('password', $password, time()+60*60*24*365);
+}
 
 
 mysql_select_db($database_tc, $tc);
@@ -70,12 +104,16 @@ $active = $row['active'];
 	<div data-role="content">	
 		
 		<?php echo $message ?>
+		<?php $_POST['rememberme']; ?>
 		
 		<form action="login.php" data-ajax="false" method="post">		
 			<label for="username">Username:</label>
 			<input type="text" name="username" id="username" value=""  />
 			<label for="password">Password:</label>
 			<input type="password" name="password" id="password" value=""  />
+			<br>
+			<input type="checkbox" name="rememberme" id="rememberme_1" class="custom" />
+			<label for="rememberme_1">Remember me</label>
 			<br>
 			<input type="submit" name="submit" value="Login" >
 		</form>
@@ -90,6 +128,12 @@ $active = $row['active'];
 	</div><!-- /footer -->
 	
 </div><!-- /page -->
+<script>
+$(document).ready(function(){
+   $("#username").focus();
+});
 
+
+</script>
 </body>
 </html>

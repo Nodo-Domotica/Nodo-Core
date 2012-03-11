@@ -54,7 +54,7 @@ $page_title="Setup: Edit activity";
  
 	<?php require_once('../include/header_admin.php'); ?>
  
-	<div data-role="content">	
+	<div data-role="content" data-theme="<?php echo $theme?>">	
 
 	<form action="activities_edit.php" data-ajax="false" method="post"> 
 	
@@ -72,8 +72,8 @@ $page_title="Setup: Edit activity";
 		<label for="name">Event(s): (example: userevent 100,100;sendkaku a1,on)</label>
 		<input type="text" name="events" id="events" value="<?php echo $row['events'] ;?>"  />
 	
-	   
-        
+	   <br>
+         <a href="activities.php" data-role="button" data-ajax="false">Cancel</a> 
 		<input type="submit" name="submit" value="Save" >
 
 		

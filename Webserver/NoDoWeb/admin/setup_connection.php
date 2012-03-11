@@ -3,6 +3,7 @@
 require_once('../connections/tc.php'); 
 require_once('../include/auth.php');
 require_once('../include/user_settings.php');
+require_once('../include/webapp_settings.php');
 
 $page_title = "Setup: Communication";	
 
@@ -216,7 +217,7 @@ END Check connection & Nodo config
 
 <!-- Start of main page: -->
 
-<div data-role="page" pageid="main" >
+<div data-role="page" pageid="main" data-theme="<?php echo $theme?>">
  
 	<?php require_once('../include/header_admin.php'); ?>
  
@@ -302,9 +303,9 @@ function show_loading() {
 </div><!-- /main page -->
 
 <!-- Start of saved dialog: -->
-<div data-role="dialog" id="saved">
+<div data-role="dialog" id="saved" data-theme="<?php echo $theme?>">
 
-	<div data-role="header">
+	<div data-role="header" data-theme="<?php echo $theme_header?>">
 		<h1><?php echo $page_title;?></h1>
 	</div><!-- /header -->
 

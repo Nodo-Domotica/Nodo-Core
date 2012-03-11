@@ -21,7 +21,7 @@ $page_title = "Setup";
 
 <body> 
 
-<div data-role="page">
+<div data-role="page" data-theme="<?php echo $theme?>">
 
 	<?php require_once('../include/header_admin.php'); ?>
 

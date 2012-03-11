@@ -1,6 +1,5 @@
 <?php 
 
- 
 require_once('connections/tc.php'); 
 require_once('include/auth.php'); 
 require_once('include/user_settings.php'); 
@@ -38,7 +37,6 @@ $RSsensor = mysql_query($query_RSsensor, $tc) or die(mysql_error());
 
 
 ?>
-
 
 
 <!DOCTYPE html> 

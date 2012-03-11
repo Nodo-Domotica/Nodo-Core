@@ -22,6 +22,7 @@ $page_title="Setup: Edit device";
  $type = mysql_real_escape_string(htmlspecialchars($_POST['type']));
  $dim = mysql_real_escape_string(htmlspecialchars($_POST['dim']));
  $homecode = mysql_real_escape_string(htmlspecialchars($_POST['homecode']));
+ $collapsed = mysql_real_escape_string(htmlspecialchars($_POST['collapsed']));
  
  
  	
@@ -32,7 +33,7 @@ $page_title="Setup: Edit device";
   
  // save the data to the database 
  mysql_select_db($database_tc, $tc);
- mysql_query("UPDATE nodo_tbl_devices SET naam='$naam', address='$address', type='$type', homecode='$homecode', dim='$dim' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
+ mysql_query("UPDATE nodo_tbl_devices SET naam='$naam', collapsed='$collapsed',address='$address', type='$type', homecode='$homecode', dim='$dim' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
  // once saved, redirect back to the view page 
  header("Location: devices.php#saved");  
  } 
@@ -57,7 +58,7 @@ $page_title="Setup: Edit device";
 <body> 
 
  
-<div data-role="page">
+<div data-role="page" data-theme="<?php echo $theme?>">
  
 	<?php require_once('../include/header_admin.php'); ?>
  
@@ -85,8 +86,16 @@ $page_title="Setup: Edit device";
 		<input type="text" name="naam" id="naam" value="<?php echo $row['naam'] ;?>"  />
 	
 	<br>
+	
+		<label for="select-choice-1" class="select" >Expand on devices page:</label>
+		<select name="collapsed" id="collapsed" data-placeholder="true" data-native-menu="false">
+			<option value="0"<?php if ($row['collapsed'] == 0) {echo 'selected="selected"';}?>>No</option>
+			<option value="1"<?php if ($row['collapsed'] == 1) {echo 'selected="selected"';}?>>Yes</option>
+		</select>
+		<br>
+		
 	<div id="dim_div">
-		<label for="select-choice-1" class="select" >Dim option:</label>
+		<label for="select-choice-2" class="select" >Dim option:</label>
 		<select name="dim" id="dim" data-placeholder="true" data-native-menu="false">
 			<option value="0"<?php if ($row['dim'] == 0) {echo 'selected="selected"';}?>>No</option>
 			<option value="1"<?php if ($row['dim'] == 1) {echo 'selected="selected"';}?>>Yes - buttons</option>
@@ -116,7 +125,7 @@ $page_title="Setup: Edit device";
 	</div>
 		
 		
-		    
+		<a href="devices.php" data-role="button" data-ajax="false">Cancel</a>     
 		<input type="submit" name="submit" value="Save" >
 
 		

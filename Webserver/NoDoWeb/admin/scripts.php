@@ -37,17 +37,6 @@ function HTTPRequest($Url){
 END HTTPRequest function														
 *************************************************************************************************/
 
-/************************************************************************************************
-Eventlist read own files														
-*************************************************************************************************/
-
-//HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&event=FileLog%20Files");
-//HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&event=FileList");
-//HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&event=FileLog");
-/************************************************************************************************
-END Eventlist read own files														
-*************************************************************************************************/
-
 
 
 /************************************************************************************************
@@ -181,7 +170,7 @@ END Script write
 
 <!-- Start of main page: -->
 
-<div data-role="page" pageid="main">
+<div data-role="page" pageid="main" data-theme="<?php echo $theme?>">
  
 	<?php require_once('../include/header_admin.php'); ?>
  
@@ -256,9 +245,9 @@ if (isset($script)){
 </div><!-- /main page -->
 
 <!-- Start of saved page: -->
-<div data-role="dialog" id="saved">
+<div data-role="dialog" id="saved" data-theme="<?php echo $theme?>">
 
-	<div data-role="header">
+	<div data-role="header" data-theme="<?php echo $theme_header?>">
 		<h1><?php echo $page_title?></h1>
 	</div><!-- /header -->
 
