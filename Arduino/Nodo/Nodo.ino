@@ -28,6 +28,7 @@
  *
  \****************************************************************************************************************************/
 
+#define NODO_MAC 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF
 
 #define VERSION       11          // Nodo Version nummer:
                                   // Major.Minor.Patch
@@ -697,8 +698,7 @@ char InputBuffer_Serial[INPUT_BUFFER_SIZE+1];               // Buffer voor input
 char InputBuffer_Terminal[INPUT_BUFFER_SIZE+1];             // Buffer voor input terminal verbinding Telnes sessie
 
 // ethernet classes voor IP communicatie EventGhost, Telnet terminal en HTTP.
-// byte Ethernet_MAC_Address[]={0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};// MAC adres van de Nodo. ??? Productie
-byte Ethernet_MAC_Address[]={0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};// MAC adres van de Nodo. ??? Test
+byte Ethernet_MAC_Address[]={NODO_MAC};// MAC adres van de Nodo.
 EthernetServer IPServer(80);                                // Server class voor HTTP sessie.
 EthernetServer TerminalServer(23);                          // Server class voor Terminal sessie.
 EthernetClient TerminalClient;                              // Client class voor Terminal sessie.
@@ -791,7 +791,7 @@ void setup()
 
   if((S.Nodo_IP[0] + S.Nodo_IP[1] + S.Nodo_IP[2] + S.Nodo_IP[3])==0)
     {
-    if(Ethernet.begin(Ethernet_MAC_Address)!=0) // maak verbinding en verzoek IP via DHCP
+    if(Ethernet.begin(Ethernet_MAC_Address)==0) // maak verbinding en verzoek IP via DHCP
       Serial.println(F("Failed to configure Ethernet using DHCP"));
     }
   else
