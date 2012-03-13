@@ -1,8 +1,9 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- Issue 322: Onterechte foutmelding DHCP verwijderd.
-- Issue 300: Dag van de week toegevoegd aan de datum weergave.
+- Issue 310: SendStatus WiredAnalog zend geen events meer richting HTTP
+- Issue 324: Toevoeging nodo welkomsttekst aan status overzicht
+- Issue 303: KAKU events - foute unit
 
 Known Errors / ToDo:
 - Default poort voor "PortServer" nog bepalen. 

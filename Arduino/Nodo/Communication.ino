@@ -171,7 +171,7 @@ boolean SendHTTPRequestEvent(unsigned long event)
   char* EventString=(char*)malloc(INPUT_BUFFER_SIZE+1);
 
   strcpy(EventString,"&unit=");
-  strcat(EventString,int2str((event>>28)&0x0f));
+  strcat(EventString,int2str((event>>24)&0x0f));
   strcat(EventString,"&event=");
   strcat(EventString,Event2str(event));
   r=xSendHTTPRequestStr(EventString);
