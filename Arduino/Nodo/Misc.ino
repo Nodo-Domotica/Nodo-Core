@@ -167,7 +167,6 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       *Par2=(WiredInputStatus[xPar1-1])?VALUE_ON:VALUE_OFF;
       break;
 
-      
     case CMD_WIRED_OUT:
       *Par1=xPar1;
       *Par2=(WiredOutputStatus[xPar1-1])?VALUE_ON:VALUE_OFF;
@@ -198,7 +197,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
  * Deze functie haalt een tekst op uit PROGMEM en geeft als string terug
  * BUILD 01, 09-01-2010, P.K.Tonkes@gmail.com
    \*********************************************************************************************/
-   char* ProgmemString(prog_char* text)
+char* ProgmemString(prog_char* text)
     {
     byte x=0;
     static char buffer[40];
@@ -395,6 +394,8 @@ void Status(byte Par1, byte Par2, boolean Transmit)
   if(Par1==VALUE_ALL)
     {
     Par2=0;
+    if(!Transmit)
+      PrintWelcome();
     CMD_Start=FIRST_COMMAND;
     CMD_End=LAST_COMMAND;
     }
@@ -406,10 +407,9 @@ void Status(byte Par1, byte Par2, boolean Transmit)
     CMD_End=Par1;
     }
 
-  if(!Transmit)PrintTerminal(ProgmemString(Text_22));
-
   for(x=CMD_Start; x<=CMD_End; x++)
     {
+    s=false;
     if(!Transmit)
       {
       s=true;
@@ -517,13 +517,16 @@ void Status(byte Par1, byte Par2, boolean Transmit)
           P2=0;
           GetStatus(&x,&P1,&P2); // haal status op. Call by Reference!
           if(Transmit)
+            {
             TransmitCode(command2event(x,P1,P2),VALUE_ALL); // verzend als event
+            }
           else
             PrintTerminal(Event2str(command2event(x,P1,P2)));
           }
       }
     }
-  if(!Transmit)PrintTerminal(ProgmemString(Text_22));
+  if(!Transmit && Par1==VALUE_ALL)
+    PrintTerminal(ProgmemString(Text_22));
   }
 
 
