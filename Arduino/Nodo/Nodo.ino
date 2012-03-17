@@ -24,7 +24,6 @@
  * Voor vragen of suggesties, mail naar              : p.k.tonkes@gmail.com
  * Compiler                                          : Arduino Compiler versie 1.0
  * Arduino board                                     : Arduino Mega 1280 of 2560 @16Mhz.
- * Hardware                                          : Hardware en Arduino penbezetting volgens schema ???
  *
  \****************************************************************************************************************************/
 
@@ -134,7 +133,7 @@ prog_char PROGMEM Cmd_044[]="SendUserEvent";
 prog_char PROGMEM Cmd_045[]="RawSignalCopy";
 prog_char PROGMEM Cmd_046[]="WildCard";
 prog_char PROGMEM Cmd_047[]="SendBusy";
-prog_char PROGMEM Cmd_048[]="";
+prog_char PROGMEM Cmd_048[]="Divert";
 prog_char PROGMEM Cmd_049[]="Password";
 prog_char PROGMEM Cmd_050[]="EventlistFile";
 prog_char PROGMEM Cmd_051[]="WiredCalibrate";
@@ -353,7 +352,7 @@ prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
 #define CMD_RAWSIGNAL_COPY              45
 #define CMD_COMMAND_WILDCARD            46
 #define CMD_SENDBUSY                    47
-#define CMD_RES_48                      48
+#define CMD_DIVERT                      48
 #define CMD_PASSWORD                    49
 #define CMD_EVENTLIST_FILE              50
 #define CMD_WIRED_ANALOG_CALIBRATE      51
@@ -683,7 +682,7 @@ uint8_t RFbit,RFport,IRbit,IRport;                          // t.b.v. verwerking
 uint8_t MD5HashCode[16];                                    // tabel voor berekenen van MD5 hash codes t.b.v. uitwisselen wachtwoord EventGhost.
 boolean EthernetEnabled = false;                            // Vlag die aangeeft of er een Ethernetverbinding is.
 int UserVar[USER_VARIABLES_MAX];
-char TempString[INPUT_BUFFER_SIZE+1];                       // Globale, tijdelijke string voor algemeen gebruik in diverste functies. ??? Nodig?
+char TempString[INPUT_BUFFER_SIZE+1];                       // Globale, tijdelijke string voor algemeen gebruik in diverste functies. 
 int TerminalConnected=0;                                    // Vlag geeft aan of en hoe lang nog (seconden) er verbinding is met een Terminal.
 boolean ConfirmHTTP=false;                                  // Als true, dan wordt een output naar Serial/Telnet eveneens per regel verzonden als HTTP-requenst  
 boolean SerialConnected;                                    // Vlag geeft aan of er een verbinding USB-poort.
@@ -728,7 +727,6 @@ void setup()
   if(S.Version!=VERSION)ResetFactory(); // Als versienummer in EEPROM niet correct is, dan een ResetFactory.
   
   // Initialiseer in/output poorten.
-  pinMode(28, OUTPUT);//??? t.b.v. tijdmetingen met Logic analyser DEBUGGING
   pinMode(PIN_IR_RX_DATA, INPUT);
   pinMode(PIN_RF_RX_DATA, INPUT);
   pinMode(PIN_RF_TX_DATA, OUTPUT);

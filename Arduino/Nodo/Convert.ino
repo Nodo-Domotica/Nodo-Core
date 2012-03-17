@@ -311,10 +311,7 @@ int str2AnalogInt(char* string)
     }
         
   if(result>10230)
-    {
-    Serial.println("*** debug: str2analogint(); Overflow!");//???
     return 0;
-    }      
   
   if(negative)
     result=-result;

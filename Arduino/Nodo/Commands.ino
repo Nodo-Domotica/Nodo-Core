@@ -269,9 +269,9 @@ byte CommandError(unsigned long Content)
       if(Par2!=VALUE_OFF && Par2!=VALUE_ON && Par2!=0)return ERROR_02;
       return false;
 
-//    case CMD_DIVERT:   //???
-//     if(Par1>UNIT_MAX)return ERROR_02;
-//     return false;
+    case CMD_DIVERT:
+     if(Par1>UNIT_MAX)return ERROR_02;
+     return false;
 
     case CMD_UNIT:
       if(Par1<1 || Par1>UNIT_MAX)return ERROR_02;
@@ -740,8 +740,11 @@ void ExecuteLine(char *Line, byte Port)
         switch(Cmd)
           {
           // Hier worden de commando's verwerkt die een afwijkende MMI hebben of die uitsluitend mogen worden uitgevoerd
-          // als ze via Serial of ethernet wrden verzonden. (i.v.m. veiligheid)
+          // als ze via Serial of ethernet worden verzonden. (i.v.m. veiligheid)
           
+          case CMD_DIVERT:
+            Serial.println("*** Debug: Divert nog niet operationeel.");//???
+                    
           case CMD_UNIT:
             S.Unit=Par1;
             if(Par1>1)
@@ -970,7 +973,6 @@ void ExecuteLine(char *Line, byte Port)
               {
               S.WiredInputSmittTrigger[Par1-1]=str2AnalogInt(TmpStr);
               SaveSettings();
-              // Serial.print("*** debug: SmittTrigger ingesteld op ");Serial.println(AnalogInt2str(S.WiredInputSmittTrigger[Par1-1]));//??? Debug
               }
             break;            
 
@@ -1128,9 +1130,9 @@ void ExecuteLine(char *Line, byte Port)
             break;
 
           case CMD_SEND:
-            // zoek in de regel waar de string met het http request begint.
             x=StringFind(Line,cmd2str(CMD_SEND))+strlen(cmd2str(CMD_SEND));
-            while(Line[x]==32)x++;
+            while(Line[x]!=';' && Line[x]!=0)x++;
+            x++;
             SendStringRF(&Line[0]+x);
             break;
 
@@ -1192,6 +1194,7 @@ void ExecuteLine(char *Line, byte Port)
           case CMD_VARIABLE_DEC:
           case CMD_VARIABLE_SET:
           case CMD_VARIABLE_INC:
+          case CMD_VARIABLE_EVENT:
             if(GetArgv(Command,TmpStr,3))        
               {
               v=AnalogInt2event(str2AnalogInt(TmpStr), Par1, Cmd);
@@ -1201,10 +1204,6 @@ void ExecuteLine(char *Line, byte Port)
             
           default:
             {              
-            //Serial.print("*** debug: Cmd =");Serial.println(Cmd,DEC);//??? Debug
-            //Serial.print("*** debug: Par1=");Serial.println(Par1,DEC);//??? Debug
-            //Serial.print("*** debug: Par2=");Serial.println(Par2,DEC);//??? Debug
-
             // standaard commando volgens gewone syntax
             v=command2event(Cmd,Par1,Par2);
             Error=CommandError(v);
@@ -1216,7 +1215,6 @@ void ExecuteLine(char *Line, byte Port)
         {
         if(State_EventlistWrite==0)// Gewoon uitvoeren
           {
-          // Serial.print("*** debug: ProcesEvent(); Event=");Serial.println(v,HEX);//??? Debug
           ProcessEvent(v,VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
           continue;
           }
@@ -1248,7 +1246,6 @@ void ExecuteLine(char *Line, byte Port)
         RaiseError(Error);
         Line[0]=0;
         }          
-      // Serial.println("*** debug: Einde behandeling commando;");
       }
 
     // printbare tekens toevoegen aan commando zolang er nog ruimte is in de string
