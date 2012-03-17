@@ -397,8 +397,7 @@ void ExecuteIP(void)
       if(IPClient.available()) 
         {
         InByte=IPClient.read();
-        //Serial.write(InByte);//??? Debug
-      
+        
         if(isprint(InByte) && InByteCounter<IP_INPUT_BUFFER_SIZE)
           InputBuffer_IP[InByteCounter++]=InByte;
     

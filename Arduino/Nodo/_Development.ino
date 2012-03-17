@@ -1,9 +1,8 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- Issue 310: SendStatus WiredAnalog zend geen events meer richting HTTP
-- Issue 324: Toevoeging nodo welkomsttekst aan status overzicht
-- Issue 303: KAKU events - foute unit
+- Issue 341:	event Variable wordt afgekeurd bij EventlistWrite
+- Issue 337:	variableset geeft overflow
 
 Known Errors / ToDo:
 - Default poort voor "PortServer" nog bepalen. 

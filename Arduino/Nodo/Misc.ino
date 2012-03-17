@@ -581,7 +581,6 @@ void Beep(int frequency, int duration)//Herz,millisec
   long halfperiod=500000L/frequency;
   long loops=(long)duration*frequency/(long)1000;
   
-  //noInterrupts();???
   for(loops;loops>0;loops--) 
     {
     digitalWrite(PIN_SPEAKER, HIGH);
@@ -589,7 +588,6 @@ void Beep(int frequency, int duration)//Herz,millisec
     digitalWrite(PIN_SPEAKER, LOW);
     delayMicroseconds(halfperiod);
     }
-  //interrupts();???
   }
  
  /**********************************************************************************************\
@@ -890,7 +888,7 @@ uint32_t md5_T[] PROGMEM = {
   	state->a[2] += a[2];
   	state->a[3] += a[3];
   	state->counter++;
-  }
+    }
   
   void md5_lastBlock(struct md5_ctx_t *state, const void* block, uint16_t length_b){
   	uint16_t l;
