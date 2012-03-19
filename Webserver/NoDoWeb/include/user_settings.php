@@ -33,9 +33,4 @@ $nodo_password = $row_RSsetup['nodo_password'];
 $nodo_id = $row_RSsetup['nodo_id'];
 
 
-//$DEFAULT_NODO_PWD = "Nodo";
-//$DEFAULT_NODO_ID = "00000000";
-//$WEBAPP_HOST = "nodo2.powerkite.nl";
-//$WEBAPP_VERSION = "0.9.3";
-
 ?>

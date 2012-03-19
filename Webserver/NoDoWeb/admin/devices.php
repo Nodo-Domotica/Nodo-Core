@@ -12,24 +12,59 @@ if (isset($_POST['submit']))
 {  
  
   
-$naam = mysql_real_escape_string(htmlspecialchars($_POST['naam'])); 
-$address = mysql_real_escape_string(htmlspecialchars($_POST['address']));  
 $type = mysql_real_escape_string(htmlspecialchars($_POST['type']));
+$naam = mysql_real_escape_string(htmlspecialchars($_POST['naam'])); 
+$label_on = mysql_real_escape_string(htmlspecialchars($_POST['label_on']));
+$label_off = mysql_real_escape_string(htmlspecialchars($_POST['label_off']));
+$collapsed = mysql_real_escape_string(htmlspecialchars($_POST['collapsed']));
+$address = mysql_real_escape_string(htmlspecialchars($_POST['address']));  
+$user_event_on = mysql_real_escape_string(htmlspecialchars($_POST['user_event_on'])); 
+$user_event_off = mysql_real_escape_string(htmlspecialchars($_POST['user_event_off'])); 
 $dim = mysql_real_escape_string(htmlspecialchars($_POST['dim'])); 
 $homecode = mysql_real_escape_string(htmlspecialchars($_POST['homecode']));
-$collapsed = mysql_real_escape_string(htmlspecialchars($_POST['collapsed']));
- 
-  
+
+
+
+
 mysql_select_db($database_tc, $tc);
-mysql_query("INSERT INTO nodo_tbl_devices(naam, collapsed, type, dim, homecode, address, user_id)
+
+//Totaal aantal records bepalen 
+$RSDevices = mysql_query("SELECT id FROM nodo_tbl_devices WHERE user_id='$userId'") or die(mysql_error()); 
+$RSDevices_rows = mysql_num_rows($RSDevices);
+//aantal records met 1 verhogen zodat we deze waarde in het sorteerveld kunnen gebruiken
+$sort_order = $RSDevices_rows + 1; 
+
+mysql_query("INSERT INTO nodo_tbl_devices(naam, label_on, label_off, collapsed, type, dim, homecode, address, user_event_on, user_event_off, user_id,sort_order)
 VALUES
-('$naam','$collapsed','$type','$dim','$homecode','$address','$userId')") or die(mysql_error());
+('$naam','$label_on','$label_off','$collapsed','$type','$dim','$homecode','$address','$user_event_on','$user_event_off','$userId','$sort_order')") or die(mysql_error());
  header("Location: devices.php#saved");   }
  
-else 
-{
-//Continue
-}?>
+ 
+ 
+ if (isset($_GET['sort'])) {
+	
+	$device_id = $_GET['id'];
+	$sort = $_GET['sort'];
+	$sort_order = $_GET['sort_order'];
+	$prev_record = $_GET['sort_order'] - 1;
+	$next_record = $_GET['sort_order'] + 1;
+	
+	if ($sort == "up") {
+
+	 mysql_query("UPDATE nodo_tbl_devices SET sort_order=sort_order +1 WHERE user_id='$userId' AND sort_order='$prev_record'") or die(mysql_error()); 	
+	 mysql_query("UPDATE nodo_tbl_devices SET sort_order=sort_order -1 WHERE user_id='$userId' AND sort_order='$sort_order' AND id='$device_id'") or die(mysql_error()); 
+	
+	}
+	if ($sort == "down") {
+
+	 mysql_query("UPDATE nodo_tbl_devices SET sort_order=sort_order -1 WHERE user_id='$userId' AND sort_order='$next_record'") or die(mysql_error()); 	
+	 mysql_query("UPDATE nodo_tbl_devices SET sort_order=sort_order +1 WHERE user_id='$userId' AND sort_order='$sort_order' AND id='$device_id'") or die(mysql_error()); 
+	
+	}
+
+}
+
+ ?>
 
 
 
@@ -63,12 +98,19 @@ else
 				<option value="1">Kaku</option>
 				<option value="2">New Kaku</option>
 				<option value="3">WiredOut</option>
+				<option value="4">UserEvent</option>
 			</select>
 	<br>
 		
 		<div id="name_div"> 		
 		<label for="name">Device name:</label>
 		<input type="text" name="naam" id="naam" value=""  />
+		<br>
+		<label for="label_on">Label on:</label>
+		<input type="text" name="label_on" id="label_on" value="On"  />
+		<br>
+		<label for="label_off">Label off:</label>
+		<input type="text" name="label_off" id="naam" value="Off"  />
 		<br>
 		<label for="select-choice-1" class="select" >Expand on devices page:</label>
 		<select name="collapsed" id="collapsed" data-placeholder="true" data-native-menu="false">
@@ -79,7 +121,6 @@ else
 		
 		</div>
 	
-	<br>
 		
 		<div id="dim_div">
 			<label for="select-choice-2" class="select">Dim option:</label>
@@ -110,6 +151,15 @@ else
 		<input type="text" maxLength="3" name="address" id="address" value=""  />
 		<br>
 		</div>
+		
+		<div id="userevent_div">
+		<label for="user_event_on" >UserEvent on: (Example: 100,2)</label>
+		<input type="text" maxLength="7" name="user_event_on" id="user_event_on" value=""  />
+		<br>
+		<label for="user_event_off" >UserEvent off: (Example: 100,1)</label>
+		<input type="text" maxLength="7" name="user_event_off" id="user_event_off" value=""  />
+		<br>
+		</div>
      
 		<div id="submit_div">
 		<input type="submit" name="submit" value="Save" >
@@ -119,26 +169,51 @@ else
 
 	</div>
 
-	<div data-role="collapsible" data-collapsed="false" data-content-theme="<?php echo $theme?>">
+	<div data-role="collapsible" data-collapsed="false" data-content-theme="<?php echo $theme;?>">
 		<h3>Edit</h3>
 		<?php
 		// get results from database        
 		mysql_select_db($database_tc, $tc);
-		$result = mysql_query("SELECT * FROM nodo_tbl_devices WHERE user_id='$userId'") or die(mysql_error());  
+		$result = mysql_query("SELECT * FROM nodo_tbl_devices WHERE user_id='$userId' ORDER BY sort_order ASC") or die(mysql_error());  
+		$rows = mysql_num_rows($result);
 				               
-		echo '<ul data-role="listview" data-split-icon="delete" data-split-theme="$theme" data-inset="true">';
-  
+		
+		//echo "<ul data-role=\"listview\" data-theme=\"$theme\" data-inset=\"true\" data-dividertheme=\"$theme_header\">";	
 		//echo '<br>';   
 		// loop through results of database query, displaying them in the table        
+		
+		$i=0;
+		
 		while($row = mysql_fetch_array($result)) 
 		{                                
-		           
-		echo '<li><a href="devices_edit.php?id=' . $row['id'] . '" title=Edit data-ajax="false">'. $row['naam'] .'</a>';                
-		echo '<a href="devices_delete_confirm.php?id=' . $row['id'] . '" data-rel="dialog">Delete</a></li>';
+		 
+		$i++;
+		?>          
 		
+		
+  
+		<div data-role="collapsible" data-collapsed="<?php if ($_GET['id'] == $row['id']) {echo "false";} else {echo "true";} ?>" data-content-theme="<?php echo $theme;?>">
+		<h3><?php echo $row['naam']; ?></h3>
+			
+		
+
+		<?php if ($i > 1) { ?>
+		<a href="devices.php?sort=up&sort_order=<?php echo $row['sort_order']; ?>&id=<?php echo $row['id']; ?>" data-role="button"  data-icon="arrow-u" data-ajax="false">Move up</a>
+		<?php } ?>
+		
+		<?php if ($i != $rows) { ?>
+		<a href="devices.php?sort=down&sort_order=<?php echo $row['sort_order']; ?>&id=<?php echo $row['id']; ?>" data-role="button" data-icon="arrow-d"  data-ajax="false">Move down</a>
+		<?php } ?>
+		
+		<a href="devices_edit.php?id=<?php echo $row['id']; ?>" data-role="button" data-icon="gear" data-ajax="false">Edit</a>
+		<a href="devices_delete_confirm.php?id=<?php echo $row['id']; ?>" data-role="button"  data-icon="delete" data-rel="dialog">Delete</a>
+		
+		</div>
+	
+		<?php
 		}         
 		?>
-		
+				
 	</div>
 	
 	</div><!-- /content -->
@@ -171,6 +246,7 @@ $('#name_div').hide();
 $('#dim_div').hide();   
 $('#homecode_div').hide();
 $('#adres_div').hide();
+$('#userevent_div').hide();
 $('#submit_div').hide();
 
 	
@@ -187,6 +263,7 @@ $('#name_div').show();
 $('#adres_div').show();
 $('#dim_div').hide();
 $('#homecode_div').show();
+$('#userevent_div').hide();
 $('#submit_div').show();
 
 $('#label_adres_kaku').show();
@@ -200,6 +277,7 @@ $('#name_div').show();
 $('#adres_div').show();
 $('#dim_div').show();
 $('#homecode_div').hide();
+$('#userevent_div').hide();
 $('#submit_div').show();
 
 $('#label_adres_kaku').hide();
@@ -214,6 +292,7 @@ $('#name_div').show();
 $('#adres_div').show();
 $('#dim_div').hide();
 $('#homecode_div').hide();
+$('#userevent_div').hide();
 $('#submit_div').show();
 
 $('#label_adres_kaku').hide();
@@ -221,7 +300,23 @@ $('#label_adres_wiredout').show();
 $('#label_adres_newkaku').hide();
 
 }
-   
+
+if ($(this).attr('value')==4) {   
+
+$('#name_div').show();  
+$('#adres_div').hide();
+$('#dim_div').hide();
+$('#homecode_div').hide();
+$('#label_adres_kaku').hide();
+$('#label_adres_wiredout').hide();
+$('#label_adres_newkaku').hide();
+$('#userevent_div').show();
+
+
+$('#submit_div').show();
+
+} 
+ 
 });
 </script>
 

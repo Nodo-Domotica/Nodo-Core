@@ -31,6 +31,31 @@ function GetSQLValueString($theValue, $theType, $theDefinedValue = "", $theNotDe
 }
 
 if ((isset($_GET['id'])) && ($_GET['id'] != "")) {
+
+  $id = $_GET['id'];
+  
+  $RS_sort = mysql_query("SELECT * FROM nodo_tbl_devices WHERE user_id='$userId' AND id='$id'") or die(mysql_error());
+  $RS_sort_row = mysql_fetch_array($RS_sort);
+  $sort_number = $RS_sort_row['sort_order'];
+  
+  $result = mysql_query("SELECT * FROM nodo_tbl_devices WHERE user_id='$userId' AND sort_order > $sort_number") or die(mysql_error());
+  
+  while($row = mysql_fetch_array($result)) {
+  
+  $id = $row['id'];
+  $sort_number = $row['sort_order'] - 1;
+  
+  // save the data to the database 
+ mysql_select_db($database_tc, $tc);
+ mysql_query("UPDATE nodo_tbl_devices SET sort_order='$sort_number' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
+ 
+ }
+  
+  
+  
+  
+  
+  
   $deleteSQL = sprintf("DELETE FROM nodo_tbl_devices WHERE id=%s AND user_id='$userId'",
                        GetSQLValueString($_GET['id'], "int"));
 

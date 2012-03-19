@@ -17,23 +17,21 @@ $page_title="Setup: Edit device";
  { 
  // get form data, making sure it is valid 
  $id = $_POST['id']; 
- $naam = mysql_real_escape_string(htmlspecialchars($_POST['naam'])); 
- $address = mysql_real_escape_string(htmlspecialchars($_POST['address']));  
  $type = mysql_real_escape_string(htmlspecialchars($_POST['type']));
+ $naam = mysql_real_escape_string(htmlspecialchars($_POST['naam'])); 
+ $label_on = mysql_real_escape_string(htmlspecialchars($_POST['label_on']));
+ $label_off = mysql_real_escape_string(htmlspecialchars($_POST['label_off']));
+ $collapsed = mysql_real_escape_string(htmlspecialchars($_POST['collapsed']));
+ $address = mysql_real_escape_string(htmlspecialchars($_POST['address']));  
+ $user_event_on = mysql_real_escape_string(htmlspecialchars($_POST['user_event_on'])); 
+ $user_event_off = mysql_real_escape_string(htmlspecialchars($_POST['user_event_off'])); 
  $dim = mysql_real_escape_string(htmlspecialchars($_POST['dim']));
  $homecode = mysql_real_escape_string(htmlspecialchars($_POST['homecode']));
- $collapsed = mysql_real_escape_string(htmlspecialchars($_POST['collapsed']));
- 
- 
- 	
-
- 
-
  
   
  // save the data to the database 
  mysql_select_db($database_tc, $tc);
- mysql_query("UPDATE nodo_tbl_devices SET naam='$naam', collapsed='$collapsed',address='$address', type='$type', homecode='$homecode', dim='$dim' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
+ mysql_query("UPDATE nodo_tbl_devices SET naam='$naam', label_on='$label_on', label_off='$label_off', collapsed='$collapsed',address='$address', user_event_on='$user_event_on', user_event_off='$user_event_off', type='$type', homecode='$homecode', dim='$dim' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
  // once saved, redirect back to the view page 
  header("Location: devices.php#saved");  
  } 
@@ -78,13 +76,20 @@ $page_title="Setup: Edit device";
 				<option value="1"<?php if ($row['type'] == 1) {echo 'selected="selected"';}?>>Kaku</option>
 				<option value="2" <?php if ($row['type'] == 2) {echo 'selected="selected"';}?>>New kaku</option>
 				<option value="3" <?php if ($row['type'] == 3) {echo 'selected="selected"';}?>>WiredOut</option>
+				<option value="4" <?php if ($row['type'] == 4) {echo 'selected="selected"';}?>>UserEvent</option>
 			</select>
 	
 	<br>
 	
 		<label for="name">Device name:</label>
 		<input type="text" name="naam" id="naam" value="<?php echo $row['naam'] ;?>"  />
-	
+	<br>
+		<label for="label_on">Label on:</label>
+		<input type="text" name="label_on" id="label_on" value="<?php echo $row['label_on'] ;?>"  />
+		<br>
+		<label for="label_off">Label off:</label>
+		<input type="text" name="label_off" id="naam" value="<?php echo $row['label_off'] ;?>"  />
+		
 	<br>
 	
 		<label for="select-choice-1" class="select" >Expand on devices page:</label>
@@ -123,10 +128,19 @@ $page_title="Setup: Edit device";
 		<input type="text" maxLength="3" name="address" id="address" value="<?php echo $row['address'] ;?>"  />
 		<br>
 	</div>
+	
+	<div id="userevent_div">
+		<label for="user_event_on" >UserEvent on: (Example: 100,1)</label>
+		<input type="text" maxLength="7" name="user_event_on" id="user_event_on" value="<?php echo $row['user_event_on'] ;?>"  />
+		<br>
+		<label for="user_event_off" >UserEvent off: (Example: 100,2)</label>
+		<input type="text" maxLength="7" name="user_event_off" id="user_event_off" value="<?php echo $row['user_event_off'] ;?>"  />
+		<br>
+	</div>
 		
 		
-		<a href="devices.php" data-role="button" data-ajax="false">Cancel</a>     
-		<input type="submit" name="submit" value="Save" >
+	<a href="devices.php" data-role="button" data-ajax="false">Cancel</a>     
+	<input type="submit" name="submit" value="Save" >
 
 		
 	
@@ -150,6 +164,7 @@ if ($row['type'] == 1) {
 	echo "$('#adres_div').show();";
 	echo "$('#dim_div').hide();";
 	echo "$('#homecode_div').show();";
+	echo "$('#userevent_div').hide();";
 	echo "$('#submit_div').show();";
 	echo "$('#label_adres_kaku').show();";
 	echo "$('#label_adres_newkaku').hide();";
@@ -165,6 +180,7 @@ if ($row['type'] == 1) {
 	echo "$('#adres_div').show();";
 	echo "$('#dim_div').show();";
 	echo "$('#homecode_div').hide();";
+	echo "$('#userevent_div').hide();";
 	echo "$('#submit_div').show();";
 	echo "$('#label_adres_kaku').hide();";
 	echo "$('#label_adres_newkaku').show();";
@@ -180,10 +196,27 @@ if ($row['type'] == 3) {
 	echo "$('#adres_div').show();";
 	echo "$('#dim_div').hide();";
 	echo "$('#homecode_div').hide();";
+	echo "$('#userevent_div').hide();";
 	echo "$('#submit_div').show();";
 	echo "$('#label_adres_kaku').hide();";
 	echo "$('#label_adres_newkaku').hide();";
 	echo "$('#label_adres_wiredout').show();";
+
+
+}
+
+if ($row['type'] == 4) {
+
+
+	echo "$('#name_div').show();";
+	echo "$('#adres_div').hide();";
+	echo "$('#dim_div').hide();";
+	echo "$('#homecode_div').hide();";
+	echo "$('#userevent_div').show();";
+	echo "$('#label_adres_kaku').hide();";
+	echo "$('#label_adres_newkaku').hide();";
+	echo "$('#label_adres_wiredout').hide();";
+	echo "$('#submit_div').show();";
 
 
 }
@@ -205,6 +238,7 @@ $('#name_div').show();
 $('#adres_div').show();
 $('#dim_div').hide();
 $('#homecode_div').show();
+$('#userevent_div').hide();
 $('#submit_div').show();
 
 $('#label_adres_kaku').show();
@@ -218,6 +252,7 @@ $('#name_div').show();
 $('#adres_div').show();
 $('#dim_div').show();
 $('#homecode_div').hide();
+$('#userevent_div').hide();
 $('#submit_div').show();
 
 $('#label_adres_kaku').hide();
@@ -232,6 +267,7 @@ $('#name_div').show();
 $('#adres_div').show();
 $('#dim_div').hide();
 $('#homecode_div').hide();
+$('#userevent_div').hide();
 $('#submit_div').show();
 
 $('#label_adres_kaku').hide();
@@ -239,6 +275,22 @@ $('#label_adres_wiredout').show();
 $('#label_adres_newkaku').hide();
 
 }
+
+if ($(this).attr('value')==4) {   
+
+$('#name_div').show();  
+$('#adres_div').hide();
+$('#dim_div').hide();
+$('#homecode_div').hide();
+$('#label_adres_kaku').hide();
+$('#label_adres_wiredout').hide();
+$('#label_adres_newkaku').hide();
+$('#userevent_div').show();
+
+
+$('#submit_div').show();
+
+} 
    
 });
 </script> 

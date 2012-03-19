@@ -75,7 +75,7 @@ $RSevent_log = mysql_query("SELECT * FROM (SELECT * FROM nodo_tbl_event_log WHER
 	
 	<div data-role="collapsible" data-collapsed="true" data-content-theme="<?php echo $theme?>">
 	<h3>Nodo status</h3>
-	<div id="status_div">
+	<div id="status_div" style="font-family:monospace">
 	
 	</div>
 	
