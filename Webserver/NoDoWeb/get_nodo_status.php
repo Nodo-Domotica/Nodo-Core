@@ -63,12 +63,12 @@ Status  read
 		for($i=0;$i<$total_script_lines_raw;$i++){
 			
 			//Remove !********************************** start en stop lines 
-			$pos = strpos($scriptraw[$i],"!*****");
+			//$pos = strpos($scriptraw[$i],"!*****");
 			
-			if($pos === false || $pos > 0) {
+			//if($pos === false || $pos > 0) {
 				$script[$x] = $scriptraw[$i];
 				$x++;
-			}
+			//}
 		}
 		
 		$total_script_lines = count($script);

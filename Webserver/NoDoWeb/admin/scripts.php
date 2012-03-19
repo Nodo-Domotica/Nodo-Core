@@ -4,11 +4,12 @@ require_once('../connections/tc.php');
 require_once('../include/auth.php');
 require_once('../include/user_settings.php');
 
+
 $page_title = "Setup: Scripts";	
 
 
 /************************************************************************************************
-HTTPRequest function														
+HTTPRequest function do not output http headers													
 *************************************************************************************************/
 function HTTPRequest($Url){
 
@@ -144,7 +145,7 @@ if (isset($_POST['Write']))
 	
 	
 	
-	header("Location: scripts.php#saved");
+	header("Location: scripts.php?file=$file#saved");
 	
 	
 }
@@ -184,12 +185,12 @@ END Script write
 	
 		<label for="select-script" class="select">Choose script:</label>
 		<select name="select-script-1" id="select-script-1" data-native-menu="false">
-		<option value="EVENTLST" <?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "EVENTLST") {echo 'Selected="Selected"';}}?>>Eventlist</option>
-		<option value="1"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "1") {echo 'Selected="Selected"';}}?>>Script 1</option>
-		<option value="2"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "2") {echo 'Selected="Selected"';}}?>>Script 2</option>
-		<option value="3"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "3") {echo 'Selected="Selected"';}}?>>Script 3</option>
-		<option value="4"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "4") {echo 'Selected="Selected"';}}?>>Script 4</option>
-		<option value="5"<?php if (isset($_POST['select-script-1'])) {if ($_POST['select-script-1'] == "5") {echo 'Selected="Selected"';}}?>>Script 5</option>
+		<option value="EVENTLST"<?php if (isset($_POST['select-script-1']) || isset($_GET['file']) ) {if ($_POST['select-script-1'] == "EVENTLST" || $_GET['file'] == "EVENTLST") {echo 'Selected="Selected"';}}?>>Eventlist</option>
+		<option value="1"<?php if (isset($_POST['select-script-1']) || isset($_GET['file']) ) {if ($_POST['select-script-1'] == "1" || $_GET['file'] == "1") {echo 'Selected="Selected"';}}?>>Script 1</option>
+		<option value="2"<?php if (isset($_POST['select-script-1']) || isset($_GET['file']) ) {if ($_POST['select-script-1'] == "2" || $_GET['file'] == "2") {echo 'Selected="Selected"';}}?>>Script 2</option>
+		<option value="3"<?php if (isset($_POST['select-script-1']) || isset($_GET['file']) ) {if ($_POST['select-script-1'] == "3" || $_GET['file'] == "3") {echo 'Selected="Selected"';}}?>>Script 3</option>
+		<option value="4"<?php if (isset($_POST['select-script-1']) || isset($_GET['file']) ) {if ($_POST['select-script-1'] == "4" || $_GET['file'] == "4") {echo 'Selected="Selected"';}}?>>Script 4</option>
+		<option value="5"<?php if (isset($_POST['select-script-1']) || isset($_GET['file']) ) {if ($_POST['select-script-1'] == "5" || $_GET['file'] == "5") {echo 'Selected="Selected"';}}?>>Script 5</option>
 		</select>
 		
 		
@@ -202,7 +203,7 @@ END Script write
 		<label for="script">Script:</label>
 		<textarea name="script" id="script"><?php 
 		
-		
+	
 
 if (isset($script)){  
 
@@ -216,6 +217,8 @@ if (isset($script)){
  
 		
 	}
+	
+	
 }
 
 ?>
@@ -254,13 +257,15 @@ if (isset($script)){
 	<div data-role="content">	
 		<h2>Script sent to Nodo.</h2>
 				
-		<p><a href="scripts.php" data-role="button" data-inline="true" data-icon="back">Ok</a></p>	
+		<p><a href="scripts.php<?php if (isset($_GET['file'])) {echo "?file=" . $_GET['file'];} ?>" data-role="button" data-inline="true" data-icon="back">Ok</a></p>	
 	
 	
 	</div><!-- /content -->
 	
 	
 </div><!-- /page saved -->
- 
+ <script>
+
+</script>
 </body>
 </html>

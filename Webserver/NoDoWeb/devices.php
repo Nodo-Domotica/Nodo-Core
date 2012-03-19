@@ -8,7 +8,7 @@ $page_title = "Devices";
 
 
 mysql_select_db($database_tc, $tc);
-$query_RSdevices = "SELECT * FROM nodo_tbl_devices WHERE user_id='$userId'";
+$query_RSdevices = "SELECT * FROM nodo_tbl_devices WHERE user_id='$userId' ORDER BY sort_order ASC";
 $RSdevices = mysql_query($query_RSdevices, $tc) or die(mysql_error());
 
 ?>
@@ -59,14 +59,19 @@ switch ($row_RSdevices['type'])
 			{
 			case "1":
 			// On/Off kaku buttons
-			echo "<a href=\"javascript:send_event(&quot;sendkaku " . $row_RSdevices['homecode'] . $row_RSdevices['address'] . ",on&quot;)\" data-role=\"button\" data-icon=\"check\" >On</a>\n";
-            echo "<a href=\"javascript:send_event(&quot;sendkaku " . $row_RSdevices['homecode'] . $row_RSdevices['address'] . ",off&quot;)\" data-role=\"button\" data-icon=\"delete\" >Off</a>\n";
+			if ($row_RSdevices['label_on'] != "") {$label_on = $row_RSdevices['label_on'];} else {$label_on = "On";}
+			if ($row_RSdevices['label_off'] != "") {$label_off = $row_RSdevices['label_off'];} else {$label_off = "Off";}
+
+			echo "<a href=\"javascript:send_event(&quot;sendkaku " . $row_RSdevices['homecode'] . $row_RSdevices['address'] . ",on&quot;)\" data-role=\"button\" data-icon=\"check\"  >" . $label_on . "</a>\n";
+            echo "<a href=\"javascript:send_event(&quot;sendkaku " . $row_RSdevices['homecode'] . $row_RSdevices['address'] . ",off&quot;)\" data-role=\"button\" data-icon=\"delete\" >" . $label_off . "</a>\n";
 			break;  
 						
 			case "2":
 			// On/Off newkaku buttons 
-			echo "<a href=\"javascript:send_event(&quot;sendnewkaku " . $row_RSdevices['address'] . ",on&quot;)\" data-role=\"button\" data-icon=\"check\" >On</a>\n";
-			echo "<a href=\"javascript:send_event(&quot;sendnewkaku " . $row_RSdevices['address'] . ",off&quot;)\" data-role=\"button\"  data-icon=\"delete\" >Off</a>\n";
+			if ($row_RSdevices['label_on'] != "") {$label_on = $row_RSdevices['label_on'];} else {$label_on = "On";}
+			if ($row_RSdevices['label_off'] != "") {$label_off = $row_RSdevices['label_off'];} else {$label_off = "Off";}
+			echo "<a href=\"javascript:send_event(&quot;sendnewkaku " . $row_RSdevices['address'] . ",on&quot;)\" data-role=\"button\" data-icon=\"check\" >" . $label_on . "</a>\n";
+			echo "<a href=\"javascript:send_event(&quot;sendnewkaku " . $row_RSdevices['address'] . ",off&quot;)\" data-role=\"button\"  data-icon=\"delete\" >" . $label_off . "</a>\n";
 			echo "<br>\n";
 					
 				//Dim buttons		
@@ -109,10 +114,21 @@ switch ($row_RSdevices['type'])
 			
 			case 3:
 			// On/Off WiredOut buttons
-			echo "<a href=\"javascript:send_event(&quot;wiredout ".$row_RSdevices['address'].",on;sendstatus wiredout,".$row_RSdevices['address']."&quot;)\" data-role=\"button\" data-icon=\"check\" >On</a>\n";
-			echo "<a href=\"javascript:send_event(&quot;wiredout ".$row_RSdevices['address'].",off;sendstatus wiredout,".$row_RSdevices['address']."&quot;)\" data-role=\"button\" data-icon=\"delete\" >Off</a>\n";
+			if ($row_RSdevices['label_on'] != "") {$label_on = $row_RSdevices['label_on'];} else {$label_on = "On";}
+			if ($row_RSdevices['label_off'] != "") {$label_off = $row_RSdevices['label_off'];} else {$label_off = "Off";}
+			echo "<a href=\"javascript:send_event(&quot;wiredout ".$row_RSdevices['address'].",on;sendstatus wiredout,".$row_RSdevices['address']."&quot;)\" data-role=\"button\" data-icon=\"check\" >" . $label_on . "</a>\n";
+			echo "<a href=\"javascript:send_event(&quot;wiredout ".$row_RSdevices['address'].",off;sendstatus wiredout,".$row_RSdevices['address']."&quot;)\" data-role=\"button\" data-icon=\"delete\" >" . $label_off . "</a>\n";
 			
-        	 break;
+        	break;
+			 
+			 case 4:
+			// On/Off Userevents
+			if ($row_RSdevices['label_on'] != "") {$label_on = $row_RSdevices['label_on'];} else {$label_on = "On";}
+			if ($row_RSdevices['label_off'] != "") {$label_off = $row_RSdevices['label_off'];} else {$label_off = "Off";}
+			echo "<a href=\"javascript:send_event(&quot;senduserevent ".$row_RSdevices['user_event_on']."&quot;)\" data-role=\"button\" data-icon=\"check\" >" . $label_on . "</a>\n";
+			echo "<a href=\"javascript:send_event(&quot;senduserevent ".$row_RSdevices['user_event_off']."&quot;)\" data-role=\"button\" data-icon=\"check\" >" . $label_off . "</a>\n";
+			
+        	break;
 			}
 	
 			echo "</p></div>";

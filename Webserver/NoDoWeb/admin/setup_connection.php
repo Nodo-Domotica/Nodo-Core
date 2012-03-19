@@ -5,11 +5,11 @@ require_once('../include/auth.php');
 require_once('../include/user_settings.php');
 require_once('../include/webapp_settings.php');
 
-$page_title = "Setup: Communication";	
+$page_title = "Setup: Communication";
 
 
 /************************************************************************************************
-HTTPRequest function														
+HTTPRequest function output http headers
 *************************************************************************************************/
 function HTTPRequest($Url){
     
@@ -33,7 +33,7 @@ function HTTPRequest($Url){
 	
 	}
 /************************************************************************************************
-END HTTPRequest function														
+END HTTPRequest function
 *************************************************************************************************/
 
 
@@ -139,6 +139,7 @@ if (isset($_POST['auto_config'])){
 		
 		if (isset($_POST['auto_config'])){
 		
+			
 			//Configure NoDo
 			HTTPRequest("http://$nodo_ip/?event=eventlistwrite;WildCard%20RF,All;SendEvent%20HTTP&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
 			HTTPRequest("http://$nodo_ip/?event=eventlistwrite;WildCard%20IR,All;SendEvent%20HTTP&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
@@ -148,6 +149,22 @@ if (isset($_POST['auto_config'])){
 			HTTPRequest("http://$nodo_ip/?event=Filewrite%20waconfig&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
 			HTTPRequest("http://$nodo_ip/?event=ok&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
 			HTTPRequest("http://$nodo_ip/?event=Filewrite&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
+			
+			//Sync clock
+			$year_par1 = substr(date("Y"), 0, 2);
+			$year_par2 = substr(date("Y"), 2, 2);
+			$date_par1 = date("d");
+			$date_par2 = date("m");
+			$time_par1 = date("H");
+			$time_par2 = date("i");
+			$dow_par1 = date("w")+1; // php zondag = 0 Nodo gaat uit van 1
+			
+			HTTPRequest("http://$nodo_ip/?event=FileLog%20$file&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
+			HTTPRequest("http://$nodo_ip/?event=ClockSetYear%20$year_par1,$year_par2&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
+			HTTPRequest("http://$nodo_ip/?event=ClockSetDate%20$date_par1,$date_par2&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
+			HTTPRequest("http://$nodo_ip/?event=ClockSetTime%20$time_par1,$time_par2&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
+			HTTPRequest("http://$nodo_ip/?event=ClockSetDow%20$dow_par1&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
+			
 			HTTPRequest("http://$nodo_ip/?event=OutputIp%20HTTP;id%20$nodo_id;password%20$nodo_password&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
 		    
 		

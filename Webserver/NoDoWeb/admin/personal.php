@@ -5,69 +5,65 @@ require_once('../include/webapp_settings.php');
 
 $page_title = "Setup: Personal";
 
+if (isset($_POST['submit'])) {
 
-if (isset($_POST['submit'])) 
-{  
- 
+	$theme = mysql_real_escape_string(htmlspecialchars($_POST['theme'])); 
+	$theme_header = mysql_real_escape_string(htmlspecialchars($_POST['theme_header']));  
+	$default_page = mysql_real_escape_string(htmlspecialchars($_POST['default_page']));  
+	$title = mysql_real_escape_string(htmlspecialchars($_POST['title'])); 
+	$first_name = mysql_real_escape_string(htmlspecialchars($_POST['first_name']));
+	$last_name = mysql_real_escape_string(htmlspecialchars($_POST['last_name']));
+	$password = mysql_real_escape_string(htmlspecialchars($_POST['password']));
 
- $theme = mysql_real_escape_string(htmlspecialchars($_POST['theme'])); 
- $theme_header = mysql_real_escape_string(htmlspecialchars($_POST['theme_header']));  
- $title = mysql_real_escape_string(htmlspecialchars($_POST['title'])); 
- $password = mysql_real_escape_string(htmlspecialchars($_POST['password']));
 
-	
-			
-					if ($password == "") {
-			  
-					 // save the data to the database 
-					 mysql_select_db($database_tc, $tc);
-					 mysql_query("UPDATE nodo_tbl_users SET webapp_theme='$theme', webapp_theme_header='$theme_header', webapp_title='$title' WHERE id='$userId'") or die(mysql_error());   
-					 // once saved, redirect back to the view page 
-					 header("Location: personal.php#saved");   
-					 
-				}
-				else {
-				
-					$password_encoded = md5($salt.$password);
-				
-					// save the data to the database 
-					 mysql_select_db($database_tc, $tc);
-					 mysql_query("UPDATE nodo_tbl_users SET user_password='$password_encoded', webapp_theme='$theme', webapp_theme_header='$theme_header', webapp_title='$title' WHERE id='$userId'") or die(mysql_error());   
-					 // once saved, redirect back to the view page 
-					 header("Location: personal.php#saved");   
-					 
-				}
-			
-			
-	
-		
-	
+	if ($password == "") {
+
+		// save the data to the database 
+		mysql_select_db($database_tc, $tc);
+		mysql_query("UPDATE nodo_tbl_users SET webapp_theme='$theme', webapp_theme_header='$theme_header', default_page='$default_page', first_name='$first_name', last_name='$last_name', webapp_title='$title' WHERE id='$userId'") or die(mysql_error());   
+		// once saved, redirect back to the view page 
+		header("Location: personal.php#saved");   
+
+	}
+
+	else {
+
+		$password_encoded = md5($salt.$password);
+		// save the data to the database 
+		mysql_select_db($database_tc, $tc);
+		mysql_query("UPDATE nodo_tbl_users SET user_password='$password_encoded', webapp_theme='$theme', webapp_theme_header='$theme_header', default_page='$default_page', first_name='$first_name', last_name='$last_name', webapp_title='$title' WHERE id='$userId'") or die(mysql_error());   
+		// once saved, redirect back to the view page 
+		header("Location: personal.php#saved");   
+
+	}
+
 } 
+
 else {
-mysql_select_db($database_tc, $tc);
-$result = mysql_query("SELECT * FROM nodo_tbl_users WHERE id='$userId'") or die(mysql_error());  
-$row = mysql_fetch_array($result);
+	
+	mysql_select_db($database_tc, $tc);
+	$result = mysql_query("SELECT * FROM nodo_tbl_users WHERE id='$userId'") or die(mysql_error());  
+	$row = mysql_fetch_array($result);
 
 
+	if($row['webapp_theme_header'] == "") {
 
-if($row['webapp_theme_header'] == "") {
+		$theme_header = "a";
 
-$theme_header = "c";
+	}
+	else
+	{
+		$theme_header = $row['webapp_theme_header'];
+	}
 
-}
-else
-{
-$theme_header = $row['webapp_theme_header'];
-}
+	if($row['webapp_theme'] == "") {
+		$theme = "c";
 
-if($row['webapp_theme'] == "") {
-$theme = "c";
-
-}
-else
-{
-$theme = $row['webapp_theme'];
-}
+	}
+	else
+	{
+		$theme = $row['webapp_theme'];
+	}
 
 
 }?>
@@ -97,10 +93,16 @@ $theme = $row['webapp_theme'];
 	<form action="personal.php" data-ajax="false" method="post"> 
 					
 					
-			<label for="title">Title:</label>
+			<label for="title">Web App title:</label>
 			<input type="text" name="title" id="title" value="<?php echo $row['webapp_title'];?>"  />
 			<br>
-	 
+			<label for="default_page" class="select">Default page:</label>
+		    <select name="default_page" id="default_page" data-placeholder="true" data-native-menu="false">
+				<option value="1" <?php if ($row['default_page'] == "1") {echo 'selected="selected"';}?>>Devices</option>
+				<option value="2" <?php if ($row['default_page'] == "2") {echo 'selected="selected"';}?>>Activities</option>
+				<option value="3" <?php if ($row['default_page'] == "3") {echo 'selected="selected"';}?>>Values</option>
+			</select>
+			<br>	 
 			<label for="theme" class="select">Theme:</label>
 		    <select name="theme" id="theme" data-placeholder="true" data-native-menu="false">
 				<option value="a" <?php if ($row['webapp_theme'] == "a") {echo 'selected="selected"';}?>>Black</option>
@@ -119,12 +121,16 @@ $theme = $row['webapp_theme'];
 				<option value="e" <?php if ($row['webapp_theme_header'] == "e") {echo 'selected="selected"';}?>>Yellow</option>
 			</select>
 			<br>
-			
-			
-			<label for="password">Password: (leave empty to keep current password)</label>
+			<label for="first_name">First name:</label>
+			<input type="text" name="first_name" id="first_name" value="<?php echo $row['first_name']; ?>"  />
+			<br>
+			<label for="last_name">Last name:</label>
+			<input type="text" name="last_name" id="last_name" value="<?php echo $row['last_name']; ?>"  />
+			<br>
+			<label for="password">Web App password: (leave empty to keep current password)</label>
 			<input type="password" name="password" id="password" value=""  />
 			<br>
-			<label for="password2">Verify password:</label>
+			<label for="password2">Verify Web App password:</label>
 			<input type="password" name="password2" id="password2" value=""  />
 			
 			<br>
@@ -152,7 +158,7 @@ $theme = $row['webapp_theme'];
 	<div data-role="content">	
 		<h2>Settings saved</h2>
 				
-		<p><a href="#main" data-rel="back" data-role="button" data-inline="true" data-icon="back">Ok</a></p>	
+		<p><a href="personal.php" data-rel="back" data-role="button" data-inline="true" data-icon="back">Ok</a></p>	
 	</div><!-- /content -->
 	
 

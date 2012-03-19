@@ -76,8 +76,8 @@ if($userId > 0) {
 			 
 			//Event in nodo_tbl_event_log opslaan
 			mysql_query("INSERT INTO nodo_tbl_event_log (user_id, nodo_unit_nr, event) VALUES ('$userId','$unit','$eventraw')") or die(mysql_error());
-			//Kijken of er meer dan 1000 events gelogd zijn zo ja dan wissen we ze
-			mysql_query("DELETE FROM nodo_tbl_event_log WHERE user_id=$userId AND id<(SELECT min(id) FROM(SELECT id FROM nodo_tbl_event_log WHERE user_id=$userId ORDER BY id DESC LIMIT 1000) AS myselect )") or die(mysql_error());
+			//Kijken of er meer dan 10000 events gelogd zijn voor de gebruiker dan wissen we het eerste record
+			mysql_query("DELETE FROM nodo_tbl_event_log WHERE user_id=$userId AND id<(SELECT min(id) FROM(SELECT id FROM nodo_tbl_event_log WHERE user_id=$userId ORDER BY id DESC LIMIT 10000) AS myselect )") or die(mysql_error());
 			 
 			 
 			//Kijken of we een notificatie moeten sturen			
@@ -110,7 +110,7 @@ if($userId > 0) {
 					
 
 					// Waarde opslaan in value log					
-					//Sensor_id (id) opvragen uit sensor tabel !!!!!!!!!!!! Aanpassen naar 1 insert/select query !!!!!!!!!!!!!
+					//Sensor_id (id) opvragen uit values tabel !!!!!!!!!!!! Aanpassen naar 1 insert/select query !!!!!!!!!!!!!
 					//mysql_select_db($database_tc, $tc);
 					$RS_sensor = mysql_query("SELECT * FROM nodo_tbl_sensor WHERE user_id='$userId' AND par1='$par1' AND sensor_type='$type'") or die(mysql_error());  
 					$row_RS_sensor = mysql_fetch_array($RS_sensor);
@@ -214,8 +214,14 @@ if($userId > 0) {
 								
 				break;
 				
+				case "userevent" :
+				
+						$userevent = $par1.",".$par2;
+					
+						mysql_query("UPDATE nodo_tbl_devices SET status='1' WHERE user_event_on='$userevent' AND type='4' AND user_id='$userId'") or die(mysql_error()); 
+						mysql_query("UPDATE nodo_tbl_devices SET status='0' WHERE user_event_off='$userevent' AND type='4' AND user_id='$userId'") or die(mysql_error()); 						
 						
-
+		
 				}
 
 

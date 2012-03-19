@@ -8,6 +8,13 @@ require_once('include/webapp_settings.php');
 
 $message = "";
 
+if (isset($_GET['logout']) == 1) {
+
+	$message = "<h4>You are now logged out.</h4>";
+	
+}
+
+
 
 if (isset($_COOKIE['username']) && isset($_COOKIE['password'])) {
 
@@ -24,7 +31,8 @@ if (isset($_COOKIE['username']) && isset($_COOKIE['password'])) {
 		//log in the user
 		session_start();
 		$_SESSION['userId'] = $id;
-		header("Location: devices.php");
+		
+		header("Location: index.php");
 	}
 	
 }
@@ -61,7 +69,7 @@ $active = $row['active'];
 		//log in the user
 		session_start();
 		$_SESSION['userId'] = $id;
-		header("Location: devices.php");
+		header("Location: index.php");
 	}
 	
 	else
