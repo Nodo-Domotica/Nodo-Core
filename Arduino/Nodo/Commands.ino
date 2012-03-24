@@ -657,8 +657,10 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
       case CMD_RECEIVE_LINE:
         Led(BLUE);
-        ReceiveLineRF(Par1, Par2, TempString);
-        Serial.print("*** debug: Line=");Serial.println(TempString); //??? Debug
+        if(ReceiveLineRF(Par1, Par2, TempString))
+          ExecuteLine(TempString,VALUE_SOURCE_RF);
+        else
+          RaiseError(ERROR_12);
       }
     }
   return error?false:true;

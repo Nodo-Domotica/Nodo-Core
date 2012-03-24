@@ -1,9 +1,4 @@
 
-// timings NODO signalen
-#define NODO_PULSE_0                    500   // PWM: Tijdsduur van de puls bij verzenden van een '0' in uSec.
-#define NODO_PULSE_MID                 1000   // PWM: Pulsen langer zijn '1'
-#define NODO_PULSE_1                   1500   // PWM: Tijdsduur van de puls bij verzenden van een '1' in uSec. (3x NODO_PULSE_0)
-#define NODO_SPACE                      500   // PWM: Tijdsduur van de space tussen de bitspuls bij verzenden van een '1' in uSec.   
 
 unsigned long AnalyzeRawSignal(void)
   {
@@ -276,13 +271,13 @@ void Nodo_2_RawSignal(unsigned long Code)
 boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
   {
   int RawCodeLength=1;
-  unsigned long PulseLength;
+  unsigned long PulseLength=0;
   
   do{// lees de pulsen in microseconden en plaats deze in een tijdelijke buffer
-    PulseLength=WaitForChangeState(DataPin, StateSignal, TimeOut); // meet hoe lang signaal LOW (= PULSE van IR signaal)
+    PulseLength=WaitForChangeState(DataPin, StateSignal, TimeOut);
     if(PulseLength<MIN_PULSE_LENGTH)return false;
     RawSignal.Pulses[RawCodeLength++]=PulseLength;
-    PulseLength=WaitForChangeState(DataPin, !StateSignal, TimeOut); // meet hoe lang signaal HIGH (= SPACE van IR signaal)
+    PulseLength=WaitForChangeState(DataPin, !StateSignal, TimeOut);
     RawSignal.Pulses[RawCodeLength++]=PulseLength;
     }while(RawCodeLength<RAW_BUFFER_SIZE && PulseLength!=0);// Zolang nog niet alle bits ontvangen en er niet vroegtijdig een timeout plaats vindt
 
@@ -412,7 +407,7 @@ boolean TransmitCode(unsigned long Event, byte Dest)
       }
     }
 
-  if(EthernetEnabled)
+  if(bitRead(HW_Config,HW_ETHERNET))
     {
     if(Dest==VALUE_SOURCE_HTTP || (Dest==VALUE_ALL && S.TransmitIP==VALUE_SOURCE_HTTP))
       {
@@ -580,205 +575,5 @@ void RawSignalGet(int Key)
   digitalWrite(EthernetShield_CS_SDCard,HIGH);
   }
 
- /*********************************************************************************************\
- * Verzend via RF een commando regel naar een andere Nodo.
- * Line = string met commando(s)
- * Dest = unitnummer waar het commando naar verzonden moet worden.
- * Deze routine maakt tevens gebruik van de WaitFreeRF routine.
- \*********************************************************************************************/
-boolean SendLineRF(char* Line, byte Dest)
-  {
-  int Length=strlen(Line);
-  byte Checksum=0;
-  int x,y;
-  byte state=0;
-  unsigned long Event;
-  unsigned long TimeoutTimer;
-  unsigned int Cookie=0;
-  char *StringToSend=(char*)malloc(INPUT_BUFFER_SIZE+35); // Standaard string lengte + extra ruimte voor de MD5 hash
-  boolean Ok=false;
-  
-  // Protocol:
-  // Stap-1. Master Nodo stuurt ReceiveLine verzoek naar slave om klaar te staan voor ontvangst: Bestemming-Unit, checksum en stringlengte (regulier Nodo commando)
-  // Stap-2. Slave beantwoordt ter bevestiging een stuurt 16-bits random Cookie in Par1 en Par2.  (regulier Nodo commando)
-  // Stap-3. Master verzendt blok met: String met commando en MD5-Hash op basis van wachtwoord en cookie (Speciale codering afwijkend van reguliere commando)
-  // Stap-4. Slave beantwoord met OK of ERROR. (regulier Nodo commando)
-  // MD5-Hash wordt berekend a.d.h.v. Lengte string, Checksum string, Password en Cookie.  Klopt 1 van de 4 niet, dan voert slave regel niet uit.
-  
-  // bereken de checksum van de string
-  for(x=0;x<Length;x++)
-    Checksum=(Checksum + Line[x])%256; // bereken checksum (crc-8)
-    
-  // Stap-1. Master Nodo stuurt ReceiveLine verzoek naar slave om klaar te staan voor ontvangst: Bestemming-Unit, checksum en stringlengte (regulier Nodo commando)
-  Event=  ((unsigned long)SIGNAL_TYPE_NODO)<<28   | 
-          ((unsigned long)Dest)<<24               | 
-          ((unsigned long)CMD_RECEIVE_LINE)<<16   | 
-          ((unsigned long)Checksum)<<8            | 
-           (unsigned long)Length;
 
-  WaitFreeRF(0, 300);
-  Nodo_2_RawSignal(Event);  
-  RawSendRF();
-  Serial.print("*** debug: Verzonden CMD_RECEIVE_LINE:");
-  Serial.print(" Checksum=");Serial.print(Checksum); //??? Debug
-  Serial.print(", Length=");Serial.println(Length); //??? Debug
-
-  // Stap-2: Wacht tot Slave beantwoord heeft met een CMD_RECEIVE_LINE_READY met een Cookie
-  TimeoutTimer=millis()+10000; 
-  while(TimeoutTimer>millis() && !Cookie)
-    {
-    if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
-      {
-      if(FetchSignal(PIN_RF_RX_DATA,HIGH,SIGNAL_TIMEOUT_RF))// Als het een duidelijk RF signaal was
-        {
-        Event=AnalyzeRawSignal(); // Bereken uit de tabel met de pulstijden de 32-bit code. 
-        if((Event&0xffff0000)==(((unsigned long)SIGNAL_TYPE_NODO)<<28 | ((unsigned long)Dest)<<24 | ((unsigned long)CMD_RECEIVE_LINE_READY)<<16)) 
-          Cookie=Event&0xffff0000;          
-        }
-      }
-    }
-
-  if(millis()<TimeoutTimer)
-    {
-    // Stap-3. Master verzendt blok met: String met commando en MD5-Hash op basis van wachtwoord en cookie (Speciale codering afwijkend van reguliere commando)
-    Serial.print("*** debug: Cookie=");Serial.println(Cookie,HEX); //??? Debug
-
-    // MD5-Hash wordt berekend a.d.h.v. Lengte string, Checksum string, Password en Cookie.
-    sprintf(TempString,"%d,%d,%d,%s",Length,Checksum,Cookie,S.Password);
-    Serial.print("*** debug: Input string MD5=");Serial.println(TempString); //??? Debug
-  
-    // Bereken eigen MD5-Hash uit de string "<cookie>:<password>"                
-    md5((struct md5_hash_t*)&MD5HashCode, TempString); 
-    strcpy(TempString,PROGMEM2str(Text_05));              
-    y=0;
-    for(x=0; x<16; x++)
-      {
-      StringToSend[y++]=TempString[MD5HashCode[x]>>4  ];
-      StringToSend[y++]=TempString[MD5HashCode[x]&0x0f];
-      }
-    StringToSend[y]=0;
-
-    // Verzend de string
-    strcat(StringToSend,Line);
-    Length=strlen(StringToSend);
-    PrintTerminal(StringToSend); //??? Debug
-//    Serial.println("*** debug: WaitFreeRF()");//???
-    WaitFreeRF(0, 300);
-  
-    digitalWrite(PIN_RF_RX_VCC,LOW);  // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
-    digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan
-    delay(5);// kleine pause om de zender de tijd te geven om stabiel te worden 
-  
-    Serial.println("*** debug: Start zenden.");//???
-
-    // Verzend startbit
-    digitalWrite(PIN_RF_TX_DATA,HIGH);
-    delayMicroseconds(NODO_PULSE_1*2); 
-    digitalWrite(PIN_RF_TX_DATA,LOW);
-    delayMicroseconds(NODO_SPACE*2); 
-  
-    for(x=0;x<Length;x++)    
-      {    
-      for(y=0;y<=7;y++)
-        {
-        if(StringToSend[x]>>y&1)
-          {
-          digitalWrite(PIN_RF_TX_DATA,HIGH); // 1
-          delayMicroseconds(NODO_PULSE_1); 
-          digitalWrite(PIN_RF_TX_DATA,LOW);
-          delayMicroseconds(NODO_SPACE); 
-          }
-        else
-          {
-          digitalWrite(PIN_RF_TX_DATA,HIGH); // 0
-          delayMicroseconds(NODO_PULSE_0); 
-          digitalWrite(PIN_RF_TX_DATA,LOW);
-          delayMicroseconds(NODO_SPACE); 
-          }
-        }
-      }
-    digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
-    digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger weer aan.
-    Ok=true;
-    Serial.println("*** debug: Verzenden gereed.");//???
-    }
-
-  free(StringToSend); // Geef gealloceerde geheugen terug.
-
-  if(!Ok)
-    {
-    RaiseError(ERROR_12);    
-    //??? bouwen we nog een retry in? 
-    }
-
-  return Ok;
-  }
-
-
- /*********************************************************************************************\
- * Verzend via RF een commando regel naar een andere Nodo.
- * Line = string met commando(s)
- * Dest = unitnummer waar het commando naar verzonden moet worden.
- * Deze routine maakt tevens gebruik van de WaitFreeRF routine.
- \*********************************************************************************************/
-boolean ReceiveLineRF(byte Checksum, byte Length, char *LineString)
-  {
-  unsigned long Event,TimeoutTimer;
-  unsigned int Cookie;
-  byte ReceivedByte, ReceivedByteCounter=0;  
-  randomSeed(millis());
-  
-  // Stap-1. Deze is reeds uitgevoerd door de Master. ReceiveLine verzoek.
-
-  // Stap-2. Slave beantwoordt ter bevestiging een 16-bits random Cookie in Par1 en Par2.  (regulier Nodo commando)
-  Serial.println("*** debug: ReceiveLineRF();");//???
-  Serial.print("*** debug: Checksum=");Serial.println(Checksum); //??? Debug
-  Serial.print("*** debug: Length=");Serial.println(Length); //??? Debug
-
-  Cookie=random(0xFFFF);
-  Event=  ((unsigned long)SIGNAL_TYPE_NODO)<<28         | 
-          ((unsigned long)S.Unit)<<24                   | 
-          ((unsigned long)CMD_RECEIVE_LINE_READY)<<16   | 
-          (unsigned long)Cookie;
-  WaitFreeRF(0, 300);
-  Nodo_2_RawSignal(Event);  
-  RawSendRF();
-  Serial.print("*** Verzonden Cookie=");Serial.println(Cookie,HEX); //??? Debug
-
-Length+=32; // tel de 32 tekens van de 128 bit MD5 hash er bij op.
-
-  // Stap-3. Master verzendt blok met: String met commando en MD5-Hash op basis van wachtwoord en cookie (Speciale codering afwijkend van reguliere commando)
-  TimeoutTimer=millis()+5000; 
-  while(TimeoutTimer>millis())
-    {
-    if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
-      {
-      // hier aangekomen als er een signaal was. 
-      if(WaitForChangeState(PIN_RF_RX_DATA,LOW, SIGNAL_TIMEOUT_RF)>NODO_PULSE_MID)// meet hoe lang het duurt voor de RF uitgang weer LOW is. als de puls een duidelijke startbit is
-        {
-        for(ReceivedByteCounter=0; TimeoutTimer>millis() && ReceivedByteCounter<Length; ReceivedByteCounter++)
-          {
-          ReceivedByte=0;
-          for(int x=0;x<=7;x++)
-            ReceivedByte |= (WaitForChangeState(PIN_RF_RX_DATA,LOW, SIGNAL_TIMEOUT_RF)>NODO_PULSE_MID)<<x;
-          LineString[ReceivedByteCounter]=ReceivedByte;
-          }
-        }
-      }
-    }
-
-  Serial.print("*** ReveivedByteCounter=");Serial.println(ReceivedByteCounter); //??? Debug
-
-
-  if(millis()<TimeoutTimer)
-    return true;
-  else
-    {
-    Serial.println("*** TimeOut!");//???
-    return false;
-    }
-      
-  // Stap-4. Slave beantwoord met OK of ERROR. (regulier Nodo commando)
-  // MD5-Hash wordt berekend a.d.h.v. Lengte string, Checksum string, Password en Cookie.  Klopt 1 van de 4 niet, dan voert slave regel niet uit.
-  }
   
