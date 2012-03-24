@@ -100,7 +100,7 @@ boolean SendEventGhost(char* event, byte* SendToIP)
   
               if(EventGhostClientState==0)
                 {
-                // Cookie is door de bridge ontvangen en moet worden beantwoord met een MD5-hash
+                // Cookie is door de Nodo ontvangen en moet worden beantwoord met een MD5-hash
                 // Stel de string samen waar de MD5 hash voor gegenereerd moet worden
   
                 strcpy(TempString,InputBuffer_IP);
@@ -636,6 +636,7 @@ void ExecuteIP(void)
         }
       }
     }
+
   delay(1);  // give the web browser time to receive the data
   IPClient.stop();
   free(str_2);

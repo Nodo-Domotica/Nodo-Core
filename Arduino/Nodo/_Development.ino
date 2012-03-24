@@ -1,8 +1,8 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- Issue 341:	event Variable wordt afgekeurd bij EventlistWrite
-- Issue 337:	variableset geeft overflow
+- Issue 344:	FileExecute kan niet worden geprogrammeerd in de Eventlist
+
 
 Known Errors / ToDo:
 - Default poort voor "PortServer" nog bepalen. 

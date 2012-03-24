@@ -270,6 +270,7 @@ char* Event2str(unsigned long Code)
         break;
   
       // Par1 als waarde en par2 niet
+      case CMD_FILE_EXECUTE:
       case CMD_UNIT:
       case CMD_RAWSIGNAL:
       case CMD_RAWSIGNAL_SEND:

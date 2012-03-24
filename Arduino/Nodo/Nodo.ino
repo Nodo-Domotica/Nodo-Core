@@ -1,6 +1,6 @@
 
  /****************************************************************************************************************************\
- * Arduino project "Nodo Due" © Copyright 2010 Paul Tonkes
+ * Arduino project "Nodo Due" © Copyright 2012 Paul Tonkes
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,8 @@
  *
  \****************************************************************************************************************************/
 
-#define NODO_MAC 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF
+#define NODO_MAC 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF // Default Nodo MAC. 
+// #define NODO_MAC 0x54, 0xa5, 0x8d, 0x17, 0xaf, 0x41 // Productie MAC Paul
 
 #define VERSION       11          // Nodo Version nummer:
                                   // Major.Minor.Patch
@@ -48,12 +49,8 @@
 #include <stdint.h>
 #include <SD.h>
 
-/**************************************************************************************************************************\
-*  Nodo Event            = TTTTUUUUCCCCCCCC1111111122222222       -> T=Type, U=Unit, C=Command, 1=Par-1, 2=Par-2
-\**************************************************************************************************************************/
-
 // strings met vaste tekst naar PROGMEM om hiermee RAM-geheugen te sparen.
-prog_char PROGMEM Text_01[] = "Nodo Domotica controller (c) Copyright 2011 P.K.Tonkes.";
+prog_char PROGMEM Text_01[] = "Nodo Domotica controller (c) Copyright 2012 P.K.Tonkes.";
 prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
 prog_char PROGMEM Text_03[] = "Enter your password: ";
 prog_char PROGMEM Text_04[] = "SunMonThuWedThuFriSat";
@@ -183,8 +180,8 @@ prog_char PROGMEM Cmd_094[]="";
 prog_char PROGMEM Cmd_095[]="";
 prog_char PROGMEM Cmd_096[]="";
 prog_char PROGMEM Cmd_097[]="";
-prog_char PROGMEM Cmd_098[]="";
-prog_char PROGMEM Cmd_099[]="";
+prog_char PROGMEM Cmd_098[]=""; // Nodo commando ReceiveLineRFReady is niet voor gebruiker bestemd.
+prog_char PROGMEM Cmd_099[]=""; // Nodo commando ReceiveLineRF is niet voor gebruiker bestemd.
 
 // events:
 #define RANGE_EVENT 100 // alle codes groter of gelijk aan deze waarde zijn events.
@@ -295,13 +292,15 @@ prog_char PROGMEM Cmd_201[]="Error: Unknown command.";
 prog_char PROGMEM Cmd_202[]="Error: Invalid parameter in command.";
 prog_char PROGMEM Cmd_203[]="Error: Unable to open file on SDCard.";
 prog_char PROGMEM Cmd_204[]="Error: Queue overflow.";
-prog_char PROGMEM Cmd_205[]="Error: Eventlist nested to deep.";
+prog_char PROGMEM Cmd_205[]="Error: Eventlist execution nested to deep.";
 prog_char PROGMEM Cmd_206[]="Error: Writing to eventlist failed.";
 prog_char PROGMEM Cmd_207[]="Error: Unable to establish Ethernet connection.";
 prog_char PROGMEM Cmd_208[]="Error: Incorrect password.";
 prog_char PROGMEM Cmd_209[]="Error: Command not supported in this Nodo version.";
 prog_char PROGMEM Cmd_210[]="Error: Terminal access not allowed.";
 prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
+prog_char PROGMEM Cmd_212[]="Error: Unable to send commandline to Nodo.";
+prog_char PROGMEM Cmd_213[]="";
 
 // commando:
 #define FIRST_COMMAND                    0 // Eerste COMMANDO uit de commando tabel
@@ -402,8 +401,8 @@ prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
 #define CMD_RES095                      95
 #define CMD_RES096                      96
 #define CMD_RES097                      97
-#define CMD_RES098                      98
-#define CMD_RES099                      99
+#define CMD_RECEIVE_LINE_READY          98 //
+#define CMD_RECEIVE_LINE                99 //
 #define LAST_COMMAND                    99 // Laatste COMMANDO uit de commando tabel
 
 // events:
@@ -485,7 +484,7 @@ prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
 #define VALUE_DIRECTION_INTERNAL       170
 #define VALUE_BUSY                     171
 #define VALUE_SOURCE                   172
-#define VALUE_RF_2_IR                  173 //??? kan weg?
+#define VALUE_RF_2_IR                  173 // ??? kan weg ?
 #define VALUE_IR_2_RF                  174 // ??? kan weg ?
 #define VALUE_ALL                      175 // Deze waarde MOET groter dan 16 zijn.
 #define VALUE_DIRECTION_OUTPUT_RAW     176
@@ -524,9 +523,10 @@ prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
 #define ERROR_09                       209
 #define ERROR_10                       210
 #define ERROR_11                       211
-#define LAST_VALUE                     211 // laatste VALUE uit de commando tabel
-#define COMMAND_MAX                    211 // hoogste commando
-
+#define ERROR_12                       212
+#define ERROR_13                       213
+#define LAST_VALUE                     213 // laatste VALUE uit de commando tabel
+#define COMMAND_MAX                    213 // hoogste commando
 
 // tabel die refereert aan de commando strings
 PROGMEM const char *CommandText_tabel[]={
@@ -551,7 +551,7 @@ PROGMEM const char *CommandText_tabel[]={
   Cmd_180,Cmd_181,Cmd_182,Cmd_183,Cmd_184,Cmd_185,Cmd_186,Cmd_187,Cmd_188,Cmd_189,          
   Cmd_190,Cmd_191,Cmd_192,Cmd_193,Cmd_194,Cmd_195,Cmd_196,Cmd_197,Cmd_198,Cmd_199,          
   Cmd_200,Cmd_201,Cmd_202,Cmd_203,Cmd_204,Cmd_205,Cmd_206,Cmd_207,Cmd_208,Cmd_209,          
-  Cmd_210          
+  Cmd_210,Cmd_211,Cmd_212,Cmd_213           
   };          
 
 // Tabel met zonsopgang en -ondergang momenten. afgeleid van KNMI gegevens midden Nederland.
