@@ -97,6 +97,7 @@ byte CommandError(unsigned long Content)
     case CMD_SEND_KAKU:
     case CMD_EVENTGHOST_SERVER:
     case CMD_PULSE_FORMULA:
+    case CMD_RECEIVE_LINE:
       return false;
  
     case CMD_SEND_KAKU_NEW:
@@ -617,8 +618,9 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;        
 
       case CMD_FILE_EXECUTE:
-        strcpy(TempString,int2str(Par1));
-        strcat(TempString,".dat");
+        strcpy(TempString,cmd2str(CMD_FILE_EXECUTE));
+        strcat(TempString," ");
+        strcat(TempString,int2str(Par1));
         ExecuteLine(TempString,Src);
         break;        
 
@@ -653,6 +655,10 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         SaveSettings();
         break;
 
+      case CMD_RECEIVE_LINE:
+        Led(BLUE);
+        ReceiveLineRF(Par1, Par2, TempString);
+        Serial.print("*** debug: Line=");Serial.println(TempString); //??? Debug
       }
     }
   return error?false:true;
@@ -845,46 +851,58 @@ void ExecuteLine(char *Line, byte Port)
             {
             if(GetArgv(Command,TmpStr,2))
               {
-              strcat(TmpStr,".dat");
-
-              // zet (eventueel) de extra logging aan
-              GetArgv(Command,TempString,3);
-              strcat(TempString,".dat");
-              TempString[14]=0; // voor het geval de gebruiker een te lange naam heeft ingegeven
-              strcpy(TempLogFile,TempString);
-
-              // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-              digitalWrite(Ethernetshield_CS_W5100, HIGH);
-              digitalWrite(EthernetShield_CS_SDCard,LOW);
-              File dataFile=SD.open(TmpStr);
-              if(dataFile) 
+              if(State_EventlistWrite!=0)
                 {
-                y=0;       
-                while(dataFile.available())
+                // Als er een EventlistWrite actief is, dan hoeft het commando niet uitgevoerd te worden. Alleen het event v moet
+                // worden gevuld zodat deze kan worden weggeschreven in de Eventlist.
+                v=command2event(Cmd,Par1,Par2);
+                Error=CommandError(v);
+                }
+
+              else // Commando uitvoeren heeft alleen zin er geen eventlistwrite commando actief is
+                {                
+                strcat(TmpStr,".dat");
+
+                // zet (eventueel) de extra logging aan
+                GetArgv(Command,TempString,3);
+                strcat(TempString,".dat");
+                TempString[14]=0; // voor het geval de gebruiker een te lange naam heeft ingegeven
+                strcpy(TempLogFile,TempString);
+                
+                // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+                digitalWrite(Ethernetshield_CS_W5100, HIGH);
+                digitalWrite(EthernetShield_CS_SDCard,LOW);
+                File dataFile=SD.open(TmpStr);
+                if(dataFile) 
                   {
-                  x=dataFile.read();
-                  if(isprint(x) && y<INPUT_BUFFER_SIZE)
-                    TmpStr[y++]=x;
-                  else
+                  y=0;       
+                  while(dataFile.available())
                     {
-                    TmpStr[y]=0;
-                    y=0;
-                    //Serial.print("*** debug: Regel uit file voor execute=");Serial.println(TmpStr);//??? Debug
-                    digitalWrite(EthernetShield_CS_SDCard,HIGH);
-                    digitalWrite(Ethernetshield_CS_W5100, LOW);
-                    ExecuteLine(TmpStr,VALUE_SOURCE_FILE);
-                    digitalWrite(EthernetShield_CS_SDCard,LOW);
-                    digitalWrite(Ethernetshield_CS_W5100, HIGH);
+                    x=dataFile.read();
+                    if(isprint(x) && y<INPUT_BUFFER_SIZE)
+                      TmpStr[y++]=x;
+                    else
+                      {
+                      TmpStr[y]=0;
+                      y=0;
+                      //Serial.print("*** debug: Regel uit file voor execute=");Serial.println(TmpStr);//??? Debug
+                      digitalWrite(EthernetShield_CS_SDCard,HIGH);
+                      digitalWrite(Ethernetshield_CS_W5100, LOW);
+                      ExecuteLine(TmpStr,VALUE_SOURCE_FILE);
+                      digitalWrite(EthernetShield_CS_SDCard,LOW);
+                      digitalWrite(Ethernetshield_CS_W5100, HIGH);
+                      }
                     }
+                  dataFile.close();
+                  }  
+                else
+                  {
+                  TransmitCode(command2event(CMD_ERROR,ERROR_03,0),VALUE_ALL);
                   }
-                dataFile.close();
-                }  
-              else 
-                TransmitCode(command2event(CMD_ERROR,ERROR_03,0),VALUE_ALL);
-      
-              // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
-              digitalWrite(EthernetShield_CS_SDCard,HIGH);
-              digitalWrite(Ethernetshield_CS_W5100, LOW);
+                // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
+                digitalWrite(EthernetShield_CS_SDCard,HIGH);
+                digitalWrite(Ethernetshield_CS_W5100, LOW);
+                }
               }
             TempLogFile[0]=0;
             break;
@@ -1133,7 +1151,8 @@ void ExecuteLine(char *Line, byte Port)
             x=StringFind(Line,cmd2str(CMD_SEND))+strlen(cmd2str(CMD_SEND));
             while(Line[x]!=';' && Line[x]!=0)x++;
             x++;
-            SendStringRF(&Line[0]+x);
+            SendLineRF(&Line[0]+x,Par1);
+            PosLine=L+1; // ga direct naar einde van de regel. Es is verder niets meer uit te voeren.
             break;
 
           case CMD_PASSWORD:

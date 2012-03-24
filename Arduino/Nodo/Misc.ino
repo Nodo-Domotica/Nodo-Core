@@ -312,7 +312,7 @@ void ResetFactory(void)
   for(x=0;x<WIRED_PORTS;x++)
     {
     S.WiredInputThreshold[x]=5000; 
-    S.WiredInputSmittTrigger[x]=0;
+    S.WiredInputSmittTrigger[x]=5;
     S.WiredInputPullUp[x]=true;
     S.WiredInput_Calibration_IH[x]=1023;
     S.WiredInput_Calibration_IL[x]=0;
@@ -581,6 +581,7 @@ void Beep(int frequency, int duration)//Herz,millisec
   long halfperiod=500000L/frequency;
   long loops=(long)duration*frequency/(long)1000;
   
+  noInterrupts();
   for(loops;loops>0;loops--) 
     {
     digitalWrite(PIN_SPEAKER, HIGH);
@@ -588,6 +589,7 @@ void Beep(int frequency, int duration)//Herz,millisec
     digitalWrite(PIN_SPEAKER, LOW);
     delayMicroseconds(halfperiod);
     }
+  interrupts();
   }
  
  /**********************************************************************************************\
