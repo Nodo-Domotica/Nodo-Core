@@ -138,7 +138,7 @@ void PrintWelcome(void)
     }
 
   // print IP adres van de Nodo
-  if(EthernetEnabled)
+  if(bitRead(HW_Config,HW_ETHERNET))
     {
     sprintf(TempString,"NodoIP=%u.%u.%u.%u",Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
     PrintTerminal(TempString);
@@ -154,10 +154,10 @@ void PrintWelcome(void)
 void PrintTerminal(char* LineToPrint)
   {
   // FreeMemory(0); //??? debug
-  if(SerialConnected)
+  if(bitRead(HW_Config,HW_SERIAL))
     Serial.println(LineToPrint);
  
-  if(EthernetEnabled)
+  if(bitRead(HW_Config,HW_ETHERNET))
     {
     if(TerminalClient.connected() && TerminalConnected>0 && TerminalLocked==0)
       TerminalClient.println(LineToPrint);

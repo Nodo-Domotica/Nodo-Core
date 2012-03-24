@@ -27,8 +27,8 @@
  *
  \****************************************************************************************************************************/
 
-#define NODO_MAC 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF // Default Nodo MAC. 
-// #define NODO_MAC 0x54, 0xa5, 0x8d, 0x17, 0xaf, 0x41 // Productie MAC Paul
+// #define NODO_MAC 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF // Default Nodo MAC. 
+ #define NODO_MAC 0x54, 0xa5, 0x8d, 0x17, 0xaf, 0x41 // Productie MAC Paul
 
 #define VERSION       11          // Nodo Version nummer:
                                   // Major.Minor.Patch
@@ -299,7 +299,7 @@ prog_char PROGMEM Cmd_208[]="Error: Incorrect password.";
 prog_char PROGMEM Cmd_209[]="Error: Command not supported in this Nodo version.";
 prog_char PROGMEM Cmd_210[]="Error: Terminal access not allowed.";
 prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
-prog_char PROGMEM Cmd_212[]="Error: Unable to send commandline to Nodo.";
+prog_char PROGMEM Cmd_212[]="Error: Unable to send or receive diverted command(s).";
 prog_char PROGMEM Cmd_213[]="";
 
 // commando:
@@ -619,6 +619,29 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define PASSWORD_MAX_RETRY           5 // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
 #define PASSWORD_TIMEOUT           300 // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
 #define TERMINAL_TIMEOUT           300 // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
+
+// timings NODO signalen
+#define NODO_PULSE_0                    500   // PWM: Tijdsduur van de puls bij verzenden van een '0' in uSec.
+#define NODO_PULSE_MID                 1000   // PWM: Pulsen langer zijn '1'
+#define NODO_PULSE_1                   1500   // PWM: Tijdsduur van de puls bij verzenden van een '1' in uSec. (3x NODO_PULSE_0)
+#define NODO_SPACE                      500   // PWM: Tijdsduur van de space tussen de bitspuls bij verzenden van een '1' in uSec.   
+
+// Hardware
+#define HW_BOARD_328    0
+#define HW_BOARD_1280   1
+#define HW_BOARD_2560   2
+#define HW_RF_RX        3
+#define HW_RF_TX        4
+#define HW_IR_RX        5
+#define HW_IR_TX        6
+#define HW_CLOCK        7
+#define HW_ETHERNET     8
+#define HW_SDCARD       9
+#define HW_SERIAL       10
+#define HW_WIRED        11
+#define HW_PULSE        12
+
+
 //****************************************************************************************************************************************
 
 struct Settings
@@ -680,12 +703,10 @@ int HoldTimer;                                              // Als deze timer st
 void(*Reset)(void)=0;                                       // reset functie op adres 0.
 uint8_t RFbit,RFport,IRbit,IRport;                          // t.b.v. verwerking IR/FR signalen.
 uint8_t MD5HashCode[16];                                    // tabel voor berekenen van MD5 hash codes t.b.v. uitwisselen wachtwoord EventGhost.
-boolean EthernetEnabled = false;                            // Vlag die aangeeft of er een Ethernetverbinding is.
 int UserVar[USER_VARIABLES_MAX];
 char TempString[INPUT_BUFFER_SIZE+1];                       // Globale, tijdelijke string voor algemeen gebruik in diverste functies. 
 int TerminalConnected=0;                                    // Vlag geeft aan of en hoe lang nog (seconden) er verbinding is met een Terminal.
 boolean ConfirmHTTP=false;                                  // Als true, dan wordt een output naar Serial/Telnet eveneens per regel verzonden als HTTP-requenst  
-boolean SerialConnected;                                    // Vlag geeft aan of er een verbinding USB-poort.
 boolean TemporyEventGhostError=false;                       // Vlag om tijdelijk evetghost verzending stil te leggen na een communicatie probleem
 int TerminalLocked=1;                                       // 0 als als gebruiker van een telnet terminalsessie juiste wachtwoord heeft ingetoetst
 volatile unsigned long PulseCount=0;                        // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
@@ -695,6 +716,10 @@ char TempLogFile[13];                                       // Naam van de Logfi
 int FileWriteMode=0;                                        // Het aantal seconden dat deze timer ingesteld staat zal er geen verwerking plaats vinden van TerminalInvoer. Iedere seconde --.
 char InputBuffer_Serial[INPUT_BUFFER_SIZE+1];               // Buffer voor input Seriele data
 char InputBuffer_Terminal[INPUT_BUFFER_SIZE+1];             // Buffer voor input terminal verbinding Telnes sessie
+unsigned long HW_Config=0;                                  // Hardware configuratie zoals gedetecteerd door de Nodo. 
+
+// boolean EthernetEnabled = false;                            // Vlag die aangeeft of er een Ethernetverbinding is.
+
 
 // ethernet classes voor IP communicatie EventGhost, Telnet terminal en HTTP.
 byte Ethernet_MAC_Address[]={NODO_MAC};// MAC adres van de Nodo.
@@ -787,22 +812,27 @@ void setup()
   IPServer = EthernetServer(S.PortServer);
   TerminalServer = EthernetServer(23);
 
-  if((S.Nodo_IP[0] + S.Nodo_IP[1] + S.Nodo_IP[2] + S.Nodo_IP[3])==0)
+
+  if((S.Nodo_IP[0] + S.Nodo_IP[1] + S.Nodo_IP[2] + S.Nodo_IP[3])==0)// Als door de user IP adres is ingesteld op 0.0.0.0 dan IP adres ophalen via DHCP
     {
     if(Ethernet.begin(Ethernet_MAC_Address)==0) // maak verbinding en verzoek IP via DHCP
+      {
       Serial.println(F("Failed to configure Ethernet using DHCP"));
+      bitWrite(HW_Config,HW_ETHERNET,0);
+      }
     }
   else
     Ethernet.begin(Ethernet_MAC_Address, S.Nodo_IP, S.DnsServer, S.Gateway, S.Subnet);
 
-  EthernetEnabled=true;                            //??? aanwezigheid ethernetshield testen
+  bitWrite(HW_Config,HW_ETHERNET,((Ethernet.localIP()[0]+Ethernet.localIP()[1]+Ethernet.localIP()[2]+Ethernet.localIP()[3])!=0)); // Als er een IP adres is, dan Ethernet inschakelen
   IPServer.begin();                                // Start Server voor ontvangst van Events
   TerminalServer.begin();                             // Start server voor Terminalsessies via TelNet
+
   
-  SerialConnected=true; // zonder deze vlag vindt er geen output naar de serial poort plaats. Tijdelijk even inschakelen.
+  bitWrite(HW_Config,HW_SERIAL,1); // zonder deze vlag vindt er geen output naar de serial poort plaats. Tijdelijk even inschakelen.
   PrintWelcome(); // geef de welkomsttekst weer
   ProcessEvent(command2event(CMD_BOOT_EVENT,0,0),VALUE_DIRECTION_INTERNAL,CMD_BOOT_EVENT,0,0);  // Voer het 'Boot' event uit.
-  SerialConnected=false; // Serial weergave uitschakelen.
+  bitWrite(HW_Config,HW_SERIAL,0); // Serial weer uitschakelen.
   }
 
 void loop() 
@@ -918,7 +948,7 @@ void loop()
           
         case 1: // binnen Slice_1
           {        
-          if(EthernetEnabled)
+          if(bitRead(HW_Config,HW_ETHERNET))
             {
             // IP Event: *************** kijk of er een Event van IP  **********************    
             if(IPServer.available())// deze call duurt +/- 90uSec.  
@@ -930,7 +960,7 @@ void loop()
         case 2: // binnen Slice_1 
           {
           // IP Telnet verbinding : *************** kijk of er verzoek tot verbinding vanuit een terminal is **********************    
-          if(EthernetEnabled)
+          if(bitRead(HW_Config,HW_ETHERNET))
             {
             if(TerminalServer.available())
               {          
@@ -987,10 +1017,10 @@ void loop()
                       if(strcmp(InputBuffer_Terminal,S.Password)==0)// als wachtwoord goed is, dan slot er af
                         {
                         TerminalLocked=0;
-                        y=SerialConnected;
-                        SerialConnected=false;
+                        y=bitRead(HW_Config,HW_SERIAL);
+                        bitWrite(HW_Config,HW_SERIAL,1);
                         PrintWelcome();
-                        SerialConnected=y;
+                        bitWrite(HW_Config,HW_SERIAL,y);
                         }
                       else// als foutief wachtwoord, dan teller 
                         {
@@ -1024,7 +1054,7 @@ void loop()
             {
             do
               {
-              SerialConnected=true;
+              bitWrite(HW_Config,HW_SERIAL,1);
               SerialInByte=Serial.read();
               if(isprint(SerialInByte) && SerialInByteCounter<INPUT_BUFFER_SIZE) // alleen de printbare tekens zijn zinvol.
                 {
