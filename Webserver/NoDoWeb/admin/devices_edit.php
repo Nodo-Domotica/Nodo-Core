@@ -27,11 +27,12 @@ $page_title="Setup: Edit device";
  $user_event_off = mysql_real_escape_string(htmlspecialchars($_POST['user_event_off'])); 
  $dim = mysql_real_escape_string(htmlspecialchars($_POST['dim']));
  $homecode = mysql_real_escape_string(htmlspecialchars($_POST['homecode']));
+ $toggle = mysql_real_escape_string(htmlspecialchars($_POST['presentation']));
  
   
  // save the data to the database 
  mysql_select_db($database_tc, $tc);
- mysql_query("UPDATE nodo_tbl_devices SET naam='$naam', label_on='$label_on', label_off='$label_off', collapsed='$collapsed',address='$address', user_event_on='$user_event_on', user_event_off='$user_event_off', type='$type', homecode='$homecode', dim='$dim' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
+ mysql_query("UPDATE nodo_tbl_devices SET naam='$naam', label_on='$label_on', label_off='$label_off', collapsed='$collapsed',address='$address', user_event_on='$user_event_on', user_event_off='$user_event_off', type='$type', toggle='$toggle', homecode='$homecode', dim='$dim' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
  // once saved, redirect back to the view page 
  header("Location: devices.php#saved");  
  } 
@@ -84,23 +85,32 @@ $page_title="Setup: Edit device";
 		<label for="name">Device name:</label>
 		<input type="text" name="naam" id="naam" value="<?php echo $row['naam'] ;?>"  />
 	<br>
-		<label for="label_on">Label on:</label>
+		<label for="select-choice-1" class="select" >Presentation:</label>
+		    <select name="presentation" id="presentation" data-native-menu="false" >
+				<option value="0"<?php if ($row['toggle'] == 0) {echo 'selected="selected"';}?>>Collapsible</option>
+				<option value="1"<?php if ($row['toggle'] == 1) {echo 'selected="selected"';}?>>Toggle</option>
+			</select>
+		<br>
+		<div id="label_div"> 
+		<label for="label_on">Label on button:</label>
 		<input type="text" name="label_on" id="label_on" value="<?php echo $row['label_on'] ;?>"  />
 		<br>
-		<label for="label_off">Label off:</label>
+		<label for="label_off">Label off button:</label>
 		<input type="text" name="label_off" id="naam" value="<?php echo $row['label_off'] ;?>"  />
-		
-	<br>
+		<br>
+		</div>
 	
-		<label for="select-choice-1" class="select" >Expand on devices page:</label>
+		<div id="expand_div"> 
+		<label for="select-choice-2" class="select" >Expand on devices page:</label>
 		<select name="collapsed" id="collapsed" data-placeholder="true" data-native-menu="false">
 			<option value="0"<?php if ($row['collapsed'] == 0) {echo 'selected="selected"';}?>>No</option>
 			<option value="1"<?php if ($row['collapsed'] == 1) {echo 'selected="selected"';}?>>Yes</option>
 		</select>
 		<br>
+		</div>
 		
 	<div id="dim_div">
-		<label for="select-choice-2" class="select" >Dim option:</label>
+		<label for="select-choice-3" class="select" >Dim option:</label>
 		<select name="dim" id="dim" data-placeholder="true" data-native-menu="false">
 			<option value="0"<?php if ($row['dim'] == 0) {echo 'selected="selected"';}?>>No</option>
 			<option value="1"<?php if ($row['dim'] == 1) {echo 'selected="selected"';}?>>Yes - buttons</option>
@@ -221,6 +231,22 @@ if ($row['type'] == 4) {
 
 }
 
+if ($row['toggle'] == 0) {
+
+
+	echo "$('#label_div').show();";
+	echo "$('#expand_div').show();";
+	
+}
+
+if ($row['toggle'] == 1) {
+
+
+	echo "$('#label_div').hide();";
+	echo "$('#expand_div').hide();";
+	
+}
+
 
 
 ?>
@@ -292,6 +318,26 @@ $('#submit_div').show();
 
 } 
    
+});
+
+$('#presentation').change(function() 
+{
+
+if ($(this).attr('value')==0) {   
+
+$('#label_div').show();
+$('#expand_div').show();  
+
+}
+
+if ($(this).attr('value')==1) {   
+
+$('#label_div').hide();
+$('#expand_div').hide();  
+
+}
+ 
+ 
 });
 </script> 
  

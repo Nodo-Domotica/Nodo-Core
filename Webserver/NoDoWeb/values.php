@@ -32,7 +32,7 @@ switch ($theme) {
 
 //lees sensoren uit
 mysql_select_db($database_tc, $tc);
-$query_RSsensor = "SELECT * FROM nodo_tbl_sensor WHERE user_id='$userId'";
+$query_RSsensor = "SELECT * FROM nodo_tbl_sensor WHERE user_id='$userId' ORDER BY sort_order ASC";
 $RSsensor = mysql_query($query_RSsensor, $tc) or die(mysql_error());
 
 
@@ -108,8 +108,11 @@ $RSsensor = mysql_query($query_RSsensor, $tc) or die(mysql_error());
 				}
 								
 				$query_RSsensor_value_data = "SELECT * FROM nodo_tbl_sensor_data WHERE user_id='$userId' AND sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR";
-				//Totalen ophalen gebaseerd op keuze ticksize
-				$RSsensor_value_data = mysql_query($query_RSsensor_value_data, $tc) or die(mysql_error());			
+				//Data ophalen gebaseerd op keuze ticksize
+				$RSsensor_value_data = mysql_query($query_RSsensor_value_data, $tc) or die(mysql_error());	
+				
+				//Leeg maken omdat er anders onterecht een staaf grafiek weergegeven word indien de voorgaande grafiek een staafgrafiek was
+				$graph_bars="";
 								
 			}
 			
@@ -135,7 +138,7 @@ $RSsensor = mysql_query($query_RSsensor, $tc) or die(mysql_error());
 					$graph_bar_width = 43200000;
 					$query_RSsensor_value_data = "SELECT sensor_id,DATE_FORMAT(timestamp , '%Y-%m-%d') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE user_id='$userId' AND sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY date(timestamp)";
 					break;
-					case "4":
+					case "4": //Weken zijn lastiger uit te rekenen. Uitzoeken of dit uberhaubt wenselijk is.
 					$graph_min_ticksize = "1, \"week\""; 
 					$graph_bar_width = 302400000;
 					$query_RSsensor_value_data = "SELECT sensor_id,DATE_FORMAT(timestamp , '%Y-%m-%d') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE user_id='$userId' AND sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY week(timestamp)";

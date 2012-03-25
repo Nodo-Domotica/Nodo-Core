@@ -8,7 +8,7 @@ $page_title = "Setup: Values";
 
 
 /*************************************************************************************************************************************************************
-POST gegevens wegschrijven naar de database of value lijst weergeven
+POST gegevens wegschrijven naar de database
 **************************************************************************************************************************************************************/
 if (isset($_POST['submit'])) 
 {  
@@ -80,22 +80,49 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
  // save the data to the database 
  mysql_select_db($database_tc, $tc);
  
+ //Totaal aantal records bepalen 
+$RSValues = mysql_query("SELECT id FROM nodo_tbl_sensor WHERE user_id='$userId'") or die(mysql_error()); 
+$RSValues_rows = mysql_num_rows($RSValues);
+//aantal records met 1 verhogen zodat we deze waarde in het sorteerveld kunnen gebruiken
+$sort_order = $RSValues_rows + 1;
+ 
    
- mysql_query("INSERT INTO nodo_tbl_sensor (sensor_type, display, input_output, input_control, input_step, input_min_val, input_max_val, sensor_prefix, sensor_suffix, sensor_suffix_true, sensor_suffix_false, user_id, nodo_unit_nr,par1,graph_hours,graph_min_ticksize,graph_type) 
+ mysql_query("INSERT INTO nodo_tbl_sensor (sensor_type, display, input_output, input_control, input_step, input_min_val, input_max_val, sensor_prefix, sensor_suffix, sensor_suffix_true, sensor_suffix_false, user_id, nodo_unit_nr,par1,graph_hours,graph_min_ticksize,graph_type,sort_order) 
  VALUES 
- ('$type','$display','$input_output','$input_control','$input_step','$input_slider_min','$input_slider_max','$prefix','$suffix','$suffix_true','$suffix_false','$userId','$unit','$par1','$graph_hours','$graph_min_ticksize','$graph_type')");
+ ('$type','$display','$input_output','$input_control','$input_step','$input_slider_min','$input_slider_max','$prefix','$suffix','$suffix_true','$suffix_false','$userId','$unit','$par1','$graph_hours','$graph_min_ticksize','$graph_type','$sort_order')");
  // once saved, redirect back to the view page 
  header("Location: values.php#saved");    }
  
 else 
 {
-mysql_select_db($database_tc, $tc);
-$RSsensor_result = mysql_query("SELECT * FROM nodo_tbl_sensor WHERE user_id='$userId'") or die(mysql_error());  
+
 }
-/*************************************************************************************************************************************************************
-/POST gegevens wegschrijven naar de database of value lijst weergeven
-**************************************************************************************************************************************************************/
+//Records sorteren
+ if (isset($_GET['sort'])) {
+	
+	$sensor_id = $_GET['id'];
+	$sort = $_GET['sort'];
+	$sort_order = $_GET['sort_order'];
+	$prev_record = $_GET['sort_order'] - 1;
+	$next_record = $_GET['sort_order'] + 1;
+	
+	if ($sort == "up") {
+	
+
+	 mysql_query("UPDATE nodo_tbl_sensor SET sort_order=sort_order +1 WHERE user_id='$userId' AND sort_order='$prev_record'") or die(mysql_error()); 	
+	 mysql_query("UPDATE nodo_tbl_sensor SET sort_order=sort_order -1 WHERE user_id='$userId' AND sort_order='$sort_order' AND id='$sensor_id'") or die(mysql_error()); 
+	
+	}
+	if ($sort == "down") {
+
+	 mysql_query("UPDATE nodo_tbl_sensor SET sort_order=sort_order -1 WHERE user_id='$userId' AND sort_order='$next_record'") or die(mysql_error()); 	
+	 mysql_query("UPDATE nodo_tbl_sensor SET sort_order=sort_order +1 WHERE user_id='$userId' AND sort_order='$sort_order' AND id='$sensor_id'") or die(mysql_error()); 
+	
+	}
+header("Location: values.php?id=$sensor_id"); 
+}
 ?>
+
 
 
 
@@ -229,7 +256,7 @@ $RSsensor_result = mysql_query("SELECT * FROM nodo_tbl_sensor WHERE user_id='$us
 				<option value="1" selected="selected">Minutes</option>
 				<option value="2">Hours</option>
 				<option value="3">Days</option>
-				<option value="4">Weeks</option>
+				<!-- <option value="4">Weeks</option> tijdelijk uit omdat weken lastiger uit te rekenen zijn-->
 				<option value="5">Months</option>
 			</select>
 			<br>
@@ -251,17 +278,43 @@ $RSsensor_result = mysql_query("SELECT * FROM nodo_tbl_sensor WHERE user_id='$us
 	<?php
 
 						   
-	echo '<ul data-role="listview" data-split-icon="delete" data-split-theme="$theme" data-inset="true">';
+	//echo '<ul data-role="listview" data-split-icon="delete" data-split-theme="$theme" data-inset="true">';
+	mysql_select_db($database_tc, $tc);
+	$result = mysql_query("SELECT * FROM nodo_tbl_sensor WHERE user_id='$userId' ORDER BY sort_order ASC") or die(mysql_error());  
+	$rows = mysql_num_rows($result);
+			
+			// loop through results of database query, displaying them in the table        
+			$i=0;
+			while($row = mysql_fetch_array($result)) 
+			
+				
+				{                                
+				 
+				$i++;
+				?>          
+				
+				
+		  
+				<div data-role="collapsible" data-collapsed="<?php if ($_GET['id'] == $row['id']) {echo "false";} else {echo "true";} ?>" data-content-theme="<?php echo $theme;?>">
+				<h3><?php echo $row['sensor_prefix']; ?></h3>
+					
+				
 
-	 
-	// loop through results of database query, displaying them in the table        
-	while($RSsensor_row = mysql_fetch_array($RSsensor_result)) 
-	{                                
-			   
-	echo '<li><a href="values_edit.php?id=' . $RSsensor_row['id'] . '" title=Edit data-ajax="false">'. $RSsensor_row['sensor_prefix'] .'</a>';                
-	echo '<a href="values_delete_confirm.php?id=' . $RSsensor_row['id'] . '" data-rel="dialog">Delete</a></li>';
-	
-	}         
+				<?php if ($i > 1) { ?>
+				<a href="values.php?sort=up&sort_order=<?php echo $row['sort_order']; ?>&id=<?php echo $row['id']; ?>" data-role="button"  data-icon="arrow-u" data-ajax="false">Move up</a>
+				<?php } ?>
+				
+				<?php if ($i != $rows) { ?>
+				<a href="values.php?sort=down&sort_order=<?php echo $row['sort_order']; ?>&id=<?php echo $row['id']; ?>" data-role="button" data-icon="arrow-d"  data-ajax="false">Move down</a>
+				<?php } ?>
+				
+				<a href="values_edit.php?id=<?php echo $row['id']; ?>" data-role="button" data-icon="gear" data-ajax="false">Edit</a>
+				<a href="values_delete_confirm.php?id=<?php echo $row['id']; ?>" data-role="button"  data-icon="delete" data-rel="dialog">Delete</a>
+				
+				</div>
+			
+				<?php
+				}         
 	?>
 	
 	</div>

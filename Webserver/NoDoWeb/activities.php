@@ -34,7 +34,7 @@ $page_title = "Activities";
 //Lees eigen opdrachten uit
 mysql_select_db($database_tc, $tc);
 
-$RSactivities = mysql_query("SELECT * FROM nodo_tbl_activities WHERE user_id='$userId'") or die(mysql_error());
+$RSactivities = mysql_query("SELECT * FROM nodo_tbl_activities WHERE user_id='$userId' ORDER BY sort_order ASC") or die(mysql_error());
 ?>
 
 

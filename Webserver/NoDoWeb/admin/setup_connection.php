@@ -262,7 +262,7 @@ END Check connection & Nodo config
 	
 	<br>   
       
-		<label for="name">TCP port:</label>
+		<label for="name">TCP port: (HTTP)</label>
 		<input type="text" name="nodo_port" id="nodo_port" value="<?php echo $row['nodo_port']?>"  />
 
 			
