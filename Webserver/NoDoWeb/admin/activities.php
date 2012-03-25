@@ -23,18 +23,50 @@ if (isset($_POST['submit']))
  // save the data to the database 
  mysql_select_db($database_tc, $tc);
  
+ //Totaal aantal records bepalen 
+$RSActivities = mysql_query("SELECT id FROM nodo_tbl_activities WHERE user_id='$userId'") or die(mysql_error()); 
+$RSActivities_rows = mysql_num_rows($RSActivities);
+//aantal records met 1 verhogen zodat we deze waarde in het sorteerveld kunnen gebruiken
+$sort_order = $RSActivities_rows + 1; 
+ 
    
- mysql_query("INSERT INTO nodo_tbl_activities (name, events, user_id) 
+ mysql_query("INSERT INTO nodo_tbl_activities (name, events, user_id, sort_order) 
  VALUES 
- ('$name','$events','$userId')");
+ ('$name','$events','$userId','$sort_order')");
  // once saved, redirect back to the view page 
  header("Location: activities.php#saved");    }
  
-else 
-{
-mysql_select_db($database_tc, $tc);
-$result = mysql_query("SELECT * FROM nodo_tbl_activities WHERE user_id='$userId'") or die(mysql_error());  
-}?>
+
+
+ //Records sorteren
+ if (isset($_GET['sort'])) {
+	
+	$device_id = $_GET['id'];
+	$sort = $_GET['sort'];
+	$sort_order = $_GET['sort_order'];
+	$prev_record = $_GET['sort_order'] - 1;
+	$next_record = $_GET['sort_order'] + 1;
+	
+	if ($sort == "up") {
+	
+
+	 mysql_query("UPDATE nodo_tbl_activities SET sort_order=sort_order +1 WHERE user_id='$userId' AND sort_order='$prev_record'") or die(mysql_error()); 	
+	 mysql_query("UPDATE nodo_tbl_activities SET sort_order=sort_order -1 WHERE user_id='$userId' AND sort_order='$sort_order' AND id='$device_id'") or die(mysql_error()); 
+	
+	}
+	if ($sort == "down") {
+
+	 mysql_query("UPDATE nodo_tbl_activities SET sort_order=sort_order -1 WHERE user_id='$userId' AND sort_order='$next_record'") or die(mysql_error()); 	
+	 mysql_query("UPDATE nodo_tbl_activities SET sort_order=sort_order +1 WHERE user_id='$userId' AND sort_order='$sort_order' AND id='$device_id'") or die(mysql_error()); 
+	
+	}
+header("Location: activities.php?id=$device_id"); 
+}
+
+
+
+
+?>
 
 
 
@@ -88,18 +120,45 @@ $result = mysql_query("SELECT * FROM nodo_tbl_activities WHERE user_id='$userId'
 			<?php
 			 
 								   
-			echo '<ul data-role="listview" data-split-icon="delete" data-split-theme="$theme" data-inset="true">';
-	  
-			//echo '<br>';   
-			// loop through results of database query, displaying them in the table        
-			while($row = mysql_fetch_array($result)) 
-			{                                
-					   
-			echo '<li><a href="activities_edit.php?id=' . $row['id'] . '" title=Edit data-ajax="false">'. $row['name'] .'</a>';                
-			echo '<a href="activities_delete_confirm.php?id=' . $row['id'] . '" data-rel="dialog">Delete</a></li>';
 			
-			}         
-			?>
+			mysql_select_db($database_tc, $tc);
+			$result = mysql_query("SELECT * FROM nodo_tbl_activities WHERE user_id='$userId' ORDER BY sort_order ASC") or die(mysql_error());  
+			$rows = mysql_num_rows($result);
+			
+			// loop through results of database query, displaying them in the table        
+			$i=0;
+			while($row = mysql_fetch_array($result)) 
+			
+				
+				{                                
+				 
+				$i++;
+				?>          
+				
+				
+		  
+				<div data-role="collapsible" data-collapsed="<?php if ($_GET['id'] == $row['id']) {echo "false";} else {echo "true";} ?>" data-content-theme="<?php echo $theme;?>">
+				<h3><?php echo $row['name']; ?></h3>
+					
+				
+
+				<?php if ($i > 1) { ?>
+				<a href="activities.php?sort=up&sort_order=<?php echo $row['sort_order']; ?>&id=<?php echo $row['id']; ?>" data-role="button"  data-icon="arrow-u" data-ajax="false">Move up</a>
+				<?php } ?>
+				
+				<?php if ($i != $rows) { ?>
+				<a href="activities.php?sort=down&sort_order=<?php echo $row['sort_order']; ?>&id=<?php echo $row['id']; ?>" data-role="button" data-icon="arrow-d"  data-ajax="false">Move down</a>
+				<?php } ?>
+				
+				<a href="activities_edit.php?id=<?php echo $row['id']; ?>" data-role="button" data-icon="gear" data-ajax="false">Edit</a>
+				<a href="activities_delete_confirm.php?id=<?php echo $row['id']; ?>" data-role="button"  data-icon="delete" data-rel="dialog">Delete</a>
+				
+				</div>
+			
+				<?php
+				}         
+		?>      
+			
 		</div>
 	
 

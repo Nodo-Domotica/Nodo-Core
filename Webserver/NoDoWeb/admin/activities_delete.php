@@ -33,6 +33,27 @@ function GetSQLValueString($theValue, $theType, $theDefinedValue = "", $theNotDe
 }
 
 if ((isset($_GET['id'])) && ($_GET['id'] != "")) {
+  
+  $id = $_GET['id'];
+  
+  //Alle records groter dan het te verwijderen record bepalen
+  $result = mysql_query("SELECT * FROM nodo_tbl_activities WHERE user_id='$userId' AND sort_order > (SELECT sort_order FROM nodo_tbl_activities WHERE user_id='$userId' AND id='$id')") or die(mysql_error());
+  
+  //Van alle records groter dan het verwijderde record het sorteer veld met één verlagen   
+  while($row = mysql_fetch_array($result)) {
+  
+  $id = $row['id'];
+  $sort_number = $row['sort_order'] - 1;
+  
+  // save the data to the database 
+ mysql_select_db($database_tc, $tc);
+ mysql_query("UPDATE nodo_tbl_activities SET sort_order='$sort_number' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
+ 
+ }
+  
+  
+  
+  
   $deleteSQL = sprintf("DELETE FROM nodo_tbl_activities WHERE id=%s AND user_id='$userId'",
                        GetSQLValueString($_GET['id'], "int"));
 

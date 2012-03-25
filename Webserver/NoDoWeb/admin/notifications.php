@@ -20,9 +20,13 @@ if (isset($_POST['submit']))
  $subject = mysql_real_escape_string(htmlspecialchars($_POST['subject'])); 
  $body = mysql_real_escape_string(htmlspecialchars($_POST['body']));  
  
- 
- 
-  
+ // ongewenste spaties uit de invoer verwijderen
+ $event_lenght = strlen($event);
+ $pos1 = strpos($event, " ");
+ $cmd = trim(substr($event, 0, $pos1));
+ $event = $cmd . " " .  str_replace(" ","",trim(substr($event, $pos1,  $event_lenght)));
+
+   
  // save the data to the database 
  mysql_select_db($database_tc, $tc);
  

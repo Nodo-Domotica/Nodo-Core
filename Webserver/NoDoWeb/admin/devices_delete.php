@@ -34,12 +34,11 @@ if ((isset($_GET['id'])) && ($_GET['id'] != "")) {
 
   $id = $_GET['id'];
   
-  $RS_sort = mysql_query("SELECT * FROM nodo_tbl_devices WHERE user_id='$userId' AND id='$id'") or die(mysql_error());
-  $RS_sort_row = mysql_fetch_array($RS_sort);
-  $sort_number = $RS_sort_row['sort_order'];
+    
+  //Alle records groter dan het te verwijderen record bepalen
+  $result = mysql_query("SELECT * FROM nodo_tbl_devices WHERE user_id='$userId' AND sort_order > (SELECT sort_order FROM nodo_tbl_devices WHERE user_id='$userId' AND id='$id')") or die(mysql_error());
   
-  $result = mysql_query("SELECT * FROM nodo_tbl_devices WHERE user_id='$userId' AND sort_order > $sort_number") or die(mysql_error());
-  
+  //Van alle records groter dan het verwijderde record het sorteer veld met één verlagen   
   while($row = mysql_fetch_array($result)) {
   
   $id = $row['id'];
@@ -51,11 +50,7 @@ if ((isset($_GET['id'])) && ($_GET['id'] != "")) {
  
  }
   
-  
-  
-  
-  
-  
+    
   $deleteSQL = sprintf("DELETE FROM nodo_tbl_devices WHERE id=%s AND user_id='$userId'",
                        GetSQLValueString($_GET['id'], "int"));
 

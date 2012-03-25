@@ -22,6 +22,7 @@ $user_event_on = mysql_real_escape_string(htmlspecialchars($_POST['user_event_on
 $user_event_off = mysql_real_escape_string(htmlspecialchars($_POST['user_event_off'])); 
 $dim = mysql_real_escape_string(htmlspecialchars($_POST['dim'])); 
 $homecode = mysql_real_escape_string(htmlspecialchars($_POST['homecode']));
+$toggle = mysql_real_escape_string(htmlspecialchars($_POST['presentation']));
 
 
 
@@ -34,13 +35,15 @@ $RSDevices_rows = mysql_num_rows($RSDevices);
 //aantal records met 1 verhogen zodat we deze waarde in het sorteerveld kunnen gebruiken
 $sort_order = $RSDevices_rows + 1; 
 
-mysql_query("INSERT INTO nodo_tbl_devices(naam, label_on, label_off, collapsed, type, dim, homecode, address, user_event_on, user_event_off, user_id,sort_order)
+mysql_query("INSERT INTO nodo_tbl_devices(naam, label_on, label_off, collapsed, type, toggle, dim, homecode, address, user_event_on, user_event_off, user_id,sort_order)
 VALUES
-('$naam','$label_on','$label_off','$collapsed','$type','$dim','$homecode','$address','$user_event_on','$user_event_off','$userId','$sort_order')") or die(mysql_error());
- header("Location: devices.php#saved");   }
+('$naam','$label_on','$label_off','$collapsed','$type','$toggle','$dim','$homecode','$address','$user_event_on','$user_event_off','$userId','$sort_order')") or die(mysql_error());
+ header("Location: devices.php#saved");   
+ 
+ }
  
  
- 
+ //Records sorteren
  if (isset($_GET['sort'])) {
 	
 	$device_id = $_GET['id'];
@@ -50,6 +53,7 @@ VALUES
 	$next_record = $_GET['sort_order'] + 1;
 	
 	if ($sort == "up") {
+	
 
 	 mysql_query("UPDATE nodo_tbl_devices SET sort_order=sort_order +1 WHERE user_id='$userId' AND sort_order='$prev_record'") or die(mysql_error()); 	
 	 mysql_query("UPDATE nodo_tbl_devices SET sort_order=sort_order -1 WHERE user_id='$userId' AND sort_order='$sort_order' AND id='$device_id'") or die(mysql_error()); 
@@ -61,7 +65,7 @@ VALUES
 	 mysql_query("UPDATE nodo_tbl_devices SET sort_order=sort_order +1 WHERE user_id='$userId' AND sort_order='$sort_order' AND id='$device_id'") or die(mysql_error()); 
 	
 	}
-
+header("Location: devices.php?id=$device_id"); 
 }
 
  ?>
@@ -100,30 +104,41 @@ VALUES
 				<option value="3">WiredOut</option>
 				<option value="4">UserEvent</option>
 			</select>
-	<br>
+		<br>
 		
 		<div id="name_div"> 		
 		<label for="name">Device name:</label>
 		<input type="text" name="naam" id="naam" value=""  />
 		<br>
-		<label for="label_on">Label on:</label>
+		<label for="select-choice-1" class="select" >Presentation:</label>
+		    <select name="presentation" id="presentation" data-native-menu="false" >
+				<option value="0">Collapsible</option>
+				<option value="1">Toggle</option>
+			</select>
+		<br>
+		<div id="label_div"> 
+		<label for="label_on">Label on button:</label>
 		<input type="text" name="label_on" id="label_on" value="On"  />
 		<br>
-		<label for="label_off">Label off:</label>
+		<label for="label_off">Label off button:</label>
 		<input type="text" name="label_off" id="naam" value="Off"  />
 		<br>
-		<label for="select-choice-1" class="select" >Expand on devices page:</label>
+		</div>
+		<div id="expand_div"> 
+		<label for="select-choice-2" class="select" >Expand on devices page:</label>
 		<select name="collapsed" id="collapsed" data-placeholder="true" data-native-menu="false">
 			<option value="0">No</option>
 			<option value="1">Yes</option>
 		</select>
 		<br>
+		</div>
+		
 		
 		</div>
 	
 		
 		<div id="dim_div">
-			<label for="select-choice-2" class="select">Dim option:</label>
+			<label for="select-choice-3" class="select">Dim option:</label>
 			<select name="dim" id="dim" data-native-menu="false">
 				<option value="0">No</option>
 				<option value="1">Yes - buttons</option>
@@ -178,8 +193,7 @@ VALUES
 		$rows = mysql_num_rows($result);
 				               
 		
-		//echo "<ul data-role=\"listview\" data-theme=\"$theme\" data-inset=\"true\" data-dividertheme=\"$theme_header\">";	
-		//echo '<br>';   
+		
 		// loop through results of database query, displaying them in the table        
 		
 		$i=0;
@@ -316,6 +330,26 @@ $('#userevent_div').show();
 $('#submit_div').show();
 
 } 
+ 
+});
+
+$('#presentation').change(function() 
+{
+
+if ($(this).attr('value')==0) {   
+
+$('#label_div').show();
+$('#expand_div').show();  
+
+}
+
+if ($(this).attr('value')==1) {   
+
+$('#label_div').hide();
+$('#expand_div').hide();  
+
+}
+ 
  
 });
 </script>

@@ -228,7 +228,7 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
 				<option value="1"<?php if ($row['graph_min_ticksize'] == 1) {echo 'selected="selected"';}?>>Minutes</option>
 				<option value="2"<?php if ($row['graph_min_ticksize'] == 2) {echo 'selected="selected"';}?>>Hours</option>
 				<option value="3"<?php if ($row['graph_min_ticksize'] == 3) {echo 'selected="selected"';}?>>Days</option>
-				<option value="4"<?php if ($row['graph_min_ticksize'] == 4) {echo 'selected="selected"';}?>>Weeks</option>
+			<!--	<option value="4"<?php if ($row['graph_min_ticksize'] == 4) {echo 'selected="selected"';}?>>Weeks</option> -->
 				<option value="5"<?php if ($row['graph_min_ticksize'] == 5) {echo 'selected="selected"';}?>>Months</option>
 			</select>
 			<br>
