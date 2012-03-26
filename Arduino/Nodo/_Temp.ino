@@ -16,14 +16,6 @@ Serial.println("*** debug: ");//???
 
 void PrintRawSignal(void)
   {
-  Serial.print("*** RawSignal=");//???
-  for(int x=1;x<=RawSignal.Number;x++)
-    {
-    Serial.print(RawSignal.Pulses[x],DEC);//??? Debug  
-    Serial.print(",");//???
-    }
-  Serial.println();//???    
-  Serial.print("*** RawSignal.Number=");Serial.println(RawSignal.Number,DEC);//??? Debug
   }
   
 

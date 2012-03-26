@@ -56,6 +56,8 @@ byte CommandError(unsigned long Content)
   switch(Command)
     {
     //test; geen, altijd goed
+    case CMD_BOOT_EVENT:
+    case CMD_RESET:
     case CMD_FILE_GET_HTTP:
     case CMD_RAWSIGNAL_SAVE:
     case CMD_RAWSIGNAL_SEND:
@@ -105,14 +107,13 @@ byte CommandError(unsigned long Content)
       if(Par2==VALUE_ON || Par2==VALUE_OFF || Par2<=16)return false;
       return ERROR_02;
 
-    // Generiek: geen par1 of par2 ingevuld.
-    case CMD_BOOT_EVENT:
     case CMD_EVENTLIST_WRITE:
+      if(Par1<1 || Par1>EVENTLIST_MAX)return ERROR_02;    
+      return false; 
+
     case CMD_EVENTLIST_SHOW:
-    case CMD_RESET:
     case CMD_EVENTLIST_ERASE: 
-      if(Par1!=0)return ERROR_02;    
-      if(Par2!=0)return ERROR_02;    
+      if(Par1>EVENTLIST_MAX)return ERROR_02;    
       return false; 
       
     case CMD_TIMER_SET_SEC:
@@ -121,7 +122,6 @@ byte CommandError(unsigned long Content)
       return false;
 
     // test:Par1 binnen bereik maximaal beschikbare variabelen
-    case CMD_VARIABLE_SET:
     case CMD_VARIABLE_INC: 
     case CMD_VARIABLE_DEC: 
     case CMD_VARIABLE_EVENT:    
@@ -131,6 +131,11 @@ byte CommandError(unsigned long Content)
     case CMD_BREAK_ON_VAR_EQU:
       Par2PortAnalog(Par1, Par2, &x, &y);
       if(x<1 || x>USER_VARIABLES_MAX)return ERROR_02;
+      return false;
+
+    case CMD_VARIABLE_SET:
+      Par2PortAnalog(Par1, Par2, &x, &y);
+      if(x>USER_VARIABLES_MAX)return ERROR_02;
       return false;
       
     // test:Par1 en Par2 binnen bereik maximaal beschikbare variabelen
@@ -147,7 +152,7 @@ byte CommandError(unsigned long Content)
 
     // Par1 alleen 0,1 of 7
     case CMD_SIMULATE_DAY:
-      if(Par1!=0 && Par1!=1 && Par1!=7)return ERROR_02;
+      if(Par1!=1 && Par1!=7)return ERROR_02;
       return false;
       
     // geldig jaartal
@@ -1082,7 +1087,7 @@ void ExecuteLine(char *Line, byte Port)
 
           case CMD_EVENTLIST_SHOW:
             PrintTerminal(ProgmemString(Text_22));
-            if(Par1==VALUE_ALL || Par1==0)
+            if(Par1==0)
               {
               for(x=1;x<=EVENTLIST_MAX;x++)
                 {
@@ -1109,7 +1114,7 @@ void ExecuteLine(char *Line, byte Port)
             break;
 
           case CMD_EVENTLIST_ERASE:
-            if(Par1==VALUE_ALL || Par1==0)
+            if(Par1==0)
               {
               Led(BLUE);
               for(x=1;x<=EVENTLIST_MAX;x++)
@@ -1117,7 +1122,7 @@ void ExecuteLine(char *Line, byte Port)
               Led(RED);
               }
             else
-                Eventlist_Write(Par1,0L,0L);
+              Eventlist_Write(Par1,0L,0L);
 
             break;        
 

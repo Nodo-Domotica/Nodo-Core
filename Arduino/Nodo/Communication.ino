@@ -735,7 +735,8 @@ boolean SendLineRF(char* Line, byte Dest)
     Length=strlen(StringToSend);
     PrintTerminal(StringToSend); //??? Debug
 //    Serial.println("*** debug: WaitFreeRF()");//???
-    WaitFreeRF(0, 300);
+
+    WaitFreeRF(250, 250);
 //    Serial.println("*** debug: Start zenden.");//???
   
     digitalWrite(PIN_RF_RX_VCC,LOW);  // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
@@ -800,7 +801,7 @@ boolean ReceiveLineRF(byte Checksum, byte Length, char *ReturnString)
   {
   unsigned long Event,TimeoutTimer;
   unsigned int Cookie;
-  byte ReceivedByte, ReceivedByteCounter=0;  
+  byte ReceivedByte, ReceivedByteCounter;  
   randomSeed(millis());
   int PulseTime,x,y;
   boolean Ok=false;
@@ -818,55 +819,79 @@ boolean ReceiveLineRF(byte Checksum, byte Length, char *ReturnString)
           ((unsigned long)S.Unit)<<24                   | 
           ((unsigned long)CMD_RECEIVE_LINE_READY)<<16   | 
           (unsigned long)Cookie;
+          
   WaitFreeRF(0, 300);
   Nodo_2_RawSignal(Event);  
   RawSendRF();
 //  Serial.print("*** Verzonden Cookie=");Serial.println(Cookie,HEX); //??? Debug
-
+  
   Length+=32; // tel de 32 tekens van de 128 bit MD5 hash bij de te ontvangen lengte op.
   ReceiveString[0]=0; // Maak de ontvangen string leeg;
 
   // Stap-3. Ontvang van de Master verzendt blok met: String met commando en MD5-Hash op basis van wachtwoord en cookie
-  TimeoutTimer=millis()+5000; 
-  do
+  noInterrupts();
+  TimeoutTimer=millis()+5000;
+  ReceivedByteCounter=0;
+  ReceivedByte=0;
+  x=0;
+  int z=0;//???
+  
+  digitalWrite(28,HIGH);//???
+
+  while(TimeoutTimer>millis())
     {
-    if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
+    // hier aangekomen als er een puls (startbit) is gestart en ingang dus hoog is.
+    if(WaitForChangeState(PIN_RF_RX_DATA,HIGH, SIGNAL_TIMEOUT_RF)>1000)// meet hoe lang het duurt totdat de RF uitgang weer LOW wordt. als de puls een duidelijke startbit is
       {
-      // hier aangekomen als er een puls is gestart en ingang dus hoog is.
-      if(WaitForChangeState(PIN_RF_RX_DATA,HIGH, SIGNAL_TIMEOUT_RF)>NODO_SPACE)// meet hoe lang het duurt totdat de RF uitgang weer LOW wordt. als de puls een duidelijke startbit is
+      while(TimeoutTimer>millis())
         {
-        PulseTime=WaitForChangeState(PIN_RF_RX_DATA,LOW, SIGNAL_TIMEOUT_RF);
-        for(ReceivedByteCounter=0; TimeoutTimer>millis() && ReceivedByteCounter<Length; ReceivedByteCounter++)
+        PulseTime = WaitForChangeState(PIN_RF_RX_DATA,HIGH, SIGNAL_TIMEOUT_RF);
+        if(PulseTime>MIN_PULSE_LENGTH)
           {
-          ReceivedByte=0;
-          for(int x=0;x<=7;x++)
+          if(z<25)RawSignal.Pulses[z++]=PulseTime;
+        
+          if(PulseTime>NODO_PULSE_MID)
+            ReceivedByte |= (1<<x);
+
+          if(++x > 7)
             {
-            PulseTime=WaitForChangeState(PIN_RF_RX_DATA,HIGH, SIGNAL_TIMEOUT_RF);
-            if(PulseTime>NODO_PULSE_MID)
-              ReceivedByte |= (1<<x);
-            PulseTime=WaitForChangeState(PIN_RF_RX_DATA,LOW, SIGNAL_TIMEOUT_RF);
+            ReceiveString[ReceivedByteCounter++]=ReceivedByte;
+            ReceivedByte=0;
+            x=0;
+            if(ReceivedByteCounter==Length)
+              {
+              Ok=true;
+              TimeoutTimer=millis();// stop de while() loop.
+              }
             }
-          ReceiveString[ReceivedByteCounter]=ReceivedByte; 
           }
-        ReceiveString[ReceivedByteCounter]=0; // sluit string af.
-        if(ReceivedByteCounter==Length)
-          Ok=true;
         }
       }
-    }while(TimeoutTimer>millis() && !Ok);
+    }
+  digitalWrite(28,LOW);//???
+  ReceiveString[ReceivedByteCounter]=0; // sluit string af.
+  interrupts();
+  
+  Serial.print("*** RawSignal=");//???
+  for(x=1;x<=z;x++)
+    {
+    Serial.print(RawSignal.Pulses[x],DEC);//??? Debug  
+    Serial.print(",");//???
+    }
+  Serial.println();//???    
+
   // ReceiveString is nu gevuld met de string die via RF is ontvangen en bevat als het goed is de MD5-Hash met direct daarop volgend het Commando
+  Serial.print("*** debug: ontvangen ReceiveString=");Serial.println(ReceiveString); //??? Debug
 
   if(Ok)
     {
     strcpy(ReturnString,ReceiveString+32);
-    Serial.print("*** debug: ontvangen ReturnString=");Serial.println(ReturnString); //??? Debug
 
     // bereken de checksum van de ontvangen string.
     Checksum=0;
     for(x=0;x<strlen(ReturnString);x++)
       Checksum=(Checksum + ReturnString[x])%256; // bereken checksum (crc-8)
     }
-
 
   ReceiveString[32]=0; // Sluit de string af direct aan het einde van de MD5-hash
   
