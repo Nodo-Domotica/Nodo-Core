@@ -27,8 +27,9 @@
  *
  \****************************************************************************************************************************/
 
-// #define NODO_MAC 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF // Default Nodo MAC. 
- #define NODO_MAC 0x54, 0xa5, 0x8d, 0x17, 0xaf, 0x41 // Productie MAC Paul
+
+#define NODO_MAC 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF // Default Nodo MAC. 
+// #define NODO_MAC 0x54, 0xa5, 0x8d, 0x17, 0xaf, 0x41 // Productie MAC Paul
 
 #define VERSION       11          // Nodo Version nummer:
                                   // Major.Minor.Patch
@@ -635,8 +636,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define HW_IR_RX        5
 #define HW_IR_TX        6
 #define HW_CLOCK        7
-#define HW_ETHERNET     8
-#define HW_SDCARD       9
+#define HW_ETHERNET     8F
 #define HW_SERIAL       10
 #define HW_WIRED        11
 #define HW_PULSE        12
@@ -763,6 +763,9 @@ void setup()
   pinMode(PIN_LED_RGB_B,  OUTPUT);
   pinMode(PIN_SPEAKER,    OUTPUT);
   pinMode(EthernetShield_CS_SDCardH, OUTPUT); // CS/SPI: nodig voor correct funktioneren van de SDCard!
+
+  pinMode(28,    OUTPUT); //??? debugging met Logic Analyser
+
 
   digitalWrite(PIN_IR_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
   digitalWrite(PIN_RF_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.

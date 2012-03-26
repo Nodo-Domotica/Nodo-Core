@@ -2,6 +2,9 @@
 
 Aanpassingen:
 - Issue 344:	FileExecute kan niet worden geprogrammeerd in de Eventlist
+- Issue 347:	SmittTrigger heeft onjuiste default
+- Issue 351:	SimulateDay accepteert 0 als parameter
+- Issue 336:	Wildcard in Variable commando's
 
 
 Known Errors / ToDo:
