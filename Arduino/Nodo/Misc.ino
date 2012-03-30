@@ -311,7 +311,7 @@ void ResetFactory(void)
   for(x=0;x<WIRED_PORTS;x++)
     {
     S.WiredInputThreshold[x]=5000; 
-    S.WiredInputSmittTrigger[x]=50;
+    S.WiredInputSmittTrigger[x]=500;
     S.WiredInputPullUp[x]=true;
     S.WiredInput_Calibration_IH[x]=1023;
     S.WiredInput_Calibration_IL[x]=0;
