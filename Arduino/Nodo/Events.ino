@@ -12,12 +12,6 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   
   Led(RED); // LED aan als er iets verwerkt wordt  
 
-// uitwerken dat de wordt weergegeven dat dit de queue in gaat en niet feitelijk verwerkt wordt.
-  if(Hold)
-    {
-    Serial.print("*** debug: Event gaat de queue in=");Serial.println(Event2str(IncommingEvent)); //??? Debug
-    }
-
   #ifdef USER_PLUGIN
   if(!UserPlugin_Receive(IncommingEvent))
     return true;
@@ -45,7 +39,6 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     if(SaveRawSignal(RawSignal.Key))
       PrintTerminal(ProgmemString(Text_13));
     RawSignal.Key=0;
-    //??? PrintRawSignal();
     return true;
     }
 
@@ -95,7 +88,6 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     x=QueuePos;
     for(x=0;x<QueuePos;x++)
       {
-      //??? nog weergeven dat dit event uit de queue komt. PB_AddProgMemString(Text_08);
       PrintEvent(QueueEvent[x],QueuePort[x],VALUE_DIRECTION_INPUT);  // geef event weer op Serial
       ProcessEvent2(QueueEvent[x],VALUE_DIRECTION_INPUT,QueuePort[x],0,0);      // verwerk binnengekomen event.
       }
@@ -202,7 +194,6 @@ boolean CheckEvent(unsigned long Event, unsigned long MacroEvent, byte Port)
   {  
   byte x,z;
   byte Command; 
-  // Serial.print("CheckEvent() > Event=0x");Serial.print(Event,HEX);Serial.print(", MacroEvent=0x");Serial.print(MacroEvent,HEX);PrintTerm();//???debugging
 
   // geen lege events zoeken en verwerken
   if(MacroEvent==0 || Event==0)
@@ -239,7 +230,7 @@ boolean CheckEvent(unsigned long Event, unsigned long MacroEvent, byte Port)
     z=(MacroEvent>>8)&0xff; // Par1 deel van de Wildcard bevat de poort
     if(z!=VALUE_ALL && z!=Port)return false;
 
-    switch(Command) // Command deel van binnengekomen event. //??? staan ze er allemaal in?
+    switch(Command) // Command deel van binnengekomen event.
       {
       case CMD_KAKU:
       case CMD_KAKU_NEW:

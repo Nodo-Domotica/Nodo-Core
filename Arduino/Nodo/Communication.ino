@@ -32,10 +32,8 @@ boolean SendEventGhost(char* event, byte* SendToIP)
   byte EventGhostClientState=0; 
   char str2[80];
   unsigned long Timeout=millis()+2000;
-  
-  const int MaxBufferSize=80;//??? mag deze kleiner? 
-  char InputBuffer_IP[MaxBufferSize];
-    
+  char* InputBuffer_IP=(char*)malloc(INPUT_BUFFER_SIZE+1);
+
   IPAddress EGServerIP(SendToIP[0],SendToIP[1],SendToIP[2],SendToIP[3]);
   EthernetClient EGclient;
 
@@ -57,7 +55,7 @@ boolean SendEventGhost(char* event, byte* SendToIP)
           InByteIP = EGclient.read();
           if(InByteIP)
             {
-            if(InByteIPCount<MaxBufferSize && isprint(InByteIP))
+            if(InByteIPCount<INPUT_BUFFER_SIZE && isprint(InByteIP))
               InputBuffer_IP[InByteIPCount++]=InByteIP;// vul de string aan met het binnengekomen teken.
   
             // check op tekens die een regel afsluiten
@@ -65,8 +63,6 @@ boolean SendEventGhost(char* event, byte* SendToIP)
               {
               InputBuffer_IP[InByteIPCount]=0;
               InByteIPCount=0;
-  
-              // Serial.print("*** debug: SendEventGhost(): InputBuffer_IP=");Serial.println(InputBuffer_IP);//??? Debug
   
               // Over IP ontvangen regel is compleet 
               // volgende fase in ontvangstproces  
@@ -76,7 +72,6 @@ boolean SendEventGhost(char* event, byte* SendToIP)
                 if(strcasecmp(InputBuffer_IP,PROGMEM2str(Text_18))==0) // accept
                   {
                   // "accept" is ontvangen dus wachtwoord geaccepteerd
-                  // Verbinding is geaccepteerd. schrijf weg ??? nog uitwerken
                   
                   // - payload.....
                   strcpy(TempString,PROGMEM2str(Text_21)); // "Payload withoutRelease"
@@ -129,15 +124,14 @@ boolean SendEventGhost(char* event, byte* SendToIP)
         }
       }
     else
-      {
-      Serial.println();
-      Serial.print(F("****** Error connecting EventGhost server.")); /// ??? Nog mooi weergeven en loggen.
-      Serial.println(F("*******"));            
-      }
+      RaiseError(ERROR_07);
+
     EGclient.stop();    // close the connection:
     EGclient.flush();    // close the connection:
     delay(250);
     }while(++Try<5);
+
+  free(InputBuffer_IP);
   return false;
   }
     
@@ -212,7 +206,7 @@ byte xSendHTTPRequestStr(char* StringToSend)
   strcat(TempString,int2str(S.Version));
   strcat(TempString,StringToSend);
 
-  // event toevoegen aan tijdelijke string, echter alle spaties vervangen door + conform URL notatie ??? nodig?  
+  // event toevoegen aan tijdelijke string, echter alle spaties vervangen door + conform URL notatie.
   for(x=0;x<strlen(TempString);x++)
     {            
     if(TempString[x]==32)
@@ -332,7 +326,6 @@ boolean ParseHTTPRequest(char* HTTPRequest,char* Keyword, char* ResultString)
       while(z<HTTPRequest_len && (HTTPRequest[z]=='=' || HTTPRequest[z]==' '))z++;
 
       x=0; // we komen niet meer terug in de 'for'-loop, daarom kunnen we x hier even gebruiken.
-
       while(z<HTTPRequest_len && HTTPRequest[z]!='&' && HTTPRequest[z]!=' ')
         {
         if(HTTPRequest[z]=='+')
@@ -459,7 +452,7 @@ void ExecuteIP(void)
                       if(RequestFile || RequestEvent)
                         {
                         RequestCompleted=true;
-                        strcpy(TempString,"HTTP/1.1 200 Ok"); //??? omzetten naar ProgMEM
+                        strcpy(TempString,"HTTP/1.1 200 Ok");
                         IPClient.println(TempString);
                         }
                       else
@@ -631,7 +624,7 @@ void ExecuteIP(void)
                 }
               }
             } // einde InputType==EVENTGHOST              
-          InputBuffer_IP[0]=0;          //???
+          InputBuffer_IP[0]=0;
           }
         }
       }
@@ -660,11 +653,9 @@ boolean SendLineRF(char* Line, byte Dest)
   int Length=strlen(Line);
   byte Checksum=0;
   int x,y;
-  byte state=0;
   unsigned long Event;
   unsigned long TimeoutTimer;
   unsigned int Cookie=0;
-  char *StringToSend=(char*)malloc(INPUT_BUFFER_SIZE+35); // Standaard string lengte + extra ruimte voor de MD5 hash
   boolean Ok=false;
   
   // Protocol:
@@ -674,10 +665,10 @@ boolean SendLineRF(char* Line, byte Dest)
   // Stap-4. Slave beantwoord met OK of ERROR. (regulier Nodo commando)
   // MD5-Hash wordt berekend a.d.h.v. Lengte string, Checksum string, Password en Cookie.  Klopt 1 van de 4 niet, dan voert slave regel niet uit.
   
-  // bereken de checksum van de string
+  // bereken de checksum en voeg toe aan de string
   for(x=0;x<Length;x++)
     Checksum=(Checksum + Line[x])%256; // bereken checksum (crc-8)
-    
+      
   // Stap-1. Master Nodo stuurt ReceiveLine verzoek naar slave om klaar te staan voor ontvangst: Bestemming-Unit, checksum en stringlengte (regulier Nodo commando)
   Event=  ((unsigned long)SIGNAL_TYPE_NODO)<<28   | 
           ((unsigned long)Dest)<<24               | 
@@ -685,15 +676,11 @@ boolean SendLineRF(char* Line, byte Dest)
           ((unsigned long)Checksum)<<8            | 
            (unsigned long)Length;
 
-  WaitFreeRF(0, 300);
   Nodo_2_RawSignal(Event);  
   RawSendRF();
-//  Serial.print("*** debug: Verzonden CMD_RECEIVE_LINE:");
-//  Serial.print(" Checksum=");Serial.print(Checksum); //??? Debug
-//  Serial.print(", Length=");Serial.println(Length); //??? Debug
 
   // Stap-2: Wacht tot Slave beantwoord heeft met een CMD_RECEIVE_LINE_READY met een Cookie
-  TimeoutTimer=millis()+10000; 
+  TimeoutTimer=millis()+3000; 
   while(TimeoutTimer>millis() && !Cookie)
     {
     if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
@@ -702,60 +689,52 @@ boolean SendLineRF(char* Line, byte Dest)
         {
         Event=AnalyzeRawSignal(); // Bereken uit de tabel met de pulstijden de 32-bit code. 
         if((Event&0xffff0000)==(((unsigned long)SIGNAL_TYPE_NODO)<<28 | ((unsigned long)Dest)<<24 | ((unsigned long)CMD_RECEIVE_LINE_READY)<<16))
-          { 
           Cookie=Event&0x0000ffff;
-//          Serial.print("*** debug: Ontvangen Cookie=");Serial.println(Cookie,HEX); //??? Debug
-          }
         }
       }
     }
 
   if(millis()<TimeoutTimer)
     {
-    // Stap-3. Master verzendt blok met: String met commando en MD5-Hash op basis van wachtwoord en cookie (Speciale codering afwijkend van reguliere commando)
-//    Serial.print("*** debug: Cookie=");Serial.println(Cookie,HEX); //??? Debug
+    // Stap-3. Master verzendt blok met: String met commando. (Speciale codering afwijkend van reguliere commando)
 
-    // MD5-Hash wordt berekend a.d.h.v. Lengte string, Checksum string, Password en Cookie.
-    sprintf(TempString,"%d,%d,%d,%s",Length,Checksum,Cookie,S.Password);
-//    Serial.print("*** debug: Input string MD5=");Serial.println(TempString); //??? Debug
-  
-    // Bereken eigen MD5-Hash uit de string
+    // Encrypt het signaal met de MD5-Hash
+    sprintf(TempString,"%d:%s",Cookie,S.Password);
     md5((struct md5_hash_t*)&MD5HashCode, TempString); 
-    strcpy(TempString,PROGMEM2str(Text_05));              
     y=0;
-    for(x=0; x<16; x++)
+    for(x=0; x<Length; x++)
       {
-      StringToSend[y++]=TempString[MD5HashCode[x]>>4  ];
-      StringToSend[y++]=TempString[MD5HashCode[x]&0x0f];
+      Line[x]=Line[x] ^ MD5HashCode[y++];
+      if(y>15)y=0;
       }
-    StringToSend[y]=0;
 
     // Verzend de string
-    strcat(StringToSend,Line);
-    Length=strlen(StringToSend);
-    PrintTerminal(StringToSend); //??? Debug
-//    Serial.println("*** debug: WaitFreeRF()");//???
-
-    WaitFreeRF(250, 250);
-//    Serial.println("*** debug: Start zenden.");//???
-  
     digitalWrite(PIN_RF_RX_VCC,LOW);  // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
     digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan
-    delay(10);// kleine pause om de zender de tijd te geven om stabiel te worden 
+    noInterrupts();
 
-    noInterrupts();//???
+    // Aanloopsignaal houdt RF band bezet en geeft slave mogelijkheid om gereed te gaan staan
+    // De ontvangers hebben ook even de tijd nodig om na inschakelen van de voedspanning even stabiel te worden.
+    // Tijdsduur emperisch bepaald.
+    for(x=0;x<500;x++)
+      {
+      digitalWrite(PIN_RF_TX_DATA,HIGH);
+      delayMicroseconds(NODO_SPACE); 
+      digitalWrite(PIN_RF_TX_DATA,LOW);
+      delayMicroseconds(NODO_SPACE); 
+      }
 
     // Verzend startbit
     digitalWrite(PIN_RF_TX_DATA,HIGH);
     delayMicroseconds(NODO_PULSE_1*2); 
     digitalWrite(PIN_RF_TX_DATA,LOW);
-    delayMicroseconds(NODO_SPACE*2); 
+    delayMicroseconds(NODO_SPACE*2);
  
     for(x=0;x<Length;x++)
       {    
       for(y=0;y<=7;y++)
         {
-        if(StringToSend[x]&(1<<y))
+        if(Line[x]&(1<<y))
           {
           digitalWrite(PIN_RF_TX_DATA,HIGH); // 1
           delayMicroseconds(NODO_PULSE_1); 
@@ -773,20 +752,9 @@ boolean SendLineRF(char* Line, byte Dest)
       }
     digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
     digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger weer aan.
-    interrupts();//???
-
+    interrupts();
     Ok=true;
-//    Serial.println("*** debug: Verzenden gereed.");//???
     }
-
-  free(StringToSend); // Geef gealloceerde geheugen terug.
-
-  if(!Ok)
-    {
-    RaiseError(ERROR_12);    
-    //??? bouwen we nog een retry in? 
-    }
-
   return Ok;
   }
 
@@ -802,119 +770,79 @@ boolean ReceiveLineRF(byte Checksum, byte Length, char *ReturnString)
   unsigned long Event,TimeoutTimer;
   unsigned int Cookie;
   byte ReceivedByte, ReceivedByteCounter;  
-  randomSeed(millis());
   int PulseTime,x,y;
   boolean Ok=false;
-  char *ReceiveString=(char*)malloc(INPUT_BUFFER_SIZE+35); // Standaard string lengte + extra ruimte voor de MD5 hash
-  char *TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+35); // Standaard string lengte + extra ruimte voor de MD5 hash
+  char *TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
   
   // Stap-1. Deze is reeds uitgevoerd door de Master. ReceiveLine verzoek.
 
   // Stap-2. Slave beantwoordt ter bevestiging een 16-bits random Cookie in Par1 en Par2.  (regulier Nodo commando)
-//  Serial.print("*** debug: Checksum=");Serial.println(Checksum); //??? Debug
-//  Serial.print("*** debug: Length=");Serial.println(Length); //??? Debug
-
+  randomSeed(millis());
   Cookie=random(0xFFFF);
   Event=  ((unsigned long)SIGNAL_TYPE_NODO)<<28         | 
           ((unsigned long)S.Unit)<<24                   | 
           ((unsigned long)CMD_RECEIVE_LINE_READY)<<16   | 
           (unsigned long)Cookie;
           
-  WaitFreeRF(0, 300);
+  WaitFreeRF(0, 100);
   Nodo_2_RawSignal(Event);  
   RawSendRF();
-//  Serial.print("*** Verzonden Cookie=");Serial.println(Cookie,HEX); //??? Debug
-  
-  Length+=32; // tel de 32 tekens van de 128 bit MD5 hash bij de te ontvangen lengte op.
-  ReceiveString[0]=0; // Maak de ontvangen string leeg;
 
   // Stap-3. Ontvang van de Master verzendt blok met: String met commando en MD5-Hash op basis van wachtwoord en cookie
-  noInterrupts();
-  TimeoutTimer=millis()+5000;
+  ReturnString[0]=0; // Maak de ontvangen string leeg;
+  TimeoutTimer=millis()+2000;
   ReceivedByteCounter=0;
   ReceivedByte=0;
   x=0;
-  int z=0;//???
   
-  digitalWrite(28,HIGH);//???
-
   while(TimeoutTimer>millis())
     {
     // hier aangekomen als er een puls (startbit) is gestart en ingang dus hoog is.
-    if(WaitForChangeState(PIN_RF_RX_DATA,HIGH, SIGNAL_TIMEOUT_RF)>1000)// meet hoe lang het duurt totdat de RF uitgang weer LOW wordt. als de puls een duidelijke startbit is
+    PulseTime=WaitForChangeState(PIN_RF_RX_DATA, HIGH, SIGNAL_TIMEOUT_RF);
+    if(PulseTime>2500 && PulseTime<3500)// meet hoe lang het duurt totdat de RF uitgang weer LOW wordt. als de puls een duidelijke startbit is
       {
       while(TimeoutTimer>millis())
         {
         PulseTime = WaitForChangeState(PIN_RF_RX_DATA,HIGH, SIGNAL_TIMEOUT_RF);
         if(PulseTime>MIN_PULSE_LENGTH)
-          {
-          if(z<25)RawSignal.Pulses[z++]=PulseTime;
-        
+          {        
           if(PulseTime>NODO_PULSE_MID)
             ReceivedByte |= (1<<x);
 
-          if(++x > 7)
+          if(++x>7)
             {
-            ReceiveString[ReceivedByteCounter++]=ReceivedByte;
+            ReturnString[ReceivedByteCounter++]=ReceivedByte;
             ReceivedByte=0;
             x=0;
             if(ReceivedByteCounter==Length)
               {
-              Ok=true;
-              TimeoutTimer=millis();// stop de while() loop.
+              ReturnString[ReceivedByteCounter]=0; // sluit string af.
+              TimeoutTimer=0L;// stop de while() loop.
+                          
+              // Decrypt het signaal met de MD5-Hash
+              sprintf(TmpStr,"%d:%s",Cookie,S.Password);
+              md5((struct md5_hash_t*)&MD5HashCode, TmpStr); 
+              y=0;
+              for(x=0; x<Length; x++)
+                {
+                ReturnString[x]=ReturnString[x] ^ MD5HashCode[y++];
+                if(y>15)y=0;
+                }
+          
+              // bereken de checksum van de ontvangen string.
+              y=0;
+              for(x=0;x<strlen(ReturnString);x++)
+                y=(y + ReturnString[x])%256; // bereken checksum (crc-8)
+
+              if(y==Checksum)
+                Ok=true;
               }
             }
           }
         }
       }
     }
-  digitalWrite(28,LOW);//???
-  ReceiveString[ReceivedByteCounter]=0; // sluit string af.
-  interrupts();
-  
-  Serial.print("*** RawSignal=");//???
-  for(x=1;x<=z;x++)
-    {
-    Serial.print(RawSignal.Pulses[x],DEC);//??? Debug  
-    Serial.print(",");//???
-    }
-  Serial.println();//???    
-
-  // ReceiveString is nu gevuld met de string die via RF is ontvangen en bevat als het goed is de MD5-Hash met direct daarop volgend het Commando
-  Serial.print("*** debug: ontvangen ReceiveString=");Serial.println(ReceiveString); //??? Debug
-
-  if(Ok)
-    {
-    strcpy(ReturnString,ReceiveString+32);
-
-    // bereken de checksum van de ontvangen string.
-    Checksum=0;
-    for(x=0;x<strlen(ReturnString);x++)
-      Checksum=(Checksum + ReturnString[x])%256; // bereken checksum (crc-8)
-    }
-
-  ReceiveString[32]=0; // Sluit de string af direct aan het einde van de MD5-hash
-  
-  Serial.print("*** debug: ontvangen MD5=");Serial.println(ReceiveString); //??? Debug
-  // MD5-Hash wordt berekend a.d.h.v. Lengte string, Checksum string, Password en Cookie.
-  sprintf(TmpStr,"%d,%d,%d,%s",Length-32,Checksum,Cookie,S.Password);
-  Serial.print("*** debug: Input string MD5=");Serial.println(TempString); //??? Debug
-  
-  // MD5-Hash wordt berekend a.d.h.v. Lengte string, Checksum string, Password en Cookie.  Klopt 1 van de 4 niet, dan voert slave regel niet uit.
-  md5((struct md5_hash_t*)&MD5HashCode, TempString); 
-  y=0;
-  for(x=0; x<16; x++)
-    {
-    TmpStr[y++]=PROGMEM2str(Text_05)[MD5HashCode[x]>>4  ];
-    TmpStr[y++]=PROGMEM2str(Text_05)[MD5HashCode[x]&0x0f];
-    }
-  TmpStr[y]=0;
-  Serial.print("*** debug: berekende MD5=");Serial.println(TmpStr); //??? Debug
   
   free(TmpStr);
-  free(ReceiveString);
-
   return Ok;    
-
-  // Stap-4. Slave beantwoord met OK of ERROR. (regulier Nodo commando)
   }

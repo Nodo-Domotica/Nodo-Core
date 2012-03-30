@@ -69,7 +69,7 @@ byte CommandError(unsigned long Content)
     case CMD_FILE_LOG:
     case CMD_PORT_SERVER:
     case CMD_PORT_CLIENT:
-    case CMD_SEND: //??? t.b.v. test/ontwikkeling. nog niet operationeel.
+    case CMD_SEND:
     case CMD_ERROR:
     case CMD_REBOOT:
     case CMD_VARIABLE_SAVE:
@@ -100,6 +100,7 @@ byte CommandError(unsigned long Content)
     case CMD_EVENTGHOST_SERVER:
     case CMD_PULSE_FORMULA:
     case CMD_RECEIVE_LINE:
+    case CMD_BREAK_ON_DAYLIGHT:
       return false;
  
     case CMD_SEND_KAKU_NEW:
@@ -196,10 +197,6 @@ byte CommandError(unsigned long Content)
       if(Par2!=VALUE_ON && Par2!=VALUE_OFF)return ERROR_02;
       return false;
 
-//    case CMD_RAWSIGNAL_COPY: //??? kan dit weg of herstellen wat verpunkt is?
-//      if(Par1!=VALUE_IP && Par1!=VALUE_EVENTGHOST && Par1!=VALUE_OFF)return ERROR_02;
-//      return false;
-
     case CMD_WAITBUSY:
     case CMD_SENDBUSY:
       if(Par1!=VALUE_OFF && Par1!=VALUE_ON && Par1!=VALUE_ALL)return ERROR_02;
@@ -218,7 +215,7 @@ byte CommandError(unsigned long Content)
       if(Par1!=VALUE_HIGH && Par1!=VALUE_LOW)return ERROR_02;
       return false;
 
-    case CMD_SEND_EVENT:// ??? opties niet gellijk aan wildcard! moet EG hier bij?
+    case CMD_SEND_EVENT:
       switch(Par1)
         {
         case VALUE_ALL:
@@ -272,12 +269,7 @@ byte CommandError(unsigned long Content)
     case CMD_TRANSMIT_RF:
     case CMD_TRANSMIT_IR:
       if(Par1!=VALUE_OFF && Par1!=VALUE_ON)return ERROR_02;
-      if(Par2!=VALUE_OFF && Par2!=VALUE_ON && Par2!=0)return ERROR_02;
       return false;
-
-    case CMD_DIVERT:
-     if(Par1>UNIT_MAX)return ERROR_02;
-     return false;
 
     case CMD_UNIT:
       if(Par1<1 || Par1>UNIT_MAX)return ERROR_02;
@@ -307,8 +299,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   byte Par2         = Content&0xff;
   byte Type         = (Content>>28)&0x0f;
   byte PreviousType = (PreviousContent>>28)&0x0f;
-
-  // Serial.print("*** debug: ExecuteCommand(); ");Serial.println(Content,HEX); //??? Debug
 
   error=CommandError(Content);
   if(error)
@@ -382,8 +372,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         a=0;
         if(S.Debug==VALUE_ON)
           {
-          Serial.print("*** debug: PulseCount=");Serial.print(PulseCount,DEC);//??? Debug
-          Serial.print(", PulseTime=");Serial.println(PulseTime,DEC); //??? Debug
+          sprintf(TempString,"PulseCount=%d, PulseTime=%d", PulseCount, PulseTime);
+          PrintTerminal(TempString);
           }
 
         //Formule-1: Variable = ( Pulse / A ) * B + C
@@ -421,8 +411,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         if(abs(a)<=10000)
           UserVar[Par1-1]=(int)a;
 
-//        Serial.print("*** debug: a                      = ");Serial.println(a,DEC);//??? Debug          
-//        Serial.print("*** debug: UserVar[Par1-1]        = ");Serial.println(UserVar[Par1-1],DEC);//??? Debug          
         ProcessEvent(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
         break;
 
@@ -455,6 +443,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           error=true;
         break;
   
+      case CMD_BREAK_ON_DAYLIGHT:
+        if(Par1==Time.Daylight)
+          error=true;
+        break;
+  
       case CMD_SEND_USEREVENT:
         // Voeg Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
         TransmitCode(command2event(CMD_USEREVENT,Par1,Par2),VALUE_ALL);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
@@ -468,7 +461,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       case CMD_RAWSIGNAL_SEND:
         if(Par1!=0)
           RawSignalGet(Par1);
-        //??? PrintRawSignal();
         TransmitCode(AnalyzeRawSignal(),VALUE_ALL);
         break;        
   
@@ -544,7 +536,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       case CMD_WIRED_PULLUP:
         S.WiredInputPullUp[Par1-1]=Par2==VALUE_ON; // Par1 is de poort[1..4], Par2 is de waarde [0..1]
         digitalWrite(14+PIN_WIRED_IN_1+Par1-1,S.WiredInputPullUp[Par1-1]==VALUE_ON);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14 
-        // ??? uitzoeken hoe bovenstaande werkt voor de ATMega2260 !
         SaveSettings();
         break;
                    
@@ -662,8 +653,13 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
       case CMD_RECEIVE_LINE:
         Led(BLUE);
-        if(ReceiveLineRF(Par1, Par2, TempString))
-          ExecuteLine(TempString,VALUE_SOURCE_RF);
+        if(ReceiveLineRF(Par1, Par2, InputBuffer_Serial)) // gebruik de InputBuffer_Serial, want die wordt op dit moment niet gebruikt.
+          {
+          PrintTerminal(InputBuffer_Serial);
+          ExecuteLine(InputBuffer_Serial,VALUE_SOURCE_RF);
+          RaiseError(ERROR_00);
+          }
+
         else
           RaiseError(ERROR_12);
       }
@@ -754,10 +750,6 @@ void ExecuteLine(char *Line, byte Port)
           {
           // Hier worden de commando's verwerkt die een afwijkende MMI hebben of die uitsluitend mogen worden uitgevoerd
           // als ze via Serial of ethernet worden verzonden. (i.v.m. veiligheid)
-          
-          case CMD_DIVERT:
-            Serial.println("*** Debug: Divert nog niet operationeel.");//???
-                    
           case CMD_UNIT:
             S.Unit=Par1;
             if(Par1>1)
@@ -892,7 +884,6 @@ void ExecuteLine(char *Line, byte Port)
                       {
                       TmpStr[y]=0;
                       y=0;
-                      //Serial.print("*** debug: Regel uit file voor execute=");Serial.println(TmpStr);//??? Debug
                       digitalWrite(EthernetShield_CS_SDCard,HIGH);
                       digitalWrite(Ethernetshield_CS_W5100, LOW);
                       ExecuteLine(TmpStr,VALUE_SOURCE_FILE);
@@ -989,10 +980,13 @@ void ExecuteLine(char *Line, byte Port)
               {
               S.WiredInputThreshold[Par1-1]=str2AnalogInt(TmpStr);
               SaveSettings();
-              // Serial.print("*** debug: Threshold ingesteld op ");Serial.println(AnalogInt2str(S.WiredInputThreshold[Par1-1]));//??? Debug
               }
             break;                  
             
+          case CMD_WIRED_ANALOG://het kan zijn dat de gebruiker dit intypt. Geen geldig commando of event
+            Error=ERROR_01;
+            break;
+
           case CMD_WIRED_SMITTTRIGGER:
             if(GetArgv(Command,TmpStr,3))
               {
@@ -1062,13 +1056,11 @@ void ExecuteLine(char *Line, byte Port)
                 {
                 S.WiredInput_Calibration_IH[Par1-1]=t;
                 S.WiredInput_Calibration_OH[Par1-1]=str2AnalogInt(TmpStr);
-                //??? Serial.print("*** debug: Calibratie voltooid. IH=");Serial.print(t,DEC);Serial.print(", OH=");Serial.println(AnalogInt2str(S.WiredInput_Calibration_OH[Par1-1]));//??? Debug
                 }
               if(Par2==VALUE_LOW)
                 {
                 S.WiredInput_Calibration_IL[Par1-1]=t;
                 S.WiredInput_Calibration_OL[Par1-1]=str2AnalogInt(TmpStr);
-                //??? Serial.print("*** debug: Calibratie voltooid. IL=");Serial.print(t,DEC);Serial.print(", OL=");Serial.println(AnalogInt2str(S.WiredInput_Calibration_OL[Par1-1]));//??? Debug
                 }
               }
             v=0;
@@ -1158,7 +1150,8 @@ void ExecuteLine(char *Line, byte Port)
             x=StringFind(Line,cmd2str(CMD_SEND))+strlen(cmd2str(CMD_SEND));
             while(Line[x]!=';' && Line[x]!=0)x++;
             x++;
-            SendLineRF(&Line[0]+x,Par1);
+            if(!SendLineRF(&Line[0]+x,Par1))
+              RaiseError(ERROR_12);    
             PosLine=L+1; // ga direct naar einde van de regel. Es is verder niets meer uit te voeren.
             break;
 

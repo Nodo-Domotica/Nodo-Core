@@ -28,10 +28,10 @@
  \****************************************************************************************************************************/
 
 
-#define NODO_MAC 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF // Default Nodo MAC. 
-// #define NODO_MAC 0x54, 0xa5, 0x8d, 0x17, 0xaf, 0x41 // Productie MAC Paul
+#define NODO_MAC 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF // Default Nodo MAC.
+// #define NODO_MAC 0x54, 0xa5, 0x8d, 0x17, 0xaf, 0x41 // Productie MAC Paul ???
 
-#define VERSION       11          // Nodo Version nummer:
+#define VERSION      300          // Nodo Version nummer:
                                   // Major.Minor.Patch
                                   // Major: Grote veranderingen aan concept, besturing, werking.
                                   // Minor: Uitbreiding/aanpassing van commando's, functionaliteit en MMI aanpassingen
@@ -84,7 +84,7 @@ prog_char PROGMEM Text_30[] = "Terminal connection closed.";
  
 // Commando's:
 prog_char PROGMEM Cmd_000[]=""; // dummy. Niet gebruiken
-prog_char PROGMEM Cmd_001[]="ReceiveSettings";
+prog_char PROGMEM Cmd_001[]="BreakOnDaylight";
 prog_char PROGMEM Cmd_002[]="BreakOnVarEqu";
 prog_char PROGMEM Cmd_003[]="BreakOnVarLess";
 prog_char PROGMEM Cmd_004[]="BreakOnVarMore";
@@ -94,7 +94,7 @@ prog_char PROGMEM Cmd_007[]="ClockSetYear";
 prog_char PROGMEM Cmd_008[]="ClockSetTime";
 prog_char PROGMEM Cmd_009[]="ClockSetDOW";
 prog_char PROGMEM Cmd_010[]="Delay";
-prog_char PROGMEM Cmd_011[]="Send";
+prog_char PROGMEM Cmd_011[]="SendTo";
 prog_char PROGMEM Cmd_012[]="EventlistErase";
 prog_char PROGMEM Cmd_013[]="EventlistShow";
 prog_char PROGMEM Cmd_014[]="EventlistWrite";
@@ -131,7 +131,7 @@ prog_char PROGMEM Cmd_044[]="SendUserEvent";
 prog_char PROGMEM Cmd_045[]="RawSignalCopy";
 prog_char PROGMEM Cmd_046[]="WildCard";
 prog_char PROGMEM Cmd_047[]="SendBusy";
-prog_char PROGMEM Cmd_048[]="Divert";
+prog_char PROGMEM Cmd_048[]="";
 prog_char PROGMEM Cmd_049[]="Password";
 prog_char PROGMEM Cmd_050[]="EventlistFile";
 prog_char PROGMEM Cmd_051[]="WiredCalibrate";
@@ -143,7 +143,7 @@ prog_char PROGMEM Cmd_056[]="AnalyseSettings";
 prog_char PROGMEM Cmd_057[]="OutputIP";
 prog_char PROGMEM Cmd_058[]="OutputIR";
 prog_char PROGMEM Cmd_059[]="OutputRF";
-prog_char PROGMEM Cmd_060[]="";
+prog_char PROGMEM Cmd_060[]="ReceiveSettings";
 prog_char PROGMEM Cmd_061[]="";
 prog_char PROGMEM Cmd_062[]="FileErase";
 prog_char PROGMEM Cmd_063[]="FileShow";
@@ -240,8 +240,8 @@ prog_char PROGMEM Cmd_149[]="";
 // Waarden:
 prog_char PROGMEM Cmd_150[]="Off";
 prog_char PROGMEM Cmd_151[]="On";
-prog_char PROGMEM Cmd_152[]="Command"; //??? kan weg?
-prog_char PROGMEM Cmd_153[]="Parameter"; //??? kan weg?
+prog_char PROGMEM Cmd_152[]="";
+prog_char PROGMEM Cmd_153[]="";
 prog_char PROGMEM Cmd_154[]="IR";
 prog_char PROGMEM Cmd_155[]="HTTP";
 prog_char PROGMEM Cmd_156[]="RF";
@@ -264,8 +264,8 @@ prog_char PROGMEM Cmd_172[]="Source";
 prog_char PROGMEM Cmd_173[]="RF2IR";
 prog_char PROGMEM Cmd_174[]="IR2RF";
 prog_char PROGMEM Cmd_175[]="All";
-prog_char PROGMEM Cmd_176[]="Output_RAW";//??? nog in gebruik?
-prog_char PROGMEM Cmd_177[]="Nesting"; //??? kan weg?
+prog_char PROGMEM Cmd_176[]="";
+prog_char PROGMEM Cmd_177[]="";
 prog_char PROGMEM Cmd_178[]="Queue";
 prog_char PROGMEM Cmd_179[]="Auto";
 prog_char PROGMEM Cmd_180[]="Time";
@@ -289,13 +289,13 @@ prog_char PROGMEM Cmd_197[]="";
 prog_char PROGMEM Cmd_198[]="";
 prog_char PROGMEM Cmd_199[]="";
 prog_char PROGMEM Cmd_200[]="Ok.";
-prog_char PROGMEM Cmd_201[]="Error: Unknown command.";
+prog_char PROGMEM Cmd_201[]="Error: Unknown command or event.";
 prog_char PROGMEM Cmd_202[]="Error: Invalid parameter in command.";
 prog_char PROGMEM Cmd_203[]="Error: Unable to open file on SDCard.";
 prog_char PROGMEM Cmd_204[]="Error: Queue overflow.";
 prog_char PROGMEM Cmd_205[]="Error: Eventlist execution nested to deep.";
 prog_char PROGMEM Cmd_206[]="Error: Writing to eventlist failed.";
-prog_char PROGMEM Cmd_207[]="Error: Unable to establish Ethernet connection.";
+prog_char PROGMEM Cmd_207[]="Error: Unable to establish connection.";
 prog_char PROGMEM Cmd_208[]="Error: Incorrect password.";
 prog_char PROGMEM Cmd_209[]="Error: Command not supported in this Nodo version.";
 prog_char PROGMEM Cmd_210[]="Error: Terminal access not allowed.";
@@ -305,7 +305,7 @@ prog_char PROGMEM Cmd_213[]="";
 
 // commando:
 #define FIRST_COMMAND                    0 // Eerste COMMANDO uit de commando tabel
-#define CMD_RECEIVE_SETTINGS             1
+#define CMD_BREAK_ON_DAYLIGHT            1
 #define CMD_BREAK_ON_VAR_EQU             2
 #define CMD_BREAK_ON_VAR_LESS            3
 #define CMD_BREAK_ON_VAR_MORE            4
@@ -352,7 +352,7 @@ prog_char PROGMEM Cmd_213[]="";
 #define CMD_RAWSIGNAL_COPY              45
 #define CMD_COMMAND_WILDCARD            46
 #define CMD_SENDBUSY                    47
-#define CMD_DIVERT                      48
+#define CMD_RES48                       48
 #define CMD_PASSWORD                    49
 #define CMD_EVENTLIST_FILE              50
 #define CMD_WIRED_ANALOG_CALIBRATE      51
@@ -364,7 +364,7 @@ prog_char PROGMEM Cmd_213[]="";
 #define CMD_TRANSMIT_IP                 57
 #define CMD_TRANSMIT_IR                 58
 #define CMD_TRANSMIT_RF                 59
-#define CMD_RES60                       60
+#define CMD_RECEIVE_SETTINGS            60
 #define CMD_RES                         61
 #define CMD_FILE_ERASE                  62
 #define CMD_FILE_SHOW                   63
@@ -464,8 +464,8 @@ prog_char PROGMEM Cmd_213[]="";
 #define FIRST_VALUE                    150  // eerste VALUE uit de commando tabel
 #define VALUE_OFF                      150 
 #define VALUE_ON                       151 // Deze waarde MOET groter dan 16 zijn.
-#define VALUE_COMMAND                  152
-#define VALUE_PARAMETER                153
+#define VALUE_RES152                   152
+#define VALUE_RES153                   153
 #define VALUE_SOURCE_IR                154
 #define VALUE_SOURCE_HTTP              155
 #define VALUE_SOURCE_RF                156
@@ -485,11 +485,11 @@ prog_char PROGMEM Cmd_213[]="";
 #define VALUE_DIRECTION_INTERNAL       170
 #define VALUE_BUSY                     171
 #define VALUE_SOURCE                   172
-#define VALUE_RF_2_IR                  173 // ??? kan weg ?
-#define VALUE_IR_2_RF                  174 // ??? kan weg ?
+#define VALUE_RF_2_IR                  173
+#define VALUE_IR_2_RF                  174
 #define VALUE_ALL                      175 // Deze waarde MOET groter dan 16 zijn.
-#define VALUE_DIRECTION_OUTPUT_RAW     176
-#define VALUE_NESTING                  177
+#define VALUE_RES176                   176
+#define VALUE_RES177                   177
 #define VALUE_SOURCE_QUEUE             178
 #define VALUE_AUTO                     179
 #define VALUE_TIME                     180
@@ -622,10 +622,10 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define TERMINAL_TIMEOUT           300 // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
 
 // timings NODO signalen
-#define NODO_PULSE_0                    500   // PWM: Tijdsduur van de puls bij verzenden van een '0' in uSec.
-#define NODO_PULSE_MID                 1000   // PWM: Pulsen langer zijn '1'
-#define NODO_PULSE_1                   1500   // PWM: Tijdsduur van de puls bij verzenden van een '1' in uSec. (3x NODO_PULSE_0)
-#define NODO_SPACE                      500   // PWM: Tijdsduur van de space tussen de bitspuls bij verzenden van een '1' in uSec.   
+#define NODO_PULSE_0               500 // PWM: Tijdsduur van de puls bij verzenden van een '0' in uSec.
+#define NODO_PULSE_MID            1000 // PWM: Pulsen langer zijn '1'
+#define NODO_PULSE_1              1500 // PWM: Tijdsduur van de puls bij verzenden van een '1' in uSec. (3x NODO_PULSE_0)
+#define NODO_SPACE                 500 // PWM: Tijdsduur van de space tussen de bitspuls bij verzenden van een '1' in uSec.   
 
 // Hardware
 #define HW_BOARD_328    0
@@ -636,7 +636,8 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define HW_IR_RX        5
 #define HW_IR_TX        6
 #define HW_CLOCK        7
-#define HW_ETHERNET     8F
+#define HW_ETHERNET     8
+#define HW_SDCARD       9
 #define HW_SERIAL       10
 #define HW_WIRED        11
 #define HW_PULSE        12
@@ -763,9 +764,6 @@ void setup()
   pinMode(PIN_LED_RGB_B,  OUTPUT);
   pinMode(PIN_SPEAKER,    OUTPUT);
   pinMode(EthernetShield_CS_SDCardH, OUTPUT); // CS/SPI: nodig voor correct funktioneren van de SDCard!
-
-  pinMode(28,    OUTPUT); //??? debugging met Logic Analyser
-
 
   digitalWrite(PIN_IR_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
   digitalWrite(PIN_RF_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.

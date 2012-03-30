@@ -5,14 +5,19 @@ Aanpassingen:
 - Issue 347:	SmittTrigger heeft onjuiste default
 - Issue 351:	SimulateDay accepteert 0 als parameter
 - Issue 336:	Wildcard in Variable commando's
-
+- Issue 231:	Programmeren van een eventlist op afstand via RF of IR
+- Issue 360:	WiredAnalog event geeft ongeldige waarde
+- Issue 364:	dag/nacht indicator
+- OutputRF en OutputIR gaven fout bij vullen parameter 2.
 
 Known Errors / ToDo:
 - Default poort voor "PortServer" nog bepalen. 
-- Divert weer implementeren
 - Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue tesBease
 
 Aanpassingen t.o.v. Nodo Due:
+- Nieuw commando "SendTo" voor versturen van een commandoregel via RF naar een andere Nodo
+- Nieuw commando voor in eventlist "BreakOnDaylight". 
+- Commando "Divert" vervallen en vervangen door "SendTo"
 - Weergave status nu niet meer volledig zoals een event weergegeven
 - commando "DnsServer" toegevoegd voor instellen van een DNS server.
 - Als IP adres an de Nodo is toegekend door DHCP dan wordt dit in de status weergegeven

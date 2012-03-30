@@ -15,8 +15,15 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
   {
   byte x;
 
-  // Serial.print("*** debug: PrintEvent(); ");Serial.println(Content,HEX);//??? Debug
-
+  // Enkele events/commando's zijn niet voor de gebruiker, maar zijn uitsluitend voor de Nodo relevant
+  // Deze mogen niet worden weergegeven
+  switch((Content>>16)&0xff)
+    {
+    case CMD_RECEIVE_LINE:
+    case CMD_RECEIVE_LINE_READY:
+       return;
+    }
+  
   TempString[0]=0; // als start een lege string
 
   // datum en tijd weergeven
@@ -78,7 +85,6 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
     }
   else
     {
-    // ??? statussen worden nu nog weergegeven als event. 
     strcat(TempString, ProgmemString(Text_14));
     strcat(TempString, Event2str(Content));
     }
@@ -121,7 +127,7 @@ void PrintWelcome(void)
   PrintTerminal(ProgmemString(Text_02));
 
   // print versienummer, unit en indien gevuld het ID
-  sprintf(TempString,"Version= (Beta) %d.%d.%d, ThisUnit=%d",S.Version/100, (S.Version%100)/10, S.Version%10,S.Unit); //??? beta tekst verwijderen
+  sprintf(TempString,"Version=%d.%d.%d, ThisUnit=%d",S.Version/100, (S.Version%100)/10, S.Version%10,S.Unit);
   if(S.ID)
     {
     strcat(TempString,", ID=");
@@ -153,7 +159,6 @@ void PrintWelcome(void)
  \*********************************************************************************************/
 void PrintTerminal(char* LineToPrint)
   {
-  // FreeMemory(0); //??? debug
   if(bitRead(HW_Config,HW_SERIAL))
     Serial.println(LineToPrint);
  
@@ -183,7 +188,6 @@ char* Event2str(unsigned long Code)
   static char EventString[50]; 
 
   EventString[0]=0;
-
 
   if(Type==SIGNAL_TYPE_NEWKAKU)
     {
@@ -274,7 +278,6 @@ char* Event2str(unsigned long Code)
       case CMD_UNIT:
       case CMD_RAWSIGNAL:
       case CMD_RAWSIGNAL_SEND:
-      //??? case CMD_DIVERT:
       case CMD_SIMULATE_DAY:
       case CMD_CLOCK_DOW:
         P1=P_VALUE;

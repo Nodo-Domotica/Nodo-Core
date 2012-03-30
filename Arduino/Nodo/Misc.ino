@@ -195,8 +195,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
 
  /**********************************************************************************************\
  * Deze functie haalt een tekst op uit PROGMEM en geeft als string terug
- * BUILD 01, 09-01-2010, P.K.Tonkes@gmail.com
-   \*********************************************************************************************/
+ \*********************************************************************************************/
 char* ProgmemString(prog_char* text)
     {
     byte x=0;
@@ -947,8 +946,8 @@ void RaiseError(byte ErrorCode)
   unsigned long eventcode;
 
   eventcode=command2event(CMD_ERROR,ErrorCode,0);
-  TransmitCode(eventcode,VALUE_ALL);    // ??? Is het wel handig om errors ook naar alle kanalen te versturen of kan het ook zonder?
   PrintEvent(eventcode,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM);  // geef event weer op Serial
+  TransmitCode(eventcode,VALUE_ALL);
   }
     
  /**********************************************************************************************\
