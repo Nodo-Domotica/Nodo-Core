@@ -43,19 +43,10 @@ void UserPlugin_Command(int Par1, int Par2)
   // onderstaand een paar voorbeelden.
   
     
-  // VOORBEELD-1: een gebruikersvariabelen gebruiken:
-  UserVar[0]=123;           // Gebruikersvariabele 1 is nu gelijk aan 123. variabelen starten met [0] en mogen max. waarde hebben van 255 
-  int MijnVar=UserVar[5];   // MijnVar is gelijk aan de gebruikersvariabele 6 (immers 0 is de eerste)
-
-
-  // VOORBEELD-2: Lezen analoge waarde. De analoge poorten kunnen worden uitgelezen met: WiredAnalog(Poort). De teruggegeven waarde is 8-bits. Poort 0..7
-//??? ; // Lees de waarde van de vierde WiredIn poort. Immers 0 is de eerste poort.
-
-  // VOORBEELD-3: uitvoeren van een Nodo commando
+  // VOORBEELD-1: uitvoeren van een Nodo commando
   ExecuteLine("Sound 0;",VALUE_DIRECTION_INTERNAL);    
 
-
-  // VOORBEELD-4: Loggen naar de SDCard
+  // VOORBEELD-2: Loggen naar de SDCard
   AddFileSDCard("log.dat","Hello, UserPlugin was here.");
   }
 
@@ -76,7 +67,6 @@ boolean UserPlugin_Receive(unsigned long Event)
   // Event = 32-bit Nodo event.
     
     
-    
   // funktie kan op twee manieren worden verlaten:
   // true = Nodo gaat verder met verwerking van het event
   // false = Event wordt niet verder behandeld.
@@ -95,8 +85,6 @@ boolean UserPlugin_Receive(unsigned long Event)
 
 void UserPlugin_Periodically()
   {
-  // VOORBEELD-1: Kookwekker die (ongeveer) iedere minuut af gaat
-
     
   return;
   }

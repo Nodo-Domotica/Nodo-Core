@@ -316,7 +316,6 @@ int str2AnalogInt(char* string)
   if(negative)
     result=-result;
 
-  //  Serial.print("*** debug: str2AnalogInt()=");Serial.println(result,DEC);//??? Debug         
   return result;
   }
 
