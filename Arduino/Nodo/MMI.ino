@@ -67,6 +67,10 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
     x=false;
     }
 
+  // Als het een onbekend type signaal is, dan unit niet weergeven.
+  if(((Content>>28)&0xf)==((unsigned long)(SIGNAL_TYPE_UNKNOWN)))
+    x=false;
+    
   // geef unit weer
   if(x)
     {

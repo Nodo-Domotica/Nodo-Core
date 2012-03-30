@@ -300,7 +300,7 @@ void ResetFactory(void)
   S.PulseCount_A               = 0;
   S.PulseCount_C               = 0;
   S.PulseCount_B               = 0;
-  S.PortServer                 = 80;
+  S.PortServer                 = 8080;
   S.PortClient                 = 80;
 
   strcpy(S.Password,ProgmemString(Text_10));
@@ -311,7 +311,7 @@ void ResetFactory(void)
   for(x=0;x<WIRED_PORTS;x++)
     {
     S.WiredInputThreshold[x]=5000; 
-    S.WiredInputSmittTrigger[x]=5;
+    S.WiredInputSmittTrigger[x]=50;
     S.WiredInputPullUp[x]=true;
     S.WiredInput_Calibration_IH[x]=1023;
     S.WiredInput_Calibration_IL[x]=0;
@@ -409,6 +409,8 @@ void Status(byte Par1, byte Par2, boolean Transmit)
   for(x=CMD_Start; x<=CMD_End; x++)
     {
     s=false;
+    boolean dhcp=(S.Nodo_IP[0] + S.Nodo_IP[1] + S.Nodo_IP[2] + S.Nodo_IP[3])==0;
+
     if(!Transmit)
       {
       s=true;
@@ -416,15 +418,18 @@ void Status(byte Par1, byte Par2, boolean Transmit)
         {
         case CMD_NODO_IP:
           sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_NODO_IP), Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
-          if((S.Nodo_IP[0] + S.Nodo_IP[1] + S.Nodo_IP[2] + S.Nodo_IP[3])==0)
+          if(dhcp)
             strcat(TempString," (DHCP)");
           PrintTerminal(TempString);
           break;
 
         case CMD_GATEWAY:
           // Gateway
-          sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_GATEWAY),S.Gateway[0],S.Gateway[1],S.Gateway[2],S.Gateway[3]);
-          PrintTerminal(TempString);
+          if(!dhcp)
+            {
+            sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_GATEWAY),S.Gateway[0],S.Gateway[1],S.Gateway[2],S.Gateway[3]);
+            PrintTerminal(TempString);
+            }
           break;
 
         case CMD_SUBNET:
@@ -434,9 +439,12 @@ void Status(byte Par1, byte Par2, boolean Transmit)
           break;
 
         case CMD_DNS_SERVER:
-          // DnsServer
-          sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_DNS_SERVER),S.DnsServer[0],S.DnsServer[1],S.DnsServer[2],S.DnsServer[3]);
-          PrintTerminal(TempString);
+          if(!dhcp)
+            {
+            // DnsServer
+            sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_DNS_SERVER),S.DnsServer[0],S.DnsServer[1],S.DnsServer[2],S.DnsServer[3]);
+            PrintTerminal(TempString);
+            }
           break;
 
         case CMD_PORT_SERVER:

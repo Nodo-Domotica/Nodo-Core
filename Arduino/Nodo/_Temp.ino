@@ -6,7 +6,6 @@ bitWrite(HW_Config,HW_SERIAL,1);
 
 
 HTTPHost nodo2.powerkite.nl/events.php
-http://nodo2.powerkite.nl/events.php?id=DFAJC31L&password=Nodo&version=3&unit=1&event=UserEvent%20100,0
 
 
 

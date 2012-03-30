@@ -59,6 +59,7 @@ unsigned long RawSignal_2_32bit(void)
   int MinSpace=0xffff;
   unsigned long CodeP=0L;
   unsigned long CodeS=0L;
+  unsigned long Event;
   
   // zoek de kortste tijd (PULSE en SPACE)
   x=5; // 0=aantal, 1=startpuls, 2=space na startpuls, 3=1e puls
@@ -104,9 +105,15 @@ unsigned long RawSignal_2_32bit(void)
     }while(x<RawSignal.Number);
 
  RawSignal.Type=SIGNAL_TYPE_UNKNOWN;
- if(Counter_pulse>=1 && Counter_space<=1)return CodeP & 0x7fffffff; // data zat in de pulsbreedte
- if(Counter_pulse<=1 && Counter_space>=1)return CodeS & 0x7fffffff; // data zat in de pulse afstand
- return ((CodeS^CodeP)&0x7fffffff)|((unsigned long)SIGNAL_TYPE_UNKNOWN<<28); // data zat in beide = bi-phase, maak er een leuke mix van.
+ 
+ if(Counter_pulse>=1 && Counter_space<=1)
+   Event=CodeP; // data zat in de pulsbreedte
+ else if(Counter_pulse<=1 && Counter_space>=1)
+   Event=CodeS; // data zat in de pulse afstand
+ else
+   Event=CodeS^CodeP; // data zat in beide = bi-phase, maak er een leuke mix van.
+   
+ return (Event&0x0fffffff)|((unsigned long)SIGNAL_TYPE_UNKNOWN<<28);
  }
 
 
