@@ -1,18 +1,16 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- Issue 344:	FileExecute kan niet worden geprogrammeerd in de Eventlist
-- Issue 347:	SmittTrigger heeft onjuiste default
-- Issue 351:	SimulateDay accepteert 0 als parameter
-- Issue 336:	Wildcard in Variable commando's
-- Issue 231:	Programmeren van een eventlist op afstand via RF of IR
-- Issue 360:	WiredAnalog event geeft ongeldige waarde
-- Issue 364:	dag/nacht indicator
-- OutputRF en OutputIR gaven fout bij vullen parameter 2.
+- Issue 371:	Gateway en DNS server blijven leeg indien IP-adres door DHCP toegekend.
+- Issue 364:	dag/nacht indicator (Aanpassing: On / Off)
+- Aanpassing SmttTrigger default op 5
+- HEX-events geven nu geen unit nummer meer.
+- Poort Nodo in (Nodo=server) veranderd van 80 naar 8080
+
 
 Known Errors / ToDo:
 - Default poort voor "PortServer" nog bepalen. 
-- Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue tesBease
+- Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue testen.
 
 Aanpassingen t.o.v. Nodo Due:
 - Nieuw commando "SendTo" voor versturen van een commandoregel via RF naar een andere Nodo

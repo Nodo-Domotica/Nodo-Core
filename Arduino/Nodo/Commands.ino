@@ -100,7 +100,6 @@ byte CommandError(unsigned long Content)
     case CMD_EVENTGHOST_SERVER:
     case CMD_PULSE_FORMULA:
     case CMD_RECEIVE_LINE:
-    case CMD_BREAK_ON_DAYLIGHT:
       return false;
  
     case CMD_SEND_KAKU_NEW:
@@ -264,10 +263,11 @@ byte CommandError(unsigned long Content)
       return false;
 
      // par1 alleen On of Off.
-     // par2 alleen 0, On of Off.
+     // par2 mag alles zijn
     case CMD_TRACE:
     case CMD_TRANSMIT_RF:
     case CMD_TRANSMIT_IR:
+    case CMD_BREAK_ON_DAYLIGHT:
       if(Par1!=VALUE_OFF && Par1!=VALUE_ON)return ERROR_02;
       return false;
 
@@ -444,7 +444,10 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;
   
       case CMD_BREAK_ON_DAYLIGHT:
-        if(Par1==Time.Daylight)
+        if(Par1==VALUE_ON && (Time.Daylight==2 || Time.Daylight==3))
+          error=true;
+
+        if(Par1==VALUE_OFF && (Time.Daylight==0 || Time.Daylight==1 || Time.Daylight==4))
           error=true;
         break;
   
