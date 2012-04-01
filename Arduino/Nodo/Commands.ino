@@ -72,7 +72,6 @@ byte CommandError(unsigned long Content)
     case CMD_SEND:
     case CMD_ERROR:
     case CMD_REBOOT:
-    case CMD_VARIABLE_SAVE:
     case CMD_WAITFREERF: 
     case CMD_USERPLUGIN: 
     case CMD_GATEWAY:
@@ -133,9 +132,14 @@ byte CommandError(unsigned long Content)
       if(x<1 || x>USER_VARIABLES_MAX)return ERROR_02;
       return false;
 
+
     case CMD_VARIABLE_SET:
       Par2PortAnalog(Par1, Par2, &x, &y);
       if(x>USER_VARIABLES_MAX)return ERROR_02;
+      return false;
+
+    case CMD_VARIABLE_SAVE:
+      if(Par1>USER_VARIABLES_MAX)return ERROR_02;
       return false;
       
     // test:Par1 en Par2 binnen bereik maximaal beschikbare variabelen
@@ -192,7 +196,7 @@ byte CommandError(unsigned long Content)
     // test:Par1 binnen bereik maximaal beschikbare wired poorten EN Par2 is ON of OFF
     case CMD_WIRED_OUT:
     case CMD_WIRED_PULLUP:
-      if(Par1<1 || Par1>WIRED_PORTS)return ERROR_02;
+      if(Par1>WIRED_PORTS)return ERROR_02;
       if(Par2!=VALUE_ON && Par2!=VALUE_OFF)return ERROR_02;
       return false;
 
@@ -347,21 +351,26 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           S.UserVar[Par1-1]=UserVar[Par1-1];            
         SaveSettings();
         break;        
+
     
       case CMD_VARIABLE_SET:
         Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
         if(y==0)
-          for(z=0;z<USER_VARIABLES_MAX;z++)
-            {
-            UserVar[z]=x;
-            ProcessEvent(AnalogInt2event(UserVar[z], z+1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
-            }
+          {
+          y=1;
+          z=USER_VARIABLES_MAX;
+          }
         else
+          {
+          z=y;
+          }
+        for(y;y<=z;y++)
           {
           UserVar[y-1]=x;
           ProcessEvent(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
           }
         break;        
+    
     
       case CMD_WIREDANALOG_VARIABLE:
         UserVar[Par1-1]=map(analogRead(PIN_WIRED_IN_1+Par2-1),S.WiredInput_Calibration_IL[Par2-1],S.WiredInput_Calibration_IH[Par2-1],S.WiredInput_Calibration_OL[Par2-1],S.WiredInput_Calibration_OH[Par2-1]);
@@ -495,12 +504,35 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
       case CMD_TIMER_SET_MIN:
         // Par1=timer, Par2=minuten. Timers werken op een resolutie van seconden maar worden door de gebruiker ingegeven in minuten        
-        TimerSet(Par1,int(Par2)*60);
+        if(Par1==0)
+          {
+          x=1;
+          y=TIMER_MAX;
+          }
+        else
+          {
+          x=Par1;
+          y=Par1;
+          }
+        for(x;x<=y;x++)
+          TimerSet(x,int(Par2)*60);
+          
         break;
         
       case CMD_TIMER_SET_SEC:
         // Par1=timer, Par2=seconden. Timers werken op een resolutie van seconden.            
-        TimerSet(Par1,Par2);
+       if(Par1==0)
+          {
+          x=1;
+          y=TIMER_MAX;
+          }
+        else
+          {
+          x=Par1;
+          y=Par1;
+          }
+        for(x;x<=y;x++)
+         TimerSet(x,Par2);
         break;
 
       case CMD_TIMER_RANDOM:
@@ -537,15 +569,42 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         break;     
     
       case CMD_WIRED_PULLUP:
-        S.WiredInputPullUp[Par1-1]=Par2==VALUE_ON; // Par1 is de poort[1..4], Par2 is de waarde [0..1]
-        digitalWrite(14+PIN_WIRED_IN_1+Par1-1,S.WiredInputPullUp[Par1-1]==VALUE_ON);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14 
+        if(Par1==0)
+          {
+          x=1;
+          y=WIRED_PORTS;
+          }
+        else
+          {
+          x=Par1;
+          y=Par1;
+          }
+        for(x;x<y;x++)
+          {
+          S.WiredInputPullUp[Par1-1]=Par2==VALUE_ON; // Par1 is de poort[1..4], Par2 is de waarde [0..1]
+          digitalWrite(14+PIN_WIRED_IN_1+Par1-1,S.WiredInputPullUp[Par1-1]==VALUE_ON);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14 
+          }
         SaveSettings();
         break;
                    
       case CMD_WIRED_OUT:
-        digitalWrite(PIN_WIRED_OUT_1+Par1-1,Par2==VALUE_ON);
-        WiredOutputStatus[Par1-1]=Par2==VALUE_ON;
-        PrintEvent(Content,VALUE_SOURCE_WIRED,VALUE_DIRECTION_OUTPUT);
+        if(Par1==0)
+          {
+          x=1;
+          y=WIRED_PORTS;
+          }
+        else
+          {
+          x=Par1;
+          y=Par1;
+          }
+        for(x;x<y;x++)
+          {
+          digitalWrite(PIN_WIRED_OUT_1+x-1,(Par2==VALUE_ON));
+          WiredOutputStatus[x-1]=(Par2==VALUE_ON);
+          Content=(Content&0xffff00ff)|x<<8;
+          PrintEvent(Content,VALUE_SOURCE_WIRED,VALUE_DIRECTION_OUTPUT);
+          }
         break;
                            
       case CMD_WAITFREERF: 

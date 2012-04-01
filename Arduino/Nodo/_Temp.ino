@@ -1,5 +1,10 @@
 /*
 
+
+        if(Par1==VALUE_ALL)
+          Par1=0;
+
+
 y=bitRead(HW_Config,HW_SERIAL);
 bitWrite(HW_Config,HW_SERIAL,1);
 
