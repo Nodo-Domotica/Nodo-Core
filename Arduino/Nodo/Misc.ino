@@ -106,24 +106,24 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       break;
 
     case CMD_CLOCK_DATE:
-      if(Time.Day==0)return false;
+      if(!bitRead(HW_Config,HW_CLOCK))return false;
       *Par1=Time.Date;
       *Par2=Time.Month;
       break;
 
     case CMD_CLOCK_TIME:
-      if(Time.Day==0)return false;
+      if(!bitRead(HW_Config,HW_CLOCK))return false;
       *Par1=Time.Hour;
       *Par2=Time.Minutes;
       break;
 
     case CMD_CLOCK_DOW:
-      if(Time.Day==0)return false;
+      if(!bitRead(HW_Config,HW_CLOCK))return false;
       *Par1=Time.Day;
       break;
 
     case CMD_CLOCK_YEAR:
-      if(Time.Day==0)return false;
+      if(!bitRead(HW_Config,HW_CLOCK))return false;
       *Par1=Time.Year/100;
       *Par2=Time.Year-2000;
       break;

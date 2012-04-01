@@ -465,7 +465,7 @@ void ExecuteIP(void)
             IPClient.println(F("Content-Type: text/html"));
             IPClient.print(F("Server: Nodo/"));
             IPClient.println(int2str(S.Version));             
-            if(Time.Day)
+            if(bitRead(HW_Config,HW_CLOCK))
               {
               IPClient.print(F("Date: "));
               IPClient.println(DateTimeString());             

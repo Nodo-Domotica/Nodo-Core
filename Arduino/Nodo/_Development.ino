@@ -1,11 +1,9 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- Issue 371:	Gateway en DNS server blijven leeg indien IP-adres door DHCP toegekend.
-- Issue 364:	dag/nacht indicator (Aanpassing: On / Off)
-- Aanpassing SmttTrigger default op 5
-- HEX-events geven nu geen unit nummer meer.
-- Poort Nodo in (Nodo=server) veranderd van 80 naar 8080
+- Issue 375:	Wildcard  WiredOut
+- Subnet wordt niet meer in status weergegevn als ip adres via DHCP
+- Snelle check toegevoegd aanwezigheid Ethernet shield.
 
 
 Known Errors / ToDo:

@@ -165,7 +165,12 @@ unsigned long ClockRead(void)
 
   // Het kan zijn als de klok niet aangesloten is, dat er 'rommel' gelezen is. Doe eenvoudige check.
   if(Time.Minutes>60 || Time.Hour>23 || Time.Day>8 || Time.Month>12 || Time.Date>31)
-    Time.Day     =0; // De dag wordt gebruikt als checksum of de klok aanwezig is. Deze nooit op 0 als klok juist aangesloten
+    {
+    Time.Day=0; // De dag wordt gebruikt als checksum of de klok aanwezig is. Deze nooit op 0 als klok juist aangesloten
+    bitWrite(HW_Config,HW_CLOCK,0);
+    }
+  else
+    bitWrite(HW_Config,HW_CLOCK,1);
     
   long x=(long)pgm_read_word_near(DLSDate+Time.Year-DLSBase);
   long y=(long)((long)(Time.Date*100L)+(long)(Time.Month*10000L)+(long)Time.Hour);

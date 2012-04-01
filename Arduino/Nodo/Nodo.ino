@@ -578,6 +578,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define PIN_RF_RX_VCC               16  // Spanning naar de ontvanger via deze pin.
 #define PIN_RF_RX_DATA              19  // Op deze input komt het 433Mhz-RF signaal binnen. LOW bij geen signaal.
 #define PIN_WIRED_OUT_1             30  // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
+#define EthernetShield_SCK          52  // NIET VERANDEREN. Ethernet shield: SCK-lijn van de ethernet kaart
 #define EthernetShield_CS_SDCardH   53  // NIET VERANDEREN. Ethernet shield: Gereserveerd voor correct funktioneren van de SDCard: Hardware CS/SPI ChipSelect
 #define EthernetShield_CS_SDCard     4  // NIET VERANDEREN. Ethernet shield: Chipselect van de SDCard. Niet gebruiken voor andere doeleinden
 #define Ethernetshield_CS_W5100     10  // NIET VERANDEREN. Ethernet shield: D10..D13  // gereserveerd voor Ethernet & SDCard
@@ -628,19 +629,14 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define NODO_SPACE                 500 // PWM: Tijdsduur van de space tussen de bitspuls bij verzenden van een '1' in uSec.   
 
 // Hardware
-#define HW_BOARD_328    0
-#define HW_BOARD_1280   1
-#define HW_BOARD_2560   2
-#define HW_RF_RX        3
-#define HW_RF_TX        4
-#define HW_IR_RX        5
-#define HW_IR_TX        6
-#define HW_CLOCK        7
-#define HW_ETHERNET     8
-#define HW_SDCARD       9
-#define HW_SERIAL       10
-#define HW_WIRED        11
-#define HW_PULSE        12
+#define HW_BOARD_UNO    0
+#define HW_BOARD_MEGA   1
+#define HW_ETHERNET     2
+#define HW_SDCARD       3
+#define HW_SERIAL       4
+#define HW_CLOCK        5
+#define HW_RF_RX        6
+#define HW_IR_RX        7
 
 
 //****************************************************************************************************************************************
@@ -745,13 +741,15 @@ void setup()
   {    
   byte x;
 
+  bitWrite(HW_Config,HW_BOARD_MEGA,1);
+
   Serial.begin(BAUD);  // Initialiseer de seriële poort
   Serial.println("Booting...");
   SerialHold(true);// XOFF verzenden zodat PC even wacht met versturen van data via Serial (Xon/Xoff-handshaking)
   Led(BLUE);
   LoadSettings();      // laad alle settings zoals deze in de EEPROM zijn opgeslagen
   if(S.Version!=VERSION)ResetFactory(); // Als versienummer in EEPROM niet correct is, dan een ResetFactory.
-  
+
   // Initialiseer in/output poorten.
   pinMode(PIN_IR_RX_DATA, INPUT);
   pinMode(PIN_RF_RX_DATA, INPUT);
@@ -796,6 +794,7 @@ void setup()
     {
     SD.mkdir(ProgmemString(Text_27)); // maak drectory aan waar de Rawsignal HEX bestanden in worden opgeslagen
     SD.mkdir(ProgmemString(Text_28)); // maak drectory aan waar de Rawsignal KEY bestanden in worden opgeslagen
+    bitWrite(HW_Config,HW_SDCARD,1);
     }
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
   digitalWrite(EthernetShield_CS_SDCard,HIGH);
@@ -809,27 +808,36 @@ void setup()
   // Zet statussen WIRED_IN op hoog, anders wordt direct wij het opstarten meerdere malen een event gegenereerd omdat de pull-up weerstand analoge de waarden op hoog zet
   for(x=0;x<WIRED_PORTS;x++){WiredInputStatus[x]=true;}
 
+ 
+  // doe een snelle check of de ethernet kaart aanwezig is. 
+  // Als ethernet shield aanwezig, dan zal SCK (Mega Pen 52) laag zijn.
+  pinMode(EthernetShield_SCK, INPUT); // MOSI
+  digitalWrite(EthernetShield_SCK,HIGH);// pull up weerstand aan
+  bitWrite(HW_Config,HW_ETHERNET,!digitalRead(EthernetShield_SCK));
+
   // Initialiseer ethernet device
-  IPServer = EthernetServer(S.PortServer);
-  TerminalServer = EthernetServer(23);
-
-
-  if((S.Nodo_IP[0] + S.Nodo_IP[1] + S.Nodo_IP[2] + S.Nodo_IP[3])==0)// Als door de user IP adres is ingesteld op 0.0.0.0 dan IP adres ophalen via DHCP
+  if(bitRead(HW_Config,HW_ETHERNET))
     {
-    if(Ethernet.begin(Ethernet_MAC_Address)==0) // maak verbinding en verzoek IP via DHCP
-      {
-      Serial.println(F("Failed to configure Ethernet using DHCP"));
-      bitWrite(HW_Config,HW_ETHERNET,0);
-      }
-    }
-  else
-    Ethernet.begin(Ethernet_MAC_Address, S.Nodo_IP, S.DnsServer, S.Gateway, S.Subnet);
-
-  bitWrite(HW_Config,HW_ETHERNET,((Ethernet.localIP()[0]+Ethernet.localIP()[1]+Ethernet.localIP()[2]+Ethernet.localIP()[3])!=0)); // Als er een IP adres is, dan Ethernet inschakelen
-  IPServer.begin();                                // Start Server voor ontvangst van Events
-  TerminalServer.begin();                             // Start server voor Terminalsessies via TelNet
-
+    IPServer = EthernetServer(S.PortServer);
+    TerminalServer = EthernetServer(23);
   
+    if((S.Nodo_IP[0] + S.Nodo_IP[1] + S.Nodo_IP[2] + S.Nodo_IP[3])==0)// Als door de user IP adres is ingesteld op 0.0.0.0 dan IP adres ophalen via DHCP
+      {
+      if(Ethernet.begin(Ethernet_MAC_Address)==0) // maak verbinding en verzoek IP via DHCP
+        {
+        Serial.println(F("Error: Failed to configure Ethernet using DHCP"));
+        bitWrite(HW_Config,HW_ETHERNET,0);
+        }
+      }
+    else
+      Ethernet.begin(Ethernet_MAC_Address, S.Nodo_IP, S.DnsServer, S.Gateway, S.Subnet);
+  
+    bitWrite(HW_Config,HW_ETHERNET,((Ethernet.localIP()[0]+Ethernet.localIP()[1]+Ethernet.localIP()[2]+Ethernet.localIP()[3])!=0)); // Als er een IP adres is, dan Ethernet inschakelen
+    IPServer.begin();                                // Start Server voor ontvangst van Events
+    TerminalServer.begin();                             // Start server voor Terminalsessies via TelNet
+    }
+  
+
   bitWrite(HW_Config,HW_SERIAL,1); // zonder deze vlag vindt er geen output naar de serial poort plaats. Tijdelijk even inschakelen.
   PrintWelcome(); // geef de welkomsttekst weer
   ProcessEvent(command2event(CMD_BOOT_EVENT,0,0),VALUE_DIRECTION_INTERNAL,CMD_BOOT_EVENT,0,0);  // Voer het 'Boot' event uit.
@@ -1094,7 +1102,7 @@ void loop()
           {
           // CLOCK: **************** Lees periodiek de realtime klok uit en check op events  ***********************
           Content=ClockRead(); // Lees de Real Time Clock waarden in de struct Time
-          if(Time.Day)//check of de klok we aanwzig is
+          if(bitRead(HW_Config,HW_CLOCK))//check of de klok we aanwzig is
             {
             if(CheckEventlist(Content,VALUE_SOURCE_CLOCK) && EventTimeCodePrevious!=Content)
               {
@@ -1110,7 +1118,7 @@ void loop()
         case 1:
           {    
           // DAYLIGHT: **************** Check zonsopkomst & zonsondergang  ***********************
-          if(Time.Day)
+          if(bitRead(HW_Config,HW_CLOCK))
             {
             SetDaylight();
             if(Time.Daylight!=DaylightPrevious)// er heeft een zonsondergang of zonsopkomst event voorgedaan

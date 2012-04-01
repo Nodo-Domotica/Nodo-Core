@@ -27,7 +27,7 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
   TempString[0]=0; // als start een lege string
 
   // datum en tijd weergeven
-  if(Time.Day) // Time.Day=true want dan is er een RTC aanwezig.
+  if(bitRead(HW_Config,HW_CLOCK)) // bitRead(HW_Config,HW_CLOCK)=true want dan is er een RTC aanwezig.
     {   
     strcat(TempString,DateTimeString());
     strcat(TempString,", ");
@@ -141,7 +141,7 @@ void PrintWelcome(void)
   PrintTerminal(TempString);
 
   // Geef datum en tijd weer.
-  if(Time.Day)
+  if(bitRead(HW_Config,HW_CLOCK))
     {
     sprintf(TempString,"%s %s",DateTimeString(), cmd2str(Time.DaylightSaving?CMD_DLS_EVENT:0));
     PrintTerminal(TempString);
@@ -153,7 +153,7 @@ void PrintWelcome(void)
     sprintf(TempString,"NodoIP=%u.%u.%u.%u",Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
     PrintTerminal(TempString);
     }
-      
+    
   PrintTerminal(ProgmemString(Text_22));
   }
 
@@ -174,9 +174,9 @@ void PrintTerminal(char* LineToPrint)
       SendHTTPRequestResponse(LineToPrint);
     }
     
-  // loggen naar file
-  if(TempLogFile[0]!=0)
-    AddFileSDCard(TempLogFile,LineToPrint); // Extra logfile op verzoek van gebruiker
+  if(bitRead(HW_Config,HW_SDCARD))
+    if(TempLogFile[0]!=0)
+      AddFileSDCard(TempLogFile,LineToPrint); // Extra logfile op verzoek van gebruiker
   }
 
 char* Event2str(unsigned long Code)

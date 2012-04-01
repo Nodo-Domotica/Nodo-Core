@@ -291,6 +291,10 @@ boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
   if(RawCodeLength>=MIN_RAW_PULSES)
     {
     RawSignal.Number=RawCodeLength-1;
+    if(DataPin==PIN_IR_RX_DATA)
+      bitWrite(HW_Config,HW_IR_RX,1);
+    if(DataPin==PIN_RF_RX_DATA)
+      bitWrite(HW_Config,HW_RF_RX,1);
     return true;
     }
   RawSignal.Number=0;
@@ -393,26 +397,26 @@ boolean TransmitCode(unsigned long Event, byte Dest)
     RawSendIR();
     } 
 
-  // Het event verzenden naar de EventGhostServer
-  if((Dest==VALUE_SOURCE_EVENTGHOST) || (Dest==VALUE_ALL && S.TransmitIP==VALUE_SOURCE_EVENTGHOST))
+  if(bitRead(HW_Config,HW_ETHERNET))// Als Ethernet shield aanwezig.
     {
-    if(!TemporyEventGhostError)
+    // Het event verzenden naar de EventGhostServer
+    if((Dest==VALUE_SOURCE_EVENTGHOST) || (Dest==VALUE_ALL && S.TransmitIP==VALUE_SOURCE_EVENTGHOST))
       {
-      // IP adres waar event naar toe moet even in de globale IP variabele plaatsen om de regel te kunnen printen.
-      ClientIPAddress[0]=S.EventGhostServer_IP[0];
-      ClientIPAddress[1]=S.EventGhostServer_IP[1];
-      ClientIPAddress[2]=S.EventGhostServer_IP[2];
-      ClientIPAddress[3]=S.EventGhostServer_IP[3];
-  
-      PrintEvent(Event,VALUE_SOURCE_EVENTGHOST,VALUE_DIRECTION_OUTPUT);
-      
-      if(!SendEventGhost(Event2str(Event),S.EventGhostServer_IP))
-        TemporyEventGhostError=true;
+      if(!TemporyEventGhostError)
+        {
+        // IP adres waar event naar toe moet even in de globale IP variabele plaatsen om de regel te kunnen printen.
+        ClientIPAddress[0]=S.EventGhostServer_IP[0];
+        ClientIPAddress[1]=S.EventGhostServer_IP[1];
+        ClientIPAddress[2]=S.EventGhostServer_IP[2];
+        ClientIPAddress[3]=S.EventGhostServer_IP[3];
+    
+        PrintEvent(Event,VALUE_SOURCE_EVENTGHOST,VALUE_DIRECTION_OUTPUT);
+        
+        if(!SendEventGhost(Event2str(Event),S.EventGhostServer_IP))
+          TemporyEventGhostError=true;
+        }
       }
-    }
-
-  if(bitRead(HW_Config,HW_ETHERNET))
-    {
+  
     if(Dest==VALUE_SOURCE_HTTP || (Dest==VALUE_ALL && S.TransmitIP==VALUE_SOURCE_HTTP))
       {
       SendHTTPRequestEvent(Event);
