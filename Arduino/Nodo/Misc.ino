@@ -276,6 +276,10 @@ void ResetFactory(void)
   S.EventGhostServer_IP[2]     = 0; // IP adres van de EventGhost server
   S.EventGhostServer_IP[3]     = 0; // IP adres van de EventGhost server
   S.HTTPRequest[0]             = 0; // string van het HTTP adres leeg maken
+  S.Client_IP[0]               = 0;
+  S.Client_IP[1]               = 0;
+  S.Client_IP[2]               = 0;
+  S.Client_IP[3]               = 0;
   S.Nodo_IP[0]                 = 0;
   S.Nodo_IP[1]                 = 0;
   S.Nodo_IP[2]                 = 0;
@@ -416,6 +420,11 @@ void Status(byte Par1, byte Par2, boolean Transmit)
       s=true;
       switch (x)
         {
+        case CMD_CLIENT_IP:
+          sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_CLIENT_IP),S.Client_IP[0],S.Client_IP[1],S.Client_IP[2],S.Client_IP[3]);
+          PrintTerminal(TempString);
+          break;
+
         case CMD_NODO_IP:
           sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_NODO_IP), Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
           if(dhcp)
@@ -434,8 +443,11 @@ void Status(byte Par1, byte Par2, boolean Transmit)
 
         case CMD_SUBNET:
           // Subnetmask
-          sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_SUBNET),S.Subnet[0],S.Subnet[1],S.Subnet[2],S.Subnet[3]);
-          PrintTerminal(TempString);
+          if(!dhcp)
+            {
+            sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_SUBNET),S.Subnet[0],S.Subnet[1],S.Subnet[2],S.Subnet[3]);
+            PrintTerminal(TempString);
+            }
           break;
 
         case CMD_DNS_SERVER:

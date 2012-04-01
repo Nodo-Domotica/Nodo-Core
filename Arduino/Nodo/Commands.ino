@@ -598,7 +598,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           x=Par1;
           y=Par1;
           }
-        for(x;x<y;x++)
+        for(x;x<=y;x++)
           {
           digitalWrite(PIN_WIRED_OUT_1+x-1,(Par2==VALUE_ON));
           WiredOutputStatus[x-1]=(Par2==VALUE_ON);
@@ -988,6 +988,13 @@ void ExecuteLine(char *Line, byte Port)
           case CMD_NODO_IP:
             if(GetArgv(Command,TmpStr,2))
               if(!str2ip(TmpStr,S.Nodo_IP))
+                Error=ERROR_02;
+            SaveSettings();
+            break;
+            
+          case CMD_CLIENT_IP:
+            if(GetArgv(Command,TmpStr,2))
+              if(!str2ip(TmpStr,S.Client_IP))
                 Error=ERROR_02;
             SaveSettings();
             break;
