@@ -1,15 +1,34 @@
 <?php 
-//Haal de schakelaar status op
+/***********************************************************************************************************************
+"Nodo Web App" Copyright © 2012 Martin de Graaf
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*************************************************************************************************************************/
+
+
 require_once('connections/tc.php');
 require_once('include/auth.php');
-?>
-<?php 
+
+
 mysql_select_db($database_tc, $tc);
 $query_RSvalue = "SELECT id,user_id,display,data,sensor_suffix_false,sensor_suffix_true,graph_type,graph_hours,graph_min_ticksize FROM nodo_tbl_sensor WHERE user_id='$userId'";
 $RSvalue = mysql_query($query_RSvalue, $tc) or die(mysql_error());
 $row_RSvalue = mysql_fetch_assoc($RSvalue);
-//$totalRows_RSvalue = mysql_num_rows($RSvalue);
+
 ?>
+
+
 <?php if ($row_RSvalue != NULL){
 do { ?>document.getElementById('value_<?php echo $row_RSvalue['id'];?>').innerHTML = <?php 
    
@@ -62,11 +81,7 @@ do { ?>document.getElementById('value_<?php echo $row_RSvalue['id'];?>').innerHT
 		  echo "'".$row_RSsensor_value_data['data']."';";
 		
 		}
-		
-		
-		
-		
-		
+			
    
    }
    
@@ -85,17 +100,9 @@ do { ?>document.getElementById('value_<?php echo $row_RSvalue['id'];?>').innerHT
 		
    }
    
-   
-
-  
-   
- 
-   
- 	
 	
-	?>
-<?php } while ($row_RSvalue = mysql_fetch_assoc($RSvalue)); }?>
-<?php
+ } while ($row_RSvalue = mysql_fetch_assoc($RSvalue)); }
+
 mysql_free_result($RSvalue);
 
 ?>
