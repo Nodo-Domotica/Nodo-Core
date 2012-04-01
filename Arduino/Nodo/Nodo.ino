@@ -31,7 +31,7 @@
 #define NODO_MAC 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF // Default Nodo MAC.
 // #define NODO_MAC 0x54, 0xa5, 0x8d, 0x17, 0xaf, 0x41 // Productie MAC Paul ???
 
-#define VERSION      300          // Nodo Version nummer:
+#define VERSION      299          // Nodo Version nummer:
                                   // Major.Minor.Patch
                                   // Major: Grote veranderingen aan concept, besturing, werking.
                                   // Minor: Uitbreiding/aanpassing van commando's, functionaliteit en MMI aanpassingen
@@ -131,7 +131,7 @@ prog_char PROGMEM Cmd_044[]="SendUserEvent";
 prog_char PROGMEM Cmd_045[]="RawSignalCopy";
 prog_char PROGMEM Cmd_046[]="WildCard";
 prog_char PROGMEM Cmd_047[]="SendBusy";
-prog_char PROGMEM Cmd_048[]="";
+prog_char PROGMEM Cmd_048[]="ClientIP";
 prog_char PROGMEM Cmd_049[]="Password";
 prog_char PROGMEM Cmd_050[]="EventlistFile";
 prog_char PROGMEM Cmd_051[]="WiredCalibrate";
@@ -298,7 +298,7 @@ prog_char PROGMEM Cmd_206[]="Error: Writing to eventlist failed.";
 prog_char PROGMEM Cmd_207[]="Error: Unable to establish connection.";
 prog_char PROGMEM Cmd_208[]="Error: Incorrect password.";
 prog_char PROGMEM Cmd_209[]="Error: Command not supported in this Nodo version.";
-prog_char PROGMEM Cmd_210[]="Error: Terminal access not allowed.";
+prog_char PROGMEM Cmd_210[]="Error: Access not allowed.";
 prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
 prog_char PROGMEM Cmd_212[]="Error: Unable to send or receive diverted command(s).";
 prog_char PROGMEM Cmd_213[]="";
@@ -352,7 +352,7 @@ prog_char PROGMEM Cmd_213[]="";
 #define CMD_RAWSIGNAL_COPY              45
 #define CMD_COMMAND_WILDCARD            46
 #define CMD_SENDBUSY                    47
-#define CMD_RES48                       48
+#define CMD_CLIENT_IP                   48
 #define CMD_PASSWORD                    49
 #define CMD_EVENTLIST_FILE              50
 #define CMD_WIRED_ANALOG_CALIBRATE      51
@@ -677,8 +677,8 @@ struct Settings
   char    HTTPRequest[80];                                  // HTTP request;
   byte    EventGhostServer_IP[4];                           // IP adres van waar EventGhost Events naar verstuurd moeten worden.
   byte    AutoSaveEventGhostIP;                             // Automatisch IP adres opslaan na ontvangst van een EG event of niet.
-  int     reserved_1;                                       // reserve
   byte    Nodo_IP[4];                                       // IP adres van van de Nodo. als 0.0.0.0 ingevuld, dan IP toekenning o.b.v. DHCP
+  byte    Client_IP[4];                                     // IP adres van van de Client die verbinding wil maken met de Nodo, 
   byte    Subnet[4];                                        // Submask
   byte    Gateway[4];                                       // Gateway
   byte    DnsServer[4];                                     // DNS Server IP adres

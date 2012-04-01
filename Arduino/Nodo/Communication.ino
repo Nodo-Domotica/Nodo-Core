@@ -382,249 +382,260 @@ void ExecuteIP(void)
   
   if(IPClient)
     {
-    InByteCounter=0;
     IPClient.getRemoteIP(ClientIPAddress);  
-    
-    while(IPClient.connected()  && !Completed && TimeoutTimer>millis())
-      {
-      if(IPClient.available()) 
-        {
-        InByte=IPClient.read();
-        
-        if(isprint(InByte) && InByteCounter<IP_INPUT_BUFFER_SIZE)
-          InputBuffer_IP[InByteCounter++]=InByte;
-    
-        else if((InByte==0x0D || InByte==0x0A))
-          {
-          InputBuffer_IP[InByteCounter]=0;
-          InByteCounter=0;
-          
-          // Kijk wat voor soort protocol het is HTTP of APOP/EventGhost
-          if(Protocol==0)
-            {
-            if(StringFind(InputBuffer_IP,"GET")!=-1)
-              Protocol=VALUE_SOURCE_HTTP;// HTTP-Request
 
-            if(StringFind(InputBuffer_IP,PROGMEM2str(Text_20))!=-1) // "quintessence"??
-              Protocol=VALUE_SOURCE_EVENTGHOST;// EventGhost
-            }
+    // Controleer of het IP adres van de Client geldig is. 
+    if((S.Client_IP[0]!=0 && ClientIPAddress[0]!=S.Client_IP[0]) ||
+       (S.Client_IP[1]!=0 && ClientIPAddress[1]!=S.Client_IP[1]) ||
+       (S.Client_IP[2]!=0 && ClientIPAddress[2]!=S.Client_IP[2]) ||
+       (S.Client_IP[3]!=0 && ClientIPAddress[3]!=S.Client_IP[3]))
+      {
+      RaiseError(ERROR_10);
+      }
+    else
+      {
+      InByteCounter=0;
+      while(IPClient.connected()  && !Completed && TimeoutTimer>millis())
+        {
+        if(IPClient.available()) 
+          {
+          InByte=IPClient.read();
           
-          if(Protocol==VALUE_SOURCE_HTTP)
+          if(isprint(InByte) && InByteCounter<IP_INPUT_BUFFER_SIZE)
+            InputBuffer_IP[InByteCounter++]=InByte;
+      
+          else if((InByte==0x0D || InByte==0x0A))
             {
-            if(!RequestCompleted)
+            InputBuffer_IP[InByteCounter]=0;
+            InByteCounter=0;
+            
+            // Kijk wat voor soort protocol het is HTTP of APOP/EventGhost
+            if(Protocol==0)
               {
-              Completed=true;
-              if(S.Debug==VALUE_ON)
+              if(StringFind(InputBuffer_IP,"GET")!=-1)
+                Protocol=VALUE_SOURCE_HTTP;// HTTP-Request
+  
+              if(StringFind(InputBuffer_IP,PROGMEM2str(Text_20))!=-1) // "quintessence"??
+                Protocol=VALUE_SOURCE_EVENTGHOST;// EventGhost
+              }
+            
+            if(Protocol==VALUE_SOURCE_HTTP)
+              {
+              if(!RequestCompleted)
                 {
-                Serial.print(F("*** HTTP Request received="));
-                Serial.println(InputBuffer_IP);
-                }
-              if(ParseHTTPRequest(InputBuffer_IP,"password",TempString))
-                {
-                if(strcmp(S.Password,TempString)!=0)
+                Completed=true;
+                if(S.Debug==VALUE_ON)
                   {
-                  IPClient.println(F("HTTP/1.1 403 Forbidden"));
+                  Serial.print(F("*** HTTP Request received="));
+                  Serial.println(InputBuffer_IP);
                   }
-                else
-                  {    
-                  if(ParseHTTPRequest(InputBuffer_IP,"id",TempString))
+                if(ParseHTTPRequest(InputBuffer_IP,"password",TempString))
+                  {
+                  if(strcmp(S.Password,TempString)!=0)
                     {
-                    if(strcmp(S.ID,TempString)!=0)
+                    IPClient.println(F("HTTP/1.1 403 Forbidden"));
+                    }
+                  else
+                    {    
+                    if(ParseHTTPRequest(InputBuffer_IP,"id",TempString))
                       {
-                      IPClient.println(F("HTTP/1.1 403 Forbidden"));
+                      if(strcmp(S.ID,TempString)!=0)
+                        {
+                        IPClient.println(F("HTTP/1.1 403 Forbidden"));
+                        }
+                      else
+                        {
+                        if(ParseHTTPRequest(InputBuffer_IP,"event",Event))
+                          RequestEvent=true;
+                         
+                        if(ParseHTTPRequest(InputBuffer_IP,"file",TempString))
+                          {
+                          TempString[9]=0; // voorkom dat een file meer dan 8 posities heeft (en een afsluitende 0)
+                          strcpy(FileName,TempString);
+                          strcat(FileName,".dat");
+                          RequestFile=true;
+                          }
+                          
+                        if(ParseHTTPRequest(InputBuffer_IP,"confirm",TempString))
+                          ConfirmHTTP=true;
+                          
+                        if(RequestFile || RequestEvent)
+                          {
+                          RequestCompleted=true;
+                          strcpy(TempString,"HTTP/1.1 200 Ok");
+                          IPClient.println(TempString);
+                          }
+                        else
+                          IPClient.println(F("HTTP/1.1 400 Bad Request"));
+                        }
+                      }
+                    }
+                  }
+                }
+              IPClient.println(F("Content-Type: text/html"));
+              IPClient.print(F("Server: Nodo/"));
+              IPClient.println(int2str(S.Version));             
+              if(bitRead(HW_Config,HW_CLOCK))
+                {
+                IPClient.print(F("Date: "));
+                IPClient.println(DateTimeString());             
+                }
+              IPClient.println(""); // HTTP Request wordt altijd afgesloten met een lege regel
+  
+              if(RequestFile)
+                {              
+                // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+                digitalWrite(Ethernetshield_CS_W5100, HIGH);
+                digitalWrite(EthernetShield_CS_SDCard,LOW);
+                File dataFile=SD.open(FileName);
+                if(dataFile) 
+                  {
+                  y=0;       
+                  while(dataFile.available())
+                    {
+                    x=dataFile.read();
+                    if(isprint(x) && y<INPUT_BUFFER_SIZE)
+                      {
+                      TempString[y++]=x;
                       }
                     else
                       {
-                      if(ParseHTTPRequest(InputBuffer_IP,"event",Event))
-                        RequestEvent=true;
-                       
-                      if(ParseHTTPRequest(InputBuffer_IP,"file",TempString))
+                      TempString[y]=0;
+                      y=0;
+                      digitalWrite(EthernetShield_CS_SDCard,HIGH);
+                      digitalWrite(Ethernetshield_CS_W5100, LOW);
+                      if(RequestFile)
                         {
-                        TempString[9]=0; // voorkom dat een file meer dan 8 posities heeft (en een afsluitende 0)
-                        strcpy(FileName,TempString);
-                        strcat(FileName,".dat");
-                        RequestFile=true;
+                        IPClient.print(ProgmemString(Text_22));
+                        IPClient.println("<br />");
+                        RequestFile=false;// gebruiken we even als vlag om de eerste keer de regel met asteriks af te drukken omdat deze variabele toch verder niet meer nodig is
                         }
-                        
-                      if(ParseHTTPRequest(InputBuffer_IP,"confirm",TempString))
-                        ConfirmHTTP=true;
-                        
-                      if(RequestFile || RequestEvent)
-                        {
-                        RequestCompleted=true;
-                        strcpy(TempString,"HTTP/1.1 200 Ok");
-                        IPClient.println(TempString);
-                        }
-                      else
-                        IPClient.println(F("HTTP/1.1 400 Bad Request"));
-                      }
-                    }
-                  }
-                }
-              }
-            IPClient.println(F("Content-Type: text/html"));
-            IPClient.print(F("Server: Nodo/"));
-            IPClient.println(int2str(S.Version));             
-            if(bitRead(HW_Config,HW_CLOCK))
-              {
-              IPClient.print(F("Date: "));
-              IPClient.println(DateTimeString());             
-              }
-            IPClient.println(""); // HTTP Request wordt altijd afgesloten met een lege regel
-
-            if(RequestFile)
-              {              
-              // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-              digitalWrite(Ethernetshield_CS_W5100, HIGH);
-              digitalWrite(EthernetShield_CS_SDCard,LOW);
-              File dataFile=SD.open(FileName);
-              if(dataFile) 
-                {
-                y=0;       
-                while(dataFile.available())
-                  {
-                  x=dataFile.read();
-                  if(isprint(x) && y<INPUT_BUFFER_SIZE)
-                    {
-                    TempString[y++]=x;
-                    }
-                  else
-                    {
-                    TempString[y]=0;
-                    y=0;
-                    digitalWrite(EthernetShield_CS_SDCard,HIGH);
-                    digitalWrite(Ethernetshield_CS_W5100, LOW);
-                    if(RequestFile)
-                      {
-                      IPClient.print(ProgmemString(Text_22));
+                      IPClient.print(TempString);
                       IPClient.println("<br />");
-                      RequestFile=false;// gebruiken we even als vlag om de eerste keer de regel met asteriks af te drukken omdat deze variabele toch verder niet meer nodig is
+                      digitalWrite(Ethernetshield_CS_W5100, HIGH);
+                      digitalWrite(EthernetShield_CS_SDCard,LOW);
                       }
-                    IPClient.print(TempString);
-                    IPClient.println("<br />");
-                    digitalWrite(Ethernetshield_CS_W5100, HIGH);
-                    digitalWrite(EthernetShield_CS_SDCard,LOW);
                     }
-                  }
-                dataFile.close();
-                digitalWrite(EthernetShield_CS_SDCard,HIGH);
-                digitalWrite(Ethernetshield_CS_W5100, LOW);
-                IPClient.println(ProgmemString(Text_22));
-                }  
-              else 
-                IPClient.println(cmd2str(ERROR_03));
-              }
-            } // einde HTTP-request
-
-          if(Protocol==VALUE_SOURCE_EVENTGHOST) // EventGhost
-            {
-            if(EGState==2)
-              {
-              // password uitwisseling via MD5 is gelukt en accept is verzonden
-              // Nu kunnen de volgende regels voorbij komen:
-              // - payload.....
-              // - close
-              // - <event>
-        
-              // Regels met "Payload" worden door de Bridge/Nodo niet gebruikt ->negeren.
-              if(StringFind(InputBuffer_IP,PROGMEM2str(Text_17))>=0)// payload
-                {
-                ; // negeren. Bridge doet niets met de payload functie.          
+                  dataFile.close();
+                  digitalWrite(EthernetShield_CS_SDCard,HIGH);
+                  digitalWrite(Ethernetshield_CS_W5100, LOW);
+                  IPClient.println(ProgmemString(Text_22));
+                  }  
+                else 
+                  IPClient.println(cmd2str(ERROR_03));
                 }
-              else if(strcasecmp(InputBuffer_IP,PROGMEM2str(Text_19))==0) // "close"
-                {
-                // Regel "close", dan afsluiten van de communicatie met EventGhost  
-                IPClient.stop();
-                TemporyEventGhostError=false; 
-                Completed=true;
-                break;
-                }
-              else
-                {
-                // Event van EG ontvangen.
-                strcpy(Event,InputBuffer_IP);
-                RequestEvent=true;
-                }
-              }
-    
-            else if(EGState==1)
-              {
-              // Cookie is verzonden en regel met de MD5 hash is ontvangen
-              // Stel de string samen waar de MD5-hash aan de Nodo zijde voor gegenereerd moet worden
-              sprintf(TempString,"%s:%s",Cookie,S.Password);
-          
-              // Bereken eigen MD5-Hash uit de string "<cookie>:<password>"                
-              md5((struct md5_hash_t*)&MD5HashCode, TempString); 
-              strcpy(str_2,PROGMEM2str(Text_05));              
-              y=0;
-              for(x=0; x<16; x++)
-                {
-                TempString[y++]=str_2[MD5HashCode[x]>>4  ];
-                TempString[y++]=str_2[MD5HashCode[x]&0x0f];
-                }
-              TempString[y]=0;
-          
-              // vergelijk hash-waarden en bevestig de EventGhostClient bij akkoord
-              if(strcasecmp(TempString,InputBuffer_IP)==0)
-                {
-                // MD5-hash code matched de we hebben een geverifiëerde EventGhostClient
-                strcpy(TempString,PROGMEM2str(Text_18));
-                strcat(TempString,"\n");
-                IPClient.print(TempString); // "accept"
-
-                // Wachtwoord correct. Bewaar IP adres indien nodig
-                if(S.AutoSaveEventGhostIP==VALUE_AUTO)
-                  {
-                  if( S.EventGhostServer_IP[0]!=ClientIPAddress[0] ||
-                      S.EventGhostServer_IP[1]!=ClientIPAddress[1] ||
-                      S.EventGhostServer_IP[2]!=ClientIPAddress[2] ||
-                      S.EventGhostServer_IP[3]!=ClientIPAddress[3] )
-                    {
-                    S.EventGhostServer_IP[0]=ClientIPAddress[0];
-                    S.EventGhostServer_IP[1]=ClientIPAddress[1];
-                    S.EventGhostServer_IP[2]=ClientIPAddress[2];
-                    S.EventGhostServer_IP[3]=ClientIPAddress[3];
-                    SaveSettings();
-                    if(S.Debug)
-                      Serial.print("*** debug: EventGhostServer saved.");
-                    }
-                  }
-                }
-              else
-                {
-                Completed=true;
-                Protocol=0;
-                RaiseError(ERROR_08);
-                break;
-                }
-              // volgende state, 
-              EGState=2;                    
-              }
-              
-            else if(EGState==0)
-              {
-              IPClient.read(); // er kan nog een \r in de buffer zitten.
+              } // einde HTTP-request
   
-              // Kijk of de input een connect verzoek is vanuit EventGhost
-              if(strcasecmp(InputBuffer_IP,PROGMEM2str(Text_20))==0) // "quintessence" 
-                {   
-                // Een wachtwoord beveiligd verzoek vanuit een EventGhost EventGhostClient (PC, Andoid, IPhone)
-                // De EventGhostClient is een EventGhost sender.  
-                // maak een 16-bits cookie en verzend deze
-                strcpy(str_2,PROGMEM2str(Text_05));
-                for(x=0;x<4;x++)
-                  Cookie[x]=str_2[int(random(0,0xf))];
-                Cookie[x]=0; // sluit string af;
-                strcpy(TempString,Cookie);
-                strcat(TempString,"\n");
-                IPClient.print(TempString);          
-    
-                // ga naar volgende state: Haal MD5 en verwerk deze
-                EGState=1;
+            if(Protocol==VALUE_SOURCE_EVENTGHOST) // EventGhost
+              {
+              if(EGState==2)
+                {
+                // password uitwisseling via MD5 is gelukt en accept is verzonden
+                // Nu kunnen de volgende regels voorbij komen:
+                // - payload.....
+                // - close
+                // - <event>
+          
+                // Regels met "Payload" worden door de Bridge/Nodo niet gebruikt ->negeren.
+                if(StringFind(InputBuffer_IP,PROGMEM2str(Text_17))>=0)// payload
+                  {
+                  ; // negeren. Bridge doet niets met de payload functie.          
+                  }
+                else if(strcasecmp(InputBuffer_IP,PROGMEM2str(Text_19))==0) // "close"
+                  {
+                  // Regel "close", dan afsluiten van de communicatie met EventGhost  
+                  IPClient.stop();
+                  TemporyEventGhostError=false; 
+                  Completed=true;
+                  break;
+                  }
+                else
+                  {
+                  // Event van EG ontvangen.
+                  strcpy(Event,InputBuffer_IP);
+                  RequestEvent=true;
+                  }
                 }
-              }
-            } // einde InputType==EVENTGHOST              
-          InputBuffer_IP[0]=0;
+      
+              else if(EGState==1)
+                {
+                // Cookie is verzonden en regel met de MD5 hash is ontvangen
+                // Stel de string samen waar de MD5-hash aan de Nodo zijde voor gegenereerd moet worden
+                sprintf(TempString,"%s:%s",Cookie,S.Password);
+            
+                // Bereken eigen MD5-Hash uit de string "<cookie>:<password>"                
+                md5((struct md5_hash_t*)&MD5HashCode, TempString); 
+                strcpy(str_2,PROGMEM2str(Text_05));              
+                y=0;
+                for(x=0; x<16; x++)
+                  {
+                  TempString[y++]=str_2[MD5HashCode[x]>>4  ];
+                  TempString[y++]=str_2[MD5HashCode[x]&0x0f];
+                  }
+                TempString[y]=0;
+            
+                // vergelijk hash-waarden en bevestig de EventGhostClient bij akkoord
+                if(strcasecmp(TempString,InputBuffer_IP)==0)
+                  {
+                  // MD5-hash code matched de we hebben een geverifiëerde EventGhostClient
+                  strcpy(TempString,PROGMEM2str(Text_18));
+                  strcat(TempString,"\n");
+                  IPClient.print(TempString); // "accept"
+  
+                  // Wachtwoord correct. Bewaar IP adres indien nodig
+                  if(S.AutoSaveEventGhostIP==VALUE_AUTO)
+                    {
+                    if( S.EventGhostServer_IP[0]!=ClientIPAddress[0] ||
+                        S.EventGhostServer_IP[1]!=ClientIPAddress[1] ||
+                        S.EventGhostServer_IP[2]!=ClientIPAddress[2] ||
+                        S.EventGhostServer_IP[3]!=ClientIPAddress[3] )
+                      {
+                      S.EventGhostServer_IP[0]=ClientIPAddress[0];
+                      S.EventGhostServer_IP[1]=ClientIPAddress[1];
+                      S.EventGhostServer_IP[2]=ClientIPAddress[2];
+                      S.EventGhostServer_IP[3]=ClientIPAddress[3];
+                      SaveSettings();
+                      if(S.Debug)
+                        Serial.print("*** debug: EventGhostServer saved.");
+                      }
+                    }
+                  }
+                else
+                  {
+                  Completed=true;
+                  Protocol=0;
+                  RaiseError(ERROR_08);
+                  break;
+                  }
+                // volgende state, 
+                EGState=2;                    
+                }
+                
+              else if(EGState==0)
+                {
+                IPClient.read(); // er kan nog een \r in de buffer zitten.
+    
+                // Kijk of de input een connect verzoek is vanuit EventGhost
+                if(strcasecmp(InputBuffer_IP,PROGMEM2str(Text_20))==0) // "quintessence" 
+                  {   
+                  // Een wachtwoord beveiligd verzoek vanuit een EventGhost EventGhostClient (PC, Andoid, IPhone)
+                  // De EventGhostClient is een EventGhost sender.  
+                  // maak een 16-bits cookie en verzend deze
+                  strcpy(str_2,PROGMEM2str(Text_05));
+                  for(x=0;x<4;x++)
+                    Cookie[x]=str_2[int(random(0,0xf))];
+                  Cookie[x]=0; // sluit string af;
+                  strcpy(TempString,Cookie);
+                  strcat(TempString,"\n");
+                  IPClient.print(TempString);          
+      
+                  // ga naar volgende state: Haal MD5 en verwerk deze
+                  EGState=1;
+                  }
+                }
+              } // einde InputType==EVENTGHOST              
+            InputBuffer_IP[0]=0;
+            }
           }
         }
       }

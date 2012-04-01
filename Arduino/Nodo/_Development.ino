@@ -2,15 +2,16 @@
 
 Aanpassingen:
 - Issue 375:	Wildcard  WiredOut
+- Issue 376:	Access list op basis van afzender IP-Adres
 - Subnet wordt niet meer in status weergegevn als ip adres via DHCP
 - Snelle check toegevoegd aanwezigheid Ethernet shield.
 
 
 Known Errors / ToDo:
-- Default poort voor "PortServer" nog bepalen. 
 - Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue testen.
 
 Aanpassingen t.o.v. Nodo Due:
+- Nieuw commando "ClientIP" toegevoegd. Aanvaard alleen HTTP-Requests en EventGhst events van opgegeven IP adres.
 - Nieuw commando "SendTo" voor versturen van een commandoregel via RF naar een andere Nodo
 - Nieuw commando voor in eventlist "BreakOnDaylight". 
 - Commando "Divert" vervallen en vervangen door "SendTo"
