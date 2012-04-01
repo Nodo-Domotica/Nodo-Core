@@ -1,8 +1,25 @@
-<?php 
+<?php
 
-require_once('connections/tc.php'); 
-require_once('include/auth.php'); 
-require_once('include/user_settings.php'); 
+/***********************************************************************************************************************
+"Nodo Web App" Copyright © 2012 Martin de Graaf
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*************************************************************************************************************************/
+
+require_once('connections/tc.php');
+require_once('include/auth.php');
+require_once('include/user_settings.php');
 
 $page_title = "Values";
 
@@ -183,10 +200,8 @@ $RSsensor = mysql_query($query_RSsensor, $tc) or die(mysql_error());
 				
 			
  
-/**********************************************************************************************************************************************************************************************
-Grafiek: Values
-**********************************************************************************************************************************************************************************************/				
 
+		//Grafiek: Values
 			
 		//Alleen een grafiek weergeven als het een output vanuit de nodo richting webapp betreft en het een waarde betreft.
 		if ($row_RSsensor['input_output'] == 2 && $row_RSsensor['display'] == 1){
@@ -225,13 +240,11 @@ Grafiek: Values
 				</script>
 
 		<?php }
-/**********************************************************************************************************************************************************************************************
-/Grafiek: Values
-**********************************************************************************************************************************************************************************************/				
+				
 
-/**********************************************************************************************************************************************************************************************
-Input control
-**********************************************************************************************************************************************************************************************/									
+
+			//Input control
+									
 			//+- Buttons
 			if ($row_RSsensor['input_control'] == 1){
 			?>
@@ -266,9 +279,7 @@ Input control
 		echo "</div>";	
 	}
 	
-/**********************************************************************************************************************************************************************************************
-/Input control
-**********************************************************************************************************************************************************************************************/		
+	
 ?>
 <script>
 //Eerste maal de functie Get_Value opstarten zodat de loop gaat lopen welke de waarde elke x seconde ververst. 

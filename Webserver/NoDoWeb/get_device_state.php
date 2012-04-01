@@ -1,15 +1,33 @@
 <?php 
-//Haal de schakelaar status op
+/***********************************************************************************************************************
+"Nodo Web App" Copyright © 2012 Martin de Graaf
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*************************************************************************************************************************/
+
 require_once('connections/tc.php');
 require_once('include/auth.php');
-?>
-<?php 
+
+//Schakelaarstatus ophalen
 mysql_select_db($database_tc, $tc);
 $query_RSdevice = "SELECT id,user_id,status,dim_value FROM nodo_tbl_devices WHERE user_id='$userId'";
 $RSdevice = mysql_query($query_RSdevice, $tc) or die(mysql_error());
 $row_RSdevice = mysql_fetch_assoc($RSdevice);
-$totalRows_RSdevice = mysql_num_rows($RSdevice);
+
 ?>
+
+
 <?php if ($row_RSdevice != NULL){
 do { ?>document.getElementById('switch_<?php echo $row_RSdevice['id'];?>').innerHTML = <?php 
    

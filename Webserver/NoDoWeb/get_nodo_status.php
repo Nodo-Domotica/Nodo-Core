@@ -1,4 +1,20 @@
 <?php 
+/***********************************************************************************************************************
+"Nodo Web App" Copyright © 2012 Martin de Graaf
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*************************************************************************************************************************/
 
 require_once('connections/tc.php'); 
 require_once('include/auth.php');
@@ -7,9 +23,7 @@ require_once('include/user_settings.php');
 $page_title = "Setup: Nodo settings";	
 
 
-/************************************************************************************************
-HTTPRequest function														
-*************************************************************************************************/
+//HTTPRequest function.
 function HTTPRequest($Url){
 
 
@@ -33,16 +47,10 @@ function HTTPRequest($Url){
 	return $output;
 	
 	}
-/************************************************************************************************
-END HTTPRequest function														
-*************************************************************************************************/
 
 
 
-/************************************************************************************************
-Status  read															
-*************************************************************************************************/
-
+		//Status uitlezen
 		$file="STATUS";
 		HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&event=FileErase%20$file");
 		HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&event=FileLog%20$file");
@@ -51,26 +59,11 @@ Status  read
 		
 			
 
-		//Read file from Nodo to array
-		$scriptraw = explode("\n", HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&file=$file"));
+		//Status van Nodo in array plaatsen
+		$script = explode("\n", HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&file=$file"));
 		
 			
-		//count total lines in $scriptraw
-		$total_script_lines_raw = count($scriptraw);
-		
-		$x=0;
-		
-		for($i=0;$i<$total_script_lines_raw;$i++){
-			
-			//Remove !********************************** start en stop lines 
-			//$pos = strpos($scriptraw[$i],"!*****");
-			
-			//if($pos === false || $pos > 0) {
-				$script[$x] = $scriptraw[$i];
-				$x++;
-			//}
-		}
-		
+		//Totaal aantal lijnen tellen in $script
 		$total_script_lines = count($script);
 		
 		

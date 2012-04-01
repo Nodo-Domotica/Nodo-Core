@@ -1,12 +1,26 @@
 <?php 
+/***********************************************************************************************************************
+"Nodo Web App" Copyright © 2012 Martin de Graaf
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*************************************************************************************************************************/
 
 require_once('connections/tc.php'); 
 require_once('include/auth.php'); 
 require_once('include/user_settings.php'); 
 
 $page_title = "Devices";
-
-
 
 ?>
 
@@ -24,13 +38,9 @@ $page_title = "Devices";
 	<style type="text/css">	
 	
 	
-	input.ui-slider-input { 
-    display:none !important; 
-	} 
-	
-	
-	
-    .ui-btn-icon-left_collapsible .ui-btn-inner { padding-left: 40px !important;}
+	input.ui-slider-input {display:none !important;} 
+			
+    .ui-btn-icon-left_collapsible .ui-btn-inner {padding-left: 40px !important;}
 	
 	.ui-btn-collapsible {
 		
@@ -110,11 +120,11 @@ if ($row_RSdevices['toggle'] == 1) {
 		echo "<a href=\"javascript:send_event(&quot;&action=toggle&device_id=". $id . "&quot;)\" class=\"ui-btn-collapsible ui-btn-icon-left_collapsible\" data-role=\"button\" data-shadow=\"false\" data-icon=\"star\" ><span id='switch_" . $row_RSdevices['id'] . "'></span>" . $row_RSdevices['naam'] . "</a>\n";
 		break;
 		
-		case 2: //NewKaku
-		//Dim buttons		
+		case 2: //NewKAKU
+		//Dim knoppen		
 		if ( $row_RSdevices['dim'] == 1 ) { 
 			
-			// newkaku toggle button
+			// NewKAKU toggle knop
 			echo "<a href=\"javascript:send_event(&quot;&action=toggle&device_id=". $id . "&quot;)\" class=\"ui-btn-collapsible1 ui-btn-icon-left_collapsible \" data-role=\"button\" data-shadow=\"false\" data-icon=\"star\"  ><span id='switch_" . $row_RSdevices['id'] . "'></span>" . $row_RSdevices['naam'] . "</a>\n";
 			echo "<div class=\"ui-collapsible-content ui-body-" . $theme . " ui-corner-bottom\">";
 			
@@ -157,16 +167,12 @@ if ($row_RSdevices['toggle'] == 1) {
 			echo "</div> <div style=\"padding: 0px 0px 8px 0px;\"></div>";
 		 }
 		else {
-			// newkaku toggle button
+			// Newkaku toggle knop
 			echo "<a href=\"javascript:send_event(&quot;&action=toggle&device_id=". $id . "&quot;)\" class=\"ui-btn-collapsible ui-btn-icon-left_collapsible\" data-role=\"button\" data-shadow=\"false\" data-icon=\"star\"  ><span id='switch_" . $row_RSdevices['id'] . "'></span>" . $row_RSdevices['naam'] . "</a>\n";
 		}
 		
 		break;
-		
-		
-		
 	}
-
 	
 }
 
@@ -184,7 +190,7 @@ else {
 	switch ($row_RSdevices['type'])
 				{
 				case "1":
-				// On/Off kaku buttons
+				// On/Off KAKU knopprn
 				if ($row_RSdevices['label_on'] != "") {$label_on = $row_RSdevices['label_on'];} else {$label_on = "On";}
 				if ($row_RSdevices['label_off'] != "") {$label_off = $row_RSdevices['label_off'];} else {$label_off = "Off";}
 
@@ -196,14 +202,14 @@ else {
 				break;  
 							
 				case "2":
-				// On/Off newkaku buttons 
+				// On/Off NewKAKU knoppen 
 				if ($row_RSdevices['label_on'] != "") {$label_on = $row_RSdevices['label_on'];} else {$label_on = "On";}
 				if ($row_RSdevices['label_off'] != "") {$label_off = $row_RSdevices['label_off'];} else {$label_off = "Off";}
 				echo "<a href=\"javascript:send_event(&quot;&action=on&device_id=". $id . "&quot;)\" data-role=\"button\" data-icon=\"check\" >" . $label_on . "</a>\n";
 				echo "<a href=\"javascript:send_event(&quot;&action=off&device_id=". $id . "&quot;)\" data-role=\"button\"  data-icon=\"delete\" >" . $label_off . "</a>\n";
 				echo "<br>\n";
 						
-					//Dim buttons		
+					//Dim knoppen		
 					if ( $row_RSdevices['dim'] == 1 ) { 
 						
 						for ($i=1; $i<=10; $i++) {
@@ -242,7 +248,7 @@ else {
 				break;    
 				
 				case 3:
-				// On/Off WiredOut buttons
+				// On/Off WiredOut knoppen
 				if ($row_RSdevices['label_on'] != "") {$label_on = $row_RSdevices['label_on'];} else {$label_on = "On";}
 				if ($row_RSdevices['label_off'] != "") {$label_off = $row_RSdevices['label_off'];} else {$label_off = "Off";}
 				echo "<a href=\"javascript:send_event(&quot;&action=on&device_id=". $id . "&quot;)\" data-role=\"button\" data-icon=\"check\" >" . $label_on . "</a>\n";
@@ -251,7 +257,7 @@ else {
 				break;
 				 
 				 case 4:
-				// On/Off Userevents
+				// On/Off Userevents knoppen
 				if ($row_RSdevices['label_on'] != "") {$label_on = $row_RSdevices['label_on'];} else {$label_on = "On";}
 				if ($row_RSdevices['label_off'] != "") {$label_off = $row_RSdevices['label_off'];} else {$label_off = "Off";}
 				echo "<a href=\"javascript:send_event(&quot;&action=on&device_id=". $id . "&quot;)\" data-role=\"button\" data-icon=\"check\" >" . $label_on . "</a>\n";

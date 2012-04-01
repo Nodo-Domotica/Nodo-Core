@@ -1,13 +1,33 @@
-<?php require_once('connections/tc.php'); 
- 
+<?php 
+/***********************************************************************************************************************
+"Nodo Web App" Copyright © 2012 Martin de Graaf
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*************************************************************************************************************************/
 
 
-// Login gegevens controleren
-//checken of id=[nodoID] als url parameter is meegegeven.
-if (isset($_GET['id'])){$id = mysql_real_escape_string(htmlspecialchars($_GET['id']));} else {$id = "";}
+require_once('connections/tc.php'); 
 
- //checken of pwd=[wachtwoord] als url parameter is meegegeven.
-if (isset($_GET['password'])){$password = mysql_real_escape_string(htmlspecialchars($_GET['password']));} else {$password = "";}
+
+/*
+Login gegevens controleren
+Checken of id=[nodoID] als url parameter is meegegeven.
+*/
+if (isset($_GET['id'])){$id = mysql_real_escape_string($_GET['id']);} else {$id = "";}
+
+//Checken of pwd=[wachtwoord] als url parameter is meegegeven.
+if (isset($_GET['password'])){$password = mysql_real_escape_string($_GET['password']);} else {$password = "";}
 
 	
 
@@ -22,12 +42,10 @@ if($userId > 0) {
 
 	 //Alle komende output bufferen
 	ob_start();
-
-	/*************************************************************************************************************************************************
-	 Zaken welke output naar de client gegeneren moeten voor het sluiten van de connectie worden geplaatst
-	 *************************************************************************************************************************************************/
-	 	
-	//Als de Nodo een file opvraagt zal onderstaande routine de file sturen zodat de Nodo deze kan parsen
+	
+	
+	 	 	
+	//Als de Nodo een file opvraagt dan zal onderstaande routine de file weergeven zodat de Nodo deze kan parsen
 	if (isset($_GET['file'])){
 	
 		$file = $_GET['file'];
@@ -38,10 +56,11 @@ if($userId > 0) {
 		echo "\n";
 	}
  
-   
     //Grootte van de output opvragen
 	$size = ob_get_length();
 
+	//!!!!Zaken welke output voor de Nodo gegeneren moeten voor het sluiten van de connectie worden geplaatst!!!!!
+	
 	//Headers naar de client sturen zodat deze de verbinding verbreekt.
 	header("Content-Length: $size");
 	header('Connection: close');
@@ -50,12 +69,9 @@ if($userId > 0) {
 	ob_flush();
 	flush();	
 
-			
-
 	//Hier begint het achtergrond process, de connectie is op dit moment al verbroken
 					 
-			 
-			 
+				 
 	 //Ontvangen events verwerken
 	 if (isset($_GET['event'])){
 			 
@@ -96,9 +112,7 @@ if($userId > 0) {
 					 
 				}
 
-						
-			
-								
+														
 			switch ($cmd) {
 				
 				
@@ -111,14 +125,12 @@ if($userId > 0) {
 
 										
 					//Sensor_id (id) opvragen uit values tabel 
-					//mysql_select_db($database_tc, $tc);
 					$RS_sensor = mysql_query("SELECT * FROM nodo_tbl_sensor WHERE user_id='$userId' AND par1='$par1' AND sensor_type='$type'") or die(mysql_error());  
 					$row_RS_sensor = mysql_fetch_array($RS_sensor); //Eerste sensor ophalen volgende sensoren met dezelfde parameters worden niet behandeld.
 					$sensor_id=$row_RS_sensor[id]; //$sensor_id gebruiken we om in de tabel sensor_data bij te houden welke data bij welke sensor hoort 
 								
 					//Alleen waarde opslaan als er een sensor is aangemaakt
 					if ($sensor_id > 0) {
-						//mysql_select_db($database_tc, $tc);
 						mysql_query("INSERT INTO nodo_tbl_sensor_data (sensor_id, par1, data, nodo_unit_nr, type, user_id) VALUES ('$sensor_id','$par1','$par2','$unit','$type','$userId')") or die(mysql_error()); 
 					}
 					
@@ -145,7 +157,6 @@ if($userId > 0) {
 					$homecode = substr($par1, 0,1);
 					$address =  substr($par1, 1);
 					
-					// save the data to the database 
 					mysql_query("UPDATE nodo_tbl_devices SET status='$status' WHERE address='$address' AND homecode='$homecode' AND type='1' AND user_id='$userId'") or die(mysql_error());   
 								
 				break;
@@ -156,19 +167,16 @@ if($userId > 0) {
 
 						case "on" :
 							$status = 1;
-							// save the data to the database 
 							mysql_query("UPDATE nodo_tbl_devices SET status='$status' WHERE address='$par1' AND type='2' AND user_id='$userId'") or die(mysql_error()); 
 						break;
 						
 						case "off" :
 							$status = 0;
-							// save the data to the database 
 							mysql_query("UPDATE nodo_tbl_devices SET status='$status' WHERE address='$par1' AND type='2' AND user_id='$userId'") or die(mysql_error()); 
 						break;
 						
 						case 0 :
 							$status = 0;
-							// save the data to the database 
 							mysql_query("UPDATE nodo_tbl_devices SET status='$status' WHERE address='$par1' AND type='2' AND user_id='$userId'") or die(mysql_error()); 
 						break;
 						
@@ -189,7 +197,6 @@ if($userId > 0) {
 						case 15:
 						case 16:
 							$status = 1;
-							// save the data to the database 
 							mysql_query("UPDATE nodo_tbl_devices SET status='$status', dim_value='$par2' WHERE address='$par1' AND type='2' AND user_id='$userId'") or die(mysql_error()); 
 						break;
 					}
@@ -211,7 +218,6 @@ if($userId > 0) {
 					
 					$address =  $par1;
 					
-					// save the data to the database 
 					mysql_query("UPDATE nodo_tbl_devices SET status='$status' WHERE address='$address' AND type='3' AND user_id='$userId'") or die(mysql_error());   
 								
 				break;
@@ -226,12 +232,8 @@ if($userId > 0) {
 		
 				}
 
-
 		}
-			
-			
-			
-					
+	
 }
 
 

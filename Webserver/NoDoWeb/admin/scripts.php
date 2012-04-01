@@ -1,4 +1,21 @@
-<?php 
+<?php
+/***********************************************************************************************************************
+"Nodo Web App" Copyright © 2012 Martin de Graaf
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*************************************************************************************************************************/
+
 
 require_once('../connections/tc.php'); 
 require_once('../include/auth.php');
@@ -9,7 +26,7 @@ $page_title = "Setup: Scripts";
 
 
 /************************************************************************************************
-HTTPRequest function do not output http headers													
+HTTPRequest function (do not output http headers)													
 *************************************************************************************************/
 function HTTPRequest($Url){
 
@@ -64,25 +81,8 @@ if (isset($_POST['Read']))
 	}
 
 	//Read file from Nodo to array
-	$scriptraw = explode("\n", HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&file=$file"));
-	
-		
-	//count total lines in $scriptraw
-	$total_script_lines_raw = count($scriptraw);
-	
-	$x=0;
-	
-	for($i=0;$i<$total_script_lines_raw;$i++){
-		
-		//Remove !********************************** start en stop lines 
-		$pos = strpos($scriptraw[$i],"!*****");
-        
-		if($pos === false || $pos > 0) {
-			$script[$x] = $scriptraw[$i];
-			$x++;
-		}
-	}
-	
+	$script = explode("\n", HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&file=$file"));
+			
 	$total_script_lines = count($script);
 	
     
