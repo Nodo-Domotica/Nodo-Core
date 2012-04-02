@@ -54,7 +54,7 @@
 prog_char PROGMEM Text_01[] = "Nodo Domotica controller (c) Copyright 2012 P.K.Tonkes.";
 prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
 prog_char PROGMEM Text_03[] = "Enter your password: ";
-prog_char PROGMEM Text_04[] = "SunMonThuWedThuFriSat";
+prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSat";
 prog_char PROGMEM Text_05[] = "0123456789abcdef";
 prog_char PROGMEM Text_06[] = "Message=";
 prog_char PROGMEM Text_07[] = "Waiting for signal...";
@@ -655,7 +655,7 @@ struct Settings
   int     PulseCount_C;
   byte    PulseCountFormula;
   int     PulseCount_B;
-  boolean WiredInputPullUp[WIRED_PORTS];
+  byte    WiredInputPullUp[WIRED_PORTS];
   byte    AnalyseSharpness;
   int     AnalyseTimeOut;
   int     UserVar[USER_VARIABLES_MAX];
@@ -775,7 +775,7 @@ void setup()
   // initialiseer de Wired ingangen.
   for(x=0;x<WIRED_PORTS;x++)
     {
-    digitalWrite(A0+PIN_WIRED_IN_1+x,S.WiredInputPullUp[x]?HIGH:LOW);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14
+    digitalWrite(A0+PIN_WIRED_IN_1+x,S.WiredInputPullUp[x]==VALUE_ON?HIGH:LOW);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14
     pinMode(PIN_WIRED_OUT_1+x,OUTPUT); // definieer Arduino pin's voor Wired-Out
     }
 

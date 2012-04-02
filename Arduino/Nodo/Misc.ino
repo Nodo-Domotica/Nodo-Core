@@ -87,7 +87,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
 
     case CMD_TRANSMIT_RF:
       *Par1=S.TransmitRF;
-      *Par2=S.TransmitRepeatIR;
+      *Par2=S.TransmitRepeatRF;
       break;
       
     case CMD_TRANSMIT_IR:
@@ -138,7 +138,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
 
     case CMD_WIRED_PULLUP:
       *Par1=xPar1;
-      *Par2=(S.WiredInputPullUp[xPar1-1])?VALUE_ON:VALUE_OFF;
+      *Par2=S.WiredInputPullUp[xPar1-1];
       break;
 
     case CMD_WIRED_ANALOG:
@@ -316,7 +316,7 @@ void ResetFactory(void)
     {
     S.WiredInputThreshold[x]=5000; 
     S.WiredInputSmittTrigger[x]=500;
-    S.WiredInputPullUp[x]=true;
+    S.WiredInputPullUp[x]=VALUE_ON;
     S.WiredInput_Calibration_IH[x]=1023;
     S.WiredInput_Calibration_IL[x]=0;
     S.WiredInput_Calibration_OH[x]=10000;
@@ -344,7 +344,7 @@ void FactoryEventlist(void)
 
   // schrijf default regels.
   Eventlist_Write(0,command2event(CMD_BOOT_EVENT,0,0),command2event(CMD_SOUND,7,0)); // geluidssignaal na opstarten Nodo
-  Eventlist_Write(0,command2event(CMD_COMMAND_WILDCARD,VALUE_SOURCE_IR,CMD_KAKU),command2event(CMD_RAWSIGNAL_SEND,0,0)); // Kort geluidssignaal bij ieder binnenkomend event
+  Eventlist_Write(0,command2event(CMD_COMMAND_WILDCARD,VALUE_SOURCE_IR,CMD_KAKU),command2event(CMD_RAWSIGNAL_SEND,0,0)); 
   }
 
   

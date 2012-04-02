@@ -51,8 +51,6 @@ byte CommandError(unsigned long Content)
   byte Par1         = (Content>>8)&0xff;
   byte Par2         = Content&0xff;
  
-
-
   switch(Command)
     {
     //test; geen, altijd goed
@@ -107,7 +105,7 @@ byte CommandError(unsigned long Content)
       return ERROR_02;
 
     case CMD_EVENTLIST_WRITE:
-      if(Par1<1 || Par1>EVENTLIST_MAX)return ERROR_02;    
+      if(Par1>EVENTLIST_MAX)return ERROR_02;    
       return false; 
 
     case CMD_EVENTLIST_SHOW:
@@ -132,12 +130,7 @@ byte CommandError(unsigned long Content)
       if(x<1 || x>USER_VARIABLES_MAX)return ERROR_02;
       return false;
 
-
     case CMD_VARIABLE_SET:
-      Par2PortAnalog(Par1, Par2, &x, &y);
-      if(x>USER_VARIABLES_MAX)return ERROR_02;
-      return false;
-
     case CMD_VARIABLE_SAVE:
       if(Par1>USER_VARIABLES_MAX)return ERROR_02;
       return false;
@@ -156,12 +149,13 @@ byte CommandError(unsigned long Content)
 
     // Par1 alleen 0,1 of 7
     case CMD_SIMULATE_DAY:
-      if(Par1!=1 && Par1!=7)return ERROR_02;
+      if(Par1!=0 && Par1!=1 && Par1!=7)return ERROR_02;
       return false;
       
     // geldig jaartal
     case CMD_CLOCK_YEAR:
-      if(Par1>21)return ERROR_02;
+      if(Par1<20 || Par1>21)return ERROR_02;
+      if(Par2>99)return ERROR_02;
       return false;
     
     // geldige tijd    
@@ -187,6 +181,10 @@ byte CommandError(unsigned long Content)
       
     // test:Par1 binnen bereik maximaal beschikbare wired poorten.
     case CMD_WIRED_IN_EVENT:
+      if(Par1<1 || Par1>WIRED_PORTS)return ERROR_02;
+      if(Par2!=VALUE_ON && Par2!=VALUE_OFF)return ERROR_02;
+      return false;
+
     case CMD_WIRED_ANALOG:
     case CMD_WIRED_THRESHOLD:
     case CMD_WIRED_SMITTTRIGGER:
@@ -196,7 +194,7 @@ byte CommandError(unsigned long Content)
     // test:Par1 binnen bereik maximaal beschikbare wired poorten EN Par2 is ON of OFF
     case CMD_WIRED_OUT:
     case CMD_WIRED_PULLUP:
-      if(Par1>WIRED_PORTS)return ERROR_02;
+      if(Par1<1 || Par1>WIRED_PORTS)return ERROR_02;
       if(Par2!=VALUE_ON && Par2!=VALUE_OFF)return ERROR_02;
       return false;
 
@@ -269,10 +267,14 @@ byte CommandError(unsigned long Content)
      // par1 alleen On of Off.
      // par2 mag alles zijn
     case CMD_TRACE:
-    case CMD_TRANSMIT_RF:
-    case CMD_TRANSMIT_IR:
     case CMD_BREAK_ON_DAYLIGHT:
       if(Par1!=VALUE_OFF && Par1!=VALUE_ON)return ERROR_02;
+      return false;
+
+    case CMD_TRANSMIT_RF:
+    case CMD_TRANSMIT_IR:
+      if(Par1!=VALUE_OFF && Par1!=VALUE_ON)return ERROR_02;
+      if(Par2>25)return ERROR_02;
       return false;
 
     case CMD_UNIT:
@@ -304,427 +306,400 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   byte Type         = (Content>>28)&0x0f;
   byte PreviousType = (PreviousContent>>28)&0x0f;
 
-  error=CommandError(Content);
-  if(error)
-    {
-    if(error==ERROR_01) // commando bestaat niet 
-      RaiseError(ERROR_01);    
-    else // commando bestaat maar parameters niet correct
-      RaiseError(ERROR_02);
+  switch(Command)
+    {   
+    case CMD_SEND_KAKU:
+      TransmitCode(command2event(CMD_KAKU,Par1,Par2),VALUE_ALL);
+      break;
+      
+    case CMD_SEND_KAKU_NEW:
+      TransmitCode(command2event(CMD_KAKU_NEW,Par1,Par2),VALUE_ALL);
+      break;
+      
+    case CMD_VARIABLE_INC:
+      Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
+      z=UserVar[y-1]+x;
+      if(abs(z)<=10000)
+        UserVar[y-1]+=x;
+      ProcessEvent(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      break;        
 
-    // als er een error is, dan stoppen met verwerken van de gehele regel. Dit om stapelen van errors te voorkomen.
-    return false;
-    } 
-  else // geen fouten, dan verwerken
-    {        
-    switch(Command)
-      {   
-      case CMD_SEND_KAKU:
-        TransmitCode(command2event(CMD_KAKU,Par1,Par2),VALUE_ALL);
-        break;
-        
-      case CMD_SEND_KAKU_NEW:
-        TransmitCode(command2event(CMD_KAKU_NEW,Par1,Par2),VALUE_ALL);
-        break;
-        
-      case CMD_VARIABLE_INC:
-        Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
-        z=UserVar[y-1]+x;
-        if(abs(z)<=10000)
-          UserVar[y-1]+=x;
-        ProcessEvent(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
-        break;        
+    case CMD_VARIABLE_DEC: 
+      Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
+      z=UserVar[y-1]-x;
+      if(abs(z)<=10000)
+        UserVar[y-1]-=x;
+      ProcessEvent(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      break;        
+
+    case CMD_VARIABLE_SAVE:   
+      if(Par1==0)
+        for(x=0;x<USER_VARIABLES_MAX;x++)
+          S.UserVar[x]=UserVar[x];
+      else
+        S.UserVar[Par1-1]=UserVar[Par1-1];            
+      SaveSettings();
+      break;        
+
   
-      case CMD_VARIABLE_DEC: 
-        Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
-        z=UserVar[y-1]-x;
-        if(abs(z)<=10000)
-          UserVar[y-1]-=x;
+    case CMD_VARIABLE_SET:
+      Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
+      if(y==0)
+        {
+        y=1;
+        z=USER_VARIABLES_MAX;
+        }
+      else
+        {
+        z=y;
+        }
+      for(y;y<=z;y++)
+        {
+        UserVar[y-1]=x;
         ProcessEvent(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
-        break;        
+        }
+      break;        
   
-      case CMD_VARIABLE_SAVE:   
-        if(Par1==0)
-          for(x=0;x<USER_VARIABLES_MAX;x++)
-            S.UserVar[x]=UserVar[x];
-        else
-          S.UserVar[Par1-1]=UserVar[Par1-1];            
-        SaveSettings();
-        break;        
+  
+    case CMD_WIREDANALOG_VARIABLE:
+      UserVar[Par1-1]=map(analogRead(PIN_WIRED_IN_1+Par2-1),S.WiredInput_Calibration_IL[Par2-1],S.WiredInput_Calibration_IH[Par2-1],S.WiredInput_Calibration_OL[Par2-1],S.WiredInput_Calibration_OH[Par2-1]);
+      ProcessEvent(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      break;
 
-    
-      case CMD_VARIABLE_SET:
-        Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
-        if(y==0)
-          {
-          y=1;
-          z=USER_VARIABLES_MAX;
-          }
-        else
-          {
-          z=y;
-          }
-        for(y;y<=z;y++)
-          {
-          UserVar[y-1]=x;
-          ProcessEvent(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
-          }
-        break;        
-    
-    
-      case CMD_WIREDANALOG_VARIABLE:
-        UserVar[Par1-1]=map(analogRead(PIN_WIRED_IN_1+Par2-1),S.WiredInput_Calibration_IL[Par2-1],S.WiredInput_Calibration_IH[Par2-1],S.WiredInput_Calibration_OL[Par2-1],S.WiredInput_Calibration_OH[Par2-1]);
-        ProcessEvent(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
-        break;
+    case CMD_PULSE_VARIABLE:
+      a=0;
+      if(S.Debug==VALUE_ON)
+        {
+        sprintf(TempString,"PulseCount=%d, PulseTime=%d", PulseCount, PulseTime);
+        PrintTerminal(TempString);
+        }
 
-      case CMD_PULSE_VARIABLE:
-        a=0;
-        if(S.Debug==VALUE_ON)
-          {
-          sprintf(TempString,"PulseCount=%d, PulseTime=%d", PulseCount, PulseTime);
-          PrintTerminal(TempString);
-          }
+      //Formule-1: Variable = ( Pulse / A ) * B + C
+      //Formule-2: Variable = ( A / Pulse ) * B + C
 
-        //Formule-1: Variable = ( Pulse / A ) * B + C
-        //Formule-2: Variable = ( A / Pulse ) * B + C
-
-        if(Par2==VALUE_COUNT)
-          {
-          a=PulseCount;
-          if(S.PulseCountFormula==1 && S.PulseCount_A!=0)
-            a=(S.PulseCount_B*PulseCount)/S.PulseCount_A+S.PulseCount_C;
-          else if(S.PulseCountFormula==2 && PulseCount!=0)            
-            a=(S.PulseCount_B*S.PulseCount_A)/PulseCount+S.PulseCount_C;
+      if(Par2==VALUE_COUNT)
+        {
+        a=PulseCount;
+        if(S.PulseCountFormula==1 && S.PulseCount_A!=0)
+          a=(S.PulseCount_B*PulseCount)/S.PulseCount_A+S.PulseCount_C;
+        else if(S.PulseCountFormula==2 && PulseCount!=0)            
+          a=(S.PulseCount_B*S.PulseCount_A)/PulseCount+S.PulseCount_C;
 
 //          Serial.print("*** debug: A       = ");Serial.println(S.PulseCount_A,DEC);//??? Debug
 //          Serial.print("*** debug: B       = ");Serial.println(S.PulseCount_B,DEC);//??? Debug
 //          Serial.print("*** debug: C       = ");Serial.println(S.PulseCount_C,DEC);//??? Debug
 //          Serial.print("*** debug: Formula = ");Serial.println(S.PulseCountFormula,DEC);//??? Debug
-          PulseCount=0;
-          }
-          
-        if(Par2==VALUE_TIME)
-          {
-          a=PulseTime;
-          if(S.PulseTimeFormula==1 && S.PulseTime_A!=0)
-            a=(S.PulseTime_B*PulseTime)/S.PulseTime_A+S.PulseTime_C;
-          else if(S.PulseTimeFormula==2 && PulseTime!=0)            
-            a=(S.PulseTime_B*S.PulseTime_A)/PulseTime+S.PulseTime_C;
+        PulseCount=0;
+        }
+        
+      if(Par2==VALUE_TIME)
+        {
+        a=PulseTime;
+        if(S.PulseTimeFormula==1 && S.PulseTime_A!=0)
+          a=(S.PulseTime_B*PulseTime)/S.PulseTime_A+S.PulseTime_C;
+        else if(S.PulseTimeFormula==2 && PulseTime!=0)            
+          a=(S.PulseTime_B*S.PulseTime_A)/PulseTime+S.PulseTime_C;
 
 //          Serial.print("*** debug: A        = ");Serial.println(S.PulseTime_A,DEC);//??? Debug
 //          Serial.print("*** debug: B        = ");Serial.println(S.PulseTime_B,DEC);//??? Debug
 //          Serial.print("*** debug: C        = ");Serial.println(S.PulseTime_C,DEC);//??? Debug
 //          Serial.print("*** debug: Formula  = ");Serial.println(S.PulseTimeFormula,DEC);//??? Debug
-          }
+        }
 
-        if(abs(a)<=10000)
-          UserVar[Par1-1]=(int)a;
+      if(abs(a)<=10000)
+        UserVar[Par1-1]=(int)a;
 
-        ProcessEvent(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
-        break;
+      ProcessEvent(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      break;
 
-      case CMD_VARIABLE_VARIABLE:
-        UserVar[Par1-1]=UserVar[Par2-1];
-        ProcessEvent(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
-        break;        
-  
-      case CMD_BREAK_ON_VAR_EQU:
-        Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
-        if(UserVar[y-1]==x)
-          error=true;
-        break;
-        
-      case CMD_BREAK_ON_VAR_NEQU:
-        Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
-        if(UserVar[y-1]!=x)
-          error=true;
-        break;
-  
-      case CMD_BREAK_ON_VAR_MORE:
-        Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
-        if(UserVar[y-1]>x)
-          error=true;
-        break;
+    case CMD_VARIABLE_VARIABLE:
+      UserVar[Par1-1]=UserVar[Par2-1];
+      ProcessEvent(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      break;        
 
-      case CMD_BREAK_ON_VAR_LESS:
-        Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
-        if(UserVar[y-1]<x)
-          error=true;
-        break;
-  
-      case CMD_BREAK_ON_DAYLIGHT:
-        if(Par1==VALUE_ON && (Time.Daylight==2 || Time.Daylight==3))
-          error=true;
-
-        if(Par1==VALUE_OFF && (Time.Daylight==0 || Time.Daylight==1 || Time.Daylight==4))
-          error=true;
-        break;
-  
-      case CMD_SEND_USEREVENT:
-        // Voeg Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
-        TransmitCode(command2event(CMD_USEREVENT,Par1,Par2),VALUE_ALL);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
-        break;
-  
-      case CMD_SIMULATE_DAY:
-        if(Par1==0)Par1=1;
-        SimulateDay(Par1); 
-        break;     
-  
-      case CMD_RAWSIGNAL_SEND:
-        if(Par1!=0)
-          RawSignalGet(Par1);
-        TransmitCode(AnalyzeRawSignal(),VALUE_ALL);
-        break;        
-  
-      case CMD_CLOCK_YEAR:
-        x=Par1*100+Par2;
-        Time.Year=x;
-        ClockSet();
-        ClockRead();
-        break;
+    case CMD_BREAK_ON_VAR_EQU:
+      Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
+      if(UserVar[y-1]==x)
+        error=true;
+      break;
       
-      case CMD_CLOCK_TIME:
-        Time.Hour=Par1;
-        Time.Minutes=Par2;
-        Time.Seconds=0;
-        ClockSet();
-        break;
-  
-      case CMD_CLOCK_DATE: // data1=datum, data2=maand
-        Time.Date=Par1;
-        Time.Month=Par2;
-        ClockSet();
-        ClockRead();
-        break;
-  
-      case CMD_CLOCK_DOW:
-        Time.Day=Par1;
-        ClockSet();
-        break;
+    case CMD_BREAK_ON_VAR_NEQU:
+      Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
+      if(UserVar[y-1]!=x)
+        error=true;
+      break;
 
-      case CMD_TIMER_SET_MIN:
-        // Par1=timer, Par2=minuten. Timers werken op een resolutie van seconden maar worden door de gebruiker ingegeven in minuten        
-        if(Par1==0)
-          {
-          x=1;
-          y=TIMER_MAX;
-          }
-        else
-          {
-          x=Par1;
-          y=Par1;
-          }
-        for(x;x<=y;x++)
-          TimerSet(x,int(Par2)*60);
-          
-        break;
-        
-      case CMD_TIMER_SET_SEC:
-        // Par1=timer, Par2=seconden. Timers werken op een resolutie van seconden.            
-       if(Par1==0)
-          {
-          x=1;
-          y=TIMER_MAX;
-          }
-        else
-          {
-          x=Par1;
-          y=Par1;
-          }
-        for(x;x<=y;x++)
-         TimerSet(x,Par2);
-        break;
+    case CMD_BREAK_ON_VAR_MORE:
+      Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
+      if(UserVar[y-1]>x)
+        error=true;
+      break;
 
-      case CMD_TIMER_RANDOM:
-        UserTimer[Par1-1]=millis()+random(Par2)*60000;// Par1=timer, Par2=maximaal aantal minuten
-        break;
-  
-      case CMD_DELAY:
-        if(Par1)
-          {
-          if(Par2==VALUE_OFF || Par2==0) // Niet opslaan in de queue, maar direct een 'dode' pause uitvoeren.
-            {
-            Led(BLUE);
-            delay(Par1*1000);
-            }
-          else if(Par2==VALUE_ON)
-            {
-            // start een nieuwe recursieve loop() om zo de events die voorbij komen te plaatsen in de queue.
-            // deze recursieve aanroep wordt beëindigd als HoldTimer==0L
-            HoldTimer=Par1;
-            Hold=CMD_DELAY;
-            loop();
-            }
-          }        
-        else
-          HoldTimer=0; //  Wachttijd is afgelopen;
-        break;        
-        
-      case CMD_SEND_EVENT:
-        TransmitCode(PreviousContent,Par1);
-        break;        
+    case CMD_BREAK_ON_VAR_LESS:
+      Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
+      if(UserVar[y-1]<x)
+        error=true;
+      break;
 
-      case CMD_SOUND: 
-        Alarm(Par1,Par2);
-        break;     
+    case CMD_BREAK_ON_DAYLIGHT:
+      if(Par1==VALUE_ON && (Time.Daylight==2 || Time.Daylight==3))
+        error=true;
+
+      if(Par1==VALUE_OFF && (Time.Daylight==0 || Time.Daylight==1 || Time.Daylight==4))
+        error=true;
+      break;
+
+    case CMD_SEND_USEREVENT:
+      // Voeg Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
+      TransmitCode(command2event(CMD_USEREVENT,Par1,Par2),VALUE_ALL);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
+      break;
+
+    case CMD_SIMULATE_DAY:
+      if(Par1==0)Par1=1;
+      SimulateDay(Par1); 
+      break;     
+
+    case CMD_RAWSIGNAL_SEND:
+      if(Par1!=0)
+        RawSignalGet(Par1);
+      TransmitCode(AnalyzeRawSignal(),VALUE_ALL);
+      break;        
+
+    case CMD_CLOCK_YEAR:
+      x=Par1*100+Par2;
+      Time.Year=x;
+      ClockSet();
+      ClockRead();
+      break;
     
-      case CMD_WIRED_PULLUP:
-        if(Par1==0)
-          {
-          x=1;
-          y=WIRED_PORTS;
-          }
-        else
-          {
-          x=Par1;
-          y=Par1;
-          }
-        for(x;x<y;x++)
-          {
-          S.WiredInputPullUp[Par1-1]=Par2==VALUE_ON; // Par1 is de poort[1..4], Par2 is de waarde [0..1]
-          digitalWrite(14+PIN_WIRED_IN_1+Par1-1,S.WiredInputPullUp[Par1-1]==VALUE_ON);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14 
-          }
-        SaveSettings();
-        break;
-                   
-      case CMD_WIRED_OUT:
-        if(Par1==0)
-          {
-          x=1;
-          y=WIRED_PORTS;
-          }
-        else
-          {
-          x=Par1;
-          y=Par1;
-          }
-        for(x;x<=y;x++)
-          {
-          digitalWrite(PIN_WIRED_OUT_1+x-1,(Par2==VALUE_ON));
-          WiredOutputStatus[x-1]=(Par2==VALUE_ON);
-          Content=(Content&0xffff00ff)|x<<8;
-          PrintEvent(Content,VALUE_SOURCE_WIRED,VALUE_DIRECTION_OUTPUT);
-          }
-        break;
-                           
-      case CMD_WAITFREERF: 
-        S.WaitFreeRF_Delay=Par1;
-        S.WaitFreeRF_Window=Par2;
-        SaveSettings();
-        break;
+    case CMD_CLOCK_TIME:
+      Time.Hour=Par1;
+      Time.Minutes=Par2;
+      Time.Seconds=0;
+      ClockSet();
+      break;
 
-      case CMD_TRACE: 
-        S.Debug=Par1;
-        SaveSettings();
-        break;
-  
-      case CMD_RAWSIGNAL_COPY:
-        if(Par1==VALUE_RF_2_IR)CopySignalRF2IR(Par2);      
-        if(Par1==VALUE_IR_2_RF)CopySignalIR2RF(Par2);
-        break;        
-  
-      case CMD_SENDBUSY:
-        if(Par1==VALUE_ALL)
+    case CMD_CLOCK_DATE: // data1=datum, data2=maand
+      Time.Date=Par1;
+      Time.Month=Par2;
+      ClockSet();
+      ClockRead();
+      break;
+
+    case CMD_CLOCK_DOW:
+      Time.Day=Par1;
+      ClockSet();
+      break;
+
+    case CMD_TIMER_SET_MIN:
+      // Par1=timer, Par2=minuten. Timers werken op een resolutie van seconden maar worden door de gebruiker ingegeven in minuten        
+      if(Par1==0)
+        {
+        x=1;
+        y=TIMER_MAX;
+        }
+      else
+        {
+        x=Par1;
+        y=Par1;
+        }
+      for(x;x<=y;x++)
+        TimerSet(x,int(Par2)*60);
+        
+      break;
+      
+    case CMD_TIMER_SET_SEC:
+      // Par1=timer, Par2=seconden. Timers werken op een resolutie van seconden.            
+     if(Par1==0)
+        {
+        x=1;
+        y=TIMER_MAX;
+        }
+      else
+        {
+        x=Par1;
+        y=Par1;
+        }
+      for(x;x<=y;x++)
+       TimerSet(x,Par2);
+      break;
+
+    case CMD_TIMER_RANDOM:
+      UserTimer[Par1-1]=millis()+random(Par2)*60000;// Par1=timer, Par2=maximaal aantal minuten
+      break;
+
+    case CMD_DELAY:
+      if(Par1)
+        {
+        if(Par2==VALUE_OFF || Par2==0) // Niet opslaan in de queue, maar direct een 'dode' pause uitvoeren.
           {
-          S.SendBusy=Par1;
+          Led(BLUE);
+          delay(Par1*1000);
+          }
+        else if(Par2==VALUE_ON)
+          {
+          // start een nieuwe recursieve loop() om zo de events die voorbij komen te plaatsen in de queue.
+          // deze recursieve aanroep wordt beëindigd als HoldTimer==0L
+          HoldTimer=Par1;
+          Hold=CMD_DELAY;
+          loop();
+          }
+        }        
+      else
+        HoldTimer=0; //  Wachttijd is afgelopen;
+      break;        
+      
+    case CMD_SEND_EVENT:
+      TransmitCode(PreviousContent,Par1);
+      break;        
+
+    case CMD_SOUND: 
+      Alarm(Par1,Par2);
+      break;     
+  
+    case CMD_WIRED_PULLUP:
+      S.WiredInputPullUp[Par1-1]=Par2; // Par1 is de poort[1..], Par2 is de waarde [0..1]
+      digitalWrite(A0+PIN_WIRED_IN_1+Par1-1,S.WiredInputPullUp[Par1-1]==VALUE_ON?HIGH:LOW);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14
+      SaveSettings();
+      break;
+                 
+    case CMD_WIRED_OUT:
+      if(Par1==0)
+        {
+        x=1;
+        y=WIRED_PORTS;
+        }
+      else
+        {
+        x=Par1;
+        y=Par1;
+        }
+      for(x;x<=y;x++)
+        {
+        digitalWrite(PIN_WIRED_OUT_1+x-1,(Par2==VALUE_ON));
+        WiredOutputStatus[x-1]=(Par2==VALUE_ON);
+        Content=(Content&0xffff00ff)|x<<8;
+        PrintEvent(Content,VALUE_SOURCE_WIRED,VALUE_DIRECTION_OUTPUT);
+        }
+      break;
+                         
+    case CMD_WAITFREERF: 
+      S.WaitFreeRF_Delay=Par1;
+      S.WaitFreeRF_Window=Par2;
+      SaveSettings();
+      break;
+
+    case CMD_TRACE: 
+      S.Debug=Par1;
+      SaveSettings();
+      break;
+
+    case CMD_RAWSIGNAL_COPY:
+      if(Par1==VALUE_RF_2_IR)CopySignalRF2IR(Par2);      
+      if(Par1==VALUE_IR_2_RF)CopySignalIR2RF(Par2);
+      break;        
+
+    case CMD_SENDBUSY:
+      if(Par1==VALUE_ALL)
+        {
+        S.SendBusy=Par1;
+        SaveSettings();
+        }
+      else
+        if(S.SendBusy==VALUE_ALL)
+          {
+          S.SendBusy=VALUE_OFF;
           SaveSettings();
           }
         else
-          if(S.SendBusy==VALUE_ALL)
-            {
-            S.SendBusy=VALUE_OFF;
-            SaveSettings();
-            }
-          else
-            TransmitCode(command2event(CMD_BUSY,Par1,0),VALUE_ALL);
-        break;
-        
-      case CMD_TRANSMIT_IP:
-        S.TransmitIP=Par1;        
-        SaveSettings();
-        break;
-        
-      case CMD_WAITBUSY:
-        if(Par1==VALUE_ALL)
-          S.WaitBusy=Par1;
+          TransmitCode(command2event(CMD_BUSY,Par1,0),VALUE_ALL);
+      break;
+      
+    case CMD_TRANSMIT_IP:
+      S.TransmitIP=Par1;        
+      SaveSettings();
+      break;
+      
+    case CMD_WAITBUSY:
+      if(Par1==VALUE_ALL)
+        S.WaitBusy=Par1;
+      else
+        if(S.WaitBusy==VALUE_ALL)
+          S.WaitBusy=VALUE_OFF;
         else
-          if(S.WaitBusy==VALUE_ALL)
-            S.WaitBusy=VALUE_OFF;
-          else
-            {
-            Hold=CMD_BUSY;
-            loop(); // deze recursieve aanroep wordt beëindigd als BusyNodo==0
-            }
-        break;
-
-      case CMD_TRANSMIT_IR:
-        S.TransmitIR=Par1;
-        if(Par2)S.TransmitRepeatIR=Par2;
-        SaveSettings();
-        break;
-
-      case CMD_TRANSMIT_RF:
-        S.TransmitRF=Par1;
-        if(Par2)S.TransmitRepeatRF=Par2;
-        SaveSettings();
-        break;
-        
-      case CMD_USERPLUGIN:
-        #ifdef USER_PLUGIN
-          UserPlugin_Command(Par1,Par2);
-        #endif
-        break;        
-
-      case CMD_FILE_EXECUTE:
-        strcpy(TempString,cmd2str(CMD_FILE_EXECUTE));
-        strcat(TempString," ");
-        strcat(TempString,int2str(Par1));
-        ExecuteLine(TempString,Src);
-        break;        
-
-      case CMD_WIRED_THRESHOLD:
-        // Dit commando wordt ook afgevangen in ExecuteLine(). Hier opgenomen i.g.v. ontvangst via RF of IR
-        S.WiredInputThreshold[Par1-1]=event2AnalogInt(Content);
-        SaveSettings();
-        break;                  
-        
-      case CMD_WIRED_SMITTTRIGGER:
-        // Dit commando wordt ook afgevangen in ExecuteLine(). Hier opgenomen i.g.v. ontvangst via RF of IR
-        S.WiredInputSmittTrigger[Par1-1]=event2AnalogInt(Content);
-        SaveSettings();
-        break;                  
-
-      case CMD_STATUS:
-        Status(Par1, Par2, false);
-        break;
-
-      case CMD_STATUS_SEND:
-        Status(Par1, Par2, true);
-        break;
-                
-      case CMD_REBOOT:
-        delay(1000);
-        Reset();
-        break;        
-
-      case CMD_ANALYSE_SETTINGS:
-        S.AnalyseTimeOut=Par1;
-        S.AnalyseSharpness=Par2*1000;
-        SaveSettings();
-        break;
-
-      case CMD_RECEIVE_LINE:
-        Led(BLUE);
-        if(ReceiveLineRF(Par1, Par2, InputBuffer_Serial)) // gebruik de InputBuffer_Serial, want die wordt op dit moment niet gebruikt.
           {
-          PrintTerminal(InputBuffer_Serial);
-          ExecuteLine(InputBuffer_Serial,VALUE_SOURCE_RF);
-          RaiseError(ERROR_00);
+          Hold=CMD_BUSY;
+          loop(); // deze recursieve aanroep wordt beëindigd als BusyNodo==0
           }
+      break;
 
-        else
-          RaiseError(ERROR_12);
-      }
+    case CMD_TRANSMIT_IR:
+      S.TransmitIR=Par1;
+      if(Par2!=0)S.TransmitRepeatIR=Par2;
+      SaveSettings();
+      break;
+
+    case CMD_TRANSMIT_RF:
+      S.TransmitRF=Par1;
+      if(Par2!=0)S.TransmitRepeatRF=Par2;
+      SaveSettings();
+      break;
+      
+    case CMD_USERPLUGIN:
+      #ifdef USER_PLUGIN
+        UserPlugin_Command(Par1,Par2);
+      #endif
+      break;        
+
+    case CMD_FILE_EXECUTE:
+      strcpy(TempString,cmd2str(CMD_FILE_EXECUTE));
+      strcat(TempString," ");
+      strcat(TempString,int2str(Par1));
+      ExecuteLine(TempString,Src);
+      break;        
+
+    case CMD_WIRED_THRESHOLD:
+      // Dit commando wordt ook afgevangen in ExecuteLine(). Hier opgenomen i.g.v. ontvangst via RF of IR
+      S.WiredInputThreshold[Par1-1]=event2AnalogInt(Content);
+      SaveSettings();
+      break;                  
+      
+    case CMD_WIRED_SMITTTRIGGER:
+      // Dit commando wordt ook afgevangen in ExecuteLine(). Hier opgenomen i.g.v. ontvangst via RF of IR
+      S.WiredInputSmittTrigger[Par1-1]=event2AnalogInt(Content);
+      SaveSettings();
+      break;                  
+
+    case CMD_STATUS:
+      Status(Par1, Par2, false);
+      break;
+
+    case CMD_STATUS_SEND:
+      Status(Par1, Par2, true);
+      break;
+              
+    case CMD_REBOOT:
+      delay(1000);
+      Reset();
+      break;        
+
+    case CMD_ANALYSE_SETTINGS:
+      S.AnalyseTimeOut=Par1;
+      S.AnalyseSharpness=Par2*1000;
+      SaveSettings();
+      break;
+
+    case CMD_RECEIVE_LINE:
+      Led(BLUE);
+      if(ReceiveLineRF(Par1, Par2, InputBuffer_Serial)) // gebruik de InputBuffer_Serial, want die wordt op dit moment niet gebruikt.
+        {
+        PrintTerminal(InputBuffer_Serial);
+        ExecuteLine(InputBuffer_Serial,VALUE_SOURCE_RF);
+        RaiseError(ERROR_00);
+        }
+
+      else
+        RaiseError(ERROR_12);
     }
   return error?false:true;
   }
@@ -800,7 +775,6 @@ void ExecuteLine(char *Line, byte Port)
       if(v<=COMMAND_MAX)
         {
         Cmd=(byte)v;
-        v=0;          
         
         if(GetArgv(Command,TmpStr,2))
           Par1=str2int(TmpStr);
@@ -808,128 +782,79 @@ void ExecuteLine(char *Line, byte Port)
         if(GetArgv(Command,TmpStr,3))
           Par2=str2int(TmpStr);
   
-        switch(Cmd)
+        // Alvorens in behandeling te nemen eerst testen op geldigheid. Alle commando's en par1 + par2
+        // eventueel meer parameters worden later gechecked.
+        Error=CommandError(command2event(Cmd,Par1,Par2));
+        v=0;
+
+        if(Error==0)
           {
-          // Hier worden de commando's verwerkt die een afwijkende MMI hebben of die uitsluitend mogen worden uitgevoerd
-          // als ze via Serial of ethernet worden verzonden. (i.v.m. veiligheid)
-          case CMD_UNIT:
-            S.Unit=Par1;
-            if(Par1>1)
-               {
-               S.WaitFreeRF_Delay=3 + Par1*3;
-               S.WaitFreeRF_Window=3; // 1 eenheid = 100 ms.
-               }
-            else
-               {
-               S.WaitFreeRF_Delay=0;
-               S.WaitFreeRF_Window=0;
-               }
-            SaveSettings();
-            FactoryEventlist();
-            Reset();
-        
-          case CMD_FILE_LOG:
-            if(GetArgv(Command,TmpStr,2))
-              {
-              strcat(TmpStr,".dat");
-              strcpy(TempLogFile,TmpStr);
-              }
-            else
-              TempLogFile[0]=0;
-            break;
+          switch(Cmd)
+            {
+            // Hier worden de commando's verwerkt die een afwijkende MMI hebben of die uitsluitend mogen worden uitgevoerd
+            // als ze via Serial of ethernet worden verzonden. (i.v.m. veiligheid)
+            case CMD_UNIT:
+              S.Unit=Par1;
+              if(Par1>1)
+                 {
+                 S.WaitFreeRF_Delay=3 + Par1*3;
+                 S.WaitFreeRF_Window=3; // 1 eenheid = 100 ms.
+                 }
+              else
+                 {
+                 S.WaitFreeRF_Delay=0;
+                 S.WaitFreeRF_Window=0;
+                 }
+              SaveSettings();
+              FactoryEventlist();
+              Reset();
           
-          case CMD_FILE_ERASE:      
-            if(GetArgv(Command,TmpStr,2))
-              {
-              strcat(TmpStr,".dat");
-
-              // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-              digitalWrite(Ethernetshield_CS_W5100, HIGH);
-              digitalWrite(EthernetShield_CS_SDCard,LOW);
-              SD.remove(TmpStr);
-              // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
-              digitalWrite(EthernetShield_CS_SDCard,HIGH);
-              digitalWrite(Ethernetshield_CS_W5100, LOW);
-              }
-            break;
-    
-          case CMD_FILE_GET_HTTP:
-            {
-            if(GetArgv(Command,TempString,2))
-              {
-              Led(BLUE);
-              strcpy(TmpStr,"&file=");
-              strcat(TmpStr,TempString);
-              xSendHTTPRequestStr(TmpStr);
-              }
-            else
-              Error=ERROR_02;            
-            break; 
-            }
-            
-          case CMD_FILE_SHOW:
-            {
-            if(GetArgv(Command,TmpStr,2))
-              {
-              Led(BLUE);
-              PrintTerminal(ProgmemString(Text_22));
-              strcat(TmpStr,".dat");
-              // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-              digitalWrite(Ethernetshield_CS_W5100, HIGH);
-              digitalWrite(EthernetShield_CS_SDCard,LOW);
-              File dataFile=SD.open(TmpStr);
-              if(dataFile) 
+            case CMD_FILE_LOG:
+              if(GetArgv(Command,TmpStr,2))
                 {
-                y=0;       
-                while(dataFile.available())
-                  {
-                  x=dataFile.read();
-                  if(isprint(x) && y<INPUT_BUFFER_SIZE)
-                    {
-                    TmpStr[y++]=x;
-                    }
-                  else
-                    {
-                    TmpStr[y]=0;
-                    y=0;
-                    PrintTerminal(TmpStr);
-                    }
-                  }
-                dataFile.close();
-                }  
-              else 
-                TransmitCode(command2event(CMD_ERROR,ERROR_03,0),VALUE_ALL);
-      
-              // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
-              digitalWrite(Ethernetshield_CS_W5100, LOW);
-              digitalWrite(EthernetShield_CS_SDCard,HIGH);
-              PrintTerminal(ProgmemString(Text_22));
-              }
-            break;
-            }
-    
-          case CMD_FILE_EXECUTE:
-            {
-            if(GetArgv(Command,TmpStr,2))
-              {
-              if(State_EventlistWrite!=0)
-                {
-                // Als er een EventlistWrite actief is, dan hoeft het commando niet uitgevoerd te worden. Alleen het event v moet
-                // worden gevuld zodat deze kan worden weggeschreven in de Eventlist.
-                v=command2event(Cmd,Par1,Par2);
-                Error=CommandError(v);
-                }
-
-              else // Commando uitvoeren heeft alleen zin er geen eventlistwrite commando actief is
-                {                
                 strcat(TmpStr,".dat");
-
-                // zet (eventueel) de extra logging aan
-                GetArgv(Command,TempString,3);
-                strcat(TempString,".dat");
-                TempString[14]=0; // voor het geval de gebruiker een te lange naam heeft ingegeven
-                strcpy(TempLogFile,TempString);
-                
+                strcpy(TempLogFile,TmpStr);
+                }
+              else
+                TempLogFile[0]=0;
+              break;
+            
+            case CMD_FILE_ERASE:      
+              if(GetArgv(Command,TmpStr,2))
+                {
+                strcat(TmpStr,".dat");
+  
+                // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+                digitalWrite(Ethernetshield_CS_W5100, HIGH);
+                digitalWrite(EthernetShield_CS_SDCard,LOW);
+                SD.remove(TmpStr);
+                // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
+                digitalWrite(EthernetShield_CS_SDCard,HIGH);
+                digitalWrite(Ethernetshield_CS_W5100, LOW);
+                }
+              break;
+      
+            case CMD_FILE_GET_HTTP:
+              {
+              if(GetArgv(Command,TempString,2))
+                {
+                Led(BLUE);
+                strcpy(TmpStr,"&file=");
+                strcat(TmpStr,TempString);
+                xSendHTTPRequestStr(TmpStr);
+                }
+              else
+                Error=ERROR_02;            
+              break; 
+              }
+              
+            case CMD_FILE_SHOW:
+              {
+              if(GetArgv(Command,TmpStr,2))
+                {
+                Led(BLUE);
+                PrintTerminal(ProgmemString(Text_22));
+                strcat(TmpStr,".dat");
                 // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
                 digitalWrite(Ethernetshield_CS_W5100, HIGH);
                 digitalWrite(EthernetShield_CS_SDCard,LOW);
@@ -941,405 +866,458 @@ void ExecuteLine(char *Line, byte Port)
                     {
                     x=dataFile.read();
                     if(isprint(x) && y<INPUT_BUFFER_SIZE)
+                      {
                       TmpStr[y++]=x;
+                      }
                     else
                       {
                       TmpStr[y]=0;
                       y=0;
-                      digitalWrite(EthernetShield_CS_SDCard,HIGH);
-                      digitalWrite(Ethernetshield_CS_W5100, LOW);
-                      ExecuteLine(TmpStr,VALUE_SOURCE_FILE);
-                      digitalWrite(EthernetShield_CS_SDCard,LOW);
-                      digitalWrite(Ethernetshield_CS_W5100, HIGH);
+                      PrintTerminal(TmpStr);
                       }
                     }
                   dataFile.close();
                   }  
-                else
-                  {
+                else 
                   TransmitCode(command2event(CMD_ERROR,ERROR_03,0),VALUE_ALL);
-                  }
+        
                 // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
-                digitalWrite(EthernetShield_CS_SDCard,HIGH);
                 digitalWrite(Ethernetshield_CS_W5100, LOW);
+                digitalWrite(EthernetShield_CS_SDCard,HIGH);
+                PrintTerminal(ProgmemString(Text_22));
                 }
+              break;
               }
-            TempLogFile[0]=0;
-            break;
-            }
-    
-          case CMD_EVENTGHOST_SERVER:
-            if(Par1==VALUE_AUTO)
-              { 
-              if(Par2==VALUE_ON)
-                S.AutoSaveEventGhostIP=VALUE_AUTO;  // Automatisch IP adres opslaan na ontvangst van een EG event of niet.
-              else
-                S.AutoSaveEventGhostIP=0;
-              }
-            else
+      
+            case CMD_FILE_EXECUTE:
               {
               if(GetArgv(Command,TmpStr,2))
-                if(!str2ip(TmpStr,S.EventGhostServer_IP))
-                  Error=ERROR_02;
-              }
-            SaveSettings();
-            break;
-            
-          case CMD_NODO_IP:
-            if(GetArgv(Command,TmpStr,2))
-              if(!str2ip(TmpStr,S.Nodo_IP))
-                Error=ERROR_02;
-            SaveSettings();
-            break;
-            
-          case CMD_CLIENT_IP:
-            if(GetArgv(Command,TmpStr,2))
-              if(!str2ip(TmpStr,S.Client_IP))
-                Error=ERROR_02;
-            SaveSettings();
-            break;
-            
-          case CMD_SUBNET:
-            if(GetArgv(Command,TmpStr,2))
-              if(!str2ip(TmpStr,S.Subnet))
-                Error=ERROR_02;
-            SaveSettings();
-            break;
-            
-          case CMD_DNS_SERVER:
-            if(GetArgv(Command,TmpStr,2))
-              if(!str2ip(TmpStr,S.DnsServer))
-                Error=ERROR_02;
-            SaveSettings();
-            break;
-            
-          case CMD_GATEWAY:
-            if(GetArgv(Command,TmpStr,2))
-              if(!str2ip(TmpStr,S.Gateway))
-                Error=ERROR_02;
-            SaveSettings();
-            break;
-            
-          case CMD_EVENTLIST_WRITE:
-            EventlistWriteLine=Par1;
-            State_EventlistWrite=1;
-            break;
-            
-          case CMD_SEND_KAKU_NEW:
-          case CMD_KAKU_NEW:
-            {
-            if(GetArgv(Command,TmpStr,2))
-              v=str2int(TmpStr);
-              
-            if(v>255)
-              {
-              v=(v&0x0fffffff) | (((unsigned long)SIGNAL_TYPE_NEWKAKU)<<28); //  // Niet Par1 want NewKAKU kan als enige op de Par1 plaats een 28-bit waarde hebben. Hoogste nible wissen en weer vullen met type NewKAKU        
-              v|=(Par2==VALUE_ON)<<4; // Stop on/off commando op juiste plek in NewKAKU code
-              }
-            else
-              {
-              v=command2event(Cmd,v,Par2);      // verwerk binnengekomen event.
-              Error=CommandError(v);
-              }
-            break;
-            }
-
-          case CMD_WIRED_THRESHOLD:
-            if(GetArgv(Command,TmpStr,3))
-              {
-              S.WiredInputThreshold[Par1-1]=str2AnalogInt(TmpStr);
-              SaveSettings();
-              }
-            break;                  
-            
-          case CMD_WIRED_ANALOG://het kan zijn dat de gebruiker dit intypt. Geen geldig commando of event
-            Error=ERROR_01;
-            break;
-
-          case CMD_WIRED_SMITTTRIGGER:
-            if(GetArgv(Command,TmpStr,3))
-              {
-              S.WiredInputSmittTrigger[Par1-1]=str2AnalogInt(TmpStr);
-              SaveSettings();
-              }
-            break;            
-
-          case CMD_PULSE_FORMULA: // "Pulse  <Time,Count>, <Formula> , <_A>, <_B> , <_C>"
-            {
-            Error=ERROR_02;
-
-            if(Par1==VALUE_TIME)
-              {
-              S.PulseTimeFormula=Par2;
-              if(GetArgv(Command,TmpStr,4))
                 {
-                S.PulseTime_A=str2int(TmpStr);
-                if(GetArgv(Command,TmpStr,5))
+                if(State_EventlistWrite!=0)
                   {
-                  S.PulseTime_B=str2AnalogInt(TmpStr);
-                  if(GetArgv(Command,TmpStr,6))
-                    {
-                    S.PulseTime_C=str2AnalogInt(TmpStr);
-                    if(S.PulseTime_B!=0 && S.PulseTime_A!=0)
-                      {
-                      SaveSettings();
-                      attachInterrupt(5,PulseCounterISR,FALLING); // IRQ-5 is specifiek voor Pen 18 (PIN_IR_RX_DATA) van de ATMega. ??? aanpassen voor de UNO
-                      Error=0;
-                      }
-                    }
+                  // Als er een EventlistWrite actief is, dan hoeft het commando niet uitgevoerd te worden. Alleen het event v moet
+                  // worden gevuld zodat deze kan worden weggeschreven in de Eventlist.
+                  v=command2event(Cmd,Par1,Par2);
+                  Error=CommandError(v);
                   }
-                }
-              }
-
-            if(Par1==VALUE_COUNT)
-              {
-              S.PulseCountFormula=Par2;
-              if(GetArgv(Command,TmpStr,4))
-                {
-                S.PulseCount_A=str2int(TmpStr);
-                if(GetArgv(Command,TmpStr,5))
-                  {
-                  S.PulseCount_B=str2AnalogInt(TmpStr);
-                  if(GetArgv(Command,TmpStr,6))
-                    {
-                    S.PulseCount_C=str2AnalogInt(TmpStr);
-                    if(S.PulseCount_B!=0 && S.PulseCount_A!=0)
-                      {
-                      SaveSettings();
-                      Error=0;
-                      }
-                    }
-                  }
-                }
-              }
-            break;
-            }
+  
+                else // Commando uitvoeren heeft alleen zin er geen eventlistwrite commando actief is
+                  {                
+                  strcat(TmpStr,".dat");
+  
+                  // zet (eventueel) de extra logging aan
+                  GetArgv(Command,TempString,3);
+                  strcat(TempString,".dat");
+                  TempString[14]=0; // voor het geval de gebruiker een te lange naam heeft ingegeven
+                  strcpy(TempLogFile,TempString);
                   
-          case CMD_WIRED_ANALOG_CALIBRATE:
-            {
-            int t;              
-            t=analogRead(PIN_WIRED_IN_1+Par1-1);
-            if(GetArgv(Command,TmpStr,4))
-              {
-              if(Par2==VALUE_HIGH)
-                {
-                S.WiredInput_Calibration_IH[Par1-1]=t;
-                S.WiredInput_Calibration_OH[Par1-1]=str2AnalogInt(TmpStr);
+                  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+                  digitalWrite(Ethernetshield_CS_W5100, HIGH);
+                  digitalWrite(EthernetShield_CS_SDCard,LOW);
+                  File dataFile=SD.open(TmpStr);
+                  if(dataFile) 
+                    {
+                    y=0;       
+                    while(dataFile.available())
+                      {
+                      x=dataFile.read();
+                      if(isprint(x) && y<INPUT_BUFFER_SIZE)
+                        TmpStr[y++]=x;
+                      else
+                        {
+                        TmpStr[y]=0;
+                        y=0;
+                        digitalWrite(EthernetShield_CS_SDCard,HIGH);
+                        digitalWrite(Ethernetshield_CS_W5100, LOW);
+                        ExecuteLine(TmpStr,VALUE_SOURCE_FILE);
+                        digitalWrite(EthernetShield_CS_SDCard,LOW);
+                        digitalWrite(Ethernetshield_CS_W5100, HIGH);
+                        }
+                      }
+                    dataFile.close();
+                    }  
+                  else
+                    {
+                    TransmitCode(command2event(CMD_ERROR,ERROR_03,0),VALUE_ALL);
+                    }
+                  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
+                  digitalWrite(EthernetShield_CS_SDCard,HIGH);
+                  digitalWrite(Ethernetshield_CS_W5100, LOW);
+                  }
                 }
-              if(Par2==VALUE_LOW)
-                {
-                S.WiredInput_Calibration_IL[Par1-1]=t;
-                S.WiredInput_Calibration_OL[Par1-1]=str2AnalogInt(TmpStr);
-                }
+              TempLogFile[0]=0;
+              break;
               }
-            v=0;
-            SaveSettings();
-            break;
-            }
-            
-          case CMD_RESET:
-            ResetFactory();
+      
+            case CMD_EVENTGHOST_SERVER:
+              if(Par1==VALUE_AUTO)
+                { 
+                if(Par2==VALUE_ON)
+                  S.AutoSaveEventGhostIP=VALUE_AUTO;  // Automatisch IP adres opslaan na ontvangst van een EG event of niet.
+                else
+                  S.AutoSaveEventGhostIP=0;
+                }
+              else
+                {
+                if(GetArgv(Command,TmpStr,2))
+                  if(!str2ip(TmpStr,S.EventGhostServer_IP))
+                    Error=ERROR_02;
+                }
+              SaveSettings();
+              break;
               
-          case CMD_RAWSIGNAL_SAVE:
-            PrintTerminal(ProgmemString(Text_07));
-            GetArgv(Command,TmpStr,2);
-            RawSignal.Key=str2int(TmpStr);
-            break;        
-
-          case CMD_EVENTLIST_SHOW:
-            PrintTerminal(ProgmemString(Text_22));
-            if(Par1==0)
+            case CMD_NODO_IP:
+              if(GetArgv(Command,TmpStr,2))
+                if(!str2ip(TmpStr,S.Nodo_IP))
+                  Error=ERROR_02;
+              SaveSettings();
+              break;
+              
+            case CMD_CLIENT_IP:
+              if(GetArgv(Command,TmpStr,2))
+                if(!str2ip(TmpStr,S.Client_IP))
+                  Error=ERROR_02;
+              SaveSettings();
+              break;
+              
+            case CMD_SUBNET:
+              if(GetArgv(Command,TmpStr,2))
+                if(!str2ip(TmpStr,S.Subnet))
+                  Error=ERROR_02;
+              SaveSettings();
+              break;
+              
+            case CMD_DNS_SERVER:
+              if(GetArgv(Command,TmpStr,2))
+                if(!str2ip(TmpStr,S.DnsServer))
+                  Error=ERROR_02;
+              SaveSettings();
+              break;
+              
+            case CMD_GATEWAY:
+              if(GetArgv(Command,TmpStr,2))
+                if(!str2ip(TmpStr,S.Gateway))
+                  Error=ERROR_02;
+              SaveSettings();
+              break;
+              
+            case CMD_EVENTLIST_WRITE:
+              EventlistWriteLine=Par1;
+              State_EventlistWrite=1;
+              break;
+              
+            case CMD_SEND_KAKU_NEW:
+            case CMD_KAKU_NEW:
               {
-              for(x=1;x<=EVENTLIST_MAX;x++)
+              if(GetArgv(Command,TmpStr,2))
+                v=str2int(TmpStr);
+                
+              if(v>255)
                 {
-                if(EventlistEntry2str(x,0,TmpStr, false))
-                  PrintTerminal(TmpStr);
+                v=(v&0x0fffffff) | (((unsigned long)SIGNAL_TYPE_NEWKAKU)<<28); //  // Niet Par1 want NewKAKU kan als enige op de Par1 plaats een 28-bit waarde hebben. Hoogste nible wissen en weer vullen met type NewKAKU        
+                v|=(Par2==VALUE_ON)<<4; // Stop on/off commando op juiste plek in NewKAKU code
                 }
-              }
-            else
-              {
-              EventlistEntry2str(Par1,0,TmpStr, false);
-              PrintTerminal(TmpStr);
-              }
-            PrintTerminal(ProgmemString(Text_22));
-            break;
-
-          case CMD_EVENTLIST_FILE:
-            Led(BLUE);
-            if(GetArgv(Command,TmpStr,2))
-              {
-              strcat(TmpStr,".dat");
-              if(!SaveEventlistSDCard(TmpStr))
-                TransmitCode(command2event(CMD_ERROR,ERROR_03,0),VALUE_ALL);
-              }
-            break;
-
-          case CMD_EVENTLIST_ERASE:
-            if(Par1==0)
-              {
-              Led(BLUE);
-              for(x=1;x<=EVENTLIST_MAX;x++)
-                Eventlist_Write(x,0L,0L);
-              Led(RED);
-              }
-            else
-              Eventlist_Write(Par1,0L,0L);
-
-            break;        
-
-          case CMD_FILE_LIST:
-            if(!FileList())
-              Error=ERROR_03;
-            break;
-
-          case CMD_FILE_WRITE:
-            if(GetArgv(Command,TmpStr,2))
-              {
-              strcat(TmpStr,".dat");
-              strcpy(TempLogFile,TmpStr);
-
-              // Zet de Nodo tijdelijk in de Hold&Queue modus
-              Hold=CMD_DELAY;
-              HoldTimer=60;
-              FileWriteMode=60;
-              }
-            else
-              Error=ERROR_02;
-            break;
-
-          case CMD_HTTP_REQUEST:
-            // zoek in de regel waar de string met het http request begint.
-            x=StringFind(Line,cmd2str(CMD_HTTP_REQUEST))+strlen(cmd2str(CMD_HTTP_REQUEST));
-            while(Line[x]==32)x++;
-            strcpy(S.HTTPRequest,&Line[0]+x);
-            SaveSettings(); 
-            break;
-
-          case CMD_SEND:
-            x=StringFind(Line,cmd2str(CMD_SEND))+strlen(cmd2str(CMD_SEND));
-            while(Line[x]!=';' && Line[x]!=0)x++;
-            x++;
-            if(!SendLineRF(&Line[0]+x,Par1))
-              RaiseError(ERROR_12);    
-            PosLine=L+1; // ga direct naar einde van de regel. Es is verder niets meer uit te voeren.
-            break;
-
-          case CMD_PASSWORD:
-            {
-            if(GetArgv(Command,S.Password,2))
-              SaveSettings();
-            break;
-            }  
-
-          case CMD_ID:
-            {
-            if(GetArgv(Command,S.ID,2))
-              SaveSettings();
-            break;
-            }  
-
-          case CMD_PORT_SERVER:
-            {
-            if(GetArgv(Command,TmpStr,2))
-              {
-              S.PortServer=str2int(TmpStr);
-              SaveSettings();
-              }
-            break;
-            }  
-
-          case CMD_PORT_CLIENT:
-            {
-            if(GetArgv(Command,TmpStr,2))
-              {
-              S.PortClient=str2int(TmpStr);
-              SaveSettings();
-              }
-            break;
-            }  
-
-          case CMD_SEND_KAKU:
-          case CMD_KAKU:
-            {
-            if(GetArgv(Command,TmpStr,2))
-              {
-              byte z=0;
-              Par1=HA2address(TmpStr,&z); // Parameter-1 bevat [A1..P16]. Omzetten naar absolute waarde. z=groep commando
-              if(GetArgv(Command,TmpStr,3))
+              else
                 {
-                Par2=(str2int(TmpStr)==VALUE_ON) | (z<<1); // Parameter-2 bevat [On,Off]. Omzetten naar 1,0. tevens op bit-2 het groepcommando zetten.
-                v=command2event(Cmd,Par1,Par2);
+                v=command2event(Cmd,v,Par2);      // verwerk binnengekomen event.
                 Error=CommandError(v);
                 }
+              break;
               }
-            break;
-            }
-            
-          case CMD_BREAK_ON_VAR_EQU:
-          case CMD_BREAK_ON_VAR_LESS:
-          case CMD_BREAK_ON_VAR_MORE:
-          case CMD_BREAK_ON_VAR_NEQU:
-          case CMD_VARIABLE_DEC:
-          case CMD_VARIABLE_SET:
-          case CMD_VARIABLE_INC:
-          case CMD_VARIABLE_EVENT:
-            if(GetArgv(Command,TmpStr,3))        
+  
+            case CMD_WIRED_THRESHOLD:
+              if(GetArgv(Command,TmpStr,3))
+                {
+                S.WiredInputThreshold[Par1-1]=str2AnalogInt(TmpStr);
+                SaveSettings();
+                }
+              break;                  
+              
+            case CMD_WIRED_ANALOG://het kan zijn dat de gebruiker dit intypt. Geen geldig commando of event
+              Error=ERROR_01;
+              break;
+  
+            case CMD_WIRED_SMITTTRIGGER:
+              if(GetArgv(Command,TmpStr,3))
+                {
+                S.WiredInputSmittTrigger[Par1-1]=str2AnalogInt(TmpStr);
+                SaveSettings();
+                }
+              break;            
+  
+            case CMD_PULSE_FORMULA: // "Pulse  <Time,Count>, <Formula> , <_A>, <_B> , <_C>"
               {
-              v=AnalogInt2event(str2AnalogInt(TmpStr), Par1, Cmd);
-              Error=CommandError(v);
+              Error=ERROR_02;
+  
+              if(Par1==VALUE_TIME)
+                {
+                S.PulseTimeFormula=Par2;
+                if(GetArgv(Command,TmpStr,4))
+                  {
+                  S.PulseTime_A=str2int(TmpStr);
+                  if(GetArgv(Command,TmpStr,5))
+                    {
+                    S.PulseTime_B=str2AnalogInt(TmpStr);
+                    if(GetArgv(Command,TmpStr,6))
+                      {
+                      S.PulseTime_C=str2AnalogInt(TmpStr);
+                      if(S.PulseTime_B!=0 && S.PulseTime_A!=0)
+                        {
+                        SaveSettings();
+                        attachInterrupt(5,PulseCounterISR,FALLING); // IRQ-5 is specifiek voor Pen 18 (PIN_IR_RX_DATA) van de ATMega. ??? aanpassen voor de UNO
+                        Error=0;
+                        }
+                      }
+                    }
+                  }
+                }
+  
+              if(Par1==VALUE_COUNT)
+                {
+                S.PulseCountFormula=Par2;
+                if(GetArgv(Command,TmpStr,4))
+                  {
+                  S.PulseCount_A=str2int(TmpStr);
+                  if(GetArgv(Command,TmpStr,5))
+                    {
+                    S.PulseCount_B=str2AnalogInt(TmpStr);
+                    if(GetArgv(Command,TmpStr,6))
+                      {
+                      S.PulseCount_C=str2AnalogInt(TmpStr);
+                      if(S.PulseCount_B!=0 && S.PulseCount_A!=0)
+                        {
+                        SaveSettings();
+                        Error=0;
+                        }
+                      }
+                    }
+                  }
+                }
+              break;
               }
-            break;
-            
-          default:
-            {              
-            // standaard commando volgens gewone syntax
-            v=command2event(Cmd,Par1,Par2);
-            Error=CommandError(v);
+                    
+            case CMD_WIRED_ANALOG_CALIBRATE:
+              {
+              int t;              
+              t=analogRead(PIN_WIRED_IN_1+Par1-1);
+              if(GetArgv(Command,TmpStr,4))
+                {
+                if(Par2==VALUE_HIGH)
+                  {
+                  S.WiredInput_Calibration_IH[Par1-1]=t;
+                  S.WiredInput_Calibration_OH[Par1-1]=str2AnalogInt(TmpStr);
+                  }
+                if(Par2==VALUE_LOW)
+                  {
+                  S.WiredInput_Calibration_IL[Par1-1]=t;
+                  S.WiredInput_Calibration_OL[Par1-1]=str2AnalogInt(TmpStr);
+                  }
+                }
+              v=0;
+              SaveSettings();
+              break;
+              }
+              
+            case CMD_RESET:
+              ResetFactory();
+                
+            case CMD_RAWSIGNAL_SAVE:
+              PrintTerminal(ProgmemString(Text_07));
+              GetArgv(Command,TmpStr,2);
+              RawSignal.Key=str2int(TmpStr);
+              break;        
+  
+            case CMD_EVENTLIST_SHOW:
+              PrintTerminal(ProgmemString(Text_22));
+              if(Par1==0)
+                {
+                for(x=1;x<=EVENTLIST_MAX;x++)
+                  {
+                  if(EventlistEntry2str(x,0,TmpStr, false))
+                    PrintTerminal(TmpStr);
+                  }
+                }
+              else
+                {
+                EventlistEntry2str(Par1,0,TmpStr, false);
+                PrintTerminal(TmpStr);
+                }
+              PrintTerminal(ProgmemString(Text_22));
+              break;
+  
+            case CMD_EVENTLIST_FILE:
+              Led(BLUE);
+              if(GetArgv(Command,TmpStr,2))
+                {
+                strcat(TmpStr,".dat");
+                if(!SaveEventlistSDCard(TmpStr))
+                  TransmitCode(command2event(CMD_ERROR,ERROR_03,0),VALUE_ALL);// geen RaiseError() anders weer poging om te loggen naar SDCard ==> oneindige loop
+                }
+              break;
+  
+            case CMD_EVENTLIST_ERASE:
+              if(Par1==0)
+                {
+                Led(BLUE);
+                for(x=1;x<=EVENTLIST_MAX;x++)
+                  Eventlist_Write(x,0L,0L);
+                Led(RED);
+                }
+              else
+                Eventlist_Write(Par1,0L,0L);
+  
+              break;        
+  
+            case CMD_FILE_LIST:
+              if(!FileList())
+                Error=ERROR_03;
+              break;
+  
+            case CMD_FILE_WRITE:
+              if(GetArgv(Command,TmpStr,2))
+                {
+                strcat(TmpStr,".dat");
+                strcpy(TempLogFile,TmpStr);
+  
+                // Zet de Nodo tijdelijk in de Hold&Queue modus
+                Hold=CMD_DELAY;
+                HoldTimer=60;
+                FileWriteMode=60;
+                }
+              else
+                Error=ERROR_02;
+              break;
+  
+            case CMD_HTTP_REQUEST:
+              // zoek in de regel waar de string met het http request begint.
+              x=StringFind(Line,cmd2str(CMD_HTTP_REQUEST))+strlen(cmd2str(CMD_HTTP_REQUEST));
+              while(Line[x]==32)x++;
+              strcpy(S.HTTPRequest,&Line[0]+x);
+              SaveSettings(); 
+              break;
+  
+            case CMD_SEND:
+              x=StringFind(Line,cmd2str(CMD_SEND))+strlen(cmd2str(CMD_SEND));
+              while(Line[x]!=';' && Line[x]!=0)x++;
+              x++;
+              if(!SendLineRF(&Line[0]+x,Par1))
+                Error=ERROR_12;    
+              PosLine=L+1; // ga direct naar einde van de regel. Es is verder niets meer uit te voeren.
+              break;
+  
+            case CMD_PASSWORD:
+              {
+              if(GetArgv(Command,S.Password,2))
+                SaveSettings();
+              break;
+              }  
+  
+            case CMD_ID:
+              {
+              if(GetArgv(Command,S.ID,2))
+                SaveSettings();
+              break;
+              }  
+  
+            case CMD_PORT_SERVER:
+              {
+              if(GetArgv(Command,TmpStr,2))
+                {
+                S.PortServer=str2int(TmpStr);
+                SaveSettings();
+                }
+              break;
+              }  
+  
+            case CMD_PORT_CLIENT:
+              {
+              if(GetArgv(Command,TmpStr,2))
+                {
+                S.PortClient=str2int(TmpStr);
+                SaveSettings();
+                }
+              break;
+              }  
+  
+            case CMD_SEND_KAKU:
+            case CMD_KAKU:
+              {
+              if(GetArgv(Command,TmpStr,2))
+                {
+                byte z=0;
+                Par1=HA2address(TmpStr,&z); // Parameter-1 bevat [A1..P16]. Omzetten naar absolute waarde. z=groep commando
+                if(GetArgv(Command,TmpStr,3))
+                  {
+                  Par2=(str2int(TmpStr)==VALUE_ON) | (z<<1); // Parameter-2 bevat [On,Off]. Omzetten naar 1,0. tevens op bit-2 het groepcommando zetten.
+                  v=command2event(Cmd,Par1,Par2);
+                  Error=CommandError(v);
+                  }
+                }
+              break;
+              }
+              
+            case CMD_BREAK_ON_VAR_EQU:
+            case CMD_BREAK_ON_VAR_LESS:
+            case CMD_BREAK_ON_VAR_MORE:
+            case CMD_BREAK_ON_VAR_NEQU:
+            case CMD_VARIABLE_DEC:
+            case CMD_VARIABLE_SET:
+            case CMD_VARIABLE_INC:
+            case CMD_VARIABLE_EVENT:
+              if(GetArgv(Command,TmpStr,3))        
+                v=AnalogInt2event(str2AnalogInt(TmpStr), Par1, Cmd);
+              break;
+              
+            default:
+              {              
+              // standaard commando volgens gewone syntax
+              v=command2event(Cmd,Par1,Par2);
+              }
             }
           }
-        }
-
-      if(v && Error==0)
-        {
-        if(State_EventlistWrite==0)// Gewoon uitvoeren
+          
+        if(v && Error==0)
           {
-          ProcessEvent(v,VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
-          continue;
-          }
-  
-        if(State_EventlistWrite==2)
-          {
-          a=v;
-          if(!Eventlist_Write(EventlistWriteLine,event,a))
+          if(State_EventlistWrite==0)// Gewoon uitvoeren
             {
-            RaiseError(ERROR_06);    
-            return;
+            ProcessEvent(v,VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
+            continue;
             }
-          State_EventlistWrite=0;
-          continue;
+    
+          if(State_EventlistWrite==2)
+            {
+            a=v;
+            if(!Eventlist_Write(EventlistWriteLine,event,a))
+              {
+              RaiseError(ERROR_06);    
+              return;
+              }
+            State_EventlistWrite=0;
+            continue;
+            }
+    
+          if(State_EventlistWrite==1)
+            {
+            event=v;
+            State_EventlistWrite=2;
+            }
           }
-  
-        if(State_EventlistWrite==1)
+          
+        if(Error) // er heeft zich een fout voorgedaan
           {
-          event=v;
-          State_EventlistWrite=2;
+          strcpy(TmpStr,Command);
+          strcat(TmpStr, " ?");
+          PrintTerminal(TmpStr);
+          RaiseError(Error);
+          Line[0]=0;
           }
         }
-
-      if(Error) // er heeft zich een fout voorgedaan
-        {
-        strcpy(TmpStr,Command);
-        strcat(TmpStr, " ?");
-        PrintTerminal(TmpStr);
-        RaiseError(Error);
-        Line[0]=0;
-        }          
       }
-
+      
     // printbare tekens toevoegen aan commando zolang er nog ruimte is in de string
     if(isprint(x) && x!=';' && PosCommand<MaxCommandLength)
       Command[PosCommand++]=x;      
-    }
+    }    
   }
   
   

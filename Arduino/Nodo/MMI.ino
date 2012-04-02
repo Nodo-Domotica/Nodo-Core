@@ -249,7 +249,6 @@ char* Event2str(unsigned long Code)
         break;
   
       // Par1 als tekst en par2 als tekst
-      case CMD_TRANSMIT_IP:
       case CMD_COMMAND_WILDCARD:
         P1=P_TEXT;
         P2=P_TEXT;
@@ -267,6 +266,7 @@ char* Event2str(unsigned long Code)
   
       // Par1 als tekst en par2 niet
       case CMD_SEND_EVENT:
+      case CMD_TRANSMIT_IP:
       case CMD_ERROR:
       case CMD_TRACE:
       case CMD_DLS_EVENT:
