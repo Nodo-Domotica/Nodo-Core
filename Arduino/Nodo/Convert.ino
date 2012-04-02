@@ -281,10 +281,10 @@ int str2AnalogInt(char* string)
   {
   byte x,c;
   int dot=100;
-  int result=0;           // resultaatwaarde achter de decimale punt
+  long result=0;           // resultaatwaarde achter de decimale punt
   boolean negative=false;  // vlag staat als het sign teken is gevonden is.
   byte digit=0;
-  
+
   for(byte pos=0; pos<=strlen(string); pos++)
     {
     c=string[pos];
@@ -308,15 +308,14 @@ int str2AnalogInt(char* string)
         dot=dot/10;
         }
       }
+    if(result>10230)
+      return 0;
     }
-        
-  if(result>10230)
-    return 0;
   
   if(negative)
     result=-result;
 
-  return result;
+  return (int)result;
   }
 
 

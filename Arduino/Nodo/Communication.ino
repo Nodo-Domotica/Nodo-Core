@@ -161,11 +161,18 @@ boolean SendHTTPRequestResponse(char* Response)
  \*******************************************************************************************************/
 boolean SendHTTPRequestEvent(unsigned long event)
   {
+  byte x;
   boolean r;
   char* EventString=(char*)malloc(INPUT_BUFFER_SIZE+1);
 
   strcpy(EventString,"&unit=");
-  strcat(EventString,int2str((event>>24)&0x0f));
+
+  // Als het een onbekend type signaal is, dan unit=0
+  if(((event>>28)&0xf)==((unsigned long)(SIGNAL_TYPE_UNKNOWN)))
+    x=0;
+  else
+    x=(event>>24)&0x0f;
+  strcat(EventString,int2str(x));
   strcat(EventString,"&event=");
   strcat(EventString,Event2str(event));
   r=xSendHTTPRequestStr(EventString);
