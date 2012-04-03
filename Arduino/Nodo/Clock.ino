@@ -69,7 +69,7 @@ int rtc[7];
  * Revision 01, 09-01-2010, P.K.Tonkes@gmail.com
  \*********************************************************************************************/
 
-void SimulateDay(byte days) 
+void SimulateDay(void) 
   {
   unsigned long SimulatedClockEvent, Event, Action;
   
@@ -79,30 +79,25 @@ void SimulateDay(byte days)
   DaylightPrevious=4;// vullen met 4, dan wordt in de zomertijd 4 niet tweemaal per etmaal weergegeven
   
   PrintTerminal(ProgmemString(Text_22));
-  for(int d=1;d<=days;d++)
+  for(int m=0;m<=1439;m++)  // loop alle minuten van één etmaal door
     {
-    for(int m=0;m<=1439;m++)  // loop alle minuten van één etmaal door
-      {
-      // Simuleer alle minuten van een etmaal
-      if(Time.Minutes==60){Time.Minutes=0;Time.Hour++;}  // roll-over naar volgende uur
-      if(Time.Hour==24)   {Time.Hour=0;Time.Day++;}      // roll-over naar volgende etmaal
-      if(Time.Day==8)     {Time.Day=1;}                  // roll-over naar volgende week
+    // Simuleer alle minuten van een etmaal
+    if(Time.Minutes==60){Time.Minutes=0;Time.Hour++;}  // roll-over naar volgende uur
 
-      // Kijk of er op het gesimuleerde tijdstip een hit is in de EventList
-      SimulatedClockEvent=command2event(CMD_CLOCK_EVENT_ALL+Time.Day,Time.Hour,Time.Minutes);
-      if(CheckEventlist(SimulatedClockEvent,VALUE_SOURCE_CLOCK)) // kijk of er een hit is in de EventList
-        ProcessEvent(SimulatedClockEvent,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);
-        
-      // Kijk of er op het gesimuleerde tijdstip een zonsondergang of zonsopkomst wisseling heeft voorgedaan
-      SetDaylight(); // Zet in de struct ook de Time.DayLight status behorend bij de tijd
-      if(Time.Daylight!=DaylightPrevious)// er heeft een zonsondergang of zonsopkomst wisseling voorgedaan
-        {
-        SimulatedClockEvent=command2event(CMD_CLOCK_EVENT_DAYLIGHT,Time.Daylight,0L);
-        DaylightPrevious=Time.Daylight;
-        ProcessEvent(SimulatedClockEvent,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);
-        }
-      Time.Minutes++;
+    // Kijk of er op het gesimuleerde tijdstip een hit is in de EventList
+    SimulatedClockEvent=command2event(CMD_CLOCK_EVENT_ALL+Time.Day,Time.Hour,Time.Minutes);
+    if(CheckEventlist(SimulatedClockEvent,VALUE_SOURCE_CLOCK)) // kijk of er een hit is in de EventList
+      ProcessEvent(SimulatedClockEvent,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);
+      
+    // Kijk of er op het gesimuleerde tijdstip een zonsondergang of zonsopkomst wisseling heeft voorgedaan
+    SetDaylight(); // Zet in de struct ook de Time.DayLight status behorend bij de tijd
+    if(Time.Daylight!=DaylightPrevious)// er heeft een zonsondergang of zonsopkomst wisseling voorgedaan
+      {
+      SimulatedClockEvent=command2event(CMD_CLOCK_EVENT_DAYLIGHT,Time.Daylight,0L);
+      DaylightPrevious=Time.Daylight;
+      ProcessEvent(SimulatedClockEvent,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);
       }
+    Time.Minutes++;
     }
 
   PrintTerminal(ProgmemString(Text_22));
@@ -189,7 +184,6 @@ unsigned long ClockRead(void)
     S.DaylightSaving=Time.DaylightSaving;
     SaveSettings();
     ClockSet();// verzet de RTC klok
-    TransmitCode(command2event(CMD_DLS_EVENT,S.DaylightSaving,0),VALUE_ALL);
     }
       
   return ((unsigned long)(SIGNAL_TYPE_NODO))<<28 |

@@ -64,10 +64,6 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       *Par1=S.Unit;
       break;        
 
-    case CMD_DLS_EVENT:
-      *Par1=S.DaylightSaving?VALUE_ON:VALUE_OFF;
-      break;
-
     case CMD_SENDBUSY:
       *Par1=S.SendBusy;
       break;
@@ -1063,7 +1059,8 @@ void Led(byte Color)
 void PulseCounterISR()
    {
    // in deze interrupt service routine staat millis() stil. Dit is echter geen bezwaar voor de meting.
-   PulseTime=millis()-PulseTimePrevious;
+   PulseTime=1234;
+   //PulseTime=millis()-PulseTimePrevious;
    PulseTimePrevious=millis();
    PulseCount++;
    }     
@@ -1074,6 +1071,7 @@ boolean FileList(void)
   File root;
   File entry;
 
+  PrintTerminal(ProgmemString(Text_22));
   digitalWrite(Ethernetshield_CS_W5100, HIGH);
   digitalWrite(EthernetShield_CS_SDCard,LOW);
 
@@ -1101,6 +1099,7 @@ boolean FileList(void)
     }
   digitalWrite(EthernetShield_CS_SDCard,HIGH);
   digitalWrite(Ethernetshield_CS_W5100, LOW);
+  PrintTerminal(ProgmemString(Text_22));
   
   return x;
   }

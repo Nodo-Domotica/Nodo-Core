@@ -1,18 +1,12 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- Issue 400:	WiredSmittTrigger accepteert ongeldige par1
-- Issue 381:	Dinsdag wordt donderdag genoemd!
-- Issue 382:	ClockSetYear accepteert foute waardes
-- Issue 398:	OutputRf - 2e parameter doet niets!
-- Issue 399:	OutputIP
-- Issue 385:	Timer event wildcard
-- Issue 379:	WiredPullup commando werkt niet???
-- Issue 384:	SimulateDay parameter onjuist
-- Issue 387:	Variableset parameter checking
-- Issue 386:	WiredIn event accepteert toch default par2
-- Issue 378:	Hex events met unitnummer ongelijk aan nul
+- Issue 398:	OutputRf - 2e parameter doet niets.
+- Issue 405:	ID werkt niet meer.
 - Issue 375:	Wildcard in WiredOut
+- Issue 406:	DaylightSaving event wordt niet gegenereerd
+- Issue 384:    SimulateDay parameter onjuist
+- Issue 392:	filelist output afbakenen
 
 Known Errors / ToDo:
 - Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue testen.

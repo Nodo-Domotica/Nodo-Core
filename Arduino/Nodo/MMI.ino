@@ -143,7 +143,7 @@ void PrintWelcome(void)
   // Geef datum en tijd weer.
   if(bitRead(HW_Config,HW_CLOCK))
     {
-    sprintf(TempString,"%s %s",DateTimeString(), cmd2str(Time.DaylightSaving?CMD_DLS_EVENT:0));
+    sprintf(TempString,"%s %s",DateTimeString(), cmd2str(Time.DaylightSaving?VALUE_DLS:0));
     PrintTerminal(TempString);
     }
 
@@ -269,7 +269,6 @@ char* Event2str(unsigned long Code)
       case CMD_TRANSMIT_IP:
       case CMD_ERROR:
       case CMD_TRACE:
-      case CMD_DLS_EVENT:
       case CMD_BUSY:
       case CMD_SENDBUSY:
       case CMD_WAITBUSY:
