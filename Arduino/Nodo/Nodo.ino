@@ -206,7 +206,7 @@ prog_char PROGMEM Cmd_116[]="Busy";
 prog_char PROGMEM Cmd_117[]="";
 prog_char PROGMEM Cmd_118[]="Error";
 prog_char PROGMEM Cmd_119[]="Boot";
-prog_char PROGMEM Cmd_120[]="DaylightSaving";
+prog_char PROGMEM Cmd_120[]="";
 prog_char PROGMEM Cmd_121[]="";
 prog_char PROGMEM Cmd_122[]="";
 prog_char PROGMEM Cmd_123[]="";
@@ -264,7 +264,7 @@ prog_char PROGMEM Cmd_172[]="Source";
 prog_char PROGMEM Cmd_173[]="RF2IR";
 prog_char PROGMEM Cmd_174[]="IR2RF";
 prog_char PROGMEM Cmd_175[]="All";
-prog_char PROGMEM Cmd_176[]="";
+prog_char PROGMEM Cmd_176[]="DaylightSaving";
 prog_char PROGMEM Cmd_177[]="";
 prog_char PROGMEM Cmd_178[]="Queue";
 prog_char PROGMEM Cmd_179[]="Auto";
@@ -428,7 +428,7 @@ prog_char PROGMEM Cmd_213[]="";
 #define CMD_RES117                     117
 #define CMD_ERROR                      118
 #define CMD_BOOT_EVENT                 119
-#define CMD_DLS_EVENT                  120
+#define CMD_RES_EVENT_120              120
 #define CMD_RES_EVENT_121              121
 #define CMD_RES_EVENT_122              122
 #define CMD_RES_EVENT_123              123
@@ -488,7 +488,7 @@ prog_char PROGMEM Cmd_213[]="";
 #define VALUE_RF_2_IR                  173
 #define VALUE_IR_2_RF                  174
 #define VALUE_ALL                      175 // Deze waarde MOET groter dan 16 zijn.
-#define VALUE_RES176                   176
+#define VALUE_DLS                      176
 #define VALUE_RES177                   177
 #define VALUE_SOURCE_QUEUE             178
 #define VALUE_AUTO                     179
@@ -706,14 +706,14 @@ int TerminalConnected=0;                                    // Vlag geeft aan of
 boolean ConfirmHTTP=false;                                  // Als true, dan wordt een output naar Serial/Telnet eveneens per regel verzonden als HTTP-requenst  
 boolean TemporyEventGhostError=false;                       // Vlag om tijdelijk evetghost verzending stil te leggen na een communicatie probleem
 int TerminalLocked=1;                                       // 0 als als gebruiker van een telnet terminalsessie juiste wachtwoord heeft ingetoetst
-volatile unsigned long PulseCount=0;                        // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
-volatile unsigned long PulseTime=0;                         // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
-volatile unsigned long PulseTimePrevious=0;                 // Tijdsduur tussen twee pulsen teller in milliseconden: vorige meting
 char TempLogFile[13];                                       // Naam van de Logfile waar (naast de standaard logging) de verwerking in gelogd moet worden.
 int FileWriteMode=0;                                        // Het aantal seconden dat deze timer ingesteld staat zal er geen verwerking plaats vinden van TerminalInvoer. Iedere seconde --.
 char InputBuffer_Serial[INPUT_BUFFER_SIZE+1];               // Buffer voor input Seriele data
 char InputBuffer_Terminal[INPUT_BUFFER_SIZE+1];             // Buffer voor input terminal verbinding Telnes sessie
 unsigned long HW_Config=0;                                  // Hardware configuratie zoals gedetecteerd door de Nodo. 
+volatile unsigned long PulseCount=0;                        // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
+volatile unsigned long PulseTime=0;                         // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
+volatile unsigned long PulseTimePrevious=0;                 // Tijdsduur tussen twee pulsen teller in milliseconden: vorige meting
 
 // boolean EthernetEnabled = false;                            // Vlag die aangeeft of er een Ethernetverbinding is.
 
