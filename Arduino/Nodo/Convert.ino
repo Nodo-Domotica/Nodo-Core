@@ -40,21 +40,14 @@ unsigned long command2event(int Command, byte Par1, byte Par2)
 
 
 /*********************************************************************************************\
- * String mag HEX, DEC of een NODO commando zijn.
+ * String mag HEX, DEC
  * Deze routine converteert uit een string een unsigned long waarde.
  * De string moet beginnen met het eerste teken(dus geen voorloop spaties).
  * bij ongeldige tekens in de string wordt een false terug gegeven.
  \*********************************************************************************************/
 unsigned long str2int(char *string)
   {
-  int x;
-  
-  x=str2cmd(string);
-  if(x>0)
-    return x;
-
-  return(strtol(string,NULL,0));
-  
+  return(strtol(string,NULL,0));  
   }
 
 /**********************************************************************************************\

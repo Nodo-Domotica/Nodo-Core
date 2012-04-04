@@ -1059,10 +1059,9 @@ void Led(byte Color)
 void PulseCounterISR()
    {
    // in deze interrupt service routine staat millis() stil. Dit is echter geen bezwaar voor de meting.
-   PulseTime=1234;
-   //PulseTime=millis()-PulseTimePrevious;
+   PulseTimeMillis=millis()-PulseTimePrevious;
    PulseTimePrevious=millis();
-   PulseCount++;
+   PulseCount++;   
    }     
 
 boolean FileList(void)

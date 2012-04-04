@@ -491,6 +491,9 @@ boolean SaveRawSignal(byte Key)
   // maak een .raw file aan met als naam de key die door de gebruiker is gekozen  
   sprintf(TempString,"%s/%s.raw",ProgmemString(Text_27),int2str(Key));  
   SD.remove(TempString); // eventueel bestaande file wissen, anders wordt de data toegevoegd.    
+  sprintf(TempString,"%s/%s.key",ProgmemString(Text_28),int2str(Key));  
+  SD.remove(TempString); // eventueel bestaande file wissen, anders wordt de data toegevoegd.    
+
   File KeyFile = SD.open(TempString, FILE_WRITE);
   if(KeyFile) 
     {
@@ -541,10 +544,11 @@ boolean SaveRawSignal(byte Key)
  * Haal de RawSignal pulsen op uit het bestand <key>.raw en sla de reeks op in de 
  * RawSignal buffer, zodat deze vervolgens weer kan wordn gebruikt om te verzenden.
  \*********************************************************************************************/
-void RawSignalGet(int Key)
+boolean RawSignalGet(int Key)
   {
   int x,y,z;
-
+  boolean error=false;
+  
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
   digitalWrite(Ethernetshield_CS_W5100, HIGH);
   digitalWrite(EthernetShield_CS_SDCard,LOW);      
@@ -572,9 +576,14 @@ void RawSignalGet(int Key)
     dataFile.close();
     RawSignal.Number=z-1;
     }
+  else
+    error=true;
+    
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
   digitalWrite(Ethernetshield_CS_W5100, LOW);
   digitalWrite(EthernetShield_CS_SDCard,HIGH);
+
+  return error;
   }
 
 

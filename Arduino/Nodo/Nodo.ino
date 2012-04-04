@@ -640,6 +640,10 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 
 
 //****************************************************************************************************************************************
+//@1
+unsigned long PulseCount;                        // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
+unsigned long PulseTimeMillis;                   // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
+unsigned long PulseTimePrevious;                 // Tijdsduur tussen twee pulsen teller in milliseconden: vorige meting
 
 struct Settings
   {
@@ -657,7 +661,7 @@ struct Settings
   int     PulseCount_B;
   byte    WiredInputPullUp[WIRED_PORTS];
   byte    AnalyseSharpness;
-  int     AnalyseTimeOut;
+  unsigned int AnalyseTimeOut;
   int     UserVar[USER_VARIABLES_MAX];
   byte    Unit;
   byte    TransmitIR;
@@ -711,9 +715,6 @@ int FileWriteMode=0;                                        // Het aantal second
 char InputBuffer_Serial[INPUT_BUFFER_SIZE+1];               // Buffer voor input Seriele data
 char InputBuffer_Terminal[INPUT_BUFFER_SIZE+1];             // Buffer voor input terminal verbinding Telnes sessie
 unsigned long HW_Config=0;                                  // Hardware configuratie zoals gedetecteerd door de Nodo. 
-volatile unsigned long PulseCount=0;                        // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
-volatile unsigned long PulseTime=0;                         // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
-volatile unsigned long PulseTimePrevious=0;                 // Tijdsduur tussen twee pulsen teller in milliseconden: vorige meting
 
 // boolean EthernetEnabled = false;                            // Vlag die aangeeft of er een Ethernetverbinding is.
 
