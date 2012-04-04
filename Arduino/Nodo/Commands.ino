@@ -56,8 +56,8 @@ byte CommandError(unsigned long Content)
     //test; geen, altijd goed
     case CMD_BOOT_EVENT:
     case CMD_RESET:
-    case CMD_RAWSIGNAL_SAVE:
     case CMD_RAWSIGNAL_SEND:
+    case CMD_RAWSIGNAL:
     case CMD_SIMULATE_DAY:
     case CMD_FILE_EXECUTE:
     case CMD_ERROR:
@@ -79,7 +79,6 @@ byte CommandError(unsigned long Content)
     case CMD_SOUND: 
     case CMD_USEREVENT:
     case CMD_SEND_USEREVENT:
-    case CMD_ANALYSE_SETTINGS:
     case CMD_KAKU:
     case CMD_SEND_KAKU:
     case CMD_RECEIVE_LINE:
@@ -104,6 +103,9 @@ byte CommandError(unsigned long Content)
       if(Par1>TIMER_MAX)return ERROR_02;
       return false;
 
+    case CMD_RAWSIGNAL_SAVE:
+      if(Par1<1)return ERROR_02;
+
     // test:Par1 binnen bereik maximaal beschikbare variabelen
     case CMD_VARIABLE_INC: 
     case CMD_VARIABLE_DEC: 
@@ -114,6 +116,10 @@ byte CommandError(unsigned long Content)
     case CMD_BREAK_ON_VAR_EQU:
       Par2PortAnalog(Par1, Par2, &x, &y);
       if(x<1 || x>USER_VARIABLES_MAX)return ERROR_02;
+      return false;
+
+    case CMD_ANALYSE_SETTINGS:
+      if(x<1 || x>50)return ERROR_02;
       return false;
 
     case CMD_VARIABLE_SET:
@@ -351,9 +357,9 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     case CMD_PULSE_VARIABLE:
       a=0;
       if(S.Debug==VALUE_ON)
-        {
-        sprintf(TempString,"PulseCount=%d, PulseTime=%d", PulseCount, PulseTime);
-        PrintTerminal(TempString);
+        {        
+        Serial.print("*** debug: PulseTimeMillis=");Serial.print(PulseTimeMillis,DEC); //??? Debug
+        Serial.print("PulseCount=");Serial.println(PulseCount,DEC); //??? Debug
         }
 
       //Formule-1: Variable = ( Pulse / A ) * B + C
@@ -376,11 +382,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         
       if(Par2==VALUE_TIME)
         {
-        a=PulseTime;
+        a=PulseTimeMillis;
         if(S.PulseTimeFormula==1 && S.PulseTime_A!=0)
-          a=(S.PulseTime_B*PulseTime)/S.PulseTime_A+S.PulseTime_C;
-        else if(S.PulseTimeFormula==2 && PulseTime!=0)            
-          a=(S.PulseTime_B*S.PulseTime_A)/PulseTime+S.PulseTime_C;
+          a=(S.PulseTime_B*PulseTimeMillis)/S.PulseTime_A+S.PulseTime_C;
+        else if(S.PulseTimeFormula==2 && PulseTimeMillis!=0)            
+          a=(S.PulseTime_B*S.PulseTime_A)/PulseTimeMillis+S.PulseTime_C;
 
 //          Serial.print("*** debug: A        = ");Serial.println(S.PulseTime_A,DEC);//??? Debug
 //          Serial.print("*** debug: B        = ");Serial.println(S.PulseTime_B,DEC);//??? Debug
@@ -442,7 +448,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
     case CMD_RAWSIGNAL_SEND:
       if(Par1!=0)
-        RawSignalGet(Par1);
+        if(!RawSignalGet(Par1))
+          RaiseError(ERROR_03);
       TransmitCode(AnalyzeRawSignal(),VALUE_ALL);
       break;        
 
@@ -681,8 +688,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;        
 
     case CMD_ANALYSE_SETTINGS:
-      S.AnalyseTimeOut=Par1;
-      S.AnalyseSharpness=Par2*1000;
+      S.AnalyseTimeOut=Par1*1000;
+      S.AnalyseSharpness=Par2;
       SaveSettings();
       break;
 
@@ -792,7 +799,7 @@ void ExecuteLine(char *Line, byte Port)
       PosLine=L+1; // ga direct naar einde van de regel.
        
     // als puntkomma (scheidt opdachten) of einde string(0), en het commando groter dan drie tekens
-    if((x=='!' || x==';' || x==0) && PosCommand>3)
+    if(x=='!' || x==';' || x==0)
       {
       Command[PosCommand]=0;
       PosCommand=0;
@@ -800,24 +807,24 @@ void ExecuteLine(char *Line, byte Port)
       Par1=0;
       Par2=0;
       v=0;
+      Cmd=0;
+      
       // string met commando compleet
       
-      // maak van de string een commando waarde. Het kan ook zijn dat het een hex-event is.
       if(GetArgv(Command,TmpStr,1));
-        v=str2int(TmpStr);
-
-      // kleiner of gelijk aan een bestaand commando. Dan behandelen als een commando. Anders is het een hex-event.
-      if(v<=COMMAND_MAX)
         {
-        Cmd=(byte)v;
-        
+        v=str2int(TmpStr); // als hex event dan is v gevuld met waarde
+        Cmd=str2cmd(TmpStr); // als bestaand commando of event, dan Cmd gevuld met waarde
+        }
+
+      // Als een commando en geen een hex-event.
+      if(v==0 && Cmd!=0)
+        {
         if(GetArgv(Command,TmpStr,2))
           Par1=str2int(TmpStr);
   
         if(GetArgv(Command,TmpStr,3))
           Par2=str2int(TmpStr);
-  
-        v=0;
 
         switch(Cmd)
           {
@@ -868,7 +875,6 @@ void ExecuteLine(char *Line, byte Port)
             if(GetArgv(Command,TmpStr,2))
               {
               Led(BLUE);
-              PrintTerminal(ProgmemString(Text_22));
               strcat(TmpStr,".dat");
               // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
               digitalWrite(Ethernetshield_CS_W5100, HIGH);
@@ -899,7 +905,6 @@ void ExecuteLine(char *Line, byte Port)
               // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
               digitalWrite(Ethernetshield_CS_W5100, LOW);
               digitalWrite(EthernetShield_CS_SDCard,HIGH);
-              PrintTerminal(ProgmemString(Text_22));
               }
             break;
             }
@@ -1251,42 +1256,42 @@ void ExecuteLine(char *Line, byte Port)
             Error=CommandError(v);
             }
           }
+        }
           
-        if(v && Error==0)
+      if(v && Error==0)
+        {
+        if(State_EventlistWrite==0)// Gewoon uitvoeren
           {
-          if(State_EventlistWrite==0)// Gewoon uitvoeren
-            {
-            ProcessEvent(v,VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
-            continue;
-            }
-    
-          if(State_EventlistWrite==2)
-            {
-            a=v;
-            if(!Eventlist_Write(EventlistWriteLine,event,a))
-              {
-              RaiseError(ERROR_06);    
-              return;
-              }
-            State_EventlistWrite=0;
-            continue;
-            }
-    
-          if(State_EventlistWrite==1)
-            {
-            event=v;
-            State_EventlistWrite=2;
-            }
+          ProcessEvent(v,VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
+          continue;
           }
-          
-        if(Error) // er heeft zich een fout voorgedaan
+  
+        if(State_EventlistWrite==2)
           {
-          strcpy(TmpStr,Command);
-          strcat(TmpStr, " ?");
-          PrintTerminal(TmpStr);
-          RaiseError(Error);
-          Line[0]=0;
+          a=v;
+          if(!Eventlist_Write(EventlistWriteLine,event,a))
+            {
+            RaiseError(ERROR_06);    
+            return;
+            }
+          State_EventlistWrite=0;
+          continue;
           }
+  
+        if(State_EventlistWrite==1)
+          {
+          event=v;
+          State_EventlistWrite=2;
+          }
+        }
+        
+      if(Error) // er heeft zich een fout voorgedaan
+        {
+        strcpy(TmpStr,Command);
+        strcat(TmpStr, " ?");
+        PrintTerminal(TmpStr);
+        RaiseError(Error);
+        Line[0]=0;
         }
       }
       
