@@ -547,7 +547,7 @@ boolean SaveRawSignal(byte Key)
 boolean RawSignalGet(int Key)
   {
   int x,y,z;
-  boolean error=false;
+  boolean Ok;
   
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
   digitalWrite(Ethernetshield_CS_W5100, HIGH);
@@ -574,16 +574,17 @@ boolean RawSignalGet(int Key)
         }
       }
     dataFile.close();
+    Ok=true;
     RawSignal.Number=z-1;
     }
   else
-    error=true;
+    Ok=false;
     
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
   digitalWrite(Ethernetshield_CS_W5100, LOW);
   digitalWrite(EthernetShield_CS_SDCard,HIGH);
 
-  return error;
+  return Ok;
   }
 
 

@@ -448,9 +448,14 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
     case CMD_RAWSIGNAL_SEND:
       if(Par1!=0)
-        if(!RawSignalGet(Par1))
-          RaiseError(ERROR_03);
-      TransmitCode(AnalyzeRawSignal(),VALUE_ALL);
+        {
+        if(RawSignalGet(Par1))
+          TransmitCode(AnalyzeRawSignal(),VALUE_ALL);
+        else
+           RaiseError(ERROR_03);
+        }
+      else
+        TransmitCode(AnalyzeRawSignal(),VALUE_ALL);
       break;        
 
     case CMD_CLOCK_YEAR:
@@ -798,8 +803,8 @@ void ExecuteLine(char *Line, byte Port)
     if(x=='!') 
       PosLine=L+1; // ga direct naar einde van de regel.
        
-    // als puntkomma (scheidt opdachten) of einde string(0), en het commando groter dan drie tekens
-    if(x=='!' || x==';' || x==0)
+    // als puntkomma (scheidt opdachten) of einde string(0)
+    if((x=='!' || x==';' || x==0) && PosCommand>1)
       {
       Command[PosCommand]=0;
       PosCommand=0;
@@ -807,29 +812,34 @@ void ExecuteLine(char *Line, byte Port)
       Par1=0;
       Par2=0;
       v=0;
-      Cmd=0;
       
       // string met commando compleet
       
       if(GetArgv(Command,TmpStr,1));
-        {
         v=str2int(TmpStr); // als hex event dan is v gevuld met waarde
-        Cmd=str2cmd(TmpStr); // als bestaand commando of event, dan Cmd gevuld met waarde
-        }
 
-      // Als een commando en geen een hex-event.
-      if(v==0 && Cmd!=0)
+      if(v==0) // Als geen een hex-event.
         {
+        Cmd=str2cmd(TmpStr); // als bestaand commando of event, dan Cmd gevuld met waarde
+        
         if(GetArgv(Command,TmpStr,2))
-          Par1=str2int(TmpStr);
-  
+          {
+          Par1=str2cmd(TmpStr);
+          if(!Par1)
+            Par1=str2int(TmpStr);
+          }
+        
         if(GetArgv(Command,TmpStr,3))
-          Par2=str2int(TmpStr);
+          {
+          Par2=str2cmd(TmpStr);
+          if(!Par2)
+            Par2=str2int(TmpStr);
+          }        
 
         switch(Cmd)
           {
           // Hier worden de commando's verwerkt die een afwijkende MMI hebben of die uitsluitend mogen worden uitgevoerd
-          // als ze via Serial of ethernet worden verzonden. (i.v.m. veiligheid)
+          // als ze via Serial of ethernet worden verzonden.
         
           case CMD_FILE_LOG:
             if(GetArgv(Command,TmpStr,2))
@@ -1229,7 +1239,7 @@ void ExecuteLine(char *Line, byte Port)
               Par1=HA2address(TmpStr,&z); // Parameter-1 bevat [A1..P16]. Omzetten naar absolute waarde. z=groep commando
               if(GetArgv(Command,TmpStr,3))
                 {
-                Par2=(str2int(TmpStr)==VALUE_ON) | (z<<1); // Parameter-2 bevat [On,Off]. Omzetten naar 1,0. tevens op bit-2 het groepcommando zetten.
+                Par2=(str2cmd(TmpStr)==VALUE_ON) | (z<<1); // Parameter-2 bevat [On,Off]. Omzetten naar 1,0. tevens op bit-2 het groepcommando zetten.
                 v=command2event(Cmd,Par1,Par2);
                 Error=CommandError(v);
                 }
