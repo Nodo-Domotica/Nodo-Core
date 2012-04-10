@@ -1,11 +1,8 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- Issue 370 in arduino-nodo: VariablePulse x,Count geeft geen waarde meer terug
-- Issue 418:	AnalyseSettings
-- Issue 421:	RawSignalSave met nr.0
-- Issue 420:	RawSignal event treedt wel op, maar is niet af te vangen in EventList
-- Issue 422:	RawSignalSend met ongeldig nummer
+- Issue 423:	Build 2012-04-04: grote problemen.
+- Issue 422:	RawSignalSend met ongeldig nummer.
 
 Known Errors / ToDo:
 - Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue testen.
