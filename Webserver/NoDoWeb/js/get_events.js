@@ -24,7 +24,7 @@ function Get_Nodo_Events()
 					$self = arguments.callee,
 					element = document.getElementById('events_div');
 					
-					element.innerHTML = '<h4><img src="/media/loading.gif"/> Please wait, loading events...</h4>'; 
+					//element.innerHTML = '<h4><img src="/media/loading.gif"/> Please wait, loading events...</h4>'; 
 					
 				if (window.XMLHttpRequest) {
 					$http = new XMLHttpRequest();
@@ -41,7 +41,8 @@ function Get_Nodo_Events()
 					{
 						if (/4|^complete$/.test($http.readyState)) {
 														
-							element.innerHTML = $http.responseText;  
+							element.innerHTML = $http.responseText; 
+							setTimeout(function(){$self();}, 2000);
 						}
 					};
 					$http.open('GET', 'get_events.php' + '?' + new Date().getTime(), true);

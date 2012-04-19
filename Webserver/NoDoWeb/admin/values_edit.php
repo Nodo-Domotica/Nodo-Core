@@ -16,7 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
-require_once('../connections/tc.php'); 
+require_once('../connections/db_connection.php'); 
 require_once('../include/auth.php'); 
 require_once('../include/user_settings.php'); 
 
@@ -94,7 +94,7 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
  
 	
  // save the data to the database 
- mysql_select_db($database_tc, $tc);
+ mysql_select_db($database, $db);
  mysql_query("UPDATE nodo_tbl_sensor SET sensor_type='$type',display='$display',input_output='$input_output',input_control='$input_control',input_step='$input_step'
  ,input_min_val='$input_slider_min',input_max_val='$input_slider_max',sensor_prefix='$prefix', sensor_suffix='$suffix', sensor_suffix_true='$suffix_true'
  ,sensor_suffix_false='$suffix_false', nodo_unit_nr='$unit',par1='$par1',graph_hours='$graph_hours',graph_min_ticksize='$graph_min_ticksize',graph_type='$graph_type'
@@ -104,7 +104,7 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
  } 
  } 
  else {
- mysql_select_db($database_tc, $tc);
+ mysql_select_db($database, $db);
  $id = $_GET['id']; $result = mysql_query("SELECT * FROM nodo_tbl_sensor WHERE id=$id AND user_id='$userId'") or die(mysql_error());  
  $row = mysql_fetch_array($result);  
  

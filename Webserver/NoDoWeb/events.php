@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
 
-require_once('connections/tc.php'); 
+require_once('connections/db_connection.php'); 
 
 
 /*
@@ -30,8 +30,7 @@ if (isset($_GET['id'])){$id = mysql_real_escape_string($_GET['id']);} else {$id 
 if (isset($_GET['password'])){$password = mysql_real_escape_string($_GET['password']);} else {$password = "";}
 
 	
-
-mysql_select_db($database_tc, $tc);
+mysql_select_db($database, $db);
 $result = mysql_query("SELECT id,nodo_id,nodo_password FROM nodo_tbl_users WHERE nodo_id='$id' AND nodo_password='$password'") or die(mysql_error());  
 $row = mysql_fetch_array($result);
 $userId = $row['id']; 
@@ -50,7 +49,7 @@ if($userId > 0) {
 	
 		$file = $_GET['file'];
 		
-		$result = mysql_query("SELECT * FROM nodo_tbl_scripts WHERE file='$file' AND user_id='$userId'") or die(mysql_error());  
+		$result = mysql_query("SELECT script FROM nodo_tbl_scripts WHERE file='$file' AND user_id='$userId'") or die(mysql_error());  
 		$row = mysql_fetch_array($result);
 		echo $row['script'];
 		echo "\n";
@@ -64,7 +63,6 @@ if($userId > 0) {
 	//Headers naar de client sturen zodat deze de verbinding verbreekt.
 	header("Content-Length: $size");
 	header('Connection: close');
-
 	ob_end_flush();
 	ob_flush();
 	flush();	
@@ -91,13 +89,18 @@ if($userId > 0) {
 			 
 			 
 			//Event in nodo_tbl_event_log opslaan
+			
 			mysql_query("INSERT INTO nodo_tbl_event_log (user_id, nodo_unit_nr, event) VALUES ('$userId','$unit','$eventraw')") or die(mysql_error());
+			
 			//Kijken of er meer dan 10000 events gelogd zijn voor de gebruiker dan wissen we het eerste record
-			mysql_query("DELETE FROM nodo_tbl_event_log WHERE user_id=$userId AND id<(SELECT min(id) FROM(SELECT id FROM nodo_tbl_event_log WHERE user_id=$userId ORDER BY id DESC LIMIT 10000) AS myselect )") or die(mysql_error());
+			//!! Af en toe een deadlock??!!!!
+			//mysql_query("DELETE FROM nodo_tbl_event_log WHERE user_id=$userId ORDER BY id DESC LIMIT 10000") or die(mysql_error());
+			
 			 
 			 
-			//Kijken of we een notificatie moeten sturen			
-			$RSnotify = mysql_query("SELECT * FROM nodo_tbl_notifications WHERE user_id='$userId' AND event='$eventraw'") or die(mysql_error());  
+			//Kijken of we een notificatie moeten sturen	
+			
+			$RSnotify = mysql_query("SELECT recipient, subject, body FROM nodo_tbl_notifications WHERE user_id='$userId' AND event='$eventraw'") or die(mysql_error());  
 			
 					
 			while($row_RSnotify = mysql_fetch_array($RSnotify)) 
@@ -125,7 +128,7 @@ if($userId > 0) {
 
 										
 					//Sensor_id (id) opvragen uit values tabel 
-					$RS_sensor = mysql_query("SELECT * FROM nodo_tbl_sensor WHERE user_id='$userId' AND par1='$par1' AND sensor_type='$type'") or die(mysql_error());  
+					$RS_sensor = mysql_query("SELECT id FROM nodo_tbl_sensor WHERE user_id='$userId' AND par1='$par1' AND sensor_type='$type'") or die(mysql_error());  
 					$row_RS_sensor = mysql_fetch_array($RS_sensor); //Eerste sensor ophalen volgende sensoren met dezelfde parameters worden niet behandeld.
 					$sensor_id=$row_RS_sensor[id]; //$sensor_id gebruiken we om in de tabel sensor_data bij te houden welke data bij welke sensor hoort 
 								
@@ -135,7 +138,7 @@ if($userId > 0) {
 					}
 					
 					//Waarde updaten
-					mysql_select_db($database_tc, $tc);
+					mysql_select_db($database, $db);
 					mysql_query("UPDATE nodo_tbl_sensor SET data='$par2' WHERE par1='$par1' AND nodo_unit_nr='$unit' AND user_id='$userId' AND sensor_type='$type'") or die(mysql_error());
 						
 				break;
@@ -156,6 +159,7 @@ if($userId > 0) {
 					
 					$homecode = substr($par1, 0,1);
 					$address =  substr($par1, 1);
+					
 					
 					mysql_query("UPDATE nodo_tbl_devices SET status='$status' WHERE address='$address' AND homecode='$homecode' AND type='1' AND user_id='$userId'") or die(mysql_error());   
 								
@@ -233,7 +237,9 @@ if($userId > 0) {
 				}
 
 		}
-	
+
+			
+		
 }
 
 

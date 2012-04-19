@@ -17,13 +17,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
 
-require_once('connections/tc.php');
+require_once('connections/db_connection.php');
 require_once('include/auth.php');
 
 
-mysql_select_db($database_tc, $tc);
+mysql_select_db($database, $db);
 $query_RSvalue = "SELECT id,user_id,display,data,sensor_suffix_false,sensor_suffix_true,graph_type,graph_hours,graph_min_ticksize FROM nodo_tbl_sensor WHERE user_id='$userId'";
-$RSvalue = mysql_query($query_RSvalue, $tc) or die(mysql_error());
+$RSvalue = mysql_query($query_RSvalue, $db) or die(mysql_error());
 $row_RSvalue = mysql_fetch_assoc($RSvalue);
 
 ?>
@@ -58,24 +58,24 @@ do { ?>document.getElementById('value_<?php echo $row_RSvalue['id'];?>').innerHT
 		  switch ($row_RSvalue['graph_min_ticksize']) {
 		
 					case "1":
-					$query_RSsensor_value_data = "SELECT id,sensor_id,DATE_FORMAT(timestamp , '%Y-%m-%d %H:%i:%s') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE user_id='$userId' AND sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY minute(timestamp) ORDER BY id DESC LIMIT 1";
+					$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m-%d %H:%i:%s') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY minute(timestamp) ORDER BY id DESC LIMIT 1";
 					break;
 					case "2":
-					$query_RSsensor_value_data = "SELECT id,sensor_id,DATE_FORMAT(timestamp , '%Y-%m-%d %H:%i') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE user_id='$userId' AND sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY hour(timestamp) ORDER BY id DESC LIMIT 1";
+					$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m-%d %H:%i') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE AND sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY hour(timestamp) ORDER BY id DESC LIMIT 1";
 					break;
 					case "3":
-					$query_RSsensor_value_data = "SELECT id,sensor_id,DATE_FORMAT(timestamp , '%Y-%m-%d') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE user_id='$userId' AND sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY date(timestamp) ORDER BY id DESC LIMIT 1;";
+					$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m-%d') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY date(timestamp) ORDER BY id DESC LIMIT 1;";
 					break;
 					case "4":
-					$query_RSsensor_value_data = "SELECT id,sensor_id,DATE_FORMAT(timestamp , '%Y-%m-%d') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE user_id='$userId' AND sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY week(timestamp) ORDER BY id DESC LIMIT 1";
+					$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m-%d') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY week(timestamp) ORDER BY id DESC LIMIT 1";
 					break;
 					case "5":
-					$query_RSsensor_value_data = "SELECT id,sensor_id,DATE_FORMAT(timestamp , '%Y-%m') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE user_id='$userId' AND sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY month(timestamp) ORDER BY id DESC LIMIT 1";
+					$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY month(timestamp) ORDER BY id DESC LIMIT 1";
 					break;
 				}
 		  
 		  	  
-		  $RSsensor_value_data = mysql_query($query_RSsensor_value_data, $tc) or die(mysql_error()); 
+		  $RSsensor_value_data = mysql_query($query_RSsensor_value_data, $db) or die(mysql_error()); 
 		  $row_RSsensor_value_data = mysql_fetch_assoc($RSsensor_value_data);
 		  //echo "debug..."; 
 		  echo "'".$row_RSsensor_value_data['data']."';";

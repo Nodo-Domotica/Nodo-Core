@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
 
-require_once('connections/tc.php'); 
+require_once('connections/db_connection.php'); 
 require_once('include/webapp_settings.php');
 
 $message = "";
@@ -35,7 +35,7 @@ if (isset($_COOKIE['username']) && isset($_COOKIE['password'])) {
 	$username = mysql_real_escape_string($_COOKIE['username']);
 	$password = mysql_real_escape_string($_COOKIE['password']);
 	
-	mysql_select_db($database_tc, $tc);
+	mysql_select_db($database, $db);
 	$result = mysql_query("SELECT id,user_login_name,user_password,active FROM nodo_tbl_users WHERE user_login_name='$username' AND user_password='$password'") or die(mysql_error());  
 	$row = mysql_fetch_array($result);
 	$id = $row['id'];
@@ -70,7 +70,7 @@ if (isset($_POST['submit']))
 	}
 
 
-	mysql_select_db($database_tc, $tc);
+	mysql_select_db($database, $db);
 	$result = mysql_query("SELECT id,user_login_name,user_password,active FROM nodo_tbl_users WHERE user_login_name='$username' AND user_password='$password'") or die(mysql_error());  
 	$row = mysql_fetch_array($result);
 	$id = $row['id'];

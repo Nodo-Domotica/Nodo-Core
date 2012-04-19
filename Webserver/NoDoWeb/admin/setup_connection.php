@@ -16,7 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
-require_once('../connections/tc.php'); 
+require_once('../connections/db_connection.php'); 
 require_once('../include/auth.php');
 require_once('../include/user_settings.php');
 require_once('../include/webapp_settings.php');
@@ -103,7 +103,7 @@ if ($nodo_id == "")  {
 
 	
 		//ID generated. Check if ID exists in Database
-		mysql_select_db($database_tc, $tc);
+		mysql_select_db($database, $db);
 		$result = mysql_query("SELECT 'nodo_id' FROM nodo_tbl_users WHERE nodo_id='$unique_ref'") or die(mysql_error());  
 		$row = mysql_fetch_array($result);
 		
@@ -215,7 +215,7 @@ if (isset($_POST['auto_config'])){
 	}
   
  // save the data to the database 
- mysql_select_db($database_tc, $tc);
+ mysql_select_db($database, $db);
  mysql_query("UPDATE nodo_tbl_users SET nodo_ip='$nodo_ip', nodo_port='$nodo_port', send_method='$send_method', nodo_password='$nodo_password', nodo_id='$nodo_id' WHERE id='$userId'") or die(mysql_error());   
  // once saved, redirect back to the view page 
  header("Location: setup_connection.php/?response=$response#saved");   
@@ -223,9 +223,36 @@ if (isset($_POST['auto_config'])){
  
 else 
 {
-mysql_select_db($database_tc, $tc);
+
+mysql_select_db($database, $db);
 $result = mysql_query("SELECT * FROM nodo_tbl_users WHERE id='$userId'") or die(mysql_error());  
 $row = mysql_fetch_array($result);
+
+//Functie om het ip-adres van de client te achterhalen
+function get_ip_address() {
+    foreach (array('HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR') as $key) {
+        if (array_key_exists($key, $_SERVER) === true) {
+            foreach (explode(',', $_SERVER[$key]) as $ip) {
+                if (filter_var($ip, FILTER_VALIDATE_IP) !== false) {
+                    return $ip;
+                }
+            }
+        }
+    }
+}
+
+//Indien er al een IP-adres in de database bekend is gebruiken we deze.
+if ($row['nodo_ip'] != "") { 
+	$nodo_ip = $row['nodo_ip'];
+	$nodo_ip_message = "";
+}
+else 
+//Indien er geen IP-adres of hostname is ingevoerd dan vullen we het IP-adres van de client in
+{
+	$nodo_ip = get_ip_address();
+	$nodo_ip_message = "Your IP address is automatically filled. <br>Make sure that your Nodo can be reached on this IP address.<br><br>";
+}
+
 }
 /************************************************************************************************
 END Check connection & Nodo config													
@@ -273,8 +300,8 @@ END Check connection & Nodo config
 	
 	<br>
 	
-		<label for="name">Nodo ip/host: (x.x.x.x)</label>
-		<input type="text" name="nodo_ip" id="nodo_ip" value="<?php echo $row['nodo_ip']?>"  />
+		<label for="name"><?php echo $nodo_ip_message; ?>Nodo IP address/hostname: (x.x.x.x)</label>
+		<input type="text" name="nodo_ip" id="nodo_ip" value="<?php echo $nodo_ip?>"  />
 	
 	<br>   
       
@@ -361,13 +388,13 @@ function show_loading() {
 			echo "Connection succeeded!<br>Nodo configured ok";
 			break;
 			case 'error_config':
-			echo "Connection succeeded!<br>Cannot verify configuration. Reason: no SD card inserted";
+			echo "Connection succeeded!<br>Error: Cannot verify configuration.";
 			break;
 			case 'forbidden':
 			echo "Authentication failed!";
 			break;
 			case 'forbidden_config':
-			echo "Cannot configure your Nodo!<BR>Make sure your Nodo has default settings.";
+			echo "Cannot configure your Nodo!<BR>Make sure your Nodo has default login settings.";
 			break;
 			default:
 			echo "Connection failed!";

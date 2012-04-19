@@ -16,7 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
-require_once('../connections/tc.php'); 
+require_once('../connections/db_connection.php'); 
 require_once('../include/auth.php'); 
 require_once('../include/user_settings.php'); 
 
@@ -47,14 +47,14 @@ $page_title="Setup: Edit device";
  
   
  // save the data to the database 
- mysql_select_db($database_tc, $tc);
+ mysql_select_db($database, $db);
  mysql_query("UPDATE nodo_tbl_devices SET naam='$naam', label_on='$label_on', label_off='$label_off', collapsed='$collapsed',address='$address', user_event_on='$user_event_on', user_event_off='$user_event_off', type='$type', toggle='$toggle', homecode='$homecode', dim='$dim' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
  // once saved, redirect back to the view page 
  header("Location: devices.php#saved");  
  } 
  } 
  else {
- mysql_select_db($database_tc, $tc);
+ mysql_select_db($database, $db);
  $id = $_GET['id']; $result = mysql_query("SELECT * FROM nodo_tbl_devices WHERE id=$id AND user_id='$userId'") or die(mysql_error());  
  $row = mysql_fetch_array($result);  
  

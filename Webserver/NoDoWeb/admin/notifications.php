@@ -16,7 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
-require_once('../connections/tc.php'); 
+require_once('../connections/db_connection.php'); 
 require_once('../include/auth.php');
 require_once('../include/user_settings.php');
 
@@ -44,7 +44,7 @@ if (isset($_POST['submit']))
 
    
  // save the data to the database 
- mysql_select_db($database_tc, $tc);
+ mysql_select_db($database, $db);
  
    
  mysql_query("INSERT INTO nodo_tbl_notifications (name, event, recipient, subject, body, user_id) 
@@ -55,7 +55,7 @@ if (isset($_POST['submit']))
  
 else 
 {
-mysql_select_db($database_tc, $tc);
+mysql_select_db($database, $db);
 $result = mysql_query("SELECT * FROM nodo_tbl_notifications WHERE user_id='$userId'") or die(mysql_error());  
 }?>
 

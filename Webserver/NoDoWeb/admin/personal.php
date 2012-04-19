@@ -16,7 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
  
-require_once('../connections/tc.php'); 
+require_once('../connections/db_connection.php'); 
 require_once('../include/auth.php'); 
 require_once('../include/webapp_settings.php'); 
 
@@ -36,7 +36,7 @@ if (isset($_POST['submit'])) {
 	if ($password == "") {
 
 		// save the data to the database 
-		mysql_select_db($database_tc, $tc);
+		mysql_select_db($database, $db);
 		mysql_query("UPDATE nodo_tbl_users SET webapp_theme='$theme', webapp_theme_header='$theme_header', default_page='$default_page', first_name='$first_name', last_name='$last_name', webapp_title='$title' WHERE id='$userId'") or die(mysql_error());   
 		// once saved, redirect back to the view page 
 		header("Location: personal.php#saved");   
@@ -47,7 +47,7 @@ if (isset($_POST['submit'])) {
 
 		$password_encoded = md5($salt.$password);
 		// save the data to the database 
-		mysql_select_db($database_tc, $tc);
+		mysql_select_db($database, $db);
 		mysql_query("UPDATE nodo_tbl_users SET user_password='$password_encoded', webapp_theme='$theme', webapp_theme_header='$theme_header', default_page='$default_page', first_name='$first_name', last_name='$last_name', webapp_title='$title' WHERE id='$userId'") or die(mysql_error());   
 		// once saved, redirect back to the view page 
 		header("Location: personal.php#saved");   
@@ -58,7 +58,7 @@ if (isset($_POST['submit'])) {
 
 else {
 	
-	mysql_select_db($database_tc, $tc);
+	mysql_select_db($database, $db);
 	$result = mysql_query("SELECT * FROM nodo_tbl_users WHERE id='$userId'") or die(mysql_error());  
 	$row = mysql_fetch_array($result);
 

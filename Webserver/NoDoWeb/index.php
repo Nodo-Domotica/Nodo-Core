@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 //Controleren of er ingelogd is. Hierna redirecten naar de door de gebruiker ingestelde standaard pagina.
 
-require_once('connections/tc.php'); 
+require_once('connections/db_connection.php'); 
 
 
 

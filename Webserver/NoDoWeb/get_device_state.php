@@ -16,18 +16,15 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
-require_once('connections/tc.php');
+require_once('connections/db_connection.php');
 require_once('include/auth.php');
 
-//Schakelaarstatus ophalen
-mysql_select_db($database_tc, $tc);
+mysql_select_db($database, $db);
 $query_RSdevice = "SELECT id,user_id,status,dim_value FROM nodo_tbl_devices WHERE user_id='$userId'";
-$RSdevice = mysql_query($query_RSdevice, $tc) or die(mysql_error());
+$RSdevice = mysql_query($query_RSdevice, $db) or die(mysql_error());
 $row_RSdevice = mysql_fetch_assoc($RSdevice);
-
+$totalRows_RSdevice = mysql_num_rows($RSdevice);
 ?>
-
-
 <?php if ($row_RSdevice != NULL){
 do { ?>document.getElementById('switch_<?php echo $row_RSdevice['id'];?>').innerHTML = <?php 
    

@@ -16,7 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
-require_once('../connections/tc.php'); 
+require_once('../connections/db_connection.php'); 
 require_once('../include/auth.php');
 require_once('../include/user_settings.php');
 
@@ -94,7 +94,7 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
  
   
  // save the data to the database 
- mysql_select_db($database_tc, $tc);
+ mysql_select_db($database, $db);
  
  //Totaal aantal records bepalen 
 $RSValues = mysql_query("SELECT id FROM nodo_tbl_sensor WHERE user_id='$userId'") or die(mysql_error()); 
@@ -295,7 +295,7 @@ header("Location: values.php?id=$sensor_id");
 
 						   
 	//echo '<ul data-role="listview" data-split-icon="delete" data-split-theme="$theme" data-inset="true">';
-	mysql_select_db($database_tc, $tc);
+	mysql_select_db($database, $db);
 	$result = mysql_query("SELECT * FROM nodo_tbl_sensor WHERE user_id='$userId' ORDER BY sort_order ASC") or die(mysql_error());  
 	$rows = mysql_num_rows($result);
 			
@@ -325,8 +325,8 @@ header("Location: values.php?id=$sensor_id");
 				<?php } ?>
 				
 				<a href="values_edit.php?id=<?php echo $row['id']; ?>" data-role="button" data-icon="gear" data-ajax="false">Edit</a>
-				<a href="values_delete_confirm.php?id=<?php echo $row['id']; ?>" data-role="button"  data-icon="delete" data-rel="dialog">Delete</a>
-				
+				<a href="values_delete_confirm.php?id=<?php echo $row['id']; ?>" data-role="button" data-icon="delete" data-rel="dialog">Delete</a>
+				<a href="export_csv_values.php?id=<?php echo $row['id']; ?>" data-role="button" data-ajax="false">Export to csv</a>
 				</div>
 			
 				<?php

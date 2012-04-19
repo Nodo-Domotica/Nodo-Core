@@ -16,7 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
-require_once('../connections/tc.php'); 
+require_once('../connections/db_connection.php'); 
 require_once('../include/auth.php');
 require_once('../include/user_settings.php');
 
@@ -37,7 +37,7 @@ if (isset($_POST['submit']))
  
   
  // save the data to the database 
- mysql_select_db($database_tc, $tc);
+ mysql_select_db($database, $db);
  
  //Totaal aantal records bepalen 
 $RSActivities = mysql_query("SELECT id FROM nodo_tbl_activities WHERE user_id='$userId'") or die(mysql_error()); 
@@ -137,7 +137,7 @@ header("Location: activities.php?id=$device_id");
 			 
 								   
 			
-			mysql_select_db($database_tc, $tc);
+			mysql_select_db($database, $db);
 			$result = mysql_query("SELECT * FROM nodo_tbl_activities WHERE user_id='$userId' ORDER BY sort_order ASC") or die(mysql_error());  
 			$rows = mysql_num_rows($result);
 			
