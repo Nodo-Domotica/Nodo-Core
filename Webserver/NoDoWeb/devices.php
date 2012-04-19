@@ -16,7 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
-require_once('connections/tc.php'); 
+require_once('connections/db_connection.php'); 
 require_once('include/auth.php'); 
 require_once('include/user_settings.php'); 
 
@@ -50,9 +50,9 @@ $page_title = "Devices";
 		margin-right: -8px !important;
 		margin-bottom: 8px !important;
 		margin-left: -8px !important;
-		-moz-border-radius: .6em !important;
-		-webkit-border-radius: .6em !important;
-		border-radius: .6em !important;
+		-moz-border-radius: 1em !important;
+		-webkit-border-radius: 1em !important;
+		border-radius: 1em !important;
 				
 	}
 	
@@ -64,9 +64,9 @@ $page_title = "Devices";
 		margin-right: -8px !important;
 			
 		margin-left: -8px !important;
-		-moz-border-radius: .6em !important;
-		-webkit-border-radius: .6em !important;
-		border-radius: .6em !important;
+		-moz-border-radius: 1em !important;
+		-webkit-border-radius: 1em !important;
+		border-radius: 1em !important;
 		
 		-moz-border-radius-bottomleft: 		0em !important;
 		-webkit-border-bottom-left-radius: 	0em !important;
@@ -77,6 +77,10 @@ $page_title = "Devices";
 		border-bottom-right-radius: 			0em !important;
 	
 	}
+	
+	
+	
+		
 	
 	
 	</style>
@@ -99,9 +103,9 @@ $page_title = "Devices";
 	
 <?php 
 
-mysql_select_db($database_tc, $tc);
+mysql_select_db($database, $db);
 $query_RSdevices = "SELECT * FROM nodo_tbl_devices WHERE user_id='$userId' ORDER BY sort_order ASC";
-$RSdevices = mysql_query($query_RSdevices, $tc) or die(mysql_error());
+$RSdevices = mysql_query($query_RSdevices, $db) or die(mysql_error());
 
 
 while ($row_RSdevices = mysql_fetch_assoc($RSdevices)){ 
@@ -117,7 +121,7 @@ if ($row_RSdevices['toggle'] == 1) {
 		case 1: //KAKU
 		case 3: //WiredOut
 		case 4: //UserEvents
-		echo "<a href=\"javascript:send_event(&quot;&action=toggle&device_id=". $id . "&quot;)\" class=\"ui-btn-collapsible ui-btn-icon-left_collapsible\" data-role=\"button\" data-shadow=\"false\" data-icon=\"star\" ><span id='switch_" . $row_RSdevices['id'] . "'></span>" . $row_RSdevices['naam'] . "</a>\n";
+		echo "<a href=\"javascript:send_event(&quot;&action=toggle&device_id=". $id . "&quot;)\" class=\"ui-btn-collapsible ui-btn-icon-left_collapsible\" data-role=\"button\"  data-icon=\"star\" ><span id='switch_" . $row_RSdevices['id'] . "'></span>" . $row_RSdevices['naam'] . "</a>\n";
 		break;
 		
 		case 2: //NewKAKU
@@ -125,7 +129,7 @@ if ($row_RSdevices['toggle'] == 1) {
 		if ( $row_RSdevices['dim'] == 1 ) { 
 			
 			// NewKAKU toggle knop
-			echo "<a href=\"javascript:send_event(&quot;&action=toggle&device_id=". $id . "&quot;)\" class=\"ui-btn-collapsible1 ui-btn-icon-left_collapsible \" data-role=\"button\" data-shadow=\"false\" data-icon=\"star\"  ><span id='switch_" . $row_RSdevices['id'] . "'></span>" . $row_RSdevices['naam'] . "</a>\n";
+			echo "<a href=\"javascript:send_event(&quot;&action=toggle&device_id=". $id . "&quot;)\" class=\"ui-btn-collapsible1 ui-btn-icon-left_collapsible \" data-role=\"button\"  data-icon=\"star\"  ><span id='switch_" . $row_RSdevices['id'] . "'></span>" . $row_RSdevices['naam'] . "</a>\n";
 			echo "<div class=\"ui-collapsible-content ui-body-" . $theme . " ui-corner-bottom\">";
 			
 			for ($i=1; $i<=10; $i++) {
@@ -143,7 +147,7 @@ if ($row_RSdevices['toggle'] == 1) {
 		//Dim slider
 		elseif ( $row_RSdevices['dim'] == 2 ) { 
 		
-			echo "<a href=\"javascript:send_event(&quot;&action=toggle&device_id=". $id . "&quot;)\" class=\"ui-btn-collapsible1 ui-btn-icon-left_collapsible \" data-role=\"button\" data-shadow=\"false\" data-icon=\"star\"  ><span id='switch_" . $row_RSdevices['id'] . "'></span>" . $row_RSdevices['naam'] . "</a>\n";
+			echo "<a href=\"javascript:send_event(&quot;&action=toggle&device_id=". $id . "&quot;)\" class=\"ui-btn-collapsible1 ui-btn-icon-left_collapsible \" data-role=\"button\"  data-icon=\"star\"  ><span id='switch_" . $row_RSdevices['id'] . "'></span>" . $row_RSdevices['naam'] . "</a>\n";
 						
 			echo "<div class=\"ui-collapsible-content ui-body-" . $theme . " ui-corner-bottom\">";
 			echo "<script>\n";
@@ -190,7 +194,7 @@ else {
 	switch ($row_RSdevices['type'])
 				{
 				case "1":
-				// On/Off KAKU knopprn
+				// On/Off KAKU knoppen
 				if ($row_RSdevices['label_on'] != "") {$label_on = $row_RSdevices['label_on'];} else {$label_on = "On";}
 				if ($row_RSdevices['label_off'] != "") {$label_off = $row_RSdevices['label_off'];} else {$label_off = "Off";}
 

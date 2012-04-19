@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
 
-require_once('../connections/tc.php'); 
+require_once('../connections/db_connection.php'); 
 require_once('../include/auth.php'); 
 require_once('../include/user_settings.php'); 
 
@@ -41,14 +41,14 @@ $page_title="Setup: Edit activity";
  
   
  // save the data to the database 
- mysql_select_db($database_tc, $tc);
+ mysql_select_db($database, $db);
  mysql_query("UPDATE nodo_tbl_activities SET name='$name', events='$events' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
  // once saved, redirect back to the view page 
  header("Location: activities.php#saved");  
  } 
  } 
  else {
- mysql_select_db($database_tc, $tc);
+ mysql_select_db($database, $db);
  $id = $_GET['id']; $result = mysql_query("SELECT * FROM nodo_tbl_activities WHERE id=$id AND user_id='$userId'") or die(mysql_error());  
  $row = mysql_fetch_array($result);  
  
@@ -80,10 +80,7 @@ header("Location: activities.php?id=$device_id");
 }
 
  ?>
-  
-  
-  
-  ?>
+
 
  <!DOCTYPE html> 
 <html> 

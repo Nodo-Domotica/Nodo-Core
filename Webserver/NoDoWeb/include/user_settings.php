@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 //Lees setup waarden uit de database
-mysql_select_db($database_tc, $tc);
+mysql_select_db($database, $db);
 $RS_setup = mysql_query("SELECT * FROM nodo_tbl_users WHERE id='$userId'") or die(mysql_error());  
 $row_RSsetup = mysql_fetch_array($RS_setup);
 

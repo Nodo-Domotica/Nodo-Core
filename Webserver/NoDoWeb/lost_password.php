@@ -16,7 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
-require_once('connections/tc.php');
+require_once('connections/db_connection.php');
 require_once('include/webapp_settings.php'); 
 
 
@@ -26,7 +26,7 @@ if (isset($_POST['submit']))
 
 			$email = mysql_real_escape_string(htmlspecialchars($_POST['email'])); 
 
-			mysql_select_db($database_tc, $tc);
+			mysql_select_db($database, $db);
 			$result = mysql_query("SELECT id,user_login_name FROM nodo_tbl_users WHERE user_login_name='$email'") or die(mysql_error());  
 			$row = mysql_fetch_array($result);
 
@@ -59,7 +59,7 @@ if (isset($_POST['submit']))
 					
 					
 					//Gegevens in de database opslaan
-					mysql_select_db($database_tc, $tc);
+					mysql_select_db($database, $db);
 					mysql_query("UPDATE nodo_tbl_users SET user_password='$password_encoded' WHERE id='$id'") or die(mysql_error());
 					
 					//Verificatie e-mail sturen.

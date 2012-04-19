@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 //Currently not used in Web App
 
-require_once('connections/tc.php'); 
+require_once('connections/db_connection.php'); 
 require_once('include/auth.php'); 
 require_once('include/user_settings.php'); 
   

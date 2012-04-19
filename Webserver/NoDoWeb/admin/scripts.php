@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
 
-require_once('../connections/tc.php'); 
+require_once('../connections/db_connection.php'); 
 require_once('../include/auth.php');
 require_once('../include/user_settings.php');
 
@@ -107,7 +107,7 @@ if (isset($_POST['Write']))
  
  
  
- mysql_select_db($database_tc, $tc);
+ mysql_select_db($database, $db);
  $result = mysql_query("SELECT * FROM nodo_tbl_scripts WHERE user_id='$userId' AND file = '$file'") or die(mysql_error());  
  
 	 if (mysql_affected_rows()==0) {
@@ -124,7 +124,7 @@ if (isset($_POST['Write']))
 	else {
 
 		// save the data to the database 
-		 mysql_select_db($database_tc, $tc);
+		 mysql_select_db($database, $db);
 		 mysql_query("UPDATE nodo_tbl_scripts SET script='$scriptpost' WHERE user_id='$userId' AND file='$file'") or die(mysql_error());   
 		  
 		 

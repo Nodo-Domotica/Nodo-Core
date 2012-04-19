@@ -1,4 +1,4 @@
-<?php
+<?php 
 /***********************************************************************************************************************
 "Nodo Web App" Copyright © 2012 Martin de Graaf
 
@@ -16,37 +16,19 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
-require_once('connections/db_connection.php'); 
-require_once('include/auth.php');
-require_once('include/user_settings.php');
+require_once('../connections/db_connection.php');
+require_once('../include/auth.php');
 
-          
-		   
-mysql_select_db($database, $db);
+$sensor_id = $_GET['id'];
 
-$RSevent_log = mysql_query("SELECT nodo_unit_nr,event,timestamp FROM (SELECT * FROM nodo_tbl_event_log WHERE user_id='$userId' ORDER BY id DESC LIMIT 25)x ORDER BY id") or die(mysql_error());
+$RSevent_log = mysql_query("SELECT data,timestamp FROM nodo_tbl_sensor_data WHERE user_id='$userId' AND sensor_id='$sensor_id'") or die(mysql_error());
+    header("Content-Type: text/csv; charset=utf-8");
+    header("Content-Disposition:attachment;filename=values.csv");
+    print "Value, Timestamp\n";
+	while($row = mysql_fetch_row($RSevent_log)) {
+	print '"' . stripslashes(implode('","',$row)) . "\"\n";
+    }
+    exit;
+
+
 ?>
-
-<table>    
-   
- <thead>     
- <tr>      
- <th scope="col" align="left">Unit</th>      
- <th scope="col" align="left">Event</th>      
- <th scope="col" align="left">Timestamp</th>
- </tr>    
- </thead>   
- <tbody>
-
-<?php		
-		while($row = mysql_fetch_array($RSevent_log)) 
-		{                                
-?>		 
-		<tr>	
-		<td width="50"><?php echo $row['nodo_unit_nr'];?></td> <td width="200"><?php echo $row['event'];?></td><td><?php echo $row['timestamp'];?></td>		
-		</tr>
-<?php		
-		}         
-		?>
-</tbody>
-	</table>

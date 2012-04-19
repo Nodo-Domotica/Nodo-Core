@@ -16,13 +16,14 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
-require_once('connections/tc.php');
+require_once('connections/db_connection.php');
 require_once('include/auth.php');
 
-$RSevent_log = mysql_query("SELECT * FROM nodo_tbl_event_log WHERE user_id='$userId'") or die(mysql_error());
+$RSevent_log = mysql_query("SELECT nodo_unit_nr,event,timestamp FROM nodo_tbl_event_log WHERE user_id='$userId'") or die(mysql_error());
     header("Content-Type: text/csv; charset=utf-8");
     header("Content-Disposition:attachment;filename=events.csv");
-    while($row = mysql_fetch_row($RSevent_log)) {
+    print "NODO unit,Event,Timestamp\n";
+	while($row = mysql_fetch_row($RSevent_log)) {
     print '"' . stripslashes(implode('","',$row)) . "\"\n";
     }
     exit;

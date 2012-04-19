@@ -16,7 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
-require_once('../connections/tc.php'); 
+require_once('../connections/db_connection.php'); 
 require_once('../include/auth.php');
 require_once('../include/user_settings.php');
 ?>

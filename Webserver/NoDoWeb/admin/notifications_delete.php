@@ -16,7 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
-require_once('../connections/tc.php');
+require_once('../connections/db_connection.php');
 require_once('../include/auth.php'); 
 
 if (!function_exists("GetSQLValueString")) {
@@ -52,8 +52,8 @@ if ((isset($_GET['id'])) && ($_GET['id'] != "")) {
   $deleteSQL = sprintf("DELETE FROM nodo_tbl_notifications WHERE id=%s AND user_id='$userId'",
                        GetSQLValueString($_GET['id'], "int"));
 
-  mysql_select_db($database_tc, $tc);
-  $Result1 = mysql_query($deleteSQL, $tc) or die(mysql_error());
+  mysql_select_db($database, $db);
+  $Result1 = mysql_query($deleteSQL, $db) or die(mysql_error());
 
   $deleteGoTo = "notifications.php";
   if (isset($_SERVER['QUERY_STRING'])) {

@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
 
-require_once('../connections/tc.php'); 
+require_once('../connections/db_connection.php'); 
 require_once('../include/auth.php');
 require_once('../include/user_settings.php');
 
@@ -44,7 +44,7 @@ $toggle = mysql_real_escape_string(htmlspecialchars($_POST['presentation']));
 
 
 
-mysql_select_db($database_tc, $tc);
+mysql_select_db($database, $db);
 
 //Totaal aantal records bepalen 
 $RSDevices = mysql_query("SELECT id FROM nodo_tbl_devices WHERE user_id='$userId'") or die(mysql_error()); 
@@ -205,7 +205,7 @@ header("Location: devices.php?id=$device_id");
 		<h3>Edit</h3>
 		<?php
 		// get results from database        
-		mysql_select_db($database_tc, $tc);
+		mysql_select_db($database, $db);
 		$result = mysql_query("SELECT * FROM nodo_tbl_devices WHERE user_id='$userId' ORDER BY sort_order ASC") or die(mysql_error());  
 		$rows = mysql_num_rows($result);
 				               

@@ -16,7 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
-require_once('connections/tc.php');
+require_once('connections/db_connection.php');
 require_once('include/auth.php');
 require_once('include/user_settings.php'); 
 require_once('include/webapp_settings.php'); 
@@ -49,7 +49,7 @@ $page_title = "Information";
 		<?php
 		
           
-mysql_select_db($database_tc, $tc);
+mysql_select_db($database, $db);
 
 $RSevent_log = mysql_query("SELECT * FROM (SELECT * FROM nodo_tbl_event_log WHERE user_id='$userId' ORDER BY id DESC LIMIT 25)x ORDER BY id") or die(mysql_error());
 ?>
@@ -74,7 +74,7 @@ $RSevent_log = mysql_query("SELECT * FROM (SELECT * FROM nodo_tbl_event_log WHER
 
 
  	<br>
-	<a href="javascript:Get_Nodo_Events();" data-role="button" data-ajax="false" data-inline="true" >Refresh events</a>
+	<!-- <a href="javascript:Get_Nodo_Events();" data-role="button" data-ajax="false" data-inline="true" >Refresh events</a> -->
 	<a href="export_csv.php" data-role="button" data-inline="true" data-ajax="false">Export all events to csv</a>
 	</div>	
 	
