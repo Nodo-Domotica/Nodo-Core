@@ -97,24 +97,12 @@ boolean SendEventGhost(char* event, byte* SendToIP)
                 {
                 // Cookie is door de Nodo ontvangen en moet worden beantwoord met een MD5-hash
                 // Stel de string samen waar de MD5 hash voor gegenereerd moet worden
+                // Bereken MD5-Hash uit de string "<cookie>:<password>" en verzend deze
   
                 strcpy(TempString,InputBuffer_IP);
                 strcat(TempString,":");
-                strcat(TempString,S.Password);
-   
-                // Bereken MD5-Hash uit de string "<cookie>:<password>"                
-                md5((struct md5_hash_t*)&MD5HashCode, TempString);  
-                strcpy(str2,PROGMEM2str(Text_05));              
-                y=0;
-                for(x=0; x<16; x++)
-                  {
-                  TempString[y++]=str2[MD5HashCode[x]>>4  ];
-                  TempString[y++]=str2[MD5HashCode[x]&0x0f];
-                  }
-                TempString[y++]=0x0a;
-                TempString[y]=0;
-  
-                // verzend hash-waarde
+                strcat(TempString,S.Password);   
+                md5(TempString);  
                 EGclient.print(TempString);
                 EventGhostClientState=1;
                 }
@@ -136,110 +124,171 @@ boolean SendEventGhost(char* event, byte* SendToIP)
   }
     
 
+// /*******************************************************************************************************\
+// *
+// *
+// \*******************************************************************************************************/
+//boolean SendHTTPRequestResponse(char* Response)//???
+//  {
+//  boolean r;
+//  char* ResponseString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+//
+//  strcpy(ResponseString,"&response=");
+//  strcat(ResponseString,Response);
+//  r=SendHTTPEventString(ResponseString,S.Unit);
+//
+//  free(ResponseString);  
+//  return r;
+//  }
+
+
  /*******************************************************************************************************\
- *
- *
+ * Haal via een HTTP-request een file op
+ * De content van de file bevindt zih in de body text die de server terugstuurt en wordt opgevangen
+ * in de funktie SendHTTPRequest()
  \*******************************************************************************************************/
-boolean SendHTTPRequestResponse(char* Response)
+byte GetHTTPFile(char* filename)
   {
-  boolean r;
-  char* ResponseString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  char *HttpRequest=(char*)malloc(INPUT_BUFFER_SIZE+1);
 
-  strcpy(ResponseString,"&response=");
-  strcat(ResponseString,Response);
-  r=xSendHTTPRequestStr(ResponseString);
+  strcpy(HttpRequest,"?id=");
+  strcat(HttpRequest,S.ID);  
 
-  free(ResponseString);
-  
-  return r;
+  strcat(HttpRequest,"&file=");
+  strcat(HttpRequest,filename);
+
+  if(S.HTTP_Pin==VALUE_ON)
+    {
+    // pin-code genereren en meesturen in het http-request
+    sprintf(TempString,"%s:%s",HTTPCookie,S.Password);  
+    md5(TempString);
+    strcat(HttpRequest,"&key=");
+    strcat(HttpRequest,TempString);    
+    }
+    
+  return SendHTTPRequest(HttpRequest);
+  free(HttpRequest);
   }
 
-
  /*******************************************************************************************************\
- *
+ * Verzend een event als HTTP-request 
  *
  \*******************************************************************************************************/
-boolean SendHTTPRequestEvent(unsigned long event)
+byte SendHTTPEvent(unsigned long event)
   {
-  byte x;
-  boolean r;
-  char* EventString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  byte Unit,x;
+  char *HttpRequest=(char*)malloc(INPUT_BUFFER_SIZE+1);
 
-  strcpy(EventString,"&unit=");
+  strcpy(HttpRequest,"?id=");
+  strcat(HttpRequest,S.ID);  
 
-  // Als het een onbekend type signaal is, dan unit=0
+  strcat(HttpRequest,"&unit=");
   if(((event>>28)&0xf)==((unsigned long)(SIGNAL_TYPE_UNKNOWN)))
-    x=0;
+    Unit=0;
   else
-    x=(event>>24)&0x0f;
-  strcat(EventString,int2str(x));
-  strcat(EventString,"&event=");
-  strcat(EventString,Event2str(event));
-  r=xSendHTTPRequestStr(EventString);
+    Unit=(event>>24)&0x0f;
+  strcat(HttpRequest,int2str(Unit));  
+  
+  if(S.HTTP_Pin==VALUE_ON)
+    {
+    // pin-code genereren en meesturen in het http-request
+    sprintf(TempString,"%s:%s",HTTPCookie,S.Password);  
+    md5(TempString);
+    strcat(HttpRequest,"&key=");
+    strcat(HttpRequest,TempString);    
+    }
+    
+  strcat(HttpRequest,"&event=");
+  strcat(HttpRequest,Event2str(event));
 
-  free(EventString);
-  return r;
+  return SendHTTPRequest(HttpRequest);
+  free(HttpRequest);
   }
 
 
-byte xSendHTTPRequestStr(char* StringToSend)
+ /*******************************************************************************************************\
+ * Verzend een nieuwe cookie als HTTP request.
+ *
+ \*******************************************************************************************************/
+byte SendHTTPCookie(void)
+  {
+  char *HttpRequest=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  
+  strcpy(HttpRequest,"?id=");
+  strcat(HttpRequest,S.ID);  
+
+  // Verzend tevens een nieuwe cookie voor het eerstvolgende event.
+  RandomCookie(HTTPCookie);
+  strcat(HttpRequest,"&cookie=");
+  strcat(HttpRequest,HTTPCookie);
+  
+  return SendHTTPRequest(HttpRequest);
+  free(HttpRequest);
+  }
+
+
+byte SendHTTPRequest(char* Request)
   {
   int InByteCounter;
   byte InByte,x;
   unsigned long TimeoutTimer;
+  char* IPBuffer=(char*)malloc(INPUT_BUFFER_SIZE+1);
   char s[2];
+  char filename[13];
+  
   const int TimeOut=10000;
   EthernetClient IPClient;                            // Client class voor HTTP sessie.
-  char *IPBuffer=(char*)malloc(IP_INPUT_BUFFER_SIZE+1);
-  char *TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
-  
+
   byte State=0;// 0 als start, 
                // 1 als 200 OK voorbij is gekomen,
                // 2 als &file= is gevonden en eerstvolgende lege regel moet worden gedetecteerd
-               // 3 als lege regel is gevonden en capture moet starten. 
-               
-  // Haal uit het HTTP request URL de Host. Alles tot aan het '/' teken.
-  strcpy(TmpStr,S.HTTPRequest);
-  x=StringFind(TmpStr,"/");
-  TmpStr[x]=0;
+               // 3 als lege regel is gevonden en file-capture moet starten.                
 
+  // Haal uit het HTTP request URL de Host. 
+  // zoek naar de eerste slash in de opgegeven HTTP-Host adres
+  int SlashPos=StringFind(S.HTTPRequest,"/");
   strcpy(IPBuffer,"GET ");
-  strcat(IPBuffer,S.HTTPRequest+x);
-  strcpy(TempString,"?id=");
-  strcat(TempString,S.ID);
-  strcat(TempString,"&password=");
-  strcat(TempString,S.Password);
-  strcat(TempString,"&version=");
-  strcat(TempString,int2str(S.Version));
-  strcat(TempString,StringToSend);
-
-  // event toevoegen aan tijdelijke string, echter alle spaties vervangen door + conform URL notatie.
-  for(x=0;x<strlen(TempString);x++)
+  strcat(IPBuffer,S.HTTPRequest+SlashPos);
+  
+  // Alle spaties omzetten naar %20 en toevoegen aan de te verzenden regel.
+  for(x=0;x<strlen(Request);x++)
     {            
-    if(TempString[x]==32)
+    if(Request[x]==32)
       strcat(IPBuffer,"%20");
     else
       {
-      s[0]=TempString[x];
+      s[0]=Request[x];
       s[1]=0;
       strcat(IPBuffer,s);
       }
     }          
-  strcat(IPBuffer," HTTP/1.1");
-  
-  if(S.Debug==VALUE_ON)
-    PrintTerminal(IPBuffer);
 
-  if(IPClient.connect(TmpStr,S.PortClient))
+  strcat(IPBuffer," HTTP/1.1");
+
+  // IPBuffer bevat nu het volledige HTTP-request, gereed voor verzending.
+
+  if(S.Debug==VALUE_ON)
+    {
+    strcpy(TempString,"# HTTP Output: ");
+    strcat(TempString,IPBuffer);
+    Serial.println(TempString);
+    }
+
+  strcpy(TempString,S.HTTPRequest);
+  TempString[SlashPos]=0;
+
+  if(IPClient.connect(TempString,S.PortClient))
     {
     IPClient.getRemoteIP(ClientIPAddress);  
     IPClient.println(IPBuffer);
-
     strcpy(IPBuffer,"Host: ");
-    strcat(IPBuffer,TmpStr);
+    strcat(IPBuffer,TempString);
     IPClient.println(IPBuffer);
-    IPClient.println(F("Connection: Close"));
-    IPClient.println();
+    strcpy(IPBuffer,"User-Agent: Nodo/");
+    strcat(IPBuffer,int2str(S.Version));
+    IPClient.println(IPBuffer);
+    IPClient.println(F("Connection: Close"));    
+    IPClient.println();// Afsluiten met een lege regel is verplicht in http protocol/
 
     TimeoutTimer=millis()+TimeOut; // Als er twee seconden geen datatransport is, dan wordt aangenomen dat de verbinding (om wat voor reden dan ook) is afgebroken.
     IPBuffer[0]=0;
@@ -250,8 +299,6 @@ byte xSendHTTPRequestStr(char* StringToSend)
       if(IPClient.available())
         {
         InByte=IPClient.read();
-        if(S.Debug==VALUE_ON)
-          Serial.write(InByte);
 
         if(isprint(InByte) && InByteCounter<INPUT_BUFFER_SIZE)
           IPBuffer[InByteCounter++]=InByte;
@@ -259,6 +306,13 @@ byte xSendHTTPRequestStr(char* StringToSend)
         else if(InByte==0x0A)
           {
           IPBuffer[InByteCounter]=0;
+          if(S.Debug==VALUE_ON)
+            {
+            strcpy(TempString,"# HTTP Input: ");
+            strcat(TempString,IPBuffer);
+            Serial.println(TempString);
+            }
+
           TimeoutTimer=millis()+TimeOut; // er is nog data transport, dus de timeout timer weer op max. zetten.
           // De regel is binnen
   
@@ -266,7 +320,7 @@ byte xSendHTTPRequestStr(char* StringToSend)
             State=3;
             
           else if(State==3)
-            AddFileSDCard(TmpStr,IPBuffer); // Extra logfile op verzoek van gebruiker   @1
+            AddFileSDCard(filename,IPBuffer); // Capture de bodytext uit het HTTP-request en sla regels op in opgegeven filename
           
           else if(State==0 && StringFind(IPBuffer,"HTTP")!=-1)
             {
@@ -275,15 +329,17 @@ byte xSendHTTPRequestStr(char* StringToSend)
               {
               State=1;
               // pluk de filename uit het http request als die er is, dan de body text van het HTTP-request opslaan.
-              if(ParseHTTPRequest(StringToSend,"file", TmpStr))
+              if(ParseHTTPRequest(Request,"file", TempString))
                 {
                 State=2;
-                strcat(TmpStr,".dat");
+                TempString[8]=0; // voorkom dat filenaam meer dan acht posities heeft
+                strcpy(filename,TempString);                
+                strcat(filename,".dat");
                 // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
                 digitalWrite(Ethernetshield_CS_W5100, HIGH);
                 digitalWrite(EthernetShield_CS_SDCard,LOW);
                 // evntueel vorig bestand wissen
-                SD.remove(TmpStr);
+                SD.remove(filename);
                 // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
                 digitalWrite(EthernetShield_CS_SDCard,HIGH);
                 digitalWrite(Ethernetshield_CS_W5100, LOW);
@@ -296,12 +352,11 @@ byte xSendHTTPRequestStr(char* StringToSend)
         }
       }
     }
-  free(TmpStr);
   free(IPBuffer);
   IPClient.stop();
   return State;
   }
-  
+    
     
 /*********************************************************************************************\
 * Deze routine haalt uit een http request de waarden die bij de opgegeven parameter hoort
@@ -356,7 +411,7 @@ boolean ParseHTTPRequest(char* HTTPRequest,char* Keyword, char* ResultString)
   }
 
 
- /**********************************************************************************************\
+/**********************************************************************************************\
  *
  *
  *
@@ -371,17 +426,17 @@ void ExecuteIP(void)
   int InByteCounter;
   byte Protocol=0;
   byte EGState=0;
-  char Cookie[8];
-  char FileName[15];
+  char FileName[13];
   boolean RequestEvent=false;
   boolean RequestFile=false;
   int x,y;
   unsigned long TimeoutTimer=millis()+2000; // Na twee seconden moet de gehele transactie gereed zijn, anders 'hik' in de lijn.
-
+  char EGCookie[10];
+  
   // reserver een inputbuffer
   char *Event=(char*)malloc(INPUT_BUFFER_SIZE+1);
   char *InputBuffer_IP=(char*)malloc(IP_INPUT_BUFFER_SIZE+1);
-  char *str_2=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  char *TmpStr2=(char*)malloc(INPUT_BUFFER_SIZE+1);
 
   Event[0]=0; // maak de string leeg.
   
@@ -433,52 +488,56 @@ void ExecuteIP(void)
                 Completed=true;
                 if(S.Debug==VALUE_ON)
                   {
-                  Serial.print(F("*** HTTP Request received="));
-                  Serial.println(InputBuffer_IP);
+                  strcpy(TempString,"# HTTP Input: ");
+                  strcat(TempString,InputBuffer_IP);
+                  Serial.println(TempString);
                   }
-                if(ParseHTTPRequest(InputBuffer_IP,"password",TempString))
+                
+                // als de beveiliging aan staat, dan kijken of de juiste pin ip meegegeven in het http-request. x is vlag voor toestemming verwerking event
+                x=false;
+                if(S.HTTP_Pin==VALUE_ON)
                   {
-                  if(strcmp(S.Password,TempString)!=0)
+                  sprintf(TmpStr2,"%s:%s",HTTPCookie,S.Password);  
+                  md5(TmpStr2);
+                  
+                  if(ParseHTTPRequest(InputBuffer_IP,"key",TempString))
                     {
-                    IPClient.println(F("HTTP/1.1 403 Forbidden"));
+                    if(strcmp(TmpStr2,TempString)==0)
+                      x=true;
+                    }
+                  }
+                else
+                  x=true;
+
+                if(x)
+                  {                
+                  if(ParseHTTPRequest(InputBuffer_IP,"event",Event))
+                    RequestEvent=true;
+                   
+                  if(ParseHTTPRequest(InputBuffer_IP,"file",TempString))
+                    {
+                    TempString[8]=0; // voorkom dat een file meer dan 8 posities heeft (en een afsluitende 0)
+                    strcpy(FileName,TempString);
+                    strcat(FileName,".dat");
+                    RequestFile=true;
+                    }
+                    
+                  if(ParseHTTPRequest(InputBuffer_IP,"confirm",TempString))//???
+                    ConfirmHTTP=true;
+                    
+                  if(RequestFile || RequestEvent)
+                    {
+                    RequestCompleted=true;
+                    strcpy(TempString,"HTTP/1.1 200 Ok");
+                    IPClient.println(TempString);
                     }
                   else
-                    {    
-                    if(ParseHTTPRequest(InputBuffer_IP,"id",TempString))
-                      {
-                      if(strcmp(S.ID,TempString)!=0)
-                        {
-                        IPClient.println(F("HTTP/1.1 403 Forbidden"));
-                        }
-                      else
-                        {
-                        if(ParseHTTPRequest(InputBuffer_IP,"event",Event))
-                          RequestEvent=true;
-                         
-                        if(ParseHTTPRequest(InputBuffer_IP,"file",TempString))
-                          {
-                          TempString[9]=0; // voorkom dat een file meer dan 8 posities heeft (en een afsluitende 0)
-                          strcpy(FileName,TempString);
-                          strcat(FileName,".dat");
-                          RequestFile=true;
-                          }
-                          
-                        if(ParseHTTPRequest(InputBuffer_IP,"confirm",TempString))
-                          ConfirmHTTP=true;
-                          
-                        if(RequestFile || RequestEvent)
-                          {
-                          RequestCompleted=true;
-                          strcpy(TempString,"HTTP/1.1 200 Ok");
-                          IPClient.println(TempString);
-                          }
-                        else
-                          IPClient.println(F("HTTP/1.1 400 Bad Request"));
-                        }
-                      }
-                    }
+                    IPClient.println(F("HTTP/1.1 400 Bad Request"));
                   }
+                else                    
+                  IPClient.println(F("HTTP/1.1 403 Forbidden"));
                 }
+
               IPClient.println(F("Content-Type: text/html"));
               IPClient.print(F("Server: Nodo/"));
               IPClient.println(int2str(S.Version));             
@@ -513,7 +572,6 @@ void ExecuteIP(void)
                       digitalWrite(Ethernetshield_CS_W5100, LOW);
                       if(RequestFile)
                         {
-                        IPClient.print(ProgmemString(Text_22));
                         IPClient.println("<br />");
                         RequestFile=false;// gebruiken we even als vlag om de eerste keer de regel met asteriks af te drukken omdat deze variabele toch verder niet meer nodig is
                         }
@@ -526,7 +584,6 @@ void ExecuteIP(void)
                   dataFile.close();
                   digitalWrite(EthernetShield_CS_SDCard,HIGH);
                   digitalWrite(Ethernetshield_CS_W5100, LOW);
-                  IPClient.println(ProgmemString(Text_22));
                   }  
                 else 
                   IPClient.println(cmd2str(ERROR_03));
@@ -568,18 +625,9 @@ void ExecuteIP(void)
                 {
                 // Cookie is verzonden en regel met de MD5 hash is ontvangen
                 // Stel de string samen waar de MD5-hash aan de Nodo zijde voor gegenereerd moet worden
-                sprintf(TempString,"%s:%s",Cookie,S.Password);
-            
                 // Bereken eigen MD5-Hash uit de string "<cookie>:<password>"                
-                md5((struct md5_hash_t*)&MD5HashCode, TempString); 
-                strcpy(str_2,PROGMEM2str(Text_05));              
-                y=0;
-                for(x=0; x<16; x++)
-                  {
-                  TempString[y++]=str_2[MD5HashCode[x]>>4  ];
-                  TempString[y++]=str_2[MD5HashCode[x]&0x0f];
-                  }
-                TempString[y]=0;
+                sprintf(TempString,"%s:%s",EGCookie,S.Password);            
+                md5(TempString); 
             
                 // vergelijk hash-waarden en bevestig de EventGhostClient bij akkoord
                 if(strcasecmp(TempString,InputBuffer_IP)==0)
@@ -602,8 +650,6 @@ void ExecuteIP(void)
                       S.EventGhostServer_IP[2]=ClientIPAddress[2];
                       S.EventGhostServer_IP[3]=ClientIPAddress[3];
                       SaveSettings();
-                      if(S.Debug)
-                        Serial.print("*** debug: EventGhostServer saved.");
                       }
                     }
                   }
@@ -627,14 +673,9 @@ void ExecuteIP(void)
                   {   
                   // Een wachtwoord beveiligd verzoek vanuit een EventGhost EventGhostClient (PC, Andoid, IPhone)
                   // De EventGhostClient is een EventGhost sender.  
-                  // maak een 16-bits cookie en verzend deze
-                  strcpy(str_2,PROGMEM2str(Text_05));
-                  for(x=0;x<4;x++)
-                    Cookie[x]=str_2[int(random(0,0xf))];
-                  Cookie[x]=0; // sluit string af;
-                  strcpy(TempString,Cookie);
-                  strcat(TempString,"\n");
-                  IPClient.print(TempString);          
+                  // maak een cookie en verzend deze
+                  RandomCookie(EGCookie);
+                  IPClient.print(EGCookie);          
       
                   // ga naar volgende state: Haal MD5 en verwerk deze
                   EGState=1;
@@ -648,9 +689,9 @@ void ExecuteIP(void)
       }
     }
 
-  delay(1);  // give the web browser time to receive the data
+  delay(5);  // korte pauze om te voorkomen dat de verbinding wordt verbroken alvorens alle data door client verwerkt is.
   IPClient.stop();
-  free(str_2);
+  free(TmpStr2);
   free(InputBuffer_IP);
 
   if(RequestEvent)
@@ -659,6 +700,7 @@ void ExecuteIP(void)
   free(Event);
   return;
   }
+  
 
  /*********************************************************************************************\
  * Verzend via RF een commando regel naar een andere Nodo.
@@ -678,7 +720,7 @@ boolean SendLineRF(char* Line, byte Dest)
   
   // Protocol:
   // Stap-1. Master Nodo stuurt ReceiveLine verzoek naar slave om klaar te staan voor ontvangst: Bestemming-Unit, checksum en stringlengte (regulier Nodo commando)
-  // Stap-2. Slave beantwoordt ter bevestiging een stuurt 16-bits random Cookie in Par1 en Par2.  (regulier Nodo commando)
+  // Stap-2. Slave beantwoordt ter bevestiging een stuurt 16-bits key in Par1 en Par2.  (regulier Nodo commando)
   // Stap-3. Master verzendt blok met: String met commando en MD5-Hash op basis van wachtwoord en cookie (Speciale codering afwijkend van reguliere commando)
   // Stap-4. Slave beantwoord met OK of ERROR. (regulier Nodo commando)
   // MD5-Hash wordt berekend a.d.h.v. Lengte string, Checksum string, Password en Cookie.  Klopt 1 van de 4 niet, dan voert slave regel niet uit.
@@ -718,7 +760,7 @@ boolean SendLineRF(char* Line, byte Dest)
 
     // Encrypt het signaal met de MD5-Hash
     sprintf(TempString,"%d:%s",Cookie,S.Password);
-    md5((struct md5_hash_t*)&MD5HashCode, TempString); 
+    md5(TempString); 
     y=0;
     for(x=0; x<Length; x++)
       {
@@ -839,7 +881,7 @@ boolean ReceiveLineRF(byte Checksum, byte Length, char *ReturnString)
                           
               // Decrypt het signaal met de MD5-Hash
               sprintf(TmpStr,"%d:%s",Cookie,S.Password);
-              md5((struct md5_hash_t*)&MD5HashCode, TmpStr); 
+              md5(TmpStr); 
               y=0;
               for(x=0; x<Length; x++)
                 {
@@ -859,8 +901,8 @@ boolean ReceiveLineRF(byte Checksum, byte Length, char *ReturnString)
           }
         }
       }
-    }
-  
+    }  
   free(TmpStr);
   return Ok;    
   }
+

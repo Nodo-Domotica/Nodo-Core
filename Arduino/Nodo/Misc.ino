@@ -52,7 +52,10 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
     {
     case CMD_TRANSMIT_IP:
       *Par1=S.TransmitIP;
-      *Par2=S.TransmitIP==VALUE_SOURCE_HTTP?0:S.AutoSaveEventGhostIP;
+      if(S.TransmitIP==VALUE_SOURCE_HTTP)
+        *Par2=S.HTTP_Pin;
+      if(S.TransmitIP==VALUE_SOURCE_EVENTGHOST)
+        *Par2=S.AutoSaveEventGhostIP;
       break;
 
     case CMD_WAITFREERF: 
@@ -228,7 +231,6 @@ boolean LoadSettings()
     
   char ByteToSave,*pointerToByteToRead=(char*)&S;    //pointer verwijst nu naar startadres van de struct.
 
-  /// Serial.print("*** debug: struct Setting=");Serial.println(sizeof(struct Settings),DEC);//??? Debug
   for(int x=0; x<sizeof(struct Settings);x++)
     {
     *pointerToByteToRead=EEPROM.read(x);
@@ -302,10 +304,10 @@ void ResetFactory(void)
   S.PulseCount_B               = 0;
   S.PortServer                 = 8080;
   S.PortClient                 = 80;
-
+  S.ID[0]                      = 0; // string leegmaken
+  S.HTTP_Pin                   = VALUE_OFF;
+  
   strcpy(S.Password,ProgmemString(Text_10));
-  strcpy(S.ID,ProgmemString(Text_16));
-  S.HTTPRequest[0];
   
   // zet analoge waarden op default
   for(x=0;x<WIRED_PORTS;x++)
@@ -744,7 +746,9 @@ boolean Eventlist_Write(int address, unsigned long Event, unsigned long Action)/
     address++;
     while(Eventlist_Read(address,&TempEvent,&TempAction))address++;
     }
-  if(address>EVENTLIST_MAX)return false;// geen geldig adres meer c.q. alles is vol.
+    
+  if(address>EVENTLIST_MAX)
+    return false;// geen geldig adres meer c.q. alles is vol.
 
   address--;// echte adressering begint vanaf nul. voor de user vanaf 1.
   address=address*8+sizeof(struct Settings);     // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer deze bytes. Deze niet te gebruiken voor de Eventlist!
@@ -940,27 +944,54 @@ uint32_t md5_T[] PROGMEM = {
   void md5_ctx2hash(struct md5_hash_t* dest, const struct md5_ctx_t* state){
   	memcpy(dest, state->a, MD5_HASH_BYTES);
   }
-  
-  void md5(struct md5_hash_t* dest, const void* msg)
+
+void md5(char* dest)
+  {
+  const void* src=dest;
+  uint32_t length_b = strlen((char*)src) * 8;
+  struct md5_ctx_t ctx;
+  char *Str=(char*)malloc(20);
+
+  md5_init(&ctx);
+  while(length_b>=MD5_BLOCK_BITS)
     {
-    uint32_t length_b = strlen((char*)msg) * 8;
-    struct md5_ctx_t ctx;
-  
-    md5_init(&ctx);
-    while(length_b>=MD5_BLOCK_BITS){
-      md5_nextBlock(&ctx, msg);
-      msg = (uint8_t*)msg + MD5_BLOCK_BYTES;
-      length_b -= MD5_BLOCK_BITS;
+    md5_nextBlock(&ctx, src);
+    src = (uint8_t*)src + MD5_BLOCK_BYTES;
+    length_b -= MD5_BLOCK_BITS;
     }
-  md5_lastBlock(&ctx, msg, length_b);
-  md5_ctx2hash(dest, &ctx);
+  md5_lastBlock(&ctx, src, length_b);
+  md5_ctx2hash((md5_hash_t*)&MD5HashCode, &ctx);
+  
+  strcpy(Str,PROGMEM2str(Text_05));              
+  int y=0;
+  for(int x=0; x<16; x++)
+    {
+    dest[y++]=Str[MD5HashCode[x]>>4  ];
+    dest[y++]=Str[MD5HashCode[x]&0x0f];
+    }
+  dest[y]=0;
+
+  free(Str);
   }
 
+//   void md5(struct md5_hash_t* dest, const void* msg)
+//    {
+//    uint32_t length_b = strlen((char*)msg) * 8;
+//    struct md5_ctx_t ctx;
+//  
+//    md5_init(&ctx);
+//    while(length_b>=MD5_BLOCK_BITS){
+//      md5_nextBlock(&ctx, msg);
+//      msg = (uint8_t*)msg + MD5_BLOCK_BYTES;
+//      length_b -= MD5_BLOCK_BITS;
+//    }
+//  md5_lastBlock(&ctx, msg, length_b);
+//  md5_ctx2hash(dest, &ctx);
+//  }
 
 void RaiseError(byte ErrorCode)
   {
   unsigned long eventcode;
-
   eventcode=command2event(CMD_ERROR,ErrorCode,0);
   PrintEvent(eventcode,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM);  // geef event weer op Serial
   TransmitCode(eventcode,VALUE_ALL);
@@ -971,17 +1002,16 @@ void RaiseError(byte ErrorCode)
  \*********************************************************************************************/
 boolean AddFileSDCard(char *FileName, char *Line)
   {
-  boolean r=true;
-  
+  boolean r;
+
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
   digitalWrite(Ethernetshield_CS_W5100, HIGH);
   digitalWrite(EthernetShield_CS_SDCard,LOW);
 
- // Serial.print("*** debug: AddFileSDCard(); FileName=");Serial.print(FileName);Serial.print(", Line=");Serial.println(Line); //??? Debug
-
   File LogFile = SD.open(FileName, FILE_WRITE);
   if(LogFile) 
     {
+    r=true;
     LogFile.write((uint8_t*)Line,strlen(Line));      
     LogFile.write('\n'); // nieuwe regel
     LogFile.close();
@@ -1104,4 +1134,18 @@ boolean FileList(void)
   }
   
   
+ /**********************************************************************************************\
+ * Geeft een string terug met een cookie op basis van een random HEX-waarde van 32-bit.
+ \*********************************************************************************************/
+void RandomCookie(char* Ck)
+  {
+  byte  x,y;
   
+  for(x=0;x<8;x++)
+    {
+    y=random(0x0, 0xf);
+    Ck[x]=y<10?(y+'0'):((y-10)+'A');
+    }
+  Ck[8]=0; // afsluiten string
+  }
+      

@@ -34,11 +34,11 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
 
   // Als de RAW pulsen worden opgevraagd door de gebruiker...
   // dan de pulsenreeks weergeven en er verder niets mee doen
-  if(RawSignal.Key!=0)
+  if(RawSignal.Key!=-1)
     {
     if(SaveRawSignal(RawSignal.Key))
       PrintTerminal(ProgmemString(Text_13));
-    RawSignal.Key=0;
+    RawSignal.Key=-1;
     return true;
     }
 
@@ -139,7 +139,7 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
         if(S.Debug==VALUE_ON)
           {
           EventlistEntry2str(x,EventlistDepth,TempString,false);
-          PrintTerminal(TempString);
+          Serial.println(TempString);
           }
           
         if(NodoType(Event_2)==NODO_TYPE_COMMAND) // is de ontvangen code een uitvoerbaar commando?

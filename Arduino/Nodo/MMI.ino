@@ -132,7 +132,7 @@ void PrintWelcome(void)
 
   // print versienummer, unit en indien gevuld het ID
   sprintf(TempString,"Version=%d.%d.%d, ThisUnit=%d",S.Version/100, (S.Version%100)/10, S.Version%10,S.Unit);
-  if(S.ID)
+  if(S.ID[0])
     {
     strcat(TempString,", ID=");
     strcat(TempString,S.ID);
@@ -170,8 +170,10 @@ void PrintTerminal(char* LineToPrint)
     {
     if(TerminalClient.connected() && TerminalConnected>0 && TerminalLocked==0)
       TerminalClient.println(LineToPrint);
-    if(ConfirmHTTP==true && S.TransmitIP==VALUE_SOURCE_HTTP)
-      SendHTTPRequestResponse(LineToPrint);
+      
+// ??? kan weg?
+//    if(ConfirmHTTP==true && S.TransmitIP==VALUE_SOURCE_HTTP)
+//      SendHTTPRequestResponse(LineToPrint);
     }
     
   if(bitRead(HW_Config,HW_SDCARD))
@@ -249,6 +251,7 @@ char* Event2str(unsigned long Code)
         break;
   
       // Par1 als tekst en par2 als tekst
+      case CMD_TRANSMIT_IP:
       case CMD_COMMAND_WILDCARD:
         P1=P_TEXT;
         P2=P_TEXT;
@@ -266,7 +269,6 @@ char* Event2str(unsigned long Code)
   
       // Par1 als tekst en par2 niet
       case CMD_SEND_EVENT:
-      case CMD_TRANSMIT_IP:
       case CMD_ERROR:
       case CMD_TRACE:
       case CMD_BUSY:

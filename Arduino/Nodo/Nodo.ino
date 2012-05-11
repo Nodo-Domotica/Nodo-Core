@@ -66,7 +66,7 @@ prog_char PROGMEM Text_12[] = "Input=";
 prog_char PROGMEM Text_13[] = "Ok.";
 prog_char PROGMEM Text_14[] = "Event=";
 prog_char PROGMEM Text_15[] = "File="; // reserve
-prog_char PROGMEM Text_16[] = "00000000"; // default ID na een reset
+prog_char PROGMEM Text_16[] = "";
 prog_char PROGMEM Text_17[] = "payload";
 prog_char PROGMEM Text_18[] = "accept";
 prog_char PROGMEM Text_19[] = "close";
@@ -89,12 +89,12 @@ prog_char PROGMEM Cmd_002[]="BreakOnVarEqu";
 prog_char PROGMEM Cmd_003[]="BreakOnVarLess";
 prog_char PROGMEM Cmd_004[]="BreakOnVarMore";
 prog_char PROGMEM Cmd_005[]="BreakOnVarNEqu";
-prog_char PROGMEM Cmd_006[]="ClockSetDate";
-prog_char PROGMEM Cmd_007[]="ClockSetYear";
-prog_char PROGMEM Cmd_008[]="ClockSetTime";
-prog_char PROGMEM Cmd_009[]="ClockSetDOW";
-prog_char PROGMEM Cmd_010[]="Delay";
-prog_char PROGMEM Cmd_011[]="SendTo";
+prog_char PROGMEM Cmd_006[]="BreakOnLater";
+prog_char PROGMEM Cmd_007[]="BreakOnEarlier";
+prog_char PROGMEM Cmd_008[]="ClockSetDate";
+prog_char PROGMEM Cmd_009[]="ClockSetYear";
+prog_char PROGMEM Cmd_010[]="ClockSetTime";
+prog_char PROGMEM Cmd_011[]="ClockSetDOW";
 prog_char PROGMEM Cmd_012[]="EventlistErase";
 prog_char PROGMEM Cmd_013[]="EventlistShow";
 prog_char PROGMEM Cmd_014[]="EventlistWrite";
@@ -104,8 +104,8 @@ prog_char PROGMEM Cmd_017[]="RawSignalSend";
 prog_char PROGMEM Cmd_018[]="Reset";
 prog_char PROGMEM Cmd_019[]="SendKAKU";
 prog_char PROGMEM Cmd_020[]="SendNewKAKU";
-prog_char PROGMEM Cmd_021[]="";
-prog_char PROGMEM Cmd_022[]="";
+prog_char PROGMEM Cmd_021[]="Delay";
+prog_char PROGMEM Cmd_022[]="SendTo";
 prog_char PROGMEM Cmd_023[]="SimulateDay";
 prog_char PROGMEM Cmd_024[]="Sound";
 prog_char PROGMEM Cmd_025[]="Debug";
@@ -292,9 +292,9 @@ prog_char PROGMEM Cmd_200[]="Ok.";
 prog_char PROGMEM Cmd_201[]="Error: Unknown command or event.";
 prog_char PROGMEM Cmd_202[]="Error: Invalid parameter in command.";
 prog_char PROGMEM Cmd_203[]="Error: Unable to open file on SDCard.";
-prog_char PROGMEM Cmd_204[]="Error: Queue overflow.";
-prog_char PROGMEM Cmd_205[]="Error: Eventlist execution nested to deep.";
-prog_char PROGMEM Cmd_206[]="Error: Writing to eventlist failed.";
+prog_char PROGMEM Cmd_204[]="Error: Event queue overflow.";
+prog_char PROGMEM Cmd_205[]="Error: Eventlist nesting error.";
+prog_char PROGMEM Cmd_206[]="Error: Accessing position in eventlist failed.";
 prog_char PROGMEM Cmd_207[]="Error: Unable to establish connection.";
 prog_char PROGMEM Cmd_208[]="Error: Incorrect password.";
 prog_char PROGMEM Cmd_209[]="Error: Command not supported in this Nodo version.";
@@ -310,12 +310,12 @@ prog_char PROGMEM Cmd_213[]="";
 #define CMD_BREAK_ON_VAR_LESS            3
 #define CMD_BREAK_ON_VAR_MORE            4
 #define CMD_BREAK_ON_VAR_NEQU            5
-#define CMD_CLOCK_DATE                   6
-#define CMD_CLOCK_YEAR                   7
-#define CMD_CLOCK_TIME                   8
-#define CMD_CLOCK_DOW                    9
-#define CMD_DELAY                       10
-#define CMD_SEND                        11
+#define CMD_BREAK_ON_TIME_LATER          6
+#define CMD_BREAK_ON_TIME_EARLIER        7
+#define CMD_CLOCK_DATE                   8
+#define CMD_CLOCK_YEAR                   9
+#define CMD_CLOCK_TIME                  10
+#define CMD_CLOCK_DOW                   11
 #define CMD_EVENTLIST_ERASE             12
 #define CMD_EVENTLIST_SHOW              13
 #define CMD_EVENTLIST_WRITE             14
@@ -325,8 +325,8 @@ prog_char PROGMEM Cmd_213[]="";
 #define CMD_RESET                       18
 #define CMD_SEND_KAKU                   19
 #define CMD_SEND_KAKU_NEW               20
-#define CMD_res21                       21
-#define CMD_res22                       22
+#define CMD_DELAY                       21
+#define CMD_SEND                        22
 #define CMD_SIMULATE_DAY                23
 #define CMD_SOUND                       24
 #define CMD_TRACE                       25
@@ -365,7 +365,7 @@ prog_char PROGMEM Cmd_213[]="";
 #define CMD_TRANSMIT_IR                 58
 #define CMD_TRANSMIT_RF                 59
 #define CMD_RECEIVE_SETTINGS            60
-#define CMD_RES                         61
+#define CMD_RES61                       61
 #define CMD_FILE_ERASE                  62
 #define CMD_FILE_SHOW                   63
 #define CMD_FILE_EXECUTE                64
@@ -590,7 +590,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define BLUE                         3  // Led = Blauw
 #define TERMINAL_PORT               23
 #define UNIT                       0x1 // Unit nummer van de Nodo. Bij gebruik van meerdere nodo's deze uniek toewijzen [1..F]
-#define EVENTLIST_MAX              256 // aantal events dat de lijst bevat in het EEPROM geheugen van de ATMega328. Iedere regel in de eventlist heeft 8 bytes nodig. eerste adres is 0
+#define EVENTLIST_MAX              250 // aantal events dat de lijst bevat in het EEPROM geheugen. Iedere regel in de eventlist heeft 8 bytes nodig. eerste adres is 0
 #define USER_VARIABLES_MAX          15 // aantal beschikbare gebruikersvariabelen voor de user.
 #define RAW_BUFFER_SIZE            256 // Maximaal aantal te ontvangen 128 bits.
 #define UNIT_MAX                    15 // Hoogst mogelijke unit nummer van een Nodo
@@ -621,6 +621,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define PASSWORD_MAX_RETRY           5 // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
 #define PASSWORD_TIMEOUT           300 // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
 #define TERMINAL_TIMEOUT           300 // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
+#define COOKIE_REFRESH_TIME         60 // Tijd tussen automatisch verzenden van een nieuw Cookie als de beveiligde HTTP modus is inschakeld.
 
 // timings NODO signalen
 #define NODO_PULSE_0               500 // PWM: Tijdsduur van de puls bij verzenden van een '0' in uSec.
@@ -677,7 +678,7 @@ struct Settings
   boolean DaylightSaving;                                   // Vlag die aangeeft of het zomertijd of wintertijd is
   int     DaylightSavingSet;                                // Vlag voor correct automatisch kunnen overschakelen van zomertijd naar wintertijd of vice-versa
   char    Password[25];                                     // String met wachtwoord.
-  char    ID[25];                                           // code waar de Nodo uniek mee geïdentificeerd kan worden in een netwerk
+  char    ID[10];                                           // code waar de Nodo uniek mee geïdentificeerd kan worden in een netwerk
   char    HTTPRequest[80];                                  // HTTP request;
   byte    EventGhostServer_IP[4];                           // IP adres van waar EventGhost Events naar verstuurd moeten worden.
   byte    AutoSaveEventGhostIP;                             // Automatisch IP adres opslaan na ontvangst van een EG event of niet.
@@ -688,6 +689,7 @@ struct Settings
   byte    DnsServer[4];                                     // DNS Server IP adres
   int     PortServer;                                       // Poort van de inkomende IP communnicatie
   int     PortClient;                                       // Poort van de uitgaande IP communnicatie
+  byte    HTTP_Pin;                                      // Als deze VALUE_ON bevat worden events tussen WebApp en Nodo alleen uitgewisseld bij juiste key in HTTP reques.
   }S;
 
 unsigned long UserTimer[TIMER_MAX];                         // Timers voor de gebruiker.
@@ -701,6 +703,7 @@ byte DaylightPrevious;                                      // t.b.v. voorkomen 
 byte EventlistDepth=0;                                      // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's.
 byte Hold=false;
 int HoldTimer;                                              // Als deze timer staat, dat verkeert de Nodo in de Hold&Queue modus.
+int CookieTimer;                                            // Seonden teller die bijhoudt wanneer er weer een nieuw Cookie naar de WebApp verzonden moet worden.
 void(*Reset)(void)=0;                                       // reset functie op adres 0.
 uint8_t RFbit,RFport,IRbit,IRport;                          // t.b.v. verwerking IR/FR signalen.
 uint8_t MD5HashCode[16];                                    // tabel voor berekenen van MD5 hash codes t.b.v. uitwisselen wachtwoord EventGhost.
@@ -711,6 +714,7 @@ boolean ConfirmHTTP=false;                                  // Als true, dan wor
 boolean TemporyEventGhostError=false;                       // Vlag om tijdelijk evetghost verzending stil te leggen na een communicatie probleem
 int TerminalLocked=1;                                       // 0 als als gebruiker van een telnet terminalsessie juiste wachtwoord heeft ingetoetst
 char TempLogFile[13];                                       // Naam van de Logfile waar (naast de standaard logging) de verwerking in gelogd moet worden.
+char HTTPCookie[10];                                        // Cookie voor uitwisselen van encrypted events via HTTP
 int FileWriteMode=0;                                        // Het aantal seconden dat deze timer ingesteld staat zal er geen verwerking plaats vinden van TerminalInvoer. Iedere seconde --.
 char InputBuffer_Serial[INPUT_BUFFER_SIZE+1];               // Buffer voor input Seriele data
 char InputBuffer_Terminal[INPUT_BUFFER_SIZE+1];             // Buffer voor input terminal verbinding Telnes sessie
@@ -734,7 +738,7 @@ struct RawsignalStruct
   unsigned int Pulses[RAW_BUFFER_SIZE+2];                   // Tabel met de gemeten pulsen in microseconden. eerste waarde [0] wordt NIET gebruikt. (legacy redenen).
   byte Source;                                              // Bron waar het signaal op is binnengekomen.
   int Number;                                               // aantal bits, maal twee omdat iedere bit een pulse en een space heeft.
-  byte Key;                                                 // sleutel waaronder de pulsenreeks op SDCard opgeslgen moet worden.
+  int Key;                                                 // sleutel waaronder de pulsenreeks op SDCard opgeslgen moet worden.
   byte Type;                                                // Type signaal dan ontvangen is.
   }RawSignal;
   
@@ -790,7 +794,6 @@ void setup()
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
   digitalWrite(Ethernetshield_CS_W5100, HIGH);
   digitalWrite(EthernetShield_CS_SDCard,LOW);
-  delay(10);
   if(SD.begin(EthernetShield_CS_SDCard))
     {
     SD.mkdir(ProgmemString(Text_27)); // maak drectory aan waar de Rawsignal HEX bestanden in worden opgeslagen
@@ -805,16 +808,18 @@ void setup()
   ClockRead();
   SetDaylight();
   DaylightPrevious=Time.Daylight;
+  randomSeed(Time.Seconds);
 
   // Zet statussen WIRED_IN op hoog, anders wordt direct wij het opstarten meerdere malen een event gegenereerd omdat de pull-up weerstand analoge de waarden op hoog zet
   for(x=0;x<WIRED_PORTS;x++){WiredInputStatus[x]=true;}
-
  
-  // doe een snelle check of de ethernet kaart aanwezig is. 
-  // Als ethernet shield aanwezig, dan zal SCK (Mega Pen 52) laag zijn.
-  pinMode(EthernetShield_SCK, INPUT); // MOSI
-  digitalWrite(EthernetShield_SCK,HIGH);// pull up weerstand aan
-  bitWrite(HW_Config,HW_ETHERNET,!digitalRead(EthernetShield_SCK));
+//  ??? deze test werkt niet voor alle ethernet shields!
+//  // doe een snelle check of de ethernet kaart aanwezig is. 
+//  // Als ethernet shield aanwezig, dan zal SCK (Mega Pen 52) laag zijn.
+//  pinMode(EthernetShield_SCK, INPUT); // MOSI
+//  digitalWrite(EthernetShield_SCK,HIGH);// pull up weerstand aan
+//  bitWrite(HW_Config,HW_ETHERNET,!digitalRead(EthernetShield_SCK));
+  bitWrite(HW_Config,HW_ETHERNET,1);
 
   // Initialiseer ethernet device
   if(bitRead(HW_Config,HW_ETHERNET))
@@ -834,11 +839,12 @@ void setup()
       Ethernet.begin(Ethernet_MAC_Address, S.Nodo_IP, S.DnsServer, S.Gateway, S.Subnet);
   
     bitWrite(HW_Config,HW_ETHERNET,((Ethernet.localIP()[0]+Ethernet.localIP()[1]+Ethernet.localIP()[2]+Ethernet.localIP()[3])!=0)); // Als er een IP adres is, dan Ethernet inschakelen
-    IPServer.begin();                                // Start Server voor ontvangst van Events
-    TerminalServer.begin();                             // Start server voor Terminalsessies via TelNet
+    IPServer.begin(); // Start Server voor ontvangst van Events
+    TerminalServer.begin(); // Start server voor Terminalsessies via TelNet
     }
-  
 
+  RawSignal.Key=-1; // Als deze variable ongelijk aan -1 dan wordt er een Rawsignal opgeslagen.
+  
   bitWrite(HW_Config,HW_SERIAL,1); // zonder deze vlag vindt er geen output naar de serial poort plaats. Tijdelijk even inschakelen.
   PrintWelcome(); // geef de welkomsttekst weer
   ProcessEvent(command2event(CMD_BOOT_EVENT,0,0),VALUE_DIRECTION_INTERNAL,CMD_BOOT_EVENT,0,0);  // Voer het 'Boot' event uit.
@@ -987,7 +993,7 @@ void loop()
                   TerminalLocked=1;
                   
                 if(TerminalLocked<=PASSWORD_MAX_RETRY)
-                  TerminalClient.print(ProgmemString(Text_03));
+                  TerminalClient.print(ProgmemString(Text_13));
                 else
                   RaiseError(ERROR_10);
                 }
@@ -1036,7 +1042,7 @@ void loop()
                         {
                         TerminalLocked++;
                         TerminalClient.println("?");
-                        TerminalClient.print(ProgmemString(Text_03));
+                        TerminalClient.print(ProgmemString(Text_13));
                         if(TerminalLocked>PASSWORD_MAX_RETRY)TerminalLocked=PASSWORD_TIMEOUT; // blokkeer tijd terminal
                         }
                       }
@@ -1217,6 +1223,18 @@ void loop()
       // Hold & Queue modus timer verlagen
       if(HoldTimer>0)
         HoldTimer--;
+
+      // Timer voor verzenden van Cookie naar de WebApp
+      if(S.HTTP_Pin==VALUE_ON)
+        {
+        if(CookieTimer>0)
+          CookieTimer--;
+        else
+          {
+          CookieTimer=COOKIE_REFRESH_TIME;
+          SendHTTPCookie(); // Verzend een nieuw cookie
+          }
+        }
 
       // loop periodiek langs de userplugin
       #ifdef NODO_PLUGIN

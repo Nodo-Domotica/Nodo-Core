@@ -1,11 +1,23 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- Issue 423:	Build 2012-04-04: grote problemen.
-- Issue 422:	RawSignalSend met ongeldig nummer.
+- LET OP: VANAF DEZE VERSIE WERKT DE NODO NIET MEER MET DE WEBAPP OMGEVING OP Nodo2.powerkite.nl maar op www.nodo-domotica.nl/webapp
+- Issue 427:	Versleutelen communicatie Nodo <> WebApp
+- ID niet meer nodig bij ontvangen van ee HTTP request. Wordt nog wel verzonden.
+- default is id string leeg na een reset
+- HTTP tag "&version" nu opgenomen als header veld.
+- let op: default poort nodo = 8080 !
+- Issue 433:	EventList lengte
+- Issue 440:	SendKAKU met ongeldige parameter
+- Issue 431:	RawSignalSave werkt niet meer
+- Issue 443:	Break on tijd
 
 Known Errors / ToDo:
-- Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue testen.
+- Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue testen
+- clocksetdate met voorloop nul?
+- default na reset toegang via browser
+- clientip 0.0.0.0 ???
+- MD5 uit SendTo slopen en vervangen door andere Key.
 
 Aanpassingen t.o.v. Nodo Due:
 - Nieuw commando "ClientIP" toegevoegd. Aanvaard alleen HTTP-Requests en EventGhst events van opgegeven IP adres.
@@ -80,4 +92,4 @@ Aanpassingen t.o.v. Nodo Due:
 - Nieuw commando: "PulseCalibrate <high | low>, <pulse_in_mSec>, <value>". Mapt een waarde en de tijd tussen twee pulsen. T.b.v. energiemeting
 - Nieuw commando: "VariablePulse <variable>, <'Count'>". Variabele vullen met gemeten pulstijd of aantal pulsen. 
 - LET OP: weergave naar Serial pas nadat er tekens via serial zijn ontvangen. Voorkomt zinloze tijdsbesteding als er geen serial aangesloten is!
-
+- Nieuw commando: BreakOnLater en BreakOnEarlier
