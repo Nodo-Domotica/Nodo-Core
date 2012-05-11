@@ -3,7 +3,7 @@
  * 
  * Deze functie vult de globale variabele Time.DayLight met de status van zonsopkomst & -opgang
  \*********************************************************************************************/
-#define offset 60
+#define offset 120
 void SetDaylight()
   {
   // Tabel Sunset & Sunrise: om de 10 dagen de tijden van zonsopkomst en zonsondergang in minuten na middernacht. 

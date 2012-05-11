@@ -50,36 +50,6 @@ unsigned long str2int(char *string)
   return(strtol(string,NULL,0));  
   }
 
-/**********************************************************************************************\
- * Converteert een string volgens formaat "<Home><address>" naar een absoluut adres [0..255]
- \*********************************************************************************************/
-int HA2address(char* HA, byte *group)
-  {
-  byte x=0,y=false; // teller die wijst naar het het te behandelen teken
-  byte c;   // teken uit de string die behandeld wordt
-  byte Home=0,Address=0;// KAKU-Home en KAKU-adres
- 
-  while((c=tolower(HA[x++]))!=0)
-    {
-    if(c>='0' && c<='9'){Address=Address*10;Address=Address+c-'0';}
-    if(c>='a' && c<='p'){Home=c-'a';y=true;} // KAKU home A is intern 0
-    }
-
-  if(y)// notatie [A1..P16]
-    {
-    if(Address==0)
-      {// groep commando is opgegeven: 0=alle adressen
-      *group=true;
-      return Home<<4;
-      }
-    else
-      return (Home<<4) | (Address-1);        
-    }
-  else // absoluut adres [0..255]
-    return Address; // KAKU adres 1 is intern 0     
-  }
-
-  
  /**********************************************************************************************\
  * geeft *char pointer terug die naar een PROGMEM string wijst.
  \*********************************************************************************************/

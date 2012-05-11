@@ -82,6 +82,7 @@ byte CommandError(unsigned long Content)
     case CMD_KAKU:
     case CMD_SEND_KAKU:
     case CMD_RECEIVE_LINE:
+    case CMD_RAWSIGNAL_SAVE:
       return false;
  
     case CMD_SEND_KAKU_NEW:
@@ -93,18 +94,10 @@ byte CommandError(unsigned long Content)
       if(Par1>EVENTLIST_MAX)return ERROR_02;    
       return false; 
 
-    case CMD_EVENTLIST_SHOW:
-    case CMD_EVENTLIST_ERASE: 
-      if(Par1>EVENTLIST_MAX)return ERROR_02;    
-      return false; 
-      
     case CMD_TIMER_SET_SEC:
     case CMD_TIMER_SET_MIN:
       if(Par1>TIMER_MAX)return ERROR_02;
       return false;
-
-    case CMD_RAWSIGNAL_SAVE:
-      if(Par1<1)return ERROR_02;
 
     // test:Par1 binnen bereik maximaal beschikbare variabelen
     case CMD_VARIABLE_INC: 
@@ -199,6 +192,7 @@ byte CommandError(unsigned long Content)
 
     case CMD_TRANSMIT_IP:
       if(Par1!=VALUE_OFF && Par1!=VALUE_SOURCE_HTTP && Par1!=VALUE_SOURCE_EVENTGHOST)return ERROR_02;
+      if(Par2!=VALUE_OFF && Par2!=VALUE_ON && Par2!=0)return ERROR_02;
       return false;
 
     case CMD_WIRED_ANALOG_CALIBRATE:
@@ -358,8 +352,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       a=0;
       if(S.Debug==VALUE_ON)
         {        
-        Serial.print("*** debug: PulseTimeMillis=");Serial.print(PulseTimeMillis,DEC); //??? Debug
-        Serial.print("PulseCount=");Serial.println(PulseCount,DEC); //??? Debug
+        Serial.print("# PulseTimeMillis=");Serial.print(PulseTimeMillis,DEC); //??? Debug
+        Serial.print(", PulseCount=");Serial.println(PulseCount,DEC); //??? Debug
         }
 
       //Formule-1: Variable = ( Pulse / A ) * B + C
@@ -437,6 +431,16 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         error=true;
       break;
 
+    case CMD_BREAK_ON_TIME_LATER:
+      if((Par1*60+Par2)<(Time.Hour*60+Time.Minutes))
+        error=true;
+      break;
+
+    case CMD_BREAK_ON_TIME_EARLIER:
+      if((Par1*60+Par2)>(Time.Hour*60+Time.Minutes))
+        error=true;
+      break;
+
     case CMD_SEND_USEREVENT:
       // Voeg Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
       TransmitCode(command2event(CMD_USEREVENT,Par1,Par2),VALUE_ALL);// Maak Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's.;
@@ -452,7 +456,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         if(RawSignalGet(Par1))
           TransmitCode(AnalyzeRawSignal(),VALUE_ALL);
         else
-           RaiseError(ERROR_03);
+          RaiseError(ERROR_03);
         }
       else
         TransmitCode(AnalyzeRawSignal(),VALUE_ALL);
@@ -610,6 +614,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       
     case CMD_TRANSMIT_IP:
       S.TransmitIP=Par1;        
+      S.HTTP_Pin=Par2;
       SaveSettings();
       break;
       
@@ -711,42 +716,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
     case CMD_RESET:
       ResetFactory();
-
-    case CMD_EVENTLIST_SHOW:
-      PrintTerminal(ProgmemString(Text_22));
-      if(Par1==0)
-        {
-        for(x=1;x<=EVENTLIST_MAX;x++)
-          {
-          if(EventlistEntry2str(x,0,TempString, false))
-            PrintTerminal(TempString);
-          }
-        }
-      else
-        {
-        EventlistEntry2str(Par1,0,TempString, false);
-        PrintTerminal(TempString);
-        }
-      PrintTerminal(ProgmemString(Text_22));
-      break;
        
     case CMD_RAWSIGNAL_SAVE:
       PrintTerminal(ProgmemString(Text_07));
       RawSignal.Key=Par1;
-      break;        
-      
-    case CMD_EVENTLIST_ERASE:
-      if(Par1==0)
-        {
-        Led(BLUE);
-        for(x=1;x<=EVENTLIST_MAX;x++)
-          Eventlist_Write(x,0L,0L);
-        Led(RED);
-        }
-      else
-        Eventlist_Write(Par1,0L,0L);
-      break;        
-          
+      break;                  
     }
   return error?false:true;
   }
@@ -763,9 +737,9 @@ void ExecuteLine(char *Line, byte Port)
   int PosCommand;
   int PosLine;
   int L=strlen(Line);
-  int x,y;
+  int w,x,y,z;
   int EventlistWriteLine=0;
-  byte Error=0,Par1,Par2,Cmd;
+  int Error=0,Par1,Par2,Cmd;
   byte State_EventlistWrite=0;
   unsigned long v,event,a; 
 
@@ -871,9 +845,7 @@ void ExecuteLine(char *Line, byte Port)
             if(GetArgv(Command,TempString,2))
               {
               Led(BLUE);
-              strcpy(TmpStr,"&file=");
-              strcat(TmpStr,TempString);
-              xSendHTTPRequestStr(TmpStr);
+              GetHTTPFile(TempString);
               }
             else
               Error=ERROR_02;            
@@ -979,7 +951,7 @@ void ExecuteLine(char *Line, byte Port)
             break;
             }
     
-          case CMD_EVENTGHOST_SERVER:
+        case CMD_EVENTGHOST_SERVER:
             if(Par1==VALUE_AUTO)
               { 
               if(Par2==VALUE_ON)
@@ -1032,8 +1004,53 @@ void ExecuteLine(char *Line, byte Port)
             break;
             
           case CMD_EVENTLIST_WRITE:
-            EventlistWriteLine=Par1;
-            State_EventlistWrite=1;
+            if(Par1>EVENTLIST_MAX)
+              Error=ERROR_06;
+            else
+              {
+              EventlistWriteLine=Par1;
+              State_EventlistWrite=1;
+              }
+            break;
+
+          case CMD_EVENTLIST_ERASE:
+            if(Par1>EVENTLIST_MAX)
+              Error=ERROR_06;
+            else
+              {            
+              if(Par1==0)
+                {
+                Led(BLUE);
+                for(x=1;x<=EVENTLIST_MAX;x++)
+                  Eventlist_Write(x,0L,0L);
+                Led(RED);
+                }
+              else
+                Eventlist_Write(Par1,0L,0L);
+              }
+            break;        
+
+          case CMD_EVENTLIST_SHOW:
+            if(Par1>EVENTLIST_MAX)
+              Error=ERROR_06;
+            else
+              {            
+              PrintTerminal(ProgmemString(Text_22));
+              if(Par1==0)
+                {
+                for(x=1;x<=EVENTLIST_MAX;x++)
+                  {
+                  if(EventlistEntry2str(x,0,TempString, false))
+                    PrintTerminal(TempString);
+                  }
+                }
+              else
+                {
+                EventlistEntry2str(Par1,0,TempString, false);
+                PrintTerminal(TempString);
+                }
+              PrintTerminal(ProgmemString(Text_22));
+              }
             break;
             
           case CMD_SEND_KAKU_NEW:
@@ -1198,15 +1215,21 @@ void ExecuteLine(char *Line, byte Port)
 
           case CMD_PASSWORD:
             {
-            if(GetArgv(Command,S.Password,2))
-              SaveSettings();
+            TmpStr[0]=0;
+            GetArgv(Command,TmpStr,2);
+            TmpStr[24]=0; // voor geval de string te lang is.
+            strcpy(S.Password,TmpStr);
+            SaveSettings();
             break;
             }  
 
           case CMD_ID:
             {
-            if(GetArgv(Command,S.ID,2))
-              SaveSettings();
+            TmpStr[0]=0;
+            GetArgv(Command,TmpStr,2);
+            TmpStr[9]=0; // voor geval de string te lang is.
+            strcpy(S.ID,TmpStr);
+            SaveSettings();
             break;
             }  
 
@@ -1235,15 +1258,44 @@ void ExecuteLine(char *Line, byte Port)
             {
             if(GetArgv(Command,TmpStr,2))
               {
-              byte z=0;
-              Par1=HA2address(TmpStr,&z); // Parameter-1 bevat [A1..P16]. Omzetten naar absolute waarde. z=groep commando
-              if(GetArgv(Command,TmpStr,3))
+              byte grp=0,c;
+              x=0;     // teller die wijst naar het het te behandelen teken
+              z=0;     // Home
+              w=0;     // Address
+              y=false; // Notatiewijze
+              
+              while((c=tolower(TmpStr[x++]))!=0)
                 {
-                Par2=(str2cmd(TmpStr)==VALUE_ON) | (z<<1); // Parameter-2 bevat [On,Off]. Omzetten naar 1,0. tevens op bit-2 het groepcommando zetten.
-                v=command2event(Cmd,Par1,Par2);
-                Error=CommandError(v);
+                if(c>='0' && c<='9'){w=w*10;w=w+c-'0';}
+                if(c>='a' && c<='p'){z=c-'a';y=true;} // KAKU home A is intern 0
                 }
+            
+              if(y)// notatie [A1..P16]
+                {
+                if(w==0)
+                  {// groep commando is opgegeven: 0=alle adressen
+                  grp=true;
+                  Par1=z<<4;
+                  }
+                else
+                  Par1= (z<<4) | (w-1);        
+                }
+              else // absoluut adres [0..255]
+                Par1=w; // KAKU adres 1 is intern 0     
+
+              // Parameter-1 bevat [A1..P16]. Nu omgezet naar absolute waarde. grp=groep commando
+
+              if(Par2==VALUE_ON || Par2==VALUE_OFF)
+                {
+                Par2=(Par2==VALUE_ON) | (grp<<1); // Parameter-2 bevat [On,Off]. Omzetten naar 1,0. tevens op bit-2 het groepcommando zetten.
+                v=command2event(Cmd,Par1,Par2);
+                }
+              else
+                Error=ERROR_02;
               }
+            else
+              Error=ERROR_02;
+              
             break;
             }
             

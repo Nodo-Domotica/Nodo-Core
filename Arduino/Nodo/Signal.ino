@@ -419,7 +419,7 @@ boolean TransmitCode(unsigned long Event, byte Dest)
   
     if(Dest==VALUE_SOURCE_HTTP || (Dest==VALUE_ALL && S.TransmitIP==VALUE_SOURCE_HTTP))
       {
-      SendHTTPRequestEvent(Event);
+      SendHTTPEvent(Event);
       PrintEvent(Event,VALUE_SOURCE_HTTP,VALUE_DIRECTION_OUTPUT);
       }
     }
