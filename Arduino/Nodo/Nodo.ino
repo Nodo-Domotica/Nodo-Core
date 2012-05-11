@@ -993,7 +993,7 @@ void loop()
                   TerminalLocked=1;
                   
                 if(TerminalLocked<=PASSWORD_MAX_RETRY)
-                  TerminalClient.print(ProgmemString(Text_13));
+                  TerminalClient.print(ProgmemString(Text_03));
                 else
                   RaiseError(ERROR_10);
                 }
