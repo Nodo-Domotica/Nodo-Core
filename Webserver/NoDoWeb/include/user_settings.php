@@ -48,6 +48,18 @@ $nodo_ip = $row_RSsetup['nodo_ip'];
 $nodo_port = $row_RSsetup['nodo_port'];
 $nodo_password = $row_RSsetup['nodo_password'];
 $nodo_id = $row_RSsetup['nodo_id'];
+$cookie = $row_RSsetup['cookie'];
+$cookie_update = $row_RSsetup['cookie_update'];
 
+$key = md5($cookie.":".$nodo_password);
+
+//Controleren of de Nodo maximaal 5 minuten geleden een connectie met de Web App heeft gehad.
+if (strtotime($cookie_update) >  (strtotime("now")-300)) {$heartbeat = "ok";} else {$heartbeat = "lost";}
+
+
+	
+
+//putenv ("TZ=Europe/Amsterdam");
+date_default_timezone_set('Europe/Amsterdam');
 
 ?>

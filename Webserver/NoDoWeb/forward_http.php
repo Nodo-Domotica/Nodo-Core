@@ -20,12 +20,19 @@ require_once('connections/db_connection.php');
 require_once('include/auth.php');
 require_once('include/user_settings.php');
 
+
+
+
+
 //Stuur parameters naar HTTP server bijvoorbeeld ?event=sendkaku a1,on&password=[password]&id=[id]
 function send_event($event)
 	{
-		global $nodo_ip, $nodo_port, $nodo_password, $nodo_id;
+		global $nodo_ip, $nodo_port, $key;
 		
-		$url = "http://$nodo_ip:$nodo_port/?event=$event&password=$nodo_password&id=$nodo_id";
+		
+		
+		$url = "http://$nodo_ip:$nodo_port/?event=$event&key=$key";
+		
 		
 		$ch = curl_init();
 		$timeout = 0;
@@ -74,7 +81,11 @@ if ($action != NULL) {
 	$wired_out_on = $wired_out_1 . "on" . $wired_out_2;
 	$wired_out_off = $wired_out_1 . "off" . $wired_out_2;
 	
-	$user_event = "SendUserEvent%20";
+	$send_user_event = "SendUserEvent%20";
+	$send_user_event_on = $send_user_event . $row_RSdevices['user_event_on'];
+	$send_user_event_off = $send_user_event . $row_RSdevices['user_event_off'];
+	
+	$user_event = "UserEvent%20";
 	$user_event_on = $user_event . $row_RSdevices['user_event_on'];
 	$user_event_off = $user_event . $row_RSdevices['user_event_off'];
 		
@@ -164,7 +175,33 @@ if ($action != NULL) {
 					
 				break;
 
-				case 4: //UserEvent
+				case 4: //SendUserEvent
+					
+					
+					
+					switch ($action) {
+							
+						case "toggle":
+							if ($status == 1) {
+							send_event($send_user_event_off);
+							}
+							elseif ($status == 0) {
+							send_event($send_user_event_on);
+							}
+						break;
+						
+						case "on":
+							send_event($send_user_event_on);
+						break;
+						
+						case "off":
+							send_event($send_user_event_off);
+						break;
+					}
+									
+				break;
+				
+				case 5: //UserEvent
 					
 					
 					

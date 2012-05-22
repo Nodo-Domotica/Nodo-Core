@@ -52,15 +52,13 @@ function HTTPRequest($Url){
 
 		//Status uitlezen
 		$file="STATUS";
-		HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&event=FileErase%20$file");
-		HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&event=FileLog%20$file");
-		HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&event=Status%20All");
-		HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&event=FileLog");
+		HTTPRequest("http://$nodo_ip/?event=FileErase%20$file;FileLog%20$file;Status%20All;FileLog&key=$key");
+		
 		
 			
 
 		//Status van Nodo in array plaatsen
-		$script = explode("\n", HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&file=$file"));
+		$script = explode("\n", HTTPRequest("http://$nodo_ip/?file=$file&key=$key"));
 		
 			
 		//Totaal aantal lijnen tellen in $script
@@ -78,8 +76,7 @@ if (isset($script)){
 	for($i=0;$i<$total_script_lines;$i++){
 		
 			
-			//<br /> aan het einde van de regels verwijderen
-			//$script[$i] = str_replace("<br />","",$script[$i]);
+			
 			
 			echo $script[$i];
 		

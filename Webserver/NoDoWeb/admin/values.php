@@ -259,7 +259,7 @@ header("Location: values.php?id=$sensor_id");
 			<label for="select-choice-5" class="select" >Graph: type:</label>
 			<select name="graph_type" id="graph_type" data-native-menu="false" >
 				<option value="1" selected="selected">Line</option>
-				<option value="2">Bar (totals)</option>
+				<option value="2">Bar (totals per day)</option>
 			</select>
 			<br>
 			

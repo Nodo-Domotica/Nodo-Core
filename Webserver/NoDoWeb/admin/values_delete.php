@@ -53,7 +53,7 @@ if ((isset($_GET['id'])) && ($_GET['id'] != "")) {
   
   $id = $_GET['id'];
   
-    
+   mysql_select_db($database, $db); 
   //Alle records groter dan het te verwijderen record bepalen
   $result = mysql_query("SELECT * FROM nodo_tbl_sensor WHERE user_id='$userId' AND sort_order > (SELECT sort_order FROM nodo_tbl_sensor WHERE user_id='$userId' AND id='$id')") or die(mysql_error());
   
@@ -64,11 +64,11 @@ if ((isset($_GET['id'])) && ($_GET['id'] != "")) {
   $sort_number = $row['sort_order'] - 1;
   
   // save the data to the database 
- mysql_select_db($database, $db);
+ 
  mysql_query("UPDATE nodo_tbl_sensor SET sort_order='$sort_number' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
  
  
- $result = mysql_query("SELECT * FROM nodo_tbl_sensor WHERE user_id='$userId' AND sort_order > (SELECT sort_order FROM nodo_tbl_sensor WHERE user_id='$userId' AND id='$id')") or die(mysql_error());
+ 
  
  
  }

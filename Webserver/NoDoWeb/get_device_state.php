@@ -33,7 +33,7 @@ do { ?>document.getElementById('switch_<?php echo $row_RSdevice['id'];?>').inner
    {
    
 	case 0:
-		echo "'<IMG SRC=\"media/off.png\" WIDTH=20 ALIGN=right alt=\"UIT\">';";
+		echo "'<IMG SRC=\"media/off.png\" ALIGN=right alt=\"UIT\">';";
 	break;
    
 	case 1:
@@ -43,57 +43,57 @@ do { ?>document.getElementById('switch_<?php echo $row_RSdevice['id'];?>').inner
 		{
 			//Als er geen dimwaarde bestaat dan gaan we er van uit dat er niet gedimd wordt.
 			case 0:
-				echo "'<IMG SRC=\"media/on.png\" WIDTH=20 ALIGN=right>';";
+				echo "'<IMG SRC=\"media/on.png\" ALIGN=right>';";
 				break;
 			   
 			//Status icoon afhankelijk van het dim-niveau
 			case 1:
-				echo "'<IMG SRC=\"media/on_dim1.png\" WIDTH=20 ALIGN=right>';";
+				echo "'<IMG SRC=\"media/on_dim1.png\" ALIGN=right>';";
 				break;
 			case 2:
-				echo "'<IMG SRC=\"media/on_dim2.png\" WIDTH=20 ALIGN=right>';";
+				echo "'<IMG SRC=\"media/on_dim2.png\" ALIGN=right>';";
 				break;
 			case 3:
-				echo "'<IMG SRC=\"media/on_dim3.png\" WIDTH=20 ALIGN=right>';";
+				echo "'<IMG SRC=\"media/on_dim3.png\" ALIGN=right>';";
 				break;
 			case 4:
-				echo "'<IMG SRC=\"media/on_dim4.png\" WIDTH=20 ALIGN=right>';";
+				echo "'<IMG SRC=\"media/on_dim4.png\" ALIGN=right>';";
 				break;
 			case 5:
-				echo "'<IMG SRC=\"media/on_dim5.png\" WIDTH=20 ALIGN=right>';";
+				echo "'<IMG SRC=\"media/on_dim5.png\" ALIGN=right>';";
 				break;
 			case 6:
-				echo "'<IMG SRC=\"media/on_dim6.png\" WIDTH=20 ALIGN=right>';";
+				echo "'<IMG SRC=\"media/on_dim6.png\" ALIGN=right>';";
 				break;
 			case 7:
-				echo "'<IMG SRC=\"media/on_dim7.png\" WIDTH=20 ALIGN=right>';";
+				echo "'<IMG SRC=\"media/on_dim7.png\" ALIGN=right>';";
 				break;
 			case 8:
-				echo "'<IMG SRC=\"media/on_dim8.png\" WIDTH=20 ALIGN=right>';";
+				echo "'<IMG SRC=\"media/on_dim8.png\" ALIGN=right>';";
 				break;
 			case 9:
-				echo "'<IMG SRC=\"media/on_dim9.png\" WIDTH=20 ALIGN=right>';";
+				echo "'<IMG SRC=\"media/on_dim9.png\" ALIGN=right>';";
 				break;
 			case 10:
-				echo "'<IMG SRC=\"media/on_dim10.png\" WIDTH=20 ALIGN=right>';";
+				echo "'<IMG SRC=\"media/on_dim10.png\" ALIGN=right>';";
 				break;
 			case 11:
-				echo "'<IMG SRC=\"media/on_dim11.png\" WIDTH=20 ALIGN=right>';";
+				echo "'<IMG SRC=\"media/on_dim11.png\" ALIGN=right>';";
 				break;
 			case 12:
-				echo "'<IMG SRC=\"media/on_dim12.png\" WIDTH=20 ALIGN=right>';";
+				echo "'<IMG SRC=\"media/on_dim12.png\" ALIGN=right>';";
 				break;
 			case 13:
-				echo "'<IMG SRC=\"media/on_dim13.png\" WIDTH=20 ALIGN=right>';";
+				echo "'<IMG SRC=\"media/on_dim13.png\" ALIGN=right>';";
 				break;
 			case 14:
-				echo "'<IMG SRC=\"media/on_dim14.png\" WIDTH=20 ALIGN=right>';";
+				echo "'<IMG SRC=\"media/on_dim14.png\" ALIGN=right>';";
 				break;
 			case 15:
-				echo "'<IMG SRC=\"media/on_dim15.png\" WIDTH=20 ALIGN=right>';";
+				echo "'<IMG SRC=\"media/on_dim15.png\" ALIGN=right>';";
 				break;
 			case 16:
-				echo "'<IMG SRC=\"media/on_dim16.png\" WIDTH=20 ALIGN=right>';";
+				echo "'<IMG SRC=\"media/on_dim16.png\" ALIGN=right>';";
 				break;
 		}
 	

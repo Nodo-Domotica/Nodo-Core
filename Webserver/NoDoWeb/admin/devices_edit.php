@@ -93,7 +93,8 @@ $page_title="Setup: Edit device";
 				<option value="1"<?php if ($row['type'] == 1) {echo 'selected="selected"';}?>>Kaku</option>
 				<option value="2" <?php if ($row['type'] == 2) {echo 'selected="selected"';}?>>New kaku</option>
 				<option value="3" <?php if ($row['type'] == 3) {echo 'selected="selected"';}?>>WiredOut</option>
-				<option value="4" <?php if ($row['type'] == 4) {echo 'selected="selected"';}?>>UserEvent</option>
+				<option value="4" <?php if ($row['type'] == 4) {echo 'selected="selected"';}?>>SendUserEvent</option>
+				<option value="5" <?php if ($row['type'] == 5) {echo 'selected="selected"';}?>>UserEvent</option>
 			</select>
 	
 	<br>
@@ -231,7 +232,7 @@ if ($row['type'] == 3) {
 
 }
 
-if ($row['type'] == 4) {
+if ($row['type'] == 4 || $row['type'] == 5) {
 
 
 	echo "$('#name_div').show();";

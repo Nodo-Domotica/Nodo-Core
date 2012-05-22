@@ -231,7 +231,7 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
 			<label for="select-choice-5" class="select" >Graph: type:</label>
 			<select name="graph_type" id="graph_type" data-native-menu="false" >
 				<option value="1" <?php if ($row['graph_type'] == 1) {echo 'selected="selected"';}?>>Line</option>
-				<option value="2" <?php if ($row['graph_type'] == 2) {echo 'selected="selected"';}?>>Bar (totals)</option>
+				<option value="2" <?php if ($row['graph_type'] == 2) {echo 'selected="selected"';}?>>Bar (day totals)</option>
 			</select>
 			<br>
 			

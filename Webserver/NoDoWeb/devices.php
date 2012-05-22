@@ -35,6 +35,15 @@ $page_title = "Devices";
 	
 	<?php require_once('include/jquery_mobile.php'); ?>
 
+
+	
+</head> 
+
+<body> 
+
+<div data-role="page" data-theme="<?php echo $theme?>" data-title="<?php echo $title ?>">
+
+
 	<style type="text/css">	
 	
 	
@@ -78,10 +87,17 @@ $page_title = "Devices";
 	
 	}
 	
+	.ui-icon-toggle {
+            background-image: url(media/toggle.png);
+            background-repeat: no-repeat;
+
+        }
+	
+
 	
 	
-		
-	
+    
+}
 	
 	</style>
 	
@@ -90,12 +106,6 @@ $page_title = "Devices";
 	<!-- /Get device state -->
 
 	<?php require_once('include/send_event.php'); ?>
-	
-</head> 
-
-<body> 
-
-<div data-role="page" data-theme="<?php echo $theme?>" data-title="<?php echo $title ?>">
 
 <?php require_once('include/header.php'); ?>
 	<div data-role="content">	
@@ -120,8 +130,9 @@ if ($row_RSdevices['toggle'] == 1) {
 				
 		case 1: //KAKU
 		case 3: //WiredOut
-		case 4: //UserEvents
-		echo "<a href=\"javascript:send_event(&quot;&action=toggle&device_id=". $id . "&quot;)\" class=\"ui-btn-collapsible ui-btn-icon-left_collapsible\" data-role=\"button\"  data-icon=\"star\" ><span id='switch_" . $row_RSdevices['id'] . "'></span>" . $row_RSdevices['naam'] . "</a>\n";
+		case 4: //SendUserEvents
+		case 5: //UserEvents
+		echo "<a href=\"javascript:send_event(&quot;&action=toggle&device_id=". $id . "&quot;)\" class=\"ui-btn-collapsible ui-btn-icon-left_collapsible\" data-role=\"button\"  data-icon=\"toggle\" ><span id='switch_" . $row_RSdevices['id'] . "'></span>" . $row_RSdevices['naam'] . "</a>\n";
 		break;
 		
 		case 2: //NewKAKU
@@ -129,7 +140,7 @@ if ($row_RSdevices['toggle'] == 1) {
 		if ( $row_RSdevices['dim'] == 1 ) { 
 			
 			// NewKAKU toggle knop
-			echo "<a href=\"javascript:send_event(&quot;&action=toggle&device_id=". $id . "&quot;)\" class=\"ui-btn-collapsible1 ui-btn-icon-left_collapsible \" data-role=\"button\"  data-icon=\"star\"  ><span id='switch_" . $row_RSdevices['id'] . "'></span>" . $row_RSdevices['naam'] . "</a>\n";
+			echo "<a href=\"javascript:send_event(&quot;&action=toggle&device_id=". $id . "&quot;)\" class=\"ui-btn-collapsible1 ui-btn-icon-left_collapsible \" data-role=\"button\"  data-icon=\"toggle\"  ><span id='switch_" . $row_RSdevices['id'] . "'></span>" . $row_RSdevices['naam'] . "</a>\n";
 			echo "<div class=\"ui-collapsible-content ui-body-" . $theme . " ui-corner-bottom\">";
 			
 			for ($i=1; $i<=10; $i++) {
@@ -147,7 +158,7 @@ if ($row_RSdevices['toggle'] == 1) {
 		//Dim slider
 		elseif ( $row_RSdevices['dim'] == 2 ) { 
 		
-			echo "<a href=\"javascript:send_event(&quot;&action=toggle&device_id=". $id . "&quot;)\" class=\"ui-btn-collapsible1 ui-btn-icon-left_collapsible \" data-role=\"button\"  data-icon=\"star\"  ><span id='switch_" . $row_RSdevices['id'] . "'></span>" . $row_RSdevices['naam'] . "</a>\n";
+			echo "<a href=\"javascript:send_event(&quot;&action=toggle&device_id=". $id . "&quot;)\" class=\"ui-btn-collapsible1 ui-btn-icon-left_collapsible \" data-role=\"button\"  data-icon=\"toggle\"  ><span id='switch_" . $row_RSdevices['id'] . "'></span>" . $row_RSdevices['naam'] . "</a>\n";
 						
 			echo "<div class=\"ui-collapsible-content ui-body-" . $theme . " ui-corner-bottom\">";
 			echo "<script>\n";
@@ -194,7 +205,10 @@ else {
 	switch ($row_RSdevices['type'])
 				{
 				case "1":
-				// On/Off KAKU knoppen
+				case "3":
+				case "4":
+				case "5":
+				// On/Off KAKU, WiredOut, Userevent, Senduserevent
 				if ($row_RSdevices['label_on'] != "") {$label_on = $row_RSdevices['label_on'];} else {$label_on = "On";}
 				if ($row_RSdevices['label_off'] != "") {$label_off = $row_RSdevices['label_off'];} else {$label_off = "Off";}
 
@@ -251,23 +265,9 @@ else {
 					 } 
 				break;    
 				
-				case 3:
-				// On/Off WiredOut knoppen
-				if ($row_RSdevices['label_on'] != "") {$label_on = $row_RSdevices['label_on'];} else {$label_on = "On";}
-				if ($row_RSdevices['label_off'] != "") {$label_off = $row_RSdevices['label_off'];} else {$label_off = "Off";}
-				echo "<a href=\"javascript:send_event(&quot;&action=on&device_id=". $id . "&quot;)\" data-role=\"button\" data-icon=\"check\" >" . $label_on . "</a>\n";
-				echo "<a href=\"javascript:send_event(&quot;&action=off&device_id=". $id . "&quot;)\" data-role=\"button\" data-icon=\"delete\" >" . $label_off . "</a>\n";
 				
-				break;
 				 
-				 case 4:
-				// On/Off Userevents knoppen
-				if ($row_RSdevices['label_on'] != "") {$label_on = $row_RSdevices['label_on'];} else {$label_on = "On";}
-				if ($row_RSdevices['label_off'] != "") {$label_off = $row_RSdevices['label_off'];} else {$label_off = "Off";}
-				echo "<a href=\"javascript:send_event(&quot;&action=on&device_id=". $id . "&quot;)\" data-role=\"button\" data-icon=\"check\" >" . $label_on . "</a>\n";
-				echo "<a href=\"javascript:send_event(&quot;&action=off&device_id=". $id . "&quot;)\" data-role=\"button\" data-icon=\"check\" >" . $label_off . "</a>\n";
-				
-				break;
+				 
 				}
 		
 				echo "</p></div>";
@@ -279,6 +279,8 @@ else {
 <script>
 //Device status loop eerste keer opstarten
 Device_State();
+
+
 </script>	
 	 
 	 
