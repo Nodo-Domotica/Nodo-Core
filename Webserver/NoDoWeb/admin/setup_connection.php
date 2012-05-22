@@ -24,6 +24,7 @@ require_once('../include/webapp_settings.php');
 $page_title = "Setup: Communication";
 
 
+
 /************************************************************************************************
 HTTPRequest function output http headers
 *************************************************************************************************/
@@ -134,12 +135,12 @@ Check connection & Nodo config
 *************************************************************************************************/ 
 if (isset($_POST['auto_config'])){
 	 //Check connection on default NODO and get headers
-     $headers = (HTTPRequest("http://$nodo_ip/?event=userevent%20255,255&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID") );
+     $headers = (HTTPRequest("http://$nodo_ip/?event=userevent%20255,255") );
      }
 	else
 	{
 	//Check connection and get headers
-     $headers = (HTTPRequest("http://$nodo_ip/?event=userevent%20255,255&password=$nodo_password&id=$nodo_id") );
+     $headers = (HTTPRequest("http://$nodo_ip/?event=userevent%20255,255&key=$key") );
       }   
      
     
@@ -157,14 +158,15 @@ if (isset($_POST['auto_config'])){
 		
 			
 			//Configure NoDo
-			HTTPRequest("http://$nodo_ip/?event=eventlistwrite;WildCard%20RF,All;SendEvent%20HTTP&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
-			HTTPRequest("http://$nodo_ip/?event=eventlistwrite;WildCard%20IR,All;SendEvent%20HTTP&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
-			HTTPRequest("http://$nodo_ip/?event=eventlistwrite;WildCard%20Variables,All;SendEvent%20HTTP&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
-			HTTPRequest("http://$nodo_ip/?event=eventlistwrite;WildCard%20Wired,All;SendEvent%20HTTP&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
-			HTTPRequest("http://$nodo_ip/?event=HTTPHost%20$WEBAPP_HOST/events.php&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
-			HTTPRequest("http://$nodo_ip/?event=Filewrite%20waconfig&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
-			HTTPRequest("http://$nodo_ip/?event=ok&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
-			HTTPRequest("http://$nodo_ip/?event=Filewrite&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
+			HTTPRequest("http://$nodo_ip/?event=eventlistwrite;WildCard%20RF,All;SendEvent%20HTTP");
+			HTTPRequest("http://$nodo_ip/?event=eventlistwrite;WildCard%20IR,All;SendEvent%20HTTP");
+			HTTPRequest("http://$nodo_ip/?event=eventlistwrite;WildCard%20Variables,All;SendEvent%20HTTP");
+			HTTPRequest("http://$nodo_ip/?event=eventlistwrite;WildCard%20Wired,All;SendEvent%20HTTP");
+			HTTPRequest("http://$nodo_ip/?event=eventlistwrite;EventListWrite;Wildcard%20All,UserEvent;SendEvent%20HTTP");
+			HTTPRequest("http://$nodo_ip/?event=HTTPHost%20$WEBAPP_HOST/nodo.php");
+			HTTPRequest("http://$nodo_ip/?event=Filewrite%20waconfig");
+			HTTPRequest("http://$nodo_ip/?event=ok");
+			HTTPRequest("http://$nodo_ip/?event=Filewrite");
 			
 			//Sync clock
 			$year_par1 = substr(date("Y"), 0, 2);
@@ -175,20 +177,19 @@ if (isset($_POST['auto_config'])){
 			$time_par2 = date("i");
 			$dow_par1 = date("w")+1; // php zondag = 0 Nodo gaat uit van 1
 			
-			HTTPRequest("http://$nodo_ip/?event=FileLog%20$file&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
-			HTTPRequest("http://$nodo_ip/?event=ClockSetYear%20$year_par1,$year_par2&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
-			HTTPRequest("http://$nodo_ip/?event=ClockSetDate%20$date_par1,$date_par2&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
-			HTTPRequest("http://$nodo_ip/?event=ClockSetTime%20$time_par1,$time_par2&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
-			HTTPRequest("http://$nodo_ip/?event=ClockSetDow%20$dow_par1&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
+			HTTPRequest("http://$nodo_ip/?event=FileLog%20$file");
+			HTTPRequest("http://$nodo_ip/?event=ClockSetYear%20$year_par1,$year_par2");
+			HTTPRequest("http://$nodo_ip/?event=ClockSetDate%20$date_par1,$date_par2");
+			HTTPRequest("http://$nodo_ip/?event=ClockSetTime%20$time_par1,$time_par2");
+			HTTPRequest("http://$nodo_ip/?event=ClockSetDow%20$dow_par1");
 			
-			HTTPRequest("http://$nodo_ip/?event=OutputIp%20HTTP;id%20$nodo_id;password%20$nodo_password&password=$DEFAULT_NODO_PWD&id=$DEFAULT_NODO_ID");
+			
 		    
 		
 			
-			if (strpos(HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&file=waconfig"), 'ok') !== false) {
-			
-				HTTPRequest("http://$nodo_ip/?event=fileerase%20waconfig&password=$nodo_password&id=$nodo_id");
-				HTTPRequest("http://$nodo_ip/?event=reboot&password=$nodo_password&id=$nodo_id");				
+			if (strpos(HTTPRequest("http://$nodo_ip/?file=waconfig"), 'ok') !== false) {
+				HTTPRequest("http://$nodo_ip/?event=id%20$nodo_id;password%20$nodo_password;fileerase%20waconfig;OutputIp%20HTTP,on;reboot");
+						
 				$response = "ok_config";	
 			
 			}
@@ -306,7 +307,10 @@ END Check connection & Nodo config
 	<br>   
       
 		<label for="name">TCP port: (HTTP)</label>
-		<input type="text" name="nodo_port" id="nodo_port" value="<?php echo $row['nodo_port']?>"  />
+		    <select name="nodo_port" id="nodo_port" data-placeholder="true" data-native-menu="false">
+				<option value="8080" <?php if ($row['nodo_port'] == 8080) {echo 'selected="selected"';}?>>8080</option>
+				<option value="80" <?php if ($row['nodo_port'] == 80) {echo 'selected="selected"';}?>>80</option>
+		    </select> 
 
 			
 	<br>

@@ -70,7 +70,7 @@ if (isset($_POST['Read']))
 
 		//Write eventlist on nodo
 			
-		HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&event=EventListfile%20$file");
+		HTTPRequest("http://$nodo_ip/?event=EventListfile%20$file&key=$key");
 		
 	}
 	else {
@@ -81,7 +81,7 @@ if (isset($_POST['Read']))
 	}
 
 	//Read file from Nodo to array
-	$script = explode("\n", HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&file=$file"));
+	$script = explode("\n", HTTPRequest("http://$nodo_ip/?file=$file&key=$key"));
 			
 	$total_script_lines = count($script);
 	
@@ -132,16 +132,25 @@ if (isset($_POST['Write']))
 	}
 			
 		
-	//Save script on Nodo 
-	HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&event=FileGetHTTP%20$file");
+	
 	
 	
 	if (ISSET($_POST["checkbox-2"])){
 	
+		
 		//Execute script on Nodo
-		HTTPRequest("http://$nodo_ip/?id=$nodo_id&password=$nodo_password&event=FileExecute%20$file");
+		HTTPRequest("http://$nodo_ip/?event=FileGetHTTP%20$file;FileExecute%20$file&key=$key");
 		
 	}
+	
+	else {
+	
+	//Save script on Nodo 
+	HTTPRequest("http://$nodo_ip/?event=FileGetHTTP%20$file&key=$key");
+	
+	}
+	
+	
 	
 	
 	

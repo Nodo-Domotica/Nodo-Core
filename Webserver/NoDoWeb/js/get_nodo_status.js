@@ -24,7 +24,7 @@ function Get_Nodo_Status()
 					$self = arguments.callee,
 					element = document.getElementById('status_div');
 					
-					element.innerHTML = '<h4><img src="/media/loading.gif"/> Please wait, loading status...</h4>'; 
+					element.innerHTML = '<h4><img src="media/loading.gif"/> Please wait, loading status...</h4>'; 
 					
 				if (window.XMLHttpRequest) {
 					$http = new XMLHttpRequest();

@@ -112,14 +112,15 @@ header("Location: devices.php?id=$device_id");
 		 
 	<div data-role="collapsible" data-content-theme="<?php echo $theme?>">
 			
-		<h3>Add</h3>
+		<h3>Add devices</h3>
 			<label for="select-choice-0" class="select" >Type of device:</label>
 		    <select name="type" id="type" data-native-menu="false" >
 				<option value="0" data-placeholder="true">Select device</option>
 				<option value="1">Kaku</option>
 				<option value="2">New Kaku</option>
 				<option value="3">WiredOut</option>
-				<option value="4">UserEvent</option>
+				<option value="4">SendUserEvent</option>
+				<option value="5">UserEvent</option>
 			</select>
 		<br>
 		
@@ -129,8 +130,8 @@ header("Location: devices.php?id=$device_id");
 		<br>
 		<label for="select-choice-1" class="select" >Presentation:</label>
 		    <select name="presentation" id="presentation" data-native-menu="false" >
-				<option value="0">Collapsible</option>
 				<option value="1">Toggle</option>
+				<option value="0">Collapsible</option>
 			</select>
 		<br>
 		<div id="label_div"> 
@@ -202,7 +203,7 @@ header("Location: devices.php?id=$device_id");
 	</div>
 
 	<div data-role="collapsible" data-collapsed="false" data-content-theme="<?php echo $theme;?>">
-		<h3>Edit</h3>
+		<h3>Edit devices</h3>
 		<?php
 		// get results from database        
 		mysql_select_db($database, $db);
@@ -279,6 +280,8 @@ $('#homecode_div').hide();
 $('#adres_div').hide();
 $('#userevent_div').hide();
 $('#submit_div').hide();
+$('#label_div').hide();
+$('#expand_div').hide();  
 
 	
 	
@@ -332,7 +335,7 @@ $('#label_adres_newkaku').hide();
 
 }
 
-if ($(this).attr('value')==4) {   
+if ($(this).attr('value')==4 || $(this).attr('value')==5) {   
 
 $('#name_div').show();  
 $('#adres_div').hide();

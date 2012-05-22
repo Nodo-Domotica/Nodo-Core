@@ -39,12 +39,18 @@ $RSactivities = mysql_query("SELECT * FROM nodo_tbl_activities WHERE user_id='$u
 	<meta name="viewport" content="width=device-width, initial-scale=1"> 
 	<title><?php echo $title ?></title> 
 	<?php require_once('include/jquery_mobile.php'); ?>
-	<?php require_once('include/send_event.php'); ?>
-	
-		<style type="text/css">	
 	
 	
-			
+</head> 
+
+<body> 
+
+<div data-role="page" data-theme="<?php echo $theme?>">
+
+<?php require_once('include/send_event.php'); ?>
+	
+	<style type="text/css">	
+				
     .ui-btn-icon-left_collapsible .ui-btn-inner {padding-left: 40px !important;}
 	
 	.ui-btn-collapsible {
@@ -62,14 +68,7 @@ $RSactivities = mysql_query("SELECT * FROM nodo_tbl_activities WHERE user_id='$u
 	}
 	
 	
-	
 	</style>
-	
-</head> 
-
-<body> 
-
-<div data-role="page" data-theme="<?php echo $theme?>">
 
 <?php require_once('include/header.php'); ?>
 

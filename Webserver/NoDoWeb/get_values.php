@@ -53,7 +53,11 @@ do { ?>document.getElementById('value_<?php echo $row_RSvalue['id'];?>').innerHT
 					$graph_hours = $row_RSvalue['graph_hours'];
 				}
 		
-		  //Staaf grafiek, totaal meting over gekozen periode weergeven 
+		//Staaf grafiek, totaal meting per dag weergeven
+		$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m-%d') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY date(timestamp) ORDER BY id DESC LIMIT 1;";
+		  
+		  /*
+		  
 		  
 		  switch ($row_RSvalue['graph_min_ticksize']) {
 		
@@ -70,14 +74,14 @@ do { ?>document.getElementById('value_<?php echo $row_RSvalue['id'];?>').innerHT
 					$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m-%d') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY week(timestamp) ORDER BY id DESC LIMIT 1";
 					break;
 					case "5":
-					$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY month(timestamp) ORDER BY id DESC LIMIT 1";
+					$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY month(timestamp) ORDER BY id DESC LIMIT 1";
 					break;
-				}
+				}*/
 		  
 		  	  
 		  $RSsensor_value_data = mysql_query($query_RSsensor_value_data, $db) or die(mysql_error()); 
 		  $row_RSsensor_value_data = mysql_fetch_assoc($RSsensor_value_data);
-		  //echo "debug..."; 
+		  
 		  echo "'".$row_RSsensor_value_data['data']."';";
 		
 		}

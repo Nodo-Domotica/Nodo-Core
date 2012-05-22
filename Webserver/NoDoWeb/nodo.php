@@ -26,18 +26,35 @@ Checken of id=[nodoID] als url parameter is meegegeven.
 */
 if (isset($_GET['id'])){$id = mysql_real_escape_string($_GET['id']);} else {$id = "";}
 
-//Checken of pwd=[wachtwoord] als url parameter is meegegeven.
-if (isset($_GET['password'])){$password = mysql_real_escape_string($_GET['password']);} else {$password = "";}
 
-	
+//User id uit de database halen doormede van NodoId	
 mysql_select_db($database, $db);
-$result = mysql_query("SELECT id,nodo_id,nodo_password FROM nodo_tbl_users WHERE nodo_id='$id' AND nodo_password='$password'") or die(mysql_error());  
+$result = mysql_query("SELECT id,nodo_id,nodo_password,cookie,cookie_count FROM nodo_tbl_users WHERE nodo_id='$id'") or die(mysql_error());  
 $row = mysql_fetch_array($result);
 $userId = $row['id']; 
+
+$cookie_counter = $row['cookie_count'] + 1; //temp variable voor stabiliteits test
+$cookie_webapp = $row['cookie'];
+$nodo_password = $row['nodo_password']; 
+
+$key_webapp = md5($cookie_webapp.":".$nodo_password);
+$key_nodo = $_GET['key'];
+
+if ($key_webapp == $key_nodo) {$key_ok = 1;}
+
+//Nieuwe cookie in de database opslaan
+if (isset($_GET['cookie'])){
+	
+	$cookie = $_GET['cookie'];
+		
+		mysql_query("UPDATE nodo_tbl_users SET cookie='$cookie', cookie_update=NOW(), cookie_count='$cookie_counter' WHERE id='$userId'") or die(mysql_error());
+		
+	}
  
+
  
-//Als de logingegevens correct zijn dan event= behandelen
-if($userId > 0) {
+//Als de key correct is dan event= behandelen
+if($userId > 0 && $key_ok == 1) {
 
 	 //Alle komende output bufferen
 	ob_start();
@@ -68,7 +85,9 @@ if($userId > 0) {
 	flush();	
 
 	//Hier begint het achtergrond process, de connectie is op dit moment al verbroken
-					 
+	
+	
+	
 				 
 	 //Ontvangen events verwerken
 	 if (isset($_GET['event'])){
@@ -138,7 +157,7 @@ if($userId > 0) {
 					}
 					
 					//Waarde updaten
-					mysql_select_db($database, $db);
+					
 					mysql_query("UPDATE nodo_tbl_sensor SET data='$par2' WHERE par1='$par1' AND nodo_unit_nr='$unit' AND user_id='$userId' AND sensor_type='$type'") or die(mysql_error());
 						
 				break;
@@ -230,8 +249,8 @@ if($userId > 0) {
 				
 						$userevent = $par1.",".$par2;
 					
-						mysql_query("UPDATE nodo_tbl_devices SET status='1' WHERE user_event_on='$userevent' AND type='4' AND user_id='$userId'") or die(mysql_error()); 
-						mysql_query("UPDATE nodo_tbl_devices SET status='0' WHERE user_event_off='$userevent' AND type='4' AND user_id='$userId'") or die(mysql_error()); 						
+						mysql_query("UPDATE nodo_tbl_devices SET status='1' WHERE user_event_on='$userevent' AND user_id='$userId'") or die(mysql_error()); 
+						mysql_query("UPDATE nodo_tbl_devices SET status='0' WHERE user_event_off='$userevent' AND user_id='$userId'") or die(mysql_error()); 						
 						
 		
 				}

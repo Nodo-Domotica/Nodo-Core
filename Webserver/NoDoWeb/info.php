@@ -33,15 +33,14 @@ $page_title = "Information";
 	<meta name="viewport" content="width=device-width, initial-scale=1"> 
 	<title><?php echo $title ?></title> 
 	<?php require_once('include/jquery_mobile.php'); ?>
-	
-	
-	<script src="js/get_nodo_status.js"></script>
-	<script src="js/get_events.js"></script>
 </head> 
 
 <body> 
 
 <div data-role="page" data-theme="<?php echo $theme?>">
+
+<script src="js/get_nodo_status.js"></script>
+<script src="js/get_events.js"></script>
 
 <?php require_once('include/header.php'); ?>
 
@@ -54,11 +53,16 @@ mysql_select_db($database, $db);
 $RSevent_log = mysql_query("SELECT * FROM (SELECT * FROM nodo_tbl_event_log WHERE user_id='$userId' ORDER BY id DESC LIMIT 25)x ORDER BY id") or die(mysql_error());
 ?>
 
-<div data-role="collapsible" data-collapsed="true" data-content-theme="<?php echo $theme?>">
+<div data-role="collapsible" data-collapsed="false" data-content-theme="<?php echo $theme?>">
 <h3>Web App details</h3>
 <b>Web App version: </b><?php echo $WEBAPP_VERSION;?><br>
 <b>Nodo ID: </b><?php echo $nodo_id;?><br>
-<b>Connected to Nodo: </b><?php echo $nodo_ip.":".$nodo_port;?><br>
+<b>Nodo IP-address: </b><?php echo $nodo_ip.":".$nodo_port;?><br>
+<b>Connection status: </b> <?php echo $heartbeat;?><br>
+<b>Cookies received: </b> <?php echo $row_RSsetup['cookie_count'];?><br>
+<b>Last Cookie received: </b> <?php echo $cookie_update;?><br>
+
+
 
 </div>
 
@@ -91,14 +95,15 @@ $RSevent_log = mysql_query("SELECT * FROM (SELECT * FROM nodo_tbl_event_log WHER
 	</div><!-- /content -->
 	
 	<?php require_once('include/footer.php'); ?>
-	
-</div><!-- /page -->
-
 <script type="text/javascript">
 //Events bij openen weergeven
 Get_Nodo_Events(); 
 
 </script>
+	
+</div><!-- /page -->
+
+
 
 </body>
 </html>
