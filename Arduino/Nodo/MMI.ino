@@ -15,6 +15,8 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
   {
   byte x;
 
+  // FreeMemory(0);//???
+
   // Enkele events/commando's zijn niet voor de gebruiker, maar zijn uitsluitend voor de Nodo relevant
   // Deze mogen niet worden weergegeven
   switch((Content>>16)&0xff)
@@ -170,10 +172,6 @@ void PrintTerminal(char* LineToPrint)
     {
     if(TerminalClient.connected() && TerminalConnected>0 && TerminalLocked==0)
       TerminalClient.println(LineToPrint);
-      
-// ??? kan weg?
-//    if(ConfirmHTTP==true && S.TransmitIP==VALUE_SOURCE_HTTP)
-//      SendHTTPRequestResponse(LineToPrint);
     }
     
   if(bitRead(HW_Config,HW_SDCARD))
@@ -191,7 +189,7 @@ char* Event2str(unsigned long Code)
   byte Command  = (Code>>16)&0xff;
   byte Par1     = (Code>>8)&0xff;
   byte Par2     = (Code)&0xff;
-  static char EventString[50]; 
+  static char EventString[60];
 
   EventString[0]=0;
 

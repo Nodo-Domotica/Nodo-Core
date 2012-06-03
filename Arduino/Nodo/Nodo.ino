@@ -301,7 +301,6 @@ prog_char PROGMEM Cmd_209[]="Error: Command not supported in this Nodo version."
 prog_char PROGMEM Cmd_210[]="Error: Access not allowed.";
 prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
 prog_char PROGMEM Cmd_212[]="Error: Unable to send or receive diverted command(s).";
-prog_char PROGMEM Cmd_213[]="";
 
 // commando:
 #define FIRST_COMMAND                    0 // Eerste COMMANDO uit de commando tabel
@@ -525,9 +524,8 @@ prog_char PROGMEM Cmd_213[]="";
 #define ERROR_10                       210
 #define ERROR_11                       211
 #define ERROR_12                       212
-#define ERROR_13                       213
-#define LAST_VALUE                     213 // laatste VALUE uit de commando tabel
-#define COMMAND_MAX                    213 // hoogste commando
+#define LAST_VALUE                     212 // laatste VALUE uit de commando tabel
+#define COMMAND_MAX                    212 // hoogste commando
 
 // tabel die refereert aan de commando strings
 PROGMEM const char *CommandText_tabel[]={
@@ -552,7 +550,7 @@ PROGMEM const char *CommandText_tabel[]={
   Cmd_180,Cmd_181,Cmd_182,Cmd_183,Cmd_184,Cmd_185,Cmd_186,Cmd_187,Cmd_188,Cmd_189,          
   Cmd_190,Cmd_191,Cmd_192,Cmd_193,Cmd_194,Cmd_195,Cmd_196,Cmd_197,Cmd_198,Cmd_199,          
   Cmd_200,Cmd_201,Cmd_202,Cmd_203,Cmd_204,Cmd_205,Cmd_206,Cmd_207,Cmd_208,Cmd_209,          
-  Cmd_210,Cmd_211,Cmd_212,Cmd_213           
+  Cmd_210,Cmd_211,Cmd_212           
   };          
 
 // Tabel met zonsopgang en -ondergang momenten. afgeleid van KNMI gegevens midden Nederland.
@@ -641,10 +639,6 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 
 
 //****************************************************************************************************************************************
-//@1
-unsigned long PulseCount;                        // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
-unsigned long PulseTimeMillis;                   // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
-unsigned long PulseTimePrevious;                 // Tijdsduur tussen twee pulsen teller in milliseconden: vorige meting
 
 struct Settings
   {
@@ -692,6 +686,9 @@ struct Settings
   byte    HTTP_Pin;                                      // Als deze VALUE_ON bevat worden events tussen WebApp en Nodo alleen uitgewisseld bij juiste key in HTTP reques.
   }S;
 
+unsigned long PulseCount;                                   // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
+unsigned long PulseTimeMillis;                              // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
+unsigned long PulseTimePrevious;                            // Tijdsduur tussen twee pulsen teller in milliseconden: vorige meting
 unsigned long UserTimer[TIMER_MAX];                         // Timers voor de gebruiker.
 unsigned long QueueEvent[EVENT_QUEUE_MAX];                  // queue voor tijdelijk onthouden van events die tijdens een delay functie voorbij komen.
 byte QueuePort[EVENT_QUEUE_MAX];                            // tabel behorend bij de queue. Geeft herkomst van het event in de queue aan.
@@ -708,7 +705,7 @@ void(*Reset)(void)=0;                                       // reset functie op 
 uint8_t RFbit,RFport,IRbit,IRport;                          // t.b.v. verwerking IR/FR signalen.
 uint8_t MD5HashCode[16];                                    // tabel voor berekenen van MD5 hash codes t.b.v. uitwisselen wachtwoord EventGhost.
 int UserVar[USER_VARIABLES_MAX];
-char TempString[INPUT_BUFFER_SIZE+1];                       // Globale, tijdelijke string voor algemeen gebruik in diverste functies. 
+char TempString[INPUT_BUFFER_SIZE+2];                       // Globale, tijdelijke string voor algemeen gebruik in diverste functies. 
 int TerminalConnected=0;                                    // Vlag geeft aan of en hoe lang nog (seconden) er verbinding is met een Terminal.
 boolean ConfirmHTTP=false;                                  // Als true, dan wordt een output naar Serial/Telnet eveneens per regel verzonden als HTTP-requenst  
 boolean TemporyEventGhostError=false;                       // Vlag om tijdelijk evetghost verzending stil te leggen na een communicatie probleem
@@ -716,12 +713,9 @@ int TerminalLocked=1;                                       // 0 als als gebruik
 char TempLogFile[13];                                       // Naam van de Logfile waar (naast de standaard logging) de verwerking in gelogd moet worden.
 char HTTPCookie[10];                                        // Cookie voor uitwisselen van encrypted events via HTTP
 int FileWriteMode=0;                                        // Het aantal seconden dat deze timer ingesteld staat zal er geen verwerking plaats vinden van TerminalInvoer. Iedere seconde --.
-char InputBuffer_Serial[INPUT_BUFFER_SIZE+1];               // Buffer voor input Seriele data
-char InputBuffer_Terminal[INPUT_BUFFER_SIZE+1];             // Buffer voor input terminal verbinding Telnes sessie
+char InputBuffer_Serial[INPUT_BUFFER_SIZE+2];               // Buffer voor input Seriele data
+char InputBuffer_Terminal[INPUT_BUFFER_SIZE+2];             // Buffer voor input terminal verbinding Telnes sessie
 unsigned long HW_Config=0;                                  // Hardware configuratie zoals gedetecteerd door de Nodo. 
-
-// boolean EthernetEnabled = false;                            // Vlag die aangeeft of er een Ethernetverbinding is.
-
 
 // ethernet classes voor IP communicatie EventGhost, Telnet terminal en HTTP.
 byte Ethernet_MAC_Address[]={NODO_MAC};// MAC adres van de Nodo.
@@ -841,6 +835,10 @@ void setup()
     bitWrite(HW_Config,HW_ETHERNET,((Ethernet.localIP()[0]+Ethernet.localIP()[1]+Ethernet.localIP()[2]+Ethernet.localIP()[3])!=0)); // Als er een IP adres is, dan Ethernet inschakelen
     IPServer.begin(); // Start Server voor ontvangst van Events
     TerminalServer.begin(); // Start server voor Terminalsessies via TelNet
+
+    // Als ethernet enbled en beveiligde modus, dan direct een Cookie sturen, ander worden eerste events niet opgepikt door de WebApp
+    if(S.HTTP_Pin==VALUE_ON)
+      SendHTTPCookie(); // Verzend een nieuw cookie
     }
 
   RawSignal.Key=-1; // Als deze variable ongelijk aan -1 dan wordt er een Rawsignal opgeslagen.
@@ -993,20 +991,24 @@ void loop()
                   TerminalLocked=1;
                   
                 if(TerminalLocked<=PASSWORD_MAX_RETRY)
-                  TerminalClient.print(ProgmemString(Text_03));
+                   TerminalClient.print(ProgmemString(Text_03));
                 else
+                  {
+                  TerminalClient.print(cmd2str(ERROR_10));
                   RaiseError(ERROR_10);
+                  }
                 }
   
               while(TerminalClient.available()) 
                 {
                 TerminalInByte=TerminalClient.read();
-                if(isprint(TerminalInByte))
+                if(isprint(TerminalInByte) && TerminalInbyteCounter<INPUT_BUFFER_SIZE)
                   InputBuffer_Terminal[TerminalInbyteCounter++]=TerminalInByte;
                   
                 if(TerminalInByte==0x03 || TerminalInByte==0x18)
                   {
                   // TerminalSessie timeout, dan de verbinding netjes afsluiten
+                  InputBuffer_Terminal[0]=0;
                   TerminalClient.println(ProgmemString(Text_30));
                   delay(100); // geef de client even de gelegenheid de tekst te ontvangen
                   TerminalClient.stop();
@@ -1042,8 +1044,14 @@ void loop()
                         {
                         TerminalLocked++;
                         TerminalClient.println("?");
-                        TerminalClient.print(ProgmemString(Text_13));
-                        if(TerminalLocked>PASSWORD_MAX_RETRY)TerminalLocked=PASSWORD_TIMEOUT; // blokkeer tijd terminal
+                        if(TerminalLocked>PASSWORD_MAX_RETRY)
+                          {
+                          TerminalLocked=PASSWORD_TIMEOUT; // blokkeer tijd terminal
+                          TerminalClient.print(cmd2str(ERROR_10));
+                          RaiseError(ERROR_10);
+                          }
+                        else
+                          TerminalClient.print(ProgmemString(Text_03));
                         }
                       }
                     else
@@ -1068,26 +1076,31 @@ void loop()
           // SERIAL: *************** kijk of er data klaar staat op de seriële poort **********************
           if(Serial.available())
             {
-            do
-              {
-              bitWrite(HW_Config,HW_SERIAL,1);
-              SerialInByte=Serial.read();
-              if(isprint(SerialInByte) && SerialInByteCounter<INPUT_BUFFER_SIZE) // alleen de printbare tekens zijn zinvol.
-                {
+            bitWrite(HW_Config,HW_SERIAL,1);// Input op seriele poort ontvangen. Vanaf nu ook output naar Seriele poort want er is klaarblijkelijk een actieve verbinding
+            StaySharpTimer=millis()+SHARP_TIME;      
+
+            while(StaySharpTimer>millis()) // blijf even paraat voor luisteren naar deze poort en voorkom dat andere input deze communicatie onderbreekt
+              {          
+              while(Serial.available())
+                {                        
+                SerialInByte=Serial.read();                
                 StaySharpTimer=millis()+SHARP_TIME;      
-                InputBuffer_Serial[SerialInByteCounter++]=SerialInByte;
+                
+                if(isprint(SerialInByte) && SerialInByteCounter<INPUT_BUFFER_SIZE) // alleen tekens aan de string toevoegen als deze nog in de buffer past.
+                  InputBuffer_Serial[SerialInByteCounter++]=SerialInByte;
+                  
+                if(SerialInByte=='\n')
+                  {
+                  SerialHold(true);
+                  InputBuffer_Serial[SerialInByteCounter]=0; // serieel ontvangen regel is compleet
+                  ExecuteLine(InputBuffer_Serial, VALUE_SOURCE_SERIAL);
+                  SerialInByteCounter=0;  
+                  InputBuffer_Serial[0]=0; // serieel ontvangen regel is verwerkt. String leegmaken
+                  SerialHold(false);
+                  StaySharpTimer=millis()+SHARP_TIME;      
+                  }
                 }
-              else if(SerialInByte=='\n') 
-                {
-                SerialHold(true);
-                InputBuffer_Serial[SerialInByteCounter]=0; // serieel ontvangen regel is compleet
-                ExecuteLine(InputBuffer_Serial, VALUE_SOURCE_SERIAL);
-                SerialInByteCounter=0;  
-                InputBuffer_Serial[0]=0; // serieel ontvangen regel is compleet
-                SerialHold(false);
-                StaySharpTimer=millis()+SHARP_TIME;      
-                }
-              }while(Serial.available() || StaySharpTimer>millis());
+              }
             }
           break;
           }

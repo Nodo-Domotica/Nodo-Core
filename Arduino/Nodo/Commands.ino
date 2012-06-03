@@ -731,9 +731,9 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
  \*******************************************************************************************************/
 void ExecuteLine(char *Line, byte Port)
   {
-  const int MaxCommandLength=80; // maximaal aantal tekens van een commando
-  char Command[MaxCommandLength]; 
-  char TmpStr[INPUT_BUFFER_SIZE+1];
+  const int MaxCommandLength=40; // maximaal aantal tekens van een commando
+  char Command[MaxCommandLength+1]; 
+  char TmpStr[INPUT_BUFFER_SIZE+2]; // Twee extra posities i.v.m. afsluitende nul en het prompt teken. regelen met malloc() ???
   int PosCommand;
   int PosLine;
   int L=strlen(Line);
@@ -773,7 +773,7 @@ void ExecuteLine(char *Line, byte Port)
     {
     x=Line[PosLine];
 
-    // Comment teken. hierna verdier niets meer doen.
+    // Comment teken. hierna verder niets meer doen.
     if(x=='!') 
       PosLine=L+1; // ga direct naar einde van de regel.
        
@@ -864,6 +864,7 @@ void ExecuteLine(char *Line, byte Port)
               File dataFile=SD.open(TmpStr);
               if(dataFile) 
                 {
+                PrintTerminal(ProgmemString(Text_22));
                 y=0;       
                 while(dataFile.available())
                   {
@@ -880,6 +881,7 @@ void ExecuteLine(char *Line, byte Port)
                     }
                   }
                 dataFile.close();
+                PrintTerminal(ProgmemString(Text_22));
                 }  
               else 
                 TransmitCode(command2event(CMD_ERROR,ERROR_03,0),VALUE_ALL);
@@ -1347,6 +1349,7 @@ void ExecuteLine(char *Line, byte Port)
           }
         }
         
+
       if(Error) // er heeft zich een fout voorgedaan
         {
         strcpy(TmpStr,Command);

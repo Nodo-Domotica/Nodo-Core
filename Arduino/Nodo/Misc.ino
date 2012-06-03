@@ -548,7 +548,7 @@ void Status(byte Par1, byte Par2, boolean Transmit)
 
 
 /*********************************************************************************************\
-* Deze routine parsed een string en geeft het opgegeven argument Argc terug in Argv
+* Deze routine parsed string en geeft het opgegeven argument nummer Argc terug in Argv
 * argumenten worden van elkaar gescheiden door een komma of een spatie.
 * Let op dat de ruimte in de doelstring voldoende is EN dat de bron string netjes is afgesloten 
 * met een 0-byte.
@@ -574,10 +574,17 @@ boolean GetArgv(char *string, char *argv, byte argc)
     string_pos++;
     }    
   argv[argv_pos]=0;
-  
+
   if(argv_pos>0)
+    {
+    argv[argv_pos]=0;
     return true;
-  return false;
+    }
+  else
+    {
+    argv[0]=0;
+    return false;
+    }
   }
 
 
@@ -974,20 +981,6 @@ void md5(char* dest)
   free(Str);
   }
 
-//   void md5(struct md5_hash_t* dest, const void* msg)
-//    {
-//    uint32_t length_b = strlen((char*)msg) * 8;
-//    struct md5_ctx_t ctx;
-//  
-//    md5_init(&ctx);
-//    while(length_b>=MD5_BLOCK_BITS){
-//      md5_nextBlock(&ctx, msg);
-//      msg = (uint8_t*)msg + MD5_BLOCK_BYTES;
-//      length_b -= MD5_BLOCK_BITS;
-//    }
-//  md5_lastBlock(&ctx, msg, length_b);
-//  md5_ctx2hash(dest, &ctx);
-//  }
 
 void RaiseError(byte ErrorCode)
   {
