@@ -4,7 +4,7 @@
  \*********************************************************************************************/
 char* cmd2str(int i)
   {
-  static char string[30];
+  static char string[80];
   if(i<COMMAND_MAX)
     {
     strcpy_P(string,(char*)pgm_read_word(&(CommandText_tabel[i])));
@@ -31,7 +31,7 @@ int str2cmd(char *command)
  \*********************************************************************************************/
 unsigned long command2event(int Command, byte Par1, byte Par2)
     {
-    return ((unsigned long)SIGNAL_TYPE_NODO)<<28   | 
+    return ((unsigned long)SIGNAL_TYPE_NODO)<<28  | 
            ((unsigned long)S.Unit)<<24            | 
            ((unsigned long)Command)<<16           | 
            ((unsigned long)Par1)<<8               | 

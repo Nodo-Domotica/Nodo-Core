@@ -31,7 +31,8 @@ boolean SendEventGhost(char* event, byte* SendToIP)
   int x,y,Try;
   byte EventGhostClientState=0; 
   char str2[80];
-  unsigned long Timeout=millis()+2000;
+  unsigned long Timeout=millis()+5000;
+
   char* InputBuffer_IP=(char*)malloc(INPUT_BUFFER_SIZE+1);
 
   IPAddress EGServerIP(SendToIP[0],SendToIP[1],SendToIP[2],SendToIP[3]);
@@ -89,6 +90,8 @@ boolean SendEventGhost(char* event, byte* SendToIP)
   
                   // klaar met verzenden en verbreek de verbinding;
                   EGclient.stop();    // close the connection:
+
+                  free(InputBuffer_IP);
                   return true;
                   }
                 }
@@ -122,35 +125,18 @@ boolean SendEventGhost(char* event, byte* SendToIP)
   free(InputBuffer_IP);
   return false;
   }
-    
-
-// /*******************************************************************************************************\
-// *
-// *
-// \*******************************************************************************************************/
-//boolean SendHTTPRequestResponse(char* Response)//???
-//  {
-//  boolean r;
-//  char* ResponseString=(char*)malloc(INPUT_BUFFER_SIZE+1);
-//
-//  strcpy(ResponseString,"&response=");
-//  strcat(ResponseString,Response);
-//  r=SendHTTPEventString(ResponseString,S.Unit);
-//
-//  free(ResponseString);  
-//  return r;
-//  }
-
+ 
 
  /*******************************************************************************************************\
  * Haal via een HTTP-request een file op
- * De content van de file bevindt zih in de body text die de server terugstuurt en wordt opgevangen
+ * De content van de file bevindt zich in de body text die de server terugstuurt en wordt opgevangen
  * in de funktie SendHTTPRequest()
  \*******************************************************************************************************/
 byte GetHTTPFile(char* filename)
   {
   char *HttpRequest=(char*)malloc(INPUT_BUFFER_SIZE+1);
-
+  byte Ok;
+  
   strcpy(HttpRequest,"?id=");
   strcat(HttpRequest,S.ID);  
 
@@ -166,8 +152,9 @@ byte GetHTTPFile(char* filename)
     strcat(HttpRequest,TempString);    
     }
     
-  return SendHTTPRequest(HttpRequest);
+  Ok=SendHTTPRequest(HttpRequest);
   free(HttpRequest);
+  return Ok;
   }
 
  /*******************************************************************************************************\
@@ -201,8 +188,9 @@ byte SendHTTPEvent(unsigned long event)
   strcat(HttpRequest,"&event=");
   strcat(HttpRequest,Event2str(event));
 
-  return SendHTTPRequest(HttpRequest);
+  x=SendHTTPRequest(HttpRequest);
   free(HttpRequest);
+  return x;
   }
 
 
@@ -210,10 +198,12 @@ byte SendHTTPEvent(unsigned long event)
  * Verzend een nieuwe cookie als HTTP request.
  *
  \*******************************************************************************************************/
-byte SendHTTPCookie(void)
+boolean SendHTTPCookie(void)
   {
+  boolean Status;
+
   char *HttpRequest=(char*)malloc(INPUT_BUFFER_SIZE+1);
-  
+
   strcpy(HttpRequest,"?id=");
   strcat(HttpRequest,S.ID);  
 
@@ -222,47 +212,54 @@ byte SendHTTPCookie(void)
   strcat(HttpRequest,"&cookie=");
   strcat(HttpRequest,HTTPCookie);
   
-  return SendHTTPRequest(HttpRequest);
+  Status=SendHTTPRequest(HttpRequest);
   free(HttpRequest);
+  return Status;
   }
 
 
-byte SendHTTPRequest(char* Request)
+boolean SendHTTPRequest(char* Request)
   {
-  int InByteCounter;
-  byte InByte,x;
+  int InByteCounter,x,y,SlashPos;
+  byte InByte;
   unsigned long TimeoutTimer;
-  char* IPBuffer=(char*)malloc(INPUT_BUFFER_SIZE+1);
-  char s[2];
+  char* IPBuffer=(char*)malloc(IP_INPUT_BUFFER_SIZE+1);
   char filename[13];
-  
   const int TimeOut=10000;
   EthernetClient IPClient;                            // Client class voor HTTP sessie.
-
   byte State=0;// 0 als start, 
                // 1 als 200 OK voorbij is gekomen,
                // 2 als &file= is gevonden en eerstvolgende lege regel moet worden gedetecteerd
                // 3 als lege regel is gevonden en file-capture moet starten.                
 
+
+  strcpy(IPBuffer,"GET ");
+
   // Haal uit het HTTP request URL de Host. 
   // zoek naar de eerste slash in de opgegeven HTTP-Host adres
-  int SlashPos=StringFind(S.HTTPRequest,"/");
-  strcpy(IPBuffer,"GET ");
-  strcat(IPBuffer,S.HTTPRequest+SlashPos);
-  
+  SlashPos=StringFind(S.HTTPRequest,"/");
+  if(SlashPos!=-1)
+    strcat(IPBuffer,S.HTTPRequest+SlashPos);
+
   // Alle spaties omzetten naar %20 en toevoegen aan de te verzenden regel.
+  y=strlen(IPBuffer);
+  
   for(x=0;x<strlen(Request);x++)
     {            
     if(Request[x]==32)
-      strcat(IPBuffer,"%20");
+      {
+      IPBuffer[y++]='%';
+      IPBuffer[y++]='2';
+      IPBuffer[y++]='0';
+      }
     else
       {
-      s[0]=Request[x];
-      s[1]=0;
-      strcat(IPBuffer,s);
+      IPBuffer[y++]=Request[x];
       }
-    }          
+    }
+  IPBuffer[y]=0;
 
+  // Sluit HTTP-request af met protocol versienummer
   strcat(IPBuffer," HTTP/1.1");
 
   // IPBuffer bevat nu het volledige HTTP-request, gereed voor verzending.
@@ -351,9 +348,12 @@ byte SendHTTPRequest(char* Request)
           }
         }
       }
+    IPClient.stop();
     }
+  else
+    State=false;
+
   free(IPBuffer);
-  IPClient.stop();
   return State;
   }
     
@@ -430,10 +430,9 @@ void ExecuteIP(void)
   boolean RequestEvent=false;
   boolean RequestFile=false;
   int x,y;
-  unsigned long TimeoutTimer=millis()+2000; // Na twee seconden moet de gehele transactie gereed zijn, anders 'hik' in de lijn.
+  unsigned long TimeoutTimer=millis()+5000; // Na twee seconden moet de gehele transactie gereed zijn, anders 'hik' in de lijn.
   char EGCookie[10];
   
-  // reserver een inputbuffer
   char *Event=(char*)malloc(INPUT_BUFFER_SIZE+1);
   char *InputBuffer_IP=(char*)malloc(IP_INPUT_BUFFER_SIZE+1);
   char *TmpStr2=(char*)malloc(INPUT_BUFFER_SIZE+1);
@@ -521,9 +520,6 @@ void ExecuteIP(void)
                     strcat(FileName,".dat");
                     RequestFile=true;
                     }
-                    
-                  if(ParseHTTPRequest(InputBuffer_IP,"confirm",TempString))//???
-                    ConfirmHTTP=true;
                     
                   if(RequestFile || RequestEvent)
                     {
@@ -691,12 +687,13 @@ void ExecuteIP(void)
 
   delay(5);  // korte pauze om te voorkomen dat de verbinding wordt verbroken alvorens alle data door client verwerkt is.
   IPClient.stop();
-  free(TmpStr2);
-  free(InputBuffer_IP);
 
   if(RequestEvent)
     ExecuteLine(Event, Protocol);
   ConfirmHTTP=false; // geen monitor weergave meer als HTTP-request versturen.
+
+  free(TmpStr2);
+  free(InputBuffer_IP);
   free(Event);
   return;
   }
