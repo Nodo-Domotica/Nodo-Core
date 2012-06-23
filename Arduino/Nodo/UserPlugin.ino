@@ -8,7 +8,7 @@
  * - zorg er voor dat er geen wachtloops in de code zitten. Lang durende verwerking / pauzes leiden er toe
  *   dat de Nodo niet meer betrouwbaar signalen zal ontvangen, dat timers niet correct verwerkt worden en dat
  *   communicatie niet correct verloopt.
- * - Wees zuinig op RAM-geheugen (variabelen zoals, integers, strings, etc.)
+ * - Wees zuinig op RAM-geheugen (geen float variabelen, etc.)
  * - Pas geen code aan buiten dit Plugin tabblad, anders zul je bij volgende releases steeds je
  *   aanpassingen opnieuw moeten aanbrengen.
  \*********************************************************************************************/
@@ -42,12 +42,13 @@ void UserPlugin_Command(int Par1, int Par2)
   // Schrijf hier je eigen code
   // onderstaand een paar voorbeelden.
   
-    
+
+
   // VOORBEELD-1: uitvoeren van een Nodo commando
-  ExecuteLine("Sound 0;",VALUE_DIRECTION_INTERNAL);    
+  // ExecuteLine("Sound 0;",VALUE_DIRECTION_INTERNAL);    
 
   // VOORBEELD-2: Loggen naar de SDCard
-  AddFileSDCard("log.dat","Hello, UserPlugin was here.");
+  // AddFileSDCard("log.dat","Hello, UserPlugin was here.");
   }
 
 

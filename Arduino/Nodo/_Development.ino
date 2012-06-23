@@ -1,29 +1,26 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- LET OP: VANAF DEZE VERSIE WERKT DE NODO NIET MEER MET DE WEBAPP OMGEVING OP Nodo2.powerkite.nl maar op www.nodo-domotica.nl/webapp
-- Issue 427:	Versleutelen communicatie Nodo <> WebApp
-- ID niet meer nodig bij ontvangen van ee HTTP request. Wordt nog wel verzonden.
-- default is id string leeg na een reset
-- HTTP tag "&version" nu opgenomen als header veld.
-- let op: default poort nodo = 8080 !
-- Issue 433:	EventList lengte
-- Issue 440:	SendKAKU met ongeldige parameter
-- Issue 431:	RawSignalSave werkt niet meer
-- Issue 443:	Break on tijd
+- Bug bij automatische resetfactory opgelost
+- Splitsing code voor Nodo-Meda en Nodo-Mini (Conditionele compilatie)
+- Nodo voor de ATmega328 is nu alleen bedoeld als satelliet en is MMI-loos. Aansturing door een Mega.
+- Messages/error aangepast. Deze hebben nu ook een code zodat ze in de eventlist kunnen worden gebruikt
+- Sendstatus zonder parameters geeft een event "Message 200 (Ok.)".
+- Bij resetfactory wordt de waitfreerf ook juist ingesteld als ander unitnummer wordt meegecompileerd
+- Queue mode in de Delay funktie verbijzonderd naar een apart commando "Queue"
+- Aangepaste ijkprocedure. Geen High/Low parameter meer.
 
 Known Errors / ToDo:
-- Sendbusy en Waitbusy testen of mmi en oppikken commando nog goed werken. Queue testen
-- clocksetdate met voorloop nul?
-- default na reset toegang via browser
-- clientip 0.0.0.0 ???
-- MD5 uit SendTo slopen en vervangen door andere Key.
+- SendBusy loopt niet lekker
+- Als er een boot event voorbij komt van een andere nodo levert deze een hit op in de eventlist.
+- EventList 7; WildCard All,UserEvent; SendEvent HTTP => er uit of alternatief
+
+
 
 Aanpassingen t.o.v. Nodo Due:
 - Nieuw commando "ClientIP" toegevoegd. Aanvaard alleen HTTP-Requests en EventGhst events van opgegeven IP adres.
-- Nieuw commando "SendTo" voor versturen van een commandoregel via RF naar een andere Nodo
+- Commando "Divert" vervallen. Nieuw commando "SendTo" voor versturen van een commandoregel via RF naar een andere Nodo
 - Nieuw commando voor in eventlist "BreakOnDaylight". 
-- Commando "Divert" vervallen en vervangen door "SendTo"
 - Weergave status nu niet meer volledig zoals een event weergegeven
 - commando "DnsServer" toegevoegd voor instellen van een DNS server.
 - Als IP adres an de Nodo is toegekend door DHCP dan wordt dit in de status weergegeven

@@ -8,6 +8,7 @@
 #define P_DIM     4
 #define P_ANALOG  5
 
+#if NODO_MEGA
  /*********************************************************************************************\
  * Print een event volgens formaat:  'EVENT/ACTION: <port>, <type>, <content>
  \*********************************************************************************************/
@@ -15,16 +16,14 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
   {
   byte x;
 
-  // FreeMemory(0);//???
-
   // Enkele events/commando's zijn niet voor de gebruiker, maar zijn uitsluitend voor de Nodo relevant
   // Deze mogen niet worden weergegeven
-  switch((Content>>16)&0xff)
-    {
-    case CMD_RECEIVE_LINE:
-    case CMD_RECEIVE_LINE_READY:
-       return;
-    }
+  //  switch((Content>>16)&0xff)
+  //    {
+  //    case CMD_RECEIVE_LINE:
+  //    case CMD_RECEIVE_LINE_READY:
+  //       return;
+  //    }???
   
   TempString[0]=0; // als start een lege string
 
@@ -58,9 +57,10 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
       break;
     }
   
-  // geef poort weer
+  // Poort
   x=true;
   strcat(TempString, cmd2str(Port));
+
   if(Port==VALUE_SOURCE_EVENTGHOST || Port==VALUE_SOURCE_HTTP || Port==VALUE_SOURCE_TERMINAL)
     {
     strcat(TempString, "(");
@@ -69,11 +69,10 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
     x=false;
     }
 
-  // Als het een onbekend type signaal is, dan unit niet weergeven.
-  if(((Content>>28)&0xf)==((unsigned long)(SIGNAL_TYPE_UNKNOWN)))
+  // Unit
+  if(((Content>>28)&0xf)==((unsigned long)(SIGNAL_TYPE_UNKNOWN)))  // Als het een onbekend type signaal is, dan unit niet weergeven.
     x=false;
-    
-  // geef unit weer
+
   if(x)
     {
     strcat(TempString, ", "); 
@@ -82,24 +81,37 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
     strcat(TempString, int2str((Content>>24)&0xf)); 
     }
     
-  // geef het event weer
+  // Event
   strcat(TempString, ", ");
-  if(((Content>>16)&0xff)==CMD_ERROR)
+  strcat(TempString, ProgmemString(Text_14));
+  strcat(TempString, Event2str(Content));
+
+
+  if(((Content>>16)&0xff)==CMD_MESSAGE )
     {
-    strcat(TempString, ProgmemString(Text_06));
-    strcat(TempString, cmd2str((Content>>8)&0xff));
-    }
-  else
-    {
-    strcat(TempString, ProgmemString(Text_14));
-    strcat(TempString, Event2str(Content));
+    strcat(TempString, " (");
+    strcat(TempString, cmd2str(Content&0xff));
+    strcat(TempString, ")");
     }
 
-  // stuur de regel naar Serial en/of naar Ethernet
-  PrintTerminal(TempString);
+  PrintTerminal(TempString);   // stuur de regel naar Serial en/of naar Ethernet
   AddFileSDCard(ProgmemString(Text_23),TempString); // standaard logging naar log.dat
   } 
-      
+#else
+
+ /*********************************************************************************************\
+ * Print een event: debug mode Nodo-Mini
+ \*********************************************************************************************/
+void PrintEvent(unsigned long Content, byte Port, byte Direction)
+  {
+  Serial.print(Direction);
+  Serial.print(",");
+  Serial.print(Port); //??? Debug
+  Serial.print(",0x");
+  Serial.println(Content,HEX); //??? Debug
+  } 
+  
+#endif
 
   
  /**********************************************************************************************\
@@ -121,6 +133,7 @@ char* DateTimeString(void)
     return dt;
     }
 
+#if NODO_MEGA
  /**********************************************************************************************\
  * Print de welkomsttekst van de Nodo.
  \*********************************************************************************************/
@@ -133,7 +146,7 @@ void PrintWelcome(void)
   PrintTerminal(ProgmemString(Text_02));
 
   // print versienummer, unit en indien gevuld het ID
-  sprintf(TempString,"Version=%d.%d.%d, ThisUnit=%d",S.Version/100, (S.Version%100)/10, S.Version%10,S.Unit);
+  sprintf(TempString,"Version=2.99(Mega), ThisUnit=%d",S.Unit);
   if(S.ID[0])
     {
     strcat(TempString,", ID=");
@@ -220,6 +233,7 @@ char* Event2str(unsigned long Code)
       case CMD_WIRED_SMITTTRIGGER:
       case CMD_WIRED_THRESHOLD:
       case CMD_WIRED_ANALOG:
+      case CMD_WIRED_ANALOG_CALIBRATE:
         P1=P_ANALOG;
         P2=P_NOT;
         break;
@@ -239,9 +253,7 @@ char* Event2str(unsigned long Code)
         break;
         
       // Par1 als waarde en par2 als tekst
-      case CMD_DELAY:
       case CMD_WIRED_PULLUP:
-      case CMD_PULSE_VARIABLE:
       case CMD_WIRED_OUT:
       case CMD_WIRED_IN_EVENT:
         P1=P_VALUE;
@@ -256,6 +268,7 @@ char* Event2str(unsigned long Code)
         break;
   
       // Par1 als tekst en par2 als getal
+      case CMD_QUEUE:
       case CMD_RAWSIGNAL_COPY:
       case CMD_TRANSMIT_IR:
       case CMD_TRANSMIT_RF:
@@ -267,8 +280,8 @@ char* Event2str(unsigned long Code)
   
       // Par1 als tekst en par2 niet
       case CMD_SEND_EVENT:
-      case CMD_ERROR:
-      case CMD_TRACE:
+      case CMD_DEBUG:
+      case CMD_LOCK:
       case CMD_BUSY:
       case CMD_SENDBUSY:
       case CMD_WAITBUSY:
@@ -277,6 +290,8 @@ char* Event2str(unsigned long Code)
         break;
   
       // Par1 als waarde en par2 niet
+      case CMD_DELAY:
+      case CMD_EVENTLIST_ERASE:
       case CMD_FILE_EXECUTE:
       case CMD_UNIT:
       case CMD_RAWSIGNAL:
@@ -368,4 +383,42 @@ char* Event2str(unsigned long Code)
   return EventString;
   }
 
+#else
 
+ /**********************************************************************************************\
+ * Print de welkomsttekst van de Nodo. ATMega 328 variant
+ \*********************************************************************************************/
+void PrintWelcome(void)
+  {
+  byte x;
+  char* str=(char*)malloc(80);
+
+
+  // Print Welkomsttekst
+  Serial.println();
+  Serial.println(ProgmemString(Text_22));
+  Serial.println(ProgmemString(Text_01));
+  Serial.println(ProgmemString(Text_02));
+
+  // print versienummer, unit en indien gevuld het ID
+  sprintf(str,"Version=2.99(ATmega328), ThisUnit=%d",S.Unit);
+  Serial.println(str);
+
+  // Geef datum en tijd weer.
+  if(bitRead(HW_Config,HW_CLOCK))
+    {
+
+    // Print de dag. 1=zondag, 0=geen RTC aanwezig
+    char s[5];
+    for(x=0;x<=2;x++)
+    s[x]=(*(ProgmemString(Text_04)+(Time.Day-1)*3+x));
+    s[x]=0;
+
+    sprintf(str,"Date=%d-%02d-%02d (%s), Time=%02d:%02d, DaylightSaving=%d", Time.Year, Time.Month, Time.Date, s, Time.Hour, Time.Minutes,Time.DaylightSaving);
+    Serial.println(str);
+    }
+  Serial.println(ProgmemString(Text_22));
+  free(str);
+  }
+
+#endif

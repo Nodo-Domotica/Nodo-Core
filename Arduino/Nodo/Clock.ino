@@ -68,6 +68,7 @@ int rtc[7];
  * Leest de realtime clock en plaatst actuele waarden in de struct Time. 
  * Revision 01, 09-01-2010, P.K.Tonkes@gmail.com
  \*********************************************************************************************/
+#if NODO_MEGA
 
 void SimulateDay(void) 
   {
@@ -105,6 +106,8 @@ void SimulateDay(void)
   SetDaylight();// daglicht status weer terug op de juiste stand zetten
   DaylightPrevious=Time.Daylight;
   }
+
+#endif
 
 // update the data on the RTC from the bcd formatted data in the buffer
 void DS1307_save(void)

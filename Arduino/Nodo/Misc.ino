@@ -1,4 +1,136 @@
 
+ /*********************************************************************************************\
+ * wachtloop die wordt afgebroken als:
+ * - tijd Timeout is verstreken na laatst ontvangen event
+ * - alle Nodo's na een "Busy On" ook weer een "Busy Off" hebben verzonden. (Als WaitForBusyNodo==true)
+ * - de Nodo expliciet een "Queue Off" opdracht krijgt toegezonden.
+ \*********************************************************************************************/
+void WaitAndQueue(int Timeout, boolean WaitForBusyNodo)
+  {
+  unsigned long TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
+  unsigned long TimeoutMinTimer=millis() + 2000L; // deze timer nodig omdat de RF ontvangers na inschakelen tijd nodig hebben om signaal te kunnen ontvangen
+  unsigned long Event;
+  int Port,x,y,z;
+  boolean Loop=true;
+  boolean QueueMessage=false;
+  
+  Led(BLUE);
+
+  while(TimeoutTimer>millis() && Loop)
+    {
+    if(GetEvent_IRRF(&Event,&Port))
+      {
+
+#if NODO_MEGA
+      if(!QueueMessage)
+        {
+          PrintTerminal(ProgmemString(Text_24));
+        QueueMessage=true;
+        }
+#endif
+
+      PrintEvent(Event,Port,VALUE_DIRECTION_INPUT);
+      TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
+
+      x=(byte)((Event>>16)&0xff); // cmd
+      y=(byte)((Event>>24)&0xf); // unit
+      z=(byte)((Event>>8)&0xff); // par1
+      
+      if(x==CMD_BUSY) // command
+        NodoBusy(Event);          
+
+      else if(x==CMD_QUEUE) // command
+        {
+        if(y==S.Unit) // Als commando voor deze unit bestemd
+          {
+          if(z==VALUE_OFF) // Par1
+            {
+            Loop=false;
+            }
+          }
+        }
+  
+      // Het is geen Busy event of Queue commando event, dan deze in de queue plaatsen.
+      else if(QueuePos<EVENT_QUEUE_MAX)
+        {
+//      Serial.print("*** debug: plaatsing in Queue=");Serial.println(Event,HEX); //??? Debug
+        QueueEvent[QueuePos]=Event;
+        QueuePort[QueuePos]=Port;
+        QueuePos++;           
+        }       
+      else
+        RaiseMessage(MESSAGE_04);    
+      }    
+
+    if(NodoBusyStatus==0 && TimeoutMinTimer<millis())
+      {
+      Loop=false;
+      }
+    }
+    
+  // Verwerk eventuele events die in de queue zijn geplaatst.
+  if(QueuePos)
+    {
+
+#if NODO_MEGA
+    PrintTerminal(ProgmemString(Text_26));
+#endif
+
+    // alvorens de queue leeg te draaien eerst wachten op vrije ether omdat de master nodo nog bezig kan zijn met verzending en
+    // een eventueel RF commando niet op de master kan aankomen.
+    if(S.WaitFreeRF_Delay==0 && S.WaitFreeRF_Window==0)
+      WaitFreeRF(0,50);
+
+//    Serial.print("*** debug: QueuePos=");Serial.println(QueuePos,HEX); //??? Debug
+    for(x=0;x<QueuePos;x++)
+      {
+//      Serial.print("*** debug: Queue event=");Serial.println(QueueEvent[x],HEX); //??? Debug
+      if(((QueueEvent[x]>>16)&0xff)==CMD_EVENTLIST_WRITE && ((QueueEvent[x]>>24)&0xf)==S.Unit && x<(QueuePos-2)) // cmd
+        {
+//        Serial.print("*** debug: Eventlistwrite: Regel=");Serial.println(((QueueEvent[x]>>8)&0xff)); //??? Debug
+//        Serial.print("*** debug: Eventlistwrite: Event=");Serial.println(QueueEvent[x+1],HEX); //??? Debug
+//        Serial.print("*** debug: Eventlistwrite: Action=");Serial.println(QueueEvent[x+2],HEX); //??? Debug
+        if(Eventlist_Write(((QueueEvent[x]>>8)&0xff),QueueEvent[x+1],QueueEvent[x+2]))
+          {
+//          Serial.println("*** debug: Eventlist regel weggeschreven.");//???
+          x+=2;
+          }
+        else
+          RaiseMessage(MESSAGE_06);    
+        }
+      else
+        ProcessEvent2(QueueEvent[x],VALUE_DIRECTION_INPUT,QueuePort[x],0,0);      // verwerk binnengekomen event.
+      }
+    QueuePos=0;
+    }
+
+#if NODO_MEGA
+  if(QueueMessage)
+    PrintTerminal(ProgmemString(Text_29));
+#endif
+}
+  
+
+ /*********************************************************************************************\
+ *
+ \*********************************************************************************************/
+boolean NodoBusy(unsigned long Event)
+  {
+  
+  // Check of het event een Busy xxx event is en zet de betreffende status van de Nodo
+  if(((Event>>16)&0xff)==CMD_BUSY) // command
+    {
+    if(((Event>>8)&0xff)==VALUE_ON) // Par1
+      NodoBusyStatus  |=  (1<<((Event>>24)&0xf)); // unit nummer
+    else
+      {
+      NodoBusyStatus  &= ~(1<<((Event>>24)&0xf)); // unit nummer
+      }
+    }
+
+  return NodoBusyStatus!=0;
+  }
+
 
  /*********************************************************************************************\
  * Zet het hoogste nibbel van een event zodat het event het Type kenmerk krijgt
@@ -50,14 +182,6 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
   *Par2=0;
   switch (*Command)
     {
-    case CMD_TRANSMIT_IP:
-      *Par1=S.TransmitIP;
-      if(S.TransmitIP==VALUE_SOURCE_HTTP)
-        *Par2=S.HTTP_Pin;
-      if(S.TransmitIP==VALUE_SOURCE_EVENTGHOST)
-        *Par2=S.AutoSaveEventGhostIP;
-      break;
-
     case CMD_WAITFREERF: 
       *Par1=S.WaitFreeRF_Delay;
       *Par2=S.WaitFreeRF_Window;
@@ -71,8 +195,12 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       *Par1=S.SendBusy;
       break;
 
-    case CMD_TRACE:
+    case CMD_DEBUG:
       *Par1=S.Debug;
+      break;
+
+    case CMD_LOCK:
+      *Par1=S.Lock;
       break;
 
     case CMD_WAITBUSY:
@@ -171,6 +299,15 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       *Par2=(WiredOutputStatus[xPar1-1])?VALUE_ON:VALUE_OFF;
       break;
 
+#if NODO_MEGA
+    case CMD_TRANSMIT_IP:
+      *Par1=S.TransmitIP;
+      if(S.TransmitIP==VALUE_SOURCE_HTTP)
+        *Par2=S.HTTP_Pin;
+      if(S.TransmitIP==VALUE_SOURCE_EVENTGHOST)
+        *Par2=S.AutoSaveEventGhostIP;
+      break;
+
     // pro-forma de commando's die geen fout op mogen leveren omdat deze elders in de statusafhandeling worden weergegeven
     case CMD_NODO_IP:
     case CMD_GATEWAY:
@@ -184,7 +321,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       *Par1=0;
       *Par2=0;
       break;
-      
+#endif      
     default:
       return false;
     }
@@ -253,9 +390,9 @@ void ResetFactory(void)
   int x,y;
   ClockRead();
 
-  S.Version                    = VERSION;
+  S.Version                    = SETTINGS_VERSION;
   S.Unit                       = UNIT;
-  S.Debug                      = VALUE_OFF;
+  S.Lock                       = VALUE_OFF;
   S.AnalyseSharpness           = 50;
   S.AnalyseTimeOut             = SIGNAL_TIMEOUT_IR;
   S.TransmitIR                 = VALUE_OFF;
@@ -265,9 +402,14 @@ void ResetFactory(void)
   S.TransmitRepeatRF           = TX_REPEATS;
   S.SendBusy                   = VALUE_OFF;
   S.WaitBusy                   = VALUE_OFF;
+  S.WaitFreeRF_Delay           = 2*(S.Unit!=1) + S.Unit;
+  S.WaitFreeRF_Window          = 3*(S.Unit!=1); // 1 eenheid = 100 ms.
   S.WaitFreeRF_Window          = 0;
   S.WaitFreeRF_Delay           = 0;
   S.DaylightSaving             = Time.DaylightSaving;
+  S.Debug                      = VALUE_OFF;
+
+#if NODO_MEGA
   S.AutoSaveEventGhostIP       = VALUE_OFF;
   S.EventGhostServer_IP[0]     = 0; // IP adres van de EventGhost server
   S.EventGhostServer_IP[1]     = 0; // IP adres van de EventGhost server
@@ -294,21 +436,14 @@ void ResetFactory(void)
   S.DnsServer[1]               = 0;
   S.DnsServer[2]               = 0;
   S.DnsServer[3]               = 0;
-  S.PulseTimeFormula           = 0;
-  S.PulseTime_A                = 0;
-  S.PulseTime_B                = 0;
-  S.PulseTime_C                = 0;
-  S.PulseCountFormula          = 0;
-  S.PulseCount_A               = 0;
-  S.PulseCount_C               = 0;
-  S.PulseCount_B               = 0;
   S.PortServer                 = 8080;
   S.PortClient                 = 80;
   S.ID[0]                      = 0; // string leegmaken
   S.HTTP_Pin                   = VALUE_OFF;
   
   strcpy(S.Password,ProgmemString(Text_10));
-  
+#endif
+
   // zet analoge waarden op default
   for(x=0;x<WIRED_PORTS;x++)
     {
@@ -327,7 +462,7 @@ void ResetFactory(void)
 
   SaveSettings();  
   FactoryEventlist();
-  delay(500);// kleine pauze, anders kans fout bij seriële communicatie
+  delay(250);// kleine pauze, anders kans fout bij seriële communicatie
   Reset();
   }
   
@@ -340,9 +475,13 @@ void FactoryEventlist(void)
   for(int x=1;x<=EVENTLIST_MAX;x++)
     Eventlist_Write(x,0L,0L);
 
+#if NODO_MEGA
   // schrijf default regels.
   Eventlist_Write(0,command2event(CMD_BOOT_EVENT,0,0),command2event(CMD_SOUND,7,0)); // geluidssignaal na opstarten Nodo
   Eventlist_Write(0,command2event(CMD_COMMAND_WILDCARD,VALUE_SOURCE_IR,CMD_KAKU),command2event(CMD_RAWSIGNAL_SEND,0,0)); 
+#else
+  Eventlist_Write(0,command2event(CMD_BOOT_EVENT,0,0),command2event(CMD_SOUND,7,0)); // geluidssignaal na opstarten Nodo
+#endif
   }
 
   
@@ -356,15 +495,15 @@ void FactoryEventlist(void)
  * be larger than HP or you'll be in big trouble! The smaller the gap, the more
  * careful you need to be. Julian Gall 6-Feb-2009.
  */
-uint8_t *heapptr, *stackptr;
-void FreeMemory(int x) 
-  {
-  stackptr = (uint8_t *)malloc(4);          // use stackptr temporarily
-  heapptr = stackptr;                     // save value of heap pointer
-  free(stackptr);      // free up the memory again (sets stackptr to 0)
-  stackptr =  (uint8_t *)(SP);           // save value of stack pointer
-  Serial.print("*** debug: Free RAM (");Serial.print(x,DEC);Serial.print(")=");Serial.println(stackptr-heapptr,DEC);
-  }
+//uint8_t *heapptr, *stackptr;
+//void FreeMemory(int x) 
+//  {
+//  stackptr = (uint8_t *)malloc(4);          // use stackptr temporarily
+//  heapptr = stackptr;                     // save value of heap pointer
+//  free(stackptr);      // free up the memory again (sets stackptr to 0)
+//  stackptr =  (uint8_t *)(SP);           // save value of stack pointer
+//  Serial.print("*** debug: Free RAM (");Serial.print(x,DEC);Serial.print(")=");Serial.println(stackptr-heapptr,DEC);
+//  }
 
 
  /**********************************************************************************************\
@@ -411,13 +550,18 @@ void Status(byte Par1, byte Par2, boolean Transmit)
   for(x=CMD_Start; x<=CMD_End; x++)
     {
     s=false;
+
+#if NODO_MEGA          
     boolean dhcp=(S.Nodo_IP[0] + S.Nodo_IP[1] + S.Nodo_IP[2] + S.Nodo_IP[3])==0;
+#endif
 
     if(!Transmit)
       {
       s=true;
       switch (x)
         {
+
+   #if NODO_MEGA          
         case CMD_CLIENT_IP:
           sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_CLIENT_IP),S.Client_IP[0],S.Client_IP[1],S.Client_IP[2],S.Client_IP[3]);
           PrintTerminal(TempString);
@@ -484,6 +628,7 @@ void Status(byte Par1, byte Par2, boolean Transmit)
             strcat(TempString," (Auto)");      
           PrintTerminal(TempString);
           break;
+#endif
 
         default:
           s=false; 
@@ -537,13 +682,18 @@ void Status(byte Par1, byte Par2, boolean Transmit)
             {
             TransmitCode(command2event(x,P1,P2),VALUE_ALL); // verzend als event
             }
+
+#if NODO_MEGA
           else
             PrintTerminal(Event2str(command2event(x,P1,P2)));
+#endif
           }
       }
     }
+#if NODO_MEGA
   if(!Transmit && Par1==VALUE_ALL)
     PrintTerminal(ProgmemString(Text_22));
+#endif
   }
 
 
@@ -982,14 +1132,42 @@ void md5(char* dest)
   }
 
 
-void RaiseError(byte ErrorCode)
+void RaiseMessage(byte MessageCode)
   {
   unsigned long eventcode;
-  eventcode=command2event(CMD_ERROR,ErrorCode,0);
+  eventcode=command2event(CMD_MESSAGE, S.Unit, MessageCode);
   PrintEvent(eventcode,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM);  // geef event weer op Serial
   TransmitCode(eventcode,VALUE_ALL);
   }
     
+
+ /**********************************************************************************************\
+ * Stuur de RGB-led.
+ *
+ * Voor de Nodo geldt:
+ *
+ * Groen = Nodo in rust en wacht op een event.
+ * Rood = Nodo verwerkt event of commando.
+ * Blauw = Bijzondere modus Nodo waarin Nodo niet in staat is om events te ontvangen of genereren.
+ \*********************************************************************************************/
+void Led(byte Color)
+  {
+  digitalWrite(PIN_LED_RGB_R,Color==RED);
+  digitalWrite(PIN_LED_RGB_B,Color==BLUE);
+#if NODO_MEGA
+  digitalWrite(PIN_LED_RGB_G,Color==GREEN);
+#endif
+  }
+  
+void PulseCounterISR()
+   {
+   // in deze interrupt service routine staat millis() stil. Dit is echter geen bezwaar voor de meting.
+   PulseTime=millis()-PulseTimePrevious;
+   PulseTimePrevious=millis();
+   PulseCount++;   
+   }     
+
+#if NODO_MEGA
  /**********************************************************************************************\
  * Voeg een regel toe aan de logfile.
  \*********************************************************************************************/
@@ -1053,7 +1231,7 @@ boolean SaveEventlistSDCard(char *FileName)
   else 
     {
     r=false; // niet meer weer proberen weg te schrijven.
-    TransmitCode(command2event(CMD_ERROR,ERROR_03,0),VALUE_ALL);
+    TransmitCode(command2event(CMD_MESSAGE,MESSAGE_03,0),VALUE_ALL);
     }
 
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip
@@ -1063,29 +1241,6 @@ boolean SaveEventlistSDCard(char *FileName)
   return r;
   }
 
- /**********************************************************************************************\
- * Stuur de RGB-led.
- *
- * Voor de Nodo geldt:
- *
- * Groen = Nodo in rust en wacht op een event.
- * Rood = Nodo verwerkt event of commando.
- * Blauw = Bijzondere modus Nodo waarin Nodo niet in staat is om events te ontvangen of genereren.
- \*********************************************************************************************/
-void Led(byte Color)
-  {
-  digitalWrite(PIN_LED_RGB_R,Color==RED);
-  digitalWrite(PIN_LED_RGB_G,Color==GREEN);
-  digitalWrite(PIN_LED_RGB_B,Color==BLUE);
-  }
-  
-void PulseCounterISR()
-   {
-   // in deze interrupt service routine staat millis() stil. Dit is echter geen bezwaar voor de meting.
-   PulseTimeMillis=millis()-PulseTimePrevious;
-   PulseTimePrevious=millis();
-   PulseCount++;   
-   }     
 
 boolean FileList(void)
   { 
@@ -1142,3 +1297,17 @@ void RandomCookie(char* Ck)
   Ck[8]=0; // afsluiten string
   }
       
+      
+ /*********************************************************************************************\
+ * Op het Ethernetshield kunnen de W5100 chip en de SDCard niet gelijktijdig worden gebruikt
+ * Deze funktie zorgt voor de juiste chipselect. Default wordt in de Nodo software uitgegaan dat
+ * de ethernetchip W5100 is geselecteerd. Met deze routine kan de SDCard worden geselecteerd.
+ * input: true = SD_Card geselecteerd.
+ \*********************************************************************************************/
+void SelectSD(byte sd)
+  {
+  digitalWrite(Ethernet_shield_CS_W5100, sd);
+  digitalWrite(Ethernet_shield_CS_SDCard,!sd);
+  }
+  
+#endif
