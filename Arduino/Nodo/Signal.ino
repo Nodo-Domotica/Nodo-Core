@@ -1,4 +1,57 @@
 
+unsigned long GetEvent_IRRF(unsigned long *Content, int *Port)
+  {
+  static unsigned long Checksum=0L;                           // Als gelijk aan Event dan tweemaal dezelfde code ontvangen: checksum funktie.
+  unsigned long StaySharpTimer=millis();                      // timer die start bij ontvangen van een signaal. Dwingt om enige tijd te luisteren naar dezelfde poort.
+  
+  // IR: *************** kijk of er data staat op IR en genereer een event als er een code ontvangen is **********************
+  do
+    {
+    if((*portInputRegister(IRport)&IRbit)==0)// Kijk if er iets op de poort binnenkomt. (Pin=LAAG als signaal in de ether). 
+      {
+      if(FetchSignal(PIN_IR_RX_DATA,LOW,S.AnalyseTimeOut))// Als het een duidelijk IR signaal was
+        {
+        *Content=AnalyzeRawSignal(); // Bereken uit de tabel met de pulstijden de 32-bit code. 
+        if(*Content)// als AnalyzeRawSignal een event heeft opgeleverd
+          {
+          StaySharpTimer=millis()+SHARP_TIME;          
+          if(*Content==Checksum)// tweede maal ontvangen als checksum
+             {
+             RawSignal.Source=VALUE_SOURCE_IR;
+             *Port=VALUE_SOURCE_IR;
+             return true;
+             }
+          Checksum=*Content;
+          }
+        }
+      }
+    }while(StaySharpTimer>millis());
+
+  // RF: *************** kijk of er data start op RF en genereer een event als er een code ontvangen is **********************
+  do
+    {
+    if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
+      {
+      if(FetchSignal(PIN_RF_RX_DATA,HIGH,SIGNAL_TIMEOUT_RF))// Als het een duidelijk RF signaal was
+        {
+        *Content=AnalyzeRawSignal(); // Bereken uit de tabel met de pulstijden de 32-bit code. 
+        if(*Content)// als AnalyzeRawSignal een event heeft opgeleverd
+          {
+          StaySharpTimer=millis()+SHARP_TIME;          
+          if(*Content==Checksum)// tweede maal ontvangen als checksum
+             {
+             RawSignal.Source=VALUE_SOURCE_RF;
+             *Port=VALUE_SOURCE_RF;
+             WaitFreeRF(0,100);
+             return true;
+             }
+          Checksum=*Content;
+          }
+        }
+      }
+    }while(StaySharpTimer>millis());
+  return false;
+  }
 
 unsigned long AnalyzeRawSignal(void)
   {
@@ -226,10 +279,10 @@ void RawSendIR(void)
       do
         {
         // Hoog
-        bitWrite(PORTH,0, (HIGH));
+//??? aanpassen naar 328        bitWrite(PORTH,0, (HIGH));
         delayMicroseconds(12);
         __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");// per nop 62.6 nano sec. @16Mhz
-        bitWrite(PORTH,0, (LOW));
+//???        bitWrite(PORTH,0, (LOW));
         delayMicroseconds(12);
         __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");// per nop 62.6 nano sec. @16Mhz
         }while(--mod);
@@ -303,37 +356,37 @@ boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
 
 
 
-/**********************************************************************************************\
-* Deze functie zendt gedurende Window seconden de IR ontvangst direct door naar RF
-* Window tijd in seconden.
-\*********************************************************************************************/
-void CopySignalIR2RF(byte Window)
-  {
-  unsigned long Timer=millis()+((unsigned long)Window)*1000; // reset de timer.  
-
-  digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
-  digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan   
-
-  while(Timer>millis())
-    {
-    digitalWrite(PIN_RF_TX_DATA,(*portInputRegister(IRport)&IRbit)==0);// Kijk if er iets op de IR poort binnenkomt. (Pin=LAAG als signaal in de ether). 
-    if((millis()>>7)&0x01)
-      Led(RED);
-    else
-      Led(false);
-    }
-  digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
-  digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger weer aan.
-  Led(RED);
-  }
-
-/**********************************************************************************************\
-* Deze functie zendt gedurende Window seconden de RF ontvangst direct door naar IR
-* Window tijd in seconden.
-\*********************************************************************************************/
-#define MAXPULSETIME 25 // maximale zendtijd van de IR-LED in mSec. Ter voorkoming van overbelasting
-void CopySignalRF2IR(byte Window)
-  {
+///**********************************************************************************************\
+//* Deze functie zendt gedurende Window seconden de IR ontvangst direct door naar RF
+//* Window tijd in seconden.
+//\*********************************************************************************************/
+//void CopySignalIR2RF(byte Window)
+//  {
+//  unsigned long Timer=millis()+((unsigned long)Window)*1000; // reset de timer.  
+//
+//  digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
+//  digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan   
+//
+//  while(Timer>millis())
+//    {
+//    digitalWrite(PIN_RF_TX_DATA,(*portInputRegister(IRport)&IRbit)==0);// Kijk if er iets op de IR poort binnenkomt. (Pin=LAAG als signaal in de ether). 
+//    if((millis()>>7)&0x01)
+//      Led(RED);
+//    else
+//      Led(false);
+//    }
+//  digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
+//  digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger weer aan.
+//  Led(RED);
+//  }
+//
+///**********************************************************************************************\
+//* Deze functie zendt gedurende Window seconden de RF ontvangst direct door naar IR
+//* Window tijd in seconden.
+//\*********************************************************************************************/
+//#define MAXPULSETIME 25 // maximale zendtijd van de IR-LED in mSec. Ter voorkoming van overbelasting
+//void CopySignalRF2IR(byte Window)
+//  {
 // ??? aanpassen aan nieuwe IR transmissie
     
 //  unsigned long Timer=millis()+((unsigned long)Window)*1000; // reset de timer.  
@@ -358,7 +411,7 @@ void CopySignalRF2IR(byte Window)
 //    }
 //  digitalWrite(PIN_LED_RGB_R,LOW);
 //  TCCR2A&=~_BV(COM2A0);
-  }
+//  }
   
 /**********************************************************************************************\
 * verzendt een event en geeft dit tevens weer op SERIAL
@@ -385,18 +438,19 @@ boolean TransmitCode(unsigned long Event, byte Dest)
   else if(SignalType==SIGNAL_TYPE_NODO)
     Nodo_2_RawSignal(Event);
 
-  if(Dest==VALUE_SOURCE_RF || (S.TransmitRF==VALUE_ON && Dest==VALUE_ALL))
-    {
-    PrintEvent(Event,VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT);
-    RawSendRF();
-    }
-
   if(Dest==VALUE_SOURCE_IR || (S.TransmitIR==VALUE_ON && Dest==VALUE_ALL))
     { 
     PrintEvent(Event,VALUE_SOURCE_IR,VALUE_DIRECTION_OUTPUT);
     RawSendIR();
     } 
 
+  if(Dest==VALUE_SOURCE_RF || (S.TransmitRF==VALUE_ON && Dest==VALUE_ALL))
+    {
+    PrintEvent(Event,VALUE_SOURCE_RF,VALUE_DIRECTION_OUTPUT);
+    RawSendRF();
+    }
+
+#if NODO_MEGA
   if(bitRead(HW_Config,HW_ETHERNET))// Als Ethernet shield aanwezig.
     {
     // Het event verzenden naar de EventGhostServer
@@ -423,10 +477,11 @@ boolean TransmitCode(unsigned long Event, byte Dest)
       PrintEvent(Event,VALUE_SOURCE_HTTP,VALUE_DIRECTION_OUTPUT);
       }
     }
+ #endif   
   }
 
 
-
+#if NODO_MEGA
  /*********************************************************************************************\
  * Kijk of voor de opgegeven Hex-event (Code) een rawsignal file op de SDCard bestaat.
  * Als deze bestaat, dan het Hex-event vervangen door het commando "RawSignal <key>"
@@ -533,7 +588,7 @@ boolean SaveRawSignal(byte Key)
     
   if(error)
     {
-    TransmitCode(command2event(CMD_ERROR,ERROR_03,0),VALUE_ALL);
+    TransmitCode(command2event(CMD_MESSAGE ,MESSAGE_03 ,0),VALUE_ALL);
     return false;
     }
   return true;
@@ -587,5 +642,5 @@ boolean RawSignalGet(int Key)
   return Ok;
   }
 
-
+#endif
   

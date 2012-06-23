@@ -1,4 +1,116 @@
+ /**********************************************************************************************\
+ * De Nodo gebruikt voor metingen analoge waarden. Deze analoge waarden worden zodanig in een 
+ * int vastgelegd dat zij naar de gebruiker kunnen worden getoond als een getal met cijfers achter
+ * komma. Dit wordt do gedaan ondat gebruik van floats erg veel geheugen vraagt.
+ * een int voor analoge waarden bevat de analoge waarde maal honderd, zodat deze later kunnen
+ * worden getoond met twee cijfers achter de komma.
+ * Voor uitwisseling van events met analoge waarden worden Par1 en Par2 anders gebruikt. Zij worden
+ * samengevoegd tot een 16-bit waarde met de volgende indeling:
+ *
+ * WWWWhsnnnnnnnnnn, waarbij W de Wired poort is en n de analoge waarde en s de sign-bit voor negatieve getallen
+ * h= high/low bit. als h=1 dan bereik 0.0-100.0, als h=0 dan bereik 0.00-10.00
+ * 
+ * De volgende conversiefunkties worden gebruikt:
+ *
+ * str2AnalogInt();    converteert een string "-nnn.nn" naar een int
+ * AnalogInt2str();    converteert een int naar een string met format "-nnn.nnn"
+ * event2AnalogInt();  converteert een eventcode naar een int
+ * AnalogInt2event();  converteert een AnalogInt + poort naar een eventcode
+ * Par2PortAnalog();  converteert een set Par1 en Par2 met integer waarden naar Poort en Analoge waarde
+ * PortAnalog2Par();  converteert een poort en analoge waarde naar Par1 en Par2
+ *
+ * verder:
+ *   (event>>12)&0x0f haalt de wired poort uit een eventcode
+ \*********************************************************************************************/
 
+unsigned long AnalogInt2event(int wi, byte port, byte cmd)
+  {
+  boolean high=false;
+  boolean sign=false;
+  
+  if(wi<0)
+    {
+    sign=true;
+    wi=-wi;
+    }
+    
+  if(wi>=1000)
+    {
+    high=true;
+    wi=wi/10;
+    }
+
+  return ((unsigned long)SIGNAL_TYPE_NODO)<<28   |
+         ((unsigned long)S.Unit)<<24             | 
+         ((unsigned long)cmd)<<16                |
+         ((unsigned long)port)<<12               |
+         ((unsigned long)high)<<11               |
+         ((unsigned long)sign)<<10               |
+         ((unsigned long)(wi & 0x3ff));
+  }
+  
+int event2AnalogInt(unsigned long event)
+  {
+  int wi; 
+  
+  wi=event&0x3ff;    // 10-bits waarde
+
+  if(event & (1<<11)) // als high bit staat
+    wi=wi*10;
+  
+  if(event & (1<<10)) // als sign bit staat
+    wi=-wi;
+  
+  return wi;
+  }
+  
+void Par2PortAnalog(byte Par1, byte Par2, int *port, int *wi)
+  {
+  *port=(Par1>>4)&0xf;
+
+  *wi=((Par1<<8)|Par2)&0x3ff;    // 10-bits waarde
+
+  if(Par1 & B1000) // als high bit staat
+    *wi=*wi*10;
+  
+  if(Par1 & B0100) // als sign bit staat
+    *wi=-(*wi);
+  }
+  
+void PortAnalog2Par(byte *Par1, byte *Par2, int port, int wi)
+  {
+  boolean high=false;
+  boolean sign=false;
+  
+  if(wi<0)
+    {
+    sign=true;
+    wi=-wi;
+    }
+    
+  if(wi>=1000)
+    {
+    high=true;
+    wi=wi/10;
+    }
+
+  *Par1=(port<<4) |  (high<<3) | (sign<<2) | ((wi>>8)&3);
+  *Par2=wi & 0xff;    
+  }
+
+ /*********************************************************************************************\
+ * Bouw een Code op uit commando, data1 en data2
+ \*********************************************************************************************/
+unsigned long command2event(int Command, byte Par1, byte Par2)
+    {
+    return ((unsigned long)SIGNAL_TYPE_NODO)<<28  | 
+           ((unsigned long)S.Unit)<<24            | 
+           ((unsigned long)Command)<<16           | 
+           ((unsigned long)Par1)<<8               | 
+            (unsigned long)Par2;
+    }
+
+#if NODO_MEGA
  /*********************************************************************************************\
  * kopiëer de string van een commando naar een string[]
  \*********************************************************************************************/
@@ -25,18 +137,6 @@ int str2cmd(char *command)
 
   return false;
   }
-
- /*********************************************************************************************\
- * Bouw een Code op uit commando, data1 en data2
- \*********************************************************************************************/
-unsigned long command2event(int Command, byte Par1, byte Par2)
-    {
-    return ((unsigned long)SIGNAL_TYPE_NODO)<<28  | 
-           ((unsigned long)S.Unit)<<24            | 
-           ((unsigned long)Command)<<16           | 
-           ((unsigned long)Par1)<<8               | 
-            (unsigned long)Par2;
-    }
 
 
 /*********************************************************************************************\
@@ -158,66 +258,6 @@ char* int2str(unsigned long x)
     
   return OutputLinePosPtr;
   }
-
-
- /**********************************************************************************************\
- * De Nodo gebruikt voor metingen analoge waarden. Deze analoge waarden worden zodanig in een 
- * int vastgelegd dat zij naar de gebruiker kunnen worden getoond als een getal met cijfers achter
- * komma. Dit wordt do gedaan ondat gebruik van floats erg veel geheugen vraagt.
- * een int voor analoge waarden bevat de analoge waarde maal honderd, zodat deze later kunnen
- * worden getoond met twee cijfers achter de komma.
- * Voor uitwisseling van events met analoge waarden worden Par1 en Par2 anders gebruikt. Zij worden
- * samengevoegd tot een 16-bit waarde met de volgende indeling:
- *
- * WWWWhsnnnnnnnnnn, waarbij W de Wired poort is en n de analoge waarde en s de sign-bit voor negatieve getallen
- * h= high/low bit. als h=1 dan bereik 0.0-100.0, als h=0 dan bereik 0.00-10.00
- * 
- * De volgende conversiefunkties worden gebruikt:
- *
- * str2AnalogInt();    converteert een string "-nnn.nn" naar een int
- * AnalogInt2str();    converteert een int naar een string met format "-nnn.nnn"
- * event2AnalogInt();  converteert een eventcode naar een int
- * AnalogInt2event();  converteert een AnalogInt + poort naar een eventcode
- * Par2PortAnalog();  converteert een set Par1 en Par2 met integer waarden naar Poort en Analoge waarde
- * PortAnalog2Par();  converteert een poort en analoge waarde naar Par1 en Par2
- *
- * verder:
- *   (event>>12)&0x0f haalt de wired poort uit een eventcode
- \*********************************************************************************************/
-
-void Par2PortAnalog(byte Par1, byte Par2, int *port, int *wi)
-  {
-  *port=(Par1>>4)&0xf;
-
-  *wi=((Par1<<8)|Par2)&0x3ff;    // 10-bits waarde
-
-  if(Par1 & B1000) // als high bit staat
-    *wi=*wi*10;
-  
-  if(Par1 & B0100) // als sign bit staat
-    *wi=-(*wi);
-  }
-  
-void PortAnalog2Par(byte *Par1, byte *Par2, int port, int wi)
-  {
-  boolean high=false;
-  boolean sign=false;
-  
-  if(wi<0)
-    {
-    sign=true;
-    wi=-wi;
-    }
-    
-  if(wi>=1000)
-    {
-    high=true;
-    wi=wi/10;
-    }
-
-  *Par1=(port<<4) |  (high<<3) | (sign<<2) | ((wi>>8)&3);
-  *Par2=wi & 0xff;    
-  }
   
 
 char* AnalogInt2str(int wi)
@@ -282,48 +322,6 @@ int str2AnalogInt(char* string)
   }
 
 
-unsigned long AnalogInt2event(int wi, byte port, byte cmd)
-  {
-  boolean high=false;
-  boolean sign=false;
-  
-  if(wi<0)
-    {
-    sign=true;
-    wi=-wi;
-    }
-    
-  if(wi>=1000)
-    {
-    high=true;
-    wi=wi/10;
-    }
-
-  return ((unsigned long)SIGNAL_TYPE_NODO)<<28   |
-         ((unsigned long)S.Unit)<<24             | 
-         ((unsigned long)cmd)<<16                |
-         ((unsigned long)port)<<12               |
-         ((unsigned long)high)<<11               |
-         ((unsigned long)sign)<<10               |
-         ((unsigned long)(wi & 0x3ff));
-  }
-  
-int event2AnalogInt(unsigned long event)
-  {
-  int wi; 
-  
-  wi=event&0x3ff;    // 10-bits waarde
-
-  if(event & (1<<11)) // als high bit staat
-    wi=wi*10;
-  
-  if(event & (1<<10)) // als sign bit staat
-    wi=-wi;
-  
-  return wi;
-  }
-  
-
  /**********************************************************************************************\
  * vult een string met een regel uit de Eventlist.
  * geeft false terug als de regel leeg is
@@ -353,3 +351,4 @@ boolean EventlistEntry2str(int entry, byte d, char* Line, boolean Script)
   strcat(Line,Event2str(Action));
   return true;
   }
+#endif
