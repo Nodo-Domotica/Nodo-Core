@@ -86,7 +86,7 @@ void SimulateDay(void)
     if(Time.Minutes==60){Time.Minutes=0;Time.Hour++;}  // roll-over naar volgende uur
 
     // Kijk of er op het gesimuleerde tijdstip een hit is in de EventList
-    SimulatedClockEvent=command2event(CMD_CLOCK_EVENT_ALL+Time.Day,Time.Hour,Time.Minutes);
+    SimulatedClockEvent=command2event(S.Unit, CMD_CLOCK_EVENT_ALL+Time.Day,Time.Hour,Time.Minutes);
     if(CheckEventlist(SimulatedClockEvent,VALUE_SOURCE_CLOCK)) // kijk of er een hit is in de EventList
       ProcessEvent(SimulatedClockEvent,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);
       
@@ -94,7 +94,7 @@ void SimulateDay(void)
     SetDaylight(); // Zet in de struct ook de Time.DayLight status behorend bij de tijd
     if(Time.Daylight!=DaylightPrevious)// er heeft een zonsondergang of zonsopkomst wisseling voorgedaan
       {
-      SimulatedClockEvent=command2event(CMD_CLOCK_EVENT_DAYLIGHT,Time.Daylight,0L);
+      SimulatedClockEvent=command2event(S.Unit, CMD_CLOCK_EVENT_DAYLIGHT,Time.Daylight,0L);
       DaylightPrevious=Time.Daylight;
       ProcessEvent(SimulatedClockEvent,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);
       }

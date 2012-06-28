@@ -63,52 +63,10 @@ void WaitAndQueue(int Timeout, boolean WaitForBusyNodo)
       }    
 
     if(NodoBusyStatus==0 && TimeoutMinTimer<millis())
-      {
       Loop=false;
-      }
-    }
-    
-  // Verwerk eventuele events die in de queue zijn geplaatst.
-  if(QueuePos)
-    {
 
-#if NODO_MEGA
-    PrintTerminal(ProgmemString(Text_26));
-#endif
-
-    // alvorens de queue leeg te draaien eerst wachten op vrije ether omdat de master nodo nog bezig kan zijn met verzending en
-    // een eventueel RF commando niet op de master kan aankomen.
-    if(S.WaitFreeRF_Delay==0 && S.WaitFreeRF_Window==0)
-      WaitFreeRF(0,50);
-
-//    Serial.print("*** debug: QueuePos=");Serial.println(QueuePos,HEX); //??? Debug
-    for(x=0;x<QueuePos;x++)
-      {
-//      Serial.print("*** debug: Queue event=");Serial.println(QueueEvent[x],HEX); //??? Debug
-      if(((QueueEvent[x]>>16)&0xff)==CMD_EVENTLIST_WRITE && ((QueueEvent[x]>>24)&0xf)==S.Unit && x<(QueuePos-2)) // cmd
-        {
-//        Serial.print("*** debug: Eventlistwrite: Regel=");Serial.println(((QueueEvent[x]>>8)&0xff)); //??? Debug
-//        Serial.print("*** debug: Eventlistwrite: Event=");Serial.println(QueueEvent[x+1],HEX); //??? Debug
-//        Serial.print("*** debug: Eventlistwrite: Action=");Serial.println(QueueEvent[x+2],HEX); //??? Debug
-        if(Eventlist_Write(((QueueEvent[x]>>8)&0xff),QueueEvent[x+1],QueueEvent[x+2]))
-          {
-//          Serial.println("*** debug: Eventlist regel weggeschreven.");//???
-          x+=2;
-          }
-        else
-          RaiseMessage(MESSAGE_06);    
-        }
-      else
-        ProcessEvent2(QueueEvent[x],VALUE_DIRECTION_INPUT,QueuePort[x],0,0);      // verwerk binnengekomen event.
-      }
-    QueuePos=0;
-    }
-
-#if NODO_MEGA
-  if(QueueMessage)
-    PrintTerminal(ProgmemString(Text_29));
-#endif
-}
+    }    
+  }
   
 
  /*********************************************************************************************\
@@ -176,12 +134,18 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
  { 
   int x;
   byte xPar1=*Par1,xPar2=*Par2;
-  unsigned long event;
+  unsigned long event,UL;
 
   *Par1=0;
   *Par2=0;
   switch (*Command)
     {
+    case CMD_EVENTLIST_SHOW:
+      for(x=1; x<=EVENTLIST_MAX;x++)
+        if(Eventlist_Read(x,&event,&UL))// event en UL worden hier gebruikt als dummy
+          *Par1=*Par1+1;
+      break;
+
     case CMD_WAITFREERF: 
       *Par1=S.WaitFreeRF_Delay;
       *Par2=S.WaitFreeRF_Window;
@@ -386,9 +350,9 @@ boolean LoadSettings()
 void ResetFactory(void)
   {
   Led(BLUE);
-  Beep(2000,2000);
+//  Beep(2000,2000);herstellen ???
   int x,y;
-  ClockRead();
+  ClockRead(); 
 
   S.Version                    = SETTINGS_VERSION;
   S.Unit                       = UNIT;
@@ -477,10 +441,10 @@ void FactoryEventlist(void)
 
 #if NODO_MEGA
   // schrijf default regels.
-  Eventlist_Write(0,command2event(CMD_BOOT_EVENT,0,0),command2event(CMD_SOUND,7,0)); // geluidssignaal na opstarten Nodo
-  Eventlist_Write(0,command2event(CMD_COMMAND_WILDCARD,VALUE_SOURCE_IR,CMD_KAKU),command2event(CMD_RAWSIGNAL_SEND,0,0)); 
+  Eventlist_Write(0,command2event(S.Unit,CMD_BOOT_EVENT,S.Unit,0),command2event(S.Unit,CMD_SOUND,7,0)); // geluidssignaal na opstarten Nodo
+  Eventlist_Write(0,command2event(S.Unit,CMD_COMMAND_WILDCARD,VALUE_SOURCE_IR,CMD_KAKU),command2event(S.Unit,CMD_RAWSIGNAL_SEND,0,0)); 
 #else
-  Eventlist_Write(0,command2event(CMD_BOOT_EVENT,0,0),command2event(CMD_SOUND,7,0)); // geluidssignaal na opstarten Nodo
+  Eventlist_Write(0,command2event(S.Unit,CMD_BOOT_EVENT,S.Unit,0),command2event(S.Unit,CMD_SOUND,7,0)); // geluidssignaal na opstarten Nodo
 #endif
   }
 
@@ -680,12 +644,12 @@ void Status(byte Par1, byte Par2, boolean Transmit)
           GetStatus(&x,&P1,&P2); // haal status op. Call by Reference!
           if(Transmit)
             {
-            TransmitCode(command2event(x,P1,P2),VALUE_ALL); // verzend als event
+            TransmitCode(command2event(S.Unit,x,P1,P2),VALUE_ALL); // verzend als event
             }
 
 #if NODO_MEGA
           else
-            PrintTerminal(Event2str(command2event(x,P1,P2)));
+            PrintTerminal(Event2str(command2event(S.Unit,x,P1,P2)));
 #endif
           }
       }
@@ -1135,7 +1099,7 @@ void md5(char* dest)
 void RaiseMessage(byte MessageCode)
   {
   unsigned long eventcode;
-  eventcode=command2event(CMD_MESSAGE, S.Unit, MessageCode);
+  eventcode=command2event(S.Unit,CMD_MESSAGE, S.Unit, MessageCode);
   PrintEvent(eventcode,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM);  // geef event weer op Serial
   TransmitCode(eventcode,VALUE_ALL);
   }
@@ -1231,7 +1195,7 @@ boolean SaveEventlistSDCard(char *FileName)
   else 
     {
     r=false; // niet meer weer proberen weg te schrijven.
-    TransmitCode(command2event(CMD_MESSAGE,MESSAGE_03,0),VALUE_ALL);
+    TransmitCode(command2event(S.Unit,CMD_MESSAGE,MESSAGE_03,0),VALUE_ALL);
     }
 
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip

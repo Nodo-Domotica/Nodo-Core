@@ -53,6 +53,7 @@ byte CommandError(unsigned long Content)
   switch(Command)
     {
     //test; geen, altijd goed
+    case CMD_TRANSMIT_QUEUE:
     case CMD_EVENTLIST_ERASE:
     case CMD_BOOT_EVENT:
     case CMD_RESET:
@@ -79,8 +80,6 @@ byte CommandError(unsigned long Content)
     case CMD_SEND_USEREVENT:
     case CMD_KAKU:
     case CMD_SEND_KAKU:
-    case CMD_RECEIVE_LINE:
-    case CMD_RAWSIGNAL_SAVE:
       return false;
  
     case CMD_SEND_KAKU_NEW:
@@ -300,12 +299,17 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
   switch(Command)
     {   
+    case CMD_TRANSMIT_QUEUE:
+      if(Par1!=0)// Als Par1 gelijk is aan nul, dan betreft het een ontvangstbevestiging van de slave Nodo.Hier niets mee doen.
+        QueueReceive(Par1,Par2);
+      break;
+
     case CMD_SEND_KAKU:
-      TransmitCode(command2event(CMD_KAKU,Par1,Par2),VALUE_ALL);
+      TransmitCode((S.Unit, CMD_KAKU,Par1,Par2),VALUE_ALL);
       break;
       
     case CMD_SEND_KAKU_NEW:
-      TransmitCode(command2event(CMD_KAKU_NEW,Par1,Par2),VALUE_ALL);
+      TransmitCode(command2event(S.Unit, CMD_KAKU_NEW,Par1,Par2),VALUE_ALL);
       break;
       
     case CMD_VARIABLE_INC:
@@ -376,28 +380,28 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           a=0;
           break;
         case 1:
-          FORMULA_1;
+          FORMULA_1
           break;
         case 2:
-          FORMULA_2;
+          FORMULA_2
           break;
         case 3:
-          FORMULA_3;
+          FORMULA_3
           break;
         case 4:
-          FORMULA_4;
+          FORMULA_4
           break;
         case 5:
-          FORMULA_5;
+          FORMULA_5
           break;
         case 6:
-          FORMULA_6;
+          FORMULA_6
           break;
         case 7:
-          FORMULA_7;
+          FORMULA_7
           break;
         case 8:
-          FORMULA_8;
+          FORMULA_8
           break;
         default:
           a=0;        
@@ -405,7 +409,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       if(abs(a)<=10000)
         UserVar[Par1-1]=(int)a;
       ProcessEvent(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
-      PulseCount=0;
       break;
 
     case CMD_VARIABLE_VARIABLE:
@@ -457,7 +460,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
     case CMD_SEND_USEREVENT:
       // Voeg Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
-      TransmitCode(command2event(CMD_USEREVENT,Par1,Par2),VALUE_ALL);
+      TransmitCode(command2event(S.Unit, CMD_USEREVENT,Par1,Par2),VALUE_ALL);
       break;
 
     case CMD_LOCK:
@@ -573,7 +576,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         WiredOutputStatus[x-1]=(Par2==VALUE_ON);
         Content=(Content&0xffff00ff)|x<<8;
 
-        PrintEvent(Content,VALUE_SOURCE_WIRED,VALUE_DIRECTION_OUTPUT);
+        PrintEvent(Content,VALUE_DIRECTION_OUTPUT, VALUE_SOURCE_WIRED);
         }
       break;
                          
@@ -596,7 +599,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         }
       else
         {// on / off 
-        TransmitCode(command2event(CMD_BUSY,Par1,0),VALUE_ALL);
+        TransmitCode(command2event(S.Unit, CMD_BUSY,Par1,0),VALUE_ALL);
         if(S.SendBusy==VALUE_ALL && Par1==VALUE_OFF)
           {// De SendBusy A;; mode moet worden uitgeschakeld
           S.SendBusy=VALUE_OFF;
@@ -691,7 +694,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
     case CMD_STATUS_SEND:
       if(Par1==0)
-        TransmitCode(command2event(CMD_MESSAGE ,S.Unit,MESSAGE_00),VALUE_ALL);        
+        TransmitCode(command2event(S.Unit, CMD_MESSAGE ,S.Unit,MESSAGE_00),VALUE_ALL);        
       else
         Status(Par1, Par2, true);
       break;
@@ -900,7 +903,7 @@ void ExecuteLine(char *Line, byte Port)
           case CMD_EVENTLIST_WRITE:
             if(SendTo!=0)
               {
-              v=command2event(CMD_EVENTLIST_WRITE,Par1,0);      // verwerk binnengekomen event.
+              v=command2event(S.Unit, CMD_EVENTLIST_WRITE,Par1,0);      // verwerk binnengekomen event.
               }
             else
               {                          
@@ -927,7 +930,7 @@ void ExecuteLine(char *Line, byte Port)
               }
             else
               {
-              v=command2event(Cmd,v,Par2);      // verwerk binnengekomen event.
+              v=command2event(S.Unit, Cmd,v,Par2);      // verwerk binnengekomen event.
               Error=CommandError(v);
               }
             break;
@@ -968,7 +971,7 @@ void ExecuteLine(char *Line, byte Port)
               if(Par2==VALUE_ON || Par2==VALUE_OFF)
                 {
                 Par2=(Par2==VALUE_ON) | (grp<<1); // Parameter-2 bevat [On,Off]. Omzetten naar 1,0. tevens op bit-2 het groepcommando zetten.
-                v=command2event(Cmd,Par1,Par2);
+                v=command2event(S.Unit, Cmd,Par1,Par2);
                 }
               else
                 Error=MESSAGE_02;
@@ -981,15 +984,7 @@ void ExecuteLine(char *Line, byte Port)
             
           case CMD_SEND:
             // als de SendTo is gevuld, dan event versturen naar een andere Nodo en niet zelf uitvoeren
-            // Protocol bestaat uit de volgende stappen:
-            // 1. Master nodo verzendt een "Delay 60,On" naar de Slave nodo. Slave gaat in de Hold&Queue mode staan
-            // 2. Master nodo verzendt commandos uit de regel, slave stopt deze in de queue
-            // 3. Als alle commandos verzonden, dan stuurt de master weer een "Delay 0" om de slave uit de Hold&Queue mode te halen.
-
             SendTo=Par1;
-            a=((command2event(CMD_QUEUE,VALUE_ON,0))&0xf0ffffff) | ((unsigned long)SendTo<<24);
-            TransmitCode(a,VALUE_SOURCE_RF); // SendTo: Stap-1
-            delay(500);
             break;
 
           case CMD_PASSWORD:
@@ -1075,7 +1070,7 @@ void ExecuteLine(char *Line, byte Port)
                 PrintTerminal(ProgmemString(Text_22));
                 }  
               else 
-                TransmitCode(command2event(CMD_MESSAGE ,MESSAGE_03,0),VALUE_ALL);
+                TransmitCode(command2event(S.Unit, CMD_MESSAGE ,MESSAGE_03,0),VALUE_ALL);
       
               SelectSD(false);
               }
@@ -1090,7 +1085,7 @@ void ExecuteLine(char *Line, byte Port)
                 {
                 // Als er een EventlistWrite actief is, dan hoeft het commando niet uitgevoerd te worden. Alleen het event v moet
                 // worden gevuld zodat deze kan worden weggeschreven in de Eventlist.
-                v=command2event(Cmd,Par1,Par2);
+                v=command2event(S.Unit, Cmd,Par1,Par2);
                 Error=CommandError(v);
                 }
 
@@ -1127,7 +1122,7 @@ void ExecuteLine(char *Line, byte Port)
                   }  
                 else
                   {
-                  TransmitCode(command2event(CMD_MESSAGE ,MESSAGE_03,0),VALUE_ALL);
+                  TransmitCode(command2event(S.Unit, CMD_MESSAGE ,MESSAGE_03,0),VALUE_ALL);
                   }
                 SelectSD(false);
                 }
@@ -1217,7 +1212,7 @@ void ExecuteLine(char *Line, byte Port)
               {
               strcat(TmpStr,".dat");
               if(!SaveEventlistSDCard(TmpStr))
-                TransmitCode(command2event(CMD_MESSAGE ,MESSAGE_03,0),VALUE_ALL);// geen RaiseMessage() anders weer poging om te loggen naar SDCard ==> oneindige loop
+                TransmitCode(command2event(S.Unit, CMD_MESSAGE ,MESSAGE_03,0),VALUE_ALL);// geen RaiseMessage() anders weer poging om te loggen naar SDCard ==> oneindige loop
               }
             break;
 
@@ -1268,7 +1263,7 @@ void ExecuteLine(char *Line, byte Port)
           default:
             {              
             // standaard commando volgens gewone syntax
-            v=command2event(Cmd,Par1,Par2);            
+            v=command2event(S.Unit,Cmd,Par1,Par2);            
             Error=CommandError(v);
             }
           }
@@ -1284,8 +1279,18 @@ void ExecuteLine(char *Line, byte Port)
             {
             if(NodoType(v))
               v=(v&0xf0ffffff)|(unsigned long)SendTo<<24;// Commando/Event unit nummer van de bestemming toewijzen, behalve als het een HEX-event is.
-            TransmitCode(v,VALUE_SOURCE_RF);// SendTo: Stap-2. Voer commando niet zelf uit, maar stuur deze naar de Nodo zoals opgegeven in de SendTo. 
-            delay(100);//??? kleine pauze om de ontvangende Nodo de tijd te geven event in de queue te kunnen stoppen
+
+            if(QueuePos<EVENT_QUEUE_MAX)
+              {
+              QueueEvent[QueuePos]=v;
+              QueuePort[QueuePos]=0;//??? nog keuze maken
+              QueuePos++;           
+              }       
+            else
+              {
+              RaiseMessage(MESSAGE_04);                
+              return;
+              }
             }
           continue;
           }
@@ -1324,12 +1329,13 @@ void ExecuteLine(char *Line, byte Port)
       Command[PosCommand++]=x;      
     }    
 
-  if(SendTo!=0)// Geef de slave-nodo de opdracht te stoppen met de WaitAndQueue routine en de queue te verwerken.
+  if(SendTo!=0)// Verzend de inhoud van de queue naar de slave Nodo
     {
-    TransmitCode(((command2event(CMD_QUEUE,VALUE_OFF,0))&0xf0ffffff) | ((unsigned long)SendTo<<24),VALUE_SOURCE_RF);
-    WaitAndQueue(60,true);    // wacht totdat zolang er nog Nodo's bezig zijn met verwerking
+    if(!QueueSend(SendTo))
+      RaiseMessage(MESSAGE_12);
+    QueuePos=0;
     }
   }
 #endif
   
-  
+
