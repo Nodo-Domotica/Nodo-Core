@@ -1,3 +1,13 @@
+
+//***** Mega *****
+#define NODO_MEGA 1
+#include <SD.h>
+#include <EthernetNodo.h>
+
+////***** Mini *****
+//#define NODO_MEGA 0
+
+
 /****************************************************************************************************************************\ 
 * Arduino project "Nodo Due" © Copyright 2012 Paul Tonkes * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -34,31 +44,31 @@
 // Zet de formules zo op dat uitsluitend met gehele getallen gerekend wordt.
 // Het resulaat van de formule wordt gedeeld door 100 weergegeven. Dus de waarde 1 representeert de
 // analoge waarde 0.01
-// Het bereik van de formule moet in het bereik van 0 tot 1000 liggen en wordt dan weergegeven als resp. 0.00 tot 100.0
+// Het bereik van het resultaat uit de formule moet zich tussen van -1000 tot 1000 bevinden en wordt dan weergegeven als resp. -100.0 tot 100.0
 // Deling door nul is ongeldig, maar zal niet tot een error leiden.
 //
 // a          = variabele met resultaat van de berekening.
 // PulseTime  = tijd tussen twee pulsen uitgedrukt in milliseconden.
 // PulseCount = Aantal pulsen tussen wee metingen.
 
-#define FORMULA_1            a = 3600/PulseTime           /* 1000 pulsen = 1KWh */
-#define FORMULA_2            a = 0
-#define FORMULA_3            a = 0
-#define FORMULA_4            a = 0 
-#define FORMULA_5            a = 0
-#define FORMULA_6            a = 0
-#define FORMULA_7            a = 0
-#define FORMULA_8            a = 0
+
+//??? PulseCount=0; nog verwerken
+
+#define FORMULA_1            a = 3600/PulseTime;            /* 1000 pulsen = 1KWh */
+#define FORMULA_2            a = PulseCount;
+#define FORMULA_3            a = 0;
+#define FORMULA_4            a = 0;
+#define FORMULA_5            a = 0;
+#define FORMULA_6            a = 0;
+#define FORMULA_7            a = 0;
+#define FORMULA_8            a = 0;
 
 /****************************************************************************************************************************/
 //#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
 
-#define NODO_MEGA 0
 
-//#include <SD.h>
-//#include <EthernetNodo.h>
 
-#define SETTINGS_VERSION      1
+#define SETTINGS_VERSION      4
 
 #include "pins_arduino.h"
 #include <EEPROM.h>
@@ -78,8 +88,8 @@ prog_char PROGMEM Text_07[] = "Waiting for signal...";
 prog_char PROGMEM Text_08[] = "Queue=Out, ";
 prog_char PROGMEM Text_09[] = "Queue=In, ";
 prog_char PROGMEM Text_10[] = "Nodo"; // Default wachtwoord na een reset
-prog_char PROGMEM Text_11[] = "Output=";
-prog_char PROGMEM Text_12[] = "Input=";
+//prog_char PROGMEM Text_11[] = "Output=";
+//prog_char PROGMEM Text_12[] = "Input=";
 prog_char PROGMEM Text_13[] = "Ok.";
 prog_char PROGMEM Text_14[] = "Event=";
 //prog_char PROGMEM Text_15[] = "";
@@ -92,7 +102,7 @@ prog_char PROGMEM Text_21[] = "payload withoutRelease";
 prog_char PROGMEM Text_22[] = "!******************************************************************************!";
 prog_char PROGMEM Text_23[] = "log.dat";
 prog_char PROGMEM Text_24[] = "Queue: fetching events...";
-prog_char PROGMEM Text_25[] = "System=";
+//prog_char PROGMEM Text_25[] = "System=";
 prog_char PROGMEM Text_26[] = "Queue: Processing events...";
 prog_char PROGMEM Text_27[] = "Raw/Key"; // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_28[] = "Raw/Hex"; // Directory op de SDCard voor opslag RawSignal
@@ -199,8 +209,8 @@ prog_char PROGMEM Cmd_094[]="";
 prog_char PROGMEM Cmd_095[]="";
 prog_char PROGMEM Cmd_096[]="";
 prog_char PROGMEM Cmd_097[]="";
-prog_char PROGMEM Cmd_098[]=""; // Nodo commando ReceiveLineRFReady is niet voor gebruiker bestemd.
-prog_char PROGMEM Cmd_099[]=""; // Nodo commando ReceiveLineRF is niet voor gebruiker bestemd.
+prog_char PROGMEM Cmd_098[]=""; 
+prog_char PROGMEM Cmd_099[]="TransmitQueue"; // Niet voor gebruiker bestemd.
 
 // events:
 #define RANGE_EVENT 100 // alle codes groter of gelijk aan deze waarde zijn events.
@@ -318,7 +328,7 @@ prog_char PROGMEM Cmd_208[]="Error: Incorrect password.";
 prog_char PROGMEM Cmd_209[]="Error: Wireless access locked.";
 prog_char PROGMEM Cmd_210[]="Error: Access not allowed.";
 prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
-prog_char PROGMEM Cmd_212[]="";
+prog_char PROGMEM Cmd_212[]="Error: SendTo failed.";
 
 // tabel die refereert aan de commando strings
 PROGMEM const char *CommandText_tabel[]={
@@ -448,8 +458,8 @@ PROGMEM const char *CommandText_tabel[]={
 #define CMD_RES095                      95
 #define CMD_RES096                      96
 #define CMD_RES097                      97
-#define CMD_RECEIVE_LINE_READY          98 //
-#define CMD_RECEIVE_LINE                99 //
+#define CMD_RES098                      98
+#define CMD_TRANSMIT_QUEUE              99 //
 #define LAST_COMMAND                    99 // Laatste COMMANDO uit de commando tabel
 
 // events:
@@ -583,7 +593,7 @@ PROGMEM prog_uint16_t Sunset[]={999,1010,1026,1044,1062,1081,1099,1117,1135,1152
 #define DLSBase 2010 // jaar van eerste element uit de array
 PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,3127};
 
-
+#define BLOK_REPEAT_TIME          1000  // Tijd waarbinnen hetzelfde event niet nogmaals via RF of IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
 #define NODO_PULSE_0               500  // PWM: Tijdsduur van de puls bij verzenden van een '0' in uSec.
 #define NODO_PULSE_MID            1000  // PWM: Pulsen langer zijn '1'
 #define NODO_PULSE_1              1500  // PWM: Tijdsduur van de puls bij verzenden van een '1' in uSec. (3x NODO_PULSE_0)
@@ -790,15 +800,14 @@ void setup()
   pinMode(PIN_LED_RGB_R,  OUTPUT);
   pinMode(PIN_SPEAKER,    OUTPUT);
   pinMode(PIN_LED_RGB_B,  OUTPUT);
+  digitalWrite(PIN_IR_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
+  digitalWrite(PIN_RF_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
+  digitalWrite(PIN_RF_RX_VCC,HIGH);   // Spanning naar de RF ontvanger aann
 
 #if NODO_MEGA
   pinMode(PIN_LED_RGB_G,  OUTPUT);
   pinMode(EthernetShield_CS_SDCardH, OUTPUT); // CS/SPI: nodig voor correct funktioneren van de SDCard!
 #endif
-
-  digitalWrite(PIN_IR_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
-  digitalWrite(PIN_RF_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
-  digitalWrite(PIN_RF_RX_VCC,HIGH);   // Spanning naar de RF ontvanger aann
 
   RFbit=digitalPinToBitMask(PIN_RF_RX_DATA);
   RFport=digitalPinToPort(PIN_RF_RX_DATA);  
@@ -808,17 +817,15 @@ void setup()
   Led(BLUE);
 
   bitWrite(HW_Config,HW_BOARD_MEGA,NODO_MEGA);
-
+  Wire.begin();        // zet I2C communicatie gereed voor uitlezen van de realtime clock.
   Serial.begin(BAUD);  // Initialiseer de seriële poort
 
 #if NODO_MEGA
   Serial.println("Booting...");
+  SerialHold(true);// XOFF verzenden zodat PC even wacht met versturen van data via Serial (Xon/Xoff-handshaking)
 #endif
 
-  SerialHold(true);// XOFF verzenden zodat PC even wacht met versturen van data via Serial (Xon/Xoff-handshaking)
   LoadSettings();      // laad alle settings zoals deze in de EEPROM zijn opgeslagen
-  
-
   if(S.Version!=SETTINGS_VERSION)ResetFactory(); // Als versienummer in EEPROM niet correct is, dan een ResetFactory.
 
   // initialiseer de Wired ingangen.
@@ -828,7 +835,6 @@ void setup()
     pinMode(PIN_WIRED_OUT_1+x,OUTPUT); // definieer Arduino pin's voor Wired-Out
     }
 
-  Wire.begin();        // zet I2C communicatie gereed voor uitlezen van de realtime clock.
 
   //Zorg ervoor dat er niet direct na een boot een CMD_CLOCK_DAYLIGHT event optreedt
   ClockRead();
@@ -890,8 +896,8 @@ void setup()
 #endif
 
   PrintWelcome(); // geef de welkomsttekst weer
-  TransmitCode(command2event(CMD_BOOT_EVENT,0,0),VALUE_ALL);  
-  ProcessEvent(command2event(CMD_BOOT_EVENT,0,0),VALUE_DIRECTION_INTERNAL,CMD_BOOT_EVENT,0,0);  // Voer het 'Boot' event uit.
+  TransmitCode(command2event(S.Unit, CMD_BOOT_EVENT,S.Unit,0),VALUE_ALL);  
+  ProcessEvent(command2event(S.Unit, CMD_BOOT_EVENT,S.Unit,0),VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM,0,0);  // Voer het 'Boot' event uit.
   bitWrite(HW_Config,HW_SERIAL,0); // Serial weer uitschakelen.
   }
 
@@ -1123,7 +1129,7 @@ void loop()
             SetDaylight();
             if(Time.Daylight!=DaylightPrevious)// er heeft een zonsondergang of zonsopkomst event voorgedaan
               {
-              Content=command2event(CMD_CLOCK_EVENT_DAYLIGHT,Time.Daylight,0L);
+              Content=command2event(S.Unit, CMD_CLOCK_EVENT_DAYLIGHT,Time.Daylight,0L);
               DaylightPrevious=Time.Daylight;
               ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
               }
@@ -1144,14 +1150,14 @@ void loop()
             if(!WiredInputStatus[x] && y>(S.WiredInputThreshold[x]+S.WiredInputSmittTrigger[x]))
               {
               WiredInputStatus[x]=true;
-              Content=command2event(CMD_WIRED_IN_EVENT,x+1,WiredInputStatus[x]?VALUE_ON:VALUE_OFF);
+              Content=command2event(S.Unit, CMD_WIRED_IN_EVENT,x+1,WiredInputStatus[x]?VALUE_ON:VALUE_OFF);
               ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
               }
       
             if(WiredInputStatus[x] && y<(S.WiredInputThreshold[x]-S.WiredInputSmittTrigger[x]))
               {
               WiredInputStatus[x]=false;
-              Content=command2event(CMD_WIRED_IN_EVENT,x+1,WiredInputStatus[x]?VALUE_ON:VALUE_OFF);
+              Content=command2event(S.Unit, CMD_WIRED_IN_EVENT,x+1,WiredInputStatus[x]?VALUE_ON:VALUE_OFF);
               ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
               }
             }
@@ -1171,7 +1177,7 @@ void loop()
               if(UserTimer[x]<millis()) // als de timer is afgelopen.
                 {
                 UserTimer[x]=0;// zet de timer op inactief.
-                Content=command2event(CMD_TIMER_EVENT,x+1,0);
+                Content=command2event(S.Unit, CMD_TIMER_EVENT,x+1,0);
                 ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_TIMER,0,0);      // verwerk binnengekomen event.
                 }
               }

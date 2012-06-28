@@ -12,7 +12,7 @@
  /*********************************************************************************************\
  * Print een event volgens formaat:  'EVENT/ACTION: <port>, <type>, <content>
  \*********************************************************************************************/
-void PrintEvent(unsigned long Content, byte Port, byte Direction)
+void PrintEvent(unsigned long Content, byte Direction, byte Port )
   {
   byte x;
 
@@ -35,30 +35,15 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
     }
     
   // Geef de richting van de communicatie weer
-  switch(Direction)
+  if(Direction)
     {
-    case VALUE_SOURCE_QUEUE:// testen ???
-      strcat(TempString,cmd2str(VALUE_SOURCE_QUEUE));      
-      strcat(TempString,"-");
-      strcat(TempString, int2str(QueuePos+1));
-      strcat(TempString,"=");
-      break;
-    
-    case VALUE_DIRECTION_INTERNAL:
-      strcat(TempString,ProgmemString(Text_25));
-      break;
-      
-    case VALUE_DIRECTION_INPUT:
-      strcat(TempString,ProgmemString(Text_12));
-      break;
-      
-    case VALUE_DIRECTION_OUTPUT:
-      strcat(TempString,ProgmemString(Text_11));
-      break;
+    strcat(TempString,cmd2str(Direction));      
+    strcat(TempString,"=");
     }
   
   // Poort
   x=true;
+
   strcat(TempString, cmd2str(Port));
 
   if(Port==VALUE_SOURCE_EVENTGHOST || Port==VALUE_SOURCE_HTTP || Port==VALUE_SOURCE_TERMINAL)
@@ -102,7 +87,7 @@ void PrintEvent(unsigned long Content, byte Port, byte Direction)
  /*********************************************************************************************\
  * Print een event: debug mode Nodo-Mini
  \*********************************************************************************************/
-void PrintEvent(unsigned long Content, byte Port, byte Direction)
+void PrintEvent(unsigned long Content, byte Direction, byte Port)
   {
   Serial.print(Direction);
   Serial.print(",");
@@ -291,6 +276,7 @@ char* Event2str(unsigned long Code)
   
       // Par1 als waarde en par2 niet
       case CMD_DELAY:
+      case CMD_EVENTLIST_SHOW:
       case CMD_EVENTLIST_ERASE:
       case CMD_FILE_EXECUTE:
       case CMD_UNIT:
@@ -298,13 +284,14 @@ char* Event2str(unsigned long Code)
       case CMD_RAWSIGNAL_SEND:
       case CMD_SIMULATE_DAY:
       case CMD_CLOCK_DOW:
+      case CMD_BOOT_EVENT:
         P1=P_VALUE;
         P2=P_NOT;
         break;
   
       // Geen parameters
-      case CMD_BOOT_EVENT:
       case CMD_REBOOT:
+      case CMD_RESET:
         P1=P_NOT;
         P2=P_NOT;
         break;

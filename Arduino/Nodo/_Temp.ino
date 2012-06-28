@@ -1,5 +1,45 @@
 /*
+  {
+      while(TimeoutTimer>millis())
+        {
+        PulseTime = WaitForChangeState(PIN_RF_RX_DATA,HIGH, SIGNAL_TIMEOUT_RF);
+        if(PulseTime>MIN_PULSE_LENGTH)
+          {        
+          if(PulseTime>NODO_PULSE_MID)
+            ReceivedByte |= (1<<x);
 
+          if(++x>7)
+            {
+            ReturnString[ReceivedByteCounter++]=ReceivedByte;
+            ReceivedByte=0;
+            x=0;
+            if(ReceivedByteCounter==Length)
+              {
+              ReturnString[ReceivedByteCounter]=0; // sluit string af.
+              TimeoutTimer=0L;// stop de while() loop.
+                          
+              // Decrypt het signaal met de MD5-Hash
+              sprintf(TmpStr,"%d:%s",Cookie,S.Password);
+              md5(TmpStr); 
+              y=0;
+              for(x=0; x<Length; x++)
+                {
+                ReturnString[x]=ReturnString[x] ^ MD5HashCode[y++];
+                if(y>15)y=0;
+                }
+          
+              // bereken de checksum van de ontvangen string.
+              y=0;
+              for(x=0;x<strlen(ReturnString);x++)
+                y=(y + ReturnString[x])%256; // bereken checksum (crc-8)
+
+              if(y==Checksum)
+                Ok=true;
+              }
+            }
+          }
+        }
+      }
 sendto 1;sound;sound;sound;sound;sound;sound;sound;sound;sound;
 #define NODO_MAC 0x54, 0xa5, 0x8d, 0x17, 0xaf, 0x41 // Productie MAC Paul ???
 
@@ -41,5 +81,9 @@ Methode=2: Oude Sendto methode (afwijkens signaal)
 
 
 */
+
+
+
+//###################################################################################################
 
 

@@ -2,6 +2,7 @@
 
 Aanpassingen:
 - Bug bij automatische resetfactory opgelost
+- Status of SendStatus met EventlistShow als apar1 geeft het aantal bezette regels in de eventlist
 - Splitsing code voor Nodo-Meda en Nodo-Mini (Conditionele compilatie)
 - Nodo voor de ATmega328 is nu alleen bedoeld als satelliet en is MMI-loos. Aansturing door een Mega.
 - Messages/error aangepast. Deze hebben nu ook een code zodat ze in de eventlist kunnen worden gebruikt
@@ -9,10 +10,15 @@ Aanpassingen:
 - Bij resetfactory wordt de waitfreerf ook juist ingesteld als ander unitnummer wordt meegecompileerd
 - Queue mode in de Delay funktie verbijzonderd naar een apart commando "Queue"
 - Aangepaste ijkprocedure. Geen High/Low parameter meer.
+- Boot event draagt nu unit nummer in Par1 zodat deze ook in de eventlist verwerkt kan worden
 
 Known Errors / ToDo:
 - SendBusy loopt niet lekker
-- Als er een boot event voorbij komt van een andere nodo levert deze een hit op in de eventlist.
+- cursor weergave in terminal venster niet netjes
+- na PulseFormula niet altijd de pulscounter op nul stellen
+- Boot event wordt weergegeven met system=system
+- SendTo werkt niet
+- Calibrate met negatief coefficient schijnt niet goed te werken.
 - EventList 7; WildCard All,UserEvent; SendEvent HTTP => er uit of alternatief
 
 

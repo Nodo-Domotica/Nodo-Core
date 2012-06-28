@@ -33,9 +33,42 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   // Verwerk het binnengekomen event
   ProcessEvent2(IncommingEvent,Direction,Port,PreviousContent,PreviousPort);
 
+  // Verwerk eventuele events die in de queue zijn geplaatst.
+  if(QueuePos)
+    {
+
+#if NODO_MEGA
+    PrintTerminal(ProgmemString(Text_26));
+#endif
+
+    // alvorens de queue leeg te draaien eerst wachten op vrije ether omdat de master nodo nog bezig kan zijn met verzending en
+    // een eventueel RF commando niet op de master kan aankomen.
+    if(S.WaitFreeRF_Delay==0 && S.WaitFreeRF_Window==0)
+      WaitFreeRF(0,50);
+
+    for(x=0;x<QueuePos;x++)
+      {
+      if(((QueueEvent[x]>>16)&0xff)==CMD_EVENTLIST_WRITE && ((QueueEvent[x]>>24)&0xf)==S.Unit && x<(QueuePos-2)) // cmd
+        {
+        if(Eventlist_Write(((QueueEvent[x]>>8)&0xff),QueueEvent[x+1],QueueEvent[x+2]))
+          x+=2;
+        else
+          RaiseMessage(MESSAGE_06);    
+        }
+      else
+        ProcessEvent2(QueueEvent[x],VALUE_DIRECTION_INPUT,QueuePort[x],0,0);      // verwerk binnengekomen event.
+      }
+    QueuePos=0;
+    }
+
+//#if NODO_MEGA
+//  if(QueueMessage)
+//    PrintTerminal(ProgmemString(Text_29));
+//#endif
+
   if(S.SendBusy==VALUE_ALL && BusyOnSent)
     {
-    TransmitCode(command2event(CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
+    TransmitCode(command2event(S.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
     BusyOnSent=false;
     }
   }
@@ -68,7 +101,7 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
 
   // print regel. Als Debug aan, dan alle regels die vanuit de eventlist worden verwerkt weergeven
   if(ExecutionDepth==0 || S.Debug==VALUE_ON)
-    PrintEvent(IncommingEvent,Port,Direction);  // geef event weer op Serial
+    PrintEvent(IncommingEvent,Direction,Port);  // geef event weer op Serial
 
   if(ExecutionDepth++>=MACRO_EXECUTION_DEPTH)
     {
@@ -95,7 +128,7 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
       if( !(w==CMD_QUEUE && x==VALUE_ON))
      // && !(w==CMD_SENDBUSY && x==VALUE_OFF))
         {      
-        TransmitCode(command2event(CMD_BUSY,VALUE_ON,0),VALUE_ALL);
+        TransmitCode(command2event(S.Unit,CMD_BUSY,VALUE_ON,0),VALUE_ALL);
         BusyOnSent=true;
         }
       }
@@ -114,7 +147,7 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
       Eventlist_Read(x,&Event_1,&Event_2);
       if(CheckEvent(IncommingEvent,Event_1,Port))
         {
-          
+
 #if NODO_MEGA
         if(S.Debug==VALUE_ON)
           {
@@ -133,7 +166,7 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
           }
         else
           {// het is een ander soort event;
-          if(Event_1!=command2event(CMD_COMMAND_WILDCARD,0,0))
+          if(Event_1!=command2event(S.Unit,CMD_COMMAND_WILDCARD,0,0))
             {
             if(!ProcessEvent2(Event_2,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_EVENTLIST,IncommingEvent,Port))
               {
@@ -152,7 +185,7 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
 
  /**********************************************************************************************\
  * Toetst of de Code ergens voorkomt in de Eventlist. Geeft False als de opgegeven code niet bestaat.
- * Een eventlist met een lengte van 255 regels is volledig gechecked binnen 10milliseconden
+ * Een eventlist met een lengte van 255 regels is volledig gechecked binnen 10 milliseconden
  \*********************************************************************************************/
 boolean CheckEventlist(unsigned long Code,byte Port)
   {
@@ -162,7 +195,10 @@ boolean CheckEventlist(unsigned long Code,byte Port)
     {
     Eventlist_Read(x,&Event,&Action);
     if(CheckEvent(Code,Event,Port))
+      {
       return true; // match gevonden
+      
+      }
     }
   return false;
   }
