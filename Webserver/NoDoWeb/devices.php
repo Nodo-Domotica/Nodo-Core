@@ -51,6 +51,23 @@ $page_title = "Devices";
 			
     .ui-btn-icon-left_collapsible .ui-btn-inner {padding-left: 40px !important;}
 	
+	.ui-corner-top {
+		-moz-border-radius-topleft: 		1em /*{global-radii-blocks}*/;
+		-webkit-border-top-left-radius: 	1em /*{global-radii-blocks}*/;
+		border-top-left-radius: 			1em /*{global-radii-blocks}*/;
+		-moz-border-radius-topright: 		1em /*{global-radii-blocks}*/;
+		-webkit-border-top-right-radius: 	1em /*{global-radii-blocks}*/;
+		border-top-right-radius: 			1em /*{global-radii-blocks}*/;
+	}
+	.ui-corner-bottom {
+		-moz-border-radius-bottomleft: 		1em /*{global-radii-blocks}*/;
+		-webkit-border-bottom-left-radius: 	1em /*{global-radii-blocks}*/;
+		border-bottom-left-radius: 			1em /*{global-radii-blocks}*/;
+		-moz-border-radius-bottomright: 	1em /*{global-radii-blocks}*/;
+		-webkit-border-bottom-right-radius: 1em /*{global-radii-blocks}*/;
+		border-bottom-right-radius: 		1em /*{global-radii-blocks}*/;
+	}
+	
 	.ui-btn-collapsible {
 		
 		text-align: left !important;
@@ -92,6 +109,15 @@ $page_title = "Devices";
             background-repeat: no-repeat;
 
         }
+		
+	.ui-collapsible-custom {
+		
+		
+		-moz-border-radius: 1em !important;
+		-webkit-border-radius: 1em !important;
+		border-radius: 1em !important;
+				
+	}
 	
 
 	
@@ -195,9 +221,15 @@ else {
 
 ?>
 
-	<div data-role="collapsible" data-content-theme="<?php echo $theme?>" <?php if($row_RSdevices['collapsed']==1) {echo "data-collapsed=\"false\"";}?> >
-	<h3><span id='switch_<?php echo $row_RSdevices['id']; ?>'></span><?php echo $row_RSdevices['naam']; ?></h3>
+	<div data-role="collapsible"  data-content-theme="<?php echo $theme?>" <?php if($row_RSdevices['collapsed']==1) {echo "data-collapsed=\"false\"";}?> >
+	<h3>
+	
+	<span id='switch_<?php echo $row_RSdevices['id']; ?>'></span><?php echo $row_RSdevices['naam']; ?></h3>
+	
+	
 	<p>
+	
+	
 			  
 	<?php 
 

@@ -21,6 +21,9 @@ require_once('../connections/db_connection.php');
 require_once('../include/auth.php');
 require_once('../include/user_settings.php');
 
+//Alleen events versturen indien de Nodo online is
+if ($heartbeat == "lost") {die('No Connection to Nodo!!!'); }
+
 
 /************************************************************************************************
 HTTPRequest function														
@@ -69,12 +72,12 @@ $file="cmdres";
 				$year_par1 = substr(date("Y"), 0, 2);
 				$year_par2 = substr(date("Y"), 2, 2);
 				
-				$date_par1 = date("j");
-				$date_par2 = date("n");
+				$date_par1 = date("d");
+				$date_par2 = date("m");
 				
 				$time_par1 = date("H");
-				$time_par2 = date("i");
-				
+				$time_par2 = 1*date("i"); //*1 zorgt ervoor dat de voorloop nul wegvalt.
+								
 				$dow_par1 = date("w")+1; // php zondag = 0 Nodo gaat uit van 1
 				
 				
@@ -86,17 +89,98 @@ $file="cmdres";
 				HTTPRequest("http://$nodo_ip/?event=FileLog&key=$key");
 				break;
 				
-							
+				case "2": //simlate day 1
+				HTTPRequest("http://$nodo_ip/?event=FileLog%20$file&key=$key");
+				HTTPRequest("http://$nodo_ip/?event=SimulateDay%201&key=$key");
+				HTTPRequest("http://$nodo_ip/?event=FileLog&key=$key");
+				break;
 				
+				case "3": //simlate day 7
+				HTTPRequest("http://$nodo_ip/?event=FileLog%20$file&key=$key");
+				HTTPRequest("http://$nodo_ip/?event=SimulateDay%207&key=$key");
+				HTTPRequest("http://$nodo_ip/?event=FileLog&key=$key");
+				break;
+				
+				case "4": //userevent 1,0
+				HTTPRequest("http://$nodo_ip/?event=FileLog%20$file&key=$key");
+				HTTPRequest("http://$nodo_ip/?event=UserEvent%201,0&key=$key");
+				HTTPRequest("http://$nodo_ip/?event=FileLog&key=$key");
+				break;
+				
+				case "5": //userevent 2,0
+				HTTPRequest("http://$nodo_ip/?event=FileLog%20$file&key=$key");
+				HTTPRequest("http://$nodo_ip/?event=UserEvent%202,0&key=$key");
+				HTTPRequest("http://$nodo_ip/?event=FileLog&key=$key");
+				break;
+				
+				case "6": //userevent 3,0
+				HTTPRequest("http://$nodo_ip/?event=FileLog%20$file&key=$key");
+				HTTPRequest("http://$nodo_ip/?event=UserEvent%203,0&key=$key");
+				HTTPRequest("http://$nodo_ip/?event=FileLog&key=$key");
+				break;
+				
+				case "7": //userevent 4,0
+				HTTPRequest("http://$nodo_ip/?event=FileLog%20$file&key=$key");
+				HTTPRequest("http://$nodo_ip/?event=UserEvent%204,0&key=$key");
+				HTTPRequest("http://$nodo_ip/?event=FileLog&key=$key");
+				break;
+				
+				case "8": //userevent 5,0
+				HTTPRequest("http://$nodo_ip/?event=FileLog%20$file&key=$key");
+				HTTPRequest("http://$nodo_ip/?event=UserEvent%205,0&key=$key");
+				HTTPRequest("http://$nodo_ip/?event=FileLog&key=$key");
+				break;
+				
+				case "9": //userevent 6,0
+				HTTPRequest("http://$nodo_ip/?event=FileLog%20$file&key=$key");
+				HTTPRequest("http://$nodo_ip/?event=UserEvent%206,0&key=$key");
+				HTTPRequest("http://$nodo_ip/?event=FileLog&key=$key");
+				break;
+				
+				case "10": //userevent 7,0
+				HTTPRequest("http://$nodo_ip/?event=FileLog%20$file&key=$key");
+				HTTPRequest("http://$nodo_ip/?event=UserEvent%207,0&key=$key");
+				HTTPRequest("http://$nodo_ip/?event=FileLog&key=$key");
+				break;
+				
+				case "11": //userevent 8,0
+				HTTPRequest("http://$nodo_ip/?event=FileLog%20$file&key=$key");
+				HTTPRequest("http://$nodo_ip/?event=UserEvent%208,0&key=$key");
+				HTTPRequest("http://$nodo_ip/?event=FileLog&key=$key");
+				break;
+				
+				case "12": //userevent 9,0
+				HTTPRequest("http://$nodo_ip/?event=FileLog%20$file&key=$key");
+				HTTPRequest("http://$nodo_ip/?event=UserEvent%209,0&key=$key");
+				HTTPRequest("http://$nodo_ip/?event=FileLog&key=$key");
+				break;
+				
+				case "13": //userevent 10,0
+				HTTPRequest("http://$nodo_ip/?event=FileLog%20$file&key=$key");
+				HTTPRequest("http://$nodo_ip/?event=UserEvent%2010,0&key=$key");
+				HTTPRequest("http://$nodo_ip/?event=FileLog&key=$key");
+				break;
 		
 			}
 		
 		}
 		
+		if ($_GET['command'] != "") {
+		
+			
+			$command = str_replace(" ","%20",$_GET['command']);
+			
+			HTTPRequest("http://$nodo_ip/?event=FileLog%20$file&key=$key");
+			HTTPRequest("http://$nodo_ip/?event=$command&key=$key");
+			HTTPRequest("http://$nodo_ip/?event=FileLog&key=$key");
+
+		}
+		
+		
 		
 		
 		//Read file from Nodo to array
-		$scriptraw = explode("\n", HTTPRequest("http://$nodo_ip/&file=$file&key=$key"));
+		$scriptraw = explode("\n", HTTPRequest("http://$nodo_ip/?file=$file&key=$key"));
 		HTTPRequest("http://$nodo_ip/?event=FileErase%20$file&key=$key");
 		
 			

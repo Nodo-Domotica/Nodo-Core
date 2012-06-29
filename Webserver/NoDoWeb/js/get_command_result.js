@@ -16,7 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
-function Get_Command_Result(defcommand)
+function Get_Command_Result(command,defcommand)
  {  
    
 			
@@ -45,7 +45,7 @@ function Get_Command_Result(defcommand)
 							element.innerHTML = $http.responseText;  
 						}
 					};
-					$http.open('GET', 'command_result.php' + '?defcommand=' + defcommand + '&' + new Date().getTime(), true);
+					$http.open('GET', 'command_result.php' + '?command=' + command + '&defcommand=' + defcommand + '&' + new Date().getTime(), true);
 					$http.send(null);
 				}
 

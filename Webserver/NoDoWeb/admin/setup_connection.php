@@ -135,12 +135,15 @@ Check connection & Nodo config
 *************************************************************************************************/ 
 if (isset($_POST['auto_config'])){
 	 //Check connection on default NODO and get headers
-     $headers = (HTTPRequest("http://$nodo_ip/?event=userevent%20255,255") );
+     $headers = (HTTPRequest("http://$nodo_ip/?event=status%20NodoIp") );
      }
 	else
 	{
 	//Check connection and get headers
-     $headers = (HTTPRequest("http://$nodo_ip/?event=userevent%20255,255&key=$key") );
+	
+	 $key = md5($cookie.":".$nodo_password); //key opnieuw genereren omdat we het wachtwoord nog niet in de DB hebben opgelagen
+     
+	 $headers = (HTTPRequest("http://$nodo_ip/?event=status%20NodoIp&key=$key") );
       }   
      
     
@@ -162,7 +165,7 @@ if (isset($_POST['auto_config'])){
 			HTTPRequest("http://$nodo_ip/?event=eventlistwrite;WildCard%20IR,All;SendEvent%20HTTP");
 			HTTPRequest("http://$nodo_ip/?event=eventlistwrite;WildCard%20Variables,All;SendEvent%20HTTP");
 			HTTPRequest("http://$nodo_ip/?event=eventlistwrite;WildCard%20Wired,All;SendEvent%20HTTP");
-			HTTPRequest("http://$nodo_ip/?event=eventlistwrite;EventListWrite;Wildcard%20All,UserEvent;SendEvent%20HTTP");
+			HTTPRequest("http://$nodo_ip/?event=eventlistwrite;EventListWrite;Wildcard%20ALL,UserEvent;SendEvent%20HTTP");
 			HTTPRequest("http://$nodo_ip/?event=HTTPHost%20$WEBAPP_HOST/nodo.php");
 			HTTPRequest("http://$nodo_ip/?event=Filewrite%20waconfig");
 			HTTPRequest("http://$nodo_ip/?event=ok");

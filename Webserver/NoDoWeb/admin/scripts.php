@@ -63,29 +63,35 @@ Eventlist script read
 if (isset($_POST['Read'])) 
 {  
 
-
-	if ($_POST['select-script-1'] == "EVENTLST") {
 	
-		$file = "EVENTLST"; 
+	if ($heartbeat == "ok") {
 
-		//Write eventlist on nodo
+
+
+		if ($_POST['select-script-1'] == "EVENTLST") {
+		
+			$file = "EVENTLST"; 
+
+			//Read eventlist on nodo
+				
+			HTTPRequest("http://$nodo_ip/?event=EventListfile%20$file&key=$key");
 			
-		HTTPRequest("http://$nodo_ip/?event=EventListfile%20$file&key=$key");
+		}
+		else {
+		
+			
+			$file = $_POST['select-script-1'];
+
+		}
+
+		//Read file from Nodo to array
+		$script = explode("\n", HTTPRequest("http://$nodo_ip/?file=$file&key=$key"));
+				
+		$total_script_lines = count($script);
 		
 	}
-	else {
-	
-		
-		$file = $_POST['select-script-1'];
 
-	}
 
-	//Read file from Nodo to array
-	$script = explode("\n", HTTPRequest("http://$nodo_ip/?file=$file&key=$key"));
-			
-	$total_script_lines = count($script);
-	
-    
  
  
 }
@@ -133,7 +139,7 @@ if (isset($_POST['Write']))
 			
 		
 	
-	
+if ($heartbeat == "ok") {	
 	
 	if (ISSET($_POST["checkbox-2"])){
 	
@@ -157,6 +163,7 @@ if (isset($_POST['Write']))
 	header("Location: scripts.php?file=$file#saved");
 	
 	
+	}
 }
 /************************************************************************************************
 END Script write													
@@ -186,6 +193,8 @@ END Script write
  
 	<div data-role="content">	
 
+	
+	
 	<form action="scripts.php" data-ajax="false" method="post"> 
 	
 	 
@@ -273,8 +282,6 @@ if (isset($script)){
 	
 	
 </div><!-- /page saved -->
- <script>
-
-</script>
+ 
 </body>
 </html>

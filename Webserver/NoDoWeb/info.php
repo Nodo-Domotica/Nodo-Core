@@ -53,14 +53,12 @@ mysql_select_db($database, $db);
 $RSevent_log = mysql_query("SELECT * FROM (SELECT * FROM nodo_tbl_event_log WHERE user_id='$userId' ORDER BY id DESC LIMIT 25)x ORDER BY id") or die(mysql_error());
 ?>
 
-<div data-role="collapsible" data-collapsed="false" data-content-theme="<?php echo $theme?>">
+<div data-role="collapsible" data-collapsed="true" data-content-theme="<?php echo $theme?>">
 <h3>Web App details</h3>
 <b>Web App version: </b><?php echo $WEBAPP_VERSION;?><br>
-<b>Nodo ID: </b><?php echo $nodo_id;?><br>
 <b>Nodo IP-address: </b><?php echo $nodo_ip.":".$nodo_port;?><br>
-<b>Connection status: </b> <?php echo $heartbeat;?><br>
-<b>Cookies received: </b> <?php echo $row_RSsetup['cookie_count'];?><br>
-<b>Last Cookie received: </b> <?php echo $cookie_update;?><br>
+<b>Nodo ID: </b><?php echo $nodo_id;?><br>
+
 
 
 
@@ -82,13 +80,16 @@ $RSevent_log = mysql_query("SELECT * FROM (SELECT * FROM nodo_tbl_event_log WHER
 	<a href="export_csv.php" data-role="button" data-inline="true" data-ajax="false">Export all events to csv</a>
 	</div>	
 	
-	<div data-role="collapsible" data-collapsed="true" data-content-theme="<?php echo $theme?>">
+	<div data-role="collapsible" data-collapsed="false" data-content-theme="<?php echo $theme?>">
 	<h3>Nodo status</h3>
+	
+	<b>Connection status: </b> <?php echo $heartbeat;?><br>
+	<b>Last heartbeat received: </b> <?php echo $cookie_update;?><br><br>
 	<div id="status_div" style="font-family:monospace">
 	
 	</div>
 	
-	<a href="javascript:Get_Nodo_Status();" data-role="button" data-ajax="false" data-inline="true" >Refresh status</a>
+	<a href="javascript:Get_Nodo_Status();" data-role="button" data-ajax="false" data-inline="true" >Get Nodo status</a>
 	
 
 	</div>

@@ -50,6 +50,7 @@ $nodo_password = $row_RSsetup['nodo_password'];
 $nodo_id = $row_RSsetup['nodo_id'];
 $cookie = $row_RSsetup['cookie'];
 $cookie_update = $row_RSsetup['cookie_update'];
+$user_group = $row_RSsetup['user_group'];
 
 $key = md5($cookie.":".$nodo_password);
 

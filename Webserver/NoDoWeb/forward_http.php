@@ -20,6 +20,8 @@ require_once('connections/db_connection.php');
 require_once('include/auth.php');
 require_once('include/user_settings.php');
 
+//Alleen events versturen indien de Nodo online is
+if ($heartbeat == "lost") {die('No Connection to Nodo!!!'); }
 
 
 

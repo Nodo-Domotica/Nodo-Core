@@ -235,9 +235,11 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
 			</select>
 			<br>
 			
+			
 			<label for="graph_hours">Graph: maximum hours to show:</label>
 			<input type="text" maxLength="5" name="graph_hours" id="graph_hours" value="<?php echo $row['graph_hours'] ;?>"  />
 			<br>
+			<div id="graph_ticksize_div">
 			<label for="select-choice-5" class="select" >Graph: minimum tick size x-axis:</label>
 			<select name="graph_min_ticksize" id="graph_min_ticksize" data-native-menu="false" >
 				<option value="1"<?php if ($row['graph_min_ticksize'] == 1) {echo 'selected="selected"';}?>>Minutes</option>
@@ -247,12 +249,7 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
 				<option value="5"<?php if ($row['graph_min_ticksize'] == 5) {echo 'selected="selected"';}?>>Months</option>
 			</select>
 			<br>
-			<!--<label for="select-choice-6" class="select" >Graph type:</label>
-			<select name="graph_type" id="graph_type" data-native-menu="false" >
-				<option value="1" selected="selected">Line</option>
-				
-			</select> 
-			<br>-->
+			</div>
 		</div>
 		<br>	
 			
@@ -350,13 +347,13 @@ if ($row['input_output'] == 2 && $row['display'] == 2 ) {
 if ($row['graph_type'] == 1) { 
 	
 	
-	echo "$('#graph_bar_width_div').hide();";
+	echo "$('#graph_ticksize_div').show();";
 }
 
 if ($row['graph_type'] == 2) { 
 	
 	
-	echo "$('#graph_bar_width_div').show();";
+	echo "$('#graph_ticksize_div').hide();";
 }	
 
 ?>
@@ -456,6 +453,22 @@ $('#slider_min_max_div').show();
    
 });
 
+$('#graph_type').change(function() {
+
+	//Line
+	if ($(this).attr('value')==1) {   
+	
+		$('#graph_ticksize_div').show(); 
+
+	}
+
+	//Bars 
+	if ($(this).attr('value')==2) {   
+
+		$('#graph_ticksize_div').hide();   
+
+	}
+});
 
 
 </script> 
