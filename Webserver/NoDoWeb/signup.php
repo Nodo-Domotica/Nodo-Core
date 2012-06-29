@@ -203,7 +203,7 @@ END Generate NoDo ID
 
 	<div data-role="content">	
 		
-		<?php echo $error_message; ?>
+		<?php //echo $error_message; ?>
 		
 		
 		<form action="signup.php" data-ajax="false" method="post">		

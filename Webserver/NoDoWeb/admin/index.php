@@ -42,7 +42,8 @@ $page_title = "Setup";
 
 	<?php require_once('../include/header_admin.php'); ?>
 
-	<div data-role="content">	
+	<div data-role="content">
+
 	  <p><a href="setup_connection.php" data-role="button" data-ajax="false">Communication</a></p>
 	  <p><a href="devices.php" data-role="button" data-ajax="false">Devices</a></p>
 	  <p><a href="activities.php" data-role="button" data-ajax="false">Activities</a></p>
@@ -51,6 +52,18 @@ $page_title = "Setup";
 	  <p><a href="commands.php" data-role="button" data-ajax="false">Commands</a></p>
 	  <p><a href="notifications.php" data-role="button" data-ajax="false">Notifications</a></p>
 	  <p><a href="personal.php" data-role="button" data-ajax="false">Personal</a></p>
+	<?php
+	if ($user_group == "admin") {
+	?>
+	
+	<p><a href="../webapp_admin/user_list.php" data-role="button" data-ajax="false">User list*</a></p>
+	<p>*Only visible for Nodo Web App administrators.</p>
+	
+	<?php
+	}
+	?>	
+	
+	
 	</div><!-- /content -->
 	
 	<?php require_once('../include/footer_admin.php'); ?>

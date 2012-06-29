@@ -125,7 +125,7 @@ header("Location: devices.php?id=$device_id");
 		<br>
 		
 		<div id="name_div"> 		
-		<label for="name">Device name:</label>
+		<label for="naam">Device name:</label>
 		<input type="text" name="naam" id="naam" value=""  />
 		<br>
 		<label for="select-choice-1" class="select" >Presentation:</label>
@@ -166,20 +166,20 @@ header("Location: devices.php?id=$device_id");
 		</div>
      
 		<div id="homecode_div">
-		<label for="name" >Home code: (A...P)</label>
+		<label for="homecode" >Home code: (A...P)</label>
 		<input type="text" maxLength="1" name="homecode" id="homecode" value=""  />
 		<br>
 		</div>
    
 		<div id="adres_div">
 		<div id="label_adres_newkaku">
-		<label for="name">Address (1...255)</label>
+		<label for="address_newkaku">Address (1...255)</label>
 		</div>
 		<div id="label_adres_kaku">
-		<label for="name">Address: (1...16)</label>
+		<label for="address_kaku">Address: (1...16)</label>
 		</div>
 		<div id="label_adres_wiredout">
-		<label for="name">Port: (1...8)</label>
+		<label for="wiredout">Port: (1...8)</label>
 		</div>
 		<input type="text" maxLength="3" name="address" id="address" value=""  />
 		<br>
@@ -195,7 +195,7 @@ header("Location: devices.php?id=$device_id");
 		</div>
      
 		<div id="submit_div">
-		<input type="submit" name="submit" value="Save" >
+		<input type="submit" name="submit" id="submit" value="Save" >
 		</div>
 		
 </form> 
@@ -269,6 +269,27 @@ header("Location: devices.php?id=$device_id");
 	</div><!-- /content -->
 	
 </div><!-- /page saved -->
+
+<script>	
+$(document).ready(function() {
+      $('#submit').click(function() {
+		  $(".error").hide();
+		  var hasError = false;
+		 
+		  
+		 var nameVal = $("#naam").val();
+		 if(nameVal == '') {
+		 $("#naam").before('<span class="error"><b>Please enter a device name<b></span>');
+		 hasError = true;
+		 }
+		  
+		 
+		 if(hasError == true) { return false; }
+	 });
+	 
+	 
+		  });
+</script>
 
 <script type="text/javascript">		
 

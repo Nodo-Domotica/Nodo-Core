@@ -263,20 +263,21 @@ header("Location: values.php?id=$sensor_id");
 			</select>
 			<br>
 			
-						
-			<label for="graph_hours">Graph: maximum hours to show:</label>
-			<input type="text" MaxLength="5" name="graph_hours" id="graph_hours" value="24"  />
-			<br>
-			<label for="select-choice-7" class="select" >Graph: minimum tick size x-axis:</label>
-			<select name="graph_min_ticksize" id="graph_min_ticksize" data-native-menu="false" >
-				<option value="1" selected="selected">Minutes</option>
-				<option value="2">Hours</option>
-				<option value="3">Days</option>
-				<!-- <option value="4">Weeks</option> tijdelijk uit omdat weken lastiger uit te rekenen zijn-->
-				<option value="5">Months</option>
-			</select>
-			<br>
-			
+							
+				<label for="graph_hours">Graph: maximum hours to show:</label>
+				<input type="text" MaxLength="5" name="graph_hours" id="graph_hours" value="24"  />
+				<br>
+			<div id="graph_ticksize_div">
+				<label for="select-choice-7" class="select" >Graph: minimum tick size x-axis:</label>
+				<select name="graph_min_ticksize" id="graph_min_ticksize" data-native-menu="false" >
+					<option value="1" selected="selected">Minutes</option>
+					<option value="2">Hours</option>
+					<option value="3">Days</option>
+					<!-- <option value="4">Weeks</option> tijdelijk uit omdat weken lastiger uit te rekenen zijn-->
+					<option value="5">Months</option>
+				</select>
+				<br>
+			</div>
 		</div>
 		<br>	
 			
@@ -362,118 +363,117 @@ header("Location: values.php?id=$sensor_id");
 
 $(document).ready(function() {
 
-//Als het document geladen word dan verbergen we onderstaanden divs
+	//Als het document geladen word dan verbergen we onderstaanden divs
 
-$('#state_div').hide();
-$('#label_variable_div').hide(); 
-$('#input_output_div').hide();
-$('#slider_min_max_div').hide(); 
-$('#graph_bar_width_div').hide(); 
-
-
-
- 
+	$('#state_div').hide();
+	$('#label_variable_div').hide(); 
+	$('#input_output_div').hide();
+	$('#slider_min_max_div').hide(); 
 	
 });
 
-$('#display').change(function() 
-{
+$('#display').change(function() {
 
-//Value
-if ($(this).attr('value')==1) {   
+	//Value
+	if ($(this).attr('value')==1) {   
 
-$('#state_div').hide(); 
-$('#value_div').show(); 
-$('#graph_div').show(); 
+		$('#state_div').hide(); 
+		$('#value_div').show(); 
+		$('#graph_div').show(); 
 
-      
+	}
 
-}
-//State   
-if ($(this).attr('value')==2) {   
+	//State   
+	if ($(this).attr('value')==2) {   
 
-$('#state_div').show(); 
-$('#value_div').hide(); 
-$('#graph_div').hide(); 
+		$('#state_div').show(); 
+		$('#value_div').hide(); 
+		$('#graph_div').hide(); 
 
  
 
-}
-
-
+	}
    
 });
 
 
+$('#type').change(function() {
 
+	//WiredIn
+	if ($(this).attr('value')==1) {   
 
-$('#type').change(function() 
-{
-//WiredIn
-if ($(this).attr('value')==1) {   
+		$('#label_wiredanalog_div').show();  
+		$('#label_variable_div').hide();   
+		$('#input_output_div').hide(); 
+		$('#graph_div').show(); 
 
-$('#label_wiredanalog_div').show();  
-$('#label_variable_div').hide();   
-$('#input_output_div').hide(); 
-$('#graph_div').show(); 
-
-}
+	}
   
-//Variable
-if ($(this).attr('value')==2) {   
+	//Variable
+	if ($(this).attr('value')==2) {   
 
-$('#label_wiredanalog_div').hide();  
-$('#label_variable_div').show(); 
-$('#input_output_div').show();  
-$('#graph_div').hide(); 
- 
-}
+		$('#label_wiredanalog_div').hide();  
+		$('#label_variable_div').show(); 
+		$('#input_output_div').show();  
+		$('#graph_div').hide(); 
+	 
+	}
 });
 
 
-$('#input_output').change(function() 
-{
+$('#input_output').change(function() {
 
-//Input
-if ($(this).attr('value')==1) {   
-$('#input_div').show();
-$('#graph_div').hide();  
+	//Input
+	if ($(this).attr('value')==1) {   
+		
+		$('#input_div').show();
+		$('#graph_div').hide();  
 
-}
+	}
 
-//Output  
-if ($(this).attr('value')==2) {   
+	//Output  
+	if ($(this).attr('value')==2) {   
 
+		$('#input_div').hide(); 
+		$('#graph_div').show();    
 
-$('#input_div').hide(); 
-$('#graph_div').show();    
-
-
-}
-
-
+	}
    
 });
-$('#input_control').change(function() 
-{
 
-//+/-Buttons
-if ($(this).attr('value')==1) {   
-$('#slider_min_max_div').hide(); 
+$('#input_control').change(function() {
 
-}
+	//+/-Buttons
+	if ($(this).attr('value')==1) {   
+	
+		$('#slider_min_max_div').hide(); 
 
-//Slider 
-if ($(this).attr('value')==2) {   
+	}
 
-$('#slider_min_max_div').show();   
+	//Slider 
+	if ($(this).attr('value')==2) {   
 
-}
+		$('#slider_min_max_div').show();   
+
+	}
 });
 
+$('#graph_type').change(function() {
 
+	//Line
+	if ($(this).attr('value')==1) {   
+	
+		$('#graph_ticksize_div').show(); 
 
-   
+	}
+
+	//Bars 
+	if ($(this).attr('value')==2) {   
+
+		$('#graph_ticksize_div').hide();   
+
+	}
+});
 
 </script>
 </body>

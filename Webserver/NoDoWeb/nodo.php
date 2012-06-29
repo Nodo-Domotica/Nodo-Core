@@ -42,6 +42,9 @@ $key_nodo = $_GET['key'];
 
 if ($key_webapp == $key_nodo) {$key_ok = 1;}
 
+
+//$key_ok = 1; //tijdelijk niet op key checken voor debug doeleinden....
+
 //Nieuwe cookie in de database opslaan
 if (isset($_GET['cookie'])){
 	
@@ -111,9 +114,7 @@ if($userId > 0 && $key_ok == 1) {
 			
 			mysql_query("INSERT INTO nodo_tbl_event_log (user_id, nodo_unit_nr, event) VALUES ('$userId','$unit','$eventraw')") or die(mysql_error());
 			
-			//Kijken of er meer dan 10000 events gelogd zijn voor de gebruiker dan wissen we het eerste record
-			//!! Af en toe een deadlock??!!!!
-			//mysql_query("DELETE FROM nodo_tbl_event_log WHERE user_id=$userId ORDER BY id DESC LIMIT 10000") or die(mysql_error());
+		
 			
 			 
 			 
@@ -147,7 +148,7 @@ if($userId > 0 && $key_ok == 1) {
 
 										
 					//Sensor_id (id) opvragen uit values tabel 
-					$RS_sensor = mysql_query("SELECT id FROM nodo_tbl_sensor WHERE user_id='$userId' AND par1='$par1' AND sensor_type='$type'") or die(mysql_error());  
+					$RS_sensor = mysql_query("SELECT id FROM nodo_tbl_sensor WHERE user_id='$userId' AND par1='$par1' AND sensor_type='$type' AND nodo_unit_nr='$unit'") or die(mysql_error());  
 					$row_RS_sensor = mysql_fetch_array($RS_sensor); //Eerste sensor ophalen volgende sensoren met dezelfde parameters worden niet behandeld.
 					$sensor_id=$row_RS_sensor[id]; //$sensor_id gebruiken we om in de tabel sensor_data bij te houden welke data bij welke sensor hoort 
 								

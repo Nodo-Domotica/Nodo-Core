@@ -62,15 +62,16 @@ $RSsensor = mysql_query($query_RSsensor, $db) or die(mysql_error());
 	<meta name="viewport" content="width=device-width, initial-scale=1"> 
 	<title><?php echo $title ?></title> 
 	<?php require_once('include/jquery_mobile.php'); ?>
-	
-	
 </head> 
 
 <body> 
 
-<div data-role="page" data-theme="<?php echo $theme?>">
+
+
+<div data-role="page" pageid="values" data-theme="<?php echo $theme?>">
 
  <!--[if lte IE 8]><script language="javascript" type="text/javascript" src="../excanvas.min.js"></script><![endif]-->
+
     <script language="javascript" type="text/javascript" src="js/flot/jquery.js"></script>
     <script language="javascript" type="text/javascript" src="js/flot/jquery.flot.js"></script>
 	<script language="javascript" type="text/javascript" src="js/flot/jquery.flot.resize.js"></script>
@@ -83,10 +84,6 @@ $RSsensor = mysql_query($query_RSsensor, $db) or die(mysql_error());
 <?php require_once('include/send_event.php'); ?>
 
 <script>
-
-function test(){
-alert ('test');
-}
 
 function Get_Graph_data(hours,sensor_id,label,bars,ticksize,date1,date2,filter)
  {  
@@ -222,9 +219,7 @@ function Historic_line(id,label,ticksize)
 					break;
 				}
 								
-				//$query_RSsensor_value_data = "SELECT data,timestamp FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR";
-				//Data ophalen gebaseerd op keuze ticksize
-				//$RSsensor_value_data = mysql_query($query_RSsensor_value_data, $db) or die(mysql_error());	
+				
 				
 				//Leeg maken omdat er anders onterecht een staaf grafiek weergegeven word indien de voorgaande grafiek een staafgrafiek was
 				$graph_bars="0";
@@ -237,12 +232,11 @@ function Historic_line(id,label,ticksize)
 			
 				$graph_min_ticksize = "day";
 					$graph_bar_width = 43200000;
-					//$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m-%d') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY date(timestamp)";
+					
 			
 				$graph_bars="1";
 				
-				//Totalen ophalen gebaseerd op keuze ticksize
-				//$RSsensor_value_data = mysql_query($query_RSsensor_value_data, $db) or die(mysql_error());	
+					
 				
 				
 						
@@ -250,6 +244,7 @@ function Historic_line(id,label,ticksize)
 			
 								
 			echo "<div data-role=\"collapsible\" id=\"collapsible" . $row_RSsensor['id'] . "\" data-content-theme=\"" . $theme ."\">";
+			
 			
 			//Input or Ouput
 			if ($row_RSsensor['input_output'] == 1) {echo "<h3> In: ";}
@@ -278,12 +273,9 @@ function Historic_line(id,label,ticksize)
 		if ($row_RSsensor['input_output'] == 2 && $row_RSsensor['display'] == 1){
 		?>
 			<br>
-			<div id="<?php echo $row_RSsensor['id']; ?>" style="width:100%;height:300px;"></div>
+			<div id="<?php echo $row_RSsensor['id']; ?>" style="width:100%;height:300px;position: relative;"></div>
 			<br>
-			<script type="text/javascript">
-			//Get_Graph_data(<?php echo $graph_hours; ?>,<?php echo $row_RSsensor['id']; ?>,'<?php echo $row_RSsensor['sensor_suffix']; ?>',<?php echo $graph_bars; ?>,'<?php echo $graph_min_ticksize; ?>')
-			</script>
-			
+					
 				
 			
 			<?php if ($graph_bars != 1) { ?>	
@@ -651,6 +643,9 @@ function Historic_line(id,label,ticksize)
 		}
 		
 		echo "</div>";	
+
+		
+		
 		?>
 		
 
@@ -662,6 +657,8 @@ function Historic_line(id,label,ticksize)
 ?>
 
 
+
+
 <script>
 //Eerste maal de functie Get_Value opstarten zodat de loop gaat lopen welke de waarde elke x seconde ververst. 
 Get_Values();
@@ -669,6 +666,8 @@ Get_Values();
 
 
 </script>
+ 
+
 	
 
 </div><!-- /content -->

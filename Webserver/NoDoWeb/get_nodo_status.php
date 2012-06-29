@@ -22,6 +22,9 @@ require_once('include/user_settings.php');
 
 $page_title = "Setup: Nodo settings";	
 
+//Alleen events versturen indien de Nodo online is
+if ($heartbeat == "lost") {die('No Connection to Nodo!!!'); }
+
 
 //HTTPRequest function.
 function HTTPRequest($Url){
