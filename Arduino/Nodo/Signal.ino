@@ -4,10 +4,10 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
   int x,y,Checksum;
   unsigned long Mark, Space, Timeout, ul=0L;
   
-  // Hier aangekomen is de master nodo nog steeds bezig met het aanloopsignaal bestaande uit de korte pulsenreeks.
+  // Hier aangekomen is de master nodo nog steeds bezig met het zenden van het aanloopsignaal bestaande uit de korte pulsenreeks.
   // Wacht totdat het aanloopsignaal een duidelijke startbit bevat.
 
-  Timeout=millis() + 10000L;
+  Timeout=millis() + 5000L;
   x=0;
   while(Timeout>millis() && !(x==50 && Mark>NODO_PULSE_MID))
     {
@@ -22,7 +22,7 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
       }
     }
 
-  // aanloopsignaal is gereed en de startbit is verzonden. Eerst bit van de pulsenreeks kot er direct aan.
+  // aanloopsignaal is gereed en de startbit is verzonden. Eerst bit van de pulsenreeks komt er direct aan.
   QueuePos=0;
   x=0;
 
@@ -52,9 +52,8 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
   // Verzend een aanloopsignaal bestaande uit reeks korte pulsen om slave tijd te geven klaar te staan voor ontvangst en voorkomen dat andere Nodo vrije ruimte in RF benut
   digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
   digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan
-  delay(5);// kleine pause om de zender de tijd te geven om stabiel te worden 
 
-  for(x=0; x<250; x++)
+  for(x=0; x<100; x++)
     {
     digitalWrite(PIN_RF_TX_DATA,HIGH); // 1
     delayMicroseconds(NODO_PULSE_0); 
@@ -62,7 +61,8 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
     delayMicroseconds(NODO_SPACE); 
     }
 
-  TransmitCode(command2event(S.Unit,CMD_TRANSMIT_QUEUE,0,Checksum),VALUE_SOURCE_RF);
+  Nodo_2_RawSignal(command2event(S.Unit,CMD_TRANSMIT_QUEUE,0,Checksum));
+  RawSendRF();
 
   if(ChecksumOrg != Checksum)
     {
@@ -78,21 +78,26 @@ boolean QueueSend(byte DestUnit)
   int x,y,Checksum=0;
   boolean Bit;
   unsigned long Event,TimeoutTimer;
-  
+  static unsigned long PreviousTimer;
+    
   // bereken checksum: crc-8 uit alle bytes in de queue.
   byte *B=(byte*)&(QueueEvent[0]);    //pointer verwijst nu naar eerste byte van de queue
   for(x=0;x<QueuePos*4;x++) // maal vier, immers 4 bytes in een unsigned long
     Checksum^=*(B+x); 
 
+  // Verzend verzoek om gereed te staan voor ontvangst naar de slave. Eerst een WaitFreeRF
+
+  while((PreviousTimer+500)>millis());// SendTo mag niet te snel gaan anders worden er regels gemist in de communicatie tussen master en slave
+  WaitFreeRF(0,100);
   Nodo_2_RawSignal(command2event(DestUnit,CMD_TRANSMIT_QUEUE,QueuePos,Checksum));
   RawSendRF();
     
   // Stap-2
   // Verzend een aanloopsignaal bestaande uit reeks korte pulsen om slave tijd te geven klaar te staan voor ontvangst en voorkomen dat andere Nodo vrije ruimte in RF benut
-  digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
+//  digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.//??? test of dit in dit specifieke geval kan.
   digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan
 
-  for(x=0; x<250; x++)
+  for(x=0; x<100; x++)// Houd de 433 band bezet en geef slave gelegenheid om klaar voor ontvangst data uit queue.
     {
     digitalWrite(PIN_RF_TX_DATA,HIGH); // 1
     delayMicroseconds(NODO_PULSE_0); 
@@ -106,6 +111,7 @@ boolean QueueSend(byte DestUnit)
   digitalWrite(PIN_RF_TX_DATA,LOW); // 0
   delayMicroseconds(NODO_SPACE); 
 
+  // Verzend de content van de queue
   for(x=0; x<QueuePos; x++)
     {
     for(y=0; y<32; y++)
@@ -132,7 +138,7 @@ boolean QueueSend(byte DestUnit)
   digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger weer aan.    
 
   // wacht op de bevestiging van de slave Nodo
-  TimeoutTimer=millis()+3000;
+  TimeoutTimer=millis()+1000;
   while(TimeoutTimer>millis())
     {
     if(GetEvent_IRRF(&Event,&x))// x is dummy
@@ -142,6 +148,9 @@ boolean QueueSend(byte DestUnit)
       }
     }
     
+  PreviousTimer=millis();
+
+  // als niet juiste antwoord van de slave ontvangen dan is vorige loop afgebroken a.g.v. een timeout.
   if(TimeoutTimer>millis())
     return true;
   else  
@@ -342,6 +351,9 @@ void WaitFreeRF(int Delay, int Window)
   {
   unsigned long Timer, TimeOutTimer;  
   
+  if((Delay+Window)==0)
+    return;
+    
   // eerst de 'dode' wachttijd
   Led(BLUE);
   delay(Delay);
@@ -587,9 +599,9 @@ boolean TransmitCode(unsigned long Event, byte Dest)
   byte SignalType=(Event>>28) & 0x0f;
   byte Command   =(Event>>16) & 0xff;
   
-  if(SignalType!=SIGNAL_TYPE_UNKNOWN)
-    if((S.WaitFreeRF_Window + S.WaitFreeRF_Delay)>=0)
-        WaitFreeRF(S.WaitFreeRF_Delay*100, S.WaitFreeRF_Window*100); // alleen WaitFreeRF als type bekend is, anders gaat SendSignal niet goed a.g.v. overschrijven buffer
+  if(Dest==VALUE_SOURCE_RF || (S.TransmitRF==VALUE_ON && Dest==VALUE_ALL))
+    if(SignalType!=SIGNAL_TYPE_UNKNOWN)
+      WaitFreeRF(S.WaitFreeRF_Delay*100, S.WaitFreeRF_Window*100); // alleen WaitFreeRF als type bekend is, anders gaat SendSignal niet goed a.g.v. overschrijven buffer
 
   if(Command==CMD_KAKU)
     KAKU_2_RawSignal(Event);
@@ -604,7 +616,7 @@ boolean TransmitCode(unsigned long Event, byte Dest)
     { 
     PrintEvent(Event,VALUE_DIRECTION_OUTPUT, VALUE_SOURCE_IR);
     RawSendIR();
-    } 
+    }
 
   if(Dest==VALUE_SOURCE_RF || (S.TransmitRF==VALUE_ON && Dest==VALUE_ALL))
     {

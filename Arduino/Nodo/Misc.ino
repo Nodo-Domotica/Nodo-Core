@@ -350,7 +350,7 @@ boolean LoadSettings()
 void ResetFactory(void)
   {
   Led(BLUE);
-//  Beep(2000,2000);herstellen ???
+  Beep(2000,2000);
   int x,y;
   ClockRead(); 
 
@@ -367,7 +367,7 @@ void ResetFactory(void)
   S.SendBusy                   = VALUE_OFF;
   S.WaitBusy                   = VALUE_OFF;
   S.WaitFreeRF_Delay           = 2*(S.Unit!=1) + S.Unit;
-  S.WaitFreeRF_Window          = 3*(S.Unit!=1); // 1 eenheid = 100 ms.
+  S.WaitFreeRF_Window          = 2*(S.Unit!=1); // 1 eenheid = 100 ms.
   S.WaitFreeRF_Window          = 0;
   S.WaitFreeRF_Delay           = 0;
   S.DaylightSaving             = Time.DaylightSaving;

@@ -52,10 +52,8 @@
 // PulseCount = Aantal pulsen tussen wee metingen.
 
 
-//??? PulseCount=0; nog verwerken
-
 #define FORMULA_1            a = 3600/PulseTime;            /* 1000 pulsen = 1KWh */
-#define FORMULA_2            a = PulseCount;
+#define FORMULA_2            a = PulseCount; PulseCount=0;
 #define FORMULA_3            a = 0;
 #define FORMULA_4            a = 0;
 #define FORMULA_5            a = 0;
@@ -670,7 +668,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 
 #else // als het voor de Arduino Uno Nodo variant is
 #define INPUT_BUFFER_SIZE           80 // Buffer waar de karakters van de seriele/IP poort in worden opgeslagen.
-#define TIMER_MAX                    5 // aantal beschikbare timers voor de user, gerekend vanaf 1
+#define TIMER_MAX                    8 // aantal beschikbare timers voor de user, gerekend vanaf 1
 #define EVENT_QUEUE_MAX             16 // maximaal aantal plaatsen in de queue
 #define PULSE_IRQ                    3 // IRQ verbonden aan de IR_RX_DATA pen 3 van de ATMega328 (Uno/Nano/Duemillanove)
 #define RAW_BUFFER_SIZE            160 // Maximaal aantal te ontvangen 128 bits.
