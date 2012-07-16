@@ -1,13 +1,4 @@
 
-//***** Mega *****
-#define NODO_MEGA 1
-#include <SD.h>
-#include <EthernetNodo.h>
-
-
-//***** Mini *****
-//#define NODO_MEGA 0
-
 
 /****************************************************************************************************************************\ 
 * Arduino project "Nodo Due" © Copyright 2012 Paul Tonkes 
@@ -42,6 +33,18 @@
 #define NODO_MAC       0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF    // Default Nodo MACadres
 
 
+//***** Mega *****
+#define UNIT_DEFAULT  1
+#define NODO_MEGA 1
+#include <SD.h>
+#include <EthernetNodo.h>
+
+
+//***** Mini *****
+//#define UNIT_DEFAULT  15
+//#define NODO_MEGA 0
+
+
 // Onderstaand de formules die gebruikt worden voor omrekening van pulsen naar analoge waarden.
 // Zet de formules zo op dat uitsluitend met gehele getallen gerekend wordt.
 // Het resulaat van de formule wordt gedeeld door 100 weergegeven. Dus de waarde 1 representeert de
@@ -66,9 +69,7 @@
 /****************************************************************************************************************************/
 //#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
 
-
-
-#define SETTINGS_VERSION      4
+#define SETTINGS_VERSION      6
 
 #include "pins_arduino.h"
 #include <EEPROM.h>
@@ -899,6 +900,7 @@ void setup()
 #endif
 
   PrintWelcome(); // geef de welkomsttekst weer
+  UserPlugin_Init();
   TransmitCode(command2event(S.Unit, CMD_BOOT_EVENT,S.Unit,0),VALUE_ALL);  
   ProcessEvent(command2event(S.Unit, CMD_BOOT_EVENT,S.Unit,0),VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM,0,0);  // Voer het 'Boot' event uit.
   bitWrite(HW_Config,HW_SERIAL,0); // Serial weer uitschakelen.

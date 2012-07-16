@@ -2,7 +2,7 @@
 
 Aanpassingen:
 - Status en SendStatus uitgebreid met optie EventlistCount. Geeft aantal bezette regels
-- SendTo voorzien van Busy bewaking
+- SendTo aangepast
 - Commando lock voorzien van code o.b.v. ingestelde wachtwoord. (Na veranderen wachtwoord zal de lock verdwijnen)
 - Prompt in Terminal venster wordt nu weergegeven NADAT verwerking plaats heeft gevonden
 - PulseCounter niet meer gereset. Onderdeel van de formule geworden
@@ -14,6 +14,9 @@ Known Errors / ToDo:
 
 - werkt logging naar SDCard nog goed.
 - mega: Queue op SDCard.
+- 1e van sendstatus wordt gemist na sendto.
+- SendTo settings out-of-the box
+- status en sendstatus: integreren en sturen maar de bron.
 - blokkeren rf en ir bij een filewrite
 - sdcard toegang via ftp.
 - Sendbusy naar niet bestaand unitnummer geeft hit op andere Nodo
