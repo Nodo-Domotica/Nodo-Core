@@ -1,5 +1,39 @@
 
  /**********************************************************************************************\
+ * Verwerk de inhoud van de queue
+ \*********************************************************************************************/
+void ProcessQueue(void)
+  {
+  byte x;
+
+  if(QueuePos)
+    {
+    #if NODO_MEGA
+    PrintTerminal(ProgmemString(Text_26));
+    #endif
+
+    // alvorens de queue leeg te draaien eerst wachten op vrije ether omdat de master nodo nog bezig kan zijn met verzending en
+    // een eventueel RF commando niet op de master kan aankomen.
+    if(S.WaitFreeRF_Delay==0 && S.WaitFreeRF_Window==0)
+      WaitFreeRF(0,50);
+
+    for(x=0;x<QueuePos;x++)
+      {
+      if(((QueueEvent[x]>>16)&0xff)==CMD_EVENTLIST_WRITE && ((QueueEvent[x]>>24)&0xf)==S.Unit && x<(QueuePos-2)) // cmd
+        {
+        if(Eventlist_Write(((QueueEvent[x]>>8)&0xff),QueueEvent[x+1],QueueEvent[x+2]))
+          x+=2;
+        else
+          RaiseMessage(MESSAGE_06);    
+        }
+      else
+        ProcessEvent2(QueueEvent[x],VALUE_DIRECTION_INPUT,QueuePort[x],0,0);      // verwerk binnengekomen event.
+      }
+    QueuePos=0;
+    }
+  }
+
+ /**********************************************************************************************\
  * Voert alle relevante acties in de eventlist uit die horen bij het binnengekomen event
  * Doorlopen van een volledig gevulde eventlist duurt ongeveer 15ms inclusief printen naar serial
  * maar exclusief verwerking n.a.v. een 'hit' in de eventlist
@@ -28,45 +62,15 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     RawSignal.Key=-1;
     return true;
     }
-#endif
+  #endif
 
   // Verwerk het binnengekomen event
   ProcessEvent2(IncommingEvent,Direction,Port,PreviousContent,PreviousPort);
 
   // Verwerk eventuele events die in de queue zijn geplaatst.
-  if(QueuePos)
-    {
+  ProcessQueue();
 
-#if NODO_MEGA
-    PrintTerminal(ProgmemString(Text_26));
-#endif
-
-    // alvorens de queue leeg te draaien eerst wachten op vrije ether omdat de master nodo nog bezig kan zijn met verzending en
-    // een eventueel RF commando niet op de master kan aankomen.
-    if(S.WaitFreeRF_Delay==0 && S.WaitFreeRF_Window==0)
-      WaitFreeRF(0,50);
-
-    for(x=0;x<QueuePos;x++)
-      {
-      if(((QueueEvent[x]>>16)&0xff)==CMD_EVENTLIST_WRITE && ((QueueEvent[x]>>24)&0xf)==S.Unit && x<(QueuePos-2)) // cmd
-        {
-        if(Eventlist_Write(((QueueEvent[x]>>8)&0xff),QueueEvent[x+1],QueueEvent[x+2]))
-          x+=2;
-        else
-          RaiseMessage(MESSAGE_06);    
-        }
-      else
-        ProcessEvent2(QueueEvent[x],VALUE_DIRECTION_INPUT,QueuePort[x],0,0);      // verwerk binnengekomen event.
-      }
-    QueuePos=0;
-    }
-
-//#if NODO_MEGA
-//  if(QueueMessage)
-//    PrintTerminal(ProgmemString(Text_29));
-//#endif
-
-  if(S.SendBusy==VALUE_ALL && BusyOnSent)
+  if(BusyOnSent)
     {
     TransmitCode(command2event(S.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
     BusyOnSent=false;
@@ -76,26 +80,54 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
 boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, unsigned long PreviousContent, byte PreviousPort)
   {
   unsigned long Event_1, Event_2;
-  int w,x,y;
+  int x;
+  byte Cmd=(IncommingEvent>>16)&0xff; // Command
+  byte Par1=(IncommingEvent>>8 )&0xff; // Par1
+  byte Par2=(IncommingEvent    )&0xff; // Par2
 
-  if(S.Lock==VALUE_ON)
+  if(S.Lock)
     {
     if(Port==VALUE_SOURCE_RF || Port==VALUE_SOURCE_IR)
       {
-      switch((IncommingEvent>>16)&0xff) // command
+      switch(Cmd) // command
         {
         // onderstaande mogen WEL worden doorgelaten als de lock aan staat
-        case CMD_QUEUE: // anders kan de Nodo niets ontvangen
-        case CMD_LOCK: // om weer te kunnen unlocken
-        case CMD_USEREVENT:
-        case CMD_STATUS_SEND:
-        case CMD_BUSY: 
+        case CMD_TRANSMIT_QUEUE:      // anders kan de Nodo niets ontvangen
+        case CMD_LOCK:                // om weer te kunnen unlocken
+        case CMD_USEREVENT:           // Noodzakelijk voor uitwisseling userevents tussen Nodo.
+        case CMD_STATUS_SEND:         // uitvragen status is onschuldig en kan handig zijn.
+        case CMD_BUSY:                // Busy status nodig voor verwerking
+        case CMD_MESSAGE:             // Voorkomt dat een message van een andere Nodo een error genereert
+        case CMD_BOOT_EVENT:          // Voorkomt dat een boot van een adere Nodo een error genereert
           break;
           
         default:
           RaiseMessage(MESSAGE_09);    
           return false;
         }
+      }
+    }
+
+  if(Cmd==CMD_BUSY) // ??? verhuizen naar Commands?
+    NodoBusy(IncommingEvent);          
+
+  // er is een verzoek ontvangen om de queue te vullen. 
+  if(Cmd==CMD_TRANSMIT_QUEUE) //??? verhuizen naar Commands?
+    {
+    if(QueueReceive(Par1,Par2))
+      {
+      if(S.SendBusy==VALUE_ALL && !BusyOnSent)
+        {
+//???@1        Nodo_2_RawSignal(command2event(S.Unit,CMD_BUSY,VALUE_ON,0));
+//        RawSendRF();
+        TransmitCode(command2event(S.Unit,CMD_BUSY,VALUE_ON,0),VALUE_ALL);
+        BusyOnSent=true;
+        }
+      }
+    else
+      {
+      RaiseMessage(MESSAGE_12);
+      return false;
       }
     }
 
@@ -114,23 +146,10 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
   // als het een Nodo event is en een geldig commando, dan deze uitvoeren
   if(NodoType(IncommingEvent)==NODO_TYPE_COMMAND)
     { // Er is een geldig Commando voor deze Nodo binnengekomen       
-
-    // Stuur een "Busy On", echter niet als het commando een "Queue On" verzoek is gedaan
-    // anders gaat de verzending door de transmissie heen van de andere Nodo die dit verzoek heeft gedaan.
-    // Ook niet als het verzoek is om de "SendBusy All" setting juist uit te schakelen met een "SendBusy Off" omdat anders
-    // een eerder verzonden "Busy On" niet wordt afgesloten met een "Busy Off" en andere Nodos dan onterecht in de wacht blijven.
     if(S.SendBusy==VALUE_ALL && !BusyOnSent)
       {
-      w=(IncommingEvent>>16)&0xff; // Command
-      x=(IncommingEvent>>8 )&0xff; // Par1
-      y=(IncommingEvent    )&0xff; // Par2
-
-      if( !(w==CMD_QUEUE && x==VALUE_ON))
-     // && !(w==CMD_SENDBUSY && x==VALUE_OFF))
-        {      
-        TransmitCode(command2event(S.Unit,CMD_BUSY,VALUE_ON,0),VALUE_ALL);
-        BusyOnSent=true;
-        }
+      TransmitCode(command2event(S.Unit,CMD_BUSY,VALUE_ON,0),VALUE_ALL);
+      BusyOnSent=true;
       }
             
     if(!ExecuteCommand(IncommingEvent,Port,PreviousContent,PreviousPort))
@@ -221,7 +240,6 @@ boolean CheckEvent(unsigned long Event, unsigned long MacroEvent, byte Port)
   if(MacroEvent==Event)
      return true; 
 
-
   // ### excate match zonder type/unit.  
   // als huidige event (met wegfilterde unit) gelijk is aan MacroEvent, dan een match
   Event&=0x00ffffff;
@@ -238,7 +256,6 @@ boolean CheckEvent(unsigned long Event, unsigned long MacroEvent, byte Port)
       if((MacroEvent&0x0000ffff)==(Event&0x0000ffff)) // en tijdstippen kloppen
         return true;
     }
-
 
   // ### WILDCARD:      
   if(((MacroEvent>>16)&0xff)==CMD_COMMAND_WILDCARD) // is regel uit de eventlist een WildCard?

@@ -6,8 +6,7 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
   
   // Hier aangekomen is de master nodo nog steeds bezig met het zenden van het aanloopsignaal bestaande uit de korte pulsenreeks.
   // Wacht totdat het aanloopsignaal een duidelijke startbit bevat.
-
-  Timeout=millis() + 5000L;
+  Timeout=millis() + 2000L;
   x=0;
   while(Timeout>millis() && !(x==50 && Mark>NODO_PULSE_MID))
     {
@@ -38,39 +37,31 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
       if(++x>31)
         {
         x=0;
-        QueueEvent[QueuePos++]=ul;
+        QueueEvent[QueuePos]=ul;
+        QueuePort[QueuePos++]=VALUE_SOURCE_RF;
         ul=0L;
         }
       }
     }
 
   // bereken checksum: crc-8 uit alle bytes in de queue.
+  Checksum=0;
   byte *B=(byte*)&(QueueEvent[0]);    //pointer verwijst nu naar eerste byte van de queue
   for(x=0;x<QueuePos*4;x++) // maal vier, immers 4 bytes in een unsigned long
     Checksum^=*(B+x); 
 
-  // Verzend een aanloopsignaal bestaande uit reeks korte pulsen om slave tijd te geven klaar te staan voor ontvangst en voorkomen dat andere Nodo vrije ruimte in RF benut
-  digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
-  digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan
-
-  for(x=0; x<100; x++)
+  if(ChecksumOrg == Checksum)
     {
-    digitalWrite(PIN_RF_TX_DATA,HIGH); // 1
-    delayMicroseconds(NODO_PULSE_0); 
-    digitalWrite(PIN_RF_TX_DATA,LOW); // 0
-    delayMicroseconds(NODO_SPACE); 
+    ProcessQueue();
+    Nodo_2_RawSignal(command2event(S.Unit,CMD_TRANSMIT_QUEUE,0,0));
+    RawSendRF();
+    return true;
     }
-
-  Nodo_2_RawSignal(command2event(S.Unit,CMD_TRANSMIT_QUEUE,0,Checksum));
-  RawSendRF();
-
-  if(ChecksumOrg != Checksum)
+  else
     {
     QueuePos=0;
     return false;
     }
-  else
-    return true;
   }
   
 boolean QueueSend(byte DestUnit)
@@ -79,22 +70,19 @@ boolean QueueSend(byte DestUnit)
   boolean Bit;
   unsigned long Event,TimeoutTimer;
   static unsigned long PreviousTimer;
-    
+
   // bereken checksum: crc-8 uit alle bytes in de queue.
   byte *B=(byte*)&(QueueEvent[0]);    //pointer verwijst nu naar eerste byte van de queue
   for(x=0;x<QueuePos*4;x++) // maal vier, immers 4 bytes in een unsigned long
     Checksum^=*(B+x); 
 
   // Verzend verzoek om gereed te staan voor ontvangst naar de slave. Eerst een WaitFreeRF
-
-  while((PreviousTimer+500)>millis());// SendTo mag niet te snel gaan anders worden er regels gemist in de communicatie tussen master en slave
   WaitFreeRF(0,100);
   Nodo_2_RawSignal(command2event(DestUnit,CMD_TRANSMIT_QUEUE,QueuePos,Checksum));
   RawSendRF();
     
-  // Stap-2
   // Verzend een aanloopsignaal bestaande uit reeks korte pulsen om slave tijd te geven klaar te staan voor ontvangst en voorkomen dat andere Nodo vrije ruimte in RF benut
-//  digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.//??? test of dit in dit specifieke geval kan.
+  digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.//??? test of dit in dit specifieke geval kan.
   digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan
 
   for(x=0; x<100; x++)// Houd de 433 band bezet en geef slave gelegenheid om klaar voor ontvangst data uit queue.
@@ -137,32 +125,15 @@ boolean QueueSend(byte DestUnit)
   digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
   digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger weer aan.    
 
-  // wacht op de bevestiging van de slave Nodo
-  TimeoutTimer=millis()+1000;
-  while(TimeoutTimer>millis())
-    {
-    if(GetEvent_IRRF(&Event,&x))// x is dummy
-      {
-      if(Event==command2event(DestUnit,CMD_TRANSMIT_QUEUE,0,Checksum))
-        break;
-      }
-    }
-    
-  PreviousTimer=millis();
-
-  // als niet juiste antwoord van de slave ontvangen dan is vorige loop afgebroken a.g.v. een timeout.
-  if(TimeoutTimer>millis())
-    return true;
-  else  
-    return false;
+  return WaitAndQueue(0,false,command2event(DestUnit,CMD_TRANSMIT_QUEUE,0,0));
   }
 
 
 unsigned long GetEvent_IRRF(unsigned long *Content, int *Port)
   {
-  static unsigned long Checksum=0L;                           // Als gelijk aan Event dan tweemaal dezelfde code ontvangen: checksum funktie.
+  unsigned long Checksum=0L;                           // Als gelijk aan Event dan tweemaal dezelfde code ontvangen: checksum funktie.
   unsigned long StaySharpTimer=millis();                      // timer die start bij ontvangen van een signaal. Dwingt om enige tijd te luisteren naar dezelfde poort.
-  static unsigned long RepeatTimer=0L;
+  static unsigned long Previous, PreviousTimer=0L;
   
   // IR: *************** kijk of er data staat op IR en genereer een event als er een code ontvangen is **********************
   do
@@ -172,21 +143,18 @@ unsigned long GetEvent_IRRF(unsigned long *Content, int *Port)
       if(FetchSignal(PIN_IR_RX_DATA,LOW,S.AnalyseTimeOut))// Als het een duidelijk IR signaal was
         {
         *Content=AnalyzeRawSignal(); // Bereken uit de tabel met de pulstijden de 32-bit code. 
-        if(*Content)// als AnalyzeRawSignal een event heeft opgeleverd
+        if(*Content==Checksum) // tweemaal hetzelfde event ontvangen
           {
-          StaySharpTimer=millis()+SHARP_TIME;          
-          if(*Content==Checksum) // tweemaal hetzelfde event ontvangen
-             {
-             if(RepeatTimer<millis()) // niet hetzelfde event binnen korte tijd
-               {
-               RawSignal.Source=VALUE_SOURCE_IR;
-               *Port=VALUE_SOURCE_IR;
-               RepeatTimer=millis()+BLOK_REPEAT_TIME;
-               return true;
-               }
-             }
-          else
-            RepeatTimer=0L;
+          if(PreviousTimer<millis())
+            Previous=0L;
+          if(Previous!=Checksum)
+            {
+            RawSignal.Source=VALUE_SOURCE_IR;
+            *Port=VALUE_SOURCE_IR;
+            PreviousTimer=millis()+BLOK_REPEAT_TIME;
+            Previous=Checksum;
+            return true;
+            }
           Checksum=*Content;
           }
         }
@@ -205,17 +173,18 @@ unsigned long GetEvent_IRRF(unsigned long *Content, int *Port)
           {
           StaySharpTimer=millis()+SHARP_TIME;          
           if(*Content==Checksum) // tweemaal hetzelfde event ontvangen
-             {
-             if(RepeatTimer<millis()) // niet hetzelfde event binnen korte tijd
-               {
-               RawSignal.Source=VALUE_SOURCE_RF;
-               *Port=VALUE_SOURCE_RF;
-               RepeatTimer=millis()+BLOK_REPEAT_TIME;
-               return true;
-               }
-             }
-          else
-            RepeatTimer=0L;
+            {
+            if(PreviousTimer<millis())
+              Previous=0L;
+            if(Previous!=Checksum)
+              {
+              RawSignal.Source=VALUE_SOURCE_RF;
+              *Port=VALUE_SOURCE_RF;
+              PreviousTimer=millis()+BLOK_REPEAT_TIME;
+              Previous=Checksum;
+              return true;
+              }
+            }
           Checksum=*Content;
           }
         }

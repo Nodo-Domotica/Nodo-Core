@@ -16,23 +16,7 @@ void PrintEvent(unsigned long Content, byte Direction, byte Port )
   {
   byte x;
 
-  // Enkele events/commando's zijn niet voor de gebruiker, maar zijn uitsluitend voor de Nodo relevant
-  // Deze mogen niet worden weergegeven
-  //  switch((Content>>16)&0xff)
-  //    {
-  //    case CMD_RECEIVE_LINE:
-  //    case CMD_RECEIVE_LINE_READY:
-  //       return;
-  //    }???
-  
   TempString[0]=0; // als start een lege string
-
-  // datum en tijd weergeven
-  if(bitRead(HW_Config,HW_CLOCK)) // bitRead(HW_Config,HW_CLOCK)=true want dan is er een RTC aanwezig.
-    {   
-    strcat(TempString,DateTimeString());
-    strcat(TempString,", ");
-    }
     
   // Geef de richting van de communicatie weer
   if(Direction)
@@ -46,7 +30,7 @@ void PrintEvent(unsigned long Content, byte Direction, byte Port )
 
   strcat(TempString, cmd2str(Port));
 
-  if(Port==VALUE_SOURCE_EVENTGHOST || Port==VALUE_SOURCE_HTTP || Port==VALUE_SOURCE_TERMINAL)
+  if(Port==VALUE_SOURCE_EVENTGHOST || Port==VALUE_SOURCE_HTTP || Port==VALUE_SOURCE_TELNET)
     {
     strcat(TempString, "(");
     strcat(TempString, ip2str(ClientIPAddress));
@@ -80,7 +64,22 @@ void PrintEvent(unsigned long Content, byte Direction, byte Port )
     }
 
   PrintTerminal(TempString);   // stuur de regel naar Serial en/of naar Ethernet
-  AddFileSDCard(ProgmemString(Text_23),TempString); // standaard logging naar log.dat
+//  AddFileSDCard(ProgmemString(Text_23),TempString); // standaard logging naar log.dat??? waar wordt dit nu gedaan?
+
+  if(bitRead(HW_Config,HW_SDCARD))
+    {
+    char* TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
+    TmpStr[0]=0;
+    // datum en tijd weergeven
+    if(bitRead(HW_Config,HW_CLOCK)) // bitRead(HW_Config,HW_CLOCK)=true want dan is er een RTC aanwezig.
+      {   
+      strcat(TmpStr,DateTimeString());
+      strcat(TmpStr,", ");
+      }
+    strcat(TmpStr,TempString);
+    AddFileSDCard(ProgmemString(Text_23),TmpStr); // Extra logfile op verzoek van gebruiker
+    free(TmpStr);
+    }
   } 
 #else
 
@@ -163,6 +162,7 @@ void PrintWelcome(void)
  \*********************************************************************************************/
 void PrintTerminal(char* LineToPrint)
   {
+  
   if(bitRead(HW_Config,HW_SERIAL))
     Serial.println(LineToPrint);
  
@@ -206,6 +206,12 @@ char* Event2str(unsigned long Code)
     strcat(EventString,cmd2str(Command));
     switch(Command)
       {
+      case CMD_LOCK:
+        Par1=(Code&0x8000)?VALUE_ON:VALUE_OFF;
+        P1=P_TEXT;
+        P2=P_NOT;
+        break;
+        
       // Par1 en Par2 samengesteld voor weergave van COMMAND <nummer> , <analoge waarde>
       case CMD_BREAK_ON_VAR_EQU:
       case CMD_BREAK_ON_VAR_LESS:
@@ -266,7 +272,7 @@ char* Event2str(unsigned long Code)
       // Par1 als tekst en par2 niet
       case CMD_SEND_EVENT:
       case CMD_DEBUG:
-      case CMD_LOCK:
+      case CMD_ECHO:
       case CMD_BUSY:
       case CMD_SENDBUSY:
       case CMD_WAITBUSY:
