@@ -391,7 +391,7 @@ void ResetFactory(void)
   ClockRead(); 
 
   S.Version                    = SETTINGS_VERSION;
-  S.Unit                       = 2;
+  S.Unit                       = UNIT_DEFAULT;
   S.Lock                       = 0;
   S.AnalyseSharpness           = 50;
   S.AnalyseTimeOut             = SIGNAL_TIMEOUT_IR;
@@ -410,7 +410,6 @@ void ResetFactory(void)
   S.Debug                      = VALUE_OFF;
 
 #if NODO_MEGA
-  S.Unit                       = 1;
   S.AutoSaveEventGhostIP       = VALUE_OFF;
   S.EventGhostServer_IP[0]     = 0; // IP adres van de EventGhost server
   S.EventGhostServer_IP[1]     = 0; // IP adres van de EventGhost server
