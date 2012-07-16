@@ -4,12 +4,14 @@
 #include <SD.h>
 #include <EthernetNodo.h>
 
-////***** Mini *****
+
+//***** Mini *****
 //#define NODO_MEGA 0
 
 
 /****************************************************************************************************************************\ 
-* Arduino project "Nodo Due" © Copyright 2012 Paul Tonkes * This program is free software: you can redistribute it and/or modify
+* Arduino project "Nodo Due" © Copyright 2012 Paul Tonkes 
+* This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
 * (at your option) any later version.
@@ -25,6 +27,7 @@
 ******************************************************************************************************************************
 *
 * Voor toelichting op de licentievoorwaarden zie    : http://www.gnu.org/licenses
+
 * Uitgebreide documentatie is te vinden op          : http://www.nodo-domotica.nl
 * bugs kunnen worden gelogd op                      : https://code.google.com/p/arduino-nodo/
 * Compiler voor deze programmacode te downloaden op : http://arduino.cc
@@ -34,7 +37,6 @@
 *
 /****************************** Door gebruiker in te stellen: ***************************************************************/
 
-#define UNIT           2                                     // Unit nummer van de Nodo na reset.
 #define ETHERNET       1                                     // EthernetShield: 0 = afwezig, 1 = aanwezig
 #define USER_PLUGIN    0                                     // Plugin: 0 = niet compileren, 1 = wel compileren
 #define NODO_MAC       0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF    // Default Nodo MACadres
@@ -81,7 +83,7 @@ prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
 prog_char PROGMEM Text_03[] = "Enter your password: ";
 prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSat";
 prog_char PROGMEM Text_05[] = "0123456789abcdef";
-prog_char PROGMEM Text_06[] = "";
+prog_char PROGMEM Text_06[] = "Busy Nodo: ";
 prog_char PROGMEM Text_07[] = "Waiting for signal...";
 prog_char PROGMEM Text_08[] = "Queue=Out, ";
 prog_char PROGMEM Text_09[] = "Queue=In, ";
@@ -90,7 +92,7 @@ prog_char PROGMEM Text_10[] = "Nodo"; // Default wachtwoord na een reset
 //prog_char PROGMEM Text_12[] = "Input=";
 prog_char PROGMEM Text_13[] = "Ok.";
 prog_char PROGMEM Text_14[] = "Event=";
-//prog_char PROGMEM Text_15[] = "";
+prog_char PROGMEM Text_15[] = "queue.dat";
 prog_char PROGMEM Text_16[] = "";
 prog_char PROGMEM Text_17[] = "payload";
 prog_char PROGMEM Text_18[] = "accept";
@@ -104,7 +106,7 @@ prog_char PROGMEM Text_24[] = "Queue: fetching events...";
 prog_char PROGMEM Text_26[] = "Queue: Processing events...";
 prog_char PROGMEM Text_27[] = "Raw/Key"; // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_28[] = "Raw/Hex"; // Directory op de SDCard voor opslag RawSignal
-prog_char PROGMEM Text_29[] = "Queue: Finished.";
+prog_char PROGMEM Text_29[] = "Queue: Finished.";//???
 prog_char PROGMEM Text_30[] = "Terminal connection closed.";
  
 #if NODO_MEGA
@@ -189,7 +191,7 @@ prog_char PROGMEM Cmd_076[]="VariablePulse";
 prog_char PROGMEM Cmd_077[]="Queue";
 prog_char PROGMEM Cmd_078[]="VariableWiredAnalog";
 prog_char PROGMEM Cmd_079[]="Reboot";
-prog_char PROGMEM Cmd_080[]="";
+prog_char PROGMEM Cmd_080[]="Echo";
 prog_char PROGMEM Cmd_081[]="";
 prog_char PROGMEM Cmd_082[]="";
 prog_char PROGMEM Cmd_083[]="";
@@ -208,7 +210,7 @@ prog_char PROGMEM Cmd_095[]="";
 prog_char PROGMEM Cmd_096[]="";
 prog_char PROGMEM Cmd_097[]="";
 prog_char PROGMEM Cmd_098[]=""; 
-prog_char PROGMEM Cmd_099[]="TransmitQueue"; // Niet voor gebruiker bestemd.
+prog_char PROGMEM Cmd_099[]=""; // TransmitQueue: Niet voor gebruiker bestemd.
 
 // events:
 #define RANGE_EVENT 100 // alle codes groter of gelijk aan deze waarde zijn events.
@@ -291,7 +293,7 @@ prog_char PROGMEM Cmd_173[]="RF2IR";
 prog_char PROGMEM Cmd_174[]="IR2RF";
 prog_char PROGMEM Cmd_175[]="All";
 prog_char PROGMEM Cmd_176[]="DaylightSaving";
-prog_char PROGMEM Cmd_177[]="";
+prog_char PROGMEM Cmd_177[]="EventlistCount";
 prog_char PROGMEM Cmd_178[]="Queue";
 prog_char PROGMEM Cmd_179[]="Auto";
 prog_char PROGMEM Cmd_180[]="Time";
@@ -327,6 +329,7 @@ prog_char PROGMEM Cmd_209[]="Error: Wireless access locked.";
 prog_char PROGMEM Cmd_210[]="Error: Access not allowed.";
 prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
 prog_char PROGMEM Cmd_212[]="Error: SendTo failed.";
+prog_char PROGMEM Cmd_213[]="Error: Timeout on busy Nodo.";
 
 // tabel die refereert aan de commando strings
 PROGMEM const char *CommandText_tabel[]={
@@ -351,7 +354,7 @@ PROGMEM const char *CommandText_tabel[]={
   Cmd_180,Cmd_181,Cmd_182,Cmd_183,Cmd_184,Cmd_185,Cmd_186,Cmd_187,Cmd_188,Cmd_189,          
   Cmd_190,Cmd_191,Cmd_192,Cmd_193,Cmd_194,Cmd_195,Cmd_196,Cmd_197,Cmd_198,Cmd_199,          
   Cmd_200,Cmd_201,Cmd_202,Cmd_203,Cmd_204,Cmd_205,Cmd_206,Cmd_207,Cmd_208,Cmd_209,          
-  Cmd_210,Cmd_211,Cmd_212           
+  Cmd_210,Cmd_211,Cmd_212,Cmd_213           
   };          
 
 #endif
@@ -438,7 +441,7 @@ PROGMEM const char *CommandText_tabel[]={
 #define CMD_QUEUE                       77
 #define CMD_WIREDANALOG_VARIABLE        78
 #define CMD_REBOOT                      79
-#define CMD_RES080                      80
+#define CMD_ECHO                        80
 #define CMD_RES081                      81
 #define CMD_RES082                      82
 #define CMD_RES083                      83
@@ -530,7 +533,7 @@ PROGMEM const char *CommandText_tabel[]={
 #define VALUE_SOURCE_TIMER             161
 #define VALUE_SOURCE_VARIABLE          162
 #define VALUE_SOURCE_CLOCK             163
-#define VALUE_SOURCE_TERMINAL          164
+#define VALUE_SOURCE_TELNET            164
 #define VALUE_SOURCE_EVENTGHOST        165
 #define VALUE_SOURCE_STATUS            166
 #define VALUE_SOURCE_FILE              167
@@ -543,7 +546,7 @@ PROGMEM const char *CommandText_tabel[]={
 #define VALUE_IR_2_RF                  174
 #define VALUE_ALL                      175 // Deze waarde MOET groter dan 16 zijn.
 #define VALUE_DLS                      176
-#define VALUE_RES177                   177
+#define VALUE_EVENTLIST_COUNT          177
 #define VALUE_SOURCE_QUEUE             178
 #define VALUE_AUTO                     179
 #define VALUE_TIME                     180
@@ -579,8 +582,9 @@ PROGMEM const char *CommandText_tabel[]={
 #define MESSAGE_10                     210
 #define MESSAGE_11                     211
 #define MESSAGE_12                     212
-#define LAST_VALUE                     212 // laatste VALUE uit de commando tabel
-#define COMMAND_MAX                    212 // hoogste commando
+#define MESSAGE_13                     213
+#define LAST_VALUE                     213 // laatste VALUE uit de commando tabel
+#define COMMAND_MAX                    213 // hoogste commando
 
 
 // Tabel met zonsopgang en -ondergang momenten. afgeleid van KNMI gegevens midden Nederland.
@@ -712,7 +716,7 @@ struct Settings
   byte    WaitBusy;
   boolean DaylightSaving;                                   // Vlag die aangeeft of het zomertijd of wintertijd is
   int     DaylightSavingSet;                                // Vlag voor correct automatisch kunnen overschakelen van zomertijd naar wintertijd of vice-versa
-  int     Lock;                                             // bevat de pincode waarmee IR/RF ontvangst is geblokkeerd. Nul indien niet geblokkeerd.
+  int     Lock;                                             // bevat de pincode waarmee IR/RF ontvangst is geblokkeerd. Bit nummer hoogste bit wordt gebruiktvoor in/uitschakelen.
   byte    Debug;                                            // Weergeven van extra gegevens t.b.v. beter inzicht verloop van de verwerking
   
 #if NODO_MEGA
@@ -729,6 +733,8 @@ struct Settings
   int     PortServer;                                       // Poort van de inkomende IP communnicatie
   int     PortClient;                                       // Poort van de uitgaande IP communnicatie
   byte    HTTP_Pin;                                         // Als deze VALUE_ON bevat worden events tussen WebApp en Nodo alleen uitgewisseld bij juiste key in HTTP reques.
+  byte    EchoSerial;
+  byte    EchoTelnet;
 #endif
   }S;
 
@@ -887,8 +893,7 @@ void setup()
       SendHTTPCookie(); // Verzend een nieuw cookie
     }
 
-  RawSignal.Key=-1; // Als deze variable ongelijk aan -1 dan wordt er een Rawsignal opgeslagen.
-  
+  RawSignal.Key=-1; // Als deze variable ongelijk aan -1 dan wordt er een Rawsignal opgeslagen.  
   bitWrite(HW_Config,HW_SERIAL,1); // zonder deze vlag vindt er geen output naar de serial poort plaats. Tijdelijk even inschakelen.
 
 #endif
@@ -948,7 +953,7 @@ void loop()
           } 
 
 #if NODO_MEGA
-          case 1: // binnen Slice_1
+        case 1: // binnen Slice_1
           {        
           if(bitRead(HW_Config,HW_ETHERNET))
             {
@@ -990,8 +995,13 @@ void loop()
               while(TerminalClient.available()) 
                 {
                 TerminalInByte=TerminalClient.read();
+                
                 if(isprint(TerminalInByte) && TerminalInbyteCounter<INPUT_BUFFER_SIZE)
+                  {
+                  if(S.EchoTelnet==VALUE_ON)
+                    TerminalClient.write(TerminalInByte);// Echo ontvangen teken                  
                   InputBuffer_Terminal[TerminalInbyteCounter++]=TerminalInByte;
+                  }
                   
                 if(TerminalInByte==0x03 || TerminalInByte==0x18)
                   {
@@ -1006,6 +1016,8 @@ void loop()
                   
                 if(TerminalInByte==0x0a || TerminalInByte==0x0d)
                   {
+                  if(S.EchoTelnet==VALUE_ON)
+                    TerminalClient.println("");// Echo de nieuwe regel.
                   TerminalConnected=TERMINAL_TIMEOUT;
                   InputBuffer_Terminal[TerminalInbyteCounter]=0;
                   if(TerminalInbyteCounter==0)break; // als de string leeg is, dan niets verwerken.
@@ -1014,7 +1026,8 @@ void loop()
                   if(TerminalLocked==0) // als op niet op slot
                     {
                     TerminalClient.getRemoteIP(ClientIPAddress);  
-                    ExecuteLine(InputBuffer_Terminal, VALUE_SOURCE_TERMINAL);
+                    ExecuteLine(InputBuffer_Terminal, VALUE_SOURCE_TELNET);
+                    TerminalClient.write('>');
                     }
                   else
                     {
@@ -1067,6 +1080,9 @@ void loop()
               while(Serial.available())
                 {                        
                 SerialInByte=Serial.read();                
+                if(S.EchoSerial==VALUE_ON)
+                  Serial.write(SerialInByte);// echo ontvangen teken
+
                 StaySharpTimer=millis()+SHARP_TIME;      
                 
                 if(isprint(SerialInByte) && SerialInByteCounter<INPUT_BUFFER_SIZE) // alleen tekens aan de string toevoegen als deze nog in de buffer past.
@@ -1077,6 +1093,7 @@ void loop()
                   SerialHold(true);
                   InputBuffer_Serial[SerialInByteCounter]=0; // serieel ontvangen regel is compleet
                   ExecuteLine(InputBuffer_Serial, VALUE_SOURCE_SERIAL);
+                  Serial.write('>');
                   SerialInByteCounter=0;  
                   InputBuffer_Serial[0]=0; // serieel ontvangen regel is verwerkt. String leegmaken
                   SerialHold(false);

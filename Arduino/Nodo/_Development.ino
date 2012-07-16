@@ -1,29 +1,35 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- Bug bij automatische resetfactory opgelost
-- Status of SendStatus met EventlistShow als apar1 geeft het aantal bezette regels in de eventlist
-- Splitsing code voor Nodo-Meda en Nodo-Mini (Conditionele compilatie)
-- Nodo voor de ATmega328 is nu alleen bedoeld als satelliet en is MMI-loos. Aansturing door een Mega.
-- Messages/error aangepast. Deze hebben nu ook een code zodat ze in de eventlist kunnen worden gebruikt
-- Sendstatus zonder parameters geeft een event "Message 200 (Ok.)".
-- Bij resetfactory wordt de waitfreerf ook juist ingesteld als ander unitnummer wordt meegecompileerd
-- Queue mode in de Delay funktie verbijzonderd naar een apart commando "Queue"
-- Aangepaste ijkprocedure. Geen High/Low parameter meer.
-- Boot event draagt nu unit nummer in Par1 zodat deze ook in de eventlist verwerkt kan worden
+- Status en SendStatus uitgebreid met optie EventlistCount. Geeft aantal bezette regels
+- SendTo voorzien van Busy bewaking
+- Commando lock voorzien van code o.b.v. ingestelde wachtwoord. (Na veranderen wachtwoord zal de lock verdwijnen)
+- Prompt in Terminal venster wordt nu weergegeven NADAT verwerking plaats heeft gevonden
+- PulseCounter niet meer gereset. Onderdeel van de formule geworden
+- SendKAKU bug in vorige build hersteld
+- Datum / Tijd wordt in Terminalvenster niet meer weergegeven. Nog wel in LOG.DAT
+- nieuw commando Echo <on/off> voor terugsturen ingevoerde tekens terminalprogramma
 
 Known Errors / ToDo:
-- SendBusy loopt niet lekker
-- cursor weergave in terminal venster niet netjes
-- na PulseFormula niet altijd de pulscounter op nul stellen
+
+- werkt logging naar SDCard nog goed.
+- mega: Queue op SDCard.
+- blokkeren rf en ir bij een filewrite
+- sdcard toegang via ftp.
+- Sendbusy naar niet bestaand unitnummer geeft hit op andere Nodo
+- >Busy< events automatisch na een reset voor een slave of in routine opnemen?
+- komt er na 60sec wel een melding als >busy off< uitblijft?
+- soms wacht master onnodig terwijl een >busy off< wel is binnengekomen.(als unit master=1. WaitFreeRF?)
+
+- In Executeline afgevangen commando worden niet gelogt op SDCard.
+- Waitbusy implementeren
 - Boot event wordt weergegeven met system=system
-- SendTo werkt niet
 - Calibrate met negatief coefficient schijnt niet goed te werken.
 - EventList 7; WildCard All,UserEvent; SendEvent HTTP => er uit of alternatief
 
-
-
 Aanpassingen t.o.v. Nodo Due:
+- nieuw commando Echo <on/off> voor terugsturen ingevoerde tekens terminalprogramma
+- Status en SendStatus uitgebreid met optie "EventlistCount". Geeft aantal bezette regels
 - Nieuw commando "ClientIP" toegevoegd. Aanvaard alleen HTTP-Requests en EventGhst events van opgegeven IP adres.
 - Commando "Divert" vervallen. Nieuw commando "SendTo" voor versturen van een commandoregel via RF naar een andere Nodo
 - Nieuw commando voor in eventlist "BreakOnDaylight". 

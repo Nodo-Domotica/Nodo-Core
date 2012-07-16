@@ -49,10 +49,13 @@ byte CommandError(unsigned long Content)
   byte Command      = (Content>>16)&0xff;
   byte Par1         = (Content>>8)&0xff;
   byte Par2         = Content&0xff;
+
  
   switch(Command)
     {
     //test; geen, altijd goed
+    case CMD_UNIT:
+    case CMD_LOCK:    
     case CMD_TRANSMIT_QUEUE:
     case CMD_EVENTLIST_ERASE:
     case CMD_BOOT_EVENT:
@@ -243,7 +246,7 @@ byte CommandError(unsigned long Content)
 
      // par1 alleen On of Off.
      // par2 mag alles zijn
-    case CMD_LOCK:
+    case CMD_BUSY:
     case CMD_BREAK_ON_DAYLIGHT:
       if(Par1!=VALUE_OFF && Par1!=VALUE_ON)return MESSAGE_02;
       return false;
@@ -254,12 +257,12 @@ byte CommandError(unsigned long Content)
       if(Par2>25)return MESSAGE_02;
       return false;
 
-    case CMD_UNIT:
-      if(Par1<1 || Par1>UNIT_MAX)return MESSAGE_02;
-      return false;
-
 #if NODO_MEGA
     case CMD_DEBUG:
+    case CMD_ECHO:
+      if(Par1!=VALUE_OFF && Par1!=VALUE_ON)return MESSAGE_02;
+      return false;
+    
     case CMD_SIMULATE_DAY:
       return false;
       
@@ -299,13 +302,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
   switch(Command)
     {   
-    case CMD_TRANSMIT_QUEUE:
-      if(Par1!=0)// Als Par1 gelijk is aan nul, dan betreft het een ontvangstbevestiging van de slave Nodo.Hier niets mee doen.
-        QueueReceive(Par1,Par2);
-      break;
-
     case CMD_SEND_KAKU:
-      TransmitCode((S.Unit, CMD_KAKU,Par1,Par2),VALUE_ALL);
+      TransmitCode(command2event(S.Unit, CMD_KAKU,Par1,Par2),VALUE_ALL);
       break;
       
     case CMD_SEND_KAKU_NEW:
@@ -371,7 +369,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       if(S.Debug==VALUE_ON)
         {        
         Serial.print("# PulseTimeMillis=");Serial.print(PulseTime,DEC);//??? er uit om ruimte te beparen?
-        Serial.print(", PulseCount=");Serial.println(PulseCount,DEC);
+        Serial.print(", PulseCount=");Serial.println(PulseCount,DEC);//??? met TerminalPrint?
         }
 #endif
       switch(Par2)
@@ -464,7 +462,21 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;
 
     case CMD_LOCK:
-      S.Lock=Par1;
+      a=Content&0x7fff;// Zet de lock met de bits 0 t/m 15
+      if(Content&0x8000)
+        {// Als verzoek om inschakelen (On/Off bevindt zich in bit nr. 15) dan Lock waarde vullen
+        if(S.Lock==0)// mits niet al gelocked.
+          S.Lock=a; 
+        else
+          RaiseMessage(MESSAGE_10);
+        }
+      else
+        {// Verzoek om uitschakelen
+        if(S.Lock==a || S.Lock==0)// als lock code overeen komt of nog niet gevuld
+          S.Lock=0;
+        else
+          RaiseMessage(MESSAGE_10);
+        }        
       SaveSettings();
       break;
 
@@ -541,7 +553,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       if(Par1==VALUE_ON)
         {
         a=(Par2==0)?60:Par2;
-        WaitAndQueue(a,false);
+        WaitAndQueue(a,false,0);
         }        
       break;        
       
@@ -601,11 +613,10 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         {// on / off 
         TransmitCode(command2event(S.Unit, CMD_BUSY,Par1,0),VALUE_ALL);
         if(S.SendBusy==VALUE_ALL && Par1==VALUE_OFF)
-          {// De SendBusy A;; mode moet worden uitgeschakeld
+          {// De SendBusy mode moet worden uitgeschakeld
           S.SendBusy=VALUE_OFF;
           SaveSettings();
           }
-        BusyOnSent=(Par1==VALUE_ON);
         }
       break;
             
@@ -623,7 +634,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           {
           if(Par1==0)
             Par1=60;
-          WaitAndQueue(Par1,true);
+          WaitAndQueue(Par1,true,0);
           }
         }
 
@@ -751,6 +762,14 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;
        
 #if NODO_MEGA
+    case CMD_ECHO:
+      if(Src==VALUE_SOURCE_TELNET) 
+        S.EchoTelnet=Par1;
+      if(Src==VALUE_SOURCE_SERIAL) 
+        S.EchoSerial=Par1;        
+      SaveSettings();
+      break;
+
     case CMD_DEBUG: 
       S.Debug=Par1;
       SaveSettings();
@@ -812,7 +831,8 @@ void ExecuteLine(char *Line, byte Port)
   int EventlistWriteLine=0;
   int Error=0,Par1,Par2,Cmd;
   byte State_EventlistWrite=0;
-  unsigned long v,event,a; 
+  unsigned long v,event,a;
+  static unsigned long PreviousSendTo; 
   byte SendTo=0; // Als deze waarde ongelijk aan nul, dan wordt het commando niet uitgevoerd maar doorgestuurd naar de andere Nodo
 
   Led(RED);
@@ -833,11 +853,6 @@ void ExecuteLine(char *Line, byte Port)
       return;
       }
     }
-
-  // geef invoer regel weer 
-  strcpy(TmpStr,">");
-  strcat(TmpStr,Line);
-  PrintTerminal(TmpStr);
 
   PosCommand=0;
   for(PosLine=0;PosLine<=L && Error==0 ;PosLine++)
@@ -885,6 +900,20 @@ void ExecuteLine(char *Line, byte Port)
         switch(Cmd)
           {
           // onderstaande commando's worden verwerkt in ExecuteCommand(); Hier vindt alleen omzetting plaats van string naar 32-bit event.
+          case CMD_LOCK://@1
+            a=0L;
+            for(x=0;x<strlen(S.Password);x++)
+              {
+              a=a<<5;
+              a^=S.Password[x];
+              }
+            
+            a&=0x7fff;// 15-bits pincode uit wachtwoord samengesteld. 16e bit is lock aan/uit.
+            if(Par1==VALUE_ON)
+              a |= (1<<15);
+            v=command2event(S.Unit,CMD_LOCK,(a>>8)&0xff,a&0xff);
+            break;
+
           case CMD_BREAK_ON_VAR_EQU:
           case CMD_BREAK_ON_VAR_LESS:
           case CMD_BREAK_ON_VAR_MORE:
@@ -985,6 +1014,10 @@ void ExecuteLine(char *Line, byte Port)
           case CMD_SEND:
             // als de SendTo is gevuld, dan event versturen naar een andere Nodo en niet zelf uitvoeren
             SendTo=Par1;
+
+            // RF ontvangers hebben enige tijd nodig om na inschakelen stabiel te worden.
+            // Wacht enig tijs om de opvolgende SendTo niet te snel op de vorige plaats te laten vinden. Anders worden er Busy events gemist.
+            while((PreviousSendTo+500)>millis()); 
             break;
 
           case CMD_PASSWORD:
@@ -993,7 +1026,20 @@ void ExecuteLine(char *Line, byte Port)
             GetArgv(Command,TmpStr,2);
             TmpStr[24]=0; // voor geval de string te lang is.
             strcpy(S.Password,TmpStr);
+
+            // Als een lock actief, dan lock op basis van nieuwe password instellen
+            if(S.Lock)
+              {
+              a=0L;
+              for(x=0;x<strlen(S.Password);x++)
+                {
+                a=a<<5;
+                a^=S.Password[x];
+                }
+              S.Lock=a&0x7fff;
+              }
             SaveSettings();
+
             break;
             }  
 
@@ -1289,7 +1335,8 @@ void ExecuteLine(char *Line, byte Port)
             else
               {
               RaiseMessage(MESSAGE_04);                
-              return;
+              break;
+              //??? return;
               }
             }
           continue;
@@ -1300,8 +1347,9 @@ void ExecuteLine(char *Line, byte Port)
           a=v;
           if(!Eventlist_Write(EventlistWriteLine,event,a))
             {
-            RaiseMessage(MESSAGE_06);    
-            return;
+            RaiseMessage(MESSAGE_06);
+            break;
+            // return;
             }
           State_EventlistWrite=0;
           continue;
@@ -1331,9 +1379,9 @@ void ExecuteLine(char *Line, byte Port)
 
   if(SendTo!=0)// Verzend de inhoud van de queue naar de slave Nodo
     {
-    if(!QueueSend(SendTo))
-      RaiseMessage(MESSAGE_12);
+    QueueSend(SendTo);    
     QueuePos=0;
+    PreviousSendTo=millis();
     }
   }
 #endif

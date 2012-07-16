@@ -1,36 +1,38 @@
 
  /*********************************************************************************************\
  * wachtloop die wordt afgebroken als:
- * - tijd Timeout is verstreken na laatst ontvangen event
+ * - tijd <QueueTime> is verstreken na laatst ontvangen event
  * - alle Nodo's na een "Busy On" ook weer een "Busy Off" hebben verzonden. (Als WaitForBusyNodo==true)
  * - de Nodo expliciet een "Queue Off" opdracht krijgt toegezonden.
+ * - Opgegeven <BreakEvent> voorbij is gekomen.
+ * - Timeout opgetreden. In dit geval geeft deze funktie een <false> terug.
  \*********************************************************************************************/
-void WaitAndQueue(int Timeout, boolean WaitForBusyNodo)
+boolean WaitAndQueue(int QueueTime, boolean WaitForBusyNodo, unsigned long BreakEvent)
   {
-  unsigned long TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
-  unsigned long TimeoutMinTimer=millis() + 2000L; // deze timer nodig omdat de RF ontvangers na inschakelen tijd nodig hebben om signaal te kunnen ontvangen
+  unsigned long QueueTimeTimer=millis() + (unsigned long)(QueueTime)*1000;
+  unsigned long TimeoutTimer=millis() + 60000L;
+  unsigned long TimeoutMinTimer=millis() + 500L; // deze timer nodig omdat de RF ontvangers na inschakelen tijd nodig hebben om signaal te kunnen ontvangen. Zolang blijft de loop minimaal lopen.
   unsigned long Event;
   int Port,x,y,z;
-  boolean Loop=true;
   boolean QueueMessage=false;
   
   Led(BLUE);
-
-  while(TimeoutTimer>millis() && Loop)
+  
+  while(TimeoutTimer>millis())
     {
     if(GetEvent_IRRF(&Event,&Port))
       {
-
-#if NODO_MEGA
-      if(!QueueMessage)
+      #if NODO_MEGA
+      if(S.Debug==VALUE_ON && !QueueMessage)
         {
-          PrintTerminal(ProgmemString(Text_24));
+        PrintTerminal(ProgmemString(Text_24));
         QueueMessage=true;
         }
-#endif
-
+      #endif
       PrintEvent(Event,Port,VALUE_DIRECTION_INPUT);
-      TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
+
+      if(BreakEvent!=0 && Event==BreakEvent)
+        break;
 
       x=(byte)((Event>>16)&0xff); // cmd
       y=(byte)((Event>>24)&0xf); // unit
@@ -38,34 +40,71 @@ void WaitAndQueue(int Timeout, boolean WaitForBusyNodo)
       
       if(x==CMD_BUSY) // command
         NodoBusy(Event);          
-
+        
       else if(x==CMD_QUEUE) // command
         {
         if(y==S.Unit) // Als commando voor deze unit bestemd
           {
           if(z==VALUE_OFF) // Par1
-            {
-            Loop=false;
-            }
+            break;
           }
         }
   
       // Het is geen Busy event of Queue commando event, dan deze in de queue plaatsen.
+
+#if NODO_MEGA
+      // Sla event op in de queue. De Nodo-Mega slaat de queue op SDCard op.
+      else
+        {
+        AddFileSDCard(ProgmemString(Text_15),int2str(Event));
+        }
+#else
+      // sla event op in de queue. De Nodo-Mini heeft de queue is een kleine array <QueueEvent> staan.
       else if(QueuePos<EVENT_QUEUE_MAX)
         {
-//      Serial.print("*** debug: plaatsing in Queue=");Serial.println(Event,HEX); //??? Debug
         QueueEvent[QueuePos]=Event;
         QueuePort[QueuePos]=Port;
         QueuePos++;           
         }       
       else
         RaiseMessage(MESSAGE_04);    
+#endif
+
       }    
 
-    if(NodoBusyStatus==0 && TimeoutMinTimer<millis())
-      Loop=false;
+    if(WaitForBusyNodo)
+      {
+      if(NodoBusyStatus==0 && TimeoutMinTimer<millis())
+        break;
+      }
+    else
+      {
+      if(QueueTime>0 && QueueTimeTimer<millis())
+        break;
+      }
+    }   
 
-    }    
+  if(TimeoutTimer<millis())
+    {
+    RaiseMessage(MESSAGE_13);
+
+    #if NODO_MEGA
+    // Geef weer op welke Nodo(s) de timeout heeft plaatsgevonden
+    strcpy(TempString, ProgmemString(Text_06));
+    if(S.Debug==VALUE_ON)
+      {
+      for(x=1;x<=UNIT_MAX;x++)
+        {
+        strcat(TempString, int2str(x));  
+        strcat(TempString, ", ");         
+        }
+      }
+    PrintTerminal(TempString);
+    #endif
+    NodoBusyStatus=0;
+    return false;
+    }
+  return true;
   }
   
 
@@ -81,11 +120,8 @@ boolean NodoBusy(unsigned long Event)
     if(((Event>>8)&0xff)==VALUE_ON) // Par1
       NodoBusyStatus  |=  (1<<((Event>>24)&0xf)); // unit nummer
     else
-      {
       NodoBusyStatus  &= ~(1<<((Event>>24)&0xf)); // unit nummer
-      }
     }
-
   return NodoBusyStatus!=0;
   }
 
@@ -140,7 +176,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
   *Par2=0;
   switch (*Command)
     {
-    case CMD_EVENTLIST_SHOW:
+    case VALUE_EVENTLIST_COUNT:
       for(x=1; x<=EVENTLIST_MAX;x++)
         if(Eventlist_Read(x,&event,&UL))// event en UL worden hier gebruikt als dummy
           *Par1=*Par1+1;
@@ -164,7 +200,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       break;
 
     case CMD_LOCK:
-      *Par1=S.Lock;
+      *Par1=S.Lock==0?0:0x80;// uit 16-bit combi van Par1+Par2 staat de on/off in bit 15.
       break;
 
     case CMD_WAITBUSY:
@@ -355,8 +391,8 @@ void ResetFactory(void)
   ClockRead(); 
 
   S.Version                    = SETTINGS_VERSION;
-  S.Unit                       = UNIT;
-  S.Lock                       = VALUE_OFF;
+  S.Unit                       = 2;
+  S.Lock                       = 0;
   S.AnalyseSharpness           = 50;
   S.AnalyseTimeOut             = SIGNAL_TIMEOUT_IR;
   S.TransmitIR                 = VALUE_OFF;
@@ -374,6 +410,7 @@ void ResetFactory(void)
   S.Debug                      = VALUE_OFF;
 
 #if NODO_MEGA
+  S.Unit                       = 1;
   S.AutoSaveEventGhostIP       = VALUE_OFF;
   S.EventGhostServer_IP[0]     = 0; // IP adres van de EventGhost server
   S.EventGhostServer_IP[1]     = 0; // IP adres van de EventGhost server
@@ -404,6 +441,8 @@ void ResetFactory(void)
   S.PortClient                 = 80;
   S.ID[0]                      = 0; // string leegmaken
   S.HTTP_Pin                   = VALUE_OFF;
+  S.EchoSerial                 = VALUE_ON;
+  S.EchoTelnet                 = VALUE_ON;
   
   strcpy(S.Password,ProgmemString(Text_10));
 #endif
@@ -501,7 +540,7 @@ void Status(byte Par1, byte Par2, boolean Transmit)
     if(!Transmit)
       PrintWelcome();
     CMD_Start=FIRST_COMMAND;
-    CMD_End=LAST_COMMAND;
+    CMD_End=COMMAND_MAX;
     }
   else
     {
