@@ -28,7 +28,6 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
   while(Timeout>millis() && QueuePos<Pos)
     {
     Mark = WaitForChangeState(PIN_RF_RX_DATA,HIGH, SIGNAL_TIMEOUT_RF);
-
     if(Mark>MIN_PULSE_LENGTH)
       {        
       if(Mark>NODO_PULSE_MID)
@@ -52,32 +51,47 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
 
   if(ChecksumOrg == Checksum)
     {
-    ProcessQueue();
+    // Korte wachttijd anders is de RF ontvanger van de master (mogelijk) nog niet gereed voor ontvangst
+    delay(300);    
+    if(S.SendBusy==VALUE_ALL)
+      {
+      Nodo_2_RawSignal(command2event(S.Unit,CMD_BUSY,VALUE_ON,0));
+      BusyOnSent=true;
+      RawSendRF();
+      }
+
+    delay(50);    
     Nodo_2_RawSignal(command2event(S.Unit,CMD_TRANSMIT_QUEUE,0,0));
     RawSendRF();
+
+    // Verwerk de inhoud van de Queue
+    ProcessQueue();
     return true;
     }
   else
     {
+    delay(1000);
     QueuePos=0;
     return false;
     }
   }
-  
+
+#if NODO_MEGA  
 boolean QueueSend(byte DestUnit)
   {
   int x,y,Checksum=0;
   boolean Bit;
   unsigned long Event,TimeoutTimer;
-  static unsigned long PreviousTimer;
+  static unsigned long PreviousQueueSend=0L;
 
   // bereken checksum: crc-8 uit alle bytes in de queue.
   byte *B=(byte*)&(QueueEvent[0]);    //pointer verwijst nu naar eerste byte van de queue
   for(x=0;x<QueuePos*4;x++) // maal vier, immers 4 bytes in een unsigned long
     Checksum^=*(B+x); 
 
-  // Verzend verzoek om gereed te staan voor ontvangst naar de slave. Eerst een WaitFreeRF
-  WaitFreeRF(0,100);
+  // Verzend verzoek om gereed te staan voor ontvangst naar de slave. Eerst een korte pause en WaitFreeRF
+  while((PreviousQueueSend+400)>millis());// ten minste 500ms tussen twee opvolgende QueueSend opdrachten.  
+  WaitFreeRF(0,100);  
   Nodo_2_RawSignal(command2event(DestUnit,CMD_TRANSMIT_QUEUE,QueuePos,Checksum));
   RawSendRF();
     
@@ -125,9 +139,16 @@ boolean QueueSend(byte DestUnit)
   digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
   digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger weer aan.    
 
-  return WaitAndQueue(0,false,command2event(DestUnit,CMD_TRANSMIT_QUEUE,0,0));
-  }
+  // Queue is verzonden. Wacht op bevestiging van de slave.
+  // Op dit moment kunnen er drie situaties voordoen:
+  // 1. master ontvangt Busy On van slave Nodo.
+  // 2. master ontvangt CMD_TRANSMIT_QUEUE bevestiging.
+  // 3. master ontvangt niets. Dan keert WaitAndQueue terug met een false.
 
+  PreviousQueueSend=millis();// bewaar tijdstip om te voorkomen dat de (eventuele) opvolgende QueueSend te snel plaats vindt.
+  return WaitAndQueue(2,false,command2event(DestUnit,CMD_TRANSMIT_QUEUE,0,0));
+  }
+#endif
 
 unsigned long GetEvent_IRRF(unsigned long *Content, int *Port)
   {

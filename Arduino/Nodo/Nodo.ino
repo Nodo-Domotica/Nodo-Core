@@ -1,5 +1,3 @@
-
-
 /****************************************************************************************************************************\ 
 * Arduino project "Nodo Due" © Copyright 2012 Paul Tonkes 
 * This program is free software: you can redistribute it and/or modify
@@ -18,7 +16,6 @@
 ******************************************************************************************************************************
 *
 * Voor toelichting op de licentievoorwaarden zie    : http://www.gnu.org/licenses
-
 * Uitgebreide documentatie is te vinden op          : http://www.nodo-domotica.nl
 * bugs kunnen worden gelogd op                      : https://code.google.com/p/arduino-nodo/
 * Compiler voor deze programmacode te downloaden op : http://arduino.cc
@@ -33,16 +30,20 @@
 #define NODO_MAC       0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF    // Default Nodo MACadres
 
 
-//***** Mega *****
-#define UNIT_DEFAULT  1
-#define NODO_MEGA 1
-#include <SD.h>
-#include <EthernetNodo.h>
+#define UNIT_DEFAULT  15
+#define NODO_MEGA 0
+
+// De code kan worden gecompileerd als een Nodo-Mini voor de Arduino met een ATMega328 processor
+// Of voor een Nodo-Mega voor een Arduino met een ATMega1280 of ATMega2560
+// Voor de Nodo-Mega variant bij onderstaande vijf regels de // remarks verwijderen.
+
+//#define UNIT_DEFAULT  1
+//#define NODO_MEGA 1
+//#include <SD.h>
+//#include <EthernetNodo.h>
+//#include <SPI.h>
 
 
-//***** Mini *****
-//#define UNIT_DEFAULT  15
-//#define NODO_MEGA 0
 
 
 // Onderstaand de formules die gebruikt worden voor omrekening van pulsen naar analoge waarden.
@@ -69,14 +70,10 @@
 /****************************************************************************************************************************/
 //#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
 
-#define SETTINGS_VERSION      6
+#define SETTINGS_VERSION      7
 
-#include "pins_arduino.h"
 #include <EEPROM.h>
 #include <Wire.h>
-#include <avr/pgmspace.h>
-#include <SPI.h>
-
 
 // strings met vaste tekst naar PROGMEM om hiermee RAM-geheugen te sparen.
 prog_char PROGMEM Text_01[] = "Nodo Domotica controller (c) Copyright 2012 P.K.Tonkes.";
@@ -84,16 +81,16 @@ prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
 prog_char PROGMEM Text_03[] = "Enter your password: ";
 prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSat";
 prog_char PROGMEM Text_05[] = "0123456789abcdef";
-prog_char PROGMEM Text_06[] = "Busy Nodo: ";
+prog_char PROGMEM Text_06[] = "Waiting for busy Nodo: ";
 prog_char PROGMEM Text_07[] = "Waiting for signal...";
-prog_char PROGMEM Text_08[] = "Queue=Out, ";
-prog_char PROGMEM Text_09[] = "Queue=In, ";
+//prog_char PROGMEM Text_08[] = "Queue=Out, ";//??
+//prog_char PROGMEM Text_09[] = "Queue=In, ";//??
 prog_char PROGMEM Text_10[] = "Nodo"; // Default wachtwoord na een reset
 //prog_char PROGMEM Text_11[] = "Output=";
 //prog_char PROGMEM Text_12[] = "Input=";
 prog_char PROGMEM Text_13[] = "Ok.";
 prog_char PROGMEM Text_14[] = "Event=";
-prog_char PROGMEM Text_15[] = "queue.dat";
+prog_char PROGMEM Text_15[] = "Queue.dat";
 prog_char PROGMEM Text_16[] = "";
 prog_char PROGMEM Text_17[] = "payload";
 prog_char PROGMEM Text_18[] = "accept";
@@ -102,9 +99,9 @@ prog_char PROGMEM Text_20[] = "quintessence";
 prog_char PROGMEM Text_21[] = "payload withoutRelease";
 prog_char PROGMEM Text_22[] = "!******************************************************************************!";
 prog_char PROGMEM Text_23[] = "log.dat";
-prog_char PROGMEM Text_24[] = "Queue: fetching events...";
+prog_char PROGMEM Text_24[] = "Queue: Capturing events...";
 //prog_char PROGMEM Text_25[] = "System=";
-prog_char PROGMEM Text_26[] = "Queue: Processing events...";
+prog_char PROGMEM Text_26[] = "Queue: Processing events...";//???
 prog_char PROGMEM Text_27[] = "Raw/Key"; // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_28[] = "Raw/Hex"; // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_29[] = "Queue: Finished.";//???
@@ -167,7 +164,7 @@ prog_char PROGMEM Cmd_051[]="WiredCalibrate";
 prog_char PROGMEM Cmd_052[]="Lock";
 prog_char PROGMEM Cmd_053[]="Unlock";
 prog_char PROGMEM Cmd_054[]="Status";
-prog_char PROGMEM Cmd_055[]="SendStatus";
+prog_char PROGMEM Cmd_055[]="";
 prog_char PROGMEM Cmd_056[]="AnalyseSettings";
 prog_char PROGMEM Cmd_057[]="OutputIP";
 prog_char PROGMEM Cmd_058[]="OutputIR";
@@ -331,6 +328,8 @@ prog_char PROGMEM Cmd_210[]="Error: Access not allowed.";
 prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
 prog_char PROGMEM Cmd_212[]="Error: SendTo failed.";
 prog_char PROGMEM Cmd_213[]="Error: Timeout on busy Nodo.";
+prog_char PROGMEM Cmd_214[]="Waiting for busy Nodo(s)...";
+prog_char PROGMEM Cmd_215[]="";
 
 // tabel die refereert aan de commando strings
 PROGMEM const char *CommandText_tabel[]={
@@ -355,7 +354,7 @@ PROGMEM const char *CommandText_tabel[]={
   Cmd_180,Cmd_181,Cmd_182,Cmd_183,Cmd_184,Cmd_185,Cmd_186,Cmd_187,Cmd_188,Cmd_189,          
   Cmd_190,Cmd_191,Cmd_192,Cmd_193,Cmd_194,Cmd_195,Cmd_196,Cmd_197,Cmd_198,Cmd_199,          
   Cmd_200,Cmd_201,Cmd_202,Cmd_203,Cmd_204,Cmd_205,Cmd_206,Cmd_207,Cmd_208,Cmd_209,          
-  Cmd_210,Cmd_211,Cmd_212,Cmd_213           
+  Cmd_210,Cmd_211,Cmd_212,Cmd_213,Cmd_214,Cmd_215           
   };          
 
 #endif
@@ -417,7 +416,7 @@ PROGMEM const char *CommandText_tabel[]={
 #define CMD_LOCK                        52
 #define CMD_UNLOCK                      53
 #define CMD_STATUS                      54
-#define CMD_STATUS_SEND                 55
+#define CMD_RES55                       55
 #define CMD_ANALYSE_SETTINGS            56
 #define CMD_TRANSMIT_IP                 57
 #define CMD_TRANSMIT_IR                 58
@@ -584,8 +583,10 @@ PROGMEM const char *CommandText_tabel[]={
 #define MESSAGE_11                     211
 #define MESSAGE_12                     212
 #define MESSAGE_13                     213
-#define LAST_VALUE                     213 // laatste VALUE uit de commando tabel
-#define COMMAND_MAX                    213 // hoogste commando
+#define MESSAGE_14                     214
+#define MESSAGE_15                     215
+#define LAST_VALUE                     215 // laatste VALUE uit de commando tabel
+#define COMMAND_MAX                    215 // hoogste commando
 
 
 // Tabel met zonsopgang en -ondergang momenten. afgeleid van KNMI gegevens midden Nederland.
@@ -605,9 +606,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define GREEN                        2  // Led = Groen
 #define BLUE                         3  // Led = Blauw
 #define BAUD                     19200 // Baudrate voor seriële communicatie.
-#define USER_VARIABLES_MAX          15 // aantal beschikbare gebruikersvariabelen voor de user.
 #define UNIT_MAX                    15 // Hoogst mogelijke unit nummer van een Nodo
-#define MACRO_EXECUTION_DEPTH       10 // maximale nesting van macro's.
 #define SERIAL_TERMINATOR_1       0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>, default voor EventGhost
 #define SERIAL_TERMINATOR_2       0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
 #define Loop_INTERVAL_1              5 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
@@ -638,8 +637,10 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define HW_IR_RX        7
 
 #if NODO_MEGA // Definities voor de Nodo-Mega variant.
+#define MACRO_EXECUTION_DEPTH       10 // maximale nesting van macro's.
 #define INPUT_BUFFER_SIZE          128  // Buffer waar de karakters van de seriele/IP poort in worden opgeslagen.
 #define TIMER_MAX                   15  // aantal beschikbare timers voor de user, gerekend vanaf 1
+#define USER_VARIABLES_MAX          15  // aantal beschikbare gebruikersvariabelen voor de user.
 #define EVENT_QUEUE_MAX             32  // maximaal aantal plaatsen in de queue
 #define PULSE_IRQ                    5  // IRQ verbonden aan de IR_RX_DATA pen 18 van de Mega
 #define PIN_WIRED_IN_1               8  // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
@@ -671,10 +672,11 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define TERMINAL_TIMEOUT           300 // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
 #define COOKIE_REFRESH_TIME         60 // Tijd tussen automatisch verzenden van een nieuw Cookie als de beveiligde HTTP modus is inschakeld.
 
-#else // als het voor de Arduino Uno Nodo variant is
-#define INPUT_BUFFER_SIZE           80 // Buffer waar de karakters van de seriele/IP poort in worden opgeslagen.
+#else // als het voor de Nodo-Mini variant is
+#define MACRO_EXECUTION_DEPTH        4 // maximale nesting van macro's.
 #define TIMER_MAX                    8 // aantal beschikbare timers voor de user, gerekend vanaf 1
-#define EVENT_QUEUE_MAX             16 // maximaal aantal plaatsen in de queue
+#define USER_VARIABLES_MAX           8 // aantal beschikbare gebruikersvariabelen voor de user.
+#define EVENT_QUEUE_MAX              8 // maximaal aantal plaatsen in de queue//???
 #define PULSE_IRQ                    3 // IRQ verbonden aan de IR_RX_DATA pen 3 van de ATMega328 (Uno/Nano/Duemillanove)
 #define RAW_BUFFER_SIZE            160 // Maximaal aantal te ontvangen 128 bits.
 #define EVENTLIST_MAX              100 // aantal events dat de lijst bevat in het EEPROM geheugen. Iedere regel in de eventlist heeft 8 bytes nodig. eerste adres is 0
@@ -752,14 +754,14 @@ boolean WiredInputStatus[WIRED_PORTS];                      // Status van de Wir
 boolean WiredOutputStatus[WIRED_PORTS];                     // Wired variabelen.
 byte DaylightPrevious;                                      // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet.
 byte ExecutionDepth=0;                                      // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's.
-int CookieTimer;                                            // Seconden teller die bijhoudt wanneer er weer een nieuw Cookie naar de WebApp verzonden moet worden.
 void(*Reset)(void)=0;                                       // reset functie op adres 0.
 uint8_t RFbit,RFport,IRbit,IRport;                          // t.b.v. verwerking IR/FR signalen.
-uint8_t MD5HashCode[16];                                    // tabel voor berekenen van MD5 hash codes t.b.v. uitwisselen wachtwoord EventGhost.
 int UserVar[USER_VARIABLES_MAX];                            // Gebruiks variabelen
 unsigned long HW_Config=0;                                  // Hardware configuratie zoals gedetecteerd door de Nodo. 
 
 #if NODO_MEGA
+uint8_t MD5HashCode[16];                                    // tabel voor berekenen van MD5 hash codes t.b.v. uitwisselen wachtwoord EventGhost.
+int CookieTimer;                                            // Seconden teller die bijhoudt wanneer er weer een nieuw Cookie naar de WebApp verzonden moet worden.
 char TempString[INPUT_BUFFER_SIZE+2];                       // Globale, tijdelijke string voor algemeen gebruik in diverste functies. 
 int TerminalConnected=0;                                    // Vlag geeft aan of en hoe lang nog (seconden) er verbinding is met een Terminal.
 boolean ConfirmHTTP=false;                                  // Als true, dan wordt een output naar Serial/Telnet eveneens per regel verzonden als HTTP-requenst  

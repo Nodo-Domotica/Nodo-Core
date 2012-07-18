@@ -1,35 +1,35 @@
 
  /*********************************************************************************************\
  * wachtloop die wordt afgebroken als:
- * - tijd <QueueTime> is verstreken na laatst ontvangen event
- * - alle Nodo's na een "Busy On" ook weer een "Busy Off" hebben verzonden. (Als WaitForBusyNodo==true)
- * - de Nodo expliciet een "Queue Off" opdracht krijgt toegezonden.
- * - Opgegeven <BreakEvent> voorbij is gekomen.
- * - Timeout opgetreden. In dit geval geeft deze funktie een <false> terug.
+ * - <Timeout> seconden zijn voorbij. In dit geval geeft deze funktie een <false> terug.
+ * - <QueueTime> opgegeven en tijd is verstreken na laatst ontvangen event
+ * - <BreakNoBusyNodo>==true en alle Nodo's na een "Busy On" ook weer een "Busy Off" hebben verzonden.
+ * - <BreakEvent> is opgegeven en dit event is ontvangen.
+ * - de Nodo expliciet een "Queue Off" opdracht heeft ontvangen.
  \*********************************************************************************************/
-boolean WaitAndQueue(int QueueTime, boolean WaitForBusyNodo, unsigned long BreakEvent)
+boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEvent)
   {
-  unsigned long QueueTimeTimer=millis() + (unsigned long)(QueueTime)*1000;
-  unsigned long TimeoutTimer=millis() + 60000L;
+  unsigned long TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
   unsigned long TimeoutMinTimer=millis() + 500L; // deze timer nodig omdat de RF ontvangers na inschakelen tijd nodig hebben om signaal te kunnen ontvangen. Zolang blijft de loop minimaal lopen.
   unsigned long Event;
   int Port,x,y,z;
-  boolean QueueMessage=false;
   
   Led(BLUE);
   
+  #if NODO_MEGA
+  if(S.Debug==VALUE_ON)
+    PrintTerminal(ProgmemString(Text_24));
+  #endif
+
   while(TimeoutTimer>millis())
     {
     if(GetEvent_IRRF(&Event,&Port))
       {
+      TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
       #if NODO_MEGA
-      if(S.Debug==VALUE_ON && !QueueMessage)
-        {
-        PrintTerminal(ProgmemString(Text_24));
-        QueueMessage=true;
-        }
+      if(S.Debug==VALUE_ON)
+          PrintEvent(Event,Port,VALUE_DIRECTION_INPUT);
       #endif
-      PrintEvent(Event,Port,VALUE_DIRECTION_INPUT);
 
       if(BreakEvent!=0 && Event==BreakEvent)
         break;
@@ -39,26 +39,27 @@ boolean WaitAndQueue(int QueueTime, boolean WaitForBusyNodo, unsigned long Break
       z=(byte)((Event>>8)&0xff); // par1
       
       if(x==CMD_BUSY) // command
-        NodoBusy(Event);          
+        {
+        NodoBusy(Event,false);          
+        
+        if(BreakNoBusyNodo && NodoBusyStatus==0)
+          break; // Geen Busy Nodo meer
+        }
         
       else if(x==CMD_QUEUE) // command
         {
         if(y==S.Unit) // Als commando voor deze unit bestemd
           {
           if(z==VALUE_OFF) // Par1
-            break;
+            break;// Queue Off commando ontgangen.
           }
         }
   
       // Het is geen Busy event of Queue commando event, dan deze in de queue plaatsen.
-
-#if NODO_MEGA
-      // Sla event op in de queue. De Nodo-Mega slaat de queue op SDCard op.
+      #if NODO_MEGA
       else
-        {
-        AddFileSDCard(ProgmemString(Text_15),int2str(Event));
-        }
-#else
+        AddFileSDCard(ProgmemString(Text_15),int2str(Event));       // Sla event op in de queue. De Nodo-Mega slaat de queue op SDCard op.
+      #else
       // sla event op in de queue. De Nodo-Mini heeft de queue is een kleine array <QueueEvent> staan.
       else if(QueuePos<EVENT_QUEUE_MAX)
         {
@@ -68,60 +69,67 @@ boolean WaitAndQueue(int QueueTime, boolean WaitForBusyNodo, unsigned long Break
         }       
       else
         RaiseMessage(MESSAGE_04);    
-#endif
-
+      #endif
       }    
-
-    if(WaitForBusyNodo)
-      {
-      if(NodoBusyStatus==0 && TimeoutMinTimer<millis())
-        break;
-      }
-    else
-      {
-      if(QueueTime>0 && QueueTimeTimer<millis())
-        break;
-      }
     }   
 
-  if(TimeoutTimer<millis())
-    {
-    RaiseMessage(MESSAGE_13);
-
-    #if NODO_MEGA
-    // Geef weer op welke Nodo(s) de timeout heeft plaatsgevonden
-    strcpy(TempString, ProgmemString(Text_06));
-    if(S.Debug==VALUE_ON)
-      {
-      for(x=1;x<=UNIT_MAX;x++)
-        {
-        strcat(TempString, int2str(x));  
-        strcat(TempString, ", ");         
-        }
-      }
-    PrintTerminal(TempString);
-    #endif
-    NodoBusyStatus=0;
+  if(TimeoutTimer<=millis())
     return false;
-    }
+
   return true;
   }
   
 
  /*********************************************************************************************\
- *
+ * Controleert of er een Nodo busy is.
+ * <Event> event t.b.v. actualiseren status.
+ * <Wait> als true, dan wordt gewacht tot alle Nodo vrij zijn.
+ * geeft een true terug als er nog een Nodo busy is.
  \*********************************************************************************************/
-boolean NodoBusy(unsigned long Event)
+boolean NodoBusy(unsigned long Event, boolean Wait)
   {
+  int PreviousNodoBusyStatus=NodoBusyStatus;
   
-  // Check of het event een Busy xxx event is en zet de betreffende status van de Nodo
-  if(((Event>>16)&0xff)==CMD_BUSY) // command
+  if(Event)
     {
-    if(((Event>>8)&0xff)==VALUE_ON) // Par1
-      NodoBusyStatus  |=  (1<<((Event>>24)&0xf)); // unit nummer
-    else
-      NodoBusyStatus  &= ~(1<<((Event>>24)&0xf)); // unit nummer
+    // Check of het event een Busy xxx event is en zet de betreffende status van de Nodo
+    if(((Event>>16)&0xff)==CMD_BUSY) // command
+      {
+      if(((Event>>8)&0xff)==VALUE_ON) // Par1
+        NodoBusyStatus  |=  (1<<((Event>>24)&0xf)); // unit nummer
+      else
+        NodoBusyStatus  &= ~(1<<((Event>>24)&0xf)); // unit nummer
+      }
     }
+
+  if(Wait && NodoBusyStatus!=0)
+    {
+    #if NODO_MEGA
+    // Geef weer op welke Nodo(s) de timeout heeft plaatsgevonden
+    strcpy(TempString, ProgmemString(Text_06));
+    for(byte x=1;x<=UNIT_MAX;x++)
+      {
+      if((NodoBusyStatus>>x)&0x1)
+        {
+        strcat(TempString, int2str(x));  
+        strcat(TempString, "  ");         
+        }
+      }
+    PrintTerminal(TempString);
+//???    TransmitCode(command2event(S.Unit, CMD_MESSAGE ,MESSAGE_14,0),VALUE_SOURCE_HTTP);// geen RaiseMessage() anders weer poging om te loggen naar SDCard ==> oneindige loop
+    #endif
+
+    if(!WaitAndQueue(30,true,0))
+      {
+      RaiseMessage(MESSAGE_13);
+      NodoBusyStatus=0;
+      }
+    }
+
+  // Als de laatste Nodo vrij is, dan een korte pause zodat zeker alle ontvangers weer paraat staan
+  if(NodoBusyStatus==0 && NodoBusyStatus!=PreviousNodoBusyStatus)
+    delay(500);
+
   return NodoBusyStatus!=0;
   }
 
@@ -401,9 +409,9 @@ void ResetFactory(void)
   S.TransmitRepeatIR           = TX_REPEATS;
   S.TransmitRepeatRF           = TX_REPEATS;
   S.SendBusy                   = VALUE_OFF;
-  S.WaitBusy                   = VALUE_OFF;
-  S.WaitFreeRF_Delay           = 2*(S.Unit!=1) + S.Unit;
-  S.WaitFreeRF_Window          = 2*(S.Unit!=1); // 1 eenheid = 100 ms.
+  S.WaitBusy                   = VALUE_ON;
+  S.WaitFreeRF_Delay           = (S.Unit!=1)?S.Unit:0;
+  S.WaitFreeRF_Window          = (S.Unit!=1)?1:0; // 1 eenheid = 100 ms.
   S.WaitFreeRF_Window          = 0;
   S.WaitFreeRF_Delay           = 0;
   S.DaylightSaving             = Time.DaylightSaving;
@@ -497,15 +505,15 @@ void FactoryEventlist(void)
  * be larger than HP or you'll be in big trouble! The smaller the gap, the more
  * careful you need to be. Julian Gall 6-Feb-2009.
  */
-//uint8_t *heapptr, *stackptr;
-//void FreeMemory(int x) 
-//  {
-//  stackptr = (uint8_t *)malloc(4);          // use stackptr temporarily
-//  heapptr = stackptr;                     // save value of heap pointer
-//  free(stackptr);      // free up the memory again (sets stackptr to 0)
-//  stackptr =  (uint8_t *)(SP);           // save value of stack pointer
-//  Serial.print("*** debug: Free RAM (");Serial.print(x,DEC);Serial.print(")=");Serial.println(stackptr-heapptr,DEC);
-//  }
+uint8_t *heapptr, *stackptr;
+void FreeMemory(int x) 
+  {
+  stackptr = (uint8_t *)malloc(4);          // use stackptr temporarily
+  heapptr = stackptr;                     // save value of heap pointer
+  free(stackptr);      // free up the memory again (sets stackptr to 0)
+  stackptr =  (uint8_t *)(SP);           // save value of stack pointer
+  Serial.print("*** debug: Free RAM (");Serial.print(x,DEC);Serial.print(")=");Serial.println(stackptr-heapptr,DEC);
+  }
 
 
  /**********************************************************************************************\
@@ -949,6 +957,186 @@ boolean Eventlist_Read(int address, unsigned long *Event, unsigned long *Action)
     return(true);
   }
 
+
+void RaiseMessage(byte MessageCode)
+  {
+  unsigned long eventcode;
+  eventcode=command2event(S.Unit,CMD_MESSAGE, S.Unit, MessageCode);
+  PrintEvent(eventcode,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM);  // geef event weer op Serial
+  TransmitCode(eventcode,VALUE_ALL);
+  }
+    
+
+ /**********************************************************************************************\
+ * Stuur de RGB-led.
+ *
+ * Voor de Nodo geldt:
+ *
+ * Groen = Nodo in rust en wacht op een event.
+ * Rood = Nodo verwerkt event of commando.
+ * Blauw = Bijzondere modus Nodo waarin Nodo niet in staat is om events te ontvangen of genereren.
+ \*********************************************************************************************/
+void Led(byte Color)
+  {
+  digitalWrite(PIN_LED_RGB_R,Color==RED);
+  digitalWrite(PIN_LED_RGB_B,Color==BLUE);
+#if NODO_MEGA
+  digitalWrite(PIN_LED_RGB_G,Color==GREEN);
+#endif
+  }
+  
+void PulseCounterISR()
+   {
+   // in deze interrupt service routine staat millis() stil. Dit is echter geen bezwaar voor de meting.
+   PulseTime=millis()-PulseTimePrevious;
+   PulseTimePrevious=millis();
+   PulseCount++;   
+   }     
+
+#if NODO_MEGA
+ /**********************************************************************************************\
+ * Voeg een regel toe aan de logfile.
+ \*********************************************************************************************/
+boolean AddFileSDCard(char *FileName, char *Line)
+  {
+  boolean r;
+
+  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+  digitalWrite(Ethernetshield_CS_W5100, HIGH);
+  digitalWrite(EthernetShield_CS_SDCard,LOW);
+
+  File LogFile = SD.open(FileName, FILE_WRITE);
+  if(LogFile) 
+    {
+    r=true;
+    LogFile.write((uint8_t*)Line,strlen(Line));      
+    LogFile.write('\n'); // nieuwe regel
+    LogFile.close();
+    }
+  else 
+    r=false;
+
+  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip
+  digitalWrite(EthernetShield_CS_SDCard,HIGH);
+  digitalWrite(Ethernetshield_CS_W5100, LOW);
+  
+  return r;
+  }
+
+ /**********************************************************************************************\
+ * Voeg een regel toe aan de logfile.
+ \*********************************************************************************************/
+boolean SaveEventlistSDCard(char *FileName)
+  {
+  int x;
+  boolean r=true;
+  
+  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+  digitalWrite(Ethernetshield_CS_W5100, HIGH);
+  digitalWrite(EthernetShield_CS_SDCard,LOW);
+
+  SD.remove(FileName); // eerst bestand wissen, anders wordt de data toegevoegd
+
+  File EventlistFile = SD.open(FileName, FILE_WRITE);
+  if(EventlistFile) 
+    {
+    strcpy(TempString,cmd2str(CMD_EVENTLIST_ERASE));
+    EventlistFile.write((uint8_t*)TempString,strlen(TempString));      
+    EventlistFile.write('\n'); // nieuwe regel
+
+    for(x=1;x<=EVENTLIST_MAX;x++)
+      {
+      if(EventlistEntry2str(x,0,TempString,true))
+        {
+        EventlistFile.write((uint8_t*)TempString,strlen(TempString));      
+        EventlistFile.write('\n'); // nieuwe regel
+        }
+      }
+    EventlistFile.close();
+    }
+  else 
+    {
+    r=false; // niet meer weer proberen weg te schrijven.
+    TransmitCode(command2event(S.Unit,CMD_MESSAGE,MESSAGE_03,0),VALUE_ALL);
+    }
+
+  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip
+  digitalWrite(Ethernetshield_CS_W5100, LOW);
+  digitalWrite(EthernetShield_CS_SDCard,HIGH);
+
+  return r;
+  }
+
+
+boolean FileList(void)
+  { 
+  boolean x=false;
+  File root;
+  File entry;
+
+  PrintTerminal(ProgmemString(Text_22));
+  digitalWrite(Ethernetshield_CS_W5100, HIGH);
+  digitalWrite(EthernetShield_CS_SDCard,LOW);
+
+  if(root = SD.open("/"))
+    {
+    root.rewindDirectory();
+    while(entry = root.openNextFile())
+      {
+      if(!entry.isDirectory())
+        {
+        digitalWrite(EthernetShield_CS_SDCard,HIGH);
+        digitalWrite(Ethernetshield_CS_W5100, LOW);
+
+        strcpy(TempString,entry.name());
+        TempString[StringFind(TempString,".")]=0;
+        PrintTerminal(TempString);
+
+        digitalWrite(Ethernetshield_CS_W5100, HIGH);
+        digitalWrite(EthernetShield_CS_SDCard,LOW);
+        }
+      }
+    root.close();
+    entry.close();
+    x=true;
+    }
+  digitalWrite(EthernetShield_CS_SDCard,HIGH);
+  digitalWrite(Ethernetshield_CS_W5100, LOW);
+  PrintTerminal(ProgmemString(Text_22));
+  
+  return x;
+  }
+  
+  
+ /**********************************************************************************************\
+ * Geeft een string terug met een cookie op basis van een random HEX-waarde van 32-bit.
+ \*********************************************************************************************/
+void RandomCookie(char* Ck)
+  {
+  byte  x,y;
+  
+  for(x=0;x<8;x++)
+    {
+    y=random(0x0, 0xf);
+    Ck[x]=y<10?(y+'0'):((y-10)+'A');
+    }
+  Ck[8]=0; // afsluiten string
+  }
+      
+      
+ /*********************************************************************************************\
+ * Op het Ethernetshield kunnen de W5100 chip en de SDCard niet gelijktijdig worden gebruikt
+ * Deze funktie zorgt voor de juiste chipselect. Default wordt in de Nodo software uitgegaan dat
+ * de ethernetchip W5100 is geselecteerd. Met deze routine kan de SDCard worden geselecteerd.
+ * input: true = SD_Card geselecteerd.
+ \*********************************************************************************************/
+void SelectSD(byte sd)
+  {
+  digitalWrite(Ethernet_shield_CS_W5100, sd);
+  digitalWrite(Ethernet_shield_CS_SDCard,!sd);
+  }
+
+
 /*********************************************************************************************\
 * Funties op dit tabblad worden gebruikt voor het genereren van een MD5-hascode
 * voor het veilig kunnen checken van een wachtwoord.
@@ -1131,185 +1319,6 @@ void md5(char* dest)
   dest[y]=0;
 
   free(Str);
-  }
-
-
-void RaiseMessage(byte MessageCode)
-  {
-  unsigned long eventcode;
-  eventcode=command2event(S.Unit,CMD_MESSAGE, S.Unit, MessageCode);
-  PrintEvent(eventcode,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM);  // geef event weer op Serial
-  TransmitCode(eventcode,VALUE_ALL);
-  }
-    
-
- /**********************************************************************************************\
- * Stuur de RGB-led.
- *
- * Voor de Nodo geldt:
- *
- * Groen = Nodo in rust en wacht op een event.
- * Rood = Nodo verwerkt event of commando.
- * Blauw = Bijzondere modus Nodo waarin Nodo niet in staat is om events te ontvangen of genereren.
- \*********************************************************************************************/
-void Led(byte Color)
-  {
-  digitalWrite(PIN_LED_RGB_R,Color==RED);
-  digitalWrite(PIN_LED_RGB_B,Color==BLUE);
-#if NODO_MEGA
-  digitalWrite(PIN_LED_RGB_G,Color==GREEN);
-#endif
-  }
-  
-void PulseCounterISR()
-   {
-   // in deze interrupt service routine staat millis() stil. Dit is echter geen bezwaar voor de meting.
-   PulseTime=millis()-PulseTimePrevious;
-   PulseTimePrevious=millis();
-   PulseCount++;   
-   }     
-
-#if NODO_MEGA
- /**********************************************************************************************\
- * Voeg een regel toe aan de logfile.
- \*********************************************************************************************/
-boolean AddFileSDCard(char *FileName, char *Line)
-  {
-  boolean r;
-
-  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-  digitalWrite(Ethernetshield_CS_W5100, HIGH);
-  digitalWrite(EthernetShield_CS_SDCard,LOW);
-
-  File LogFile = SD.open(FileName, FILE_WRITE);
-  if(LogFile) 
-    {
-    r=true;
-    LogFile.write((uint8_t*)Line,strlen(Line));      
-    LogFile.write('\n'); // nieuwe regel
-    LogFile.close();
-    }
-  else 
-    r=false;
-
-  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip
-  digitalWrite(EthernetShield_CS_SDCard,HIGH);
-  digitalWrite(Ethernetshield_CS_W5100, LOW);
-  
-  return r;
-  }
-
- /**********************************************************************************************\
- * Voeg een regel toe aan de logfile.
- \*********************************************************************************************/
-boolean SaveEventlistSDCard(char *FileName)
-  {
-  int x;
-  boolean r=true;
-  
-  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-  digitalWrite(Ethernetshield_CS_W5100, HIGH);
-  digitalWrite(EthernetShield_CS_SDCard,LOW);
-
-  SD.remove(FileName); // eerst bestand wissen, anders wordt de data toegevoegd
-
-  File EventlistFile = SD.open(FileName, FILE_WRITE);
-  if(EventlistFile) 
-    {
-    strcpy(TempString,cmd2str(CMD_EVENTLIST_ERASE));
-    EventlistFile.write((uint8_t*)TempString,strlen(TempString));      
-    EventlistFile.write('\n'); // nieuwe regel
-
-    for(x=1;x<=EVENTLIST_MAX;x++)
-      {
-      if(EventlistEntry2str(x,0,TempString,true))
-        {
-        EventlistFile.write((uint8_t*)TempString,strlen(TempString));      
-        EventlistFile.write('\n'); // nieuwe regel
-        }
-      }
-    EventlistFile.close();
-    }
-  else 
-    {
-    r=false; // niet meer weer proberen weg te schrijven.
-    TransmitCode(command2event(S.Unit,CMD_MESSAGE,MESSAGE_03,0),VALUE_ALL);
-    }
-
-  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip
-  digitalWrite(Ethernetshield_CS_W5100, LOW);
-  digitalWrite(EthernetShield_CS_SDCard,HIGH);
-
-  return r;
-  }
-
-
-boolean FileList(void)
-  { 
-  boolean x=false;
-  File root;
-  File entry;
-
-  PrintTerminal(ProgmemString(Text_22));
-  digitalWrite(Ethernetshield_CS_W5100, HIGH);
-  digitalWrite(EthernetShield_CS_SDCard,LOW);
-
-  if(root = SD.open("/"))
-    {
-    root.rewindDirectory();
-    while(entry = root.openNextFile())
-      {
-      if(!entry.isDirectory())
-        {
-        digitalWrite(EthernetShield_CS_SDCard,HIGH);
-        digitalWrite(Ethernetshield_CS_W5100, LOW);
-
-        strcpy(TempString,entry.name());
-        TempString[StringFind(TempString,".")]=0;
-        PrintTerminal(TempString);
-
-        digitalWrite(Ethernetshield_CS_W5100, HIGH);
-        digitalWrite(EthernetShield_CS_SDCard,LOW);
-        }
-      }
-    root.close();
-    entry.close();
-    x=true;
-    }
-  digitalWrite(EthernetShield_CS_SDCard,HIGH);
-  digitalWrite(Ethernetshield_CS_W5100, LOW);
-  PrintTerminal(ProgmemString(Text_22));
-  
-  return x;
-  }
-  
-  
- /**********************************************************************************************\
- * Geeft een string terug met een cookie op basis van een random HEX-waarde van 32-bit.
- \*********************************************************************************************/
-void RandomCookie(char* Ck)
-  {
-  byte  x,y;
-  
-  for(x=0;x<8;x++)
-    {
-    y=random(0x0, 0xf);
-    Ck[x]=y<10?(y+'0'):((y-10)+'A');
-    }
-  Ck[8]=0; // afsluiten string
-  }
-      
-      
- /*********************************************************************************************\
- * Op het Ethernetshield kunnen de W5100 chip en de SDCard niet gelijktijdig worden gebruikt
- * Deze funktie zorgt voor de juiste chipselect. Default wordt in de Nodo software uitgegaan dat
- * de ethernetchip W5100 is geselecteerd. Met deze routine kan de SDCard worden geselecteerd.
- * input: true = SD_Card geselecteerd.
- \*********************************************************************************************/
-void SelectSD(byte sd)
-  {
-  digitalWrite(Ethernet_shield_CS_W5100, sd);
-  digitalWrite(Ethernet_shield_CS_SDCard,!sd);
   }
   
 #endif
