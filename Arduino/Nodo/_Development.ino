@@ -1,7 +1,7 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- Status en SendStatus uitgebreid met optie EventlistCount. Geeft aantal bezette regels
+- Status uitgebreid met optie EventlistCount. Geeft aantal bezette regels
 - SendTo aangepast
 - Commando lock voorzien van code o.b.v. ingestelde wachtwoord. (Na veranderen wachtwoord zal de lock verdwijnen)
 - Prompt in Terminal venster wordt nu weergegeven NADAT verwerking plaats heeft gevonden
@@ -9,30 +9,28 @@ Aanpassingen:
 - SendKAKU bug in vorige build hersteld
 - Datum / Tijd wordt in Terminalvenster niet meer weergegeven. Nog wel in LOG.DAT
 - nieuw commando Echo <on/off> voor terugsturen ingevoerde tekens terminalprogramma
+- WildCard uitgebreid met Message en Boot events.
+- Status en SendStatus geintegreerd. Resultaat wordt altijs alleen naar de bron verstuurd.
+- Mini: aantal variabelen terug gebracht naar 8
+- Mini: Nesting diepte teruggebracht naar 4
+- Mini: queue voor opvangen events 8 events.
+- WaitBusy staat default op <On>
+- mega: Queue op SDCard. Geen limiet voor aantal events dat kan worden opgevangen in de queue tijdens wachten
+- SendTo naar niet bestaand unitnummer geeft hit op andere Nodo
+- onderdrukking repeated ontvangen van events via RF aangepast
 
 Known Errors / ToDo:
-
-- werkt logging naar SDCard nog goed.
-- mega: Queue op SDCard.
-- 1e van sendstatus wordt gemist na sendto.
-- SendTo settings out-of-the box
-- status en sendstatus: integreren en sturen maar de bron.
 - blokkeren rf en ir bij een filewrite
-- sdcard toegang via ftp.
-- Sendbusy naar niet bestaand unitnummer geeft hit op andere Nodo
-- >Busy< events automatisch na een reset voor een slave of in routine opnemen?
-- komt er na 60sec wel een melding als >busy off< uitblijft?
-- soms wacht master onnodig terwijl een >busy off< wel is binnengekomen.(als unit master=1. WaitFreeRF?)
-
+- Calibratie voor sensoren met negatief coefficient (Melding Martin)
 - In Executeline afgevangen commando worden niet gelogt op SDCard.
-- Waitbusy implementeren
-- Boot event wordt weergegeven met system=system
-- Calibrate met negatief coefficient schijnt niet goed te werken.
-- EventList 7; WildCard All,UserEvent; SendEvent HTTP => er uit of alternatief
 
 Aanpassingen t.o.v. Nodo Due:
+- WaitBusy staat default op <On>
+- WildCard uitgebreid met Message en Boot events.
+- mega: Queue op SDCard. Geen limiet voor aantal events dat kan worden opgevangen in de queue tijdens wachten
+- Status en SendStatus geintegreerd. Resultaat wordt altijs alleen naar de bron verstuurd.
 - nieuw commando Echo <on/off> voor terugsturen ingevoerde tekens terminalprogramma
-- Status en SendStatus uitgebreid met optie "EventlistCount". Geeft aantal bezette regels
+- Status uitgebreid met optie "EventlistCount". Geeft aantal bezette regels
 - Nieuw commando "ClientIP" toegevoegd. Aanvaard alleen HTTP-Requests en EventGhst events van opgegeven IP adres.
 - Commando "Divert" vervallen. Nieuw commando "SendTo" voor versturen van een commandoregel via RF naar een andere Nodo
 - Nieuw commando voor in eventlist "BreakOnDaylight". 
@@ -52,7 +50,6 @@ Aanpassingen t.o.v. Nodo Due:
 - Aanpassing "WiredSmittTrigger": invoer analoge decimale waarde. 
 - Aanpassing "WiredTreshold": invoer analoge decimale waarde.
 - Eventlist uitgebreid van 120 posities naar 256
-- queue voor opvangen events tijdens delay van 15 uitgebreid naar 32 events.
 - Welkomsttekst uitgebreid met de IP-settings
 - Welkomsttekst uitgebreid met melding logging naar SDCard.
 - Toevoeging commando "Reboot"
@@ -105,3 +102,4 @@ Aanpassingen t.o.v. Nodo Due:
 - Nieuw commando: "VariablePulse <variable>, <'Count'>". Variabele vullen met gemeten pulstijd of aantal pulsen. 
 - LET OP: weergave naar Serial pas nadat er tekens via serial zijn ontvangen. Voorkomt zinloze tijdsbesteding als er geen serial aangesloten is!
 - Nieuw commando: BreakOnLater en BreakOnEarlier
+

@@ -5,17 +5,13 @@
 void ProcessQueue(void)
   {
   byte x;
+  int y;
 
   if(QueuePos)
     {
     #if NODO_MEGA
     PrintTerminal(ProgmemString(Text_26));
     #endif
-
-    // alvorens de queue leeg te draaien eerst wachten op vrije ether omdat de master nodo nog bezig kan zijn met verzending en
-    // een eventueel RF commando niet op de master kan aankomen.
-    if(S.WaitFreeRF_Delay==0 && S.WaitFreeRF_Window==0)
-      WaitFreeRF(0,50);
 
     for(x=0;x<QueuePos;x++)
       {
@@ -31,6 +27,38 @@ void ProcessQueue(void)
       }
     QueuePos=0;
     }
+
+  // de Mega Nodo heeft nog een extra queue faciliteit: bestand queue.dat op SDCard
+  #if NODO_MEGA
+  char *TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  unsigned long Event;
+
+  SelectSD(true);
+  strcpy(TmpStr,ProgmemString(Text_15));
+  File dataFile=SD.open(TmpStr);
+  if(dataFile)
+    {
+    y=0;       
+    while(dataFile.available())
+      {
+      x=dataFile.read();
+      if(isprint(x) && y<INPUT_BUFFER_SIZE)
+        TmpStr[y++]=x;
+      else
+        {
+        TmpStr[y]=0;
+        y=0;
+        SelectSD(false);      
+        ProcessEvent2(str2int(TmpStr),VALUE_DIRECTION_INPUT,VALUE_SOURCE_FILE,0,0);      // verwerk binnengekomen event.
+        SelectSD(true);
+        }
+      }
+    dataFile.close();
+    SD.remove(ProgmemString(Text_15));
+    }  
+  free(TmpStr);
+  SelectSD(false);
+  #endif
   }
 
  /**********************************************************************************************\
@@ -72,6 +100,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
 
   if(BusyOnSent)
     {
+    delay(100); // anders volgt de <Busy Off> te snel en wordt deze mogelijk gemist door de master.
     TransmitCode(command2event(S.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
     BusyOnSent=false;
     }
@@ -95,7 +124,7 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
         case CMD_TRANSMIT_QUEUE:      // anders kan de Nodo niets ontvangen
         case CMD_LOCK:                // om weer te kunnen unlocken
         case CMD_USEREVENT:           // Noodzakelijk voor uitwisseling userevents tussen Nodo.
-        case CMD_STATUS_SEND:         // uitvragen status is onschuldig en kan handig zijn.
+        case CMD_STATUS:              // uitvragen status is onschuldig en kan handig zijn.
         case CMD_BUSY:                // Busy status nodig voor verwerking
         case CMD_MESSAGE:             // Voorkomt dat een message van een andere Nodo een error genereert
         case CMD_BOOT_EVENT:          // Voorkomt dat een boot van een adere Nodo een error genereert
@@ -108,23 +137,10 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
       }
     }
 
-  if(Cmd==CMD_BUSY) // ??? verhuizen naar Commands?
-    NodoBusy(IncommingEvent);          
-
-  // er is een verzoek ontvangen om de queue te vullen. 
-  if(Cmd==CMD_TRANSMIT_QUEUE) //??? verhuizen naar Commands?
+  if((IncommingEvent&0xffff0000) == command2event(S.Unit,CMD_TRANSMIT_QUEUE,0,0))
     {
-    if(QueueReceive(Par1,Par2))
-      {
-      if(S.SendBusy==VALUE_ALL && !BusyOnSent)
-        {
-//???@1        Nodo_2_RawSignal(command2event(S.Unit,CMD_BUSY,VALUE_ON,0));
-//        RawSendRF();
-        TransmitCode(command2event(S.Unit,CMD_BUSY,VALUE_ON,0),VALUE_ALL);
-        BusyOnSent=true;
-        }
-      }
-    else
+    // Er is een verzoek ontvangen om de queue te vullen. 
+    if(!QueueReceive(Par1,Par2))
       {
       RaiseMessage(MESSAGE_12);
       return false;
@@ -134,6 +150,8 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
   // print regel. Als Debug aan, dan alle regels die vanuit de eventlist worden verwerkt weergeven
   if(ExecutionDepth==0 || S.Debug==VALUE_ON)
     PrintEvent(IncommingEvent,Direction,Port);  // geef event weer op Serial
+
+  NodoBusy(IncommingEvent,true);          
 
   if(ExecutionDepth++>=MACRO_EXECUTION_DEPTH)
     {
@@ -214,10 +232,7 @@ boolean CheckEventlist(unsigned long Code,byte Port)
     {
     Eventlist_Read(x,&Event,&Action);
     if(CheckEvent(Code,Event,Port))
-      {
       return true; // match gevonden
-      
-      }
     }
   return false;
   }
@@ -266,9 +281,10 @@ boolean CheckEvent(unsigned long Event, unsigned long MacroEvent, byte Port)
 
     switch(Command) // Command deel van binnengekomen event.
       {
+      case CMD_BOOT_EVENT:
+      case CMD_MESSAGE:  
       case CMD_KAKU:
       case CMD_KAKU_NEW:
-      case CMD_MESSAGE:
       case CMD_USEREVENT:
         x=Command;
         break;

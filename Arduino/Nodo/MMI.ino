@@ -16,6 +16,13 @@ void PrintEvent(unsigned long Content, byte Direction, byte Port )
   {
   byte x;
 
+  // Commando niet om weer te geven voor de gebruiker
+  switch((Content>>16)&0xff)// Cmd
+    {
+    case CMD_TRANSMIT_QUEUE:
+      return;
+    }
+
   TempString[0]=0; // als start een lege string
     
   // Geef de richting van de communicatie weer
@@ -88,6 +95,7 @@ void PrintEvent(unsigned long Content, byte Direction, byte Port )
  \*********************************************************************************************/
 void PrintEvent(unsigned long Content, byte Direction, byte Port)
   {
+  FreeMemory(0);
   Serial.print(Direction);
   Serial.print(",");
   Serial.print(Port); //??? Debug
@@ -264,7 +272,6 @@ char* Event2str(unsigned long Code)
       case CMD_TRANSMIT_IR:
       case CMD_TRANSMIT_RF:
       case CMD_STATUS:
-      case CMD_STATUS_SEND:
         P1=P_TEXT;
         P2=P_VALUE;
         break;

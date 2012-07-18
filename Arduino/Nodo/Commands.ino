@@ -76,7 +76,6 @@ byte CommandError(unsigned long Content)
     case CMD_CLOCK_EVENT_FRI:
     case CMD_CLOCK_EVENT_SAT:
     case CMD_STATUS:
-    case CMD_STATUS_SEND:
     case CMD_DELAY:
     case CMD_SOUND: 
     case CMD_USEREVENT:
@@ -315,7 +314,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       z=UserVar[y-1]+x;
       if(abs(z)<=10000)
         UserVar[y-1]+=x;
-      ProcessEvent(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      ProcessEvent2(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;        
 
     case CMD_VARIABLE_DEC: 
@@ -323,7 +322,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       z=UserVar[y-1]-x;
       if(abs(z)<=10000)
         UserVar[y-1]-=x;
-      ProcessEvent(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      ProcessEvent2(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;        
 
     case CMD_VARIABLE_SAVE:   
@@ -349,14 +348,14 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       for(y;y<=z;y++)
         {
         UserVar[y-1]=x;
-        ProcessEvent(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+        ProcessEvent2(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
         }
       break;        
   
   
     case CMD_WIREDANALOG_VARIABLE:
       UserVar[Par1-1]=map(analogRead(PIN_WIRED_IN_1+Par2-1),S.WiredInput_Calibration_IL[Par2-1],S.WiredInput_Calibration_IH[Par2-1],S.WiredInput_Calibration_OL[Par2-1],S.WiredInput_Calibration_OH[Par2-1]);
-      ProcessEvent(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      ProcessEvent2(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;
 
     case CMD_PULSE_VARIABLE:
@@ -406,12 +405,12 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         }        
       if(abs(a)<=10000)
         UserVar[Par1-1]=(int)a;
-      ProcessEvent(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      ProcessEvent2(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;
 
     case CMD_VARIABLE_VARIABLE:
       UserVar[Par1-1]=UserVar[Par2-1];
-      ProcessEvent(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      ProcessEvent2(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;        
 
     case CMD_BREAK_ON_VAR_EQU:
@@ -598,11 +597,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       SaveSettings();
       break;
 
-//    case CMD_RAWSIGNAL_COPY:
-//      if(Par1==VALUE_RF_2_IR)CopySignalRF2IR(Par2);      
-//      if(Par1==VALUE_IR_2_RF)CopySignalIR2RF(Par2);
-//      break;        
-
     case CMD_SENDBUSY:
       if(Par1==VALUE_ALL)
         {// All
@@ -700,14 +694,15 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;                  
 
     case CMD_STATUS:
-      Status(Par1, Par2, false);
-      break;
-
-    case CMD_STATUS_SEND:
-      if(Par1==0)
-        TransmitCode(command2event(S.Unit, CMD_MESSAGE ,S.Unit,MESSAGE_00),VALUE_ALL);        
+      if(Src==VALUE_SOURCE_HTTP || Src==VALUE_SOURCE_SERIAL)
+        Status(Par1, Par2, false);
       else
-        Status(Par1, Par2, true);
+        {
+        if(Par1==0)
+          TransmitCode(command2event(S.Unit, CMD_MESSAGE ,S.Unit,MESSAGE_00),Src);        
+        else
+          Status(Par1, Par2, true);
+        }
       break;
 
     case CMD_UNIT:
@@ -832,10 +827,11 @@ void ExecuteLine(char *Line, byte Port)
   int Error=0,Par1,Par2,Cmd;
   byte State_EventlistWrite=0;
   unsigned long v,event,a;
-  static unsigned long PreviousSendTo; 
   byte SendTo=0; // Als deze waarde ongelijk aan nul, dan wordt het commando niet uitgevoerd maar doorgestuurd naar de andere Nodo
 
   Led(RED);
+  if(S.WaitBusy==VALUE_ALL)
+    NodoBusy(0,true);
   
   // verwerking van commando's is door gebruiker tijdelijk geblokkeerd door FileWrite commando
   if(FileWriteMode>0)
@@ -900,7 +896,7 @@ void ExecuteLine(char *Line, byte Port)
         switch(Cmd)
           {
           // onderstaande commando's worden verwerkt in ExecuteCommand(); Hier vindt alleen omzetting plaats van string naar 32-bit event.
-          case CMD_LOCK://@1
+          case CMD_LOCK:
             a=0L;
             for(x=0;x<strlen(S.Password);x++)
               {
@@ -1013,11 +1009,9 @@ void ExecuteLine(char *Line, byte Port)
             
           case CMD_SEND:
             // als de SendTo is gevuld, dan event versturen naar een andere Nodo en niet zelf uitvoeren
-            SendTo=Par1;
-
-            // RF ontvangers hebben enige tijd nodig om na inschakelen stabiel te worden.
-            // Wacht enig tijs om de opvolgende SendTo niet te snel op de vorige plaats te laten vinden. Anders worden er Busy events gemist.
-            while((PreviousSendTo+500)>millis()); 
+            // echter vooraf wel checken of er Nodos zijn die bezig zijn met verwerking.
+//            Serial.println("*** debug: Nieuw SendTo commando.");//???
+            SendTo=Par1;             
             break;
 
           case CMD_PASSWORD:
@@ -1320,7 +1314,7 @@ void ExecuteLine(char *Line, byte Port)
         if(State_EventlistWrite==0)// Gewoon uitvoeren
           {
           if(SendTo==0)
-            ProcessEvent(v,VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
+            ProcessEvent2(v,VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
           else
             {
             if(NodoType(v))
@@ -1379,9 +1373,9 @@ void ExecuteLine(char *Line, byte Port)
 
   if(SendTo!=0)// Verzend de inhoud van de queue naar de slave Nodo
     {
-    QueueSend(SendTo);    
+    if(!QueueSend(SendTo))
+      RaiseMessage(MESSAGE_12);
     QueuePos=0;
-    PreviousSendTo=millis();
     }
   }
 #endif
