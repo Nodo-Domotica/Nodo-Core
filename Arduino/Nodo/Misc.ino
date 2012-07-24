@@ -32,8 +32,11 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
       #endif
 
       if(BreakEvent!=0 && Event==BreakEvent)
+        {
         break;
-
+//Serial.println("*** debug: BreakEvent ontvangen.");//???
+        }
+        
       x=(byte)((Event>>16)&0xff); // cmd
       y=(byte)((Event>>24)&0xf); // unit
       z=(byte)((Event>>8)&0xff); // par1
@@ -43,7 +46,10 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
         NodoBusy(Event,false);          
         
         if(BreakNoBusyNodo && NodoBusyStatus==0)
+          {
+//Serial.println("*** debug: Alle Nodo vrij.");//???
           break; // Geen Busy Nodo meer
+          }
         }
         
       else if(x==CMD_QUEUE) // command
@@ -51,7 +57,10 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
         if(y==S.Unit) // Als commando voor deze unit bestemd
           {
           if(z==VALUE_OFF) // Par1
+            {
+//Serial.println("*** debug: Queue Off ontvangen.");//???
             break;// Queue Off commando ontgangen.
+            }
           }
         }
   
@@ -74,8 +83,12 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
     }   
 
   if(TimeoutTimer<=millis())
+    {
+//Serial.println("*** debug: Timeout opgetreden.");//???
     return false;
-
+    }
+    
+//Serial.println("*** debug: WaitAndQueue met success ontvangen.");//???
   return true;
   }
   
