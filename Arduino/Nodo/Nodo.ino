@@ -34,7 +34,7 @@
 #define NODO_MEGA 0
 
 // De code kan worden gecompileerd als een Nodo-Mini voor de Arduino met een ATMega328 processor
-// Of voor een Nodo-Mega voor een Arduino met een ATMega1280 of ATMega2560
+// of voor een Nodo-Mega voor een Arduino met een ATMega1280 of ATMega2560
 // Voor de Nodo-Mega variant bij onderstaande vijf regels de // remarks verwijderen.
 
 //#define UNIT_DEFAULT  1
@@ -42,7 +42,6 @@
 //#include <SD.h>
 //#include <EthernetNodo.h>
 //#include <SPI.h>
-
 
 
 
@@ -809,7 +808,9 @@ void setup()
   pinMode(PIN_LED_RGB_B,  OUTPUT);
   digitalWrite(PIN_IR_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
   digitalWrite(PIN_RF_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
-  digitalWrite(PIN_RF_RX_VCC,HIGH);   // Spanning naar de RF ontvanger aann
+  digitalWrite(PIN_RF_RX_VCC,HIGH);   // Spanning naar de RF ontvanger aan
+  digitalWrite(PIN_IR_TX_DATA,LOW);   // Zet de IR zenders initiëel uit! Anders mogelijk overbelasting !
+
 
 #if NODO_MEGA
   pinMode(PIN_LED_RGB_G,  OUTPUT);

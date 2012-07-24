@@ -6,7 +6,7 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
   
   // Hier aangekomen is de master nodo nog steeds bezig met het zenden van het aanloopsignaal bestaande uit de korte pulsenreeks.
   // Wacht totdat het aanloopsignaal een duidelijke startbit bevat.
-  Timeout=millis() + 2000L;
+  Timeout=millis() + 2000L; // binnen twee seconden moet het blok met gegevens zijn aangekomen.
   x=0;
   while(Timeout>millis() && !(x==50 && Mark>NODO_PULSE_MID))
     {
@@ -51,8 +51,8 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
 
   if(ChecksumOrg == Checksum)
     {
-    // Korte wachttijd anders is de RF ontvanger van de master (mogelijk) nog niet gereed voor ontvangst
-    delay(300);    
+    
+    delay(400); // Korte wachttijd anders is de RF ontvanger van de master (mogelijk) nog niet gereed voor ontvangst
     if(S.SendBusy==VALUE_ALL)
       {
       Nodo_2_RawSignal(command2event(S.Unit,CMD_BUSY,VALUE_ON,0));
@@ -60,7 +60,7 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
       RawSendRF();
       }
 
-    delay(50);    
+    delay(100);    
     Nodo_2_RawSignal(command2event(S.Unit,CMD_TRANSMIT_QUEUE,0,0));
     RawSendRF();
 
@@ -90,8 +90,9 @@ boolean QueueSend(byte DestUnit)
     Checksum^=*(B+x); 
 
   // Verzend verzoek om gereed te staan voor ontvangst naar de slave. Eerst een korte pause en WaitFreeRF
-  while((PreviousQueueSend+400)>millis());// ten minste 500ms tussen twee opvolgende QueueSend opdrachten.  
+  while((PreviousQueueSend+500)>millis());// ten minste 500ms tussen twee opvolgende QueueSend opdrachten. 
   WaitFreeRF(0,100);  
+
   Nodo_2_RawSignal(command2event(DestUnit,CMD_TRANSMIT_QUEUE,QueuePos,Checksum));
   RawSendRF();
     
@@ -146,7 +147,7 @@ boolean QueueSend(byte DestUnit)
   // 3. master ontvangt niets. Dan keert WaitAndQueue terug met een false.
 
   PreviousQueueSend=millis();// bewaar tijdstip om te voorkomen dat de (eventuele) opvolgende QueueSend te snel plaats vindt.
-  return WaitAndQueue(2,false,command2event(DestUnit,CMD_TRANSMIT_QUEUE,0,0));
+  return WaitAndQueue(3,false,command2event(DestUnit,CMD_TRANSMIT_QUEUE,0,0));
   }
 #endif
 
@@ -456,6 +457,7 @@ void RawSendIR(void)
       }
     interrupts(); // interupts weer inschakelen.
     }
+  digitalWrite(PIN_IR_TX_DATA,LOW);   // Voor de zekerheid de LED's uitschakelen, anders mogelijk overbelasting van de transistor/led's
   }
 
  /*********************************************************************************************\
