@@ -154,7 +154,7 @@ if($userId > 0 && $key_ok == 1) {
 								
 					//Alleen waarde opslaan als er een sensor is aangemaakt
 					if ($sensor_id > 0) {
-						mysql_query("INSERT INTO nodo_tbl_sensor_data (sensor_id, par1, data, nodo_unit_nr, type, user_id) VALUES ('$sensor_id','$par1','$par2','$unit','$type','$userId')") or die(mysql_error()); 
+						mysql_query("INSERT INTO nodo_tbl_sensor_data (sensor_id, data) VALUES ('$sensor_id','$par2')") or die(mysql_error()); 
 					}
 					
 					//Waarde updaten

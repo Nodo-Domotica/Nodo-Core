@@ -222,7 +222,7 @@ if (isset($_POST['auto_config'])){
  mysql_select_db($database, $db);
  mysql_query("UPDATE nodo_tbl_users SET nodo_ip='$nodo_ip', nodo_port='$nodo_port', send_method='$send_method', nodo_password='$nodo_password', nodo_id='$nodo_id' WHERE id='$userId'") or die(mysql_error());   
  // once saved, redirect back to the view page 
- header("Location: setup_connection.php/?response=$response#saved");   
+ header("Location: ?response=$response#saved");   
  }
  
 else 
@@ -409,7 +409,7 @@ function show_loading() {
 		}	
 			?>	
 			</h2>
-		<p><a href="../../admin/setup_connection.php" data-role="button" data-inline="true" data-icon="back" data-ajax="false">Ok</a></p>	
+		<p><a href="setup_connection.php" data-role="button" data-inline="true" data-icon="back" data-ajax="false">Ok</a></p>	
 	</div><!-- /content -->
 	
 	

@@ -84,7 +84,7 @@ if ((isset($_GET['id'])) && ($_GET['id'] != "")) {
                        GetSQLValueString($_GET['id'], "int"));
  
 
-  $delete_sensor_data_SQL = sprintf("DELETE FROM nodo_tbl_sensor_data WHERE sensor_id=%s AND user_id='$userId'", 
+  $delete_sensor_data_SQL = sprintf("DELETE FROM nodo_tbl_sensor_data WHERE sensor_id=%s", 
                        GetSQLValueString($_GET['id'], "int"));
 					   
 					   

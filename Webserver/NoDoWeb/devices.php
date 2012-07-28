@@ -41,10 +41,11 @@ $page_title = "Devices";
 
 <body> 
 
-<div data-role="page" data-theme="<?php echo $theme?>" data-title="<?php echo $title ?>">
+<div data-role="page" pageid="devices" data-theme="<?php echo $theme?>" data-title="<?php echo $title ?>">
 
 
 	<style type="text/css">	
+
 	
 	
 	input.ui-slider-input {display:none !important;} 
@@ -72,7 +73,7 @@ $page_title = "Devices";
 		
 		text-align: left !important;
 		margin: 0 -8px !important;
-		margin-top: 0px !important;
+		margin-top: 8px !important;
 		margin-right: -8px !important;
 		margin-bottom: 8px !important;
 		margin-left: -8px !important;
@@ -86,9 +87,8 @@ $page_title = "Devices";
 	
 		text-align: left !important;
 		margin: 0 -8px !important;
-		margin-top: 0px !important;
+		margin-top: 8px !important;
 		margin-right: -8px !important;
-			
 		margin-left: -8px !important;
 		-moz-border-radius: 1em !important;
 		-webkit-border-radius: 1em !important;
@@ -116,6 +116,7 @@ $page_title = "Devices";
 		-moz-border-radius: 1em !important;
 		-webkit-border-radius: 1em !important;
 		border-radius: 1em !important;
+		margin-top: 8px !important;
 				
 	}
 	
@@ -177,7 +178,7 @@ if ($row_RSdevices['toggle'] == 1) {
 					echo "<a href=\"javascript:send_event(&quot;&action=dim&device_id=". $id . "&dim=" .$dim_level. "&quot;)\" data-role=\"button\" data-mini=\"true\" data-inline=\"true\">".$dim_percentage."%</a>\n";
 			}
 			
-			echo "</div> <div style=\"padding: 0px 0px 8px 0px;\"></div>";
+			echo "</div> ";
 		}
 					
 			
@@ -205,7 +206,7 @@ if ($row_RSdevices['toggle'] == 1) {
 			echo "<input name=\"distSlider\" id=\"distSlider".$row_RSdevices['id']."\" value=\"".$row_RSdevices['dim_value']."\" min=\"1\" max=\"16\" data-type=\"range\" onChange='update_distance_timer_".$row_RSdevices['id']."()'>\n";
 			
 			
-			echo "</div> <div style=\"padding: 0px 0px 8px 0px;\"></div>";
+			echo "</div>";
 		 }
 		else {
 			// Newkaku toggle knop
@@ -221,8 +222,8 @@ else {
 
 ?>
 
-	<div data-role="collapsible"  data-content-theme="<?php echo $theme?>" <?php if($row_RSdevices['collapsed']==1) {echo "data-collapsed=\"false\"";}?> >
-	<h3>
+	<div data-role="collapsible" data-content-theme="<?php echo $theme?>" <?php if($row_RSdevices['collapsed']==1) {echo "data-collapsed=\"false\"";}?> >
+	<h3 class="ui-btn-corner-all ui-shadow">
 	
 	<span id='switch_<?php echo $row_RSdevices['id']; ?>'></span><?php echo $row_RSdevices['naam']; ?></h3>
 	

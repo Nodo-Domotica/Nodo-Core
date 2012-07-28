@@ -44,7 +44,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		<ul>
 			<li><a href="devices.php" data-icon="devices" data-ajax="false">Devices</a></li>
 			<li><a href="activities.php" data-icon="grid" data-ajax="false">Activities</a></li>
-			<li><a href="values.php" data-icon="measurements" data-ajax="false">Values</a></li>
+			<li><a href="values.php" data-icon="measurements"  data-ajax="false">Values</a></li>
 		</ul>
 		</div>
 	</div><!-- /header -->

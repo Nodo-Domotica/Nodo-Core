@@ -23,7 +23,7 @@ $sensor_id = $_GET['id'];
 
 mysql_select_db($database, $db);
 
-$RSevent_log = mysql_query("SELECT data,timestamp FROM nodo_tbl_sensor_data WHERE user_id='$userId' AND sensor_id='$sensor_id'") or die(mysql_error());
+$RSevent_log = mysql_query("SELECT data,timestamp FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id'") or die(mysql_error());
     header("Content-Type: text/csv; charset=utf-8");
     header("Content-Disposition:attachment;filename=values.csv");
     print "Value, Timestamp\n";
