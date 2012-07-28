@@ -45,7 +45,7 @@ $RSactivities = mysql_query("SELECT * FROM nodo_tbl_activities WHERE user_id='$u
 
 <body> 
 
-<div data-role="page" data-theme="<?php echo $theme?>">
+<div data-role="page" pageid="activities" data-theme="<?php echo $theme?>">
 
 <?php require_once('include/send_event.php'); ?>
 	
@@ -68,7 +68,7 @@ $RSactivities = mysql_query("SELECT * FROM nodo_tbl_activities WHERE user_id='$u
 	}
 	
 	
-	</style>
+	</style> 
 
 <?php require_once('include/header.php'); ?>
 

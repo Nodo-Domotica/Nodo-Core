@@ -54,35 +54,11 @@ do { ?>document.getElementById('value_<?php echo $row_RSvalue['id'];?>').innerHT
 				}
 		
 		//Staaf grafiek, totaal meting per dag weergeven
-		$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m-%d') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY date(timestamp) ORDER BY id DESC LIMIT 1;";
+		$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m-%d') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY date(timestamp) ORDER BY timestamp DESC LIMIT 1;";
+		$RSsensor_value_data = mysql_query($query_RSsensor_value_data, $db) or die(mysql_error()); 
+		$row_RSsensor_value_data = mysql_fetch_assoc($RSsensor_value_data);
 		  
-		  /*
-		  
-		  
-		  switch ($row_RSvalue['graph_min_ticksize']) {
-		
-					case "1":
-					$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m-%d %H:%i:%s') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY minute(timestamp) ORDER BY id DESC LIMIT 1";
-					break;
-					case "2":
-					$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m-%d %H:%i') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE AND sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY hour(timestamp) ORDER BY id DESC LIMIT 1";
-					break;
-					case "3":
-					$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m-%d') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY date(timestamp) ORDER BY id DESC LIMIT 1;";
-					break;
-					case "4":
-					$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m-%d') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY week(timestamp) ORDER BY id DESC LIMIT 1";
-					break;
-					case "5":
-					$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY month(timestamp) ORDER BY id DESC LIMIT 1";
-					break;
-				}*/
-		  
-		  	  
-		  $RSsensor_value_data = mysql_query($query_RSsensor_value_data, $db) or die(mysql_error()); 
-		  $row_RSsensor_value_data = mysql_fetch_assoc($RSsensor_value_data);
-		  
-		  echo "'".$row_RSsensor_value_data['data']."';";
+		echo "'".$row_RSsensor_value_data['data']."';";
 		
 		}
 			

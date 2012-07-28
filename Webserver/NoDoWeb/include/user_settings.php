@@ -22,26 +22,10 @@ mysql_select_db($database, $db);
 $RS_setup = mysql_query("SELECT * FROM nodo_tbl_users WHERE id='$userId'") or die(mysql_error());  
 $row_RSsetup = mysql_fetch_array($RS_setup);
 
-if($row_RSsetup['webapp_theme'] == "") {  
-	$theme = "c";
-} 
-else { 
-	$theme = $row_RSsetup['webapp_theme'];
-}
+if($row_RSsetup['webapp_theme'] == "") {$theme = "c";} else {$theme = $row_RSsetup['webapp_theme'];}
+if($row_RSsetup['webapp_theme_header'] == "") {$theme_header = "a";} else {$theme_header = $row_RSsetup['webapp_theme_header'];}
 
-if($row_RSsetup['webapp_theme_header'] == "") {  
-	$theme_header = "a";
-} 
-else { 
-	$theme_header = $row_RSsetup['webapp_theme_header'];
-}
-
-if($row_RSsetup['webapp_title'] == "") {  
-	$title = "Nodo Web App";
-} 
-else { 
-	$title = $row_RSsetup['webapp_title'];
-}
+if($row_RSsetup['webapp_title'] == "") {$title = "Nodo Web App";} else {$title = $row_RSsetup['webapp_title'];}
 
 $send_method = $row_RSsetup['send_method'];
 $nodo_ip = $row_RSsetup['nodo_ip'];
@@ -54,13 +38,9 @@ $user_group = $row_RSsetup['user_group'];
 
 $key = md5($cookie.":".$nodo_password);
 
-//Controleren of de Nodo maximaal 5 minuten geleden een connectie met de Web App heeft gehad.
-if (strtotime($cookie_update) >  (strtotime("now")-300)) {$heartbeat = "ok";} else {$heartbeat = "lost";}
+//Controleren of de Nodo maximaal 3 minuten geleden een connectie met de Web App heeft gehad.
+if (strtotime($cookie_update) >  (strtotime("now")-180)) {$heartbeat = "ok";} else {$heartbeat = "lost";}
 
-
-	
-
-//putenv ("TZ=Europe/Amsterdam");
 date_default_timezone_set('Europe/Amsterdam');
 
 ?>

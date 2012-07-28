@@ -61,7 +61,56 @@ $RSsensor = mysql_query($query_RSsensor, $db) or die(mysql_error());
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1"> 
 	<title><?php echo $title ?></title> 
+	
+	
 	<?php require_once('include/jquery_mobile.php'); ?>
+	
+<script>	
+	
+
+
+$('[data-role=page]').live('pageshow', function (event) {
+
+<?php
+
+while($row_RSsensor = mysql_fetch_array($RSsensor)) {
+
+	if ($row_RSsensor['collapsed'] == 1){
+		echo "$('#collapsible" .$row_RSsensor['id']. " ').trigger('expand');";
+	}
+}
+?>
+});
+
+
+
+
+
+$('.collapsible').live('expand', function(){
+	
+	var id = $(this).data("id");
+	var suffix = $(this).data("suffix");
+	var hours = $(this).data("hours");
+	var bars = $(this).data("bars");
+	var ticksize = $(this).data("ticksize");
+	var display = $(this).data("display");
+	var inputoutput = $(this).data("inputoutput");
+	
+	if (display == 1 && inputoutput == 2) { //alleen grafiek gegevens ophalen indien het een value is en een output betreft
+		
+		Get_Graph_data(hours,id,suffix,bars,ticksize);
+		//eval('refreshgraph' + id + '();');
+		window['refreshgraph' + id]();
+	}	
+ 
+}).live('collapse', function(){
+  var id = $(this).data("id");
+  
+  
+    
+});	
+</script>		
+
 </head> 
 
 <body> 
@@ -72,8 +121,8 @@ $RSsensor = mysql_query($query_RSsensor, $db) or die(mysql_error());
 
  <!--[if lte IE 8]><script language="javascript" type="text/javascript" src="../excanvas.min.js"></script><![endif]-->
 
-    <script language="javascript" type="text/javascript" src="js/flot/jquery.js"></script>
-    <script language="javascript" type="text/javascript" src="js/flot/jquery.flot.js"></script>
+    
+    <script language="javascript" type="text/javascript" src="js/flot/jquery.flot.min.js"></script>
 	<script language="javascript" type="text/javascript" src="js/flot/jquery.flot.resize.js"></script>
 	
 	<!-- NoDoWebapp client side java -->
@@ -92,10 +141,11 @@ function Get_Graph_data(hours,sensor_id,label,bars,ticksize,date1,date2,filter)
 						xaxis: { mode: "time",minTickSize: [1,ticksize]}
 					};
 			
+		 
 		
-		element = document.getElementById(sensor_id);
-					
-		element.innerHTML = '<h4><img src="media/loading.gif"/> Please wait, loading graph...</h4>'; 
+			element = document.getElementById(sensor_id);	
+		//element.innerHTML = '<h4><img src="media/loading.gif"/> Please wait, loading graph...</h4>'; 
+		//Andere oplossing voor maken
 
 					
 		$.getJSON("include/get_graph_data.php?hours=" + hours +"&sensor_id="+sensor_id +"&bars="+bars +"&date1="+date1 +"&date2="+date2+"&filter="+filter, function(graph_data) {
@@ -120,7 +170,7 @@ function Get_Graph_data(hours,sensor_id,label,bars,ticksize,date1,date2,filter)
 		   
 		   
 		   $.plot(plotarea , [
-					 { label: label, data: graph_data, color: "<?php echo $graph_line_color; ?>" ,bars: {show: true, barWidth:43200000, align: "center"} }
+					 { label: label, data: graph_data, color: "<?php echo $graph_line_color; ?>" ,bars: {show: true, barWidth:43200000, align: "center",} }
 					 ],options );
 		   }
 		   
@@ -177,10 +227,18 @@ function Historic_line(id,label,ticksize)
 
 </script>
 
+	
+
 	<div data-role="content">	
 
 	
-	<?php while($row_RSsensor = mysql_fetch_array($RSsensor)) {
+	<?php 
+	mysql_data_seek($RSsensor, 0); //weer bij record 0 beginnen
+	while($row_RSsensor = mysql_fetch_array($RSsensor)) {
+	
+	?>
+	
+<?php
 		
 			$sensor_id = $row_RSsensor['id'];
 			
@@ -243,13 +301,26 @@ function Historic_line(id,label,ticksize)
 			}			
 			
 								
-			echo "<div data-role=\"collapsible\" id=\"collapsible" . $row_RSsensor['id'] . "\" data-content-theme=\"" . $theme ."\">";
+			echo "<div data-role=\"collapsible\" class=\"collapsible\" 
+			      data-hours=\"" . $graph_hours ."\" 
+			      data-suffix=\"" . $row_RSsensor['sensor_suffix'] ."\"
+				  data-bars=\"" . $graph_bars ."\"
+				  data-ticksize=\"" . $graph_min_ticksize ."\"
+				  data-display=\"" . $row_RSsensor['display'] ."\"
+				  data-inputoutput=\"" . $row_RSsensor['input_output'] ."\"
+				  data-id=\"" . $row_RSsensor['id'] ."\"
+				  id=\"collapsible" . $row_RSsensor['id'] . "\" data-content-theme=\"" . $theme ."\">";
 			
 			
 			//Input or Ouput
-			if ($row_RSsensor['input_output'] == 1) {echo "<h3> In: ";}
-			if ($row_RSsensor['input_output'] == 2) {echo "<h3 onclick=\"Get_Graph_data(".$graph_hours. "," .$row_RSsensor['id']. ",'" . $row_RSsensor['sensor_suffix']."',".$graph_bars.",'".$graph_min_ticksize. "')\">Out: ";}
 			
+			//Input
+			if ($row_RSsensor['input_output'] == 1) {echo "<h3> In: ";}
+			//Output - State
+			if ($row_RSsensor['input_output'] == 2 && $row_RSsensor['display'] == 2) {echo "<h3>Out: ";}
+			//Ouput - Value
+			if ($row_RSsensor['input_output'] == 2 && $row_RSsensor['display'] == 1) {echo "<h3>Out: ";}
+
 			
 			//Prefix
 			echo $row_RSsensor['sensor_prefix']." ";
@@ -275,11 +346,19 @@ function Historic_line(id,label,ticksize)
 			<br>
 			<div id="<?php echo $row_RSsensor['id']; ?>" style="width:100%;height:300px;position: relative;"></div>
 			<br>
-					
+			<?php
+			echo "<script type=\"text/javascript\">\n";
+			echo "var graphtimer".$row_RSsensor['id'].";\n";
+			echo "function refreshgraph".$row_RSsensor['id']."(){\n";
+			echo "graphtimer".$row_RSsensor['id']."=setInterval(function(){Get_Graph_data('". $graph_hours ."','". $row_RSsensor['id'] ."','". $row_RSsensor['sensor_suffix'] ."','". $graph_bars ."','". $graph_min_ticksize ."')},300000+Math.floor(Math.random() * 10000));\n";
+			echo "}\n";
+			echo "</script>\n";
+			?>
+			
 				
 			
 			<?php if ($graph_bars != 1) { ?>	
-				<div data-role="collapsible" data-content-theme="<?php echo $theme; ?>" data-mini="true">
+			<div data-role="collapsible" data-content-theme="<?php echo $theme; ?>" data-mini="true">
 			<h3>Historic data</h3>
 
 			<fieldset data-role="controlgroup" data-type="horizontal" data-mini="true">
@@ -611,6 +690,7 @@ function Historic_line(id,label,ticksize)
 					var val<?php echo $row_RSsensor['id']; ?> = $('#distSlider<?php echo $row_RSsensor['id']; ?>').val();
 					//alert(val);
 					send_event('variableset <?php echo $row_RSsensor['par1']; ?>,' + val<?php echo $row_RSsensor['id'];?>)
+					
 					}
 			</script>
 		
@@ -659,13 +739,6 @@ function Historic_line(id,label,ticksize)
 
 
 
-<script>
-//Eerste maal de functie Get_Value opstarten zodat de loop gaat lopen welke de waarde elke x seconde ververst. 
-Get_Values();
-
-
-
-</script>
  
 
 	
@@ -674,6 +747,10 @@ Get_Values();
 <?php require_once('include/footer.php'); ?>
 	
 </div><!-- /page -->
-
+<script>
+//Eerste maal de functie Get_Value opstarten zodat de loop gaat lopen welke de waarde elke x seconde ververst. 
+	Get_Values();
+</script>
 </body>
+
 </html>

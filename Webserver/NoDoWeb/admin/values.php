@@ -35,6 +35,7 @@ if (isset($_POST['submit']))
  $par1 = mysql_real_escape_string(htmlspecialchars($_POST['par1'])); 
  $type = mysql_real_escape_string(htmlspecialchars($_POST['type']));
  $display = mysql_real_escape_string(htmlspecialchars($_POST['display']));
+ $collapsed = mysql_real_escape_string(htmlspecialchars($_POST['collapsed']));
  $input_output = mysql_real_escape_string(htmlspecialchars($_POST['input_output']));
  $input_control = mysql_real_escape_string(htmlspecialchars($_POST['input_control']));
  $input_slider_min = mysql_real_escape_string(htmlspecialchars($_POST['input_slider_min_val']));
@@ -103,9 +104,9 @@ $RSValues_rows = mysql_num_rows($RSValues);
 $sort_order = $RSValues_rows + 1;
  
    
- mysql_query("INSERT INTO nodo_tbl_sensor (sensor_type, display, input_output, input_control, input_step, input_min_val, input_max_val, sensor_prefix, sensor_suffix, sensor_suffix_true, sensor_suffix_false, user_id, nodo_unit_nr,par1,graph_hours,graph_min_ticksize,graph_type,sort_order) 
+ mysql_query("INSERT INTO nodo_tbl_sensor (sensor_type, display, collapsed, input_output, input_control, input_step, input_min_val, input_max_val, sensor_prefix, sensor_suffix, sensor_suffix_true, sensor_suffix_false, user_id, nodo_unit_nr,par1,graph_hours,graph_min_ticksize,graph_type,sort_order) 
  VALUES 
- ('$type','$display','$input_output','$input_control','$input_step','$input_slider_min','$input_slider_max','$prefix','$suffix','$suffix_true','$suffix_false','$userId','$unit','$par1','$graph_hours','$graph_min_ticksize','$graph_type','$sort_order')");
+ ('$type','$display','$collapsed','$input_output','$input_control','$input_step','$input_slider_min','$input_slider_max','$prefix','$suffix','$suffix_true','$suffix_false','$userId','$unit','$par1','$graph_hours','$graph_min_ticksize','$graph_type','$sort_order')");
  // once saved, redirect back to the view page 
  header("Location: values.php#saved");    }
  
@@ -184,6 +185,12 @@ header("Location: values.php?id=$sensor_id");
 			<option value="2">State</option>
 		</select>				
 		
+		<br>
+		<label for="select-choice-2" class="select" >Expand on values page:</label>
+		<select name="collapsed" id="collapsed" data-placeholder="true" data-native-menu="false">
+			<option value="0">No</option>
+			<option value="1">Yes</option>
+		</select>
 		<br>
 		
 		<div id="input_output_div">

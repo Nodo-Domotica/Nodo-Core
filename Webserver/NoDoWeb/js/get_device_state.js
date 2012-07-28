@@ -36,6 +36,7 @@ function Device_State()
 					$http.onreadystatechange = function()
 					{
 						if (/4|^complete$/.test($http.readyState)) {
+							
 							eval($http.responseText);
 							
 							setTimeout(function(){$self();}, 2000);

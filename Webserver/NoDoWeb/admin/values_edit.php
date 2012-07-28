@@ -37,6 +37,7 @@ $page_title="Setup: Edit values";
  $par1 = mysql_real_escape_string(htmlspecialchars($_POST['par1'])); 
  $type = mysql_real_escape_string(htmlspecialchars($_POST['type']));
  $display = mysql_real_escape_string(htmlspecialchars($_POST['display']));
+ $collapsed = mysql_real_escape_string(htmlspecialchars($_POST['collapsed']));
  $input_output = mysql_real_escape_string(htmlspecialchars($_POST['input_output']));
  $input_control = mysql_real_escape_string(htmlspecialchars($_POST['input_control']));
  $input_slider_min = mysql_real_escape_string(htmlspecialchars($_POST['input_slider_min_val']));
@@ -95,7 +96,7 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
 	
  // save the data to the database 
  mysql_select_db($database, $db);
- mysql_query("UPDATE nodo_tbl_sensor SET sensor_type='$type',display='$display',input_output='$input_output',input_control='$input_control',input_step='$input_step'
+ mysql_query("UPDATE nodo_tbl_sensor SET sensor_type='$type',display='$display',collapsed='$collapsed',input_output='$input_output',input_control='$input_control',input_step='$input_step'
  ,input_min_val='$input_slider_min',input_max_val='$input_slider_max',sensor_prefix='$prefix', sensor_suffix='$suffix', sensor_suffix_true='$suffix_true'
  ,sensor_suffix_false='$suffix_false', nodo_unit_nr='$unit',par1='$par1',graph_hours='$graph_hours',graph_min_ticksize='$graph_min_ticksize',graph_type='$graph_type'
  WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
@@ -156,6 +157,13 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
 			<option value="2" <?php if ($row['display'] == 2) {echo 'selected="selected"';}?>>State</option>
 		</select>				
 		
+		<br>
+		
+		<label for="select-choice-2" class="select" >Expand on values page:</label>
+		<select name="collapsed" id="collapsed" data-placeholder="true" data-native-menu="false">
+			<option value="0"<?php if ($row['collapsed'] == 0) {echo 'selected="selected"';}?>>No</option>
+			<option value="1"<?php if ($row['collapsed'] == 1) {echo 'selected="selected"';}?>>Yes</option>
+		</select>
 		<br>
 		
 		<div id="input_output_div">
