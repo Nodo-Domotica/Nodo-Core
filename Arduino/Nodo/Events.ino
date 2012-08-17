@@ -100,7 +100,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
 
   if(BusyOnSent)
     {
-    delay(100); // anders volgt de <Busy Off> te snel en wordt deze mogelijk gemist door de master.
+    delay(250); // anders volgt de <Busy Off> te snel en wordt deze mogelijk gemist door de master.
     TransmitCode(command2event(S.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
     BusyOnSent=false;
     }
@@ -151,7 +151,7 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
   if(ExecutionDepth==0 || S.Debug==VALUE_ON)
     PrintEvent(IncommingEvent,Direction,Port);  // geef event weer op Serial
 
-  NodoBusy(IncommingEvent,true);          
+  NodoBusy(IncommingEvent,S.WaitBusy==VALUE_ALL);          
 
   if(ExecutionDepth++>=MACRO_EXECUTION_DEPTH)
     {

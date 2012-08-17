@@ -51,21 +51,15 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
 
   if(ChecksumOrg == Checksum)
     {
-    
     delay(400); // Korte wachttijd anders is de RF ontvanger van de master (mogelijk) nog niet gereed voor ontvangst
-    if(S.SendBusy==VALUE_ALL)
-      {
-      Nodo_2_RawSignal(command2event(S.Unit,CMD_BUSY,VALUE_ON,0));
-      BusyOnSent=true;
-      RawSendRF();
-      }
-
-    delay(100);    
-    Nodo_2_RawSignal(command2event(S.Unit,CMD_TRANSMIT_QUEUE,0,0));
+    Nodo_2_RawSignal(command2event(S.Unit,CMD_BUSY,VALUE_ON,0));
     RawSendRF();
+    BusyOnSent=true;
 
     // Verwerk de inhoud van de Queue
     ProcessQueue();
+//??? Zit al in ProcesEvent.    delay(250); // Korte wachttijd om Master gelegenheid te geven om het [Busy On] signaal te verwerken.???
+
     return true;
     }
   else
@@ -82,16 +76,17 @@ boolean QueueSend(byte DestUnit)
   int x,y,Checksum=0;
   boolean Bit;
   unsigned long Event,TimeoutTimer;
-  static unsigned long PreviousQueueSend=0L;
+  
+  // Eerst wachten op bezige Nodo
+  NodoBusy(0L, true);
+
+  // Wachten totdat de ether schoon is. Neem hiervoor 500ms, dan is in ieder geval de ontvanger van de slave weer stabiel.
+  WaitFreeRF(0,400);  
 
   // bereken checksum: crc-8 uit alle bytes in de queue.
   byte *B=(byte*)&(QueueEvent[0]);    //pointer verwijst nu naar eerste byte van de queue
   for(x=0;x<QueuePos*4;x++) // maal vier, immers 4 bytes in een unsigned long
     Checksum^=*(B+x); 
-
-  // Verzend verzoek om gereed te staan voor ontvangst naar de slave. Eerst een korte pause en WaitFreeRF
-  while((PreviousQueueSend+500)>millis());// ten minste 500ms tussen twee opvolgende QueueSend opdrachten. 
-  WaitFreeRF(0,100);  
 
   Nodo_2_RawSignal(command2event(DestUnit,CMD_TRANSMIT_QUEUE,QueuePos,Checksum));
   RawSendRF();
@@ -142,12 +137,11 @@ boolean QueueSend(byte DestUnit)
 
   // Queue is verzonden. Wacht op bevestiging van de slave.
   // Op dit moment kunnen er drie situaties voordoen:
-  // 1. master ontvangt Busy On van slave Nodo.
-  // 2. master ontvangt CMD_TRANSMIT_QUEUE bevestiging.
-  // 3. master ontvangt niets. Dan keert WaitAndQueue terug met een false.
+  // 1. master ontvangt Busy On van slave Nodo, hieruit kan worden afgeleid dat de Slave start met verwerking van de queue 
+  // 2. master ontvangt niets. Dan keert WaitAndQueue terug met een false.
+  // 3. master ontvangt error message van de slave.
 
-  PreviousQueueSend=millis();// bewaar tijdstip om te voorkomen dat de (eventuele) opvolgende QueueSend te snel plaats vindt.
-  return WaitAndQueue(3,false,command2event(DestUnit,CMD_TRANSMIT_QUEUE,0,0));
+  return WaitAndQueue(3,false,command2event(DestUnit,CMD_BUSY,VALUE_ON,0));
   }
 #endif
 
@@ -643,7 +637,7 @@ boolean TransmitCode(unsigned long Event, byte Dest)
       PrintEvent(Event,VALUE_DIRECTION_OUTPUT,VALUE_SOURCE_HTTP);
       }
     }
- #endif   
+ #endif 
   }
 
 
@@ -754,7 +748,7 @@ boolean SaveRawSignal(byte Key)
     
   if(error)
     {
-    TransmitCode(command2event(S.Unit,CMD_MESSAGE ,MESSAGE_03 ,0),VALUE_ALL);
+    TransmitCode(command2event(S.Unit,CMD_MESSAGE, S.Unit, MESSAGE_03),VALUE_ALL);
     return false;
     }
   return true;

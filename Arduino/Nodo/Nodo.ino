@@ -25,25 +25,23 @@
 *
 /****************************** Door gebruiker in te stellen: ***************************************************************/
 
-#define ETHERNET       1                                     // EthernetShield: 0 = afwezig, 1 = aanwezig
-#define USER_PLUGIN    0                                     // Plugin: 0 = niet compileren, 1 = wel compileren
-#define NODO_MAC       0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF    // Default Nodo MACadres
+#define USER_PLUGIN        0                                     // Plugin: 0 = niet compileren, 1 = wel compileren
+#define NODO_MEGA          0
+#define UNIT_NODO_MINI     15
 
 
-#define UNIT_DEFAULT  15
-#define NODO_MEGA 0
 
 // De code kan worden gecompileerd als een Nodo-Mini voor de Arduino met een ATMega328 processor
 // of voor een Nodo-Mega voor een Arduino met een ATMega1280 of ATMega2560
-// Voor de Nodo-Mega variant bij onderstaande vijf regels de // remarks verwijderen.
+// Voor de Nodo-Mega variant bij onderstaande zeven regels de // remarks verwijderen.
 
-//#define UNIT_DEFAULT  1
-//#define NODO_MEGA 1
-//#include <SD.h>
-//#include <EthernetNodo.h>
-//#include <SPI.h>
-
-
+#define NODO_MEGA 1
+#include <SD.h>
+#include <EthernetNodo.h>
+#include <SPI.h>
+#define ETHERNET           1                                     // EthernetShield: 0 = afwezig, 1 = aanwezig
+#define NODO_MAC           0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF    // Default Nodo MACadres
+#define UNIT_NODO_MEGA     1
 
 // Onderstaand de formules die gebruikt worden voor omrekening van pulsen naar analoge waarden.
 // Zet de formules zo op dat uitsluitend met gehele getallen gerekend wordt.
@@ -54,7 +52,7 @@
 //
 // a          = variabele met resultaat van de berekening.
 // PulseTime  = tijd tussen twee pulsen uitgedrukt in milliseconden.
-// PulseCount = Aantal pulsen tussen wee metingen.
+// PulseCount = Aantal pulsen tussen twee metingen.
 
 
 #define FORMULA_1            a = 3600/PulseTime;            /* 1000 pulsen = 1KWh */
@@ -69,7 +67,7 @@
 /****************************************************************************************************************************/
 //#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
 
-#define SETTINGS_VERSION      7
+#define SETTINGS_VERSION      8
 
 #include <EEPROM.h>
 #include <Wire.h>
@@ -80,33 +78,31 @@ prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
 prog_char PROGMEM Text_03[] = "Enter your password: ";
 prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSat";
 prog_char PROGMEM Text_05[] = "0123456789abcdef";
+prog_char PROGMEM Text_22[] = "!******************************************************************************!";
+ 
+#if NODO_MEGA
 prog_char PROGMEM Text_06[] = "Waiting for busy Nodo: ";
 prog_char PROGMEM Text_07[] = "Waiting for signal...";
-//prog_char PROGMEM Text_08[] = "Queue=Out, ";//??
-//prog_char PROGMEM Text_09[] = "Queue=In, ";//??
 prog_char PROGMEM Text_10[] = "Nodo"; // Default wachtwoord na een reset
-//prog_char PROGMEM Text_11[] = "Output=";
-//prog_char PROGMEM Text_12[] = "Input=";
 prog_char PROGMEM Text_13[] = "Ok.";
 prog_char PROGMEM Text_14[] = "Event=";
-prog_char PROGMEM Text_15[] = "Queue.dat";
-prog_char PROGMEM Text_16[] = "";
 prog_char PROGMEM Text_17[] = "payload";
 prog_char PROGMEM Text_18[] = "accept";
 prog_char PROGMEM Text_19[] = "close";
 prog_char PROGMEM Text_20[] = "quintessence";
 prog_char PROGMEM Text_21[] = "payload withoutRelease";
-prog_char PROGMEM Text_22[] = "!******************************************************************************!";
 prog_char PROGMEM Text_23[] = "log.dat";
+
+
 prog_char PROGMEM Text_24[] = "Queue: Capturing events...";
-//prog_char PROGMEM Text_25[] = "System=";
+prog_char PROGMEM Text_15[] = "Queue.dat";
 prog_char PROGMEM Text_26[] = "Queue: Processing events...";//???
 prog_char PROGMEM Text_27[] = "Raw/Key"; // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_28[] = "Raw/Hex"; // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_29[] = "Queue: Finished.";//???
 prog_char PROGMEM Text_30[] = "Terminal connection closed.";
- 
-#if NODO_MEGA
+
+
 // Commando's:
 prog_char PROGMEM Cmd_000[]=""; // dummy. Niet gebruiken
 prog_char PROGMEM Cmd_001[]="BreakOnDaylight";
@@ -314,7 +310,7 @@ prog_char PROGMEM Cmd_197[]="";
 prog_char PROGMEM Cmd_198[]="";
 prog_char PROGMEM Cmd_199[]="";
 prog_char PROGMEM Cmd_200[]="Ok.";
-prog_char PROGMEM Cmd_201[]="Error: Unknown command or event.";
+prog_char PROGMEM Cmd_201[]="Error: Unknown command, event or scriptfile.";
 prog_char PROGMEM Cmd_202[]="Error: Invalid parameter in command.";
 prog_char PROGMEM Cmd_203[]="Error: Unable to open file on SDCard.";
 prog_char PROGMEM Cmd_204[]="Error: Event queue overflow.";
@@ -625,7 +621,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define NODO_TYPE_EVENT              1
 #define NODO_TYPE_COMMAND            2
 
-// Hardware 
+// Hardware in gebruik
 #define HW_BOARD_UNO    0
 #define HW_BOARD_MEGA   1
 #define HW_ETHERNET     2
@@ -755,7 +751,7 @@ byte DaylightPrevious;                                      // t.b.v. voorkomen 
 byte ExecutionDepth=0;                                      // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's.
 void(*Reset)(void)=0;                                       // reset functie op adres 0.
 uint8_t RFbit,RFport,IRbit,IRport;                          // t.b.v. verwerking IR/FR signalen.
-int UserVar[USER_VARIABLES_MAX];                            // Gebruiks variabelen
+int UserVar[USER_VARIABLES_MAX];                            // Gebruikers variabelen
 unsigned long HW_Config=0;                                  // Hardware configuratie zoals gedetecteerd door de Nodo. 
 
 #if NODO_MEGA
@@ -810,7 +806,6 @@ void setup()
   digitalWrite(PIN_RF_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
   digitalWrite(PIN_RF_RX_VCC,HIGH);   // Spanning naar de RF ontvanger aan
   digitalWrite(PIN_IR_TX_DATA,LOW);   // Zet de IR zenders initiëel uit! Anders mogelijk overbelasting !
-
 
 #if NODO_MEGA
   pinMode(PIN_LED_RGB_G,  OUTPUT);
@@ -936,7 +931,7 @@ void loop()
   // dit is een tijdkritische loop die wacht tot binnengekomen event op IR, RF, SERIAL, CLOCK, DAYLIGHT, TIMER, etc
   // Er is bewist niet gekozen voor opvangen van signalen via IRQ's omdat er dan bij ontvangst van seriele gegevens
   // tekens verloren gaan. Deze hoofdloop duurt normaal ongeveer 27 microseconden en bij kijken naar Ethernet 
-  // maximaal 95Sec. Snel genoeg om een startbit van een binnenkomend RF of IR niet te hoeven missen omdat die
+  // maximaal 95 uSec. Snel genoeg om een startbit van een binnenkomend RF of IR niet te hoeven missen omdat die
   // van de orde groote zijn tussen 500..3000 microseconden.
 
   while(true)
@@ -1013,7 +1008,7 @@ void loop()
                   // TerminalSessie timeout, dan de verbinding netjes afsluiten
                   InputBuffer_Terminal[0]=0;
                   TerminalClient.println(ProgmemString(Text_30));
-                  delay(100); // geef de client even de gelegenheid de tekst te ontvangen
+                  delay(1000); // geef de client even de gelegenheid de tekst te ontvangen
                   TerminalClient.stop();
                   TerminalConnected=0;
                   break;
@@ -1032,7 +1027,7 @@ void loop()
                     {
                     TerminalClient.getRemoteIP(ClientIPAddress);  
                     ExecuteLine(InputBuffer_Terminal, VALUE_SOURCE_TELNET);
-                    TerminalClient.write('>');
+//                    TerminalClient.write('>');
                     }
                   else
                     {
@@ -1065,6 +1060,7 @@ void loop()
                       TerminalClient.println(cmd2str(MESSAGE_10));
                       }
                     }
+                  TerminalClient.write('>');                    
                   }
                 }
               }

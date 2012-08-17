@@ -548,7 +548,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;        
       
     case CMD_QUEUE:
-      Led(BLUE);     
       if(Par1==VALUE_ON)
         {
         a=(Par2==0)?60:Par2;
@@ -625,11 +624,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         if(S.WaitBusy==VALUE_ALL)
           S.WaitBusy=VALUE_OFF;
         else
-          {
-          if(Par1==0)
-            Par1=60;
-          WaitAndQueue(Par1,true,0);
-          }
+          NodoBusy(60,true);
         }
 
       break;
@@ -1009,8 +1004,6 @@ void ExecuteLine(char *Line, byte Port)
             
           case CMD_SEND:
             // als de SendTo is gevuld, dan event versturen naar een andere Nodo en niet zelf uitvoeren
-            // echter vooraf wel checken of er Nodos zijn die bezig zijn met verwerking.
-//            Serial.println("*** debug: Nieuw SendTo commando.");//???
             SendTo=Par1;             
             break;
 
@@ -1082,15 +1075,20 @@ void ExecuteLine(char *Line, byte Port)
             
           case CMD_FILE_SHOW:
             {
-            if(GetArgv(Command,TmpStr,2))
+            char FileName[13];
+            TmpStr[8]=0;// voor de zekerheid te lange filename afkappen
+            if(GetArgv(Command,FileName,2))
               {
               Led(BLUE);
-              strcat(TmpStr,".dat");
+              strcat(FileName,".dat");
               SelectSD(true);
-              File dataFile=SD.open(TmpStr);
+              File dataFile=SD.open(FileName);
               if(dataFile) 
                 {
+                SelectSD(false);
                 PrintTerminal(ProgmemString(Text_22));
+                SelectSD(true);
+                TmpStr[0]=0;
                 y=0;       
                 while(dataFile.available())
                   {
@@ -1103,23 +1101,29 @@ void ExecuteLine(char *Line, byte Port)
                     {
                     TmpStr[y]=0;
                     y=0;
+                    SelectSD(false);
                     PrintTerminal(TmpStr);
+                    SelectSD(true);
                     }
                   }
                 dataFile.close();
+                SelectSD(false);
                 PrintTerminal(ProgmemString(Text_22));
                 }  
-              else 
-                TransmitCode(command2event(S.Unit, CMD_MESSAGE ,MESSAGE_03,0),VALUE_ALL);
-      
-              SelectSD(false);
+              else
+                {
+                SelectSD(true);
+                TransmitCode(command2event(S.Unit, CMD_MESSAGE, S.Unit, MESSAGE_03),VALUE_ALL);      
+                }
               }
             break;
             }
     
           case CMD_FILE_EXECUTE:
             {
-            if(GetArgv(Command,TmpStr,2))
+            char FileName[13];
+            TmpStr[8]=0;// voor de zekerheid te lange filename afkappen
+            if(GetArgv(Command,FileName,2))
               {
               if(State_EventlistWrite!=0)
                 {
@@ -1131,7 +1135,7 @@ void ExecuteLine(char *Line, byte Port)
 
               else // Commando uitvoeren heeft alleen zin er geen eventlistwrite commando actief is
                 {                
-                strcat(TmpStr,".dat");
+                strcat(FileName,".dat");
 
                 // zet (eventueel) de extra logging aan
                 GetArgv(Command,TempString,3);
@@ -1140,7 +1144,7 @@ void ExecuteLine(char *Line, byte Port)
                 strcpy(TempLogFile,TempString);
                 
                 SelectSD(true);
-                File dataFile=SD.open(TmpStr);
+                File dataFile=SD.open(FileName);
                 if(dataFile) 
                   {
                   y=0;       
@@ -1154,6 +1158,7 @@ void ExecuteLine(char *Line, byte Port)
                       TmpStr[y]=0;
                       y=0;
                       SelectSD(false);
+                      PrintTerminal(TmpStr);
                       ExecuteLine(TmpStr,VALUE_SOURCE_FILE);
                       SelectSD(true);
                       }
@@ -1162,7 +1167,8 @@ void ExecuteLine(char *Line, byte Port)
                   }  
                 else
                   {
-                  TransmitCode(command2event(S.Unit, CMD_MESSAGE ,MESSAGE_03,0),VALUE_ALL);
+                  SelectSD(false);  
+                  TransmitCode(command2event(S.Unit, CMD_MESSAGE, S.Unit, MESSAGE_01),VALUE_ALL);
                   }
                 SelectSD(false);
                 }
@@ -1252,7 +1258,7 @@ void ExecuteLine(char *Line, byte Port)
               {
               strcat(TmpStr,".dat");
               if(!SaveEventlistSDCard(TmpStr))
-                TransmitCode(command2event(S.Unit, CMD_MESSAGE ,MESSAGE_03,0),VALUE_ALL);// geen RaiseMessage() anders weer poging om te loggen naar SDCard ==> oneindige loop
+                TransmitCode(command2event(S.Unit, CMD_MESSAGE, S.Unit, MESSAGE_03),VALUE_ALL);// geen RaiseMessage() anders weer poging om te loggen naar SDCard ==> oneindige loop
               }
             break;
 
@@ -1300,11 +1306,22 @@ void ExecuteLine(char *Line, byte Port)
             break;
             }  
 
+
           default:
             {              
             // standaard commando volgens gewone syntax
             v=command2event(S.Unit,Cmd,Par1,Par2);            
             Error=CommandError(v);
+
+            // Als het geen regulier commando was EN geen commando met afwijkende MMI, dan kijken of file op SDCard staat)
+            if(Error)
+              {
+              Command[8]=0;// Gebruik commando als een filename. Voor de zekerheid te lange filename afkappen
+              strcpy(TmpStr,"FileExecute ");
+              strcat(TmpStr,Command);
+              ExecuteLine(TmpStr,VALUE_SOURCE_FILE);
+              Error=0;
+              }
             }
           }
         }
@@ -1323,7 +1340,7 @@ void ExecuteLine(char *Line, byte Port)
             if(QueuePos<EVENT_QUEUE_MAX)
               {
               QueueEvent[QueuePos]=v;
-              QueuePort[QueuePos]=0;//??? nog keuze maken
+              QueuePort[QueuePos]=0;
               QueuePos++;           
               }       
             else
