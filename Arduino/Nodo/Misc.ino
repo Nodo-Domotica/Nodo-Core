@@ -959,9 +959,13 @@ boolean Eventlist_Read(int address, unsigned long *Event, unsigned long *Action)
 void RaiseMessage(byte MessageCode)
   {
   unsigned long eventcode;
+  int x;
   eventcode=command2event(S.Unit,CMD_MESSAGE, S.Unit, MessageCode);
   PrintEvent(eventcode,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM);  // geef event weer op Serial
+  x=S.WaitFreeRF_Window;
+  S.WaitFreeRF_Window=500;
   TransmitCode(eventcode,VALUE_ALL);
+  S.WaitFreeRF_Window=x;
   }
     
 
