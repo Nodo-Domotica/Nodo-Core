@@ -548,8 +548,7 @@ void ExecuteIP(void)
               if(RequestFile)
                 {              
                 // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-                digitalWrite(Ethernetshield_CS_W5100, HIGH);
-                digitalWrite(EthernetShield_CS_SDCard,LOW);
+                SelectSD(true);
                 File dataFile=SD.open(FileName);
                 if(dataFile) 
                   {

@@ -23,25 +23,27 @@ void PrintEvent(unsigned long Content, byte Direction, byte Port )
       return;
     }
 
-  TempString[0]=0; // als start een lege string
+
+  char* StringToPrint=(char*)malloc(100);
+  StringToPrint[0]=0; // als start een lege string
     
   // Geef de richting van de communicatie weer
   if(Direction)
     {
-    strcat(TempString,cmd2str(Direction));      
-    strcat(TempString,"=");
+    strcat(StringToPrint,cmd2str(Direction));      
+    strcat(StringToPrint,"=");
     }
   
   // Poort
   x=true;
 
-  strcat(TempString, cmd2str(Port));
+  strcat(StringToPrint, cmd2str(Port));
 
   if(Port==VALUE_SOURCE_EVENTGHOST || Port==VALUE_SOURCE_HTTP || Port==VALUE_SOURCE_TELNET)
     {
-    strcat(TempString, "(");
-    strcat(TempString, ip2str(ClientIPAddress));
-    strcat(TempString, ")");
+    strcat(StringToPrint, "(");
+    strcat(StringToPrint, ip2str(ClientIPAddress));
+    strcat(StringToPrint, ")");
     x=false;
     }
 
@@ -51,27 +53,28 @@ void PrintEvent(unsigned long Content, byte Direction, byte Port )
 
   if(x)
     {
-    strcat(TempString, ", "); 
-    strcat(TempString, cmd2str(CMD_UNIT));
-    strcat(TempString, "=");
-    strcat(TempString, int2str((Content>>24)&0xf)); 
+    strcat(StringToPrint, ", "); 
+    strcat(StringToPrint, cmd2str(CMD_UNIT));
+    strcat(StringToPrint, "=");
+    strcat(StringToPrint, int2str((Content>>24)&0xf)); 
     }
     
   // Event
-  strcat(TempString, ", ");
-  strcat(TempString, ProgmemString(Text_14));
-  strcat(TempString, Event2str(Content));
+  strcat(StringToPrint, ", ");
+  strcat(StringToPrint, ProgmemString(Text_14));
+  strcat(StringToPrint, Event2str(Content));
 
 
-  if(((Content>>16)&0xff)==CMD_MESSAGE )
+
+
+  if(((Content>>16)&0xff)==CMD_MESSAGE)
     {
-    strcat(TempString, " (");
-    strcat(TempString, cmd2str(Content&0xff));
-    strcat(TempString, ")");
+    strcat(StringToPrint, " (");
+    strcat(StringToPrint, cmd2str(Content&0xff));
+    strcat(StringToPrint, ")");
     }
 
-  PrintTerminal(TempString);   // stuur de regel naar Serial en/of naar Ethernet
-//  AddFileSDCard(ProgmemString(Text_23),TempString); // standaard logging naar log.dat??? waar wordt dit nu gedaan?
+  PrintTerminal(StringToPrint);   // stuur de regel naar Serial en/of naar Ethernet
 
   if(bitRead(HW_Config,HW_SDCARD))
     {
@@ -83,10 +86,11 @@ void PrintEvent(unsigned long Content, byte Direction, byte Port )
       strcat(TmpStr,DateTimeString());
       strcat(TmpStr,", ");
       }
-    strcat(TmpStr,TempString);
+    strcat(TmpStr,StringToPrint);
     AddFileSDCard(ProgmemString(Text_23),TmpStr); // Extra logfile op verzoek van gebruiker
     free(TmpStr);
     }
+  free(StringToPrint);
   } 
 #else
 
@@ -95,12 +99,12 @@ void PrintEvent(unsigned long Content, byte Direction, byte Port )
  \*********************************************************************************************/
 void PrintEvent(unsigned long Content, byte Direction, byte Port)
   {
-  FreeMemory(0);
+  FreeMemory(0); //??? t.b.v. debugging
   Serial.print(Direction);
   Serial.print(",");
-  Serial.print(Port); //??? Debug
+  Serial.print(Port);
   Serial.print(",0x");
-  Serial.println(Content,HEX); //??? Debug
+  Serial.println(Content,HEX);
   } 
   
 #endif
@@ -126,6 +130,7 @@ char* DateTimeString(void)
     }
 
 #if NODO_MEGA
+
  /**********************************************************************************************\
  * Print de welkomsttekst van de Nodo.
  \*********************************************************************************************/
@@ -169,8 +174,7 @@ void PrintWelcome(void)
  * Verzend teken(s) naar de Terminal
  \*********************************************************************************************/
 void PrintTerminal(char* LineToPrint)
-  {
-  
+  {  
   if(bitRead(HW_Config,HW_SERIAL))
     Serial.println(LineToPrint);
  
@@ -180,9 +184,9 @@ void PrintTerminal(char* LineToPrint)
       TerminalClient.println(LineToPrint);
     }
     
-  if(bitRead(HW_Config,HW_SDCARD))
-    if(TempLogFile[0]!=0)
-      AddFileSDCard(TempLogFile,LineToPrint); // Extra logfile op verzoek van gebruiker
+  if(TempLogFile[0]!=0)
+    if(bitRead(HW_Config,HW_SDCARD))
+      AddFileSDCard(TempLogFile,LineToPrint); // Extra logfile op verzoek van gebruiker: CMD_FILE_LOG
   }
 
 char* Event2str(unsigned long Code)

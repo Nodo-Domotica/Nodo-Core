@@ -10,7 +10,6 @@
 boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEvent)
   {
   unsigned long TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
-  unsigned long TimeoutMinTimer=millis() + 500L; // deze timer nodig omdat de RF ontvangers na inschakelen tijd nodig hebben om signaal te kunnen ontvangen. Zolang blijft de loop minimaal lopen.
   unsigned long Event;
   int Port,x,y,z;
   
@@ -23,72 +22,60 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
 
   while(TimeoutTimer>millis())
     {
+    if(BreakNoBusyNodo && NodoBusyStatus==0)
+      break; // Geen Busy Nodo meer
+
     if(GetEvent_IRRF(&Event,&Port))
       {
       TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
+
       #if NODO_MEGA
       if(S.Debug==VALUE_ON)
-          PrintEvent(Event,Port,VALUE_DIRECTION_INPUT);
+        PrintEvent(Event,Port,VALUE_DIRECTION_INPUT);
       #endif
-
-      if(BreakEvent!=0 && Event==BreakEvent)
-        {
-        break;
-//Serial.println("*** debug: BreakEvent ontvangen.");//???
-        }
         
       x=(byte)((Event>>16)&0xff); // cmd
       y=(byte)((Event>>24)&0xf); // unit
       z=(byte)((Event>>8)&0xff); // par1
       
       if(x==CMD_BUSY) // command
-        {
         NodoBusy(Event,false);          
-        
-        if(BreakNoBusyNodo && NodoBusyStatus==0)
-          {
-//Serial.println("*** debug: Alle Nodo vrij.");//???
-          break; // Geen Busy Nodo meer
-          }
-        }
+
+      if(BreakEvent!=0 && Event==BreakEvent)
+        break;
         
       else if(x==CMD_QUEUE) // command
         {
         if(y==S.Unit) // Als commando voor deze unit bestemd
           {
           if(z==VALUE_OFF) // Par1
-            {
-//Serial.println("*** debug: Queue Off ontvangen.");//???
             break;// Queue Off commando ontgangen.
-            }
           }
         }
   
       // Het is geen Busy event of Queue commando event, dan deze in de queue plaatsen.
-      #if NODO_MEGA
-      else
-        AddFileSDCard(ProgmemString(Text_15),int2str(Event));       // Sla event op in de queue. De Nodo-Mega slaat de queue op SDCard op.
-      #else
-      // sla event op in de queue. De Nodo-Mini heeft de queue is een kleine array <QueueEvent> staan.
-      else if(QueuePos<EVENT_QUEUE_MAX)
+      else if(x!=CMD_BUSY)
         {
-        QueueEvent[QueuePos]=Event;
-        QueuePort[QueuePos]=Port;
-        QueuePos++;           
-        }       
-      else
-        RaiseMessage(MESSAGE_04);    
-      #endif
+        #if NODO_MEGA
+        AddFileSDCard(ProgmemString(Text_15),int2str(Event));       // Sla event op in de queue. De Nodo-Mega slaat de queue op SDCard op.
+        #else
+        // sla event op in de queue. De Nodo-Mini heeft de queue is een kleine array <QueueEvent> staan.
+        if(QueuePos<EVENT_QUEUE_MAX)
+          {
+          QueueEvent[QueuePos]=Event;
+          QueuePort[QueuePos]=Port;
+          QueuePos++;           
+          }       
+        else
+          RaiseMessage(MESSAGE_04);    
+        #endif
+        }
       }    
     }   
 
   if(TimeoutTimer<=millis())
-    {
-//Serial.println("*** debug: Timeout opgetreden.");//???
     return false;
-    }
     
-//Serial.println("*** debug: WaitAndQueue met success ontvangen.");//???
   return true;
   }
   
@@ -96,7 +83,7 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
  /*********************************************************************************************\
  * Controleert of er een Nodo busy is.
  * <Event> event t.b.v. actualiseren status.
- * <Wait> als true, dan wordt gewacht tot alle Nodo vrij zijn.
+ * <Wait> als true, dan wordt gewacht tot alle Nodos vrij zijn.
  * geeft een true terug als er nog een Nodo busy is.
  \*********************************************************************************************/
 boolean NodoBusy(unsigned long Event, boolean Wait)
@@ -118,18 +105,20 @@ boolean NodoBusy(unsigned long Event, boolean Wait)
   if(Wait && NodoBusyStatus!=0)
     {
     #if NODO_MEGA
-    // Geef weer op welke Nodo(s) de timeout heeft plaatsgevonden
-    strcpy(TempString, ProgmemString(Text_06));
-    for(byte x=1;x<=UNIT_MAX;x++)
+    if(S.Debug==VALUE_ON)
       {
-      if((NodoBusyStatus>>x)&0x1)
+      // Geef weer op welke Nodo(s) wordt gewacht
+      strcpy(TempString, ProgmemString(Text_06));
+      for(byte x=1;x<=UNIT_MAX;x++)
         {
-        strcat(TempString, int2str(x));  
-        strcat(TempString, "  ");         
+        if((NodoBusyStatus>>x)&0x1)
+          {
+          strcat(TempString, int2str(x));  
+          strcat(TempString, "  ");         
+          }
         }
+      PrintTerminal(TempString);
       }
-    PrintTerminal(TempString);
-//???    TransmitCode(command2event(S.Unit, CMD_MESSAGE ,MESSAGE_14,0),VALUE_SOURCE_HTTP);// geen RaiseMessage() anders weer poging om te loggen naar SDCard ==> oneindige loop
     #endif
 
     if(!WaitAndQueue(30,true,0))
@@ -138,11 +127,6 @@ boolean NodoBusy(unsigned long Event, boolean Wait)
       NodoBusyStatus=0;
       }
     }
-
-  // Als de laatste Nodo vrij is, dan een korte pause zodat zeker alle ontvangers weer paraat staan
-  if(NodoBusyStatus==0 && NodoBusyStatus!=PreviousNodoBusyStatus)
-    delay(500);
-
   return NodoBusyStatus!=0;
   }
 
@@ -412,7 +396,6 @@ void ResetFactory(void)
   ClockRead(); 
 
   S.Version                    = SETTINGS_VERSION;
-  S.Unit                       = UNIT_DEFAULT;
   S.Lock                       = 0;
   S.AnalyseSharpness           = 50;
   S.AnalyseTimeOut             = SIGNAL_TIMEOUT_IR;
@@ -425,12 +408,11 @@ void ResetFactory(void)
   S.WaitBusy                   = VALUE_ON;
   S.WaitFreeRF_Delay           = (S.Unit!=1)?S.Unit:0;
   S.WaitFreeRF_Window          = (S.Unit!=1)?1:0; // 1 eenheid = 100 ms.
-  S.WaitFreeRF_Window          = 0;
-  S.WaitFreeRF_Delay           = 0;
   S.DaylightSaving             = Time.DaylightSaving;
-  S.Debug                      = VALUE_OFF;
 
 #if NODO_MEGA
+  S.Unit                       = UNIT_NODO_MEGA;
+  S.Debug                      = VALUE_OFF;
   S.AutoSaveEventGhostIP       = VALUE_OFF;
   S.EventGhostServer_IP[0]     = 0; // IP adres van de EventGhost server
   S.EventGhostServer_IP[1]     = 0; // IP adres van de EventGhost server
@@ -462,9 +444,12 @@ void ResetFactory(void)
   S.ID[0]                      = 0; // string leegmaken
   S.HTTP_Pin                   = VALUE_OFF;
   S.EchoSerial                 = VALUE_ON;
-  S.EchoTelnet                 = VALUE_ON;
-  
+  S.EchoTelnet                 = VALUE_ON;  
   strcpy(S.Password,ProgmemString(Text_10));
+
+#else
+  S.Unit                       = UNIT_NODO_MINI;
+
 #endif
 
   // zet analoge waarden op default
@@ -1070,7 +1055,7 @@ boolean SaveEventlistSDCard(char *FileName)
   else 
     {
     r=false; // niet meer weer proberen weg te schrijven.
-    TransmitCode(command2event(S.Unit,CMD_MESSAGE,MESSAGE_03,0),VALUE_ALL);
+    TransmitCode(command2event(S.Unit,CMD_MESSAGE, S.Unit, MESSAGE_03),VALUE_ALL);
     }
 
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip

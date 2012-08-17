@@ -117,12 +117,13 @@ unsigned long command2event(byte Unit, byte Command, byte Par1, byte Par2)
 char* cmd2str(int i)
   {
   static char string[80];
+
   if(i<=COMMAND_MAX)
-    {
     strcpy_P(string,(char*)pgm_read_word(&(CommandText_tabel[i])));
-    }
+
   else
     string[0]=0;// als er geen gevonden wordt, dan is de string leeg
+
   return string;
   }
   

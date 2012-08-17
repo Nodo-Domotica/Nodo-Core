@@ -1,30 +1,31 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- Status uitgebreid met optie EventlistCount. Geeft aantal bezette regels
-- SendTo aangepast
-- Commando lock voorzien van code o.b.v. ingestelde wachtwoord. (Na veranderen wachtwoord zal de lock verdwijnen)
-- Prompt in Terminal venster wordt nu weergegeven NADAT verwerking plaats heeft gevonden
-- PulseCounter niet meer gereset. Onderdeel van de formule geworden
-- SendKAKU bug in vorige build hersteld
-- Datum / Tijd wordt in Terminalvenster niet meer weergegeven. Nog wel in LOG.DAT
-- nieuw commando Echo <on/off> voor terugsturen ingevoerde tekens terminalprogramma
-- WildCard uitgebreid met Message en Boot events.
-- Status en SendStatus geintegreerd. Resultaat wordt altijs alleen naar de bron verstuurd.
-- Mini: aantal variabelen terug gebracht naar 8
-- Mini: Nesting diepte teruggebracht naar 4
-- Mini: queue voor opvangen events 8 events.
-- WaitBusy staat default op <On>
-- mega: Queue op SDCard. Geen limiet voor aantal events dat kan worden opgevangen in de queue tijdens wachten
-- SendTo naar niet bestaand unitnummer geeft hit op andere Nodo
-- onderdrukking repeated ontvangen van events via RF aangepast
+- Bug: Aanpassing SendTo. Werkt nu ook vanuit een script.
+- Bug: FileShow via TelNet loopt soms vast
+- Nieuw: FileExecute geeft regel weer voordat deze wordt uitgevoerd
+- Bug: Tekst bij message werd niet overal goed weergegeven. Soms geen tekst.
+- Aanpassing: Commando [WaitBusy] heeft als parameters [All, Off, <leeg> ] Parameter [On] wordt geaccepteerd, maar is heeft zelfde werking als leeg. Default staat de WaitBusy op [All]. Timeout=60Sec.
 
 Known Errors / ToDo:
 - blokkeren rf en ir bij een filewrite
 - Calibratie voor sensoren met negatief coefficient (Melding Martin)
 - In Executeline afgevangen commando worden niet gelogt op SDCard.
+- WaitBusy staat default op <On>: geen setting meer en altijd aan???
+- Event 0,0 wordt getoond na ongeldig commando
 
 Aanpassingen t.o.v. Nodo Due:
+- Mega: Prompt in Terminal venster wordt nu weergegeven NADAT verwerking plaats heeft gevonden
+- Mega: Datum / Tijd wordt in Terminalvenster niet meer weergegeven. Nog wel in LOG.DAT
+- Mega: nieuw commando Echo <on/off> voor terugsturen ingevoerde tekens terminalprogramma
+- All: WildCard uitgebreid met Message en Boot events.
+- All: Status en SendStatus geintegreerd. Resultaat wordt altijs alleen naar de bron verstuurd.
+- Mini: aantal variabelen terug gebracht naar 8
+- Mini: Nesting diepte teruggebracht naar 4. Dit i.v.m. besparing ram geheugen.
+- Mini: queue voor opvangen events 8 events.
+- mega: Queue op SDCard. Geen limiet voor aantal events dat kan worden opgevangen in de queue tijdens wachten
+- Commando lock voorzien van code o.b.v. ingestelde wachtwoord. (Na veranderen wachtwoord zal de lock verdwijnen)
+- Status uitgebreid met optie EventlistCount. Geeft aantal bezette regels
 - WaitBusy staat default op <On>
 - WildCard uitgebreid met Message en Boot events.
 - mega: Queue op SDCard. Geen limiet voor aantal events dat kan worden opgevangen in de queue tijdens wachten
