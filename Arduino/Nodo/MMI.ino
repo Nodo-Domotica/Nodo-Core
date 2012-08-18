@@ -99,7 +99,7 @@ void PrintEvent(unsigned long Content, byte Direction, byte Port )
  \*********************************************************************************************/
 void PrintEvent(unsigned long Content, byte Direction, byte Port)
   {
-  FreeMemory(0); //??? t.b.v. debugging
+  // FreeMemory(0); //??? t.b.v. debugging
   Serial.print(Direction);
   Serial.print(",");
   Serial.print(Port);
@@ -143,7 +143,7 @@ void PrintWelcome(void)
   PrintTerminal(ProgmemString(Text_02));
 
   // print versienummer, unit en indien gevuld het ID
-  sprintf(TempString,"Version=2.99(Mega), ThisUnit=%d",S.Unit);
+  sprintf(TempString,"Version=3.0(Mega), Build=%04d, ThisUnit=%d", NODO_BUILD, S.Unit);
   if(S.ID[0])
     {
     strcat(TempString,", ID=");
@@ -162,7 +162,7 @@ void PrintWelcome(void)
   // print IP adres van de Nodo
   if(bitRead(HW_Config,HW_ETHERNET))
     {
-    sprintf(TempString,"NodoIP=%u.%u.%u.%u",Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
+    sprintf(TempString,"NodoIP=%u.%u.%u.%u, MAC=%02X-%02X-%02X-%02X-%02X-%02X",Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3], NODO_MAC);
     PrintTerminal(TempString);
     }
     
@@ -236,7 +236,8 @@ char* Event2str(unsigned long Code)
       case CMD_WIRED_SMITTTRIGGER:
       case CMD_WIRED_THRESHOLD:
       case CMD_WIRED_ANALOG:
-      case CMD_WIRED_ANALOG_CALIBRATE:
+      case CMD_WIRED_ANALOG_CALIBRATE_HIGH:
+      case CMD_WIRED_ANALOG_CALIBRATE_LOW:
         P1=P_ANALOG;
         P2=P_NOT;
         break;
@@ -405,7 +406,7 @@ void PrintWelcome(void)
   Serial.println(ProgmemString(Text_02));
 
   // print versienummer, unit en indien gevuld het ID
-  sprintf(str,"Version=2.99(ATmega328), ThisUnit=%d",S.Unit);
+  sprintf(str,"Version=3.0(Mini), Build=%04d, ThisUnit=%d", NODO_BUILD, S.Unit);
   Serial.println(str);
 
   // Geef datum en tijd weer.
