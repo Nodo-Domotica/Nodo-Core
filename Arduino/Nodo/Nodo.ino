@@ -1,5 +1,5 @@
 /****************************************************************************************************************************\ 
-* Arduino project "Nodo Due" © Copyright 2012 Paul Tonkes 
+* Arduino project "Nodo" © Copyright 2012 Paul Tonkes 
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
@@ -43,6 +43,7 @@
 #define NODO_MAC           0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF    // Default Nodo MACadres
 #define UNIT_NODO_MEGA     1
 
+
 // Onderstaand de formules die gebruikt worden voor omrekening van pulsen naar analoge waarden.
 // Zet de formules zo op dat uitsluitend met gehele getallen gerekend wordt.
 // Het resulaat van de formule wordt gedeeld door 100 weergegeven. Dus de waarde 1 representeert de
@@ -53,7 +54,6 @@
 // a          = variabele met resultaat van de berekening.
 // PulseTime  = tijd tussen twee pulsen uitgedrukt in milliseconden.
 // PulseCount = Aantal pulsen tussen twee metingen.
-
 
 #define FORMULA_1            a = 3600/PulseTime;            /* 1000 pulsen = 1KWh */
 #define FORMULA_2            a = PulseCount; PulseCount=0;
@@ -68,7 +68,7 @@
 //#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
 
 #define SETTINGS_VERSION      8
-
+#define NODO_BUILD            0
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -155,10 +155,10 @@ prog_char PROGMEM Cmd_047[]="SendBusy";
 prog_char PROGMEM Cmd_048[]="ClientIP";
 prog_char PROGMEM Cmd_049[]="Password";
 prog_char PROGMEM Cmd_050[]="EventlistFile";
-prog_char PROGMEM Cmd_051[]="WiredCalibrate";
-prog_char PROGMEM Cmd_052[]="Lock";
-prog_char PROGMEM Cmd_053[]="Unlock";
-prog_char PROGMEM Cmd_054[]="Status";
+prog_char PROGMEM Cmd_051[]="WiredCalibrateHigh";
+prog_char PROGMEM Cmd_052[]="WiredCalibrateLow";
+prog_char PROGMEM Cmd_053[]="Lock";//??? verwijderen
+prog_char PROGMEM Cmd_054[]="Status"; 
 prog_char PROGMEM Cmd_055[]="";
 prog_char PROGMEM Cmd_056[]="AnalyseSettings";
 prog_char PROGMEM Cmd_057[]="OutputIP";
@@ -282,8 +282,8 @@ prog_char PROGMEM Cmd_169[]="Output";
 prog_char PROGMEM Cmd_170[]="Internal";
 prog_char PROGMEM Cmd_171[]="Busy";
 prog_char PROGMEM Cmd_172[]="Source";
-prog_char PROGMEM Cmd_173[]="RF2IR";
-prog_char PROGMEM Cmd_174[]="IR2RF";
+prog_char PROGMEM Cmd_173[]="RF2IR"; //???
+prog_char PROGMEM Cmd_174[]="IR2RF"; //???
 prog_char PROGMEM Cmd_175[]="All";
 prog_char PROGMEM Cmd_176[]="DaylightSaving";
 prog_char PROGMEM Cmd_177[]="EventlistCount";
@@ -291,8 +291,8 @@ prog_char PROGMEM Cmd_178[]="Queue";
 prog_char PROGMEM Cmd_179[]="Auto";
 prog_char PROGMEM Cmd_180[]="Time";
 prog_char PROGMEM Cmd_181[]="Count";
-prog_char PROGMEM Cmd_182[]="High";
-prog_char PROGMEM Cmd_183[]="Low";
+prog_char PROGMEM Cmd_182[]="High"; //??? mag weg
+prog_char PROGMEM Cmd_183[]="Low"; //??? mag weg
 prog_char PROGMEM Cmd_184[]="";
 prog_char PROGMEM Cmd_185[]="";
 prog_char PROGMEM Cmd_186[]="";
@@ -310,17 +310,17 @@ prog_char PROGMEM Cmd_197[]="";
 prog_char PROGMEM Cmd_198[]="";
 prog_char PROGMEM Cmd_199[]="";
 prog_char PROGMEM Cmd_200[]="Ok.";
-prog_char PROGMEM Cmd_201[]="Error: Unknown command, event or scriptfile.";
+prog_char PROGMEM Cmd_201[]="Error: Unknown command.";
 prog_char PROGMEM Cmd_202[]="Error: Invalid parameter in command.";
 prog_char PROGMEM Cmd_203[]="Error: Unable to open file on SDCard.";
 prog_char PROGMEM Cmd_204[]="Error: Event queue overflow.";
 prog_char PROGMEM Cmd_205[]="Error: Eventlist nesting error.";
-prog_char PROGMEM Cmd_206[]="Error: Accessing position in eventlist failed.";
+prog_char PROGMEM Cmd_206[]="Error: Reading/writing eventlist failed.";
 prog_char PROGMEM Cmd_207[]="Error: Unable to establish connection.";
 prog_char PROGMEM Cmd_208[]="Error: Incorrect password.";
 prog_char PROGMEM Cmd_209[]="Error: Wireless access locked.";
 prog_char PROGMEM Cmd_210[]="Error: Access not allowed.";
-prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost event failed.";
+prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost failed.";
 prog_char PROGMEM Cmd_212[]="Error: SendTo failed.";
 prog_char PROGMEM Cmd_213[]="Error: Timeout on busy Nodo.";
 prog_char PROGMEM Cmd_214[]="Waiting for busy Nodo(s)...";
@@ -407,9 +407,9 @@ PROGMEM const char *CommandText_tabel[]={
 #define CMD_CLIENT_IP                   48
 #define CMD_PASSWORD                    49
 #define CMD_EVENTLIST_FILE              50
-#define CMD_WIRED_ANALOG_CALIBRATE      51
-#define CMD_LOCK                        52
-#define CMD_UNLOCK                      53
+#define CMD_WIRED_ANALOG_CALIBRATE_HIGH 51
+#define CMD_WIRED_ANALOG_CALIBRATE_LOW  52
+#define CMD_LOCK                        53
 #define CMD_STATUS                      54
 #define CMD_RES55                       55
 #define CMD_ANALYSE_SETTINGS            56
@@ -434,7 +434,7 @@ PROGMEM const char *CommandText_tabel[]={
 #define CMD_EVENTGHOST_SERVER           75
 #define CMD_PULSE_VARIABLE              76
 #define CMD_QUEUE                       77
-#define CMD_WIREDANALOG_VARIABLE        78
+#define CMD_VARIABLE_WIREDANALOG        78
 #define CMD_REBOOT                      79
 #define CMD_ECHO                        80
 #define CMD_RES081                      81
@@ -834,7 +834,12 @@ void setup()
   // initialiseer de Wired ingangen.
   for(x=0;x<WIRED_PORTS;x++)
     {
-    digitalWrite(A0+PIN_WIRED_IN_1+x,S.WiredInputPullUp[x]==VALUE_ON?HIGH:LOW);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14
+    //digitalWrite(A0+PIN_WIRED_IN_1+x,S.WiredInputPullUp[x]==VALUE_ON?HIGH:LOW);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14//??? kan weg?
+    if(S.WiredInputPullUp[x]==VALUE_ON)
+      pinMode(A0+PIN_WIRED_IN_1+x,INPUT_PULLUP);
+    else
+      pinMode(A0+PIN_WIRED_IN_1+x,INPUT);
+
     pinMode(PIN_WIRED_OUT_1+x,OUTPUT); // definieer Arduino pin's voor Wired-Out
     }
 
@@ -900,7 +905,7 @@ void setup()
   PrintWelcome(); // geef de welkomsttekst weer
   UserPlugin_Init();
   TransmitCode(command2event(S.Unit, CMD_BOOT_EVENT,S.Unit,0),VALUE_ALL);  
-  ProcessEvent(command2event(S.Unit, CMD_BOOT_EVENT,S.Unit,0),VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM,0,0);  // Voer het 'Boot' event uit.
+  ProcessEventT(command2event(S.Unit, CMD_BOOT_EVENT,S.Unit,0),VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM,0,0);  // Voer het 'Boot' event uit.
   bitWrite(HW_Config,HW_SERIAL,0); // Serial weer uitschakelen.
   }
 
@@ -938,7 +943,7 @@ void loop()
     {
     // Check voor IR of RF events
     if(GetEvent_IRRF(&Content,&x)) 
-      ProcessEvent(Content,VALUE_DIRECTION_INPUT,x,0,0); // verwerk binnengekomen event.
+      ProcessEventT(Content,VALUE_DIRECTION_INPUT,x,0,0); // verwerk binnengekomen event.
       
     // 1: niet tijdkritische processen die periodiek uitgevoerd moeten worden
     if(LoopIntervalTimer_1<millis())// korte interval
@@ -1129,7 +1134,7 @@ void loop()
             if(CheckEventlist(Content,VALUE_SOURCE_CLOCK) && EventTimeCodePrevious!=Content)
               {
               EventTimeCodePrevious=Content; 
-              ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
+              ProcessEventT(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
               }
             else
               Content=0L;
@@ -1147,7 +1152,7 @@ void loop()
               {
               Content=command2event(S.Unit, CMD_CLOCK_EVENT_DAYLIGHT,Time.Daylight,0L);
               DaylightPrevious=Time.Daylight;
-              ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
+              ProcessEventT(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
               }
             }
           break;
@@ -1167,14 +1172,14 @@ void loop()
               {
               WiredInputStatus[x]=true;
               Content=command2event(S.Unit, CMD_WIRED_IN_EVENT,x+1,WiredInputStatus[x]?VALUE_ON:VALUE_OFF);
-              ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
+              ProcessEventT(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
               }
       
             if(WiredInputStatus[x] && y<(S.WiredInputThreshold[x]-S.WiredInputSmittTrigger[x]))
               {
               WiredInputStatus[x]=false;
               Content=command2event(S.Unit, CMD_WIRED_IN_EVENT,x+1,WiredInputStatus[x]?VALUE_ON:VALUE_OFF);
-              ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
+              ProcessEventT(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
               }
             }
           break;
@@ -1194,7 +1199,7 @@ void loop()
                 {
                 UserTimer[x]=0;// zet de timer op inactief.
                 Content=command2event(S.Unit, CMD_TIMER_EVENT,x+1,0);
-                ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_TIMER,0,0);      // verwerk binnengekomen event.
+                ProcessEventT(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_TIMER,0,0);      // verwerk binnengekomen event.
                 }
               }
             }
@@ -1250,9 +1255,9 @@ void loop()
 #endif
 
       // loop periodiek langs de userplugin
-      #ifdef NODO_PLUGIN
+//???      #ifdef NODO_PLUGIN=1
         UserPlugin_Periodically();
-      #endif
+//???      #endif
       }
     }// while 
   }

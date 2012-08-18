@@ -82,7 +82,8 @@ boolean QueueSend(byte DestUnit)
   NodoBusy(0L, true);
 
   // Wachten totdat de ether schoon is. Neem hiervoor 500ms, dan is in ieder geval de ontvanger van de slave weer stabiel.
-  WaitFreeRF(0,400);  
+//???  WaitFreeRF(0,400);  
+delay(400); //???
 
   // bereken checksum: crc-8 uit alle bytes in de queue.
   byte *B=(byte*)&(QueueEvent[0]);    //pointer verwijst nu naar eerste byte van de queue

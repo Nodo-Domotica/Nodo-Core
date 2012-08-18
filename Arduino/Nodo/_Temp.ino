@@ -1,5 +1,13 @@
 /*
 
+
+
+Event   = Alarm <nummer>
+Command = AlarmSet <nummer>, <hour>, <minute>
+                    0,1..4   00..23  00..59
+                    3        5       6
+
+
 FileWrite Test
 
 ! *****************************************************

@@ -23,7 +23,7 @@ void ProcessQueue(void)
           RaiseMessage(MESSAGE_06);    
         }
       else
-        ProcessEvent2(QueueEvent[x],VALUE_DIRECTION_INPUT,QueuePort[x],0,0);      // verwerk binnengekomen event.
+        ProcessEvent(QueueEvent[x],VALUE_DIRECTION_INPUT,QueuePort[x],0,0);      // verwerk binnengekomen event.
       }
     QueuePos=0;
     }
@@ -49,7 +49,7 @@ void ProcessQueue(void)
         TmpStr[y]=0;
         y=0;
         SelectSD(false);      
-        ProcessEvent2(str2int(TmpStr),VALUE_DIRECTION_INPUT,VALUE_SOURCE_FILE,0,0);      // verwerk binnengekomen event.
+        ProcessEvent(str2int(TmpStr),VALUE_DIRECTION_INPUT,VALUE_SOURCE_FILE,0,0);      // verwerk binnengekomen event.
         SelectSD(true);
         }
       }
@@ -66,7 +66,7 @@ void ProcessQueue(void)
  * Doorlopen van een volledig gevulde eventlist duurt ongeveer 15ms inclusief printen naar serial
  * maar exclusief verwerking n.a.v. een 'hit' in de eventlist
  \*********************************************************************************************/
-boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, unsigned long PreviousContent, byte PreviousPort)
+boolean ProcessEventT(unsigned long IncommingEvent, byte Direction, byte Port, unsigned long PreviousContent, byte PreviousPort)
   {
   byte x;
   SerialHold(true);  // als er een regel ontvangen is, dan binnenkomst van signalen stopzetten met een seriele XOFF
@@ -93,7 +93,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   #endif
 
   // Verwerk het binnengekomen event
-  ProcessEvent2(IncommingEvent,Direction,Port,PreviousContent,PreviousPort);
+  ProcessEvent(IncommingEvent,Direction,Port,PreviousContent,PreviousPort);
 
   // Verwerk eventuele events die in de queue zijn geplaatst.
   ProcessQueue();
@@ -106,7 +106,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     }
   }
   
-boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, unsigned long PreviousContent, byte PreviousPort)
+boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, unsigned long PreviousContent, byte PreviousPort)
   {
   unsigned long Event_1, Event_2;
   int x;
@@ -116,7 +116,7 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
 
   if(S.Lock)
     {
-    if(Port==VALUE_SOURCE_RF || Port==VALUE_SOURCE_IR)
+    if((Port==VALUE_SOURCE_RF || Port==VALUE_SOURCE_IR) && millis()>60000)
       {
       switch(Cmd) // command
         {
@@ -128,6 +128,8 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
         case CMD_BUSY:                // Busy status nodig voor verwerking
         case CMD_MESSAGE:             // Voorkomt dat een message van een andere Nodo een error genereert
         case CMD_BOOT_EVENT:          // Voorkomt dat een boot van een adere Nodo een error genereert
+        case CMD_KAKU:
+        case CMD_KAKU_NEW:
           break;
           
         default:
@@ -205,7 +207,7 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
           {// het is een ander soort event;
           if(Event_1!=command2event(S.Unit,CMD_COMMAND_WILDCARD,0,0))
             {
-            if(!ProcessEvent2(Event_2,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_EVENTLIST,IncommingEvent,Port))
+            if(!ProcessEvent(Event_2,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_EVENTLIST,IncommingEvent,Port))
               {
               ExecutionDepth--;
               return true;

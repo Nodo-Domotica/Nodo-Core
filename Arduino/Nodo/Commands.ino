@@ -110,7 +110,8 @@ byte CommandError(unsigned long Content)
       if(x<1 || x>USER_VARIABLES_MAX)return MESSAGE_02;
       return false;
 
-    case CMD_WIRED_ANALOG_CALIBRATE:
+    case CMD_WIRED_ANALOG_CALIBRATE_HIGH:
+    case CMD_WIRED_ANALOG_CALIBRATE_LOW:
     case CMD_WIRED_ANALOG:
     case CMD_WIRED_THRESHOLD:
     case CMD_WIRED_SMITTTRIGGER:
@@ -160,7 +161,7 @@ byte CommandError(unsigned long Content)
       if(Par1<1 || Par1>7)return MESSAGE_02;
       return false;
 
-    case CMD_WIREDANALOG_VARIABLE:
+    case CMD_VARIABLE_WIREDANALOG:
       if(Par1<1 || Par1>USER_VARIABLES_MAX)return MESSAGE_02;
       if(Par2<1 || Par2>WIRED_PORTS)return MESSAGE_02;
       return false;
@@ -314,7 +315,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       z=UserVar[y-1]+x;
       if(abs(z)<=10000)
         UserVar[y-1]+=x;
-      ProcessEvent2(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      ProcessEvent(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;        
 
     case CMD_VARIABLE_DEC: 
@@ -322,7 +323,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       z=UserVar[y-1]-x;
       if(abs(z)<=10000)
         UserVar[y-1]-=x;
-      ProcessEvent2(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      ProcessEvent(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;        
 
     case CMD_VARIABLE_SAVE:   
@@ -348,14 +349,13 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       for(y;y<=z;y++)
         {
         UserVar[y-1]=x;
-        ProcessEvent2(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+        ProcessEvent(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
         }
-      break;        
+      break;         
   
-  
-    case CMD_WIREDANALOG_VARIABLE:
+    case CMD_VARIABLE_WIREDANALOG:
       UserVar[Par1-1]=map(analogRead(PIN_WIRED_IN_1+Par2-1),S.WiredInput_Calibration_IL[Par2-1],S.WiredInput_Calibration_IH[Par2-1],S.WiredInput_Calibration_OL[Par2-1],S.WiredInput_Calibration_OH[Par2-1]);
-      ProcessEvent2(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      ProcessEvent(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;
 
     case CMD_PULSE_VARIABLE:
@@ -405,12 +405,12 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         }        
       if(abs(a)<=10000)
         UserVar[Par1-1]=(int)a;
-      ProcessEvent2(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      ProcessEvent(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;
 
     case CMD_VARIABLE_VARIABLE:
       UserVar[Par1-1]=UserVar[Par2-1];
-      ProcessEvent2(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      ProcessEvent(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;        
 
     case CMD_BREAK_ON_VAR_EQU:
@@ -564,8 +564,12 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;     
   
     case CMD_WIRED_PULLUP:
-      S.WiredInputPullUp[Par1-1]=Par2; // Par1 is de poort[1..], Par2 is de waarde [0..1]
-      digitalWrite(A0+PIN_WIRED_IN_1+Par1-1,S.WiredInputPullUp[Par1-1]==VALUE_ON?HIGH:LOW);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14
+      S.WiredInputPullUp[Par1-1]=Par2; // Par1 is de poort[1..]
+      if(S.WiredInputPullUp[x]==VALUE_ON)
+        pinMode(A0+PIN_WIRED_IN_1+Par1-1,INPUT_PULLUP);
+      else
+        pinMode(A0+PIN_WIRED_IN_1+Par1-1,INPUT);
+
       SaveSettings();
       break;
                  
@@ -591,8 +595,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;
                          
     case CMD_WAITFREERF: 
-      S.WaitFreeRF_Delay=Par1;
-      S.WaitFreeRF_Window=Par2;
+      S.WaitFreeRF_Delay=Par1*100;
+      S.WaitFreeRF_Window=Par2*100;
       SaveSettings();
       break;
 
@@ -653,32 +657,25 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       SaveSettings();
       break;                  
 
-    case CMD_WIRED_ANALOG_CALIBRATE:
+    case CMD_WIRED_ANALOG_CALIBRATE_HIGH:
       {
       Par2PortAnalog(Par1, Par2, &z, &x);// y=port, x=waarde
       z--;
-            
       y=analogRead(PIN_WIRED_IN_1+z);      
-      
-      // als exact dezelfde ijkwaarde vorige keer ook al gebruikt, dan een reset van de ijkwaarden
-      if(x==S.WiredInput_Calibration_OH[z] || x==S.WiredInput_Calibration_OL[z])
-        {
-        S.WiredInput_Calibration_IH[z]=y;
-        S.WiredInput_Calibration_IL[z]=y;
-        S.WiredInput_Calibration_OH[z]=x;
-        S.WiredInput_Calibration_OL[z]=x;
-        }
-      else if(x>=(((S.WiredInput_Calibration_OH[z] - S.WiredInput_Calibration_OL[z]) / 2) + S.WiredInput_Calibration_OL[z]))
-        {
-        S.WiredInput_Calibration_IH[z]=y;
-        S.WiredInput_Calibration_OH[z]=x;
-        }
-      else
-        {
-        S.WiredInput_Calibration_IL[z]=y;
-        S.WiredInput_Calibration_OL[z]=x;
-        }
+      S.WiredInput_Calibration_IH[z]=y;
+      S.WiredInput_Calibration_OH[z]=x;
       SaveSettings();
+      break;
+      }
+
+    case CMD_WIRED_ANALOG_CALIBRATE_LOW:
+      {
+      Par2PortAnalog(Par1, Par2, &z, &x);// y=port, x=waarde
+      z--;
+      y=analogRead(PIN_WIRED_IN_1+z);      
+      S.WiredInput_Calibration_IL[z]=y;
+      S.WiredInput_Calibration_OL[z]=x;
+      //??? Weer herstellen: SaveSettings();
       break;
       }
       
@@ -702,18 +699,10 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
     case CMD_UNIT:
       S.Unit=Par1;
-      if(Par1>1)
-         {
-         S.WaitFreeRF_Delay=3 + S.Unit;
-         S.WaitFreeRF_Window=3; // 1 eenheid = 100 ms.
-         }
-      else
-         {
-         S.WaitFreeRF_Delay=0;
-         S.WaitFreeRF_Window=0;
-         }
+      S.WaitFreeRF_Delay           = (S.Unit==1)? 0 : (S.Unit-2)*100; // Als Unit ongelijk aan 1 dan basis wachttijd
+      S.WaitFreeRF_Window          = (S.Unit==1)? 0 : 400;           // Als Unit ongelijk aan 1 dan basis window + 50ms*unit
       SaveSettings();
-      FactoryEventlist();
+  //    FactoryEventlist();??? kan deze weg?
       Reset();
 
     case CMD_REBOOT:
@@ -915,8 +904,9 @@ void ExecuteLine(char *Line, byte Port)
           case CMD_VARIABLE_EVENT:
           case CMD_WIRED_THRESHOLD:
           case CMD_WIRED_SMITTTRIGGER:
-          case CMD_WIRED_ANALOG_CALIBRATE:
-            if(GetArgv(Command,TmpStr,3))        
+          case CMD_WIRED_ANALOG_CALIBRATE_HIGH:
+          case CMD_WIRED_ANALOG_CALIBRATE_LOW:
+            if(GetArgv(Command,TmpStr,3))
               v=AnalogInt2event(str2AnalogInt(TmpStr), Par1, Cmd);
             break;
 
@@ -1331,7 +1321,7 @@ void ExecuteLine(char *Line, byte Port)
         if(State_EventlistWrite==0)// Gewoon uitvoeren
           {
           if(SendTo==0)
-            ProcessEvent2(v,VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
+            ProcessEvent(v,VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
           else
             {
             if(NodoType(v))

@@ -406,8 +406,8 @@ void ResetFactory(void)
   S.TransmitRepeatRF           = TX_REPEATS;
   S.SendBusy                   = VALUE_OFF;
   S.WaitBusy                   = VALUE_ON;
-  S.WaitFreeRF_Delay           = (S.Unit!=1)?S.Unit:0;
-  S.WaitFreeRF_Window          = (S.Unit!=1)?1:0; // 1 eenheid = 100 ms.
+  S.WaitFreeRF_Delay           = (S.Unit==1)? 0 : (S.Unit-1)*100; // Als Unit ongelijk aan 1 dan basis wachttijd
+  S.WaitFreeRF_Window          = (S.Unit==1)? 0 : 400;           // Als Unit ongelijk aan 1 dan basis window + 50ms*unit
   S.DaylightSaving             = Time.DaylightSaving;
 
 #if NODO_MEGA
