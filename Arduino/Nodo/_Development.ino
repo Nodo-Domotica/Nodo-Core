@@ -1,23 +1,18 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- Issue 475:	WaitFreeRF default. Delay en ListenWindow aangepast. Tevens bug omrekening opgelost
-- Issue 476:	SendTo scripts. Code herschreven.
-- Issue 463:	SendTo werkt nog niet goed
-- Issue 479:	Delay n,on levert soms een "hang"
-- Issue 473:	output Status
-- Issue 459:	MAC address ontbreekt in status.
-- WiredCalibrate: Opgesplitst naat twee commando's: WiredCalibrateHigh en WiredCalibrateLow.
-- Bug: WiredPullup bug a.g.v. nieuwe Arduino compiler opgelost.
+- WaitFreeRF aangepast. Nu uitsluitend nog On/Off instellen. Fijnafstemming komt later nog o.b.v. Hans zijn praktijk situatie
 
 Known Errors / ToDo:
+- WaitFreeRF: Fijnafstemming komt later nog o.b.v. Hans zijn praktijk situatie
+- Vreemde weergave events: Internal=System
 - blokkeren rf en ir bij een filewrite
 - waitfreerf default 500 ms laten wachten.
 - In Executeline afgevangen commando worden niet gelogt op SDCard.
-- WaitBusy staat default op <On>: geen setting meer en altijd aan???
 - Event 0,0 wordt getoond na ongeldig commando
 
 Aanpassingen t.o.v. Nodo Due:
+- All:WaitFreeRF aangepast. Nu uitsluitend nog On/Off instellen.
 - All: Aanpassing: Commando [WaitBusy] heeft als parameters [All, Off, <leeg> ] Parameter [On] wordt geaccepteerd, maar is heeft zelfde werking als leeg. Default staat de WaitBusy op [All]. Timeout=60Sec.
 - Mega: Prompt in Terminal venster wordt nu weergegeven NADAT verwerking plaats heeft gevonden
 - Mega: Datum / Tijd wordt in Terminalvenster niet meer weergegeven. Nog wel in LOG.DAT
