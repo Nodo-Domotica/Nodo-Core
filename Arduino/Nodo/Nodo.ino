@@ -35,13 +35,13 @@
 // of voor een Nodo-Mega voor een Arduino met een ATMega1280 of ATMega2560
 // Voor de Nodo-Mega variant bij onderstaande zeven regels de // remarks verwijderen.
 
-#define NODO_MEGA 1
-#include <SD.h>
-#include <EthernetNodo.h>
-#include <SPI.h>
-#define ETHERNET           1                                     // EthernetShield: 0 = afwezig, 1 = aanwezig
-#define NODO_MAC           0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF    // Default Nodo MACadres
-#define UNIT_NODO_MEGA     1
+//#define NODO_MEGA 1
+//#include <SD.h>
+//#include <EthernetNodo.h>
+//#include <SPI.h>
+//#define ETHERNET           1                                     // EthernetShield: 0 = afwezig, 1 = aanwezig
+//#define NODO_MAC           0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF    // Default Nodo MACadres
+//#define UNIT_NODO_MEGA     1
 
 
 // Onderstaand de formules die gebruikt worden voor omrekening van pulsen naar analoge waarden.
@@ -67,8 +67,8 @@
 /****************************************************************************************************************************/
 //#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
 
-#define SETTINGS_VERSION      8
-#define NODO_BUILD            0
+#define SETTINGS_VERSION     10
+#define NODO_BUILD          420
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -708,8 +708,7 @@ struct Settings
   byte    TransmitRF;
   byte    TransmitRepeatRF;
   byte    TransmitIP;                                       // Definitie van het gebruik van de IP-poort: Off, EventGhost of HTTP
-  byte    WaitFreeRF_Window;
-  byte    WaitFreeRF_Delay;
+  byte    WaitFreeRF;
   byte    SendBusy;
   byte    WaitBusy;
   boolean DaylightSaving;                                   // Vlag die aangeeft of het zomertijd of wintertijd is
@@ -1255,10 +1254,11 @@ void loop()
 #endif
 
       // loop periodiek langs de userplugin
-//???      #ifdef NODO_PLUGIN=1
+      #ifdef NODO_PLUGIN=1
         UserPlugin_Periodically();
-//???      #endif
+      #endif
       }
     }// while 
   }
+
 

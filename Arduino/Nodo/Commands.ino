@@ -64,7 +64,6 @@ byte CommandError(unsigned long Content)
     case CMD_RAWSIGNAL:
     case CMD_MESSAGE :
     case CMD_REBOOT:
-    case CMD_WAITFREERF: 
     case CMD_USERPLUGIN: 
     case CMD_CLOCK_EVENT_DAYLIGHT:
     case CMD_CLOCK_EVENT_ALL:
@@ -248,6 +247,7 @@ byte CommandError(unsigned long Content)
      // par2 mag alles zijn
     case CMD_BUSY:
     case CMD_BREAK_ON_DAYLIGHT:
+    case CMD_WAITFREERF:
       if(Par1!=VALUE_OFF && Par1!=VALUE_ON)return MESSAGE_02;
       return false;
 
@@ -595,8 +595,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;
                          
     case CMD_WAITFREERF: 
-      S.WaitFreeRF_Delay=Par1*100;
-      S.WaitFreeRF_Window=Par2*100;
+      S.WaitFreeRF=Par1;
       SaveSettings();
       break;
 
@@ -699,8 +698,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
     case CMD_UNIT:
       S.Unit=Par1;
-      S.WaitFreeRF_Delay           = (S.Unit==1)? 0 : (S.Unit-2)*100; // Als Unit ongelijk aan 1 dan basis wachttijd
-      S.WaitFreeRF_Window          = (S.Unit==1)? 0 : 400;           // Als Unit ongelijk aan 1 dan basis window + 50ms*unit
       SaveSettings();
   //    FactoryEventlist();??? kan deze weg?
       Reset();

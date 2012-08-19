@@ -51,16 +51,13 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
 
   if(ChecksumOrg == Checksum)
     {
-    delay(400);
-    // waitFreeRF(0,400); // Korte wachttijd 400ms anders is de RF ontvanger van de master (mogelijk) nog niet gereed voor ontvangst. Tevens wacht vrije ether.
+    delay(400);// Korte wachttijd 400ms anders is de RF ontvanger van de master (mogelijk) nog niet gereed voor ontvangst. Tevens wacht vrije ether.
     Nodo_2_RawSignal(command2event(S.Unit,CMD_BUSY,VALUE_ON,0));
     RawSendRF();
     BusyOnSent=true;
 
     // Verwerk de inhoud van de Queue
     ProcessQueue();
-//??? Zit al in ProcesEvent.    delay(250); // Korte wachttijd om Master gelegenheid te geven om het [Busy On] signaal te verwerken.???
-
     return true;
     }
   else
@@ -78,12 +75,14 @@ boolean QueueSend(byte DestUnit)
   boolean Bit;
   unsigned long Event,TimeoutTimer;
   
+  Led(BLUE);
+
   // Eerst wachten op bezige Nodo
   NodoBusy(0L, true);
 
-  // Wachten totdat de ether schoon is. Neem hiervoor 500ms, dan is in ieder geval de ontvanger van de slave weer stabiel.
-//???  WaitFreeRF(0,400);  
-delay(400); //???
+  delay(400);
+  if(S.WaitFreeRF==VALUE_ON)
+    WaitFreeRF();  
 
   // bereken checksum: crc-8 uit alle bytes in de queue.
   byte *B=(byte*)&(QueueEvent[0]);    //pointer verwijst nu naar eerste byte van de queue
@@ -334,19 +333,16 @@ unsigned long RawSignal_2_32bit(void)
  \*********************************************************************************************/
 # define WAITFREERF_TIMEOUT             30000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
 
-void WaitFreeRF(int Delay, int Window)
+void WaitFreeRF(void)
   {
   unsigned long Timer, TimeOutTimer;  
-  
-  if((Delay+Window)==0)
-    return;
-    
+      
   // eerst de 'dode' wachttijd
   Led(BLUE);
-  delay(Delay);
-  
+  delay((S.Unit-1)*100);
+    
   // dan kijken of de ether vrij is.
-  Timer=millis()+Window; // reset de timer.
+  Timer=millis()+300; // reset de timer.
   TimeOutTimer=millis()+WAITFREERF_TIMEOUT; // tijd waarna de routine wordt afgebroken in milliseconden
 
   while(Timer>millis() && TimeOutTimer>millis())
@@ -354,7 +350,7 @@ void WaitFreeRF(int Delay, int Window)
     if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
       {
       if(FetchSignal(PIN_RF_RX_DATA,HIGH,SIGNAL_TIMEOUT_RF))// Als het een duidelijk signaal was
-        Timer=millis()+Window; // reset de timer weer.
+        Timer=millis()+300; // reset de timer weer.
       }
     }
   Led(RED);
@@ -588,8 +584,8 @@ boolean TransmitCode(unsigned long Event, byte Dest)
   byte Command   =(Event>>16) & 0xff;
   
   if(Dest==VALUE_SOURCE_RF || (S.TransmitRF==VALUE_ON && Dest==VALUE_ALL))
-    if(SignalType!=SIGNAL_TYPE_UNKNOWN)
-      WaitFreeRF(S.WaitFreeRF_Delay*100, S.WaitFreeRF_Window*100); // alleen WaitFreeRF als type bekend is, anders gaat SendSignal niet goed a.g.v. overschrijven buffer
+    if(S.WaitFreeRF==VALUE_ON && SignalType!=SIGNAL_TYPE_UNKNOWN)// alleen WaitFreeRF als type bekend is, anders gaat SendSignal niet goed a.g.v. overschrijven buffer
+      WaitFreeRF();  
 
   if(Command==CMD_KAKU)
     KAKU_2_RawSignal(Event);

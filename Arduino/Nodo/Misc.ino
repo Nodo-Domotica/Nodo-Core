@@ -188,8 +188,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       break;
 
     case CMD_WAITFREERF: 
-      *Par1=S.WaitFreeRF_Delay;
-      *Par2=S.WaitFreeRF_Window;
+      *Par1=S.WaitFreeRF;
       break;
   
     case CMD_UNIT: 
@@ -406,8 +405,7 @@ void ResetFactory(void)
   S.TransmitRepeatRF           = TX_REPEATS;
   S.SendBusy                   = VALUE_OFF;
   S.WaitBusy                   = VALUE_ON;
-  S.WaitFreeRF_Delay           = (S.Unit==1)? 0 : (S.Unit-1)*100; // Als Unit ongelijk aan 1 dan basis wachttijd
-  S.WaitFreeRF_Window          = (S.Unit==1)? 0 : 400;           // Als Unit ongelijk aan 1 dan basis window + 50ms*unit
+  S.WaitFreeRF                 = VALUE_OFF;
   S.DaylightSaving             = Time.DaylightSaving;
 
 #if NODO_MEGA
@@ -962,10 +960,7 @@ void RaiseMessage(byte MessageCode)
   int x;
   eventcode=command2event(S.Unit,CMD_MESSAGE, S.Unit, MessageCode);
   PrintEvent(eventcode,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM);  // geef event weer op Serial
-  x=S.WaitFreeRF_Window;
-  S.WaitFreeRF_Window=500;
   TransmitCode(eventcode,VALUE_ALL);
-  S.WaitFreeRF_Window=x;
   }
     
 
