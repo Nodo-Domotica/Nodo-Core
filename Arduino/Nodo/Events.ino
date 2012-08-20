@@ -100,7 +100,7 @@ boolean ProcessEventT(unsigned long IncommingEvent, byte Direction, byte Port, u
 
   if(BusyOnSent)
     {
-    delay(250); // anders volgt de <Busy Off> te snel en wordt deze mogelijk gemist door de master.
+    delay(RECEIVER_STABLE); // anders volgt de <Busy Off> te snel en wordt deze mogelijk gemist door de master. ???hoger
     TransmitCode(command2event(S.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
     BusyOnSent=false;
     }
@@ -251,8 +251,6 @@ boolean CheckEvent(unsigned long Event, unsigned long MacroEvent, byte Port)
   // geen lege events zoeken en verwerken
   if(MacroEvent==0 || Event==0)
     return false;  
-  
-  // ### exacte match: 
   // als huidige event exact overeenkomt met het event in de regel uit de Eventlist, dan een match
   if(MacroEvent==Event)
      return true; 

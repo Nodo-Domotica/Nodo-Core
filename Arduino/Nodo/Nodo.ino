@@ -35,13 +35,13 @@
 // of voor een Nodo-Mega voor een Arduino met een ATMega1280 of ATMega2560
 // Voor de Nodo-Mega variant bij onderstaande zeven regels de // remarks verwijderen.
 
-//#define NODO_MEGA 1
-//#include <SD.h>
-//#include <EthernetNodo.h>
-//#include <SPI.h>
-//#define ETHERNET           1                                     // EthernetShield: 0 = afwezig, 1 = aanwezig
-//#define NODO_MAC           0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF    // Default Nodo MACadres
-//#define UNIT_NODO_MEGA     1
+#define NODO_MEGA 1
+#include <SD.h>
+#include <EthernetNodo.h>
+#include <SPI.h>
+#define ETHERNET           1                                     // EthernetShield: 0 = afwezig, 1 = aanwezig
+#define NODO_MAC           0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF    // Default Nodo MACadres
+#define UNIT_NODO_MEGA     1
 
 
 // Onderstaand de formules die gebruikt worden voor omrekening van pulsen naar analoge waarden.
@@ -55,9 +55,9 @@
 // PulseTime  = tijd tussen twee pulsen uitgedrukt in milliseconden.
 // PulseCount = Aantal pulsen tussen twee metingen.
 
-#define FORMULA_1            a = 3600/PulseTime;            /* 1000 pulsen = 1KWh */
+#define FORMULA_1            a = 3600000/PulseTime;            /* 1000 pulsen = 1KWh */
 #define FORMULA_2            a = PulseCount; PulseCount=0;
-#define FORMULA_3            a = 0;
+#define FORMULA_3            a = PulseCount / 10; PulseCount=0;
 #define FORMULA_4            a = 0;
 #define FORMULA_5            a = 0;
 #define FORMULA_6            a = 0;
@@ -68,7 +68,7 @@
 //#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
 
 #define SETTINGS_VERSION     10
-#define NODO_BUILD          420
+#define NODO_BUILD          421
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -614,6 +614,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define MIN_PULSE_LENGTH           100 // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define MIN_RAW_PULSES              16 // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
 #define SHARP_TIME                 500 // tijd in milliseconden dat de nodo gefocust moet blijven luisteren naar één dezelfde poort na binnenkomst van een signaal
+#define RECEIVER_STABLE            750 // ??? 
 #define SIGNAL_TYPE_UNKNOWN          0 // Type ontvangen of te verzenden signaal in de eventcode
 #define SIGNAL_TYPE_NODO             1 // Type ontvangen of te verzenden signaal in de eventcode
 #define SIGNAL_TYPE_KAKU             2 // Type ontvangen of te verzenden signaal in de eventcode
