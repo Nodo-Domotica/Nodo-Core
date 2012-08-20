@@ -10,6 +10,8 @@ Known Errors / ToDo:
 - waitfreerf default 500 ms laten wachten.
 - In Executeline afgevangen commando worden niet gelogt op SDCard.
 - Event 0,0 wordt getoond na ongeldig commando
+- NewKaku geeft unit nummer.
+- auto reset van busy van units.
 
 Aanpassingen t.o.v. Nodo Due:
 - All:WaitFreeRF aangepast. Nu uitsluitend nog On/Off instellen.

@@ -51,7 +51,7 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
 
   if(ChecksumOrg == Checksum)
     {
-    delay(400);// Korte wachttijd 400ms anders is de RF ontvanger van de master (mogelijk) nog niet gereed voor ontvangst. Tevens wacht vrije ether.
+    delay(RECEIVER_STABLE);// Korte wachttijd anders is de RF ontvanger van de master (mogelijk) nog niet gereed voor ontvangst. Tevens wacht vrije ether.
     Nodo_2_RawSignal(command2event(S.Unit,CMD_BUSY,VALUE_ON,0));
     RawSendRF();
     BusyOnSent=true;
@@ -80,7 +80,7 @@ boolean QueueSend(byte DestUnit)
   // Eerst wachten op bezige Nodo
   NodoBusy(0L, true);
 
-  delay(400);
+  delay(RECEIVER_STABLE);
   if(S.WaitFreeRF==VALUE_ON)
     WaitFreeRF();  
 

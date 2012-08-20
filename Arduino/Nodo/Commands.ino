@@ -699,11 +699,16 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     case CMD_UNIT:
       S.Unit=Par1;
       SaveSettings();
-  //    FactoryEventlist();??? kan deze weg?
+      if(BusyOnSent)
+        TransmitCode(command2event(S.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
+      FactoryEventlist();
+      
       Reset();
 
     case CMD_REBOOT:
       delay(1000);
+      if(BusyOnSent)
+        TransmitCode(command2event(S.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
       Reset();
       break;        
 
@@ -714,6 +719,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;
 
     case CMD_RESET:
+      if(BusyOnSent)
+        TransmitCode(command2event(S.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
       ResetFactory();
 
     case CMD_EVENTLIST_ERASE:
