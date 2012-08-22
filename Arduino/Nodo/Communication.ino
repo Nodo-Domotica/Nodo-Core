@@ -42,7 +42,7 @@ boolean SendEventGhost(char* event, byte* SendToIP)
   Try=0;
   do
     {
-    if(EGclient.connect(EGServerIP,S.PortClient))
+    if(EGclient.connect(EGServerIP,Settings.PortClient))
       {
       EGclient.flush();
   
@@ -105,7 +105,7 @@ boolean SendEventGhost(char* event, byte* SendToIP)
   
                 strcpy(TempString,InputBuffer_IP);
                 strcat(TempString,":");
-                strcat(TempString,S.Password);   
+                strcat(TempString,Settings.Password);   
                 md5(TempString);  
                 EGclient.print(TempString);
                 EventGhostClientState=1;
@@ -139,15 +139,15 @@ byte GetHTTPFile(char* filename)
   byte Ok;
   
   strcpy(HttpRequest,"?id=");
-  strcat(HttpRequest,S.ID);  
+  strcat(HttpRequest,Settings.ID);  
 
   strcat(HttpRequest,"&file=");
   strcat(HttpRequest,filename);
 
-  if(S.HTTP_Pin==VALUE_ON)
+  if(Settings.HTTP_Pin==VALUE_ON)
     {
     // pin-code genereren en meesturen in het http-request
-    sprintf(TempString,"%s:%s",HTTPCookie,S.Password);  
+    sprintf(TempString,"%s:%s",HTTPCookie,Settings.Password);  
     md5(TempString);
     strcat(HttpRequest,"&key=");
     strcat(HttpRequest,TempString);    
@@ -168,7 +168,7 @@ byte SendHTTPEvent(unsigned long event)
   char *HttpRequest=(char*)malloc(INPUT_BUFFER_SIZE+1);
 
   strcpy(HttpRequest,"?id=");
-  strcat(HttpRequest,S.ID);  
+  strcat(HttpRequest,Settings.ID);  
 
   strcat(HttpRequest,"&unit=");
   if(((event>>28)&0xf)==((unsigned long)(SIGNAL_TYPE_UNKNOWN)))
@@ -177,10 +177,10 @@ byte SendHTTPEvent(unsigned long event)
     Unit=(event>>24)&0x0f;
   strcat(HttpRequest,int2str(Unit));  
   
-  if(S.HTTP_Pin==VALUE_ON)
+  if(Settings.HTTP_Pin==VALUE_ON)
     {
     // pin-code genereren en meesturen in het http-request
-    sprintf(TempString,"%s:%s",HTTPCookie,S.Password);  
+    sprintf(TempString,"%s:%s",HTTPCookie,Settings.Password);  
     md5(TempString);
     strcat(HttpRequest,"&key=");
     strcat(HttpRequest,TempString);    
@@ -206,7 +206,7 @@ boolean SendHTTPCookie(void)
   char *HttpRequest=(char*)malloc(INPUT_BUFFER_SIZE+1);
 
   strcpy(HttpRequest,"?id=");
-  strcat(HttpRequest,S.ID);  
+  strcat(HttpRequest,Settings.ID);  
 
   // Verzend tevens een nieuwe cookie voor het eerstvolgende event.
   RandomCookie(HTTPCookie);
@@ -238,9 +238,9 @@ boolean SendHTTPRequest(char* Request)
 
   // Haal uit het HTTP request URL de Host. 
   // zoek naar de eerste slash in de opgegeven HTTP-Host adres
-  SlashPos=StringFind(S.HTTPRequest,"/");
+  SlashPos=StringFind(Settings.HTTPRequest,"/");
   if(SlashPos!=-1)
-    strcat(IPBuffer,S.HTTPRequest+SlashPos);
+    strcat(IPBuffer,Settings.HTTPRequest+SlashPos);
 
   // Alle spaties omzetten naar %20 en toevoegen aan de te verzenden regel.
   y=strlen(IPBuffer);
@@ -265,17 +265,17 @@ boolean SendHTTPRequest(char* Request)
 
   // IPBuffer bevat nu het volledige HTTP-request, gereed voor verzending.
 
-  if(S.Debug==VALUE_ON)
+  if(Settings.Debug==VALUE_ON)
     {
     strcpy(TempString,"# HTTP Output: ");
     strcat(TempString,IPBuffer);
     Serial.println(TempString);
     }
 
-  strcpy(TempString,S.HTTPRequest);
+  strcpy(TempString,Settings.HTTPRequest);
   TempString[SlashPos]=0;
 
-  if(IPClient.connect(TempString,S.PortClient))
+  if(IPClient.connect(TempString,Settings.PortClient))
     {
     IPClient.getRemoteIP(ClientIPAddress);  
     IPClient.println(IPBuffer);
@@ -283,7 +283,7 @@ boolean SendHTTPRequest(char* Request)
     strcat(IPBuffer,TempString);
     IPClient.println(IPBuffer);
     strcpy(IPBuffer,"User-Agent: Nodo/");
-    strcat(IPBuffer,int2str(S.Version));
+    strcat(IPBuffer,int2str(Settings.Version));
     IPClient.println(IPBuffer);
     IPClient.println(F("Connection: Close"));    
     IPClient.println();// Afsluiten met een lege regel is verplicht in http protocol/
@@ -304,7 +304,7 @@ boolean SendHTTPRequest(char* Request)
         else if(InByte==0x0A)
           {
           IPBuffer[InByteCounter]=0;
-          if(S.Debug==VALUE_ON)
+          if(Settings.Debug==VALUE_ON)
             {
             strcpy(TempString,"# HTTP Input: ");
             strcat(TempString,IPBuffer);
@@ -447,10 +447,10 @@ void ExecuteIP(void)
     IPClient.getRemoteIP(ClientIPAddress);  
 
     // Controleer of het IP adres van de Client geldig is. 
-    if((S.Client_IP[0]!=0 && ClientIPAddress[0]!=S.Client_IP[0]) ||
-       (S.Client_IP[1]!=0 && ClientIPAddress[1]!=S.Client_IP[1]) ||
-       (S.Client_IP[2]!=0 && ClientIPAddress[2]!=S.Client_IP[2]) ||
-       (S.Client_IP[3]!=0 && ClientIPAddress[3]!=S.Client_IP[3]))
+    if((Settings.Client_IP[0]!=0 && ClientIPAddress[0]!=Settings.Client_IP[0]) ||
+       (Settings.Client_IP[1]!=0 && ClientIPAddress[1]!=Settings.Client_IP[1]) ||
+       (Settings.Client_IP[2]!=0 && ClientIPAddress[2]!=Settings.Client_IP[2]) ||
+       (Settings.Client_IP[3]!=0 && ClientIPAddress[3]!=Settings.Client_IP[3]))
       {
       RaiseMessage(MESSAGE_10);
       }
@@ -486,7 +486,7 @@ void ExecuteIP(void)
               if(!RequestCompleted)
                 {
                 Completed=true;
-                if(S.Debug==VALUE_ON)
+                if(Settings.Debug==VALUE_ON)
                   {
                   strcpy(TempString,"# HTTP Input: ");
                   strcat(TempString,InputBuffer_IP);
@@ -495,9 +495,9 @@ void ExecuteIP(void)
                 
                 // als de beveiliging aan staat, dan kijken of de juiste pin ip meegegeven in het http-request. x is vlag voor toestemming verwerking event
                 x=false;
-                if(S.HTTP_Pin==VALUE_ON)
+                if(Settings.HTTP_Pin==VALUE_ON)
                   {
-                  sprintf(TmpStr2,"%s:%s",HTTPCookie,S.Password);  
+                  sprintf(TmpStr2,"%s:%s",HTTPCookie,Settings.Password);  
                   md5(TmpStr2);
                   
                   if(ParseHTTPRequest(InputBuffer_IP,"key",TempString))
@@ -537,7 +537,7 @@ void ExecuteIP(void)
 
               IPClient.println(F("Content-Type: text/html"));
               IPClient.print(F("Server: Nodo/"));
-              IPClient.println(int2str(S.Version));             
+              IPClient.println(int2str(Settings.Version));             
               if(bitRead(HW_Config,HW_CLOCK))
                 {
                 IPClient.print(F("Date: "));
@@ -622,7 +622,7 @@ void ExecuteIP(void)
                 // Cookie is verzonden en regel met de MD5 hash is ontvangen
                 // Stel de string samen waar de MD5-hash aan de Nodo zijde voor gegenereerd moet worden
                 // Bereken eigen MD5-Hash uit de string "<cookie>:<password>"                
-                sprintf(TempString,"%s:%s",EGCookie,S.Password);            
+                sprintf(TempString,"%s:%s",EGCookie,Settings.Password);            
                 md5(TempString); 
             
                 // vergelijk hash-waarden en bevestig de EventGhostClient bij akkoord
@@ -634,17 +634,17 @@ void ExecuteIP(void)
                   IPClient.print(TempString); // "accept"
   
                   // Wachtwoord correct. Bewaar IP adres indien nodig
-                  if(S.AutoSaveEventGhostIP==VALUE_AUTO)
+                  if(Settings.AutoSaveEventGhostIP==VALUE_AUTO)
                     {
-                    if( S.EventGhostServer_IP[0]!=ClientIPAddress[0] ||
-                        S.EventGhostServer_IP[1]!=ClientIPAddress[1] ||
-                        S.EventGhostServer_IP[2]!=ClientIPAddress[2] ||
-                        S.EventGhostServer_IP[3]!=ClientIPAddress[3] )
+                    if( Settings.EventGhostServer_IP[0]!=ClientIPAddress[0] ||
+                        Settings.EventGhostServer_IP[1]!=ClientIPAddress[1] ||
+                        Settings.EventGhostServer_IP[2]!=ClientIPAddress[2] ||
+                        Settings.EventGhostServer_IP[3]!=ClientIPAddress[3] )
                       {
-                      S.EventGhostServer_IP[0]=ClientIPAddress[0];
-                      S.EventGhostServer_IP[1]=ClientIPAddress[1];
-                      S.EventGhostServer_IP[2]=ClientIPAddress[2];
-                      S.EventGhostServer_IP[3]=ClientIPAddress[3];
+                      Settings.EventGhostServer_IP[0]=ClientIPAddress[0];
+                      Settings.EventGhostServer_IP[1]=ClientIPAddress[1];
+                      Settings.EventGhostServer_IP[2]=ClientIPAddress[2];
+                      Settings.EventGhostServer_IP[3]=ClientIPAddress[3];
                       SaveSettings();
                       }
                     }

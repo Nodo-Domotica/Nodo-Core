@@ -29,24 +29,10 @@ sendto 5; eventlistwrite; userevent 100; sound 3
 sendto 5; eventlistwrite; userevent 100; senduserevent 123
 sendto 5; sendkaku A3,on
 sendto 5; sound
-Delay 3
 SendUserEvent 100
 
 FileWrite
  
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

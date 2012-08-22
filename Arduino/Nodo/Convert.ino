@@ -41,7 +41,7 @@ unsigned long AnalogInt2event(int wi, byte port, byte cmd)
     }
 
   return ((unsigned long)SIGNAL_TYPE_NODO)<<28   |
-         ((unsigned long)S.Unit)<<24             | 
+         ((unsigned long)Settings.Unit)<<24             | 
          ((unsigned long)cmd)<<16                |
          ((unsigned long)port)<<12               |
          ((unsigned long)high)<<11               |
