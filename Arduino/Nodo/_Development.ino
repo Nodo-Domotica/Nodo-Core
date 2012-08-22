@@ -1,17 +1,19 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- WaitFreeRF aangepast. Nu uitsluitend nog On/Off instellen. Fijnafstemming komt later nog o.b.v. Hans zijn praktijk situatie
+- Queue bestand wordt gewist na een reboot (anders kans op een loop bij verkeerde inhoud)
+- diverse aanpassingen t.a.v. queueing
+- aanpassing Busy On/Off mechanisme.
 
 Known Errors / ToDo:
+- IR werkt niet voor de Mini variant ?
+- Status All uitvraag bij een mini levert: [Input=File, Unit=15, Event=Debug] Geen geldig event
 - WaitFreeRF: Fijnafstemming komt later nog o.b.v. Hans zijn praktijk situatie
 - Vreemde weergave events: Internal=System
 - blokkeren rf en ir bij een filewrite
-- waitfreerf default 500 ms laten wachten.
 - In Executeline afgevangen commando worden niet gelogt op SDCard.
 - Event 0,0 wordt getoond na ongeldig commando
 - NewKaku geeft unit nummer.
-- auto reset van busy van units.
 
 Aanpassingen t.o.v. Nodo Due:
 - All:WaitFreeRF aangepast. Nu uitsluitend nog On/Off instellen.

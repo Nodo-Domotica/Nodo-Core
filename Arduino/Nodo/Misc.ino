@@ -1,4 +1,3 @@
-
  /*********************************************************************************************\
  * wachtloop die wordt afgebroken als:
  * - <Timeout> seconden zijn voorbij. In dit geval geeft deze funktie een <false> terug.
@@ -16,13 +15,12 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
   Led(BLUE);
   
   #if NODO_MEGA
-  if(S.Debug==VALUE_ON)
-    PrintTerminal(ProgmemString(Text_24));
+  PrintTerminal(ProgmemString(Text_24));
   #endif
 
   while(TimeoutTimer>millis())
     {
-    if(BreakNoBusyNodo && NodoBusyStatus==0)
+    if(BreakNoBusyNodo && Busy.Status==0)
       break; // Geen Busy Nodo meer
 
     if(GetEvent_IRRF(&Event,&Port))
@@ -30,8 +28,7 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
       TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
 
       #if NODO_MEGA
-      if(S.Debug==VALUE_ON)
-        PrintEvent(Event,Port,VALUE_DIRECTION_INPUT);
+      PrintEvent(Event,Port,VALUE_DIRECTION_INPUT);
       #endif
         
       x=(byte)((Event>>16)&0xff); // cmd
@@ -39,17 +36,17 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
       z=(byte)((Event>>8)&0xff); // par1
       
       if(x==CMD_BUSY) // command
-        NodoBusy(Event,false);          
+        NodoBusy(Event,0);          
 
       if(BreakEvent!=0 && Event==BreakEvent)
         break;
         
-      else if(x==CMD_QUEUE) // command
+      else if(x==CMD_DELAY) // command
         {
-        if(y==S.Unit) // Als commando voor deze unit bestemd
+        if(y==Settings.Unit) // Als commando voor deze unit bestemd
           {
-          if(z==VALUE_OFF) // Par1
-            break;// Queue Off commando ontgangen.
+          if(z==0) // Par1
+            break;// QueueAndWait weer uitschakelen.
           }
         }
   
@@ -83,12 +80,12 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
  /*********************************************************************************************\
  * Controleert of er een Nodo busy is.
  * <Event> event t.b.v. actualiseren status.
- * <Wait> als true, dan wordt gewacht tot alle Nodos vrij zijn.
+ * <Wait> als ongelijk 0, dan wordt opgegeven tijd (seconden) gewacht tot alle Nodos vrij zijn.
  * geeft een true terug als er nog een Nodo busy is.
  \*********************************************************************************************/
-boolean NodoBusy(unsigned long Event, boolean Wait)
+boolean NodoBusy(unsigned long Event, int Wait)
   {
-  int PreviousNodoBusyStatus=NodoBusyStatus;
+  int PreviousNodoBusyStatus=Busy.Status;
   
   if(Event)
     {
@@ -96,22 +93,24 @@ boolean NodoBusy(unsigned long Event, boolean Wait)
     if(((Event>>16)&0xff)==CMD_BUSY) // command
       {
       if(((Event>>8)&0xff)==VALUE_ON) // Par1
-        NodoBusyStatus  |=  (1<<((Event>>24)&0xf)); // unit nummer
+        Busy.Status  |=  (1<<((Event>>24)&0xf)); // unit nummer
       else
-        NodoBusyStatus  &= ~(1<<((Event>>24)&0xf)); // unit nummer
+        Busy.Status  &= ~(1<<((Event>>24)&0xf)); // unit nummer
+
+      Busy.ResetTimer=Settings.WaitBusyAll;// na 60 sec. automtische reset van de statussen om te voorkomen dat deze Nodo hangt a.g.v. een gemist Busy Off signaal.
       }
     }
 
-  if(Wait && NodoBusyStatus!=0)
+  if(Wait>0 && Busy.Status!=0)
     {
     #if NODO_MEGA
-    if(S.Debug==VALUE_ON)
+    if(Settings.Debug==VALUE_ON)
       {
       // Geef weer op welke Nodo(s) wordt gewacht
       strcpy(TempString, ProgmemString(Text_06));
       for(byte x=1;x<=UNIT_MAX;x++)
         {
-        if((NodoBusyStatus>>x)&0x1)
+        if((Busy.Status>>x)&0x1)
           {
           strcat(TempString, int2str(x));  
           strcat(TempString, "  ");         
@@ -121,13 +120,13 @@ boolean NodoBusy(unsigned long Event, boolean Wait)
       }
     #endif
 
-    if(!WaitAndQueue(30,true,0))
+    if(!WaitAndQueue(Wait,true,0))
       {
       RaiseMessage(MESSAGE_13);
-      NodoBusyStatus=0;
+      Busy.Status=0;
       }
     }
-  return NodoBusyStatus!=0;
+  return Busy.Status!=0;
   }
 
 
@@ -188,42 +187,42 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       break;
 
     case CMD_WAITFREERF: 
-      *Par1=S.WaitFreeRF;
+      *Par1=Settings.WaitFreeRF;
       break;
   
     case CMD_UNIT: 
-      *Par1=S.Unit;
+      *Par1=Settings.Unit;
       break;        
 
     case CMD_SENDBUSY:
-      *Par1=S.SendBusy;
+      *Par1=Settings.SendBusy;
       break;
 
     case CMD_DEBUG:
-      *Par1=S.Debug;
+      *Par1=Settings.Debug;
       break;
 
     case CMD_LOCK:
-      *Par1=S.Lock==0?0:0x80;// uit 16-bit combi van Par1+Par2 staat de on/off in bit 15.
+      *Par1=Settings.Lock==0?0:0x80;// uit 16-bit combi van Par1+Par2 staat de on/off in bit 15.
       break;
 
     case CMD_WAITBUSY:
-      *Par1=S.WaitBusy?VALUE_ALL:VALUE_OFF;
+      *Par1=Settings.WaitBusyAll;
       break;
                   
     case CMD_ANALYSE_SETTINGS:
-      *Par1=S.AnalyseTimeOut/1000;
-      *Par2=S.AnalyseSharpness;
+      *Par1=Settings.AnalyseTimeOut/1000;
+      *Par2=Settings.AnalyseSharpness;
       break;
 
     case CMD_TRANSMIT_RF:
-      *Par1=S.TransmitRF;
-      *Par2=S.TransmitRepeatRF;
+      *Par1=Settings.TransmitRF;
+      *Par2=Settings.TransmitRepeatRF;
       break;
       
     case CMD_TRANSMIT_IR:
-      *Par1=S.TransmitIR;
-      *Par2=S.TransmitRepeatIR;
+      *Par1=Settings.TransmitIR;
+      *Par2=Settings.TransmitRepeatIR;
       break;
 
     case CMD_CLOCK_EVENT_DAYLIGHT:
@@ -269,26 +268,26 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
 
     case CMD_WIRED_PULLUP:
       *Par1=xPar1;
-      *Par2=S.WiredInputPullUp[xPar1-1];
+      *Par2=Settings.WiredInputPullUp[xPar1-1];
       break;
 
     case CMD_WIRED_ANALOG:
       // lees analoge waarde. Dit is een 10-bit waarde, unsigned 0..1023
       // vervolgens met map() omrekenen naar gekalibreerde waarde        
-      x=map(analogRead(PIN_WIRED_IN_1+xPar1-1),S.WiredInput_Calibration_IL[xPar1-1],S.WiredInput_Calibration_IH[xPar1-1],S.WiredInput_Calibration_OL[xPar1-1],S.WiredInput_Calibration_OH[xPar1-1]);
+      x=map(analogRead(PIN_WIRED_IN_1+xPar1-1),Settings.WiredInput_Calibration_IL[xPar1-1],Settings.WiredInput_Calibration_IH[xPar1-1],Settings.WiredInput_Calibration_OL[xPar1-1],Settings.WiredInput_Calibration_OH[xPar1-1]);
       event=AnalogInt2event(x, xPar1, CMD_WIRED_ANALOG);
       *Par1=(byte)((event>>8) & 0xff);
       *Par2=(byte)(event & 0xff);
       break;
 
     case CMD_WIRED_THRESHOLD:
-      event=AnalogInt2event(S.WiredInputThreshold[xPar1-1], xPar1,0);
+      event=AnalogInt2event(Settings.WiredInputThreshold[xPar1-1], xPar1,0);
       *Par1=(byte)((event>>8) & 0xff);
       *Par2=(byte)(event & 0xff);
       break;
 
     case CMD_WIRED_SMITTTRIGGER:
-      event=AnalogInt2event(S.WiredInputSmittTrigger[xPar1-1], xPar1,0);
+      event=AnalogInt2event(Settings.WiredInputSmittTrigger[xPar1-1], xPar1,0);
       *Par1=(byte)((event>>8) & 0xff);
       *Par2=(byte)(event & 0xff);
       break;
@@ -305,11 +304,11 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
 
 #if NODO_MEGA
     case CMD_TRANSMIT_IP:
-      *Par1=S.TransmitIP;
-      if(S.TransmitIP==VALUE_SOURCE_HTTP)
-        *Par2=S.HTTP_Pin;
-      if(S.TransmitIP==VALUE_SOURCE_EVENTGHOST)
-        *Par2=S.AutoSaveEventGhostIP;
+      *Par1=Settings.TransmitIP;
+      if(Settings.TransmitIP==VALUE_SOURCE_HTTP)
+        *Par2=Settings.HTTP_Pin;
+      if(Settings.TransmitIP==VALUE_SOURCE_EVENTGHOST)
+        *Par2=Settings.AutoSaveEventGhostIP;
       break;
 
     // pro-forma de commando's die geen fout op mogen leveren omdat deze elders in de statusafhandeling worden weergegeven
@@ -354,9 +353,9 @@ char* ProgmemString(prog_char* text)
    \*********************************************************************************************/
   void SaveSettings(void)  
     {
-    char ByteToSave,*pointerToByteToSave=pointerToByteToSave=(char*)&S;    //pointer verwijst nu naar startadres van de struct. 
+    char ByteToSave,*pointerToByteToSave=pointerToByteToSave=(char*)&Settings;    //pointer verwijst nu naar startadres van de struct. 
     
-    for(int x=0; x<sizeof(struct Settings) ;x++)
+    for(int x=0; x<sizeof(struct SettingsStruct) ;x++)
       {
       EEPROM.write(x,*pointerToByteToSave); 
       pointerToByteToSave++;
@@ -370,16 +369,16 @@ boolean LoadSettings()
   {
   byte x;
     
-  char ByteToSave,*pointerToByteToRead=(char*)&S;    //pointer verwijst nu naar startadres van de struct.
+  char ByteToSave,*pointerToByteToRead=(char*)&Settings;    //pointer verwijst nu naar startadres van de struct.
 
-  for(int x=0; x<sizeof(struct Settings);x++)
+  for(int x=0; x<sizeof(struct SettingsStruct);x++)
     {
     *pointerToByteToRead=EEPROM.read(x);
     pointerToByteToRead++;// volgende byte uit de struct
     }
     
   for(x=0;x<USER_VARIABLES_MAX;x++)
-    UserVar[x]=S.UserVar[x];
+    UserVar[x]=Settings.UserVar[x];
       
   }
  
@@ -394,77 +393,77 @@ void ResetFactory(void)
   int x,y;
   ClockRead(); 
 
-  S.Version                    = SETTINGS_VERSION;
-  S.Lock                       = 0;
-  S.AnalyseSharpness           = 50;
-  S.AnalyseTimeOut             = SIGNAL_TIMEOUT_IR;
-  S.TransmitIR                 = VALUE_OFF;
-  S.TransmitRF                 = VALUE_ON;
-  S.TransmitIP                 = VALUE_OFF;
-  S.TransmitRepeatIR           = TX_REPEATS;
-  S.TransmitRepeatRF           = TX_REPEATS;
-  S.SendBusy                   = VALUE_OFF;
-  S.WaitBusy                   = VALUE_ON;
-  S.WaitFreeRF                 = VALUE_OFF;
-  S.DaylightSaving             = Time.DaylightSaving;
+  Settings.Version                    = SETTINGS_VERSION;
+  Settings.Lock                       = 0;
+  Settings.AnalyseSharpness           = 50;
+  Settings.AnalyseTimeOut             = SIGNAL_TIMEOUT_IR;
+  Settings.TransmitIR                 = VALUE_OFF;
+  Settings.TransmitRF                 = VALUE_ON;
+  Settings.TransmitIP                 = VALUE_OFF;
+  Settings.TransmitRepeatIR           = TX_REPEATS;
+  Settings.TransmitRepeatRF           = TX_REPEATS;
+  Settings.SendBusy                   = VALUE_OFF;
+  Settings.WaitBusyAll                = 30;
+  Settings.WaitFreeRF                 = VALUE_OFF;
+  Settings.DaylightSaving             = Time.DaylightSaving;
 
 #if NODO_MEGA
-  S.Unit                       = UNIT_NODO_MEGA;
-  S.Debug                      = VALUE_OFF;
-  S.AutoSaveEventGhostIP       = VALUE_OFF;
-  S.EventGhostServer_IP[0]     = 0; // IP adres van de EventGhost server
-  S.EventGhostServer_IP[1]     = 0; // IP adres van de EventGhost server
-  S.EventGhostServer_IP[2]     = 0; // IP adres van de EventGhost server
-  S.EventGhostServer_IP[3]     = 0; // IP adres van de EventGhost server
-  S.HTTPRequest[0]             = 0; // string van het HTTP adres leeg maken
-  S.Client_IP[0]               = 0;
-  S.Client_IP[1]               = 0;
-  S.Client_IP[2]               = 0;
-  S.Client_IP[3]               = 0;
-  S.Nodo_IP[0]                 = 0;
-  S.Nodo_IP[1]                 = 0;
-  S.Nodo_IP[2]                 = 0;
-  S.Nodo_IP[3]                 = 0;
-  S.Gateway[0]                 = 0;
-  S.Gateway[1]                 = 0;
-  S.Gateway[2]                 = 0;
-  S.Gateway[3]                 = 0;
-  S.Subnet[0]                  = 255;
-  S.Subnet[1]                  = 255;
-  S.Subnet[2]                  = 255;
-  S.Subnet[3]                  = 0;
-  S.DnsServer[0]               = 0;
-  S.DnsServer[1]               = 0;
-  S.DnsServer[2]               = 0;
-  S.DnsServer[3]               = 0;
-  S.PortServer                 = 8080;
-  S.PortClient                 = 80;
-  S.ID[0]                      = 0; // string leegmaken
-  S.HTTP_Pin                   = VALUE_OFF;
-  S.EchoSerial                 = VALUE_ON;
-  S.EchoTelnet                 = VALUE_ON;  
-  strcpy(S.Password,ProgmemString(Text_10));
+  Settings.Unit                       = UNIT_NODO_MEGA;
+  Settings.Debug                      = VALUE_OFF;
+  Settings.AutoSaveEventGhostIP       = VALUE_OFF;
+  Settings.EventGhostServer_IP[0]     = 0; // IP adres van de EventGhost server
+  Settings.EventGhostServer_IP[1]     = 0; // IP adres van de EventGhost server
+  Settings.EventGhostServer_IP[2]     = 0; // IP adres van de EventGhost server
+  Settings.EventGhostServer_IP[3]     = 0; // IP adres van de EventGhost server
+  Settings.HTTPRequest[0]             = 0; // string van het HTTP adres leeg maken
+  Settings.Client_IP[0]               = 0;
+  Settings.Client_IP[1]               = 0;
+  Settings.Client_IP[2]               = 0;
+  Settings.Client_IP[3]               = 0;
+  Settings.Nodo_IP[0]                 = 0;
+  Settings.Nodo_IP[1]                 = 0;
+  Settings.Nodo_IP[2]                 = 0;
+  Settings.Nodo_IP[3]                 = 0;
+  Settings.Gateway[0]                 = 0;
+  Settings.Gateway[1]                 = 0;
+  Settings.Gateway[2]                 = 0;
+  Settings.Gateway[3]                 = 0;
+  Settings.Subnet[0]                  = 255;
+  Settings.Subnet[1]                  = 255;
+  Settings.Subnet[2]                  = 255;
+  Settings.Subnet[3]                  = 0;
+  Settings.DnsServer[0]               = 0;
+  Settings.DnsServer[1]               = 0;
+  Settings.DnsServer[2]               = 0;
+  Settings.DnsServer[3]               = 0;
+  Settings.PortServer                 = 8080;
+  Settings.PortClient                 = 80;
+  Settings.ID[0]                      = 0; // string leegmaken
+  Settings.HTTP_Pin                   = VALUE_OFF;
+  Settings.EchoSerial                 = VALUE_ON;
+  Settings.EchoTelnet                 = VALUE_ON;  
+  strcpy(Settings.Password,ProgmemString(Text_10));
 
 #else
-  S.Unit                       = UNIT_NODO_MINI;
+  Settings.Unit                       = UNIT_NODO_MINI;
 
 #endif
 
   // zet analoge waarden op default
   for(x=0;x<WIRED_PORTS;x++)
     {
-    S.WiredInputThreshold[x]=5000; 
-    S.WiredInputSmittTrigger[x]=500;
-    S.WiredInputPullUp[x]=VALUE_ON;
-    S.WiredInput_Calibration_IH[x]=1023;
-    S.WiredInput_Calibration_IL[x]=0;
-    S.WiredInput_Calibration_OH[x]=10000;
-    S.WiredInput_Calibration_OL[x]=0;
+    Settings.WiredInputThreshold[x]=5000; 
+    Settings.WiredInputSmittTrigger[x]=500;
+    Settings.WiredInputPullUp[x]=VALUE_ON;
+    Settings.WiredInput_Calibration_IH[x]=1023;
+    Settings.WiredInput_Calibration_IL[x]=0;
+    Settings.WiredInput_Calibration_OH[x]=10000;
+    Settings.WiredInput_Calibration_OL[x]=0;
     }
 
   // maak alle variabelen leeg
   for(byte x=0;x<USER_VARIABLES_MAX;x++)
-     S.UserVar[x]=0;
+     Settings.UserVar[x]=0;
 
   SaveSettings();  
   FactoryEventlist();
@@ -483,10 +482,10 @@ void FactoryEventlist(void)
 
 #if NODO_MEGA
   // schrijf default regels.
-  Eventlist_Write(0,command2event(S.Unit,CMD_BOOT_EVENT,S.Unit,0),command2event(S.Unit,CMD_SOUND,7,0)); // geluidssignaal na opstarten Nodo
-  Eventlist_Write(0,command2event(S.Unit,CMD_COMMAND_WILDCARD,VALUE_SOURCE_IR,CMD_KAKU),command2event(S.Unit,CMD_RAWSIGNAL_SEND,0,0)); 
+  Eventlist_Write(0,command2event(Settings.Unit,CMD_BOOT_EVENT,Settings.Unit,0),command2event(Settings.Unit,CMD_SOUND,7,0)); // geluidssignaal na opstarten Nodo
+  Eventlist_Write(0,command2event(Settings.Unit,CMD_COMMAND_WILDCARD,VALUE_SOURCE_IR,CMD_KAKU),command2event(Settings.Unit,CMD_RAWSIGNAL_SEND,0,0)); 
 #else
-  Eventlist_Write(0,command2event(S.Unit,CMD_BOOT_EVENT,S.Unit,0),command2event(S.Unit,CMD_SOUND,7,0)); // geluidssignaal na opstarten Nodo
+  Eventlist_Write(0,command2event(Settings.Unit,CMD_BOOT_EVENT,Settings.Unit,0),command2event(Settings.Unit,CMD_SOUND,7,0)); // geluidssignaal na opstarten Nodo
 #endif
   }
 
@@ -558,7 +557,7 @@ void Status(byte Par1, byte Par2, boolean Transmit)
     s=false;
 
 #if NODO_MEGA          
-    boolean dhcp=(S.Nodo_IP[0] + S.Nodo_IP[1] + S.Nodo_IP[2] + S.Nodo_IP[3])==0;
+    boolean dhcp=(Settings.Nodo_IP[0] + Settings.Nodo_IP[1] + Settings.Nodo_IP[2] + Settings.Nodo_IP[3])==0;
 #endif
 
     if(!Transmit)
@@ -569,7 +568,7 @@ void Status(byte Par1, byte Par2, boolean Transmit)
 
    #if NODO_MEGA          
         case CMD_CLIENT_IP:
-          sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_CLIENT_IP),S.Client_IP[0],S.Client_IP[1],S.Client_IP[2],S.Client_IP[3]);
+          sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_CLIENT_IP),Settings.Client_IP[0],Settings.Client_IP[1],Settings.Client_IP[2],Settings.Client_IP[3]);
           PrintTerminal(TempString);
           break;
 
@@ -584,7 +583,7 @@ void Status(byte Par1, byte Par2, boolean Transmit)
           // Gateway
           if(!dhcp)
             {
-            sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_GATEWAY),S.Gateway[0],S.Gateway[1],S.Gateway[2],S.Gateway[3]);
+            sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_GATEWAY),Settings.Gateway[0],Settings.Gateway[1],Settings.Gateway[2],Settings.Gateway[3]);
             PrintTerminal(TempString);
             }
           break;
@@ -593,7 +592,7 @@ void Status(byte Par1, byte Par2, boolean Transmit)
           // Subnetmask
           if(!dhcp)
             {
-            sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_SUBNET),S.Subnet[0],S.Subnet[1],S.Subnet[2],S.Subnet[3]);
+            sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_SUBNET),Settings.Subnet[0],Settings.Subnet[1],Settings.Subnet[2],Settings.Subnet[3]);
             PrintTerminal(TempString);
             }
           break;
@@ -602,35 +601,35 @@ void Status(byte Par1, byte Par2, boolean Transmit)
           if(!dhcp)
             {
             // DnsServer
-            sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_DNS_SERVER),S.DnsServer[0],S.DnsServer[1],S.DnsServer[2],S.DnsServer[3]);
+            sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_DNS_SERVER),Settings.DnsServer[0],Settings.DnsServer[1],Settings.DnsServer[2],Settings.DnsServer[3]);
             PrintTerminal(TempString);
             }
           break;
 
         case CMD_PORT_SERVER:
-          sprintf(TempString,"%s %d",cmd2str(CMD_PORT_SERVER), S.PortServer);
+          sprintf(TempString,"%s %d",cmd2str(CMD_PORT_SERVER), Settings.PortServer);
           PrintTerminal(TempString);
           break;
 
         case CMD_PORT_CLIENT:
-          sprintf(TempString,"%s %d",cmd2str(CMD_PORT_CLIENT), S.PortClient);
+          sprintf(TempString,"%s %d",cmd2str(CMD_PORT_CLIENT), Settings.PortClient);
           PrintTerminal(TempString);
           break;
 
         case CMD_HTTP_REQUEST:
-          sprintf(TempString,"%s %s",cmd2str(CMD_HTTP_REQUEST),S.HTTPRequest);
+          sprintf(TempString,"%s %s",cmd2str(CMD_HTTP_REQUEST),Settings.HTTPRequest);
           PrintTerminal(TempString);
           break;
 
         case CMD_ID:
-          sprintf(TempString,"%s %s",cmd2str(CMD_ID), S.ID);
+          sprintf(TempString,"%s %s",cmd2str(CMD_ID), Settings.ID);
           PrintTerminal(TempString);
           break;
           
         case CMD_EVENTGHOST_SERVER:
           // EvetGhost client IP
-          sprintf(TempString,"%s %u.%u.%u.%u ",cmd2str(CMD_EVENTGHOST_SERVER),S.EventGhostServer_IP[0],S.EventGhostServer_IP[1],S.EventGhostServer_IP[2],S.EventGhostServer_IP[3]);
-          if(S.AutoSaveEventGhostIP==VALUE_AUTO)
+          sprintf(TempString,"%s %u.%u.%u.%u ",cmd2str(CMD_EVENTGHOST_SERVER),Settings.EventGhostServer_IP[0],Settings.EventGhostServer_IP[1],Settings.EventGhostServer_IP[2],Settings.EventGhostServer_IP[3]);
+          if(Settings.AutoSaveEventGhostIP==VALUE_AUTO)
             strcat(TempString," (Auto)");      
           PrintTerminal(TempString);
           break;
@@ -686,12 +685,12 @@ void Status(byte Par1, byte Par2, boolean Transmit)
           GetStatus(&x,&P1,&P2); // haal status op. Call by Reference!
           if(Transmit)
             {
-            TransmitCode(command2event(S.Unit,x,P1,P2),VALUE_ALL); // verzend als event
+            TransmitCode(command2event(Settings.Unit,x,P1,P2),VALUE_ALL); // verzend als event
             }
 
 #if NODO_MEGA
           else
-            PrintTerminal(Event2str(command2event(S.Unit,x,P1,P2)));
+            PrintTerminal(Event2str(command2event(Settings.Unit,x,P1,P2)));
 #endif
           }
       }
@@ -812,7 +811,7 @@ void Alarm(int Variant,int Option)
         }          
       break;
 
-    case 4:// S.O.S.
+    case 4:// Settings.O.Settings.
       for(y=1;y<=(Option>1?Option:1);y++)
         {
           Beep(1200,50);
@@ -914,7 +913,7 @@ boolean Eventlist_Write(int address, unsigned long Event, unsigned long Action)/
     return false;// geen geldig adres meer c.q. alles is vol.
 
   address--;// echte adressering begint vanaf nul. voor de user vanaf 1.
-  address=address*8+sizeof(struct Settings);     // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer deze bytes. Deze niet te gebruiken voor de Eventlist!
+  address=address*8+sizeof(struct SettingsStruct);     // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer deze bytes. Deze niet te gebruiken voor de Eventlist!
 
   EEPROM.write(address++,(Event>>24  & 0xFF));
   EEPROM.write(address++,(Event>>16  & 0xFF));
@@ -937,7 +936,7 @@ boolean Eventlist_Read(int address, unsigned long *Event, unsigned long *Action)
   if(address>EVENTLIST_MAX)return(false);
 
   address--;// echte adressering begint vanaf nul. voor de user vanaf 1.
-  address=address*8+sizeof(struct Settings);     // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer deze bytes. Deze niet te gebruiken voor de Eventlist!
+  address=address*8+sizeof(struct SettingsStruct);     // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer deze bytes. Deze niet te gebruiken voor de Eventlist!
 
   *Event  =((unsigned long)(EEPROM.read(address++))) << 24;
   *Event|= ((unsigned long)(EEPROM.read(address++))) << 16;
@@ -958,7 +957,7 @@ void RaiseMessage(byte MessageCode)
   {
   unsigned long eventcode;
   int x;
-  eventcode=command2event(S.Unit,CMD_MESSAGE, S.Unit, MessageCode);
+  eventcode=command2event(Settings.Unit,CMD_MESSAGE, Settings.Unit, MessageCode);
   PrintEvent(eventcode,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM);  // geef event weer op Serial
   TransmitCode(eventcode,VALUE_ALL);
   }
@@ -975,10 +974,12 @@ void RaiseMessage(byte MessageCode)
  \*********************************************************************************************/
 void Led(byte Color)
   {
+#if NODO_MEGA
   digitalWrite(PIN_LED_RGB_R,Color==RED);
   digitalWrite(PIN_LED_RGB_B,Color==BLUE);
-#if NODO_MEGA
   digitalWrite(PIN_LED_RGB_G,Color==GREEN);
+#else
+  digitalWrite(PIN_LED_RGB_R,(Color==RED || Color==BLUE));
 #endif
   }
   
@@ -1054,7 +1055,7 @@ boolean SaveEventlistSDCard(char *FileName)
   else 
     {
     r=false; // niet meer weer proberen weg te schrijven.
-    TransmitCode(command2event(S.Unit,CMD_MESSAGE, S.Unit, MESSAGE_03),VALUE_ALL);
+    TransmitCode(command2event(Settings.Unit,CMD_MESSAGE, Settings.Unit, MESSAGE_03),VALUE_ALL);
     }
 
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip

@@ -20,16 +20,13 @@
 * bugs kunnen worden gelogd op                      : https://code.google.com/p/arduino-nodo/
 * Compiler voor deze programmacode te downloaden op : http://arduino.cc
 * Voor vragen of suggesties, mail naar              : p.k.tonkes@gmail.com
-* Compiler                                          : Arduino Compiler versie 1.0
-* Arduino board                                     : Arduino Mega 1280 of 2560 @16Mhz.
+* Compiler                                          : Arduino Compiler met minimaal versie 1.0.1
 *
 /****************************** Door gebruiker in te stellen: ***************************************************************/
 
 #define USER_PLUGIN        0                                     // Plugin: 0 = niet compileren, 1 = wel compileren
 #define NODO_MEGA          0
 #define UNIT_NODO_MINI     15
-
-
 
 // De code kan worden gecompileerd als een Nodo-Mini voor de Arduino met een ATMega328 processor
 // of voor een Nodo-Mega voor een Arduino met een ATMega1280 of ATMega2560
@@ -63,12 +60,14 @@
 #define FORMULA_6            a = 0;
 #define FORMULA_7            a = 0;
 #define FORMULA_8            a = 0;
+#define FORMULA_9            a = 0;
+#define FORMULA_10           a = 0;
 
 /****************************************************************************************************************************/
 //#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
 
 #define SETTINGS_VERSION     10
-#define NODO_BUILD          421
+#define NODO_BUILD          422
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -181,7 +180,7 @@ prog_char PROGMEM Cmd_073[]="PortServer";
 prog_char PROGMEM Cmd_074[]="PortClient";
 prog_char PROGMEM Cmd_075[]="EventGhostServer";
 prog_char PROGMEM Cmd_076[]="VariablePulse";
-prog_char PROGMEM Cmd_077[]="Queue";
+prog_char PROGMEM Cmd_077[]="";
 prog_char PROGMEM Cmd_078[]="VariableWiredAnalog";
 prog_char PROGMEM Cmd_079[]="Reboot";
 prog_char PROGMEM Cmd_080[]="Echo";
@@ -433,7 +432,7 @@ PROGMEM const char *CommandText_tabel[]={
 #define CMD_PORT_CLIENT                 74
 #define CMD_EVENTGHOST_SERVER           75
 #define CMD_PULSE_VARIABLE              76
-#define CMD_QUEUE                       77
+#define CMD_RES77                       77
 #define CMD_VARIABLE_WIREDANALOG        78
 #define CMD_REBOOT                      79
 #define CMD_ECHO                        80
@@ -693,7 +692,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 
 //****************************************************************************************************************************************
 
-struct Settings
+struct SettingsStruct
   {
   int     Version;        
   int     WiredInputThreshold[WIRED_PORTS], WiredInputSmittTrigger[WIRED_PORTS];
@@ -711,7 +710,7 @@ struct Settings
   byte    TransmitIP;                                       // Definitie van het gebruik van de IP-poort: Off, EventGhost of HTTP
   byte    WaitFreeRF;
   byte    SendBusy;
-  byte    WaitBusy;
+  byte    WaitBusyAll;                                      // maximale tijd dat gewacht moet worden op Nodos die bezig zijn met verwerking
   boolean DaylightSaving;                                   // Vlag die aangeeft of het zomertijd of wintertijd is
   int     DaylightSavingSet;                                // Vlag voor correct automatisch kunnen overschakelen van zomertijd naar wintertijd of vice-versa
   int     Lock;                                             // bevat de pincode waarmee IR/RF ontvangst is geblokkeerd. Bit nummer hoogste bit wordt gebruiktvoor in/uitschakelen.
@@ -734,17 +733,22 @@ struct Settings
   byte    EchoSerial;
   byte    EchoTelnet;
 #endif
-  }S;
+  }Settings;
 
+struct NodoBusyStruct //@2
+  {
+  int Status;                                               // in deze variabele de status van het event 'Busy' van de betreffende units 1 t/m 15. bit-1 = unit-1.
+  boolean Sent;                                           // Vlag die bijhoudt of het Busy On event is verzonden.
+  int ResetTimer;                                           // Timer voor resetten van de status.
+  }Busy;
+  
 unsigned long PulseCount;                                   // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
 unsigned long PulseTime;                                    // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
 unsigned long PulseTimePrevious;                            // Tijdsduur tussen twee pulsen teller in milliseconden: vorige meting
 unsigned long UserTimer[TIMER_MAX];                         // Timers voor de gebruiker.
 unsigned long QueueEvent[EVENT_QUEUE_MAX];                  // queue voor tijdelijk onthouden van events die tijdens een delay functie voorbij komen.
 byte QueuePort[EVENT_QUEUE_MAX];                            // tabel behorend bij de queue. Geeft herkomst van het event in de queue aan.
-int NodoBusyStatus=0;                                       // in deze variabele de status van het event 'Busy' van de betreffende units 1 t/m 15. bit-1 = unit-1.
 byte QueuePos;                                              // teller die wijst naar een plaats in de queue.
-boolean BusyOnSent=false;                                   // Vlag die bijhoudt of het Busy On event is verzonden.
 boolean WiredInputStatus[WIRED_PORTS];                      // Status van de WiredIn worden hierin opgeslagen.
 boolean WiredOutputStatus[WIRED_PORTS];                     // Wired variabelen.
 byte DaylightPrevious;                                      // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet.
@@ -828,14 +832,19 @@ void setup()
   SerialHold(true);// XOFF verzenden zodat PC even wacht met versturen van data via Serial (Xon/Xoff-handshaking)
 #endif
 
+  // initialiseer de Busy Nodo gegevens
+  Busy.Status=0;
+  Busy.Sent=false;
+  Busy.ResetTimer=0;
+
   LoadSettings();      // laad alle settings zoals deze in de EEPROM zijn opgeslagen
-  if(S.Version!=SETTINGS_VERSION)ResetFactory(); // Als versienummer in EEPROM niet correct is, dan een ResetFactory.
+  if(Settings.Version!=SETTINGS_VERSION)ResetFactory(); // Als versienummer in EEPROM niet correct is, dan een ResetFactory.
 
   // initialiseer de Wired ingangen.
   for(x=0;x<WIRED_PORTS;x++)
     {
-    //digitalWrite(A0+PIN_WIRED_IN_1+x,S.WiredInputPullUp[x]==VALUE_ON?HIGH:LOW);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14//??? kan weg?
-    if(S.WiredInputPullUp[x]==VALUE_ON)
+    //digitalWrite(A0+PIN_WIRED_IN_1+x,Settings.WiredInputPullUp[x]==VALUE_ON?HIGH:LOW);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14//??? kan weg?
+    if(Settings.WiredInputPullUp[x]==VALUE_ON)
       pinMode(A0+PIN_WIRED_IN_1+x,INPUT_PULLUP);
     else
       pinMode(A0+PIN_WIRED_IN_1+x,INPUT);
@@ -855,29 +864,27 @@ void setup()
 
 #if NODO_MEGA
   // SDCard initialiseren:
-  // Maak directories aan op de SDCard als ze nog iet bestaan) en check of het logbestand kan worden geopend
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-  digitalWrite(Ethernetshield_CS_W5100, HIGH);
-  digitalWrite(EthernetShield_CS_SDCard,LOW);
+  SelectSD(true);
   if(SD.begin(EthernetShield_CS_SDCard))
     {
     SD.mkdir(ProgmemString(Text_27)); // maak drectory aan waar de Rawsignal HEX bestanden in worden opgeslagen
     SD.mkdir(ProgmemString(Text_28)); // maak drectory aan waar de Rawsignal KEY bestanden in worden opgeslagen
+    SD.remove(ProgmemString(Text_15)); // eventueel queue wissen. 
     bitWrite(HW_Config,HW_SDCARD,1);
     }
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
-  digitalWrite(EthernetShield_CS_SDCard,HIGH);
-  digitalWrite(Ethernetshield_CS_W5100, LOW);
+  SelectSD(false);
    
   bitWrite(HW_Config,HW_ETHERNET,ETHERNET);
 
   // Initialiseer ethernet device
   if(bitRead(HW_Config,HW_ETHERNET))
     {
-    IPServer = EthernetServer(S.PortServer);
+    IPServer = EthernetServer(Settings.PortServer);
     TerminalServer = EthernetServer(23);
   
-    if((S.Nodo_IP[0] + S.Nodo_IP[1] + S.Nodo_IP[2] + S.Nodo_IP[3])==0)// Als door de user IP adres is ingesteld op 0.0.0.0 dan IP adres ophalen via DHCP
+    if((Settings.Nodo_IP[0] + Settings.Nodo_IP[1] + Settings.Nodo_IP[2] + Settings.Nodo_IP[3])==0)// Als door de user IP adres is ingesteld op 0.0.0.0 dan IP adres ophalen via DHCP
       {
       if(Ethernet.begin(Ethernet_MAC_Address)==0) // maak verbinding en verzoek IP via DHCP
         {
@@ -886,14 +893,14 @@ void setup()
         }
       }
     else
-      Ethernet.begin(Ethernet_MAC_Address, S.Nodo_IP, S.DnsServer, S.Gateway, S.Subnet);
+      Ethernet.begin(Ethernet_MAC_Address, Settings.Nodo_IP, Settings.DnsServer, Settings.Gateway, Settings.Subnet);
   
     bitWrite(HW_Config,HW_ETHERNET,((Ethernet.localIP()[0]+Ethernet.localIP()[1]+Ethernet.localIP()[2]+Ethernet.localIP()[3])!=0)); // Als er een IP adres is, dan Ethernet inschakelen
     IPServer.begin(); // Start Server voor ontvangst van Events
     TerminalServer.begin(); // Start server voor Terminalsessies via TelNet
 
     // Als ethernet enbled en beveiligde modus, dan direct een Cookie sturen, ander worden eerste events niet opgepikt door de WebApp
-    if(S.HTTP_Pin==VALUE_ON)
+    if(Settings.HTTP_Pin==VALUE_ON)
       SendHTTPCookie(); // Verzend een nieuw cookie
     }
 
@@ -904,8 +911,8 @@ void setup()
 
   PrintWelcome(); // geef de welkomsttekst weer
   UserPlugin_Init();
-  TransmitCode(command2event(S.Unit, CMD_BOOT_EVENT,S.Unit,0),VALUE_ALL);  
-  ProcessEventT(command2event(S.Unit, CMD_BOOT_EVENT,S.Unit,0),VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM,0,0);  // Voer het 'Boot' event uit.
+  TransmitCode(command2event(Settings.Unit, CMD_BOOT_EVENT,Settings.Unit,0),VALUE_ALL);  
+  ProcessEvent(command2event(Settings.Unit, CMD_BOOT_EVENT,Settings.Unit,0),VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM,0,0);  // Voer het 'Boot' event uit.
   bitWrite(HW_Config,HW_SERIAL,0); // Serial weer uitschakelen.
   }
 
@@ -943,7 +950,7 @@ void loop()
     {
     // Check voor IR of RF events
     if(GetEvent_IRRF(&Content,&x)) 
-      ProcessEventT(Content,VALUE_DIRECTION_INPUT,x,0,0); // verwerk binnengekomen event.
+      ProcessEvent(Content,VALUE_DIRECTION_INPUT,x,0,0); // verwerk binnengekomen event.
       
     // 1: niet tijdkritische processen die periodiek uitgevoerd moeten worden
     if(LoopIntervalTimer_1<millis())// korte interval
@@ -1001,11 +1008,16 @@ void loop()
                 {
                 TerminalInByte=TerminalClient.read();
                 
-                if(isprint(TerminalInByte) && TerminalInbyteCounter<INPUT_BUFFER_SIZE)
+                if(isprint(TerminalInByte))
                   {
-                  if(S.EchoTelnet==VALUE_ON)
-                    TerminalClient.write(TerminalInByte);// Echo ontvangen teken                  
-                  InputBuffer_Terminal[TerminalInbyteCounter++]=TerminalInByte;
+                  if(TerminalInbyteCounter<INPUT_BUFFER_SIZE)
+                    {
+                    if(Settings.EchoTelnet==VALUE_ON)
+                      TerminalClient.write(TerminalInByte);// Echo ontvangen teken                  
+                    InputBuffer_Terminal[TerminalInbyteCounter++]=TerminalInByte;
+                    }
+//                  else
+//                     TerminalClient.write('#');// geen ruimte meer.
                   }
                   
                 if(TerminalInByte==0x03 || TerminalInByte==0x18)
@@ -1021,7 +1033,7 @@ void loop()
                   
                 if(TerminalInByte==0x0a || TerminalInByte==0x0d)
                   {
-                  if(S.EchoTelnet==VALUE_ON)
+                  if(Settings.EchoTelnet==VALUE_ON)
                     TerminalClient.println("");// Echo de nieuwe regel.
                   TerminalConnected=TERMINAL_TIMEOUT;
                   InputBuffer_Terminal[TerminalInbyteCounter]=0;
@@ -1038,7 +1050,7 @@ void loop()
                     {
                     if(TerminalLocked<=PASSWORD_MAX_RETRY)// teller is wachtloop bij herhaaldelijke pogingen foutief wachtwoord. Bij >3 pogingen niet meer toegestaan
                       {
-                      if(strcmp(InputBuffer_Terminal,S.Password)==0)// als wachtwoord goed is, dan slot er af
+                      if(strcmp(InputBuffer_Terminal,Settings.Password)==0)// als wachtwoord goed is, dan slot er af
                         {
                         TerminalLocked=0;
                         y=bitRead(HW_Config,HW_SERIAL);
@@ -1086,13 +1098,18 @@ void loop()
               while(Serial.available())
                 {                        
                 SerialInByte=Serial.read();                
-                if(S.EchoSerial==VALUE_ON)
+                if(Settings.EchoSerial==VALUE_ON)
                   Serial.write(SerialInByte);// echo ontvangen teken
 
                 StaySharpTimer=millis()+SHARP_TIME;      
                 
-                if(isprint(SerialInByte) && SerialInByteCounter<INPUT_BUFFER_SIZE) // alleen tekens aan de string toevoegen als deze nog in de buffer past.
-                  InputBuffer_Serial[SerialInByteCounter++]=SerialInByte;
+                if(isprint(SerialInByte))
+                  {
+                  if(SerialInByteCounter<INPUT_BUFFER_SIZE) // alleen tekens aan de string toevoegen als deze nog in de buffer past.
+                    InputBuffer_Serial[SerialInByteCounter++]=SerialInByte;
+//                  else
+//                    Serial.write('#');
+                  }
                   
                 if(SerialInByte=='\n')
                   {
@@ -1134,7 +1151,7 @@ void loop()
             if(CheckEventlist(Content,VALUE_SOURCE_CLOCK) && EventTimeCodePrevious!=Content)
               {
               EventTimeCodePrevious=Content; 
-              ProcessEventT(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
+              ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
               }
             else
               Content=0L;
@@ -1150,9 +1167,9 @@ void loop()
             SetDaylight();
             if(Time.Daylight!=DaylightPrevious)// er heeft een zonsondergang of zonsopkomst event voorgedaan
               {
-              Content=command2event(S.Unit, CMD_CLOCK_EVENT_DAYLIGHT,Time.Daylight,0L);
+              Content=command2event(Settings.Unit, CMD_CLOCK_EVENT_DAYLIGHT,Time.Daylight,0L);
               DaylightPrevious=Time.Daylight;
-              ProcessEventT(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
+              ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
               }
             }
           break;
@@ -1166,20 +1183,20 @@ void loop()
             {
             // lees analoge waarde. Dit is een 10-bit waarde, unsigned 0..1023
             // vervolgens met map() omrekenen naar gekalibreerde waarde        
-            y=map(analogRead(PIN_WIRED_IN_1+x),S.WiredInput_Calibration_IL[x],S.WiredInput_Calibration_IH[x],S.WiredInput_Calibration_OL[x],S.WiredInput_Calibration_OH[x]);        
+            y=map(analogRead(PIN_WIRED_IN_1+x),Settings.WiredInput_Calibration_IL[x],Settings.WiredInput_Calibration_IH[x],Settings.WiredInput_Calibration_OL[x],Settings.WiredInput_Calibration_OH[x]);        
                  
-            if(!WiredInputStatus[x] && y>(S.WiredInputThreshold[x]+S.WiredInputSmittTrigger[x]))
+            if(!WiredInputStatus[x] && y>(Settings.WiredInputThreshold[x]+Settings.WiredInputSmittTrigger[x]))
               {
               WiredInputStatus[x]=true;
-              Content=command2event(S.Unit, CMD_WIRED_IN_EVENT,x+1,WiredInputStatus[x]?VALUE_ON:VALUE_OFF);
-              ProcessEventT(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
+              Content=command2event(Settings.Unit, CMD_WIRED_IN_EVENT,x+1,WiredInputStatus[x]?VALUE_ON:VALUE_OFF);
+              ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
               }
       
-            if(WiredInputStatus[x] && y<(S.WiredInputThreshold[x]-S.WiredInputSmittTrigger[x]))
+            if(WiredInputStatus[x] && y<(Settings.WiredInputThreshold[x]-Settings.WiredInputSmittTrigger[x]))
               {
               WiredInputStatus[x]=false;
-              Content=command2event(S.Unit, CMD_WIRED_IN_EVENT,x+1,WiredInputStatus[x]?VALUE_ON:VALUE_OFF);
-              ProcessEventT(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
+              Content=command2event(Settings.Unit, CMD_WIRED_IN_EVENT,x+1,WiredInputStatus[x]?VALUE_ON:VALUE_OFF);
+              ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
               }
             }
           break;
@@ -1198,8 +1215,8 @@ void loop()
               if(UserTimer[x]<millis()) // als de timer is afgelopen.
                 {
                 UserTimer[x]=0;// zet de timer op inactief.
-                Content=command2event(S.Unit, CMD_TIMER_EVENT,x+1,0);
-                ProcessEventT(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_TIMER,0,0);      // verwerk binnengekomen event.
+                Content=command2event(Settings.Unit, CMD_TIMER_EVENT,x+1,0);
+                ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_TIMER,0,0);      // verwerk binnengekomen event.
                 }
               }
             }
@@ -1242,7 +1259,7 @@ void loop()
         }
         
       // Timer voor verzenden van Cookie naar de WebApp
-      if(S.HTTP_Pin==VALUE_ON)
+      if(Settings.HTTP_Pin==VALUE_ON)
         {
         if(CookieTimer>0)
           CookieTimer--;
@@ -1253,6 +1270,15 @@ void loop()
           }
         }
 #endif
+
+      // De Nodo houdt bij of Andere Nodos bezig zijn. Periodiek wordt de status gereset
+      // om te voorkomen dat de Nodo lange tijd onnodig vast komt te zitten.
+      // Als deze teller nul is, dan wordt de status van de busy Nodos gereset.
+      if(Busy.ResetTimer>0)
+        Busy.ResetTimer--;
+      else
+        Busy.Status=0;      
+
 
       // loop periodiek langs de userplugin
       #ifdef NODO_PLUGIN=1

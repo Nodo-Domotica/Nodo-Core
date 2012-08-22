@@ -52,13 +52,13 @@ void UserPlugin_Command(int Par1, int Par2)
 
   // VOORBEELD-1: Verzend een userevent [UserEvent 111,222]
   // De constanten CMD_xxx die de opdracht representeren kunnen worden gevonden in het tabblad [Nodo] 
-  // TransmitCode(command2event(S.Unit, CMD_USEREVENT, 111, 222),VALUE_ALL);
+  // TransmitCode(command2event(Settings.Unit, CMD_USEREVENT, 111, 222),VALUE_ALL);
 
   // VOORBEELD-2: uitvoeren van een event: [UserEvent 123,100]
-  // ProcessEvent(command2event(S.Unit, CMD_USEREVENT, 123, 100),VALUE_DIRECTION_INPUT,0,0,0);
+  // ProcessEvent(command2event(Settings.Unit, CMD_USEREVENT, 123, 100),VALUE_DIRECTION_INPUT,0,0,0);
 
   // VOORBEELD-3: uitvoeren van een commando: [Sound 0]
-  // ExecuteCommand(command2event(S.Unit, CMD_SOUND, 0, 0) ,0 , 0, 0);
+  // ExecuteCommand(command2event(Settings.Unit, CMD_SOUND, 0, 0) ,0 , 0, 0);
   
   // VOORBEELD-4: uitvoeren van een Nodo voor de Mega variant
   // ExecuteLine("Sound 0;",VALUE_DIRECTION_INTERNAL);    
@@ -116,7 +116,7 @@ void UserPlugin_Periodically()
 //   for(int x=0;x<WIRED_PORTS;x++)
 //    {
 //    y=analogRead(PIN_WIRED_IN_1+x);
-//    z=map(y,S.WiredInput_Calibration_IL[x],S.WiredInput_Calibration_IH[x],S.WiredInput_Calibration_OL[x],S.WiredInput_Calibration_OH[x]);
+//    z=map(y,Settings.WiredInput_Calibration_IL[x],Settings.WiredInput_Calibration_IH[x],Settings.WiredInput_Calibration_OL[x],Settings.WiredInput_Calibration_OH[x]);
 //    sprintf(str,"Arduino port A%02d=%d, WiredIn-%d=%d.%d",x+PIN_WIRED_IN_1,y,x+1,z/100,abs(z)%100); // %100 en %100 omdat zo een integer kan worden weergegeven als een float
 //    Serial.println(str);
 //    }

@@ -143,11 +143,11 @@ void PrintWelcome(void)
   PrintTerminal(ProgmemString(Text_02));
 
   // print versienummer, unit en indien gevuld het ID
-  sprintf(TempString,"Version=3.0(Mega), Build=%04d, ThisUnit=%d", NODO_BUILD, S.Unit);
-  if(S.ID[0])
+  sprintf(TempString,"Version=3.0(Mega), Build=%04d, ThisUnit=%d", NODO_BUILD, Settings.Unit);
+  if(Settings.ID[0])
     {
     strcat(TempString,", ID=");
-    strcat(TempString,S.ID);
+    strcat(TempString,Settings.ID);
     }
     
   PrintTerminal(TempString);
@@ -257,6 +257,7 @@ char* Event2str(unsigned long Code)
         break;
         
       // Par1 als waarde en par2 als tekst
+      case CMD_DELAY:
       case CMD_WIRED_PULLUP:
       case CMD_WIRED_OUT:
       case CMD_WIRED_IN_EVENT:
@@ -272,7 +273,6 @@ char* Event2str(unsigned long Code)
         break;
   
       // Par1 als tekst en par2 als getal
-      case CMD_QUEUE:
       case CMD_RAWSIGNAL_COPY:
       case CMD_TRANSMIT_IR:
       case CMD_TRANSMIT_RF:
@@ -286,14 +286,14 @@ char* Event2str(unsigned long Code)
       case CMD_DEBUG:
       case CMD_ECHO:
       case CMD_BUSY:
+      case CMD_WAITFREERF:
       case CMD_SENDBUSY:
-      case CMD_WAITBUSY:
         P1=P_TEXT;
         P2=P_NOT;
         break;
   
       // Par1 als waarde en par2 niet
-      case CMD_DELAY:
+      case CMD_WAITBUSY:
       case CMD_EVENTLIST_SHOW:
       case CMD_EVENTLIST_ERASE:
       case CMD_FILE_EXECUTE:
@@ -406,7 +406,7 @@ void PrintWelcome(void)
   Serial.println(ProgmemString(Text_02));
 
   // print versienummer, unit en indien gevuld het ID
-  sprintf(str,"Version=3.0(Mini), Build=%04d, ThisUnit=%d", NODO_BUILD, S.Unit);
+  sprintf(str,"Version=3.0(Mini), Revision=%04d, ThisUnit=%d", NODO_BUILD, Settings.Unit);
   Serial.println(str);
 
   // Geef datum en tijd weer.

@@ -86,17 +86,17 @@ void SimulateDay(void)
     if(Time.Minutes==60){Time.Minutes=0;Time.Hour++;}  // roll-over naar volgende uur
 
     // Kijk of er op het gesimuleerde tijdstip een hit is in de EventList
-    SimulatedClockEvent=command2event(S.Unit, CMD_CLOCK_EVENT_ALL+Time.Day,Time.Hour,Time.Minutes);
+    SimulatedClockEvent=command2event(Settings.Unit, CMD_CLOCK_EVENT_ALL+Time.Day,Time.Hour,Time.Minutes);
     if(CheckEventlist(SimulatedClockEvent,VALUE_SOURCE_CLOCK)) // kijk of er een hit is in de EventList
-      ProcessEventT(SimulatedClockEvent,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);
+      ProcessEvent(SimulatedClockEvent,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);
       
     // Kijk of er op het gesimuleerde tijdstip een zonsondergang of zonsopkomst wisseling heeft voorgedaan
     SetDaylight(); // Zet in de struct ook de Time.DayLight status behorend bij de tijd
     if(Time.Daylight!=DaylightPrevious)// er heeft een zonsondergang of zonsopkomst wisseling voorgedaan
       {
-      SimulatedClockEvent=command2event(S.Unit, CMD_CLOCK_EVENT_DAYLIGHT,Time.Daylight,0L);
+      SimulatedClockEvent=command2event(Settings.Unit, CMD_CLOCK_EVENT_DAYLIGHT,Time.Daylight,0L);
       DaylightPrevious=Time.Daylight;
-      ProcessEventT(SimulatedClockEvent,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);
+      ProcessEvent(SimulatedClockEvent,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);
       }
     Time.Minutes++;
     }
@@ -177,20 +177,20 @@ unsigned long ClockRead(void)
   
   // Automatische zomer-/wintertijd schakeling
   x=Time.Month*100+Time.Date;  
-  if(Time.DaylightSaving!=S.DaylightSaving  && x!=S.DaylightSavingSet)
+  if(Time.DaylightSaving!=Settings.DaylightSaving  && x!=Settings.DaylightSavingSet)
     {  
-    if(S.DaylightSaving)// als het zomertijd is en wintertijd wordt EN verzetdatum ongelijk aan nu
+    if(Settings.DaylightSaving)// als het zomertijd is en wintertijd wordt EN verzetdatum ongelijk aan nu
       Time.Hour=Time.Hour==0?23:Time.Hour-1;// ...dan de klok een uur terug.
     else // als het wintertijd is en zomertijd wordt
       Time.Hour=Time.Hour<23?Time.Hour+1:0; //... dan klok uur vooruit.
-    S.DaylightSavingSet=x;
-    S.DaylightSaving=Time.DaylightSaving;
+    Settings.DaylightSavingSet=x;
+    Settings.DaylightSaving=Time.DaylightSaving;
     SaveSettings();
     ClockSet();// verzet de RTC klok
     }
       
   return ((unsigned long)(SIGNAL_TYPE_NODO))<<28 |
-         ((unsigned long)(S.Unit))<<24 | 
+         ((unsigned long)(Settings.Unit))<<24 | 
          ((unsigned long)(CMD_CLOCK_EVENT_ALL+Time.Day))<<16 | 
          ((unsigned long)(Time.Hour))<<8 | 
          ((unsigned long)(Time.Minutes));

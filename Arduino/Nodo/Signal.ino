@@ -51,12 +51,20 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
 
   if(ChecksumOrg == Checksum)
     {
-    delay(RECEIVER_STABLE);// Korte wachttijd anders is de RF ontvanger van de master (mogelijk) nog niet gereed voor ontvangst. Tevens wacht vrije ether.
-    Nodo_2_RawSignal(command2event(S.Unit,CMD_BUSY,VALUE_ON,0));
+    // Korte wachttijd anders is de RF ontvanger van de master (mogelijk) nog niet gereed voor ontvangst. 
+    delay(RECEIVER_STABLE);
+
+    // Verzend [Busy On] zodat de master weet dat alles in goede orde ontvangen en verwerking start.
+    ul=command2event(Settings.Unit,CMD_BUSY,VALUE_ON,0);
+    Nodo_2_RawSignal(ul);
     RawSendRF();
-    BusyOnSent=true;
+    Busy.Sent=true;
+
+    if(Settings.Debug==VALUE_ON)
+      PrintEvent(ul,VALUE_DIRECTION_OUTPUT, VALUE_SOURCE_RF);
 
     // Verwerk de inhoud van de Queue
+    delay(250); //???
     ProcessQueue();
     return true;
     }
@@ -77,11 +85,15 @@ boolean QueueSend(byte DestUnit)
   
   Led(BLUE);
 
-  // Eerst wachten op bezige Nodo
-  NodoBusy(0L, true);
+  // Eerst wachten op bezige Nodo. Als gebruiker deze setting niet heeft geactiveerd, dan tijdelijk hiervoor 30 sec. nemen.
+  if(Settings.WaitBusyAll<30)
+    x=30;
+  else
+    x=Settings.WaitBusyAll;    
+  NodoBusy(0L, 30);
 
   delay(RECEIVER_STABLE);
-  if(S.WaitFreeRF==VALUE_ON)
+  if(Settings.WaitFreeRF==VALUE_ON)
     WaitFreeRF();  
 
   // bereken checksum: crc-8 uit alle bytes in de queue.
@@ -142,7 +154,13 @@ boolean QueueSend(byte DestUnit)
   // 2. master ontvangt niets. Dan keert WaitAndQueue terug met een false.
   // 3. master ontvangt error message van de slave.
 
-  return WaitAndQueue(3,false,command2event(DestUnit,CMD_BUSY,VALUE_ON,0));
+  if(WaitAndQueue(3,false,command2event(DestUnit,CMD_BUSY,VALUE_ON,0)))
+    {
+    WaitAndQueue(30,true,0L);
+    return true;
+    }
+  else
+    return false;
   }
 #endif
 
@@ -157,7 +175,7 @@ unsigned long GetEvent_IRRF(unsigned long *Content, int *Port)
     {
     if((*portInputRegister(IRport)&IRbit)==0)// Kijk if er iets op de poort binnenkomt. (Pin=LAAG als signaal in de ether). 
       {
-      if(FetchSignal(PIN_IR_RX_DATA,LOW,S.AnalyseTimeOut))// Als het een duidelijk IR signaal was
+      if(FetchSignal(PIN_IR_RX_DATA,LOW,Settings.AnalyseTimeOut))// Als het een duidelijk IR signaal was
         {
         *Content=AnalyzeRawSignal(); // Bereken uit de tabel met de pulstijden de 32-bit code. 
         if(*Content==Checksum) // tweemaal hetzelfde event ontvangen
@@ -280,8 +298,8 @@ unsigned long RawSignal_2_32bit(void)
     if(RawSignal.Pulses[x]<MinSpace)MinSpace=RawSignal.Pulses[x]; // Zoek naar de kortste spacetijd.
     x++;
     }
-  MinPulse+=(MinPulse*S.AnalyseSharpness)/100;
-  MinSpace+=(MinSpace*S.AnalyseSharpness)/100;
+  MinPulse+=(MinPulse*Settings.AnalyseSharpness)/100;
+  MinSpace+=(MinSpace*Settings.AnalyseSharpness)/100;
      
   x=3; // 0=aantal, 1=startpuls, 2=space na startpuls, 3=1e pulslengte
   z=0; // bit in de Code die geset moet worden 
@@ -339,7 +357,7 @@ void WaitFreeRF(void)
       
   // eerst de 'dode' wachttijd
   Led(BLUE);
-  delay((S.Unit-1)*100);
+  delay((Settings.Unit-1)*100);
     
   // dan kijken of de ether vrij is.
   Timer=millis()+300; // reset de timer.
@@ -390,7 +408,7 @@ void RawSendRF(void)
   digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan
   delay(5);// kleine pause om de zender de tijd te geven om stabiel te worden 
   
-  for(byte y=0; y<S.TransmitRepeatRF; y++) // herhaal verzenden RF code
+  for(byte y=0; y<Settings.TransmitRepeatRF; y++) // herhaal verzenden RF code
     {
     x=1;
     while(x<=RawSignal.Number)
@@ -424,7 +442,7 @@ void RawSendIR(void)
   // kleine pause zodat verzenden event naar de USB poort gereed is, immers de IRQ's worden tijdelijk uitgezet
   delay(10);
 
-  for(int repeat=0; repeat<S.TransmitRepeatIR; repeat++) // herhaal verzenden IR code
+  for(int repeat=0; repeat<Settings.TransmitRepeatIR; repeat++) // herhaal verzenden IR code
     {
     pulse=1;
     noInterrupts(); // interrupts tijdelijk uitschakelen om zo en zuiverder signaal te krijgen
@@ -583,8 +601,8 @@ boolean TransmitCode(unsigned long Event, byte Dest)
   byte SignalType=(Event>>28) & 0x0f;
   byte Command   =(Event>>16) & 0xff;
   
-  if(Dest==VALUE_SOURCE_RF || (S.TransmitRF==VALUE_ON && Dest==VALUE_ALL))
-    if(S.WaitFreeRF==VALUE_ON && SignalType!=SIGNAL_TYPE_UNKNOWN)// alleen WaitFreeRF als type bekend is, anders gaat SendSignal niet goed a.g.v. overschrijven buffer
+  if(Dest==VALUE_SOURCE_RF || (Settings.TransmitRF==VALUE_ON && Dest==VALUE_ALL))
+    if(Settings.WaitFreeRF==VALUE_ON && SignalType!=SIGNAL_TYPE_UNKNOWN)// alleen WaitFreeRF als type bekend is, anders gaat SendSignal niet goed a.g.v. overschrijven buffer
       WaitFreeRF();  
 
   if(Command==CMD_KAKU)
@@ -596,40 +614,44 @@ boolean TransmitCode(unsigned long Event, byte Dest)
   else if(SignalType==SIGNAL_TYPE_NODO)
     Nodo_2_RawSignal(Event);
 
-  if(Dest==VALUE_SOURCE_IR || (S.TransmitIR==VALUE_ON && Dest==VALUE_ALL))
+  if(Dest==VALUE_SOURCE_IR || (Settings.TransmitIR==VALUE_ON && Dest==VALUE_ALL))
     { 
     PrintEvent(Event,VALUE_DIRECTION_OUTPUT, VALUE_SOURCE_IR);
     RawSendIR();
     }
+  else
+    delay(250);//??? anders te snel voor een mega 
 
-  if(Dest==VALUE_SOURCE_RF || (S.TransmitRF==VALUE_ON && Dest==VALUE_ALL))
+  if(Dest==VALUE_SOURCE_RF || (Settings.TransmitRF==VALUE_ON && Dest==VALUE_ALL))
     {
     PrintEvent(Event,VALUE_DIRECTION_OUTPUT, VALUE_SOURCE_RF);
     RawSendRF();
     }
+  else
+    delay(255);//???
 
 #if NODO_MEGA
   if(bitRead(HW_Config,HW_ETHERNET))// Als Ethernet shield aanwezig.
     {
     // Het event verzenden naar de EventGhostServer
-    if((Dest==VALUE_SOURCE_EVENTGHOST) || (Dest==VALUE_ALL && S.TransmitIP==VALUE_SOURCE_EVENTGHOST))
+    if((Dest==VALUE_SOURCE_EVENTGHOST) || (Dest==VALUE_ALL && Settings.TransmitIP==VALUE_SOURCE_EVENTGHOST))
       {
       if(!TemporyEventGhostError)
         {
         // IP adres waar event naar toe moet even in de globale IP variabele plaatsen om de regel te kunnen printen.
-        ClientIPAddress[0]=S.EventGhostServer_IP[0];
-        ClientIPAddress[1]=S.EventGhostServer_IP[1];
-        ClientIPAddress[2]=S.EventGhostServer_IP[2];
-        ClientIPAddress[3]=S.EventGhostServer_IP[3];
+        ClientIPAddress[0]=Settings.EventGhostServer_IP[0];
+        ClientIPAddress[1]=Settings.EventGhostServer_IP[1];
+        ClientIPAddress[2]=Settings.EventGhostServer_IP[2];
+        ClientIPAddress[3]=Settings.EventGhostServer_IP[3];
     
         PrintEvent(Event,VALUE_DIRECTION_OUTPUT, VALUE_SOURCE_EVENTGHOST);
         
-        if(!SendEventGhost(Event2str(Event),S.EventGhostServer_IP))
+        if(!SendEventGhost(Event2str(Event),Settings.EventGhostServer_IP))
           TemporyEventGhostError=true;
         }
       }
   
-    if(Dest==VALUE_SOURCE_HTTP || (Dest==VALUE_ALL && S.TransmitIP==VALUE_SOURCE_HTTP))
+    if(Dest==VALUE_SOURCE_HTTP || (Dest==VALUE_ALL && Settings.TransmitIP==VALUE_SOURCE_HTTP))
       {
       SendHTTPEvent(Event);
       PrintEvent(Event,VALUE_DIRECTION_OUTPUT,VALUE_SOURCE_HTTP);
@@ -674,7 +696,7 @@ void CheckRawSignalKey(unsigned long *Code)
           {
           TempString[y]=0;
           y=0;
-          *Code=command2event(S.Unit,CMD_RAWSIGNAL,str2int(TempString),0);
+          *Code=command2event(Settings.Unit,CMD_RAWSIGNAL,str2int(TempString),0);
           return;
           }
         }
@@ -746,7 +768,7 @@ boolean SaveRawSignal(byte Key)
     
   if(error)
     {
-    TransmitCode(command2event(S.Unit,CMD_MESSAGE, S.Unit, MESSAGE_03),VALUE_ALL);
+    TransmitCode(command2event(Settings.Unit,CMD_MESSAGE, Settings.Unit, MESSAGE_03),VALUE_ALL);
     return false;
     }
   return true;

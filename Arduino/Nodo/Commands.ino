@@ -18,7 +18,7 @@ byte NodoType(unsigned long Content)
 
   // als Unit deel ongelijk is aan eigen adres en ongelijk aan wildcard unit=0, dan was het een event voor een andere Nodo
   x=(Content>>24)&0xf;
-  if(x!=S.Unit && x!=0)
+  if(x!=Settings.Unit && x!=0)
     return false;
 
   x=(Content>>16)&0xff;
@@ -54,7 +54,7 @@ byte CommandError(unsigned long Content)
   switch(Command)
     {
     //test; geen, altijd goed
-    case CMD_UNIT:
+    case CMD_WAITBUSY:
     case CMD_LOCK:    
     case CMD_TRANSMIT_QUEUE:
     case CMD_EVENTLIST_ERASE:
@@ -116,6 +116,10 @@ byte CommandError(unsigned long Content)
     case CMD_WIRED_SMITTTRIGGER:
       Par2PortAnalog(Par1, Par2, &x, &y);// x=wired , y=waarde
       if(x<1 || x>WIRED_PORTS)return MESSAGE_02;
+      return false;
+
+    case CMD_UNIT:
+      if(Par1<1 || Par1>UNIT_MAX)return MESSAGE_02;
       return false;
 
     case CMD_ANALYSE_SETTINGS:
@@ -181,9 +185,7 @@ byte CommandError(unsigned long Content)
       if(Par2!=VALUE_ON && Par2!=VALUE_OFF)return MESSAGE_02;
       return false;
 
-    case CMD_WAITBUSY:
     case CMD_SENDBUSY:
-    case CMD_QUEUE:
       if(Par1!=0 && Par1!=VALUE_OFF && Par1!=VALUE_ON && Par1!=VALUE_ALL)return MESSAGE_02;
       return false;
 
@@ -303,11 +305,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   switch(Command)
     {   
     case CMD_SEND_KAKU:
-      TransmitCode(command2event(S.Unit, CMD_KAKU,Par1,Par2),VALUE_ALL);
+      TransmitCode(command2event(Settings.Unit, CMD_KAKU,Par1,Par2),VALUE_ALL);
       break;
       
     case CMD_SEND_KAKU_NEW:
-      TransmitCode(command2event(S.Unit, CMD_KAKU_NEW,Par1,Par2),VALUE_ALL);
+      TransmitCode(command2event(Settings.Unit, CMD_KAKU_NEW,Par1,Par2),VALUE_ALL);
       break;
       
     case CMD_VARIABLE_INC:
@@ -329,9 +331,9 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     case CMD_VARIABLE_SAVE:   
       if(Par1==0)
         for(x=0;x<USER_VARIABLES_MAX;x++)
-          S.UserVar[x]=UserVar[x];
+          Settings.UserVar[x]=UserVar[x];
       else
-        S.UserVar[Par1-1]=UserVar[Par1-1];            
+        Settings.UserVar[Par1-1]=UserVar[Par1-1];            
       SaveSettings();
       break;        
   
@@ -354,7 +356,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;         
   
     case CMD_VARIABLE_WIREDANALOG:
-      UserVar[Par1-1]=map(analogRead(PIN_WIRED_IN_1+Par2-1),S.WiredInput_Calibration_IL[Par2-1],S.WiredInput_Calibration_IH[Par2-1],S.WiredInput_Calibration_OL[Par2-1],S.WiredInput_Calibration_OH[Par2-1]);
+      UserVar[Par1-1]=map(analogRead(PIN_WIRED_IN_1+Par2-1),Settings.WiredInput_Calibration_IL[Par2-1],Settings.WiredInput_Calibration_IH[Par2-1],Settings.WiredInput_Calibration_OL[Par2-1],Settings.WiredInput_Calibration_OH[Par2-1]);
       ProcessEvent(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;
 
@@ -365,7 +367,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       attachInterrupt(PULSE_IRQ,PulseCounterISR,FALLING); // IRQ behorende bij PIN_IR_RX_DATA
 
 #if NODO_MEGA
-      if(S.Debug==VALUE_ON)
+      if(Settings.Debug==VALUE_ON)
         {        
         Serial.print("# PulseTimeMillis=");Serial.print(PulseTime,DEC);//??? er uit om ruimte te beparen?
         Serial.print(", PulseCount=");Serial.println(PulseCount,DEC);//??? met TerminalPrint?
@@ -457,22 +459,22 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
     case CMD_SEND_USEREVENT:
       // Voeg Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
-      TransmitCode(command2event(S.Unit, CMD_USEREVENT,Par1,Par2),VALUE_ALL);
+      TransmitCode(command2event(Settings.Unit, CMD_USEREVENT,Par1,Par2),VALUE_ALL);
       break;
 
     case CMD_LOCK:
       a=Content&0x7fff;// Zet de lock met de bits 0 t/m 15
       if(Content&0x8000)
         {// Als verzoek om inschakelen (On/Off bevindt zich in bit nr. 15) dan Lock waarde vullen
-        if(S.Lock==0)// mits niet al gelocked.
-          S.Lock=a; 
+        if(Settings.Lock==0)// mits niet al gelocked.
+          Settings.Lock=a; 
         else
           RaiseMessage(MESSAGE_10);
         }
       else
         {// Verzoek om uitschakelen
-        if(S.Lock==a || S.Lock==0)// als lock code overeen komt of nog niet gevuld
-          S.Lock=0;
+        if(Settings.Lock==a || Settings.Lock==0)// als lock code overeen komt of nog niet gevuld
+          Settings.Lock=0;
         else
           RaiseMessage(MESSAGE_10);
         }        
@@ -544,15 +546,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
     case CMD_DELAY:
       Led(BLUE);
-      delay(Par1*1000);      
-      break;        
       
-    case CMD_QUEUE:
-      if(Par1==VALUE_ON)
-        {
-        a=(Par2==0)?60:Par2;
-        WaitAndQueue(a,false,0);
-        }        
+      if(Par2==VALUE_OFF)    
+        delay(Par1*1000);      
+      else      
+        WaitAndQueue(Par1,false,0);
       break;        
       
     case CMD_SEND_EVENT:
@@ -564,8 +562,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;     
   
     case CMD_WIRED_PULLUP:
-      S.WiredInputPullUp[Par1-1]=Par2; // Par1 is de poort[1..]
-      if(S.WiredInputPullUp[x]==VALUE_ON)
+      Settings.WiredInputPullUp[Par1-1]=Par2; // Par1 is de poort[1..]
+      if(Settings.WiredInputPullUp[x]==VALUE_ON)
         pinMode(A0+PIN_WIRED_IN_1+Par1-1,INPUT_PULLUP);
       else
         pinMode(A0+PIN_WIRED_IN_1+Par1-1,INPUT);
@@ -595,52 +593,46 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;
                          
     case CMD_WAITFREERF: 
-      S.WaitFreeRF=Par1;
+      Settings.WaitFreeRF=Par1;
       SaveSettings();
       break;
 
     case CMD_SENDBUSY:
       if(Par1==VALUE_ALL)
         {// All
-        S.SendBusy=Par1;
+        Settings.SendBusy=Par1;
         SaveSettings();
         }
       else
         {// on / off 
-        TransmitCode(command2event(S.Unit, CMD_BUSY,Par1,0),VALUE_ALL);
-        if(S.SendBusy==VALUE_ALL && Par1==VALUE_OFF)
+        TransmitCode(command2event(Settings.Unit, CMD_BUSY,Par1,0),VALUE_ALL);
+        if(Settings.SendBusy==VALUE_ALL && Par1==VALUE_OFF)
           {// De SendBusy mode moet worden uitgeschakeld
-          S.SendBusy=VALUE_OFF;
+          Settings.SendBusy=VALUE_OFF;
           SaveSettings();
           }
         }
       break;
             
     case CMD_WAITBUSY:
-      if(Par1==VALUE_ALL)
+      if(Par2==VALUE_ALL)
         {
-        S.WaitBusy=Par1;
+        Settings.WaitBusyAll=Par1;
         SaveSettings();
         }
       else
-        {
-        if(S.WaitBusy==VALUE_ALL)
-          S.WaitBusy=VALUE_OFF;
-        else
-          NodoBusy(60,true);
-        }
-
+        NodoBusy(0L, Par1);
       break;
 
     case CMD_TRANSMIT_IR:
-      S.TransmitIR=Par1;
-      if(Par2!=0)S.TransmitRepeatIR=Par2;
+      Settings.TransmitIR=Par1;
+      if(Par2!=0)Settings.TransmitRepeatIR=Par2;
       SaveSettings();
       break;
 
     case CMD_TRANSMIT_RF:
-      S.TransmitRF=Par1;
-      if(Par2!=0)S.TransmitRepeatRF=Par2;
+      Settings.TransmitRF=Par1;
+      if(Par2!=0)Settings.TransmitRepeatRF=Par2;
       SaveSettings();
       break;
       
@@ -652,7 +644,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
     case CMD_WIRED_THRESHOLD:
       Par2PortAnalog(Par1, Par2, &z, &x);// y=port, x=waarde
-      S.WiredInputThreshold[z-1]=x;
+      Settings.WiredInputThreshold[z-1]=x;
       SaveSettings();
       break;                  
 
@@ -661,8 +653,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       Par2PortAnalog(Par1, Par2, &z, &x);// y=port, x=waarde
       z--;
       y=analogRead(PIN_WIRED_IN_1+z);      
-      S.WiredInput_Calibration_IH[z]=y;
-      S.WiredInput_Calibration_OH[z]=x;
+      Settings.WiredInput_Calibration_IH[z]=y;
+      Settings.WiredInput_Calibration_OH[z]=x;
       SaveSettings();
       break;
       }
@@ -672,15 +664,15 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       Par2PortAnalog(Par1, Par2, &z, &x);// y=port, x=waarde
       z--;
       y=analogRead(PIN_WIRED_IN_1+z);      
-      S.WiredInput_Calibration_IL[z]=y;
-      S.WiredInput_Calibration_OL[z]=x;
+      Settings.WiredInput_Calibration_IL[z]=y;
+      Settings.WiredInput_Calibration_OL[z]=x;
       //??? Weer herstellen: SaveSettings();
       break;
       }
       
     case CMD_WIRED_SMITTTRIGGER:
       Par2PortAnalog(Par1, Par2, &z, &x);// y=variabele, x=waarde
-      S.WiredInputSmittTrigger[z-1]=x;
+      Settings.WiredInputSmittTrigger[z-1]=x;
       SaveSettings();
       break;                  
 
@@ -690,37 +682,37 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       else
         {
         if(Par1==0)
-          TransmitCode(command2event(S.Unit, CMD_MESSAGE ,S.Unit,MESSAGE_00),Src);        
+          TransmitCode(command2event(Settings.Unit, CMD_MESSAGE ,Settings.Unit,MESSAGE_00),Src);        
         else
           Status(Par1, Par2, true);
         }
       break;
 
     case CMD_UNIT:
-      S.Unit=Par1;
+      Settings.Unit=Par1;
       SaveSettings();
-      if(BusyOnSent)
-        TransmitCode(command2event(S.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
+      if(Busy.Sent)
+        TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
       FactoryEventlist();
       
       Reset();
 
     case CMD_REBOOT:
       delay(1000);
-      if(BusyOnSent)
-        TransmitCode(command2event(S.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
+      if(Busy.Sent)
+        TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
       Reset();
       break;        
 
     case CMD_ANALYSE_SETTINGS:
-      S.AnalyseTimeOut=Par1*1000;
-      S.AnalyseSharpness=Par2;
+      Settings.AnalyseTimeOut=Par1*1000;
+      Settings.AnalyseSharpness=Par2;
       SaveSettings();
       break;
 
     case CMD_RESET:
-      if(BusyOnSent)
-        TransmitCode(command2event(S.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
+      if(Busy.Sent)
+        TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
       ResetFactory();
 
     case CMD_EVENTLIST_ERASE:
@@ -747,14 +739,14 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 #if NODO_MEGA
     case CMD_ECHO:
       if(Src==VALUE_SOURCE_TELNET) 
-        S.EchoTelnet=Par1;
+        Settings.EchoTelnet=Par1;
       if(Src==VALUE_SOURCE_SERIAL) 
-        S.EchoSerial=Par1;        
+        Settings.EchoSerial=Par1;        
       SaveSettings();
       break;
 
     case CMD_DEBUG: 
-      S.Debug=Par1;
+      Settings.Debug=Par1;
       SaveSettings();
       break;
 
@@ -780,8 +772,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;        
 
     case CMD_TRANSMIT_IP:
-      S.TransmitIP=Par1;        
-      S.HTTP_Pin=Par2;
+      Settings.TransmitIP=Par1;        
+      Settings.HTTP_Pin=Par2;
       SaveSettings();
       break;
 
@@ -818,8 +810,8 @@ void ExecuteLine(char *Line, byte Port)
   byte SendTo=0; // Als deze waarde ongelijk aan nul, dan wordt het commando niet uitgevoerd maar doorgestuurd naar de andere Nodo
 
   Led(RED);
-  if(S.WaitBusy==VALUE_ALL)
-    NodoBusy(0,true);
+//  if(Settings.WaitBusy==VALUE_ALL)??? kan dit weg?
+//    NodoBusy(0,true);
   
   // verwerking van commando's is door gebruiker tijdelijk geblokkeerd door FileWrite commando
   if(FileWriteMode>0)
@@ -886,16 +878,16 @@ void ExecuteLine(char *Line, byte Port)
           // onderstaande commando's worden verwerkt in ExecuteCommand(); Hier vindt alleen omzetting plaats van string naar 32-bit event.
           case CMD_LOCK:
             a=0L;
-            for(x=0;x<strlen(S.Password);x++)
+            for(x=0;x<strlen(Settings.Password);x++)
               {
               a=a<<5;
-              a^=S.Password[x];
+              a^=Settings.Password[x];
               }
             
             a&=0x7fff;// 15-bits pincode uit wachtwoord samengesteld. 16e bit is lock aan/uit.
             if(Par1==VALUE_ON)
               a |= (1<<15);
-            v=command2event(S.Unit,CMD_LOCK,(a>>8)&0xff,a&0xff);
+            v=command2event(Settings.Unit,CMD_LOCK,(a>>8)&0xff,a&0xff);
             break;
 
           case CMD_BREAK_ON_VAR_EQU:
@@ -917,7 +909,7 @@ void ExecuteLine(char *Line, byte Port)
           case CMD_EVENTLIST_WRITE:
             if(SendTo!=0)
               {
-              v=command2event(S.Unit, CMD_EVENTLIST_WRITE,Par1,0);      // verwerk binnengekomen event.
+              v=command2event(Settings.Unit, CMD_EVENTLIST_WRITE,Par1,0);      // verwerk binnengekomen event.
               }
             else
               {                          
@@ -944,7 +936,7 @@ void ExecuteLine(char *Line, byte Port)
               }
             else
               {
-              v=command2event(S.Unit, Cmd,v,Par2);      // verwerk binnengekomen event.
+              v=command2event(Settings.Unit, Cmd,v,Par2);      // verwerk binnengekomen event.
               Error=CommandError(v);
               }
             break;
@@ -985,7 +977,7 @@ void ExecuteLine(char *Line, byte Port)
               if(Par2==VALUE_ON || Par2==VALUE_OFF)
                 {
                 Par2=(Par2==VALUE_ON) | (grp<<1); // Parameter-2 bevat [On,Off]. Omzetten naar 1,0. tevens op bit-2 het groepcommando zetten.
-                v=command2event(S.Unit, Cmd,Par1,Par2);
+                v=command2event(Settings.Unit, Cmd,Par1,Par2);
                 }
               else
                 Error=MESSAGE_02;
@@ -1006,18 +998,18 @@ void ExecuteLine(char *Line, byte Port)
             TmpStr[0]=0;
             GetArgv(Command,TmpStr,2);
             TmpStr[24]=0; // voor geval de string te lang is.
-            strcpy(S.Password,TmpStr);
+            strcpy(Settings.Password,TmpStr);
 
             // Als een lock actief, dan lock op basis van nieuwe password instellen
-            if(S.Lock)
+            if(Settings.Lock)
               {
               a=0L;
-              for(x=0;x<strlen(S.Password);x++)
+              for(x=0;x<strlen(Settings.Password);x++)
                 {
                 a=a<<5;
-                a^=S.Password[x];
+                a^=Settings.Password[x];
                 }
-              S.Lock=a&0x7fff;
+              Settings.Lock=a&0x7fff;
               }
             SaveSettings();
 
@@ -1029,7 +1021,7 @@ void ExecuteLine(char *Line, byte Port)
             TmpStr[0]=0;
             GetArgv(Command,TmpStr,2);
             TmpStr[9]=0; // voor geval de string te lang is.
-            strcpy(S.ID,TmpStr);
+            strcpy(Settings.ID,TmpStr);
             SaveSettings();
             break;
             }  
@@ -1107,7 +1099,7 @@ void ExecuteLine(char *Line, byte Port)
               else
                 {
                 SelectSD(true);
-                TransmitCode(command2event(S.Unit, CMD_MESSAGE, S.Unit, MESSAGE_03),VALUE_ALL);      
+                TransmitCode(command2event(Settings.Unit, CMD_MESSAGE, Settings.Unit, MESSAGE_03),VALUE_ALL);      
                 }
               }
             break;
@@ -1123,7 +1115,7 @@ void ExecuteLine(char *Line, byte Port)
                 {
                 // Als er een EventlistWrite actief is, dan hoeft het commando niet uitgevoerd te worden. Alleen het event v moet
                 // worden gevuld zodat deze kan worden weggeschreven in de Eventlist.
-                v=command2event(S.Unit, Cmd,Par1,Par2);
+                v=command2event(Settings.Unit, Cmd,Par1,Par2);
                 Error=CommandError(v);
                 }
 
@@ -1162,7 +1154,7 @@ void ExecuteLine(char *Line, byte Port)
                 else
                   {
                   SelectSD(false);  
-                  TransmitCode(command2event(S.Unit, CMD_MESSAGE, S.Unit, MESSAGE_01),VALUE_ALL);
+                  TransmitCode(command2event(Settings.Unit, CMD_MESSAGE, Settings.Unit, MESSAGE_01),VALUE_ALL);
                   }
                 SelectSD(false);
                 }
@@ -1198,14 +1190,14 @@ void ExecuteLine(char *Line, byte Port)
             if(Par1==VALUE_AUTO)
               { 
               if(Par2==VALUE_ON)
-                S.AutoSaveEventGhostIP=VALUE_AUTO;  // Automatisch IP adres opslaan na ontvangst van een EG event of niet.
+                Settings.AutoSaveEventGhostIP=VALUE_AUTO;  // Automatisch IP adres opslaan na ontvangst van een EG event of niet.
               else
-                S.AutoSaveEventGhostIP=0;
+                Settings.AutoSaveEventGhostIP=0;
               }
             else
               {
               if(GetArgv(Command,TmpStr,2))
-                if(!str2ip(TmpStr,S.EventGhostServer_IP))
+                if(!str2ip(TmpStr,Settings.EventGhostServer_IP))
                   Error=MESSAGE_02;
               }
             SaveSettings();
@@ -1213,35 +1205,35 @@ void ExecuteLine(char *Line, byte Port)
             
           case CMD_NODO_IP:
             if(GetArgv(Command,TmpStr,2))
-              if(!str2ip(TmpStr,S.Nodo_IP))
+              if(!str2ip(TmpStr,Settings.Nodo_IP))
                 Error=MESSAGE_02;
             SaveSettings();
             break;
             
           case CMD_CLIENT_IP:
             if(GetArgv(Command,TmpStr,2))
-              if(!str2ip(TmpStr,S.Client_IP))
+              if(!str2ip(TmpStr,Settings.Client_IP))
                 Error=MESSAGE_02;
             SaveSettings();
             break;
             
           case CMD_SUBNET:
             if(GetArgv(Command,TmpStr,2))
-              if(!str2ip(TmpStr,S.Subnet))
+              if(!str2ip(TmpStr,Settings.Subnet))
                 Error=MESSAGE_02;
             SaveSettings();
             break;
             
           case CMD_DNS_SERVER:
             if(GetArgv(Command,TmpStr,2))
-              if(!str2ip(TmpStr,S.DnsServer))
+              if(!str2ip(TmpStr,Settings.DnsServer))
                 Error=MESSAGE_02;
             SaveSettings();
             break;
             
           case CMD_GATEWAY:
             if(GetArgv(Command,TmpStr,2))
-              if(!str2ip(TmpStr,S.Gateway))
+              if(!str2ip(TmpStr,Settings.Gateway))
                 Error=MESSAGE_02;
             SaveSettings();
             break;
@@ -1252,7 +1244,7 @@ void ExecuteLine(char *Line, byte Port)
               {
               strcat(TmpStr,".dat");
               if(!SaveEventlistSDCard(TmpStr))
-                TransmitCode(command2event(S.Unit, CMD_MESSAGE, S.Unit, MESSAGE_03),VALUE_ALL);// geen RaiseMessage() anders weer poging om te loggen naar SDCard ==> oneindige loop
+                TransmitCode(command2event(Settings.Unit, CMD_MESSAGE, Settings.Unit, MESSAGE_03),VALUE_ALL);// geen RaiseMessage() anders weer poging om te loggen naar SDCard ==> oneindige loop
               }
             break;
 
@@ -1276,7 +1268,7 @@ void ExecuteLine(char *Line, byte Port)
             // zoek in de regel waar de string met het http request begint.
             x=StringFind(Line,cmd2str(CMD_HTTP_REQUEST))+strlen(cmd2str(CMD_HTTP_REQUEST));
             while(Line[x]==32)x++;
-            strcpy(S.HTTPRequest,&Line[0]+x);
+            strcpy(Settings.HTTPRequest,&Line[0]+x);
             SaveSettings(); 
             break;
 
@@ -1284,7 +1276,7 @@ void ExecuteLine(char *Line, byte Port)
             {
             if(GetArgv(Command,TmpStr,2))
               {
-              S.PortServer=str2int(TmpStr);
+              Settings.PortServer=str2int(TmpStr);
               SaveSettings();
               }
             break;
@@ -1294,7 +1286,7 @@ void ExecuteLine(char *Line, byte Port)
             {
             if(GetArgv(Command,TmpStr,2))
               {
-              S.PortClient=str2int(TmpStr);
+              Settings.PortClient=str2int(TmpStr);
               SaveSettings();
               }
             break;
@@ -1304,7 +1296,7 @@ void ExecuteLine(char *Line, byte Port)
           default:
             {              
             // standaard commando volgens gewone syntax
-            v=command2event(S.Unit,Cmd,Par1,Par2);            
+            v=command2event(Settings.Unit,Cmd,Par1,Par2);            
             Error=CommandError(v);
 
             // Als het geen regulier commando was EN geen commando met afwijkende MMI, dan kijken of file op SDCard staat)
@@ -1387,6 +1379,9 @@ void ExecuteLine(char *Line, byte Port)
     if(!QueueSend(SendTo))
       RaiseMessage(MESSAGE_12);
     QueuePos=0;
+    
+    // Verwerk eventuele events die in de queue zijn geplaatst.
+    ProcessQueue();
     }
   }
 #endif

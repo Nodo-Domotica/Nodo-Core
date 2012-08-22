@@ -15,7 +15,7 @@ void ProcessQueue(void)
 
     for(x=0;x<QueuePos;x++)
       {
-      if(((QueueEvent[x]>>16)&0xff)==CMD_EVENTLIST_WRITE && ((QueueEvent[x]>>24)&0xf)==S.Unit && x<(QueuePos-2)) // cmd
+      if(((QueueEvent[x]>>16)&0xff)==CMD_EVENTLIST_WRITE && ((QueueEvent[x]>>24)&0xf)==Settings.Unit && x<(QueuePos-2)) // cmd
         {
         if(Eventlist_Write(((QueueEvent[x]>>8)&0xff),QueueEvent[x+1],QueueEvent[x+2]))
           x+=2;
@@ -23,7 +23,7 @@ void ProcessQueue(void)
           RaiseMessage(MESSAGE_06);    
         }
       else
-        ProcessEvent(QueueEvent[x],VALUE_DIRECTION_INPUT,QueuePort[x],0,0);      // verwerk binnengekomen event.
+        ProcessEvent2(QueueEvent[x],VALUE_DIRECTION_INPUT,QueuePort[x],0,0);      // verwerk binnengekomen event.
       }
     QueuePos=0;
     }
@@ -49,7 +49,7 @@ void ProcessQueue(void)
         TmpStr[y]=0;
         y=0;
         SelectSD(false);      
-        ProcessEvent(str2int(TmpStr),VALUE_DIRECTION_INPUT,VALUE_SOURCE_FILE,0,0);      // verwerk binnengekomen event.
+        ProcessEvent2(str2int(TmpStr),VALUE_DIRECTION_INPUT,VALUE_SOURCE_FILE,0,0);      // verwerk binnengekomen event.
         SelectSD(true);
         }
       }
@@ -66,7 +66,7 @@ void ProcessQueue(void)
  * Doorlopen van een volledig gevulde eventlist duurt ongeveer 15ms inclusief printen naar serial
  * maar exclusief verwerking n.a.v. een 'hit' in de eventlist
  \*********************************************************************************************/
-boolean ProcessEventT(unsigned long IncommingEvent, byte Direction, byte Port, unsigned long PreviousContent, byte PreviousPort)
+boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, unsigned long PreviousContent, byte PreviousPort)
   {
   byte x;
   SerialHold(true);  // als er een regel ontvangen is, dan binnenkomst van signalen stopzetten met een seriele XOFF
@@ -93,20 +93,20 @@ boolean ProcessEventT(unsigned long IncommingEvent, byte Direction, byte Port, u
   #endif
 
   // Verwerk het binnengekomen event
-  ProcessEvent(IncommingEvent,Direction,Port,PreviousContent,PreviousPort);
+  ProcessEvent2(IncommingEvent,Direction,Port,PreviousContent,PreviousPort);
 
   // Verwerk eventuele events die in de queue zijn geplaatst.
   ProcessQueue();
 
-  if(BusyOnSent)
+  if(Busy.Sent)
     {
     delay(RECEIVER_STABLE); // anders volgt de <Busy Off> te snel en wordt deze mogelijk gemist door de master. ???hoger
-    TransmitCode(command2event(S.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
-    BusyOnSent=false;
+    TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
+    Busy.Sent=false;
     }
   }
   
-boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, unsigned long PreviousContent, byte PreviousPort)
+boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, unsigned long PreviousContent, byte PreviousPort)
   {
   unsigned long Event_1, Event_2;
   int x;
@@ -114,7 +114,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   byte Par1=(IncommingEvent>>8 )&0xff; // Par1
   byte Par2=(IncommingEvent    )&0xff; // Par2
 
-  if(S.Lock)
+  if(Settings.Lock)
     {
     if((Port==VALUE_SOURCE_RF || Port==VALUE_SOURCE_IR) && millis()>60000)
       {
@@ -139,9 +139,9 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
       }
     }
 
-  if((IncommingEvent&0xffff0000) == command2event(S.Unit,CMD_TRANSMIT_QUEUE,0,0))
+  if((IncommingEvent&0xffff0000) == command2event(Settings.Unit,CMD_TRANSMIT_QUEUE,0,0))//??? rename naar SendTo
     {
-    // Er is een verzoek ontvangen om de queue te vullen. 
+    // Er is een SendTo verzoek ontvangen om de queue te vullen. 
     if(!QueueReceive(Par1,Par2))
       {
       RaiseMessage(MESSAGE_12);
@@ -150,10 +150,11 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     }
 
   // print regel. Als Debug aan, dan alle regels die vanuit de eventlist worden verwerkt weergeven
-  if(ExecutionDepth==0 || S.Debug==VALUE_ON)
+//???  if(ExecutionDepth==0 || Settings.Debug==VALUE_ON)
     PrintEvent(IncommingEvent,Direction,Port);  // geef event weer op Serial
 
-  NodoBusy(IncommingEvent,S.WaitBusy==VALUE_ALL);          
+  // Werk de status bij van busy units en eventueel wachten tot alle vrij zijn.
+  NodoBusy(IncommingEvent,Settings.WaitBusyAll);          
 
   if(ExecutionDepth++>=MACRO_EXECUTION_DEPTH)
     {
@@ -166,10 +167,10 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   // als het een Nodo event is en een geldig commando, dan deze uitvoeren
   if(NodoType(IncommingEvent)==NODO_TYPE_COMMAND)
     { // Er is een geldig Commando voor deze Nodo binnengekomen       
-    if(S.SendBusy==VALUE_ALL && !BusyOnSent)
+    if(Settings.SendBusy==VALUE_ALL && !Busy.Sent)
       {
-      TransmitCode(command2event(S.Unit,CMD_BUSY,VALUE_ON,0),VALUE_ALL);
-      BusyOnSent=true;
+      TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_ON,0),VALUE_ALL);
+      Busy.Sent=true;
       }
             
     if(!ExecuteCommand(IncommingEvent,Port,PreviousContent,PreviousPort))
@@ -180,20 +181,24 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
     }
   else
     {// Er is een Event binnengekomen  
-    // loop de gehele eventlist langs om te kijken of er een treffer is. 255 regels checken duurt 180 milliseconde
+    // loop de gehele eventlist langs om te kijken of er een treffer is. 255 regels checken duurt 180 milliseconden.
     for(x=1; x<=EVENTLIST_MAX; x++)
       {
       Eventlist_Read(x,&Event_1,&Event_2);
       if(CheckEvent(IncommingEvent,Event_1,Port))
         {
-
 #if NODO_MEGA
-        if(S.Debug==VALUE_ON)
+        if(Settings.Debug==VALUE_ON)
           {
           EventlistEntry2str(x,ExecutionDepth,TempString,false);
           Serial.println(TempString);
           }
 #endif
+        if(Settings.SendBusy==VALUE_ALL && !Busy.Sent)
+          {
+          TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_ON,0),VALUE_ALL);
+          Busy.Sent=true;
+          }
 
         if(NodoType(Event_2)==NODO_TYPE_COMMAND) // is de ontvangen code een uitvoerbaar commando?
           {
@@ -205,7 +210,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
           }
         else
           {// het is een ander soort event;
-          if(Event_1!=command2event(S.Unit,CMD_COMMAND_WILDCARD,0,0))
+          if(Event_1!=command2event(Settings.Unit,CMD_COMMAND_WILDCARD,0,0))
             {
             if(!ProcessEvent(Event_2,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_EVENTLIST,IncommingEvent,Port))
               {
