@@ -6,57 +6,83 @@ void ProcessQueue(void)
   {
   byte x;
   int y;
-
-  if(QueuePos)
+  unsigned long Event;
+  byte Port;
+  
+  if(Queue.Position>0)
     {
     #if NODO_MEGA
     PrintTerminal(ProgmemString(Text_26));
     #endif
 
-    for(x=0;x<QueuePos;x++)
+Serial.print("*** debug: ProcessQueue=");Serial.println(Queue.Position); //??? Debug
+    for(x=0;x<Queue.Position;x++)
       {
-      if(((QueueEvent[x]>>16)&0xff)==CMD_EVENTLIST_WRITE && ((QueueEvent[x]>>24)&0xf)==Settings.Unit && x<(QueuePos-2)) // cmd
+      if(((Queue.Event[x]>>16)&0xff)==CMD_EVENTLIST_WRITE && ((Queue.Event[x]>>24)&0xf)==Settings.Unit && x<(Queue.Position-2)) // cmd
         {
-        if(Eventlist_Write(((QueueEvent[x]>>8)&0xff),QueueEvent[x+1],QueueEvent[x+2]))
+Serial.print("*** debug: EventlistWrite=");Serial.println(); //??? Debug
+        
+        if(Eventlist_Write(((Queue.Event[x]>>8)&0xff),Queue.Event[x+1],Queue.Event[x+2]))
           x+=2;
         else
           RaiseMessage(MESSAGE_06);    
         }
       else
-        ProcessEvent2(QueueEvent[x],VALUE_DIRECTION_INPUT,QueuePort[x],0,0);      // verwerk binnengekomen event.
+        ProcessEvent2(Queue.Event[x],VALUE_DIRECTION_INPUT,Queue.Port[x],0,0);      // verwerk binnengekomen event.
       }
-    QueuePos=0;
+    Queue.Position=0;
+    #if NODO_MEGA
+    PrintTerminal(ProgmemString(Text_29));
+    #endif
     }
 
   // de Mega Nodo heeft nog een extra queue faciliteit: bestand queue.dat op SDCard
   #if NODO_MEGA
-  char *TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
-  unsigned long Event;
 
   SelectSD(true);
-  strcpy(TmpStr,ProgmemString(Text_15));
-  File dataFile=SD.open(TmpStr);
+  File dataFile=SD.open(ProgmemString(Text_15));
   if(dataFile)
     {
+    #if NODO_MEGA
+    PrintTerminal(ProgmemString(Text_26));
+    #endif
+
+    char *Line=(char*)malloc(INPUT_BUFFER_SIZE+1);
+    char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
     y=0;       
     while(dataFile.available())
       {
       x=dataFile.read();
       if(isprint(x) && y<INPUT_BUFFER_SIZE)
-        TmpStr[y++]=x;
+        Line[y++]=x;
       else
         {
-        TmpStr[y]=0;
+        Line[y]=0;
         y=0;
-        SelectSD(false);      
-        ProcessEvent2(str2int(TmpStr),VALUE_DIRECTION_INPUT,VALUE_SOURCE_FILE,0,0);      // verwerk binnengekomen event.
-        SelectSD(true);
+        
+        if(GetArgv(Line, TempString, 1))// Haal hex-event uit de regel
+          {
+          Event=str2int(TempString);
+          Port=0;
+          if(GetArgv(Line, TempString, 2))// Haal poort uit de regel
+            {
+            Port=str2int(TempString);
+            }
+          SelectSD(false);      
+          ProcessEvent2(Event,VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
+          SelectSD(true);
+          }
         }
       }
     dataFile.close();
+    free(Line);
+    free(TempString);
     SD.remove(ProgmemString(Text_15));
+    SelectSD(false);
+    #if NODO_MEGA
+    PrintTerminal(ProgmemString(Text_29));
+    #endif
     }  
-  free(TmpStr);
   SelectSD(false);
   #endif
   }
@@ -75,6 +101,9 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   
   #ifdef USER_PLUGIN
   if(!UserPlugin_Receive(IncommingEvent))
+    return true;
+
+  if(FileWriteMode!=0)
     return true;
   #endif
   
@@ -158,8 +187,9 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
 
   if(ExecutionDepth++>=MACRO_EXECUTION_DEPTH)
     {
-    RaiseMessage(MESSAGE_05);
     ExecutionDepth=0;
+    Queue.Position=0;
+    RaiseMessage(MESSAGE_05);
     return false; // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
     }
 
@@ -190,8 +220,10 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
 #if NODO_MEGA
         if(Settings.Debug==VALUE_ON)
           {
+          char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
           EventlistEntry2str(x,ExecutionDepth,TempString,false);
           Serial.println(TempString);
+          free(TempString);
           }
 #endif
         if(Settings.SendBusy==VALUE_ALL && !Busy.Sent)

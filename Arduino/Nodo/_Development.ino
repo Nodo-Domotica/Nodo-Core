@@ -1,19 +1,33 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- Queue bestand wordt gewist na een reboot (anders kans op een loop bij verkeerde inhoud)
+- Issue 503: queueing slaat op hol?
+- Issue 499: Ir rx wordt niet verwerkt
+- Issue 507: UserPlugin - periodical
+- Issue 498: uitschakelen inkomende events
+- Issue 496: Mega zonder Ethernet card
 - diverse aanpassingen t.a.v. queueing
 - aanpassing Busy On/Off mechanisme.
+- Boot zonder unitnummer niet meer toestaan.
+- blokkeren rf en ir bij een filewrite
+- Toevoeging: Poort mee in de verwerking van de queue
+- Bug: WildCard uitgebreid met TelNet optie.
+- IR default zenden uit
+- Status All via Telnt verzendt niet meer naar andere poorten.
+- Andere allocatie geheugen voor string variabelen. (t.b.v. verbeteren recursief aanroepen routines en stabiliteit
 
 Known Errors / ToDo:
-- IR werkt niet voor de Mini variant ?
+- uitvoer script VAR geeft nesting error en reboot
+- Nesting error komt niet los
+- Timestamp als variabele van de compiler t.b.v. Resetten nodo
+- Resetten: spiegel, verbinden in/out poorten, ????
+- Unit commando uitvoeren met behoud van eventlist?- IR werkt niet voor de Mini variant ?
 - Status All uitvraag bij een mini levert: [Input=File, Unit=15, Event=Debug] Geen geldig event
 - WaitFreeRF: Fijnafstemming komt later nog o.b.v. Hans zijn praktijk situatie
 - Vreemde weergave events: Internal=System
-- blokkeren rf en ir bij een filewrite
 - In Executeline afgevangen commando worden niet gelogt op SDCard.
 - Event 0,0 wordt getoond na ongeldig commando
-- NewKaku geeft unit nummer.
+- NewKaku geeft soms unit nummer.
 
 Aanpassingen t.o.v. Nodo Due:
 - All:WaitFreeRF aangepast. Nu uitsluitend nog On/Off instellen.

@@ -25,8 +25,8 @@
 /****************************** Door gebruiker in te stellen: ***************************************************************/
 
 #define USER_PLUGIN        0                                     // Plugin: 0 = niet compileren, 1 = wel compileren
+#define USER_PLUGIN_NAME   "UserPlugin"
 #define NODO_MEGA          0
-#define UNIT_NODO_MINI     15
 
 // De code kan worden gecompileerd als een Nodo-Mini voor de Arduino met een ATMega328 processor
 // of voor een Nodo-Mega voor een Arduino met een ATMega1280 of ATMega2560
@@ -38,7 +38,6 @@
 #include <SPI.h>
 #define ETHERNET           1                                     // EthernetShield: 0 = afwezig, 1 = aanwezig
 #define NODO_MAC           0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF    // Default Nodo MACadres
-#define UNIT_NODO_MEGA     1
 
 
 // Onderstaand de formules die gebruikt worden voor omrekening van pulsen naar analoge waarden.
@@ -67,7 +66,7 @@
 //#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
 
 #define SETTINGS_VERSION     10
-#define NODO_BUILD          422
+#define NODO_BUILD          423
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -91,8 +90,6 @@ prog_char PROGMEM Text_19[] = "close";
 prog_char PROGMEM Text_20[] = "quintessence";
 prog_char PROGMEM Text_21[] = "payload withoutRelease";
 prog_char PROGMEM Text_23[] = "log.dat";
-
-
 prog_char PROGMEM Text_24[] = "Queue: Capturing events...";
 prog_char PROGMEM Text_15[] = "Queue.dat";
 prog_char PROGMEM Text_26[] = "Queue: Processing events...";//???
@@ -129,7 +126,7 @@ prog_char PROGMEM Cmd_022[]="SendTo";
 prog_char PROGMEM Cmd_023[]="SimulateDay";
 prog_char PROGMEM Cmd_024[]="Sound";
 prog_char PROGMEM Cmd_025[]="Debug";
-prog_char PROGMEM Cmd_026[]="UserPlugin";
+prog_char PROGMEM Cmd_026[]=USER_PLUGIN_NAME;
 prog_char PROGMEM Cmd_027[]="TimerRandom";
 prog_char PROGMEM Cmd_028[]="TimerSetSec";
 prog_char PROGMEM Cmd_029[]="TimerSetMin";
@@ -671,7 +668,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define MACRO_EXECUTION_DEPTH        4 // maximale nesting van macro's.
 #define TIMER_MAX                    8 // aantal beschikbare timers voor de user, gerekend vanaf 1
 #define USER_VARIABLES_MAX           8 // aantal beschikbare gebruikersvariabelen voor de user.
-#define EVENT_QUEUE_MAX              8 // maximaal aantal plaatsen in de queue//???
+#define EVENT_QUEUE_MAX             16 // maximaal aantal plaatsen in de queue//???
 #define PULSE_IRQ                    3 // IRQ verbonden aan de IR_RX_DATA pen 3 van de ATMega328 (Uno/Nano/Duemillanove)
 #define RAW_BUFFER_SIZE            160 // Maximaal aantal te ontvangen 128 bits.
 #define EVENTLIST_MAX              100 // aantal events dat de lijst bevat in het EEPROM geheugen. Iedere regel in de eventlist heeft 8 bytes nodig. eerste adres is 0
@@ -738,17 +735,21 @@ struct SettingsStruct
 struct NodoBusyStruct //@2
   {
   int Status;                                               // in deze variabele de status van het event 'Busy' van de betreffende units 1 t/m 15. bit-1 = unit-1.
-  boolean Sent;                                           // Vlag die bijhoudt of het Busy On event is verzonden.
+  boolean Sent;                                             // Vlag die bijhoudt of het Busy On event is verzonden.
   int ResetTimer;                                           // Timer voor resetten van de status.
   }Busy;
+
+struct QueueStruct
+  {
+  byte Port[EVENT_QUEUE_MAX];                               // tabel behorend bij de queue. Geeft herkomst van het event in de queue aan.
+  unsigned long Event[EVENT_QUEUE_MAX];                     // queue voor tijdelijk onthouden van events die tijdens een delay functie voorbij komen.
+  byte Position;                                                 // teller die wijst naar een plaats in de queue.
+  }Queue;
   
 unsigned long PulseCount;                                   // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
 unsigned long PulseTime;                                    // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
 unsigned long PulseTimePrevious;                            // Tijdsduur tussen twee pulsen teller in milliseconden: vorige meting
 unsigned long UserTimer[TIMER_MAX];                         // Timers voor de gebruiker.
-unsigned long QueueEvent[EVENT_QUEUE_MAX];                  // queue voor tijdelijk onthouden van events die tijdens een delay functie voorbij komen.
-byte QueuePort[EVENT_QUEUE_MAX];                            // tabel behorend bij de queue. Geeft herkomst van het event in de queue aan.
-byte QueuePos;                                              // teller die wijst naar een plaats in de queue.
 boolean WiredInputStatus[WIRED_PORTS];                      // Status van de WiredIn worden hierin opgeslagen.
 boolean WiredOutputStatus[WIRED_PORTS];                     // Wired variabelen.
 byte DaylightPrevious;                                      // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet.
@@ -761,7 +762,6 @@ unsigned long HW_Config=0;                                  // Hardware configur
 #if NODO_MEGA
 uint8_t MD5HashCode[16];                                    // tabel voor berekenen van MD5 hash codes t.b.v. uitwisselen wachtwoord EventGhost.
 int CookieTimer;                                            // Seconden teller die bijhoudt wanneer er weer een nieuw Cookie naar de WebApp verzonden moet worden.
-char TempString[INPUT_BUFFER_SIZE+2];                       // Globale, tijdelijke string voor algemeen gebruik in diverste functies. 
 int TerminalConnected=0;                                    // Vlag geeft aan of en hoe lang nog (seconden) er verbinding is met een Terminal.
 boolean ConfirmHTTP=false;                                  // Als true, dan wordt een output naar Serial/Telnet eveneens per regel verzonden als HTTP-requenst  
 boolean TemporyEventGhostError=false;                       // Vlag om tijdelijk evetghost verzending stil te leggen na een communicatie probleem
@@ -910,7 +910,9 @@ void setup()
 #endif
 
   PrintWelcome(); // geef de welkomsttekst weer
-  UserPlugin_Init();
+  #ifdef USER_PLUGIN
+    UserPlugin_Init();
+  #endif
   TransmitCode(command2event(Settings.Unit, CMD_BOOT_EVENT,Settings.Unit,0),VALUE_ALL);  
   ProcessEvent(command2event(Settings.Unit, CMD_BOOT_EVENT,Settings.Unit,0),VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM,0,0);  // Voer het 'Boot' event uit.
   bitWrite(HW_Config,HW_SERIAL,0); // Serial weer uitschakelen.
@@ -950,7 +952,9 @@ void loop()
     {
     // Check voor IR of RF events
     if(GetEvent_IRRF(&Content,&x)) 
+      {
       ProcessEvent(Content,VALUE_DIRECTION_INPUT,x,0,0); // verwerk binnengekomen event.
+      }
       
     // 1: niet tijdkritische processen die periodiek uitgevoerd moeten worden
     if(LoopIntervalTimer_1<millis())// korte interval
@@ -1232,6 +1236,11 @@ void loop()
       {
       LoopIntervalTimer_3=millis()+Loop_INTERVAL_3; // reset de timer  
 
+      // loop periodiek langs de userplugin
+      #ifdef USER_PLUGIN
+        UserPlugin_Periodically();
+      #endif
+
 #if NODO_MEGA
       // Terminal onderhoudstaken
       // tel seconden terug nadat de gebruiker driemaal foutief wachtwoord ingegeven
@@ -1279,11 +1288,6 @@ void loop()
       else
         Busy.Status=0;      
 
-
-      // loop periodiek langs de userplugin
-      #ifdef NODO_PLUGIN=1
-        UserPlugin_Periodically();
-      #endif
       }
     }// while 
   }

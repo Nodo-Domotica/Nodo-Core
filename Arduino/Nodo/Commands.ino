@@ -54,11 +54,10 @@ byte CommandError(unsigned long Content)
   switch(Command)
     {
     //test; geen, altijd goed
+    case CMD_LOCK:
     case CMD_WAITBUSY:
-    case CMD_LOCK:    
     case CMD_TRANSMIT_QUEUE:
     case CMD_EVENTLIST_ERASE:
-    case CMD_BOOT_EVENT:
     case CMD_RESET:
     case CMD_RAWSIGNAL_SEND:
     case CMD_RAWSIGNAL:
@@ -119,6 +118,7 @@ byte CommandError(unsigned long Content)
       return false;
 
     case CMD_UNIT:
+    case CMD_BOOT_EVENT:
       if(Par1<1 || Par1>UNIT_MAX)return MESSAGE_02;
       return false;
 
@@ -200,6 +200,7 @@ byte CommandError(unsigned long Content)
         case VALUE_SOURCE_IR:
         case VALUE_SOURCE_RF:
 #if NODO_MEGA
+        case VALUE_SOURCE_TELNET:
         case VALUE_SOURCE_SERIAL:
         case VALUE_SOURCE_EVENTGHOST:
         case VALUE_SOURCE_HTTP:
@@ -294,6 +295,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   {
   unsigned long Event, a;  
   int x,y,z;
+  char *TempString=(char*)malloc(25);
 
   byte error        = false;
   byte Command      = (Content>>16)&0xff;
@@ -463,20 +465,38 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;
 
     case CMD_LOCK:
+      // In de bits van Par1 en Par2 zit een sleutel die gegenereerd is uit het wachtwoord van de Nodo die het commando verstuurd heeft.
       a=Content&0x7fff;// Zet de lock met de bits 0 t/m 15
-      if(Content&0x8000)
-        {// Als verzoek om inschakelen (On/Off bevindt zich in bit nr. 15) dan Lock waarde vullen
+//Serial.print("*** debug: a=");Serial.println(a,HEX); //??? Debug
+//Serial.print("*** debug: Settings.Lock=");Serial.println(Settings.Lock); //??? Debug
+//Serial.print("*** debug: Content=");Serial.println(Content); //??? Debug
+      if(Content&0x8000) // On/Off bevindt zich in bit nr. 15
+        {// Als verzoek om inschakelen dan Lock waarde vullen
+//Serial.println("*** debug: Lock inschakelen.");//???
         if(Settings.Lock==0)// mits niet al gelocked.
+          {
+//Serial.println("*** debug: Lock ingesteld.");//???
           Settings.Lock=a; 
+          }
         else
+          {
+//Serial.println("*** debug: Lock was reeds ingesteld met andere key (1).");//???
           RaiseMessage(MESSAGE_10);
+          }
         }
       else
         {// Verzoek om uitschakelen
+//Serial.println("*** debug: Lock uischakelen.");//???
         if(Settings.Lock==a || Settings.Lock==0)// als lock code overeen komt of nog niet gevuld
+          {
           Settings.Lock=0;
+//Serial.println("*** debug: Lock verwijderd.");//???
+          }
         else
+          {
+//Serial.println("*** debug: Lock stond nog ingesteld met andere key (2).");//???
           RaiseMessage(MESSAGE_10);
+          }
         }        
       SaveSettings();
       break;
@@ -677,7 +697,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;                  
 
     case CMD_STATUS:
-      if(Src==VALUE_SOURCE_HTTP || Src==VALUE_SOURCE_SERIAL)
+      if(Src==VALUE_SOURCE_HTTP || Src==VALUE_SOURCE_SERIAL || Src==VALUE_SOURCE_TELNET)
         Status(Par1, Par2, false);
       else
         {
@@ -689,12 +709,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;
 
     case CMD_UNIT:
-      Settings.Unit=Par1;
-      SaveSettings();
       if(Busy.Sent)
         TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
-      FactoryEventlist();
-      
+      Settings.Unit=Par1;
+      SaveSettings();
+      FactoryEventlist();      
       Reset();
 
     case CMD_REBOOT:
@@ -786,6 +805,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 #endif
 
     }
+  free(TempString);
   return error?false:true;
   }
 
@@ -798,7 +818,8 @@ void ExecuteLine(char *Line, byte Port)
   {
   const int MaxCommandLength=40; // maximaal aantal tekens van een commando
   char Command[MaxCommandLength+1]; 
-  char TmpStr[INPUT_BUFFER_SIZE+2]; // Twee extra posities i.v.m. afsluitende nul en het prompt teken. regelen met malloc() ???
+  char *TmpStr1=(char*)malloc(MaxCommandLength+1);
+  char *TmpStr2=(char*)malloc(INPUT_BUFFER_SIZE+2);
   int PosCommand;
   int PosLine;
   int L=strlen(Line);
@@ -821,568 +842,566 @@ void ExecuteLine(char *Line, byte Port)
       // beëindig de FileWrite modus
       FileWriteMode=0;
       TempLogFile[0]=0;
-      return;
       }
     else if(TempLogFile[0]!=0)
       {
       AddFileSDCard(TempLogFile,Line); // Extra logfile op verzoek van gebruiker
-      return;
       }
     }
-
-  PosCommand=0;
-  for(PosLine=0;PosLine<=L && Error==0 ;PosLine++)
+  else
     {
-    x=Line[PosLine];
-
-    // Comment teken. hierna verder niets meer doen.
-    if(x=='!') 
-      PosLine=L+1; // ga direct naar einde van de regel.
-       
-    // als puntkomma (scheidt opdachten) of einde string(0)
-    if((x=='!' || x==';' || x==0) && PosCommand>1)
+    PosCommand=0;
+    for(PosLine=0;PosLine<=L && Error==0 ;PosLine++)
       {
-      Command[PosCommand]=0;
-      PosCommand=0;
-      Cmd=0;
-      Par1=0;
-      Par2=0;
-      v=0;
-      
-      // string met commando compleet
-      
-      if(GetArgv(Command,TmpStr,1));
-        v=str2int(TmpStr); // als hex event dan is v gevuld met waarde
-
-      if(v==0) // Als geen een hex-event.
+      x=Line[PosLine];
+  
+      // Comment teken. hierna verder niets meer doen.
+      if(x=='!') 
+        PosLine=L+1; // ga direct naar einde van de regel.
+         
+      // als puntkomma (scheidt opdachten) of einde string(0)
+      if((x=='!' || x==';' || x==0) && PosCommand>1)
         {
-        Cmd=str2cmd(TmpStr); // als bestaand commando of event, dan Cmd gevuld met waarde
+        Command[PosCommand]=0;
+        PosCommand=0;
+        Cmd=0;
+        Par1=0;
+        Par2=0;
+        v=0;
         
-        if(GetArgv(Command,TmpStr,2))
-          {
-          Par1=str2cmd(TmpStr);
-          if(!Par1)
-            Par1=str2int(TmpStr);
-          }
+        // string met commando compleet
         
-        if(GetArgv(Command,TmpStr,3))
+        if(GetArgv(Command,TmpStr1,1));
+          v=str2int(TmpStr1); // als hex event dan is v gevuld met waarde
+  
+        if(v==0) // Als geen een hex-event.
           {
-          Par2=str2cmd(TmpStr);
-          if(!Par2)
-            Par2=str2int(TmpStr);
-          }        
-
-        // Hier worden de commando's verwerkt die een afwijkende MMI hebben.
-        switch(Cmd)
-          {
-          // onderstaande commando's worden verwerkt in ExecuteCommand(); Hier vindt alleen omzetting plaats van string naar 32-bit event.
-          case CMD_LOCK:
-            a=0L;
-            for(x=0;x<strlen(Settings.Password);x++)
-              {
-              a=a<<5;
-              a^=Settings.Password[x];
-              }
-            
-            a&=0x7fff;// 15-bits pincode uit wachtwoord samengesteld. 16e bit is lock aan/uit.
-            if(Par1==VALUE_ON)
-              a |= (1<<15);
-            v=command2event(Settings.Unit,CMD_LOCK,(a>>8)&0xff,a&0xff);
-            break;
-
-          case CMD_BREAK_ON_VAR_EQU:
-          case CMD_BREAK_ON_VAR_LESS:
-          case CMD_BREAK_ON_VAR_MORE:
-          case CMD_BREAK_ON_VAR_NEQU:
-          case CMD_VARIABLE_DEC:
-          case CMD_VARIABLE_SET:
-          case CMD_VARIABLE_INC:
-          case CMD_VARIABLE_EVENT:
-          case CMD_WIRED_THRESHOLD:
-          case CMD_WIRED_SMITTTRIGGER:
-          case CMD_WIRED_ANALOG_CALIBRATE_HIGH:
-          case CMD_WIRED_ANALOG_CALIBRATE_LOW:
-            if(GetArgv(Command,TmpStr,3))
-              v=AnalogInt2event(str2AnalogInt(TmpStr), Par1, Cmd);
-            break;
-
-          case CMD_EVENTLIST_WRITE:
-            if(SendTo!=0)
-              {
-              v=command2event(Settings.Unit, CMD_EVENTLIST_WRITE,Par1,0);      // verwerk binnengekomen event.
-              }
-            else
-              {                          
-              if(Par1>EVENTLIST_MAX)
-                Error=MESSAGE_06;
-              else
-                {
-                EventlistWriteLine=Par1;
-                State_EventlistWrite=1;
-                }
-              }
-            break;
-            
-          case CMD_SEND_KAKU_NEW:
-          case CMD_KAKU_NEW:
+          Cmd=str2cmd(TmpStr1); // als bestaand commando of event, dan Cmd gevuld met waarde
+          
+          if(GetArgv(Command,TmpStr1,2))
             {
-            if(GetArgv(Command,TmpStr,2))
-              v=str2int(TmpStr);
-              
-            if(v>255)
-              {
-              v=(v&0x0fffffff) | (((unsigned long)SIGNAL_TYPE_NEWKAKU)<<28); //  // Niet Par1 want NewKAKU kan als enige op de Par1 plaats een 28-bit waarde hebben. Hoogste nible wissen en weer vullen met type NewKAKU        
-              v|=(Par2==VALUE_ON)<<4; // Stop on/off commando op juiste plek in NewKAKU code
-              }
-            else
-              {
-              v=command2event(Settings.Unit, Cmd,v,Par2);      // verwerk binnengekomen event.
-              Error=CommandError(v);
-              }
-            break;
+            Par1=str2cmd(TmpStr1);
+            if(!Par1)
+              Par1=str2int(TmpStr1);
             }
-                  
-          case CMD_SEND_KAKU:
-          case CMD_KAKU:
+          
+          if(GetArgv(Command,TmpStr1,3))
             {
-            if(GetArgv(Command,TmpStr,2))
-              {
-              byte grp=0,c;
-              x=0;     // teller die wijst naar het het te behandelen teken
-              z=0;     // Home
-              w=0;     // Address
-              y=false; // Notatiewijze
-              
-              while((c=tolower(TmpStr[x++]))!=0)
-                {
-                if(c>='0' && c<='9'){w=w*10;w=w+c-'0';}
-                if(c>='a' && c<='p'){z=c-'a';y=true;} // KAKU home A is intern 0
-                }
-            
-              if(y)// notatie [A1..P16]
-                {
-                if(w==0)
-                  {// groep commando is opgegeven: 0=alle adressen
-                  grp=true;
-                  Par1=z<<4;
-                  }
-                else
-                  Par1= (z<<4) | (w-1);        
-                }
-              else // absoluut adres [0..255]
-                Par1=w; // KAKU adres 1 is intern 0     
-
-              // Parameter-1 bevat [A1..P16]. Nu omgezet naar absolute waarde. grp=groep commando
-
-              if(Par2==VALUE_ON || Par2==VALUE_OFF)
-                {
-                Par2=(Par2==VALUE_ON) | (grp<<1); // Parameter-2 bevat [On,Off]. Omzetten naar 1,0. tevens op bit-2 het groepcommando zetten.
-                v=command2event(Settings.Unit, Cmd,Par1,Par2);
-                }
-              else
-                Error=MESSAGE_02;
-              }
-            else
-              Error=MESSAGE_02;
-              
-            break;
-            }
-            
-          case CMD_SEND:
-            // als de SendTo is gevuld, dan event versturen naar een andere Nodo en niet zelf uitvoeren
-            SendTo=Par1;             
-            break;
-
-          case CMD_PASSWORD:
+            Par2=str2cmd(TmpStr1);
+            if(!Par2)
+              Par2=str2int(TmpStr1);
+            }        
+  
+          // Hier worden de commando's verwerkt die een afwijkende MMI hebben.
+          switch(Cmd)
             {
-            TmpStr[0]=0;
-            GetArgv(Command,TmpStr,2);
-            TmpStr[24]=0; // voor geval de string te lang is.
-            strcpy(Settings.Password,TmpStr);
-
-            // Als een lock actief, dan lock op basis van nieuwe password instellen
-            if(Settings.Lock)
-              {
+            case CMD_LOCK: // Hier wordt de lock code o.b.v. het wachtwoord ingesteld. Alleen van toepassing voor de Mega.
               a=0L;
               for(x=0;x<strlen(Settings.Password);x++)
                 {
                 a=a<<5;
                 a^=Settings.Password[x];
                 }
-              Settings.Lock=a&0x7fff;
-              }
-            SaveSettings();
-
-            break;
-            }  
-
-          case CMD_ID:
-            {
-            TmpStr[0]=0;
-            GetArgv(Command,TmpStr,2);
-            TmpStr[9]=0; // voor geval de string te lang is.
-            strcpy(Settings.ID,TmpStr);
-            SaveSettings();
-            break;
-            }  
-
-          case CMD_FILE_LOG:
-            if(GetArgv(Command,TmpStr,2))
-              {
-              strcat(TmpStr,".dat");
-              strcpy(TempLogFile,TmpStr);
-              }
-            else
-              TempLogFile[0]=0;
-            break;
-          
-          case CMD_FILE_ERASE:      
-            if(GetArgv(Command,TmpStr,2))
-              {
-              strcat(TmpStr,".dat");
-
-              SelectSD(true);
-              SD.remove(TmpStr);
-              SelectSD(false);
-              }
-            break;
-    
-          case CMD_FILE_GET_HTTP:
-            {
-            if(GetArgv(Command,TempString,2))
-              {
-              Led(BLUE);
-              GetHTTPFile(TempString);
-              }
-            else
-              Error=MESSAGE_02;            
-            break; 
-            }
-            
-          case CMD_FILE_SHOW:
-            {
-            char FileName[13];
-            TmpStr[8]=0;// voor de zekerheid te lange filename afkappen
-            if(GetArgv(Command,FileName,2))
-              {
-              Led(BLUE);
-              strcat(FileName,".dat");
-              SelectSD(true);
-              File dataFile=SD.open(FileName);
-              if(dataFile) 
+              a&=0x7fff;// 15-bits pincode uit wachtwoord samengesteld. 16e bit is lock aan/uit.
+              if(Par1==VALUE_ON)
+                a |= (1<<15);
+               v=command2event(Settings.Unit,CMD_LOCK,(a>>8)&0xff,a&0xff);
+              break;
+  
+            case CMD_BREAK_ON_VAR_EQU:
+            case CMD_BREAK_ON_VAR_LESS:
+            case CMD_BREAK_ON_VAR_MORE:
+            case CMD_BREAK_ON_VAR_NEQU:
+            case CMD_VARIABLE_DEC:
+            case CMD_VARIABLE_SET:
+            case CMD_VARIABLE_INC:
+            case CMD_VARIABLE_EVENT:
+            case CMD_WIRED_THRESHOLD:
+            case CMD_WIRED_SMITTTRIGGER:
+            case CMD_WIRED_ANALOG_CALIBRATE_HIGH:
+            case CMD_WIRED_ANALOG_CALIBRATE_LOW:
+              if(GetArgv(Command,TmpStr1,3))
+                v=AnalogInt2event(str2AnalogInt(TmpStr1), Par1, Cmd);
+              break;
+  
+            case CMD_EVENTLIST_WRITE:
+              if(SendTo!=0)
                 {
-                SelectSD(false);
-                PrintTerminal(ProgmemString(Text_22));
-                SelectSD(true);
-                TmpStr[0]=0;
-                y=0;       
-                while(dataFile.available())
+                v=command2event(Settings.Unit, CMD_EVENTLIST_WRITE,Par1,0);      // verwerk binnengekomen event.
+                }
+              else
+                {                          
+                if(Par1>EVENTLIST_MAX)
+                  Error=MESSAGE_06;
+                else
                   {
-                  x=dataFile.read();
-                  if(isprint(x) && y<INPUT_BUFFER_SIZE)
-                    {
-                    TmpStr[y++]=x;
-                    }
-                  else
-                    {
-                    TmpStr[y]=0;
-                    y=0;
-                    SelectSD(false);
-                    PrintTerminal(TmpStr);
-                    SelectSD(true);
-                    }
+                  EventlistWriteLine=Par1;
+                  State_EventlistWrite=1;
                   }
-                dataFile.close();
-                SelectSD(false);
-                PrintTerminal(ProgmemString(Text_22));
-                }  
+                }
+              break;
+              
+            case CMD_SEND_KAKU_NEW:
+            case CMD_KAKU_NEW:
+              {
+              if(GetArgv(Command,TmpStr1,2))
+                v=str2int(TmpStr1);
+                
+              if(v>255)
+                {
+                v=(v&0x0fffffff) | (((unsigned long)SIGNAL_TYPE_NEWKAKU)<<28); //  // Niet Par1 want NewKAKU kan als enige op de Par1 plaats een 28-bit waarde hebben. Hoogste nible wissen en weer vullen met type NewKAKU        
+                v|=(Par2==VALUE_ON)<<4; // Stop on/off commando op juiste plek in NewKAKU code
+                }
               else
                 {
-                SelectSD(true);
-                TransmitCode(command2event(Settings.Unit, CMD_MESSAGE, Settings.Unit, MESSAGE_03),VALUE_ALL);      
-                }
-              }
-            break;
-            }
-    
-          case CMD_FILE_EXECUTE:
-            {
-            char FileName[13];
-            TmpStr[8]=0;// voor de zekerheid te lange filename afkappen
-            if(GetArgv(Command,FileName,2))
-              {
-              if(State_EventlistWrite!=0)
-                {
-                // Als er een EventlistWrite actief is, dan hoeft het commando niet uitgevoerd te worden. Alleen het event v moet
-                // worden gevuld zodat deze kan worden weggeschreven in de Eventlist.
-                v=command2event(Settings.Unit, Cmd,Par1,Par2);
+                v=command2event(Settings.Unit, Cmd,v,Par2);      // verwerk binnengekomen event.
                 Error=CommandError(v);
                 }
-
-              else // Commando uitvoeren heeft alleen zin er geen eventlistwrite commando actief is
-                {                
-                strcat(FileName,".dat");
-
-                // zet (eventueel) de extra logging aan
-                GetArgv(Command,TempString,3);
-                strcat(TempString,".dat");
-                TempString[14]=0; // voor het geval de gebruiker een te lange naam heeft ingegeven
-                strcpy(TempLogFile,TempString);
+              break;
+              }
+                    
+            case CMD_SEND_KAKU:
+            case CMD_KAKU:
+              {
+              if(GetArgv(Command,TmpStr1,2))
+                {
+                byte grp=0,c;
+                x=0;     // teller die wijst naar het het te behandelen teken
+                z=0;     // Home
+                w=0;     // Address
+                y=false; // Notatiewijze
                 
+                while((c=tolower(TmpStr1[x++]))!=0)
+                  {
+                  if(c>='0' && c<='9'){w=w*10;w=w+c-'0';}
+                  if(c>='a' && c<='p'){z=c-'a';y=true;} // KAKU home A is intern 0
+                  }
+              
+                if(y)// notatie [A1..P16]
+                  {
+                  if(w==0)
+                    {// groep commando is opgegeven: 0=alle adressen
+                    grp=true;
+                    Par1=z<<4;
+                    }
+                  else
+                    Par1= (z<<4) | (w-1);        
+                  }
+                else // absoluut adres [0..255]
+                  Par1=w; // KAKU adres 1 is intern 0     
+  
+                // Parameter-1 bevat [A1..P16]. Nu omgezet naar absolute waarde. grp=groep commando
+  
+                if(Par2==VALUE_ON || Par2==VALUE_OFF)
+                  {
+                  Par2=(Par2==VALUE_ON) | (grp<<1); // Parameter-2 bevat [On,Off]. Omzetten naar 1,0. tevens op bit-2 het groepcommando zetten.
+                  v=command2event(Settings.Unit, Cmd,Par1,Par2);
+                  }
+                else
+                  Error=MESSAGE_02;
+                }
+              else
+                Error=MESSAGE_02;
+                
+              break;
+              }
+              
+            case CMD_SEND:
+              // als de SendTo is gevuld, dan event versturen naar een andere Nodo en niet zelf uitvoeren
+              SendTo=Par1;             
+              break;
+  
+            case CMD_PASSWORD:
+              {
+              TmpStr1[0]=0;
+              GetArgv(Command,TmpStr1,2);
+              TmpStr1[24]=0; // voor geval de string te lang is.
+              strcpy(Settings.Password,TmpStr1);
+  
+              // Als een lock actief, dan lock op basis van nieuwe password instellen
+              if(Settings.Lock)
+                {
+                a=0L;
+                for(x=0;x<strlen(Settings.Password);x++)
+                  {
+                  a=a<<5;
+                  a^=Settings.Password[x];
+                  }
+                Settings.Lock=a&0x7fff;
+                }
+              SaveSettings();
+  
+              break;
+              }  
+  
+            case CMD_ID:
+              {
+              TmpStr1[0]=0;
+              GetArgv(Command,TmpStr1,2);
+              TmpStr1[9]=0; // voor geval de string te lang is.
+              strcpy(Settings.ID,TmpStr1);
+              SaveSettings();
+              break;
+              }  
+  
+            case CMD_FILE_LOG:
+              if(GetArgv(Command,TmpStr1,2))
+                {
+                strcat(TmpStr1,".dat");
+                strcpy(TempLogFile,TmpStr1);
+                }
+              else
+                TempLogFile[0]=0;
+              break;
+            
+            case CMD_FILE_ERASE:      
+              if(GetArgv(Command,TmpStr1,2))
+                {
+                strcat(TmpStr1,".dat");
+  
+                SelectSD(true);
+                SD.remove(TmpStr1);
+                SelectSD(false);
+                }
+              break;
+      
+            case CMD_FILE_GET_HTTP:
+              {
+              if(GetArgv(Command,TmpStr1,2))
+                {
+                Led(BLUE);
+                GetHTTPFile(TmpStr1);
+                }
+              else
+                Error=MESSAGE_02;            
+              break; 
+              }
+              
+            case CMD_FILE_SHOW:
+              {
+              char FileName[13];
+              TmpStr1[8]=0;// voor de zekerheid te lange filename afkappen
+              if(GetArgv(Command,FileName,2))
+                {
+                Led(BLUE);
+                strcat(FileName,".dat");
                 SelectSD(true);
                 File dataFile=SD.open(FileName);
                 if(dataFile) 
                   {
+                  SelectSD(false);
+                  PrintTerminal(ProgmemString(Text_22));
+                  SelectSD(true);
+                  TmpStr2[0]=0;
                   y=0;       
                   while(dataFile.available())
                     {
                     x=dataFile.read();
                     if(isprint(x) && y<INPUT_BUFFER_SIZE)
-                      TmpStr[y++]=x;
+                      {
+                      TmpStr2[y++]=x;
+                      }
                     else
                       {
-                      TmpStr[y]=0;
+                      TmpStr2[y]=0;
                       y=0;
                       SelectSD(false);
-                      PrintTerminal(TmpStr);
-                      ExecuteLine(TmpStr,VALUE_SOURCE_FILE);
+                      PrintTerminal(TmpStr2);
                       SelectSD(true);
                       }
                     }
                   dataFile.close();
+                  SelectSD(false);
+                  PrintTerminal(ProgmemString(Text_22));
                   }  
                 else
                   {
-                  SelectSD(false);  
-                  TransmitCode(command2event(Settings.Unit, CMD_MESSAGE, Settings.Unit, MESSAGE_01),VALUE_ALL);
+                  SelectSD(true);
+                  TransmitCode(command2event(Settings.Unit, CMD_MESSAGE, Settings.Unit, MESSAGE_03),VALUE_ALL);      
                   }
-                SelectSD(false);
+                }
+              break;
+              }
+      
+            case CMD_FILE_EXECUTE:
+              {
+              char FileName[13];
+              TmpStr1[8]=0;// voor de zekerheid te lange filename afkappen
+              if(GetArgv(Command,FileName,2))
+                {
+                if(State_EventlistWrite!=0)
+                  {
+                  // Als er een EventlistWrite actief is, dan hoeft het commando niet uitgevoerd te worden. Alleen het event v moet
+                  // worden gevuld zodat deze kan worden weggeschreven in de Eventlist.
+                  v=command2event(Settings.Unit, Cmd,Par1,Par2);
+                  Error=CommandError(v);
+                  }
+  
+                else // Commando uitvoeren heeft alleen zin er geen eventlistwrite commando actief is
+                  {                
+                  strcat(FileName,".dat");
+  
+                  // zet (eventueel) de extra logging aan
+                  GetArgv(Command,TmpStr1,3);
+                  strcat(TmpStr1,".dat");
+                  TmpStr1[14]=0; // voor het geval de gebruiker een te lange naam heeft ingegeven
+                  strcpy(TempLogFile,TmpStr2);
+                  
+                  SelectSD(true);
+                  File dataFile=SD.open(FileName);
+                  if(dataFile) 
+                    {
+                    y=0;       
+                    while(dataFile.available())
+                      {
+                      x=dataFile.read();
+                      if(isprint(x) && y<INPUT_BUFFER_SIZE)
+                        TmpStr2[y++]=x;
+                      else
+                        {
+                        TmpStr2[y]=0;
+                        y=0;
+                        SelectSD(false);
+                        PrintTerminal(TmpStr2);
+                        ExecuteLine(TmpStr2,VALUE_SOURCE_FILE);
+                        SelectSD(true);
+                        }
+                      }
+                    dataFile.close();
+                    }  
+                  else
+                    {
+                    SelectSD(false);  
+                    TransmitCode(command2event(Settings.Unit, CMD_MESSAGE, Settings.Unit, MESSAGE_01),VALUE_ALL);
+                    }
+                  SelectSD(false);
+                  }
+                }
+              TempLogFile[0]=0;
+              break;
+              }
+      
+            case CMD_EVENTLIST_SHOW:
+              if(Par1>EVENTLIST_MAX)
+                Error=MESSAGE_06;
+              else
+                {            
+                PrintTerminal(ProgmemString(Text_22));
+                if(Par1==0)
+                  {
+                  for(x=1;x<=EVENTLIST_MAX;x++)
+                    {
+                    if(EventlistEntry2str(x,0,TmpStr2, false))
+                      PrintTerminal(TmpStr2);
+                    }
+                  }
+                else
+                  {
+                  EventlistEntry2str(Par1,0,TmpStr2, false);
+                  PrintTerminal(TmpStr2);
+                  }
+                PrintTerminal(ProgmemString(Text_22));
+                }
+              break;
+  
+            case CMD_EVENTGHOST_SERVER:
+              if(Par1==VALUE_AUTO)
+                { 
+                if(Par2==VALUE_ON)
+                  Settings.AutoSaveEventGhostIP=VALUE_AUTO;  // Automatisch IP adres opslaan na ontvangst van een EG event of niet.
+                else
+                  Settings.AutoSaveEventGhostIP=0;
+                }
+              else
+                {
+                if(GetArgv(Command,TmpStr1,2))
+                  if(!str2ip(TmpStr1,Settings.EventGhostServer_IP))
+                    Error=MESSAGE_02;
+                }
+              SaveSettings();
+              break;
+              
+            case CMD_NODO_IP:
+              if(GetArgv(Command,TmpStr1,2))
+                if(!str2ip(TmpStr1,Settings.Nodo_IP))
+                  Error=MESSAGE_02;
+              SaveSettings();
+              break;
+              
+            case CMD_CLIENT_IP:
+              if(GetArgv(Command,TmpStr1,2))
+                if(!str2ip(TmpStr1,Settings.Client_IP))
+                  Error=MESSAGE_02;
+              SaveSettings();
+              break;
+              
+            case CMD_SUBNET:
+              if(GetArgv(Command,TmpStr1,2))
+                if(!str2ip(TmpStr1,Settings.Subnet))
+                  Error=MESSAGE_02;
+              SaveSettings();
+              break;
+              
+            case CMD_DNS_SERVER:
+              if(GetArgv(Command,TmpStr1,2))
+                if(!str2ip(TmpStr1,Settings.DnsServer))
+                  Error=MESSAGE_02;
+              SaveSettings();
+              break;
+              
+            case CMD_GATEWAY:
+              if(GetArgv(Command,TmpStr1,2))
+                if(!str2ip(TmpStr1,Settings.Gateway))
+                  Error=MESSAGE_02;
+              SaveSettings();
+              break;
+              
+            case CMD_EVENTLIST_FILE:
+              Led(BLUE);
+              if(GetArgv(Command,TmpStr1,2))
+                {
+                strcat(TmpStr1,".dat");
+                if(!SaveEventlistSDCard(TmpStr1))
+                  TransmitCode(command2event(Settings.Unit, CMD_MESSAGE, Settings.Unit, MESSAGE_03),VALUE_ALL);// geen RaiseMessage() anders weer poging om te loggen naar SDCard ==> oneindige loop
+                }
+              break;
+  
+            case CMD_FILE_LIST:
+              if(!FileList())
+                Error=MESSAGE_03;
+              break;
+  
+            case CMD_FILE_WRITE:
+              if(GetArgv(Command,TmpStr1,2))
+                {
+                strcat(TmpStr1,".dat");
+                strcpy(TempLogFile,TmpStr1);
+                FileWriteMode=60;
+                }
+              else
+                Error=MESSAGE_02;
+              break;
+  
+            case CMD_HTTP_REQUEST:
+              // zoek in de regel waar de string met het http request begint.
+              x=StringFind(Line,cmd2str(CMD_HTTP_REQUEST))+strlen(cmd2str(CMD_HTTP_REQUEST));
+              while(Line[x]==32)x++;
+              strcpy(Settings.HTTPRequest,&Line[0]+x);
+              SaveSettings(); 
+              break;
+  
+            case CMD_PORT_SERVER:
+              {
+              if(GetArgv(Command,TmpStr1,2))
+                {
+                Settings.PortServer=str2int(TmpStr1);
+                SaveSettings();
+                }
+              break;
+              }  
+  
+            case CMD_PORT_CLIENT:
+              {
+              if(GetArgv(Command,TmpStr1,2))
+                {
+                Settings.PortClient=str2int(TmpStr1);
+                SaveSettings();
+                }
+              break;
+              }  
+  
+  
+            default:
+              {              
+              // standaard commando volgens gewone syntax
+              v=command2event(Settings.Unit,Cmd,Par1,Par2);            
+              Error=CommandError(v);
+  
+              // Als het geen regulier commando was EN geen commando met afwijkende MMI, dan kijken of file op SDCard staat)
+              if(Error)
+                {
+                Command[8]=0;// Gebruik commando als een filename. Voor de zekerheid te lange filename afkappen
+                strcpy(TmpStr1,"FileExecute ");
+                strcat(TmpStr1,Command);
+                ExecuteLine(TmpStr1,VALUE_SOURCE_FILE);
+                Error=0;
                 }
               }
-            TempLogFile[0]=0;
-            break;
+            }
+          }
+            
+        if(v && Error==0)
+          {
+          if(State_EventlistWrite==0)// Gewoon uitvoeren
+            {
+            if(SendTo==0)
+              ProcessEvent(v,VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
+            else
+              {
+              if(NodoType(v))
+                v=(v&0xf0ffffff)|(unsigned long)SendTo<<24;// Commando/Event unit nummer van de bestemming toewijzen, behalve als het een HEX-event is.
+  
+              if(Queue.Position<EVENT_QUEUE_MAX)
+                {
+                Queue.Event[Queue.Position]=v;
+                Queue.Port[Queue.Position]=Port;
+                Queue.Position++;           
+                }       
+              else
+                {
+                RaiseMessage(MESSAGE_04);                
+                break;
+                //??? return;
+                }
+              }
+            continue;
             }
     
-          case CMD_EVENTLIST_SHOW:
-            if(Par1>EVENTLIST_MAX)
-              Error=MESSAGE_06;
-            else
-              {            
-              PrintTerminal(ProgmemString(Text_22));
-              if(Par1==0)
-                {
-                for(x=1;x<=EVENTLIST_MAX;x++)
-                  {
-                  if(EventlistEntry2str(x,0,TempString, false))
-                    PrintTerminal(TempString);
-                  }
-                }
-              else
-                {
-                EventlistEntry2str(Par1,0,TempString, false);
-                PrintTerminal(TempString);
-                }
-              PrintTerminal(ProgmemString(Text_22));
-              }
-            break;
-
-          case CMD_EVENTGHOST_SERVER:
-            if(Par1==VALUE_AUTO)
-              { 
-              if(Par2==VALUE_ON)
-                Settings.AutoSaveEventGhostIP=VALUE_AUTO;  // Automatisch IP adres opslaan na ontvangst van een EG event of niet.
-              else
-                Settings.AutoSaveEventGhostIP=0;
-              }
-            else
-              {
-              if(GetArgv(Command,TmpStr,2))
-                if(!str2ip(TmpStr,Settings.EventGhostServer_IP))
-                  Error=MESSAGE_02;
-              }
-            SaveSettings();
-            break;
-            
-          case CMD_NODO_IP:
-            if(GetArgv(Command,TmpStr,2))
-              if(!str2ip(TmpStr,Settings.Nodo_IP))
-                Error=MESSAGE_02;
-            SaveSettings();
-            break;
-            
-          case CMD_CLIENT_IP:
-            if(GetArgv(Command,TmpStr,2))
-              if(!str2ip(TmpStr,Settings.Client_IP))
-                Error=MESSAGE_02;
-            SaveSettings();
-            break;
-            
-          case CMD_SUBNET:
-            if(GetArgv(Command,TmpStr,2))
-              if(!str2ip(TmpStr,Settings.Subnet))
-                Error=MESSAGE_02;
-            SaveSettings();
-            break;
-            
-          case CMD_DNS_SERVER:
-            if(GetArgv(Command,TmpStr,2))
-              if(!str2ip(TmpStr,Settings.DnsServer))
-                Error=MESSAGE_02;
-            SaveSettings();
-            break;
-            
-          case CMD_GATEWAY:
-            if(GetArgv(Command,TmpStr,2))
-              if(!str2ip(TmpStr,Settings.Gateway))
-                Error=MESSAGE_02;
-            SaveSettings();
-            break;
-            
-          case CMD_EVENTLIST_FILE:
-            Led(BLUE);
-            if(GetArgv(Command,TmpStr,2))
-              {
-              strcat(TmpStr,".dat");
-              if(!SaveEventlistSDCard(TmpStr))
-                TransmitCode(command2event(Settings.Unit, CMD_MESSAGE, Settings.Unit, MESSAGE_03),VALUE_ALL);// geen RaiseMessage() anders weer poging om te loggen naar SDCard ==> oneindige loop
-              }
-            break;
-
-          case CMD_FILE_LIST:
-            if(!FileList())
-              Error=MESSAGE_03;
-            break;
-
-          case CMD_FILE_WRITE:
-            if(GetArgv(Command,TmpStr,2))
-              {
-              strcat(TmpStr,".dat");
-              strcpy(TempLogFile,TmpStr);
-              FileWriteMode=60;
-              }
-            else
-              Error=MESSAGE_02;
-            break;
-
-          case CMD_HTTP_REQUEST:
-            // zoek in de regel waar de string met het http request begint.
-            x=StringFind(Line,cmd2str(CMD_HTTP_REQUEST))+strlen(cmd2str(CMD_HTTP_REQUEST));
-            while(Line[x]==32)x++;
-            strcpy(Settings.HTTPRequest,&Line[0]+x);
-            SaveSettings(); 
-            break;
-
-          case CMD_PORT_SERVER:
+          if(State_EventlistWrite==2)
             {
-            if(GetArgv(Command,TmpStr,2))
+            a=v;
+            if(!Eventlist_Write(EventlistWriteLine,event,a))
               {
-              Settings.PortServer=str2int(TmpStr);
-              SaveSettings();
-              }
-            break;
-            }  
-
-          case CMD_PORT_CLIENT:
-            {
-            if(GetArgv(Command,TmpStr,2))
-              {
-              Settings.PortClient=str2int(TmpStr);
-              SaveSettings();
-              }
-            break;
-            }  
-
-
-          default:
-            {              
-            // standaard commando volgens gewone syntax
-            v=command2event(Settings.Unit,Cmd,Par1,Par2);            
-            Error=CommandError(v);
-
-            // Als het geen regulier commando was EN geen commando met afwijkende MMI, dan kijken of file op SDCard staat)
-            if(Error)
-              {
-              Command[8]=0;// Gebruik commando als een filename. Voor de zekerheid te lange filename afkappen
-              strcpy(TmpStr,"FileExecute ");
-              strcat(TmpStr,Command);
-              ExecuteLine(TmpStr,VALUE_SOURCE_FILE);
-              Error=0;
-              }
-            }
-          }
-        }
-          
-      if(v && Error==0)
-        {
-        if(State_EventlistWrite==0)// Gewoon uitvoeren
-          {
-          if(SendTo==0)
-            ProcessEvent(v,VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
-          else
-            {
-            if(NodoType(v))
-              v=(v&0xf0ffffff)|(unsigned long)SendTo<<24;// Commando/Event unit nummer van de bestemming toewijzen, behalve als het een HEX-event is.
-
-            if(QueuePos<EVENT_QUEUE_MAX)
-              {
-              QueueEvent[QueuePos]=v;
-              QueuePort[QueuePos]=0;
-              QueuePos++;           
-              }       
-            else
-              {
-              RaiseMessage(MESSAGE_04);                
+              RaiseMessage(MESSAGE_06);
               break;
-              //??? return;
+              // return;
               }
-            }
-          continue;
-          }
-  
-        if(State_EventlistWrite==2)
-          {
-          a=v;
-          if(!Eventlist_Write(EventlistWriteLine,event,a))
+            State_EventlistWrite=0;
+            continue;
+            }  
+          if(State_EventlistWrite==1)
             {
-            RaiseMessage(MESSAGE_06);
-            break;
-            // return;
+            event=v;
+            State_EventlistWrite=2;
             }
-          State_EventlistWrite=0;
-          continue;
           }
-  
-        if(State_EventlistWrite==1)
+          
+        if(Error) // er heeft zich een fout voorgedaan
           {
-          event=v;
-          State_EventlistWrite=2;
+          strcpy(TmpStr2,Command);
+          strcat(TmpStr2, " ?");
+          PrintTerminal(TmpStr2);
+          RaiseMessage(Error);
+          Line[0]=0;
           }
         }
         
-      if(Error) // er heeft zich een fout voorgedaan
-        {
-        strcpy(TmpStr,Command);
-        strcat(TmpStr, " ?");
-        PrintTerminal(TmpStr);
-        RaiseMessage(Error);
-        Line[0]=0;
-        }
-      }
+      // printbare tekens toevoegen aan commando zolang er nog ruimte is in de string
+      if(isprint(x) && x!=';' && PosCommand<MaxCommandLength)
+        Command[PosCommand++]=x;      
+      }    
+  
+    if(SendTo!=0)// Verzend de inhoud van de queue naar de slave Nodo
+      {
+      if(!QueueSend(SendTo))
+        RaiseMessage(MESSAGE_12);
       
-    // printbare tekens toevoegen aan commando zolang er nog ruimte is in de string
-    if(isprint(x) && x!=';' && PosCommand<MaxCommandLength)
-      Command[PosCommand++]=x;      
-    }    
-
-  if(SendTo!=0)// Verzend de inhoud van de queue naar de slave Nodo
-    {
-    if(!QueueSend(SendTo))
-      RaiseMessage(MESSAGE_12);
-    QueuePos=0;
-    
-    // Verwerk eventuele events die in de queue zijn geplaatst.
-    ProcessQueue();
+      // Verwerk eventuele events die in de queue zijn geplaatst.
+      ProcessQueue();
+      }
     }
+  free(TmpStr2);
+  free(TmpStr1);
   }
 #endif
   

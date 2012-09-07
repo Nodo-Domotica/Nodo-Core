@@ -1,3 +1,4 @@
+
  /*********************************************************************************************\
  * Hier kan de gebruiker zelf een stuk code plaatsen.
  *
@@ -32,7 +33,7 @@
  \*********************************************************************************************/
 void UserPlugin_Init(void)
   {
-    
+
   }
 
  /*********************************************************************************************\ 
@@ -65,8 +66,7 @@ void UserPlugin_Command(int Par1, int Par2)
 
   // VOORBEELD-5: Loggen naar de SDCard
   // AddFileSDCard("log.dat","Hello, UserPlugin was here.");
-  
-  
+    
   }
 
 
@@ -83,6 +83,7 @@ void UserPlugin_Command(int Par1, int Par2)
 
 boolean UserPlugin_Receive(unsigned long Event)
   {
+
   // Event = 32-bit Nodo event.
     
     
@@ -105,10 +106,11 @@ boolean UserPlugin_Receive(unsigned long Event)
 void UserPlugin_Periodically()
   {
   // Voorbeeld: Lees iedere 5 sec. de WiredIn poorten uit en geef deze weer op Serial/USB.
+
 //  static int Secondenteller=0; // static, dan blijft deze bewaard na verlaten van deze routine
 //  char str[80]; // reserveer een kleine (!) string voor weergave van de analoge waarde
 //  int y,z;
-//  
+//
 //  Secondenteller = Secondenteller +1;
 //  if(Secondenteller==5)
 //   {
@@ -122,7 +124,7 @@ void UserPlugin_Periodically()
 //    }
 //   Serial.println();
 //   }
-  
-  return;
+//  
+//  return;
   }
   

@@ -13,7 +13,8 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
   int Port,x,y,z;
   
   Led(BLUE);
-  
+  Queue.Position=0;    
+
   #if NODO_MEGA
   PrintTerminal(ProgmemString(Text_24));
   #endif
@@ -54,14 +55,29 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
       else if(x!=CMD_BUSY)
         {
         #if NODO_MEGA
-        AddFileSDCard(ProgmemString(Text_15),int2str(Event));       // Sla event op in de queue. De Nodo-Mega slaat de queue op SDCard op.
+        if(bitRead(HW_Config,HW_SDCARD))
+          {// Als de SDCard aanwezig
+          char* Line=(char*)malloc(40);
+          strcpy(Line,int2str(Event));
+          strcat(Line,",");
+          strcat(Line,int2str(Port));        
+          AddFileSDCard(ProgmemString(Text_15),Line);       // Sla event op in de queue. De Nodo-Mega slaat de queue op SDCard op.
+          free(Line);
+          }
+        else if(Queue.Position<EVENT_QUEUE_MAX)
+          {// Als de SDCard niet aanwezig.
+          Queue.Event[Queue.Position]=Event;
+          Queue.Port[Queue.Position]=Port;
+          Queue.Position++;           
+          }       
+        
         #else
         // sla event op in de queue. De Nodo-Mini heeft de queue is een kleine array <QueueEvent> staan.
-        if(QueuePos<EVENT_QUEUE_MAX)
+        if(Queue.Position<EVENT_QUEUE_MAX)
           {
-          QueueEvent[QueuePos]=Event;
-          QueuePort[QueuePos]=Port;
-          QueuePos++;           
+          Queue.Event[Queue.Position]=Event;
+          Queue.Port[Queue.Position]=Port;
+          Queue.Position++;           
           }       
         else
           RaiseMessage(MESSAGE_04);    
@@ -97,13 +113,24 @@ boolean NodoBusy(unsigned long Event, int Wait)
       else
         Busy.Status  &= ~(1<<((Event>>24)&0xf)); // unit nummer
 
-      Busy.ResetTimer=Settings.WaitBusyAll;// na 60 sec. automtische reset van de statussen om te voorkomen dat deze Nodo hangt a.g.v. een gemist Busy Off signaal.
+      Busy.ResetTimer=Settings.WaitBusyAll;// Na ingestelde tijd automtische reset van de statussen om te voorkomen dat deze Nodo hangt a.g.v. een gemist Busy Off signaal.
       }
     }
 
+  #if NODO_MEGA
+  if(Busy.Status!=0)
+    {
+    // geef ook aan de WebApp te kennen dat de Nodo busy is.
+    //Serial.println("*** debug: Busy On verzonden naar HTTP");//???
+    TransmitCode(command2event(Settings.Unit, CMD_BUSY,VALUE_ON,0),VALUE_SOURCE_HTTP);
+    Busy.Sent=true;
+    }
+  #endif
+  
   if(Wait>0 && Busy.Status!=0)
     {
     #if NODO_MEGA
+    char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
     if(Settings.Debug==VALUE_ON)
       {
       // Geef weer op welke Nodo(s) wordt gewacht
@@ -386,6 +413,10 @@ boolean LoadSettings()
  /*********************************************************************************************\
  * Alle settings van de Nodo weer op default.
  \*********************************************************************************************/
+
+#define UNIT_NODO_MINI     15
+#define UNIT_NODO_MEGA     1
+
 void ResetFactory(void)
   {
   Led(BLUE);
@@ -517,7 +548,7 @@ void FreeMemory(int x)
   * Par1 = Command
   * Par2 = selectie (poort, variabele, timer) Als nul, dan waldcard voor alle.
  \**********************************************************************************************/
-void Status(byte Par1, byte Par2, boolean Transmit)
+void Status(byte Par1, byte Par2, byte Transmit)
   {
   byte CMD_Start,CMD_End;
   byte Par1_Start,Par1_End;
@@ -552,14 +583,15 @@ void Status(byte Par1, byte Par2, boolean Transmit)
     CMD_End=Par1;
     }
 
+
+#if NODO_MEGA          
+  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  boolean dhcp=(Settings.Nodo_IP[0] + Settings.Nodo_IP[1] + Settings.Nodo_IP[2] + Settings.Nodo_IP[3])==0;
+#endif
+
   for(x=CMD_Start; x<=CMD_End; x++)
     {
     s=false;
-
-#if NODO_MEGA          
-    boolean dhcp=(Settings.Nodo_IP[0] + Settings.Nodo_IP[1] + Settings.Nodo_IP[2] + Settings.Nodo_IP[3])==0;
-#endif
-
     if(!Transmit)
       {
       s=true;
@@ -698,6 +730,8 @@ void Status(byte Par1, byte Par2, boolean Transmit)
 #if NODO_MEGA
   if(!Transmit && Par1==VALUE_ALL)
     PrintTerminal(ProgmemString(Text_22));
+
+  free(TempString);
 #endif
   }
 
@@ -1028,6 +1062,7 @@ boolean SaveEventlistSDCard(char *FileName)
   {
   int x;
   boolean r=true;
+  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
   
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
   digitalWrite(Ethernetshield_CS_W5100, HIGH);
@@ -1062,6 +1097,7 @@ boolean SaveEventlistSDCard(char *FileName)
   digitalWrite(Ethernetshield_CS_W5100, LOW);
   digitalWrite(EthernetShield_CS_SDCard,HIGH);
 
+  free(TempString);
   return r;
   }
 
@@ -1071,6 +1107,7 @@ boolean FileList(void)
   boolean x=false;
   File root;
   File entry;
+  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
 
   PrintTerminal(ProgmemString(Text_22));
   digitalWrite(Ethernetshield_CS_W5100, HIGH);
@@ -1102,6 +1139,7 @@ boolean FileList(void)
   digitalWrite(Ethernetshield_CS_W5100, LOW);
   PrintTerminal(ProgmemString(Text_22));
   
+  free(TempString);  
   return x;
   }
   
