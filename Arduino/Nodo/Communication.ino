@@ -1,6 +1,7 @@
-#define IP_INPUT_BUFFER_SIZE      256
+#define IP_BUFFER_SIZE      256
 #define XON                       0x11
 #define XOFF                      0x13
+
 
 void SerialHold(boolean x)
   {
@@ -35,6 +36,7 @@ boolean SendEventGhost(char* event, byte* SendToIP)
   unsigned long Timeout=millis()+5000;
 
   char* InputBuffer_IP=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
 
   IPAddress EGServerIP(SendToIP[0],SendToIP[1],SendToIP[2],SendToIP[3]);
   EthernetClient EGclient;
@@ -93,6 +95,7 @@ boolean SendEventGhost(char* event, byte* SendToIP)
                   EGclient.stop();    // close the connection:
 
                   free(InputBuffer_IP);
+                  free(TempString);
                   return true;
                   }
                 }
@@ -124,6 +127,7 @@ boolean SendEventGhost(char* event, byte* SendToIP)
     }while(++Try<5);
 
   free(InputBuffer_IP);
+  free(TempString);
   return false;
   }
  
@@ -136,6 +140,7 @@ boolean SendEventGhost(char* event, byte* SendToIP)
 byte GetHTTPFile(char* filename)
   {
   char *HttpRequest=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
   byte Ok;
   
   strcpy(HttpRequest,"?id=");
@@ -155,6 +160,7 @@ byte GetHTTPFile(char* filename)
     
   Ok=SendHTTPRequest(HttpRequest);
   free(HttpRequest);
+  free(TempString);
   return Ok;
   }
 
@@ -166,6 +172,7 @@ byte SendHTTPEvent(unsigned long event)
   {
   byte Unit,x;
   char *HttpRequest=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
 
   strcpy(HttpRequest,"?id=");
   strcat(HttpRequest,Settings.ID);  
@@ -191,6 +198,7 @@ byte SendHTTPEvent(unsigned long event)
 
   x=SendHTTPRequest(HttpRequest);
   free(HttpRequest);
+  free(TempString);
   return x;
   }
 
@@ -224,7 +232,8 @@ boolean SendHTTPRequest(char* Request)
   int InByteCounter,x,y,SlashPos;
   byte InByte;
   unsigned long TimeoutTimer;
-  char* IPBuffer=(char*)malloc(IP_INPUT_BUFFER_SIZE+1);
+  char *IPBuffer=(char*)malloc(IP_BUFFER_SIZE+1);
+  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
   char filename[13];
   const int TimeOut=10000;
   EthernetClient IPClient;                            // Client class voor HTTP sessie.
@@ -268,7 +277,7 @@ boolean SendHTTPRequest(char* Request)
   if(Settings.Debug==VALUE_ON)
     {
     strcpy(TempString,"# HTTP Output: ");
-    strcat(TempString,IPBuffer);
+    strcat(TempString,IPBuffer);//??? ruimte IPBuffer is groter dan TempString!
     Serial.println(TempString);
     }
 
@@ -298,7 +307,7 @@ boolean SendHTTPRequest(char* Request)
         {
         InByte=IPClient.read();
 
-        if(isprint(InByte) && InByteCounter<INPUT_BUFFER_SIZE)
+        if(isprint(InByte) && InByteCounter<IP_BUFFER_SIZE)
           IPBuffer[InByteCounter++]=InByte;
           
         else if(InByte==0x0A)
@@ -354,6 +363,7 @@ boolean SendHTTPRequest(char* Request)
   else
     State=false;
 
+  free(TempString);
   free(IPBuffer);
   return State;
   }
@@ -412,7 +422,7 @@ boolean ParseHTTPRequest(char* HTTPRequest,char* Keyword, char* ResultString)
   }
 
 
-/**********************************************************************************************\
+ /*********************************************************************************************\
  *
  *
  *
@@ -434,9 +444,10 @@ void ExecuteIP(void)
   unsigned long TimeoutTimer=millis()+5000; // Na twee seconden moet de gehele transactie gereed zijn, anders 'hik' in de lijn.
   char EGCookie[10];
   
-  char *Event=(char*)malloc(INPUT_BUFFER_SIZE+1);
-  char *InputBuffer_IP=(char*)malloc(IP_INPUT_BUFFER_SIZE+1);
-  char *TmpStr2=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  char *InputBuffer_IP = (char*) malloc(IP_BUFFER_SIZE+1);
+  char *Event          = (char*) malloc(INPUT_BUFFER_SIZE+1);
+  char *TmpStr1        = (char*) malloc(INPUT_BUFFER_SIZE+1);
+  char *TmpStr2        = (char*) malloc(40); 
 
   Event[0]=0; // maak de string leeg.
   
@@ -463,7 +474,7 @@ void ExecuteIP(void)
           {
           InByte=IPClient.read();
           
-          if(isprint(InByte) && InByteCounter<IP_INPUT_BUFFER_SIZE)
+          if(isprint(InByte) && InByteCounter<IP_BUFFER_SIZE)
             InputBuffer_IP[InByteCounter++]=InByte;
       
           else if((InByte==0x0D || InByte==0x0A))
@@ -487,11 +498,7 @@ void ExecuteIP(void)
                 {
                 Completed=true;
                 if(Settings.Debug==VALUE_ON)
-                  {
-                  strcpy(TempString,"# HTTP Input: ");
-                  strcat(TempString,InputBuffer_IP);
-                  Serial.println(TempString);
-                  }
+                  Serial.println(InputBuffer_IP);
                 
                 // als de beveiliging aan staat, dan kijken of de juiste pin ip meegegeven in het http-request. x is vlag voor toestemming verwerking event
                 x=false;
@@ -500,9 +507,9 @@ void ExecuteIP(void)
                   sprintf(TmpStr2,"%s:%s",HTTPCookie,Settings.Password);  
                   md5(TmpStr2);
                   
-                  if(ParseHTTPRequest(InputBuffer_IP,"key",TempString))
+                  if(ParseHTTPRequest(InputBuffer_IP,"key",TmpStr1))
                     {
-                    if(strcmp(TmpStr2,TempString)==0)
+                    if(strcmp(TmpStr2,TmpStr1)==0)
                       x=true;
                     }
                   }
@@ -514,10 +521,10 @@ void ExecuteIP(void)
                   if(ParseHTTPRequest(InputBuffer_IP,"event",Event))
                     RequestEvent=true;
                    
-                  if(ParseHTTPRequest(InputBuffer_IP,"file",TempString))
+                  if(ParseHTTPRequest(InputBuffer_IP,"file",TmpStr1))
                     {
-                    TempString[8]=0; // voorkom dat een file meer dan 8 posities heeft (en een afsluitende 0)
-                    strcpy(FileName,TempString);
+                    TmpStr1[8]=0; // voorkom dat een file meer dan 8 posities heeft (en een afsluitende 0)
+                    strcpy(FileName,TmpStr1);
                     strcat(FileName,".dat");
                     RequestFile=true;
                     }
@@ -525,8 +532,8 @@ void ExecuteIP(void)
                   if(RequestFile || RequestEvent)
                     {
                     RequestCompleted=true;
-                    strcpy(TempString,"HTTP/1.1 200 Ok");
-                    IPClient.println(TempString);
+                    strcpy(TmpStr1,"HTTP/1.1 200 Ok");
+                    IPClient.println(TmpStr1);
                     }
                   else
                     IPClient.println(F("HTTP/1.1 400 Bad Request"));
@@ -558,11 +565,11 @@ void ExecuteIP(void)
                     x=dataFile.read();
                     if(isprint(x) && y<INPUT_BUFFER_SIZE)
                       {
-                      TempString[y++]=x;
+                      TmpStr1[y++]=x;
                       }
                     else
                       {
-                      TempString[y]=0;
+                      TmpStr1[y]=0;
                       y=0;
                       digitalWrite(EthernetShield_CS_SDCard,HIGH);
                       digitalWrite(Ethernetshield_CS_W5100, LOW);
@@ -571,7 +578,7 @@ void ExecuteIP(void)
                         IPClient.println("<br />");
                         RequestFile=false;// gebruiken we even als vlag om de eerste keer de regel met asteriks af te drukken omdat deze variabele toch verder niet meer nodig is
                         }
-                      IPClient.print(TempString);
+                      IPClient.print(TmpStr1);
                       IPClient.println("<br />");
                       digitalWrite(Ethernetshield_CS_W5100, HIGH);
                       digitalWrite(EthernetShield_CS_SDCard,LOW);
@@ -622,16 +629,16 @@ void ExecuteIP(void)
                 // Cookie is verzonden en regel met de MD5 hash is ontvangen
                 // Stel de string samen waar de MD5-hash aan de Nodo zijde voor gegenereerd moet worden
                 // Bereken eigen MD5-Hash uit de string "<cookie>:<password>"                
-                sprintf(TempString,"%s:%s",EGCookie,Settings.Password);            
-                md5(TempString); 
+                sprintf(TmpStr1,"%s:%s",EGCookie,Settings.Password);            
+                md5(TmpStr1); 
             
                 // vergelijk hash-waarden en bevestig de EventGhostClient bij akkoord
-                if(strcasecmp(TempString,InputBuffer_IP)==0)
+                if(strcasecmp(TmpStr1,InputBuffer_IP)==0)
                   {
                   // MD5-hash code matched de we hebben een geverifiëerde EventGhostClient
-                  strcpy(TempString,PROGMEM2str(Text_18));
-                  strcat(TempString,"\n");
-                  IPClient.print(TempString); // "accept"
+                  strcpy(TmpStr1,PROGMEM2str(Text_18));
+                  strcat(TmpStr1,"\n");
+                  IPClient.print(TmpStr1); // "accept"
   
                   // Wachtwoord correct. Bewaar IP adres indien nodig
                   if(Settings.AutoSaveEventGhostIP==VALUE_AUTO)
@@ -692,6 +699,7 @@ void ExecuteIP(void)
     ExecuteLine(Event, Protocol);
   ConfirmHTTP=false; // geen monitor weergave meer als HTTP-request versturen.
 
+  free(TmpStr1);
   free(TmpStr2);
   free(InputBuffer_IP);
   free(Event);

@@ -22,10 +22,10 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
     }
 
   // aanloopsignaal is gereed en de startbit is verzonden. Eerst bit van de pulsenreeks komt er direct aan.
-  QueuePos=0;
+  Queue.Position=0;
   x=0;
 
-  while(Timeout>millis() && QueuePos<Pos)
+  while(Timeout>millis() && Queue.Position<Pos)
     {
     Mark = WaitForChangeState(PIN_RF_RX_DATA,HIGH, SIGNAL_TIMEOUT_RF);
     if(Mark>MIN_PULSE_LENGTH)
@@ -36,8 +36,8 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
       if(++x>31)
         {
         x=0;
-        QueueEvent[QueuePos]=ul;
-        QueuePort[QueuePos++]=VALUE_SOURCE_RF;
+        Queue.Event[Queue.Position]=ul;
+        Queue.Port[Queue.Position++]=VALUE_SOURCE_RF;
         ul=0L;
         }
       }
@@ -45,8 +45,8 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
 
   // bereken checksum: crc-8 uit alle bytes in de queue.
   Checksum=0;
-  byte *B=(byte*)&(QueueEvent[0]);    //pointer verwijst nu naar eerste byte van de queue
-  for(x=0;x<QueuePos*4;x++) // maal vier, immers 4 bytes in een unsigned long
+  byte *B=(byte*)&(Queue.Event[0]);    //pointer verwijst nu naar eerste byte van de queue
+  for(x=0;x<Queue.Position*4;x++) // maal vier, immers 4 bytes in een unsigned long
     Checksum^=*(B+x); 
 
   if(ChecksumOrg == Checksum)
@@ -71,7 +71,7 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
   else
     {
     delay(1000);
-    QueuePos=0;
+    Queue.Position=0;
     return false;
     }
   }
@@ -97,11 +97,11 @@ boolean QueueSend(byte DestUnit)
     WaitFreeRF();  
 
   // bereken checksum: crc-8 uit alle bytes in de queue.
-  byte *B=(byte*)&(QueueEvent[0]);    //pointer verwijst nu naar eerste byte van de queue
-  for(x=0;x<QueuePos*4;x++) // maal vier, immers 4 bytes in een unsigned long
+  byte *B=(byte*)&(Queue.Event[0]);    //pointer verwijst nu naar eerste byte van de queue
+  for(x=0;x<Queue.Position*4;x++) // maal vier, immers 4 bytes in een unsigned long
     Checksum^=*(B+x); 
 
-  Nodo_2_RawSignal(command2event(DestUnit,CMD_TRANSMIT_QUEUE,QueuePos,Checksum));
+  Nodo_2_RawSignal(command2event(DestUnit,CMD_TRANSMIT_QUEUE,Queue.Position,Checksum));
   RawSendRF();
     
   // Verzend een aanloopsignaal bestaande uit reeks korte pulsen om slave tijd te geven klaar te staan voor ontvangst en voorkomen dat andere Nodo vrije ruimte in RF benut
@@ -123,11 +123,11 @@ boolean QueueSend(byte DestUnit)
   delayMicroseconds(NODO_SPACE); 
 
   // Verzend de content van de queue
-  for(x=0; x<QueuePos; x++)
+  for(x=0; x<Queue.Position; x++)
     {
     for(y=0; y<32; y++)
       {
-      if(((QueueEvent[x])>>y)&1)
+      if(((Queue.Event[x])>>y)&1)
         {// 1
         digitalWrite(PIN_RF_TX_DATA,HIGH);
         delayMicroseconds(NODO_PULSE_1); 
@@ -143,7 +143,6 @@ boolean QueueSend(byte DestUnit)
         }
       }
     }
-    
   delayMicroseconds(NODO_SPACE*10); 
   digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
   digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger weer aan.    
@@ -178,17 +177,21 @@ unsigned long GetEvent_IRRF(unsigned long *Content, int *Port)
       if(FetchSignal(PIN_IR_RX_DATA,LOW,Settings.AnalyseTimeOut))// Als het een duidelijk IR signaal was
         {
         *Content=AnalyzeRawSignal(); // Bereken uit de tabel met de pulstijden de 32-bit code. 
-        if(*Content==Checksum) // tweemaal hetzelfde event ontvangen
+        if(*Content)// als AnalyzeRawSignal een event heeft opgeleverd
           {
-          if(PreviousTimer<millis())
-            Previous=0L;
-          if(Previous!=Checksum)
+          StaySharpTimer=millis()+SHARP_TIME;          
+          if(*Content==Checksum) // tweemaal hetzelfde event ontvangen
             {
-            RawSignal.Source=VALUE_SOURCE_IR;
-            *Port=VALUE_SOURCE_IR;
-            PreviousTimer=millis()+BLOK_REPEAT_TIME;
-            Previous=Checksum;
-            return true;
+            if(PreviousTimer<millis())
+              Previous=0L;
+            if(Previous!=Checksum)
+              {
+              RawSignal.Source=VALUE_SOURCE_IR;
+              *Port=VALUE_SOURCE_IR;
+              PreviousTimer=millis()+BLOK_REPEAT_TIME;
+              Previous=Checksum;
+              return true;
+              }
             }
           Checksum=*Content;
           }
@@ -620,7 +623,7 @@ boolean TransmitCode(unsigned long Event, byte Dest)
     RawSendIR();
     }
   else
-    delay(250);//??? anders te snel voor een mega 
+    delay(250);
 
   if(Dest==VALUE_SOURCE_RF || (Settings.TransmitRF==VALUE_ON && Dest==VALUE_ALL))
     {
@@ -628,7 +631,7 @@ boolean TransmitCode(unsigned long Event, byte Dest)
     RawSendRF();
     }
   else
-    delay(255);//???
+    delay(250);
 
 #if NODO_MEGA
   if(bitRead(HW_Config,HW_ETHERNET))// Als Ethernet shield aanwezig.
@@ -670,7 +673,9 @@ boolean TransmitCode(unsigned long Event, byte Dest)
 void CheckRawSignalKey(unsigned long *Code)
   {
   int x,y;
-
+  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  boolean Finished=false;
+  
   if(RawSignal.Type==SIGNAL_TYPE_UNKNOWN)
     {
     // kijk of de hex-code toevallig al eerder is opgeslagen als rawsignal op de SDCard
@@ -685,7 +690,7 @@ void CheckRawSignalKey(unsigned long *Code)
     if(dataFile) 
       {
       y=0;       
-      while(dataFile.available())
+      while(!Finished && dataFile.available())
         {
         x=dataFile.read();
         if(isDigit(x) && y<INPUT_BUFFER_SIZE)
@@ -697,7 +702,7 @@ void CheckRawSignalKey(unsigned long *Code)
           TempString[y]=0;
           y=0;
           *Code=command2event(Settings.Unit,CMD_RAWSIGNAL,str2int(TempString),0);
-          return;
+          Finished=true;
           }
         }
       dataFile.close();
@@ -707,6 +712,7 @@ void CheckRawSignalKey(unsigned long *Code)
     digitalWrite(Ethernetshield_CS_W5100, LOW);
     digitalWrite(EthernetShield_CS_SDCard,HIGH);
     }
+  free(TempString);
   }
 
  /*********************************************************************************************\
@@ -716,6 +722,7 @@ boolean SaveRawSignal(byte Key)
   {
   boolean error=false;
   unsigned long Event;
+  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
 
   Event=AnalyzeRawSignal();
 
@@ -766,6 +773,8 @@ boolean SaveRawSignal(byte Key)
   digitalWrite(EthernetShield_CS_SDCard,HIGH);
   digitalWrite(Ethernetshield_CS_W5100, LOW);
     
+  free(TempString);
+
   if(error)
     {
     TransmitCode(command2event(Settings.Unit,CMD_MESSAGE, Settings.Unit, MESSAGE_03),VALUE_ALL);
@@ -783,6 +792,7 @@ boolean RawSignalGet(int Key)
   {
   int x,y,z;
   boolean Ok;
+  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
   
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
   digitalWrite(Ethernetshield_CS_W5100, HIGH);
@@ -819,6 +829,7 @@ boolean RawSignalGet(int Key)
   digitalWrite(Ethernetshield_CS_W5100, LOW);
   digitalWrite(EthernetShield_CS_SDCard,HIGH);
 
+  free(TempString);
   return Ok;
   }
 

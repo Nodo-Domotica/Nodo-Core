@@ -34,6 +34,10 @@ SendUserEvent 100
 FileWrite
  
 
+  #if NODO_MEGA
+    char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+    free(TempString);
+  #endif
 
 
 
