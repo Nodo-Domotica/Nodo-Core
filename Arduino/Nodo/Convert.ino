@@ -1,3 +1,4 @@
+
  /**********************************************************************************************\
  * De Nodo gebruikt voor metingen analoge waarden. Deze analoge waarden worden zodanig in een 
  * int vastgelegd dat zij naar de gebruiker kunnen worden getoond als een getal met cijfers achter

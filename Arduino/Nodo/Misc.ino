@@ -1,3 +1,4 @@
+
  /*********************************************************************************************\
  * wachtloop die wordt afgebroken als:
  * - <Timeout> seconden zijn voorbij. In dit geval geeft deze funktie een <false> terug.
