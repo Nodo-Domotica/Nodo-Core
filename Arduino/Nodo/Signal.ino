@@ -3,6 +3,10 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
   {
   int x,y,Checksum;
   unsigned long Mark, Space, Timeout, ul=0L;
+
+  #if TRACE
+  Trace(4,0,0);
+  #endif
   
   // Hier aangekomen is de master nodo nog steeds bezig met het zenden van het aanloopsignaal bestaande uit de korte pulsenreeks.
   // Wacht totdat het aanloopsignaal een duidelijke startbit bevat.
@@ -51,6 +55,10 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
 
   if(ChecksumOrg == Checksum)
     {
+    #if TRACE
+    Trace(4,1,0);
+    #endif
+    
     // Korte wachttijd anders is de RF ontvanger van de master (mogelijk) nog niet gereed voor ontvangst. 
     delay(RECEIVER_STABLE);
 
@@ -63,15 +71,30 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
     if(Settings.Debug==VALUE_ON)
       PrintEvent(ul,VALUE_DIRECTION_OUTPUT, VALUE_SOURCE_RF);
 
-    // Verwerk de inhoud van de Queue
-    delay(250); //???
+    // Verwerk de inhoud van de Queue, Eerst Korte wachttijd anders is de RF ontvanger van de master (mogelijk) nog niet gereed voor ontvangst.  //???
+    delay(RECEIVER_STABLE);
+
+    #if TRACE
+    Trace(4,2,0);
+    #endif
+
     ProcessQueue();
+
+    #if TRACE
+    Trace(4,3,1);
+    #endif
+
     return true;
     }
   else
     {
     delay(1000);
     Queue.Position=0;
+
+    #if TRACE
+    Trace(4,3,0);
+    #endif
+
     return false;
     }
   }
@@ -85,12 +108,16 @@ boolean QueueSend(byte DestUnit)
   
   Led(BLUE);
 
+  #if TRACE
+  Trace(1,0,0);
+  #endif
+
   // Eerst wachten op bezige Nodo. Als gebruiker deze setting niet heeft geactiveerd, dan tijdelijk hiervoor 30 sec. nemen.
   if(Settings.WaitBusyAll<30)
     x=30;
   else
     x=Settings.WaitBusyAll;    
-  NodoBusy(0L, 30);
+  NodoBusy(0L, x);
 
   delay(RECEIVER_STABLE);
   if(Settings.WaitFreeRF==VALUE_ON)
@@ -105,7 +132,7 @@ boolean QueueSend(byte DestUnit)
   RawSendRF();
     
   // Verzend een aanloopsignaal bestaande uit reeks korte pulsen om slave tijd te geven klaar te staan voor ontvangst en voorkomen dat andere Nodo vrije ruimte in RF benut
-  digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.//??? test of dit in dit specifieke geval kan.
+//  digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.//??? test of dit in dit specifieke geval kan.
   digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan
 
   for(x=0; x<100; x++)// Houd de 433 band bezet en geef slave gelegenheid om klaar voor ontvangst data uit queue.
@@ -153,13 +180,21 @@ boolean QueueSend(byte DestUnit)
   // 2. master ontvangt niets. Dan keert WaitAndQueue terug met een false.
   // 3. master ontvangt error message van de slave.
 
-  if(WaitAndQueue(3,false,command2event(DestUnit,CMD_BUSY,VALUE_ON,0)))
+  if(WaitAndQueue(4,false,command2event(DestUnit,CMD_BUSY,VALUE_ON,0)))
     {
     WaitAndQueue(30,true,0L);
+    #if TRACE
+    Trace(1,1,1);
+    #endif
     return true;
     }
   else
+    {
+    #if TRACE
+    Trace(1,1,0);
+    #endif
     return false;
+    }
   }
 #endif
 
@@ -190,6 +225,11 @@ unsigned long GetEvent_IRRF(unsigned long *Content, int *Port)
               *Port=VALUE_SOURCE_IR;
               PreviousTimer=millis()+BLOK_REPEAT_TIME;
               Previous=Checksum;
+
+              #if TRACE
+              Trace(2,1,0);
+              #endif
+
               return true;
               }
             }
@@ -220,6 +260,11 @@ unsigned long GetEvent_IRRF(unsigned long *Content, int *Port)
               *Port=VALUE_SOURCE_RF;
               PreviousTimer=millis()+BLOK_REPEAT_TIME;
               Previous=Checksum;
+
+              #if TRACE
+              Trace(2,2,0);
+              #endif
+
               return true;
               }
             }
@@ -451,16 +496,30 @@ void RawSendIR(void)
     noInterrupts(); // interrupts tijdelijk uitschakelen om zo en zuiverder signaal te krijgen
     while(pulse<=RawSignal.Number)
       {
-      // Mark verzenden. Bereken hoeveel pulsen van 26uSec er nodig zijn die samen de lenge van de mark zijn.
+      // Mark verzenden. Bereken hoeveel pulsen van 26uSec er nodig zijn die samen de lengte van de mark zijn.
       mod=RawSignal.Pulses[pulse++]/26; // delen om aantal pulsen uit te rekenen
 
       do
         {
         // Hoog
-//??? aanpassen naar 328        bitWrite(PORTH,0, (HIGH));
+        #if NODO_MEGA
+        bitWrite(PORTH,0, HIGH);
+        #else
+        bitWrite(PORTB,3, HIGH);
+        #endif
+        
         delayMicroseconds(12);
         __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");// per nop 62.6 nano sec. @16Mhz
-//???        bitWrite(PORTH,0, (LOW));
+
+
+        // Laag
+        #if NODO_MEGA
+        bitWrite(PORTH,0, LOW);
+        #else
+        bitWrite(PORTB,3, LOW);
+        #endif
+
+
         delayMicroseconds(12);
         __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");// per nop 62.6 nano sec. @16Mhz
         }while(--mod);
@@ -470,7 +529,6 @@ void RawSendIR(void)
       }
     interrupts(); // interupts weer inschakelen.
     }
-  digitalWrite(PIN_IR_TX_DATA,LOW);   // Voor de zekerheid de LED's uitschakelen, anders mogelijk overbelasting van de transistor/led's
   }
 
  /*********************************************************************************************\

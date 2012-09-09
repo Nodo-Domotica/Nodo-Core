@@ -15,6 +15,11 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
   Led(BLUE);
   Queue.Position=0;    
 
+  #if TRACE
+  Trace(3,0,0);
+  #endif
+
+
   #if NODO_MEGA
   PrintTerminal(ProgmemString(Text_24));
   #endif
@@ -22,11 +27,19 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
   while(TimeoutTimer>millis())
     {
     if(BreakNoBusyNodo && Busy.Status==0)
+      {
+      #if TRACE
+      Trace(3,1,0);
+      #endif
       break; // Geen Busy Nodo meer
-
+      }
     if(GetEvent_IRRF(&Event,&Port))
       {
       TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
+
+      #if TRACE
+      Trace(3,2,0);
+      #endif
 
       #if NODO_MEGA
       PrintEvent(Event,Port,VALUE_DIRECTION_INPUT);
@@ -54,6 +67,10 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
       // Het is geen Busy event of Queue commando event, dan deze in de queue plaatsen.
       else if(x!=CMD_BUSY)
         {
+        #if TRACE
+        Trace(3,3,0);
+        #endif
+
         #if NODO_MEGA
         if(bitRead(HW_Config,HW_SDCARD))
           {// Als de SDCard aanwezig
@@ -87,8 +104,16 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
     }   
 
   if(TimeoutTimer<=millis())
+    {
+    #if TRACE
+    Trace(3,4,0);
+    #endif
     return false;
+    }
     
+  #if TRACE
+  Trace(3,4,1);
+  #endif
   return true;
   }
   
@@ -117,15 +142,17 @@ boolean NodoBusy(unsigned long Event, int Wait)
       }
     }
 
-  #if NODO_MEGA
-  if(Busy.Status!=0)
-    {
-    // geef ook aan de WebApp te kennen dat de Nodo busy is.
-    //Serial.println("*** debug: Busy On verzonden naar HTTP");//???
-    TransmitCode(command2event(Settings.Unit, CMD_BUSY,VALUE_ON,0),VALUE_SOURCE_HTTP);
-    Busy.Sent=true;
-    }
-  #endif
+
+// Dit was bedoeld om vanuit een SendTo commando aan de WebApp kenbaar te maken dat de Master Nodo busy is. Nog nader bekijken.
+//  #if NODO_MEGA
+//  if(Busy.Status!=0)
+//    {
+//    // geef ook aan de WebApp te kennen dat de Nodo busy is.
+//    //Serial.println("*** debug: Busy On verzonden naar HTTP");//???
+//    TransmitCode(command2event(Settings.Unit, CMD_BUSY,VALUE_ON,0),VALUE_SOURCE_HTTP);
+//    Busy.Sent=true;
+//    }
+//  #endif
   
   if(Wait>0 && Busy.Status!=0)
     {
@@ -1358,3 +1385,27 @@ void md5(char* dest)
   }
   
 #endif
+
+
+#if TRACE
+void Trace(int Func, int Pos, unsigned long Value)
+  {
+  char* str=(char*)malloc(80);
+
+  strcpy(str,"=> Trace: Seconds=");
+  strcat(str,int2str(millis()/1000));
+  strcat(str,", Func=");
+  strcat(str,int2str(Func));
+  strcat(str,", Pos=");
+  strcat(str,int2str(Pos));
+  strcat(str,", Value=");
+  strcat(str,int2str(Value));
+
+  Serial.println(str);
+  AddFileSDCard("TRACE.DAT", str);
+
+  free(str);
+  }
+#endif
+  
+  

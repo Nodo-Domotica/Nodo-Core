@@ -178,10 +178,11 @@ byte SendHTTPEvent(unsigned long event)
   strcat(HttpRequest,Settings.ID);  
 
   strcat(HttpRequest,"&unit=");
-  if(((event>>28)&0xf)==((unsigned long)(SIGNAL_TYPE_UNKNOWN)))
-    Unit=0;
-  else
+  if(((event>>28)&0xf)==((unsigned long)(SIGNAL_TYPE_NODO)))
     Unit=(event>>24)&0x0f;
+  else
+    Unit=0;
+
   strcat(HttpRequest,int2str(Unit));  
   
   if(Settings.HTTP_Pin==VALUE_ON)
