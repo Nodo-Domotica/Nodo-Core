@@ -1,4 +1,5 @@
 
+
 /*********************************************************************************************\
  * Eenvoudige check of event een Nodo commando is die voor deze Nodo bestemd is.
  * Test NIET op geldigheid van de parameters
