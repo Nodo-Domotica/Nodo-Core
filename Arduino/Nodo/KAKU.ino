@@ -243,7 +243,7 @@ unsigned long RawSignal_2_NewKAKU(void)
     {
     // het is van een NewKAKU zender afkomstig. Geef de hex-waarde terug.
     RawSignal.Type=SIGNAL_TYPE_NEWKAKU;
-    return SetEventType(bitstream,SIGNAL_TYPE_NEWKAKU); // hoogte nible wissen en weer vullen met type NewKAKU
+    return (bitstream & 0x0fffffff) | (unsigned long)(SIGNAL_TYPE_NEWKAKU)<<28  ; // hoogte twee nibles wissen en weer vullen met: type NewKAKU en unit 0.
     }
   else
     {

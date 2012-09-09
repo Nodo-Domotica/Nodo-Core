@@ -15,12 +15,12 @@ void ProcessQueue(void)
     PrintTerminal(ProgmemString(Text_26));
     #endif
 
-Serial.print("*** debug: ProcessQueue=");Serial.println(Queue.Position); //??? Debug
+//Serial.print("*** debug: ProcessQueue=");Serial.println(Queue.Position); //??? Debug
     for(x=0;x<Queue.Position;x++)
       {
       if(((Queue.Event[x]>>16)&0xff)==CMD_EVENTLIST_WRITE && ((Queue.Event[x]>>24)&0xf)==Settings.Unit && x<(Queue.Position-2)) // cmd
         {
-Serial.print("*** debug: EventlistWrite=");Serial.println(); //??? Debug
+//Serial.print("*** debug: EventlistWrite=");Serial.println(); //??? Debug
         
         if(Eventlist_Write(((Queue.Event[x]>>8)&0xff),Queue.Event[x+1],Queue.Event[x+2]))
           x+=2;
@@ -102,12 +102,13 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   #ifdef USER_PLUGIN
   if(!UserPlugin_Receive(IncommingEvent))
     return true;
-
-  if(FileWriteMode!=0)
-    return true;
   #endif
   
   #if NODO_MEGA
+
+  if(FileWriteMode!=0)
+    return true;
+
   CheckRawSignalKey(&IncommingEvent); // check of er een RawSignal key op de SDCard aanwezig is en vul met Nodo Event. Call by reference!
 
   // Als de RAW pulsen worden opgevraagd door de gebruiker...

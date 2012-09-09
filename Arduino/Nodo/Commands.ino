@@ -892,6 +892,14 @@ void ExecuteLine(char *Line, byte Port)
               Par2=str2int(TmpStr1);
             }        
   
+          // Geef aan de WebApp en andere Nodo's te kennen dat deze Nodo bezig is met verwerking
+          // Maar niet met het SendTo commando, ander is de Slave niet bereikbaar!
+          if(Cmd!=CMD_SEND && Settings.SendBusy==VALUE_ALL && !Busy.Sent)
+            {
+            TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_ON,0),VALUE_ALL);
+            Busy.Sent=true;
+            }
+
           // Hier worden de commando's verwerkt die een afwijkende MMI hebben.
           switch(Cmd)
             {
@@ -1310,7 +1318,6 @@ void ExecuteLine(char *Line, byte Port)
               break;
               }  
   
-  
             default:
               {              
               // standaard commando volgens gewone syntax
@@ -1402,6 +1409,13 @@ void ExecuteLine(char *Line, byte Port)
     }
   free(TmpStr2);
   free(TmpStr1);
+
+  if(Busy.Sent)
+    {
+    TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
+    Busy.Sent=false;
+    }
+
   }
 #endif
   

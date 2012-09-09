@@ -24,15 +24,16 @@
 *
 /****************************** Door gebruiker in te stellen: ***************************************************************/
 
+#define NODO_MEGA          0
 #define USER_PLUGIN        0                                     // Plugin: 0 = niet compileren, 1 = wel compileren
 #define USER_PLUGIN_NAME   "UserPlugin"
-#define NODO_MEGA          0
 
 // De code kan worden gecompileerd als een Nodo-Mini voor de Arduino met een ATMega328 processor
 // of voor een Nodo-Mega voor een Arduino met een ATMega1280 of ATMega2560
 // Voor de Nodo-Mega variant bij onderstaande zeven regels de // remarks verwijderen.
 
-#define NODO_MEGA 1
+#define NODO_MEGA          1
+#define TRACE              0
 #include <SD.h>
 #include <EthernetNodo.h>
 #include <SPI.h>
@@ -66,7 +67,7 @@
 //#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
 
 #define SETTINGS_VERSION     10
-#define NODO_BUILD          423
+#define NODO_BUILD          426
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -610,7 +611,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define MIN_PULSE_LENGTH           100 // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define MIN_RAW_PULSES              16 // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
 #define SHARP_TIME                 500 // tijd in milliseconden dat de nodo gefocust moet blijven luisteren naar één dezelfde poort na binnenkomst van een signaal
-#define RECEIVER_STABLE            750 // ??? 
+#define RECEIVER_STABLE            750 // Tijd die de RF ontvanger nodig heeft om na inschakelen voedspanning signalen op te kunnen vangen.
 #define SIGNAL_TYPE_UNKNOWN          0 // Type ontvangen of te verzenden signaal in de eventcode
 #define SIGNAL_TYPE_NODO             1 // Type ontvangen of te verzenden signaal in de eventcode
 #define SIGNAL_TYPE_KAKU             2 // Type ontvangen of te verzenden signaal in de eventcode
@@ -806,10 +807,10 @@ void setup()
   pinMode(PIN_LED_RGB_R,  OUTPUT);
   pinMode(PIN_SPEAKER,    OUTPUT);
   pinMode(PIN_LED_RGB_B,  OUTPUT);
+  digitalWrite(PIN_IR_TX_DATA,LOW);   // Zet de IR zenders initiëel uit! Anders mogelijk overbelasting !
   digitalWrite(PIN_IR_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
   digitalWrite(PIN_RF_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
   digitalWrite(PIN_RF_RX_VCC,HIGH);   // Spanning naar de RF ontvanger aan
-  digitalWrite(PIN_IR_TX_DATA,LOW);   // Zet de IR zenders initiëel uit! Anders mogelijk overbelasting !
 
 #if NODO_MEGA
   pinMode(PIN_LED_RGB_G,  OUTPUT);
