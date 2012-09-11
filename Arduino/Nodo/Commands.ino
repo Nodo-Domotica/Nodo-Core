@@ -43,6 +43,10 @@ byte CommandError(unsigned long Content)
   {
   int x,y;
   
+  #if TRACE
+  Trace(5,0,0);
+  #endif
+
   x=NodoType(Content);
   if(x!=NODO_TYPE_COMMAND && x!=NODO_TYPE_EVENT)
     return MESSAGE_01;
@@ -305,6 +309,10 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   byte Type         = (Content>>28)&0x0f;
   byte PreviousType = (PreviousContent>>28)&0x0f;
 
+  #if TRACE
+  Trace(6,0,0);
+  #endif
+
   switch(Command)
     {   
     case CMD_SEND_KAKU:
@@ -372,8 +380,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 #if NODO_MEGA
       if(Settings.Debug==VALUE_ON)
         {        
-        Serial.print("# PulseTimeMillis=");Serial.print(PulseTime,DEC);//??? er uit om ruimte te beparen?
-        Serial.print(", PulseCount=");Serial.println(PulseCount,DEC);//??? met TerminalPrint?
+        Serial.print("# PulseTimeMillis=");Serial.print(PulseTime,DEC);
+        Serial.print(", PulseCount=");Serial.println(PulseCount,DEC);
         }
 #endif
       switch(Par2)
@@ -468,34 +476,25 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     case CMD_LOCK:
       // In de bits van Par1 en Par2 zit een sleutel die gegenereerd is uit het wachtwoord van de Nodo die het commando verstuurd heeft.
       a=Content&0x7fff;// Zet de lock met de bits 0 t/m 15
-//Serial.print("*** debug: a=");Serial.println(a,HEX); //??? Debug
-//Serial.print("*** debug: Settings.Lock=");Serial.println(Settings.Lock); //??? Debug
-//Serial.print("*** debug: Content=");Serial.println(Content); //??? Debug
       if(Content&0x8000) // On/Off bevindt zich in bit nr. 15
         {// Als verzoek om inschakelen dan Lock waarde vullen
-//Serial.println("*** debug: Lock inschakelen.");//???
         if(Settings.Lock==0)// mits niet al gelocked.
           {
-//Serial.println("*** debug: Lock ingesteld.");//???
           Settings.Lock=a; 
           }
         else
           {
-//Serial.println("*** debug: Lock was reeds ingesteld met andere key (1).");//???
           RaiseMessage(MESSAGE_10);
           }
         }
       else
         {// Verzoek om uitschakelen
-//Serial.println("*** debug: Lock uischakelen.");//???
         if(Settings.Lock==a || Settings.Lock==0)// als lock code overeen komt of nog niet gevuld
           {
           Settings.Lock=0;
-//Serial.println("*** debug: Lock verwijderd.");//???
           }
         else
           {
-//Serial.println("*** debug: Lock stond nog ingesteld met andere key (2).");//???
           RaiseMessage(MESSAGE_10);
           }
         }        
@@ -658,7 +657,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;
       
     case CMD_USERPLUGIN:
-      #ifdef USER_PLUGIN
+      #if USER_PLUGIN
         UserPlugin_Command(Par1,Par2);
       #endif
       break;        
@@ -687,7 +686,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       y=analogRead(PIN_WIRED_IN_1+z);      
       Settings.WiredInput_Calibration_IL[z]=y;
       Settings.WiredInput_Calibration_OL[z]=x;
-      //??? Weer herstellen: SaveSettings();
+      SaveSettings();
       break;
       }
       
@@ -832,20 +831,34 @@ void ExecuteLine(char *Line, byte Port)
   byte SendTo=0; // Als deze waarde ongelijk aan nul, dan wordt het commando niet uitgevoerd maar doorgestuurd naar de andere Nodo
 
   Led(RED);
-//  if(Settings.WaitBusy==VALUE_ALL)??? kan dit weg?
-//    NodoBusy(0,true);
+
+  #if TRACE
+  Trace(7,0,0);
+  #endif
   
   // verwerking van commando's is door gebruiker tijdelijk geblokkeerd door FileWrite commando
   if(FileWriteMode>0)
     {
+    #if TRACE
+    Trace(7,1,0);
+    #endif
+    
     if(StringFind(Line,cmd2str(CMD_FILE_WRITE))!=-1)// string gevonden!
       {
       // beëindig de FileWrite modus
+      #if TRACE
+      Trace(7,2,0);
+      #endif
+      
       FileWriteMode=0;
       TempLogFile[0]=0;
       }
-    else if(TempLogFile[0]!=0)
+
+    if(TempLogFile[0]!=0)
       {
+Serial.print("*** debug: TempLogFile=");Serial.println(TempLogFile); //??? Debug
+Serial.print("*** debug: Line=");Serial.println(Line); //??? Debug
+
       AddFileSDCard(TempLogFile,Line); // Extra logfile op verzoek van gebruiker
       }
     }
@@ -1125,7 +1138,7 @@ void ExecuteLine(char *Line, byte Port)
                   }  
                 else
                   {
-                  SelectSD(true);
+                  SelectSD(false);
                   TransmitCode(command2event(Settings.Unit, CMD_MESSAGE, Settings.Unit, MESSAGE_03),VALUE_ALL);      
                   }
                 }
@@ -1149,13 +1162,6 @@ void ExecuteLine(char *Line, byte Port)
                 else // Commando uitvoeren heeft alleen zin er geen eventlistwrite commando actief is
                   {                
                   strcat(FileName,".dat");
-  
-                  // zet (eventueel) de extra logging aan
-                  GetArgv(Command,TmpStr1,3);
-                  strcat(TmpStr1,".dat");
-                  TmpStr1[14]=0; // voor het geval de gebruiker een te lange naam heeft ingegeven
-                  strcpy(TempLogFile,TmpStr2);
-                  
                   SelectSD(true);
                   File dataFile=SD.open(FileName);
                   if(dataFile) 
@@ -1359,7 +1365,6 @@ void ExecuteLine(char *Line, byte Port)
                 {
                 RaiseMessage(MESSAGE_04);                
                 break;
-                //??? return;
                 }
               }
             continue;

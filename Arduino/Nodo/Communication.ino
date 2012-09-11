@@ -42,6 +42,10 @@ boolean SendEventGhost(char* event, byte* SendToIP)
   IPAddress EGServerIP(SendToIP[0],SendToIP[1],SendToIP[2],SendToIP[3]);
   EthernetClient EGclient;
 
+  #if TRACE
+  Trace(8,0,0);
+  #endif
+
   Try=0;
   do
     {
@@ -144,6 +148,10 @@ byte GetHTTPFile(char* filename)
   char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
   byte Ok;
   
+  #if TRACE
+  Trace(9,0,0);
+  #endif
+
   strcpy(HttpRequest,"?id=");
   strcat(HttpRequest,Settings.ID);  
 
@@ -174,6 +182,10 @@ byte SendHTTPEvent(unsigned long event)
   byte Unit,x;
   char *HttpRequest=(char*)malloc(INPUT_BUFFER_SIZE+1);
   char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+
+  #if TRACE
+  Trace(10,0,0);
+  #endif
 
   strcpy(HttpRequest,"?id=");
   strcat(HttpRequest,Settings.ID);  
@@ -215,6 +227,10 @@ boolean SendHTTPCookie(void)
 
   char *HttpRequest=(char*)malloc(INPUT_BUFFER_SIZE+1);
 
+  #if TRACE
+  Trace(11,0,0);
+  #endif
+
   strcpy(HttpRequest,"?id=");
   strcat(HttpRequest,Settings.ID);  
 
@@ -244,6 +260,11 @@ boolean SendHTTPRequest(char* Request)
                // 2 als &file= is gevonden en eerstvolgende lege regel moet worden gedetecteerd
                // 3 als lege regel is gevonden en file-capture moet starten.                
 
+  SelectSD(false); //??? voor de zekerheid, mocht de chipselect niet goed zijn.
+  
+  #if TRACE
+  Trace(12,0,0);
+  #endif
 
   strcpy(IPBuffer,"GET ");
 
@@ -344,14 +365,11 @@ boolean SendHTTPRequest(char* Request)
                 TempString[8]=0; // voorkom dat filenaam meer dan acht posities heeft
                 strcpy(filename,TempString);                
                 strcat(filename,".dat");
-                // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-                digitalWrite(Ethernetshield_CS_W5100, HIGH);
-                digitalWrite(EthernetShield_CS_SDCard,LOW);
+
                 // evntueel vorig bestand wissen
+                SelectSD(true);
                 SD.remove(filename);
-                // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
-                digitalWrite(EthernetShield_CS_SDCard,HIGH);
-                digitalWrite(Ethernetshield_CS_W5100, LOW);
+                SelectSD(false);
                 }
               }
             IPBuffer[InByteCounter]=0;
@@ -380,6 +398,10 @@ boolean ParseHTTPRequest(char* HTTPRequest,char* Keyword, char* ResultString)
   int x,y,z;
   int Keyword_len=strlen(Keyword);
   int HTTPRequest_len=strlen(HTTPRequest);
+
+  #if TRACE
+  Trace(13,0,0);
+  #endif
 
   ResultString[0]=0;
   
@@ -450,6 +472,10 @@ void ExecuteIP(void)
   char *Event          = (char*) malloc(INPUT_BUFFER_SIZE+1);
   char *TmpStr1        = (char*) malloc(INPUT_BUFFER_SIZE+1);
   char *TmpStr2        = (char*) malloc(40); 
+
+  #if TRACE
+  Trace(14,0,0);
+  #endif
 
   Event[0]=0; // maak de string leeg.
   
