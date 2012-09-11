@@ -128,6 +128,10 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
 boolean NodoBusy(unsigned long Event, int Wait)
   {
   int PreviousNodoBusyStatus=Busy.Status;
+
+  #if TRACE
+  Trace(20,0,0);
+  #endif
   
   if(Event)
     {
@@ -442,13 +446,16 @@ boolean LoadSettings()
  * Alle settings van de Nodo weer op default.
  \*********************************************************************************************/
 
-#define UNIT_NODO_MINI     15
-#define UNIT_NODO_MEGA     1
 
 void ResetFactory(void)
   {
   Led(BLUE);
   Beep(2000,2000);
+
+  #if TRACE
+  Trace(21,0,0);
+  #endif
+
   int x,y;
   ClockRead(); 
 
@@ -549,27 +556,6 @@ void FactoryEventlist(void)
   }
 
   
-
-/* This function places the current value of the heap and stack pointers in the
- * variables. You can call it from any place in your code and save the data for
- * outputting or displaying later. This allows you to check at different parts of
- * your program flow.
- * The stack pointer starts at the top of RAM and grows downwards. The heap pointer
- * starts just above the static variables etc. and grows upwards. SP should always
- * be larger than HP or you'll be in big trouble! The smaller the gap, the more
- * careful you need to be. Julian Gall 6-Feb-2009.
- */
-uint8_t *heapptr, *stackptr;
-void FreeMemory(int x) 
-  {
-  stackptr = (uint8_t *)malloc(4);          // use stackptr temporarily
-  heapptr = stackptr;                     // save value of heap pointer
-  free(stackptr);      // free up the memory again (sets stackptr to 0)
-  stackptr =  (uint8_t *)(SP);           // save value of stack pointer
-  Serial.print("*** debug: Free RAM (");Serial.print(x,DEC);Serial.print(")=");Serial.println(stackptr-heapptr,DEC);
-  }
-
-
  /**********************************************************************************************\
   * Geeft de status weer of verzendt deze.
   * verzend de status van een setting als event.
@@ -1019,6 +1005,11 @@ void RaiseMessage(byte MessageCode)
   {
   unsigned long eventcode;
   int x;
+
+  #if TRACE
+  Trace(23,0,0);
+  #endif
+
   eventcode=command2event(Settings.Unit,CMD_MESSAGE, Settings.Unit, MessageCode);
   PrintEvent(eventcode,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM);  // geef event weer op Serial
   TransmitCode(eventcode,VALUE_ALL);
@@ -1061,10 +1052,7 @@ boolean AddFileSDCard(char *FileName, char *Line)
   {
   boolean r;
 
-  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-  digitalWrite(Ethernetshield_CS_W5100, HIGH);
-  digitalWrite(EthernetShield_CS_SDCard,LOW);
-
+  SelectSD(true);
   File LogFile = SD.open(FileName, FILE_WRITE);
   if(LogFile) 
     {
@@ -1076,9 +1064,7 @@ boolean AddFileSDCard(char *FileName, char *Line)
   else 
     r=false;
 
-  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip
-  digitalWrite(EthernetShield_CS_SDCard,HIGH);
-  digitalWrite(Ethernetshield_CS_W5100, LOW);
+  SelectSD(false);
   
   return r;
   }
@@ -1131,16 +1117,14 @@ boolean SaveEventlistSDCard(char *FileName)
 
 
 boolean FileList(void)
-  { 
+  { //???
   boolean x=false;
   File root;
   File entry;
-  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  char *TempString=(char*)malloc(15);
 
   PrintTerminal(ProgmemString(Text_22));
-  digitalWrite(Ethernetshield_CS_W5100, HIGH);
-  digitalWrite(EthernetShield_CS_SDCard,LOW);
-
+  SelectSD(true);
   if(root = SD.open("/"))
     {
     root.rewindDirectory();
@@ -1148,23 +1132,18 @@ boolean FileList(void)
       {
       if(!entry.isDirectory())
         {
-        digitalWrite(EthernetShield_CS_SDCard,HIGH);
-        digitalWrite(Ethernetshield_CS_W5100, LOW);
-
         strcpy(TempString,entry.name());
         TempString[StringFind(TempString,".")]=0;
+        SelectSD(false);
         PrintTerminal(TempString);
-
-        digitalWrite(Ethernetshield_CS_W5100, HIGH);
-        digitalWrite(EthernetShield_CS_SDCard,LOW);
+        SelectSD(true);
         }
+      entry.close();
       }
     root.close();
-    entry.close();
     x=true;
     }
-  digitalWrite(EthernetShield_CS_SDCard,HIGH);
-  digitalWrite(Ethernetshield_CS_W5100, LOW);
+  SelectSD(false);
   PrintTerminal(ProgmemString(Text_22));
   
   free(TempString);  
@@ -1196,8 +1175,10 @@ void RandomCookie(char* Ck)
  \*********************************************************************************************/
 void SelectSD(byte sd)
   {
+  delay(5);  //???
   digitalWrite(Ethernet_shield_CS_W5100, sd);
   digitalWrite(Ethernet_shield_CS_SDCard,!sd);
+  delay(5);  //???
   }
 
 
@@ -1267,8 +1248,7 @@ uint32_t md5_T[] PROGMEM = {
   
   #define ROTL32(x,n) (((x)<<(n)) | ((x)>>(32-(n))))  
   
-  static
-  void md5_core(uint32_t* a, void* block, uint8_t as, uint8_t s, uint8_t i, uint8_t fi){
+  static void md5_core(uint32_t* a, void* block, uint8_t as, uint8_t s, uint8_t i, uint8_t fi){
   	uint32_t t;
   	md5_func_t* funcs[]={md5_F, md5_G, md5_H, md5_I};
   	as &= 0x3;
@@ -1358,6 +1338,10 @@ uint32_t md5_T[] PROGMEM = {
 
 void md5(char* dest)
   {
+  #if TRACE
+  Trace(25,0,0);
+  #endif
+  
   const void* src=dest;
   uint32_t length_b = strlen((char*)src) * 8;
   struct md5_ctx_t ctx;
@@ -1387,11 +1371,15 @@ void md5(char* dest)
   
 #endif
 
-
 #if TRACE
+uint8_t *heapptr, *stackptr;
 void Trace(int Func, int Pos, unsigned long Value)
   {
   char* str=(char*)malloc(80);
+  stackptr = (uint8_t *)malloc(4);          // use stackptr temporarily
+  heapptr = stackptr;                     // save value of heap pointer
+  free(stackptr);      // free up the memory again (sets stackptr to 0)
+  stackptr =  (uint8_t *)(SP);           // save value of stack pointer
 
   strcpy(str,"=> Trace: Seconds=");
   strcat(str,int2str(millis()/1000));
@@ -1401,6 +1389,8 @@ void Trace(int Func, int Pos, unsigned long Value)
   strcat(str,int2str(Pos));
   strcat(str,", Value=");
   strcat(str,int2str(Value));
+  strcat(str,", Memory=");
+  strcat(str,int2str(stackptr-heapptr));
 
   Serial.println(str);
   AddFileSDCard("TRACE.DAT", str);

@@ -14,28 +14,28 @@
  * Print een event volgens formaat:  'EVENT/ACTION: <port>, <type>, <content>
  \*********************************************************************************************/
 void PrintEvent(unsigned long Content, byte Direction, byte Port )
-{
-  // FreeMemory(0); //??? t.b.v. debugging
+  {
 
   byte x;
 
   // Commando(s) die NIET aan de gebruiker getoond hoeven te worden.
   switch((Content>>16)&0xff)// Cmd
-  {
-  case CMD_TRANSMIT_QUEUE:
-    return;
-  }
-
+    {
+    case CMD_TRANSMIT_QUEUE:
+      return;
+    }
 
   char* StringToPrint=(char*)malloc(100);
+  char* TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
+
   StringToPrint[0]=0; // als start een lege string
 
   // Geef de richting van de communicatie weer
   if(Direction)
-  {
+    {
     strcat(StringToPrint,cmd2str(Direction));      
     strcat(StringToPrint,"=");
-  }
+    }
 
   // Poort
   x=true;
@@ -43,24 +43,24 @@ void PrintEvent(unsigned long Content, byte Direction, byte Port )
   strcat(StringToPrint, cmd2str(Port));
 
   if(Port==VALUE_SOURCE_EVENTGHOST || Port==VALUE_SOURCE_HTTP || Port==VALUE_SOURCE_TELNET)
-  {
+    {
     strcat(StringToPrint, "(");
     strcat(StringToPrint, ip2str(ClientIPAddress));
     strcat(StringToPrint, ")");
     x=false;
-  }
+    }
 
   // Unit
   if(((Content>>28)&0xf)==((unsigned long)(SIGNAL_TYPE_UNKNOWN)))  // Als het een onbekend type signaal is, dan unit niet weergeven.
     x=false;
 
   if(x)
-  {
+    {
     strcat(StringToPrint, ", "); 
     strcat(StringToPrint, cmd2str(CMD_UNIT));
     strcat(StringToPrint, "=");
     strcat(StringToPrint, int2str((Content>>24)&0xf)); 
-  }
+    }
 
   // Event
   strcat(StringToPrint, ", ");
@@ -68,44 +68,42 @@ void PrintEvent(unsigned long Content, byte Direction, byte Port )
   strcat(StringToPrint, Event2str(Content));
 
   if(((Content>>16)&0xff)==CMD_MESSAGE)
-  {
+    {
     strcat(StringToPrint, " (");
     strcat(StringToPrint, cmd2str(Content&0xff));
     strcat(StringToPrint, ")");
-  }
+    }
 
   PrintTerminal(StringToPrint);   // stuur de regel naar Serial en/of naar Ethernet
 
-    if(bitRead(HW_Config,HW_SDCARD))
-  {
-    char* TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  if(bitRead(HW_Config,HW_SDCARD)) 
+    {
     TmpStr[0]=0;
     // datum en tijd weergeven
     if(bitRead(HW_Config,HW_CLOCK)) // bitRead(HW_Config,HW_CLOCK)=true want dan is er een RTC aanwezig.
-    {   
+      {   
       strcat(TmpStr,DateTimeString());
       strcat(TmpStr,", ");
-    }
+      }
     strcat(TmpStr,StringToPrint);
     AddFileSDCard(ProgmemString(Text_23),TmpStr); // Extra logfile op verzoek van gebruiker
-    free(TmpStr);
-  }
+    }
+  free(TmpStr);
   free(StringToPrint);
-} 
+  } 
 #else
 
 /*********************************************************************************************\
  * Print een event: debug mode Nodo-Mini
  \*********************************************************************************************/
 void PrintEvent(unsigned long Content, byte Direction, byte Port)
-{
-  // FreeMemory(0); //??? t.b.v. debugging
+  {
   Serial.print(Direction);
   Serial.print(",");
   Serial.print(Port);
   Serial.print(",0x");
   Serial.println(Content,HEX);
-} 
+  } 
 
 #endif
 
@@ -114,7 +112,7 @@ void PrintEvent(unsigned long Content, byte Direction, byte Port)
  * Print actuele dag, datum, tijd.
  \*********************************************************************************************/
 char* DateTimeString(void)
-{
+  {
   int x;
   static char dt[40];
   char s[5];
@@ -127,7 +125,7 @@ char* DateTimeString(void)
   sprintf(dt,"Date=%d-%02d-%02d (%s), Time=%02d:%02d", Time.Year, Time.Month, Time.Date, s, Time.Hour, Time.Minutes);
 
   return dt;
-}
+  }
 
 #if NODO_MEGA
 
@@ -147,26 +145,26 @@ void PrintWelcome(void)
   // print versienummer, unit en indien gevuld het ID
   sprintf(TempString,"Version=3.0(Mega), Build=%04d, ThisUnit=%d", NODO_BUILD, Settings.Unit);
   if(Settings.ID[0])
-  {
+    {
     strcat(TempString,", ID=");
     strcat(TempString,Settings.ID);
-  }
+    }
 
   PrintTerminal(TempString);
 
   // Geef datum en tijd weer.
   if(bitRead(HW_Config,HW_CLOCK))
-  {
+    {
     sprintf(TempString,"%s %s",DateTimeString(), cmd2str(Time.DaylightSaving?VALUE_DLS:0));
     PrintTerminal(TempString);
-  }
+    }
 
   // print IP adres van de Nodo
   if(bitRead(HW_Config,HW_ETHERNET))
-  {
+    {
     sprintf(TempString,"NodoIP=%u.%u.%u.%u, MAC=%02X-%02X-%02X-%02X-%02X-%02X",Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3], NODO_MAC);
     PrintTerminal(TempString);
-  }
+    }
 
   PrintTerminal(ProgmemString(Text_22));
   free(TempString);
@@ -177,23 +175,25 @@ void PrintWelcome(void)
  * Verzend teken(s) naar de Terminal
  \*********************************************************************************************/
 void PrintTerminal(char* LineToPrint)
-{  
+  {  
   if(bitRead(HW_Config,HW_SERIAL))
     Serial.println(LineToPrint);
 
   if(bitRead(HW_Config,HW_ETHERNET))
-  {
+    {
     if(TerminalClient.connected() && TerminalConnected>0 && TerminalLocked==0)
       TerminalClient.println(LineToPrint);
-  }
+    }
 
+  // FileLog wordt hier uitgevoerd.
   if(TempLogFile[0]!=0)
     if(bitRead(HW_Config,HW_SDCARD))
       AddFileSDCard(TempLogFile,LineToPrint); // Extra logfile op verzoek van gebruiker: CMD_FILE_LOG
+
 }
 
 char* Event2str(unsigned long Code)
-{
+  {
   int x,y;
   byte P1,P2,Par2_b; 
   boolean P2Z=true;     // vlag: true=Par2 als nul waarde afdrukken false=nulwaarde weglaten
@@ -291,6 +291,7 @@ char* Event2str(unsigned long Code)
     case CMD_BUSY:
     case CMD_WAITFREERF:
     case CMD_SENDBUSY:
+    case CMD_BREAK_ON_DAYLIGHT:
       P1=P_TEXT;
       P2=P_NOT;
       break;

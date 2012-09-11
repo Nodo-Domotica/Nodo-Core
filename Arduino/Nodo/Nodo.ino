@@ -27,14 +27,16 @@
 
 #define NODO_MEGA          0
 #define USER_PLUGIN        0                                     // Plugin: 0 = niet compileren, 1 = wel compileren
-#define USER_PLUGIN_NAME   "UserPlugin"
+#define USER_PLUGIN_NAME   "UserPlugin"                          // Commando naam waarmee de plugin kan worden aangeroepen
+#define UNIT_NODO_MINI     15                                    // Default unitnummer van een Nodo-Mini na een reset van de Nodo.
+#define UNIT_NODO_MEGA     1                                     // Default unitnummer van een Nodo-Mega na een reset van de Nodo.
 
 // De code kan worden gecompileerd als een Nodo-Mini voor de Arduino met een ATMega328 processor
 // of voor een Nodo-Mega voor een Arduino met een ATMega1280 of ATMega2560
 // Voor de Nodo-Mega variant bij onderstaande zeven regels de // remarks verwijderen.
 
 #define NODO_MEGA          1
-#define TRACE              0
+#define TRACE              1
 #include <SD.h>
 #include <EthernetNodo.h>
 #include <SPI.h>
@@ -68,7 +70,7 @@
 //#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
 
 #define SETTINGS_VERSION     10
-#define NODO_BUILD          426
+#define NODO_BUILD          428
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -912,7 +914,7 @@ void setup()
 #endif
 
   PrintWelcome(); // geef de welkomsttekst weer
-  #ifdef USER_PLUGIN
+  #if USER_PLUGIN
     UserPlugin_Init();
   #endif
   TransmitCode(command2event(Settings.Unit, CMD_BOOT_EVENT,Settings.Unit,0),VALUE_ALL);  
@@ -1239,7 +1241,7 @@ void loop()
       LoopIntervalTimer_3=millis()+Loop_INTERVAL_3; // reset de timer  
 
       // loop periodiek langs de userplugin
-      #ifdef USER_PLUGIN
+      #if USER_PLUGIN
         UserPlugin_Periodically();
       #endif
 

@@ -2,9 +2,10 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- IR-TX weer funktioneel
-- Mega: NewNAKU geeft unit nummer 0 naar de WebApp
-- SendBusy naar WebApp aangepast.
+- Issue 510: compileer opties
+- Issue 509: BreakOnDaylight waarde
+- WiredCalibrate settings worden nu weer opgeslagen
+- herhaaldelijk uitvoeren van een Filelist leidt tot vastloper: workaround op bug in SD library.
 
 Known Errors / ToDo:
 - SendBusy van de Master zet de slave tijdelijk op onbereikbaar.
