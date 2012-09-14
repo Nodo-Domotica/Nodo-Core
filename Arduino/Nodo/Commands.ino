@@ -1120,6 +1120,21 @@ int ExecuteLine(char *Line, byte Port)
                   SelectSD(false);
                   PrintTerminal(ProgmemString(Text_22));
                   SelectSD(true);
+
+                  // Als de file groter is dan 10K, dan alleen laatste stuk laten zien
+                  if(Par2 != VALUE_ALL)
+                    {
+                    a=dataFile.size();
+                    if(a>10000)
+                      {
+                      w=dataFile.seek(a-10000UL);                    
+                      while(dataFile.available() && isprint(dataFile.read())); // ga naa eerstvolgende nieuwe regel
+                      SelectSD(false);
+                      PrintTerminal(ProgmemString(Text_09));
+                      SelectSD(true);
+                      }
+                    }
+
                   TmpStr2[0]=0;
                   y=0;       
                   while(dataFile.available())
@@ -1168,7 +1183,7 @@ int ExecuteLine(char *Line, byte Port)
                 else // Commando uitvoeren heeft alleen zin er geen eventlistwrite commando actief is
                   {
                   FileExecute(FileName);//??? error afvangen als niet uitvoerbaar?                
-                  TempLogFile[0]=0;//??? waarom?
+                  // TempLogFile[0]=0;//??? waarom zou deze leeg gemaakt moeten worden? Kan weg?
                   }
                 }
               break;
@@ -1343,10 +1358,7 @@ int ExecuteLine(char *Line, byte Port)
                 Queue.Position++;           
                 }       
               else
-                {
-                RaiseMessage(MESSAGE_04);    // ??? maken dat dit slechts eenmalig wordt weergegeven            
                 break;
-                }
               }
             continue;
             }

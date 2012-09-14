@@ -71,7 +71,7 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
     if(Settings.Debug==VALUE_ON)
       PrintEvent(ul,VALUE_DIRECTION_OUTPUT, VALUE_SOURCE_RF);
 
-    // Verwerk de inhoud van de Queue, Eerst Korte wachttijd anders is de RF ontvanger van de master (mogelijk) nog niet gereed voor ontvangst.  //???
+    // Verwerk de inhoud van de Queue, Eerst Korte wachttijd anders is de RF ontvanger van de master (mogelijk) nog niet gereed voor ontvangst.
     delay(RECEIVER_STABLE);
 
     #if TRACE
@@ -132,7 +132,7 @@ boolean QueueSend(byte DestUnit)
   RawSendRF();
     
   // Verzend een aanloopsignaal bestaande uit reeks korte pulsen om slave tijd te geven klaar te staan voor ontvangst en voorkomen dat andere Nodo vrije ruimte in RF benut
-//  digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.//??? test of dit in dit specifieke geval kan.
+  digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
   digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan
 
   for(x=0; x<100; x++)// Houd de 433 band bezet en geef slave gelegenheid om klaar voor ontvangst data uit queue.
@@ -587,72 +587,13 @@ boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
   RawSignal.Number=0;
   return false;
   }
-
-
-
-///**********************************************************************************************\
-//* Deze functie zendt gedurende Window seconden de IR ontvangst direct door naar RF
-//* Window tijd in seconden.
-//\*********************************************************************************************/
-//void CopySignalIR2RF(byte Window)
-//  {
-//  unsigned long Timer=millis()+((unsigned long)Window)*1000; // reset de timer.  
-//
-//  digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
-//  digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan   
-//
-//  while(Timer>millis())
-//    {
-//    digitalWrite(PIN_RF_TX_DATA,(*portInputRegister(IRport)&IRbit)==0);// Kijk if er iets op de IR poort binnenkomt. (Pin=LAAG als signaal in de ether). 
-//    if((millis()>>7)&0x01)
-//      Led(RED);
-//    else
-//      Led(false);
-//    }
-//  digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
-//  digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger weer aan.
-//  Led(RED);
-//  }
-//
-///**********************************************************************************************\
-//* Deze functie zendt gedurende Window seconden de RF ontvangst direct door naar IR
-//* Window tijd in seconden.
-//\*********************************************************************************************/
-//#define MAXPULSETIME 25 // maximale zendtijd van de IR-LED in mSec. Ter voorkoming van overbelasting
-//void CopySignalRF2IR(byte Window)
-//  {
-// ??? aanpassen aan nieuwe IR transmissie
-    
-//  unsigned long Timer=millis()+((unsigned long)Window)*1000; // reset de timer.  
-//  unsigned long PulseTimer;
-//  
-//  while(Timer>millis())// voor de duur van het opgegeven tijdframe
-//    {
-//    while((*portInputRegister(RFport)&RFbit)==RFbit)// Zolang de RF-pulse duurt. (Pin=HOOG bij puls, laag bij SPACE). 
-//      {      
-//      if(PulseTimer>millis())// als de maximale zendtijd van IR nog niet verstreken
-//        {
-//        digitalWrite(PIN_LED_RGB_R,HIGH);
-//        TCCR2A|=_BV(COM2A0);  // zet IR-modulatie AAN
-//        }
-//      else // zendtijd IR voorbij, zet IR uit.
-//        {
-//        digitalWrite(PIN_LED_RGB_R,LOW);
-//        TCCR2A&=~_BV(COM2A0); // zet IR-modulatie UIT
-//        }
-//      }
-//    PulseTimer=millis()+MAXPULSETIME;
-//    }
-//  digitalWrite(PIN_LED_RGB_R,LOW);
-//  TCCR2A&=~_BV(COM2A0);
-//  }
+  
   
 /**********************************************************************************************\
 * verzendt een event en geeft dit tevens weer op SERIAL
 * als het Event gelijk is aan 0L dan wordt alleen de huidige inhoud van de buffer als RAW
 * verzonden.
 \**********************************************************************************************/
-
 boolean TransmitCode(unsigned long Event, byte Dest)
   {  
   int x;
@@ -704,8 +645,11 @@ boolean TransmitCode(unsigned long Event, byte Dest)
     
         PrintEvent(Event,VALUE_DIRECTION_OUTPUT, VALUE_SOURCE_EVENTGHOST);
         
-        if(!SendEventGhost(Event2str(Event),Settings.EventGhostServer_IP))
+        char *TempString=(char*)malloc(20);
+        Event2str(Event,TempString);
+        if(!SendEventGhost(TempString,Settings.EventGhostServer_IP))
           TemporyEventGhostError=true;
+        free(TempString);
         }
       }
   

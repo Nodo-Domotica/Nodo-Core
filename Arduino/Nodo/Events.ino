@@ -20,12 +20,13 @@ void ProcessQueue(void)
     PrintTerminal(ProgmemString(Text_26));
     #endif
 
-//Serial.print("*** debug: ProcessQueue=");Serial.println(Queue.Position); //??? Debug
     for(x=0;x<Queue.Position;x++)
       {
       if(((Queue.Event[x]>>16)&0xff)==CMD_EVENTLIST_WRITE && ((Queue.Event[x]>>24)&0xf)==Settings.Unit && x<(Queue.Position-2)) // cmd
         {
-//Serial.print("*** debug: EventlistWrite=");Serial.println(); //??? Debug
+        #if TRACE
+        Trace(16,1,0);
+        #endif
         
         if(Eventlist_Write(((Queue.Event[x]>>8)&0xff),Queue.Event[x+1],Queue.Event[x+2]))
           x+=2;
@@ -33,7 +34,13 @@ void ProcessQueue(void)
           RaiseMessage(MESSAGE_06);    
         }
       else
+        {
+        #if TRACE
+        Trace(16,2,0);
+        #endif
+
         ProcessEvent2(Queue.Event[x],VALUE_DIRECTION_INPUT,Queue.Port[x],0,0);      // verwerk binnengekomen event.
+        }
       }
     Queue.Position=0;
     #if NODO_MEGA
@@ -48,9 +55,7 @@ void ProcessQueue(void)
   File dataFile=SD.open(ProgmemString(Text_15));
   if(dataFile)
     {
-    #if NODO_MEGA
     PrintTerminal(ProgmemString(Text_26));
-    #endif
 
     char *Line=(char*)malloc(INPUT_BUFFER_SIZE+1);
     char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
@@ -84,9 +89,7 @@ void ProcessQueue(void)
     free(TempString);
     SD.remove(ProgmemString(Text_15));
     SelectSD(false);
-    #if NODO_MEGA
     PrintTerminal(ProgmemString(Text_29));
-    #endif
     }  
   SelectSD(false);
   #endif
@@ -142,7 +145,7 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
 
   if(Busy.Sent)
     {
-    delay(RECEIVER_STABLE); // anders volgt de <Busy Off> te snel en wordt deze mogelijk gemist door de master. ???hoger
+    delay(RECEIVER_STABLE); // anders volgt de <Busy Off> te snel en wordt deze mogelijk gemist door de master.
     TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
     Busy.Sent=false;
     }
@@ -185,7 +188,7 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
       }
     }
 
-  if((IncommingEvent&0xffff0000) == command2event(Settings.Unit,CMD_TRANSMIT_QUEUE,0,0))//??? rename naar SendTo
+  if((IncommingEvent&0xffff0000) == command2event(Settings.Unit,CMD_TRANSMIT_QUEUE,0,0))
     {
     // Er is een SendTo verzoek ontvangen om de queue te vullen. 
     if(!QueueReceive(Par1,Par2))
