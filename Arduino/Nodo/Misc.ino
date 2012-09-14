@@ -1175,10 +1175,8 @@ void RandomCookie(char* Ck)
  \*********************************************************************************************/
 void SelectSD(byte sd)
   {
-  delay(5);  //???
   digitalWrite(Ethernet_shield_CS_W5100, sd);
   digitalWrite(Ethernet_shield_CS_SDCard,!sd);
-  delay(5);  //???
   }
 
 
@@ -1369,6 +1367,45 @@ void md5(char* dest)
   free(Str);
   }
   
+
+boolean FileExecute(char* FileName)
+  {
+  int x,y;
+  char *TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  boolean error=false;
+
+  Led(RED);
+  
+  strcpy(TmpStr,FileName);
+  strcat(TmpStr,".dat");
+  SelectSD(true);
+  File dataFile=SD.open(TmpStr);
+  if(dataFile) 
+    {
+    y=0;       
+    while(dataFile.available())
+      {
+      x=dataFile.read();
+      if(isprint(x) && y<INPUT_BUFFER_SIZE)
+        TmpStr[y++]=x;
+      else
+        {
+        TmpStr[y]=0;
+        y=0;
+        SelectSD(false);
+        PrintTerminal(TmpStr);
+        ExecuteLine(TmpStr,VALUE_SOURCE_FILE);
+        SelectSD(true);
+        }
+      }
+    dataFile.close();
+    }  
+  else
+    error=true;
+  free(TmpStr);
+  SelectSD(false);
+  return error;
+  }    
 #endif
 
 #if TRACE
@@ -1399,4 +1436,4 @@ void Trace(int Func, int Pos, unsigned long Value)
   }
 #endif
   
-  
+

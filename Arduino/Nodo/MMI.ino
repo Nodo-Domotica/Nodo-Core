@@ -260,6 +260,7 @@ char* Event2str(unsigned long Code)
       break;
 
       // Par1 als waarde en par2 als tekst
+    case CMD_RAWSIGNAL_SEND:
     case CMD_DELAY:
     case CMD_WIRED_PULLUP:
     case CMD_WIRED_OUT:
@@ -303,7 +304,6 @@ char* Event2str(unsigned long Code)
     case CMD_FILE_EXECUTE:
     case CMD_UNIT:
     case CMD_RAWSIGNAL:
-    case CMD_RAWSIGNAL_SEND:
     case CMD_SIMULATE_DAY:
     case CMD_CLOCK_DOW:
     case CMD_BOOT_EVENT:

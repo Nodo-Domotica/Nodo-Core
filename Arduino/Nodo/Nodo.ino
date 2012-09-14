@@ -36,7 +36,7 @@
 // Voor de Nodo-Mega variant bij onderstaande zeven regels de // remarks verwijderen.
 
 #define NODO_MEGA          1
-#define TRACE              1
+#define TRACE              0
 #include <SD.h>
 #include <EthernetNodo.h>
 #include <SPI.h>
@@ -86,7 +86,7 @@ prog_char PROGMEM Text_22[] = "!************************************************
 prog_char PROGMEM Text_06[] = "Waiting for busy Nodo: ";
 prog_char PROGMEM Text_07[] = "Waiting for signal...";
 prog_char PROGMEM Text_10[] = "Nodo"; // Default wachtwoord na een reset
-prog_char PROGMEM Text_13[] = "Ok.";
+prog_char PROGMEM Text_13[] = "RawSignal saved.";
 prog_char PROGMEM Text_14[] = "Event=";
 prog_char PROGMEM Text_17[] = "payload";
 prog_char PROGMEM Text_18[] = "accept";
@@ -97,8 +97,8 @@ prog_char PROGMEM Text_23[] = "log.dat";
 prog_char PROGMEM Text_24[] = "Queue: Capturing events...";
 prog_char PROGMEM Text_15[] = "Queue.dat";
 prog_char PROGMEM Text_26[] = "Queue: Processing events...";//???
-prog_char PROGMEM Text_27[] = "Raw/Key"; // Directory op de SDCard voor opslag RawSignal
-prog_char PROGMEM Text_28[] = "Raw/Hex"; // Directory op de SDCard voor opslag RawSignal
+prog_char PROGMEM Text_27[] = "raw/raw"; // Directory op de SDCard voor opslag van sleutels naar .hex files
+prog_char PROGMEM Text_28[] = "raw/key"; // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_29[] = "Queue: Finished.";//???
 prog_char PROGMEM Text_30[] = "Terminal connection closed.";
 
@@ -767,7 +767,6 @@ unsigned long HW_Config=0;                                  // Hardware configur
 uint8_t MD5HashCode[16];                                    // tabel voor berekenen van MD5 hash codes t.b.v. uitwisselen wachtwoord EventGhost.
 int CookieTimer;                                            // Seconden teller die bijhoudt wanneer er weer een nieuw Cookie naar de WebApp verzonden moet worden.
 int TerminalConnected=0;                                    // Vlag geeft aan of en hoe lang nog (seconden) er verbinding is met een Terminal.
-boolean ConfirmHTTP=false;                                  // Als true, dan wordt een output naar Serial/Telnet eveneens per regel verzonden als HTTP-requenst  
 boolean TemporyEventGhostError=false;                       // Vlag om tijdelijk evetghost verzending stil te leggen na een communicatie probleem
 int TerminalLocked=1;                                       // 0 als als gebruiker van een telnet terminalsessie juiste wachtwoord heeft ingetoetst
 char TempLogFile[13];                                       // Naam van de Logfile waar (naast de standaard logging) de verwerking in gelogd moet worden.
