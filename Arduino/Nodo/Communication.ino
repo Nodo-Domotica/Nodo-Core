@@ -1,8 +1,6 @@
-
-#define IP_BUFFER_SIZE      256
+#define IP_BUFFER_SIZE            256
 #define XON                       0x11
 #define XOFF                      0x13
-
 
 void SerialHold(boolean x)
   {
@@ -725,7 +723,6 @@ void ExecuteIP(void)
 
   if(RequestEvent)
     ExecuteLine(Event, Protocol);
-  ConfirmHTTP=false; // geen monitor weergave meer als HTTP-request versturen.
 
   free(TmpStr1);
   free(TmpStr2);

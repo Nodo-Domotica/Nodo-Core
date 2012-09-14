@@ -39,7 +39,7 @@ byte NodoType(unsigned long Content)
  * Als het een correct commando is wordt een false teruggegeven 
  * in andere gevallen een foutcode
  \*********************************************************************************************/
-byte CommandError(unsigned long Content)
+byte Commanderror(unsigned long Content)
   {
   int x,y;
   
@@ -64,7 +64,7 @@ byte CommandError(unsigned long Content)
     case CMD_TRANSMIT_QUEUE:
     case CMD_EVENTLIST_ERASE:
     case CMD_RESET:
-    case CMD_RAWSIGNAL_SEND:
+    case CMD_RAWSIGNAL_SAVE:
     case CMD_RAWSIGNAL:
     case CMD_MESSAGE :
     case CMD_REBOOT:
@@ -90,6 +90,10 @@ byte CommandError(unsigned long Content)
     case CMD_SEND_KAKU_NEW:
     case CMD_KAKU_NEW:    
       if(Par2==VALUE_ON || Par2==VALUE_OFF || Par2<=16)return false;
+      return MESSAGE_02;
+
+    case CMD_RAWSIGNAL_SEND:    
+      if(Par2==VALUE_SOURCE_RF || Par2==VALUE_SOURCE_IR || Par2==0)return false;
       return MESSAGE_02;
 
     case CMD_EVENTLIST_WRITE:
@@ -128,7 +132,7 @@ byte CommandError(unsigned long Content)
       return false;
 
     case CMD_ANALYSE_SETTINGS:
-      if(x<1 || x>50)return MESSAGE_02;
+      if(Par1<1 || Par1>50)return MESSAGE_02;
       return false;
 
     case CMD_VARIABLE_SET:
@@ -484,7 +488,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           }
         else
           {
-          RaiseMessage(MESSAGE_10);
+          error=MESSAGE_10;
           }
         }
       else
@@ -495,7 +499,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           }
         else
           {
-          RaiseMessage(MESSAGE_10);
+          error=MESSAGE_10;
           }
         }        
       SaveSettings();
@@ -744,7 +748,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           Led(BLUE);
           for(x=1;x<=EVENTLIST_MAX;x++)
             Eventlist_Write(x,0L,0L);
-          Led(RED);
           }
         else
           Eventlist_Write(Par1,0L,0L);
@@ -774,6 +777,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;     
 
     case CMD_RAWSIGNAL_SAVE:
+      Led(BLUE);
       PrintTerminal(ProgmemString(Text_07));
       RawSignal.Key=Par1;
       break;                  
@@ -782,9 +786,14 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       if(Par1!=0)
         {
         if(RawSignalGet(Par1))
-          TransmitCode(AnalyzeRawSignal(),VALUE_ALL);
+          {
+          x=VALUE_ALL;
+          if(Par2==VALUE_SOURCE_RF || Par2==VALUE_SOURCE_IR)
+            x=Par2;
+          TransmitCode(AnalyzeRawSignal(),x);
+          }
         else
-          RaiseMessage(MESSAGE_03);
+          error=MESSAGE_03;
         }
       else
         TransmitCode(AnalyzeRawSignal(),VALUE_ALL);
@@ -814,7 +823,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
  * Deze funktie parsed een string en voert de commando uit die daarin voorkomen. Commandos
  * worden gescheiden met een puntkomma.
  \*******************************************************************************************************/
-void ExecuteLine(char *Line, byte Port)
+int ExecuteLine(char *Line, byte Port)
   {
   const int MaxCommandLength=40; // maximaal aantal tekens van een commando
   char Command[MaxCommandLength+1]; 
@@ -825,7 +834,7 @@ void ExecuteLine(char *Line, byte Port)
   int L=strlen(Line);
   int w,x,y,z;
   int EventlistWriteLine=0;
-  int Error=0,Par1,Par2,Cmd;
+  int error=0,Par1,Par2,Cmd;
   byte State_EventlistWrite=0;
   unsigned long v,event,a;
   byte SendTo=0; // Als deze waarde ongelijk aan nul, dan wordt het commando niet uitgevoerd maar doorgestuurd naar de andere Nodo
@@ -856,16 +865,13 @@ void ExecuteLine(char *Line, byte Port)
 
     if(TempLogFile[0]!=0)
       {
-Serial.print("*** debug: TempLogFile=");Serial.println(TempLogFile); //??? Debug
-Serial.print("*** debug: Line=");Serial.println(Line); //??? Debug
-
       AddFileSDCard(TempLogFile,Line); // Extra logfile op verzoek van gebruiker
       }
     }
   else
     {
     PosCommand=0;
-    for(PosLine=0;PosLine<=L && Error==0 ;PosLine++)
+    for(PosLine=0;PosLine<=L && error==0 ;PosLine++)
       {
       x=Line[PosLine];
   
@@ -954,7 +960,7 @@ Serial.print("*** debug: Line=");Serial.println(Line); //??? Debug
               else
                 {                          
                 if(Par1>EVENTLIST_MAX)
-                  Error=MESSAGE_06;
+                  error=MESSAGE_06;
                 else
                   {
                   EventlistWriteLine=Par1;
@@ -977,7 +983,7 @@ Serial.print("*** debug: Line=");Serial.println(Line); //??? Debug
               else
                 {
                 v=command2event(Settings.Unit, Cmd,v,Par2);      // verwerk binnengekomen event.
-                Error=CommandError(v);
+                error=Commanderror(v);
                 }
               break;
               }
@@ -1020,10 +1026,10 @@ Serial.print("*** debug: Line=");Serial.println(Line); //??? Debug
                   v=command2event(Settings.Unit, Cmd,Par1,Par2);
                   }
                 else
-                  Error=MESSAGE_02;
+                  error=MESSAGE_02;
                 }
               else
-                Error=MESSAGE_02;
+                error=MESSAGE_02;
                 
               break;
               }
@@ -1095,7 +1101,7 @@ Serial.print("*** debug: Line=");Serial.println(Line); //??? Debug
                 GetHTTPFile(TmpStr1);
                 }
               else
-                Error=MESSAGE_02;            
+                error=MESSAGE_02;            
               break; 
               }
               
@@ -1156,49 +1162,21 @@ Serial.print("*** debug: Line=");Serial.println(Line); //??? Debug
                   // Als er een EventlistWrite actief is, dan hoeft het commando niet uitgevoerd te worden. Alleen het event v moet
                   // worden gevuld zodat deze kan worden weggeschreven in de Eventlist.
                   v=command2event(Settings.Unit, Cmd,Par1,Par2);
-                  Error=CommandError(v);
+                  error=Commanderror(v);
                   }
   
                 else // Commando uitvoeren heeft alleen zin er geen eventlistwrite commando actief is
-                  {                
-                  strcat(FileName,".dat");
-                  SelectSD(true);
-                  File dataFile=SD.open(FileName);
-                  if(dataFile) 
-                    {
-                    y=0;       
-                    while(dataFile.available())
-                      {
-                      x=dataFile.read();
-                      if(isprint(x) && y<INPUT_BUFFER_SIZE)
-                        TmpStr2[y++]=x;
-                      else
-                        {
-                        TmpStr2[y]=0;
-                        y=0;
-                        SelectSD(false);
-                        PrintTerminal(TmpStr2);
-                        ExecuteLine(TmpStr2,VALUE_SOURCE_FILE);
-                        SelectSD(true);
-                        }
-                      }
-                    dataFile.close();
-                    }  
-                  else
-                    {
-                    SelectSD(false);  
-                    TransmitCode(command2event(Settings.Unit, CMD_MESSAGE, Settings.Unit, MESSAGE_01),VALUE_ALL);
-                    }
-                  SelectSD(false);
+                  {
+                  FileExecute(FileName);//??? error afvangen als niet uitvoerbaar?                
+                  TempLogFile[0]=0;//??? waarom?
                   }
                 }
-              TempLogFile[0]=0;
               break;
               }
       
             case CMD_EVENTLIST_SHOW:
               if(Par1>EVENTLIST_MAX)
-                Error=MESSAGE_06;
+                error=MESSAGE_06;
               else
                 {            
                 PrintTerminal(ProgmemString(Text_22));
@@ -1231,7 +1209,7 @@ Serial.print("*** debug: Line=");Serial.println(Line); //??? Debug
                 {
                 if(GetArgv(Command,TmpStr1,2))
                   if(!str2ip(TmpStr1,Settings.EventGhostServer_IP))
-                    Error=MESSAGE_02;
+                    error=MESSAGE_02;
                 }
               SaveSettings();
               break;
@@ -1239,35 +1217,35 @@ Serial.print("*** debug: Line=");Serial.println(Line); //??? Debug
             case CMD_NODO_IP:
               if(GetArgv(Command,TmpStr1,2))
                 if(!str2ip(TmpStr1,Settings.Nodo_IP))
-                  Error=MESSAGE_02;
+                  error=MESSAGE_02;
               SaveSettings();
               break;
               
             case CMD_CLIENT_IP:
               if(GetArgv(Command,TmpStr1,2))
                 if(!str2ip(TmpStr1,Settings.Client_IP))
-                  Error=MESSAGE_02;
+                  error=MESSAGE_02;
               SaveSettings();
               break;
               
             case CMD_SUBNET:
               if(GetArgv(Command,TmpStr1,2))
                 if(!str2ip(TmpStr1,Settings.Subnet))
-                  Error=MESSAGE_02;
+                  error=MESSAGE_02;
               SaveSettings();
               break;
               
             case CMD_DNS_SERVER:
               if(GetArgv(Command,TmpStr1,2))
                 if(!str2ip(TmpStr1,Settings.DnsServer))
-                  Error=MESSAGE_02;
+                  error=MESSAGE_02;
               SaveSettings();
               break;
               
             case CMD_GATEWAY:
               if(GetArgv(Command,TmpStr1,2))
                 if(!str2ip(TmpStr1,Settings.Gateway))
-                  Error=MESSAGE_02;
+                  error=MESSAGE_02;
               SaveSettings();
               break;
               
@@ -1283,7 +1261,7 @@ Serial.print("*** debug: Line=");Serial.println(Line); //??? Debug
   
             case CMD_FILE_LIST:
               if(!FileList())
-                Error=MESSAGE_03;
+                error=MESSAGE_03;
               break;
   
             case CMD_FILE_WRITE:
@@ -1294,7 +1272,7 @@ Serial.print("*** debug: Line=");Serial.println(Line); //??? Debug
                 FileWriteMode=60;
                 }
               else
-                Error=MESSAGE_02;
+                error=MESSAGE_02;
               break;
   
             case CMD_HTTP_REQUEST:
@@ -1329,27 +1307,30 @@ Serial.print("*** debug: Line=");Serial.println(Line); //??? Debug
               {              
               // standaard commando volgens gewone syntax
               v=command2event(Settings.Unit,Cmd,Par1,Par2);            
-              Error=CommandError(v);
+              error=Commanderror(v);
   
               // Als het geen regulier commando was EN geen commando met afwijkende MMI, dan kijken of file op SDCard staat)
-              if(Error)
+              if(error)
                 {
                 Command[8]=0;// Gebruik commando als een filename. Voor de zekerheid te lange filename afkappen
-                strcpy(TmpStr1,"FileExecute ");
-                strcat(TmpStr1,Command);
-                ExecuteLine(TmpStr1,VALUE_SOURCE_FILE);
-                Error=0;
+                if(!FileExecute(Command))
+                  {
+                  error=0;
+                  v=0;
+                  }
                 }
               }
             }
           }
             
-        if(v && Error==0)
+        if(v && error==0)
           {
           if(State_EventlistWrite==0)// Gewoon uitvoeren
             {
             if(SendTo==0)
+              {
               ProcessEvent(v,VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
+              }              
             else
               {
               if(NodoType(v))
@@ -1363,7 +1344,7 @@ Serial.print("*** debug: Line=");Serial.println(Line); //??? Debug
                 }       
               else
                 {
-                RaiseMessage(MESSAGE_04);                
+                RaiseMessage(MESSAGE_04);    // ??? maken dat dit slechts eenmalig wordt weergegeven            
                 break;
                 }
               }
@@ -1389,12 +1370,12 @@ Serial.print("*** debug: Line=");Serial.println(Line); //??? Debug
             }
           }
           
-        if(Error) // er heeft zich een fout voorgedaan
+        if(error) // er heeft zich een fout voorgedaan
           {
           strcpy(TmpStr2,Command);
           strcat(TmpStr2, " ?");
           PrintTerminal(TmpStr2);
-          RaiseMessage(Error);
+          RaiseMessage(error);
           Line[0]=0;
           }
         }
@@ -1413,8 +1394,6 @@ Serial.print("*** debug: Line=");Serial.println(Line); //??? Debug
       ProcessQueue();
       }
     }
-  free(TmpStr2);
-  free(TmpStr1);
 
   if(Busy.Sent)
     {
@@ -1422,6 +1401,10 @@ Serial.print("*** debug: Line=");Serial.println(Line); //??? Debug
     Busy.Sent=false;
     }
 
+  free(TmpStr2);
+  free(TmpStr1);
+
+  return error;
   }
 #endif
   

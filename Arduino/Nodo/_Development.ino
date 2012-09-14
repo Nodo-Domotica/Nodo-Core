@@ -2,10 +2,7 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- Issue 510: compileer opties
-- Issue 509: BreakOnDaylight waarde
-- WiredCalibrate settings worden nu weer opgeslagen
-- herhaaldelijk uitvoeren van een Filelist leidt tot vastloper: workaround op bug in SD library.
+- Issue 442: RawSignalSend werkt niet
 
 Known Errors / ToDo:
 - SendBusy van de Master zet de slave tijdelijk op onbereikbaar.

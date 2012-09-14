@@ -125,7 +125,10 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   if(RawSignal.Key!=-1)
     {
     if(SaveRawSignal(RawSignal.Key))
+      {
+      PrintEvent(IncommingEvent,Direction,Port);  // geef event weer op Terminal
       PrintTerminal(ProgmemString(Text_13));
+      }
     RawSignal.Key=-1;
     return true;
     }

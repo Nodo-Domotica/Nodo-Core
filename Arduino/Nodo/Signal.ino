@@ -1,5 +1,4 @@
 
-
 boolean QueueReceive(int Pos, int ChecksumOrg)
   {
   int x,y,Checksum;
@@ -215,24 +214,21 @@ unsigned long GetEvent_IRRF(unsigned long *Content, int *Port)
         *Content=AnalyzeRawSignal(); // Bereken uit de tabel met de pulstijden de 32-bit code. 
         if(*Content)// als AnalyzeRawSignal een event heeft opgeleverd
           {
-          StaySharpTimer=millis()+SHARP_TIME;          
-          if(*Content==Checksum) // tweemaal hetzelfde event ontvangen
+          StaySharpTimer=millis()+SHARP_TIME;
+          if(PreviousTimer<millis())
+            Previous=0L;
+          if(Previous!=*Content)
             {
-            if(PreviousTimer<millis())
-              Previous=0L;
-            if(Previous!=Checksum)
-              {
-              RawSignal.Source=VALUE_SOURCE_IR;
-              *Port=VALUE_SOURCE_IR;
-              PreviousTimer=millis()+BLOK_REPEAT_TIME;
-              Previous=Checksum;
+            RawSignal.Source=VALUE_SOURCE_IR;
+            *Port=VALUE_SOURCE_IR;
+            PreviousTimer=millis()+BLOK_REPEAT_TIME;
+            Previous=*Content;
 
-              #if TRACE
-              Trace(2,1,0);
-              #endif
+            #if TRACE
+            Trace(2,1,0);
+            #endif
 
-              return true;
-              }
+            return true;
             }
           Checksum=*Content;
           }
@@ -741,8 +737,7 @@ void CheckRawSignalKey(unsigned long *Code)
     // maak er dan een Nodo event van. 
   
     // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-    digitalWrite(Ethernetshield_CS_W5100, HIGH);
-    digitalWrite(EthernetShield_CS_SDCard,LOW);      
+    SelectSD(true);
     sprintf(TempString,"%s/%s.key",ProgmemString(Text_28),int2str(*Code)+2); // +2 omdat dan de tekens '0x' niet worden meegenomen. anders groter dan acht posities in filenaam.
     
     File dataFile=SD.open(TempString);
@@ -768,8 +763,7 @@ void CheckRawSignalKey(unsigned long *Code)
       }  
   
     // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
-    digitalWrite(Ethernetshield_CS_W5100, LOW);
-    digitalWrite(EthernetShield_CS_SDCard,HIGH);
+    SelectSD(false);
     }
   free(TempString);
   }
@@ -781,20 +775,16 @@ boolean SaveRawSignal(byte Key)
   {
   boolean error=false;
   unsigned long Event;
-  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  char *TempString=(char*)malloc(40);
 
   Event=AnalyzeRawSignal();
 
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-  digitalWrite(Ethernetshield_CS_W5100, HIGH);
-  digitalWrite(EthernetShield_CS_SDCard,LOW);
+  SelectSD(true);
 
-  // maak een .raw file aan met als naam de key die door de gebruiker is gekozen  
-  sprintf(TempString,"%s/%s.raw",ProgmemString(Text_27),int2str(Key));  
+  // Sla Raw-pulsenreeks op in bestand met door gebruiker gekozen nummer als filenaam
+  sprintf(TempString,"%s/%s.raw",ProgmemString(Text_27),int2str(Key));
   SD.remove(TempString); // eventueel bestaande file wissen, anders wordt de data toegevoegd.    
-  sprintf(TempString,"%s/%s.key",ProgmemString(Text_28),int2str(Key));  
-  SD.remove(TempString); // eventueel bestaande file wissen, anders wordt de data toegevoegd.    
-
   File KeyFile = SD.open(TempString, FILE_WRITE);
   if(KeyFile) 
     {
@@ -810,10 +800,10 @@ boolean SaveRawSignal(byte Key)
     KeyFile.write(TempString);
     KeyFile.close();
 
-    // maak een .key file aan met als naam de key die door de gebruiker is gekozen  
+
+    // bestand met HEX-event als naam en verwijzing naar door gebruiker gekozen key als inhoud
     sprintf(TempString,"%s/%s.key",ProgmemString(Text_28),int2str(Event)+2); // +2 omdat dan de tekens '0x' niet worden meegenomen. anders groter dan acht posities in filenaam.
     SD.remove(TempString); // eventueel bestaande file wissen, anders wordt de data toegevoegd.      
-
     KeyFile = SD.open(TempString, FILE_WRITE);
     if(KeyFile) 
       {
@@ -828,9 +818,8 @@ boolean SaveRawSignal(byte Key)
   else 
     error=true;
  
-  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip
-  digitalWrite(EthernetShield_CS_SDCard,HIGH);
-  digitalWrite(Ethernetshield_CS_W5100, LOW);
+  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
+  SelectSD(false);
     
   free(TempString);
 
@@ -845,7 +834,7 @@ boolean SaveRawSignal(byte Key)
 
  /*********************************************************************************************\
  * Haal de RawSignal pulsen op uit het bestand <key>.raw en sla de reeks op in de 
- * RawSignal buffer, zodat deze vervolgens weer kan wordn gebruikt om te verzenden.
+ * RawSignal buffer, zodat deze vervolgens weer kan worden gebruikt om te verzenden.
  \*********************************************************************************************/
 boolean RawSignalGet(int Key)
   {
@@ -854,8 +843,7 @@ boolean RawSignalGet(int Key)
   char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
   
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-  digitalWrite(Ethernetshield_CS_W5100, HIGH);
-  digitalWrite(EthernetShield_CS_SDCard,LOW);      
+  SelectSD(true);
   sprintf(TempString,"%s/%s.raw",ProgmemString(Text_27),int2str(Key));
 
   File dataFile=SD.open(TempString);
@@ -885,8 +873,7 @@ boolean RawSignalGet(int Key)
     Ok=false;
     
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
-  digitalWrite(Ethernetshield_CS_W5100, LOW);
-  digitalWrite(EthernetShield_CS_SDCard,HIGH);
+  SelectSD(false);
 
   free(TempString);
   return Ok;
