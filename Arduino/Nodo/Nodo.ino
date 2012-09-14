@@ -36,7 +36,7 @@
 // Voor de Nodo-Mega variant bij onderstaande zeven regels de // remarks verwijderen.
 
 #define NODO_MEGA          1
-#define TRACE              0
+#define TRACE              1
 #include <SD.h>
 #include <EthernetNodo.h>
 #include <SPI.h>
@@ -55,7 +55,7 @@
 // PulseTime  = tijd tussen twee pulsen uitgedrukt in milliseconden.
 // PulseCount = Aantal pulsen tussen twee metingen.
 
-#define FORMULA_1            a = 3600000/PulseTime;            /* 1000 pulsen = 1KWh */
+#define FORMULA_1            a = 3600000/PulseTime;            /* 1000 pulsen in een uur = 1KWh */
 #define FORMULA_2            a = PulseCount; PulseCount=0;
 #define FORMULA_3            a = PulseCount / 10; PulseCount=0;
 #define FORMULA_4            a = 0;
@@ -70,7 +70,7 @@
 //#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
 
 #define SETTINGS_VERSION     10
-#define NODO_BUILD          428
+#define NODO_BUILD          430
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -85,6 +85,8 @@ prog_char PROGMEM Text_22[] = "!************************************************
 #if NODO_MEGA
 prog_char PROGMEM Text_06[] = "Waiting for busy Nodo: ";
 prog_char PROGMEM Text_07[] = "Waiting for signal...";
+prog_char PROGMEM Text_08[] = "ATTENTION: Beta version. Nodo in trace mode! Logging to TRACE.DAT on SDCard.";
+prog_char PROGMEM Text_09[] = "(Last 10KByte)";
 prog_char PROGMEM Text_10[] = "Nodo"; // Default wachtwoord na een reset
 prog_char PROGMEM Text_13[] = "RawSignal saved.";
 prog_char PROGMEM Text_14[] = "Event=";
@@ -96,10 +98,10 @@ prog_char PROGMEM Text_21[] = "payload withoutRelease";
 prog_char PROGMEM Text_23[] = "log.dat";
 prog_char PROGMEM Text_24[] = "Queue: Capturing events...";
 prog_char PROGMEM Text_15[] = "Queue.dat";
-prog_char PROGMEM Text_26[] = "Queue: Processing events...";//???
+prog_char PROGMEM Text_26[] = "Queue: Processing events...";
 prog_char PROGMEM Text_27[] = "raw/raw"; // Directory op de SDCard voor opslag van sleutels naar .hex files
 prog_char PROGMEM Text_28[] = "raw/key"; // Directory op de SDCard voor opslag RawSignal
-prog_char PROGMEM Text_29[] = "Queue: Finished.";//???
+prog_char PROGMEM Text_29[] = "Queue: Finished.";
 prog_char PROGMEM Text_30[] = "Terminal connection closed.";
 
 
@@ -157,7 +159,7 @@ prog_char PROGMEM Cmd_049[]="Password";
 prog_char PROGMEM Cmd_050[]="EventlistFile";
 prog_char PROGMEM Cmd_051[]="WiredCalibrateHigh";
 prog_char PROGMEM Cmd_052[]="WiredCalibrateLow";
-prog_char PROGMEM Cmd_053[]="Lock";//??? verwijderen
+prog_char PROGMEM Cmd_053[]="Lock";
 prog_char PROGMEM Cmd_054[]="Status"; 
 prog_char PROGMEM Cmd_055[]="";
 prog_char PROGMEM Cmd_056[]="AnalyseSettings";
@@ -282,8 +284,8 @@ prog_char PROGMEM Cmd_169[]="Output";
 prog_char PROGMEM Cmd_170[]="Internal";
 prog_char PROGMEM Cmd_171[]="Busy";
 prog_char PROGMEM Cmd_172[]="Source";
-prog_char PROGMEM Cmd_173[]="RF2IR"; //???
-prog_char PROGMEM Cmd_174[]="IR2RF"; //???
+prog_char PROGMEM Cmd_173[]="";
+prog_char PROGMEM Cmd_174[]="";
 prog_char PROGMEM Cmd_175[]="All";
 prog_char PROGMEM Cmd_176[]="DaylightSaving";
 prog_char PROGMEM Cmd_177[]="EventlistCount";
@@ -291,8 +293,8 @@ prog_char PROGMEM Cmd_178[]="Queue";
 prog_char PROGMEM Cmd_179[]="Auto";
 prog_char PROGMEM Cmd_180[]="Time";
 prog_char PROGMEM Cmd_181[]="Count";
-prog_char PROGMEM Cmd_182[]="High"; //??? mag weg
-prog_char PROGMEM Cmd_183[]="Low"; //??? mag weg
+prog_char PROGMEM Cmd_182[]="";
+prog_char PROGMEM Cmd_183[]="";
 prog_char PROGMEM Cmd_184[]="";
 prog_char PROGMEM Cmd_185[]="";
 prog_char PROGMEM Cmd_186[]="";
@@ -313,7 +315,7 @@ prog_char PROGMEM Cmd_200[]="Ok.";
 prog_char PROGMEM Cmd_201[]="Error: Unknown command.";
 prog_char PROGMEM Cmd_202[]="Error: Invalid parameter in command.";
 prog_char PROGMEM Cmd_203[]="Error: Unable to open file on SDCard.";
-prog_char PROGMEM Cmd_204[]="Error: Event queue overflow.";
+prog_char PROGMEM Cmd_204[]="";
 prog_char PROGMEM Cmd_205[]="Error: Eventlist nesting error.";
 prog_char PROGMEM Cmd_206[]="Error: Reading/writing eventlist failed.";
 prog_char PROGMEM Cmd_207[]="Error: Unable to establish connection.";
@@ -537,8 +539,8 @@ PROGMEM const char *CommandText_tabel[]={
 #define VALUE_DIRECTION_INTERNAL       170
 #define VALUE_BUSY                     171
 #define VALUE_SOURCE                   172
-#define VALUE_RF_2_IR                  173
-#define VALUE_IR_2_RF                  174
+#define VALUE_RES173                   173
+#define VALUE_RES174                   174
 #define VALUE_ALL                      175 // Deze waarde MOET groter dan 16 zijn.
 #define VALUE_DLS                      176
 #define VALUE_EVENTLIST_COUNT          177
@@ -546,8 +548,8 @@ PROGMEM const char *CommandText_tabel[]={
 #define VALUE_AUTO                     179
 #define VALUE_TIME                     180
 #define VALUE_COUNT                    181
-#define VALUE_HIGH                     182
-#define VALUE_LOW                      183
+#define VALUE_RES182                   182
+#define VALUE_RES183                   183
 #define VALUE_RES184                   184
 #define VALUE_RES185                   185
 #define VALUE_RES186                   186
@@ -655,8 +657,8 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define EthernetShield_CS_SDCardH   53  // NIET VERANDEREN. Ethernet shield: Gereserveerd voor correct funktioneren van de SDCard: Hardware CS/SPI ChipSelect
 #define EthernetShield_CS_SDCard     4  // NIET VERANDEREN. Ethernet shield: Chipselect van de SDCard. Niet gebruiken voor andere doeleinden
 #define Ethernetshield_CS_W5100     10  // NIET VERANDEREN. Ethernet shield: D10..D13  // gereserveerd voor Ethernet & SDCard
-#define Ethernet_shield_CS_SDCard    4  // NIET VERANDEREN. Ethernet shield: Chipselect van de SDCard. Niet gebruiken voor andere doeleinden/???
-#define Ethernet_shield_CS_W5100    10  // NIET VERANDEREN. Ethernet shield: D10..D13  // gereserveerd voor Ethernet & SDCard/???
+#define Ethernet_shield_CS_SDCard    4  // NIET VERANDEREN. Ethernet shield: Chipselect van de SDCard. Niet gebruiken voor andere doeleinden
+#define Ethernet_shield_CS_W5100    10  // NIET VERANDEREN. Ethernet shield: D10..D13  // gereserveerd voor Ethernet & SDCard
 #define PIN_CLOCK_SDA               20  // I2C communicatie lijn voor de realtime clock.
 #define PIN_CLOCK_SLC               21  // I2C communicatie lijn voor de realtime clock.
 #define RAW_BUFFER_SIZE            256  // Maximaal aantal te ontvangen 128 bits.
@@ -672,7 +674,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define MACRO_EXECUTION_DEPTH        4 // maximale nesting van macro's.
 #define TIMER_MAX                    8 // aantal beschikbare timers voor de user, gerekend vanaf 1
 #define USER_VARIABLES_MAX           8 // aantal beschikbare gebruikersvariabelen voor de user.
-#define EVENT_QUEUE_MAX             16 // maximaal aantal plaatsen in de queue//???
+#define EVENT_QUEUE_MAX             16 // maximaal aantal plaatsen in de queue
 #define PULSE_IRQ                    3 // IRQ verbonden aan de IR_RX_DATA pen 3 van de ATMega328 (Uno/Nano/Duemillanove)
 #define RAW_BUFFER_SIZE            160 // Maximaal aantal te ontvangen 128 bits.
 #define EVENTLIST_MAX              100 // aantal events dat de lijst bevat in het EEPROM geheugen. Iedere regel in de eventlist heeft 8 bytes nodig. eerste adres is 0
@@ -846,7 +848,6 @@ void setup()
   // initialiseer de Wired ingangen.
   for(x=0;x<WIRED_PORTS;x++)
     {
-    //digitalWrite(A0+PIN_WIRED_IN_1+x,Settings.WiredInputPullUp[x]==VALUE_ON?HIGH:LOW);// Zet de pull-up weerstand van 20K voor analoge ingangen. Analog-0 is gekoppeld aan Digital-14//??? kan weg?
     if(Settings.WiredInputPullUp[x]==VALUE_ON)
       pinMode(A0+PIN_WIRED_IN_1+x,INPUT_PULLUP);
     else
@@ -876,10 +877,14 @@ void setup()
     SD.remove(ProgmemString(Text_15)); // eventueel queue wissen. 
     bitWrite(HW_Config,HW_SDCARD,1);
     }
+
+  #if TRACE
+  Trace(0,0,0);
+  #endif
+   
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
   SelectSD(false);
-   
-  bitWrite(HW_Config,HW_ETHERNET,ETHERNET);
+  bitWrite(HW_Config,HW_ETHERNET,ETHERNET);//??? nog slim detecteren
 
   // Initialiseer ethernet device
   if(bitRead(HW_Config,HW_ETHERNET))

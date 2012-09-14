@@ -3,16 +3,19 @@
 
 Aanpassingen:
 - Issue 442: RawSignalSend werkt niet
+- In http request wordt "Build=nnn" teruggegeven.
+- Diverse kleine (potentiële) bugfixes
+- Uitbreiding van de trace faciliteit.
+- FileShow geeft default de laatste 10KByte aan regels, tenzij Par2=All
+- Nodo-Mini verzendt geen Message 4 ("Error: Event queue overflow.") meer. Dit verstoort en kan toch niet zinvol worden verwerkt.
 
 Known Errors / ToDo:
-- SendBusy van de Master zet de slave tijdelijk op onbereikbaar.
-- Resetten:  verbinden in/out poorten, ????
+- Ontvangen IR: Niet alle codes worden goed ontvangen. Probleem nog analyseren
+- SendBusy op de Master zet de slaves tijdelijk op onbereikbaar. Hierdoor werkt SendTo niet
+- In geval van onbereikbare Nodo-Mini: Hoe resetten? verbinden van in/out poorten, ????
 - Status All uitvraag bij een mini levert: [Input=File, Unit=15, Event=Debug] Geen geldig event
 - WaitFreeRF: Fijnafstemming komt later nog o.b.v. Hans zijn praktijk situatie
 - Vreemde weergave events: Internal=System
-- In Executeline afgevangen commando worden niet gelogt op SDCard.
-- Event 0,0 wordt getoond na ongeldig commando
-
 
 Aanpassingen t.o.v. Nodo Due:
 - All:WaitFreeRF aangepast. Nu uitsluitend nog On/Off instellen.

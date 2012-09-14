@@ -221,7 +221,7 @@ boolean str2ip(char *string, byte* IP)
  \*********************************************************************************************/
 char* int2str(unsigned long x)
   {
-  static char OutputLine[10];
+  static char OutputLine[12];
   char* OutputLinePosPtr=&OutputLine[10];
   int y;
   
@@ -331,6 +331,7 @@ int str2AnalogInt(char* string)
 boolean EventlistEntry2str(int entry, byte d, char* Line, boolean Script)
   {
   unsigned long Event, Action;
+  char *TempString=(char*)malloc(80);
     
   Eventlist_Read(entry,&Event,&Action); // leesregel uit de Eventlist.    
   if(Event==0)
@@ -346,11 +347,15 @@ boolean EventlistEntry2str(int entry, byte d, char* Line, boolean Script)
 
   // geef het event weer
   strcat(Line,"; ");
-  strcat(Line,Event2str(Event));
+  Event2str(Event, TempString);
+  strcat(Line, TempString);
 
   // geef het action weer
   strcat(Line,"; ");
-  strcat(Line,Event2str(Action));
+  Event2str(Event, TempString);  
+  strcat(Line,TempString);
+
+  free(TempString);
   return true;
   }
 #endif

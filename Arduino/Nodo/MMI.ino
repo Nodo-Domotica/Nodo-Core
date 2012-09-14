@@ -65,7 +65,8 @@ void PrintEvent(unsigned long Content, byte Direction, byte Port )
   // Event
   strcat(StringToPrint, ", ");
   strcat(StringToPrint, ProgmemString(Text_14));
-  strcat(StringToPrint, Event2str(Content));
+  Event2str(Content,TmpStr);
+  strcat(StringToPrint, TmpStr);
 
   if(((Content>>16)&0xff)==CMD_MESSAGE)
     {
@@ -157,6 +158,10 @@ void PrintWelcome(void)
     {
     sprintf(TempString,"%s %s",DateTimeString(), cmd2str(Time.DaylightSaving?VALUE_DLS:0));
     PrintTerminal(TempString);
+
+    #if TRACE
+    AddFileSDCard("TRACE.DAT", TempString);
+    #endif
     }
 
   // print IP adres van de Nodo
@@ -165,6 +170,12 @@ void PrintWelcome(void)
     sprintf(TempString,"NodoIP=%u.%u.%u.%u, MAC=%02X-%02X-%02X-%02X-%02X-%02X",Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3], NODO_MAC);
     PrintTerminal(TempString);
     }
+  
+  #if TRACE
+  PrintTerminal("");
+  PrintTerminal(ProgmemString(Text_08));
+  PrintTerminal("");
+  #endif
 
   PrintTerminal(ProgmemString(Text_22));
   free(TempString);
@@ -192,7 +203,10 @@ void PrintTerminal(char* LineToPrint)
 
 }
 
-char* Event2str(unsigned long Code)
+/**********************************************************************************************\
+ * Converteert een 32-bit eventcode naar een voor de gebruiker leesbare string
+ \*********************************************************************************************/
+void Event2str(unsigned long Code, char* EventString)
   {
   int x,y;
   byte P1,P2,Par2_b; 
@@ -202,12 +216,11 @@ char* Event2str(unsigned long Code)
   byte Command  = (Code>>16)&0xff;
   byte Par1     = (Code>>8)&0xff;
   byte Par2     = (Code)&0xff;
-  static char EventString[60];
 
   EventString[0]=0;
 
   if(Type==SIGNAL_TYPE_NEWKAKU)
-  {
+    {
     // Aan/Uit zit in bit 5 
     strcpy(EventString,cmd2str(CMD_KAKU_NEW));
     strcat(EventString," ");
@@ -322,11 +335,11 @@ char* Event2str(unsigned long Code)
     default:
       P1=P_VALUE;
       P2=P_VALUE;    
-    }
+      }
 
     // Print Par1      
     if(P1!=P_NOT)
-    {
+      {
       strcat(EventString," ");
       switch(P1)
       {
@@ -360,48 +373,46 @@ char* Event2str(unsigned long Code)
 
     // Print Par2    
     if(P2!=P_NOT)
-    {
-      switch(P2)
       {
-      case P_TEXT:
-        if(Par2)
-          strcat(EventString,",");
-        strcat(EventString,cmd2str(Par2));
-        break;
-      case P_VALUE:
-        strcat(EventString,",");
-        strcat(EventString,int2str(Par2));
-        break;
-      case P_DIM:
+      switch(P2)
         {
-          strcat(EventString,",");
-          if(Par2==VALUE_OFF || Par2==VALUE_ON)
-            strcat(EventString, cmd2str(Par2)); // Print 'On' of 'Off'
-          else
-            strcat(EventString,int2str(Par2));
+        case P_TEXT:
+          if(Par2)
+            strcat(EventString,",");
+          strcat(EventString,cmd2str(Par2));
           break;
+        case P_VALUE:
+          strcat(EventString,",");
+          strcat(EventString,int2str(Par2));
+          break;
+        case P_DIM:
+          {
+            strcat(EventString,",");
+            if(Par2==VALUE_OFF || Par2==VALUE_ON)
+              strcat(EventString, cmd2str(Par2)); // Print 'On' of 'Off'
+            else
+              strcat(EventString,int2str(Par2));
+            break;
+          }
         }
-      }
-    }// P2
-  }//   if(Type==SIGNAL_TYPE_NODO || Type==SIGNAL_TYPE_OTHERUNIT)
+      }// P2
+    }//   if(Type==SIGNAL_TYPE_NODO || Type==SIGNAL_TYPE_OTHERUNIT)
 
   else // wat over blijft is het type UNKNOWN.
-  {
+    {
     strcat(EventString,int2str(Code));
+    }
   }
-  return EventString;
-}
 
 #else
 
 /**********************************************************************************************\
- * Print de welkomsttekst van de Nodo. ATMega 328 variant
+ * Print de welkomsttekst van de Nodo. ATMega328 variant
  \*********************************************************************************************/
 void PrintWelcome(void)
 {
   byte x;
   char* str=(char*)malloc(80);
-
 
   // Print Welkomsttekst
   Serial.println();
@@ -415,8 +426,7 @@ void PrintWelcome(void)
 
   // Geef datum en tijd weer.
   if(bitRead(HW_Config,HW_CLOCK))
-  {
-
+    {
     // Print de dag. 1=zondag, 0=geen RTC aanwezig
     char s[5];
     for(x=0;x<=2;x++)
@@ -425,10 +435,9 @@ void PrintWelcome(void)
 
     sprintf(str,"Date=%d-%02d-%02d (%s), Time=%02d:%02d, DaylightSaving=%d", Time.Year, Time.Month, Time.Date, s, Time.Hour, Time.Minutes,Time.DaylightSaving);
     Serial.println(str);
-  }
+    }
   Serial.println(ProgmemString(Text_22));
   free(str);
-}
-
+  }
 #endif
 

@@ -199,14 +199,17 @@ byte SendHTTPEvent(unsigned long event)
   if(Settings.HTTP_Pin==VALUE_ON)
     {
     // pin-code genereren en meesturen in het http-request
-    sprintf(TempString,"%s:%s",HTTPCookie,Settings.Password);  
+    strcpy(TempString,HTTPCookie);
+    strcat(TempString,":");
+    strcat(TempString,Settings.Password);
     md5(TempString);
     strcat(HttpRequest,"&key=");
     strcat(HttpRequest,TempString);    
     }
     
   strcat(HttpRequest,"&event=");
-  strcat(HttpRequest,Event2str(event));
+  Event2str(event,TempString);
+  strcat(HttpRequest,TempString);
 
   x=SendHTTPRequest(HttpRequest);
   free(HttpRequest);
@@ -258,7 +261,7 @@ boolean SendHTTPRequest(char* Request)
                // 2 als &file= is gevonden en eerstvolgende lege regel moet worden gedetecteerd
                // 3 als lege regel is gevonden en file-capture moet starten.                
 
-  SelectSD(false); //??? voor de zekerheid, mocht de chipselect niet goed zijn.
+  SelectSD(false); // Voor de zekerheid, mocht de chipselect niet goed zijn.
   
   #if TRACE
   Trace(12,0,0);
@@ -298,12 +301,18 @@ boolean SendHTTPRequest(char* Request)
   if(Settings.Debug==VALUE_ON)
     {
     strcpy(TempString,"# HTTP Output: ");
-    strcat(TempString,IPBuffer);//??? ruimte IPBuffer is groter dan TempString!
+    strcat(TempString,IPBuffer);// Ruimte IPBuffer is groter dan TempString, maar kan hier geen kwaad
     Serial.println(TempString);
     }
 
   strcpy(TempString,Settings.HTTPRequest);
   TempString[SlashPos]=0;
+
+  #if TRACE
+  Trace(12,1,Settings.PortClient);
+  AddFileSDCard("TRACE.DAT", TempString);
+  AddFileSDCard("TRACE.DAT", IPBuffer);
+  #endif
 
   if(IPClient.connect(TempString,Settings.PortClient))
     {
@@ -312,13 +321,13 @@ boolean SendHTTPRequest(char* Request)
     strcpy(IPBuffer,"Host: ");
     strcat(IPBuffer,TempString);
     IPClient.println(IPBuffer);
-    strcpy(IPBuffer,"User-Agent: Nodo/");
-    strcat(IPBuffer,int2str(Settings.Version));
+    strcpy(IPBuffer,"User-Agent: Nodo/Build=");
+    strcat(IPBuffer,int2str(NODO_BUILD));
     IPClient.println(IPBuffer);
     IPClient.println(F("Connection: Close"));    
     IPClient.println();// Afsluiten met een lege regel is verplicht in http protocol/
 
-    TimeoutTimer=millis()+TimeOut; // Als er twee seconden geen datatransport is, dan wordt aangenomen dat de verbinding (om wat voor reden dan ook) is afgebroken.
+    TimeoutTimer=millis()+TimeOut; // Als erte lange tijd geen datatransport is, dan wordt aangenomen dat de verbinding (om wat voor reden dan ook) is afgebroken.
     IPBuffer[0]=0;
     InByteCounter=0;
     
@@ -403,7 +412,7 @@ boolean ParseHTTPRequest(char* HTTPRequest,char* Keyword, char* ResultString)
 
   ResultString[0]=0;
   
-  if(HTTPRequest_len<5) // doe geen moeite als de string te weinig tekens heeft
+  if(HTTPRequest_len<3) // doe geen moeite als de string te weinig tekens heeft
     return -1;
   
   for(x=0; x<=(HTTPRequest_len-Keyword_len); x++)
@@ -716,10 +725,10 @@ void ExecuteIP(void)
           }
         }
       }
+    delay(5);  // korte pauze om te voorkomen dat de verbinding wordt verbroken alvorens alle data door client verwerkt is.
+    IPClient.stop();
     }
 
-  delay(5);  // korte pauze om te voorkomen dat de verbinding wordt verbroken alvorens alle data door client verwerkt is.
-  IPClient.stop();
 
   if(RequestEvent)
     ExecuteLine(Event, Protocol);

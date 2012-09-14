@@ -177,6 +177,7 @@ boolean NodoBusy(unsigned long Event, int Wait)
         }
       PrintTerminal(TempString);
       }
+    free(TempString);
     #endif
 
     if(!WaitAndQueue(Wait,true,0))
@@ -397,7 +398,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
 char* ProgmemString(prog_char* text)
     {
     byte x=0;
-    static char buffer[40];
+    static char buffer[90];
   
     do
       {
@@ -568,6 +569,10 @@ void Status(byte Par1, byte Par2, byte Transmit)
   byte Par1_Start,Par1_End;
   byte x,P1,P2; // in deze variabele wordt de waarde geplaats (call by reference)
   boolean s;
+
+#if NODO_MEGA          
+  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+#endif
   
   if(Par1==0)
     return;
@@ -591,7 +596,7 @@ void Status(byte Par1, byte Par2, byte Transmit)
     }
   else
     {
-    if(!GetStatus(&Par1,&P1,&P2))// kijk of voor de opgegeven parameter de status opvraagbaar is. Zo niet dan klaar. Error in parameter???
+    if(!GetStatus(&Par1,&P1,&P2))// kijk of voor de opgegeven parameter de status opvraagbaar is. Zo niet dan klaar.
       return;
     CMD_Start=Par1;
     CMD_End=Par1;
@@ -599,7 +604,6 @@ void Status(byte Par1, byte Par2, byte Transmit)
 
 
 #if NODO_MEGA          
-  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
   boolean dhcp=(Settings.Nodo_IP[0] + Settings.Nodo_IP[1] + Settings.Nodo_IP[2] + Settings.Nodo_IP[3])==0;
 #endif
 
@@ -736,7 +740,10 @@ void Status(byte Par1, byte Par2, byte Transmit)
 
 #if NODO_MEGA
           else
-            PrintTerminal(Event2str(command2event(Settings.Unit,x,P1,P2)));
+            {
+            Event2str(command2event(Settings.Unit,x,P1,P2),TempString);
+            PrintTerminal(TempString);
+            }
 #endif
           }
       }
@@ -1065,7 +1072,6 @@ boolean AddFileSDCard(char *FileName, char *Line)
     r=false;
 
   SelectSD(false);
-  
   return r;
   }
 
@@ -1117,7 +1123,7 @@ boolean SaveEventlistSDCard(char *FileName)
 
 
 boolean FileList(void)
-  { //???
+  {
   boolean x=false;
   File root;
   File entry;
@@ -1429,7 +1435,6 @@ void Trace(int Func, int Pos, unsigned long Value)
   strcat(str,", Memory=");
   strcat(str,int2str(stackptr-heapptr));
 
-  Serial.println(str);
   AddFileSDCard("TRACE.DAT", str);
 
   free(str);
