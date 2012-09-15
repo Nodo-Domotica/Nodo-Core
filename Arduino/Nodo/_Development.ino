@@ -7,13 +7,13 @@ Aanpassingen:
 - Diverse kleine (potentiële) bugfixes
 - Uitbreiding van de trace faciliteit.
 - FileShow geeft default de laatste 10KByte aan regels, tenzij Par2=All
-- Nodo-Mini verzendt geen Message 4 ("Error: Event queue overflow.") meer. Dit verstoort en kan toch niet zinvol worden verwerkt.
+- Nodo-Small verzendt geen Message 4 ("Error: Event queue overflow.") meer. Dit verstoort en kan toch niet zinvol worden verwerkt.
 
 Known Errors / ToDo:
 - Ontvangen IR: Niet alle codes worden goed ontvangen. Probleem nog analyseren
 - SendBusy op de Master zet de slaves tijdelijk op onbereikbaar. Hierdoor werkt SendTo niet
-- In geval van onbereikbare Nodo-Mini: Hoe resetten? verbinden van in/out poorten, ????
-- Status All uitvraag bij een mini levert: [Input=File, Unit=15, Event=Debug] Geen geldig event
+- In geval van onbereikbare Nodo-Small: Hoe resetten? verbinden van in/out poorten, ????
+- Status All uitvraag bij een Small levert: [Input=File, Unit=15, Event=Debug] Geen geldig event
 - WaitFreeRF: Fijnafstemming komt later nog o.b.v. Hans zijn praktijk situatie
 - Vreemde weergave events: Internal=System
 
@@ -26,9 +26,9 @@ Aanpassingen t.o.v. Nodo Due:
 - All: Commando [SendStatus] is komen te vervallen.
 - All: WildCard uitgebreid met Message en Boot events.
 - All: Status en SendStatus geintegreerd. Resultaat wordt altijs alleen naar de bron verstuurd.
-- Mini: aantal variabelen terug gebracht naar 8
-- Mini: Nesting diepte teruggebracht naar 4. Dit i.v.m. besparing ram geheugen.
-- Mini: queue voor opvangen events 8 events.
+- Small: aantal variabelen terug gebracht naar 8
+- Small: Nesting diepte teruggebracht naar 4. Dit i.v.m. besparing ram geheugen.
+- Small: queue voor opvangen events 8 events.
 - mega: Queue op SDCard. Geen limiet voor aantal events dat kan worden opgevangen in de queue tijdens wachten
 - Commando lock voorzien van code o.b.v. ingestelde wachtwoord. (Na veranderen wachtwoord zal de lock verdwijnen)
 - Status uitgebreid met optie EventlistCount. Geeft aantal bezette regels

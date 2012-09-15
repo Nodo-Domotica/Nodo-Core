@@ -327,35 +327,45 @@ int str2AnalogInt(char* string)
  /**********************************************************************************************\
  * vult een string met een regel uit de Eventlist.
  * geeft false terug als de regel leeg is
+ * Let op dat er voldoende ruimte is in [Line]
  \*********************************************************************************************/
 boolean EventlistEntry2str(int entry, byte d, char* Line, boolean Script)
   {
   unsigned long Event, Action;
   char *TempString=(char*)malloc(80);
-    
-  Eventlist_Read(entry,&Event,&Action); // leesregel uit de Eventlist.    
-  if(Event==0)
-    return false;
+  boolean Ok;
 
-  // Geef de entry van de eventlist weer
-  strcpy(Line,cmd2str(Script?CMD_EVENTLIST_WRITE:VALUE_SOURCE_EVENTLIST));
-  if(!Script)
+  
+  Eventlist_Read(entry,&Event,&Action); // leesregel uit de Eventlist.    
+
+  if(Event==0)
     {
-    strcat(Line," ");
-    strcat(Line,int2str(entry));
+    Ok=false;
+    }
+  else
+    {
+    // Geef de entry van de eventlist weer
+    strcpy(Line,cmd2str(Script?CMD_EVENTLIST_WRITE:VALUE_SOURCE_EVENTLIST));
+    
+    if(!Script)
+      {
+      strcat(Line," ");
+      strcat(Line,int2str(entry));
+      }
+  
+    // geef het event weer
+    strcat(Line,"; ");
+    Event2str(Event, TempString);
+    strcat(Line, TempString);
+  
+    // geef het action weer
+    strcat(Line,"; ");
+    Event2str(Action, TempString);  
+    strcat(Line,TempString);
+    Ok=true;
     }
 
-  // geef het event weer
-  strcat(Line,"; ");
-  Event2str(Event, TempString);
-  strcat(Line, TempString);
-
-  // geef het action weer
-  strcat(Line,"; ");
-  Event2str(Event, TempString);  
-  strcat(Line,TempString);
-
   free(TempString);
-  return true;
+  return Ok;
   }
 #endif

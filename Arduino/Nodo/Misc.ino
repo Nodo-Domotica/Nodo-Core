@@ -90,7 +90,7 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
           }       
         
         #else
-        // sla event op in de queue. De Nodo-Mini heeft de queue is een kleine array <QueueEvent> staan.
+        // sla event op in de queue. De Nodo-Small heeft de queue is een kleine array <QueueEvent> staan.
         if(Queue.Position<EVENT_QUEUE_MAX)
           {
           Queue.Event[Queue.Position]=Event;
@@ -512,7 +512,7 @@ void ResetFactory(void)
   strcpy(Settings.Password,ProgmemString(Text_10));
 
 #else
-  Settings.Unit                       = UNIT_NODO_MINI;
+  Settings.Unit                       = UNIT_NODO_SMALL;
 
 #endif
 
