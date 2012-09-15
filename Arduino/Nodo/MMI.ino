@@ -95,7 +95,7 @@ void PrintEvent(unsigned long Content, byte Direction, byte Port )
 #else
 
 /*********************************************************************************************\
- * Print een event: debug mode Nodo-Mini
+ * Print een event: debug mode Nodo-Small
  \*********************************************************************************************/
 void PrintEvent(unsigned long Content, byte Direction, byte Port)
   {
@@ -421,7 +421,7 @@ void PrintWelcome(void)
   Serial.println(ProgmemString(Text_02));
 
   // print versienummer, unit en indien gevuld het ID
-  sprintf(str,"Version=3.0(Mini), Revision=%04d, ThisUnit=%d", NODO_BUILD, Settings.Unit);
+  sprintf(str,"Version=3.0(Small), Revision=%04d, ThisUnit=%d", NODO_BUILD, Settings.Unit);
   Serial.println(str);
 
   // Geef datum en tijd weer.

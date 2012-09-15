@@ -152,20 +152,22 @@ byte GetHTTPFile(char* filename)
 
   strcpy(HttpRequest,"?id=");
   strcat(HttpRequest,Settings.ID);  
-
   strcat(HttpRequest,"&file=");
   strcat(HttpRequest,filename);
 
   if(Settings.HTTP_Pin==VALUE_ON)
     {
     // pin-code genereren en meesturen in het http-request
-    sprintf(TempString,"%s:%s",HTTPCookie,Settings.Password);  
+    strcpy(TempString,HTTPCookie);
+    strcat(TempString,":");
+    strcat(TempString,Settings.Password);  
     md5(TempString);
     strcat(HttpRequest,"&key=");
-    strcat(HttpRequest,TempString);    
+    strcat(HttpRequest,TempString); 
     }
-    
+
   Ok=SendHTTPRequest(HttpRequest);
+
   free(HttpRequest);
   free(TempString);
   return Ok;
@@ -261,7 +263,6 @@ boolean SendHTTPRequest(char* Request)
                // 2 als &file= is gevonden en eerstvolgende lege regel moet worden gedetecteerd
                // 3 als lege regel is gevonden en file-capture moet starten.                
 
-  SelectSD(false); // Voor de zekerheid, mocht de chipselect niet goed zijn.
   
   #if TRACE
   Trace(12,0,0);
@@ -314,6 +315,7 @@ boolean SendHTTPRequest(char* Request)
   AddFileSDCard("TRACE.DAT", IPBuffer);
   #endif
 
+  SelectSD(false); // Voor de zekerheid, mocht de chipselect niet goed zijn.
   if(IPClient.connect(TempString,Settings.PortClient))
     {
     IPClient.getRemoteIP(ClientIPAddress);  
@@ -368,6 +370,11 @@ boolean SendHTTPRequest(char* Request)
               // pluk de filename uit het http request als die er is, dan de body text van het HTTP-request opslaan.
               if(ParseHTTPRequest(Request,"file", TempString))
                 {
+                 
+                #if TRACE
+                Trace(12,2,0);
+                #endif
+                
                 State=2;
                 TempString[8]=0; // voorkom dat filenaam meer dan acht posities heeft
                 strcpy(filename,TempString);                

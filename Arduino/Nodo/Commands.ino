@@ -865,6 +865,10 @@ int ExecuteLine(char *Line, byte Port)
 
     if(TempLogFile[0]!=0)
       {
+      #if TRACE
+      Trace(7,3,0);
+      #endif
+
       AddFileSDCard(TempLogFile,Line); // Extra logfile op verzoek van gebruiker
       }
     }
@@ -916,11 +920,21 @@ int ExecuteLine(char *Line, byte Port)
           // Maar niet met het SendTo commando, ander is de Slave niet bereikbaar!
           if(Cmd!=CMD_SEND && Settings.SendBusy==VALUE_ALL && !Busy.Sent)
             {
+
+            #if TRACE
+            Trace(7,4,0);
+            #endif
+
             TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_ON,0),VALUE_ALL);
             Busy.Sent=true;
             }
 
           // Hier worden de commando's verwerkt die een afwijkende MMI hebben.
+
+          #if TRACE
+          Trace(7,5,Cmd);
+          #endif
+
           switch(Cmd)
             {
             case CMD_LOCK: // Hier wordt de lock code o.b.v. het wachtwoord ingesteld. Alleen van toepassing voor de Mega.
@@ -1095,6 +1109,11 @@ int ExecuteLine(char *Line, byte Port)
       
             case CMD_FILE_GET_HTTP:
               {
+
+              #if TRACE
+              Trace(7,6,0);
+              #endif
+
               if(GetArgv(Command,TmpStr1,2))
                 {
                 Led(BLUE);
@@ -1365,7 +1384,7 @@ int ExecuteLine(char *Line, byte Port)
     
           if(State_EventlistWrite==2)
             {
-            a=v;
+            a=v;            
             if(!Eventlist_Write(EventlistWriteLine,event,a))
               {
               RaiseMessage(MESSAGE_06);
@@ -1415,6 +1434,10 @@ int ExecuteLine(char *Line, byte Port)
 
   free(TmpStr2);
   free(TmpStr1);
+
+  #if TRACE
+  Trace(7,999,0);
+  #endif
 
   return error;
   }

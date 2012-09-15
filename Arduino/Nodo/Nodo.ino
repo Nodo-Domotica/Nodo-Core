@@ -28,10 +28,10 @@
 #define NODO_MEGA          0
 #define USER_PLUGIN        0                                     // Plugin: 0 = niet compileren, 1 = wel compileren
 #define USER_PLUGIN_NAME   "UserPlugin"                          // Commando naam waarmee de plugin kan worden aangeroepen
-#define UNIT_NODO_MINI     15                                    // Default unitnummer van een Nodo-Mini na een reset van de Nodo.
+#define UNIT_NODO_SMALL    15                                    // Default unitnummer van een Nodo-Small na een reset van de Nodo.
 #define UNIT_NODO_MEGA     1                                     // Default unitnummer van een Nodo-Mega na een reset van de Nodo.
 
-// De code kan worden gecompileerd als een Nodo-Mini voor de Arduino met een ATMega328 processor
+// De code kan worden gecompileerd als een Nodo-Small voor de Arduino met een ATMega328 processor
 // of voor een Nodo-Mega voor een Arduino met een ATMega1280 of ATMega2560
 // Voor de Nodo-Mega variant bij onderstaande zeven regels de // remarks verwijderen.
 
@@ -70,7 +70,7 @@
 //#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
 
 #define SETTINGS_VERSION     10
-#define NODO_BUILD          430
+#define NODO_BUILD          431
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -670,7 +670,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define TERMINAL_TIMEOUT           300 // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
 #define COOKIE_REFRESH_TIME         60 // Tijd tussen automatisch verzenden van een nieuw Cookie als de beveiligde HTTP modus is inschakeld.
 
-#else // als het voor de Nodo-Mini variant is
+#else // als het voor de Nodo-Small variant is
 #define MACRO_EXECUTION_DEPTH        4 // maximale nesting van macro's.
 #define TIMER_MAX                    8 // aantal beschikbare timers voor de user, gerekend vanaf 1
 #define USER_VARIABLES_MAX           8 // aantal beschikbare gebruikersvariabelen voor de user.
@@ -680,7 +680,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define EVENTLIST_MAX              100 // aantal events dat de lijst bevat in het EEPROM geheugen. Iedere regel in de eventlist heeft 8 bytes nodig. eerste adres is 0
 #define WIRED_PORTS                  4 // aantal WiredIn/WiredOut poorten
 #define PIN_LED_RGB_R               13 // RGB-Led, aansluiting rood
-#define PIN_LED_RGB_B               13 // RGB-Led, aansluiting blauw, maar voor de Nodo mini is dit de eveneens de rode led.
+#define PIN_LED_RGB_B               13 // RGB-Led, aansluiting blauw, maar voor de Nodo Small is dit de eveneens de rode led.
 #define PIN_WIRED_IN_1               0 // Eerste WIRED input pin. Wired-IN loopt van A0 tot en met 3
 #define PIN_SPEAKER                  6 // luidspreker aansluiting
 #define PIN_IR_TX_DATA              11 // NIET VERANDEREN. Aan deze pin zit een zender IR-Led. (gebufferd via transistor i.v.m. hogere stroom die nodig is voor IR-led)
