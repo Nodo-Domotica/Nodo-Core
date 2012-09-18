@@ -1043,14 +1043,6 @@ void Led(byte Color)
 #endif
   }
   
-void PulseCounterISR()
-   {
-   // in deze interrupt service routine staat millis() stil. Dit is echter geen bezwaar voor de meting.
-   PulseTime=millis()-PulseTimePrevious;
-   PulseTimePrevious=millis();
-   PulseCount++;   
-   }     
-
 #if NODO_MEGA
  /**********************************************************************************************\
  * Voeg een regel toe aan de logfile.
