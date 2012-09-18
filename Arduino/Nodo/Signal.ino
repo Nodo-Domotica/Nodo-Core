@@ -117,6 +117,7 @@ boolean QueueSend(byte DestUnit)
     x=30;
   else
     x=Settings.WaitBusyAll;    
+
   NodoBusy(0L, x);
 
   delay(RECEIVER_STABLE);
@@ -132,6 +133,8 @@ boolean QueueSend(byte DestUnit)
   RawSendRF();
     
   // Verzend een aanloopsignaal bestaande uit reeks korte pulsen om slave tijd te geven klaar te staan voor ontvangst en voorkomen dat andere Nodo vrije ruimte in RF benut
+
+  noInterrupts();//???
   digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
   digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan
 
@@ -173,6 +176,7 @@ boolean QueueSend(byte DestUnit)
   delayMicroseconds(NODO_SPACE*10); 
   digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
   digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger weer aan.    
+  interrupts();
 
   // Queue is verzonden. Wacht op bevestiging van de slave.
   // Op dit moment kunnen er drie situaties voordoen:
@@ -198,122 +202,147 @@ boolean QueueSend(byte DestUnit)
   }
 #endif
 
-unsigned long GetEvent_IRRF(unsigned long *Content, int *Port)
+void GetIRSignal_ISR(void)
   {
-  unsigned long Checksum=0L;                           // Als gelijk aan Event dan tweemaal dezelfde code ontvangen: checksum funktie.
-  unsigned long StaySharpTimer=millis();                      // timer die start bij ontvangen van een signaal. Dwingt om enige tijd te luisteren naar dezelfde poort.
-  static unsigned long Previous, PreviousTimer=0L;
+  // als de Nodo alleen pulsen moet tellen
+  if(bitRead(HW_Config,HW_IR_PULSE))
+    {
+    // in deze interrupt service routine staat millis() stil. Dit is echter geen bezwaar voor de meting.
+    PulseTime=millis()-PulseTimePrevious;
+    PulseTimePrevious=millis();
+    PulseCount++;
+    return;
+    }
+    
+  if(RawSignalPtr->Fetched)
+    return;
   
-  // IR: *************** kijk of er data staat op IR en genereer een event als er een code ontvangen is **********************
-  do
+  if(FetchSignal(PIN_IR_RX_DATA,LOW,Settings.AnalyseTimeOut))// Als het een duidelijk IR signaal was.
     {
-    if((*portInputRegister(IRport)&IRbit)==0)// Kijk if er iets op de poort binnenkomt. (Pin=LAAG als signaal in de ether). 
-      {
-      if(FetchSignal(PIN_IR_RX_DATA,LOW,Settings.AnalyseTimeOut))// Als het een duidelijk IR signaal was
-        {
-        *Content=AnalyzeRawSignal(); // Bereken uit de tabel met de pulstijden de 32-bit code. 
-        if(*Content)// als AnalyzeRawSignal een event heeft opgeleverd
-          {
-          StaySharpTimer=millis()+SHARP_TIME;
-          if(PreviousTimer<millis())
-            Previous=0L;
-          if(Previous!=*Content)
-            {
-            RawSignal.Source=VALUE_SOURCE_IR;
-            *Port=VALUE_SOURCE_IR;
-            PreviousTimer=millis()+BLOK_REPEAT_TIME;
-            Previous=*Content;
+    RawSignalPtr->Source=VALUE_SOURCE_IR;
+    RawSignalPtr->Fetched=true;
+    }
+  }    
+    
+void GetRFSignal_ISR(void)
+  {
+  if(RawSignalPtr->Fetched)
+    return;
 
-            #if TRACE
-            Trace(2,1,0);
-            #endif
-
-            return true;
-            }
-          Checksum=*Content;
-          }
-        }
-      }
-    }while(StaySharpTimer>millis());
-
-  // RF: *************** kijk of er data start op RF en genereer een event als er een code ontvangen is **********************
-  do
+  if(FetchSignal(PIN_RF_RX_DATA,HIGH,Settings.AnalyseTimeOut))// Als het een duidelijk IR signaal was.
     {
-    if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
-      {
-      if(FetchSignal(PIN_RF_RX_DATA,HIGH,SIGNAL_TIMEOUT_RF))// Als het een duidelijk RF signaal was
-        {
-        *Content=AnalyzeRawSignal(); // Bereken uit de tabel met de pulstijden de 32-bit code. 
-        if(*Content)// als AnalyzeRawSignal een event heeft opgeleverd
-          {
-          StaySharpTimer=millis()+SHARP_TIME;          
-          if(*Content==Checksum) // tweemaal hetzelfde event ontvangen
-            {
-            if(PreviousTimer<millis())
-              Previous=0L;
-            if(Previous!=Checksum)
-              {
-              RawSignal.Source=VALUE_SOURCE_RF;
-              *Port=VALUE_SOURCE_RF;
-              PreviousTimer=millis()+BLOK_REPEAT_TIME;
-              Previous=Checksum;
+    RawSignalPtr->Source=VALUE_SOURCE_RF;
+    RawSignalPtr->Fetched=true;
+    }
+  }    
+    
 
-              #if TRACE
-              Trace(2,2,0);
-              #endif
-
-              return true;
-              }
-            }
-          Checksum=*Content;
-          }
-        }
-      }
-    }while(StaySharpTimer>millis());
-  return false;
+void RX_ISR(boolean State)
+  {
+  if(State)
+    {
+    // Schakel IRQ in voor ontvangst van IR signalen.
+    #if NODO_MEGA    
+    attachInterrupt(4,GetRFSignal_ISR,RISING); // RF: Mega pen 19
+    attachInterrupt(5,GetIRSignal_ISR,FALLING); // IR: Mega pen 18
+    #else
+    attachInterrupt(0,GetRFSignal_ISR,RISING); // RF: Uno pen 2
+    attachInterrupt(1,GetIRSignal_ISR,FALLING); // IR: Uno pen 3
+    #endif
+    }
+  else
+    {
+    #if NODO_MEGA
+    detachInterrupt(4);
+    detachInterrupt(5);
+    #else
+    detachInterrupt(0);
+    detachInterrupt(1);
+    #endif
+    }
   }
+
+unsigned long GetEvent_IRRF(unsigned long *EventCode, int *Port)
+  {
+  static unsigned long Timer=0;
+  
+  *EventCode=0;
+
+  // Als er recent een code ontvangen, dan wachten tot pulsen zijn verdwenen
+  if(Timer<millis())
+    RX_ISR(true);
+        
+  if(RawSignal.Fetched)
+    {
+    *EventCode=AnalyzeRawSignal(); // Bereken uit de tabel met de pulstijden de 32-bit code.     
+    if(*EventCode!=0)
+      {      
+      // wacht even op 2e signaal ter bevestiging / checksum
+      Timer=millis()+SIGNAL_TIMEOUT_CPL;
+      RawSignal.Fetched=false;      
+      while(Timer>millis() && !RawSignal.Fetched)
+        {
+        if(AnalyzeRawSignal()==*EventCode)
+          {
+          #if TRACE
+          Trace(2,RawSignal.Source,*EventCode);
+          #endif
+
+          RX_ISR(false); // Niet nodig om events te ontvangen via IR/IF voordat deze netjes is verwerkt.
+          *Port=RawSignal.Source;
+          break;
+          }
+        else
+          *EventCode=0;      
+        }
+      }
+    }
+  return *EventCode!=0;
+  }
+
 
 unsigned long AnalyzeRawSignal(void)
   {
   unsigned long Code=0L;
   
-  if(RawSignal.Number==RAW_BUFFER_SIZE)return 0L;     // Als het signaal een volle buffer beslaat is het zeer waarschijnlijk ruis.
+  if(RawSignal.Number==RAW_BUFFER_SIZE)return 0L;     // Als het signaal een volle buffer beslaat is het zeer waarschijnlijk ruis of ongeldig signaal
 
-  if(!(Code=RawSignal_2_Nodo()))
-    if(!(Code=RawSignal_2_KAKU()))
-      if(!(Code=RawSignal_2_NewKAKU()))
-        Code=RawSignal_2_32bit();
+  if(!(Code=RawSignal_2_Nodo()))           // Is het een Nodo signaal?
+    if(!(Code=RawSignal_2_KAKU()))         // Of een KAKU?
+      if(!(Code=RawSignal_2_NewKAKU()))    // Of een NewKAKU?
+        Code=RawSignal_2_32bit();          // Geen Nodo, KAKU of NewKAKU code. Genereer dan uit het onbekende signaal een (vrijwel) unieke 32-bit waarde.
       
-  return Code;   // Geen Nodo, KAKU of NewKAKU code. Genereer uit het onbekende signaal een (vrijwel) unieke 32-bit waarde uit.  
+  return Code;   
   }
 
 /*********************************************************************************************\
 * Deze routine berekent de uit een RawSignal een NODO code
 * Geeft een false retour als geen geldig NODO signaal
 \*********************************************************************************************/
-unsigned long RawSignal_2_Nodo(void)
+unsigned long RawSignal_2_Nodo(void)//???@1
   {
   unsigned long bitstream=0L;
   int x,y,z;
-  
-  // nieuwe NODO signaal bestaat altijd uit start bit + 32 bits. Ongelijk aan 66, dan geen Nodo signaal
-  if (RawSignal.Number!=66)return 0L;
 
-  x=3; // 0=aantal, 1=startpuls, 2=space na startpuls, 3=1e pulslengte
-  do{
-    if(RawSignal.Pulses[x]>NODO_PULSE_MID)
+  // NODO signaal bestaat uit start bit + 32 bits. Als ongelijk aan 66, dan geen Nodo signaal
+  if(RawSignal.Number!=66)return 0L;
+
+  // 0=aantal, 1=startpuls, 2=space na startpuls, 3=1e pulslengte. Dus start loop met drie.
+  z=0;
+  for(x=3;x<=RawSignal.Number;x+=2)
+    {
+    if(RawSignal.Pulses[x]>NODO_PULSE_MID)      
       bitstream|=(long)(1L<<z); //LSB in signaal wordt  als eerste verzonden
-    x+=2;
     z++;
-    }while(x<RawSignal.Number);
+    }
 
-  if(((bitstream>>28)&0xf) == SIGNAL_TYPE_NODO)// is het type-nibble uit het signaal gevuld met de aanduiding NODO ?  
+  if(((bitstream>>28)&0xf) == SIGNAL_TYPE_NODO)// is het type-nibble uit het signaal gevuld met de aanduiding NODO.
     {
     RawSignal.Type=SIGNAL_TYPE_NODO;
     return bitstream;
     }
-  else
-    return 0L;  
+
+  return 0L;  
   }
 
 
@@ -452,6 +481,8 @@ void RawSendRF(void)
   digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
   digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan
   delay(5);// kleine pause om de zender de tijd te geven om stabiel te worden 
+
+  noInterrupts();
   
   for(byte y=0; y<Settings.TransmitRepeatRF; y++) // herhaal verzenden RF code
     {
@@ -464,6 +495,8 @@ void RawSendRF(void)
       delayMicroseconds(RawSignal.Pulses[x++]); 
       }
     }
+  interrupts();
+
   digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
   digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger weer aan.
   }
@@ -570,21 +603,21 @@ boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
   do{// lees de pulsen in microseconden en plaats deze in een tijdelijke buffer
     PulseLength=WaitForChangeState(DataPin, StateSignal, TimeOut);
     if(PulseLength<MIN_PULSE_LENGTH)return false;
-    RawSignal.Pulses[RawCodeLength++]=PulseLength;
+    RawSignalPtr->Pulses[RawCodeLength++]=PulseLength;
     PulseLength=WaitForChangeState(DataPin, !StateSignal, TimeOut);
-    RawSignal.Pulses[RawCodeLength++]=PulseLength;
+    RawSignalPtr->Pulses[RawCodeLength++]=PulseLength;
     }while(RawCodeLength<RAW_BUFFER_SIZE && PulseLength!=0);// Zolang nog niet alle bits ontvangen en er niet vroegtijdig een timeout plaats vindt
 
   if(RawCodeLength>=MIN_RAW_PULSES)
     {
-    RawSignal.Number=RawCodeLength-1;
+    RawSignalPtr->Number=RawCodeLength-1;
     if(DataPin==PIN_IR_RX_DATA)
       bitWrite(HW_Config,HW_IR_RX,1);
     if(DataPin==PIN_RF_RX_DATA)
       bitWrite(HW_Config,HW_RF_RX,1);
     return true;
     }
-  RawSignal.Number=0;
+  RawSignalPtr->Number=0;
   return false;
   }
   

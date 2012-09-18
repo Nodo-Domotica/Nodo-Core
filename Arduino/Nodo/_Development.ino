@@ -2,15 +2,12 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- Issue 442: RawSignalSend werkt niet
-- In http request wordt "Build=nnn" teruggegeven.
-- Diverse kleine (potentiële) bugfixes
-- Uitbreiding van de trace faciliteit.
-- FileShow geeft default de laatste 10KByte aan regels, tenzij Par2=All
-- Nodo-Small verzendt geen Message 4 ("Error: Event queue overflow.") meer. Dit verstoort en kan toch niet zinvol worden verwerkt.
+- 
 
 Known Errors / ToDo:
-- Ontvangen IR: Niet alle codes worden goed ontvangen. Probleem nog analyseren
+- testen pulsenteller
+- Wat is de invloed van IRQ-driven ontvangen van signalen voor tellen van pulsen. Testen.
+- Wat is de invloed van IRQ-driven ontvangen van signalen op WaitFreeRF()
 - SendBusy op de Master zet de slaves tijdelijk op onbereikbaar. Hierdoor werkt SendTo niet
 - In geval van onbereikbare Nodo-Small: Hoe resetten? verbinden van in/out poorten, ????
 - Status All uitvraag bij een Small levert: [Input=File, Unit=15, Event=Debug] Geen geldig event
