@@ -2,16 +2,17 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- 
+- Entrypoint voor UserPlugin_Receive aangepast.
+- Ontvangst van IR/RF event driven gemaakt
+- Extra logging: IP adres ven server waar HTTP-request naar verzoden is.
+- <br> verwijderd uit HTTP-body
 
 Known Errors / ToDo:
-- testen pulsenteller
-- Wat is de invloed van IRQ-driven ontvangen van signalen voor tellen van pulsen. Testen.
+- testen pulsenteller !!! Nog op juiste werking getest!
 - Wat is de invloed van IRQ-driven ontvangen van signalen op WaitFreeRF()
 - SendBusy op de Master zet de slaves tijdelijk op onbereikbaar. Hierdoor werkt SendTo niet
 - In geval van onbereikbare Nodo-Small: Hoe resetten? verbinden van in/out poorten, ????
 - Status All uitvraag bij een Small levert: [Input=File, Unit=15, Event=Debug] Geen geldig event
-- WaitFreeRF: Fijnafstemming komt later nog o.b.v. Hans zijn praktijk situatie
 - Vreemde weergave events: Internal=System
 
 Aanpassingen t.o.v. Nodo Due:

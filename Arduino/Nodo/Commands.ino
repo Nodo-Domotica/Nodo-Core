@@ -779,7 +779,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       Led(BLUE);
       PrintTerminal(ProgmemString(Text_07));
       RawSignal.Key=Par1;
-      break;                  
+      break;              
 
     case CMD_RAWSIGNAL_SEND:
       if(Par1!=0)

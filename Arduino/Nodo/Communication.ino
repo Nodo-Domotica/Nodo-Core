@@ -319,6 +319,11 @@ boolean SendHTTPRequest(char* Request)
   if(IPClient.connect(TempString,Settings.PortClient))
     {
     IPClient.getRemoteIP(ClientIPAddress);  
+
+    #if TRACE
+    AddFileSDCard("TRACE.DAT", ip2str(ClientIPAddress));
+    #endif
+
     IPClient.println(IPBuffer);
     strcpy(IPBuffer,"Host: ");
     strcat(IPBuffer,TempString);
@@ -612,18 +617,18 @@ void ExecuteIP(void)
                     else
                       {
                       TmpStr1[y]=0;
-                      y=0;
-                      digitalWrite(EthernetShield_CS_SDCard,HIGH);
-                      digitalWrite(Ethernetshield_CS_W5100, LOW);
+                      y=0;                    
+                      SelectSD(false);
+                      
                       if(RequestFile)
                         {
-                        IPClient.println("<br />");
+                        IPClient.println();//??? Verzoek van Martin "<br />" verwijderd
                         RequestFile=false;// gebruiken we even als vlag om de eerste keer de regel met asteriks af te drukken omdat deze variabele toch verder niet meer nodig is
                         }
                       IPClient.print(TmpStr1);
-                      IPClient.println("<br />");
-                      digitalWrite(Ethernetshield_CS_W5100, HIGH);
-                      digitalWrite(EthernetShield_CS_SDCard,LOW);
+                      IPClient.println();//??? Verzoek van Martin "<br />" verwijderd
+
+                      SelectSD(true);
                       }
                     }
                   dataFile.close();
