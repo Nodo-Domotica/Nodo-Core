@@ -30,7 +30,7 @@
 #define NODO_MEGA          1                                     // 0 = SMALL, 1 = MEGA
 
 // Voor de Nodo-Mega variant bij onderstaande regels de // tekens op positie 1 en 2 verwijderen.
-#define TRACE              0
+#define TRACE              1
 #include <SD.h>
 #include <EthernetNodo.h>
 #include <SPI.h>
@@ -67,7 +67,7 @@
 //#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
 
 #define SETTINGS_VERSION     10
-#define NODO_BUILD          0
+#define NODO_BUILD          433
 #include <EEPROM.h>
 #include <Wire.h>
 
