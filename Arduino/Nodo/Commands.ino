@@ -377,8 +377,9 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
     case CMD_PULSE_VARIABLE:
       a=0;
+
       // eerst een keer dit commando uitvoeren voordat de teller gaat lopen.
-      bitWrite(HW_Config,HW_IR_PULSE,true);
+      attachInterrupt(PULSE_IRQ,PulseCounterISR,FALLING); // IRQ behorende bij PIN_IR_RX_DATA
 
 #if NODO_MEGA
       if(Settings.Debug==VALUE_ON)
@@ -779,7 +780,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       Led(BLUE);
       PrintTerminal(ProgmemString(Text_07));
       RawSignal.Key=Par1;
-      break;              
+      break;                  
 
     case CMD_RAWSIGNAL_SEND:
       if(Par1!=0)

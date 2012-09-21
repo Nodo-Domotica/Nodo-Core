@@ -1,4 +1,4 @@
-#if USER_PLUGIN
+
 
  /*********************************************************************************************\
  * Hier kan de gebruiker zelf een stuk code plaatsen.
@@ -128,4 +128,4 @@ void UserPlugin_Periodically()
 //  
 //  return;
   }
-#endif  
+  

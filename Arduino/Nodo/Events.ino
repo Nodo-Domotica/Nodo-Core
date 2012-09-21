@@ -106,16 +106,26 @@ boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, un
   SerialHold(true);  // als er een regel ontvangen is, dan binnenkomst van signalen stopzetten met een seriele XOFF
 
   Led(RED); // LED aan als er iets verwerkt wordt  
+
+  #if TRACE
+  Trace(17,0,0);
+  #endif
   
+  #if USER_PLUGIN
+  if(!UserPlugin_Receive(IncommingEvent))
+    return true;
+  #endif
   
   #if NODO_MEGA
+
   if(FileWriteMode!=0)
     return true;
 
   CheckRawSignalKey(&IncommingEvent); // check of er een RawSignal key op de SDCard aanwezig is en vul met Nodo Event. Call by reference!
 
   // Als de RAW pulsen worden opgevraagd door de gebruiker...
-  if(RawSignal.Key!=-1 && IncommingEvent)
+  // dan de pulsenreeks weergeven en er verder niets mee doen
+  if(RawSignal.Key!=-1)
     {
     if(SaveRawSignal(RawSignal.Key))
       {
@@ -148,6 +158,10 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
   byte Cmd=(IncommingEvent>>16)&0xff; // Command
   byte Par1=(IncommingEvent>>8 )&0xff; // Par1
   byte Par2=(IncommingEvent    )&0xff; // Par2
+
+  #if TRACE
+  Trace(18,0,0);
+  #endif
 
   if(Settings.Lock)
     {
@@ -184,17 +198,9 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
       }
     }
 
-  #if TRACE
-  Trace(18,0,0);
-  #endif
-
-  #if USER_PLUGIN
-  if(!UserPlugin_Receive(IncommingEvent))
-    return true;
-  #endif
-
   // print regel. Als Debug aan, dan alle regels die vanuit de eventlist worden verwerkt weergeven
-  PrintEvent(IncommingEvent,Direction,Port);  // geef event weer op Serial
+//???  if(ExecutionDepth==0 || Settings.Debug==VALUE_ON)
+    PrintEvent(IncommingEvent,Direction,Port);  // geef event weer op Serial
 
   // Werk de status bij van busy units en eventueel wachten tot alle vrij zijn.
   NodoBusy(IncommingEvent,Settings.WaitBusyAll);          
