@@ -2,10 +2,7 @@
 /**************************************************************************************************************************\
 
 Aanpassingen:
-- Entrypoint voor UserPlugin_Receive aangepast.
-- Ontvangst van IR/RF event driven gemaakt
-- Extra logging: IP adres ven server waar HTTP-request naar verzoden is.
-- <br> verwijderd uit HTTP-body
+-
 
 Known Errors / ToDo:
 - testen pulsenteller !!! Nog op juiste werking getest!

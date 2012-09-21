@@ -1,13 +1,19 @@
 
-/****************************************************************************************************************************\
+/****************************************************************************************************************************\ 
 * Arduino project "Nodo" © Copyright 2012 Paul Tonkes 
-* This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License 
-* as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
 * 
-* This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty 
-* of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
 *
-* You received a copy of the GNU General Public License along with this program in tab '_COPYING'.
+* You received a copy of the GNU General Public License
+* along with this program in tab '_COPYING'.
+*
 ******************************************************************************************************************************
 *
 * Voor toelichting op de licentievoorwaarden zie    : http://www.gnu.org/licenses
@@ -19,28 +25,23 @@
 *
 /****************************** Door gebruiker in te stellen: ***************************************************************/
 
-/* instelling van default unit nummer en MAC address (dat laatste alleen voor de Mega van toepassing): **********************/
+#define NODO_MEGA          0
+#define USER_PLUGIN        0                                     // Plugin: 0 = niet compileren, 1 = wel compileren
+#define USER_PLUGIN_NAME   "UserPlugin"                          // Commando naam waarmee de plugin kan worden aangeroepen
 #define UNIT_NODO_SMALL    15                                    // Default unitnummer van een Nodo-Small na een reset van de Nodo.
 #define UNIT_NODO_MEGA     1                                     // Default unitnummer van een Nodo-Mega na een reset van de Nodo.
-#define NODO_MAC           0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF    // Default Nodo MACadres (alleen voor de Nodo-Mega)
 
-/* Keuze tussen SMALL of MEGA: **********************************************************************************************/
 // De code kan worden gecompileerd als een Nodo-Small voor de Arduino met een ATMega328 processor
 // of voor een Nodo-Mega voor een Arduino met een ATMega1280 of ATMega2560
-#define NODO_MEGA            0
+// Voor de Nodo-Mega variant bij onderstaande zeven regels de // remarks verwijderen.
 
-
-// Voor de Nodo-Mega variant bij onderstaande regels de // tekens op positie 1 en 2 verwijderen.
 #define NODO_MEGA          1
-#define TRACE              0                                     // Sla debug informatie op SDCard op in bestand TRACE.DAT. Let op, maakt de Nodo traag.
-#define ETHERNET           1                                     // EthernetShield: 0 = afwezig, 1 = aanwezig
+#define TRACE              1
 #include <SD.h>
 #include <EthernetNodo.h>
 #include <SPI.h>
-
-/* User plugin opties: ******************************************************************************************************/
-#define USER_PLUGIN        0                                     // Plugin: 0 = niet compileren, 1 = wel compileren
-#define USER_PLUGIN_NAME   "UserPlugin"                          // Commando naam waarmee de plugin kan worden aangeroepen
+#define ETHERNET           1                                     // EthernetShield: 0 = afwezig, 1 = aanwezig
+#define NODO_MAC           0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF    // Default Nodo MACadres
 
 
 // Onderstaand de formules die gebruikt worden voor omrekening van pulsen naar analoge waarden.
@@ -55,9 +56,9 @@
 // PulseCount = Aantal pulsen tussen twee metingen.
 
 #define FORMULA_1            a = 3600000/PulseTime;            /* 1000 pulsen in een uur = 1KWh */
-#define FORMULA_2            a = 2160000/PulseTime;            /* 600 pulsen per uur = 1KWh */
-#define FORMULA_3            a = PulseCount; PulseCount=0;
-#define FORMULA_4            a = PulseCount / 10; PulseCount=0;
+#define FORMULA_2            a = PulseCount; PulseCount=0;
+#define FORMULA_3            a = PulseCount / 10; PulseCount=0;
+#define FORMULA_4            a = 0;
 #define FORMULA_5            a = 0;
 #define FORMULA_6            a = 0;
 #define FORMULA_7            a = 0;
@@ -69,7 +70,7 @@
 //#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
 
 #define SETTINGS_VERSION     10
-#define NODO_BUILD          434
+#define NODO_BUILD          431
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -102,6 +103,7 @@ prog_char PROGMEM Text_27[] = "raw/raw"; // Directory op de SDCard voor opslag v
 prog_char PROGMEM Text_28[] = "raw/key"; // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_29[] = "Queue: Finished.";
 prog_char PROGMEM Text_30[] = "Terminal connection closed.";
+
 
 // Commando's:
 prog_char PROGMEM Cmd_000[]=""; // dummy. Niet gebruiken
@@ -610,7 +612,6 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define ENDSIGNAL_TIME            1500 // Dit is de tijd in milliseconden waarna wordt aangenomen dat het ontvangen één reeks signalen beëindigd is
 #define SIGNAL_TIMEOUT_RF         5000 // na deze tijd in uSec. wordt één RF signaal als beëindigd beschouwd.
 #define SIGNAL_TIMEOUT_IR        10000 // na deze tijd in uSec. wordt één IR signaal als beëindigd beschouwd.
-#define SIGNAL_TIMEOUT_CPL        1000 // tijd waarna één compleet signaal als beëindigd wordt beschouwd. Te kort leidt tot herhalingen of foutieve codes, te lang zorgt ervoor dat codesniet worden opgepikt.//???
 #define TX_REPEATS                   5 // aantal herhalingen van een code binnen één RF of IR reeks
 #define MIN_PULSE_LENGTH           100 // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define MIN_RAW_PULSES              16 // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
@@ -632,7 +633,6 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define HW_CLOCK        5
 #define HW_RF_RX        6
 #define HW_IR_RX        7
-#define HW_IR_PULSE     8
 
 #if NODO_MEGA // Definities voor de Nodo-Mega variant.
 #define MACRO_EXECUTION_DEPTH       10 // maximale nesting van macro's.
@@ -791,15 +791,12 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight; int Yea
 struct RawsignalStruct
   {
   unsigned int Pulses[RAW_BUFFER_SIZE+2];                   // Tabel met de gemeten pulsen in microseconden. eerste waarde [0] wordt NIET gebruikt. (legacy redenen).
-  boolean Fetched;                                          // Vlag die aangeeft of er een nieuw signaal is ontvangen.
   byte Source;                                              // Bron waar het signaal op is binnengekomen.
   int Number;                                               // aantal bits, maal twee omdat iedere bit een pulse en een space heeft.
-  int Key;                                                  // sleutel waaronder de pulsenreeks op SDCard opgeslgen moet worden.
+  int Key;                                                 // sleutel waaronder de pulsenreeks op SDCard opgeslgen moet worden.
   byte Type;                                                // Type signaal dan ontvangen is.
   }RawSignal;
-
-volatile struct RawsignalStruct *RawSignalPtr=&RawSignal; // Pointer naar de struct om deze foutloos binnen de IST te kunnen gebruiken.
-
+  
 void setup() 
   {    
   byte x;
@@ -817,7 +814,7 @@ void setup()
   digitalWrite(PIN_IR_TX_DATA,LOW);   // Zet de IR zenders initiëel uit! Anders mogelijk overbelasting !
   digitalWrite(PIN_IR_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
   digitalWrite(PIN_RF_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
-  digitalWrite(PIN_RF_RX_VCC,HIGH);   // Spanning naar de RF ontvanger aan.
+  digitalWrite(PIN_RF_RX_VCC,HIGH);   // Spanning naar de RF ontvanger aan
 
 #if NODO_MEGA
   pinMode(PIN_LED_RGB_G,  OUTPUT);
@@ -832,7 +829,6 @@ void setup()
   Led(BLUE);
 
   bitWrite(HW_Config,HW_BOARD_MEGA,NODO_MEGA);
-
   Wire.begin();        // zet I2C communicatie gereed voor uitlezen van de realtime clock.
   Serial.begin(BAUD);  // Initialiseer de seriële poort
 
@@ -888,10 +884,7 @@ void setup()
    
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
   SelectSD(false);
-
-  #if ETHERNET
   bitWrite(HW_Config,HW_ETHERNET,ETHERNET);//??? nog slim detecteren
-  #endif
 
   // Initialiseer ethernet device
   if(bitRead(HW_Config,HW_ETHERNET))
@@ -931,10 +924,6 @@ void setup()
   TransmitCode(command2event(Settings.Unit, CMD_BOOT_EVENT,Settings.Unit,0),VALUE_ALL);  
   ProcessEvent(command2event(Settings.Unit, CMD_BOOT_EVENT,Settings.Unit,0),VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM,0,0);  // Voer het 'Boot' event uit.
   bitWrite(HW_Config,HW_SERIAL,0); // Serial weer uitschakelen.
-
-  // Zet Nodo gereed voor ontvangst IR / RF
-  RawSignal.Fetched=false;      
-  RX_ISR(true);
   }
 
 
@@ -973,7 +962,6 @@ void loop()
     if(GetEvent_IRRF(&Content,&x)) 
       {
       ProcessEvent(Content,VALUE_DIRECTION_INPUT,x,0,0); // verwerk binnengekomen event.
-      RawSignal.Fetched=false;
       }
       
     // 1: niet tijdkritische processen die periodiek uitgevoerd moeten worden
