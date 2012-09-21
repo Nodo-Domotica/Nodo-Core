@@ -815,7 +815,7 @@ void Beep(int frequency, int duration)//Herz,millisec
   long halfperiod=500000L/frequency;
   long loops=(long)duration*frequency/(long)1000;
   
-  noInterrupts();
+  noInterrupts();//???
   for(loops;loops>0;loops--) 
     {
     digitalWrite(PIN_SPEAKER, HIGH);

@@ -134,7 +134,6 @@ boolean QueueSend(byte DestUnit)
     
   // Verzend een aanloopsignaal bestaande uit reeks korte pulsen om slave tijd te geven klaar te staan voor ontvangst en voorkomen dat andere Nodo vrije ruimte in RF benut
 
-  noInterrupts();//???
   digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
   digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan
 
@@ -176,7 +175,6 @@ boolean QueueSend(byte DestUnit)
   delayMicroseconds(NODO_SPACE*10); 
   digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
   digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger weer aan.    
-  interrupts();
 
   // Queue is verzonden. Wacht op bevestiging van de slave.
   // Op dit moment kunnen er drie situaties voordoen:
@@ -204,15 +202,10 @@ boolean QueueSend(byte DestUnit)
 
 void GetIRSignal_ISR(void)
   {
-  // als de Nodo alleen pulsen moet tellen
-  if(bitRead(HW_Config,HW_IR_PULSE))
-    {
-    // in deze interrupt service routine staat millis() stil. Dit is echter geen bezwaar voor de meting.
-    PulseTime=millis()-PulseTimePrevious;
-    PulseTimePrevious=millis();
-    PulseCount++;
-    return;
-    }
+  // in deze interrupt service routine staat millis() stil. Dit is echter geen bezwaar voor de meting.
+  PulseTime=millis()-PulseTimePrevious;
+  PulseTimePrevious=millis();
+  PulseCount++;
     
   if(RawSignalPtr->Fetched)
     return;
@@ -269,9 +262,9 @@ unsigned long GetEvent_IRRF(unsigned long *EventCode, int *Port)
   *EventCode=0;
 
   // Als er recent een code ontvangen, dan wachten tot pulsen zijn verdwenen
-  if(Timer<millis())
-    RX_ISR(true);
-        
+  if(Timer>millis() && RawSignal.Fetched)
+    return 0L;
+
   if(RawSignal.Fetched)
     {
     *EventCode=AnalyzeRawSignal(); // Bereken uit de tabel met de pulstijden de 32-bit code.     
@@ -288,7 +281,6 @@ unsigned long GetEvent_IRRF(unsigned long *EventCode, int *Port)
           Trace(2,RawSignal.Source,*EventCode);
           #endif
 
-          RX_ISR(false); // Niet nodig om events te ontvangen via IR/IF voordat deze netjes is verwerkt.
           *Port=RawSignal.Source;
           break;
           }
@@ -495,10 +487,9 @@ void RawSendRF(void)
       delayMicroseconds(RawSignal.Pulses[x++]); 
       }
     }
-  interrupts();
-
   digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
   digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger weer aan.
+  interrupts();
   }
 
 
@@ -541,14 +532,12 @@ void RawSendIR(void)
         delayMicroseconds(12);
         __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");// per nop 62.6 nano sec. @16Mhz
 
-
         // Laag
         #if NODO_MEGA
         bitWrite(PORTH,0, LOW);
         #else
         bitWrite(PORTB,3, LOW);
         #endif
-
 
         delayMicroseconds(12);
         __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");// per nop 62.6 nano sec. @16Mhz

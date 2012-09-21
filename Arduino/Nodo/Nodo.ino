@@ -27,14 +27,16 @@
 /* Keuze tussen SMALL of MEGA: **********************************************************************************************/
 // De code kan worden gecompileerd als een Nodo-Small voor de Arduino met een ATMega328 processor
 // of voor een Nodo-Mega voor een Arduino met een ATMega1280 of ATMega2560
-#define NODO_MEGA          1                                     // 0 = SMALL, 1 = MEGA
+#define NODO_MEGA            0
+
 
 // Voor de Nodo-Mega variant bij onderstaande regels de // tekens op positie 1 en 2 verwijderen.
-#define TRACE              1
+#define NODO_MEGA          1
+#define TRACE              0                                     // Sla debug informatie op SDCard op in bestand TRACE.DAT. Let op, maakt de Nodo traag.
+#define ETHERNET           1                                     // EthernetShield: 0 = afwezig, 1 = aanwezig
 #include <SD.h>
 #include <EthernetNodo.h>
 #include <SPI.h>
-#define ETHERNET           1                                     // EthernetShield: 0 = afwezig, 1 = aanwezig
 
 /* User plugin opties: ******************************************************************************************************/
 #define USER_PLUGIN        0                                     // Plugin: 0 = niet compileren, 1 = wel compileren
@@ -67,7 +69,7 @@
 //#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
 
 #define SETTINGS_VERSION     10
-#define NODO_BUILD          433
+#define NODO_BUILD          434
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -971,6 +973,7 @@ void loop()
     if(GetEvent_IRRF(&Content,&x)) 
       {
       ProcessEvent(Content,VALUE_DIRECTION_INPUT,x,0,0); // verwerk binnengekomen event.
+      RawSignal.Fetched=false;
       }
       
     // 1: niet tijdkritische processen die periodiek uitgevoerd moeten worden
