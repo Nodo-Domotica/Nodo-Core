@@ -315,7 +315,7 @@ boolean SendHTTPRequest(char* Request)
   AddFileSDCard("TRACE.DAT", IPBuffer);
   #endif
 
-  SelectSD(false); // Voor de zekerheid, mocht de chipselect niet goed zijn.
+  SelectSD(false); // Voor de zekerheid, mocht de chipselect niet goed staan.
   if(IPClient.connect(TempString,Settings.PortClient))
     {
     IPClient.getRemoteIP(ClientIPAddress);  
