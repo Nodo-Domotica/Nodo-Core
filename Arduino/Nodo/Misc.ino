@@ -10,8 +10,8 @@
 boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEvent)
   {
   unsigned long TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
-  unsigned long Event;
-  int Port,x,y,z;
+  unsigned long Event=0L;
+  int x,y,z,Port;
   
   Led(BLUE);
   Queue.Position=0;    
@@ -34,8 +34,9 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
       #endif
       break; // Geen Busy Nodo meer
       }
+
     if(GetEvent_IRRF(&Event,&Port))
-      {
+      {      
       TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
 
       #if TRACE
@@ -43,6 +44,9 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
       #endif
 
       #if NODO_MEGA
+      
+      CheckRawSignalKey(&Event); // check of er een RawSignal key op de SDCard aanwezig is en vul met Nodo Event. Call by reference!
+
       PrintEvent(Event,Port,VALUE_DIRECTION_INPUT);
       #endif
         
@@ -815,7 +819,7 @@ void Beep(int frequency, int duration)//Herz,millisec
   long halfperiod=500000L/frequency;
   long loops=(long)duration*frequency/(long)1000;
   
-  noInterrupts();
+  noInterrupts();//???
   for(loops;loops>0;loops--) 
     {
     digitalWrite(PIN_SPEAKER, HIGH);
@@ -1043,14 +1047,6 @@ void Led(byte Color)
 #endif
   }
   
-void PulseCounterISR()
-   {
-   // in deze interrupt service routine staat millis() stil. Dit is echter geen bezwaar voor de meting.
-   PulseTime=millis()-PulseTimePrevious;
-   PulseTimePrevious=millis();
-   PulseCount++;   
-   }     
-
 #if NODO_MEGA
  /**********************************************************************************************\
  * Voeg een regel toe aan de logfile.
@@ -1441,4 +1437,11 @@ void Trace(int Func, int Pos, unsigned long Value)
   }
 #endif
   
+void PulseCounterISR()
+   {
+   // in deze interrupt service routine staat millis() stil. Dit is echter geen bezwaar voor de meting.
+   PulseTime=millis()-PulseTimePrevious;
+   PulseTimePrevious=millis();
+   PulseCount++;   
+   }     
 
