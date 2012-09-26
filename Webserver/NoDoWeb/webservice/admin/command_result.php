@@ -17,12 +17,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
 
-require_once('../connections/db_connection.php'); 
-require_once('../include/auth.php');
-require_once('../include/user_settings.php');
+require_once('../../connections/db_connection.php'); 
+require_once('../../include/auth.php');
+require_once('../../include/user_settings.php');
 
 //Alleen events versturen indien de Nodo online is
 if ($heartbeat == "lost") {die('No Connection to Nodo!!!'); }
+if ($busy == "1") {die('Nodo busy!!!'); }
 
 
 /************************************************************************************************
@@ -43,7 +44,8 @@ function HTTPRequest($Url){
     curl_setopt($ch, CURLOPT_HEADER, 0);
 	curl_setopt($ch, CURLOPT_PORT, $nodo_port);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+	curl_setopt($ch,CURLOPT_TIMEOUT,5);
+	curl_setopt($ch, CURLOPT_TIMEOUT, 60);
  
     $output = curl_exec($ch);
     curl_close($ch);
@@ -72,10 +74,10 @@ $file="cmdres";
 				$year_par1 = substr(date("Y"), 0, 2);
 				$year_par2 = substr(date("Y"), 2, 2);
 				
-				$date_par1 = date("d");
-				$date_par2 = date("m");
+				$date_par1 = date("j");
+				$date_par2 = date("n");
 				
-				$time_par1 = date("H");
+				$time_par1 = date("G");
 				$time_par2 = 1*date("i"); //*1 zorgt ervoor dat de voorloop nul wegvalt.
 								
 				$dow_par1 = date("w")+1; // php zondag = 0 Nodo gaat uit van 1
@@ -219,7 +221,7 @@ if (isset($script)){
 			//<br /> aan het einde van de regels verwijderen
 			//$script[$i] = str_replace("<br />","",$script[$i]);
 			
-			echo $script[$i];
+			echo $script[$i]."<BR \>";
 		
 	}
 	

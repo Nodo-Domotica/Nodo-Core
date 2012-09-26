@@ -109,7 +109,7 @@ if (isset($_POST['submit']))
 		<h1>Nodo Web App lost password</h1>
 		<div data-role="navbar" data-iconpos="top">
 		<ul>
-			<li><a href="login.php" data-icon="star"  data-ajax="false">Login</a></li>
+			<li><a href="index.html" data-icon="star"  data-ajax="false">Login</a></li>
 		</ul>
 	</div>
 	</div><!-- /header -->

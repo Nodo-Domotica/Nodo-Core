@@ -15,39 +15,45 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
-function Get_Values()
-//Lees waarden uit
-			{
-				var
-					$http,
-					$self = arguments.callee;
-
-				if (window.XMLHttpRequest) {
-					$http = new XMLHttpRequest();
-				} else if (window.ActiveXObject) {
-					try {
-						$http = new ActiveXObject('Msxml2.XMLHTTP');
-					} catch(e) {
-						$http = new ActiveXObject('Microsoft.XMLHTTP');
-					}
-				}
-
-				if ($http) {
-					$http.onreadystatechange = function()
+	
+		
+		function send_event(event,type)
+		//stuur opdrachten door naar de nodo
 					{
-						if (/4|^complete$/.test($http.readyState)) {
-							eval($http.responseText);
-							
-							setTimeout(function(){$self();}, 2000);
+						var
+							$http,
+							$self = arguments.callee;
+
+						if (window.XMLHttpRequest) {
+							$http = new XMLHttpRequest();
+						} else if (window.ActiveXObject) {
+							try {
+								$http = new ActiveXObject('Msxml2.XMLHTTP');
+							} catch(e) {
+								$http = new ActiveXObject('Microsoft.XMLHTTP');
+							}
 						}
-					};
-					$http.open('GET', 'get_values.php' + '?' + new Date().getTime(), true);
-					$http.send(null);
-				}
 
-			}
+						if ($http) {
+
+				 
+						$http.open('GET', 'webservice/forward_http.php' + '?event=' + event + '&unique=' + new Date().getTime(), true);
+						
+						
+						$http.send(null);
+							if (type == 'device'){
+							//status van een device na 1 seconde ophalen
+							//alert (type);
+							setTimeout(function(){Device_State()},1000);
+							}
+							if (type == 'value'){
+							//status van een device na 1 seconde ophalen
+							//alert (type);
+							setTimeout(function(){getValueState()},1000);
+							}
+						}
+
+					}
 
 
-
-
- 
+	

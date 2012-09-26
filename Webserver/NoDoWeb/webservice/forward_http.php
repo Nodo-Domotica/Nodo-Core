@@ -16,9 +16,9 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
-require_once('connections/db_connection.php'); 
-require_once('include/auth.php');
-require_once('include/user_settings.php');
+require_once('../connections/db_connection.php'); 
+require_once('../include/auth.php');
+require_once('../include/user_settings.php');
 
 //Alleen events versturen indien de Nodo online is
 if ($heartbeat == "lost") {die('No Connection to Nodo!!!'); }
@@ -41,6 +41,7 @@ function send_event($event)
 		curl_setopt($ch,CURLOPT_URL,$url);
 		curl_setopt($ch,CURLOPT_RETURNTRANSFER,0);
 		curl_setopt($ch,CURLOPT_CONNECTTIMEOUT,5);
+		curl_setopt($ch,CURLOPT_TIMEOUT,5);	
 		$data = curl_exec($ch);
 		curl_close($ch);
 		return $data;
@@ -79,9 +80,9 @@ if ($action != NULL) {
 	$newkaku_dim = $newkaku . $dim;
 	
 	$wired_out_1 = "WiredOut%20$address,";
-	$wired_out_2	= ";Sendstatus%20WiredOut%20$address";
-	$wired_out_on = $wired_out_1 . "on" . $wired_out_2;
-	$wired_out_off = $wired_out_1 . "off" . $wired_out_2;
+	//$wired_out_2	= ";Sendstatus%20WiredOut%20$address";
+	$wired_out_on = $wired_out_1 . "on";
+	$wired_out_off = $wired_out_1 . "off";
 	
 	$send_user_event = "SendUserEvent%20";
 	$send_user_event_on = $send_user_event . $row_RSdevices['user_event_on'];

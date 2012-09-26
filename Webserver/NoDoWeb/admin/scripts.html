@@ -1,0 +1,136 @@
+<!DOCTYPE html> 
+<html> 
+ 
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1"> 
+	<title>Scripts</title> 
+	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.2.0-rc.2/jquery.mobile-1.2.0-rc.2.min.css" />
+	<script src="http://code.jquery.com/jquery-1.8.1.min.js"></script>
+	<script src="http://code.jquery.com/mobile/1.2.0-rc.2/jquery.mobile-1.2.0-rc.2.min.js"></script>
+	
+	<link rel="stylesheet" type="text/css" href="../css/custom.css" />
+</head> 
+ 
+<body> 
+
+<!-- Start of main page: -->
+
+<div data-role="page" id="scripts_page">
+ 
+	<!-- header -->
+	<div data-role="header" data-id="toolbar" >
+		<h1>Setup: Scripts<div id="nodostate_devices"></div></h1>
+		<div data-role="navbar" data-iconpos="top">
+		<ul>
+			<li><a href="../webapp.html#devices_page" data-icon="devices"  data-transition="none" data-ajax="false">Devices</a></li>
+			<li><a href="../webapp.html#activities_page" data-icon="grid"  data-transition="none" data-ajax="false">Activities</a></li>
+			<li><a href="../webapp.html#values_page" data-icon="measurements" data-transition="none" data-ajax="false">Values</a></li>
+		</ul>
+		</div>
+	</div><!-- /header -->
+ 
+ 
+	<div data-role="content">	
+
+	
+	
+	<form id="scripts"> 
+	
+	 
+				
+	<br>
+	
+		<label for="select-script" class="select">Choose script:</label>
+		<select name="scriptfile" id="scriptfile" data-native-menu="true"></select>
+		
+		<div class="ui-grid-a">
+			<div class="ui-block-a"><input type="button" id="delete" name="delete" value="Delete" ></div>
+			<div class="ui-block-b"><input type="button" id="new" name="new" value="New"></div>
+		</div>
+		
+			
+		
+		
+		<label for="scriptcontent1">Script:</label>
+		<textarea name="scriptcontent" id="scriptcontent"></textarea>
+<br>		
+		
+    	
+		<input type="checkbox" name="checkbox" id="checkbox" class="custom" checked="yes"/>
+		<label for="checkbox">Execute after write</label>
+		
+		<br>
+        
+		<input type="button" id="write" name="write" value="Write" > 
+			
+
+	
+	</form> 
+	
+	
+	
+		
+	
+	</div><!-- /content -->
+	
+	<div data-role="footer" data-id="toolbar" >
+		<div data-role="navbar" data-iconpos="top">
+			<ul>
+				<li><a href="../logout.php" data-icon="delete"  data-ajax="false">Logout</a></li>
+				<li><a href="../webapp.html#info_page" data-icon="info"  data-transition="none" data-ajax="false">Info</a></li>
+				<li><a href="index.php" data-icon="gear"  data-ajax="false">Setup</a></li>
+			</ul>
+		</div>
+	</div><!-- /footer -->
+	
+	<div data-role="popup" id="scripts_popup_msg" data-overlay-theme="a" style="min-width:250px;" class="ui-corner-all">
+			<div data-role="header" class="ui-corner-top">
+				<h1></h1>
+			</div>
+			<div data-role="content" class="ui-corner-bottom ui-content">
+				<h3 id="write_message" class="ui-title"></h3>
+				<a href="#" data-role="button" data-inline="true" data-rel="back" >Ok</a>    
+			</div>
+		</div>
+		
+		<div data-role="popup" id="scripts_popup_new" data-overlay-theme="a" style="min-width:250px;" class="ui-corner-all">
+			<div data-role="header" class="ui-corner-top">
+				<h1></h1>
+			</div>
+			<div data-role="content" class="ui-corner-bottom ui-content">
+				<h3 id="new_message" class="ui-title"></h3>
+				<div id="scriptfilenewdiv">
+					<label for="scriptfilenew" id="scriptfilenewlabel">Script name:</label>
+					<input type="text" maxlength="8" style="text-transform: uppercase" name="scriptfilenew" id="scriptfilenew" value="" />
+				</div>
+				<div class="ui-grid-a">
+					<div class="ui-block-a"><a href="#" id="new2" data-role="button" data-inline="true" data-rel="back" >Close</a> </div>
+					<div class="ui-block-b"><input type="button" id="new3" name="new3" value="Create"></div>
+				</div>
+			</div>
+		</div>
+		
+		<div data-role="popup" id="scripts_popup_delete" data-overlay-theme="a" style="min-width:250px;" class="ui-corner-all">
+			<div data-role="header" class="ui-corner-top">
+				<h1></h1>
+			</div>
+				
+			<div data-role="content" class="ui-corner-bottom ui-content">
+				<h3 id="delete_message" class="ui-title"></h3>
+					<div class="ui-grid-a">
+					<div class="ui-block-a"><a href="#" data-role="button" id="delete2" data-inline="true" data-rel="back" >Cancel</a> </div>
+					<div class="ui-block-b"><input type="button" id="delete3" name="delete3" value="Ok"></div>
+				</div>
+			</div>
+		</div>
+	
+</div><!-- /main page -->
+
+<script src="../js/check_session.js"></script>
+<script src="../js/settings.js"></script>
+<script src="js/scripts.js"></script>
+
+ 
+</body>
+</html>

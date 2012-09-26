@@ -66,8 +66,7 @@ END HTTPRequest function
 	<title><?php echo $title ?></title> 
 	<?php require_once('../include/jquery_mobile.php'); ?>
 	
-	<script src="../js/get_command_result.js"></script>
-	
+		
 </head> 
  
 <body> 
@@ -145,7 +144,7 @@ $(document).ready(function() {
 	 
 		  
 </script>
-
+<script src="js/commands.js"></script>
 </body>
 </html>
 

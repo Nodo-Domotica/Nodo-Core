@@ -16,41 +16,26 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
-//Controleren of er ingelogd is. Hierna redirecten naar de door de gebruiker ingestelde standaard pagina.
+require_once('../connections/db_connection.php');
+require_once('../include/auth.php');
 
-require_once('connections/db_connection.php'); 
+mysql_select_db($database, $db);
+$query = "SELECT * FROM nodo_tbl_users WHERE id='$userId'";
+$recordset = mysql_query($query, $db) or die(mysql_error());
+$row = mysql_fetch_array($recordset);
+//Controleren of de Nodo maximaal 3 minuten geleden een connectie met de Web App heeft gehad.
+if (strtotime($row['cookie_update']) >  (strtotime("now")-120)) {$online = "1";} else {$online = "0";}
+        
+             $rowsarray[] = array(
+            "busy" 			=> $row['busy'],
+			"online" 	=> $online);
+        
+ 
+$json = json_encode($rowsarray);
+
+echo '{"nodostate":'. $json .'}'; 
+ 
 
 
 
-session_start();
-if(!isset($_SESSION['userId'])) {
-        //die('You need to be logged in!!!');
-	header("Location: login.php");
-} 
-
-else {
-
-require_once('include/auth.php');
-require_once('include/user_settings.php');
-
-$default_page = $row_RSsetup['default_page'];
-
-	switch ($default_page) {
-
-		case 1:
-		header("Location: devices.php");
-		break;
-		case 2:
-		header("Location: activities.php");
-		break;
-		case 3:
-		header("Location: values.php");
-		break;
-		default:
-		header("Location: devices.php");
-		break;
-
-	}
-
-}
 ?>

@@ -1,3 +1,4 @@
+
 /***********************************************************************************************************************
 "Nodo Web App" Copyright © 2012 Martin de Graaf
 
@@ -15,13 +16,17 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
-function Device_State()
-//Lees schakelaar status uit
-			{
+function Get_Command_Result(command,defcommand)
+ {  
+   
+			
 				var
 					$http,
-					$self = arguments.callee;
-
+					$self = arguments.callee,
+					element = document.getElementById('result_div');
+					
+					element.innerHTML = '<img src="../media/loading.gif"/> Please wait, loading results...</h4>'; 
+					
 				if (window.XMLHttpRequest) {
 					$http = new XMLHttpRequest();
 				} else if (window.ActiveXObject) {
@@ -36,19 +41,20 @@ function Device_State()
 					$http.onreadystatechange = function()
 					{
 						if (/4|^complete$/.test($http.readyState)) {
-							
-							eval($http.responseText);
-							
-							setTimeout(function(){$self();}, 2000);
+														
+							element.innerHTML = $http.responseText;  
 						}
 					};
-					$http.open('GET', 'get_device_state.php' + '?' + new Date().getTime(), true);
+					$http.open('GET', '../webservice/admin/command_result.php' + '?command=' + command + '&defcommand=' + defcommand + '&' + new Date().getTime(), true);
 					$http.send(null);
 				}
 
 			}
 
 
+
+
+ 
 
 
  

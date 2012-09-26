@@ -44,7 +44,7 @@ function Get_Nodo_Status()
 							element.innerHTML = $http.responseText;  
 						}
 					};
-					$http.open('GET', 'get_nodo_status.php' + '?' + new Date().getTime(), true);
+					$http.open('GET', 'webservice/get_nodo_status.php' + '?' + new Date().getTime(), true);
 					$http.send(null);
 				}
 
