@@ -17,8 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
 
-require_once('connections/db_connection.php');
-require_once('include/auth.php');
+require_once('../connections/db_connection.php');
+require_once('../include/auth.php');
 
 
 mysql_select_db($database, $db);
@@ -26,18 +26,18 @@ $query_RSvalue = "SELECT id,user_id,display,data,sensor_suffix_false,sensor_suff
 $RSvalue = mysql_query($query_RSvalue, $db) or die(mysql_error());
 $row_RSvalue = mysql_fetch_assoc($RSvalue);
 
-?>
 
 
-<?php if ($row_RSvalue != NULL){
-do { ?>document.getElementById('value_<?php echo $row_RSvalue['id'];?>').innerHTML = <?php 
+
+if ($row_RSvalue != NULL){
+do {  
    
    if ($row_RSvalue['display'] == 1){
    
 		//Lijn grafiek dus laatste meting weergeven
 		if ($row_RSvalue['graph_type'] <=1 ){
 		
-			echo "'".$row_RSvalue['data']."';";
+			$value = $row_RSvalue['data'];
 		}
 		
 		if ($row_RSvalue['graph_type'] == 2){
@@ -54,11 +54,11 @@ do { ?>document.getElementById('value_<?php echo $row_RSvalue['id'];?>').innerHT
 				}
 		
 		//Staaf grafiek, totaal meting per dag weergeven
-		$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m-%d') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $graph_hours HOUR GROUP BY date(timestamp) ORDER BY timestamp DESC LIMIT 1;";
+		$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m-%d') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= NOW() - INTERVAL $graph_hours HOUR GROUP BY date(timestamp) ORDER BY timestamp DESC LIMIT 1;";
 		$RSsensor_value_data = mysql_query($query_RSsensor_value_data, $db) or die(mysql_error()); 
 		$row_RSsensor_value_data = mysql_fetch_assoc($RSsensor_value_data);
 		  
-		echo "'".$row_RSsensor_value_data['data']."';";
+		$value = $row_RSsensor_value_data['data'];
 		
 		}
 			
@@ -69,20 +69,30 @@ do { ?>document.getElementById('value_<?php echo $row_RSvalue['id'];?>').innerHT
 	
 		if ($row_RSvalue['data'] <= 0){
 		
-			echo "'".$row_RSvalue['sensor_suffix_false']."';";
+			$value = $row_RSvalue['sensor_suffix_false'];
 		}
 		
 		if ($row_RSvalue['data'] > 0){
 		
-			echo "'".$row_RSvalue['sensor_suffix_true']."';";
+			$value = $row_RSvalue['sensor_suffix_true'];
 		}
 		
 		
    }
    
+	  $rows[] = array(
+            "id" => $row_RSvalue['id'],
+			"value" => $value);
 	
  } while ($row_RSvalue = mysql_fetch_assoc($RSvalue)); }
 
 mysql_free_result($RSvalue);
+
+$json = json_encode($rows);
+
+
+ echo $json;
+
+
 
 ?>

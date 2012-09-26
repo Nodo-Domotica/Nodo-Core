@@ -107,14 +107,10 @@ header("Location: activities.php?id=$device_id");
  
 	<div data-role="content">	
 
-	<div data-role="collapsible" data-content-theme="<?php echo $theme?>">
-			<h3>Add</h3>
+	<div data-role="collapsible"  data-inset="false" data-collapsed-icon="plus" data-expanded-icon="minus" data-iconpos="right">
+			<h3>Add activitie:</h3>
 	<form action="activities.php" data-ajax="false" method="post"> 
-	
-	 
-				
-	<br>
-	
+		
 		<label for="name">Name: </label>
 		<input type="text" name="name" id="name" value=""  />
 		<br>
@@ -124,15 +120,12 @@ header("Location: activities.php?id=$device_id");
 	    <br>
         
 		<input type="submit" name="submit" value="Save" >
-
-		
-	
-	</form> 
+    </form> 
 	</div>
 	
 	
-		<div data-role="collapsible" data-collapsed="false" data-content-theme="<?php echo $theme?>">
-			<h3>Edit</h3>
+		<div data-role="collapsible" data-collapsed="false" data-inset="false" data-iconpos="right" >
+			<h3>Edit activities:</h3>
 			<?php
 			 
 								   
@@ -153,24 +146,17 @@ header("Location: activities.php?id=$device_id");
 				
 				
 		  
-				<div data-role="collapsible" data-collapsed="<?php if ($_GET['id'] == $row['id']) {echo "false";} else {echo "true";} ?>" data-content-theme="<?php echo $theme;?>">
+				<div data-role="collapsible" data-collapsed="<?php if ($_GET['id'] == $row['id']) {echo "false";} else {echo "true";} ?>"  data-iconpos="right" data-content-theme="<?php echo $theme;?>">
 				<h3><?php echo $row['name']; ?></h3>
-					
-				
-
 				<?php if ($i > 1) { ?>
 				<a href="activities.php?sort=up&sort_order=<?php echo $row['sort_order']; ?>&id=<?php echo $row['id']; ?>" data-role="button"  data-icon="arrow-u" data-ajax="false">Move up</a>
 				<?php } ?>
-				
 				<?php if ($i != $rows) { ?>
 				<a href="activities.php?sort=down&sort_order=<?php echo $row['sort_order']; ?>&id=<?php echo $row['id']; ?>" data-role="button" data-icon="arrow-d"  data-ajax="false">Move down</a>
 				<?php } ?>
-				
 				<a href="activities_edit.php?id=<?php echo $row['id']; ?>" data-role="button" data-icon="gear" data-ajax="false">Edit</a>
 				<a href="activities_delete_confirm.php?id=<?php echo $row['id']; ?>" data-role="button"  data-icon="delete" data-rel="dialog">Delete</a>
-				
 				</div>
-			
 				<?php
 				}         
 		?>      

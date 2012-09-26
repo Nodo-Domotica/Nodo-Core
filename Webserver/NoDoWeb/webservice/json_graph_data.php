@@ -23,7 +23,7 @@ if ($bars == 1) {
 	
 	else {
 	
-		$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m-%d') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $hours HOUR GROUP BY date(timestamp)";
+		$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m-%d') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= NOW() - INTERVAL $hours HOUR GROUP BY date(timestamp)";
 	
 	}
 
@@ -33,13 +33,13 @@ else {
 
 	if ($filter == 2) {
 
-		$query_RSsensor_value_data = "SELECT data,timestamp FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp BETWEEN '$date1' AND '$date2' LIMIT 20000";
+		$query_RSsensor_value_data = "SELECT data,timestamp FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp BETWEEN '$date1' AND '$date2'";
 }
 	
 	else {
 	
-		$query_RSsensor_value_data = "SELECT data,timestamp FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= SYSDATE() - INTERVAL $hours HOUR LIMIT 20000";
-	
+		$query_RSsensor_value_data = "SELECT data,timestamp FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= NOW() - INTERVAL $hours HOUR";
+		
 	}
 }
 

@@ -43,7 +43,7 @@ function HTTPRequest($Url){
     curl_setopt($ch, CURLOPT_HEADER, 0);
 	curl_setopt($ch, CURLOPT_PORT, $nodo_port);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
  
     $output = curl_exec($ch);
     curl_close($ch);
@@ -56,6 +56,16 @@ END HTTPRequest function
 *************************************************************************************************/
 
 
+/************************************************************************************************
+Filelist															
+*************************************************************************************************/
+HTTPRequest("http://$nodo_ip/?event=fileerase%20Filelst;Filelog%20Filelst;filelist;filelog&key=$key");
+$files = explode("\n", HTTPRequest("http://$nodo_ip/?file=filelst&key=$key"));
+			
+	$total_files = count($files);
+	//echo "file " . $files[2];
+
+
 
 /************************************************************************************************
 Eventlist script read															
@@ -64,7 +74,7 @@ if (isset($_POST['Read']))
 {  
 
 	
-	if ($heartbeat == "ok") {
+	if ($heartbeat == "ok" && $busy == 0) {
 
 
 
@@ -139,7 +149,9 @@ if (isset($_POST['Write']))
 			
 		
 	
-if ($heartbeat == "ok") {	
+if ($heartbeat == "ok" && $busy == 0) {	
+
+
 	
 	if (ISSET($_POST["checkbox-2"])){
 	
@@ -204,11 +216,35 @@ END Script write
 		<label for="select-script" class="select">Choose script:</label>
 		<select name="select-script-1" id="select-script-1" data-native-menu="false">
 		<option value="EVENTLST"<?php if (isset($_POST['select-script-1']) || isset($_GET['file']) ) {if ($_POST['select-script-1'] == "EVENTLST" || $_GET['file'] == "EVENTLST") {echo 'Selected="Selected"';}}?>>Eventlist</option>
-		<option value="1"<?php if (isset($_POST['select-script-1']) || isset($_GET['file']) ) {if ($_POST['select-script-1'] == "1" || $_GET['file'] == "1") {echo 'Selected="Selected"';}}?>>Script 1</option>
-		<option value="2"<?php if (isset($_POST['select-script-1']) || isset($_GET['file']) ) {if ($_POST['select-script-1'] == "2" || $_GET['file'] == "2") {echo 'Selected="Selected"';}}?>>Script 2</option>
-		<option value="3"<?php if (isset($_POST['select-script-1']) || isset($_GET['file']) ) {if ($_POST['select-script-1'] == "3" || $_GET['file'] == "3") {echo 'Selected="Selected"';}}?>>Script 3</option>
-		<option value="4"<?php if (isset($_POST['select-script-1']) || isset($_GET['file']) ) {if ($_POST['select-script-1'] == "4" || $_GET['file'] == "4") {echo 'Selected="Selected"';}}?>>Script 4</option>
-		<option value="5"<?php if (isset($_POST['select-script-1']) || isset($_GET['file']) ) {if ($_POST['select-script-1'] == "5" || $_GET['file'] == "5") {echo 'Selected="Selected"';}}?>>Script 5</option>
+		
+		<?php
+		
+		if (isset($files)){  
+
+			for($i=1;$i<$total_files;$i++){
+		
+			
+			//<br /> aan het einde van de regels verwijderen
+			$files[$i] = trim(str_replace("<br />","",$files[$i]));
+			
+			
+			//echo $files[$i];
+			//Remove !********************************** start en stop lines 
+			$pos = strpos($files[$i],"!*");
+			
+			if($pos === false || $pos > 0) {
+				
+				if ($files[$i] != "" && $files[$i] != "FILELST" && $files[$i] != "EVENTLST" && $files[$i]!= "STATUS" && $files[$i]!= "LOG"){
+		?>
+			<option value="<?php echo $files[$i];?>"<?php if (isset($_POST['select-script-1']) || isset($_GET['file']) ) {if ($_POST['select-script-1'] == $files[$i] || $_GET['file'] == $files[$i]) {echo 'Selected="Selected"';}}?>><?php echo $files[$i];?></option>
+		<?php
+				}
+			}
+	}
+	
+	
+}
+?>		
 		</select>
 		
 		

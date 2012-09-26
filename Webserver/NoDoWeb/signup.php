@@ -195,7 +195,7 @@ END Generate NoDo ID
 		<h1>Nodo Web App Sign up</h1>
 		<div data-role="navbar" data-iconpos="top">
 		<ul>
-			<li><a href="login.php" data-icon="star"  data-ajax="false">Login</a></li>
+			<li><a href="index.html" data-icon="star"  data-ajax="false">Login</a></li>
 			
 		</ul>
 	</div>

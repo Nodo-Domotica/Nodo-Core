@@ -33,7 +33,6 @@ $type = mysql_real_escape_string(htmlspecialchars($_POST['type']));
 $naam = mysql_real_escape_string(htmlspecialchars($_POST['naam'])); 
 $label_on = mysql_real_escape_string(htmlspecialchars($_POST['label_on']));
 $label_off = mysql_real_escape_string(htmlspecialchars($_POST['label_off']));
-$collapsed = mysql_real_escape_string(htmlspecialchars($_POST['collapsed']));
 $address = mysql_real_escape_string(htmlspecialchars($_POST['address']));  
 $user_event_on = mysql_real_escape_string(htmlspecialchars($_POST['user_event_on'])); 
 $user_event_off = mysql_real_escape_string(htmlspecialchars($_POST['user_event_off'])); 
@@ -52,9 +51,9 @@ $RSDevices_rows = mysql_num_rows($RSDevices);
 //aantal records met 1 verhogen zodat we deze waarde in het sorteerveld kunnen gebruiken
 $sort_order = $RSDevices_rows + 1; 
 
-mysql_query("INSERT INTO nodo_tbl_devices(naam, label_on, label_off, collapsed, type, toggle, dim, homecode, address, user_event_on, user_event_off, user_id,sort_order)
+mysql_query("INSERT INTO nodo_tbl_devices(naam, label_on, label_off, type, toggle, dim, homecode, address, user_event_on, user_event_off, user_id,sort_order)
 VALUES
-('$naam','$label_on','$label_off','$collapsed','$type','$toggle','$dim','$homecode','$address','$user_event_on','$user_event_off','$userId','$sort_order')") or die(mysql_error());
+('$naam','$label_on','$label_off','$type','$toggle','$dim','$homecode','$address','$user_event_on','$user_event_off','$userId','$sort_order')") or die(mysql_error());
  header("Location: devices.php#saved");   
  
  }
@@ -102,7 +101,7 @@ header("Location: devices.php?id=$device_id");
 <body> 
 
  
-<div data-role="page" id="main" data-theme="<?php echo $theme?>">
+<div data-role="page" id="admin_devices_page" data-theme="<?php echo $theme?>">
  
 	<?php require_once('../include/header_admin.php');?>
  
@@ -110,9 +109,9 @@ header("Location: devices.php?id=$device_id");
 
 <form action="devices.php" data-ajax="false" method="post"> 
 		 
-	<div data-role="collapsible" data-content-theme="<?php echo $theme?>">
+	<div data-role="collapsible" data-inset="false" data-collapsed-icon="plus" data-expanded-icon="minus" data-iconpos="right" data-content-theme="<?php echo $theme?>">
 			
-		<h3>Add devices</h3>
+		<h3>Add device:</h3>
 			<label for="select-choice-0" class="select" >Type of device:</label>
 		    <select name="type" id="type" data-native-menu="false" >
 				<option value="0" data-placeholder="true">Select device</option>
@@ -128,10 +127,10 @@ header("Location: devices.php?id=$device_id");
 		<label for="naam">Device name:</label>
 		<input type="text" name="naam" id="naam" value=""  />
 		<br>
-		<label for="select-choice-1" class="select" >Presentation:</label>
+		<label for="select-choice-1" class="select" >Switch type:</label>
 		    <select name="presentation" id="presentation" data-native-menu="false" >
 				<option value="1">Toggle</option>
-				<option value="0">Collapsible</option>
+				<option value="0">Popup</option>
 			</select>
 		<br>
 		<div id="label_div"> 
@@ -142,14 +141,7 @@ header("Location: devices.php?id=$device_id");
 		<input type="text" name="label_off" id="naam" value="Off"  />
 		<br>
 		</div>
-		<div id="expand_div"> 
-		<label for="select-choice-2" class="select" >Expand on devices page:</label>
-		<select name="collapsed" id="collapsed" data-placeholder="true" data-native-menu="false">
-			<option value="0">No</option>
-			<option value="1">Yes</option>
-		</select>
-		<br>
-		</div>
+		
 		
 		
 		</div>
@@ -202,8 +194,8 @@ header("Location: devices.php?id=$device_id");
 
 	</div>
 
-	<div data-role="collapsible" data-collapsed="false" data-content-theme="<?php echo $theme;?>">
-		<h3>Edit devices</h3>
+	<div data-role="collapsible" data-inset="false" data-collapsed="false" data-iconpos="right" >
+		<h3>Edit devices:</h3>
 		<?php
 		// get results from database        
 		mysql_select_db($database, $db);
@@ -221,25 +213,16 @@ header("Location: devices.php?id=$device_id");
 		 
 		$i++;
 		?>          
-		
-		
-  
-		<div data-role="collapsible" data-collapsed="<?php if ($_GET['id'] == $row['id']) {echo "false";} else {echo "true";} ?>" data-content-theme="<?php echo $theme;?>">
+		<div data-role="collapsible" data-collapsed="<?php if ($_GET['id'] == $row['id']) {echo "false";} else {echo "true";} ?>" data-iconpos="right" data-content-theme="<?php echo $theme;?>">
 		<h3><?php echo $row['naam']; ?></h3>
-			
-		
-
 		<?php if ($i > 1) { ?>
 		<a href="devices.php?sort=up&sort_order=<?php echo $row['sort_order']; ?>&id=<?php echo $row['id']; ?>" data-role="button"  data-icon="arrow-u" data-ajax="false">Move up</a>
 		<?php } ?>
-		
 		<?php if ($i != $rows) { ?>
 		<a href="devices.php?sort=down&sort_order=<?php echo $row['sort_order']; ?>&id=<?php echo $row['id']; ?>" data-role="button" data-icon="arrow-d"  data-ajax="false">Move down</a>
 		<?php } ?>
-		
 		<a href="devices_edit.php?id=<?php echo $row['id']; ?>" data-role="button" data-icon="gear" data-ajax="false">Edit</a>
 		<a href="devices_delete_confirm.php?id=<?php echo $row['id']; ?>" data-role="button"  data-icon="delete" data-rel="dialog">Delete</a>
-		
 		</div>
 	
 		<?php
@@ -302,7 +285,7 @@ $('#adres_div').hide();
 $('#userevent_div').hide();
 $('#submit_div').hide();
 $('#label_div').hide();
-$('#expand_div').hide();  
+
 
 	
 	
@@ -380,14 +363,14 @@ $('#presentation').change(function()
 if ($(this).attr('value')==0) {   
 
 $('#label_div').show();
-$('#expand_div').show();  
+
 
 }
 
 if ($(this).attr('value')==1) {   
 
 $('#label_div').hide();
-$('#expand_div').hide();  
+ 
 
 }
  

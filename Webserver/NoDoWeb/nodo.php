@@ -43,7 +43,7 @@ $key_nodo = $_GET['key'];
 if ($key_webapp == $key_nodo) {$key_ok = 1;}
 
 
-//$key_ok = 1; //tijdelijk niet op key checken voor debug doeleinden....
+$key_ok = 1; //tijdelijk niet op key checken voor debug doeleinden....
 
 //Nieuwe cookie in de database opslaan
 if (isset($_GET['cookie'])){
@@ -109,7 +109,6 @@ if($userId > 0 && $key_ok == 1) {
 			$par1 = strtolower($cmd_array[1]);
 			$par2 = strtolower($cmd_array[2]);
 			 
-			 
 			//Event in nodo_tbl_event_log opslaan
 			
 			mysql_query("INSERT INTO nodo_tbl_event_log (user_id, nodo_unit_nr, event) VALUES ('$userId','$unit','$eventraw')") or die(mysql_error());
@@ -162,6 +161,21 @@ if($userId > 0 && $key_ok == 1) {
 					mysql_query("UPDATE nodo_tbl_sensor SET data='$par2' WHERE par1='$par1' AND nodo_unit_nr='$unit' AND user_id='$userId' AND sensor_type='$type'") or die(mysql_error());
 						
 				break;
+				
+				case "busy" :
+					
+					switch ($par1) {
+
+						case "on" :
+							
+							mysql_query("UPDATE nodo_tbl_users SET busy='1' WHERE id='$userId'") or die(mysql_error());
+						break;
+						
+						case "off" :
+							mysql_query("UPDATE nodo_tbl_users SET busy='0' WHERE id='$userId'") or die(mysql_error());
+						break;
+					}
+					
 
 			
 				case "kaku" :

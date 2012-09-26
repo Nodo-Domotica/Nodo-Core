@@ -15,14 +15,38 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
+
+require_once('../connections/db_connection.php'); 
+require_once('../include/auth.php');
+require_once('../include/user_settings.php');
+
+          
+		   
+mysql_select_db($database, $db);
+
+$RSevent_log = mysql_query("SELECT nodo_unit_nr,event,timestamp FROM (SELECT * FROM nodo_tbl_event_log WHERE user_id='$userId' ORDER BY id DESC LIMIT 25)x ORDER BY id") or die(mysql_error());
 ?>
-<div data-role="footer" data-theme="<?php echo $theme_header?>">
-		
-		<div data-role="navbar" data-iconpos="top">
-		<ul>
-			<li><a href="logout.php" data-icon="delete"  data-ajax="false">Logout</a></li>
-			<li><a href="info.php" data-icon="info"  data-ajax="false">Info</a></li>
-			<li><a href="admin" data-icon="gear"  data-ajax="false">Setup</a></li>
-		</ul>
-		</div>
-	</div><!-- /footer -->
+
+<table>    
+   
+ <thead>     
+ <tr>      
+ <th scope="col" align="left">Unit</th>      
+ <th scope="col" align="left">Event</th>      
+ <th scope="col" align="left">Timestamp</th>
+ </tr>    
+ </thead>   
+ <tbody>
+
+<?php		
+		while($row = mysql_fetch_array($RSevent_log)) 
+		{                                
+?>		 
+		<tr>	
+		<td width="50"><?php echo $row['nodo_unit_nr'];?></td> <td width="200"><?php echo $row['event'];?></td><td><?php echo $row['timestamp'];?></td>		
+		</tr>
+<?php		
+		}         
+		?>
+</tbody>
+	</table>

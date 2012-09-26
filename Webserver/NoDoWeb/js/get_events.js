@@ -42,10 +42,10 @@ function Get_Nodo_Events()
 						if (/4|^complete$/.test($http.readyState)) {
 														
 							element.innerHTML = $http.responseText; 
-							setTimeout(function(){$self();}, 2000);
+							
 						}
 					};
-					$http.open('GET', 'get_events.php' + '?' + new Date().getTime(), true);
+					$http.open('GET', 'webservice/get_events.php' + '?' + new Date().getTime(), true);
 					$http.send(null);
 				}
 

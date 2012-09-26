@@ -164,8 +164,8 @@ header("Location: values.php?id=$sensor_id");
  
 	<div data-role="content">	
 			
-	<div data-role="collapsible" data-content-theme="<?php echo $theme?>">
-		<h3>Add</h3>
+	<div data-role="collapsible" data-inset="false" data-iconpos="right">
+		<h3>Add value:</h3>
 
 		<form action="values.php" data-ajax="false" method="post"> 
 					
@@ -280,7 +280,6 @@ header("Location: values.php?id=$sensor_id");
 					<option value="1" selected="selected">Minutes</option>
 					<option value="2">Hours</option>
 					<option value="3">Days</option>
-					<!-- <option value="4">Weeks</option> tijdelijk uit omdat weken lastiger uit te rekenen zijn-->
 					<option value="5">Months</option>
 				</select>
 				<br>
@@ -297,8 +296,8 @@ header("Location: values.php?id=$sensor_id");
 			
 	</div>		
 			
-	<div data-role="collapsible" data-collapsed="false" data-content-theme="<?php echo $theme?>">
-	<h3>Edit</h3>
+	<div data-role="collapsible" data-collapsed="false" data-inset="false" data-iconpos="right" >
+	<h3>Edit values:</h3>
 	<?php
 
 						   
@@ -319,11 +318,8 @@ header("Location: values.php?id=$sensor_id");
 				
 				
 		  
-				<div data-role="collapsible" data-collapsed="<?php if ($_GET['id'] == $row['id']) {echo "false";} else {echo "true";} ?>" data-content-theme="<?php echo $theme;?>">
+				<div data-role="collapsible" data-collapsed="<?php if ($_GET['id'] == $row['id']) {echo "false";} else {echo "true";} ?>" data-inset="true" data-iconpos="right" data-content-theme="<?php echo $theme;?>">
 				<h3><?php echo $row['sensor_prefix']; ?></h3>
-					
-				
-
 				<?php if ($i > 1) { ?>
 				<a href="values.php?sort=up&sort_order=<?php echo $row['sort_order']; ?>&id=<?php echo $row['id']; ?>" data-role="button"  data-icon="arrow-u" data-ajax="false">Move up</a>
 				<?php } ?>

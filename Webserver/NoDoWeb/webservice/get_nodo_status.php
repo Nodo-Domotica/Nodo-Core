@@ -16,9 +16,9 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
-require_once('connections/db_connection.php'); 
-require_once('include/auth.php');
-require_once('include/user_settings.php');
+require_once('../connections/db_connection.php'); 
+require_once('../include/auth.php');
+require_once('../include/user_settings.php');
 
 $page_title = "Setup: Nodo settings";	
 
@@ -42,7 +42,8 @@ function HTTPRequest($Url){
     curl_setopt($ch, CURLOPT_HEADER, 0);
 	curl_setopt($ch, CURLOPT_PORT, $nodo_port);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+	curl_setopt($ch,CURLOPT_CONNECTTIMEOUT,5);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
  
     $output = curl_exec($ch);
     curl_close($ch);
@@ -81,7 +82,7 @@ if (isset($script)){
 			
 			
 			
-			echo $script[$i];
+			echo $script[$i]."<BR />";
 		
 	}
 	

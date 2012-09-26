@@ -82,8 +82,8 @@ $result = mysql_query("SELECT * FROM nodo_tbl_notifications WHERE user_id='$user
  
 	<div data-role="content">	
 
-	<div data-role="collapsible" data-content-theme="<?php echo $theme?>">
-			<h3>Add</h3>
+	<div data-role="collapsible" data-inset="false" data-iconpos="right" data-content-theme="<?php echo $theme?>">
+			<h3>Add notification:</h3>
 	<form action="notifications.php" data-ajax="false" method="post"> 
 	
 	 
@@ -115,12 +115,12 @@ $result = mysql_query("SELECT * FROM nodo_tbl_notifications WHERE user_id='$user
 	</div>
 	
 	
-		<div data-role="collapsible" data-collapsed="false" data-content-theme="<?php echo $theme?>">
-			<h3>Edit</h3>
+		<div data-role="collapsible" data-collapsed="false" data-inset="false" data-iconpos="right" data-content-theme="<?php echo $theme?>">
+			<h3>Edit notifications:</h3>
 			<?php
 			 
 								   
-			echo '<ul data-role="listview" data-split-icon="delete" data-split-theme="$theme" data-inset="true">';
+			echo '<ul data-role="listview" data-split-icon="delete" data-split-theme="$theme" data-inset="true" data-iconpos="right">';
 	  
 			//echo '<br>';   
 			// loop through results of database query, displaying them in the table        

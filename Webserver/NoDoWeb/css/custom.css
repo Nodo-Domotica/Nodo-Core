@@ -1,0 +1,25 @@
+.ui-icon-toggle {
+	background-image: url(/webapp/media/toggle.png);
+	background-repeat: no-repeat;
+
+}
+		
+.ui-icon-measurements {
+	background-image: url(/webapp/media/measurements.png);
+	background-repeat: no-repeat;
+
+}
+
+.ui-icon-devices {
+	background-image: url(/webapp/media/devices.png);
+	background-repeat: no-repeat;
+
+}
+
+.ui-icon-measurements, .ui-icon-devices {
+	background-position: 0 50%;
+
+}
+
+.status-icon-dialog { position:absolute;
+ right:10px; }
