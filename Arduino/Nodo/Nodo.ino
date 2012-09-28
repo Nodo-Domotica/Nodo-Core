@@ -29,10 +29,9 @@
 // of voor een Nodo-Mega voor een Arduino met een ATMega1280 of ATMega2560
 #define NODO_MEGA            0
 
-
 // Voor de Nodo-Mega variant bij onderstaande regels de // tekens op positie 1 en 2 verwijderen.
 #define NODO_MEGA          1
-#define TRACE              0                                     // Sla debug informatie op SDCard op in bestand TRACE.DAT. Let op, maakt de Nodo traag.
+#define TRACE              1                                     // Sla debug informatie op SDCard op in bestand TRACE.DAT. Let op, maakt de Nodo traag.
 #define ETHERNET           1                                     // EthernetShield: 0 = afwezig, 1 = aanwezig
 #include <SD.h>
 #include <EthernetNodo.h>
@@ -313,7 +312,7 @@ prog_char PROGMEM Cmd_200[]="Ok.";
 prog_char PROGMEM Cmd_201[]="Error: Unknown command.";
 prog_char PROGMEM Cmd_202[]="Error: Invalid parameter in command.";
 prog_char PROGMEM Cmd_203[]="Error: Unable to open file on SDCard.";
-prog_char PROGMEM Cmd_204[]="";
+prog_char PROGMEM Cmd_204[]="Error: Error during queing events.";
 prog_char PROGMEM Cmd_205[]="Error: Eventlist nesting error.";
 prog_char PROGMEM Cmd_206[]="Error: Reading/writing eventlist failed.";
 prog_char PROGMEM Cmd_207[]="Error: Unable to establish connection.";
@@ -804,6 +803,8 @@ void setup()
   {    
   byte x;
 
+  // enable de WatchDogTimer: we Als de Nodo in de problemen komt, dan resetten.
+  
   // Initialiseer in/output poorten.
   pinMode(PIN_IR_RX_DATA, INPUT);
   pinMode(PIN_RF_RX_DATA, INPUT);

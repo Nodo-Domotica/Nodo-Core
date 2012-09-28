@@ -331,10 +331,14 @@ boolean SendHTTPRequest(char* Request)
     strcpy(IPBuffer,"User-Agent: Nodo/Build=");
     strcat(IPBuffer,int2str(NODO_BUILD));
     IPClient.println(IPBuffer);
-    IPClient.println(F("Connection: Close"));    
+    IPClient.println(F("Connection: Close"));
+  
+  //??? up time: millis() toevoegen?
+  //??? intern ip adres
+  
     IPClient.println();// Afsluiten met een lege regel is verplicht in http protocol/
 
-    TimeoutTimer=millis()+TimeOut; // Als erte lange tijd geen datatransport is, dan wordt aangenomen dat de verbinding (om wat voor reden dan ook) is afgebroken.
+    TimeoutTimer=millis()+TimeOut; // Als er te lange tijd geen datatransport is, dan wordt aangenomen dat de verbinding (om wat voor reden dan ook) is afgebroken.
     IPBuffer[0]=0;
     InByteCounter=0;
     

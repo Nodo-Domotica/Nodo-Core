@@ -72,7 +72,7 @@ void UserPlugin_Command(int Par1, int Par2)
 
 
  /*********************************************************************************************\ 
- * Dit deel van de plugin wordt altijd aangeroepen direct na ontvangst van een signaal
+ * Dit deel van de plugin wordt altijd aangeroepen direct na ontvangst van een event
  * 
  * TIPS:
  * - Rawsignal is de tabel met de ontvangen impulsen van IR of RF. Deze kan worden gebruikt 
@@ -81,7 +81,6 @@ void UserPlugin_Command(int Par1, int Par2)
  * - Deze functie wordt bij ieder binnenkomend event doorlopen, zorg er voor dat hier
  *   geen onnodige en/of tijdrovende verwerking plaatsvindt.
  \*********************************************************************************************/
-
 boolean UserPlugin_Receive(unsigned long Event)
   {
 
@@ -127,5 +126,59 @@ void UserPlugin_Periodically()
 //   }
 //  
 //  return;
+  }
+
+
+ /*********************************************************************************************\ 
+ * Dit deel van de plugin wordt altijd aangeroepen direct na ontvangst van een RF of IR signaal.
+ * Deze routine wordt uitgevoerd alvorens het signaal is gedecodeerd en weergegeven op het 
+ * eventueel openstaande Serial/Telnet venster.
+ *
+ * Port bevat een waarde waaruit kan worden afgeleid of het signaal afkomstig was van IR of RF
+ * Bij verlaten kan een EventCode worden teruggegeven die vervolgens wordt verwerkt door de Nodo. 
+ * Is deze EventCode nul, dan gaat de Nodo regulier verder met verwerking.
+ * Is deze EventCode één, dan vindt geen verdere verwerking plaats.
+ * Is deze EventCode een andere waarde, dan wordt deze waarde verwerkt als een eventcode.
+ * 
+ *
+ * TIPS:
+ * - Rawsignal is de tabel met de ontvangen impulsen van IR of RF. Deze kan worden gebruikt 
+ *   voor verwerken van signalen.
+ * - Gebruik deze functie alleen voor onderscheppen van signalen en hier een eigen analyse
+ *   op uit te voeren.
+ * - Deze functie wordt bij ieder binnenkomend event doorlopen, zorg er voor dat hier
+ *   geen onnodige en/of tijdrovende verwerking plaatsvindt.
+ \*********************************************************************************************/
+unsigned long RawSignal_2_UserPlugin(int Port)
+  {
+    
+  // Voorbeeld: Onderstaand een stukje code dat een binnengekomen signaal weergeeft. Eén 'M' of '_'-teken staat voor 250uSec. 
+    
+//  int x,y;
+//  
+//  Serial.println(F("==================================== RawSignal ==================================="));
+//
+//  Serial.print(RawSignal.Number/2);
+//  Serial.print(F(" bits received. Pulses (uSec): "));
+//  for(x=1;x<=RawSignal.Number;x++)
+//    {
+//    Serial.print(RawSignal.Pulses[x]); 
+//    Serial.write(',');       
+//    }
+//  Serial.println();
+//
+//  const int dev=250;  
+//  for(x=1;x<=RawSignal.Number;x+=2)
+//    {
+//    for(y=1+RawSignal.Pulses[x]/dev; y;y--)
+//      Serial.write('M');  // Mark  
+//    for(y=1+RawSignal.Pulses[x+1]/dev; y;y--)
+//      Serial.write('_');    // Space  
+//    }
+//
+//  Serial.println(F("=================================================================================="));
+//  Serial.println();
+
+  return 0L; // ga verder met verwerking.
   }
 #endif  
