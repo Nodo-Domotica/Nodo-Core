@@ -278,6 +278,14 @@ unsigned long AnalyzeRawSignal(void)
   
   if(RawSignal.Number==RAW_BUFFER_SIZE)return 0L;     // Als het signaal een volle buffer beslaat is het zeer waarschijnlijk ruis of ongeldig signaal
 
+  #if USER_PLUGIN
+  Code=RawSignal_2_UserPlugin(RawSignal.Source);
+  if(Code==1)
+    return 0;
+  else if(Code>1)
+    return Code;
+  #endif
+  
   if(!(Code=RawSignal_2_Nodo()))           // Is het een Nodo signaal?
     if(!(Code=RawSignal_2_KAKU()))         // Of een KAKU?
       if(!(Code=RawSignal_2_NewKAKU()))    // Of een NewKAKU?

@@ -158,6 +158,8 @@ byte Commanderror(unsigned long Content)
       return false;
     
     // geldige tijd    
+    case CMD_BREAK_ON_TIME_LATER:
+    case CMD_BREAK_ON_TIME_EARLIER:
     case CMD_CLOCK_TIME:
       if(Par1>23)return MESSAGE_02;
       if(Par2>59)return MESSAGE_02;
@@ -701,7 +703,9 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;                  
 
     case CMD_STATUS:
-      if(Src==VALUE_SOURCE_HTTP || Src==VALUE_SOURCE_SERIAL || Src==VALUE_SOURCE_TELNET)
+      // Het commando [Status] verzendt de status naar de bron waar het verzoek van is ontvangen. Serial en TelNet worden beschouwd als dezelfde bron.
+      // Als het door de gebruiker is verzocht om logging naar een file te doen, dan wordt de output NIET als events verzonden.
+      if(TempLogFile[0]!=0 || Src==VALUE_SOURCE_SERIAL || Src==VALUE_SOURCE_TELNET)
         Status(Par1, Par2, false);
       else
         {

@@ -12,6 +12,7 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
   unsigned long TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
   unsigned long Event=0L;
   int x,y,z,Port;
+  boolean error=false;
   
   Led(BLUE);
   Queue.Position=0;    
@@ -83,7 +84,8 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
           strcpy(Line,int2str(Event));
           strcat(Line,",");
           strcat(Line,int2str(Port));        
-          AddFileSDCard(ProgmemString(Text_15),Line);       // Sla event op in de queue. De Nodo-Mega slaat de queue op SDCard op.
+          if(!AddFileSDCard(ProgmemString(Text_15),Line))       // Sla event op in de queue. De Nodo-Mega slaat de queue op SDCard op.
+            error=true;
           free(Line);
           }
         else if(Queue.Position<EVENT_QUEUE_MAX)
@@ -102,24 +104,23 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
           Queue.Position++;           
           }       
         else
-          RaiseMessage(MESSAGE_04);    
+         error=true;
         #endif
         }
       }    
     }   
 
   if(TimeoutTimer<=millis())
-    {
-    #if TRACE
-    Trace(3,4,0);
-    #endif
-    return false;
-    }
+    error=true;
     
   #if TRACE
-  Trace(3,4,1);
+  Trace(3,4,error);
   #endif
-  return true;
+
+  if(error)
+    RaiseMessage(MESSAGE_04);
+
+  return !error;
   }
   
 
