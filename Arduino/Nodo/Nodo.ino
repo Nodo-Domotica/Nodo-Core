@@ -31,7 +31,7 @@
 
 // Voor de Nodo-Mega variant bij onderstaande regels de // tekens op positie 1 en 2 verwijderen.
 #define NODO_MEGA          1
-#define TRACE              1                                     // Sla debug informatie op SDCard op in bestand TRACE.DAT. Let op, maakt de Nodo traag.
+#define TRACE              0                                     // Sla debug informatie op SDCard op in bestand TRACE.DAT. Let op, maakt de Nodo traag.
 #define ETHERNET           1                                     // EthernetShield: 0 = afwezig, 1 = aanwezig
 #include <SD.h>
 #include <EthernetNodo.h>
@@ -67,8 +67,8 @@
 /****************************************************************************************************************************/
 //#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
 
-#define SETTINGS_VERSION     10
-#define NODO_BUILD          440
+#define SETTINGS_VERSION     11
+#define NODO_BUILD          441
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -91,15 +91,12 @@ prog_char PROGMEM Text_14[] = "Event=";
 prog_char PROGMEM Text_17[] = "payload";
 prog_char PROGMEM Text_18[] = "accept";
 prog_char PROGMEM Text_19[] = "close";
-prog_char PROGMEM Text_20[] = "quintessence";
-prog_char PROGMEM Text_21[] = "payload withoutRelease";
 prog_char PROGMEM Text_23[] = "log.dat";
 prog_char PROGMEM Text_24[] = "Queue: Capturing events...";
 prog_char PROGMEM Text_15[] = "Queue.dat";
-prog_char PROGMEM Text_26[] = "Queue: Processing events...";
+prog_char PROGMEM Text_26[] = "Queue: End capture.";
 prog_char PROGMEM Text_27[] = "raw/raw"; // Directory op de SDCard voor opslag van sleutels naar .hex files
 prog_char PROGMEM Text_28[] = "raw/key"; // Directory op de SDCard voor opslag RawSignal
-prog_char PROGMEM Text_29[] = "Queue: Finished.";
 prog_char PROGMEM Text_30[] = "Terminal connection closed.";
 
 // Commando's:
@@ -158,7 +155,7 @@ prog_char PROGMEM Cmd_051[]="WiredCalibrateHigh";
 prog_char PROGMEM Cmd_052[]="WiredCalibrateLow";
 prog_char PROGMEM Cmd_053[]="Lock";
 prog_char PROGMEM Cmd_054[]="Status"; 
-prog_char PROGMEM Cmd_055[]="";
+prog_char PROGMEM Cmd_055[]="Log";
 prog_char PROGMEM Cmd_056[]="AnalyseSettings";
 prog_char PROGMEM Cmd_057[]="OutputIP";
 prog_char PROGMEM Cmd_058[]="OutputIR";
@@ -178,7 +175,7 @@ prog_char PROGMEM Cmd_071[]="Subnet";
 prog_char PROGMEM Cmd_072[]="DnsServer";
 prog_char PROGMEM Cmd_073[]="PortServer";
 prog_char PROGMEM Cmd_074[]="PortClient";
-prog_char PROGMEM Cmd_075[]="EventGhostServer";
+prog_char PROGMEM Cmd_075[]="";
 prog_char PROGMEM Cmd_076[]="VariablePulse";
 prog_char PROGMEM Cmd_077[]="";
 prog_char PROGMEM Cmd_078[]="VariableWiredAnalog";
@@ -273,7 +270,7 @@ prog_char PROGMEM Cmd_161[]="Timers";
 prog_char PROGMEM Cmd_162[]="Variables";
 prog_char PROGMEM Cmd_163[]="Clock";
 prog_char PROGMEM Cmd_164[]="Terminal";
-prog_char PROGMEM Cmd_165[]="EventGhost";
+prog_char PROGMEM Cmd_165[]="";
 prog_char PROGMEM Cmd_166[]="Status";
 prog_char PROGMEM Cmd_167[]="File";
 prog_char PROGMEM Cmd_168[]="Input";
@@ -319,7 +316,7 @@ prog_char PROGMEM Cmd_207[]="Error: Unable to establish connection.";
 prog_char PROGMEM Cmd_208[]="Error: Incorrect password.";
 prog_char PROGMEM Cmd_209[]="Error: Wireless access locked.";
 prog_char PROGMEM Cmd_210[]="Error: Access not allowed.";
-prog_char PROGMEM Cmd_211[]="Error: Sending/receiving EventGhost failed.";
+prog_char PROGMEM Cmd_211[]="";
 prog_char PROGMEM Cmd_212[]="Error: SendTo failed.";
 prog_char PROGMEM Cmd_213[]="Error: Timeout on busy Nodo.";
 prog_char PROGMEM Cmd_214[]="Waiting for busy Nodo(s)...";
@@ -410,7 +407,7 @@ PROGMEM const char *CommandText_tabel[]={
 #define CMD_WIRED_ANALOG_CALIBRATE_LOW  52
 #define CMD_LOCK                        53
 #define CMD_STATUS                      54
-#define CMD_RES55                       55
+#define CMD_LOG                         55
 #define CMD_ANALYSE_SETTINGS            56
 #define CMD_TRANSMIT_IP                 57
 #define CMD_TRANSMIT_IR                 58
@@ -430,7 +427,7 @@ PROGMEM const char *CommandText_tabel[]={
 #define CMD_DNS_SERVER                  72
 #define CMD_PORT_SERVER                 73
 #define CMD_PORT_CLIENT                 74
-#define CMD_EVENTGHOST_SERVER           75
+#define CMD_RES75                       75
 #define CMD_PULSE_VARIABLE              76
 #define CMD_RES77                       77
 #define CMD_VARIABLE_WIREDANALOG        78
@@ -528,7 +525,7 @@ PROGMEM const char *CommandText_tabel[]={
 #define VALUE_SOURCE_VARIABLE          162
 #define VALUE_SOURCE_CLOCK             163
 #define VALUE_SOURCE_TELNET            164
-#define VALUE_SOURCE_EVENTGHOST        165
+#define VALUE_SOURCE_res165            165
 #define VALUE_SOURCE_STATUS            166
 #define VALUE_SOURCE_FILE              167
 #define VALUE_DIRECTION_INPUT          168
@@ -574,7 +571,7 @@ PROGMEM const char *CommandText_tabel[]={
 #define MESSAGE_08                     208
 #define MESSAGE_09                     209
 #define MESSAGE_10                     210
-#define MESSAGE_11                     211
+#define MESSAGE_RES11                  211
 #define MESSAGE_12                     212
 #define MESSAGE_13                     213
 #define MESSAGE_14                     214
@@ -600,7 +597,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define BLUE                         3  // Led = Blauw
 #define BAUD                     19200 // Baudrate voor seriële communicatie.
 #define UNIT_MAX                    15 // Hoogst mogelijke unit nummer van een Nodo
-#define SERIAL_TERMINATOR_1       0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>, default voor EventGhost
+#define SERIAL_TERMINATOR_1       0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>
 #define SERIAL_TERMINATOR_2       0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
 #define Loop_INTERVAL_1              5 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
 #define Loop_INTERVAL_2            100 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
@@ -708,7 +705,7 @@ struct SettingsStruct
   byte    TransmitRepeatIR;
   byte    TransmitRF;
   byte    TransmitRepeatRF;
-  byte    TransmitIP;                                       // Definitie van het gebruik van de IP-poort: Off, EventGhost of HTTP
+  byte    TransmitIP;                                       // Definitie van het gebruik van de IP-poort: Off of HTTP
   byte    WaitFreeRF;
   byte    SendBusy;
   byte    WaitBusyAll;                                      // maximale tijd dat gewacht moet worden op Nodos die bezig zijn met verwerking
@@ -721,8 +718,6 @@ struct SettingsStruct
   char    Password[25];                                     // String met wachtwoord.
   char    ID[10];                                           // code waar de Nodo uniek mee geïdentificeerd kan worden in een netwerk
   char    HTTPRequest[80];                                  // HTTP request;
-  byte    EventGhostServer_IP[4];                           // IP adres van waar EventGhost Events naar verstuurd moeten worden.
-  byte    AutoSaveEventGhostIP;                             // Automatisch IP adres opslaan na ontvangst van een EG event of niet.
   byte    Nodo_IP[4];                                       // IP adres van van de Nodo. als 0.0.0.0 ingevuld, dan IP toekenning o.b.v. DHCP
   byte    Client_IP[4];                                     // IP adres van van de Client die verbinding wil maken met de Nodo, 
   byte    Subnet[4];                                        // Submask
@@ -733,6 +728,7 @@ struct SettingsStruct
   byte    HTTP_Pin;                                         // Als deze VALUE_ON bevat worden events tussen WebApp en Nodo alleen uitgewisseld bij juiste key in HTTP reques.
   byte    EchoSerial;
   byte    EchoTelnet;
+  byte    Log;
 #endif
   }Settings;
 
@@ -764,10 +760,9 @@ int UserVar[USER_VARIABLES_MAX];                            // Gebruikers variab
 unsigned long HW_Config=0;                                  // Hardware configuratie zoals gedetecteerd door de Nodo. 
 
 #if NODO_MEGA
-uint8_t MD5HashCode[16];                                    // tabel voor berekenen van MD5 hash codes t.b.v. uitwisselen wachtwoord EventGhost.
+uint8_t MD5HashCode[16];                                    // tabel voor berekenen van MD5 hash codes.
 int CookieTimer;                                            // Seconden teller die bijhoudt wanneer er weer een nieuw Cookie naar de WebApp verzonden moet worden.
 int TerminalConnected=0;                                    // Vlag geeft aan of en hoe lang nog (seconden) er verbinding is met een Terminal.
-boolean TemporyEventGhostError=false;                       // Vlag om tijdelijk evetghost verzending stil te leggen na een communicatie probleem
 int TerminalLocked=1;                                       // 0 als als gebruiker van een telnet terminalsessie juiste wachtwoord heeft ingetoetst
 char TempLogFile[13];                                       // Naam van de Logfile waar (naast de standaard logging) de verwerking in gelogd moet worden.
 char HTTPCookie[10];                                        // Cookie voor uitwisselen van encrypted events via HTTP
@@ -775,12 +770,12 @@ int FileWriteMode=0;                                        // Het aantal second
 char InputBuffer_Serial[INPUT_BUFFER_SIZE+2];               // Buffer voor input Seriele data
 char InputBuffer_Terminal[INPUT_BUFFER_SIZE+2];             // Buffer voor input terminal verbinding Telnes sessie
 
-// ethernet classes voor IP communicatie EventGhost, Telnet terminal en HTTP.
+// ethernet classes voor IP communicatie Telnet terminal en HTTP.
 byte Ethernet_MAC_Address[]={NODO_MAC};// MAC adres van de Nodo.
 EthernetServer IPServer(80);                                // Server class voor HTTP sessie.
 EthernetServer TerminalServer(23);                          // Server class voor Terminal sessie.
 EthernetClient TerminalClient;                              // Client class voor Terminal sessie.
-byte ClientIPAddress[4];                                    // IP adres van de EventGhost client die verbinding probeert te maken c.q. verbonden is.
+byte ClientIPAddress[4];                                    // IP adres van de client die verbinding probeert te maken c.q. verbonden is.
 #endif
 
 // RealTimeclock DS1307

@@ -646,27 +646,6 @@ boolean TransmitCode(unsigned long Event, byte Dest)
 #if NODO_MEGA
   if(bitRead(HW_Config,HW_ETHERNET))// Als Ethernet shield aanwezig.
     {
-    // Het event verzenden naar de EventGhostServer
-    if((Dest==VALUE_SOURCE_EVENTGHOST) || (Dest==VALUE_ALL && Settings.TransmitIP==VALUE_SOURCE_EVENTGHOST))
-      {
-      if(!TemporyEventGhostError)
-        {
-        // IP adres waar event naar toe moet even in de globale IP variabele plaatsen om de regel te kunnen printen.
-        ClientIPAddress[0]=Settings.EventGhostServer_IP[0];
-        ClientIPAddress[1]=Settings.EventGhostServer_IP[1];
-        ClientIPAddress[2]=Settings.EventGhostServer_IP[2];
-        ClientIPAddress[3]=Settings.EventGhostServer_IP[3];
-    
-        PrintEvent(Event,VALUE_DIRECTION_OUTPUT, VALUE_SOURCE_EVENTGHOST);
-        
-        char *TempString=(char*)malloc(20);
-        Event2str(Event,TempString);
-        if(!SendEventGhost(TempString,Settings.EventGhostServer_IP))
-          TemporyEventGhostError=true;
-        free(TempString);
-        }
-      }
-  
     if(Dest==VALUE_SOURCE_HTTP || (Dest==VALUE_ALL && Settings.TransmitIP==VALUE_SOURCE_HTTP))
       {
       SendHTTPEvent(Event);

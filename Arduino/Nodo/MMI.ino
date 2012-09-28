@@ -42,7 +42,7 @@ void PrintEvent(unsigned long Content, byte Direction, byte Port )
 
   strcat(StringToPrint, cmd2str(Port));
 
-  if(Port==VALUE_SOURCE_EVENTGHOST || Port==VALUE_SOURCE_HTTP || Port==VALUE_SOURCE_TELNET)
+  if(Port==VALUE_SOURCE_HTTP || Port==VALUE_SOURCE_TELNET)
     {
     strcat(StringToPrint, "(");
     strcat(StringToPrint, ip2str(ClientIPAddress));
@@ -77,7 +77,7 @@ void PrintEvent(unsigned long Content, byte Direction, byte Port )
 
   PrintTerminal(StringToPrint);   // stuur de regel naar Serial en/of naar Ethernet
 
-  if(bitRead(HW_Config,HW_SDCARD)) 
+  if(bitRead(HW_Config,HW_SDCARD && Settings.Log==VALUE_ON)) 
     {
     TmpStr[0]=0;
     // datum en tijd weergeven
@@ -87,8 +87,9 @@ void PrintEvent(unsigned long Content, byte Direction, byte Port )
       strcat(TmpStr,", ");
       }
     strcat(TmpStr,StringToPrint);
-    AddFileSDCard(ProgmemString(Text_23),TmpStr); // Extra logfile op verzoek van gebruiker
+    AddFileSDCard(ProgmemString(Text_23),TmpStr);
     }
+    
   free(TmpStr);
   free(StringToPrint);
   } 
@@ -301,6 +302,7 @@ void Event2str(unsigned long Code, char* EventString)
       // Par1 als tekst en par2 niet
     case CMD_SEND_EVENT:
     case CMD_DEBUG:
+    case CMD_LOG:
     case CMD_ECHO:
     case CMD_BUSY:
     case CMD_WAITFREERF:

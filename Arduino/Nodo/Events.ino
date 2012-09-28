@@ -43,9 +43,6 @@ void ProcessQueue(void)
         }
       }
     Queue.Position=0;
-    #if NODO_MEGA
-    PrintTerminal(ProgmemString(Text_29));
-    #endif
     }
 
   // de Mega Nodo heeft nog een extra queue faciliteit: bestand queue.dat op SDCard
@@ -88,8 +85,6 @@ void ProcessQueue(void)
     free(Line);
     free(TempString);
     SD.remove(ProgmemString(Text_15));
-    SelectSD(false);
-    PrintTerminal(ProgmemString(Text_29));
     }  
   SelectSD(false);
   #endif
