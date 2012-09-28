@@ -68,7 +68,7 @@
 //#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
 
 #define SETTINGS_VERSION     10
-#define NODO_BUILD          436
+#define NODO_BUILD          440
 #include <EEPROM.h>
 #include <Wire.h>
 
