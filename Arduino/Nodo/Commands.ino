@@ -213,7 +213,6 @@ byte Commanderror(unsigned long Content)
 #if NODO_MEGA
         case VALUE_SOURCE_TELNET:
         case VALUE_SOURCE_SERIAL:
-        case VALUE_SOURCE_EVENTGHOST:
         case VALUE_SOURCE_HTTP:
 #endif
           break;
@@ -236,7 +235,6 @@ byte Commanderror(unsigned long Content)
         case VALUE_SOURCE_VARIABLE:
         case VALUE_SOURCE_CLOCK:
 #if NODO_MEGA
-        case VALUE_SOURCE_EVENTGHOST:
         case VALUE_SOURCE_HTTP:
 #endif
           break;
@@ -272,6 +270,7 @@ byte Commanderror(unsigned long Content)
       return false;
 
 #if NODO_MEGA
+    case CMD_LOG:
     case CMD_DEBUG:
     case CMD_ECHO:
       if(Par1!=VALUE_OFF && Par1!=VALUE_ON)return MESSAGE_02;
@@ -284,7 +283,7 @@ byte Commanderror(unsigned long Content)
       return false;
 
     case CMD_TRANSMIT_IP:
-      if(Par1!=VALUE_OFF && Par1!=VALUE_SOURCE_HTTP && Par1!=VALUE_SOURCE_EVENTGHOST)return MESSAGE_02;
+      if(Par1!=VALUE_OFF && Par1!=VALUE_SOURCE_HTTP)return MESSAGE_02;
       if(Par2!=VALUE_OFF && Par2!=VALUE_ON && Par2!=0)return MESSAGE_02;
       return false;
 #endif
@@ -776,6 +775,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       SaveSettings();
       break;
 
+    case CMD_LOG: 
+      Settings.Log=Par1;
+      SaveSettings();
+      break;
+
     case CMD_SIMULATE_DAY:
       SimulateDay(); 
       break;     
@@ -1234,24 +1238,7 @@ int ExecuteLine(char *Line, byte Port)
                 PrintTerminal(ProgmemString(Text_22));
                 }
               break;
-  
-            case CMD_EVENTGHOST_SERVER:
-              if(Par1==VALUE_AUTO)
-                { 
-                if(Par2==VALUE_ON)
-                  Settings.AutoSaveEventGhostIP=VALUE_AUTO;  // Automatisch IP adres opslaan na ontvangst van een EG event of niet.
-                else
-                  Settings.AutoSaveEventGhostIP=0;
-                }
-              else
-                {
-                if(GetArgv(Command,TmpStr1,2))
-                  if(!str2ip(TmpStr1,Settings.EventGhostServer_IP))
-                    error=MESSAGE_02;
-                }
-              SaveSettings();
-              break;
-              
+                
             case CMD_NODO_IP:
               if(GetArgv(Command,TmpStr1,2))
                 if(!str2ip(TmpStr1,Settings.Nodo_IP))

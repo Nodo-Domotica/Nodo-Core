@@ -20,119 +20,6 @@ void SerialHold(boolean x)
   
 #if NODO_MEGA
 
-/*******************************************************************************************************\
- * Deze functie verzendt een regel als event naar een EventGhost EventGhostServer. De Payload wordt niet
- * gebruikt en is leeg. Er wordt een false teruggegeven als de communicatie met de EventGhost EventGhostServer
- * niet tot stand gebracht kon worden.
- \*******************************************************************************************************/
-boolean SendEventGhost(char* event, byte* SendToIP)
-  {
-  byte InByteIP;
-  int  InByteIPCount=0;
-  int x,y,Try;
-  byte EventGhostClientState=0; 
-  char str2[80];
-  unsigned long Timeout=millis()+5000;
-
-  char* InputBuffer_IP=(char*)malloc(INPUT_BUFFER_SIZE+1);
-  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
-
-  IPAddress EGServerIP(SendToIP[0],SendToIP[1],SendToIP[2],SendToIP[3]);
-  EthernetClient EGclient;
-
-  #if TRACE
-  Trace(8,0,0);
-  #endif
-
-  Try=0;
-  do
-    {
-    if(EGclient.connect(EGServerIP,Settings.PortClient))
-      {
-      EGclient.flush();
-  
-      // verzend verzoek om verbinding met de EventGhost Server
-      EGclient.print(F("quintessence\n\r")); //  
-  
-      // Haal de Cookie op van de server
-      while(Timeout > millis()) 
-        {
-        if(EGclient.available())
-          {
-          InByteIP = EGclient.read();
-          if(InByteIP)
-            {
-            if(InByteIPCount<INPUT_BUFFER_SIZE && isprint(InByteIP))
-              InputBuffer_IP[InByteIPCount++]=InByteIP;// vul de string aan met het binnengekomen teken.
-  
-            // check op tekens die een regel afsluiten
-            if(InByteIP==0x0a && InByteIPCount!=0) // als de ontvangen regel met een 0x0A wordt afgesloten, is er een lege regel. Deze niet verwerken.
-              {
-              InputBuffer_IP[InByteIPCount]=0;
-              InByteIPCount=0;
-  
-              // Over IP ontvangen regel is compleet 
-              // volgende fase in ontvangstproces  
-              // wacht op "accept"
-              if(EventGhostClientState==1)
-                {
-                if(strcasecmp(InputBuffer_IP,PROGMEM2str(Text_18))==0) // accept
-                  {
-                  // "accept" is ontvangen dus wachtwoord geaccepteerd
-                  
-                  // - payload.....
-                  strcpy(TempString,PROGMEM2str(Text_21)); // "Payload withoutRelease"
-                  strcat(TempString,"\n");
-                  EGclient.print(TempString);
-  
-                  // - <event>
-                  strcat(event,"\n");
-                  EGclient.print(event);
-  
-                  // - "close"
-                  strcpy(TempString,PROGMEM2str(Text_19)); 
-                  strcat(TempString,"\n");
-                  EGclient.print(TempString);
-  
-                  // klaar met verzenden en verbreek de verbinding;
-                  EGclient.stop();    // close the connection:
-
-                  free(InputBuffer_IP);
-                  free(TempString);
-                  return true;
-                  }
-                }
-  
-              if(EventGhostClientState==0)
-                {
-                // Cookie is door de Nodo ontvangen en moet worden beantwoord met een MD5-hash
-                // Stel de string samen waar de MD5 hash voor gegenereerd moet worden
-                // Bereken MD5-Hash uit de string "<cookie>:<password>" en verzend deze
-  
-                strcpy(TempString,InputBuffer_IP);
-                strcat(TempString,":");
-                strcat(TempString,Settings.Password);   
-                md5(TempString);  
-                EGclient.print(TempString);
-                EventGhostClientState=1;
-                }
-              }
-            }
-          }
-        }
-      }
-    else
-      RaiseMessage(MESSAGE_07);
-
-    EGclient.stop();    // close the connection:
-    EGclient.flush();    // close the connection:
-    delay(250);
-    }while(++Try<5);
-
-  free(InputBuffer_IP);
-  free(TempString);
-  return false;
-  }
  
 
  /*******************************************************************************************************\
@@ -325,16 +212,14 @@ boolean SendHTTPRequest(char* Request)
     #endif
 
     IPClient.println(IPBuffer);
-    strcpy(IPBuffer,"Host: ");
-    strcat(IPBuffer,TempString);
-    IPClient.println(IPBuffer);
-    strcpy(IPBuffer,"User-Agent: Nodo/Build=");
-    strcat(IPBuffer,int2str(NODO_BUILD));
-    IPClient.println(IPBuffer);
+
+    IPClient.print(F("Host: "));
+    IPClient.println(TempString);
+
+    IPClient.print(F("User-Agent: Nodo/Build="));
+    IPClient.println(int2str(NODO_BUILD));             
+ 
     IPClient.println(F("Connection: Close"));
-  
-  //??? up time: millis() toevoegen?
-  //??? intern ip adres
   
     IPClient.println();// Afsluiten met een lege regel is verplicht in http protocol/
 
@@ -481,15 +366,13 @@ void ExecuteIP(void)
   char InByte;
   boolean RequestCompleted=false;  
   boolean Completed=false;
+  int Protocol=0;
   int InByteCounter;
-  byte Protocol=0;
-  byte EGState=0;
   char FileName[13];
   boolean RequestEvent=false;
   boolean RequestFile=false;
   int x,y;
   unsigned long TimeoutTimer=millis()+5000; // Na twee seconden moet de gehele transactie gereed zijn, anders 'hik' in de lijn.
-  char EGCookie[10];
   
   char *InputBuffer_IP = (char*) malloc(IP_BUFFER_SIZE+1);
   char *Event          = (char*) malloc(INPUT_BUFFER_SIZE+1);
@@ -533,14 +416,11 @@ void ExecuteIP(void)
             InputBuffer_IP[InByteCounter]=0;
             InByteCounter=0;
             
-            // Kijk wat voor soort protocol het is HTTP of APOP/EventGhost
+            // Kijk of het een HTTP-request is
             if(Protocol==0)
               {
               if(StringFind(InputBuffer_IP,"GET")!=-1)
                 Protocol=VALUE_SOURCE_HTTP;// HTTP-Request
-  
-              if(StringFind(InputBuffer_IP,PROGMEM2str(Text_20))!=-1) // "quintessence"??
-                Protocol=VALUE_SOURCE_EVENTGHOST;// EventGhost
               }
             
             if(Protocol==VALUE_SOURCE_HTTP)
@@ -594,8 +474,8 @@ void ExecuteIP(void)
                 }
 
               IPClient.println(F("Content-Type: text/html"));
-              IPClient.print(F("Server: Nodo/"));
-              IPClient.println(int2str(Settings.Version));             
+              IPClient.print(F("Server: Nodo/Build="));
+              IPClient.println(int2str(NODO_BUILD));             
               if(bitRead(HW_Config,HW_CLOCK))
                 {
                 IPClient.print(F("Date: "));
@@ -643,108 +523,13 @@ void ExecuteIP(void)
                   IPClient.println(cmd2str(MESSAGE_03));
                 }
               } // einde HTTP-request
-  
-            if(Protocol==VALUE_SOURCE_EVENTGHOST) // EventGhost
-              {
-              if(EGState==2)
-                {
-                // password uitwisseling via MD5 is gelukt en accept is verzonden
-                // Nu kunnen de volgende regels voorbij komen:
-                // - payload.....
-                // - close
-                // - <event>
-          
-                // Regels met "Payload" worden door de Bridge/Nodo niet gebruikt ->negeren.
-                if(StringFind(InputBuffer_IP,PROGMEM2str(Text_17))>=0)// payload
-                  {
-                  ; // negeren. Bridge doet niets met de payload functie.          
-                  }
-                else if(strcasecmp(InputBuffer_IP,PROGMEM2str(Text_19))==0) // "close"
-                  {
-                  // Regel "close", dan afsluiten van de communicatie met EventGhost  
-                  IPClient.stop();
-                  TemporyEventGhostError=false; 
-                  Completed=true;
-                  break;
-                  }
-                else
-                  {
-                  // Event van EG ontvangen.
-                  strcpy(Event,InputBuffer_IP);
-                  RequestEvent=true;
-                  }
-                }
-      
-              else if(EGState==1)
-                {
-                // Cookie is verzonden en regel met de MD5 hash is ontvangen
-                // Stel de string samen waar de MD5-hash aan de Nodo zijde voor gegenereerd moet worden
-                // Bereken eigen MD5-Hash uit de string "<cookie>:<password>"                
-                sprintf(TmpStr1,"%s:%s",EGCookie,Settings.Password);            
-                md5(TmpStr1); 
-            
-                // vergelijk hash-waarden en bevestig de EventGhostClient bij akkoord
-                if(strcasecmp(TmpStr1,InputBuffer_IP)==0)
-                  {
-                  // MD5-hash code matched de we hebben een geverifiëerde EventGhostClient
-                  strcpy(TmpStr1,PROGMEM2str(Text_18));
-                  strcat(TmpStr1,"\n");
-                  IPClient.print(TmpStr1); // "accept"
-  
-                  // Wachtwoord correct. Bewaar IP adres indien nodig
-                  if(Settings.AutoSaveEventGhostIP==VALUE_AUTO)
-                    {
-                    if( Settings.EventGhostServer_IP[0]!=ClientIPAddress[0] ||
-                        Settings.EventGhostServer_IP[1]!=ClientIPAddress[1] ||
-                        Settings.EventGhostServer_IP[2]!=ClientIPAddress[2] ||
-                        Settings.EventGhostServer_IP[3]!=ClientIPAddress[3] )
-                      {
-                      Settings.EventGhostServer_IP[0]=ClientIPAddress[0];
-                      Settings.EventGhostServer_IP[1]=ClientIPAddress[1];
-                      Settings.EventGhostServer_IP[2]=ClientIPAddress[2];
-                      Settings.EventGhostServer_IP[3]=ClientIPAddress[3];
-                      SaveSettings();
-                      }
-                    }
-                  }
-                else
-                  {
-                  Completed=true;
-                  Protocol=0;
-                  RaiseMessage(MESSAGE_08);
-                  break;
-                  }
-                // volgende state, 
-                EGState=2;                    
-                }
-                
-              else if(EGState==0)
-                {
-                IPClient.read(); // er kan nog een \r in de buffer zitten.
-    
-                // Kijk of de input een connect verzoek is vanuit EventGhost
-                if(strcasecmp(InputBuffer_IP,PROGMEM2str(Text_20))==0) // "quintessence" 
-                  {   
-                  // Een wachtwoord beveiligd verzoek vanuit een EventGhost EventGhostClient (PC, Andoid, IPhone)
-                  // De EventGhostClient is een EventGhost sender.  
-                  // maak een cookie en verzend deze
-                  RandomCookie(EGCookie);
-                  IPClient.print(EGCookie);          
-      
-                  // ga naar volgende state: Haal MD5 en verwerk deze
-                  EGState=1;
-                  }
-                }
-              } // einde InputType==EVENTGHOST              
-            InputBuffer_IP[0]=0;
-            }
+            }  
           }
         }
       }
     delay(5);  // korte pauze om te voorkomen dat de verbinding wordt verbroken alvorens alle data door client verwerkt is.
     IPClient.stop();
     }
-
 
   if(RequestEvent)
     ExecuteLine(Event, Protocol);

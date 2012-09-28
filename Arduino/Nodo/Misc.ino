@@ -267,6 +267,10 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       *Par1=Settings.Debug;
       break;
 
+    case CMD_LOG:
+      *Par1=Settings.Log;
+      break;
+
     case CMD_LOCK:
       *Par1=Settings.Lock==0?0:0x80;// uit 16-bit combi van Par1+Par2 staat de on/off in bit 15.
       break;
@@ -372,8 +376,6 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       *Par1=Settings.TransmitIP;
       if(Settings.TransmitIP==VALUE_SOURCE_HTTP)
         *Par2=Settings.HTTP_Pin;
-      if(Settings.TransmitIP==VALUE_SOURCE_EVENTGHOST)
-        *Par2=Settings.AutoSaveEventGhostIP;
       break;
 
     // pro-forma de commando's die geen fout op mogen leveren omdat deze elders in de statusafhandeling worden weergegeven
@@ -385,7 +387,6 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
     case CMD_PORT_CLIENT:
     case CMD_HTTP_REQUEST:
     case CMD_ID:
-    case CMD_EVENTGHOST_SERVER:
       *Par1=0;
       *Par2=0;
       break;
@@ -451,8 +452,6 @@ boolean LoadSettings()
  /*********************************************************************************************\
  * Alle settings van de Nodo weer op default.
  \*********************************************************************************************/
-
-
 void ResetFactory(void)
   {
   Led(BLUE);
@@ -482,11 +481,6 @@ void ResetFactory(void)
 #if NODO_MEGA
   Settings.Unit                       = UNIT_NODO_MEGA;
   Settings.Debug                      = VALUE_OFF;
-  Settings.AutoSaveEventGhostIP       = VALUE_OFF;
-  Settings.EventGhostServer_IP[0]     = 0; // IP adres van de EventGhost server
-  Settings.EventGhostServer_IP[1]     = 0; // IP adres van de EventGhost server
-  Settings.EventGhostServer_IP[2]     = 0; // IP adres van de EventGhost server
-  Settings.EventGhostServer_IP[3]     = 0; // IP adres van de EventGhost server
   Settings.HTTPRequest[0]             = 0; // string van het HTTP adres leeg maken
   Settings.Client_IP[0]               = 0;
   Settings.Client_IP[1]               = 0;
@@ -514,6 +508,7 @@ void ResetFactory(void)
   Settings.HTTP_Pin                   = VALUE_OFF;
   Settings.EchoSerial                 = VALUE_ON;
   Settings.EchoTelnet                 = VALUE_ON;  
+  Settings.Log                        = VALUE_OFF;  
   strcpy(Settings.Password,ProgmemString(Text_10));
 
 #else
@@ -681,13 +676,6 @@ void Status(byte Par1, byte Par2, byte Transmit)
           PrintTerminal(TempString);
           break;
           
-        case CMD_EVENTGHOST_SERVER:
-          // EvetGhost client IP
-          sprintf(TempString,"%s %u.%u.%u.%u ",cmd2str(CMD_EVENTGHOST_SERVER),Settings.EventGhostServer_IP[0],Settings.EventGhostServer_IP[1],Settings.EventGhostServer_IP[2],Settings.EventGhostServer_IP[3]);
-          if(Settings.AutoSaveEventGhostIP==VALUE_AUTO)
-            strcat(TempString," (Auto)");      
-          PrintTerminal(TempString);
-          break;
 #endif
 
         default:
