@@ -53,8 +53,8 @@
 // PulseTime  = tijd tussen twee pulsen uitgedrukt in milliseconden.
 // PulseCount = Aantal pulsen tussen twee metingen.
 
-#define FORMULA_1            a = 3600000/PulseTime;            /* 1000 pulsen in een uur = 1KWh */
-#define FORMULA_2            a = 2160000/PulseTime;            /* 600 pulsen per uur = 1KWh */
+#define FORMULA_1            a = 360000/PulseTime;            /* 1000 pulsen in een uur = 1KWh */
+#define FORMULA_2            a = 216000/PulseTime;            /* 600 pulsen per uur = 1KWh */
 #define FORMULA_3            a = PulseCount; PulseCount=0;
 #define FORMULA_4            a = PulseCount / 10; PulseCount=0;
 #define FORMULA_5            a = 0;

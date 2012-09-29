@@ -267,14 +267,6 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       *Par1=Settings.Debug;
       break;
 
-    case CMD_LOG:
-      *Par1=Settings.Log;
-      break;
-
-    case CMD_LOCK:
-      *Par1=Settings.Lock==0?0:0x80;// uit 16-bit combi van Par1+Par2 staat de on/off in bit 15.
-      break;
-
     case CMD_WAITBUSY:
       *Par1=Settings.WaitBusyAll;
       break;
@@ -372,6 +364,14 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       break;
 
 #if NODO_MEGA
+    case CMD_LOG:
+      *Par1=Settings.Log;
+      break;
+
+    case CMD_LOCK:
+      *Par1=Settings.Lock==0?0:0x80;// uit 16-bit combi van Par1+Par2 staat de on/off in bit 15.
+      break;
+
     case CMD_TRANSMIT_IP:
       *Par1=Settings.TransmitIP;
       if(Settings.TransmitIP==VALUE_SOURCE_HTTP)
