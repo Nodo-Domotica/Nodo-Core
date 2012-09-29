@@ -704,7 +704,13 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     case CMD_STATUS:
       // Het commando [Status] verzendt de status naar de bron waar het verzoek van is ontvangen. Serial en TelNet worden beschouwd als dezelfde bron.
       // Als het door de gebruiker is verzocht om logging naar een file te doen, dan wordt de output NIET als events verzonden.
+
+      #if NODO_MEGA
       if(TempLogFile[0]!=0 || Src==VALUE_SOURCE_SERIAL || Src==VALUE_SOURCE_TELNET)
+      #else
+      if(Src==VALUE_SOURCE_SERIAL || Src==VALUE_SOURCE_TELNET)
+      #endif
+
         Status(Par1, Par2, false);
       else
         {

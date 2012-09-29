@@ -5,6 +5,8 @@ Aanpassingen t.o.v. laatste build:
 - Issue 537: in arduino-nodo: Headers niet consequent bij verzenden/ontvangen
 - Issue 538: Logging naar LOG.DAT is voor veel gebruikers onnodig omdat de WebApp hier ook in voorziet
 - Issue 539: EventGhost APOP protocol verwijderen uit de Nodo
+- Aanpassing formules voor pulsen.
+
  
 Aanpassingen t.o.v. Final Beta Build 436:
 - Issue 538: Logging naar LOG.DAT is voor veel genruikers onnodig omdat de WebApp hier ook in voorziet
