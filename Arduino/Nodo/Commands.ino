@@ -380,6 +380,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       a=0;
       // eerst een keer dit commando uitvoeren voordat de teller gaat lopen.
       bitWrite(HW_Config,HW_IR_PULSE,true);
+
       attachInterrupt(PULSE_IRQ,PulseCounterISR,FALLING); // IRQ behorende bij PIN_IR_RX_DATA
 
 #if NODO_MEGA
