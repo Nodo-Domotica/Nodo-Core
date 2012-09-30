@@ -30,12 +30,12 @@
 #define NODO_MEGA            0
 
 // Voor de Nodo-Mega variant bij onderstaande regels de // tekens op positie 1 en 2 verwijderen.
-#define NODO_MEGA          1
-#define TRACE              0                                     // Sla debug informatie op SDCard op in bestand TRACE.DAT. Let op, maakt de Nodo traag.
-#define ETHERNET           1                                     // EthernetShield: 0 = afwezig, 1 = aanwezig
-#include <SD.h>
-#include <EthernetNodo.h>
-#include <SPI.h>
+//#define NODO_MEGA          1
+//#define TRACE              0                                     // Sla debug informatie op SDCard op in bestand TRACE.DAT. Let op, maakt de Nodo traag.
+//#define ETHERNET           1                                     // EthernetShield: 0 = afwezig, 1 = aanwezig
+//#include <SD.h>
+//#include <EthernetNodo.h>
+//#include <SPI.h>
 
 /* User plugin opties: ******************************************************************************************************/
 #define USER_PLUGIN        0                                     // Plugin: 0 = niet compileren, 1 = wel compileren
@@ -68,7 +68,7 @@
 //#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
 
 #define SETTINGS_VERSION     11
-#define NODO_BUILD          441
+#define NODO_BUILD          443
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -670,7 +670,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define TIMER_MAX                    8 // aantal beschikbare timers voor de user, gerekend vanaf 1
 #define USER_VARIABLES_MAX           8 // aantal beschikbare gebruikersvariabelen voor de user.
 #define EVENT_QUEUE_MAX             16 // maximaal aantal plaatsen in de queue
-#define PULSE_IRQ                    3 // IRQ verbonden aan de IR_RX_DATA pen 3 van de ATMega328 (Uno/Nano/Duemillanove)
+#define PULSE_IRQ                    1 // IRQ-1 verbonden aan de IR_RX_DATA pen 3 van de ATMega328 (Uno/Nano/Duemillanove)
 #define RAW_BUFFER_SIZE            160 // Maximaal aantal te ontvangen 128 bits.
 #define EVENTLIST_MAX              100 // aantal events dat de lijst bevat in het EEPROM geheugen. Iedere regel in de eventlist heeft 8 bytes nodig. eerste adres is 0
 #define WIRED_PORTS                  4 // aantal WiredIn/WiredOut poorten
@@ -746,9 +746,9 @@ struct QueueStruct
   byte Position;                                                 // teller die wijst naar een plaats in de queue.
   }Queue;
   
-unsigned long PulseCount;                                   // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
-unsigned long PulseTime;                                    // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
-unsigned long PulseTimePrevious;                            // Tijdsduur tussen twee pulsen teller in milliseconden: vorige meting
+volatile unsigned long PulseCount=0L;                       // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
+volatile unsigned long PulseTime=0L;                        // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
+volatile unsigned long PulseTimePrevious=0L;                // Tijdsduur tussen twee pulsen teller in milliseconden: vorige meting
 unsigned long UserTimer[TIMER_MAX];                         // Timers voor de gebruiker.
 boolean WiredInputStatus[WIRED_PORTS];                      // Status van de WiredIn worden hierin opgeslagen.
 boolean WiredOutputStatus[WIRED_PORTS];                     // Wired variabelen.
@@ -811,9 +811,10 @@ void setup()
   pinMode(PIN_SPEAKER,    OUTPUT);
   pinMode(PIN_LED_RGB_B,  OUTPUT);
   digitalWrite(PIN_IR_TX_DATA,LOW);   // Zet de IR zenders initiëel uit! Anders mogelijk overbelasting !
-  digitalWrite(PIN_IR_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
-  digitalWrite(PIN_RF_RX_DATA,HIGH);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
   digitalWrite(PIN_RF_RX_VCC,HIGH);   // Spanning naar de RF ontvanger aan.
+
+  digitalWrite(PIN_IR_RX_DATA,INPUT_PULLUP);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.//???
+  digitalWrite(PIN_RF_RX_DATA,INPUT_PULLUP);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.//???
 
 #if NODO_MEGA
   pinMode(PIN_LED_RGB_G,  OUTPUT);
