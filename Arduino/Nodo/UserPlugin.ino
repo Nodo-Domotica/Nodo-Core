@@ -57,7 +57,7 @@ void UserPlugin_Command(int Par1, int Par2)
   // TransmitCode(command2event(Settings.Unit, CMD_USEREVENT, 111, 222),VALUE_ALL);
 
   // VOORBEELD-2: uitvoeren van een event: [UserEvent 123,100]
-  // ProcessEvent(command2event(Settings.Unit, CMD_USEREVENT, 123, 100),VALUE_DIRECTION_INPUT,0,0,0);
+  // ProcessEvent2(command2event(Settings.Unit, CMD_USEREVENT, 123, 100),VALUE_DIRECTION_INPUT,0,0,0);
 
   // VOORBEELD-3: uitvoeren van een commando: [Sound 0]
   // ExecuteCommand(command2event(Settings.Unit, CMD_SOUND, 0, 0) ,0 , 0, 0);

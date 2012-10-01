@@ -3,6 +3,8 @@
 
 Aanpassingen t.o.v. laatste build:
 - Issue 543: Small: Tellen van pulsen werkt niet correct
+- Issue 549: Output commando's bundelen ==>> LET OP: Hiervoor aanpassing van de WebApp nodig.
+- Issue 548: Onbekend UserEvent laat Small stoppen met scanne.
 - Aanpassing formules voor pulsen.
 - PullUp voor IR_RX_DATA lijn 
  

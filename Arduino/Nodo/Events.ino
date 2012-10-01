@@ -25,7 +25,7 @@ void ProcessQueue(void)
       if(((Queue.Event[x]>>16)&0xff)==CMD_EVENTLIST_WRITE && ((Queue.Event[x]>>24)&0xf)==Settings.Unit && x<(Queue.Position-2)) // cmd
         {
         #if TRACE
-        Trace(16,1,0);
+        Trace(16,1,x);
         #endif
         
         if(Eventlist_Write(((Queue.Event[x]>>8)&0xff),Queue.Event[x+1],Queue.Event[x+2]))
@@ -36,7 +36,7 @@ void ProcessQueue(void)
       else
         {
         #if TRACE
-        Trace(16,2,0);
+        Trace(16,2,x);
         #endif
 
         ProcessEvent2(Queue.Event[x],VALUE_DIRECTION_INPUT,Queue.Port[x],0,0);      // verwerk binnengekomen event.
@@ -47,7 +47,6 @@ void ProcessQueue(void)
 
   // de Mega Nodo heeft nog een extra queue faciliteit: bestand queue.dat op SDCard
   #if NODO_MEGA
-
   SelectSD(true);
   File dataFile=SD.open(ProgmemString(Text_15));
   if(dataFile)
@@ -95,7 +94,7 @@ void ProcessQueue(void)
  * Doorlopen van een volledig gevulde eventlist duurt ongeveer 15ms inclusief printen naar serial
  * maar exclusief verwerking n.a.v. een 'hit' in de eventlist
  \*********************************************************************************************/
-boolean ProcessEvent(unsigned long IncommingEvent, byte Direction, byte Port, unsigned long PreviousContent, byte PreviousPort)
+boolean ProcessEvent1(unsigned long IncommingEvent, byte Direction, byte Port, unsigned long PreviousContent, byte PreviousPort)
   {
   byte x;
   SerialHold(true);  // als er een regel ontvangen is, dan binnenkomst van signalen stopzetten met een seriele XOFF
@@ -253,7 +252,7 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
           {// het is een ander soort event;
           if(Event_1!=command2event(Settings.Unit,CMD_COMMAND_WILDCARD,0,0))
             {
-            if(!ProcessEvent(Event_2,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_EVENTLIST,IncommingEvent,Port))
+            if(!ProcessEvent2(Event_2,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_EVENTLIST,IncommingEvent,Port))
               {
               ExecutionDepth--;
               return true;

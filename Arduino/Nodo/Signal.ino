@@ -77,7 +77,7 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
     Trace(4,2,0);
     #endif
 
-    ProcessQueue();
+    ProcessQueue(); //???
 
     #if TRACE
     Trace(4,3,1);
@@ -463,7 +463,7 @@ void RawSendRF(void)
   delay(5);// kleine pause om de zender de tijd te geven om stabiel te worden 
   noInterrupts();
   
-  for(byte y=0; y<Settings.TransmitRepeatRF; y++) // herhaal verzenden RF code
+  for(byte y=0; y<RF_REPEATS; y++) // herhaal verzenden RF code
     {
     x=1;
     while(x<=RawSignal.Number)
@@ -500,7 +500,7 @@ void RawSendIR(void)
   // kleine pause zodat verzenden event naar de USB poort gereed is, immers de IRQ's worden tijdelijk uitgezet
   delay(10);
 
-  for(int repeat=0; repeat<Settings.TransmitRepeatIR; repeat++) // herhaal verzenden IR code
+  for(int repeat=0; repeat<IR_REPEATS; repeat++) // herhaal verzenden IR code
     {
     pulse=1;
     noInterrupts(); // interrupts tijdelijk uitschakelen om zo en zuiverder signaal te krijgen
@@ -646,7 +646,7 @@ boolean TransmitCode(unsigned long Event, byte Dest)
 #if NODO_MEGA
   if(bitRead(HW_Config,HW_ETHERNET))// Als Ethernet shield aanwezig.
     {
-    if(Dest==VALUE_SOURCE_HTTP || (Dest==VALUE_ALL && Settings.TransmitIP==VALUE_SOURCE_HTTP))
+    if(Dest==VALUE_SOURCE_HTTP || (Dest==VALUE_ALL && Settings.TransmitIP==VALUE_ON))
       {
       SendHTTPEvent(Event);
       PrintEvent(Event,VALUE_DIRECTION_OUTPUT,VALUE_SOURCE_HTTP);

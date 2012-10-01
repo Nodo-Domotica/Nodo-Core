@@ -276,16 +276,6 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       *Par2=Settings.AnalyseSharpness;
       break;
 
-    case CMD_TRANSMIT_RF:
-      *Par1=Settings.TransmitRF;
-      *Par2=Settings.TransmitRepeatRF;
-      break;
-      
-    case CMD_TRANSMIT_IR:
-      *Par1=Settings.TransmitIR;
-      *Par2=Settings.TransmitRepeatIR;
-      break;
-
     case CMD_CLOCK_EVENT_DAYLIGHT:
       *Par1=Time.Daylight;
       break;
@@ -370,12 +360,6 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
 
     case CMD_LOCK:
       *Par1=Settings.Lock==0?0:0x80;// uit 16-bit combi van Par1+Par2 staat de on/off in bit 15.
-      break;
-
-    case CMD_TRANSMIT_IP:
-      *Par1=Settings.TransmitIP;
-      if(Settings.TransmitIP==VALUE_SOURCE_HTTP)
-        *Par2=Settings.HTTP_Pin;
       break;
 
     // pro-forma de commando's die geen fout op mogen leveren omdat deze elders in de statusafhandeling worden weergegeven
@@ -471,8 +455,6 @@ void ResetFactory(void)
   Settings.TransmitIR                 = VALUE_OFF;
   Settings.TransmitRF                 = VALUE_ON;
   Settings.TransmitIP                 = VALUE_OFF;
-  Settings.TransmitRepeatIR           = TX_REPEATS;
-  Settings.TransmitRepeatRF           = TX_REPEATS;
   Settings.SendBusy                   = VALUE_OFF;
   Settings.WaitBusyAll                = 30;
   Settings.WaitFreeRF                 = VALUE_OFF;
@@ -505,12 +487,11 @@ void ResetFactory(void)
   Settings.PortServer                 = 8080;
   Settings.PortClient                 = 80;
   Settings.ID[0]                      = 0; // string leegmaken
-  Settings.HTTP_Pin                   = VALUE_OFF;
   Settings.EchoSerial                 = VALUE_ON;
   Settings.EchoTelnet                 = VALUE_ON;  
   Settings.Log                        = VALUE_OFF;  
-  strcpy(Settings.Password,ProgmemString(Text_10));
-
+  Settings.Password[0]                = 0;
+  
 #else
   Settings.Unit                       = UNIT_NODO_SMALL;
 
@@ -1409,6 +1390,7 @@ void Trace(int Func, int Pos, unsigned long Value)
   free(stackptr);      // free up the memory again (sets stackptr to 0)
   stackptr =  (uint8_t *)(SP);           // save value of stack pointer
 
+  #if NODO_MEGA
   strcpy(str,"=> Trace: Seconds=");
   strcat(str,int2str(millis()/1000));
   strcat(str,", Func=");
@@ -1419,9 +1401,22 @@ void Trace(int Func, int Pos, unsigned long Value)
   strcat(str,int2str(Value));
   strcat(str,", Memory=");
   strcat(str,int2str(stackptr-heapptr));
-
   AddFileSDCard("TRACE.DAT", str);
 
+  #else
+  Serial.print(F("=> Trace: Seconds="));
+  Serial.print(millis()/1000);
+  Serial.print(F(", Func="));
+  Serial.print(Func);
+  Serial.print(F(", Pos="));
+  Serial.print(Pos);
+  Serial.print(F(", Value="));
+  Serial.print(Value);
+  Serial.print(F(", Memory="));
+  Serial.println(stackptr-heapptr);
+  
+  #endif
+  
   free(str);
   }
 #endif

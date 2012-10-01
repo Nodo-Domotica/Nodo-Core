@@ -42,7 +42,7 @@ byte GetHTTPFile(char* filename)
   strcat(HttpRequest,"&file=");
   strcat(HttpRequest,filename);
 
-  if(Settings.HTTP_Pin==VALUE_ON)
+  if(Settings.Password[0]!=0)
     {
     // pin-code genereren en meesturen in het http-request
     strcpy(TempString,HTTPCookie);
@@ -85,7 +85,7 @@ byte SendHTTPEvent(unsigned long event)
 
   strcat(HttpRequest,int2str(Unit));  
   
-  if(Settings.HTTP_Pin==VALUE_ON)
+  if(Settings.Password[0]!=0)
     {
     // pin-code genereren en meesturen in het http-request
     strcpy(TempString,HTTPCookie);
@@ -433,7 +433,7 @@ void ExecuteIP(void)
                 
                 // als de beveiliging aan staat, dan kijken of de juiste pin ip meegegeven in het http-request. x is vlag voor toestemming verwerking event
                 x=false;
-                if(Settings.HTTP_Pin==VALUE_ON)
+                if(Settings.Password[0]!=0)
                   {
                   sprintf(TmpStr2,"%s:%s",HTTPCookie,Settings.Password);  
                   md5(TmpStr2);
