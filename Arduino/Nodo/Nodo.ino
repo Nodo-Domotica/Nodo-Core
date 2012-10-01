@@ -20,6 +20,7 @@
 /****************************** Door gebruiker in te stellen: ***************************************************************/
 
 /* instelling van default unit nummer en MAC address (dat laatste alleen voor de Mega van toepassing): **********************/
+#define TRACE              0                                     // Geef weer of sla debug informatie op SDCard op in bestand TRACE.DAT. Let op, maakt de Nodo traag.
 #define UNIT_NODO_SMALL    15                                    // Default unitnummer van een Nodo-Small na een reset van de Nodo.
 #define UNIT_NODO_MEGA     1                                     // Default unitnummer van een Nodo-Mega na een reset van de Nodo.
 #define NODO_MAC           0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF    // Default Nodo MACadres (alleen voor de Nodo-Mega)
@@ -30,12 +31,11 @@
 #define NODO_MEGA            0
 
 // Voor de Nodo-Mega variant bij onderstaande regels de // tekens op positie 1 en 2 verwijderen.
-//#define NODO_MEGA          1
-//#define TRACE              0                                     // Sla debug informatie op SDCard op in bestand TRACE.DAT. Let op, maakt de Nodo traag.
-//#define ETHERNET           1                                     // EthernetShield: 0 = afwezig, 1 = aanwezig
-//#include <SD.h>
-//#include <EthernetNodo.h>
-//#include <SPI.h>
+#define NODO_MEGA          1
+#define ETHERNET           1                                     // EthernetShield: 0 = afwezig, 1 = aanwezig
+#include <SD.h>
+#include <EthernetNodo.h>
+#include <SPI.h>
 
 /* User plugin opties: ******************************************************************************************************/
 #define USER_PLUGIN        0                                     // Plugin: 0 = niet compileren, 1 = wel compileren
@@ -67,8 +67,8 @@
 /****************************************************************************************************************************/
 //#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
 
-#define SETTINGS_VERSION     11
-#define NODO_BUILD          443
+#define SETTINGS_VERSION     12
+#define NODO_BUILD          444
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -157,9 +157,9 @@ prog_char PROGMEM Cmd_053[]="Lock";
 prog_char PROGMEM Cmd_054[]="Status"; 
 prog_char PROGMEM Cmd_055[]="Log";
 prog_char PROGMEM Cmd_056[]="AnalyseSettings";
-prog_char PROGMEM Cmd_057[]="OutputIP";
-prog_char PROGMEM Cmd_058[]="OutputIR";
-prog_char PROGMEM Cmd_059[]="OutputRF";
+prog_char PROGMEM Cmd_057[]="Output";
+prog_char PROGMEM Cmd_058[]="";
+prog_char PROGMEM Cmd_059[]="";
 prog_char PROGMEM Cmd_060[]="ReceiveSettings";
 prog_char PROGMEM Cmd_061[]="HTTPHost";
 prog_char PROGMEM Cmd_062[]="FileErase";
@@ -409,9 +409,9 @@ PROGMEM const char *CommandText_tabel[]={
 #define CMD_STATUS                      54
 #define CMD_LOG                         55
 #define CMD_ANALYSE_SETTINGS            56
-#define CMD_TRANSMIT_IP                 57
-#define CMD_TRANSMIT_IR                 58
-#define CMD_TRANSMIT_RF                 59
+#define CMD_OUTPUT                      57
+#define CMD_RES58                       58
+#define CMD_RES59                       59
 #define CMD_RECEIVE_SETTINGS            60
 #define CMD_HTTP_REQUEST                61
 #define CMD_FILE_ERASE                  62
@@ -606,7 +606,8 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define SIGNAL_TIMEOUT_RF         5000 // na deze tijd in uSec. wordt één RF signaal als beëindigd beschouwd.
 #define SIGNAL_TIMEOUT_IR        10000 // na deze tijd in uSec. wordt één IR signaal als beëindigd beschouwd.
 #define SIGNAL_REPEAT_TIME        1000  // Tijd waarbinnen hetzelfde event niet nogmaals via RF of IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
-#define TX_REPEATS                   5 // aantal herhalingen van een code binnen één RF of IR reeks
+#define RF_REPEATS                   5 // aantal herhalingen van een code binnen één RF reeks
+#define IR_REPEATS                   5 // aantal herhalingen van een code binnen één IR reeks
 #define MIN_PULSE_LENGTH           100 // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define MIN_RAW_PULSES              32 // =16 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
 #define SHARP_TIME                 500 // tijd in milliseconden dat de nodo gefocust moet blijven luisteren naar één dezelfde poort na binnenkomst van een signaal
@@ -702,9 +703,7 @@ struct SettingsStruct
   int     UserVar[USER_VARIABLES_MAX];
   byte    Unit;
   byte    TransmitIR;
-  byte    TransmitRepeatIR;
   byte    TransmitRF;
-  byte    TransmitRepeatRF;
   byte    TransmitIP;                                       // Definitie van het gebruik van de IP-poort: Off of HTTP
   byte    WaitFreeRF;
   byte    SendBusy;
@@ -725,7 +724,6 @@ struct SettingsStruct
   byte    DnsServer[4];                                     // DNS Server IP adres
   int     PortServer;                                       // Poort van de inkomende IP communnicatie
   int     PortClient;                                       // Poort van de uitgaande IP communnicatie
-  byte    HTTP_Pin;                                         // Als deze VALUE_ON bevat worden events tussen WebApp en Nodo alleen uitgewisseld bij juiste key in HTTP reques.
   byte    EchoSerial;
   byte    EchoTelnet;
   byte    Log;
@@ -912,7 +910,7 @@ void setup()
     TerminalServer.begin(); // Start server voor Terminalsessies via TelNet
 
     // Als ethernet enbled en beveiligde modus, dan direct een Cookie sturen, ander worden eerste events niet opgepikt door de WebApp
-    if(Settings.HTTP_Pin==VALUE_ON)
+    if(Settings.Password[0]!=0)
       SendHTTPCookie(); // Verzend een nieuw cookie
     }
 
@@ -926,9 +924,8 @@ void setup()
     UserPlugin_Init();
   #endif
   TransmitCode(command2event(Settings.Unit, CMD_BOOT_EVENT,Settings.Unit,0),VALUE_ALL);  
-  ProcessEvent(command2event(Settings.Unit, CMD_BOOT_EVENT,Settings.Unit,0),VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM,0,0);  // Voer het 'Boot' event uit.
+  ProcessEvent1(command2event(Settings.Unit, CMD_BOOT_EVENT,Settings.Unit,0),VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM,0,0);  // Voer het 'Boot' event uit.
   bitWrite(HW_Config,HW_SERIAL,0); // Serial weer uitschakelen.
-
   }
 
 
@@ -966,7 +963,7 @@ void loop()
     // Check voor IR of RF events
     if(GetEvent_IRRF(&Content,&x)) 
       {
-      ProcessEvent(Content,VALUE_DIRECTION_INPUT,x,0,0); // verwerk binnengekomen event.
+      ProcessEvent1(Content,VALUE_DIRECTION_INPUT,x,0,0); // verwerk binnengekomen event.
       }
       
     // 1: niet tijdkritische processen die periodiek uitgevoerd moeten worden
@@ -1168,7 +1165,7 @@ void loop()
             if(CheckEventlist(Content,VALUE_SOURCE_CLOCK) && EventTimeCodePrevious!=Content)
               {
               EventTimeCodePrevious=Content; 
-              ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
+              ProcessEvent1(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
               }
             else
               Content=0L;
@@ -1186,7 +1183,7 @@ void loop()
               {
               Content=command2event(Settings.Unit, CMD_CLOCK_EVENT_DAYLIGHT,Time.Daylight,0L);
               DaylightPrevious=Time.Daylight;
-              ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
+              ProcessEvent1(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.
               }
             }
           break;
@@ -1206,14 +1203,14 @@ void loop()
               {
               WiredInputStatus[x]=true;
               Content=command2event(Settings.Unit, CMD_WIRED_IN_EVENT,x+1,WiredInputStatus[x]?VALUE_ON:VALUE_OFF);
-              ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
+              ProcessEvent1(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
               }
       
             if(WiredInputStatus[x] && y<(Settings.WiredInputThreshold[x]-Settings.WiredInputSmittTrigger[x]))
               {
               WiredInputStatus[x]=false;
               Content=command2event(Settings.Unit, CMD_WIRED_IN_EVENT,x+1,WiredInputStatus[x]?VALUE_ON:VALUE_OFF);
-              ProcessEvent(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
+              ProcessEvent1(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
               }
             }
           break;
@@ -1233,7 +1230,7 @@ void loop()
                 {
                 UserTimer[x]=0;// zet de timer op inactief.
                 Content=command2event(Settings.Unit, CMD_TIMER_EVENT,x+1,0);
-                ProcessEvent(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_TIMER,0,0);      // verwerk binnengekomen event.
+                ProcessEvent1(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_TIMER,0,0);      // verwerk binnengekomen event.
                 }
               }
             }
@@ -1281,7 +1278,7 @@ void loop()
         }
         
       // Timer voor verzenden van Cookie naar de WebApp
-      if(Settings.HTTP_Pin==VALUE_ON)
+      if(Settings.Password[0]!=0)
         {
         if(CookieTimer>0)
           CookieTimer--;

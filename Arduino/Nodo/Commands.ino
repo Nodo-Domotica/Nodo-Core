@@ -263,10 +263,9 @@ byte Commanderror(unsigned long Content)
       if(Par1!=VALUE_OFF && Par1!=VALUE_ON)return MESSAGE_02;
       return false;
 
-    case CMD_TRANSMIT_RF:
-    case CMD_TRANSMIT_IR:
-      if(Par1!=VALUE_OFF && Par1!=VALUE_ON)return MESSAGE_02;
-      if(Par2>25)return MESSAGE_02;
+    case CMD_OUTPUT:
+      if(Par1!=VALUE_SOURCE_IR && Par1!=VALUE_SOURCE_RF && Par1!=VALUE_SOURCE_HTTP)return MESSAGE_02;
+      if(Par2!=VALUE_OFF && Par2!=VALUE_ON)return MESSAGE_02;
       return false;
 
 #if NODO_MEGA
@@ -282,10 +281,6 @@ byte Commanderror(unsigned long Content)
     case CMD_FILE_EXECUTE:
       return false;
 
-    case CMD_TRANSMIT_IP:
-      if(Par1!=VALUE_OFF && Par1!=VALUE_SOURCE_HTTP)return MESSAGE_02;
-      if(Par2!=VALUE_OFF && Par2!=VALUE_ON && Par2!=0)return MESSAGE_02;
-      return false;
 #endif
 
     default:
@@ -333,7 +328,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       z=UserVar[y-1]+x;
       if(abs(z)<=10000)
         UserVar[y-1]+=x;
-      ProcessEvent(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      ProcessEvent2(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;        
 
     case CMD_VARIABLE_DEC: 
@@ -341,7 +336,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       z=UserVar[y-1]-x;
       if(abs(z)<=10000)
         UserVar[y-1]-=x;
-      ProcessEvent(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      ProcessEvent2(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;        
 
     case CMD_VARIABLE_SAVE:   
@@ -367,13 +362,13 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       for(y;y<=z;y++)
         {
         UserVar[y-1]=x;
-        ProcessEvent(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+        ProcessEvent2(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
         }
       break;         
   
     case CMD_VARIABLE_WIREDANALOG:
       UserVar[Par1-1]=map(analogRead(PIN_WIRED_IN_1+Par2-1),Settings.WiredInput_Calibration_IL[Par2-1],Settings.WiredInput_Calibration_IH[Par2-1],Settings.WiredInput_Calibration_OL[Par2-1],Settings.WiredInput_Calibration_OH[Par2-1]);
-      ProcessEvent(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      ProcessEvent2(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;
 
     case CMD_PULSE_VARIABLE:
@@ -424,12 +419,12 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         }        
       if(abs(a)<=10000)
         UserVar[Par1-1]=(int)a;
-      ProcessEvent(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      ProcessEvent2(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;
 
     case CMD_VARIABLE_VARIABLE:
       UserVar[Par1-1]=UserVar[Par2-1];
-      ProcessEvent(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      ProcessEvent2(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;        
 
     case CMD_BREAK_ON_VAR_EQU:
@@ -650,15 +645,22 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         NodoBusy(0L, Par1);
       break;
 
-    case CMD_TRANSMIT_IR:
-      Settings.TransmitIR=Par1;
-      if(Par2!=0)Settings.TransmitRepeatIR=Par2;
-      SaveSettings();
-      break;
+    case CMD_OUTPUT:
+      switch(Par1)
+        {
+        case VALUE_SOURCE_IR:
+          Settings.TransmitIR=Par2;
+          break;       
+        case VALUE_SOURCE_RF:
+          Settings.TransmitRF=Par2;
+          break;       
 
-    case CMD_TRANSMIT_RF:
-      Settings.TransmitRF=Par1;
-      if(Par2!=0)Settings.TransmitRepeatRF=Par2;
+        #if NODO_MEGA
+        case VALUE_SOURCE_HTTP:
+          Settings.TransmitIP=Par2;        
+          break;       
+        #endif
+        }
       SaveSettings();
       break;
       
@@ -814,11 +816,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         TransmitCode(AnalyzeRawSignal(),VALUE_ALL);
       break;        
 
-    case CMD_TRANSMIT_IP:
-      Settings.TransmitIP=Par1;        
-      Settings.HTTP_Pin=Par2;
-      SaveSettings();
-      break;
 
     case CMD_FILE_EXECUTE:
       strcpy(TempString,cmd2str(CMD_FILE_EXECUTE));
@@ -1361,7 +1358,7 @@ int ExecuteLine(char *Line, byte Port)
             {
             if(SendTo==0)
               {
-              ProcessEvent(v,VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
+              ProcessEvent2(v,VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
               }              
             else
               {

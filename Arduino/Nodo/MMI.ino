@@ -284,16 +284,14 @@ void Event2str(unsigned long Code, char* EventString)
       break;
 
       // Par1 als tekst en par2 als tekst
-    case CMD_TRANSMIT_IP:
     case CMD_COMMAND_WILDCARD:
+    case CMD_OUTPUT:
       P1=P_TEXT;
       P2=P_TEXT;
       break;
 
       // Par1 als tekst en par2 als getal
     case CMD_RAWSIGNAL_COPY:
-    case CMD_TRANSMIT_IR:
-    case CMD_TRANSMIT_RF:
     case CMD_STATUS:
       P1=P_TEXT;
       P2=P_VALUE;
