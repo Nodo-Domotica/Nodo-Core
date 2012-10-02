@@ -20,27 +20,26 @@
 /****************************** Door gebruiker in te stellen: ***************************************************************/
 
 /* instelling van default unit nummer en MAC address (dat laatste alleen voor de Mega van toepassing): **********************/
-#define TRACE              0                                     // Geef weer of sla debug informatie op SDCard op in bestand TRACE.DAT. Let op, maakt de Nodo traag.
-#define UNIT_NODO_SMALL    15                                    // Default unitnummer van een Nodo-Small na een reset van de Nodo.
-#define UNIT_NODO_MEGA     1                                     // Default unitnummer van een Nodo-Mega na een reset van de Nodo.
+#define UNIT_NODO_SMALL    15                                    // Default unitnummer van een Nodo-Small na een reset-commando van de Nodo.
+#define UNIT_NODO_MEGA     1                                     // Default unitnummer van een Nodo-Mega na een reset-commando van de Nodo.
 #define NODO_MAC           0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF    // Default Nodo MACadres (alleen voor de Nodo-Mega)
+#define NODO_MEGA          0
+#define TRACE 1
 
 /* Keuze tussen SMALL of MEGA: **********************************************************************************************/
 // De code kan worden gecompileerd als een Nodo-Small voor de Arduino met een ATMega328 processor
 // of voor een Nodo-Mega voor een Arduino met een ATMega1280 of ATMega2560
-#define NODO_MEGA            0
 
 // Voor de Nodo-Mega variant bij onderstaande regels de // tekens op positie 1 en 2 verwijderen.
-#define NODO_MEGA          1
-#define ETHERNET           1                                     // EthernetShield: 0 = afwezig, 1 = aanwezig
-#include <SD.h>
-#include <EthernetNodo.h>
-#include <SPI.h>
+//#define NODO_MEGA          1
+//#define ETHERNET           1                                     // EthernetShield: 0 = afwezig, 1 = aanwezig
+//#include <SD.h>
+//#include <EthernetNodo.h>
+//#include <SPI.h>
 
 /* User plugin opties: ******************************************************************************************************/
 #define USER_PLUGIN        0                                     // Plugin: 0 = niet compileren, 1 = wel compileren
 #define USER_PLUGIN_NAME   "UserPlugin"                          // Commando naam waarmee de plugin kan worden aangeroepen
-
 
 // Onderstaand de formules die gebruikt worden voor omrekening van pulsen naar analoge waarden.
 // Zet de formules zo op dat uitsluitend met gehele getallen gerekend wordt.
@@ -68,7 +67,7 @@
 //#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
 
 #define SETTINGS_VERSION     12
-#define NODO_BUILD          444
+#define NODO_BUILD          445
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -83,14 +82,9 @@ prog_char PROGMEM Text_22[] = "!************************************************
 #if NODO_MEGA
 prog_char PROGMEM Text_06[] = "Waiting for busy Nodo: ";
 prog_char PROGMEM Text_07[] = "Waiting for signal...";
-prog_char PROGMEM Text_08[] = "ATTENTION: Beta version. Nodo in trace mode! Logging to TRACE.DAT on SDCard.";
 prog_char PROGMEM Text_09[] = "(Last 10KByte)";
-prog_char PROGMEM Text_10[] = "Nodo"; // Default wachtwoord na een reset
 prog_char PROGMEM Text_13[] = "RawSignal saved.";
 prog_char PROGMEM Text_14[] = "Event=";
-prog_char PROGMEM Text_17[] = "payload";
-prog_char PROGMEM Text_18[] = "accept";
-prog_char PROGMEM Text_19[] = "close";
 prog_char PROGMEM Text_23[] = "log.dat";
 prog_char PROGMEM Text_24[] = "Queue: Capturing events...";
 prog_char PROGMEM Text_15[] = "Queue.dat";
@@ -257,7 +251,7 @@ prog_char PROGMEM Cmd_149[]="";
 // Waarden:
 prog_char PROGMEM Cmd_150[]="Off";
 prog_char PROGMEM Cmd_151[]="On";
-prog_char PROGMEM Cmd_152[]="";
+prog_char PROGMEM Cmd_152[]="Build";
 prog_char PROGMEM Cmd_153[]="";
 prog_char PROGMEM Cmd_154[]="IR";
 prog_char PROGMEM Cmd_155[]="HTTP";
@@ -284,9 +278,9 @@ prog_char PROGMEM Cmd_175[]="All";
 prog_char PROGMEM Cmd_176[]="DaylightSaving";
 prog_char PROGMEM Cmd_177[]="EventlistCount";
 prog_char PROGMEM Cmd_178[]="Queue";
-prog_char PROGMEM Cmd_179[]="Auto";
-prog_char PROGMEM Cmd_180[]="Time";
-prog_char PROGMEM Cmd_181[]="Count";
+prog_char PROGMEM Cmd_179[]="";
+prog_char PROGMEM Cmd_180[]="";
+prog_char PROGMEM Cmd_181[]="";
 prog_char PROGMEM Cmd_182[]="";
 prog_char PROGMEM Cmd_183[]="";
 prog_char PROGMEM Cmd_184[]="";
@@ -512,7 +506,7 @@ PROGMEM const char *CommandText_tabel[]={
 #define FIRST_VALUE                    150  // eerste VALUE uit de commando tabel
 #define VALUE_OFF                      150 
 #define VALUE_ON                       151 // Deze waarde MOET groter dan 16 zijn.
-#define VALUE_RES152                   152
+#define VALUE_BUILD                    152
 #define VALUE_RES153                   153
 #define VALUE_SOURCE_IR                154
 #define VALUE_SOURCE_HTTP              155
@@ -540,8 +534,8 @@ PROGMEM const char *CommandText_tabel[]={
 #define VALUE_EVENTLIST_COUNT          177
 #define VALUE_SOURCE_QUEUE             178
 #define VALUE_AUTO                     179
-#define VALUE_TIME                     180
-#define VALUE_COUNT                    181
+#define VALUE_res180                   180
+#define VALUE_res181                   181
 #define VALUE_RES182                   182
 #define VALUE_RES183                   183
 #define VALUE_RES184                   184
@@ -876,10 +870,6 @@ void setup()
     SD.remove(ProgmemString(Text_15)); // eventueel queue wissen. 
     bitWrite(HW_Config,HW_SDCARD,1);
     }
-
-  #if TRACE
-  Trace(0,0,0);
-  #endif
    
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
   SelectSD(false);

@@ -43,10 +43,6 @@ byte Commanderror(unsigned long Content)
   {
   int x,y;
   
-  #if TRACE
-  Trace(5,0,0);
-  #endif
-
   x=NodoType(Content);
   if(x!=NODO_TYPE_COMMAND && x!=NODO_TYPE_EVENT)
     return MESSAGE_01;
@@ -308,10 +304,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   byte Par2         = Content&0xff;
   byte Type         = (Content>>28)&0x0f;
   byte PreviousType = (PreviousContent>>28)&0x0f;
-
-  #if TRACE
-  Trace(6,0,0);
-  #endif
 
   switch(Command)
     {   
@@ -852,35 +844,19 @@ int ExecuteLine(char *Line, byte Port)
   byte SendTo=0; // Als deze waarde ongelijk aan nul, dan wordt het commando niet uitgevoerd maar doorgestuurd naar de andere Nodo
 
   Led(RED);
-
-  #if TRACE
-  Trace(7,0,0);
-  #endif
   
   // verwerking van commando's is door gebruiker tijdelijk geblokkeerd door FileWrite commando
   if(FileWriteMode>0)
     {
-    #if TRACE
-    Trace(7,1,0);
-    #endif
-    
     if(StringFind(Line,cmd2str(CMD_FILE_WRITE))!=-1)// string gevonden!
       {
       // beëindig de FileWrite modus
-      #if TRACE
-      Trace(7,2,0);
-      #endif
-      
       FileWriteMode=0;
       TempLogFile[0]=0;
       }
 
     if(TempLogFile[0]!=0)
       {
-      #if TRACE
-      Trace(7,3,0);
-      #endif
-
       AddFileSDCard(TempLogFile,Line); // Extra logfile op verzoek van gebruiker
       }
     }
@@ -932,21 +908,11 @@ int ExecuteLine(char *Line, byte Port)
           // Maar niet met het SendTo commando, ander is de Slave niet bereikbaar!
           if(Cmd!=CMD_SEND && Settings.SendBusy==VALUE_ALL && !Busy.Sent)
             {
-
-            #if TRACE
-            Trace(7,4,0);
-            #endif
-
             TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_ON,0),VALUE_ALL);
             Busy.Sent=true;
             }
 
           // Hier worden de commando's verwerkt die een afwijkende MMI hebben.
-
-          #if TRACE
-          Trace(7,5,Cmd);
-          #endif
-
           switch(Cmd)
             {
             case CMD_LOCK: // Hier wordt de lock code o.b.v. het wachtwoord ingesteld. Alleen van toepassing voor de Mega.
@@ -1121,11 +1087,6 @@ int ExecuteLine(char *Line, byte Port)
       
             case CMD_FILE_GET_HTTP:
               {
-
-              #if TRACE
-              Trace(7,6,0);
-              #endif
-
               if(GetArgv(Command,TmpStr1,2))
                 {
                 Led(BLUE);
@@ -1429,11 +1390,6 @@ int ExecuteLine(char *Line, byte Port)
 
   free(TmpStr2);
   free(TmpStr1);
-
-  #if TRACE
-  Trace(7,999,0);
-  #endif
-
   return error;
   }
 #endif

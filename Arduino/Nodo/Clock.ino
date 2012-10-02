@@ -126,7 +126,8 @@ void DS1307_read(void)
   Wire.write((uint8_t)0x00);
   Wire.endTransmission();
   Wire.requestFrom(DS1307_CTRL_ID, 7);  // request the 7 bytes of data    (secs, min, hr, dow, date. mth, yr)
-  for(byte i=0; i<7; i++)rtc[i]=Wire.read();// store data in raw bcd format
+
+  if(Wire.available() == 7) for(byte i=0; i<7; i++)rtc[i]=Wire.read();// store data in raw bcd format
   }
 
     
@@ -154,6 +155,8 @@ void ClockSet(void)
 unsigned long ClockRead(void)
   {
   DS1307_read();// lees de RTC chip uit
+  if (rtc[4] <= 0) return 0L;
+
   Time.Seconds =(10*((rtc[DS1307_SEC] & DS1307_HI_SEC)>>4))+(rtc[DS1307_SEC] & DS1307_LO_BCD);
   Time.Minutes =(10*((rtc[DS1307_MIN] & DS1307_HI_MIN)>>4))+(rtc[DS1307_MIN] & DS1307_LO_BCD);
   Time.Date    =(10*((rtc[DS1307_DATE] & DS1307_HI_DATE)>>4))+(rtc[DS1307_DATE] & DS1307_LO_BCD);

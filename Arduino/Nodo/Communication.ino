@@ -33,10 +33,6 @@ byte GetHTTPFile(char* filename)
   char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
   byte Ok;
   
-  #if TRACE
-  Trace(9,0,0);
-  #endif
-
   strcpy(HttpRequest,"?id=");
   strcat(HttpRequest,Settings.ID);  
   strcat(HttpRequest,"&file=");
@@ -69,10 +65,6 @@ byte SendHTTPEvent(unsigned long event)
   byte Unit,x;
   char *HttpRequest=(char*)malloc(INPUT_BUFFER_SIZE+1);
   char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
-
-  #if TRACE
-  Trace(10,0,0);
-  #endif
 
   strcpy(HttpRequest,"?id=");
   strcat(HttpRequest,Settings.ID);  
@@ -117,10 +109,6 @@ boolean SendHTTPCookie(void)
 
   char *HttpRequest=(char*)malloc(INPUT_BUFFER_SIZE+1);
 
-  #if TRACE
-  Trace(11,0,0);
-  #endif
-
   strcpy(HttpRequest,"?id=");
   strcat(HttpRequest,Settings.ID);  
 
@@ -149,12 +137,7 @@ boolean SendHTTPRequest(char* Request)
                // 1 als 200 OK voorbij is gekomen,
                // 2 als &file= is gevonden en eerstvolgende lege regel moet worden gedetecteerd
                // 3 als lege regel is gevonden en file-capture moet starten.                
-
   
-  #if TRACE
-  Trace(12,0,0);
-  #endif
-
   strcpy(IPBuffer,"GET ");
 
   // Haal uit het HTTP request URL de Host. 
@@ -197,9 +180,14 @@ boolean SendHTTPRequest(char* Request)
   TempString[SlashPos]=0;
 
   #if TRACE
-  Trace(12,1,Settings.PortClient);
-  AddFileSDCard("TRACE.DAT", TempString);
-  AddFileSDCard("TRACE.DAT", IPBuffer);
+  char *TraceString=(char*)malloc(200);
+  strcpy(TraceString,TempString);
+  strcat(TraceString,", Port=");
+  strcat(TraceString,int2str(Settings.PortClient));
+  strcat(TraceString,", IPBuffer=");
+  strcat(TraceString,IPBuffer);
+  AddFileSDCard("TRACE.DAT", TraceString);
+  free(TraceString);
   #endif
 
   SelectSD(false); // Voor de zekerheid, mocht de chipselect niet goed staan.
@@ -208,19 +196,18 @@ boolean SendHTTPRequest(char* Request)
     IPClient.getRemoteIP(ClientIPAddress);  
 
     #if TRACE
-    AddFileSDCard("TRACE.DAT", ip2str(ClientIPAddress));
+    char *TraceString=(char*)malloc(200);
+    strcpy(TraceString,ip2str(ClientIPAddress));
+    AddFileSDCard("TRACE.DAT", TraceString);
+    free(TraceString);
     #endif
 
     IPClient.println(IPBuffer);
-
     IPClient.print(F("Host: "));
     IPClient.println(TempString);
-
     IPClient.print(F("User-Agent: Nodo/Build="));
     IPClient.println(int2str(NODO_BUILD));             
- 
     IPClient.println(F("Connection: Close"));
-  
     IPClient.println();// Afsluiten met een lege regel is verplicht in http protocol/
 
     TimeoutTimer=millis()+TimeOut; // Als er te lange tijd geen datatransport is, dan wordt aangenomen dat de verbinding (om wat voor reden dan ook) is afgebroken.
@@ -247,8 +234,8 @@ boolean SendHTTPRequest(char* Request)
             }
 
           TimeoutTimer=millis()+TimeOut; // er is nog data transport, dus de timeout timer weer op max. zetten.
-          // De regel is binnen
-  
+ 
+          // De regel is binnen 
           if(State==2 && InByteCounter==0) // als lege regel in HTTP request gevonden
             State=3;
             
@@ -264,11 +251,6 @@ boolean SendHTTPRequest(char* Request)
               // pluk de filename uit het http request als die er is, dan de body text van het HTTP-request opslaan.
               if(ParseHTTPRequest(Request,"file", TempString))
                 {
-                 
-                #if TRACE
-                Trace(12,2,0);
-                #endif
-                
                 State=2;
                 TempString[8]=0; // voorkom dat filenaam meer dan acht posities heeft
                 strcpy(filename,TempString);                
@@ -306,10 +288,6 @@ boolean ParseHTTPRequest(char* HTTPRequest,char* Keyword, char* ResultString)
   int x,y,z;
   int Keyword_len=strlen(Keyword);
   int HTTPRequest_len=strlen(HTTPRequest);
-
-  #if TRACE
-  Trace(13,0,0);
-  #endif
 
   ResultString[0]=0;
   
@@ -378,10 +356,6 @@ void ExecuteIP(void)
   char *Event          = (char*) malloc(INPUT_BUFFER_SIZE+1);
   char *TmpStr1        = (char*) malloc(INPUT_BUFFER_SIZE+1);
   char *TmpStr2        = (char*) malloc(40); 
-
-  #if TRACE
-  Trace(14,0,0);
-  #endif
 
   Event[0]=0; // maak de string leeg.
   

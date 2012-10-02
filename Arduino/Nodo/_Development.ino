@@ -4,12 +4,19 @@
 Aanpassingen t.o.v. laatste build:
 - Issue 543: Small: Tellen van pulsen werkt niet correct
 - Issue 549: Output commando's bundelen ==>> LET OP: Hiervoor aanpassing van de WebApp nodig.
-- Issue 548: Onbekend UserEvent laat Small stoppen met scanne.
+- Issue 548: Onbekend UserEvent laat Small stoppen met scannen.
+- Issue 541: WaitFreeRF nodig? Default "on"?
+- Issue 542: Versie van een Small niet via RF te achterhalen
+- Issue 534: Meer defensieve verwerking van de RTC data via de I2C bus
 - Aanpassing formules voor pulsen.
 - PullUp voor IR_RX_DATA lijn 
  
 Aanpassingen t.o.v. Final Beta Build 436:
-- Issue 543: Small: Tellen van pulsen werkt niet correct
+- Issue 549: Output commando's bundelen ==>> LET OP: Hiervoor aanpassing van de WebApp nodig.
+- Issue 548: Onbekend UserEvent laat Small stoppen met scannen.
+- Issue 541: WaitFreeRF nodig? Default "on"?
+- Issue 542: Versie van een Small niet via RF te achterhalen
+- Issue 534: Meer defensieve verwerking van de RTC data via de I2C bus
 - Aanpassing formules voor pulsen.
 - PullUp voor IR_RX_DATA lijn 
 - Issue 543: Small: Tellen van pulsen werkt niet correct
