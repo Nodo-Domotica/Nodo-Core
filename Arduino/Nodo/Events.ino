@@ -10,10 +10,6 @@ void ProcessQueue(void)
   unsigned long Event;
   byte Port;
   
-  #if TRACE
-  Trace(16,0,0);
-  #endif
-
   if(Queue.Position>0)
     {
     #if NODO_MEGA
@@ -24,10 +20,6 @@ void ProcessQueue(void)
       {
       if(((Queue.Event[x]>>16)&0xff)==CMD_EVENTLIST_WRITE && ((Queue.Event[x]>>24)&0xf)==Settings.Unit && x<(Queue.Position-2)) // cmd
         {
-        #if TRACE
-        Trace(16,1,x);
-        #endif
-        
         if(Eventlist_Write(((Queue.Event[x]>>8)&0xff),Queue.Event[x+1],Queue.Event[x+2]))
           x+=2;
         else
@@ -35,10 +27,6 @@ void ProcessQueue(void)
         }
       else
         {
-        #if TRACE
-        Trace(16,2,x);
-        #endif
-
         ProcessEvent2(Queue.Event[x],VALUE_DIRECTION_INPUT,Queue.Port[x],0,0);      // verwerk binnengekomen event.
         }
       }
@@ -177,10 +165,6 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
       return false;
       }
     }
-
-  #if TRACE
-  Trace(18,0,0);
-  #endif
 
   #if USER_PLUGIN
   if(!UserPlugin_Receive(IncommingEvent))

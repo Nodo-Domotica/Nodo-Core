@@ -17,11 +17,6 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
   Led(BLUE);
   Queue.Position=0;    
 
-  #if TRACE
-  Trace(3,0,0);
-  #endif
-
-
   #if NODO_MEGA
   PrintTerminal(ProgmemString(Text_24));
   #endif
@@ -29,23 +24,13 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
   while(TimeoutTimer>millis())
     {
     if(BreakNoBusyNodo && Busy.Status==0)
-      {
-      #if TRACE
-      Trace(3,1,0);
-      #endif
       break; // Geen Busy Nodo meer
-      }
 
     if(GetEvent_IRRF(&Event,&Port))
       {      
       TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
 
-      #if TRACE
-      Trace(3,2,0);
-      #endif
-
-      #if NODO_MEGA
-      
+      #if NODO_MEGA      
       CheckRawSignalKey(&Event); // check of er een RawSignal key op de SDCard aanwezig is en vul met Nodo Event. Call by reference!
 
       PrintEvent(Event,Port,VALUE_DIRECTION_INPUT);
@@ -73,10 +58,6 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
       // Het is geen Busy event of Queue commando event, dan deze in de queue plaatsen.
       else if(x!=CMD_BUSY)
         {
-        #if TRACE
-        Trace(3,3,0);
-        #endif
-
         #if NODO_MEGA
         if(bitRead(HW_Config,HW_SDCARD))
           {// Als de SDCard aanwezig
@@ -113,10 +94,6 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
   if(TimeoutTimer<=millis())
     error=true;
     
-  #if TRACE
-  Trace(3,4,error);
-  #endif
-
   if(error)
     RaiseMessage(MESSAGE_04);
 
@@ -134,10 +111,6 @@ boolean NodoBusy(unsigned long Event, int Wait)
   {
   int PreviousNodoBusyStatus=Busy.Status;
 
-  #if TRACE
-  Trace(20,0,0);
-  #endif
-  
   if(Event)
     {
     // Check of het event een Busy xxx event is en zet de betreffende status van de Nodo
@@ -259,6 +232,11 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       *Par1=Settings.Unit;
       break;        
 
+    case VALUE_BUILD: 
+      *Par1=NODO_BUILD & 0xff;
+      *Par2=(NODO_BUILD>>8) & 0xff;
+      break;        
+
     case CMD_SENDBUSY:
       *Par1=Settings.SendBusy;
       break;
@@ -278,6 +256,26 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
 
     case CMD_CLOCK_EVENT_DAYLIGHT:
       *Par1=Time.Daylight;
+      break;
+  
+    case CMD_OUTPUT:
+      *Par1=xPar1;
+      switch(xPar1)
+        {
+        case VALUE_SOURCE_IR:
+          *Par2=Settings.TransmitIR;
+          break;
+          
+        case VALUE_SOURCE_RF:
+          *Par2=Settings.TransmitRF;
+          break;
+          
+        #if NODO_MEGA
+        case VALUE_SOURCE_HTTP:
+          *Par2=Settings.TransmitIP;
+          break;
+        #endif 
+        }
       break;
 
     case CMD_VARIABLE_SET:
@@ -441,10 +439,6 @@ void ResetFactory(void)
   Led(BLUE);
   Beep(2000,2000);
 
-  #if TRACE
-  Trace(21,0,0);
-  #endif
-
   int x,y;
   ClockRead(); 
 
@@ -457,11 +451,11 @@ void ResetFactory(void)
   Settings.TransmitIP                 = VALUE_OFF;
   Settings.SendBusy                   = VALUE_OFF;
   Settings.WaitBusyAll                = 30;
-  Settings.WaitFreeRF                 = VALUE_OFF;
   Settings.DaylightSaving             = Time.DaylightSaving;
 
-#if NODO_MEGA
+  #if NODO_MEGA
   Settings.Unit                       = UNIT_NODO_MEGA;
+  Settings.WaitFreeRF                 = VALUE_OFF;
   Settings.Debug                      = VALUE_OFF;
   Settings.HTTPRequest[0]             = 0; // string van het HTTP adres leeg maken
   Settings.Client_IP[0]               = 0;
@@ -492,10 +486,10 @@ void ResetFactory(void)
   Settings.Log                        = VALUE_OFF;  
   Settings.Password[0]                = 0;
   
-#else
+  #else
   Settings.Unit                       = UNIT_NODO_SMALL;
-
-#endif
+  Settings.WaitFreeRF                 = VALUE_ON;
+  #endif
 
   // zet analoge waarden op default
   for(x=0;x<WIRED_PORTS;x++)
@@ -528,13 +522,13 @@ void FactoryEventlist(void)
   for(int x=1;x<=EVENTLIST_MAX;x++)
     Eventlist_Write(x,0L,0L);
 
-#if NODO_MEGA
   // schrijf default regels.
+  #if NODO_MEGA
   Eventlist_Write(0,command2event(Settings.Unit,CMD_BOOT_EVENT,Settings.Unit,0),command2event(Settings.Unit,CMD_SOUND,7,0)); // geluidssignaal na opstarten Nodo
   Eventlist_Write(0,command2event(Settings.Unit,CMD_COMMAND_WILDCARD,VALUE_SOURCE_IR,CMD_KAKU),command2event(Settings.Unit,CMD_RAWSIGNAL_SEND,0,0)); 
-#else
+  #else
   Eventlist_Write(0,command2event(Settings.Unit,CMD_BOOT_EVENT,Settings.Unit,0),command2event(Settings.Unit,CMD_SOUND,7,0)); // geluidssignaal na opstarten Nodo
-#endif
+  #endif
   }
 
   
@@ -551,9 +545,9 @@ void Status(byte Par1, byte Par2, byte Transmit)
   byte x,P1,P2; // in deze variabele wordt de waarde geplaats (call by reference)
   boolean s;
 
-#if NODO_MEGA          
+  #if NODO_MEGA          
   char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
-#endif
+  #endif
   
   if(Par1==0)
     return;
@@ -583,10 +577,9 @@ void Status(byte Par1, byte Par2, byte Transmit)
     CMD_End=Par1;
     }
 
-
-#if NODO_MEGA          
+  #if NODO_MEGA          
   boolean dhcp=(Settings.Nodo_IP[0] + Settings.Nodo_IP[1] + Settings.Nodo_IP[2] + Settings.Nodo_IP[3])==0;
-#endif
+  #endif
 
   for(x=CMD_Start; x<=CMD_End; x++)
     {
@@ -601,12 +594,12 @@ void Status(byte Par1, byte Par2, byte Transmit)
         case CMD_CLIENT_IP:
           sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_CLIENT_IP),Settings.Client_IP[0],Settings.Client_IP[1],Settings.Client_IP[2],Settings.Client_IP[3]);
           PrintTerminal(TempString);
-          break;
+              break;
 
         case CMD_NODO_IP:
           sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_NODO_IP), Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
           if(dhcp)
-            strcat(TempString," (DHCP)");
+            strcat(TempString,"(DHCP)");
           PrintTerminal(TempString);
           break;
 
@@ -657,7 +650,7 @@ void Status(byte Par1, byte Par2, byte Transmit)
           PrintTerminal(TempString);
           break;
           
-#endif
+        #endif
 
         default:
           s=false; 
@@ -671,6 +664,11 @@ void Status(byte Par1, byte Par2, byte Transmit)
         {
         switch(x)
           {
+          case CMD_OUTPUT:
+            Par1_Start=VALUE_SOURCE_IR;
+            Par1_End=VALUE_SOURCE_RF;
+            break;
+            
           case CMD_WIRED_ANALOG:
           case CMD_WIRED_OUT:
           case CMD_WIRED_PULLUP:
@@ -707,27 +705,27 @@ void Status(byte Par1, byte Par2, byte Transmit)
           P1=y;
           P2=0;
           GetStatus(&x,&P1,&P2); // haal status op. Call by Reference!
-          if(Transmit)
-            {
-            TransmitCode(command2event(Settings.Unit,x,P1,P2),VALUE_ALL); // verzend als event
-            }
 
-#if NODO_MEGA
+          if(Transmit)
+            TransmitCode(command2event(Settings.Unit,x,P1,P2),VALUE_ALL); // verzend als event
+
+          #if NODO_MEGA
           else
             {
             Event2str(command2event(Settings.Unit,x,P1,P2),TempString);
             PrintTerminal(TempString);
             }
-#endif
+          #endif
           }
       }
     }
-#if NODO_MEGA
+
+  #if NODO_MEGA
   if(!Transmit && Par1==VALUE_ALL)
     PrintTerminal(ProgmemString(Text_22));
 
   free(TempString);
-#endif
+  #endif
   }
 
 
@@ -986,10 +984,6 @@ void RaiseMessage(byte MessageCode)
   {
   unsigned long eventcode;
   int x;
-
-  #if TRACE
-  Trace(23,0,0);
-  #endif
 
   eventcode=command2event(Settings.Unit,CMD_MESSAGE, Settings.Unit, MessageCode);
   PrintEvent(eventcode,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM);  // geef event weer op Serial
@@ -1308,10 +1302,6 @@ uint32_t md5_T[] PROGMEM = {
 
 void md5(char* dest)
   {
-  #if TRACE
-  Trace(25,0,0);
-  #endif
-  
   const void* src=dest;
   uint32_t length_b = strlen((char*)src) * 8;
   struct md5_ctx_t ctx;

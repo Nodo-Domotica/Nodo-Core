@@ -3,10 +3,6 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
   int x,y,Checksum;
   unsigned long Mark, Space, Timeout, ul=0L;
 
-  #if TRACE
-  Trace(4,0,0);
-  #endif
-  
   // Hier aangekomen is de master nodo nog steeds bezig met het zenden van het aanloopsignaal bestaande uit de korte pulsenreeks.
   // Wacht totdat het aanloopsignaal een duidelijke startbit bevat.
   Timeout=millis() + 2000L; // binnen twee seconden moet het blok met gegevens zijn aangekomen.
@@ -54,10 +50,6 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
 
   if(ChecksumOrg == Checksum)
     {
-    #if TRACE
-    Trace(4,1,0);
-    #endif
-    
     // Korte wachttijd anders is de RF ontvanger van de master (mogelijk) nog niet gereed voor ontvangst. 
     delay(RECEIVER_STABLE);
 
@@ -73,27 +65,13 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
     // Verwerk de inhoud van de Queue, Eerst Korte wachttijd anders is de RF ontvanger van de master (mogelijk) nog niet gereed voor ontvangst.
     delay(RECEIVER_STABLE);
 
-    #if TRACE
-    Trace(4,2,0);
-    #endif
-
-    ProcessQueue(); //???
-
-    #if TRACE
-    Trace(4,3,1);
-    #endif
-
+    ProcessQueue();
     return true;
     }
   else
     {
     delay(1000);
     Queue.Position=0;
-
-    #if TRACE
-    Trace(4,3,0);
-    #endif
-
     return false;
     }
   }
@@ -106,10 +84,6 @@ boolean QueueSend(byte DestUnit)
   unsigned long Event,TimeoutTimer;
   
   Led(BLUE);
-
-  #if TRACE
-  Trace(1,0,0);
-  #endif
 
   // Eerst wachten op bezige Nodo. Als gebruiker deze setting niet heeft geactiveerd, dan tijdelijk hiervoor 30 sec. nemen.
   if(Settings.WaitBusyAll<30)
@@ -182,16 +156,10 @@ boolean QueueSend(byte DestUnit)
   if(WaitAndQueue(4,false,command2event(DestUnit,CMD_BUSY,VALUE_ON,0)))
     {
     WaitAndQueue(30,true,0L);
-    #if TRACE
-    Trace(1,1,1);
-    #endif
     return true;
     }
   else
     {
-    #if TRACE
-    Trace(1,1,0);
-    #endif
     return false;
     }
   }
@@ -222,11 +190,6 @@ unsigned long GetEvent_IRRF(unsigned long *Content, int *Port)
             *Port=VALUE_SOURCE_IR;
             PreviousTimer=millis()+SIGNAL_REPEAT_TIME;
             Previous=*Content;
-
-            #if TRACE
-            Trace(2,1,0);
-            #endif
-
             return true;
             }
           Checksum=*Content;
@@ -256,11 +219,6 @@ unsigned long GetEvent_IRRF(unsigned long *Content, int *Port)
               *Port=VALUE_SOURCE_RF;
               PreviousTimer=millis()+SIGNAL_REPEAT_TIME;
               Previous=Checksum;
-
-              #if TRACE
-              Trace(2,2,0);
-              #endif
-
               return true;
               }
             }

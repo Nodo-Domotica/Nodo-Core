@@ -8,6 +8,7 @@
 #define P_VALUE   3
 #define P_DIM     4
 #define P_ANALOG  5
+#define P_INT16   6
 
 #if NODO_MEGA
 /*********************************************************************************************\
@@ -159,10 +160,6 @@ void PrintWelcome(void)
     {
     sprintf(TempString,"%s %s",DateTimeString(), cmd2str(Time.DaylightSaving?VALUE_DLS:0));
     PrintTerminal(TempString);
-
-    #if TRACE
-    AddFileSDCard("TRACE.DAT", TempString);
-    #endif
     }
 
   // print IP adres van de Nodo
@@ -172,12 +169,6 @@ void PrintWelcome(void)
     PrintTerminal(TempString);
     }
   
-  #if TRACE
-  PrintTerminal("");
-  PrintTerminal(ProgmemString(Text_08));
-  PrintTerminal("");
-  #endif
-
   PrintTerminal(ProgmemString(Text_22));
   free(TempString);
   }
@@ -228,10 +219,10 @@ void Event2str(unsigned long Code, char* EventString)
     strcat(EventString,int2str(Code&0x0FFFFFEF));
     strcat(EventString,",");   
     strcat(EventString,cmd2str(((Code>>4)&0x1)?VALUE_ON:VALUE_OFF)); 
-  }
+    }
 
   else if(Type==SIGNAL_TYPE_NODO || Type==SIGNAL_TYPE_KAKU)
-  {
+    {
     strcat(EventString,cmd2str(Command));
     switch(Command)
     {
@@ -259,12 +250,18 @@ void Event2str(unsigned long Code, char* EventString)
       P2=P_NOT;
       break;
 
-      // Par1 als KAKU adres [A0..P16] en Par2 als [On,Off]
+    // Par1 als KAKU adres [A0..P16] en Par2 als [On,Off]
     case CMD_KAKU:
     case CMD_SEND_KAKU:
       P1=P_KAKU;
       P2=P_TEXT;
       Par2_b=Par2;
+      break;
+    
+    // Toon Par1 en Par2 tezamen als één unsigned integer.
+    case VALUE_BUILD:
+      P1=P_INT16;
+      P2-P_NOT;
       break;
 
     case CMD_KAKU_NEW:
@@ -343,17 +340,24 @@ void Event2str(unsigned long Code, char* EventString)
       strcat(EventString," ");
       switch(P1)
       {
+      case P_INT16:
+        strcat(EventString,int2str(Par1+Par2*256));
+        break;
+
       case P_ANALOG:
         strcat(EventString,int2str(((Code>>12)&0x0f)));
         strcat(EventString,",");
         strcat(EventString,AnalogInt2str(event2AnalogInt(Code))); // waarde analoog
         break;
+
       case P_TEXT:
         strcat(EventString,cmd2str(Par1));
         break;
+
       case P_VALUE:
         strcat(EventString,int2str(Par1));
         break;
+      
       case P_KAKU:
         char t[3];
         t[0]= 'A' + ((Par1&0xf0)>>4);      // A..P
