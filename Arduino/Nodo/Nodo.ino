@@ -67,19 +67,19 @@
 //#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
 
 #define SETTINGS_VERSION     12
-#define NODO_BUILD          445
+#define NODO_BUILD          446
 #include <EEPROM.h>
 #include <Wire.h>
 
 // strings met vaste tekst naar PROGMEM om hiermee RAM-geheugen te sparen.
 prog_char PROGMEM Text_01[] = "Nodo Domotica controller (c) Copyright 2012 P.K.Tonkes.";
 prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
-prog_char PROGMEM Text_03[] = "Enter your password: ";
 prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSat";
-prog_char PROGMEM Text_05[] = "0123456789abcdef";
 prog_char PROGMEM Text_22[] = "!******************************************************************************!";
  
 #if NODO_MEGA
+prog_char PROGMEM Text_03[] = "Enter your password: ";
+prog_char PROGMEM Text_05[] = "0123456789abcdef";
 prog_char PROGMEM Text_06[] = "Waiting for busy Nodo: ";
 prog_char PROGMEM Text_07[] = "Waiting for signal...";
 prog_char PROGMEM Text_09[] = "(Last 10KByte)";
@@ -341,7 +341,6 @@ PROGMEM const char *CommandText_tabel[]={
   Cmd_200,Cmd_201,Cmd_202,Cmd_203,Cmd_204,Cmd_205,Cmd_206,Cmd_207,Cmd_208,Cmd_209,          
   Cmd_210,Cmd_211,Cmd_212,Cmd_213,Cmd_214,Cmd_215           
   };          
-
 #endif
 
 
@@ -724,7 +723,7 @@ struct SettingsStruct
 #endif
   }Settings;
 
-struct NodoBusyStruct //@2
+struct NodoBusyStruct
   {
   int Status;                                               // in deze variabele de status van het event 'Busy' van de betreffende units 1 t/m 15. bit-1 = unit-1.
   boolean Sent;                                             // Vlag die bijhoudt of het Busy On event is verzonden.
@@ -763,11 +762,13 @@ char InputBuffer_Serial[INPUT_BUFFER_SIZE+2];               // Buffer voor input
 char InputBuffer_Terminal[INPUT_BUFFER_SIZE+2];             // Buffer voor input terminal verbinding Telnes sessie
 
 // ethernet classes voor IP communicatie Telnet terminal en HTTP.
-byte Ethernet_MAC_Address[]={NODO_MAC};// MAC adres van de Nodo.
+byte Ethernet_MAC_Address[]={NODO_MAC};                     // MAC adres van de Nodo.
 EthernetServer IPServer(80);                                // Server class voor HTTP sessie.
+EthernetClient HTTPClient;                                    // Client Class voor uitgaande HTTP sessi
 EthernetServer TerminalServer(23);                          // Server class voor Terminal sessie.
 EthernetClient TerminalClient;                              // Client class voor Terminal sessie.
 byte ClientIPAddress[4];                                    // IP adres van de client die verbinding probeert te maken c.q. verbonden is.
+byte HTTPClientIP[4]; // IP adres van de Host
 #endif
 
 // RealTimeclock DS1307
@@ -788,7 +789,7 @@ volatile struct RawsignalStruct *RawSignalPtr=&RawSignal; // Pointer naar de str
 
 void setup() 
   {    
-  byte x;
+  int x;
 
   // enable de WatchDogTimer: we Als de Nodo in de problemen komt, dan resetten.
   
@@ -881,10 +882,7 @@ void setup()
   // Initialiseer ethernet device
   if(bitRead(HW_Config,HW_ETHERNET))
     {
-    IPServer = EthernetServer(Settings.PortServer);
-    TerminalServer = EthernetServer(23);
-  
-    if((Settings.Nodo_IP[0] + Settings.Nodo_IP[1] + Settings.Nodo_IP[2] + Settings.Nodo_IP[3])==0)// Als door de user IP adres is ingesteld op 0.0.0.0 dan IP adres ophalen via DHCP
+      if((Settings.Nodo_IP[0] + Settings.Nodo_IP[1] + Settings.Nodo_IP[2] + Settings.Nodo_IP[3])==0)// Als door de user IP adres is ingesteld op 0.0.0.0 dan IP adres ophalen via DHCP
       {
       if(Ethernet.begin(Ethernet_MAC_Address)==0) // maak verbinding en verzoek IP via DHCP
         {
@@ -896,26 +894,61 @@ void setup()
       Ethernet.begin(Ethernet_MAC_Address, Settings.Nodo_IP, Settings.DnsServer, Settings.Gateway, Settings.Subnet);
   
     bitWrite(HW_Config,HW_ETHERNET,((Ethernet.localIP()[0]+Ethernet.localIP()[1]+Ethernet.localIP()[2]+Ethernet.localIP()[3])!=0)); // Als er een IP adres is, dan Ethernet inschakelen
-    IPServer.begin(); // Start Server voor ontvangst van Events
-    TerminalServer.begin(); // Start server voor Terminalsessies via TelNet
+    }
+    
+  // We hebben een IP adres, nu verder de Servers in werking zetten.
 
+  if(bitRead(HW_Config,HW_ETHERNET))
+    {
+    // Start Server voor ontvangst van HTTP-Events
+    IPServer=EthernetServer(Settings.PortServer);
+    IPServer.begin(); 
+
+    // Start server voor Terminalsessies via TelNet
+    TerminalServer=EthernetServer(23);
+    TerminalServer.begin(); 
+
+    // Haal IP adres op van de Host waar de nodo de HTTP events naar verzendt zodat niet iedere transactie een DNS-resolve plaats hoeft te vinden.
+    // Haal uit het HTTP request URL de Host. 
+    // zoek naar de eerste slash in de opgegeven HTTP-Host adres
+    char *TempString=(char*)malloc(80);
+    x=StringFind(Settings.HTTPRequest,"/");
+    strcpy(TempString,Settings.HTTPRequest);
+    TempString[x]=0;    
+    if(HTTPClient.connect(TempString,Settings.PortClient))   
+      {
+      HTTPClient.getRemoteIP(HTTPClientIP);  
+      HTTPClient.stop();
+      }
+    else
+      {
+      HTTPClientIP[0]=0;
+      HTTPClientIP[1]=0;
+      HTTPClientIP[2]=0;
+      HTTPClientIP[3]=0;
+      }
+    free(TempString);
+    
     // Als ethernet enbled en beveiligde modus, dan direct een Cookie sturen, ander worden eerste events niet opgepikt door de WebApp
     if(Settings.Password[0]!=0)
       SendHTTPCookie(); // Verzend een nieuw cookie
     }
 
   RawSignal.Key=-1; // Als deze variable ongelijk aan -1 dan wordt er een Rawsignal opgeslagen.  
-  bitWrite(HW_Config,HW_SERIAL,1); // zonder deze vlag vindt er geen output naar de serial poort plaats. Tijdelijk even inschakelen.
 
   #endif
 
+  bitWrite(HW_Config,HW_SERIAL,1); // Serial weer uitschakelen.
   PrintWelcome(); // geef de welkomsttekst weer
+  if(!Serial.available())
+    bitWrite(HW_Config,HW_SERIAL,0); // Serial weer uitschakelen.
+
   #if USER_PLUGIN
     UserPlugin_Init();
   #endif
+
   TransmitCode(command2event(Settings.Unit, CMD_BOOT_EVENT,Settings.Unit,0),VALUE_ALL);  
   ProcessEvent1(command2event(Settings.Unit, CMD_BOOT_EVENT,Settings.Unit,0),VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM,0,0);  // Voer het 'Boot' event uit.
-  bitWrite(HW_Config,HW_SERIAL,0); // Serial weer uitschakelen.
   }
 
 
@@ -952,9 +985,7 @@ void loop()
     {
     // Check voor IR of RF events
     if(GetEvent_IRRF(&Content,&x)) 
-      {
       ProcessEvent1(Content,VALUE_DIRECTION_INPUT,x,0,0); // verwerk binnengekomen event.
-      }
       
     // 1: niet tijdkritische processen die periodiek uitgevoerd moeten worden
     if(LoopIntervalTimer_1<millis())// korte interval

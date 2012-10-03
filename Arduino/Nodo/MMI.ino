@@ -165,10 +165,21 @@ void PrintWelcome(void)
   // print IP adres van de Nodo
   if(bitRead(HW_Config,HW_ETHERNET))
     {
-    sprintf(TempString,"NodoIP=%u.%u.%u.%u, MAC=%02X-%02X-%02X-%02X-%02X-%02X",Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3], NODO_MAC);
+    sprintf(TempString,"MAC=%02X-%02X-%02X-%02X-%02X-%02X, NodoIP=%u.%u.%u.%u, ", NODO_MAC, Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
     PrintTerminal(TempString);
+    
+    if((HTTPClientIP[0],HTTPClientIP[1],HTTPClientIP[2],HTTPClientIP[3])!=0)
+      {
+      strcpy(TempString,"Host=");        
+      strcat(TempString,Settings.HTTPRequest);
+      int x=StringFind(TempString,"/");
+      TempString[x]=0;    
+      strcat(TempString,", HostIP=");        
+      strcat(TempString,ip2str(HTTPClientIP));
+      PrintTerminal(TempString);
+      }
     }
-  
+    
   PrintTerminal(ProgmemString(Text_22));
   free(TempString);
   }
