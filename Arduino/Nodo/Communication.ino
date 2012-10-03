@@ -132,7 +132,7 @@ boolean SendHTTPRequest(char* Request)
   char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
   char filename[13];
   const int TimeOut=10000;
-  EthernetClient IPClient;                            // Client class voor HTTP sessie.
+  EthernetClient HTTPClient;                            // Client class voor HTTP sessie.
   byte State=0;// 0 als start, 
                // 1 als 200 OK voorbij is gekomen,
                // 2 als &file= is gevonden en eerstvolgende lege regel moet worden gedetecteerd
@@ -178,47 +178,34 @@ boolean SendHTTPRequest(char* Request)
 
   strcpy(TempString,Settings.HTTPRequest);
   TempString[SlashPos]=0;
-
-  #if TRACE
-  char *TraceString=(char*)malloc(200);
-  strcpy(TraceString,TempString);
-  strcat(TraceString,", Port=");
-  strcat(TraceString,int2str(Settings.PortClient));
-  strcat(TraceString,", IPBuffer=");
-  strcat(TraceString,IPBuffer);
-  AddFileSDCard("TRACE.DAT", TraceString);
-  free(TraceString);
-  #endif
-
+    
   SelectSD(false); // Voor de zekerheid, mocht de chipselect niet goed staan.
-  if(IPClient.connect(TempString,Settings.PortClient))
+
+  if(HTTPClient.connect(HTTPClientIP,Settings.PortClient))
     {
-    IPClient.getRemoteIP(ClientIPAddress);  
 
-    #if TRACE
-    char *TraceString=(char*)malloc(200);
-    strcpy(TraceString,ip2str(ClientIPAddress));
-    AddFileSDCard("TRACE.DAT", TraceString);
-    free(TraceString);
-    #endif
-
-    IPClient.println(IPBuffer);
-    IPClient.print(F("Host: "));
-    IPClient.println(TempString);
-    IPClient.print(F("User-Agent: Nodo/Build="));
-    IPClient.println(int2str(NODO_BUILD));             
-    IPClient.println(F("Connection: Close"));
-    IPClient.println();// Afsluiten met een lege regel is verplicht in http protocol/
+    ClientIPAddress[0]=HTTPClientIP[0];
+    ClientIPAddress[1]=HTTPClientIP[1];
+    ClientIPAddress[2]=HTTPClientIP[2];
+    ClientIPAddress[3]=HTTPClientIP[3];
+  
+    HTTPClient.println(IPBuffer);
+    HTTPClient.print(F("Host: "));
+    HTTPClient.println(TempString);
+    HTTPClient.print(F("User-Agent: Nodo/Build="));
+    HTTPClient.println(int2str(NODO_BUILD));             
+    HTTPClient.println(F("Connection: Close"));
+    HTTPClient.println();// Afsluiten met een lege regel is verplicht in http protocol/
 
     TimeoutTimer=millis()+TimeOut; // Als er te lange tijd geen datatransport is, dan wordt aangenomen dat de verbinding (om wat voor reden dan ook) is afgebroken.
     IPBuffer[0]=0;
     InByteCounter=0;
     
-    while(TimeoutTimer>millis() && IPClient.connected())
+    while(TimeoutTimer>millis() && HTTPClient.connected())
       {
-      if(IPClient.available())
+      if(HTTPClient.available())
         {
-        InByte=IPClient.read();
+        InByte=HTTPClient.read();
 
         if(isprint(InByte) && InByteCounter<IP_BUFFER_SIZE)
           IPBuffer[InByteCounter++]=InByte;
@@ -268,7 +255,7 @@ boolean SendHTTPRequest(char* Request)
           }
         }
       }
-    IPClient.stop();
+    HTTPClient.stop();
     }
   else
     State=false;
@@ -359,11 +346,11 @@ void ExecuteIP(void)
 
   Event[0]=0; // maak de string leeg.
   
-  EthernetClient IPClient = IPServer.available();
+  EthernetClient HTTPClient = IPServer.available();
   
-  if(IPClient)
+  if(HTTPClient)
     {
-    IPClient.getRemoteIP(ClientIPAddress);  
+    HTTPClient.getRemoteIP(ClientIPAddress);  
 
     // Controleer of het IP adres van de Client geldig is. 
     if((Settings.Client_IP[0]!=0 && ClientIPAddress[0]!=Settings.Client_IP[0]) ||
@@ -376,11 +363,11 @@ void ExecuteIP(void)
     else
       {
       InByteCounter=0;
-      while(IPClient.connected()  && !Completed && TimeoutTimer>millis())
+      while(HTTPClient.connected()  && !Completed && TimeoutTimer>millis())
         {
-        if(IPClient.available()) 
+        if(HTTPClient.available()) 
           {
-          InByte=IPClient.read();
+          InByte=HTTPClient.read();
           
           if(isprint(InByte) && InByteCounter<IP_BUFFER_SIZE)
             InputBuffer_IP[InByteCounter++]=InByte;
@@ -438,24 +425,24 @@ void ExecuteIP(void)
                     {
                     RequestCompleted=true;
                     strcpy(TmpStr1,"HTTP/1.1 200 Ok");
-                    IPClient.println(TmpStr1);
+                    HTTPClient.println(TmpStr1);
                     }
                   else
-                    IPClient.println(F("HTTP/1.1 400 Bad Request"));
+                    HTTPClient.println(F("HTTP/1.1 400 Bad Request"));
                   }
                 else                    
-                  IPClient.println(F("HTTP/1.1 403 Forbidden"));
+                  HTTPClient.println(F("HTTP/1.1 403 Forbidden"));
                 }
 
-              IPClient.println(F("Content-Type: text/html"));
-              IPClient.print(F("Server: Nodo/Build="));
-              IPClient.println(int2str(NODO_BUILD));             
+              HTTPClient.println(F("Content-Type: text/html"));
+              HTTPClient.print(F("Server: Nodo/Build="));
+              HTTPClient.println(int2str(NODO_BUILD));             
               if(bitRead(HW_Config,HW_CLOCK))
                 {
-                IPClient.print(F("Date: "));
-                IPClient.println(DateTimeString());             
+                HTTPClient.print(F("Date: "));
+                HTTPClient.println(DateTimeString());             
                 }
-              IPClient.println(""); // HTTP Request wordt altijd afgesloten met een lege regel
+              HTTPClient.println(""); // HTTP Request wordt altijd afgesloten met een lege regel
   
               if(RequestFile)
                 {              
@@ -480,11 +467,11 @@ void ExecuteIP(void)
                       
                       if(RequestFile)
                         {
-                        IPClient.println();//??? Verzoek van Martin "<br />" verwijderd
+                        HTTPClient.println();//??? Verzoek van Martin "<br />" verwijderd
                         RequestFile=false;// gebruiken we even als vlag om de eerste keer de regel met asteriks af te drukken omdat deze variabele toch verder niet meer nodig is
                         }
-                      IPClient.print(TmpStr1);
-                      IPClient.println();//??? Verzoek van Martin "<br />" verwijderd
+                      HTTPClient.print(TmpStr1);
+                      HTTPClient.println();//??? Verzoek van Martin "<br />" verwijderd
 
                       SelectSD(true);
                       }
@@ -494,7 +481,7 @@ void ExecuteIP(void)
                   digitalWrite(Ethernetshield_CS_W5100, LOW);
                   }  
                 else 
-                  IPClient.println(cmd2str(MESSAGE_03));
+                  HTTPClient.println(cmd2str(MESSAGE_03));
                 }
               } // einde HTTP-request
             }  
@@ -502,7 +489,7 @@ void ExecuteIP(void)
         }
       }
     delay(5);  // korte pauze om te voorkomen dat de verbinding wordt verbroken alvorens alle data door client verwerkt is.
-    IPClient.stop();
+    HTTPClient.stop();
     }
 
   if(RequestEvent)

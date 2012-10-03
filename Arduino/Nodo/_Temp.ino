@@ -13,10 +13,6 @@ Command = AlarmSet <nummer>, <hour>, <minute>
 Serial.print("*** debug: =");Serial.println(); //??? Debug
 Serial.println("*** debug: ");//???
 
-Laatste is: 25
-#if TRACE
-Trace(19,0,0);
-#endif
 
 */
 
