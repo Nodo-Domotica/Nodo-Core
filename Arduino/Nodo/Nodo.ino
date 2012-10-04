@@ -55,7 +55,7 @@
 #define FORMULA_1            a = 360000/PulseTime;            /* 1000 pulsen in een uur = 1KWh */
 #define FORMULA_2            a = 216000/PulseTime;            /* 600 pulsen per uur = 1KWh */
 #define FORMULA_3            a = PulseCount; PulseCount=0;
-#define FORMULA_4            a = PulseCount / 10; PulseCount=0;
+#define FORMULA_4            a = PulseCount *100 ; PulseCount=0;
 #define FORMULA_5            a = 0;
 #define FORMULA_6            a = 0;
 #define FORMULA_7            a = 0;
@@ -624,11 +624,11 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define HW_IR_PULSE     8
 
 #if NODO_MEGA // Definities voor de Nodo-Mega variant.
+#define EVENT_QUEUE_MAX             16 // maximaal aantal plaatsen in de queue (Nodo-Mega heeft eveneens queue op SDCard in file QUEUE.DAT)
 #define MACRO_EXECUTION_DEPTH       10 // maximale nesting van macro's.
 #define INPUT_BUFFER_SIZE          128  // Buffer waar de karakters van de seriele/IP poort in worden opgeslagen.
 #define TIMER_MAX                   15  // aantal beschikbare timers voor de user, gerekend vanaf 1
 #define USER_VARIABLES_MAX          15  // aantal beschikbare gebruikersvariabelen voor de user.
-#define EVENT_QUEUE_MAX             32  // maximaal aantal plaatsen in de queue
 #define PULSE_IRQ                    5  // IRQ verbonden aan de IR_RX_DATA pen 18 van de Mega
 #define PIN_WIRED_IN_1               8  // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
 #define PIN_LED_RGB_R               47  // RGB-Led, aansluiting rood
@@ -660,10 +660,10 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define COOKIE_REFRESH_TIME         60 // Tijd tussen automatisch verzenden van een nieuw Cookie als de beveiligde HTTP modus is inschakeld.
 
 #else // als het voor de Nodo-Small variant is
+#define EVENT_QUEUE_MAX             16 // maximaal aantal plaatsen in de queue (Nodo-Mega heeft eveneens queue op SDCard in file QUEUE.DAT)
 #define MACRO_EXECUTION_DEPTH        4 // maximale nesting van macro's.
 #define TIMER_MAX                    8 // aantal beschikbare timers voor de user, gerekend vanaf 1
 #define USER_VARIABLES_MAX           8 // aantal beschikbare gebruikersvariabelen voor de user.
-#define EVENT_QUEUE_MAX             16 // maximaal aantal plaatsen in de queue
 #define PULSE_IRQ                    1 // IRQ-1 verbonden aan de IR_RX_DATA pen 3 van de ATMega328 (Uno/Nano/Duemillanove)
 #define RAW_BUFFER_SIZE            160 // Maximaal aantal te ontvangen 128 bits.
 #define EVENTLIST_MAX              100 // aantal events dat de lijst bevat in het EEPROM geheugen. Iedere regel in de eventlist heeft 8 bytes nodig. eerste adres is 0
@@ -679,7 +679,6 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define PIN_RF_RX_DATA               2 // Op deze input komt het 433Mhz-RF signaal binnen. LOW bij geen signaal.
 #define PIN_RF_RX_VCC               12 // Spanning naar de ontvanger via deze pin.
 #define PIN_WIRED_OUT_1              7 // 7 digitale outputs D07 t/m D10 worden gebruikt voor WiredIn 1 tot en met 4
-
 #endif
 
 //****************************************************************************************************************************************
@@ -809,10 +808,10 @@ void setup()
   digitalWrite(PIN_IR_RX_DATA,INPUT_PULLUP);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.//???
   digitalWrite(PIN_RF_RX_DATA,INPUT_PULLUP);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.//???
 
-#if NODO_MEGA
+  #if NODO_MEGA
   pinMode(PIN_LED_RGB_G,  OUTPUT);
   pinMode(EthernetShield_CS_SDCardH, OUTPUT); // CS/SPI: nodig voor correct funktioneren van de SDCard!
-#endif
+  #endif
 
   RFbit=digitalPinToBitMask(PIN_RF_RX_DATA);
   RFport=digitalPinToPort(PIN_RF_RX_DATA);  
@@ -826,10 +825,10 @@ void setup()
   Wire.begin();        // zet I2C communicatie gereed voor uitlezen van de realtime clock.
   Serial.begin(BAUD);  // Initialiseer de seriële poort
 
-#if NODO_MEGA
+  #if NODO_MEGA
   Serial.println("Booting...");
   SerialHold(true);// XOFF verzenden zodat PC even wacht met versturen van data via Serial (Xon/Xoff-handshaking)
-#endif
+  #endif
 
   // initialiseer de Busy Nodo gegevens
   Busy.Status=0;
@@ -860,7 +859,7 @@ void setup()
   // Zet statussen WIRED_IN op hoog, anders wordt direct wij het opstarten meerdere malen een event gegenereerd omdat de pull-up weerstand analoge de waarden op hoog zet
   for(x=0;x<WIRED_PORTS;x++){WiredInputStatus[x]=true;}
 
-#if NODO_MEGA
+  #if NODO_MEGA
   // SDCard initialiseren:
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
   SelectSD(true);
@@ -935,7 +934,6 @@ void setup()
     }
 
   RawSignal.Key=-1; // Als deze variable ongelijk aan -1 dan wordt er een Rawsignal opgeslagen.  
-
   #endif
 
   bitWrite(HW_Config,HW_SERIAL,1); // Serial weer uitschakelen.
@@ -944,7 +942,7 @@ void setup()
     bitWrite(HW_Config,HW_SERIAL,0); // Serial weer uitschakelen.
 
   #if USER_PLUGIN
-    UserPlugin_Init();
+  UserPlugin_Init();
   #endif
 
   TransmitCode(command2event(Settings.Unit, CMD_BOOT_EVENT,Settings.Unit,0),VALUE_ALL);  
@@ -968,11 +966,11 @@ void loop()
   unsigned long EventTimeCodePrevious; 
   unsigned long StaySharpTimer;                               // Timer die er voor zorgt dat bij communicatie via een kanaal de focus hier ook enige tijd op blijft
 
-#if NODO_MEGA
+  #if NODO_MEGA
   SerialHold(false); // er mogen weer tekens binnen komen van SERIAL
   InputBuffer_Serial[0]=0; // serieel buffer string leeg maken
   TempLogFile[0]=0; // geen extra logging
-#endif
+  #endif
 
   // hoofdloop: scannen naar signalen
   // dit is een tijdkritische loop die wacht tot binnengekomen event op IR, RF, SERIAL, CLOCK, DAYLIGHT, TIMER, etc
@@ -999,7 +997,7 @@ void loop()
           Led(GREEN);
           } 
 
-#if NODO_MEGA
+        #if NODO_MEGA
         case 1: // binnen Slice_1
           {        
           if(bitRead(HW_Config,HW_ETHERNET))
@@ -1027,16 +1025,28 @@ void loop()
                 TerminalInbyteCounter=0;
                 TerminalClient.flush(); // schoon beginnen.
 
-                if(TerminalLocked==0)
-                  TerminalLocked=1;
-                  
-                if(TerminalLocked<=PASSWORD_MAX_RETRY)
-                   TerminalClient.print(ProgmemString(Text_03));
+
+                if(Settings.Password[0]!=0)
+                  {
+                  if(TerminalLocked==0)
+                    TerminalLocked=1;//???@2
+                    
+                  if(TerminalLocked<=PASSWORD_MAX_RETRY)
+                     TerminalClient.print(ProgmemString(Text_03));
+                  else
+                    {
+                    TerminalClient.print(cmd2str(MESSAGE_10));
+                    RaiseMessage(MESSAGE_10);
+                    }
+                  }
                 else
                   {
-                  TerminalClient.print(cmd2str(MESSAGE_10));
-                  RaiseMessage(MESSAGE_10);
-                  }
+                  TerminalLocked=0;
+                  y=bitRead(HW_Config,HW_SERIAL);
+                  bitWrite(HW_Config,HW_SERIAL,1);
+                  PrintWelcome();
+                  bitWrite(HW_Config,HW_SERIAL,y);
+                  }                
                 }
   
               while(TerminalClient.available()) 
@@ -1051,8 +1061,8 @@ void loop()
                       TerminalClient.write(TerminalInByte);// Echo ontvangen teken                  
                     InputBuffer_Terminal[TerminalInbyteCounter++]=TerminalInByte;
                     }
-//                  else
-//                     TerminalClient.write('#');// geen ruimte meer.
+                  else
+                     TerminalClient.write('#');// geen ruimte meer.
                   }
                   
                 if(TerminalInByte==0x03 || TerminalInByte==0x18)
@@ -1072,15 +1082,15 @@ void loop()
                     TerminalClient.println("");// Echo de nieuwe regel.
                   TerminalConnected=TERMINAL_TIMEOUT;
                   InputBuffer_Terminal[TerminalInbyteCounter]=0;
-                  if(TerminalInbyteCounter==0)break; // als de string leeg is, dan niets verwerken.
                   TerminalInbyteCounter=0;
-  
+                
                   if(TerminalLocked==0) // als op niet op slot
                     {
                     TerminalClient.getRemoteIP(ClientIPAddress);  
                     ExecuteLine(InputBuffer_Terminal, VALUE_SOURCE_TELNET);
 //                    TerminalClient.write('>');
                     }
+                    
                   else
                     {
                     if(TerminalLocked<=PASSWORD_MAX_RETRY)// teller is wachtloop bij herhaaldelijke pogingen foutief wachtwoord. Bij >3 pogingen niet meer toegestaan
@@ -1272,7 +1282,7 @@ void loop()
         UserPlugin_Periodically();
       #endif
 
-#if NODO_MEGA
+      #if NODO_MEGA
       // Terminal onderhoudstaken
       // tel seconden terug nadat de gebruiker driemaal foutief wachtwoord ingegeven
       if(TerminalLocked>PASSWORD_MAX_RETRY)
@@ -1309,7 +1319,7 @@ void loop()
           SendHTTPCookie(); // Verzend een nieuw cookie
           }
         }
-#endif
+      #endif
 
       // De Nodo houdt bij of Andere Nodos bezig zijn. Periodiek wordt de status gereset
       // om te voorkomen dat de Nodo lange tijd onnodig vast komt te zitten.

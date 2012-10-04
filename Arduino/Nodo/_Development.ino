@@ -2,11 +2,24 @@
 /**************************************************************************************************************************\
 
 Aanpassingen t.o.v. laatste build:
-- Alleen DNS-Resolving van de HTTPHost tijdens opstarten.
-- Toevoeging aan Welkomsttekst: "Host=www.nodo-domotica.nl, HostIP=141.138.136.245"
-- Boot event wordt na opstarten niet meer getoont, tenzij er input op serial is ontvangen.
+- Issue 564: echo voor TelNet default op Off.
+- Issue 563: Password verkeerd ingesteld in build 446
+- Issue 504: Nodo Busy status in WebApp
+- Issue 559: Queueing error
+- Issue 558: Te lange Filename wordt zonder waarschuwing geweigerd
+- Issue 557: OutputIP heeft geen invloed op verzenden naar WebApp
 
 Aanpassingen t.o.v. Final Beta Build 436:
+- Issue 557: OutputIP heeft geen invloed op verzenden naar WebApp
+- Issue 558: Te lange Filename wordt zonder waarschuwing geweigerd
+- Issue 559: Queueing error
+- Issue 504: Nodo Busy status in WebApp
+- Issue 564: echo voor TelNet default op Off.
+- Issue 563: Password verkeerd ingesteld in build 446
+- Alleen DNS-Resolving van de HTTPHost tijdens opstarten.
+- Default geen wachtwoord ingesteld op de Nodo.
+- Toevoeging aan Welkomsttekst: "Host=www.nodo-domotica.nl, HostIP=141.138.136.245"
+- Boot event wordt na opstarten niet meer getoont, tenzij er input op serial is ontvangen.
 - Issue 549: Output commando's bundelen ==>> LET OP: Hiervoor aanpassing van de WebApp nodig.
 - Issue 548: Onbekend UserEvent laat Small stoppen met scannen.
 - Issue 541: WaitFreeRF nodig? Default "on"?

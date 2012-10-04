@@ -62,7 +62,7 @@ byte Commanderror(unsigned long Content)
     case CMD_RESET:
     case CMD_RAWSIGNAL_SAVE:
     case CMD_RAWSIGNAL:
-    case CMD_MESSAGE :
+    case CMD_MESSAGE:
     case CMD_REBOOT:
     case CMD_USERPLUGIN: 
     case CMD_CLOCK_EVENT_DAYLIGHT:
@@ -560,10 +560,10 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     case CMD_DELAY:
       Led(BLUE);
       
-      if(Par2==VALUE_OFF)    
-        delay(Par1*1000);      
-      else      
+      if(Par2==VALUE_ON)    
         WaitAndQueue(Par1,false,0);
+      else      
+        delay(Par1*1000);      
       break;        
       
     case CMD_SEND_EVENT:
@@ -618,12 +618,13 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         }
       else
         {// on / off 
-        TransmitCode(command2event(Settings.Unit, CMD_BUSY,Par1,0),VALUE_ALL);
         if(Settings.SendBusy==VALUE_ALL && Par1==VALUE_OFF)
           {// De SendBusy mode moet worden uitgeschakeld
           Settings.SendBusy=VALUE_OFF;
           SaveSettings();
           }
+        else
+          TransmitCode(command2event(Settings.Unit, CMD_BUSY,Par1,0),VALUE_ALL);
         }
       break;
             
@@ -1255,7 +1256,7 @@ int ExecuteLine(char *Line, byte Port)
               break;
   
             case CMD_FILE_WRITE:
-              if(GetArgv(Command,TmpStr1,2))
+              if(GetArgv(Command,TmpStr1,2) && strlen(TmpStr1)<=8)
                 {
                 strcat(TmpStr1,".dat");
                 strcpy(TempLogFile,TmpStr1);

@@ -203,8 +203,7 @@ void PrintTerminal(char* LineToPrint)
   if(TempLogFile[0]!=0)
     if(bitRead(HW_Config,HW_SDCARD))
       AddFileSDCard(TempLogFile,LineToPrint); // Extra logfile op verzoek van gebruiker: CMD_FILE_LOG
-
-}
+  }
 
 /**********************************************************************************************\
  * Converteert een 32-bit eventcode naar een voor de gebruiker leesbare string
