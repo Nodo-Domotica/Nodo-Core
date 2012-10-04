@@ -12,7 +12,7 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
   unsigned long TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
   unsigned long Event=0L;
   int x,y,z,Port;
-  boolean error=false;
+  boolean error=false, BusyReceived=false;
   
   Led(BLUE);
   Queue.Position=0;    
@@ -32,8 +32,7 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
 
       #if NODO_MEGA      
       CheckRawSignalKey(&Event); // check of er een RawSignal key op de SDCard aanwezig is en vul met Nodo Event. Call by reference!
-
-      PrintEvent(Event,Port,VALUE_DIRECTION_INPUT);
+      PrintEvent(Event,VALUE_DIRECTION_INPUT,Port);
       #endif
         
       x=(byte)((Event>>16)&0xff); // cmd
@@ -41,7 +40,7 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
       z=(byte)((Event>>8)&0xff); // par1
       
       if(x==CMD_BUSY) // command
-        NodoBusy(Event,0);          
+        NodoBusy(Event,0);
 
       if(BreakEvent!=0 && Event==BreakEvent)
         break;
@@ -56,7 +55,7 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
         }
   
       // Het is geen Busy event of Queue commando event, dan deze in de queue plaatsen.
-      else if(x!=CMD_BUSY)
+      else if(x!=CMD_BUSY )
         {
         #if NODO_MEGA
         if(bitRead(HW_Config,HW_SDCARD))
@@ -94,8 +93,9 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
   if(TimeoutTimer<=millis())
     error=true;
     
-  if(error)
-    RaiseMessage(MESSAGE_04);
+// ??? Gedisabled dat er een error komt. Issue
+//  if(error)
+//    RaiseMessage(MESSAGE_04);
 
   return !error;
   }
@@ -125,17 +125,15 @@ boolean NodoBusy(unsigned long Event, int Wait)
       }
     }
 
-
-// Dit was bedoeld om vanuit een SendTo commando aan de WebApp kenbaar te maken dat de Master Nodo busy is. Nog nader bekijken.
-//  #if NODO_MEGA
-//  if(Busy.Status!=0)
-//    {
-//    // geef ook aan de WebApp te kennen dat de Nodo busy is.
-//    //Serial.println("*** debug: Busy On verzonden naar HTTP");//???
-//    TransmitCode(command2event(Settings.Unit, CMD_BUSY,VALUE_ON,0),VALUE_SOURCE_HTTP);
-//    Busy.Sent=true;
-//    }
-//  #endif
+  #if NODO_MEGA
+  if(Busy.Status!=0 && Settings.TransmitIP==VALUE_ON)
+    {
+    // geef ook aan de WebApp te kennen dat de Nodo busy is.
+    // Alleen naar de WebApp omdat de bron dit al via RF heeft verzorgd.
+    TransmitCode(command2event(Settings.Unit, CMD_BUSY,VALUE_ON,0),VALUE_SOURCE_HTTP);
+    Busy.Sent=true;
+    }
+  #endif
   
   if(Wait>0 && Busy.Status!=0)
     {
@@ -437,7 +435,7 @@ boolean LoadSettings()
 void ResetFactory(void)
   {
   Led(BLUE);
-  Beep(2000,2000);
+  //??? tijdelijk die irritantie piet uitgezet. Beep(2000,2000);
 
   int x,y;
   ClockRead(); 
@@ -482,7 +480,7 @@ void ResetFactory(void)
   Settings.PortClient                 = 80;
   Settings.ID[0]                      = 0; // string leegmaken
   Settings.EchoSerial                 = VALUE_ON;
-  Settings.EchoTelnet                 = VALUE_ON;  
+  Settings.EchoTelnet                 = VALUE_OFF;  
   Settings.Log                        = VALUE_OFF;  
   Settings.Password[0]                = 0;
   

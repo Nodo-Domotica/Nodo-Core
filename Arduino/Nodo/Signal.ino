@@ -585,7 +585,7 @@ boolean TransmitCode(unsigned long Event, byte Dest)
   else if(SignalType==SIGNAL_TYPE_NODO)
     Nodo_2_RawSignal(Event);
 
-  if(Dest==VALUE_SOURCE_IR || (Settings.TransmitIR==VALUE_ON && Dest==VALUE_ALL))
+  if(Settings.TransmitIR==VALUE_ON && (Dest==VALUE_SOURCE_IR || Dest==VALUE_ALL))
     { 
     PrintEvent(Event,VALUE_DIRECTION_OUTPUT, VALUE_SOURCE_IR);
     RawSendIR();
@@ -593,7 +593,7 @@ boolean TransmitCode(unsigned long Event, byte Dest)
   else
     delay(250);
 
-  if(Dest==VALUE_SOURCE_RF || (Settings.TransmitRF==VALUE_ON && Dest==VALUE_ALL))
+  if(Settings.TransmitRF==VALUE_ON && (Dest==VALUE_SOURCE_RF || Dest==VALUE_ALL))
     {
     PrintEvent(Event,VALUE_DIRECTION_OUTPUT, VALUE_SOURCE_RF);
     RawSendRF();
@@ -604,7 +604,7 @@ boolean TransmitCode(unsigned long Event, byte Dest)
 #if NODO_MEGA
   if(bitRead(HW_Config,HW_ETHERNET))// Als Ethernet shield aanwezig.
     {
-    if(Dest==VALUE_SOURCE_HTTP || (Dest==VALUE_ALL && Settings.TransmitIP==VALUE_ON))
+    if(Settings.TransmitIP==VALUE_ON && (Dest==VALUE_SOURCE_HTTP || Dest==VALUE_ALL))
       {
       SendHTTPEvent(Event);
       PrintEvent(Event,VALUE_DIRECTION_OUTPUT,VALUE_SOURCE_HTTP);
