@@ -1,4 +1,3 @@
-
 <!DOCTYPE html> 
 <html>
 
@@ -6,21 +5,22 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"> 
 	<title>Nodo WebApp</title> 
-	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.2.0-rc.2/jquery.mobile-1.2.0-rc.2.min.css" />
-	<script src="http://code.jquery.com/jquery-1.8.1.min.js"></script>
-	<script src="http://code.jquery.com/mobile/1.2.0-rc.2/jquery.mobile-1.2.0-rc.2.min.js"></script>
+	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.css" />
+	<link rel="stylesheet" type="text/css" href="css/custom.css" />
+	<script src="http://code.jquery.com/jquery-1.8.2.min.js"></script>
+	<script src="js/flot/jquery.flot.min.js"></script>
+	<script src="js/flot/jquery.flot.resize.min.js"></script>
+	<script src="http://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.js"></script>
 	
-	<link rel="stylesheet" type="text/css" href="/webapp/css/custom.css" />
-	
-	</head> 
+</head> 
 
 <body> 
 
 <div data-role="page" id="devices_page">
 	
 	<!-- header -->
-	<div data-role="header" data-id="toolbar" >
-		<h1>Devices <div id="nodostate_devices"></div></h1>
+	<div data-role="header" data-id="toolbar" data-position="fixed" data-tap-toggle="false">
+		<h1 id="header_devices"></h1>
 		<div data-role="navbar" data-iconpos="top">
 		<ul>
 			<li><a href="#devices_page" data-icon="devices"  data-transition="none" data-ajax="true">Devices</a></li>
@@ -28,25 +28,18 @@
 			<li><a href="#values_page" data-icon="measurements" data-transition="none" data-ajax="true">Values</a></li>
 		</ul>
 		</div>
-	</div><!-- /header -->
+		
+	</div>
+	<!-- /header -->
 	
 	<div data-role="content">
 	<p></p>
-		<ul id="devices" data-role="listview" data-filter="false" ></ul>
-
-		<!-- Start of page: #device_popup -->
-		<div data-role="popup" id="device_popup" data-overlay-theme="c">
-			<a href="#" data-rel="back" data-role="button" data-icon="delete" data-iconpos="notext" class="ui-btn-right">Close</a>
-				
-				<ul id="divdevice" data-role="listview" data-inset="true" style="max-width:300px"></ul>
-				
-		</div>
-		<!-- /page device_popup -->
-		
+		<ul id="devices" data-role="listview" data-filter="true" ></ul>
 	<p></p>
-	</div><!-- /content -->
+	</div>
+	<!-- /content -->
 	
-	<div data-role="footer" data-id="toolbar" >
+	<div data-role="footer" data-id="toolbar" data-position="fixed" data-tap-toggle="false" >
 		<div data-role="navbar" data-iconpos="top">
 			<ul>
 				<li><a href="logout.php" data-icon="delete"  data-ajax="false">Logout</a></li>
@@ -54,29 +47,42 @@
 				<li><a href="admin" data-icon="gear"  data-ajax="false">Setup</a></li>
 			</ul>
 		</div>
-	</div><!-- /footer -->	
+	</div>
+	<!-- /footer -->	
 	
-</div><!-- /page -->
+	<!-- Start of page: #device_popup -->
+	<div data-role="popup" id="device_popup" data-overlay-theme="c">
+		<a href="#" data-rel="back" data-role="button" data-icon="delete" data-iconpos="notext" class="ui-btn-right">Close</a>
+		<ul id="divdevice" data-role="listview" data-inset="true" style="max-width:300px"></ul>
+	</div>
+	<!-- /page device_popup -->	
+	
+		
+</div>
+<!-- /page -->
 
 <div data-role="page" id="activities_page">
 
-	<div data-role="header" data-id="toolbar" >
-		<h1>Activities<div id="nodostate_activities"></div></h1>
-				<div data-role="navbar" data-iconpos="top">
-		<ul>
-			<li><a href="#devices_page" data-icon="devices"  data-transition="none" data-ajax="true">Devices</a></li>
-			<li><a href="#activities_page" data-icon="grid"  data-transition="none" data-ajax="true">Activities</a></li>
-			<li><a href="#values_page" data-icon="measurements" data-transition="none" data-ajax="true">Values</a></li>
-		</ul>
+	<div data-role="header" data-id="toolbar" data-position="fixed" data-tap-toggle="false" >
+		<h1 id="header_activities"></h1>
+		<div data-role="navbar" data-iconpos="top">
+			<ul>
+				<li><a href="#devices_page" data-icon="devices"  data-transition="none" data-ajax="true">Devices</a></li>
+				<li><a href="#activities_page" data-icon="grid"  data-transition="none" data-ajax="true">Activities</a></li>
+				<li><a href="#values_page" data-icon="measurements" data-transition="none" data-ajax="true">Values</a></li>
+			</ul>
 		</div>
-	</div><!-- /header -->
+	</div>
+	<!-- /header -->
 
 	<div data-role="content">	
 	<p></p>	
 		<ul id="activities" data-role="listview" data-split-theme="c"></ul>
 	<p></p>
-	</div><!-- /content -->
-	<div data-role="footer" data-id="toolbar" >
+	</div>
+	<!-- /content -->
+	
+	<div data-role="footer" data-id="toolbar" data-position="fixed" data-tap-toggle="false" >
 		
 		<div data-role="navbar" data-iconpos="top">
 		<ul>
@@ -85,66 +91,58 @@
 			<li><a href="admin" data-icon="gear"  data-ajax="false">Setup</a></li>
 		</ul>
 		</div>
-	</div><!-- /footer -->	
+	</div>
+	<!-- /footer -->	
 	
-</div><!-- /page -->
+</div>
+<!-- /page -->
 
 <div data-role="page" id="values_page">
 
-	<div data-role="header" data-id="toolbar" >
-		<h1>Values<div id="nodostate_values"></div></h1>
-				<div data-role="navbar" data-iconpos="top">
-		<ul>
-			<li><a href="#devices_page" data-icon="devices"  data-transition="none" data-ajax="true">Devices</a></li>
-			<li><a href="#activities_page" data-icon="grid"  data-transition="none" data-ajax="true">Activities</a></li>
-			<li><a href="#values_page" data-icon="measurements" data-transition="none" data-ajax="false">Values</a></li>
-		</ul>
+	<div data-role="header" data-id="toolbar" data-position="fixed" data-tap-toggle="false">
+		<h1 id="header_values"></h1>
+		<div data-role="navbar" data-iconpos="top">
+			<ul>
+				<li><a href="#devices_page" data-icon="devices"  data-transition="none" data-ajax="true">Devices</a></li>
+				<li><a href="#activities_page" data-icon="grid"  data-transition="none" data-ajax="true">Activities</a></li>
+				<li><a href="#values_page" data-icon="measurements" data-transition="none" data-ajax="false">Values</a></li>
+			</ul>
 		</div>
-	</div><!-- /header -->
+	</div>
+	<!-- /header -->
 
 	<div data-role="content">	
-		
-	<div id="values"><h4><img src="media/loading.gif"/> Please wait, loading values...</h4></div>
+		<div id="values"><h4><img src="media/loading.gif"/> Please wait, loading values...</h4></div>
+	</div>
+	<!-- /content -->
 
-	</div><!-- /content -->
-	<div data-role="footer" data-id="toolbar" >
-		
+	<div data-role="footer" data-id="toolbar" data-position="fixed" data-tap-toggle="false" >
 		<div data-role="navbar" data-iconpos="top">
-		<ul>
-			<li><a href="logout.php" data-icon="delete"  data-ajax="false">Logout</a></li>
-			<li><a href="#info_page" data-icon="info" data-transition="none" data-ajax="true">Info</a></li>
-			<li><a href="admin" data-icon="gear"  data-ajax="false">Setup</a></li>
-		</ul>
+			<ul>
+				<li><a href="logout.php" data-icon="delete"  data-ajax="false">Logout</a></li>
+				<li><a href="#info_page" data-icon="info" data-transition="none" data-ajax="true">Info</a></li>
+				<li><a href="admin" data-icon="gear"  data-ajax="false">Setup</a></li>
+			</ul>
 		</div>
-	</div><!-- /footer -->	
-	
-<!-- Start of page: #values_popup -->
-		<div data-role="popup" id="values_popup" data-overlay-theme="c">
-			<a href="#" data-rel="back" data-role="button" data-icon="delete" data-iconpos="notext" class="ui-btn-right">Close</a>
-				
-				<input id="date1" name="date1" style="display:none"/>
-				<input id="date2" name="date2" style="display:none"/>
-				
-		</div>
-		<!-- /page device_popup -->
-	
-</div><!-- /page -->
+	</div>
+	<!-- /footer -->	
+</div>
+<!-- /page -->
 
 
 <div data-role="page" id="info_page">
 
-
-
-<div data-role="header" data-id="toolbar" >
-		<h1>Info <div id="nodostate_info"></div></h1>
-				<div data-role="navbar" data-iconpos="top">
-		<ul>
-			<li><a href="#devices_page" data-icon="devices"  data-transition="none" data-ajax="true">Devices</a></li>
-			<li><a href="#activities_page" data-icon="grid"  data-transition="none" data-ajax="true">Activities</a></li>
-			<li><a href="#values_page" data-icon="measurements" data-transition="none" data-ajax="false">Values</a></li>
-		</ul>
-		</div>
-	</div><!-- /header -->
+	<div data-role="header" data-id="toolbar" data-position="fixed" data-tap-toggle="false" >
+			<h1 id="header_info"></h1>
+			<div data-role="navbar" data-iconpos="top">
+				<ul>
+					<li><a href="#devices_page" data-icon="devices"  data-transition="none" data-ajax="true">Devices</a></li>
+					<li><a href="#activities_page" data-icon="grid"  data-transition="none" data-ajax="true">Activities</a></li>
+					<li><a href="#values_page" data-icon="measurements" data-transition="none" data-ajax="false">Values</a></li>
+				</ul>
+			</div>
+	</div>
+	<!-- /header -->
 
 	<div data-role="content">	
 		<div data-role="collapsible" data-collapsed="true" data-inset="false" data-collapsed-icon="plus" data-expanded-icon="minus" data-iconpos="right">
@@ -156,8 +154,8 @@
 			<h3>Eventlog</h3>
 			<h3>Last 25 events</h3>	
 			<div id="events_div"></div>
-			<br>
-			<a href="export_csv.php" data-role="button" data-inline="true" data-ajax="false">Export all events to csv</a>
+			<br \>
+			<a href="webservice/export_csv_events.php" data-role="button" data-inline="true" data-ajax="false">Export all events to csv</a>
 		</div>	
 	
 	<div data-role="collapsible" class="nodostatus" data-collapsed="true" data-inset="false" data-collapsed-icon="plus" data-expanded-icon="minus" data-iconpos="right">
@@ -165,32 +163,42 @@
 		<div id="status_div" style="font-family:monospace"></div>
 		<a href="javascript:Get_Nodo_Status();" data-role="button" data-ajax="false" data-inline="true" >Refresh Nodo status</a>
 	</div>
+	
 	<div data-role="collapsible" data-collapsed="true" data-inset="false" data-collapsed-icon="plus" data-expanded-icon="minus" data-iconpos="right">
 		<h3>Support</h3>
 		<a href="http://www.nodo-domotica.nl/forum" data-role="button" target="_blank" data-ajax="false" data-inline="false" >Nodo Forum</a>
 		<a href="http://www.nodo-domotica.nl/" data-role="button" target="_blank" data-ajax="false" data-inline="false" >Nodo Wiki</a>
-
 	</div>
-	</div><!-- /content -->
-	<div data-role="footer" data-id="toolbar" >
+	
+	<div data-role="collapsible" data-collapsed="true" data-inset="false" data-collapsed-icon="plus" data-expanded-icon="minus" data-iconpos="right">
+		<h3>Disclaimer</h3><br \>
+		<b>(C) Copyright 2012 by Martin de Graaf & Paul Tonkes, <a href="http://www.nodo-domotica.nl/" target="_blank">www.nodo-domotica.nl</a></b><br \><br \>
+		Nodo-Domotica provides the <a href="http://www.nodo-domotica.nl/webapp" target="_blank">http://www.nodo-domotica.nl/webapp</a> Website as a service to the public and Website owners.<br \><br \>
+		Nodo-Domotica is not responsible for, and expressly disclaims all liability for, damages of any kind arising out of use, reference to, or reliance on any information contained within the site. While the information contained within the site is periodically updated, no guarantee is given that the information provided in this Web site is correct, complete, and up-to-date.<br \><br \>
+		Although the Nodo-Domotica Web site may include links providing direct access to other Internet resources, including Web sites, Nodo-Domotica is not responsible for the accuracy or content of information contained in these sites. Links from Nodo-Domotica to third-party sites do not constitute an endorsement by Nodo-Domotica of the parties or their products and services. The appearance on the Web site of advertisements and product or service information does not constitute an endorsement by Nodo-Domotica, and Nodo-Domotica has not investigated the claims made by any advertiser. Product information is based solely on material received from suppliers.<br \><br \>
+		The WebApp and Nodo software are part of the 'Nodo Domotica' platform. The WebApp and all other related components are distributed under the terms of the GNU General Public License.  This program and hosting service comes with ABSOLUTELY NO WARRANTY.<br \><br \>
+		You should have received a copy of the GNU General Public License
+		along with this program.  If not, see &lt;<a href="http://www.gnu.org/licenses/" target="_blank">http://www.gnu.org/licenses/</a>&gt;<br \><br \>
+		
+		<a href="http://www.nodo-domotica.nl/webapp/gpl.html" data-role="button" target="_blank" data-ajax="false" data-inline="false" >GNU GENERAL PUBLIC LICENSE</a>
+	</div>
+	
+	</div>
+	<!-- /content -->
+	
+	<div data-role="footer" data-id="toolbar" data-position="fixed" data-tap-toggle="false">
 		
 		<div data-role="navbar" data-iconpos="top">
-		<ul>
-			<li><a href="logout.php" data-icon="delete"  data-ajax="false">Logout</a></li>
-			<li><a href="#info_page" data-icon="info" data-transition="none" data-ajax="true">Info</a></li>
-			<li><a href="admin" data-icon="gear"  data-ajax="false">Setup</a></li>
-		</ul>
+			<ul>
+				<li><a href="logout.php" data-icon="delete"  data-ajax="false">Logout</a></li>
+				<li><a href="#info_page" data-icon="info" data-transition="none" data-ajax="true">Info</a></li>
+				<li><a href="admin" data-icon="gear"  data-ajax="false">Setup</a></li>
+			</ul>
 		</div>
 	</div><!-- /footer -->	
 
-
-
-
-
-<script src="js/flot/jquery.flot.min.js"></script>
-<script src="js/flot/jquery.flot.resize.min.js"></script>
 <script src="js/check_session.js"></script>
-<script src="js/settings.js"></script>
+<script src="js/user_settings.js"></script>
 <script src="js/get_nodo_status.js"></script>
 <script src="js/get_events.js"></script>
 <script src="js/json_nodo_state.js"></script>
@@ -201,10 +209,6 @@
 <script src="js/send_event.js"></script>
 <script src="js/value_state.js"></script>
 <script src="js/device_state.js"></script>
-
-
-
-	
 
 </body>
 </html>

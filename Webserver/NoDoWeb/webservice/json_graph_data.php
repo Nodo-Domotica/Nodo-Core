@@ -47,7 +47,7 @@ $result = mysql_query($query_RSsensor_value_data) or die("Could not query ".mysq
   
 while($row = mysql_fetch_assoc($result))  
 {  
- 
+
 $dataset1[] = array((strtotime($row['timestamp'])*1000),$row['data']);  
 }  
 

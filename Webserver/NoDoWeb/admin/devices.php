@@ -121,25 +121,25 @@ header("Location: devices.php?id=$device_id");
 				<option value="4">SendUserEvent</option>
 				<option value="5">UserEvent</option>
 			</select>
-		<br>
+		<br \>
 		
 		<div id="name_div"> 		
 		<label for="naam">Device name:</label>
 		<input type="text" name="naam" id="naam" value=""  />
-		<br>
+		<br \>
 		<label for="select-choice-1" class="select" >Switch type:</label>
 		    <select name="presentation" id="presentation" data-native-menu="false" >
 				<option value="1">Toggle</option>
 				<option value="0">Popup</option>
 			</select>
-		<br>
+		<br \>
 		<div id="label_div"> 
 		<label for="label_on">Label on button:</label>
 		<input type="text" name="label_on" id="label_on" value="On"  />
-		<br>
+		<br \>
 		<label for="label_off">Label off button:</label>
 		<input type="text" name="label_off" id="naam" value="Off"  />
-		<br>
+		<br \>
 		</div>
 		
 		
@@ -154,13 +154,13 @@ header("Location: devices.php?id=$device_id");
 				<option value="1">Yes - buttons</option>
 				<option value="2">Yes - slider</option>
 			</select>
-			<br>
+			<br \>
 		</div>
      
 		<div id="homecode_div">
 		<label for="homecode" >Home code: (A...P)</label>
 		<input type="text" maxLength="1" name="homecode" id="homecode" value=""  />
-		<br>
+		<br \>
 		</div>
    
 		<div id="adres_div">
@@ -174,16 +174,16 @@ header("Location: devices.php?id=$device_id");
 		<label for="wiredout">Port: (1...8)</label>
 		</div>
 		<input type="text" maxLength="3" name="address" id="address" value=""  />
-		<br>
+		<br \>
 		</div>
 		
 		<div id="userevent_div">
 		<label for="user_event_on" >UserEvent on: (Example: 100,2)</label>
 		<input type="text" maxLength="7" name="user_event_on" id="user_event_on" value=""  />
-		<br>
+		<br \>
 		<label for="user_event_off" >UserEvent off: (Example: 100,1)</label>
 		<input type="text" maxLength="7" name="user_event_off" id="user_event_off" value=""  />
-		<br>
+		<br \>
 		</div>
      
 		<div id="submit_div">

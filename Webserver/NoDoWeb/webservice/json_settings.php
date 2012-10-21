@@ -12,6 +12,7 @@ $row = mysql_fetch_array($recordset);
              $rowsarray[] = array(
             "theme" 			=> $row['webapp_theme'],
 			"themeheader" 		=> $row['webapp_theme_header'],
+			"usergroup"			=> $row['user_group'],
 			"nodoid"			=> $row['nodo_id'],
 			"nodoip"			=> $row['nodo_ip'],
 			"nodoport"			=> $row['nodo_port']);

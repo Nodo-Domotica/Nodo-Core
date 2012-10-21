@@ -22,13 +22,13 @@ $('#login_form').bind('submit', function () {
     return false;
 });
 
-$("#logon_page").live("pageinit", function() {
+$("#logon_page").on("pageinit", function() {
 	$.getJSON('login.php', function(data) {
 				
 			
 			if (data.authorized > 0) {
 			
-				var html = '<h4>Logging you in with saved credentials</h4>';
+				var html = '<h4>Logging you in with saved credentials...</h4>';
 				
 				$( "#login_form" ).append( html ).trigger('create');
 				
@@ -45,10 +45,10 @@ $("#logon_page").live("pageinit", function() {
 				'<input type="text" name="username" id="username" value=""  />' +
 				'<label for="password">Password:</label>' +
 				'<input type="password" name="password" id="password" value=""  />' +
-				'<br>' +
+				'<br \>' +
 				'<input type="checkbox" name="rememberme" id="rememberme_1" class="custom" />' +
 				'<label for="rememberme_1">Remember me</label>' +
-				'<br>' +
+				'<br \>' +
 				'<input type="submit" name="submit" value="Login" >';
 				
 				

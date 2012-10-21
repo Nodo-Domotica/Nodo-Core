@@ -21,7 +21,7 @@ require_once('connections/db_connection.php');
 require_once('include/webapp_settings.php');
 
 
-//Als er een cookie met de juiste gegevens bestaat dan redirecten naar de index pagina.
+
 if (isset($_COOKIE['username']) && isset($_COOKIE['password'])) {
 
 	$username = mysql_real_escape_string($_COOKIE['username']);

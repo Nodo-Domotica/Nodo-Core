@@ -37,7 +37,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 </style>
 
-	<div data-role="header" data-theme="<?php echo $theme_header?>">
+	<div data-role="header" data-theme="<?php echo $theme_header?>" data-position="fixed" data-tap-toggle="false">
 		<h1><?php echo $page_title;?></h1>
 		<?php if ($heartbeat == "lost"){echo "<h2 ><FONT COLOR=\"red\">No connection to Nodo!</FONT></h2>";}?>
 		<div data-role="navbar" data-iconpos="top">

@@ -26,7 +26,7 @@ if ($heartbeat == "lost") {die('No Connection to Nodo!!!'); }
 
 
 
-//Stuur parameters naar HTTP server bijvoorbeeld ?event=sendkaku a1,on&password=[password]&id=[id]
+//Stuur parameters naar HTTP server
 function send_event($event)
 	{
 		global $nodo_ip, $nodo_port, $key;
@@ -40,8 +40,8 @@ function send_event($event)
 		$timeout = 0;
 		curl_setopt($ch,CURLOPT_URL,$url);
 		curl_setopt($ch,CURLOPT_RETURNTRANSFER,0);
-		curl_setopt($ch,CURLOPT_CONNECTTIMEOUT,5);
-		curl_setopt($ch,CURLOPT_TIMEOUT,5);	
+		curl_setopt($ch,CURLOPT_CONNECTTIMEOUT,10);
+		curl_setopt($ch,CURLOPT_TIMEOUT,10);	
 		$data = curl_exec($ch);
 		curl_close($ch);
 		return $data;
@@ -80,9 +80,9 @@ if ($action != NULL) {
 	$newkaku_dim = $newkaku . $dim;
 	
 	$wired_out_1 = "WiredOut%20$address,";
-	//$wired_out_2	= ";Sendstatus%20WiredOut%20$address";
-	$wired_out_on = $wired_out_1 . "on";
-	$wired_out_off = $wired_out_1 . "off";
+	$wired_out_2 = ";status%20WiredOut%20$address";
+	$wired_out_on = $wired_out_1 . "on" . $wired_out_2 ;
+	$wired_out_off = $wired_out_1 . "off" . $wired_out_2;
 	
 	$send_user_event = "SendUserEvent%20";
 	$send_user_event_on = $send_user_event . $row_RSdevices['user_event_on'];

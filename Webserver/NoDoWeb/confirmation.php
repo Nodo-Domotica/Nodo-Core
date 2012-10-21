@@ -32,8 +32,8 @@ $id = $row['id'];
 		//mysql_query("UPDATE nodo_tbl_activities SET name='$name', events='$events' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
 		mysql_select_db($database, $db);
 		mysql_query("UPDATE nodo_tbl_users SET active='1',confirm_code='' WHERE id='$id'") or die(mysql_error());
-		$message = "You account is confirmed<br>";
-		$message.= "Click <a href=\"http://$WEBAPP_HOST/login.php\">here</a> to login";
+		$message = "You account is confirmed<br \>";
+		$message.= "Click <a href=\"http://$WEBAPP_HOST/\">here</a> to login";
     }
 	else {
 		

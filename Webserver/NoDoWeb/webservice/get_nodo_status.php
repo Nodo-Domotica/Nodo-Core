@@ -20,7 +20,6 @@ require_once('../connections/db_connection.php');
 require_once('../include/auth.php');
 require_once('../include/user_settings.php');
 
-$page_title = "Setup: Nodo settings";	
 
 //Alleen events versturen indien de Nodo online is
 if ($heartbeat == "lost") {die('No Connection to Nodo!!!'); }
@@ -38,12 +37,12 @@ function HTTPRequest($Url){
     global $nodo_port;
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $Url);
-    curl_setopt($ch, CURLOPT_USERAGENT, "Nodo Web App");
+    curl_setopt($ch, CURLOPT_USERAGENT, "Nodo WebApp");
     curl_setopt($ch, CURLOPT_HEADER, 0);
 	curl_setopt($ch, CURLOPT_PORT, $nodo_port);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($ch,CURLOPT_CONNECTTIMEOUT,5);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+	curl_setopt($ch,CURLOPT_CONNECTTIMEOUT,10);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 20);
  
     $output = curl_exec($ch);
     curl_close($ch);
@@ -63,10 +62,9 @@ function HTTPRequest($Url){
 
 		//Status van Nodo in array plaatsen
 		$script = explode("\n", HTTPRequest("http://$nodo_ip/?file=$file&key=$key"));
-		
-			
 		//Totaal aantal lijnen tellen in $script
 		$total_script_lines = count($script);
+		
 		
 		
 

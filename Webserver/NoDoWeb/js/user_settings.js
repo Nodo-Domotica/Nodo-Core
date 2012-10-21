@@ -4,6 +4,8 @@ var nodoip;
 var nodoport;
 var nodoid;
 var webappversion='WebApp (SWINWA-PROD-V099)';
+var usergroup;
+
 
 var url='/webapp/webservice/json_settings.php';
 //$.ajax omdat we de settings synchroon willen ophalen zodat we zeker weten dat de settings beschikbaar zijn als de pagina's worden geladen.
@@ -19,6 +21,7 @@ $.ajax({
 			nodoip=setting.nodoip;
 			nodoport=setting.nodoport;
 			nodoid=setting.nodoid;
+			usergroup=setting.usergroup;
 			});
 		}
 });

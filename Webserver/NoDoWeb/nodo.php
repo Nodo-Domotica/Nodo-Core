@@ -43,14 +43,13 @@ $key_nodo = $_GET['key'];
 if ($key_webapp == $key_nodo) {$key_ok = 1;}
 
 
-$key_ok = 1; //tijdelijk niet op key checken voor debug doeleinden....
-
-//Nieuwe cookie in de database opslaan
+//Nieuwe cookie en header informatie in de database opslaan
 if (isset($_GET['cookie'])){
 	
 	$cookie = $_GET['cookie'];
+	$build = $_SERVER['HTTP_USER_AGENT'];
 		
-		mysql_query("UPDATE nodo_tbl_users SET cookie='$cookie', cookie_update=NOW(), cookie_count='$cookie_counter' WHERE id='$userId'") or die(mysql_error());
+		mysql_query("UPDATE nodo_tbl_users SET cookie='$cookie', cookie_update=NOW(), cookie_count='$cookie_counter', nodo_build='$build' WHERE id='$userId'") or die(mysql_error());
 		
 	}
  

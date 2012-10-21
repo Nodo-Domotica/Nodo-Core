@@ -62,18 +62,16 @@ if (isset($_GET['files'])) {
 	if ($heartbeat == "ok" && $busy == 0) {
 
 		HTTPRequest("http://$nodo_ip/?event=fileerase%20Filelst;Filelog%20Filelst;filelist;filelog&key=$key");
-		$files = explode("\n", HTTPRequest("http://$nodo_ip/?file=filelst&key=$key"));
+		$files = explode("\n", trim(HTTPRequest("http://$nodo_ip/?file=filelst&key=$key")));
 		$total_files = count($files);
 			
 		if (isset($files)){  
 
-			for($i=1;$i<$total_files;$i++){
+			for($i=0;$i<$total_files;$i++){
 		
-			
-			//<br /> aan het einde van de regels verwijderen
-			$files[$i] = trim(str_replace("<br />","",$files[$i]));
+			$files[$i] = trim($files[$i]);
 					
-			//Remove !********************************** start en stop lines 
+			//Remove !********************************** lines 
 			$pos = strpos($files[$i],"!*");
 			
 				if($pos === false || $pos > 0) {
@@ -94,6 +92,8 @@ if (isset($_GET['files'])) {
 	}
 
 echo '{"files":'. $json .'}'; 
+
+
 	
 }
 
@@ -123,24 +123,20 @@ if (isset($_POST['read']))
 			$file = $_POST['scriptfile'];
 
 		}
+		
+		
 
 		//Read file from Nodo to array
-		$script = explode("\n", HTTPRequest("http://$nodo_ip/?file=$file&key=$key"));
-				
-		$total_script_lines = count($script);
+		$script =  trim(HTTPRequest("http://$nodo_ip/?file=$file&key=$key"));
 		
+					
 	}
 
 
 	 if (isset($script)){  
 
-		for($i=1;$i<$total_script_lines;$i++){ //let op start normaal bij 0 maar de eerste regel is een <br /> dus die verwijderen we nu
-			
-				
-				//<br /> aan het einde van de regels verwijderen
-				$script[$i] = str_replace("<br />","",$script[$i]);
-				
-				echo $script[$i];
+						
+				echo $script;
 	 
 			
 		}
@@ -148,7 +144,7 @@ if (isset($_POST['read']))
 		
 	}
  
-}
+
 /************************************************************************************************
 END script Read															
 *************************************************************************************************/

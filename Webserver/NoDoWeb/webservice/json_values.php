@@ -18,6 +18,7 @@ $recordset = mysql_query($query, $db) or die(mysql_error());
 			"display"		=> $row['display'],
 			"collapsed"		=> $row['collapsed'],
 			"type"			=> $row['graph_type'],
+			"linecolor"		=> $row['graph_line_color'],
 			"inputoutput"	=> $row['input_output'],
 			"hours" 		=> $row['graph_hours'],
 			"inputcontrol" 	=> $row['input_control'],

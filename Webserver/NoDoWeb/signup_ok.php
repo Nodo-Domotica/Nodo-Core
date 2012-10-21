@@ -34,15 +34,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		<h1>Nodo Web App</h1>
 		<div data-role="navbar" data-iconpos="top">
 		<ul>
-			<li><a href="login.php" data-icon="star"  data-ajax="false">Login</a></li>
+			<li><a href="index.html" data-icon="star"  data-ajax="false">Login</a></li>
 			
 		</ul>
 		</div>
 	</div><!-- /header -->
 
 	<div data-role="content">	
-		<p>Your Nodo Web App account is created.</p>		
-		<p>Login details and a confirmation link has been sent to your email address.</p>	
+		<p>Your Nodo WebApp account is created.</p>		
+		<p>Login details and a confirmation link are sent to your email address.</p>	
 				
 		
 	</div><!-- /content -->

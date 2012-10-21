@@ -107,17 +107,17 @@ header("Location: activities.php?id=$device_id");
 		
 		<input type="hidden" name="id" id="id" value="<?php echo $row['id'] ;?>"  />
 	
-	<br>
+	<br \>
 	
-		<br>
+		<br \>
 	
 		<label for="name">Name: </label>
 		<input type="text" name="name" id="name" value="<?php echo $row['name'] ;?>"  />
-		<br>
+		<br \>
 		<label for="name">Event(s): (example: userevent 100,100;sendkaku a1,on)</label>
 		<input type="text" name="events" id="events" value="<?php echo $row['events'] ;?>"  />
 	
-	   <br>
+	   <br \>
          <a href="activities.php" data-role="button" data-ajax="false">Cancel</a> 
 		<input type="submit" name="submit" value="Save" >
 

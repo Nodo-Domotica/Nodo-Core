@@ -85,7 +85,7 @@ END HTTPRequest function
 	
 	 
 				
-	<br>
+	<br \>
 		<label for="select-choice-0" class="select">Predefined commands:</label>
 		<select name="def_command" id="def_command" data-native-menu="false">
 		    <option value="">Select command</option>
@@ -106,17 +106,17 @@ END HTTPRequest function
 			
 			
 		 </select>	
-		<br>
+		<br \>
 		<label for="name">Nodo command: (Example: userevent 1;sendkaku a1,on)</label>
 		<input type="text" name="command" id="command" value=""  />
 	
-	    <br>
+	    <br \>
         
 		<input type="submit" name="submit" value="Execute" >
 
 			
 	</form> 
-	<br>
+	<br \>
 	<div data-role="collapsible" data-collapsed="false" data-content-theme="<?php echo $theme?>">
 	<h4>Result:</h4>		
 	<div id="result_div" style="font-family:monospace">
