@@ -42,7 +42,7 @@ require_once('../include/user_settings.php');
 
 	<div data-role="content">	
 		<h2>Delete activity?</h2>
-		<br>
+		<br \>
 		<a href="activities_delete.php?id=<?php echo $_GET["id"];?> " data-role="button" data-inline="true" data-ajax="false">Yes</a>
 		<a href="activities.php" data-role="button" data-inline="true" data-ajax="false">No</a>
 	</div><!-- /content -->

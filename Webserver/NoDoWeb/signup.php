@@ -142,16 +142,25 @@ END Generate NoDo ID
 	
 	//Verificatie e-mail sturen.
 	 $to = $email;
-	 $subject = "Confirm your Nodo Web App account";
+	 $subject = "Confirm your Nodo WebApp account";
 	 $message="Dear $first_name $last_name, \r\n\r\n";
-	 $message.="Before U can use Nodo Web App please click on this link to activate your account \r\n";
+	 $message.="Before you can use Nodo software and the WebApp and hosting service, you must accept the licence agreement and activate your account by clicking the following link:\r\n";
      $message.="http://$WEBAPP_HOST/confirmation.php?passkey=$confirm_code\r\n";
 	 $message.="\r\n";
-	 $message.="After confirmation your can login with:\r\n";
+	 $message.="After confirmation you can login at http://www.nodo-domotica.nl/webapp with these login data:\r\n\r\n";
 	 $message.="Username: $email\r\n";
 	 $message.="Password: $password\r\n";
 	 $message.="\r\n"; 
-	 $message.="Your Nodo ID: $nodo_id\r\n";
+	 $message.="Your Nodo ID: $nodo_id\r\n\r\n";
+	 $message.="DISCLAIMER\r\n
+				(C) Copyright 2012 by Martin de Graaf & Paul Tonkes, http://www.nodo-domotica.nl\r\n
+				Nodo-Domotica provides the http://www.nodo-domotica.nl/webapp Website as a service to the public and Web siteowners.\r\n
+				Nodo-Domotica is not responsible for, and expressly disclaims all liability for, damages of any kind arising out of use, reference to, or reliance on any information contained within the site. While the information contained within the site is periodically updated, no guarantee is given that the information provided in this Web site is correct, complete, and up-to-date.\r\n
+				Although the Nodo-Domotica Web site may include links providing direct access to other Internet resources, including Web sites, Nodo-Domotica is not responsible for the accuracy or content of information contained in these sites. Links from Nodo-Domotica to third-party sites do not constitute an endorsement by Nodo-Domotica of the parties or their products and services. The appearance on the Web site of advertisements and product or service information does not constitute an endorsement by Nodo-Domotica, and Nodo-Domotica has not investigated the claims made by any advertiser. Product information is based solely on material received from suppliers.\r\n
+				The WebApp and Nodo software are part of the 'Nodo Domotica' platform. The WebApp and all other related components are distributed under the terms of the GNU General Public License.  This program and hosting service comes with ABSOLUTELY NO WARRANTY.\r\n
+				You should have received a copy of the GNU General Public License
+				along with this program.  If not, see <http://www.gnu.org/licenses/>\r\n";
+	 
 	 $from = "webapp@nodo-domotica.nl";
 	 $headers = "From:" . $from;
 	 
@@ -215,7 +224,7 @@ END Generate NoDo ID
 			
 			<label for="email">Email address:</label>
 			<input type="text" name="email" id="email" value="<?php echo $email ?>"  />
-			<br>
+			<br \>
 				
 			<input type="submit" name="submit" id="submit" value="Signup" >
 		</form>

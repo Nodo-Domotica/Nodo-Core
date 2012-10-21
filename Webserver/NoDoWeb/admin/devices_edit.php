@@ -84,7 +84,7 @@ $page_title="Setup: Edit device";
 		
 		<input type="hidden" name="id" id="id" value="<?php echo $row['id'] ;?>"  />
 	
-	<br>
+	<br \>
 	
 		
 			<label for="select-choice-0" class="select">Type of device:</label>
@@ -96,24 +96,24 @@ $page_title="Setup: Edit device";
 				<option value="5" <?php if ($row['type'] == 5) {echo 'selected="selected"';}?>>UserEvent</option>
 			</select>
 	
-	<br>
+	<br \>
 	
 		<label for="name">Device name:</label>
 		<input type="text" name="naam" id="naam" value="<?php echo $row['naam'] ;?>"  />
-	<br>
+	<br \>
 		<label for="select-choice-1" class="select" >Switch type:</label>
 		    <select name="presentation" id="presentation" data-native-menu="false" >
 				<option value="0"<?php if ($row['toggle'] == 0) {echo 'selected="selected"';}?>>Popup</option>
 				<option value="1"<?php if ($row['toggle'] == 1) {echo 'selected="selected"';}?>>Toggle</option>
 			</select>
-		<br>
+		<br \>
 		<div id="label_div"> 
 		<label for="label_on">Label on button:</label>
 		<input type="text" name="label_on" id="label_on" value="<?php echo $row['label_on'] ;?>"  />
-		<br>
+		<br \>
 		<label for="label_off">Label off button:</label>
 		<input type="text" name="label_off" id="naam" value="<?php echo $row['label_off'] ;?>"  />
-		<br>
+		<br \>
 		</div>
 	
 				
@@ -124,13 +124,13 @@ $page_title="Setup: Edit device";
 			<option value="1"<?php if ($row['dim'] == 1) {echo 'selected="selected"';}?>>Yes - buttons</option>
 			<option value="2"<?php if ($row['dim'] == 2) {echo 'selected="selected"';}?>>Yes - slider</option>
 		</select>
-		<br>
+		<br \>
 		</div>
     
 	<div id="homecode_div">
 		<label for="name">Home code: (A...P)</label>
 		<input type="text" maxLength="1" name="homecode" id="homecode" value="<?php echo $row['homecode'] ;?>"  />
-    <br>
+    <br \>
 	</div>
    
     <div id="adres_div">
@@ -144,16 +144,16 @@ $page_title="Setup: Edit device";
 		<label for="name">Port: (1...8)</label>
 		</div>
 		<input type="text" maxLength="3" name="address" id="address" value="<?php echo $row['address'] ;?>"  />
-		<br>
+		<br \>
 	</div>
 	
 	<div id="userevent_div">
 		<label for="user_event_on" >UserEvent on: (Example: 100,1)</label>
 		<input type="text" maxLength="7" name="user_event_on" id="user_event_on" value="<?php echo $row['user_event_on'] ;?>"  />
-		<br>
+		<br \>
 		<label for="user_event_off" >UserEvent off: (Example: 100,2)</label>
 		<input type="text" maxLength="7" name="user_event_off" id="user_event_off" value="<?php echo $row['user_event_off'] ;?>"  />
-		<br>
+		<br \>
 	</div>
 		
 		

@@ -85,25 +85,25 @@ $page_title="Setup: Edit Notification";
 		
 		<input type="hidden" name="id" id="id" value="<?php echo $row['id'] ;?>"  />
 	
-	<br>
-	<br>
+	<br \>
+	<br \>
 	<label for="name">Name: </label>
 		<input type="text" name="name" id="name" value="<?php echo $row['name'] ;?>"  />
-		<br>
+		<br \>
 		<label for="name">Event: (Example: userevent 100,0 | newkaku 1,on)</label>
 		<input type="text" name="event" id="event" value="<?php echo $row['event'] ;?>"  />
-		<br>
+		<br \>
 		<label for="name">Recipient:</label>
 		<input type="text" name="recipient" id="recipient" value="<?php echo $row['recipient'] ;?>"  />
-		<br>
+		<br \>
 		<label for="name">Subject:</label>
 		<input type="text" name="subject" id="subject" value="<?php echo $row['subject'] ;?>"  />
-		<br>
+		<br \>
 		<label for="body">Body:</label>
 		<textarea name="body" id="body"><?php echo $row['body'] ;?></textarea>
-		<br>		
+		<br \>		
 	
-	    <br>
+	    <br \>
          <a href="notifications.php" data-role="button" data-ajax="false">Cancel</a> 
 		<input type="submit" name="submit" value="Save" >
 

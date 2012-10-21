@@ -64,8 +64,8 @@ if (isset($_POST['submit']))
 					
 					//Verificatie e-mail sturen.
 					 $to = $email;
-					 $subject = "New password for your Nodo Web App account";
-					 $message="Your Nodo Web App login details \r\n";
+					 $subject = "New password for your Nodo WebApp account";
+					 $message="Your Nodo WebApp login details \r\n";
 					 $message.="Username: $email\r\n";
 					 $message.="Password: $password\r\n";
 					 $from = "webapp@nodo-domotica.nl";
@@ -123,7 +123,7 @@ if (isset($_POST['submit']))
 						
 			<label for="email">Enter your e-mail address:</label>
 			<input type="text" name="email" id="email" value=""  />
-			<br>
+			<br \>
 				
 			<input type="submit" name="submit" id="submit" value="Send" >
 		</form>

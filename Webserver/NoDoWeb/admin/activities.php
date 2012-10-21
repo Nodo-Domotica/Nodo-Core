@@ -113,11 +113,11 @@ header("Location: activities.php?id=$device_id");
 		
 		<label for="name">Name: </label>
 		<input type="text" name="name" id="name" value=""  />
-		<br>
+		<br \>
 		<label for="name">Event(s): (Example: userevent 1;sendkaku a1,on)</label>
 		<input type="text" name="events" id="events" value=""  />
 	
-	    <br>
+	    <br \>
         
 		<input type="submit" name="submit" value="Save" >
     </form> 

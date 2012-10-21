@@ -4,6 +4,7 @@ $('#activities_page').on('pageinit', function(event) {
 });
 
 function getActivities() {
+	$.ajaxSetup({ cache: false });
 	$.getJSON('webservice/json_activities.php', function(data) {
 		activities = data.activities;
 		$('#activities li').remove();
@@ -18,8 +19,14 @@ function getActivities() {
 
 $('#activities_page').on('pageshow', function(event) {
 	
+	pagetitle = 'Activities';
+	
 	checkSession();
-	
-	
-	
+	$('#header_activities').append('<div id="nodostate">'+pagetitle+'</div>');
+	Nodo_State();
+});
+
+$('#activities_page').on('pagehide', function(event) {
+	checkSession();
+	$('#header_activities').empty();
 });

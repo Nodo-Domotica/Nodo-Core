@@ -45,7 +45,7 @@ if (isset($_POST['submit']))
  $graph_hours = mysql_real_escape_string(htmlspecialchars($_POST['graph_hours']));
  $graph_min_ticksize = mysql_real_escape_string(htmlspecialchars($_POST['graph_min_ticksize']));
  $graph_type = mysql_real_escape_string(htmlspecialchars($_POST['graph_type']));
-
+ $graph_line_color = mysql_real_escape_string(htmlspecialchars($_POST['graph_line_color']));
 
   
 //1=wiredin 2=variable
@@ -65,6 +65,7 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
 	$graph_hours = "";
 	$graph_min_ticksize = "";
 	$graph_type = "";
+	$graph_line_color ="";
 	
 	
 	
@@ -104,9 +105,9 @@ $RSValues_rows = mysql_num_rows($RSValues);
 $sort_order = $RSValues_rows + 1;
  
    
- mysql_query("INSERT INTO nodo_tbl_sensor (sensor_type, display, collapsed, input_output, input_control, input_step, input_min_val, input_max_val, sensor_prefix, sensor_suffix, sensor_suffix_true, sensor_suffix_false, user_id, nodo_unit_nr,par1,graph_hours,graph_min_ticksize,graph_type,sort_order) 
+ mysql_query("INSERT INTO nodo_tbl_sensor (sensor_type, display, collapsed, input_output, input_control, input_step, input_min_val, input_max_val, sensor_prefix, sensor_suffix, sensor_suffix_true, sensor_suffix_false, user_id, nodo_unit_nr,par1,graph_hours,graph_min_ticksize,graph_type,graph_line_color,sort_order) 
  VALUES 
- ('$type','$display','$collapsed','$input_output','$input_control','$input_step','$input_slider_min','$input_slider_max','$prefix','$suffix','$suffix_true','$suffix_false','$userId','$unit','$par1','$graph_hours','$graph_min_ticksize','$graph_type','$sort_order')");
+ ('$type','$display','$collapsed','$input_output','$input_control','$input_step','$input_slider_min','$input_slider_max','$prefix','$suffix','$suffix_true','$suffix_false','$userId','$unit','$par1','$graph_hours','$graph_min_ticksize','$graph_type','$graph_line_color','$sort_order')");
  // once saved, redirect back to the view page 
  header("Location: values.php#saved");    }
  
@@ -169,7 +170,7 @@ header("Location: values.php?id=$sensor_id");
 
 		<form action="values.php" data-ajax="false" method="post"> 
 					
-		<br>
+		<br \>
 	
 		<label for="select-choice-0" class="select" >Input type:</label>
 		<select name="type" id="type" data-native-menu="false" >
@@ -177,7 +178,7 @@ header("Location: values.php?id=$sensor_id");
 			<option value="2">Variable</option>
 		</select>	
 		
-		<br>
+		<br \>
 		
 		<label for="select-choice-1" class="select" >Display:</label>
 		<select name="display" id="display" data-native-menu="false" >
@@ -185,13 +186,13 @@ header("Location: values.php?id=$sensor_id");
 			<option value="2">State</option>
 		</select>				
 		
-		<br>
+		<br \>
 		<label for="select-choice-2" class="select" >Expand on values page:</label>
 		<select name="collapsed" id="collapsed" data-placeholder="true" data-native-menu="false">
 			<option value="0">No</option>
 			<option value="1">Yes</option>
 		</select>
-		<br>
+		<br \>
 		
 		<div id="input_output_div">
 			<label for="select-choice-3" class="select" >In or output:</label>
@@ -200,7 +201,7 @@ header("Location: values.php?id=$sensor_id");
 				<option value="2">Output</option>
 			</select>
 		
-		<br>	
+		<br \>	
 		
 			<div id="input_div">
 				<div id="input_control_div">
@@ -209,22 +210,22 @@ header("Location: values.php?id=$sensor_id");
 						<option value="1" selected="selected">+/- Buttons</option>
 						<option value="2">Slider</option>
 					</select>
-					<br>	
+					<br \>	
 				</div>
 				
 				<div id="slider_min_max_div">
 					<label for="input_slider_min_val">Minimum value:</label>
 					<input type="text" name="input_slider_min_val" id="input_slider_min_val" value=""  />
-					<br>
+					<br \>
 					<label for="input_slider_max_val">Maximum value:</label>
 					<input type="text" name="input_slider_max_val" id="input_slider_max_val" value=""  />
-					<br>
+					<br \>
 				</div>
 				
 				<div id="input_step_div">
 					<label for="input_step_val">Step: (Example: 0.5)</label>
 					<input type="text" name="input_step_val" id="input_step_val" value=""  />
-					<br>
+					<br \>
 				</div>
 			
 			</div>
@@ -234,26 +235,26 @@ header("Location: values.php?id=$sensor_id");
 		<label for="prefix">Prefix: (Example: Temperature outside:, Door:)</label>
 		<input type="text" name="prefix" id="prefix" value=""  />
 		
-		<br>
+		<br \>
 		
 		<div id="value_div">
 			<label for="suffix">Suffix: (Example: &deg;C, M&sup3;)</label>
 			<input type="text" name="suffix" id="suffix" value=""  />
-			<br>
+			<br \>
 		</div>
 		
 		<div id="state_div">
 			<label for="suffix_false">Suffix: >0 (Example: Open)</label>
 			<input type="text" name="suffix_true" id="suffix_true" value=""  />
-			<br>
+			<br \>
 			<label for="suffix_true">Suffix: <=0 (Example: Closed)</label>
 			<input type="text" name="suffix_false" id="suffix_false" value=""  />
-			<br>
+			<br \>
 		</div>
 		
 		<label for="unit" >Nodo unit: (1...15)</label>
 		<input type="text" maxLength="2" name="unit" id="unit" value=""  />
-		<br>
+		<br \>
 		<div id="label_wiredanalog_div">
 			<label for="name">WiredIn port: (1...8)</label>
 		</div>
@@ -261,19 +262,37 @@ header("Location: values.php?id=$sensor_id");
 			<label for="name">Variable: (1...15)</label>
 		</div>
 		<input type="text" maxLength="2" name="par1" id="par1" value=""  />
-		<br>
+		<br \>
 		<div id="graph_div">
 			<label for="select-choice-5" class="select" >Graph: type:</label>
 			<select name="graph_type" id="graph_type" data-native-menu="false" >
 				<option value="1" selected="selected">Line</option>
 				<option value="2">Bar (totals per day)</option>
 			</select>
-			<br>
+			<br \>
+			<label for="select-choice-6" class="select" >Graph line color:</label>
+			<select name="graph_line_color" id="graph_line_color" data-native-menu="true" >
+				<option value="">Default</option>
+				<option value="#000000">Black</option>
+				<option value="#0000FF">Blue</option>
+				<option value="#A52A2A">Brown</option>
+				<option value="#00FFFF">Cyan</option>
+				<option value="#00008B">Dark Blue</option>
+				<option value="#006400">Green</option>
+				<option value="#FF00FF">Magenta</option>
+				<option value="#FFA500">Orange</option>
+				<option value="#FFC0CB">Pink</option>
+				<option value="#800080">Purple</option>
+				<option value="#FF0000">Red</option>
+				<option value="#FFFF00">Yellow</option>
+				<option value="#FFFFFF">White</option>
+			</select>
+			<br \>
 			
 							
 				<label for="graph_hours">Graph: maximum hours to show:</label>
 				<input type="text" MaxLength="5" name="graph_hours" id="graph_hours" value="24"  />
-				<br>
+				<br \>
 			<div id="graph_ticksize_div">
 				<label for="select-choice-7" class="select" >Graph: minimum tick size x-axis:</label>
 				<select name="graph_min_ticksize" id="graph_min_ticksize" data-native-menu="false" >
@@ -282,10 +301,10 @@ header("Location: values.php?id=$sensor_id");
 					<option value="3">Days</option>
 					<option value="5">Months</option>
 				</select>
-				<br>
+				<br \>
 			</div>
 		</div>
-		<br>	
+		<br \>	
 			
 	           
 		<input type="submit" name="submit" value="Save" >
@@ -301,7 +320,7 @@ header("Location: values.php?id=$sensor_id");
 	<?php
 
 						   
-	//echo '<ul data-role="listview" data-split-icon="delete" data-split-theme="$theme" data-inset="true">';
+	
 	mysql_select_db($database, $db);
 	$result = mysql_query("SELECT * FROM nodo_tbl_sensor WHERE user_id='$userId' ORDER BY sort_order ASC") or die(mysql_error());  
 	$rows = mysql_num_rows($result);
@@ -330,7 +349,7 @@ header("Location: values.php?id=$sensor_id");
 				
 				<a href="values_edit.php?id=<?php echo $row['id']; ?>" data-role="button" data-icon="gear" data-ajax="false">Edit</a>
 				<a href="values_delete_confirm.php?id=<?php echo $row['id']; ?>" data-role="button" data-icon="delete" data-rel="dialog">Delete</a>
-				<a href="export_csv_values.php?id=<?php echo $row['id']; ?>" data-role="button" data-ajax="false">Export to csv</a>
+				<a href="../webservice/admin/export_csv_values.php?id=<?php echo $row['id']; ?>" data-role="button" data-ajax="false">Export to csv</a>
 				</div>
 			
 				<?php

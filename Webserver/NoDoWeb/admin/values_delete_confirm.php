@@ -39,7 +39,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	<div data-role="content">	
 		<h2>Delete value?</h2>
 		<h4>The historical data of this value will also be deleted!</h4>
-		<br>
+		<br \>
 		<a href="values_delete.php?id=<?php echo $_GET["id"];?> " data-role="button" data-inline="true" data-ajax="false">Yes</a>
 		<a href="values.php" data-role="button" data-inline="true" data-ajax="false">No</a>
 	</div><!-- /content -->

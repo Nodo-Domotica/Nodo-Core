@@ -1,5 +1,4 @@
 <?php 
-
 /***********************************************************************************************************************
 "Nodo Web App" Copyright © 2012 Martin de Graaf
 
@@ -17,55 +16,21 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
+require_once('../../connections/db_connection.php');
+require_once('../../include/auth.php');
 
-require_once('connections/db_connection.php');
-require_once('include/auth.php');
-require_once('include/user_settings.php'); 
+$sensor_id = $_GET['id'];
 
-$page_title = "Activities";
+mysql_select_db($database, $db);
+
+$RSevent_log = mysql_query("SELECT data,timestamp FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id'") or die(mysql_error());
+    header("Content-Type: text/csv; charset=utf-8");
+    header("Content-Disposition:attachment;filename=values.csv");
+    print "Value, Timestamp\n";
+	while($row = mysql_fetch_row($RSevent_log)) {
+	print '"' . stripslashes(implode('","',$row)) . "\"\n";
+    }
+    exit;
 
 
 ?>
-
-
-<!DOCTYPE html> 
-<html> 
-
-<head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1"> 
-	<title><?php echo $title ?></title> 
-	<?php require_once('include/jquery_mobile.php'); ?>
-	
-	
-</head> 
-
-<body> 
-
-<div data-role="page" id="activities_page" data-theme="<?php echo $theme?>">
-
-
-
-	
-
-<?php require_once('include/header.php'); ?>
-
-	<div data-role="content">	
-
-	
-	<!-- Event sender -->
-	<script src="js/send_event.js"></script>
-	<!-- /Event sender-->
-
-	<script src="js/activities.js"></script>
-	
-	<ul id="activities" data-role="listview" data-split-theme="c"></ul>
-
-	</div><!-- /content -->
-	
-	<?php require_once('include/footer.php'); ?>
-	
-</div><!-- /page -->
-
-</body>
-</html>

@@ -6,17 +6,17 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"> 
 	<title>Communication</title> 
-	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.2.0-rc.2/jquery.mobile-1.2.0-rc.2.min.css" />
-	<script src="http://code.jquery.com/jquery-1.8.1.min.js"></script>
-	<script src="http://code.jquery.com/mobile/1.2.0-rc.2/jquery.mobile-1.2.0-rc.2.min.js"></script>
+	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.css" />
 	<link rel="stylesheet" type="text/css" href="../css/custom.css" />
+	<script src="http://code.jquery.com/jquery-1.8.2.min.js"></script>
+	<script src="http://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.js"></script>
 	</head> 
 <body> 
 <div data-role="page" id="setup_connection_page">
  
 	<!-- header -->
-	<div data-role="header" data-id="toolbar" >
-		<h1>Setup: Communication <div id="nodostate_devices"></div></h1>
+	<div data-role="header" data-id="toolbar" data-position="fixed" data-tap-toggle="false">
+		<h1 id="header_setup_communication"></h1>
 		<div data-role="navbar" data-iconpos="top">
 		<ul>
 			<li><a href="../webapp.html#devices_page" data-icon="devices"  data-transition="none" data-ajax="false">Devices</a></li>
@@ -34,16 +34,26 @@
 		<input type="hidden" name="send_method" id="send_method" value="2" />
 
 			
-	<br>
+	<br \>
 	
-		<label for="ipmessage" id="ipmessage">Nodo IP address/hostname: (x.x.x.x)</label>
+		<label for="ipmessage" id="ipmessage">Nodo IP-address/hostname: (x.x.x.x)</label>
 		<input type="text" name="nodo_ip" id="nodo_ip" value=""  />
 	
-	<br>   
+	<br \>   
       
 		<label for="name">TCP port: (HTTP)</label>
-		    <select name="nodo_port" id="nodo_port" data-placeholder="true" data-native-menu="false">
-			<option value="8080" selected="selected">8080</option>
+		    <select name="nodo_port" id="nodo_port" data-placeholder="true" data-native-menu="true">
+			
+				<option value="6636" selected="selected">6636</option>
+				<option value="6637" >6637</option>
+				<option value="6638" >6638</option>
+				<option value="6639" >6639</option>
+				<option value="6640" >6640</option>
+				<option value="6641" >6641</option>
+				<option value="6642" >6642</option>
+				<option value="6643" >6643</option>
+				<option value="6644" >6644</option>
+				<option value="8080" >8080</option>
 				<option value="8081" >8081</option>
 				<option value="8082" >8082</option>
 				<option value="8083" >8083</option>
@@ -53,26 +63,23 @@
 		    </select> 
 
 			
-	<br>
+	<br \>
       
 		<label for="name">Nodo password:</label>
 		<input type="password" name="nodo_password" id="nodo_password" value=""  />
-		In case of auto configuration your Nodo password will be changed to this password!<br>
+		In case of auto configuration your Nodo password will be changed to this password!<br \>
 		
-	<br>
+	<br \>
 	   	   	
-		<!-- <input type="checkbox" name="checkbox-1" id="checkbox-0" class="custom" />
-		<label for="checkbox-0">Generate NoDo ID</label>
-		 -->
 		 <input type="checkbox" name="auto_config" id="auto_config_2" class="custom" />
 		<label for="auto_config_2">Auto configure your default Nodo</label>
 	 
-	 <br>  
+	 <br \>  
       
 		<label for="name" id="nodo_id_txt">Nodo ID: <b></b></label>
 		<input type="hidden" name="nodo_id" id="nodo_id" value=""  />
     
-	<br><br>
+	<br \><br \>
         
 
  
@@ -91,17 +98,17 @@
 	
 	</div><!-- /content -->
 	
-	<div data-role="footer" data-id="toolbar" >
+	<div data-role="footer" data-id="toolbar" data-position="fixed" data-tap-toggle="false">
 		<div data-role="navbar" data-iconpos="top">
 			<ul>
 				<li><a href="../logout.php" data-icon="delete"  data-ajax="false">Logout</a></li>
 				<li><a href="../webapp.html#info_page" data-icon="info"  data-transition="none" data-ajax="false">Info</a></li>
-				<li><a href="index.php" data-icon="gear"  data-ajax="false">Setup</a></li>
+				<li><a href="../admin" data-icon="gear"  data-ajax="false">Setup</a></li>
 			</ul>
 		</div>
 	</div><!-- /footer -->
 	
-	<div data-role="popup" id="connection_popup" data-overlay-theme="a" style="min-width:250px;" class="ui-corner-all">
+	<div data-role="popup" id="connection_popup" data-overlay-theme="c" style="min-width:250px;" class="ui-corner-all">
 			<div data-role="header" class="ui-corner-top">
 				<h1></h1>
 			</div>
@@ -117,7 +124,8 @@
 
 
 <script src="../js/check_session.js"></script>
-<script src="../js/settings.js"></script>
+<script src="../js/user_settings.js"></script>
+<script src="../js/json_nodo_state.js"></script>
 <script src="js/setup_connection.js"></script>
  
 </body>

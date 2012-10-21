@@ -88,24 +88,24 @@ $result = mysql_query("SELECT * FROM nodo_tbl_notifications WHERE user_id='$user
 	
 	 
 				
-	<br>
+	<br \>
 	<label for="name">Name: </label>
 		<input type="text" name="name" id="name" value=""  />
-		<br>
+		<br \>
 		<label for="name">Event: (Example: userevent 100,0 | newkaku 1,on)</label>
 		<input type="text" name="event" id="event" value=""  />
-		<br>
+		<br \>
 		<label for="name">Recipient:</label>
 		<input type="text" name="recipient" id="recipient" value=""  />
-		<br>
+		<br \>
 		<label for="name">Subject:</label>
 		<input type="text" name="subject" id="subject" value=""  />
-		<br>
+		<br \>
 		<label for="body">Body:</label>
 		<textarea name="body" id="body"></textarea>
-		<br>		
+		<br \>		
 	
-	    <br>
+	    <br \>
         
 		<input type="submit" name="submit" value="Save" >
 
@@ -122,7 +122,7 @@ $result = mysql_query("SELECT * FROM nodo_tbl_notifications WHERE user_id='$user
 								   
 			echo '<ul data-role="listview" data-split-icon="delete" data-split-theme="$theme" data-inset="true" data-iconpos="right">';
 	  
-			//echo '<br>';   
+			//echo '<br \>';   
 			// loop through results of database query, displaying them in the table        
 			while($row = mysql_fetch_array($result)) 
 			{                                

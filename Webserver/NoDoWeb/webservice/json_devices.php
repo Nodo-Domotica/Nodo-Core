@@ -23,6 +23,7 @@ $recordset = mysql_query($query, $db) or die(mysql_error());
  
 $json = json_encode($rowsarray);
 
+
 echo '{"devices":'. $json .'}'; 
  
 

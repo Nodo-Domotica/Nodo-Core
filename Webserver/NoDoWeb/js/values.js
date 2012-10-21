@@ -2,76 +2,78 @@ var ValueTimer;
 var SliderTimer;
 var SliderIndex;
 
-var ArrayValueID=new Array();
-var ArrayValueSuffix=new Array();
-var ArrayValueHours=new Array();
-var ArrayValueBar=new Array();
-var ArrayValueType=new Array();
-var ArrayValueTicksize=new Array();
-var ArrayValueDisplay=new Array();
-var ArrayValueInputoutput=new Array();
-var ArrayValuePar1=new Array();
+var ArrValueID=new Array();
+var ArrValueSuffix=new Array();
+var ArrValueHours=new Array();
+var ArrValueBar=new Array();
+var ArrValueType=new Array();
+var ArrTicksize=new Array();
+var ArrValueDisplay=new Array();
+var ArrValueInputoutput=new Array();
+var ArrValuePar1=new Array();
+var ArrLineColor=new Array();
 
-//Grafiek kleuren
-var GraphColor;
-switch(theme)
- {
- case 'a':
-  GraphColor = "#808080"; //grijs
-  break;
- case 'b':
-  GraphColor = "#2065E6"; //blauw
-  break;
- case 'c':
-  GraphColor = "black"; 
-  break;
- case 'd':
-  GraphColor = "black"; 
-   break;
- case 'e':
-	GraphColor = "#FFDF0F"; //geel
-   break;
- default:
-   GraphColor = "black"; 
- }
+var GraphTimer = new Array();
 
 
 $('#values_page').on('pageinit', function(event) {
 	checkSession();
 	getValues();
-
-	
 });
 
+$('#values_page').on('pageshow', function (event) {
+
+	pagetitle = 'Values';
+
+	checkSession();
+	//clearInterval(ValueTimer);
+	//Eerste maal de functie getValueState() opstarten zodat de loop gaat lopen welke de waarde elke x seconde ververst. 
+	getValueState();
+	ValueTimer=setInterval(function(){getValueState()},5000);
+	
+	$('#header_values').append('<div id="nodostate">'+pagetitle+'</div>');
+	Nodo_State();
+
+
+});
+
+ $('#values_page').on('pagehide', function(event) {
+		
+	clearInterval(ValueTimer);
+	$('#header_values').empty();
+	
+}); 
+
 function getValues() {
+	$.ajaxSetup({ cache: false });
 	$.getJSON('webservice/json_values.php', function(data) {
 		values = data.values;
 		$('#values').empty();
 		$.each(values, function(index, value) {
 			
-			ArrayValueID[index]=value.id;
-			ArrayValueSuffix[index]=value.suffix;
-			ArrayValueHours[index]=value.hours;
-			ArrayValueType[index]=value.type;
-			ArrayValuePar1[index]=value.par1;
-			
-			
+			ArrValueID[index]=value.id;
+			ArrValueSuffix[index]=value.suffix;
+			ArrValueHours[index]=value.hours;
+			ArrValueType[index]=value.type;
+			ArrValuePar1[index]=value.par1;
+			ArrLineColor[index]=value.linecolor;
+						
 			//Lijn Grafiek
-			if (value.type == 1) {ArrayValueBar[index]=0;}
+			if (value.type == 1) {ArrValueBar[index]=0;}
 			
 			//Staaf Grafiek
-			if (value.type == 2) {ArrayValueBar[index]=1;}
+			if (value.type == 2) {ArrValueBar[index]=1;}
 			
-			ArrayValueTicksize[index]=value.ticksize;
-			ArrayValueDisplay[index]=value.display;
-			ArrayValueInputoutput[index]=value.inputoutput;
+			ArrTicksize[index]=value.ticksize;
+			ArrValueDisplay[index]=value.display;
+			ArrValueInputoutput[index]=value.inputoutput;
 			
 			//Hoofd items
 			if (value.collapsed == 1) {
-				var ValueHtml = '<div data-role="collapsible" data-indexid='+ index +' class="value" data-collapsed-icon="plus" data-collapsed="false" data-expanded-icon="minus" data-iconpos="right" data-inset="false">';
+				var ValueHtml = '<div data-role="collapsible" data-collapsedid='+ index +' class="value" data-collapsed-icon="plus" data-collapsed="false" data-expanded-icon="minus" data-iconpos="right" data-inset="false">';
 			}
 			else {
-				var ValueHtml = '<div data-role="collapsible" data-indexid='+ index +' class="value" data-collapsed-icon="plus" data-collapsed="true" data-expanded-icon="minus" data-iconpos="right" data-inset="false">';
+				var ValueHtml = '<div data-role="collapsible" data-collapsedid='+ index +' class="value" data-collapsed-icon="plus" data-collapsed="true" data-expanded-icon="minus" data-iconpos="right" data-inset="false">';
 			}
 			
 			if (value.display == 1){ValueHtml = ValueHtml + '<h2>'+ value.prefix +' <span id="value_'+ value.id +'"><img src="media/loading.gif" WIDTH="15"></span> '+ value.suffix +'</h2>';}
@@ -110,11 +112,12 @@ function getValues() {
 $('div.value').live('expand', function(){
 	
 	
-	var indexid = $(this).data("indexid");
-	var sensor_id = ArrayValueID[indexid];
-	var suffix = ArrayValueSuffix[indexid];
-	var hours = ArrayValueHours[indexid];
-	var bars = ArrayValueBar[indexid];
+	var collapsedid = $(this).data("collapsedid");
+	var sensor_id = ArrValueID[collapsedid];
+	var suffix = ArrValueSuffix[collapsedid];
+	var hours = ArrValueHours[collapsedid];
+	var bars = ArrValueBar[collapsedid];
+	var linecolor = ArrLineColor[collapsedid];
 	
 	if (bars == 1){
 		var ticksize = 'day';
@@ -123,70 +126,90 @@ $('div.value').live('expand', function(){
 		var ticksize = 'minute';
 	}
 	
-	var display = ArrayValueDisplay[indexid];
-	var inputoutput = ArrayValueInputoutput[indexid];
+	var display = ArrValueDisplay[collapsedid];
+	var inputoutput = ArrValueInputoutput[collapsedid];
 	//alert (bars);
 		
 	if (display == 1 && inputoutput == 2) { //alleen grafiek gegevens ophalen indien het een value is en een output betreft
 		
-		Get_Graph_data(hours,sensor_id,suffix,bars,ticksize);
-		//eval('refreshgraph' + id + '();');
-		//window['refreshgraph' + indexid]();
+		Get_Graph_data(hours,sensor_id,suffix,bars,ticksize,linecolor);
+				
+		GraphTimer[collapsedid]=setInterval(function(){Get_Graph_data(hours,sensor_id,suffix,bars,ticksize,linecolor)},30000+Math.floor(Math.random() * 10000));	
+		
 	}
 });
 
-function Get_Graph_data(hours,sensor_id,label,bars,ticksize,date1,date2,filter)
- {  
-     
-			var options = {
-						xaxis: { mode: "time",minTickSize: [1,ticksize]}
-					};
-			
-		 
-		
-			element = document.getElementById('graph_'+sensor_id);	
-		//element.innerHTML = '<h4><img src="media/loading.gif"/> Please wait, loading graph...</h4>'; 
-		//Andere oplossing voor maken
+$('div.value').live('collapse', function(){
 
+	var collapsedid = $(this).data("collapsedid");
+	clearInterval(GraphTimer[collapsedid]);		
+
+});
+
+function Get_Graph_data(hours,sensor_id,label,bars,ticksize,linecolor,date1,date2,filter) {  
+     
+		if (linecolor =='') {
+					
+				//Standaard lijn kleuren
+				switch(theme)
+				 {
+				 case 'a':
+				  linecolor = "#FF0000"; //rood
+				  break;
+				 case 'b':
+				  linecolor = "#2065E6"; //blauw
+				  break;
+				 case 'c':
+				  linecolor = "black"; 
+				  break;
+				 case 'd':
+				  linecolor = "black"; 
+				   break;
+				 case 'e':
+					linecolor = "#FFDF0F"; //geel
+				   break;
+				 default:
+				   linecolor = "black"; 
+				 }
+			}
+	 
+	 
+			var options = {
+						xaxis: { mode: "time",minTickSize: [1,ticksize]},
+						legend: { backgroundOpacity: 0 },
+						bars: {lineWidth: 2},
+						lines: {lineWidth: 2,fill: true},
+						shadowSize: 3
+						
+						
+			};
+					
+			element = document.getElementById('graph_'+sensor_id);	
+		
 					
 		$.getJSON("webservice/json_graph_data.php?hours=" + hours +"&sensor_id="+sensor_id +"&bars="+bars +"&date1="+date1 +"&date2="+date2+"&filter="+filter, function(graph_data) {
-       //succes - data loaded, now use plot:
-       
-	   if (graph_data != null) {
-	   
-	   var plotarea = $("#graph_" + sensor_id);
-       
-       if (bars != 1)
-		   {
+              
+			if (graph_data != null) {
 		   
+				var plotarea = $("#graph_" + sensor_id);
 		   
-		   
-		   $.plot(plotarea , [
-					 { label: label, data: graph_data, color: GraphColor  }
-					 ],options );
-		   }
-		else
-		   {
-		   
-		   
-		   
-		   $.plot(plotarea , [
-					 { label: label, data: graph_data, color: GraphColor ,bars: {show: true, barWidth:43200000, align: "center",} }
-					 ],options );
-		   }
-		   
-		}
-		
-		else {
-		
-		
-			element.innerHTML = '<h4>No data available......</h4>'; 
+					if (bars != 1) {
+						$.plot(plotarea , [
+								{ label: label, data: graph_data, color: linecolor }
+								],options );
+					}
+					else {
+					   
+					   $.plot(plotarea , [
+								 { label: label, data: graph_data, color: linecolor ,bars: {show: true, barWidth:43200000, align: "center",} }
+								 ],options );
+					}
+				}
 			
-		}
-	   
-	
-    });
-
+			else {
+				element.innerHTML = '<h4>No data available......</h4>'; 
+			}
+		});
 }
 
 
@@ -195,33 +218,13 @@ function update_distance_value_timer(index)	{
 	SliderIndex = index;
 	clearTimeout(SliderTimer);
 	SliderTimer=setTimeout("update_distance_value(SliderIndex)",1000);
-	
 }
 function update_distance_value(index) {
-	
 	var val = $('#distSlider'+index).val();
-	//alert(index);
-	send_event('variableset '+ArrayValuePar1[index]+',' + val,'value')
-					
+	send_event('variableset '+ArrValuePar1[index]+',' + val,'value')
 }
 
-$('#values_page').on('pageshow', function (event) {
 
-	
-	checkSession();
-	clearInterval(ValueTimer);
-	//Eerste maal de functie getValueState() opstarten zodat de loop gaat lopen welke de waarde elke x seconde ververst. 
-	getValueState();
-	ValueTimer=setInterval(function(){getValueState()},5000);
-
-});
-
- $('#values_page').on('pagehide', function(event) {
-	//Timer stoppen
-	
-	clearInterval(ValueTimer);
-	//console.log('clearing');
-	}); 
 
 
 

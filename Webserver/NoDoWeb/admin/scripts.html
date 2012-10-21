@@ -3,13 +3,13 @@
  
 <head>
 	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1"> 
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"> 
 	<title>Scripts</title> 
-	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.2.0-rc.2/jquery.mobile-1.2.0-rc.2.min.css" />
-	<script src="http://code.jquery.com/jquery-1.8.1.min.js"></script>
-	<script src="http://code.jquery.com/mobile/1.2.0-rc.2/jquery.mobile-1.2.0-rc.2.min.js"></script>
-	
+	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.css" />
 	<link rel="stylesheet" type="text/css" href="../css/custom.css" />
+	<script src="http://code.jquery.com/jquery-1.8.2.min.js"></script>
+	<script src="http://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.js"></script>
+	
 </head> 
  
 <body> 
@@ -19,8 +19,8 @@
 <div data-role="page" id="scripts_page">
  
 	<!-- header -->
-	<div data-role="header" data-id="toolbar" >
-		<h1>Setup: Scripts<div id="nodostate_devices"></div></h1>
+	<div data-role="header" data-id="toolbar" data-position="fixed" data-tap-toggle="false">
+		<h1 id="header_setup_scripts"></h1>
 		<div data-role="navbar" data-iconpos="top">
 		<ul>
 			<li><a href="../webapp.html#devices_page" data-icon="devices"  data-transition="none" data-ajax="false">Devices</a></li>
@@ -39,28 +39,29 @@
 	
 	 
 				
-	<br>
+	<br \>
 	
-		<label for="select-script" class="select">Choose script:</label>
+		<label for="select-script" class="select">Select script:</label>
 		<select name="scriptfile" id="scriptfile" data-native-menu="true"></select>
 		
 		<div class="ui-grid-a">
 			<div class="ui-block-a"><input type="button" id="delete" name="delete" value="Delete" ></div>
 			<div class="ui-block-b"><input type="button" id="new" name="new" value="New"></div>
 		</div>
+		<input type="button" id="eventlist" name="eventlist" value="Read eventlist" >
 		
 			
 		
 		
 		<label for="scriptcontent1">Script:</label>
-		<textarea name="scriptcontent" id="scriptcontent"></textarea>
-<br>		
+		<textarea style="font-family:monospace;font-size:100%" name="scriptcontent" id="scriptcontent"></textarea>
+<br \>		
 		
     	
 		<input type="checkbox" name="checkbox" id="checkbox" class="custom" checked="yes"/>
 		<label for="checkbox">Execute after write</label>
 		
-		<br>
+		<br \>
         
 		<input type="button" id="write" name="write" value="Write" > 
 			
@@ -74,17 +75,17 @@
 	
 	</div><!-- /content -->
 	
-	<div data-role="footer" data-id="toolbar" >
+	<div data-role="footer" data-id="toolbar" data-position="fixed" data-tap-toggle="false" >
 		<div data-role="navbar" data-iconpos="top">
 			<ul>
 				<li><a href="../logout.php" data-icon="delete"  data-ajax="false">Logout</a></li>
 				<li><a href="../webapp.html#info_page" data-icon="info"  data-transition="none" data-ajax="false">Info</a></li>
-				<li><a href="index.php" data-icon="gear"  data-ajax="false">Setup</a></li>
+				<li><a href="../admin" data-icon="gear"  data-ajax="false">Setup</a></li>
 			</ul>
 		</div>
 	</div><!-- /footer -->
 	
-	<div data-role="popup" id="scripts_popup_msg" data-overlay-theme="a" style="min-width:250px;" class="ui-corner-all">
+	<div data-role="popup" id="scripts_popup_msg" data-overlay-theme="c" style="min-width:250px;" class="ui-corner-all">
 			<div data-role="header" class="ui-corner-top">
 				<h1></h1>
 			</div>
@@ -92,9 +93,9 @@
 				<h3 id="write_message" class="ui-title"></h3>
 				<a href="#" data-role="button" data-inline="true" data-rel="back" >Ok</a>    
 			</div>
-		</div>
+	</div>
 		
-		<div data-role="popup" id="scripts_popup_new" data-overlay-theme="a" style="min-width:250px;" class="ui-corner-all">
+		<div data-role="popup" id="scripts_popup_new" data-overlay-theme="c" style="min-width:250px;" class="ui-corner-all">
 			<div data-role="header" class="ui-corner-top">
 				<h1></h1>
 			</div>
@@ -111,7 +112,7 @@
 			</div>
 		</div>
 		
-		<div data-role="popup" id="scripts_popup_delete" data-overlay-theme="a" style="min-width:250px;" class="ui-corner-all">
+		<div data-role="popup" id="scripts_popup_delete" data-overlay-theme="c" style="min-width:250px;" class="ui-corner-all">
 			<div data-role="header" class="ui-corner-top">
 				<h1></h1>
 			</div>
@@ -128,8 +129,10 @@
 </div><!-- /main page -->
 
 <script src="../js/check_session.js"></script>
-<script src="../js/settings.js"></script>
-<script src="js/scripts.js"></script>
+<script src="../js/user_settings.js"></script>
+<script src="../js/json_nodo_state.js"></script>
+<script src="js/setup_scripts.js"></script>
+
 
  
 </body>
