@@ -165,10 +165,10 @@ void PrintWelcome(void)
   // print IP adres van de Nodo
   if(bitRead(HW_Config,HW_ETHERNET))
     {
-    sprintf(TempString,"MAC=%02X-%02X-%02X-%02X-%02X-%02X, NodoIP=%u.%u.%u.%u, ", NODO_MAC, Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
+    sprintf(TempString,"MAC=%02X-%02X-%02X-%02X-%02X-%02X, NodoIP=%u.%u.%u.%u, %s=%d", NODO_MAC, Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3],cmd2str(CMD_PORT_SERVER),Settings.HTTPServerPort );
     PrintTerminal(TempString);
     
-    if((HTTPClientIP[0],HTTPClientIP[1],HTTPClientIP[2],HTTPClientIP[3])!=0)
+    if((HTTPClientIP[0] + HTTPClientIP[1] + HTTPClientIP[2] + HTTPClientIP[3]) > 0)
       {
       strcpy(TempString,"Host=");        
       strcat(TempString,Settings.HTTPRequest);
@@ -176,6 +176,10 @@ void PrintWelcome(void)
       TempString[x]=0;    
       strcat(TempString,", HostIP=");        
       strcat(TempString,ip2str(HTTPClientIP));
+      strcat(TempString,", ");        
+      strcat(TempString,cmd2str(CMD_PORT_CLIENT));        
+      strcat(TempString,"=");        
+      strcat(TempString,int2str(Settings.PortClient));
       PrintTerminal(TempString);
       }
     }
@@ -190,6 +194,7 @@ void PrintWelcome(void)
  \*********************************************************************************************/
 void PrintTerminal(char* LineToPrint)
   {  
+  
   if(bitRead(HW_Config,HW_SERIAL))
     Serial.println(LineToPrint);
 

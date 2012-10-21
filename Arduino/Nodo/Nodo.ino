@@ -1,4 +1,10 @@
 
+#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
+  #define NODO_MEGA 1
+#else
+  #define NODO_MEGA 0
+#endif
+
 /****************************************************************************************************************************\
 * Arduino project "Nodo" © Copyright 2012 Paul Tonkes 
 * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License 
@@ -17,29 +23,37 @@
 * Voor vragen of suggesties, mail naar              : p.k.tonkes@gmail.com
 * Compiler                                          : Arduino Compiler met minimaal versie 1.0.1
 *
-/****************************** Door gebruiker in te stellen: ***************************************************************/
+\****************************** Door gebruiker in te stellen: ***************************************************************/
 
-/* instelling van default unit nummer en MAC address (dat laatste alleen voor de Mega van toepassing): **********************/
-#define UNIT_NODO_SMALL    15                                    // Default unitnummer van een Nodo-Small na een reset-commando van de Nodo.
-#define UNIT_NODO_MEGA     1                                     // Default unitnummer van een Nodo-Mega na een reset-commando van de Nodo.
-#define NODO_MAC           0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF    // Default Nodo MACadres (alleen voor de Nodo-Mega)
-#define NODO_MEGA          0
-#define TRACE 1
+// De code kan worden gecompileerd als een Nodo-Small voor de Arduino met een ATMega328 processor of een Nodo-Mega met een ATMega1280/2560.
+// stel allereerst het juiste board-type en COM-poort in op de Arduino compiler.
+// en pas eventueel de drie include statements aan (zie onder)
 
-/* Keuze tussen SMALL of MEGA: **********************************************************************************************/
-// De code kan worden gecompileerd als een Nodo-Small voor de Arduino met een ATMega328 processor
-// of voor een Nodo-Mega voor een Arduino met een ATMega1280 of ATMega2560
 
-// Voor de Nodo-Mega variant bij onderstaande regels de // tekens op positie 1 en 2 verwijderen.
-//#define NODO_MEGA          1
-//#define ETHERNET           1                                     // EthernetShield: 0 = afwezig, 1 = aanwezig
-//#include <SD.h>
-//#include <EthernetNodo.h>
-//#include <SPI.h>
+// User plugin opties: ******************************************************************************************************
+#define USER_PLUGIN         "UserPlugin"                          // Commando naam waarmee de plugin kan worden aangeroepen. Remarken met // als UserPluging niet nodig is
 
-/* User plugin opties: ******************************************************************************************************/
-#define USER_PLUGIN        0                                     // Plugin: 0 = niet compileren, 1 = wel compileren
-#define USER_PLUGIN_NAME   "UserPlugin"                          // Commando naam waarmee de plugin kan worden aangeroepen
+#if NODO_MEGA
+  // definities voor Mega:
+  #define UNIT_NODO          1                                     // default unit nummer na een [Reset] commando//
+  #define NODO_MAC           0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF    // MAC adres voor de ethernet kaart. Remarken met // als ethernet niet nodig is
+
+  // Keuze tussen SMALL of MEGA: **********************************************************************************************
+  // vanwege een bug in de Arduino compiler moeten de volgende regels handmatig worden aangepast!
+  // Voor de Nodo-Mega variant bij onderstaande drie regels de // voorafgaand aan de #include worden verwijderd en voor een Nodo-Small worden toegevoegd 
+  // Anders wordt de code groot en zal deze niet in de ATMega328 passen
+
+  #include <SD.h>
+  #include <EthernetNodo.h>
+  #include <SPI.h>
+  
+#endif
+
+#if !NODO_MEGA
+  // definities Small
+  #define UNIT_NODO    15                                    // default unit nummer na een [Reset] commando
+#endif
+
 
 // Onderstaand de formules die gebruikt worden voor omrekening van pulsen naar analoge waarden.
 // Zet de formules zo op dat uitsluitend met gehele getallen gerekend wordt.
@@ -64,10 +78,8 @@
 #define FORMULA_10           a = 0;
 
 /****************************************************************************************************************************/
-//#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
-
 #define SETTINGS_VERSION     12
-#define NODO_BUILD          446
+#define NODO_BUILD          448
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -120,7 +132,7 @@ prog_char PROGMEM Cmd_022[]="SendTo";
 prog_char PROGMEM Cmd_023[]="SimulateDay";
 prog_char PROGMEM Cmd_024[]="Sound";
 prog_char PROGMEM Cmd_025[]="Debug";
-prog_char PROGMEM Cmd_026[]=USER_PLUGIN_NAME;
+prog_char PROGMEM Cmd_026[]=USER_PLUGIN;
 prog_char PROGMEM Cmd_027[]="TimerRandom";
 prog_char PROGMEM Cmd_028[]="TimerSetSec";
 prog_char PROGMEM Cmd_029[]="TimerSetMin";
@@ -152,7 +164,7 @@ prog_char PROGMEM Cmd_054[]="Status";
 prog_char PROGMEM Cmd_055[]="Log";
 prog_char PROGMEM Cmd_056[]="AnalyseSettings";
 prog_char PROGMEM Cmd_057[]="Output";
-prog_char PROGMEM Cmd_058[]="";
+prog_char PROGMEM Cmd_058[]="Save";
 prog_char PROGMEM Cmd_059[]="";
 prog_char PROGMEM Cmd_060[]="ReceiveSettings";
 prog_char PROGMEM Cmd_061[]="HTTPHost";
@@ -167,8 +179,10 @@ prog_char PROGMEM Cmd_069[]="NodoIP";
 prog_char PROGMEM Cmd_070[]="Gateway";
 prog_char PROGMEM Cmd_071[]="Subnet";
 prog_char PROGMEM Cmd_072[]="DnsServer";
-prog_char PROGMEM Cmd_073[]="PortServer";
+prog_char PROGMEM Cmd_073[]="HTTPServerPort";
 prog_char PROGMEM Cmd_074[]="PortClient";
+// ??? prog_char PROGMEM Cmd_073[]="PortInput";
+// ??? prog_char PROGMEM Cmd_074[]="PortOutput";
 prog_char PROGMEM Cmd_075[]="";
 prog_char PROGMEM Cmd_076[]="VariablePulse";
 prog_char PROGMEM Cmd_077[]="";
@@ -306,15 +320,14 @@ prog_char PROGMEM Cmd_203[]="Error: Unable to open file on SDCard.";
 prog_char PROGMEM Cmd_204[]="Error: Error during queing events.";
 prog_char PROGMEM Cmd_205[]="Error: Eventlist nesting error.";
 prog_char PROGMEM Cmd_206[]="Error: Reading/writing eventlist failed.";
-prog_char PROGMEM Cmd_207[]="Error: Unable to establish connection.";
+prog_char PROGMEM Cmd_207[]="Error: Unable to establish TCPIP connection.";
 prog_char PROGMEM Cmd_208[]="Error: Incorrect password.";
 prog_char PROGMEM Cmd_209[]="Error: Wireless access locked.";
 prog_char PROGMEM Cmd_210[]="Error: Access not allowed.";
-prog_char PROGMEM Cmd_211[]="";
+prog_char PROGMEM Cmd_211[]=""; 
 prog_char PROGMEM Cmd_212[]="Error: SendTo failed.";
 prog_char PROGMEM Cmd_213[]="Error: Timeout on busy Nodo.";
 prog_char PROGMEM Cmd_214[]="Waiting for busy Nodo(s)...";
-prog_char PROGMEM Cmd_215[]="";
 
 // tabel die refereert aan de commando strings
 PROGMEM const char *CommandText_tabel[]={
@@ -339,7 +352,7 @@ PROGMEM const char *CommandText_tabel[]={
   Cmd_180,Cmd_181,Cmd_182,Cmd_183,Cmd_184,Cmd_185,Cmd_186,Cmd_187,Cmd_188,Cmd_189,          
   Cmd_190,Cmd_191,Cmd_192,Cmd_193,Cmd_194,Cmd_195,Cmd_196,Cmd_197,Cmd_198,Cmd_199,          
   Cmd_200,Cmd_201,Cmd_202,Cmd_203,Cmd_204,Cmd_205,Cmd_206,Cmd_207,Cmd_208,Cmd_209,          
-  Cmd_210,Cmd_211,Cmd_212,Cmd_213,Cmd_214,Cmd_215           
+  Cmd_210,Cmd_211,Cmd_212,Cmd_213,Cmd_214
   };          
 #endif
 
@@ -403,7 +416,7 @@ PROGMEM const char *CommandText_tabel[]={
 #define CMD_LOG                         55
 #define CMD_ANALYSE_SETTINGS            56
 #define CMD_OUTPUT                      57
-#define CMD_RES58                       58
+#define CMD_SAVE                        58
 #define CMD_RES59                       59
 #define CMD_RECEIVE_SETTINGS            60
 #define CMD_HTTP_REQUEST                61
@@ -564,13 +577,12 @@ PROGMEM const char *CommandText_tabel[]={
 #define MESSAGE_08                     208
 #define MESSAGE_09                     209
 #define MESSAGE_10                     210
-#define MESSAGE_RES11                  211
+#define MESSAGE_11                     211
 #define MESSAGE_12                     212
 #define MESSAGE_13                     213
 #define MESSAGE_14                     214
-#define MESSAGE_15                     215
-#define LAST_VALUE                     215 // laatste VALUE uit de commando tabel
-#define COMMAND_MAX                    215 // hoogste commando
+#define LAST_VALUE                     214 // laatste VALUE uit de commando tabel
+#define COMMAND_MAX                    214 // hoogste commando
 
 
 // Tabel met zonsopgang en -ondergang momenten. afgeleid van KNMI gegevens midden Nederland.
@@ -714,7 +726,7 @@ struct SettingsStruct
   byte    Subnet[4];                                        // Submask
   byte    Gateway[4];                                       // Gateway
   byte    DnsServer[4];                                     // DNS Server IP adres
-  int     PortServer;                                       // Poort van de inkomende IP communnicatie
+  int     HTTPServerPort;                                   // Poort van de inkomende IP communnicatie
   int     PortClient;                                       // Poort van de uitgaande IP communnicatie
   byte    EchoSerial;
   byte    EchoTelnet;
@@ -725,7 +737,7 @@ struct SettingsStruct
 struct NodoBusyStruct
   {
   int Status;                                               // in deze variabele de status van het event 'Busy' van de betreffende units 1 t/m 15. bit-1 = unit-1.
-  boolean Sent;                                             // Vlag die bijhoudt of het Busy On event is verzonden.
+  byte BusyOnSent;                                          // Vlag die bijhoudt of en naar welke poort het Busy On event is verzonden.
   int ResetTimer;                                           // Timer voor resetten van de status.
   }Busy;
 
@@ -762,8 +774,7 @@ char InputBuffer_Terminal[INPUT_BUFFER_SIZE+2];             // Buffer voor input
 
 // ethernet classes voor IP communicatie Telnet terminal en HTTP.
 byte Ethernet_MAC_Address[]={NODO_MAC};                     // MAC adres van de Nodo.
-EthernetServer IPServer(80);                                // Server class voor HTTP sessie.
-EthernetClient HTTPClient;                                    // Client Class voor uitgaande HTTP sessi
+EthernetServer HTTPServer(80);                              // Server class voor HTTP sessie. Poort wordt later goed gezet.
 EthernetServer TerminalServer(23);                          // Server class voor Terminal sessie.
 EthernetClient TerminalClient;                              // Client class voor Terminal sessie.
 byte ClientIPAddress[4];                                    // IP adres van de client die verbinding probeert te maken c.q. verbonden is.
@@ -832,7 +843,7 @@ void setup()
 
   // initialiseer de Busy Nodo gegevens
   Busy.Status=0;
-  Busy.Sent=false;
+  Busy.BusyOnSent=0;
   Busy.ResetTimer=0;
 
   LoadSettings();      // laad alle settings zoals deze in de EEPROM zijn opgeslagen
@@ -859,9 +870,10 @@ void setup()
   // Zet statussen WIRED_IN op hoog, anders wordt direct wij het opstarten meerdere malen een event gegenereerd omdat de pull-up weerstand analoge de waarden op hoog zet
   for(x=0;x<WIRED_PORTS;x++){WiredInputStatus[x]=true;}
 
-  #if NODO_MEGA
+
   // SDCard initialiseren:
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+  #if NODO_MEGA
   SelectSD(true);
   if(SD.begin(EthernetShield_CS_SDCard))
     {
@@ -871,77 +883,22 @@ void setup()
     bitWrite(HW_Config,HW_SDCARD,1);
     }
    
-  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
-  SelectSD(false);
-
-  #if ETHERNET
-  bitWrite(HW_Config,HW_ETHERNET,ETHERNET);//??? nog slim detecteren
-  #endif
-
-  // Initialiseer ethernet device
-  if(bitRead(HW_Config,HW_ETHERNET))
+  // Start Ethernet kaart en start de HTTP-Server en de Telnet-server
+  if(EthernetInit())
     {
-      if((Settings.Nodo_IP[0] + Settings.Nodo_IP[1] + Settings.Nodo_IP[2] + Settings.Nodo_IP[3])==0)// Als door de user IP adres is ingesteld op 0.0.0.0 dan IP adres ophalen via DHCP
-      {
-      if(Ethernet.begin(Ethernet_MAC_Address)==0) // maak verbinding en verzoek IP via DHCP
-        {
-        Serial.println(F("Error: Failed to configure Ethernet using DHCP"));
-        bitWrite(HW_Config,HW_ETHERNET,0);
-        }
-      }
-    else
-      Ethernet.begin(Ethernet_MAC_Address, Settings.Nodo_IP, Settings.DnsServer, Settings.Gateway, Settings.Subnet);
-  
-    bitWrite(HW_Config,HW_ETHERNET,((Ethernet.localIP()[0]+Ethernet.localIP()[1]+Ethernet.localIP()[2]+Ethernet.localIP()[3])!=0)); // Als er een IP adres is, dan Ethernet inschakelen
-    }
-    
-  // We hebben een IP adres, nu verder de Servers in werking zetten.
-
-  if(bitRead(HW_Config,HW_ETHERNET))
-    {
-    // Start Server voor ontvangst van HTTP-Events
-    IPServer=EthernetServer(Settings.PortServer);
-    IPServer.begin(); 
-
-    // Start server voor Terminalsessies via TelNet
-    TerminalServer=EthernetServer(23);
-    TerminalServer.begin(); 
-
-    // Haal IP adres op van de Host waar de nodo de HTTP events naar verzendt zodat niet iedere transactie een DNS-resolve plaats hoeft te vinden.
-    // Haal uit het HTTP request URL de Host. 
-    // zoek naar de eerste slash in de opgegeven HTTP-Host adres
-    char *TempString=(char*)malloc(80);
-    x=StringFind(Settings.HTTPRequest,"/");
-    strcpy(TempString,Settings.HTTPRequest);
-    TempString[x]=0;    
-    if(HTTPClient.connect(TempString,Settings.PortClient))   
-      {
-      HTTPClient.getRemoteIP(HTTPClientIP);  
-      HTTPClient.stop();
-      }
-    else
-      {
-      HTTPClientIP[0]=0;
-      HTTPClientIP[1]=0;
-      HTTPClientIP[2]=0;
-      HTTPClientIP[3]=0;
-      }
-    free(TempString);
-    
-    // Als ethernet enbled en beveiligde modus, dan direct een Cookie sturen, ander worden eerste events niet opgepikt door de WebApp
+    // Als ethernet enabled en beveiligde modus, dan direct een Cookie sturen, ander worden eerste events niet opgepikt door de WebApp
     if(Settings.Password[0]!=0)
       SendHTTPCookie(); // Verzend een nieuw cookie
     }
-
+    
   RawSignal.Key=-1; // Als deze variable ongelijk aan -1 dan wordt er een Rawsignal opgeslagen.  
   #endif
 
   bitWrite(HW_Config,HW_SERIAL,1); // Serial weer uitschakelen.
   PrintWelcome(); // geef de welkomsttekst weer
-  if(!Serial.available())
-    bitWrite(HW_Config,HW_SERIAL,0); // Serial weer uitschakelen.
+  bitWrite(HW_Config,HW_SERIAL,Serial.available()?1:0); // Serial weer uitschakelen.
 
-  #if USER_PLUGIN
+  #ifdef USER_PLUGIN
   UserPlugin_Init();
   #endif
 
@@ -1003,7 +960,7 @@ void loop()
           if(bitRead(HW_Config,HW_ETHERNET))
             {
             // IP Event: *************** kijk of er een Event van IP  **********************    
-            if(IPServer.available())// deze call duurt +/- 90uSec.  
+            if(HTTPServer.available())// deze call duurt +/- 90uSec.  
               ExecuteIP();
             }
           break;
@@ -1016,20 +973,19 @@ void loop()
             {
             if(TerminalServer.available())
               {          
-              if(TerminalConnected==0)
+              if(TerminalConnected==0)// indien een nieuwe connectie
                 {
                 // we hebben een nieuwe Terminal client
                 TerminalClient=TerminalServer.available();
                 TerminalConnected=TERMINAL_TIMEOUT;
                 InputBuffer_Terminal[0]=0;
                 TerminalInbyteCounter=0;
-                TerminalClient.flush(); // schoon beginnen.
-
+                TerminalClient.flush();// eventuele rommel weggooien.
 
                 if(Settings.Password[0]!=0)
                   {
                   if(TerminalLocked==0)
-                    TerminalLocked=1;//???@2
+                    TerminalLocked=1;
                     
                   if(TerminalLocked<=PASSWORD_MAX_RETRY)
                      TerminalClient.print(ProgmemString(Text_03));
@@ -1043,12 +999,12 @@ void loop()
                   {
                   TerminalLocked=0;
                   y=bitRead(HW_Config,HW_SERIAL);
-                  bitWrite(HW_Config,HW_SERIAL,1);
+                  bitWrite(HW_Config,HW_SERIAL,0);
                   PrintWelcome();
                   bitWrite(HW_Config,HW_SERIAL,y);
                   }                
                 }
-  
+              
               while(TerminalClient.available()) 
                 {
                 TerminalInByte=TerminalClient.read();
@@ -1062,21 +1018,10 @@ void loop()
                     InputBuffer_Terminal[TerminalInbyteCounter++]=TerminalInByte;
                     }
                   else
-                     TerminalClient.write('#');// geen ruimte meer.
+                     TerminalClient.write('?');// geen ruimte meer.
                   }
-                  
-                if(TerminalInByte==0x03 || TerminalInByte==0x18)
-                  {
-                  // TerminalSessie timeout, dan de verbinding netjes afsluiten
-                  InputBuffer_Terminal[0]=0;
-                  TerminalClient.println(ProgmemString(Text_30));
-                  delay(1000); // geef de client even de gelegenheid de tekst te ontvangen
-                  TerminalClient.stop();
-                  TerminalConnected=0;
-                  break;
-                  }
-                  
-                if(TerminalInByte==0x0a || TerminalInByte==0x0d)
+                                    
+                else if(TerminalInByte==0x0a || TerminalInByte==0x0d)
                   {
                   if(Settings.EchoTelnet==VALUE_ON)
                     TerminalClient.println("");// Echo de nieuwe regel.
@@ -1088,9 +1033,8 @@ void loop()
                     {
                     TerminalClient.getRemoteIP(ClientIPAddress);  
                     ExecuteLine(InputBuffer_Terminal, VALUE_SOURCE_TELNET);
-//                    TerminalClient.write('>');
+                      TerminalClient.write('>');// prompt
                     }
-                    
                   else
                     {
                     if(TerminalLocked<=PASSWORD_MAX_RETRY)// teller is wachtloop bij herhaaldelijke pogingen foutief wachtwoord. Bij >3 pogingen niet meer toegestaan
@@ -1099,7 +1043,7 @@ void loop()
                         {
                         TerminalLocked=0;
                         y=bitRead(HW_Config,HW_SERIAL);
-                        bitWrite(HW_Config,HW_SERIAL,1);
+                        bitWrite(HW_Config,HW_SERIAL,0);
                         PrintWelcome();
                         bitWrite(HW_Config,HW_SERIAL,y);
                         }
@@ -1122,7 +1066,18 @@ void loop()
                       TerminalClient.println(cmd2str(MESSAGE_10));
                       }
                     }
-                  TerminalClient.write('>');                    
+                  }
+
+                else 
+                  {// bij een niet printbaar teken wordt de verbinding direct verbroken. Uit veiligheidsoverweging om te voorkomen dat bulk rommel naar de Nodo gestuurd wordt.
+                  // TerminalSessie timeout, dan de verbinding netjes afsluiten
+                  InputBuffer_Terminal[0]=0;
+                  TerminalClient.println(ProgmemString(Text_30));
+                  delay(100); // geef de client even de gelegenheid de tekst te ontvangen
+                  TerminalClient.flush();// eventuele rommel weggooien.
+                  TerminalClient.stop();
+                  TerminalConnected=0;
+                  break;
                   }
                 }
               }
@@ -1172,7 +1127,7 @@ void loop()
             }
           break;
           }
-#endif
+        #endif
 
         default:  // binnen Slice_1
           Slice_1=0;
@@ -1259,7 +1214,7 @@ void loop()
               {
               if(UserTimer[x]<millis()) // als de timer is afgelopen.
                 {
-                UserTimer[x]=0;// zet de timer op inactief.
+                UserTimer[x]=0L;// zet de timer op inactief.
                 Content=command2event(Settings.Unit, CMD_TIMER_EVENT,x+1,0);
                 ProcessEvent1(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_TIMER,0,0);      // verwerk binnengekomen event.
                 }
@@ -1267,6 +1222,7 @@ void loop()
             }
           break;
           }
+          
         default:
           Slice_2=0;
         }
@@ -1278,7 +1234,7 @@ void loop()
       LoopIntervalTimer_3=millis()+Loop_INTERVAL_3; // reset de timer  
 
       // loop periodiek langs de userplugin
-      #if USER_PLUGIN
+      #ifdef USER_PLUGIN
         UserPlugin_Periodically();
       #endif
 
@@ -1295,6 +1251,7 @@ void loop()
           TerminalConnected=0;
         if(!TerminalConnected)
           {
+          delay(10);
           TerminalClient.flush();
           TerminalClient.stop();
           }        
@@ -1321,14 +1278,13 @@ void loop()
         }
       #endif
 
-      // De Nodo houdt bij of Andere Nodos bezig zijn. Periodiek wordt de status gereset
+      // De Nodo houdt bij of andere Nodos bezig zijn. Periodiek wordt de status gereset
       // om te voorkomen dat de Nodo lange tijd onnodig vast komt te zitten.
       // Als deze teller nul is, dan wordt de status van de busy Nodos gereset.
       if(Busy.ResetTimer>0)
         Busy.ResetTimer--;
       else
         Busy.Status=0;      
-
       }
     }// while 
   }

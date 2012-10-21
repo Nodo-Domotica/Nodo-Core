@@ -3,6 +3,10 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
   int x,y,Checksum;
   unsigned long Mark, Space, Timeout, ul=0L;
 
+  // Voorkom dat als TransmitRF door gebruiker is uitgezet, het SendTo commando niet meer werkt.
+  byte TransmitRFOrg=Settings.TransmitRF;
+  Settings.TransmitRF=VALUE_ON;
+  
   // Hier aangekomen is de master nodo nog steeds bezig met het zenden van het aanloopsignaal bestaande uit de korte pulsenreeks.
   // Wacht totdat het aanloopsignaal een duidelijke startbit bevat.
   Timeout=millis() + 2000L; // binnen twee seconden moet het blok met gegevens zijn aangekomen.
@@ -57,7 +61,7 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
     ul=command2event(Settings.Unit,CMD_BUSY,VALUE_ON,0);
     Nodo_2_RawSignal(ul);
     RawSendRF();
-    Busy.Sent=true;
+    Busy.BusyOnSent=VALUE_SOURCE_RF;
 
     if(Settings.Debug==VALUE_ON)
       PrintEvent(ul,VALUE_DIRECTION_OUTPUT, VALUE_SOURCE_RF);
@@ -65,6 +69,7 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
     // Verwerk de inhoud van de Queue, Eerst Korte wachttijd anders is de RF ontvanger van de master (mogelijk) nog niet gereed voor ontvangst.
     delay(RECEIVER_STABLE);
 
+    Settings.TransmitRF=TransmitRFOrg;// Herstel de TransmitRF setting zoals de gebruiker die had ingesteld.
     ProcessQueue();
     return true;
     }
@@ -72,6 +77,7 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
     {
     delay(1000);
     Queue.Position=0;
+    Settings.TransmitRF=TransmitRFOrg;// Herstel de TransmitRF setting zoals de gebruiker die had ingesteld.
     return false;
     }
   }
@@ -82,6 +88,10 @@ boolean QueueSend(byte DestUnit)
   int x,y,Checksum=0;
   boolean Bit;
   unsigned long Event,TimeoutTimer;
+
+  // Voorkom dat als TransmitRF door gebruiker is uitgezet, het SendTo commando niet meer werkt.
+  byte TransmitRFOrg=Settings.TransmitRF; 
+  Settings.TransmitRF=VALUE_ON;
   
   Led(BLUE);
 
@@ -152,6 +162,8 @@ boolean QueueSend(byte DestUnit)
   // 1. master ontvangt Busy On van slave Nodo, hieruit kan worden afgeleid dat de Slave start met verwerking van de queue 
   // 2. master ontvangt niets. Dan keert WaitAndQueue terug met een false.
   // 3. master ontvangt error message van de slave.
+
+  Settings.TransmitRF=TransmitRFOrg;// Herstel de TransmitRF setting zoals de gebruiker die had ingesteld.
 
   if(WaitAndQueue(4,false,command2event(DestUnit,CMD_BUSY,VALUE_ON,0)))
     {
@@ -236,7 +248,7 @@ unsigned long AnalyzeRawSignal(void)
   
   if(RawSignal.Number==RAW_BUFFER_SIZE)return 0L;     // Als het signaal een volle buffer beslaat is het zeer waarschijnlijk ruis of ongeldig signaal
 
-  #if USER_PLUGIN
+  #ifdef USER_PLUGIN
   Code=RawSignal_2_UserPlugin(RawSignal.Source);
   if(Code==1)
     return 0;
@@ -585,6 +597,14 @@ boolean TransmitCode(unsigned long Event, byte Dest)
   else if(SignalType==SIGNAL_TYPE_NODO)
     Nodo_2_RawSignal(Event);
 
+  if(Settings.TransmitRF==VALUE_ON && (Dest==VALUE_SOURCE_RF || Dest==VALUE_ALL))
+    {
+    PrintEvent(Event,VALUE_DIRECTION_OUTPUT, VALUE_SOURCE_RF);
+    RawSendRF();
+    }
+  else
+    delay(250);
+
   if(Settings.TransmitIR==VALUE_ON && (Dest==VALUE_SOURCE_IR || Dest==VALUE_ALL))
     { 
     PrintEvent(Event,VALUE_DIRECTION_OUTPUT, VALUE_SOURCE_IR);
@@ -593,13 +613,6 @@ boolean TransmitCode(unsigned long Event, byte Dest)
   else
     delay(250);
 
-  if(Settings.TransmitRF==VALUE_ON && (Dest==VALUE_SOURCE_RF || Dest==VALUE_ALL))
-    {
-    PrintEvent(Event,VALUE_DIRECTION_OUTPUT, VALUE_SOURCE_RF);
-    RawSendRF();
-    }
-  else
-    delay(250);
 
 #if NODO_MEGA
   if(bitRead(HW_Config,HW_ETHERNET))// Als Ethernet shield aanwezig.

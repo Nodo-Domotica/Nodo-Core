@@ -1,4 +1,4 @@
-#if USER_PLUGIN
+#ifdef USER_PLUGIN
 
  /*********************************************************************************************\
  * Hier kan de gebruiker zelf een stuk code plaatsen.
@@ -181,4 +181,5 @@ unsigned long RawSignal_2_UserPlugin(int Port)
 
   return 0L; // ga verder met verwerking.
   }
+
 #endif  

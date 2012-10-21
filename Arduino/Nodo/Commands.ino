@@ -207,8 +207,6 @@ byte Commanderror(unsigned long Content)
         case VALUE_SOURCE_IR:
         case VALUE_SOURCE_RF:
 #if NODO_MEGA
-        case VALUE_SOURCE_TELNET:
-        case VALUE_SOURCE_SERIAL:
         case VALUE_SOURCE_HTTP:
 #endif
           break;
@@ -296,8 +294,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   {
   unsigned long Event, a;  
   int x,y,z;
-  char *TempString=(char*)malloc(25);
-
+    
   byte error        = false;
   byte Command      = (Content>>16)&0xff;
   byte Par1         = (Content>>8)&0xff;
@@ -370,13 +367,16 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
       attachInterrupt(PULSE_IRQ,PulseCounterISR,FALLING); // IRQ behorende bij PIN_IR_RX_DATA
 
-#if NODO_MEGA
+      #if NODO_MEGA
       if(Settings.Debug==VALUE_ON)
-        {        
-        Serial.print("# PulseTimeMillis=");Serial.print(PulseTime,DEC);
-        Serial.print(", PulseCount=");Serial.println(PulseCount,DEC);
+        {
+        char *TempString=(char*)malloc(80);
+        sprintf(TempString,"PulseTimeMillis=%d, PulseCount=%d",PulseTime,PulseCount);
+        PrintTerminal(TempString);
+        free(TempString);
         }
-#endif
+      #endif
+      
       switch(Par2)
         {
         case 0:
@@ -658,7 +658,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;
       
     case CMD_USERPLUGIN:
-      #if USER_PLUGIN
+      #ifdef USER_PLUGIN
         UserPlugin_Command(Par1,Par2);
       #endif
       break;        
@@ -718,7 +718,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;
 
     case CMD_UNIT:
-      if(Busy.Sent)
+      if(Busy.BusyOnSent)
         TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
       Settings.Unit=Par1;
       SaveSettings();
@@ -727,7 +727,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
     case CMD_REBOOT:
       delay(1000);
-      if(Busy.Sent)
+      if(Busy.BusyOnSent)
         TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
       Reset();
       break;        
@@ -739,7 +739,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;
 
     case CMD_RESET:
-      if(Busy.Sent)
+      if(Busy.BusyOnSent)
         TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
       ResetFactory();
 
@@ -809,17 +809,18 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         TransmitCode(AnalyzeRawSignal(),VALUE_ALL);
       break;        
 
-
     case CMD_FILE_EXECUTE:
+      char *TempString=(char*)malloc(50);
       strcpy(TempString,cmd2str(CMD_FILE_EXECUTE));
       strcat(TempString," ");
       strcat(TempString,int2str(Par1));
       ExecuteLine(TempString,Src);
+      free(TempString);
       break;        
 #endif
 
     }
-  free(TempString);
+
   return error?false:true;
   }
 
@@ -868,6 +869,16 @@ int ExecuteLine(char *Line, byte Port)
       {
       x=Line[PosLine];
   
+      // Chat teken. 
+      if(x=='#')
+        {
+        y=bitRead(HW_Config,HW_SERIAL);
+        bitWrite(HW_Config,HW_SERIAL,1);
+        PrintTerminal(Line+PosLine);
+        bitWrite(HW_Config,HW_SERIAL,y);
+        PosLine=L+1; // ga direct naar einde van de regel.
+        }
+
       // Comment teken. hierna verder niets meer doen.
       if(x=='!') 
         PosLine=L+1; // ga direct naar einde van de regel.
@@ -907,10 +918,10 @@ int ExecuteLine(char *Line, byte Port)
   
           // Geef aan de WebApp en andere Nodo's te kennen dat deze Nodo bezig is met verwerking
           // Maar niet met het SendTo commando, ander is de Slave niet bereikbaar!
-          if(Cmd!=CMD_SEND && Settings.SendBusy==VALUE_ALL && !Busy.Sent)
+          if(Cmd!=CMD_SEND && Settings.SendBusy==VALUE_ALL && Busy.BusyOnSent==0)
             {
             TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_ON,0),VALUE_ALL);
-            Busy.Sent=true;
+            Busy.BusyOnSent=VALUE_ALL;
             }
 
           // Hier worden de commando's verwerkt die een afwijkende MMI hebben.
@@ -1175,8 +1186,7 @@ int ExecuteLine(char *Line, byte Port)
   
                 else // Commando uitvoeren heeft alleen zin er geen eventlistwrite commando actief is
                   {
-                  FileExecute(FileName);//??? error afvangen als niet uitvoerbaar?                
-                  // TempLogFile[0]=0;//??? waarom zou deze leeg gemaakt moeten worden? Kan weg?
+                  FileExecute(FileName);        
                   }
                 }
               break;
@@ -1278,7 +1288,7 @@ int ExecuteLine(char *Line, byte Port)
               {
               if(GetArgv(Command,TmpStr1,2))
                 {
-                Settings.PortServer=str2int(TmpStr1);
+                Settings.HTTPServerPort=str2int(TmpStr1);
                 SaveSettings();
                 }
               break;
@@ -1383,10 +1393,10 @@ int ExecuteLine(char *Line, byte Port)
       }
     }
 
-  if(Busy.Sent)
+  if(Busy.BusyOnSent)
     {
-    TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
-    Busy.Sent=false;
+    TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),Busy.BusyOnSent);
+    Busy.BusyOnSent=0;
     }
 
   free(TmpStr2);

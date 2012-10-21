@@ -8,8 +8,18 @@ Aanpassingen t.o.v. laatste build:
 - Issue 559: Queueing error
 - Issue 558: Te lange Filename wordt zonder waarschuwing geweigerd
 - Issue 557: OutputIP heeft geen invloed op verzenden naar WebApp
+- Issue 577: SendTo naar unit met Output RF,Off
+- queue op de Mega teruggeplaatst naar RAM, dit i.v.m. erg hoge mutatiegraad van de SDCard en mogelijk defect van SDCard.
+- Chat teken aangepast naar #
+- Div. aanpassingen TelNet en HTTP communicatie
+- Welkomsttekst wordt niet meer op Serial weergegeven als Telnet verbinding tot stand komt.
+
 
 Aanpassingen t.o.v. Final Beta Build 436:
+- Welkomsttekst wordt niet meer op Serial weergegeven als Telnet verbinding tot stand komt.
+- queue op de Mega teruggeplaatst naar RAM, dit i.v.m. erg hoge mutatiegraad van de SDCard en mogelijk defect van SDCard.
+- Chat teken aangepast naar #
+- Div. aanpassingen TelNet en HTTP communicatie
 - Issue 557: OutputIP heeft geen invloed op verzenden naar WebApp
 - Issue 558: Te lange Filename wordt zonder waarschuwing geweigerd
 - Issue 559: Queueing error
@@ -37,6 +47,8 @@ Aanpassingen t.o.v. Final Beta Build 436:
 - Issue 486: Extra entry point voor UserPlugin
 
 Known Errors / ToDo:
+- openen Telnet sessie geeft eveneens welkomsttekst weer op Serial
+- dubbel prompt teken.
 - SendBusy op de Master zet de slaves tijdelijk op onbereikbaar. Hierdoor werkt SendTo niet
 - In geval van onbereikbare Nodo-Small: Hoe resetten?
 - Status All uitvraag bij een Small levert: [Input=File, Unit=15, Event=Debug] Geen geldig event
