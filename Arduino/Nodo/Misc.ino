@@ -999,15 +999,16 @@ boolean AddFileSDCard(char *FileName, char *Line)
 
   SelectSD(true);
   File LogFile = SD.open(FileName, FILE_WRITE);
-  if(LogFile) 
+  if(LogFile)
     {
     r=true;
-    LogFile.println(Line);      
+    LogFile.write((uint8_t*)Line,strlen(Line));
+    LogFile.write('\n'); // nieuwe regel
     LogFile.close();
     }
-  else 
+  else
     r=false;
-
+    
   SelectSD(false);
   return r;
   }
@@ -1388,6 +1389,8 @@ void Trace(int Func, int Pos, unsigned long Value)
   
 void PulseCounterISR()
    {
+   static unsigned long PulseTimePrevious=0L;                // Tijdsduur tussen twee pulsen teller in milliseconden: vorige meting
+     
    // in deze interrupt service routine staat millis() stil. Dit is echter geen bezwaar voor de meting.
    PulseTime=millis()-PulseTimePrevious;
    PulseTimePrevious=millis();

@@ -193,6 +193,7 @@ boolean SendHTTPRequest(char* Request)
   {
   int InByteCounter,x,y,SlashPos;
   byte InByte;
+  byte Try=0;
   unsigned long TimeoutTimer;
   char *IPBuffer=(char*)malloc(IP_BUFFER_SIZE+1);
   char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
@@ -243,97 +244,107 @@ boolean SendHTTPRequest(char* Request)
     
   SelectSD(false); // Voor de zekerheid, mocht de chipselect niet goed staan.
 
-  if(HTTPClient.connect(HTTPClientIP,Settings.PortClient))
+  do
     {
-    ClientIPAddress[0]=HTTPClientIP[0];
-    ClientIPAddress[1]=HTTPClientIP[1];
-    ClientIPAddress[2]=HTTPClientIP[2];
-    ClientIPAddress[3]=HTTPClientIP[3];
-  
-    HTTPClient.println(IPBuffer);
-    HTTPClient.print(F("Host: "));
-    HTTPClient.println(TempString);
-    HTTPClient.print(F("User-Agent: Nodo/Build="));
-    HTTPClient.println(int2str(NODO_BUILD));             
-    HTTPClient.println(F("Connection: Close"));
-    HTTPClient.println();// Afsluiten met een lege regel is verplicht in http protocol/
-
-    TimeoutTimer=millis()+TimeOut; // Als er te lange tijd geen datatransport is, dan wordt aangenomen dat de verbinding (om wat voor reden dan ook) is afgebroken.
-    IPBuffer[0]=0;
-    InByteCounter=0;
-    
-    while(TimeoutTimer>millis() && HTTPClient.connected())
+    if(HTTPClient.connect(HTTPClientIP,Settings.PortClient))
       {
-      if(HTTPClient.available())
+      ClientIPAddress[0]=HTTPClientIP[0];
+      ClientIPAddress[1]=HTTPClientIP[1];
+      ClientIPAddress[2]=HTTPClientIP[2];
+      ClientIPAddress[3]=HTTPClientIP[3];
+    
+      HTTPClient.println(IPBuffer);
+      HTTPClient.print(F("Host: "));
+      HTTPClient.println(TempString);
+      HTTPClient.print(F("User-Agent: Nodo/Build="));
+      HTTPClient.println(int2str(NODO_BUILD));             
+      HTTPClient.println(F("Connection: Close"));
+      HTTPClient.println();// Afsluiten met een lege regel is verplicht in http protocol/
+  
+      TimeoutTimer=millis()+TimeOut; // Als er te lange tijd geen datatransport is, dan wordt aangenomen dat de verbinding (om wat voor reden dan ook) is afgebroken.
+      IPBuffer[0]=0;
+      InByteCounter=0;
+      
+      while(TimeoutTimer>millis() && HTTPClient.connected())
         {
-        InByte=HTTPClient.read();
-
-        if(isprint(InByte) && InByteCounter<IP_BUFFER_SIZE)
-          IPBuffer[InByteCounter++]=InByte;
-          
-        else if(InByte==0x0A)
+        if(HTTPClient.available())
           {
-          IPBuffer[InByteCounter]=0;
-          if(Settings.Debug==VALUE_ON)
-            {
-            strcpy(TempString,"DEBUG HTTP Input: ");
-            strcat(TempString,IPBuffer);
-            Serial.println(TempString);
-            }
-
-          TimeoutTimer=millis()+TimeOut; // er is nog data transport, dus de timeout timer weer op max. zetten.
- 
-          // De regel is binnen 
-          if(State==2 && InByteCounter==0) // als lege regel in HTTP request gevonden
-            State=3;
+          InByte=HTTPClient.read();
+  
+          if(isprint(InByte) && InByteCounter<IP_BUFFER_SIZE)
+            IPBuffer[InByteCounter++]=InByte;
             
-          else if(State==3)
-            AddFileSDCard(filename,IPBuffer); // Capture de bodytext uit het HTTP-request en sla regels op in opgegeven filename
-          
-          else if(State==0 && StringFind(IPBuffer,"HTTP")!=-1)
+          else if(InByte==0x0A)
             {
-            // Response n.a.v. HTTP-request is ontvangen
-            if(StringFind(IPBuffer,"200")!=-1)
-              {
-              State=1;
-              // pluk de filename uit het http request als die er is, dan de body text van het HTTP-request opslaan.
-              if(ParseHTTPRequest(Request,"file", TempString))
-                {
-                State=2;
-                TempString[8]=0; // voorkom dat filenaam meer dan acht posities heeft
-                strcpy(filename,TempString);                
-                strcat(filename,".dat");
-
-                // evntueel vorig bestand wissen
-                SelectSD(true);
-                SD.remove(filename);
-                SelectSD(false);
-                }
-              }
             IPBuffer[InByteCounter]=0;
+            if(Settings.Debug==VALUE_ON)
+              {
+              strcpy(TempString,"DEBUG HTTP Input: ");
+              strcat(TempString,IPBuffer);
+              Serial.println(TempString);
+              }
+  
+            TimeoutTimer=millis()+TimeOut; // er is nog data transport, dus de timeout timer weer op max. zetten.
+   
+            // De regel is binnen 
+            if(State==2 && InByteCounter==0) // als lege regel in HTTP request gevonden
+              State=3;
+              
+            else if(State==3)
+              AddFileSDCard(filename,IPBuffer); // Capture de bodytext uit het HTTP-request en sla regels op in opgegeven filename
+            
+            else if(State==0 && StringFind(IPBuffer,"HTTP")!=-1)
+              {
+              // Response n.a.v. HTTP-request is ontvangen
+              if(StringFind(IPBuffer,"200")!=-1)
+                {
+                State=1;
+                // pluk de filename uit het http request als die er is, dan de body text van het HTTP-request opslaan.
+                if(ParseHTTPRequest(Request,"file", TempString))
+                  {
+                  State=2;
+                  TempString[8]=0; // voorkom dat filenaam meer dan acht posities heeft
+                  strcpy(filename,TempString);                
+                  strcat(filename,".dat");
+  
+                  // evntueel vorig bestand wissen
+                  SelectSD(true);
+                  SD.remove(filename);
+                  SelectSD(false);
+                  }
+                }
+              IPBuffer[InByteCounter]=0;
+              }
+            InByteCounter=0;          
             }
-          InByteCounter=0;          
           }
         }
+      delay(10);
+      HTTPClient.flush();// Verwijder eventuele rommel in de buffer.
+      HTTPClient.stop();
+      State=true;
       }
-    delay(10);
-    HTTPClient.flush();// Verwijder eventuele rommel in de buffer.
-    HTTPClient.stop();
-    }
-  else
-    {
-    // niet gelukt om de TCP-IP verbinding op te zetten. Genereerd error en herinitialiseer de ethernetkaart.
-    State=false;
-    x=Settings.TransmitIP; // HTTP tijdelijk uitzetten want die deed het immers niet.
-    Settings.TransmitIP=VALUE_OFF; // HTTP tijdelijk uitzetten want die deed het immers niet.
-    RaiseMessage(MESSAGE_07);
-    if(EthernetInit())
-      CookieTimer=1;// gelijk een nieuwe cookie versturen.
-    Settings.TransmitIP=x; // HTTP weer terugzetten naar oorspronkelijke waarde.
-    }
+    else
+      {
+      // niet gelukt om de TCP-IP verbinding op te zetten. Genereerd error en herinitialiseer de ethernetkaart.
+      State=false;
+      delay(1000); // korte pause tussen de nieuwe pogingen om verbinding te maken.
+      if(EthernetInit())
+        CookieTimer=1;// gelijk een nieuwe cookie versturen.
+      }
+    }while(!State && ++Try<3);
 
   free(TempString);
   free(IPBuffer);
+  
+  if(!State)
+    {
+    x=Settings.TransmitIP; // HTTP tijdelijk uitzetten want die deed het immers niet.
+    Settings.TransmitIP=VALUE_OFF; // HTTP tijdelijk uitzetten want die deed het immers niet.
+    RaiseMessage(MESSAGE_07);
+    Settings.TransmitIP=x; // HTTP weer terugzetten naar oorspronkelijke waarde.
+    }
+    
   return State;
   }
     

@@ -1,4 +1,3 @@
-
 #if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
   #define NODO_MEGA 1
 #else
@@ -79,7 +78,7 @@
 
 /****************************************************************************************************************************/
 #define SETTINGS_VERSION     12
-#define NODO_BUILD          448
+#define NODO_BUILD          450
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -745,12 +744,11 @@ struct QueueStruct
   {
   byte Port[EVENT_QUEUE_MAX];                               // tabel behorend bij de queue. Geeft herkomst van het event in de queue aan.
   unsigned long Event[EVENT_QUEUE_MAX];                     // queue voor tijdelijk onthouden van events die tijdens een delay functie voorbij komen.
-  byte Position;                                                 // teller die wijst naar een plaats in de queue.
+  byte Position;                                            // teller die wijst naar een plaats in de queue.
   }Queue;
   
-volatile unsigned long PulseCount=0L;                       // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
-volatile unsigned long PulseTime=0L;                        // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
-volatile unsigned long PulseTimePrevious=0L;                // Tijdsduur tussen twee pulsen teller in milliseconden: vorige meting
+unsigned long PulseCount=0L;                                // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
+unsigned long PulseTime=0L;                                 // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
 unsigned long UserTimer[TIMER_MAX];                         // Timers voor de gebruiker.
 boolean WiredInputStatus[WIRED_PORTS];                      // Status van de WiredIn worden hierin opgeslagen.
 boolean WiredOutputStatus[WIRED_PORTS];                     // Wired variabelen.

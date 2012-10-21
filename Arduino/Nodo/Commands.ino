@@ -363,17 +363,19 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     case CMD_PULSE_VARIABLE:
       a=0;
       // eerst een keer dit commando uitvoeren voordat de teller gaat lopen.
-      bitWrite(HW_Config,HW_IR_PULSE,true);
-
-      attachInterrupt(PULSE_IRQ,PulseCounterISR,FALLING); // IRQ behorende bij PIN_IR_RX_DATA
-
+      if(!bitRead(HW_Config,HW_IR_PULSE))
+        {
+        bitWrite(HW_Config,HW_IR_PULSE,true);
+        attachInterrupt(PULSE_IRQ,PulseCounterISR,FALLING); // IRQ behorende bij PIN_IR_RX_DATA
+        PulseCount=0;
+        PulseTime=0;
+        }
+        
       #if NODO_MEGA
       if(Settings.Debug==VALUE_ON)
         {
-        char *TempString=(char*)malloc(80);
-        sprintf(TempString,"PulseTimeMillis=%d, PulseCount=%d",PulseTime,PulseCount);
-        PrintTerminal(TempString);
-        free(TempString);
+        Serial.print("*** debug: PulseCount=");Serial.print(PulseCount); //??? Debug
+        Serial.print(", PulseTime=");Serial.println(PulseTime); //??? Debug
         }
       #endif
       
@@ -411,6 +413,9 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         }        
       if(abs(a)<=10000)
         UserVar[Par1-1]=(int)a;
+      else
+        UserVar[Par1-1]=0;
+        
       ProcessEvent2(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;
 
