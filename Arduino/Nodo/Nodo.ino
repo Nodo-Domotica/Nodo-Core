@@ -78,7 +78,7 @@
 
 /****************************************************************************************************************************/
 #define SETTINGS_VERSION     12
-#define NODO_BUILD          450
+#define NODO_BUILD          451
 #include <EEPROM.h>
 #include <Wire.h>
 

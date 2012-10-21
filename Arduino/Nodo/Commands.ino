@@ -374,11 +374,16 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       #if NODO_MEGA
       if(Settings.Debug==VALUE_ON)
         {
-        Serial.print("*** debug: PulseCount=");Serial.print(PulseCount); //??? Debug
-        Serial.print(", PulseTime=");Serial.println(PulseTime); //??? Debug
+        char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+        strcpy(TempString,"PulseCount=");
+        strcat(TempString,int2str((int)PulseCount));
+        strcat(TempString,", PulseTime=");
+        strcat(TempString,int2str((int)PulseTime));
+        PrintTerminal(TempString);
+        free(TempString);
         }
       #endif
-      
+              
       switch(Par2)
         {
         case 0:
