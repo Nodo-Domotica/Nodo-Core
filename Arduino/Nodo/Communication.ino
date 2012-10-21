@@ -19,8 +19,75 @@ void SerialHold(boolean x)
   }
   
 #if NODO_MEGA
+boolean EthernetInit(void)
+  {
+  int x;
+  boolean Ok=false;
+  
+  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
+  SelectSD(false);
 
- 
+  #ifdef NODO_MAC
+    bitWrite(HW_Config,HW_ETHERNET,1);//??? nog slim detecteren
+  #else
+    bitWrite(HW_Config,HW_ETHERNET,0);//??? nog slim detecteren
+  #endif
+  
+  // Initialiseer ethernet device
+  if(bitRead(HW_Config,HW_ETHERNET))
+    {
+    if((Settings.Nodo_IP[0] + Settings.Nodo_IP[1] + Settings.Nodo_IP[2] + Settings.Nodo_IP[3])==0)// Als door de user IP adres is ingesteld op 0.0.0.0 dan IP adres ophalen via DHCP
+      {
+      if(Ethernet.begin(Ethernet_MAC_Address)==0) // maak verbinding en verzoek IP via DHCP
+        {
+        Serial.println(F("Error: Failed to configure Ethernet using DHCP"));
+        bitWrite(HW_Config,HW_ETHERNET,0);
+        }
+      }
+    else      
+      Ethernet.begin(Ethernet_MAC_Address, Settings.Nodo_IP, Settings.DnsServer, Settings.Gateway, Settings.Subnet);
+  
+    bitWrite(HW_Config,HW_ETHERNET,((Ethernet.localIP()[0]+Ethernet.localIP()[1]+Ethernet.localIP()[2]+Ethernet.localIP()[3])!=0)); // Als er een IP adres is, dan Ethernet inschakelen
+    }
+    
+  // We hebben een IP adres, nu verder de Servers in werking zetten.
+  if(bitRead(HW_Config,HW_ETHERNET))
+    {
+    // Start server voor Terminalsessies via TelNet
+    TerminalServer=EthernetServer(23);
+    TerminalServer.begin(); 
+
+    // Start Server voor ontvangst van HTTP-Events
+    HTTPServer=EthernetServer(Settings.HTTPServerPort);
+    HTTPServer.begin(); 
+
+    // Haal IP adres op van de Host waar de nodo de HTTP events naar verzendt zodat niet iedere transactie een DNS-resolve plaats hoeft te vinden.
+    // Haal uit het HTTP request URL de Host. Zoek naar de eerste slash in de opgegeven HTTP-Host adres
+    char *TempString=(char*)malloc(80);
+    x=StringFind(Settings.HTTPRequest,"/");
+    strcpy(TempString,Settings.HTTPRequest);
+    TempString[x]=0;
+    
+    EthernetClient HTTPClient;
+    if(HTTPClient.connect(TempString,Settings.PortClient))   
+      {
+      HTTPClient.getRemoteIP(HTTPClientIP);
+      Ok=true;
+      delay(10); //even wachten op response van de server.
+      HTTPClient.flush(); // gooi alles weg, alleen IP adres was van belang.
+      HTTPClient.stop();
+      }
+    else
+      {
+      HTTPClientIP[0]=0;
+      HTTPClientIP[1]=0;
+      HTTPClientIP[2]=0;
+      HTTPClientIP[3]=0;
+      }
+    free(TempString);    
+    }
+  return Ok;
+  }
 
  /*******************************************************************************************************\
  * Haal via een HTTP-request een file op
@@ -49,10 +116,9 @@ byte GetHTTPFile(char* filename)
     strcat(HttpRequest,TempString); 
     }
 
-  Ok=SendHTTPRequest(HttpRequest);
-
-  free(HttpRequest);
   free(TempString);
+  Ok=SendHTTPRequest(HttpRequest);
+  free(HttpRequest);
   return Ok;
   }
 
@@ -92,9 +158,9 @@ byte SendHTTPEvent(unsigned long event)
   Event2str(event,TempString);
   strcat(HttpRequest,TempString);
 
+  free(TempString);
   x=SendHTTPRequest(HttpRequest);
   free(HttpRequest);
-  free(TempString);
   return x;
   }
 
@@ -170,11 +236,7 @@ boolean SendHTTPRequest(char* Request)
   // IPBuffer bevat nu het volledige HTTP-request, gereed voor verzending.
 
   if(Settings.Debug==VALUE_ON)
-    {
-    strcpy(TempString,"# HTTP Output: ");
-    strcat(TempString,IPBuffer);// Ruimte IPBuffer is groter dan TempString, maar kan hier geen kwaad
-    Serial.println(TempString);
-    }
+    Serial.println(IPBuffer);
 
   strcpy(TempString,Settings.HTTPRequest);
   TempString[SlashPos]=0;
@@ -183,7 +245,6 @@ boolean SendHTTPRequest(char* Request)
 
   if(HTTPClient.connect(HTTPClientIP,Settings.PortClient))
     {
-
     ClientIPAddress[0]=HTTPClientIP[0];
     ClientIPAddress[1]=HTTPClientIP[1];
     ClientIPAddress[2]=HTTPClientIP[2];
@@ -215,7 +276,7 @@ boolean SendHTTPRequest(char* Request)
           IPBuffer[InByteCounter]=0;
           if(Settings.Debug==VALUE_ON)
             {
-            strcpy(TempString,"# HTTP Input: ");
+            strcpy(TempString,"DEBUG HTTP Input: ");
             strcat(TempString,IPBuffer);
             Serial.println(TempString);
             }
@@ -255,10 +316,21 @@ boolean SendHTTPRequest(char* Request)
           }
         }
       }
+    delay(10);
+    HTTPClient.flush();// Verwijder eventuele rommel in de buffer.
     HTTPClient.stop();
     }
   else
+    {
+    // niet gelukt om de TCP-IP verbinding op te zetten. Genereerd error en herinitialiseer de ethernetkaart.
     State=false;
+    x=Settings.TransmitIP; // HTTP tijdelijk uitzetten want die deed het immers niet.
+    Settings.TransmitIP=VALUE_OFF; // HTTP tijdelijk uitzetten want die deed het immers niet.
+    RaiseMessage(MESSAGE_07);
+    if(EthernetInit())
+      CookieTimer=1;// gelijk een nieuwe cookie versturen.
+    Settings.TransmitIP=x; // HTTP weer terugzetten naar oorspronkelijke waarde.
+    }
 
   free(TempString);
   free(IPBuffer);
@@ -337,7 +409,7 @@ void ExecuteIP(void)
   boolean RequestEvent=false;
   boolean RequestFile=false;
   int x,y;
-  unsigned long TimeoutTimer=millis()+5000; // Na twee seconden moet de gehele transactie gereed zijn, anders 'hik' in de lijn.
+  unsigned long TimeoutTimer=millis() + 5000; // Na enkele seconden moet de gehele transactie gereed zijn, anders 'hik' in de lijn.
   
   char *InputBuffer_IP = (char*) malloc(IP_BUFFER_SIZE+1);
   char *Event          = (char*) malloc(INPUT_BUFFER_SIZE+1);
@@ -346,7 +418,7 @@ void ExecuteIP(void)
 
   Event[0]=0; // maak de string leeg.
   
-  EthernetClient HTTPClient = IPServer.available();
+  EthernetClient HTTPClient=HTTPServer.available();
   
   if(HTTPClient)
     {
@@ -368,15 +440,20 @@ void ExecuteIP(void)
         if(HTTPClient.available()) 
           {
           InByte=HTTPClient.read();
-          
+
           if(isprint(InByte) && InByteCounter<IP_BUFFER_SIZE)
+            {
             InputBuffer_IP[InByteCounter++]=InByte;
+            }
       
           else if((InByte==0x0D || InByte==0x0A))
             {
             InputBuffer_IP[InByteCounter]=0;
             InByteCounter=0;
-            
+
+            if(Settings.Debug==VALUE_ON)
+              Serial.println(InputBuffer_IP);
+
             // Kijk of het een HTTP-request is
             if(Protocol==0)
               {
@@ -389,8 +466,6 @@ void ExecuteIP(void)
               if(!RequestCompleted)
                 {
                 Completed=true;
-                if(Settings.Debug==VALUE_ON)
-                  Serial.println(InputBuffer_IP);
                 
                 // als de beveiliging aan staat, dan kijken of de juiste pin ip meegegeven in het http-request. x is vlag voor toestemming verwerking event
                 x=false;
@@ -467,7 +542,7 @@ void ExecuteIP(void)
                       
                       if(RequestFile)
                         {
-                        HTTPClient.println();//??? Verzoek van Martin "<br />" verwijderd
+                        HTTPClient.println();
                         RequestFile=false;// gebruiken we even als vlag om de eerste keer de regel met asteriks af te drukken omdat deze variabele toch verder niet meer nodig is
                         }
                       HTTPClient.print(TmpStr1);
@@ -484,22 +559,29 @@ void ExecuteIP(void)
                   HTTPClient.println(cmd2str(MESSAGE_03));
                 }
               } // einde HTTP-request
-            }  
+            }
+          else
+            {
+            // Er is geen geldig teken binnen gekomen. Even wachten en afbreken.
+            delay(1000);
+            Completed=true;
+            }
           }
         }
       }
-    delay(5);  // korte pauze om te voorkomen dat de verbinding wordt verbroken alvorens alle data door client verwerkt is.
+    delay(10);  // korte pauze om te voorkomen dat de verbinding wordt verbroken alvorens alle data door client verwerkt is.
+    HTTPClient.flush();// Verwijder eventuele rommel in de buffer.
     HTTPClient.stop();
     }
-
-  if(RequestEvent)
-    ExecuteLine(Event, Protocol);
 
   free(TmpStr1);
   free(TmpStr2);
   free(InputBuffer_IP);
+
+  if(RequestEvent)
+    ExecuteLine(Event, Protocol);
+
   free(Event);
   return;
-  }
-  
+  }  
 #endif

@@ -30,7 +30,7 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
       {      
       TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
 
-      #if NODO_MEGA      
+      #if NODO_MEGA
       CheckRawSignalKey(&Event); // check of er een RawSignal key op de SDCard aanwezig is en vul met Nodo Event. Call by reference!
       PrintEvent(Event,VALUE_DIRECTION_INPUT,Port);
       #endif
@@ -57,25 +57,6 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
       // Het is geen Busy event of Queue commando event, dan deze in de queue plaatsen.
       else if(x!=CMD_BUSY )
         {
-        #if NODO_MEGA
-        if(bitRead(HW_Config,HW_SDCARD))
-          {// Als de SDCard aanwezig
-          char* Line=(char*)malloc(40);
-          strcpy(Line,int2str(Event));
-          strcat(Line,",");
-          strcat(Line,int2str(Port));        
-          if(!AddFileSDCard(ProgmemString(Text_15),Line))       // Sla event op in de queue. De Nodo-Mega slaat de queue op SDCard op.
-            error=true;
-          free(Line);
-          }
-        else if(Queue.Position<EVENT_QUEUE_MAX)
-          {// Als de SDCard niet aanwezig.
-          Queue.Event[Queue.Position]=Event;
-          Queue.Port[Queue.Position]=Port;
-          Queue.Position++;           
-          }       
-        
-        #else
         // sla event op in de queue. De Nodo-Small heeft de queue is een kleine array <QueueEvent> staan.
         if(Queue.Position<EVENT_QUEUE_MAX)
           {
@@ -85,7 +66,6 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
           }       
         else
          error=true;
-        #endif
         }
       }    
     }   
@@ -131,7 +111,7 @@ boolean NodoBusy(unsigned long Event, int Wait)
     // geef ook aan de WebApp te kennen dat de Nodo busy is.
     // Alleen naar de WebApp omdat de bron dit al via RF heeft verzorgd.
     TransmitCode(command2event(Settings.Unit, CMD_BUSY,VALUE_ON,0),VALUE_SOURCE_HTTP);
-    Busy.Sent=true;
+    Busy.BusyOnSent=VALUE_SOURCE_HTTP;
     }
   #endif
   
@@ -190,7 +170,7 @@ void TimerSet(byte Timer, int Time)
       if(Time==0)
         UserTimer[x]=0L;
       else
-        UserTimer[x]=millis()+(unsigned long)(Time)*1000;
+        UserTimer[x]=millis()+(unsigned long)(Time)*1000L;
       }
     }
   else
@@ -198,7 +178,7 @@ void TimerSet(byte Timer, int Time)
     if(Time==0)
       UserTimer[Timer-1]=0L;
     else
-      UserTimer[Timer-1]=millis()+(unsigned long)Time*1000;
+      UserTimer[Timer-1]=millis()+(unsigned long)Time*1000L;
     }
   }
 
@@ -435,7 +415,7 @@ boolean LoadSettings()
 void ResetFactory(void)
   {
   Led(BLUE);
-  //??? tijdelijk die irritantie piet uitgezet. Beep(2000,2000);
+  Beep(2000,2000);
 
   int x,y;
   ClockRead(); 
@@ -450,9 +430,9 @@ void ResetFactory(void)
   Settings.SendBusy                   = VALUE_OFF;
   Settings.WaitBusyAll                = 30;
   Settings.DaylightSaving             = Time.DaylightSaving;
+  Settings.Unit                       = UNIT_NODO;
 
   #if NODO_MEGA
-  Settings.Unit                       = UNIT_NODO_MEGA;
   Settings.WaitFreeRF                 = VALUE_OFF;
   Settings.Debug                      = VALUE_OFF;
   Settings.HTTPRequest[0]             = 0; // string van het HTTP adres leeg maken
@@ -476,7 +456,7 @@ void ResetFactory(void)
   Settings.DnsServer[1]               = 0;
   Settings.DnsServer[2]               = 0;
   Settings.DnsServer[3]               = 0;
-  Settings.PortServer                 = 8080;
+  Settings.HTTPServerPort             = 8080;
   Settings.PortClient                 = 80;
   Settings.ID[0]                      = 0; // string leegmaken
   Settings.EchoSerial                 = VALUE_ON;
@@ -485,8 +465,8 @@ void ResetFactory(void)
   Settings.Password[0]                = 0;
   
   #else
-  Settings.Unit                       = UNIT_NODO_SMALL;
   Settings.WaitFreeRF                 = VALUE_ON;
+
   #endif
 
   // zet analoge waarden op default
@@ -629,7 +609,7 @@ void Status(byte Par1, byte Par2, byte Transmit)
           break;
 
         case CMD_PORT_SERVER:
-          sprintf(TempString,"%s %d",cmd2str(CMD_PORT_SERVER), Settings.PortServer);
+          sprintf(TempString,"%s %d",cmd2str(CMD_PORT_SERVER), Settings.HTTPServerPort);
           PrintTerminal(TempString);
           break;
 
@@ -1022,8 +1002,7 @@ boolean AddFileSDCard(char *FileName, char *Line)
   if(LogFile) 
     {
     r=true;
-    LogFile.write((uint8_t*)Line,strlen(Line));      
-    LogFile.write('\n'); // nieuwe regel
+    LogFile.println(Line);      
     LogFile.close();
     }
   else 
@@ -1137,10 +1116,10 @@ void RandomCookie(char* Ck)
  * de ethernetchip W5100 is geselecteerd. Met deze routine kan de SDCard worden geselecteerd.
  * input: true = SD_Card geselecteerd.
  \*********************************************************************************************/
-void SelectSD(byte sd)
+void SelectSD(boolean sd)
   {
   digitalWrite(Ethernet_shield_CS_W5100, sd);
-  digitalWrite(Ethernet_shield_CS_SDCard,!sd);
+  digitalWrite(Ethernet_shield_CS_SDCard, !sd);
   }
 
 
@@ -1368,17 +1347,16 @@ boolean FileExecute(char* FileName)
   }    
 #endif
 
-#if TRACE
 uint8_t *heapptr, *stackptr;
 void Trace(int Func, int Pos, unsigned long Value)
   {
-  char* str=(char*)malloc(80);
-  stackptr = (uint8_t *)malloc(4);          // use stackptr temporarily
+  stackptr = (uint8_t *)malloc(4);        // use stackptr temporarily
   heapptr = stackptr;                     // save value of heap pointer
-  free(stackptr);      // free up the memory again (sets stackptr to 0)
-  stackptr =  (uint8_t *)(SP);           // save value of stack pointer
+  free(stackptr);                         // free up the memory again (sets stackptr to 0)
+  stackptr =  (uint8_t *)(SP);            // save value of stack pointer
 
   #if NODO_MEGA
+  char* str=(char*)malloc(80);
   strcpy(str,"=> Trace: Seconds=");
   strcat(str,int2str(millis()/1000));
   strcat(str,", Func=");
@@ -1390,6 +1368,7 @@ void Trace(int Func, int Pos, unsigned long Value)
   strcat(str,", Memory=");
   strcat(str,int2str(stackptr-heapptr));
   AddFileSDCard("TRACE.DAT", str);
+  free(str);
 
   #else
   Serial.print(F("=> Trace: Seconds="));
@@ -1405,9 +1384,7 @@ void Trace(int Func, int Pos, unsigned long Value)
   
   #endif
   
-  free(str);
   }
-#endif
   
 void PulseCounterISR()
    {

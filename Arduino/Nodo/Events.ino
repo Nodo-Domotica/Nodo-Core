@@ -115,11 +115,11 @@ boolean ProcessEvent1(unsigned long IncommingEvent, byte Direction, byte Port, u
   // Verwerk eventuele events die in de queue zijn geplaatst.
   ProcessQueue();
 
-  if(Busy.Sent)
+  if(Busy.BusyOnSent)
     {
     delay(RECEIVER_STABLE); // anders volgt de <Busy Off> te snel en wordt deze mogelijk gemist door de master.
-    TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
-    Busy.Sent=false;
+    TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),Busy.BusyOnSent);
+    Busy.BusyOnSent=0;
     }
   }
   
@@ -166,7 +166,7 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
       }
     }
 
-  #if USER_PLUGIN
+  #ifdef USER_PLUGIN
   if(!UserPlugin_Receive(IncommingEvent))
     return true;
   #endif
@@ -189,10 +189,10 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
   // als het een Nodo event is en een geldig commando, dan deze uitvoeren
   if(NodoType(IncommingEvent)==NODO_TYPE_COMMAND)
     { // Er is een geldig Commando voor deze Nodo binnengekomen       
-    if(Settings.SendBusy==VALUE_ALL && !Busy.Sent)
+    if(Settings.SendBusy==VALUE_ALL && Busy.BusyOnSent==0)
       {
       TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_ON,0),VALUE_ALL);
-      Busy.Sent=true;
+      Busy.BusyOnSent=VALUE_ALL;
       }
             
     if(!ExecuteCommand(IncommingEvent,Port,PreviousContent,PreviousPort))
@@ -209,19 +209,20 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
       Eventlist_Read(x,&Event_1,&Event_2);
       if(CheckEvent(IncommingEvent,Event_1,Port))
         {
-#if NODO_MEGA
+        #if NODO_MEGA
         if(Settings.Debug==VALUE_ON)
           {
           char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
           EventlistEntry2str(x,ExecutionDepth,TempString,false);
-          Serial.println(TempString);
+          PrintTerminal(TempString);
           free(TempString);
           }
-#endif
-        if(Settings.SendBusy==VALUE_ALL && !Busy.Sent)
+        #endif
+        
+        if(Settings.SendBusy==VALUE_ALL && Busy.BusyOnSent==0)
           {
           TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_ON,0),VALUE_ALL);
-          Busy.Sent=true;
+          Busy.BusyOnSent=VALUE_ALL;
           }
 
         if(NodoType(Event_2)==NODO_TYPE_COMMAND) // is de ontvangen code een uitvoerbaar commando?
