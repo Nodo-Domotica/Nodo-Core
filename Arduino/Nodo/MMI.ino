@@ -131,7 +131,6 @@ char* DateTimeString(void)
   }
 
 #if NODO_MEGA
-
 /**********************************************************************************************\
  * Print de welkomsttekst van de Nodo.
  \*********************************************************************************************/
@@ -275,6 +274,7 @@ void Event2str(unsigned long Code, char* EventString)
     
     // Toon Par1 en Par2 tezamen als één unsigned integer.
     case VALUE_BUILD:
+    case VALUE_HWCONFIG:
       P1=P_INT16;
       P2-P_NOT;
       break;

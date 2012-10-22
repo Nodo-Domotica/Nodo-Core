@@ -2,20 +2,11 @@
 /**************************************************************************************************************************\
 
 Aanpassingen t.o.v. laatste build:
-- Issue 564: echo voor TelNet default op Off.
-- Issue 563: Password verkeerd ingesteld in build 446
-- Issue 504: Nodo Busy status in WebApp
-- Issue 559: Queueing error
-- Issue 558: Te lange Filename wordt zonder waarschuwing geweigerd
-- Issue 557: OutputIP heeft geen invloed op verzenden naar WebApp
-- Issue 577: SendTo naar unit met Output RF,Off
-- queue op de Mega teruggeplaatst naar RAM, dit i.v.m. erg hoge mutatiegraad van de SDCard en mogelijk defect van SDCard.
-- Chat teken aangepast naar #
-- Div. aanpassingen TelNet en HTTP communicatie
-- Welkomsttekst wordt niet meer op Serial weergegeven als Telnet verbinding tot stand komt.
-
+- [HWConfig] toegevoegd als optie voor commando [Status]
+- Poort 6636 ipv 8080
 
 Aanpassingen t.o.v. Final Beta Build 436:
+- [HWConfig] toegevoegd als optie voor commando [Status]
 - Welkomsttekst wordt niet meer op Serial weergegeven als Telnet verbinding tot stand komt.
 - queue op de Mega teruggeplaatst naar RAM, dit i.v.m. erg hoge mutatiegraad van de SDCard en mogelijk defect van SDCard.
 - Chat teken aangepast naar #
@@ -47,7 +38,6 @@ Aanpassingen t.o.v. Final Beta Build 436:
 - Issue 486: Extra entry point voor UserPlugin
 
 Known Errors / ToDo:
-- openen Telnet sessie geeft eveneens welkomsttekst weer op Serial
 - dubbel prompt teken.
 - SendBusy op de Master zet de slaves tijdelijk op onbereikbaar. Hierdoor werkt SendTo niet
 - In geval van onbereikbare Nodo-Small: Hoe resetten?
