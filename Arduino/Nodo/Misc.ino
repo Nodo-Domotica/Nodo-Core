@@ -215,6 +215,11 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       *Par2=(NODO_BUILD>>8) & 0xff;
       break;        
 
+    case VALUE_HWCONFIG: 
+      *Par1=HW_Config & 0xff;
+      *Par2=(HW_Config>>8) & 0xff;
+      break;        
+
     case CMD_SENDBUSY:
       *Par1=Settings.SendBusy;
       break;
@@ -456,7 +461,7 @@ void ResetFactory(void)
   Settings.DnsServer[1]               = 0;
   Settings.DnsServer[2]               = 0;
   Settings.DnsServer[3]               = 0;
-  Settings.HTTPServerPort             = 8080;
+  Settings.HTTPServerPort             = 6636;
   Settings.PortClient                 = 80;
   Settings.ID[0]                      = 0; // string leegmaken
   Settings.EchoSerial                 = VALUE_ON;
@@ -533,7 +538,7 @@ void Status(byte Par1, byte Par2, byte Transmit)
   if(Par2==VALUE_ALL)
     Par2==0;
 
-  if(Par1==CMD_BOOT_EVENT)
+  if(Par1==CMD_BOOT_EVENT || Par1==0)
     {
     PrintWelcome();
     return;

@@ -78,7 +78,7 @@
 
 /****************************************************************************************************************************/
 #define SETTINGS_VERSION     12
-#define NODO_BUILD          451
+#define NODO_BUILD          452
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -265,7 +265,7 @@ prog_char PROGMEM Cmd_149[]="";
 prog_char PROGMEM Cmd_150[]="Off";
 prog_char PROGMEM Cmd_151[]="On";
 prog_char PROGMEM Cmd_152[]="Build";
-prog_char PROGMEM Cmd_153[]="";
+prog_char PROGMEM Cmd_153[]="HWConfig";
 prog_char PROGMEM Cmd_154[]="IR";
 prog_char PROGMEM Cmd_155[]="HTTP";
 prog_char PROGMEM Cmd_156[]="RF";
@@ -518,7 +518,7 @@ PROGMEM const char *CommandText_tabel[]={
 #define VALUE_OFF                      150 
 #define VALUE_ON                       151 // Deze waarde MOET groter dan 16 zijn.
 #define VALUE_BUILD                    152
-#define VALUE_RES153                   153
+#define VALUE_HWCONFIG                 153
 #define VALUE_SOURCE_IR                154
 #define VALUE_SOURCE_HTTP              155
 #define VALUE_SOURCE_RF                156
@@ -623,7 +623,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define NODO_TYPE_EVENT              1
 #define NODO_TYPE_COMMAND            2
 
-// Hardware in gebruik
+// Hardware in gebruik: Bits worden geset in de variabele HW_Config, uit te lezen met [Status HWConfig]
 #define HW_BOARD_UNO    0
 #define HW_BOARD_MEGA   1
 #define HW_ETHERNET     2
@@ -633,9 +633,16 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define HW_RF_RX        6
 #define HW_IR_RX        7
 #define HW_IR_PULSE     8
+#define HW_RES9         9
+#define HW_RES10       10
+#define HW_RES11       11
+#define HW_RES12       12
+#define HW_RES13       13
+#define HW_RES14       14
+#define HW_RES15       15
 
 #if NODO_MEGA // Definities voor de Nodo-Mega variant.
-#define EVENT_QUEUE_MAX             16 // maximaal aantal plaatsen in de queue (Nodo-Mega heeft eveneens queue op SDCard in file QUEUE.DAT)
+#define EVENT_QUEUE_MAX             32 // maximaal aantal plaatsen in de queue.
 #define MACRO_EXECUTION_DEPTH       10 // maximale nesting van macro's.
 #define INPUT_BUFFER_SIZE          128  // Buffer waar de karakters van de seriele/IP poort in worden opgeslagen.
 #define TIMER_MAX                   15  // aantal beschikbare timers voor de user, gerekend vanaf 1
@@ -691,7 +698,6 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define PIN_RF_RX_VCC               12 // Spanning naar de ontvanger via deze pin.
 #define PIN_WIRED_OUT_1              7 // 7 digitale outputs D07 t/m D10 worden gebruikt voor WiredIn 1 tot en met 4
 #endif
-
 //****************************************************************************************************************************************
 
 struct SettingsStruct
