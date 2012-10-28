@@ -1,10 +1,8 @@
 
  /**********************************************************************************************\
  * De Nodo gebruikt voor metingen analoge waarden. Deze analoge waarden worden zodanig in een 
- * int vastgelegd dat zij naar de gebruiker kunnen worden getoond als een getal met cijfers achter
- * komma. Dit wordt do gedaan ondat gebruik van floats erg veel geheugen vraagt.
- * een int voor analoge waarden bevat de analoge waarde maal honderd, zodat deze later kunnen
- * worden getoond met twee cijfers achter de komma.
+ * int vastgelegd dat zij naar transporteerbaar zijn in een kleiner bit-formaat om zo 
+ * het aaltal te verzenden/ontvangen bits te beperken. Dit variabeletype wordt een NodoFloat genoemd.
  * Voor uitwisseling van events met analoge waarden worden Par1 en Par2 anders gebruikt. Zij worden
  * samengevoegd tot een 16-bit waarde met de volgende indeling:
  *
@@ -16,67 +14,64 @@
  * str2AnalogInt();    converteert een string "-nnn.nn" naar een int
  * AnalogInt2str();    converteert een int naar een string met format "-nnn.nnn"
  * event2AnalogInt();  converteert een eventcode naar een int
- * AnalogInt2event();  converteert een AnalogInt + poort naar een eventcode
+ * NodoFloat2event();  converteert een AnalogInt + poort naar een eventcode
  * Par2PortAnalog();  converteert een set Par1 en Par2 met integer waarden naar Poort en Analoge waarde
  * PortAnalog2Par();  converteert een poort en analoge waarde naar Par1 en Par2
- *
- * verder:
- *   (event>>12)&0x0f haalt de wired poort uit een eventcode
  \*********************************************************************************************/
 
-unsigned long AnalogInt2event(int wi, byte port, byte cmd)
+unsigned long float2event(float f, byte port, byte cmd)
   {
   boolean high=false;
   boolean sign=false;
+  int wi;
   
-  if(wi<0)
+  if(f>=USER_VARIABLES_RANGE_MIN && f<= USER_VARIABLES_RANGE_MAX)
     {
-    sign=true;
-    wi=-wi;
-    }
+    wi=int(f * 100);
     
-  if(wi>=1000)
-    {
-    high=true;
-    wi=wi/10;
+    if(wi<0)
+      {
+      sign=true;
+      wi=-wi;
+      }
+      
+    if(wi>=1000)
+      {
+      high=true;
+      wi=wi/10;
+      }
+  
+    return ((unsigned long)SIGNAL_TYPE_NODO)<<28   |
+           ((unsigned long)Settings.Unit)<<24             | 
+           ((unsigned long)cmd)<<16                |
+           ((unsigned long)port)<<12               |
+           ((unsigned long)high)<<11               |
+           ((unsigned long)sign)<<10               |
+           ((unsigned long)(wi & 0x3ff));
     }
-
-  return ((unsigned long)SIGNAL_TYPE_NODO)<<28   |
-         ((unsigned long)Settings.Unit)<<24             | 
-         ((unsigned long)cmd)<<16                |
-         ((unsigned long)port)<<12               |
-         ((unsigned long)high)<<11               |
-         ((unsigned long)sign)<<10               |
-         ((unsigned long)(wi & 0x3ff));
+  else
+    return 0L;  
   }
   
-int event2AnalogInt(unsigned long event)
+float EventPartFloat(unsigned long event)
   {
-  int wi; 
+  float f;
   
-  wi=event&0x3ff;    // 10-bits waarde
+  f=float(event&0x3ff);    // 10-bits waarde
+
 
   if(event & (1<<11)) // als high bit staat
-    wi=wi*10;
+    f*=10;
+
+  f=f/100;
   
   if(event & (1<<10)) // als sign bit staat
-    wi=-wi;
+    f=-f;
+
   
-  return wi;
+  return f;
   }
   
-void Par2PortAnalog(byte Par1, byte Par2, int *port, int *wi)
-  {
-  *port=(Par1>>4)&0xf;
-
-  *wi=((Par1<<8)|Par2)&0x3ff;    // 10-bits waarde
-
-  if(Par1 & B1000) // als high bit staat
-    *wi=*wi*10;
-  
-  if(Par1 & B0100) // als sign bit staat
-    *wi=-(*wi);
-  }
   
 void PortAnalog2Par(byte *Par1, byte *Par2, int port, int wi)
   {
@@ -111,7 +106,7 @@ unsigned long command2event(byte Unit, byte Command, byte Par1, byte Par2)
             (unsigned long)Par2;
     }
 
-#if NODO_MEGA
+#ifdef NODO_MEGA
  /*********************************************************************************************\
  * kopiëer de string van een commando naar een string[]
  \*********************************************************************************************/
@@ -262,65 +257,11 @@ char* int2str(unsigned long x)
   }
   
 
-char* AnalogInt2str(int wi)
+char* Float2str(float f)
   {
-  static char rString[10];
-  if(abs(wi)>10230)
-    strcpy(rString,"Overflow");
-  else
-    {
-    if(abs(wi)>=1000)
-      {
-      wi/=10;
-      sprintf(rString,"%d.%01d",wi/10,abs(wi)%10);
-      }
-    else
-      {
-      sprintf(rString,"%d.%02d",wi/100,abs(wi)%100);
-      }
-    }
+  static char rString[25];
+  dtostrf(f, 0, 2, rString); // Kaboem... 2100 bytes programmacode extra !
   return rString;
-  }
-
-int str2AnalogInt(char* string)
-  {
-  byte x,c;
-  int dot=100;
-  long result=0;           // resultaatwaarde achter de decimale punt
-  boolean negative=false;  // vlag staat als het sign teken is gevonden is.
-  byte digit=0;
-
-  for(byte pos=0; pos<=strlen(string); pos++)
-    {
-    c=string[pos];
-    if(c=='-')
-      negative=true;
-    
-    else if(c=='.')
-      dot=10;
-
-    else if(isdigit(c) && digit<4)
-      {
-      digit++;
-      if(dot==100)
-        {
-        result=result*10;
-        result=result+(c-'0')*dot;        
-        }
-      else
-        {
-        result=result+(c-'0')*dot;        
-        dot=dot/10;
-        }
-      }
-    if(result>10230)
-      return 0;
-    }
-  
-  if(negative)
-    result=-result;
-
-  return (int)result;
   }
 
 

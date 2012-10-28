@@ -1,3 +1,8 @@
+#define EventPartCommand(Event)   ((Event>>16)&0xff)
+#define EventPartPar1(Event)      ((Event>>8)&0xff)
+#define EventPartPar2(Event)      (Event&0xff)
+#define EventPartWiredPort(Event) ((Event>>12)&0xf)
+#define EventPartType(Event)      ((Event>>28)&0xf)
 
 
 /*********************************************************************************************\
@@ -47,11 +52,10 @@ byte Commanderror(unsigned long Content)
   if(x!=NODO_TYPE_COMMAND && x!=NODO_TYPE_EVENT)
     return MESSAGE_01;
   
-  byte Command      = (Content>>16)&0xff;
-  byte Par1         = (Content>>8)&0xff;
-  byte Par2         = Content&0xff;
-
- 
+  byte Command      = EventPartCommand(Content);
+  byte Par1         = EventPartPar1(Content);
+  byte Par2         = EventPartPar2(Content);
+  
   switch(Command)
     {
     //test; geen, altijd goed
@@ -109,7 +113,7 @@ byte Commanderror(unsigned long Content)
     case CMD_BREAK_ON_VAR_MORE:
     case CMD_BREAK_ON_VAR_LESS:
     case CMD_BREAK_ON_VAR_EQU:
-      Par2PortAnalog(Par1, Par2, &x, &y);
+      x=EventPartWiredPort(Content);
       if(x<1 || x>USER_VARIABLES_MAX)return MESSAGE_02;
       return false;
 
@@ -118,7 +122,7 @@ byte Commanderror(unsigned long Content)
     case CMD_WIRED_ANALOG:
     case CMD_WIRED_THRESHOLD:
     case CMD_WIRED_SMITTTRIGGER:
-      Par2PortAnalog(Par1, Par2, &x, &y);// x=wired , y=waarde
+      x=EventPartWiredPort(Content);
       if(x<1 || x>WIRED_PORTS)return MESSAGE_02;
       return false;
 
@@ -132,7 +136,9 @@ byte Commanderror(unsigned long Content)
       return false;
 
     case CMD_VARIABLE_SET:
+    #ifdef NODO_MEGA
     case CMD_VARIABLE_SAVE:
+    #endif
       if(Par1>USER_VARIABLES_MAX)return MESSAGE_02;
       return false;
       
@@ -206,7 +212,7 @@ byte Commanderror(unsigned long Content)
         case VALUE_ALL:
         case VALUE_SOURCE_IR:
         case VALUE_SOURCE_RF:
-#if NODO_MEGA
+#ifdef NODO_MEGA
         case VALUE_SOURCE_HTTP:
 #endif
           break;
@@ -228,7 +234,7 @@ byte Commanderror(unsigned long Content)
         case VALUE_SOURCE_TIMER:
         case VALUE_SOURCE_VARIABLE:
         case VALUE_SOURCE_CLOCK:
-#if NODO_MEGA
+#ifdef NODO_MEGA
         case VALUE_SOURCE_HTTP:
 #endif
           break;
@@ -262,7 +268,7 @@ byte Commanderror(unsigned long Content)
       if(Par2!=VALUE_OFF && Par2!=VALUE_ON)return MESSAGE_02;
       return false;
 
-#if NODO_MEGA
+#ifdef NODO_MEGA
     case CMD_LOG:
     case CMD_DEBUG:
     case CMD_ECHO:
@@ -287,7 +293,6 @@ byte Commanderror(unsigned long Content)
  * Deze functie checked of de code die ontvangen is een uitvoerbare opdracht is/
  * Als het een correct commando is wordt deze uitgevoerd en 
  * true teruggegeven. Zo niet dan wordt er een 'false' retour gegeven.
- * 
  \*********************************************************************************************/
 
 boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousContent, int PreviousSrc)
@@ -296,12 +301,13 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   int x,y,z;
     
   byte error        = false;
-  byte Command      = (Content>>16)&0xff;
-  byte Par1         = (Content>>8)&0xff;
-  byte Par2         = Content&0xff;
-  byte Type         = (Content>>28)&0x0f;
+  byte Command      = EventPartCommand(Content);
+  byte Par1         = EventPartPar1(Content);
+  byte Par2         = EventPartPar2(Content);
+  byte Type         = EventPartType(Content);
   byte PreviousType = (PreviousContent>>28)&0x0f;
-
+  float f;
+  
   switch(Command)
     {   
     case CMD_SEND_KAKU:
@@ -313,21 +319,21 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;
       
     case CMD_VARIABLE_INC:
-      Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
-      z=UserVar[y-1]+x;
-      if(abs(z)<=10000)
-        UserVar[y-1]+=x;
-      ProcessEvent2(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      y=EventPartWiredPort(Content);
+      f=EventPartFloat(Content);
+
+      UserVar[y-1]+=f;
+      ProcessEvent2(float2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;        
 
     case CMD_VARIABLE_DEC: 
-      Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
-      z=UserVar[y-1]-x;
-      if(abs(z)<=10000)
-        UserVar[y-1]-=x;
-      ProcessEvent2(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      y=EventPartWiredPort(Content);
+      f=EventPartFloat(Content);
+      UserVar[y-1]-=f;
+      ProcessEvent2(float2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;        
 
+    #ifdef NODO_MEGA
     case CMD_VARIABLE_SAVE:   
       if(Par1==0)
         for(x=0;x<USER_VARIABLES_MAX;x++)
@@ -336,9 +342,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         Settings.UserVar[Par1-1]=UserVar[Par1-1];            
       SaveSettings();
       break;        
-  
+    #endif
+    
     case CMD_VARIABLE_SET:
-      Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
+      y=EventPartWiredPort(Content);
+      f=EventPartFloat(Content);      
       if(y==0)
         {
         y=1;
@@ -350,14 +358,14 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         }
       for(y;y<=z;y++)
         {
-        UserVar[y-1]=x;
-        ProcessEvent2(AnalogInt2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+        UserVar[y-1]=f;
+        ProcessEvent2(float2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
         }
       break;         
   
     case CMD_VARIABLE_WIREDANALOG:
       UserVar[Par1-1]=map(analogRead(PIN_WIRED_IN_1+Par2-1),Settings.WiredInput_Calibration_IL[Par2-1],Settings.WiredInput_Calibration_IH[Par2-1],Settings.WiredInput_Calibration_OL[Par2-1],Settings.WiredInput_Calibration_OH[Par2-1]);
-      ProcessEvent2(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      ProcessEvent2(float2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;
 
     case CMD_PULSE_VARIABLE:
@@ -371,7 +379,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         PulseTime=0;
         }
         
-      #if NODO_MEGA
+      #ifdef NODO_MEGA
       if(Settings.Debug==VALUE_ON)
         {
         char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
@@ -387,7 +395,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       switch(Par2)
         {
         case 0:
-          a=0;
+          f=0;
           break;
         case 1:
           FORMULA_1
@@ -414,42 +422,46 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           FORMULA_8
           break;
         default:
-          a=0;        
+          f=0;        
         }        
-      if(abs(a)<=10000)
-        UserVar[Par1-1]=(int)a;
+      if(f>=(USER_VARIABLES_RANGE_MIN) && f<=USER_VARIABLES_RANGE_MAX)
+        UserVar[Par1-1]=f;
       else
         UserVar[Par1-1]=0;
         
-      ProcessEvent2(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      ProcessEvent2(float2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;
 
     case CMD_VARIABLE_VARIABLE:
       UserVar[Par1-1]=UserVar[Par2-1];
-      ProcessEvent2(AnalogInt2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      ProcessEvent2(float2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;        
 
     case CMD_BREAK_ON_VAR_EQU:
-      Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
-      if(UserVar[y-1]==x)
+      y=EventPartWiredPort(Content);
+      f=EventPartFloat(Content);
+      if(int(UserVar[y-1])==int(f))
         error=true;
       break;
       
     case CMD_BREAK_ON_VAR_NEQU:
-      Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
-      if(UserVar[y-1]!=x)
+      y=EventPartWiredPort(Content);
+      f=EventPartFloat(Content);
+      if(int(UserVar[y-1])!=int(f))
         error=true;
       break;
 
     case CMD_BREAK_ON_VAR_MORE:
-      Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
-      if(UserVar[y-1]>x)
+      y=EventPartWiredPort(Content);
+      f=EventPartFloat(Content);
+      if(UserVar[y-1]>f)
         error=true;
       break;
 
     case CMD_BREAK_ON_VAR_LESS:
-      Par2PortAnalog(Par1, Par2, &y, &x);// y=variabele, x=waarde
-      if(UserVar[y-1]<x)
+      y=EventPartWiredPort(Content);
+      f=EventPartFloat(Content);
+      if(UserVar[y-1]<f)
         error=true;
       break;
 
@@ -610,7 +622,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         digitalWrite(PIN_WIRED_OUT_1+x-1,(Par2==VALUE_ON));
         WiredOutputStatus[x-1]=(Par2==VALUE_ON);
         Content=(Content&0xffff00ff)|x<<8;
-
         PrintEvent(Content,VALUE_DIRECTION_OUTPUT, VALUE_SOURCE_WIRED);
         }
       break;
@@ -658,7 +669,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           Settings.TransmitRF=Par2;
           break;       
 
-        #if NODO_MEGA
+        #ifdef NODO_MEGA
         case VALUE_SOURCE_HTTP:
           Settings.TransmitIP=Par2;        
           break;       
@@ -674,36 +685,40 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;        
 
     case CMD_WIRED_THRESHOLD:
-      Par2PortAnalog(Par1, Par2, &z, &x);// y=port, x=waarde
-      Settings.WiredInputThreshold[z-1]=x;
+      z=EventPartWiredPort(Content);
+      f=EventPartFloat(Content);
+      Settings.WiredInputThreshold[z-1]=f;
       SaveSettings();
       break;                  
 
     case CMD_WIRED_ANALOG_CALIBRATE_HIGH:
       {
-      Par2PortAnalog(Par1, Par2, &z, &x);// y=port, x=waarde
+      z=EventPartWiredPort(Content);
+      f=EventPartFloat(Content);
       z--;
       y=analogRead(PIN_WIRED_IN_1+z);      
       Settings.WiredInput_Calibration_IH[z]=y;
-      Settings.WiredInput_Calibration_OH[z]=x;
+      Settings.WiredInput_Calibration_OH[z]=f;
       SaveSettings();
       break;
       }
 
     case CMD_WIRED_ANALOG_CALIBRATE_LOW:
       {
-      Par2PortAnalog(Par1, Par2, &z, &x);// y=port, x=waarde
+      z=EventPartWiredPort(Content);
+      f=EventPartFloat(Content);
       z--;
       y=analogRead(PIN_WIRED_IN_1+z);      
       Settings.WiredInput_Calibration_IL[z]=y;
-      Settings.WiredInput_Calibration_OL[z]=x;
+      Settings.WiredInput_Calibration_OL[z]=f;
       SaveSettings();
       break;
       }
       
     case CMD_WIRED_SMITTTRIGGER:
-      Par2PortAnalog(Par1, Par2, &z, &x);// y=variabele, x=waarde
-      Settings.WiredInputSmittTrigger[z-1]=x;
+      z=EventPartWiredPort(Content);
+      f=EventPartFloat(Content);
+      Settings.WiredInputSmittTrigger[z-1]=f;
       SaveSettings();
       break;                  
 
@@ -711,7 +726,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       // Het commando [Status] verzendt de status naar de bron waar het verzoek van is ontvangen. Serial en TelNet worden beschouwd als dezelfde bron.
       // Als het door de gebruiker is verzocht om logging naar een file te doen, dan wordt de output NIET als events verzonden.
 
-      #if NODO_MEGA
+      #ifdef NODO_MEGA
       if(TempLogFile[0]!=0 || Src==VALUE_SOURCE_SERIAL || Src==VALUE_SOURCE_TELNET)
       #else
       if(Src==VALUE_SOURCE_SERIAL || Src==VALUE_SOURCE_TELNET)
@@ -742,12 +757,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       Reset();
       break;        
 
-    case CMD_ANALYSE_SETTINGS:
-      Settings.AnalyseTimeOut=Par1*1000;
-      Settings.AnalyseSharpness=Par2;
-      SaveSettings();
-      break;
-
     case CMD_RESET:
       if(Busy.BusyOnSent)
         TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
@@ -773,7 +782,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       error=MESSAGE_01;
       break;
        
-#if NODO_MEGA
+#ifdef NODO_MEGA
     case CMD_ECHO:
       if(Src==VALUE_SOURCE_TELNET) 
         Settings.EchoTelnet=Par1;
@@ -834,7 +843,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   return error?false:true;
   }
 
-#if NODO_MEGA
+#ifdef NODO_MEGA
  /*******************************************************************************************************\
  * Deze funktie parsed een string en voert de commando uit die daarin voorkomen. Commandos
  * worden gescheiden met een puntkomma.
@@ -963,7 +972,7 @@ int ExecuteLine(char *Line, byte Port)
             case CMD_WIRED_ANALOG_CALIBRATE_HIGH:
             case CMD_WIRED_ANALOG_CALIBRATE_LOW:
               if(GetArgv(Command,TmpStr1,3))
-                v=AnalogInt2event(str2AnalogInt(TmpStr1), Par1, Cmd);
+                v=float2event(atof(TmpStr1), Par1, Cmd);
               break;
   
             case CMD_EVENTLIST_WRITE:

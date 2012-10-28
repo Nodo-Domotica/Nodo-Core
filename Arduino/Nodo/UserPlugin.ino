@@ -86,7 +86,6 @@ boolean UserPlugin_Receive(unsigned long Event)
 
   // Event = 32-bit Nodo event.
     
-    
   // funktie kan op twee manieren worden verlaten:
   // true = Nodo gaat verder met verwerking van het event
   // false = Event wordt niet verder behandeld.
@@ -151,7 +150,6 @@ void UserPlugin_Periodically()
  \*********************************************************************************************/
 unsigned long RawSignal_2_UserPlugin(int Port)
   {
-    
   // Voorbeeld: Onderstaand een stukje code dat een binnengekomen signaal weergeeft. Eén 'M' of '_'-teken staat voor 250uSec. 
     
 //  int x,y;

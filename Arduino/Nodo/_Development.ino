@@ -3,9 +3,17 @@
 
 Aanpassingen t.o.v. laatste build:
 - [HWConfig] toegevoegd als optie voor commando [Status]
-- Poort 6636 ipv 8080
+- HTTP-Poort 6636 ipv 8080
+- Interne verwerking van variabelen en analoge waarden nu onder de motorkap geregeld et variabeletype float.
+- [AnalyseSettings] niet meer met commando instelbaar, alleen compileerbaar
+- DayLight events niet meer beschikbaar voor een Small-Nodo, alleen nog op de Mega-Nodo.
+- Voor Nodo-Small geldt: Gebruikers variabelen niet meer naar EEPROM te schrijven. EEPROM is alleen nog bedoeld voor settings. Commando [VariableSave] hiermee vervallen.
 
 Aanpassingen t.o.v. Final Beta Build 436:
+- DayLight events niet meer beschikbaar voor een Small-Nodo, alleen nog op de Mega-Nodo.
+- Voor Nodo-Small geldt: Gebruikers variabelen niet meer naar EEPROM te schrijven. EEPROM is alleen nog bedoeld voor settings. Commando [VariableSave] hiermee vervallen.
+- [AnalyseSettings] niet meer met commando instelbaar, alleen compileerbaar
+- HTTP-Poort 6636 ipv 8080
 - [HWConfig] toegevoegd als optie voor commando [Status]
 - Welkomsttekst wordt niet meer op Serial weergegeven als Telnet verbinding tot stand komt.
 - queue op de Mega teruggeplaatst naar RAM, dit i.v.m. erg hoge mutatiegraad van de SDCard en mogelijk defect van SDCard.

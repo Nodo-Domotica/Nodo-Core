@@ -82,7 +82,7 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
     }
   }
 
-#if NODO_MEGA  
+#ifdef NODO_MEGA  
 boolean QueueSend(byte DestUnit)
   {
   int x,y,Checksum=0;
@@ -188,7 +188,7 @@ unsigned long GetEvent_IRRF(unsigned long *Content, int *Port)
     {
     if((*portInputRegister(IRport)&IRbit)==0)// Kijk if er iets op de poort binnenkomt. (Pin=LAAG als signaal in de ether). 
       {
-      if(FetchSignal(PIN_IR_RX_DATA,LOW,Settings.AnalyseTimeOut))// Als het een duidelijk IR signaal was
+      if(FetchSignal(PIN_IR_RX_DATA,LOW,SIGNAL_TIMEOUT_RF))// Als het een duidelijk IR signaal was
         {
         *Content=AnalyzeRawSignal(); // Bereken uit de tabel met de pulstijden de 32-bit code. 
         if(*Content)// als AnalyzeRawSignal een event heeft opgeleverd
@@ -321,8 +321,8 @@ unsigned long RawSignal_2_32bit(void)
     if(RawSignal.Pulses[x]<MinSpace)MinSpace=RawSignal.Pulses[x]; // Zoek naar de kortste spacetijd.
     x++;
     }
-  MinPulse+=(MinPulse*Settings.AnalyseSharpness)/100;
-  MinSpace+=(MinSpace*Settings.AnalyseSharpness)/100;
+  MinPulse+=(MinPulse*SIGNAL_ANALYZE_SHARPNESS)/100;
+  MinSpace+=(MinSpace*SIGNAL_ANALYZE_SHARPNESS)/100;
      
   x=3; // 0=aantal, 1=startpuls, 2=space na startpuls, 3=1e pulslengte
   z=0; // bit in de Code die geset moet worden 
@@ -482,7 +482,7 @@ void RawSendIR(void)
       do
         {
         // Hoog
-        #if NODO_MEGA
+        #ifdef NODO_MEGA
         bitWrite(PORTH,0, HIGH);
         #else
         bitWrite(PORTB,3, HIGH);
@@ -492,7 +492,7 @@ void RawSendIR(void)
         __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");// per nop 62.6 nano sec. @16Mhz
 
         // Laag
-        #if NODO_MEGA
+        #ifdef NODO_MEGA
         bitWrite(PORTH,0, LOW);
         #else
         bitWrite(PORTB,3, LOW);
@@ -614,7 +614,7 @@ boolean TransmitCode(unsigned long Event, byte Dest)
     delay(250);
 
 
-#if NODO_MEGA
+#ifdef NODO_MEGA
   if(bitRead(HW_Config,HW_ETHERNET))// Als Ethernet shield aanwezig.
     {
     if(Settings.TransmitIP==VALUE_ON && (Dest==VALUE_SOURCE_HTTP || Dest==VALUE_ALL))
@@ -627,7 +627,7 @@ boolean TransmitCode(unsigned long Event, byte Dest)
   }
 
 
-#if NODO_MEGA
+#ifdef NODO_MEGA
  /*********************************************************************************************\
  * Kijk of voor de opgegeven Hex-event (Code) een rawsignal file op de SDCard bestaat.
  * Als deze bestaat, dan het Hex-event vervangen door het commando "RawSignal <key>"

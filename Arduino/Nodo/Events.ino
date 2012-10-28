@@ -12,7 +12,7 @@ void ProcessQueue(void)
   
   if(Queue.Position>0)
     {
-    #if NODO_MEGA
+    #ifdef NODO_MEGA
     PrintTerminal(ProgmemString(Text_26));
     #endif
 
@@ -34,7 +34,7 @@ void ProcessQueue(void)
     }
 
   // de Mega Nodo heeft nog een extra queue faciliteit: bestand queue.dat op SDCard
-  #if NODO_MEGA
+  #ifdef NODO_MEGA
   SelectSD(true);
   File dataFile=SD.open(ProgmemString(Text_15));
   if(dataFile)
@@ -87,10 +87,9 @@ boolean ProcessEvent1(unsigned long IncommingEvent, byte Direction, byte Port, u
   byte x;
   SerialHold(true);  // als er een regel ontvangen is, dan binnenkomst van signalen stopzetten met een seriele XOFF
 
-  Led(RED); // LED aan als er iets verwerkt wordt  
+  Led(RED); // LED aan als er iets verwerkt wordt    
   
-  
-  #if NODO_MEGA
+  #ifdef NODO_MEGA
   if(FileWriteMode!=0)
     return true;
 
@@ -209,7 +208,7 @@ boolean ProcessEvent2(unsigned long IncommingEvent, byte Direction, byte Port, u
       Eventlist_Read(x,&Event_1,&Event_2);
       if(CheckEvent(IncommingEvent,Event_1,Port))
         {
-        #if NODO_MEGA
+        #ifdef NODO_MEGA
         if(Settings.Debug==VALUE_ON)
           {
           char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
