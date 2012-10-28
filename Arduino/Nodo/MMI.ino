@@ -10,7 +10,7 @@
 #define P_ANALOG  5
 #define P_INT16   6
 
-#if NODO_MEGA
+#ifdef NODO_MEGA
 /*********************************************************************************************\
  * Print een event volgens formaat:  'EVENT/ACTION: <port>, <type>, <content>
  \*********************************************************************************************/
@@ -130,7 +130,7 @@ char* DateTimeString(void)
   return dt;
   }
 
-#if NODO_MEGA
+#ifdef NODO_MEGA
 /**********************************************************************************************\
  * Print de welkomsttekst van de Nodo.
  \*********************************************************************************************/
@@ -362,7 +362,7 @@ void Event2str(unsigned long Code, char* EventString)
       case P_ANALOG:
         strcat(EventString,int2str(((Code>>12)&0x0f)));
         strcat(EventString,",");
-        strcat(EventString,AnalogInt2str(event2AnalogInt(Code))); // waarde analoog
+        strcat(EventString,Float2str(EventPartFloat(Code))); // waarde analoog
         break;
 
       case P_TEXT:

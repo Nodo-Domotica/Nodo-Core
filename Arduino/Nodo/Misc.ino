@@ -17,7 +17,7 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
   Led(BLUE);
   Queue.Position=0;    
 
-  #if NODO_MEGA
+  #ifdef NODO_MEGA
   PrintTerminal(ProgmemString(Text_24));
   #endif
 
@@ -30,7 +30,7 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
       {      
       TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
 
-      #if NODO_MEGA
+      #ifdef NODO_MEGA
       CheckRawSignalKey(&Event); // check of er een RawSignal key op de SDCard aanwezig is en vul met Nodo Event. Call by reference!
       PrintEvent(Event,VALUE_DIRECTION_INPUT,Port);
       #endif
@@ -105,7 +105,7 @@ boolean NodoBusy(unsigned long Event, int Wait)
       }
     }
 
-  #if NODO_MEGA
+  #ifdef NODO_MEGA
   if(Busy.Status!=0 && Settings.TransmitIP==VALUE_ON)
     {
     // geef ook aan de WebApp te kennen dat de Nodo busy is.
@@ -117,7 +117,7 @@ boolean NodoBusy(unsigned long Event, int Wait)
   
   if(Wait>0 && Busy.Status!=0)
     {
-    #if NODO_MEGA
+    #ifdef NODO_MEGA
     char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
     if(Settings.Debug==VALUE_ON)
       {
@@ -232,11 +232,6 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       *Par1=Settings.WaitBusyAll;
       break;
                   
-    case CMD_ANALYSE_SETTINGS:
-      *Par1=Settings.AnalyseTimeOut/1000;
-      *Par2=Settings.AnalyseSharpness;
-      break;
-
     case CMD_CLOCK_EVENT_DAYLIGHT:
       *Par1=Time.Daylight;
       break;
@@ -253,7 +248,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
           *Par2=Settings.TransmitRF;
           break;
           
-        #if NODO_MEGA
+        #ifdef NODO_MEGA
         case VALUE_SOURCE_HTTP:
           *Par2=Settings.TransmitIP;
           break;
@@ -262,7 +257,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       break;
 
     case CMD_VARIABLE_SET:
-      event=AnalogInt2event(UserVar[xPar1-1], xPar1, 0);
+      event=float2event(UserVar[xPar1-1], xPar1, 0);
       *Par1=(event>>8)&0xff;
       *Par2=event&0xff;
       break;
@@ -307,19 +302,19 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       // lees analoge waarde. Dit is een 10-bit waarde, unsigned 0..1023
       // vervolgens met map() omrekenen naar gekalibreerde waarde        
       x=map(analogRead(PIN_WIRED_IN_1+xPar1-1),Settings.WiredInput_Calibration_IL[xPar1-1],Settings.WiredInput_Calibration_IH[xPar1-1],Settings.WiredInput_Calibration_OL[xPar1-1],Settings.WiredInput_Calibration_OH[xPar1-1]);
-      event=AnalogInt2event(x, xPar1, CMD_WIRED_ANALOG);
+      event=float2event(x, xPar1, CMD_WIRED_ANALOG);
       *Par1=(byte)((event>>8) & 0xff);
       *Par2=(byte)(event & 0xff);
       break;
 
     case CMD_WIRED_THRESHOLD:
-      event=AnalogInt2event(Settings.WiredInputThreshold[xPar1-1], xPar1,0);
+      event=float2event(Settings.WiredInputThreshold[xPar1-1], xPar1,0);
       *Par1=(byte)((event>>8) & 0xff);
       *Par2=(byte)(event & 0xff);
       break;
 
     case CMD_WIRED_SMITTTRIGGER:
-      event=AnalogInt2event(Settings.WiredInputSmittTrigger[xPar1-1], xPar1,0);
+      event=float2event(Settings.WiredInputSmittTrigger[xPar1-1], xPar1,0);
       *Par1=(byte)((event>>8) & 0xff);
       *Par2=(byte)(event & 0xff);
       break;
@@ -334,7 +329,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
       *Par2=(WiredOutputStatus[xPar1-1])?VALUE_ON:VALUE_OFF;
       break;
 
-#if NODO_MEGA
+#ifdef NODO_MEGA
     case CMD_LOG:
       *Par1=Settings.Log;
       break;
@@ -408,9 +403,10 @@ boolean LoadSettings()
     pointerToByteToRead++;// volgende byte uit de struct
     }
     
+  #if NODO_MEGA
   for(x=0;x<USER_VARIABLES_MAX;x++)
     UserVar[x]=Settings.UserVar[x];
-      
+  #endif
   }
  
   
@@ -419,25 +415,20 @@ boolean LoadSettings()
  \*********************************************************************************************/
 void ResetFactory(void)
   {
+  int x,y;
   Led(BLUE);
   Beep(2000,2000);
 
-  int x,y;
-  ClockRead(); 
-
   Settings.Version                    = SETTINGS_VERSION;
   Settings.Lock                       = 0;
-  Settings.AnalyseSharpness           = 50;
-  Settings.AnalyseTimeOut             = SIGNAL_TIMEOUT_IR;
   Settings.TransmitIR                 = VALUE_OFF;
   Settings.TransmitRF                 = VALUE_ON;
-  Settings.TransmitIP                 = VALUE_OFF;
   Settings.SendBusy                   = VALUE_OFF;
   Settings.WaitBusyAll                = 30;
-  Settings.DaylightSaving             = Time.DaylightSaving;
   Settings.Unit                       = UNIT_NODO;
 
-  #if NODO_MEGA
+  #ifdef NODO_MEGA
+  Settings.TransmitIP                 = VALUE_OFF;
   Settings.WaitFreeRF                 = VALUE_OFF;
   Settings.Debug                      = VALUE_OFF;
   Settings.HTTPRequest[0]             = 0; // string van het HTTP adres leeg maken
@@ -477,18 +468,20 @@ void ResetFactory(void)
   // zet analoge waarden op default
   for(x=0;x<WIRED_PORTS;x++)
     {
-    Settings.WiredInputThreshold[x]=5000; 
-    Settings.WiredInputSmittTrigger[x]=500;
+    Settings.WiredInputThreshold[x]=50; 
+    Settings.WiredInputSmittTrigger[x]=5;
     Settings.WiredInputPullUp[x]=VALUE_ON;
     Settings.WiredInput_Calibration_IH[x]=1023;
     Settings.WiredInput_Calibration_IL[x]=0;
-    Settings.WiredInput_Calibration_OH[x]=10000;
+    Settings.WiredInput_Calibration_OH[x]=100;
     Settings.WiredInput_Calibration_OL[x]=0;
     }
 
+  #if NODO_MEGA
   // maak alle variabelen leeg
   for(byte x=0;x<USER_VARIABLES_MAX;x++)
      Settings.UserVar[x]=0;
+  #endif
 
   SaveSettings();  
   FactoryEventlist();
@@ -506,7 +499,7 @@ void FactoryEventlist(void)
     Eventlist_Write(x,0L,0L);
 
   // schrijf default regels.
-  #if NODO_MEGA
+  #ifdef NODO_MEGA
   Eventlist_Write(0,command2event(Settings.Unit,CMD_BOOT_EVENT,Settings.Unit,0),command2event(Settings.Unit,CMD_SOUND,7,0)); // geluidssignaal na opstarten Nodo
   Eventlist_Write(0,command2event(Settings.Unit,CMD_COMMAND_WILDCARD,VALUE_SOURCE_IR,CMD_KAKU),command2event(Settings.Unit,CMD_RAWSIGNAL_SEND,0,0)); 
   #else
@@ -528,7 +521,7 @@ void Status(byte Par1, byte Par2, byte Transmit)
   byte x,P1,P2; // in deze variabele wordt de waarde geplaats (call by reference)
   boolean s;
 
-  #if NODO_MEGA          
+  #ifdef NODO_MEGA          
   char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
   #endif
   
@@ -560,7 +553,7 @@ void Status(byte Par1, byte Par2, byte Transmit)
     CMD_End=Par1;
     }
 
-  #if NODO_MEGA          
+  #ifdef NODO_MEGA          
   boolean dhcp=(Settings.Nodo_IP[0] + Settings.Nodo_IP[1] + Settings.Nodo_IP[2] + Settings.Nodo_IP[3])==0;
   #endif
 
@@ -573,7 +566,7 @@ void Status(byte Par1, byte Par2, byte Transmit)
       switch (x)
         {
 
-   #if NODO_MEGA          
+   #ifdef NODO_MEGA          
         case CMD_CLIENT_IP:
           sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_CLIENT_IP),Settings.Client_IP[0],Settings.Client_IP[1],Settings.Client_IP[2],Settings.Client_IP[3]);
           PrintTerminal(TempString);
@@ -692,7 +685,7 @@ void Status(byte Par1, byte Par2, byte Transmit)
           if(Transmit)
             TransmitCode(command2event(Settings.Unit,x,P1,P2),VALUE_ALL); // verzend als event
 
-          #if NODO_MEGA
+          #ifdef NODO_MEGA
           else
             {
             Event2str(command2event(Settings.Unit,x,P1,P2),TempString);
@@ -703,7 +696,7 @@ void Status(byte Par1, byte Par2, byte Transmit)
       }
     }
 
-  #if NODO_MEGA
+  #ifdef NODO_MEGA
   if(!Transmit && Par1==VALUE_ALL)
     PrintTerminal(ProgmemString(Text_22));
 
@@ -985,7 +978,7 @@ void RaiseMessage(byte MessageCode)
  \*********************************************************************************************/
 void Led(byte Color)
   {
-#if NODO_MEGA
+#ifdef NODO_MEGA
   digitalWrite(PIN_LED_RGB_R,Color==RED);
   digitalWrite(PIN_LED_RGB_B,Color==BLUE);
   digitalWrite(PIN_LED_RGB_G,Color==GREEN);
@@ -994,7 +987,7 @@ void Led(byte Color)
 #endif
   }
   
-#if NODO_MEGA
+#ifdef NODO_MEGA
  /**********************************************************************************************\
  * Voeg een regel toe aan de logfile.
  \*********************************************************************************************/
@@ -1361,7 +1354,7 @@ void Trace(int Func, int Pos, unsigned long Value)
   free(stackptr);                         // free up the memory again (sets stackptr to 0)
   stackptr =  (uint8_t *)(SP);            // save value of stack pointer
 
-  #if NODO_MEGA
+  #ifdef NODO_MEGA
   char* str=(char*)malloc(80);
   strcpy(str,"=> Trace: Seconds=");
   strcat(str,int2str(millis()/1000));

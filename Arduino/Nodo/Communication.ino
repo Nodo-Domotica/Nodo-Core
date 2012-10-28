@@ -18,40 +18,29 @@ void SerialHold(boolean x)
     }
   }
   
-#if NODO_MEGA
+#ifdef NODO_MEGA
 boolean EthernetInit(void)
   {
   int x;
   boolean Ok=false;
-  
+
+  if(!bitRead(HW_Config,HW_ETHERNET))
+    return false;
+
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
   SelectSD(false);
-
-  #ifdef NODO_MAC
-    bitWrite(HW_Config,HW_ETHERNET,1);//??? nog slim detecteren
-  #else
-    bitWrite(HW_Config,HW_ETHERNET,0);//??? nog slim detecteren
-  #endif
   
   // Initialiseer ethernet device
-  if(bitRead(HW_Config,HW_ETHERNET))
+  if((Settings.Nodo_IP[0] + Settings.Nodo_IP[1] + Settings.Nodo_IP[2] + Settings.Nodo_IP[3])==0)// Als door de user IP adres is ingesteld op 0.0.0.0 dan IP adres ophalen via DHCP
     {
-    if((Settings.Nodo_IP[0] + Settings.Nodo_IP[1] + Settings.Nodo_IP[2] + Settings.Nodo_IP[3])==0)// Als door de user IP adres is ingesteld op 0.0.0.0 dan IP adres ophalen via DHCP
-      {
-      if(Ethernet.begin(Ethernet_MAC_Address)==0) // maak verbinding en verzoek IP via DHCP
-        {
-        Serial.println(F("Error: Failed to configure Ethernet using DHCP"));
-        bitWrite(HW_Config,HW_ETHERNET,0);
-        }
-      }
-    else      
-      Ethernet.begin(Ethernet_MAC_Address, Settings.Nodo_IP, Settings.DnsServer, Settings.Gateway, Settings.Subnet);
-  
-    bitWrite(HW_Config,HW_ETHERNET,((Ethernet.localIP()[0]+Ethernet.localIP()[1]+Ethernet.localIP()[2]+Ethernet.localIP()[3])!=0)); // Als er een IP adres is, dan Ethernet inschakelen
+    if(Ethernet.begin(Ethernet_MAC_Address)==0) // maak verbinding en verzoek IP via DHCP
+      Serial.println(F("Error: Failed to configure Ethernet using DHCP"));
     }
-    
-  // We hebben een IP adres, nu verder de Servers in werking zetten.
-  if(bitRead(HW_Config,HW_ETHERNET))
+  else      
+    {
+    Ethernet.begin(Ethernet_MAC_Address, Settings.Nodo_IP, Settings.DnsServer, Settings.Gateway, Settings.Subnet);
+    }
+  if((Ethernet.localIP()[0]+Ethernet.localIP()[1]+Ethernet.localIP()[2]+Ethernet.localIP()[3])!=0); // Als er een IP adres is, dan TTP en TelNet servers inschakelen
     {
     // Start server voor Terminalsessies via TelNet
     TerminalServer=EthernetServer(23);
@@ -60,31 +49,35 @@ boolean EthernetInit(void)
     // Start Server voor ontvangst van HTTP-Events
     HTTPServer=EthernetServer(Settings.HTTPServerPort);
     HTTPServer.begin(); 
-
-    // Haal IP adres op van de Host waar de nodo de HTTP events naar verzendt zodat niet iedere transactie een DNS-resolve plaats hoeft te vinden.
-    // Haal uit het HTTP request URL de Host. Zoek naar de eerste slash in de opgegeven HTTP-Host adres
-    char *TempString=(char*)malloc(80);
-    x=StringFind(Settings.HTTPRequest,"/");
-    strcpy(TempString,Settings.HTTPRequest);
-    TempString[x]=0;
     
-    EthernetClient HTTPClient;
-    if(HTTPClient.connect(TempString,Settings.PortClient))   
+    if(Settings.TransmitIP==VALUE_ON)
       {
-      HTTPClient.getRemoteIP(HTTPClientIP);
-      Ok=true;
-      delay(10); //even wachten op response van de server.
-      HTTPClient.flush(); // gooi alles weg, alleen IP adres was van belang.
-      HTTPClient.stop();
+      // Haal IP adres op van de Host waar de nodo de HTTP events naar verzendt zodat niet iedere transactie een DNS-resolve plaats hoeft te vinden.
+      // Haal uit het HTTP request URL de Host. Zoek naar de eerste slash in de opgegeven HTTP-Host adres
+      char *TempString=(char*)malloc(80);
+      x=StringFind(Settings.HTTPRequest,"/");
+      strcpy(TempString,Settings.HTTPRequest);
+      TempString[x]=0;
+      EthernetClient HTTPClient;
+      if(HTTPClient.connect(TempString,Settings.PortClient))   
+        {
+        HTTPClient.getRemoteIP(HTTPClientIP);
+        Ok=true;
+        delay(10); //even wachten op response van de server.
+        HTTPClient.flush(); // gooi alles weg, alleen IP adres was van belang.
+        HTTPClient.stop();
+        }
+      else
+        {
+        HTTPClientIP[0]=0;
+        HTTPClientIP[1]=0;
+        HTTPClientIP[2]=0;
+        HTTPClientIP[3]=0;
+        }
+      free(TempString);    
       }
     else
-      {
-      HTTPClientIP[0]=0;
-      HTTPClientIP[1]=0;
-      HTTPClientIP[2]=0;
-      HTTPClientIP[3]=0;
-      }
-    free(TempString);    
+      Ok=true;
     }
   return Ok;
   }
@@ -270,7 +263,7 @@ boolean SendHTTPRequest(char* Request)
         if(HTTPClient.available())
           {
           InByte=HTTPClient.read();
-  
+          // DEBUG *** Serial.write(InByte);//???
           if(isprint(InByte) && InByteCounter<IP_BUFFER_SIZE)
             IPBuffer[InByteCounter++]=InByte;
             
