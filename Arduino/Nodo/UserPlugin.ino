@@ -51,7 +51,6 @@ void UserPlugin_Command(int Par1, int Par2)
   // Schrijf hier je eigen code
   // onderstaand een paar voorbeelden.
 
-
   // VOORBEELD-1: Verzend een userevent [UserEvent 111,222]
   // De constanten CMD_xxx die de opdracht representeren kunnen worden gevonden in het tabblad [Nodo] 
   // TransmitCode(command2event(Settings.Unit, CMD_USEREVENT, 111, 222),VALUE_ALL);

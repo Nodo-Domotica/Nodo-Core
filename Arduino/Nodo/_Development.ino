@@ -1,15 +1,30 @@
 
 /**************************************************************************************************************************\
+Known Errors / ToDo:
+- PullUp op mega correct?
+- Werkt de nieuwe WiredAnalog uitlezing?
+
+- dubbel prompt teken.
+- SendBusy op de Master zet de slaves tijdelijk op onbereikbaar. Hierdoor werkt SendTo niet
+- In geval van onbereikbare Nodo-Small: Hoe resetten?
+- Status All uitvraag bij een Small levert: [Input=File, Unit=15, Event=Debug] Geen geldig event
+- Vreemde weergave events: Internal=System
 
 Aanpassingen t.o.v. laatste build:
+- *** LET OP *** Instellingen worden pas opgeslagen na commaando [SettingsSave] ! Uitgezonderd het commando [Unit].
+- Wildcard Par2 uitgebreid met opties: "Boot", "PulseCount", "PulseTime".
 - [HWConfig] toegevoegd als optie voor commando [Status]
 - HTTP-Poort 6636 ipv 8080
 - Interne verwerking van variabelen en analoge waarden nu onder de motorkap geregeld et variabeletype float.
 - [AnalyseSettings] niet meer met commando instelbaar, alleen compileerbaar
 - DayLight events niet meer beschikbaar voor een Small-Nodo, alleen nog op de Mega-Nodo.
 - Voor Nodo-Small geldt: Gebruikers variabelen niet meer naar EEPROM te schrijven. EEPROM is alleen nog bedoeld voor settings. Commando [VariableSave] hiermee vervallen.
+- Invoerregels: variabelen gebruiken tussen % en formules tussen #
+- Toevoeging commando [if]. Kan worden gebruikt in scripts of invoerregels in terminal venster. Kent '=' vergelijking en '<>'vergelijking
 
 Aanpassingen t.o.v. Final Beta Build 436:
+- *** LET OP *** Instellingen worden pas opgeslagen na commaando [SettingsSave] !
+- Wildcard Par2 uitgebreid met opties: "Boot", "PulseCount", "PulseTime".
 - DayLight events niet meer beschikbaar voor een Small-Nodo, alleen nog op de Mega-Nodo.
 - Voor Nodo-Small geldt: Gebruikers variabelen niet meer naar EEPROM te schrijven. EEPROM is alleen nog bedoeld voor settings. Commando [VariableSave] hiermee vervallen.
 - [AnalyseSettings] niet meer met commando instelbaar, alleen compileerbaar
@@ -17,7 +32,7 @@ Aanpassingen t.o.v. Final Beta Build 436:
 - [HWConfig] toegevoegd als optie voor commando [Status]
 - Welkomsttekst wordt niet meer op Serial weergegeven als Telnet verbinding tot stand komt.
 - queue op de Mega teruggeplaatst naar RAM, dit i.v.m. erg hoge mutatiegraad van de SDCard en mogelijk defect van SDCard.
-- Chat teken aangepast naar #
+- Chat teken aangepast naar $
 - Div. aanpassingen TelNet en HTTP communicatie
 - Issue 557: OutputIP heeft geen invloed op verzenden naar WebApp
 - Issue 558: Te lange Filename wordt zonder waarschuwing geweigerd
@@ -44,13 +59,6 @@ Aanpassingen t.o.v. Final Beta Build 436:
 - Issue 505: Overvloedige error message.
 - Issue 443: Break on tijd.
 - Issue 486: Extra entry point voor UserPlugin
-
-Known Errors / ToDo:
-- dubbel prompt teken.
-- SendBusy op de Master zet de slaves tijdelijk op onbereikbaar. Hierdoor werkt SendTo niet
-- In geval van onbereikbare Nodo-Small: Hoe resetten?
-- Status All uitvraag bij een Small levert: [Input=File, Unit=15, Event=Debug] Geen geldig event
-- Vreemde weergave events: Internal=System
 
 
 \**************************************************************************************************************************/

@@ -1,5 +1,5 @@
-#define SETTINGS_VERSION     13
-#define NODO_BUILD          452
+#define SETTINGS_VERSION     16
+#define NODO_BUILD          455
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -77,21 +77,21 @@ prog_char PROGMEM Cmd_041[]="WiredPullup";
 prog_char PROGMEM Cmd_042[]="WiredSmittTrigger";
 prog_char PROGMEM Cmd_043[]="WiredThreshold";
 prog_char PROGMEM Cmd_044[]="SendUserEvent";
-prog_char PROGMEM Cmd_045[]="RawSignalCopy";
+prog_char PROGMEM Cmd_045[]="";
 prog_char PROGMEM Cmd_046[]="WildCard";
 prog_char PROGMEM Cmd_047[]="SendBusy";
 prog_char PROGMEM Cmd_048[]="ClientIP";
 prog_char PROGMEM Cmd_049[]="Password";
 prog_char PROGMEM Cmd_050[]="EventlistFile";
-prog_char PROGMEM Cmd_051[]="WiredCalibrateHigh";
-prog_char PROGMEM Cmd_052[]="WiredCalibrateLow";
+prog_char PROGMEM Cmd_051[]="";
+prog_char PROGMEM Cmd_052[]="";
 prog_char PROGMEM Cmd_053[]="Lock";
 prog_char PROGMEM Cmd_054[]="Status"; 
 prog_char PROGMEM Cmd_055[]="Log";
 prog_char PROGMEM Cmd_056[]="AnalyseSettings";
 prog_char PROGMEM Cmd_057[]="Output";
-prog_char PROGMEM Cmd_058[]="Save";
-prog_char PROGMEM Cmd_059[]="";
+prog_char PROGMEM Cmd_058[]="SettingsSave";
+prog_char PROGMEM Cmd_059[]="If";
 prog_char PROGMEM Cmd_060[]="ReceiveSettings";
 prog_char PROGMEM Cmd_061[]="HTTPHost";
 prog_char PROGMEM Cmd_062[]="FileErase";
@@ -110,9 +110,9 @@ prog_char PROGMEM Cmd_074[]="PortClient";
 // ??? prog_char PROGMEM Cmd_073[]="PortInput";
 // ??? prog_char PROGMEM Cmd_074[]="PortOutput";
 prog_char PROGMEM Cmd_075[]="";
-prog_char PROGMEM Cmd_076[]="VariablePulse";
+prog_char PROGMEM Cmd_076[]="";
 prog_char PROGMEM Cmd_077[]="";
-prog_char PROGMEM Cmd_078[]="VariableWiredAnalog";
+prog_char PROGMEM Cmd_078[]="";
 prog_char PROGMEM Cmd_079[]="Reboot";
 prog_char PROGMEM Cmd_080[]="Echo";
 prog_char PROGMEM Cmd_081[]="";
@@ -157,8 +157,8 @@ prog_char PROGMEM Cmd_116[]="Busy";
 prog_char PROGMEM Cmd_117[]="";
 prog_char PROGMEM Cmd_118[]="Message";
 prog_char PROGMEM Cmd_119[]="Boot";
-prog_char PROGMEM Cmd_120[]="";
-prog_char PROGMEM Cmd_121[]="";
+prog_char PROGMEM Cmd_120[]="PulseTime";
+prog_char PROGMEM Cmd_121[]="PulseCount";
 prog_char PROGMEM Cmd_122[]="";
 prog_char PROGMEM Cmd_123[]="";
 prog_char PROGMEM Cmd_124[]="";
@@ -204,23 +204,23 @@ prog_char PROGMEM Cmd_161[]="Timers";
 prog_char PROGMEM Cmd_162[]="Variables";
 prog_char PROGMEM Cmd_163[]="Clock";
 prog_char PROGMEM Cmd_164[]="Terminal";
-prog_char PROGMEM Cmd_165[]="";
+prog_char PROGMEM Cmd_165[]="Received";
 prog_char PROGMEM Cmd_166[]="Status";
 prog_char PROGMEM Cmd_167[]="File";
 prog_char PROGMEM Cmd_168[]="Input";
 prog_char PROGMEM Cmd_169[]="Output";
 prog_char PROGMEM Cmd_170[]="Internal";
 prog_char PROGMEM Cmd_171[]="Busy";
-prog_char PROGMEM Cmd_172[]="Source";
-prog_char PROGMEM Cmd_173[]="";
-prog_char PROGMEM Cmd_174[]="";
-prog_char PROGMEM Cmd_175[]="All";
-prog_char PROGMEM Cmd_176[]="DaylightSaving";
-prog_char PROGMEM Cmd_177[]="EventlistCount";
-prog_char PROGMEM Cmd_178[]="Queue";
-prog_char PROGMEM Cmd_179[]="";
-prog_char PROGMEM Cmd_180[]="";
-prog_char PROGMEM Cmd_181[]="";
+prog_char PROGMEM Cmd_172[]="All";
+prog_char PROGMEM Cmd_173[]="DaylightSaving";
+prog_char PROGMEM Cmd_174[]="EventlistCount";
+prog_char PROGMEM Cmd_175[]="Queue";
+prog_char PROGMEM Cmd_176[]="Port";
+prog_char PROGMEM Cmd_177[]="";
+prog_char PROGMEM Cmd_178[]="ThisUnit";
+prog_char PROGMEM Cmd_179[]="Event";
+prog_char PROGMEM Cmd_180[]="Par1";
+prog_char PROGMEM Cmd_181[]="Par2";
 prog_char PROGMEM Cmd_182[]="";
 prog_char PROGMEM Cmd_183[]="";
 prog_char PROGMEM Cmd_184[]="";
@@ -337,21 +337,21 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_WIRED_SMITTTRIGGER          42
 #define CMD_WIRED_THRESHOLD             43
 #define CMD_SEND_USEREVENT              44
-#define CMD_RAWSIGNAL_COPY              45
+#define CMD_res45              45
 #define CMD_COMMAND_WILDCARD            46
 #define CMD_SENDBUSY                    47
 #define CMD_CLIENT_IP                   48
 #define CMD_PASSWORD                    49
 #define CMD_EVENTLIST_FILE              50
-#define CMD_WIRED_ANALOG_CALIBRATE_HIGH 51
-#define CMD_WIRED_ANALOG_CALIBRATE_LOW  52
+#define CMD_RES51                       51
+#define CMD_RES52                       52
 #define CMD_LOCK                        53
 #define CMD_STATUS                      54
 #define CMD_LOG                         55
 #define CMD_ANALYSE_SETTINGS            56
 #define CMD_OUTPUT                      57
-#define CMD_SAVE                        58
-#define CMD_RES59                       59
+#define CMD_SETTINGS_SAVE               58
+#define CMD_IF                          59
 #define CMD_RECEIVE_SETTINGS            60
 #define CMD_HTTP_REQUEST                61
 #define CMD_FILE_ERASE                  62
@@ -368,13 +368,13 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_PORT_SERVER                 73
 #define CMD_PORT_CLIENT                 74
 #define CMD_RES75                       75
-#define CMD_PULSE_VARIABLE              76
+#define CMD_RES76                       76
 #define CMD_RES77                       77
-#define CMD_VARIABLE_WIREDANALOG        78
+#define CMD_RES78                       78
 #define CMD_REBOOT                      79
 #define CMD_ECHO                        80
-#define CMD_RES081                      81
-#define CMD_RES082                      82
+#define CMD_EVENT_SEND                  81
+//#define CMD_EVENT_SAVE                  82
 #define CMD_RES083                      83
 #define CMD_RES084                      84
 #define CMD_RES085                      85
@@ -413,11 +413,11 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_WIRED_IN_EVENT             114
 #define CMD_VARIABLE_EVENT             115
 #define CMD_BUSY                       116
-#define CMD_RES117                     117
+// #define CMD_EVENT                      117
 #define CMD_MESSAGE                    118
 #define CMD_BOOT_EVENT                 119
-#define CMD_RES_EVENT_120              120
-#define CMD_RES_EVENT_121              121
+#define CMD_PULSE_TIME                 120
+#define CMD_PULSE_COUNT                121
 #define CMD_RES_EVENT_122              122
 #define CMD_RES_EVENT_123              123
 #define CMD_RES_EVENT_124              124
@@ -472,16 +472,16 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define VALUE_DIRECTION_OUTPUT         169
 #define VALUE_DIRECTION_INTERNAL       170
 #define VALUE_BUSY                     171
-#define VALUE_SOURCE                   172
-#define VALUE_RES173                   173
-#define VALUE_RES174                   174
-#define VALUE_ALL                      175 // Deze waarde MOET groter dan 16 zijn.
-#define VALUE_DLS                      176
-#define VALUE_EVENTLIST_COUNT          177
-#define VALUE_SOURCE_QUEUE             178
-#define VALUE_AUTO                     179
-#define VALUE_res180                   180
-#define VALUE_res181                   181
+#define VALUE_ALL                      172 // Deze waarde MOET groter dan 16 zijn.
+#define VALUE_DLS                      173
+#define VALUE_EVENTLIST_COUNT          174
+#define VALUE_SOURCE_QUEUE             175
+#define VALUE_PORT                     176
+#define VALUE_res                      177
+#define VALUE_THISUNIT                 178
+#define VALUE_RECEIVED_EVENT           179
+#define VALUE_RECEIVED_PAR1            180
+#define VALUE_RECEIVED_PAR2            181
 #define VALUE_RES182                   182
 #define VALUE_RES183                   183
 #define VALUE_RES184                   184
@@ -635,9 +635,7 @@ struct SettingsStruct
   {
   int     Version;        
   byte    Unit;
-  float   WiredInputThreshold[WIRED_PORTS], WiredInputSmittTrigger[WIRED_PORTS];
-  int     WiredInput_Calibration_IH[WIRED_PORTS], WiredInput_Calibration_IL[WIRED_PORTS];
-  float   WiredInput_Calibration_OH[WIRED_PORTS], WiredInput_Calibration_OL[WIRED_PORTS];
+  int     WiredInputThreshold[WIRED_PORTS], WiredInputSmittTrigger[WIRED_PORTS];
   byte    WiredInputPullUp[WIRED_PORTS];
   byte    TransmitIR;
   byte    TransmitRF;
@@ -646,7 +644,7 @@ struct SettingsStruct
   byte    WaitBusyAll;                                      // maximale tijd dat gewacht moet worden op Nodos die bezig zijn met verwerking
   int     Lock;                                             // bevat de pincode waarmee IR/RF ontvangst is geblokkeerd. Bit nummer hoogste bit wordt gebruiktvoor in/uitschakelen.
   byte    Debug;                                            // Weergeven van extra gegevens t.b.v. beter inzicht verloop van de verwerking
-  
+    
   #ifdef NODO_MEGA
   float   UserVar[USER_VARIABLES_MAX];
   byte    TransmitIP;                                       // Definitie van het gebruik van HTTP-communicatie via de IP-poort: [Off] of [On]
@@ -693,6 +691,7 @@ float UserVar[USER_VARIABLES_MAX];                          // Gebruikers variab
 unsigned long HW_Config=0;                                  // Hardware configuratie zoals gedetecteerd door de Nodo. 
 
 #ifdef NODO_MEGA
+unsigned long Received=0L;                                  // Laatst ontvangen event
 uint8_t MD5HashCode[16];                                    // tabel voor berekenen van MD5 hash codes.
 int CookieTimer;                                            // Seconden teller die bijhoudt wanneer er weer een nieuw Cookie naar de WebApp verzonden moet worden.
 int TerminalConnected=0;                                    // Vlag geeft aan of en hoe lang nog (seconden) er verbinding is met een Terminal.
@@ -719,13 +718,11 @@ struct RawsignalStruct
   {
   unsigned int Pulses[RAW_BUFFER_SIZE+2];                   // Tabel met de gemeten pulsen in microseconden. eerste waarde [0] wordt NIET gebruikt. (legacy redenen).
   byte Source;                                              // Bron waar het signaal op is binnengekomen.
-  int Number;                                               // aantal bits, maal twee omdat iedere bit een pulse en een space heeft.
-  int Key;                                                  // sleutel waaronder de pulsenreeks op SDCard opgeslgen moet worden.
+  int Number;                                               // aantal bits, maal twee omdat iedere bit een mark en een space heeft.
+  int Key;                                                  // sleutel waaronder de pulsenreeks op SDCard opgeslagen moet worden.
   byte Type;                                                // Type signaal dan ontvangen is.
   unsigned long Timer;                                      // Tijdstip millis() waarop event is binnengekomen.
   }RawSignal;
-
-struct RawsignalStruct *RawSignalPtr=&RawSignal; // Pointer naar de struct om deze foutloos binnen de ISR te kunnen gebruiken.
 
 void setup() 
   {    
@@ -786,7 +783,6 @@ void setup()
     pinMode(PIN_WIRED_OUT_1+x,OUTPUT); // definieer Arduino pin's voor Wired-Out
     }
 
-
   //Zorg ervoor dat er niet direct na een boot een CMD_CLOCK_DAYLIGHT event optreedt
   ClockRead();
 
@@ -811,13 +807,15 @@ void setup()
     }
    
   // Start Ethernet kaart en start de HTTP-Server en de Telnet-server
+  #if ETHERNET
   bitWrite(HW_Config,HW_ETHERNET,1); // nog slim detecteren
+  #endif
   if(EthernetInit())
     {
     // als het verkrijgen van een ethernet adres gelukt is en de servers draaien, zet dan de vlag dat ethernet present is
     // Als ethernet enabled en beveiligde modus, dan direct een Cookie sturen, ander worden eerste events niet opgepikt door de WebApp
-    if(Settings.Password[0]!=0)
-      SendHTTPCookie(); // Verzend een nieuw cookie //??? alleen doen als Settings.TransmitIP op ON staat?
+    if(Settings.Password[0]!=0 && Settings.TransmitIP==VALUE_ON)
+      SendHTTPCookie(); // Verzend een nieuw cookie
     }
   else
     {
@@ -1116,25 +1114,28 @@ void loop()
         case 2:
           {
           // WIRED: *************** kijk of statussen gewijzigd zijn op WIRED **********************  
-          // als de huidige waarde groter dan threshold EN de vorige keer was dat nog niet zo DAN verstuur code
+          // als de huidige waarde groter dan threshold EN de vorige keer was dat nog niet zo DAN event genereren
           for(x=0;x<WIRED_PORTS;x++)
             {
             // lees analoge waarde. Dit is een 10-bit waarde, unsigned 0..1023
-            // vervolgens met map() omrekenen naar gekalibreerde waarde        
-            y=map(analogRead(PIN_WIRED_IN_1+x),Settings.WiredInput_Calibration_IL[x],Settings.WiredInput_Calibration_IH[x],Settings.WiredInput_Calibration_OL[x],Settings.WiredInput_Calibration_OH[x]);        
-                 
+            y=analogRead(PIN_WIRED_IN_1+x);
+            z=false; // verandering
+            
             if(!WiredInputStatus[x] && y>(Settings.WiredInputThreshold[x]+Settings.WiredInputSmittTrigger[x]))
               {
               WiredInputStatus[x]=true;
-              Content=command2event(Settings.Unit, CMD_WIRED_IN_EVENT,x+1,WiredInputStatus[x]?VALUE_ON:VALUE_OFF);
-              ProcessEvent1(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
+              z=true;
               }
       
             if(WiredInputStatus[x] && y<(Settings.WiredInputThreshold[x]-Settings.WiredInputSmittTrigger[x]))
               {
               WiredInputStatus[x]=false;
+              z=true;
+              }
+            if(z)
+              {
               Content=command2event(Settings.Unit, CMD_WIRED_IN_EVENT,x+1,WiredInputStatus[x]?VALUE_ON:VALUE_OFF);
-              ProcessEvent1(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.
+              ProcessEvent1(Content,VALUE_DIRECTION_INPUT,VALUE_SOURCE_WIRED,0,0);      // verwerk binnengekomen event.                
               }
             }
           break;

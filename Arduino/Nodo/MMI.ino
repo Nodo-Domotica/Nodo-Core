@@ -1,15 +1,4 @@
 
-/*********************************************************************************************\
- * Een string formaat van een Event weer in de vorm "(<commando> <parameter-1>,<parameter-2>)"
- \*********************************************************************************************/
-#define P_NOT     0
-#define P_TEXT    1 
-#define P_KAKU    2
-#define P_VALUE   3
-#define P_DIM     4
-#define P_ANALOG  5
-#define P_INT16   6
-
 #ifdef NODO_MEGA
 /*********************************************************************************************\
  * Print een event volgens formaat:  'EVENT/ACTION: <port>, <type>, <content>
@@ -212,6 +201,16 @@ void PrintTerminal(char* LineToPrint)
 /**********************************************************************************************\
  * Converteert een 32-bit eventcode naar een voor de gebruiker leesbare string
  \*********************************************************************************************/
+#define P_NOT     0
+#define P_TEXT    1 
+#define P_KAKU    2
+#define P_VALUE   3
+#define P_DIM     4
+#define P_PORT    5
+#define P_INT16   6
+#define P_INT10   7
+#define P_FLOAT   8
+
 void Event2str(unsigned long Code, char* EventString)
   {
   int x,y;
@@ -255,13 +254,15 @@ void Event2str(unsigned long Code, char* EventString)
     case CMD_VARIABLE_INC:
     case CMD_VARIABLE_DEC:
     case CMD_VARIABLE_EVENT:
+      P1=P_PORT;
+      P2=P_FLOAT;
+      break;
+
     case CMD_WIRED_SMITTTRIGGER:
     case CMD_WIRED_THRESHOLD:
     case CMD_WIRED_ANALOG:
-    case CMD_WIRED_ANALOG_CALIBRATE_HIGH:
-    case CMD_WIRED_ANALOG_CALIBRATE_LOW:
-      P1=P_ANALOG;
-      P2=P_NOT;
+      P1=P_PORT;
+      P2=P_INT10;
       break;
 
     // Par1 als KAKU adres [A0..P16] en Par2 als [On,Off]
@@ -272,9 +273,11 @@ void Event2str(unsigned long Code, char* EventString)
       Par2_b=Par2;
       break;
     
-    // Toon Par1 en Par2 tezamen als één unsigned integer.
+    // Toon Par1 en Par2 tezamen als één unsigned 16-bit integer.
     case VALUE_BUILD:
     case VALUE_HWCONFIG:
+    case CMD_PULSE_TIME:
+    case CMD_PULSE_COUNT:
       P1=P_INT16;
       P2-P_NOT;
       break;
@@ -303,7 +306,6 @@ void Event2str(unsigned long Code, char* EventString)
       break;
 
       // Par1 als tekst en par2 als getal
-    case CMD_RAWSIGNAL_COPY:
     case CMD_STATUS:
       P1=P_TEXT;
       P2=P_VALUE;
@@ -356,13 +358,11 @@ void Event2str(unsigned long Code, char* EventString)
       switch(P1)
       {
       case P_INT16:
-        strcat(EventString,int2str(Par1+Par2*256));
+        strcat(EventString,int2str(EventPart16Bit(Code)));
         break;
 
-      case P_ANALOG:
+      case P_PORT:
         strcat(EventString,int2str(((Code>>12)&0x0f)));
-        strcat(EventString,",");
-        strcat(EventString,Float2str(EventPartFloat(Code))); // waarde analoog
         break;
 
       case P_TEXT:
@@ -393,26 +393,34 @@ void Event2str(unsigned long Code, char* EventString)
     // Print Par2    
     if(P2!=P_NOT)
       {
+      strcat(EventString,",");
       switch(P2)
         {
         case P_TEXT:
-          if(Par2)
-            strcat(EventString,",");
           strcat(EventString,cmd2str(Par2));
           break;
+
         case P_VALUE:
-          strcat(EventString,",");
           strcat(EventString,int2str(Par2));
           break;
+
         case P_DIM:
           {
-            strcat(EventString,",");
-            if(Par2==VALUE_OFF || Par2==VALUE_ON)
-              strcat(EventString, cmd2str(Par2)); // Print 'On' of 'Off'
-            else
-              strcat(EventString,int2str(Par2));
-            break;
+          if(Par2==VALUE_OFF || Par2==VALUE_ON)
+            strcat(EventString, cmd2str(Par2)); // Print 'On' of 'Off'
+          else
+            strcat(EventString,int2str(Par2));
+          break;
           }
+
+        case P_INT10:
+          strcat(EventString,int2str(EventPart10Bit(Code)));
+          break;
+  
+        case P_FLOAT:
+          strcat(EventString,Float2str(EventPartFloat(Code))); // waarde analoog
+          break;
+
         }
       }// P2
     }//   if(Type==SIGNAL_TYPE_NODO || Type==SIGNAL_TYPE_OTHERUNIT)

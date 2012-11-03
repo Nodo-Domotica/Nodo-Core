@@ -554,21 +554,21 @@ boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
     if(PulseLength<MIN_PULSE_LENGTH)
       return false;
 
-    RawSignalPtr->Pulses[RawCodeLength++]=PulseLength;
+    RawSignal.Pulses[RawCodeLength++]=PulseLength;
     PulseLength=WaitForChangeState(DataPin, !StateSignal, TimeOut);
-    RawSignalPtr->Pulses[RawCodeLength++]=PulseLength;
+    RawSignal.Pulses[RawCodeLength++]=PulseLength;
     }while(RawCodeLength<RAW_BUFFER_SIZE && PulseLength!=0);// Zolang nog niet alle bits ontvangen en er niet vroegtijdig een timeout plaats vindt
 
   if(RawCodeLength>=MIN_RAW_PULSES)
     {
-    RawSignalPtr->Number=RawCodeLength-1;
+    RawSignal.Number=RawCodeLength-1;
     if(DataPin==PIN_IR_RX_DATA)
       bitWrite(HW_Config,HW_IR_RX,1);
     if(DataPin==PIN_RF_RX_DATA)
       bitWrite(HW_Config,HW_RF_RX,1);
     return true;
     }
-  RawSignalPtr->Number=0;
+  RawSignal.Number=0;
   return false;
   }
   

@@ -73,10 +73,6 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
   if(TimeoutTimer<=millis())
     error=true;
     
-// ??? Gedisabled dat er een error komt. Issue
-//  if(error)
-//    RaiseMessage(MESSAGE_04);
-
   return !error;
   }
   
@@ -186,7 +182,7 @@ void TimerSet(byte Timer, int Time)
  * Haal voor het opgegeven Command de status op.
  * Let op: call by reference!
  \*********************************************************************************************/
-boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
+boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
  { 
   int x;
   byte xPar1=*Par1,xPar2=*Par2;
@@ -194,6 +190,53 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
 
   *Par1=0;
   *Par2=0;
+
+  // Eerst alleen een check of het een uitvraagbare stutus is.
+  switch (*Command)
+    {
+    case VALUE_EVENTLIST_COUNT:
+    case VALUE_BUILD: 
+    case VALUE_HWCONFIG: 
+    case CMD_WAITFREERF: 
+    case CMD_UNIT: 
+    case CMD_SENDBUSY:
+    case CMD_DEBUG:
+    case CMD_WAITBUSY:
+    case CMD_CLOCK_EVENT_DAYLIGHT:
+    case CMD_OUTPUT:
+    case CMD_VARIABLE_SET:
+    case CMD_CLOCK_DATE:
+    case CMD_CLOCK_TIME:
+    case CMD_CLOCK_DOW:
+    case CMD_CLOCK_YEAR:
+    case CMD_TIMER_SET_MIN:
+    case CMD_WIRED_PULLUP:
+    case CMD_WIRED_ANALOG:
+    case CMD_PULSE_TIME:
+    case CMD_PULSE_COUNT:
+    case CMD_WIRED_THRESHOLD:
+    case CMD_WIRED_SMITTTRIGGER:
+    case CMD_WIRED_IN_EVENT:
+    case CMD_WIRED_OUT:
+    case CMD_LOG:
+    case CMD_LOCK:
+    case CMD_NODO_IP:
+    case CMD_GATEWAY:
+    case CMD_SUBNET:
+    case CMD_DNS_SERVER:
+    case CMD_PORT_SERVER:
+    case CMD_PORT_CLIENT:
+    case CMD_HTTP_REQUEST:
+    case CMD_ID:
+      break;
+
+    default:
+      return false;
+    }
+
+  if(!ReturnStatus)
+    return true;
+
   switch (*Command)
     {
     case VALUE_EVENTLIST_COUNT:
@@ -300,11 +343,36 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2)
 
     case CMD_WIRED_ANALOG:
       // lees analoge waarde. Dit is een 10-bit waarde, unsigned 0..1023
-      // vervolgens met map() omrekenen naar gekalibreerde waarde        
-      x=map(analogRead(PIN_WIRED_IN_1+xPar1-1),Settings.WiredInput_Calibration_IL[xPar1-1],Settings.WiredInput_Calibration_IH[xPar1-1],Settings.WiredInput_Calibration_OL[xPar1-1],Settings.WiredInput_Calibration_OH[xPar1-1]);
-      event=float2event(x, xPar1, CMD_WIRED_ANALOG);
-      *Par1=(byte)((event>>8) & 0xff);
-      *Par2=(byte)(event & 0xff);
+      x=analogRead(PIN_WIRED_IN_1+xPar1-1);
+      event= ((unsigned long)xPar1)<<12 | (unsigned long)((x/256) & 0xff) | (unsigned long)(x & 0xff);
+      *Par1=EventPartPar1(event);
+      *Par2=EventPartPar2(event);
+      break;
+
+    case CMD_PULSE_TIME:
+      // eerst een keer dit commando uitvoeren voordat de teller gaat lopen.
+      if(!bitRead(HW_Config,HW_IR_PULSE))
+        {
+        bitWrite(HW_Config,HW_IR_PULSE,true);
+        attachInterrupt(PULSE_IRQ,PulseCounterISR,FALLING); // IRQ behorende bij PIN_IR_RX_DATA
+        }
+
+      //??? wat als pulstijden meer dan 65 sec. Deelfactor of begrenzen?
+      *Par2=(byte)((PulseTime/256) & 0xff);
+      *Par1=(byte)( PulseTime      & 0xff);
+      break;
+
+    case CMD_PULSE_COUNT:
+      //??? wat als pulstijden meer dan 65 sec. Deelfactor of begrenzen?
+      // eerst een keer dit commando uitvoeren voordat de teller gaat lopen.
+      if(!bitRead(HW_Config,HW_IR_PULSE))
+        {
+        bitWrite(HW_Config,HW_IR_PULSE,true);
+        attachInterrupt(PULSE_IRQ,PulseCounterISR,FALLING); // IRQ behorende bij PIN_IR_RX_DATA
+        }
+      *Par2=(byte)((PulseCount/256)  & 0xff);
+      *Par1=(byte)( PulseCount      & 0xff);
+      PulseCount=0;
       break;
 
     case CMD_WIRED_THRESHOLD:
@@ -377,7 +445,7 @@ char* ProgmemString(prog_char* text)
    /*********************************************************************************************\
    * Sla alle settings op in het EEPROM geheugen.
    \*********************************************************************************************/
-  void SaveSettings(void)  
+  void Save_Settings(void)  
     {
     char ByteToSave,*pointerToByteToSave=pointerToByteToSave=(char*)&Settings;    //pointer verwijst nu naar startadres van de struct. 
     
@@ -417,7 +485,7 @@ void ResetFactory(void)
   {
   int x,y;
   Led(BLUE);
-  Beep(2000,2000);
+  //??? Beep(2000,2000);
 
   Settings.Version                    = SETTINGS_VERSION;
   Settings.Lock                       = 0;
@@ -462,28 +530,25 @@ void ResetFactory(void)
   
   #else
   Settings.WaitFreeRF                 = VALUE_ON;
-
   #endif
 
   // zet analoge waarden op default
   for(x=0;x<WIRED_PORTS;x++)
     {
-    Settings.WiredInputThreshold[x]=50; 
-    Settings.WiredInputSmittTrigger[x]=5;
+    Settings.WiredInputThreshold[x]=512; 
+    Settings.WiredInputSmittTrigger[x]=10;
     Settings.WiredInputPullUp[x]=VALUE_ON;
-    Settings.WiredInput_Calibration_IH[x]=1023;
-    Settings.WiredInput_Calibration_IL[x]=0;
-    Settings.WiredInput_Calibration_OH[x]=100;
-    Settings.WiredInput_Calibration_OL[x]=0;
     }
 
   #if NODO_MEGA
   // maak alle variabelen leeg
   for(byte x=0;x<USER_VARIABLES_MAX;x++)
      Settings.UserVar[x]=0;
+     
   #endif
-
-  SaveSettings();  
+    
+  Save_Settings();
+  
   FactoryEventlist();
   delay(250);// kleine pauze, anders kans fout bij seriële communicatie
   Reset();
@@ -547,7 +612,7 @@ void Status(byte Par1, byte Par2, byte Transmit)
     }
   else
     {
-    if(!GetStatus(&Par1,&P1,&P2))// kijk of voor de opgegeven parameter de status opvraagbaar is. Zo niet dan klaar.
+    if(!GetStatus(&Par1,&P1,&P2,false))// kijk of voor de opgegeven parameter de status opvraagbaar is. Zo niet dan klaar.
       return;
     CMD_Start=Par1;
     CMD_End=Par1;
@@ -634,7 +699,7 @@ void Status(byte Par1, byte Par2, byte Transmit)
         }
       }
       
-    if(!s && GetStatus(&x,&P1,&P2)) // Als het een geldige uitvraag is. let op: call by reference !
+    if(!s && GetStatus(&x,&P1,&P2,false)) // Als het een geldige uitvraag is. let op: call by reference !
       {
       if(Par2==0) // Als in het commando 'Status Par1, Par2' Par2 niet is gevuld met een waarde
         {
@@ -680,7 +745,7 @@ void Status(byte Par1, byte Par2, byte Transmit)
           {
           P1=y;
           P2=0;
-          GetStatus(&x,&P1,&P2); // haal status op. Call by Reference!
+          GetStatus(&x,&P1,&P2,true); // haal status op. Call by Reference!
 
           if(Transmit)
             TransmitCode(command2event(Settings.Unit,x,P1,P2),VALUE_ALL); // verzend als event
@@ -763,7 +828,6 @@ void Beep(int frequency, int duration)//Herz,millisec
   long halfperiod=500000L/frequency;
   long loops=(long)duration*frequency/(long)1000;
   
-  //noInterrupts();//???
   for(loops;loops>0;loops--) 
     {
     digitalWrite(PIN_SPEAKER, HIGH);
@@ -1394,4 +1458,428 @@ void PulseCounterISR()
    PulseTimePrevious=millis();
    PulseCount++;   
    }     
+
+
+#ifdef NODO_MEGA
+//################### Calculate #################################
+
+#define CALCULATE_OK                            0
+#define CALCULATE_ERROR_STACK_OVERFLOW          1
+#define CALCULATE_ERROR_BAD_OPERATOR            2
+#define CALCULATE_ERROR_PARENTHESES_MISMATCHED  3
+#define CALCULATE_ERROR_UNKNOWN_TOKEN           4
+#define STACK_SIZE 50
+#define TOKEN_MAX 20
+
+float stack[STACK_SIZE];
+float *sp = stack-1;
+float *sp_max = &stack[STACK_SIZE-1];
+
+#define is_operator(c)  (c == '+' || c == '-' || c == '*' || c == '/' )
+
+int push(float value)
+  {
+  if(sp != sp_max) // Full
+    {
+    *(++sp) = value;
+    return 0;
+    }
+  else 
+    return CALCULATE_ERROR_STACK_OVERFLOW;
+  }
+
+float pop()
+  {
+  if(sp != (stack-1)) // empty
+    return *(sp--);
+  }
+
+float apply_operator(char op, float first, float second)
+  {
+  switch(op)
+    {
+    case '+': return first + second;
+    case '-': return first - second;
+    case '*': return first * second;
+    case '/': return first / second;
+    return 0;
+    }  
+  }
+
+char *next_token(char *linep)
+  {
+  while(isspace(*(linep++)));
+  while(*linep && !isspace(*(linep++)));
+  return linep;
+  }
+
+int RPNCalculate(char* token)
+  {
+  if(token[0]==0)
+    return 0; // geen moeite doen voor een lege string
+
+  if(is_operator(token[0]))
+    {
+    float second = pop();
+    float first = pop();
+
+    if(push(apply_operator(token[0], first, second)))
+      return CALCULATE_ERROR_STACK_OVERFLOW;
+    }
+  else // Als er nog een is, dan deze ophalen
+    if(push(atof(token))) // is het een waarde, dan op de stack plaatsen
+      return CALCULATE_ERROR_STACK_OVERFLOW;
+
+  return 0;
+  }
+
+// operators
+// precedence   operators         associativity
+// 3            !                 right to left
+// 2            * / %             left to right
+// 1            + - ^             left to right
+int op_preced(const char c)
+  {
+  switch(c)    
+    {
+    case '*':  case '/': return 2;
+    case '+': case '-': return 1;
+    }
+  return 0;
+  }
+ 
+bool op_left_assoc(const char c)
+  {
+  switch(c)
+    { 
+    case '*': case '/': case '+': case '-': return true;     // left to right
+    //case '!': return false;    // right to left
+    }
+  return false;
+  }
+ 
+unsigned int op_arg_count(const char c)
+  {
+  switch(c)  
+    {
+    case '*': case '/': case '+': case '-': return 2;
+    //case '!': return 1;
+    }
+  return 0;
+  }
+ 
+ 
+int Calculate(const char *input, float* result)
+  {
+  const char *strpos = input, *strend = input + strlen(input);
+  char token[25];
+  char c, *TokenPos = token;
+  char stack[32];       // operator stack
+  unsigned int sl = 0;  // stack length
+  char     sc;          // used for record stack element
+  int error=0;
+
+  *sp=0;
+  
+  while(strpos < strend)   
+    {
+    // read one token from the input stream
+    c = *strpos;
+    if(c != ' ')
+      {
+      // If the token is a number (identifier), then add it to the token queue.
+      if((c >= '0' && c <= '9') || c=='.')
+        {
+        *TokenPos = c; ++TokenPos;
+        }
+        
+      // If the token is an operator, op1, then:
+      else if(is_operator(c))
+        {
+        *(TokenPos)=0;error=RPNCalculate(token);TokenPos=token;
+        if(error)return error;
+        while(sl > 0)
+          {
+          sc = stack[sl - 1];
+          // While there is an operator token, op2, at the top of the stack
+          // op1 is left-associative and its precedence is less than or equal to that of op2,
+          // or op1 has precedence less than that of op2,
+          // The differing operator priority decides pop / push
+          // If 2 operators have equal priority then associativity decides.
+          if(is_operator(sc) && ((op_left_assoc(c) && (op_preced(c) <= op_preced(sc))) || (op_preced(c) < op_preced(sc))))
+            {
+            // Pop op2 off the stack, onto the token queue;
+            *TokenPos = sc; 
+            ++TokenPos;
+            *(TokenPos)=0;error=RPNCalculate(token);TokenPos=token; 
+            if(error)return error;
+            sl--;
+            }
+          else
+            break;
+          }
+        // push op1 onto the stack.
+        stack[sl] = c;
+        ++sl;
+        }
+        // If the token is a left parenthesis, then push it onto the stack.
+      else if(c == '(')
+        {
+        stack[sl] = c;
+        ++sl;
+        }
+      // If the token is a right parenthesis:
+      else if(c == ')')
+        {
+        bool pe = false;
+        // Until the token at the top of the stack is a left parenthesis,
+        // pop operators off the stack onto the token queue
+        while(sl > 0)
+          {
+          *(TokenPos)=0;error=RPNCalculate(token);TokenPos=token; 
+          if(error)return error;
+          sc = stack[sl - 1];
+          if(sc == '(')
+            {
+            pe = true;
+            break;
+            }
+          else  
+            {
+            *TokenPos = sc; 
+            ++TokenPos;
+            sl--;
+            }
+          }
+          // If the stack runs out without finding a left parenthesis, then there are mismatched parentheses.
+          if(!pe)  
+            return CALCULATE_ERROR_PARENTHESES_MISMATCHED;
+
+          // Pop the left parenthesis from the stack, but not onto the token queue.
+          sl--;
+
+          // If the token at the top of the stack is a function token, pop it onto the token queue.
+          if(sl > 0)
+            sc = stack[sl - 1];
+
+          }
+        else
+          return CALCULATE_ERROR_UNKNOWN_TOKEN;
+        }
+      ++strpos;
+      }
+      // When there are no more tokens to read:
+      // While there are still operator tokens in the stack:
+    while(sl > 0)
+      {
+      sc = stack[sl - 1];
+      if(sc == '(' || sc == ')')
+        return CALCULATE_ERROR_PARENTHESES_MISMATCHED;
+
+    *(TokenPos)=0;error=RPNCalculate(token);TokenPos=token; 
+    if(error)return error;
+    *TokenPos = sc; 
+    ++TokenPos;
+    --sl;
+    }
+
+  *(TokenPos)=0;error=RPNCalculate(token);TokenPos=token; 
+  if(error)
+    {
+    *result=0;
+    return error;
+    }  
+  *result=*sp;
+  return CALCULATE_OK;
+  }
+//################### Einde Calculate #################################
+
+boolean Substitute(char* Input)
+  {
+  boolean Grab=false;
+  byte Res;
+  byte x;
+
+  char *Output=(char*)malloc(INPUT_BUFFER_SIZE);
+  char *TmpStr=(char*)malloc(INPUT_BUFFER_SIZE);
+  char *TmpStr2=(char*)malloc(25);
+  char* InputPos  = Input;
+  char* OutputPos = Output;
+  char* TmpStrPos = TmpStr;
+  boolean error=false;
+  
+  Res=0;
+  while(*(InputPos)!=0)// zolang einde van de string Input nog niet bereikt
+    {
+    if(*InputPos=='%') 
+      {
+      if(!Grab)
+        {
+        Grab=true;
+        TmpStrPos=TmpStr;
+        }
+      else
+        {
+        Grab=false;
+        *TmpStrPos=0;// Sluit string af
+        
+        // Haal de status van de variabele
+        byte Cmd=0;
+        GetArgv(TmpStr,TmpStr2,1);
+        Cmd=str2cmd(TmpStr2); // commando deel
+        
+        if(Cmd!=0)
+          {
+          // Er zijn twee type mogelijk: A)Direct te vullen omdat ze niet met status opvraagbaar zijn, B)Op te vragen met status
+
+          byte Par1=0;
+          byte Par2=0;
+          Res=2;
+        
+          switch(Cmd)
+            {
+            case VALUE_THISUNIT:
+              strcpy(TmpStr,int2str(Settings.Unit));
+              Res=1;
+              break;    
+
+            case CMD_UNIT: // Hier lenen we "Unit", maar bij dit het unitnummer van en binnengekomen event.
+              strcpy(TmpStr,int2str(EventPartUnit(Received)));
+              Res=1;
+              break;    
+
+            case VALUE_RECEIVED_EVENT:
+              Event2str(Received,TmpStr);
+              Res=1;
+              break;    
+
+            case VALUE_RECEIVED_PAR1:
+              Event2str(Received,TmpStr);
+              Res=2;
+              break;    
+
+            case VALUE_RECEIVED_PAR2:
+              Event2str(Received,TmpStr);
+              Res=3;
+              break;    
+
+            default:
+              {
+              // B) Op te vragen met status  
+              if(GetArgv(TmpStr,TmpStr2,2))
+                {
+                Res=3;
+                Par1=str2cmd(TmpStr2);
+                if(!Par1)
+                  Par1=str2int(TmpStr2);
+                }
+              if(GetStatus(&Cmd,&Par1,&Par2,true)) // haal status op. Call by Reference!
+                Event2str(command2event(0, Cmd ,Par1,Par2),TmpStr);
+              else
+                Res=0;
+              }
+            }
+          }
+        else
+          Res=0;
+
+        if(Res)
+          {
+          // plak de opgehaalde waarde aan de output string
+          GetArgv(TmpStr,TmpStr2,Res);
+          for(x=0;x<strlen(TmpStr2);x++)
+            *OutputPos++=TmpStr2[x];
+          }
+        }     
+      }
+    else if(Grab)
+      *TmpStrPos++=*InputPos;// Voeg teken toe aan variabele      
+    else
+      *OutputPos++=*InputPos;// Voeg teken toe aan outputstring
+    
+    InputPos++;  
+    }
+  *OutputPos=0;// Sluit string af.
+
+  if(Res)
+    {
+    strcpy(Input,Output);  
+    if(Settings.Debug==VALUE_ON)
+      {
+      Serial.print("Substituted: ");Serial.println(Input);
+      }
+    strcpy(Input,Output);  
+    }
+
+  if(Grab) // Als % niet correct afgesloten...
+    error=true;
+  else
+    {
+    // Nu zijn de formules aan de beurt.
+    InputPos  = Input;
+    OutputPos = Output;
+    TmpStrPos = TmpStr;
+    Res=0;
+    
+    while(*(InputPos)!=0)// zolang einde van de string Input nog niet bereikt
+      {
+      if(*InputPos=='#') 
+        {
+        if(!Grab)
+          {
+          Grab=true;
+          TmpStrPos=TmpStr;
+          }
+        else
+          {
+          Grab=false;
+          *TmpStrPos=0;// Sluit string af
+          float result;
+          if(Calculate(TmpStr,&result)==CALCULATE_OK)
+            {
+            floatToString(TmpStr,result,2,0);
+            x=StringFind(TmpStr,".00");          // de overbodige nullen weghalen
+            if(x>0)
+              TmpStr[x]=0;
+    
+            // plak de opgehaalde waarde aan de output string
+            for(x=0;x<strlen(TmpStr);x++)
+              *OutputPos++=TmpStr[x];
+  
+            Res=true;
+            }
+          else
+            Res=false;
+  
+          }     
+        }
+      else if(Grab)
+        *TmpStrPos++=*InputPos;// Voeg teken toe aan variabele      
+      else
+        *OutputPos++=*InputPos;// Voeg teken toe aan outputstring
+      InputPos++;  
+      }
+    *OutputPos=0;// Sluit string af.
+  
+    if(Grab) // Als % niet correct afgesloten...
+      error=true;
+  
+    if(Res && !error)
+      {
+      strcpy(Input,Output);  
+      if(Settings.Debug==VALUE_ON)
+        {
+        Serial.print("Calculated: ");Serial.println(Input);
+        }
+      strcpy(Input,Output);  
+      }
+    }
+  free(TmpStr2);
+  free(TmpStr);
+  free(Output);
+
+  return error;
+  }
+#endif
+
 
