@@ -93,6 +93,7 @@ boolean ProcessEvent1(unsigned long IncommingEvent, byte Direction, byte Port, u
   if(FileWriteMode!=0)
     return true;
 
+  Received=IncommingEvent;            // Received wordt gebruikt om later de status van laatste ontvangen event te kunnen gebruiken t.b.v. substitutie van vars.
   CheckRawSignalKey(&IncommingEvent); // check of er een RawSignal key op de SDCard aanwezig is en vul met Nodo Event. Call by reference!
 
   // Als de RAW pulsen worden opgevraagd door de gebruiker...

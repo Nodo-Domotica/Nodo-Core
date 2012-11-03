@@ -30,14 +30,16 @@
 #if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)     // NIET veranderen
   #define NODO_MEGA 1                                              // NIET veranderen !
   #define UNIT_NODO          1                                     // default unit nummer na een [Reset] commando
-  #define NODO_MAC           0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF    // MAC adres voor de ethernet kaart. Remarken met // als ethernet niet nodig is
-
+  #define ETHERNET           1                                     // op 0 zetten als ethernet kaart niet aanwezig
+  #define NODO_MAC           0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF    // MAC adres voor de ethernet kaart. 
+  
 
   // Keuze tussen SMALL of MEGA: **********************************************************************************************
   // Kies voor compilatie het juiste Arduino board. Dit kan een Arduino zijn gebaseerd op een zijn een ATMega1280, ATMega2560 of een ATMega328.
   // vanwege een bug in de Arduino compiler moeten daarnaast nog enkele regels handmatig worden aangepast!
   // Voor een arduino anders dan een Mega1280 of Mega2560 de onderstaande vier regels vooraf laten gaan door twee slashes //
   // Anders worden de niet gebruikte librariesmeegecompileerd en zal deze niet in een ATMega328 passen.
+
   #include <SD.h>
   #include <EthernetNodo.h>
   #include <SPI.h>
@@ -48,23 +50,6 @@
   #define UNIT_NODO    15                                    // default unit nummer na een [Reset] commando
 #endif
 
-
-// Onderstaand de formules die gebruikt worden voor omrekening van pulsen naar analoge waarden.
-// Het bereik van het resultaat uit de formule moet zich tussen van -100 tot 100 bevinden.
-// Deling door nul is ongeldig, maar zal niet tot een error leiden.
-//
-// f          = variabele met resultaat van de berekening.
-// PulseTime  = tijd tussen twee pulsen uitgedrukt in milliseconden.
-// PulseCount = Aantal pulsen tussen twee metingen.
-
-#define FORMULA_1            f = 3600/PulseTime;            /* 1000 pulsen in een uur = 1KWh */
-#define FORMULA_2            f = 2160/PulseTime;            /* 600 pulsen per uur = 1KWh */
-#define FORMULA_3            f = PulseCount; PulseCount=0;
-#define FORMULA_4            f = 0;
-#define FORMULA_5            f = 0;
-#define FORMULA_6            f = 0;
-#define FORMULA_7            f = 0;
-#define FORMULA_8            f = 0;
 
 //****************************** Einde gedeelte door gebruiker in te stellen ************************************************
 

@@ -1,14 +1,12 @@
-//    case CMD_ANALYSE_SETTINGS:
-//      Settings.AnalyseTimeOut=Par1*1000;
-//      Settings.AnalyseSharpness=Par2;
-//      SaveSettings();
-//      break;
-//
-//  byte    AnalyseSharpness;
-//  unsigned int AnalyseTimeOut;
 
-//  Settings.AnalyseSharpness           = 50;
-//  Settings.AnalyseTimeOut             = SIGNAL_TIMEOUT_IR;
+// Event, EventPar1, EventPar2, EventUnit, EventPort
+
+// CatchEvent Unit, Event, par1, Par2, scriptfile  : 
+
+// if xxx=yyy; if aaa!=bbb; sound
+
+
+
 
 
 /*

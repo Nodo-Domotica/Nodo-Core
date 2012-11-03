@@ -1,9 +1,11 @@
+#define EventPartType(Event)      ((Event>>28)&0xf)
+#define EventPartUnit(Event)      ((Event>>24)&0xf)
 #define EventPartCommand(Event)   ((Event>>16)&0xff)
 #define EventPartPar1(Event)      ((Event>>8)&0xff)
 #define EventPartPar2(Event)      (Event&0xff)
 #define EventPartWiredPort(Event) ((Event>>12)&0xf)
-#define EventPartType(Event)      ((Event>>28)&0xf)
-
+#define EventPart10Bit(Event)     (((Event>>8)&0xff+(Event&0xff)*256)&0x3ff)
+#define EventPart16Bit(Event)     (((Event>>8)&0xff) + 256*(Event&0xff))
 
 /*********************************************************************************************\
  * Eenvoudige check of event een Nodo commando is die voor deze Nodo bestemd is.
@@ -68,6 +70,7 @@ byte Commanderror(unsigned long Content)
     case CMD_RAWSIGNAL:
     case CMD_MESSAGE:
     case CMD_REBOOT:
+    case CMD_SETTINGS_SAVE:
     case CMD_USERPLUGIN: 
     case CMD_CLOCK_EVENT_DAYLIGHT:
     case CMD_CLOCK_EVENT_ALL:
@@ -117,8 +120,6 @@ byte Commanderror(unsigned long Content)
       if(x<1 || x>USER_VARIABLES_MAX)return MESSAGE_02;
       return false;
 
-    case CMD_WIRED_ANALOG_CALIBRATE_HIGH:
-    case CMD_WIRED_ANALOG_CALIBRATE_LOW:
     case CMD_WIRED_ANALOG:
     case CMD_WIRED_THRESHOLD:
     case CMD_WIRED_SMITTTRIGGER:
@@ -177,11 +178,6 @@ byte Commanderror(unsigned long Content)
       if(Par1<1 || Par1>7)return MESSAGE_02;
       return false;
 
-    case CMD_VARIABLE_WIREDANALOG:
-      if(Par1<1 || Par1>USER_VARIABLES_MAX)return MESSAGE_02;
-      if(Par2<1 || Par2>WIRED_PORTS)return MESSAGE_02;
-      return false;
-      
     // test:Par1 binnen bereik maximaal beschikbare wired poorten.
     case CMD_WIRED_IN_EVENT:
       if(Par1<1 || Par1>WIRED_PORTS)return MESSAGE_02;
@@ -202,10 +198,7 @@ byte Commanderror(unsigned long Content)
       if(Par1!=0 && Par1!=VALUE_OFF && Par1!=VALUE_ON && Par1!=VALUE_ALL)return MESSAGE_02;
       return false;
 
-    case CMD_PULSE_VARIABLE:
-      if(Par1<1 || Par1>USER_VARIABLES_MAX || Par2>8)return MESSAGE_02;
-      return false;
-
+    case CMD_EVENT_SEND: // t.b.v. compatibiliteit vorige versies. Tijdelijk
     case CMD_SEND_EVENT:
       switch(Par1)
         {
@@ -243,12 +236,16 @@ byte Commanderror(unsigned long Content)
         }
 
       switch(Par2)
-        {
+        {// Uitbreiden met pulsetime en pulsecount?
         case VALUE_ALL:
         case CMD_MESSAGE :
         case CMD_KAKU:
         case CMD_KAKU_NEW:
         case CMD_USEREVENT:
+        case CMD_PULSE_COUNT:
+        case CMD_PULSE_TIME:
+        case CMD_BOOT_EVENT:
+        
           break;
         default:
           return MESSAGE_02;
@@ -340,7 +337,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           Settings.UserVar[x]=UserVar[x];
       else
         Settings.UserVar[Par1-1]=UserVar[Par1-1];            
-      SaveSettings();
+      
       break;        
     #endif
     
@@ -363,75 +360,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         }
       break;         
   
-    case CMD_VARIABLE_WIREDANALOG:
-      UserVar[Par1-1]=map(analogRead(PIN_WIRED_IN_1+Par2-1),Settings.WiredInput_Calibration_IL[Par2-1],Settings.WiredInput_Calibration_IH[Par2-1],Settings.WiredInput_Calibration_OL[Par2-1],Settings.WiredInput_Calibration_OH[Par2-1]);
-      ProcessEvent2(float2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
-      break;
-
-    case CMD_PULSE_VARIABLE:
-      a=0;
-      // eerst een keer dit commando uitvoeren voordat de teller gaat lopen.
-      if(!bitRead(HW_Config,HW_IR_PULSE))
-        {
-        bitWrite(HW_Config,HW_IR_PULSE,true);
-        attachInterrupt(PULSE_IRQ,PulseCounterISR,FALLING); // IRQ behorende bij PIN_IR_RX_DATA
-        PulseCount=0;
-        PulseTime=0;
-        }
-        
-      #ifdef NODO_MEGA
-      if(Settings.Debug==VALUE_ON)
-        {
-        char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
-        strcpy(TempString,"PulseCount=");
-        strcat(TempString,int2str((int)PulseCount));
-        strcat(TempString,", PulseTime=");
-        strcat(TempString,int2str((int)PulseTime));
-        PrintTerminal(TempString);
-        free(TempString);
-        }
-      #endif
-              
-      switch(Par2)
-        {
-        case 0:
-          f=0;
-          break;
-        case 1:
-          FORMULA_1
-          break;
-        case 2:
-          FORMULA_2
-          break;
-        case 3:
-          FORMULA_3
-          break;
-        case 4:
-          FORMULA_4
-          break;
-        case 5:
-          FORMULA_5
-          break;
-        case 6:
-          FORMULA_6
-          break;
-        case 7:
-          FORMULA_7
-          break;
-        case 8:
-          FORMULA_8
-          break;
-        default:
-          f=0;        
-        }        
-      if(f>=(USER_VARIABLES_RANGE_MIN) && f<=USER_VARIABLES_RANGE_MAX)
-        UserVar[Par1-1]=f;
-      else
-        UserVar[Par1-1]=0;
-        
-      ProcessEvent2(float2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
-      break;
-
     case CMD_VARIABLE_VARIABLE:
       UserVar[Par1-1]=UserVar[Par2-1];
       ProcessEvent2(float2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
@@ -513,7 +441,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           error=MESSAGE_10;
           }
         }        
-      SaveSettings();
+      
       break;
 
     case CMD_CLOCK_YEAR:
@@ -603,7 +531,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       else
         pinMode(A0+PIN_WIRED_IN_1+Par1-1,INPUT);
 
-      SaveSettings();
+      
       break;
                  
     case CMD_WIRED_OUT:
@@ -626,23 +554,27 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         }
       break;
                          
+    case CMD_SETTINGS_SAVE:
+      Save_Settings();
+      break;
+
     case CMD_WAITFREERF: 
       Settings.WaitFreeRF=Par1;
-      SaveSettings();
+      
       break;
 
     case CMD_SENDBUSY:
       if(Par1==VALUE_ALL)
         {// All
         Settings.SendBusy=Par1;
-        SaveSettings();
+        
         }
       else
         {// on / off 
         if(Settings.SendBusy==VALUE_ALL && Par1==VALUE_OFF)
           {// De SendBusy mode moet worden uitgeschakeld
           Settings.SendBusy=VALUE_OFF;
-          SaveSettings();
+          
           }
         else
           TransmitCode(command2event(Settings.Unit, CMD_BUSY,Par1,0),VALUE_ALL);
@@ -653,7 +585,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       if(Par2==VALUE_ALL)
         {
         Settings.WaitBusyAll=Par1;
-        SaveSettings();
+        
         }
       else
         NodoBusy(0L, Par1);
@@ -675,7 +607,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
           break;       
         #endif
         }
-      SaveSettings();
+      
       break;
       
     case CMD_USERPLUGIN:
@@ -684,42 +616,17 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       #endif
       break;        
 
-    case CMD_WIRED_THRESHOLD:
-      z=EventPartWiredPort(Content);
-      f=EventPartFloat(Content);
-      Settings.WiredInputThreshold[z-1]=f;
-      SaveSettings();
-      break;                  
-
-    case CMD_WIRED_ANALOG_CALIBRATE_HIGH:
-      {
-      z=EventPartWiredPort(Content);
-      f=EventPartFloat(Content);
-      z--;
-      y=analogRead(PIN_WIRED_IN_1+z);      
-      Settings.WiredInput_Calibration_IH[z]=y;
-      Settings.WiredInput_Calibration_OH[z]=f;
-      SaveSettings();
-      break;
-      }
-
-    case CMD_WIRED_ANALOG_CALIBRATE_LOW:
-      {
-      z=EventPartWiredPort(Content);
-      f=EventPartFloat(Content);
-      z--;
-      y=analogRead(PIN_WIRED_IN_1+z);      
-      Settings.WiredInput_Calibration_IL[z]=y;
-      Settings.WiredInput_Calibration_OL[z]=f;
-      SaveSettings();
-      break;
-      }
-      
     case CMD_WIRED_SMITTTRIGGER:
       z=EventPartWiredPort(Content);
-      f=EventPartFloat(Content);
-      Settings.WiredInputSmittTrigger[z-1]=f;
-      SaveSettings();
+      y=EventPart10Bit(Content);
+      Settings.WiredInputSmittTrigger[z-1]=y;
+      
+      break;                  
+
+    case CMD_WIRED_THRESHOLD:
+      z=EventPartWiredPort(Content);
+      y=EventPart10Bit(Content);
+      Settings.WiredInputThreshold[z-1]=y;
       break;                  
 
     case CMD_STATUS:
@@ -746,7 +653,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       if(Busy.BusyOnSent)
         TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
       Settings.Unit=Par1;
-      SaveSettings();
+      Save_Settings();
       FactoryEventlist();      
       Reset();
 
@@ -783,22 +690,20 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;
        
 #ifdef NODO_MEGA
+
     case CMD_ECHO:
       if(Src==VALUE_SOURCE_TELNET) 
         Settings.EchoTelnet=Par1;
       if(Src==VALUE_SOURCE_SERIAL) 
         Settings.EchoSerial=Par1;        
-      SaveSettings();
       break;
 
     case CMD_DEBUG: 
       Settings.Debug=Par1;
-      SaveSettings();
       break;
 
     case CMD_LOG: 
       Settings.Log=Par1;
-      SaveSettings();
       break;
 
     case CMD_SIMULATE_DAY:
@@ -837,9 +742,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       free(TempString);
       break;        
 #endif
-
     }
-
   return error?false:true;
   }
 
@@ -854,12 +757,12 @@ int ExecuteLine(char *Line, byte Port)
   char Command[MaxCommandLength+1]; 
   char *TmpStr1=(char*)malloc(MaxCommandLength+1);
   char *TmpStr2=(char*)malloc(INPUT_BUFFER_SIZE+2);
-  int PosCommand;
-  int PosLine;
-  int L=strlen(Line);
+  int CommandPos;
+  int LinePos;
+//  int L=strlen(Line);
   int w,x,y,z;
   int EventlistWriteLine=0;
-  int error=0,Par1,Par2,Cmd;
+  int error,Par1,Par2,Cmd;
   byte State_EventlistWrite=0;
   unsigned long v,event,a;
   byte SendTo=0; // Als deze waarde ongelijk aan nul, dan wordt het commando niet uitgevoerd maar doorgestuurd naar de andere Nodo
@@ -867,6 +770,8 @@ int ExecuteLine(char *Line, byte Port)
   Led(RED);
   
   // verwerking van commando's is door gebruiker tijdelijk geblokkeerd door FileWrite commando
+  error=false;
+
   if(FileWriteMode>0)
     {
     if(StringFind(Line,cmd2str(CMD_FILE_WRITE))!=-1)// string gevonden!
@@ -875,45 +780,50 @@ int ExecuteLine(char *Line, byte Port)
       FileWriteMode=0;
       TempLogFile[0]=0;
       }
-
     if(TempLogFile[0]!=0)
-      {
       AddFileSDCard(TempLogFile,Line); // Extra logfile op verzoek van gebruiker
-      }
     }
   else
     {
-    PosCommand=0;
-    for(PosLine=0;PosLine<=L && error==0 ;PosLine++)
+    if(Substitute(Line)!=0)
       {
-      x=Line[PosLine];
+      error=MESSAGE_02;
+      Serial.print("Substitute error=");Serial.println(Line);//???
+      }
+    CommandPos=0;
+    LinePos=0;
+    
+    int LineLength=strlen(Line);
+    while(LinePos<=LineLength && error==0)
+      {
+      x=Line[LinePos++];
   
       // Chat teken. 
-      if(x=='#')
+      if(x=='$')
         {
         y=bitRead(HW_Config,HW_SERIAL);
         bitWrite(HW_Config,HW_SERIAL,1);
-        PrintTerminal(Line+PosLine);
+        PrintTerminal(Line+LinePos);
         bitWrite(HW_Config,HW_SERIAL,y);
-        PosLine=L+1; // ga direct naar einde van de regel.
+        LinePos=LineLength+1; // ga direct naar einde van de regel.
         }
 
       // Comment teken. hierna verder niets meer doen.
       if(x=='!') 
-        PosLine=L+1; // ga direct naar einde van de regel.
-         
-      // als puntkomma (scheidt opdachten) of einde string(0)
-      if((x=='!' || x==';' || x==0) && PosCommand>1)
+        LinePos=LineLength+1; // ga direct naar einde van de regel.
+
+      // als puntkomma (scheidt opdrachten) of einde string
+      if((x=='!' || x==';' || x==0) && CommandPos>1)
         {
-        Command[PosCommand]=0;
-        PosCommand=0;
+        Command[CommandPos]=0;
+        CommandPos=0;
         Cmd=0;
         Par1=0;
         Par2=0;
         v=0;
         
         // string met commando compleet
-        
+
         if(GetArgv(Command,TmpStr1,1));
           v=str2int(TmpStr1); // als hex event dan is v gevuld met waarde
   
@@ -969,17 +879,13 @@ int ExecuteLine(char *Line, byte Port)
             case CMD_VARIABLE_EVENT:
             case CMD_WIRED_THRESHOLD:
             case CMD_WIRED_SMITTTRIGGER:
-            case CMD_WIRED_ANALOG_CALIBRATE_HIGH:
-            case CMD_WIRED_ANALOG_CALIBRATE_LOW:
               if(GetArgv(Command,TmpStr1,3))
                 v=float2event(atof(TmpStr1), Par1, Cmd);
               break;
   
             case CMD_EVENTLIST_WRITE:
               if(SendTo!=0)
-                {
                 v=command2event(Settings.Unit, CMD_EVENTLIST_WRITE,Par1,0);      // verwerk binnengekomen event.
-                }
               else
                 {                          
                 if(Par1>EVENTLIST_MAX)
@@ -1080,8 +986,6 @@ int ExecuteLine(char *Line, byte Port)
                   }
                 Settings.Lock=a&0x7fff;
                 }
-              SaveSettings();
-  
               break;
               }  
   
@@ -1091,7 +995,6 @@ int ExecuteLine(char *Line, byte Port)
               GetArgv(Command,TmpStr1,2);
               TmpStr1[9]=0; // voor geval de string te lang is.
               strcpy(Settings.ID,TmpStr1);
-              SaveSettings();
               break;
               }  
   
@@ -1238,35 +1141,30 @@ int ExecuteLine(char *Line, byte Port)
               if(GetArgv(Command,TmpStr1,2))
                 if(!str2ip(TmpStr1,Settings.Nodo_IP))
                   error=MESSAGE_02;
-              SaveSettings();
               break;
               
             case CMD_CLIENT_IP:
               if(GetArgv(Command,TmpStr1,2))
                 if(!str2ip(TmpStr1,Settings.Client_IP))
                   error=MESSAGE_02;
-              SaveSettings();
               break;
               
             case CMD_SUBNET:
               if(GetArgv(Command,TmpStr1,2))
                 if(!str2ip(TmpStr1,Settings.Subnet))
                   error=MESSAGE_02;
-              SaveSettings();
               break;
               
             case CMD_DNS_SERVER:
               if(GetArgv(Command,TmpStr1,2))
                 if(!str2ip(TmpStr1,Settings.DnsServer))
                   error=MESSAGE_02;
-              SaveSettings();
               break;
               
             case CMD_GATEWAY:
               if(GetArgv(Command,TmpStr1,2))
                 if(!str2ip(TmpStr1,Settings.Gateway))
                   error=MESSAGE_02;
-              SaveSettings();
               break;
               
             case CMD_EVENTLIST_FILE:
@@ -1279,6 +1177,41 @@ int ExecuteLine(char *Line, byte Port)
                 }
               break;
   
+            case CMD_IF:
+              {
+              x=StringFind(Command," ") ;           // laat x wijzen direct NA het if commando.
+              strcpy(TmpStr1,Command+x);            // Alles na de "if" hoort bij de voorwaarde
+
+              // eventuele spaties er uithalen
+              y=0;
+              for(x=0;x<strlen(TmpStr1);x++)
+                {
+                if(TmpStr1[x]!=' ')
+                  TmpStr1[y++]=TmpStr1[x];
+                }
+              TmpStr1[y]=0;
+              
+              // Zoek '=' teken op en splitst naar linker en rechter operand.
+              if((x=StringFind(TmpStr1,"<>")!=-1))
+                {
+                strcpy(TmpStr2,TmpStr1+x+2);
+                TmpStr1[x]=0;
+                if(strcasecmp(TmpStr1,TmpStr2)==0)
+                  LinePos=LineLength+1; // ga direct naar einde van de regel.
+                }
+              else if((x=StringFind(TmpStr1,"=")!=-1))
+                {
+                strcpy(TmpStr2,TmpStr1+x+1);
+                TmpStr1[x]=0;
+                if(strcasecmp(TmpStr1,TmpStr2)!=0)
+                  LinePos=LineLength+1; // ga direct naar einde van de regel.
+                }
+                
+              else
+                error=MESSAGE_02;
+              break;
+              }            
+
             case CMD_FILE_LIST:
               if(!FileList())
                 error=MESSAGE_03;
@@ -1300,26 +1233,19 @@ int ExecuteLine(char *Line, byte Port)
               x=StringFind(Line,cmd2str(CMD_HTTP_REQUEST))+strlen(cmd2str(CMD_HTTP_REQUEST));
               while(Line[x]==32)x++;
               strcpy(Settings.HTTPRequest,&Line[0]+x);
-              SaveSettings(); 
               break;
   
             case CMD_PORT_SERVER:
               {
               if(GetArgv(Command,TmpStr1,2))
-                {
                 Settings.HTTPServerPort=str2int(TmpStr1);
-                SaveSettings();
-                }
               break;
               }  
   
             case CMD_PORT_CLIENT:
               {
               if(GetArgv(Command,TmpStr1,2))
-                {
                 Settings.PortClient=str2int(TmpStr1);
-                SaveSettings();
-                }
               break;
               }  
   
@@ -1348,13 +1274,11 @@ int ExecuteLine(char *Line, byte Port)
           if(State_EventlistWrite==0)// Gewoon uitvoeren
             {
             if(SendTo==0)
-              {
               ProcessEvent2(v,VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
-              }              
             else
               {
               if(NodoType(v))
-                v=(v&0xf0ffffff)|(unsigned long)SendTo<<24;// Commando/Event unit nummer van de bestemming toewijzen, behalve als het een HEX-event is.
+                v=(v&0xf0ffffff)|(unsigned long)SendTo<<24;// Commando c.q. Event unit nummer van de bestemming toewijzen, behalve als het een HEX-event is.
   
               if(Queue.Position<EVENT_QUEUE_MAX)
                 {
@@ -1386,7 +1310,7 @@ int ExecuteLine(char *Line, byte Port)
             State_EventlistWrite=2;
             }
           }
-          
+
         if(error) // er heeft zich een fout voorgedaan
           {
           strcpy(TmpStr2,Command);
@@ -1398,8 +1322,8 @@ int ExecuteLine(char *Line, byte Port)
         }
         
       // printbare tekens toevoegen aan commando zolang er nog ruimte is in de string
-      if(isprint(x) && x!=';' && PosCommand<MaxCommandLength)
-        Command[PosCommand++]=x;      
+      if(x!=';' && CommandPos<MaxCommandLength)
+        Command[CommandPos++]=x;      
       }    
   
     if(SendTo!=0)// Verzend de inhoud van de queue naar de slave Nodo
@@ -1417,7 +1341,7 @@ int ExecuteLine(char *Line, byte Port)
     TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),Busy.BusyOnSent);
     Busy.BusyOnSent=0;
     }
-
+    
   free(TmpStr2);
   free(TmpStr1);
   return error;
