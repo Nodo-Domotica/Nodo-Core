@@ -3,7 +3,8 @@
 Known Errors / ToDo:
 - PullUp op mega correct?
 - SmittTrigger instellingen na een reset?
-
+- pulsecount irt. status all ?
+- pulsetime niet in HEX weergeven
 - dubbel prompt teken.
 - SendBusy op de Master zet de slaves tijdelijk op onbereikbaar. Hierdoor werkt SendTo niet
 - In geval van onbereikbare Nodo-Small: Hoe resetten?
