@@ -810,21 +810,23 @@ void setup()
   #if ETHERNET
   bitWrite(HW_Config,HW_ETHERNET,1); // nog slim detecteren
   #endif
-  if(EthernetInit())
+  if(bitRead(HW_Config,HW_ETHERNET))
     {
-    // als het verkrijgen van een ethernet adres gelukt is en de servers draaien, zet dan de vlag dat ethernet present is
-    // Als ethernet enabled en beveiligde modus, dan direct een Cookie sturen, ander worden eerste events niet opgepikt door de WebApp
-    if(Settings.Password[0]!=0 && Settings.TransmitIP==VALUE_ON)
-      SendHTTPCookie(); // Verzend een nieuw cookie
+    if(EthernetInit())
+      {
+      // als het verkrijgen van een ethernet adres gelukt is en de servers draaien, zet dan de vlag dat ethernet present is
+      // Als ethernet enabled en beveiligde modus, dan direct een Cookie sturen, ander worden eerste events niet opgepikt door de WebApp
+      if(Settings.Password[0]!=0 && Settings.TransmitIP==VALUE_ON)
+        SendHTTPCookie(); // Verzend een nieuw cookie
+      }
+    else
+      {
+      // niet gelukt om ethernet verbinding op gang te krijgen
+      // disable ethernet voorziening.
+      bitWrite(HW_Config,HW_ETHERNET,0);
+      RaiseMessage(MESSAGE_07);
+      }
     }
-  else
-    {
-    // niet gelukt om ethernet verbinding op gang te krijgen
-    // disable ethernet voorziening.
-    bitWrite(HW_Config,HW_ETHERNET,0);
-    RaiseMessage(MESSAGE_07);
-    }
-    
   RawSignal.Key=-1; // Als deze variable ongelijk aan -1 dan wordt er een Rawsignal opgeslagen.  
   #endif
 
@@ -1205,7 +1207,7 @@ void loop()
         }
         
       // Timer voor verzenden van Cookie naar de WebApp
-      if(Settings.Password[0]!=0)
+      if(Settings.Password[0]!=0 && Settings.TransmitIP==VALUE_ON)
         {
         if(CookieTimer>0)
           CookieTimer--;

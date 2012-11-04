@@ -2,7 +2,7 @@
 /**************************************************************************************************************************\
 Known Errors / ToDo:
 - PullUp op mega correct?
-- Werkt de nieuwe WiredAnalog uitlezing?
+- SmittTrigger instellingen na een reset?
 
 - dubbel prompt teken.
 - SendBusy op de Master zet de slaves tijdelijk op onbereikbaar. Hierdoor werkt SendTo niet
@@ -11,24 +11,17 @@ Known Errors / ToDo:
 - Vreemde weergave events: Internal=System
 
 Aanpassingen t.o.v. laatste build:
-- *** LET OP *** Instellingen worden pas opgeslagen na commaando [SettingsSave] ! Uitgezonderd het commando [Unit].
-- Wildcard Par2 uitgebreid met opties: "Boot", "PulseCount", "PulseTime".
-- [HWConfig] toegevoegd als optie voor commando [Status]
-- HTTP-Poort 6636 ipv 8080
-- Interne verwerking van variabelen en analoge waarden nu onder de motorkap geregeld et variabeletype float.
-- [AnalyseSettings] niet meer met commando instelbaar, alleen compileerbaar
-- DayLight events niet meer beschikbaar voor een Small-Nodo, alleen nog op de Mega-Nodo.
-- Voor Nodo-Small geldt: Gebruikers variabelen niet meer naar EEPROM te schrijven. EEPROM is alleen nog bedoeld voor settings. Commando [VariableSave] hiermee vervallen.
-- Invoerregels: variabelen gebruiken tussen % en formules tussen #
-- Toevoeging commando [if]. Kan worden gebruikt in scripts of invoerregels in terminal venster. Kent '=' vergelijking en '<>'vergelijking
 
 Aanpassingen t.o.v. Final Beta Build 436:
+- Invoerregels: variabelen gebruiken tussen % en formules tussen #
+- Toevoeging commando [if]. Kan worden gebruikt in scripts of invoerregels in terminal venster. Kent '=' vergelijking en '<>'vergelijking
+- Interne verwerking van variabelen en analoge waarden nu onder de motorkap geregeld et variabeletype float.
 - *** LET OP *** Instellingen worden pas opgeslagen na commaando [SettingsSave] !
 - Wildcard Par2 uitgebreid met opties: "Boot", "PulseCount", "PulseTime".
 - DayLight events niet meer beschikbaar voor een Small-Nodo, alleen nog op de Mega-Nodo.
 - Voor Nodo-Small geldt: Gebruikers variabelen niet meer naar EEPROM te schrijven. EEPROM is alleen nog bedoeld voor settings. Commando [VariableSave] hiermee vervallen.
 - [AnalyseSettings] niet meer met commando instelbaar, alleen compileerbaar
-- HTTP-Poort 6636 ipv 8080
+- HTTP-Poort default 6636 ipv 8080
 - [HWConfig] toegevoegd als optie voor commando [Status]
 - Welkomsttekst wordt niet meer op Serial weergegeven als Telnet verbinding tot stand komt.
 - queue op de Mega teruggeplaatst naar RAM, dit i.v.m. erg hoge mutatiegraad van de SDCard en mogelijk defect van SDCard.

@@ -40,7 +40,7 @@ boolean EthernetInit(void)
     {
     Ethernet.begin(Ethernet_MAC_Address, Settings.Nodo_IP, Settings.DnsServer, Settings.Gateway, Settings.Subnet);
     }
-  if((Ethernet.localIP()[0]+Ethernet.localIP()[1]+Ethernet.localIP()[2]+Ethernet.localIP()[3])!=0); // Als er een IP adres is, dan TTP en TelNet servers inschakelen
+  if((Ethernet.localIP()[0]+Ethernet.localIP()[1]+Ethernet.localIP()[2]+Ethernet.localIP()[3])!=0); // Als er een IP adres is, dan HTTP en TelNet servers inschakelen
     {
     // Start server voor Terminalsessies via TelNet
     TerminalServer=EthernetServer(23);
