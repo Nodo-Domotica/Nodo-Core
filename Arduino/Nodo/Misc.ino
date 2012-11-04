@@ -485,7 +485,7 @@ void ResetFactory(void)
   {
   int x,y;
   Led(BLUE);
-  //??? Beep(2000,2000);
+  Beep(2000,2000);
 
   Settings.Version                    = SETTINGS_VERSION;
   Settings.Lock                       = 0;
@@ -543,8 +543,7 @@ void ResetFactory(void)
   #if NODO_MEGA
   // maak alle variabelen leeg
   for(byte x=0;x<USER_VARIABLES_MAX;x++)
-     Settings.UserVar[x]=0;
-     
+     Settings.UserVar[x]=0;     
   #endif
     
   Save_Settings();
