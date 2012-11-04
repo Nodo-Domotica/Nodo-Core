@@ -759,7 +759,6 @@ int ExecuteLine(char *Line, byte Port)
   char *TmpStr2=(char*)malloc(INPUT_BUFFER_SIZE+2);
   int CommandPos;
   int LinePos;
-//  int L=strlen(Line);
   int w,x,y,z;
   int EventlistWriteLine=0;
   int error,Par1,Par2,Cmd;
@@ -788,11 +787,11 @@ int ExecuteLine(char *Line, byte Port)
     if(Substitute(Line)!=0)
       {
       error=MESSAGE_02;
-      Serial.print("Substitute error=");Serial.println(Line);//???
+      Serial.print(F("Substitute error="));Serial.println(Line);//???
       }
+
     CommandPos=0;
-    LinePos=0;
-    
+    LinePos=0;    
     int LineLength=strlen(Line);
     while(LinePos<=LineLength && error==0)
       {
@@ -1321,7 +1320,7 @@ int ExecuteLine(char *Line, byte Port)
           }
         }
         
-      // printbare tekens toevoegen aan commando zolang er nog ruimte is in de string
+      // Tekens toevoegen aan commando zolang er nog ruimte is in de string
       if(x!=';' && CommandPos<MaxCommandLength)
         Command[CommandPos++]=x;      
       }    

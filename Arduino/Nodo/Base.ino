@@ -1,5 +1,5 @@
 #define SETTINGS_VERSION     16
-#define NODO_BUILD          455
+#define NODO_BUILD          456
 #include <EEPROM.h>
 #include <Wire.h>
 

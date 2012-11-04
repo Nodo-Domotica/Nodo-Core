@@ -279,7 +279,7 @@ void Event2str(unsigned long Code, char* EventString)
     case CMD_PULSE_TIME:
     case CMD_PULSE_COUNT:
       P1=P_INT16;
-      P2-P_NOT;
+      P2=P_NOT;
       break;
 
     case CMD_KAKU_NEW:

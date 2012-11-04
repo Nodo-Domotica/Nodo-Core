@@ -775,38 +775,45 @@ void Status(byte Par1, byte Par2, byte Transmit)
 * Let op dat de ruimte in de doelstring voldoende is EN dat de bron string netjes is afgesloten 
 * met een 0-byte.
 \*********************************************************************************************/
-boolean GetArgv(char *string, char *argv, byte argc)
+boolean GetArgv(char *string, char *argv, int argc)
   {
   int string_pos=0,argv_pos=0,argc_pos=0; 
-  argc--;
-  int c;
+  char c,d;
 
-  while(string[string_pos]==32)string_pos++;   // sla voorloopspaties over
+  boolean InArg=false;
   
-  while(string[string_pos]!=0 && argc_pos<=argc)
+  while(string_pos<strlen(string))
     {
-    if(string[string_pos]==','|| string[string_pos]==32)
+    c=string[string_pos];
+    d=string[string_pos+1];
+    
+    if       (c==' ' && d==' '){}
+    else if  (c==' ' && d==','){}
+    else if  (c==',' && d==' '){}
+    else if  (c==' ' && d>=33 && d<=126){}
+    else 
       {
-      while(string[string_pos+1]==32)string_pos++;   // sla voorloopspaties over
-      argc_pos++;
-      }
-    else if(string[string_pos]>=33 && string[string_pos]<=126 && argc_pos==argc)
-      argv[argv_pos++]=string[string_pos];
-      
-    string_pos++;
-    }    
-  argv[argv_pos]=0;
+      argv[argv_pos++]=c;
+      argv[argv_pos]=0;          
 
-  if(argv_pos>0)
-    {
-    argv[argv_pos]=0;
-    return true;
+      if(d==' ' || d==',' || d==0)
+        {
+        // We waren bezig met toevoegen van tekens aan een argument, maar kwamen een scheidingsteken tegen
+        InArg=false;
+        argv[argv_pos]=0;
+        argc_pos++;
+
+        if(argc_pos==argc)
+          return true;
+
+        argv[0]=0;
+        argv_pos=0;
+        string_pos++;
+        }
+      }
+    string_pos++;
     }
-  else
-    {
-    argv[0]=0;
-    return false;
-    }
+  return false;
   }
 
 
