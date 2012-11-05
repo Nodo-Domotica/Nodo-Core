@@ -2,9 +2,7 @@
 /**************************************************************************************************************************\
 Known Errors / ToDo:
 - PullUp op mega correct?
-- SmittTrigger instellingen na een reset?
-- pulsecount irt. status all ?
-- pulsetime niet in HEX weergeven
+- deelfactor pulsetime
 - dubbel prompt teken.
 - SendBusy op de Master zet de slaves tijdelijk op onbereikbaar. Hierdoor werkt SendTo niet
 - In geval van onbereikbare Nodo-Small: Hoe resetten?
@@ -12,11 +10,15 @@ Known Errors / ToDo:
 - Vreemde weergave events: Internal=System
 
 Aanpassingen t.o.v. laatste build:
+- Bug in weergave: WiredAnalog, WiredSmittTrigger, WiredThreshold opgelost
+- PulseTime niet in HEX weergeven
+- PulseCount irt. status all: [Status PulseCount] geeft waarde, [Status PulseCount,Reset] leest uit en zet waarde op nul
+- PULSE_TIME_DEVIDE toegevoegd aan gebruikersparameters voor meecompileren
 
 Aanpassingen t.o.v. Final Beta Build 436:
 - Invoerregels: variabelen gebruiken tussen % en formules tussen #
 - Toevoeging commando [if]. Kan worden gebruikt in scripts of invoerregels in terminal venster. Kent '=' vergelijking en '<>'vergelijking
-- Interne verwerking van variabelen en analoge waarden nu onder de motorkap geregeld et variabeletype float.
+- Interne verwerking van variabelen en analoge waarden nu onder de motorkap geregeld met variabeletype float.
 - *** LET OP *** Instellingen worden pas opgeslagen na commaando [SettingsSave] !
 - Wildcard Par2 uitgebreid met opties: "Boot", "PulseCount", "PulseTime".
 - DayLight events niet meer beschikbaar voor een Small-Nodo, alleen nog op de Mega-Nodo.

@@ -427,7 +427,7 @@ void Event2str(unsigned long Code, char* EventString)
 
   else // wat over blijft is het type UNKNOWN.
     {
-    strcat(EventString,int2str(Code));
+    strcat(EventString,int2strhex(Code));
     }
   }
 
