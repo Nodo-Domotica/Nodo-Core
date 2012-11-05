@@ -211,7 +211,7 @@ boolean str2ip(char *string, byte* IP)
 
 
  /**********************************************************************************************\
- * Converteert een unsigned long naar een integer.
+ * Converteert een unsigned long naar een string met decimale integer.
  \*********************************************************************************************/
 char* int2str(unsigned long x)
   {
@@ -225,18 +225,34 @@ char* int2str(unsigned long x)
     {
     *--OutputLinePosPtr='0';
     }
-    
-  else if(x<=10000)  // getallen weergeven als een integer in decimaal formaat
-    {
+  else
+    {  
     while(x>0)
       {
       *--OutputLinePosPtr='0'+(x%10);
       x/=10;
       }
-    }
-    
-  else // getallen weergeven als een integer in hexadecimaal formaat
+    }    
+  return OutputLinePosPtr;
+  }
+
+ /**********************************************************************************************\
+ * Converteert een unsigned long naar een hexadecimale string.
+ \*********************************************************************************************/
+char* int2strhex(unsigned long x)
+  {
+  static char OutputLine[12];
+  char* OutputLinePosPtr=&OutputLine[10];
+  int y;
+  
+  *OutputLinePosPtr=0;
+
+  if(x==0)
     {
+    *--OutputLinePosPtr='0';
+    }
+  else
+    {  
     while(x>0)
       {
       y=x&0xf;
@@ -251,7 +267,6 @@ char* int2str(unsigned long x)
     *--OutputLinePosPtr='x';
     *--OutputLinePosPtr='0';
     }
-    
   return OutputLinePosPtr;
   }
   

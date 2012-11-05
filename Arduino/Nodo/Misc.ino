@@ -344,9 +344,18 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
     case CMD_WIRED_ANALOG:
       // lees analoge waarde. Dit is een 10-bit waarde, unsigned 0..1023
       x=analogRead(PIN_WIRED_IN_1+xPar1-1);
-      event= ((unsigned long)xPar1)<<12 | (unsigned long)((x/256) & 0xff) | (unsigned long)(x & 0xff);
-      *Par1=EventPartPar1(event);
-      *Par2=EventPartPar2(event);
+      *Par1=(byte)(x & 0xff);
+      *Par2=(byte)((x/256)  & 0x03);
+      break;
+
+    case CMD_WIRED_THRESHOLD:
+      *Par1=(byte)((Settings.WiredInputThreshold[xPar1-1]       & 0xff));
+      *Par2=(byte)((Settings.WiredInputThreshold[xPar1-1]/256)  & 0x03);
+      break;
+
+    case CMD_WIRED_SMITTTRIGGER:
+      *Par1=(byte)((Settings.WiredInputSmittTrigger[xPar1-1]     & 0xff));
+      *Par2=(byte)((Settings.WiredInputSmittTrigger[xPar1-1]/256) & 0x03);
       break;
 
     case CMD_PULSE_TIME:
@@ -358,8 +367,8 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
         }
 
       //??? wat als pulstijden meer dan 65 sec. Deelfactor of begrenzen?
-      *Par2=(byte)((PulseTime/256) & 0xff);
-      *Par1=(byte)( PulseTime      & 0xff);
+      *Par2=(byte)(((PulseTime/PULSE_TIME_DEVIDE)/256) & 0xff);
+      *Par1=(byte)( (PulseTime/PULSE_TIME_DEVIDE)      & 0xff);
       break;
 
     case CMD_PULSE_COUNT:
@@ -372,19 +381,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
         }
       *Par2=(byte)((PulseCount/256)  & 0xff);
       *Par1=(byte)( PulseCount      & 0xff);
-      PulseCount=0;
-      break;
-
-    case CMD_WIRED_THRESHOLD:
-      event=float2event(Settings.WiredInputThreshold[xPar1-1], xPar1,0);
-      *Par1=(byte)((event>>8) & 0xff);
-      *Par2=(byte)(event & 0xff);
-      break;
-
-    case CMD_WIRED_SMITTTRIGGER:
-      event=float2event(Settings.WiredInputSmittTrigger[xPar1-1], xPar1,0);
-      *Par1=(byte)((event>>8) & 0xff);
-      *Par2=(byte)(event & 0xff);
+      if(xPar1==CMD_RESET)PulseCount=0;//???
       break;
 
     case CMD_WIRED_IN_EVENT:
