@@ -365,14 +365,11 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
         bitWrite(HW_Config,HW_IR_PULSE,true);
         attachInterrupt(PULSE_IRQ,PulseCounterISR,FALLING); // IRQ behorende bij PIN_IR_RX_DATA
         }
-
-      //??? wat als pulstijden meer dan 65 sec. Deelfactor of begrenzen?
       *Par2=(byte)(((PulseTime/PULSE_TIME_DEVIDE)/256) & 0xff);
       *Par1=(byte)( (PulseTime/PULSE_TIME_DEVIDE)      & 0xff);
       break;
 
     case CMD_PULSE_COUNT:
-      //??? wat als pulstijden meer dan 65 sec. Deelfactor of begrenzen?
       // eerst een keer dit commando uitvoeren voordat de teller gaat lopen.
       if(!bitRead(HW_Config,HW_IR_PULSE))
         {
@@ -381,7 +378,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
         }
       *Par2=(byte)((PulseCount/256)  & 0xff);
       *Par1=(byte)( PulseCount      & 0xff);
-      if(xPar1==CMD_RESET)PulseCount=0;//???
+      if(xPar1==CMD_RESET)PulseCount=0;
       break;
 
     case CMD_WIRED_IN_EVENT:
