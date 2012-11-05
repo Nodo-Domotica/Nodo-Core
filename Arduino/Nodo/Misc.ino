@@ -253,14 +253,16 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
       *Par1=Settings.Unit;
       break;        
 
-    case VALUE_BUILD: 
-      *Par1=NODO_BUILD & 0xff;
-      *Par2=(NODO_BUILD>>8) & 0xff;
+    case VALUE_BUILD:
+      event=NODO_BUILD&0xffff;
+      *Par1=EventPartPar1(event);      
+      *Par2=EventPartPar2(event);      
       break;        
 
     case VALUE_HWCONFIG: 
-      *Par1=HW_Config & 0xff;
-      *Par2=(HW_Config>>8) & 0xff;
+      event=HW_Config&0xffff;
+      *Par1=EventPartPar1(event);      
+      *Par2=EventPartPar2(event);      
       break;        
 
     case CMD_SENDBUSY:
@@ -344,18 +346,22 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
     case CMD_WIRED_ANALOG:
       // lees analoge waarde. Dit is een 10-bit waarde, unsigned 0..1023
       x=analogRead(PIN_WIRED_IN_1+xPar1-1);
-      *Par1=(byte)(x & 0xff);
-      *Par2=(byte)((x/256)  & 0x03);
+      event=((unsigned long)x)&0x3ff | ((unsigned long)(xPar1-1)<<12);
+      *Par1=EventPartPar1(event);      
+      *Par2=EventPartPar2(event);      
+      
       break;
 
     case CMD_WIRED_THRESHOLD:
-      *Par1=(byte)((Settings.WiredInputThreshold[xPar1-1]       & 0xff));
-      *Par2=(byte)((Settings.WiredInputThreshold[xPar1-1]/256)  & 0x03);
+      event=((unsigned long)Settings.WiredInputThreshold[xPar1-1])&0x3ff | ((unsigned long)(xPar1-1)<<12);
+      *Par1=EventPartPar1(event);      
+      *Par2=EventPartPar2(event);      
       break;
 
     case CMD_WIRED_SMITTTRIGGER:
-      *Par1=(byte)((Settings.WiredInputSmittTrigger[xPar1-1]     & 0xff));
-      *Par2=(byte)((Settings.WiredInputSmittTrigger[xPar1-1]/256) & 0x03);
+      event=((unsigned long)Settings.WiredInputSmittTrigger[xPar1-1])&0x3ff | ((unsigned long)(xPar1-1)<<12);
+      *Par1=EventPartPar1(event);      
+      *Par2=EventPartPar2(event);      
       break;
 
     case CMD_PULSE_TIME:
@@ -365,8 +371,9 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
         bitWrite(HW_Config,HW_IR_PULSE,true);
         attachInterrupt(PULSE_IRQ,PulseCounterISR,FALLING); // IRQ behorende bij PIN_IR_RX_DATA
         }
-      *Par2=(byte)(((PulseTime/PULSE_TIME_DEVIDE)/256) & 0xff);
-      *Par1=(byte)( (PulseTime/PULSE_TIME_DEVIDE)      & 0xff);
+      event=PulseTime&0xffff;
+      *Par1=EventPartPar1(event);      
+      *Par2=EventPartPar2(event);      
       break;
 
     case CMD_PULSE_COUNT:
@@ -376,8 +383,9 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
         bitWrite(HW_Config,HW_IR_PULSE,true);
         attachInterrupt(PULSE_IRQ,PulseCounterISR,FALLING); // IRQ behorende bij PIN_IR_RX_DATA
         }
-      *Par2=(byte)((PulseCount/256)  & 0xff);
-      *Par1=(byte)( PulseCount      & 0xff);
+      event=PulseCount&0xffff;
+      *Par1=EventPartPar1(event);      
+      *Par2=EventPartPar2(event);      
       if(xPar1==CMD_RESET)PulseCount=0;
       break;
 

@@ -4,8 +4,8 @@
 #define EventPartPar1(Event)      ((Event>>8)&0xff)
 #define EventPartPar2(Event)      (Event&0xff)
 #define EventPartWiredPort(Event) ((Event>>12)&0xf)
-#define EventPart10Bit(Event)     (((Event>>8)&0xff+(Event&0xff)*256)&0x3ff)
-#define EventPart16Bit(Event)     (((Event>>8)&0xff) + 256*(Event&0xff))
+#define EventPart10Bit(Event)     (Event&0x3ff)
+#define EventPart16Bit(Event)     (Event&0xffff)
 
 /*********************************************************************************************\
  * Eenvoudige check of event een Nodo commando is die voor deze Nodo bestemd is.

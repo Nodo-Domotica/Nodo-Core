@@ -362,7 +362,7 @@ void Event2str(unsigned long Code, char* EventString)
         break;
 
       case P_PORT:
-        strcat(EventString,int2str(((Code>>12)&0x0f)));
+        strcat(EventString,int2str(1+((Code>>12)&0x0f)));
         break;
 
       case P_TEXT:
@@ -387,8 +387,8 @@ void Event2str(unsigned long Code, char* EventString)
 
         Par2=(Par2&0x1)?VALUE_ON:VALUE_OFF;
         break;
-      }
-    }// P1
+        }
+      }// P1
 
     // Print Par2    
     if(P2!=P_NOT)
