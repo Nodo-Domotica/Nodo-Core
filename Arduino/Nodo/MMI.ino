@@ -229,7 +229,7 @@ void Event2str(unsigned long Code, char* EventString)
     // Aan/Uit zit in bit 5 
     strcpy(EventString,cmd2str(CMD_KAKU_NEW));
     strcat(EventString," ");
-    strcat(EventString,int2str(Code&0x0FFFFFEF));
+    strcat(EventString,int2strhex(Code&0x0FFFFFEF));
     strcat(EventString,",");   
     strcat(EventString,cmd2str(((Code>>4)&0x1)?VALUE_ON:VALUE_OFF)); 
     }
