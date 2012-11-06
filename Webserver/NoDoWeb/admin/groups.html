@@ -1,0 +1,176 @@
+<!DOCTYPE html> 
+<html> 
+ 
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"> 
+	<title>Groups</title> 
+	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.css" />
+	<link rel="stylesheet" type="text/css" href="../css/custom.css" />
+	<script src="http://code.jquery.com/jquery-1.8.2.min.js"></script>
+	<script src="http://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.js"></script>
+	
+</head> 
+ 
+<body> 
+
+<!-- Start of group page: -->
+
+<div data-role="page" id="groups_page">
+ 
+	<!-- header -->
+	<div data-role="header" data-id="toolbar" data-position="fixed" data-tap-toggle="false">
+		<h1 id="header_setup_groups"></h1>
+		<div data-role="navbar" data-iconpos="top">
+		<ul>
+			<li><a href="../webapp.html#devices_page" data-icon="devices"  data-transition="none" data-ajax="false">Devices</a></li>
+			<li><a href="../webapp.html#activities_page" data-icon="grid"  data-transition="none" data-ajax="false">Activities</a></li>
+			<li><a href="../webapp.html#values_page" data-icon="measurements" data-transition="none" data-ajax="false">Values</a></li>
+		</ul>
+		</div>
+	</div><!-- /header -->
+ 
+ 
+	<div data-role="content">	
+	
+		<a href="#groups_add_page" data-role="button" data-transition="none" >Add group</a>
+		<br />
+		<div id="grouplist"></div>
+	
+	</div><!-- /content -->
+	
+	<div data-role="footer" data-id="toolbar" data-position="fixed" data-tap-toggle="false" >
+		<div data-role="navbar" data-iconpos="top">
+			<ul>
+				<li><a href="../logout.php" data-icon="delete"  data-ajax="false">Logout</a></li>
+				<li><a href="../webapp.html#info_page" data-icon="info"  data-transition="none" data-ajax="false">Info</a></li>
+				<li><a href="../admin" data-icon="gear"  data-ajax="false">Setup</a></li>
+			</ul>
+		</div>
+	</div><!-- /footer -->
+	
+	<div data-role="popup" id="groups_popup_delete" data-overlay-theme="c" style="min-width:250px;" class="ui-corner-all">
+			<div data-role="header" class="ui-corner-top">
+				<h1></h1>
+			</div>
+			<div data-role="content" class="ui-corner-bottom ui-content">
+				<h3 id="delete_message" class="ui-title"></h3>
+				<div class="ui-grid-a">
+					<div class="ui-block-a"><a href="#" id="cancel_delete" data-role="button" data-inline="true" data-rel="back" >Cancel</a> </div>
+					<div class="ui-block-b"><a href="javascript:deleteGroup()" id="ok_delete" data-role="button" data-inline="true" >Delete</a> </div>
+				</div>
+			</div>
+		</div>
+	
+	
+</div><!-- /group page -->
+
+<!-- Start of group add page: -->
+
+<div data-role="page" id="groups_add_page">
+ 
+	<!-- header -->
+	<div data-role="header" data-id="toolbar" data-position="fixed" data-tap-toggle="false">
+		<h1 id="header_setup_groups_add"></h1>
+		<div data-role="navbar" data-iconpos="top">
+		<ul>
+			<li><a href="../webapp.html#devices_page" data-icon="devices"  data-transition="none" data-ajax="false">Devices</a></li>
+			<li><a href="../webapp.html#activities_page" data-icon="grid"  data-transition="none" data-ajax="false">Activities</a></li>
+			<li><a href="../webapp.html#values_page" data-icon="measurements" data-transition="none" data-ajax="false">Values</a></li>
+		</ul>
+		</div>
+	</div><!-- /header -->
+ 
+ 
+	<div data-role="content">	
+	
+		<form id="group_add" data-ajax="false"> 
+		
+			<label for="group_name_add">Group name:</label>
+			<input type="text" name="group_name_add" id="group_name_add" value=""  />
+			<br />
+			Group usage:
+			<label><input type="checkbox" id="checkbox_devices_add" name="checkbox_devices_add" /> Devices </label>
+			<!-- <label><input type="checkbox" id="checkbox_activities_add" name="checkbox_activities_add" /> Activities </label> -->
+			<br />
+			Default group for:
+			<label><input type="checkbox" id="checkbox_devices_default_add" name="checkbox_devices_default_add" /> Devices </label>
+			<!-- <label><input type="checkbox" id="checkbox_activities_default_add" name="checkbox_activities_default_add" /> Activities </label> -->
+			<br />
+			<input type="submit" id="addgroup" name="addgroup" value="Add group">
+			<a href="#groups_page" data-role="button" data-transition="none" >Cancel</a>
+						
+		</form> 
+	
+	</div><!-- /content -->
+	
+	<div data-role="footer" data-id="toolbar" data-position="fixed" data-tap-toggle="false" >
+		<div data-role="navbar" data-iconpos="top">
+			<ul>
+				<li><a href="../logout.php" data-icon="delete"  data-ajax="false">Logout</a></li>
+				<li><a href="../webapp.html#info_page" data-icon="info"  data-transition="none" data-ajax="false">Info</a></li>
+				<li><a href="../admin" data-icon="gear"  data-ajax="false">Setup</a></li>
+			</ul>
+		</div>
+	</div><!-- /footer -->
+	
+</div><!-- /Group add page -->
+
+<!-- Start of group edit page: -->
+
+<div data-role="page" id="groups_edit_page">
+ 
+	<!-- header -->
+	<div data-role="header" data-id="toolbar" data-position="fixed" data-tap-toggle="false">
+		<h1 id="header_setup_groups_edit"></h1>
+		<div data-role="navbar" data-iconpos="top">
+		<ul>
+			<li><a href="../webapp.html#devices_page" data-icon="devices"  data-transition="none" data-ajax="false">Devices</a></li>
+			<li><a href="../webapp.html#activities_page" data-icon="grid"  data-transition="none" data-ajax="false">Activities</a></li>
+			<li><a href="../webapp.html#values_page" data-icon="measurements" data-transition="none" data-ajax="false">Values</a></li>
+		</ul>
+		</div>
+	</div><!-- /header -->
+ 
+ 
+	<div data-role="content">	
+	
+		<form id="group_edit" data-ajax="false"> 
+			<input type="hidden" name="group_id_edit" id="group_id_edit" value=""  />
+			<label for="group_name_edit">Group name:</label>
+			<input type="text" name="group_name_edit" id="group_name_edit" value=""  />
+			<br />
+			Group usage:
+			<label><input type="checkbox" id="checkbox_devices_edit" name="checkbox_devices_edit" /> Devices </label>
+			<!-- <label><input type="checkbox" id="checkbox_activities_edit" name="checkbox_activities_edit" /> Activities </label> -->
+			<br />
+			Default group for:
+			<label><input type="checkbox" id="checkbox_devices_default_edit" name="checkbox_devices_default_edit" /> Devices </label>
+			<!-- <label><input type="checkbox" id="checkbox_activities_default_edit" name="checkbox_activities_default_edit" /> Activities </label> -->
+			<br />
+			<input type="submit" id="editgroup" name="editgroup" value="Save">
+			<a href="#groups_page" data-role="button" data-transition="none" >Cancel</a>
+			
+		</form> 
+	
+	</div><!-- /content -->
+	
+	<div data-role="footer" data-id="toolbar" data-position="fixed" data-tap-toggle="false" >
+		<div data-role="navbar" data-iconpos="top">
+			<ul>
+				<li><a href="../logout.php" data-icon="delete"  data-ajax="false">Logout</a></li>
+				<li><a href="../webapp.html#info_page" data-icon="info"  data-transition="none" data-ajax="false">Info</a></li>
+				<li><a href="../admin" data-icon="gear"  data-ajax="false">Setup</a></li>
+			</ul>
+		</div>
+	</div><!-- /footer -->
+	
+</div><!-- /Group edit page -->
+
+<script src="../js/check_session.js"></script>
+<script src="../js/user_settings.js"></script>
+<script src="../js/json_nodo_state.js"></script>
+<script src="js/setup_groups.js"></script>
+
+</body>
+</html>
