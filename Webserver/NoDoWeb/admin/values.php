@@ -46,11 +46,12 @@ if (isset($_POST['submit']))
  $graph_min_ticksize = mysql_real_escape_string(htmlspecialchars($_POST['graph_min_ticksize']));
  $graph_type = mysql_real_escape_string(htmlspecialchars($_POST['graph_type']));
  $graph_line_color = mysql_real_escape_string(htmlspecialchars($_POST['graph_line_color']));
-
+ $formula = mysql_real_escape_string($_POST['formula']);
+ $round = mysql_real_escape_string($_POST['round']);
   
 //1=wiredin 2=variable
 //Als het wiredin betreft of een variable met output geselecteerd gaat het om een output gaan dus zetten we alle input velden op 0
-if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) {
+if ($_POST['type'] == 1 || $_POST['type'] == 2 || $_POST['type'] == 3 || $_POST['type'] == 4 && $_POST['input_output'] == 2 ) {
 	$input_output = "2"; // wiredanalog is output vanuit de nodo richting webapp
 	$input_control = "0";
 	$input_slider_min = "0";
@@ -105,9 +106,9 @@ $RSValues_rows = mysql_num_rows($RSValues);
 $sort_order = $RSValues_rows + 1;
  
    
- mysql_query("INSERT INTO nodo_tbl_sensor (sensor_type, display, collapsed, input_output, input_control, input_step, input_min_val, input_max_val, sensor_prefix, sensor_suffix, sensor_suffix_true, sensor_suffix_false, user_id, nodo_unit_nr,par1,graph_hours,graph_min_ticksize,graph_type,graph_line_color,sort_order) 
+ mysql_query("INSERT INTO nodo_tbl_sensor (sensor_type, display, formula, round, collapsed, input_output, input_control, input_step, input_min_val, input_max_val, sensor_prefix, sensor_suffix, sensor_suffix_true, sensor_suffix_false, user_id, nodo_unit_nr,par1,graph_hours,graph_min_ticksize,graph_type,graph_line_color,sort_order) 
  VALUES 
- ('$type','$display','$collapsed','$input_output','$input_control','$input_step','$input_slider_min','$input_slider_max','$prefix','$suffix','$suffix_true','$suffix_false','$userId','$unit','$par1','$graph_hours','$graph_min_ticksize','$graph_type','$graph_line_color','$sort_order')");
+ ('$type','$display','$formula','$round','$collapsed','$input_output','$input_control','$input_step','$input_slider_min','$input_slider_max','$prefix','$suffix','$suffix_true','$suffix_false','$userId','$unit','$par1','$graph_hours','$graph_min_ticksize','$graph_type','$graph_line_color','$sort_order')");
  // once saved, redirect back to the view page 
  header("Location: values.php#saved");    }
  
@@ -118,26 +119,28 @@ else
 //Records sorteren
  if (isset($_GET['sort'])) {
 	
-	$sensor_id = $_GET['id'];
-	$sort = $_GET['sort'];
-	$sort_order = $_GET['sort_order'];
-	$prev_record = $_GET['sort_order'] - 1;
-	$next_record = $_GET['sort_order'] + 1;
-	
-	if ($sort == "up") {
-	
+	if (is_numeric($_GET['id']) && is_numeric($_GET['sort_order'])){
+		$sensor_id = $_GET['id'];
+		$sort = $_GET['sort'];
+		$sort_order = $_GET['sort_order'];
+		$prev_record = $_GET['sort_order'] - 1;
+		$next_record = $_GET['sort_order'] + 1;
+		
+		if ($sort == "up") {
+		
 
-	 mysql_query("UPDATE nodo_tbl_sensor SET sort_order=sort_order +1 WHERE user_id='$userId' AND sort_order='$prev_record'") or die(mysql_error()); 	
-	 mysql_query("UPDATE nodo_tbl_sensor SET sort_order=sort_order -1 WHERE user_id='$userId' AND sort_order='$sort_order' AND id='$sensor_id'") or die(mysql_error()); 
-	
-	}
-	if ($sort == "down") {
+		 mysql_query("UPDATE nodo_tbl_sensor SET sort_order=sort_order +1 WHERE user_id='$userId' AND sort_order='$prev_record'") or die(mysql_error()); 	
+		 mysql_query("UPDATE nodo_tbl_sensor SET sort_order=sort_order -1 WHERE user_id='$userId' AND sort_order='$sort_order' AND id='$sensor_id'") or die(mysql_error()); 
+		
+		}
+		if ($sort == "down") {
 
-	 mysql_query("UPDATE nodo_tbl_sensor SET sort_order=sort_order -1 WHERE user_id='$userId' AND sort_order='$next_record'") or die(mysql_error()); 	
-	 mysql_query("UPDATE nodo_tbl_sensor SET sort_order=sort_order +1 WHERE user_id='$userId' AND sort_order='$sort_order' AND id='$sensor_id'") or die(mysql_error()); 
-	
+		 mysql_query("UPDATE nodo_tbl_sensor SET sort_order=sort_order -1 WHERE user_id='$userId' AND sort_order='$next_record'") or die(mysql_error()); 	
+		 mysql_query("UPDATE nodo_tbl_sensor SET sort_order=sort_order +1 WHERE user_id='$userId' AND sort_order='$sort_order' AND id='$sensor_id'") or die(mysql_error()); 
+		
+		}
+		header("Location: values.php?id=$sensor_id"); 
 	}
-header("Location: values.php?id=$sensor_id"); 
 }
 ?>
 
@@ -174,8 +177,11 @@ header("Location: values.php?id=$sensor_id");
 	
 		<label for="select-choice-0" class="select" >Input type:</label>
 		<select name="type" id="type" data-native-menu="false" >
-			<option value="1" selected="selected">WiredIn</option>
+			<option value="1" selected="selected">WiredAnalog</option>
 			<option value="2">Variable</option>
+			<option value="3">PulseTime</option>
+			<option value="4">PulseCount</option>
+		
 		</select>	
 		
 		<br \>
@@ -255,14 +261,17 @@ header("Location: values.php?id=$sensor_id");
 		<label for="unit" >Nodo unit: (1...15)</label>
 		<input type="text" maxLength="2" name="unit" id="unit" value=""  />
 		<br \>
-		<div id="label_wiredanalog_div">
-			<label for="name">WiredIn port: (1...8)</label>
+		
+		<div id="wiredanalog_wiredin_div">
+			<div id="label_wiredanalog_div">
+				<label for="name">WiredIn port: (1...8)</label>
+			</div>
+			<div id="label_variable_div">
+				<label for="name">Variable: (1...15)</label>
+			</div>
+			<input type="text" maxLength="2" name="par1" id="par1" value=""  />
+			<br \>
 		</div>
-		<div id="label_variable_div">
-			<label for="name">Variable: (1...15)</label>
-		</div>
-		<input type="text" maxLength="2" name="par1" id="par1" value=""  />
-		<br \>
 		<div id="graph_div">
 			<label for="select-choice-5" class="select" >Graph: type:</label>
 			<select name="graph_type" id="graph_type" data-native-menu="false" >
@@ -289,10 +298,16 @@ header("Location: values.php?id=$sensor_id");
 			</select>
 			<br \>
 			
-							
+				
 				<label for="graph_hours">Graph: maximum hours to show:</label>
 				<input type="text" MaxLength="5" name="graph_hours" id="graph_hours" value="24"  />
-				<br \>
+			<br \>
+				<label for="formula">Formula: (examples: %value% * 1000, 1000 / %value% ) <i>*optional</i></label>
+				<input type="text" MaxLength="50" name="formula" id="formula" value=""  />
+			<br \>	
+				<label for="round">Round: <i>(rounds the value to the specified precision)</i></label>
+				<input type="text" MaxLength="1" name="round" id="round" value="2"  />
+			<br \>	
 			<div id="graph_ticksize_div">
 				<label for="select-choice-7" class="select" >Graph: minimum tick size x-axis:</label>
 				<select name="graph_min_ticksize" id="graph_min_ticksize" data-native-menu="false" >
@@ -303,6 +318,7 @@ header("Location: values.php?id=$sensor_id");
 				</select>
 				<br \>
 			</div>
+				
 		</div>
 		<br \>	
 			
@@ -397,14 +413,17 @@ $(document).ready(function() {
 $('#display').change(function() {
 
 	//Value
-	if ($(this).attr('value')==1) {   
+	if ($(this).attr('value')==1 || $(this).attr('value')==3 || $(this).attr('value')==4 ) {   
 
 		$('#state_div').hide(); 
 		$('#value_div').show(); 
 		$('#graph_div').show(); 
 
 	}
-
+	
+	
+	
+	
 	//State   
 	if ($(this).attr('value')==2) {   
 
@@ -427,7 +446,8 @@ $('#type').change(function() {
 		$('#label_wiredanalog_div').show();  
 		$('#label_variable_div').hide();   
 		$('#input_output_div').hide(); 
-		$('#graph_div').show(); 
+		$('#graph_div').show();
+		$('#wiredanalog_wiredin_div').show();		
 
 	}
   
@@ -437,8 +457,16 @@ $('#type').change(function() {
 		$('#label_wiredanalog_div').hide();  
 		$('#label_variable_div').show(); 
 		$('#input_output_div').show();  
-		$('#graph_div').hide(); 
+		$('#graph_div').hide();
+		$('#wiredanalog_wiredin_div').show();
 	 
+	}
+	
+	//PulseCount,PulseTime
+	if ($(this).attr('value')==3 || $(this).attr('value')==4 ) {  
+		
+		$('#wiredanalog_wiredin_div').hide();
+		
 	}
 });
 

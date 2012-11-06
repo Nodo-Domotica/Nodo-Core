@@ -45,65 +45,68 @@ $('#values_page').on('pageshow', function (event) {
 }); 
 
 function getValues() {
-	$.ajaxSetup({ cache: false });
+	
 	$.getJSON('webservice/json_values.php', function(data) {
-		values = data.values;
+		
 		$('#values').empty();
-		$.each(values, function(index, value) {
-			
-			ArrValueID[index]=value.id;
-			ArrValueSuffix[index]=value.suffix;
-			ArrValueHours[index]=value.hours;
-			ArrValueType[index]=value.type;
-			ArrValuePar1[index]=value.par1;
-			ArrLineColor[index]=value.linecolor;
-						
-			//Lijn Grafiek
-			if (value.type == 1) {ArrValueBar[index]=0;}
-			
-			//Staaf Grafiek
-			if (value.type == 2) {ArrValueBar[index]=1;}
-			
-			ArrTicksize[index]=value.ticksize;
-			ArrValueDisplay[index]=value.display;
-			ArrValueInputoutput[index]=value.inputoutput;
-			
-			//Hoofd items
-			if (value.collapsed == 1) {
-				var ValueHtml = '<div data-role="collapsible" data-collapsedid='+ index +' class="value" data-collapsed-icon="plus" data-collapsed="false" data-expanded-icon="minus" data-iconpos="right" data-inset="false">';
-			}
-			else {
-				var ValueHtml = '<div data-role="collapsible" data-collapsedid='+ index +' class="value" data-collapsed-icon="plus" data-collapsed="true" data-expanded-icon="minus" data-iconpos="right" data-inset="false">';
-			}
-			
-			if (value.display == 1){ValueHtml = ValueHtml + '<h2>'+ value.prefix +' <span id="value_'+ value.id +'"><img src="media/loading.gif" WIDTH="15"></span> '+ value.suffix +'</h2>';}
-			if (value.display == 2){ValueHtml = ValueHtml + '<h2>'+ value.prefix +' <span id="value_'+ value.id +'"><img src="media/loading.gif" WIDTH="15"></span></h2>';}
-			
-			//Alleen een grafiek weergeven als het een output vanuit de nodo richting webapp betreft en het een waarde betreft.
-			if (value.inputoutput == 2 && value.display == 1) {
-				ValueHtml = ValueHtml + '<div id="graph_' + value.id +'" style="width:100%;height:300px;position: relative;"></div>';
-			}
 		
-			//+- knoppen
-			if (value.inputcontrol == 1){
-				ValueHtml = ValueHtml + '<a href="javascript:send_event(&quot;variableinc ' + value.par1 +','+ value.inputstep +'&quot;,&quot;value&quot;)" data-role="button">+</a>';
-				ValueHtml = ValueHtml + '<a href="javascript:send_event(&quot;variabledec ' + value.par1 +','+ value.inputstep +'&quot;,&quot;value&quot;)" data-role="button">-</a>';		
-			}
-			
-			//Slider
-			if (value.inputcontrol == 2){
-				ValueHtml = ValueHtml + '<label  id="distSlider-label" for="distSlider">Set value: </label>';
-				ValueHtml = ValueHtml + '<input  name="distSlider" id="distSlider'+ index +'" value="'+ value.data +'" min="'+ value.inputminval +'" max="'+ value.inputmaxval +'" step="'+ value.inputstep +'" data-type="range" onChange="update_distance_value_timer('+ index +')">';
-			}
-			
-		
-			var ValueHtml = ValueHtml + '</div>';
-			//console.log(value.prefix);
-			$('#values').append(ValueHtml);
-								
+		if (data.values != null) {
+			$.each(data.values, function(index, value) {
 				
-		});
-		$('#values').trigger('create');
+				ArrValueID[index]=value.id;
+				ArrValueSuffix[index]=value.suffix;
+				ArrValueHours[index]=value.hours;
+				ArrValueType[index]=value.type;
+				ArrValuePar1[index]=value.par1;
+				ArrLineColor[index]=value.linecolor;
+							
+				//Lijn Grafiek
+				if (value.type == 1) {ArrValueBar[index]=0;}
+				
+				//Staaf Grafiek
+				if (value.type == 2) {ArrValueBar[index]=1;}
+				
+				ArrTicksize[index]=value.ticksize;
+				ArrValueDisplay[index]=value.display;
+				ArrValueInputoutput[index]=value.inputoutput;
+				
+				//Hoofd items
+				if (value.collapsed == 1) {
+					var ValueHtml = '<div data-role="collapsible" data-collapsedid='+ index +' class="value" data-collapsed-icon="plus" data-collapsed="false" data-expanded-icon="minus" data-iconpos="right" data-inset="false">';
+				}
+				else {
+					var ValueHtml = '<div data-role="collapsible" data-collapsedid='+ index +' class="value" data-collapsed-icon="plus" data-collapsed="true" data-expanded-icon="minus" data-iconpos="right" data-inset="false">';
+				}
+				
+				if (value.display == 1){ValueHtml = ValueHtml + '<h2>'+ value.prefix +' <span id="value_'+ value.id +'"><img src="media/loading.gif" WIDTH="15"></span> '+ value.suffix +'</h2>';}
+				if (value.display == 2){ValueHtml = ValueHtml + '<h2>'+ value.prefix +' <span id="value_'+ value.id +'"><img src="media/loading.gif" WIDTH="15"></span></h2>';}
+				
+				//Alleen een grafiek weergeven als het een output vanuit de nodo richting webapp betreft en het een waarde betreft.
+				if (value.inputoutput == 2 && value.display == 1) {
+					ValueHtml = ValueHtml + '<div id="graph_' + value.id +'" style="width:100%;height:300px;position: relative;"></div>';
+				}
+			
+				//+- knoppen
+				if (value.inputcontrol == 1){
+					ValueHtml = ValueHtml + '<a href="javascript:send_event(&quot;variableinc ' + value.par1 +','+ value.inputstep +'&quot;,&quot;value&quot;)" data-role="button">+</a>';
+					ValueHtml = ValueHtml + '<a href="javascript:send_event(&quot;variabledec ' + value.par1 +','+ value.inputstep +'&quot;,&quot;value&quot;)" data-role="button">-</a>';		
+				}
+				
+				//Slider
+				if (value.inputcontrol == 2){
+					ValueHtml = ValueHtml + '<label  id="distSlider-label" for="distSlider">Set value: </label>';
+					ValueHtml = ValueHtml + '<input  name="distSlider" id="distSlider'+ index +'" value="'+ value.data +'" min="'+ value.inputminval +'" max="'+ value.inputmaxval +'" step="'+ value.inputstep +'" data-type="range" onChange="update_distance_value_timer('+ index +')">';
+				}
+				
+			
+				var ValueHtml = ValueHtml + '</div>';
+				//console.log(value.prefix);
+				$('#values').append(ValueHtml);
+									
+					
+			});
+			$('#values').trigger('create');
+		}
 	});
  
 
@@ -201,7 +204,7 @@ function Get_Graph_data(hours,sensor_id,label,bars,ticksize,linecolor,date1,date
 					else {
 					   
 					   $.plot(plotarea , [
-								 { label: label, data: graph_data, color: linecolor ,bars: {show: true, barWidth:43200000, align: "center",} }
+								 { label: label, data: graph_data, color: linecolor ,bars: {show: true, barWidth:43200000, align: "center"} }
 								 ],options );
 					}
 				}

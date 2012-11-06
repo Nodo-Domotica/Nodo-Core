@@ -159,7 +159,7 @@ if (isset($_POST['write']))
  
  // get form data, making sure it is valid 
  $file = mysql_real_escape_string(htmlspecialchars($_POST['scriptfile'])); 
- $scriptpost = mysql_real_escape_string(htmlspecialchars($_POST['script']));
+ $scriptpost = mysql_real_escape_string($_POST['script']);
  
  
  
@@ -220,7 +220,7 @@ END Script write
 /************************************************************************************************
 New File
 *************************************************************************************************/
-if (isset($_POST['new'])) {
+if (isset($_POST['newfile'])) {
 
 	$file = $_POST["scriptfile"];
 
@@ -234,7 +234,7 @@ if (isset($_POST['new'])) {
 /************************************************************************************************
 Delete File
 *************************************************************************************************/
-if (isset($_POST['delete'])) {
+if (isset($_POST['deletefile'])) {
 
 	$file = $_POST["scriptfile"];
 

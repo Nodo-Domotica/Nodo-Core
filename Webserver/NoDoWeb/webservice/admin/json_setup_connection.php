@@ -194,10 +194,18 @@ if (isset($_POST['save'])) {
 				global $build;
 				
 								
-				if ($build >= 443) { //Tijdelijk om ook oude Nodo builds correct te configureren
+				if ($build >= 443 && $build < 455) { // vanaf build 443
 				
-					HTTPRequest("http://$nodo_ip/?event=id%20$nodo_id;password%20$nodo_password;fileerase%20waconfig;Output%20HTTP,on;reboot"); //nieuwe manier
+					HTTPRequest("http://$nodo_ip/?event=id%20$nodo_id;password%20$nodo_password;fileerase%20waconfig;Output%20HTTP,on;reboot"); 
+				
 				}
+					
+				elseif 	($build >= 455) { //vanaf build 455
+					
+					HTTPRequest("http://$nodo_ip/?event=id%20$nodo_id;password%20$nodo_password;fileerase%20waconfig;Output%20HTTP,on;SettingsSave;reboot");
+					
+				}
+				
 				else {
 					HTTPRequest("http://$nodo_ip/?event=id%20$nodo_id;password%20$nodo_password;fileerase%20waconfig;OutputIp%20HTTP,on;reboot"); //oude manier
 				}

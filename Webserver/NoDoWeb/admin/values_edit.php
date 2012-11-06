@@ -48,11 +48,14 @@ $page_title="Setup: Edit values";
  $graph_min_ticksize = mysql_real_escape_string(htmlspecialchars($_POST['graph_min_ticksize']));
  $graph_type = mysql_real_escape_string(htmlspecialchars($_POST['graph_type']));
  $graph_line_color = mysql_real_escape_string(htmlspecialchars($_POST['graph_line_color']));
+ $formula = mysql_real_escape_string($_POST['formula']);
+ $round = mysql_real_escape_string($_POST['round']);
+ 
  
   
 //1=wiredin 2=variable
 //Als het wiredin betreft of een variable met output geselecteerd gaat het om een output gaan dus zetten we alle input velden op 0
-if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) {
+if ($_POST['type'] == 1 || $_POST['type'] == 2 || $_POST['type'] == 3 || $_POST['type'] == 4 && $_POST['input_output'] == 2 ) {
 	$input_output = "2"; // wiredanalog is output vanuit de nodo richting webapp
 	$input_control = "0";
 	$input_slider_min = "0";
@@ -67,7 +70,8 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
 	$graph_hours = "";
 	$graph_min_ticksize = "";
 	$graph_type = "";
-	$graph_line_color ="";
+	$graph_line_color = "";
+	$formula = "";
 	
 	
 	
@@ -99,7 +103,7 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
  // save the data to the database 
  mysql_select_db($database, $db);
  mysql_query("UPDATE nodo_tbl_sensor SET sensor_type='$type',display='$display',collapsed='$collapsed',input_output='$input_output',input_control='$input_control',input_step='$input_step'
- ,input_min_val='$input_slider_min',input_max_val='$input_slider_max',sensor_prefix='$prefix', sensor_suffix='$suffix', sensor_suffix_true='$suffix_true'
+ ,input_min_val='$input_slider_min',input_max_val='$input_slider_max',formula='$formula',round='$round',sensor_prefix='$prefix', sensor_suffix='$suffix', sensor_suffix_true='$suffix_true'
  ,sensor_suffix_false='$suffix_false', nodo_unit_nr='$unit',par1='$par1',graph_hours='$graph_hours',graph_min_ticksize='$graph_min_ticksize',graph_type='$graph_type',graph_line_color='$graph_line_color'
  WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
  // once saved, redirect back to the view page 
@@ -147,8 +151,10 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
 	
 		<label for="select-choice-0" class="select" >Input type:</label>
 		<select name="type" id="type" data-native-menu="false" >
-			<option value="1" <?php if ($row['sensor_type'] == 1) {echo 'selected="selected"';}?>>WiredIn</option>
+			<option value="1" <?php if ($row['sensor_type'] == 1) {echo 'selected="selected"';}?>>WiredAnalog</option>
 			<option value="2" <?php if ($row['sensor_type'] == 2) {echo 'selected="selected"';}?>>Variable</option>
+			<option value="3" <?php if ($row['sensor_type'] == 3) {echo 'selected="selected"';}?>>PulseTime</option>
+			<option value="4" <?php if ($row['sensor_type'] == 4) {echo 'selected="selected"';}?>>PulseCount</option>
 		</select>	
 		
 		<br \>
@@ -229,14 +235,16 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
 		<label for="unit" >Nodo unit: (1...15)</label>
 		<input type="text" maxLength="2" name="unit" id="unit" value="<?php echo $row['nodo_unit_nr'] ;?>"  />
 		<br \>
-		<div id="label_wiredanalog_div">
-			<label for="name">WiredIn port: (1...8)</label>
+		<div id="wiredanalog_wiredin_div">
+			<div id="label_wiredanalog_div">
+				<label for="name">WiredIn port: (1...8)</label>
+			</div>
+			<div id="label_variable_div">
+				<label for="name">Variable: (1...15)</label>
+			</div>
+			<input type="text" maxLength="2" name="par1" id="par1" value="<?php echo $row['par1'] ;?>"  />
+			<br \>
 		</div>
-		<div id="label_variable_div">
-			<label for="name">Variable: (1...15)</label>
-		</div>
-		<input type="text" maxLength="2" name="par1" id="par1" value="<?php echo $row['par1'] ;?>"  />
-		<br \>
 		<div id="graph_div">
 			<label for="select-choice-5" class="select" >Graph: type:</label>
 			<select name="graph_type" id="graph_type" data-native-menu="false" >
@@ -249,6 +257,12 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
 			<label for="graph_hours">Graph: maximum hours to show:</label>
 			<input type="text" maxLength="5" name="graph_hours" id="graph_hours" value="<?php echo $row['graph_hours'] ;?>"  />
 			<br \>
+			<label for="formula">Formula: (examples: %value% * 1000, 1000 / %value% ) <i>*optional</i></label>
+			<input type="text" MaxLength="50" name="formula" id="formula" value="<?php echo $row['formula'] ;?>"  />
+			<br \>
+			<label for="round">Round: <i>(rounds the value to the specified precision)</i></label>
+				<input type="text" MaxLength="1" name="round" id="round" value="<?php echo $row['round'] ;?>"  />
+			<br \>				
 			<label for="select-choice-6" class="select" >Graph line color:</label>
 			<select name="graph_line_color" id="graph_line_color" data-native-menu="true" >
 				<option value=""<?php if ($row['graph_line_color'] == "") {echo 'selected="selected"';}?>>Default</option>
@@ -278,6 +292,7 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 && $_POST['input_output'] == 2 ) 
 				<option value="5"<?php if ($row['graph_min_ticksize'] == 5) {echo 'selected="selected"';}?>>Months</option>
 			</select>
 			<br \>
+				
 			</div>
 		</div>
 		<br \>	
@@ -319,6 +334,16 @@ if ($row['sensor_type'] == 1) {
 	echo "$('#input_output_div').show();";
 	
 		
+	
+}
+
+ if ($row['sensor_type'] == 3 || $row['sensor_type'] == 4 ) {
+
+	echo "$('#label_wiredanalog_div').hide();";
+	echo "$('#label_variable_div').show();";
+	echo "$('#graph_div').hide();";
+	echo "$('#input_output_div').show();";
+	echo "$('#wiredanalog_wiredin_div').hide();";
 	
 }
 
@@ -390,25 +415,34 @@ if ($row['graph_type'] == 2) {
 
 $('#type').change(function() 
 {
-//WiredIn
-if ($(this).attr('value')==1) {   
+	//WiredIn
+	if ($(this).attr('value')==1) {   
 
-$('#label_wiredanalog_div').show();  
-$('#label_variable_div').hide();   
-$('#input_output_div').hide(); 
-$('#graph_div').show(); 
+		$('#label_wiredanalog_div').show();  
+		$('#label_variable_div').hide();   
+		$('#input_output_div').hide(); 
+		$('#graph_div').show();
+		$('#wiredanalog_wiredin_div').show();		
 
-}
+	}
   
-//Variable
-if ($(this).attr('value')==2) {   
+	//Variable
+	if ($(this).attr('value')==2) {   
 
-$('#label_wiredanalog_div').hide();  
-$('#label_variable_div').show(); 
-$('#input_output_div').show();  
-$('#graph_div').hide(); 
- 
-}
+		$('#label_wiredanalog_div').hide();  
+		$('#label_variable_div').show(); 
+		$('#input_output_div').show();  
+		$('#graph_div').hide(); 
+		$('#wiredanalog_wiredin_div').show();
+	 
+	}
+
+	//PulseCount,PulseTime
+	if ($(this).attr('value')==3 || $(this).attr('value')==4 ) {  
+		
+		$('#wiredanalog_wiredin_div').hide();
+		
+	}
 });
 
 $('#display').change(function() 

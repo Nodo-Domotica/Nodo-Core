@@ -23,6 +23,11 @@ require_once('../include/user_settings.php');
 
 $page_title = "Setup: Devices";
 
+$sql = "SELECT * FROM nodo_tbl_groups WHERE user_id='$userId'";
+     $query = mysql_query($sql);
+     while ( $groupresults[] = mysql_fetch_object ( $query ) );
+     array_pop ( $groupresults );
+
 // check if the form has been submitted. If it has, process the form and save it to the database if 
 
 if (isset($_POST['submit'])) 
@@ -31,6 +36,7 @@ if (isset($_POST['submit']))
   
 $type = mysql_real_escape_string(htmlspecialchars($_POST['type']));
 $naam = mysql_real_escape_string(htmlspecialchars($_POST['naam'])); 
+$group_id = mysql_real_escape_string(htmlspecialchars($_POST['group']));
 $label_on = mysql_real_escape_string(htmlspecialchars($_POST['label_on']));
 $label_off = mysql_real_escape_string(htmlspecialchars($_POST['label_off']));
 $address = mysql_real_escape_string(htmlspecialchars($_POST['address']));  
@@ -51,9 +57,9 @@ $RSDevices_rows = mysql_num_rows($RSDevices);
 //aantal records met 1 verhogen zodat we deze waarde in het sorteerveld kunnen gebruiken
 $sort_order = $RSDevices_rows + 1; 
 
-mysql_query("INSERT INTO nodo_tbl_devices(naam, label_on, label_off, type, toggle, dim, homecode, address, user_event_on, user_event_off, user_id,sort_order)
+mysql_query("INSERT INTO nodo_tbl_devices(naam, group_id, label_on, label_off, type, toggle, dim, homecode, address, user_event_on, user_event_off, user_id,sort_order)
 VALUES
-('$naam','$label_on','$label_off','$type','$toggle','$dim','$homecode','$address','$user_event_on','$user_event_off','$userId','$sort_order')") or die(mysql_error());
+('$naam','$group_id','$label_on','$label_off','$type','$toggle','$dim','$homecode','$address','$user_event_on','$user_event_off','$userId','$sort_order')") or die(mysql_error());
  header("Location: devices.php#saved");   
  
  }
@@ -62,26 +68,29 @@ VALUES
  //Records sorteren
  if (isset($_GET['sort'])) {
 	
-	$device_id = $_GET['id'];
-	$sort = $_GET['sort'];
-	$sort_order = $_GET['sort_order'];
-	$prev_record = $_GET['sort_order'] - 1;
-	$next_record = $_GET['sort_order'] + 1;
-	
-	if ($sort == "up") {
-	
+	if (is_numeric($_GET['id']) && is_numeric($_GET['sort_order'])){
+		
+		$device_id = $_GET['id'];
+		$sort = $_GET['sort'];
+		$sort_order = $_GET['sort_order'];
+		$prev_record = $_GET['sort_order'] - 1;
+		$next_record = $_GET['sort_order'] + 1;
+		
+		if ($sort == "up") {
+		
 
-	 mysql_query("UPDATE nodo_tbl_devices SET sort_order=sort_order +1 WHERE user_id='$userId' AND sort_order='$prev_record'") or die(mysql_error()); 	
-	 mysql_query("UPDATE nodo_tbl_devices SET sort_order=sort_order -1 WHERE user_id='$userId' AND sort_order='$sort_order' AND id='$device_id'") or die(mysql_error()); 
-	
-	}
-	if ($sort == "down") {
+		 mysql_query("UPDATE nodo_tbl_devices SET sort_order=sort_order +1 WHERE user_id='$userId' AND sort_order='$prev_record'") or die(mysql_error()); 	
+		 mysql_query("UPDATE nodo_tbl_devices SET sort_order=sort_order -1 WHERE user_id='$userId' AND sort_order='$sort_order' AND id='$device_id'") or die(mysql_error()); 
+		
+		}
+		if ($sort == "down") {
 
-	 mysql_query("UPDATE nodo_tbl_devices SET sort_order=sort_order -1 WHERE user_id='$userId' AND sort_order='$next_record'") or die(mysql_error()); 	
-	 mysql_query("UPDATE nodo_tbl_devices SET sort_order=sort_order +1 WHERE user_id='$userId' AND sort_order='$sort_order' AND id='$device_id'") or die(mysql_error()); 
-	
+		 mysql_query("UPDATE nodo_tbl_devices SET sort_order=sort_order -1 WHERE user_id='$userId' AND sort_order='$next_record'") or die(mysql_error()); 	
+		 mysql_query("UPDATE nodo_tbl_devices SET sort_order=sort_order +1 WHERE user_id='$userId' AND sort_order='$sort_order' AND id='$device_id'") or die(mysql_error()); 
+		
+		}
+		header("Location: devices.php?id=$device_id"); 
 	}
-header("Location: devices.php?id=$device_id"); 
 }
 
  ?>
@@ -126,6 +135,15 @@ header("Location: devices.php?id=$device_id");
 		<div id="name_div"> 		
 		<label for="naam">Device name:</label>
 		<input type="text" name="naam" id="naam" value=""  />
+		<br \>
+		<label for="group" class="select" >Group member: <i>*optional</i></label>
+		<select name="group" id="group" data-native-menu="false">
+			<option value="">Select group</option>
+			<option value="">All devices</option>
+		<?php foreach ( $groupresults as $option ) : ?>
+            <option value="<?php echo $option->id; ?>"><?php echo $option->name; ?></option>
+		<?php endforeach; ?>
+		</select>
 		<br \>
 		<label for="select-choice-1" class="select" >Switch type:</label>
 		    <select name="presentation" id="presentation" data-native-menu="false" >

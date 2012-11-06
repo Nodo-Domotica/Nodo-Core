@@ -16,6 +16,16 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
+//Zomer/winter tijd check
+if (date('I') == 0) {$DLS='No';} else {$DLS='Yes';}
+
+$date = date("d-m-Y");
+$time = date("H:i");
+$dow= date("w")+1; // php zondag = 0 Nodo gaat uit van 1
+
+//Header voor het timesync van de Nodo
+header("Nodo-Date: Day=".$dow.", Date=".$date.", Time=".$time.", DLS=".$DLS);
+
 
 require_once('connections/db_connection.php'); 
 
@@ -33,7 +43,7 @@ $result = mysql_query("SELECT id,nodo_id,nodo_password,cookie,cookie_count FROM 
 $row = mysql_fetch_array($result);
 $userId = $row['id']; 
 
-$cookie_counter = $row['cookie_count'] + 1; //temp variable voor stabiliteits test
+$cookie_counter = $row['cookie_count'] + 1;
 $cookie_webapp = $row['cookie'];
 $nodo_password = $row['nodo_password']; 
 
@@ -46,12 +56,12 @@ if ($key_webapp == $key_nodo) {$key_ok = 1;}
 //Nieuwe cookie en header informatie in de database opslaan
 if (isset($_GET['cookie'])){
 	
-	$cookie = $_GET['cookie'];
+	$cookie = mysql_real_escape_string($_GET['cookie']);
 	$build = $_SERVER['HTTP_USER_AGENT'];
 		
 		mysql_query("UPDATE nodo_tbl_users SET cookie='$cookie', cookie_update=NOW(), cookie_count='$cookie_counter', nodo_build='$build' WHERE id='$userId'") or die(mysql_error());
-		
-	}
+		header('cookie: $cookie');
+}
  
 
  
@@ -59,7 +69,7 @@ if (isset($_GET['cookie'])){
 if($userId > 0 && $key_ok == 1) {
 
 	 //Alle komende output bufferen
-	ob_start();
+	//ob_start();
 	
 	
 	 	 	
@@ -75,16 +85,16 @@ if($userId > 0 && $key_ok == 1) {
 	}
  
     //Grootte van de output opvragen
-	$size = ob_get_length();
+	//$size = ob_get_length();
 
 	//!!!!Zaken welke output voor de Nodo gegeneren moeten voor het sluiten van de connectie worden geplaatst!!!!!
 	
 	//Headers naar de client sturen zodat deze de verbinding verbreekt.
-	header("Content-Length: $size");
+	/*header("Content-Length: $size");
 	header('Connection: close');
 	ob_end_flush();
 	ob_flush();
-	flush();	
+	flush(); */	
 
 	//Hier begint het achtergrond process, de connectie is op dit moment al verbroken
 	
@@ -109,20 +119,14 @@ if($userId > 0 && $key_ok == 1) {
 			$par2 = strtolower($cmd_array[2]);
 			 
 			//Event in nodo_tbl_event_log opslaan
-			
 			mysql_query("INSERT INTO nodo_tbl_event_log (user_id, nodo_unit_nr, event) VALUES ('$userId','$unit','$eventraw')") or die(mysql_error());
 			
-		
-			
-			 
 			 
 			//Kijken of we een notificatie moeten sturen	
-			
 			$RSnotify = mysql_query("SELECT recipient, subject, body FROM nodo_tbl_notifications WHERE user_id='$userId' AND event='$eventraw'") or die(mysql_error());  
 			
 					
-			while($row_RSnotify = mysql_fetch_array($RSnotify)) 
-				{                                
+			while($row_RSnotify = mysql_fetch_array($RSnotify)) {                                
 			   
 					 $to = $row_RSnotify['recipient'];
 					 $subject = $row_RSnotify['subject'];
@@ -131,7 +135,7 @@ if($userId > 0 && $key_ok == 1) {
 					 $headers = "From:" . $from;
 					 mail($to,$subject,$message,$headers);
 					 
-				}
+			}
 
 														
 			switch ($cmd) {
@@ -139,26 +143,42 @@ if($userId > 0 && $key_ok == 1) {
 				
 				case "wiredanalog":
 				case "variable":
+				case "variableset":
+				case "pulsetime":
+				case "pulsecount":
 					 
 					 if ($cmd == "wiredanalog") {$type=1;}
-					 if ($cmd == "variable") {$type=2;}
-					
+					 if ($cmd == "variable" || $cmd == "variableset" ) {$type=2;}
+					 if ($cmd == "pulsetime") {$type=3;}
+					 if ($cmd == "pulsecount") {$type=4;}
 
 										
 					//Sensor_id (id) opvragen uit values tabel 
-					$RS_sensor = mysql_query("SELECT id FROM nodo_tbl_sensor WHERE user_id='$userId' AND par1='$par1' AND sensor_type='$type' AND nodo_unit_nr='$unit'") or die(mysql_error());  
+					if ($type == 1 || $type == 2) { //wiredanalog, variable
+						$RS_sensor = mysql_query("SELECT id FROM nodo_tbl_sensor WHERE user_id='$userId' AND par1='$par1' AND sensor_type='$type' AND nodo_unit_nr='$unit'") or die(mysql_error());  
+					}
+					
+					if ($type == 3 || $type == 4) { //pulsetime, pulsecount
+						$RS_sensor = mysql_query("SELECT id FROM nodo_tbl_sensor WHERE user_id='$userId' AND sensor_type='$type' AND nodo_unit_nr='$unit'") or die(mysql_error());  
+					}
+										
 					$row_RS_sensor = mysql_fetch_array($RS_sensor); //Eerste sensor ophalen volgende sensoren met dezelfde parameters worden niet behandeld.
 					$sensor_id=$row_RS_sensor[id]; //$sensor_id gebruiken we om in de tabel sensor_data bij te houden welke data bij welke sensor hoort 
 								
 					//Alleen waarde opslaan als er een sensor is aangemaakt
 					if ($sensor_id > 0) {
-						mysql_query("INSERT INTO nodo_tbl_sensor_data (sensor_id, data) VALUES ('$sensor_id','$par2')") or die(mysql_error()); 
+						if ($type == 1 || $type == 2) { //wiredanalog, variable
+							mysql_query("INSERT INTO nodo_tbl_sensor_data (sensor_id, data) VALUES ('$sensor_id','$par2')") or die(mysql_error()); 
+							mysql_query("UPDATE nodo_tbl_sensor SET data='$par2' WHERE par1='$par1' AND nodo_unit_nr='$unit' AND user_id='$userId' AND sensor_type='$type'") or die(mysql_error());
+						}
+						if ($type == 3 || $type == 4) { //pulsetime, pulsecount
+							mysql_query("INSERT INTO nodo_tbl_sensor_data (sensor_id, data) VALUES ('$sensor_id','$par1')") or die(mysql_error()); 
+							mysql_query("UPDATE nodo_tbl_sensor SET data='$par1' WHERE nodo_unit_nr='$unit' AND user_id='$userId' AND sensor_type='$type'") or die(mysql_error());
+						}
+										
 					}
 					
-					//Waarde updaten
 					
-					mysql_query("UPDATE nodo_tbl_sensor SET data='$par2' WHERE par1='$par1' AND nodo_unit_nr='$unit' AND user_id='$userId' AND sensor_type='$type'") or die(mysql_error());
-						
 				break;
 				
 				case "busy" :

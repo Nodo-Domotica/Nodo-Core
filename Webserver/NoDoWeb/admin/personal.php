@@ -30,7 +30,7 @@ if (isset($_POST['submit'])) {
 	$title = mysql_real_escape_string(htmlspecialchars($_POST['title'])); 
 	$first_name = mysql_real_escape_string(htmlspecialchars($_POST['first_name']));
 	$last_name = mysql_real_escape_string(htmlspecialchars($_POST['last_name']));
-	$password = mysql_real_escape_string(htmlspecialchars($_POST['password']));
+	$password = $_POST['password'];
 
 
 	if ($password == "") {
