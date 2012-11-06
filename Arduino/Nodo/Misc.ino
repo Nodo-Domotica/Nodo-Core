@@ -365,24 +365,12 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
       break;
 
     case CMD_PULSE_TIME:
-      // eerst een keer dit commando uitvoeren voordat de teller gaat lopen.
-      if(!bitRead(HW_Config,HW_IR_PULSE))
-        {
-        bitWrite(HW_Config,HW_IR_PULSE,true);
-        attachInterrupt(PULSE_IRQ,PulseCounterISR,FALLING); // IRQ behorende bij PIN_IR_RX_DATA
-        }
       event=PulseTime&0xffff;
       *Par1=EventPartPar1(event);      
       *Par2=EventPartPar2(event);      
       break;
 
     case CMD_PULSE_COUNT:
-      // eerst een keer dit commando uitvoeren voordat de teller gaat lopen.
-      if(!bitRead(HW_Config,HW_IR_PULSE))
-        {
-        bitWrite(HW_Config,HW_IR_PULSE,true);
-        attachInterrupt(PULSE_IRQ,PulseCounterISR,FALLING); // IRQ behorende bij PIN_IR_RX_DATA
-        }
       event=PulseCount&0xffff;
       *Par1=EventPartPar1(event);      
       *Par2=EventPartPar2(event);      
@@ -807,7 +795,7 @@ boolean GetArgv(char *string, char *argv, int argc)
 
         if(argc_pos==argc)
           return true;
-
+          
         argv[0]=0;
         argv_pos=0;
         string_pos++;

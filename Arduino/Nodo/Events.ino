@@ -315,6 +315,8 @@ boolean CheckEvent(unsigned long Event, unsigned long MacroEvent, byte Port)
       case CMD_MESSAGE:  
       case CMD_KAKU:
       case CMD_KAKU_NEW:
+      case CMD_PULSE_COUNT:
+      case CMD_PULSE_TIME:
       case CMD_USEREVENT:
         x=Command;
         break;

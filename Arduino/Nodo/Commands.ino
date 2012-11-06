@@ -95,6 +95,10 @@ byte Commanderror(unsigned long Content)
       if(Par2==VALUE_ON || Par2==VALUE_OFF || Par2<=16)return false;
       return MESSAGE_02;
 
+    case CMD_PULSE_COUNT:    
+      if(Par2==VALUE_ON || Par2==VALUE_OFF || Par2==CMD_RESET)return false;
+      return MESSAGE_02;
+
     case CMD_RAWSIGNAL_SEND:    
       if(Par2==VALUE_SOURCE_RF || Par2==VALUE_SOURCE_IR || Par2==0)return false;
       return MESSAGE_02;
@@ -619,7 +623,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     case CMD_WIRED_SMITTTRIGGER:
       z=EventPartWiredPort(Content);
       y=EventPart10Bit(Content);
-      Settings.WiredInputSmittTrigger[z-1]=y;
+      Settings.WiredInputSmittTrigger[z]=y;
       
       break;                  
 
@@ -710,6 +714,20 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       SimulateDay(); 
       break;     
 
+    case CMD_PULSE_COUNT:    
+      // eerst een keer dit commando uitvoeren voordat de teller gaat lopen.
+      if(Par1==VALUE_ON)
+        {
+        bitWrite(HW_Config,HW_IR_PULSE,true);
+        attachInterrupt(PULSE_IRQ,PulseCounterISR,FALLING); // IRQ behorende bij PIN_IR_RX_DATA
+        }
+      else
+        {
+        bitWrite(HW_Config,HW_IR_PULSE,false);
+        detachInterrupt(PULSE_IRQ); // IRQ behorende bij PIN_IR_RX_DATA
+        }
+      break;
+      
     case CMD_RAWSIGNAL_SAVE:
       Led(BLUE);
       PrintTerminal(ProgmemString(Text_07));
@@ -795,10 +813,10 @@ int ExecuteLine(char *Line, byte Port)
     int LineLength=strlen(Line);
     while(LinePos<=LineLength && error==0)
       {
-      x=Line[LinePos++];
+      char LineChar=Line[LinePos];
   
       // Chat teken. 
-      if(x=='$')
+      if(LineChar=='$')
         {
         y=bitRead(HW_Config,HW_SERIAL);
         bitWrite(HW_Config,HW_SERIAL,1);
@@ -808,11 +826,11 @@ int ExecuteLine(char *Line, byte Port)
         }
 
       // Comment teken. hierna verder niets meer doen.
-      if(x=='!') 
+      if(LineChar=='!') 
         LinePos=LineLength+1; // ga direct naar einde van de regel.
 
       // als puntkomma (scheidt opdrachten) of einde string
-      if((x=='!' || x==';' || x==0) && CommandPos>1)
+      if((LineChar=='!' || LineChar==';' || LineChar==0) && CommandPos>1)
         {
         Command[CommandPos]=0;
         CommandPos=0;
@@ -822,7 +840,6 @@ int ExecuteLine(char *Line, byte Port)
         v=0;
         
         // string met commando compleet
-
         if(GetArgv(Command,TmpStr1,1));
           v=str2int(TmpStr1); // als hex event dan is v gevuld met waarde
   
@@ -876,12 +893,20 @@ int ExecuteLine(char *Line, byte Port)
             case CMD_VARIABLE_SET:
             case CMD_VARIABLE_INC:
             case CMD_VARIABLE_EVENT:
-            case CMD_WIRED_THRESHOLD:
-            case CMD_WIRED_SMITTTRIGGER:
               if(GetArgv(Command,TmpStr1,3))
                 v=float2event(atof(TmpStr1), Par1, Cmd);
               break;
   
+            case CMD_WIRED_THRESHOLD:
+            case CMD_WIRED_SMITTTRIGGER:
+              if(GetArgv(Command,TmpStr1,3))
+                {
+                v=command2event(Settings.Unit,Cmd,0,0);
+                v|=(unsigned long)str2int(TmpStr1)&0x3ff;
+                v|=(unsigned long)(((Par1-1)&0xf)<<12);
+                }
+              break;
+                
             case CMD_EVENTLIST_WRITE:
               if(SendTo!=0)
                 v=command2event(Settings.Unit, CMD_EVENTLIST_WRITE,Par1,0);      // verwerk binnengekomen event.
@@ -1321,8 +1346,11 @@ int ExecuteLine(char *Line, byte Port)
         }
         
       // Tekens toevoegen aan commando zolang er nog ruimte is in de string
-      if(x!=';' && CommandPos<MaxCommandLength)
-        Command[CommandPos++]=x;      
+      if(LineChar!=';' && CommandPos<MaxCommandLength)
+        {
+        Command[CommandPos++]=LineChar;      
+        }
+      LinePos++;
       }    
   
     if(SendTo!=0)// Verzend de inhoud van de queue naar de slave Nodo
