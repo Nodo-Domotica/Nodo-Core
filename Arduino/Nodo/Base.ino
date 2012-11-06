@@ -1,5 +1,5 @@
 #define SETTINGS_VERSION     16
-#define NODO_BUILD          459
+#define NODO_BUILD          462
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -285,7 +285,6 @@ PROGMEM const char *CommandText_tabel[]={
 PROGMEM prog_uint16_t Sunrise[]={528,525,516,503,487,467,446,424,401,378,355,333,313,295,279,268,261,259,263,271,283,297,312,329,345,367,377,394,411,428,446,464,481,498,512,522,528,527};
 PROGMEM prog_uint16_t Sunset[]={999,1010,1026,1044,1062,1081,1099,1117,1135,1152,1169,1186,1203,1219,1235,1248,1258,1263,1264,1259,1249,1235,1218,1198,1177,1154,1131,1107,1084,1062,1041,1023,1008,996,990,989,993,1004};
 #endif
-
 
 // omschakeling zomertijd / wintertijd voor komende 10 jaar. één int bevat de omschakeldatum van maart en oktober.
 #define DLSBase 2010 // jaar van eerste element uit de array
@@ -1003,18 +1002,18 @@ void loop()
                       }
                     }
                   }
-
-                else 
-                  {// bij een niet printbaar teken wordt de verbinding direct verbroken. Uit veiligheidsoverweging om te voorkomen dat bulk rommel naar de Nodo gestuurd wordt.
-                  // TerminalSessie timeout, dan de verbinding netjes afsluiten
-                  InputBuffer_Terminal[0]=0;
-                  TerminalClient.println(ProgmemString(Text_30));
-                  delay(100); // geef de client even de gelegenheid de tekst te ontvangen
-                  TerminalClient.flush();// eventuele rommel weggooien.
-                  TerminalClient.stop();
-                  TerminalConnected=0;
-                  break;
-                  }
+//??? voor testdoeleinden tijdelijk gedisabled.
+//                else 
+//                  {// bij een niet printbaar teken wordt de verbinding direct verbroken. Uit veiligheidsoverweging om te voorkomen dat bulk rommel naar de Nodo gestuurd wordt.
+//                  // TerminalSessie timeout, dan de verbinding netjes afsluiten
+//                  InputBuffer_Terminal[0]=0;
+//                  TerminalClient.println(ProgmemString(Text_30));
+//                  delay(100); // geef de client even de gelegenheid de tekst te ontvangen
+//                  TerminalClient.flush();// eventuele rommel weggooien.
+//                  TerminalClient.stop();
+//                  TerminalConnected=0;
+//                  break;
+//                  }
                 }
               }
             }

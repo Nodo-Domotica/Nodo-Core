@@ -1,21 +1,20 @@
 
 /**************************************************************************************************************************\
 Known Errors / ToDo:
-- PullUp op mega correct?
-- deelfactor pulsetime
-- dubbel prompt teken.
 - SendBusy op de Master zet de slaves tijdelijk op onbereikbaar. Hierdoor werkt SendTo niet
 - In geval van onbereikbare Nodo-Small: Hoe resetten?
-- Status All uitvraag bij een Small levert: [Input=File, Unit=15, Event=Debug] Geen geldig event
+- status all zet pulsen tellen in werking. 
 - Vreemde weergave events: Internal=System
 
 Aanpassingen t.o.v. laatste build:
-- Bug in weergave: WiredAnalog, WiredSmittTrigger, WiredThreshold opgelost
-- PulseTime niet in HEX weergeven
-- PulseCount irt. status all: [Status PulseCount] geeft waarde, [Status PulseCount,Reset] leest uit en zet waarde op nul
-- PULSE_TIME_DEVIDE toegevoegd aan gebruikersparameters voor meecompileren
+- Commando [PulseCount on/off] voor inschakelen/uitschakelen pulsen tellen.
+- Invoer bug opgelost WiredSmittTrigger en WiredThreshold
+- Bug opgelost dat in enkele gevallen een regel in terminal venster niet correct werd geparsed.
 
 Aanpassingen t.o.v. Final Beta Build 436:
+- Commando [PulseCount on/off] voor inschakelen/uitschakelen pulsen tellen.
+- PulseCount irt. status all: [Status PulseCount] geeft waarde, [Status PulseCount,Reset] leest uit en zet waarde op nul
+- PULSE_TIME_DEVIDE toegevoegd aan gebruikersparameters voor meecompileren
 - Invoerregels: variabelen gebruiken tussen % en formules tussen #
 - Toevoeging commando [if]. Kan worden gebruikt in scripts of invoerregels in terminal venster. Kent '=' vergelijking en '<>'vergelijking
 - Interne verwerking van variabelen en analoge waarden nu onder de motorkap geregeld met variabeletype float.
