@@ -57,26 +57,29 @@ $sort_order = $RSActivities_rows + 1;
  //Records sorteren
  if (isset($_GET['sort'])) {
 	
-	$device_id = $_GET['id'];
-	$sort = $_GET['sort'];
-	$sort_order = $_GET['sort_order'];
-	$prev_record = $_GET['sort_order'] - 1;
-	$next_record = $_GET['sort_order'] + 1;
-	
-	if ($sort == "up") {
-	
+		if (is_numeric($_GET['id']) && is_numeric($_GET['sort_order'])){
+		
+		$device_id = $_GET['id'];
+		$sort = mysql_real_escape_string($_GET['sort']);
+		$sort_order = $_GET['sort_order'];
+		$prev_record = $_GET['sort_order'] - 1;
+		$next_record = $_GET['sort_order'] + 1;
+		
+		if ($sort == "up") {
+		
 
-	 mysql_query("UPDATE nodo_tbl_activities SET sort_order=sort_order +1 WHERE user_id='$userId' AND sort_order='$prev_record'") or die(mysql_error()); 	
-	 mysql_query("UPDATE nodo_tbl_activities SET sort_order=sort_order -1 WHERE user_id='$userId' AND sort_order='$sort_order' AND id='$device_id'") or die(mysql_error()); 
-	
-	}
-	if ($sort == "down") {
+		 mysql_query("UPDATE nodo_tbl_activities SET sort_order=sort_order +1 WHERE user_id='$userId' AND sort_order='$prev_record'") or die(mysql_error()); 	
+		 mysql_query("UPDATE nodo_tbl_activities SET sort_order=sort_order -1 WHERE user_id='$userId' AND sort_order='$sort_order' AND id='$device_id'") or die(mysql_error()); 
+		
+		}
+		if ($sort == "down") {
 
-	 mysql_query("UPDATE nodo_tbl_activities SET sort_order=sort_order -1 WHERE user_id='$userId' AND sort_order='$next_record'") or die(mysql_error()); 	
-	 mysql_query("UPDATE nodo_tbl_activities SET sort_order=sort_order +1 WHERE user_id='$userId' AND sort_order='$sort_order' AND id='$device_id'") or die(mysql_error()); 
-	
+		 mysql_query("UPDATE nodo_tbl_activities SET sort_order=sort_order -1 WHERE user_id='$userId' AND sort_order='$next_record'") or die(mysql_error()); 	
+		 mysql_query("UPDATE nodo_tbl_activities SET sort_order=sort_order +1 WHERE user_id='$userId' AND sort_order='$sort_order' AND id='$device_id'") or die(mysql_error()); 
+		
+		}
+		header("Location: activities.php?id=$device_id"); 
 	}
-header("Location: activities.php?id=$device_id"); 
 }
 
 

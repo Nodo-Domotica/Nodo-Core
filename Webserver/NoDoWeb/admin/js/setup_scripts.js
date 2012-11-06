@@ -71,6 +71,7 @@ $('#scriptfile').change( function( e ) {
 				$('#write').button('enable');
 				$('#checkbox').checkboxradio('enable');
 				$('#scriptcontent').textinput('enable');
+				
 			}
 			else {
 				$('#delete').button('disable');
@@ -100,8 +101,8 @@ $('#eventlist').click( function( e ) {
 		$.post("../webservice/admin/json_scripts.php", { read: "1", scriptfile: "EVENTLST" },function(data) {   
 			$('#scriptcontent').val(data).keyup();
 			$('#scriptcontent').textinput('enable');
-			$('#write').button('enable');
-		    $('#checkbox').checkboxradio('enable');
+			//$('#write').button('enable');
+		    //$('#checkbox').checkboxradio('enable');
 			$('#scriptcontent').focus();
 		});
        
@@ -171,7 +172,7 @@ $('#new3').click(function( e ) {
 	
 		$('#new_message').append('Creating file: ' + $('#scriptfilenew').val().toUpperCase() +'...');
 	
-		$.post("../webservice/admin/json_scripts.php", { new: "1", scriptfile: $('#scriptfilenew').val() },function(data) {
+		$.post("../webservice/admin/json_scripts.php", { newfile: "1", scriptfile: $('#scriptfilenew').val() },function(data) {
 		
 		$('#new_message').empty();
 		$('#new_message').append('Script '+ $('#scriptfilenew').val().toUpperCase() +' created.');
@@ -227,7 +228,7 @@ $('#delete3').click(function( e ) {
 	
 	$('#delete3').button('disable');
 	
-	$.post("../webservice/admin/json_scripts.php", { delete: "1", scriptfile: $('#scriptfile').val() },function(data) {
+	$.post("../webservice/admin/json_scripts.php", { deletefile: "1", scriptfile: $('#scriptfile').val() },function(data) {
 		
 		$("#delete2 .ui-btn-text").text("Close");
 		

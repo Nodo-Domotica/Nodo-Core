@@ -22,22 +22,66 @@ require_once('../include/auth.php');
 
 
 mysql_select_db($database, $db);
-$query_RSvalue = "SELECT id,user_id,display,data,sensor_suffix_false,sensor_suffix_true,graph_type,graph_hours,graph_min_ticksize FROM nodo_tbl_sensor WHERE user_id='$userId'";
+$query_RSvalue = "SELECT id,user_id,display,data,formula,round,sensor_suffix_false,sensor_suffix_true,graph_type,graph_hours,graph_min_ticksize FROM nodo_tbl_sensor WHERE user_id='$userId'";
 $RSvalue = mysql_query($query_RSvalue, $db) or die(mysql_error());
 $row_RSvalue = mysql_fetch_assoc($RSvalue);
 
+/**
+* Evaluates a math equation and returns the result, sanitizing
+* input for security purposes.  Note, this function does not
+* support math functions (sin, cos, etc)
+*
+* @param string the math equation to evaluate (ex:  100 * 24)
+* @return number
+*/
+function evalmath($equation) {
+
+	$result = 0;
+	 
+	// sanitize imput
+	$equation = preg_replace("/[^0-9+\-.*\/()%]/","",$equation);
+	 
+	// convert percentages to decimal
+	$equation = preg_replace("/([+-])([0-9]{1})(%)/","*(1\$1.0\$2)",$equation);
+	$equation = preg_replace("/([+-])([0-9]+)(%)/","*(1\$1.\$2)",$equation);
+	$equation = preg_replace("/([0-9]+)(%)/",".\$1",$equation);
+	 
+	if ( $equation != "" ) {
+		$result = @eval("return " . $equation . ";" );
+	}
+	 
+	if ($result === false) {
+		return "Error in formula!"; //Unable to calculate equation
+	}
+	 
+	return $result;
+}
 
 
 
 if ($row_RSvalue != NULL){
 do {  
    
+   $formula = $row_RSvalue['formula'];
+   
+   
+   
    if ($row_RSvalue['display'] == 1){
    
 		//Lijn grafiek dus laatste meting weergeven
 		if ($row_RSvalue['graph_type'] <=1 ){
 		
-			$value = $row_RSvalue['data'];
+			
+			if ($formula != '') {
+				
+				$formula = str_ireplace("%value%",$row_RSvalue['data'],$formula);
+				$data = round(evalmath($formula),$row_RSvalue['round']);
+			}
+			else {
+				$data = $row_RSvalue['data'];
+			}
+		
+			$value = $data;
 		}
 		
 		if ($row_RSvalue['graph_type'] == 2){
@@ -54,12 +98,22 @@ do {
 				}
 		
 		//Staaf grafiek, totaal meting per dag weergeven
-		$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m-%d') as timestamp , ROUND(SUM(data),2) as data FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= NOW() - INTERVAL $graph_hours HOUR GROUP BY date(timestamp) ORDER BY timestamp DESC LIMIT 1;";
+		$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m-%d') as timestamp , SUM(data) as data FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= NOW() - INTERVAL $graph_hours HOUR GROUP BY date(timestamp) ORDER BY timestamp DESC LIMIT 1;";
 		$RSsensor_value_data = mysql_query($query_RSsensor_value_data, $db) or die(mysql_error()); 
 		$row_RSsensor_value_data = mysql_fetch_assoc($RSsensor_value_data);
-		  
-		$value = $row_RSsensor_value_data['data'];
+			
+		if ($formula != '') {
+				
+				$formula = str_ireplace("%value%",$row_RSsensor_value_data['data'],$formula);
+				$data = round(evalmath($formula),$row_RSvalue['round']);
+			}
+			else {
+				$data = $row_RSsensor_value_data['data'];
+			}
 		
+			$value = $data;	
+		
+			
 		}
 			
    

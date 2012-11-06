@@ -18,6 +18,7 @@ $recordset = mysql_query($query, $db) or die(mysql_error());
 			"type" 		=> $row['type'],
 			"dim" 		=> $row['dim'],
             "dimvalue" 	=> $row['dim_value'],
+			"group" 	=> $row['group_id'],
 			"toggle"	=> $row['toggle']);
         }
  

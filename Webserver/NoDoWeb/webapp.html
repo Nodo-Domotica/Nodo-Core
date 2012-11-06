@@ -21,20 +21,27 @@
 	<!-- header -->
 	<div data-role="header" data-id="toolbar" data-position="fixed" data-tap-toggle="false">
 		<h1 id="header_devices"></h1>
-		<div data-role="navbar" data-iconpos="top">
+		<a id="GroupSelectButton" href="javascript:OpenDeviceGroupPopup();" data-icon="search" data-transition="none" class="ui-btn-right">All devices</a>
+		
+		
+		<div data-role="navbar" id="devices_navbar" data-iconpos="top">
 		<ul>
 			<li><a href="#devices_page" data-icon="devices"  data-transition="none" data-ajax="true">Devices</a></li>
 			<li><a href="#activities_page" data-icon="grid"  data-transition="none" data-ajax="true">Activities</a></li>
 			<li><a href="#values_page" data-icon="measurements" data-transition="none" data-ajax="true">Values</a></li>
 		</ul>
 		</div>
-		
+			
 	</div>
+	
+	
 	<!-- /header -->
 	
 	<div data-role="content">
 	<p></p>
-		<ul id="devices" data-role="listview" data-filter="true" ></ul>
+		
+
+		<ul id="deviceslist" data-role="listview" data-filter="true" ></ul>
 	<p></p>
 	</div>
 	<!-- /content -->
@@ -53,9 +60,16 @@
 	<!-- Start of page: #device_popup -->
 	<div data-role="popup" id="device_popup" data-overlay-theme="c">
 		<a href="#" data-rel="back" data-role="button" data-icon="delete" data-iconpos="notext" class="ui-btn-right">Close</a>
-		<ul id="divdevice" data-role="listview" data-inset="true" style="max-width:300px"></ul>
+		<ul id="devicepopuplist" data-role="listview" data-inset="true" style="max-width:300px"></ul>
 	</div>
 	<!-- /page device_popup -->	
+	
+	<!-- Start of page: #device_group_popup -->
+	<div data-role="popup" id="device_group_popup" data-overlay-theme="c">
+		<a href="#" data-rel="back" data-role="button" data-icon="delete" data-iconpos="notext" class="ui-btn-right">Close</a>
+		<ul id="devicegrouppopuplist" data-role="listview" data-inset="true" style="max-width:300px"></ul>
+	</div>
+	<!-- /page device_group_popup -->
 	
 		
 </div>

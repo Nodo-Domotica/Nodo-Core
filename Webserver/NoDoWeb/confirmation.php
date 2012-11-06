@@ -19,26 +19,36 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 require_once('connections/db_connection.php'); 
 require_once('include/webapp_settings.php');
 
-$confirm_code=$_GET['passkey'];
 
-mysql_select_db($database, $db);
-$result = mysql_query("SELECT id,confirm_code FROM nodo_tbl_users WHERE confirm_code='$confirm_code' ") or die(mysql_error());  
-$row = mysql_fetch_array($result);
-$id = $row['id'];
 
-	if($id > 0) {
-	
-		//Gegevens in de database opslaan
-		//mysql_query("UPDATE nodo_tbl_activities SET name='$name', events='$events' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
-		mysql_select_db($database, $db);
-		mysql_query("UPDATE nodo_tbl_users SET active='1',confirm_code='' WHERE id='$id'") or die(mysql_error());
-		$message = "You account is confirmed<br \>";
-		$message.= "Click <a href=\"http://$WEBAPP_HOST/\">here</a> to login";
-    }
-	else {
+if (isset($_GET['passkey']) && $_GET['passkey'] != null ) {
+
+	$confirm_code = $_GET['passkey'];
+
+	mysql_select_db($database, $db);
+	$result = mysql_query("SELECT id,confirm_code FROM nodo_tbl_users WHERE confirm_code='$confirm_code' ") or die(mysql_error());  
+	$row = mysql_fetch_array($result);
+	$id = $row['id'];
+
+		if($id > 0) {
 		
-		$message = "Confirmation ID not found";
-	}
+			//Gegevens in de database opslaan
+			//mysql_query("UPDATE nodo_tbl_activities SET name='$name', events='$events' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
+			mysql_select_db($database, $db);
+			mysql_query("UPDATE nodo_tbl_users SET active='1',confirm_code='' WHERE id='$id'") or die(mysql_error());
+			$message = "You account is confirmed<br \>";
+			$message.= "Click <a href=\"http://$WEBAPP_HOST/\">here</a> to login";
+		}
+		else {
+			
+			$message = "Confirmation ID". $confirm_code . "not found";
+		}
+	
+}
+else {
+	
+	$message = "Confirmation ID ". $confirm_code . "not correct";
+}
 
 ?>
 

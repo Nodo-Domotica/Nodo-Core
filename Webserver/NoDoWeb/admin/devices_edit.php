@@ -22,6 +22,11 @@ require_once('../include/user_settings.php');
 
 $page_title="Setup: Edit device";
 
+$sql = "SELECT * FROM nodo_tbl_groups WHERE user_id='$userId'";
+     $query = mysql_query($sql);
+     while ( $groupresults[] = mysql_fetch_object ( $query ) );
+     array_pop ( $groupresults );
+
 
 
  // check if the form has been submitted. If it has, process the form and save it to the database if 
@@ -34,7 +39,8 @@ $page_title="Setup: Edit device";
  // get form data, making sure it is valid 
  $id = $_POST['id']; 
  $type = mysql_real_escape_string(htmlspecialchars($_POST['type']));
- $naam = mysql_real_escape_string(htmlspecialchars($_POST['naam'])); 
+ $naam = mysql_real_escape_string(htmlspecialchars($_POST['naam']));
+ $group_id = mysql_real_escape_string(htmlspecialchars($_POST['group'])); 
  $label_on = mysql_real_escape_string(htmlspecialchars($_POST['label_on']));
  $label_off = mysql_real_escape_string(htmlspecialchars($_POST['label_off']));
  $address = mysql_real_escape_string(htmlspecialchars($_POST['address']));  
@@ -47,7 +53,7 @@ $page_title="Setup: Edit device";
   
  // save the data to the database 
  mysql_select_db($database, $db);
- mysql_query("UPDATE nodo_tbl_devices SET naam='$naam', label_on='$label_on', label_off='$label_off', address='$address', user_event_on='$user_event_on', user_event_off='$user_event_off', type='$type', toggle='$toggle', homecode='$homecode', dim='$dim' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
+ mysql_query("UPDATE nodo_tbl_devices SET naam='$naam', group_id='$group_id', label_on='$label_on', label_off='$label_off', address='$address', user_event_on='$user_event_on', user_event_off='$user_event_off', type='$type', toggle='$toggle', homecode='$homecode', dim='$dim' WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
  // once saved, redirect back to the view page 
  header("Location: devices.php#saved");  
  } 
@@ -106,6 +112,15 @@ $page_title="Setup: Edit device";
 				<option value="0"<?php if ($row['toggle'] == 0) {echo 'selected="selected"';}?>>Popup</option>
 				<option value="1"<?php if ($row['toggle'] == 1) {echo 'selected="selected"';}?>>Toggle</option>
 			</select>
+		<br \>
+		<label for="group" class="select" >Group member: <i>*optional</i></label>
+		<select name="group" id="group" data-native-menu="false">
+			<option value="">Select group</option>
+			<option value="">All devices</option>
+		<?php foreach ( $groupresults as $option ) : ?>
+            <option value="<?php echo $option->id; ?>"<?php if ($row['group_id'] == $option->id) {echo 'selected="selected"';}?>><?php echo $option->name; ?></option>
+		<?php endforeach; ?>
+		</select>
 		<br \>
 		<div id="label_div"> 
 		<label for="label_on">Label on button:</label>
