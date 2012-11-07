@@ -228,6 +228,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
     case CMD_PORT_CLIENT:
     case CMD_HTTP_REQUEST:
     case CMD_ID:
+    case CMD_TEMP:
       break;
 
     default:
@@ -302,7 +303,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
       break;
 
     case CMD_VARIABLE_SET:
-      event=float2event(UserVar[xPar1-1], xPar1, 0);
+      event=float2event(UserVar[xPar1], xPar1, 0);
       *Par1=(event>>8)&0xff;
       *Par2=event&0xff;
       break;
@@ -365,7 +366,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
       break;
 
     case CMD_PULSE_TIME:
-      event=PulseTime&0xffff;
+      event=PulseTime&0xffff/PULSE_TIME_DIVIDE;
       *Par1=EventPartPar1(event);      
       *Par2=EventPartPar2(event);      
       break;
@@ -405,6 +406,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
     case CMD_PORT_CLIENT:
     case CMD_HTTP_REQUEST:
     case CMD_ID:
+    case CMD_TEMP:
       *Par1=0;
       *Par2=0;
       break;
@@ -513,6 +515,7 @@ void ResetFactory(void)
   Settings.HTTPServerPort             = 6636;
   Settings.PortClient                 = 80;
   Settings.ID[0]                      = 0; // string leegmaken
+  Settings.Temp[0]                    = 0; // string leegmaken
   Settings.EchoSerial                 = VALUE_ON;
   Settings.EchoTelnet                 = VALUE_OFF;  
   Settings.Log                        = VALUE_OFF;  
@@ -619,8 +622,7 @@ void Status(byte Par1, byte Par2, byte Transmit)
       s=true;
       switch (x)
         {
-
-   #ifdef NODO_MEGA          
+       #ifdef NODO_MEGA          
         case CMD_CLIENT_IP:
           sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_CLIENT_IP),Settings.Client_IP[0],Settings.Client_IP[1],Settings.Client_IP[2],Settings.Client_IP[3]);
           PrintTerminal(TempString);
@@ -680,6 +682,11 @@ void Status(byte Par1, byte Par2, byte Transmit)
           PrintTerminal(TempString);
           break;
           
+        case CMD_TEMP:
+          sprintf(TempString,"%s %s",cmd2str(CMD_TEMP), Settings.Temp);
+          PrintTerminal(TempString);
+          break;
+          
         #endif
 
         default:
@@ -710,8 +717,8 @@ void Status(byte Par1, byte Par2, byte Transmit)
             break;      
 
           case CMD_VARIABLE_SET:
-            Par1_Start=1;
-            Par1_End=USER_VARIABLES_MAX;
+            Par1_Start=0;
+            Par1_End=USER_VARIABLES_MAX-1;
             break;
 
           case CMD_TIMER_SET_MIN:
@@ -1732,8 +1739,19 @@ boolean Substitute(char* Input)
           byte Par2=0;
           Res=2;
         
+          // A)Direct te vullen omdat ze niet met status opvraagbaar zijn
           switch(Cmd)
             {
+            case CMD_ID:
+              strcpy(TmpStr,Settings.ID);
+              Res=1;
+              break;    
+
+            case CMD_TEMP:
+              strcpy(TmpStr,Settings.Temp);
+              Res=1;
+              break;    
+
             case VALUE_THISUNIT:
               strcpy(TmpStr,int2str(Settings.Unit));
               Res=1;

@@ -96,7 +96,7 @@ byte Commanderror(unsigned long Content)
       return MESSAGE_02;
 
     case CMD_PULSE_COUNT:    
-      if(Par2==VALUE_ON || Par2==VALUE_OFF || Par2==CMD_RESET)return false;
+      if(Par1==VALUE_ON || Par1==VALUE_OFF || Par1==CMD_RESET)return false;
       return MESSAGE_02;
 
     case CMD_RAWSIGNAL_SEND:    
@@ -144,7 +144,7 @@ byte Commanderror(unsigned long Content)
     #ifdef NODO_MEGA
     case CMD_VARIABLE_SAVE:
     #endif
-      if(Par1>USER_VARIABLES_MAX)return MESSAGE_02;
+      if(Par1<1 || Par1>USER_VARIABLES_MAX)return MESSAGE_02;
       return false;
       
     // test:Par1 en Par2 binnen bereik maximaal beschikbare variabelen
@@ -348,20 +348,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     case CMD_VARIABLE_SET:
       y=EventPartWiredPort(Content);
       f=EventPartFloat(Content);      
-      if(y==0)
-        {
-        y=1;
-        z=USER_VARIABLES_MAX;
-        }
-      else
-        {
-        z=y;
-        }
-      for(y;y<=z;y++)
-        {
-        UserVar[y-1]=f;
-        ProcessEvent2(float2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
-        }
+      UserVar[y]=f;
+      ProcessEvent2(float2event(UserVar[y], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;         
   
     case CMD_VARIABLE_VARIABLE:
@@ -372,28 +360,28 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     case CMD_BREAK_ON_VAR_EQU:
       y=EventPartWiredPort(Content);
       f=EventPartFloat(Content);
-      if(int(UserVar[y-1])==int(f))
+      if(int(UserVar[y])==int(f))
         error=true;
       break;
       
     case CMD_BREAK_ON_VAR_NEQU:
       y=EventPartWiredPort(Content);
       f=EventPartFloat(Content);
-      if(int(UserVar[y-1])!=int(f))
+      if(int(UserVar[y])!=int(f))
         error=true;
       break;
 
     case CMD_BREAK_ON_VAR_MORE:
       y=EventPartWiredPort(Content);
       f=EventPartFloat(Content);
-      if(UserVar[y-1]>f)
+      if(UserVar[y]>f)
         error=true;
       break;
 
     case CMD_BREAK_ON_VAR_LESS:
       y=EventPartWiredPort(Content);
       f=EventPartFloat(Content);
-      if(UserVar[y-1]<f)
+      if(UserVar[y]<f)
         error=true;
       break;
 
@@ -894,7 +882,7 @@ int ExecuteLine(char *Line, byte Port)
             case CMD_VARIABLE_INC:
             case CMD_VARIABLE_EVENT:
               if(GetArgv(Command,TmpStr1,3))
-                v=float2event(atof(TmpStr1), Par1, Cmd);
+                v=float2event(atof(TmpStr1), Par1-1, Cmd); // -1 omdat intern variabelen starten vanaf nul
               break;
   
             case CMD_WIRED_THRESHOLD:
@@ -996,7 +984,7 @@ int ExecuteLine(char *Line, byte Port)
               {
               TmpStr1[0]=0;
               GetArgv(Command,TmpStr1,2);
-              TmpStr1[24]=0; // voor geval de string te lang is.
+              TmpStr1[25]=0; // voor geval de string te lang is.
               strcpy(Settings.Password,TmpStr1);
   
               // Als een lock actief, dan lock op basis van nieuwe password instellen
@@ -1019,6 +1007,15 @@ int ExecuteLine(char *Line, byte Port)
               GetArgv(Command,TmpStr1,2);
               TmpStr1[9]=0; // voor geval de string te lang is.
               strcpy(Settings.ID,TmpStr1);
+              break;
+              }  
+  
+            case CMD_TEMP:
+              {
+              TmpStr1[0]=0;
+              GetArgv(Command,TmpStr1,2);
+              TmpStr1[25]=0; // voor geval de string te lang is.
+              strcpy(Settings.Temp,TmpStr1);
               break;
               }  
   
@@ -1131,9 +1128,7 @@ int ExecuteLine(char *Line, byte Port)
                   }
   
                 else // Commando uitvoeren heeft alleen zin er geen eventlistwrite commando actief is
-                  {
                   FileExecute(FileName);        
-                  }
                 }
               break;
               }

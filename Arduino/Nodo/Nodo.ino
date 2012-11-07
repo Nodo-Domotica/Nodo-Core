@@ -26,10 +26,10 @@
 
 
 #define USER_PLUGIN         "UserPlugin"                           // Commando naam waarmee de plugin kan worden aangeroepen. Remarken met // als UserPluging niet nodig is
-#define PULSE_TIME_DEVIDE    1                                     // PulseTime geeft waarden van 0..65535 milliseconden. Door de deelfactor te vergroten kan de tijdseenheid worden vergroot. 1000-seconden
+#define PULSE_TIME_DIVIDE    1                                     // PulseTime geeft waarden van 0..65535 milliseconden. Door de deelfactor te vergroten kan de tijdseenheid worden vergroot. 1000-seconden
 
 #if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)     // NIET veranderen
-  #define NODO_MEGA 1                                              // NIET veranderen !
+  #define NODO_MEGA          1                                     // NIET veranderen !
   #define UNIT_NODO          1                                     // default unit nummer na een [Reset] commando
   #define ETHERNET           1                                     // op 0 zetten als ethernet kaart niet aanwezig
   #define NODO_MAC           0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF    // MAC adres voor de ethernet kaart. 

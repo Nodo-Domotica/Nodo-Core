@@ -1,4 +1,4 @@
-#define SETTINGS_VERSION     16
+#define SETTINGS_VERSION     17
 #define NODO_BUILD          462
 #include <EEPROM.h>
 #include <Wire.h>
@@ -17,9 +17,9 @@ prog_char PROGMEM Text_07[] = "Waiting for signal...";
 prog_char PROGMEM Text_09[] = "(Last 10KByte)";
 prog_char PROGMEM Text_13[] = "RawSignal saved.";
 prog_char PROGMEM Text_14[] = "Event=";
+//prog_char PROGMEM Text_15[] = "";
 prog_char PROGMEM Text_23[] = "log.dat";
 prog_char PROGMEM Text_24[] = "Queue: Capturing events...";
-prog_char PROGMEM Text_15[] = "Queue.dat";
 prog_char PROGMEM Text_26[] = "Queue: End capture.";
 prog_char PROGMEM Text_27[] = "raw/raw"; // Directory op de SDCard voor opslag van sleutels naar .hex files
 prog_char PROGMEM Text_28[] = "raw/key"; // Directory op de SDCard voor opslag RawSignal
@@ -77,7 +77,7 @@ prog_char PROGMEM Cmd_041[]="WiredPullup";
 prog_char PROGMEM Cmd_042[]="WiredSmittTrigger";
 prog_char PROGMEM Cmd_043[]="WiredThreshold";
 prog_char PROGMEM Cmd_044[]="SendUserEvent";
-prog_char PROGMEM Cmd_045[]="";
+prog_char PROGMEM Cmd_045[]="Temp";
 prog_char PROGMEM Cmd_046[]="WildCard";
 prog_char PROGMEM Cmd_047[]="SendBusy";
 prog_char PROGMEM Cmd_048[]="ClientIP";
@@ -336,7 +336,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_WIRED_SMITTTRIGGER          42
 #define CMD_WIRED_THRESHOLD             43
 #define CMD_SEND_USEREVENT              44
-#define CMD_res45              45
+#define CMD_TEMP                        45
 #define CMD_COMMAND_WILDCARD            46
 #define CMD_SENDBUSY                    47
 #define CMD_CLIENT_IP                   48
@@ -647,9 +647,10 @@ struct SettingsStruct
   #ifdef NODO_MEGA
   float   UserVar[USER_VARIABLES_MAX];
   byte    TransmitIP;                                       // Definitie van het gebruik van HTTP-communicatie via de IP-poort: [Off] of [On]
-  char    Password[25];                                     // String met wachtwoord.
+  char    Password[26];                                     // String met wachtwoord.
   char    ID[10];                                           // ID waar de Nodo uniek mee geïdentificeerd kan worden in een netwerk
   char    HTTPRequest[80];                                  // HTTP request;
+  char    Temp[26];                                         // Tijdelijke variabele voor de gebruiker;
   byte    Nodo_IP[4];                                       // IP adres van van de Nodo. als 0.0.0.0 ingevuld, dan IP toekenning o.b.v. DHCP
   byte    Client_IP[4];                                     // IP adres van van de Client die verbinding wil maken met de Nodo, 
   byte    Subnet[4];                                        // Submask
@@ -801,7 +802,6 @@ void setup()
     {
     SD.mkdir(ProgmemString(Text_27)); // maak drectory aan waar de Rawsignal HEX bestanden in worden opgeslagen
     SD.mkdir(ProgmemString(Text_28)); // maak drectory aan waar de Rawsignal KEY bestanden in worden opgeslagen
-    SD.remove(ProgmemString(Text_15)); // eventueel queue wissen. 
     bitWrite(HW_Config,HW_SDCARD,1);
     }
    
