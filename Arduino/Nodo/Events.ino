@@ -32,49 +32,6 @@ void ProcessQueue(void)
       }
     Queue.Position=0;
     }
-
-  // de Mega Nodo heeft nog een extra queue faciliteit: bestand queue.dat op SDCard
-  #ifdef NODO_MEGA
-  SelectSD(true);
-  File dataFile=SD.open(ProgmemString(Text_15));
-  if(dataFile)
-    {
-    PrintTerminal(ProgmemString(Text_26));
-
-    char *Line=(char*)malloc(INPUT_BUFFER_SIZE+1);
-    char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
-    y=0;       
-    while(dataFile.available())
-      {
-      x=dataFile.read();
-      if(isprint(x) && y<INPUT_BUFFER_SIZE)
-        Line[y++]=x;
-      else
-        {
-        Line[y]=0;
-        y=0;
-        
-        if(GetArgv(Line, TempString, 1))// Haal hex-event uit de regel
-          {
-          Event=str2int(TempString);
-          Port=0;
-          if(GetArgv(Line, TempString, 2))// Haal poort uit de regel
-            {
-            Port=str2int(TempString);
-            }
-          SelectSD(false);      
-          ProcessEvent2(Event,VALUE_DIRECTION_INPUT,Port,0,0);      // verwerk binnengekomen event.
-          SelectSD(true);
-          }
-        }
-      }
-    dataFile.close();
-    free(Line);
-    free(TempString);
-    SD.remove(ProgmemString(Text_15));
-    }  
-  SelectSD(false);
-  #endif
   }
 
  /**********************************************************************************************\

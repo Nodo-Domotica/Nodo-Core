@@ -362,7 +362,7 @@ void Event2str(unsigned long Code, char* EventString)
         break;
 
       case P_PORT:
-        strcat(EventString,int2str(1+((Code>>12)&0x0f)));
+        strcat(EventString,int2str(((Code>>12)&0x0f) +1)); // +1 omdat intern vananf nul wordt geteld en gebruiker vanaf 1.
         break;
 
       case P_TEXT:

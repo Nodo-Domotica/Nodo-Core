@@ -7,9 +7,12 @@ Known Errors / ToDo:
 - Vreemde weergave events: Internal=System
 
 Aanpassingen t.o.v. laatste build:
-- Commando [PulseCount on/off] voor inschakelen/uitschakelen pulsen tellen.
-- Invoer bug opgelost WiredSmittTrigger en WiredThreshold
-- Bug opgelost dat in enkele gevallen een regel in terminal venster niet correct werd geparsed.
+- Wildcard betekenis Par1 voor waarde nul vervallen voor VariableSet. Moeten opofferen voor rekenen met floats
+- Issue 596: variables fout
+- Issue 597: nitpicking
+- Issue 593: speciale variabele voor strings
+- PulseCount comando geactiveerd.
+
 
 Aanpassingen t.o.v. Final Beta Build 436:
 - Commando [PulseCount on/off] voor inschakelen/uitschakelen pulsen tellen.
