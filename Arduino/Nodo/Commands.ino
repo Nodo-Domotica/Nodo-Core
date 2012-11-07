@@ -1010,11 +1010,11 @@ int ExecuteLine(char *Line, byte Port)
               break;
               }  
   
-            case CMD_TEMP:
+            case CMD_TEMP://???@
               {
-              TmpStr1[0]=0;
-              GetArgv(Command,TmpStr1,2);
-              TmpStr1[25]=0; // voor geval de string te lang is.
+              x=StringFind(Command," ") ;           // laat x wijzen direct NA het if commando.
+              strcpy(TmpStr1,Command+x);            // Alles na de "temp" hoort bij de voorwaarde
+              TmpStr1[25]=0;// voor geval de string te lang is.
               strcpy(Settings.Temp,TmpStr1);
               break;
               }  
@@ -1033,7 +1033,6 @@ int ExecuteLine(char *Line, byte Port)
               if(GetArgv(Command,TmpStr1,2))
                 {
                 strcat(TmpStr1,".dat");
-  
                 SelectSD(true);
                 SD.remove(TmpStr1);
                 SelectSD(false);
@@ -1129,9 +1128,9 @@ int ExecuteLine(char *Line, byte Port)
   
                 else // Commando uitvoeren heeft alleen zin er geen eventlistwrite commando actief is
                   FileExecute(FileName);        
+                  }
                 }
               break;
-              }
       
             case CMD_EVENTLIST_SHOW:
               if(Par1>EVENTLIST_MAX)

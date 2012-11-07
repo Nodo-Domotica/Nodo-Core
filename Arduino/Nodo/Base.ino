@@ -1,5 +1,5 @@
 #define SETTINGS_VERSION     17
-#define NODO_BUILD          464
+#define NODO_BUILD          465
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -849,7 +849,7 @@ void loop()
   byte TerminalInByte;
   int SerialInByteCounter=0;
   int TerminalInbyteCounter=0;
-  byte Slice_1,Slice_2;    
+  byte Slice_1=0,Slice_2=0;    
 
   unsigned long LoopIntervalTimer_1=millis();                 // Timer voor periodieke verwerking. millis() maakt dat de intervallen van 1 en 2 niet op zelfde moment vallen => 1 en 2 nu asynchroon.
   unsigned long LoopIntervalTimer_2=0L;                       // Timer voor periodieke verwerking.
