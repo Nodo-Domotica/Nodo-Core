@@ -95,10 +95,6 @@ byte Commanderror(unsigned long Content)
       if(Par2==VALUE_ON || Par2==VALUE_OFF || Par2<=16)return false;
       return MESSAGE_02;
 
-    case CMD_PULSE_COUNT:    
-      if(Par1==VALUE_ON || Par1==VALUE_OFF || Par1==CMD_RESET)return false;
-      return MESSAGE_02;
-
     case CMD_RAWSIGNAL_SEND:    
       if(Par2==VALUE_SOURCE_RF || Par2==VALUE_SOURCE_IR || Par2==0)return false;
       return MESSAGE_02;
@@ -240,7 +236,7 @@ byte Commanderror(unsigned long Content)
         }
 
       switch(Par2)
-        {// Uitbreiden met pulsetime en pulsecount?
+        {
         case VALUE_ALL:
         case CMD_MESSAGE :
         case CMD_KAKU:
@@ -701,20 +697,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     case CMD_SIMULATE_DAY:
       SimulateDay(); 
       break;     
-
-    case CMD_PULSE_COUNT:    
-      // eerst een keer dit commando uitvoeren voordat de teller gaat lopen.
-      if(Par1==VALUE_ON)
-        {
-        bitWrite(HW_Config,HW_IR_PULSE,true);
-        attachInterrupt(PULSE_IRQ,PulseCounterISR,FALLING); // IRQ behorende bij PIN_IR_RX_DATA
-        }
-      else
-        {
-        bitWrite(HW_Config,HW_IR_PULSE,false);
-        detachInterrupt(PULSE_IRQ); // IRQ behorende bij PIN_IR_RX_DATA
-        }
-      break;
       
     case CMD_RAWSIGNAL_SAVE:
       Led(BLUE);
@@ -793,7 +775,7 @@ int ExecuteLine(char *Line, byte Port)
     if(Substitute(Line)!=0)
       {
       error=MESSAGE_02;
-      Serial.print(F("Substitute error="));Serial.println(Line);//???
+      Serial.print(F("Substitute error="));Serial.println(Line);
       }
 
     CommandPos=0;
@@ -1010,11 +992,12 @@ int ExecuteLine(char *Line, byte Port)
               break;
               }  
   
-            case CMD_TEMP://???@
+            case CMD_TEMP:
               {
-              x=StringFind(Command," ") ;           // laat x wijzen direct NA het if commando.
-              strcpy(TmpStr1,Command+x);            // Alles na de "temp" hoort bij de voorwaarde
-              TmpStr1[25]=0;// voor geval de string te lang is.
+              x=StringFind(Command,cmd2str(CMD_TEMP))+strlen(cmd2str(CMD_TEMP));
+              while(Command[x]==' ')x++;             // eventuele spaties verwijderen
+              strcpy(TmpStr1,Command+x);             // Alles na de "temp" hoort bij de variabele
+              TmpStr1[25]=0;                         // voor geval de string te lang is.
               strcpy(Settings.Temp,TmpStr1);
               break;
               }  
@@ -1210,14 +1193,17 @@ int ExecuteLine(char *Line, byte Port)
               TmpStr1[y]=0;
               
               // Zoek '=' teken op en splitst naar linker en rechter operand.
-              if((x=StringFind(TmpStr1,"<>")!=-1))
+              x=StringFind(TmpStr1,"<>");
+              if(x!=-1)
                 {
                 strcpy(TmpStr2,TmpStr1+x+2);
                 TmpStr1[x]=0;
                 if(strcasecmp(TmpStr1,TmpStr2)==0)
                   LinePos=LineLength+1; // ga direct naar einde van de regel.
                 }
-              else if((x=StringFind(TmpStr1,"=")!=-1))
+                
+              x=StringFind(TmpStr1,"=");
+              if(x!=-1)
                 {
                 strcpy(TmpStr2,TmpStr1+x+1);
                 TmpStr1[x]=0;

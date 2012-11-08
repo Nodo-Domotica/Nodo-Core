@@ -1,5 +1,5 @@
 #define SETTINGS_VERSION     17
-#define NODO_BUILD          465
+#define NODO_BUILD          466
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -194,8 +194,8 @@ prog_char PROGMEM Cmd_151[]="On";
 prog_char PROGMEM Cmd_152[]="Build";
 prog_char PROGMEM Cmd_153[]="HWConfig";
 prog_char PROGMEM Cmd_154[]="IR";
-prog_char PROGMEM Cmd_155[]="HTTP";
-prog_char PROGMEM Cmd_156[]="RF";
+prog_char PROGMEM Cmd_155[]="RF";
+prog_char PROGMEM Cmd_156[]="HTTP";
 prog_char PROGMEM Cmd_157[]="Serial";
 prog_char PROGMEM Cmd_158[]="Wired";
 prog_char PROGMEM Cmd_159[]="EventList";
@@ -454,8 +454,8 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define VALUE_BUILD                    152
 #define VALUE_HWCONFIG                 153
 #define VALUE_SOURCE_IR                154
-#define VALUE_SOURCE_HTTP              155
-#define VALUE_SOURCE_RF                156
+#define VALUE_SOURCE_RF                155
+#define VALUE_SOURCE_HTTP              156
 #define VALUE_SOURCE_SERIAL            157
 #define VALUE_SOURCE_WIRED             158
 #define VALUE_SOURCE_EVENTLIST         159
@@ -743,6 +743,11 @@ void setup()
   digitalWrite(PIN_IR_RX_DATA,INPUT_PULLUP);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.//???
   digitalWrite(PIN_RF_RX_DATA,INPUT_PULLUP);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.//???
 
+  // IRQ behorende bij PIN_IR_RX_DATA
+  // Als er toch een reeks pulsen komt, dan wordt in FetchSignal() het tellen van pulsen gedisabled.
+  bitWrite(HW_Config,HW_IR_PULSE,true);
+  attachInterrupt(PULSE_IRQ,PulseCounterISR,FALLING); 
+    
   #ifdef NODO_MEGA
   pinMode(PIN_LED_RGB_G,  OUTPUT);
   pinMode(EthernetShield_CS_SDCardH, OUTPUT); // CS/SPI: nodig voor correct funktioneren van de SDCard!
