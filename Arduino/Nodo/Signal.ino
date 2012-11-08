@@ -192,7 +192,7 @@ unsigned long GetEvent_IRRF(unsigned long *Content, int *Port)
         {
         *Content=AnalyzeRawSignal(); // Bereken uit de tabel met de pulstijden de 32-bit code. 
         if(*Content)// als AnalyzeRawSignal een event heeft opgeleverd
-          {
+          {//???@ hier pulsen schakelen?/uitschakelen 
           StaySharpTimer=millis()+SHARP_TIME;
           if(PreviousTimer<millis())
             Previous=0L;
@@ -563,7 +563,14 @@ boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
     {
     RawSignal.Number=RawCodeLength-1;
     if(DataPin==PIN_IR_RX_DATA)
+      {
+      // er is een IR signaal binnen gekomen. Zet de hardware vlag voor IR
       bitWrite(HW_Config,HW_IR_RX,1);
+
+      // dit houdt dan ook in dat er geen pulsen worden geteld. Schakel de pulsentellerfaciliteit uit
+      bitWrite(HW_Config,HW_IR_PULSE,0);
+      detachInterrupt(PULSE_IRQ); // IRQ behorende bij PIN_IR_RX_DATA
+      }
     if(DataPin==PIN_RF_RX_DATA)
       bitWrite(HW_Config,HW_RF_RX,1);
     return true;

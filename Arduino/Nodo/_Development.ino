@@ -7,12 +7,9 @@ Known Errors / ToDo:
 - Vreemde weergave events: Internal=System
 
 Aanpassingen t.o.v. laatste build:
-- Wildcard betekenis Par1 voor waarde nul vervallen voor VariableSet. Moeten opofferen voor rekenen met floats
-- Issue 596: variables fout
-- Issue 597: nitpicking
-- Issue 593: speciale variabele voor strings
-- PulseCount comando geactiveerd.
-
+- Issue 603: PulseCount status
+- Issue 600: status van HTTP op Output overzicht
+- Paar kleine dingen die niet helemaal ok waren.
 
 Aanpassingen t.o.v. Final Beta Build 436:
 - Commando [PulseCount on/off] voor inschakelen/uitschakelen pulsen tellen.
