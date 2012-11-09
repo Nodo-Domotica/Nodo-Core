@@ -3,7 +3,7 @@
 #define EventPartCommand(Event)   ((Event>>16)&0xff)
 #define EventPartPar1(Event)      ((Event>>8)&0xff)
 #define EventPartPar2(Event)      (Event&0xff)
-#define EventPartWiredPort(Event) ((Event>>12)&0xf)
+#define EventPart4Bit(Event)      ((Event>>12)&0xf)
 #define EventPart10Bit(Event)     (Event&0x3ff)
 #define EventPart16Bit(Event)     (Event&0xffff)
 
@@ -116,18 +116,19 @@ byte Commanderror(unsigned long Content)
     case CMD_BREAK_ON_VAR_MORE:
     case CMD_BREAK_ON_VAR_LESS:
     case CMD_BREAK_ON_VAR_EQU:
-      x=EventPartWiredPort(Content);
+      x=EventPart4Bit(Content);
       if(x<1 || x>USER_VARIABLES_MAX)return MESSAGE_02;
       return false;
 
     case CMD_WIRED_ANALOG:
     case CMD_WIRED_THRESHOLD:
     case CMD_WIRED_SMITTTRIGGER:
-      x=EventPartWiredPort(Content);
+      x=EventPart4Bit(Content);
       if(x<1 || x>WIRED_PORTS)return MESSAGE_02;
       return false;
 
     case CMD_UNIT:
+    case CMD_NEWNODO:
     case CMD_BOOT_EVENT:
       if(Par1<1 || Par1>UNIT_MAX)return MESSAGE_02;
       return false;
@@ -137,9 +138,6 @@ byte Commanderror(unsigned long Content)
       return false;
 
     case CMD_VARIABLE_SET:
-    #ifdef NODO_MEGA
-    case CMD_VARIABLE_SAVE:
-    #endif
       if(Par1<1 || Par1>USER_VARIABLES_MAX)return MESSAGE_02;
       return false;
       
@@ -238,7 +236,7 @@ byte Commanderror(unsigned long Content)
       switch(Par2)
         {
         case VALUE_ALL:
-        case CMD_MESSAGE :
+        case CMD_MESSAGE:
         case CMD_KAKU:
         case CMD_KAKU_NEW:
         case CMD_USEREVENT:
@@ -316,33 +314,21 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;
       
     case CMD_VARIABLE_INC:
-      y=EventPartWiredPort(Content);
+      y=EventPart4Bit(Content);
       f=EventPartFloat(Content);
-
-      UserVar[y-1]+=f;
-      ProcessEvent2(float2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      UserVar[y]=(UserVar[y]+f)>USER_VARIABLES_RANGE_MAX?USER_VARIABLES_RANGE_MAX:UserVar[y]+=f;
+      ProcessEvent2(float2event(UserVar[y], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;        
 
     case CMD_VARIABLE_DEC: 
-      y=EventPartWiredPort(Content);
+      y=EventPart4Bit(Content);
       f=EventPartFloat(Content);
-      UserVar[y-1]-=f;
-      ProcessEvent2(float2event(UserVar[y-1], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      UserVar[y]=(UserVar[y]-f)<USER_VARIABLES_RANGE_MIN?USER_VARIABLES_RANGE_MIN:UserVar[y]-=f;
+      ProcessEvent2(float2event(UserVar[y], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;        
 
-    #ifdef NODO_MEGA
-    case CMD_VARIABLE_SAVE:   
-      if(Par1==0)
-        for(x=0;x<USER_VARIABLES_MAX;x++)
-          Settings.UserVar[x]=UserVar[x];
-      else
-        Settings.UserVar[Par1-1]=UserVar[Par1-1];            
-      
-      break;        
-    #endif
-    
     case CMD_VARIABLE_SET:
-      y=EventPartWiredPort(Content);
+      y=EventPart4Bit(Content);
       f=EventPartFloat(Content);      
       UserVar[y]=f;
       ProcessEvent2(float2event(UserVar[y], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
@@ -354,28 +340,28 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;        
 
     case CMD_BREAK_ON_VAR_EQU:
-      y=EventPartWiredPort(Content);
+      y=EventPart4Bit(Content);
       f=EventPartFloat(Content);
       if(int(UserVar[y])==int(f))
         error=true;
       break;
       
     case CMD_BREAK_ON_VAR_NEQU:
-      y=EventPartWiredPort(Content);
+      y=EventPart4Bit(Content);
       f=EventPartFloat(Content);
       if(int(UserVar[y])!=int(f))
         error=true;
       break;
 
     case CMD_BREAK_ON_VAR_MORE:
-      y=EventPartWiredPort(Content);
+      y=EventPart4Bit(Content);
       f=EventPartFloat(Content);
       if(UserVar[y]>f)
         error=true;
       break;
 
     case CMD_BREAK_ON_VAR_LESS:
-      y=EventPartWiredPort(Content);
+      y=EventPart4Bit(Content);
       f=EventPartFloat(Content);
       if(UserVar[y]<f)
         error=true;
@@ -543,6 +529,11 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;
                          
     case CMD_SETTINGS_SAVE:
+      Settings.NewNodo=false;
+      #ifdef NODO_MEGA
+      for(x=0;x<USER_VARIABLES_MAX;x++)
+        Settings.UserVar[x]=UserVar[x];
+      #endif  
       Save_Settings();
       break;
 
@@ -605,14 +596,14 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;        
 
     case CMD_WIRED_SMITTTRIGGER:
-      z=EventPartWiredPort(Content);
+      z=EventPart4Bit(Content);
       y=EventPart10Bit(Content);
       Settings.WiredInputSmittTrigger[z]=y;
       
       break;                  
 
     case CMD_WIRED_THRESHOLD:
-      z=EventPartWiredPort(Content);
+      z=EventPart4Bit(Content);
       y=EventPart10Bit(Content);
       Settings.WiredInputThreshold[z-1]=y;
       break;                  
@@ -662,9 +653,15 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         error=MESSAGE_06;
       else
         {            
+        Led(BLUE);
+        if(Settings.NewNodo)
+          {
+          Settings.NewNodo=false;
+          Save_Settings();
+          }
+
         if(Par1==0)
           {
-          Led(BLUE);
           for(x=1;x<=EVENTLIST_MAX;x++)
             Eventlist_Write(x,0L,0L);
           }
@@ -878,6 +875,12 @@ int ExecuteLine(char *Line, byte Port)
               break;
                 
             case CMD_EVENTLIST_WRITE:
+              if(Settings.NewNodo==true)
+                {
+                Settings.NewNodo=false;
+                Save_Settings();
+                }
+
               if(SendTo!=0)
                 v=command2event(Settings.Unit, CMD_EVENTLIST_WRITE,Par1,0);      // verwerk binnengekomen event.
               else
