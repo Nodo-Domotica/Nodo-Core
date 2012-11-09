@@ -303,7 +303,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
     break;
 
   case CMD_VARIABLE_SET:
-    event=float2event(UserVar[xPar1], xPar1, 0);
+    event=float2event(UserVar[xPar1-1], xPar1-1, 0);
     *Par1=(event>>8)&0xff;
     *Par2=event&0xff;
     break;
@@ -439,15 +439,16 @@ char* ProgmemString(prog_char* text)
  * Sla alle settings op in het EEPROM geheugen.
  \*********************************************************************************************/
 void Save_Settings(void)  
-{
+  {
+  Led(BLUE);
   char ByteToSave,*pointerToByteToSave=pointerToByteToSave=(char*)&Settings;    //pointer verwijst nu naar startadres van de struct. 
 
   for(int x=0; x<sizeof(struct SettingsStruct) ;x++)
-  {
+    {
     EEPROM.write(x,*pointerToByteToSave); 
     pointerToByteToSave++;
-  }  
-}
+    }  
+  }
 
 /*********************************************************************************************\
  * Laad de settings uit het EEPROM geheugen.
@@ -481,6 +482,7 @@ void ResetFactory(void)
   Beep(2000,2000);
 
   Settings.Version                    = SETTINGS_VERSION;
+  Settings.NewNodo                    = true;
   Settings.Lock                       = 0;
   Settings.TransmitIR                 = VALUE_OFF;
   Settings.TransmitRF                 = VALUE_ON;
@@ -722,8 +724,8 @@ void Status(byte Par1, byte Par2, byte Transmit)
           break;      
 
         case CMD_VARIABLE_SET:
-          Par1_Start=0;
-          Par1_End=USER_VARIABLES_MAX-1;
+          Par1_Start=1;
+          Par1_End=USER_VARIABLES_MAX;
           break;
 
         case CMD_TIMER_SET_MIN:
@@ -1033,14 +1035,15 @@ boolean Eventlist_Read(int address, unsigned long *Event, unsigned long *Action)
 
 
 void RaiseMessage(byte MessageCode)
-{
+  {
   unsigned long eventcode;
   int x;
 
   eventcode=command2event(Settings.Unit,CMD_MESSAGE, Settings.Unit, MessageCode);
   PrintEvent(eventcode,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM);  // geef event weer op Serial
   TransmitCode(eventcode,VALUE_ALL);
-}
+  ProcessEvent2(eventcode,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM,0,0);
+  }
 
 
 /**********************************************************************************************\

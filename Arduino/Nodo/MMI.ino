@@ -334,6 +334,7 @@ void Event2str(unsigned long Code, char* EventString)
     case CMD_SIMULATE_DAY:
     case CMD_CLOCK_DOW:
     case CMD_BOOT_EVENT:
+    case CMD_NEWNODO:
       P1=P_VALUE;
       P2=P_NOT;
       break;

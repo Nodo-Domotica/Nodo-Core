@@ -1,23 +1,3 @@
-//      // eerst een keer dit commando uitvoeren voordat de teller gaat lopen.
-//      if(Par1==VALUE_ON)
-//        {
-//        bitWrite(HW_Config,HW_IR_PULSE,true);
-//        attachInterrupt(PULSE_IRQ,PulseCounterISR,FALLING); // IRQ behorende bij PIN_IR_RX_DATA
-//        }
-//      else
-//        {
-//        bitWrite(HW_Config,HW_IR_PULSE,false);
-//        detachInterrupt(PULSE_IRQ); // IRQ behorende bij PIN_IR_RX_DATA
-//        }
-
-// Event, EventPar1, EventPar2, EventUnit, EventPort
-
-// CatchEvent Unit, Event, par1, Par2, scriptfile  : 
-
-// if xxx=yyy; if aaa!=bbb; sound
-
-
-
 
 
 /*

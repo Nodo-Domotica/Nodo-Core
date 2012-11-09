@@ -1,5 +1,5 @@
-#define SETTINGS_VERSION     17
-#define NODO_BUILD          466
+#define SETTINGS_VERSION     18
+#define NODO_BUILD          467
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -41,7 +41,7 @@ prog_char PROGMEM Cmd_011[]="ClockSetDOW";
 prog_char PROGMEM Cmd_012[]="EventlistErase";
 prog_char PROGMEM Cmd_013[]="EventlistShow";
 prog_char PROGMEM Cmd_014[]="EventlistWrite";
-prog_char PROGMEM Cmd_015[]="VariableSave";
+prog_char PROGMEM Cmd_015[]="";
 prog_char PROGMEM Cmd_016[]="RawSignalSave";
 prog_char PROGMEM Cmd_017[]="RawSignalSend";
 prog_char PROGMEM Cmd_018[]="Reset";
@@ -154,7 +154,7 @@ prog_char PROGMEM Cmd_113[]="Timer";
 prog_char PROGMEM Cmd_114[]="WiredIn";
 prog_char PROGMEM Cmd_115[]="Variable";
 prog_char PROGMEM Cmd_116[]="Busy";
-prog_char PROGMEM Cmd_117[]="";
+prog_char PROGMEM Cmd_117[]="NewNodo";
 prog_char PROGMEM Cmd_118[]="Message";
 prog_char PROGMEM Cmd_119[]="Boot";
 prog_char PROGMEM Cmd_120[]="PulseTime";
@@ -306,7 +306,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_EVENTLIST_ERASE             12
 #define CMD_EVENTLIST_SHOW              13
 #define CMD_EVENTLIST_WRITE             14
-#define CMD_VARIABLE_SAVE               15
+#define CMD_res15                       15
 #define CMD_RAWSIGNAL_SAVE              16
 #define CMD_RAWSIGNAL_SEND              17
 #define CMD_RESET                       18
@@ -412,7 +412,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_WIRED_IN_EVENT             114
 #define CMD_VARIABLE_EVENT             115
 #define CMD_BUSY                       116
-// #define CMD_EVENT                      117
+#define CMD_NEWNODO                    117
 #define CMD_MESSAGE                    118
 #define CMD_BOOT_EVENT                 119
 #define CMD_PULSE_TIME                 120
@@ -634,6 +634,7 @@ struct SettingsStruct
   {
   int     Version;        
   byte    Unit;
+  boolean NewNodo;
   int     WiredInputThreshold[WIRED_PORTS], WiredInputSmittTrigger[WIRED_PORTS];
   byte    WiredInputPullUp[WIRED_PORTS];
   byte    TransmitIR;
@@ -842,6 +843,7 @@ void setup()
   UserPlugin_Init();
   #endif
 
+  if(Settings.NewNodo)TransmitCode(command2event(Settings.Unit, CMD_NEWNODO,Settings.Unit,0),VALUE_ALL);  
   TransmitCode(command2event(Settings.Unit, CMD_BOOT_EVENT,Settings.Unit,0),VALUE_ALL);  
   ProcessEvent1(command2event(Settings.Unit, CMD_BOOT_EVENT,Settings.Unit,0),VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM,0,0);  // Voer het 'Boot' event uit.
   }
