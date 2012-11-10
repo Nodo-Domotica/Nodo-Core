@@ -25,8 +25,6 @@ unsigned long float2event(float f, byte port, byte cmd)
   boolean sign=false;
   long wi;
 
-Serial.print("*** debug: float2event() f=");Serial.println(f); //??? Debug
-  
   if(f>=USER_VARIABLES_RANGE_MIN && f<= USER_VARIABLES_RANGE_MAX)
     {
     wi=int(f * 100);
@@ -43,9 +41,6 @@ Serial.print("*** debug: float2event() f=");Serial.println(f); //??? Debug
       wi=wi/10;
       }
   
-Serial.print("*** debug: float2event() sign=");Serial.println(sign); //??? Debug
-Serial.print("*** debug: float2event() high=");Serial.println(high); //??? Debug
-
     return ((unsigned long)SIGNAL_TYPE_NODO)<<28   |
            ((unsigned long)Settings.Unit)<<24      | 
            ((unsigned long)cmd)<<16                |
@@ -63,7 +58,6 @@ float EventPartFloat(unsigned long event)
   float f;
   
   f=float(event&0x3ff);    // 10-bits waarde
-
 
   if(event & (1<<11)) // als high bit staat
     f*=10;
