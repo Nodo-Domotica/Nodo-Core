@@ -83,97 +83,118 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
   }
 
 #ifdef NODO_MEGA  
-boolean QueueSend(byte DestUnit)
+/*********************************************************************************************\
+ * Deze routine verzend de inhoud van de queue naar een andere Nodo. Er zijn twee manieren van 
+ * verzending: 
+ * A) Save mode met checksumcontrole en [Busy] mechanisme 
+ * B) Snelle mode zonder controles. 
+ \*********************************************************************************************/
+boolean QueueSend(byte DestUnit, boolean SaveMode)
   {
   int x,y,Checksum=0;
   boolean Bit;
   unsigned long Event,TimeoutTimer;
 
+  Led(BLUE);
+
   // Voorkom dat als TransmitRF door gebruiker is uitgezet, het SendTo commando niet meer werkt.
   byte TransmitRFOrg=Settings.TransmitRF; 
   Settings.TransmitRF=VALUE_ON;
   
-  Led(BLUE);
-
-  // Eerst wachten op bezige Nodo. Als gebruiker deze setting niet heeft geactiveerd, dan tijdelijk hiervoor 30 sec. nemen.
-  if(Settings.WaitBusyAll<30)
-    x=30;
-  else
-    x=Settings.WaitBusyAll;    
-  NodoBusy(0L, x);
-
-  delay(RECEIVER_STABLE);
-  if(Settings.WaitFreeRF==VALUE_ON)
-    WaitFreeRF();  
-
-  // bereken checksum: crc-8 uit alle bytes in de queue.
-  byte *B=(byte*)&(Queue.Event[0]);    //pointer verwijst nu naar eerste byte van de queue
-  for(x=0;x<Queue.Position*4;x++) // maal vier, immers 4 bytes in een unsigned long
-    Checksum^=*(B+x); 
-
-  Nodo_2_RawSignal(command2event(DestUnit,CMD_TRANSMIT_QUEUE,Queue.Position,Checksum));
-  RawSendRF();
-    
-  // Verzend een aanloopsignaal bestaande uit reeks korte pulsen om slave tijd te geven klaar te staan voor ontvangst en voorkomen dat andere Nodo vrije ruimte in RF benut
-  digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
-  digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan
-
-  for(x=0; x<100; x++)// Houd de 433 band bezet en geef slave gelegenheid om klaar voor ontvangst data uit queue.
-    {
+  if(SaveMode)
+    { // A) Save mode met checksumcontrole en [Busy] mechanisme 
+    Led(BLUE);
+    // Eerst wachten op bezige Nodo. Als gebruiker deze setting niet heeft geactiveerd, dan tijdelijk hiervoor 30 sec. nemen.
+    if(Settings.WaitBusyAll<30)
+      x=30;
+    else
+      x=Settings.WaitBusyAll;    
+    NodoBusy(0L, x);
+  
+    delay(RECEIVER_STABLE);
+    if(Settings.WaitFreeRF==VALUE_ON)
+      WaitFreeRF();  
+  
+    // bereken checksum: crc-8 uit alle bytes in de queue.
+    byte *B=(byte*)&(Queue.Event[0]);    //pointer verwijst nu naar eerste byte van de queue
+    for(x=0;x<Queue.Position*4;x++) // maal vier, immers 4 bytes in een unsigned long
+      Checksum^=*(B+x); 
+  
+    Nodo_2_RawSignal(command2event(DestUnit,CMD_TRANSMIT_QUEUE,Queue.Position,Checksum));
+    RawSendRF();
+      
+    // Verzend een aanloopsignaal bestaande uit reeks korte pulsen om slave tijd te geven klaar te staan voor ontvangst en voorkomen dat andere Nodo vrije ruimte in RF benut
+    digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
+    digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan
+  
+    for(x=0; x<100; x++)// Houd de 433 band bezet en geef slave gelegenheid om klaar voor ontvangst data uit queue.
+      {
+      digitalWrite(PIN_RF_TX_DATA,HIGH); // 1
+      delayMicroseconds(NODO_PULSE_0); 
+      digitalWrite(PIN_RF_TX_DATA,LOW); // 0
+      delayMicroseconds(NODO_SPACE); 
+      }
+  
+    // verzend startbit
     digitalWrite(PIN_RF_TX_DATA,HIGH); // 1
-    delayMicroseconds(NODO_PULSE_0); 
+    delayMicroseconds(NODO_PULSE_1*3); 
     digitalWrite(PIN_RF_TX_DATA,LOW); // 0
     delayMicroseconds(NODO_SPACE); 
-    }
-
-  // verzend startbit
-  digitalWrite(PIN_RF_TX_DATA,HIGH); // 1
-  delayMicroseconds(NODO_PULSE_1*3); 
-  digitalWrite(PIN_RF_TX_DATA,LOW); // 0
-  delayMicroseconds(NODO_SPACE); 
-
-  // Verzend de content van de queue
-  for(x=0; x<Queue.Position; x++)
-    {
-    for(y=0; y<32; y++)
+  
+    // Verzend de content van de queue
+    for(x=0; x<Queue.Position; x++)
       {
-      if(((Queue.Event[x])>>y)&1)
-        {// 1
-        digitalWrite(PIN_RF_TX_DATA,HIGH);
-        delayMicroseconds(NODO_PULSE_1); 
-        digitalWrite(PIN_RF_TX_DATA,LOW);
-        delayMicroseconds(NODO_SPACE); 
-        }
-      else
-        {// 0
-        digitalWrite(PIN_RF_TX_DATA,HIGH);
-        delayMicroseconds(NODO_PULSE_0); 
-        digitalWrite(PIN_RF_TX_DATA,LOW);
-        delayMicroseconds(NODO_SPACE); 
+      for(y=0; y<32; y++)
+        {
+        if(((Queue.Event[x])>>y)&1)
+          {// 1
+          digitalWrite(PIN_RF_TX_DATA,HIGH);
+          delayMicroseconds(NODO_PULSE_1); 
+          digitalWrite(PIN_RF_TX_DATA,LOW);
+          delayMicroseconds(NODO_SPACE); 
+          }
+        else
+          {// 0
+          digitalWrite(PIN_RF_TX_DATA,HIGH);
+          delayMicroseconds(NODO_PULSE_0); 
+          digitalWrite(PIN_RF_TX_DATA,LOW);
+          delayMicroseconds(NODO_SPACE); 
+          }
         }
       }
-    }
-  delayMicroseconds(NODO_SPACE*10); 
-  digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
-  digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger weer aan.    
-
-  // Queue is verzonden. Wacht op bevestiging van de slave.
-  // Op dit moment kunnen er drie situaties voordoen:
-  // 1. master ontvangt Busy On van slave Nodo, hieruit kan worden afgeleid dat de Slave start met verwerking van de queue 
-  // 2. master ontvangt niets. Dan keert WaitAndQueue terug met een false.
-  // 3. master ontvangt error message van de slave.
-
-  Settings.TransmitRF=TransmitRFOrg;// Herstel de TransmitRF setting zoals de gebruiker die had ingesteld.
-
-  if(WaitAndQueue(4,false,command2event(DestUnit,CMD_BUSY,VALUE_ON,0)))
-    {
-    WaitAndQueue(30,true,0L);
-    return true;
+    delayMicroseconds(NODO_SPACE*10); 
+    digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
+    digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger weer aan.    
+  
+    // Queue is verzonden. Wacht op bevestiging van de slave.
+    // Op dit moment kunnen er drie situaties voordoen:
+    // 1. master ontvangt Busy On van slave Nodo, hieruit kan worden afgeleid dat de Slave start met verwerking van de queue 
+    // 2. master ontvangt niets. Dan keert WaitAndQueue terug met een false.
+    // 3. master ontvangt error message van de slave.
+  
+  
+    if(WaitAndQueue(4,false,command2event(DestUnit,CMD_BUSY,VALUE_ON,0)))
+      {
+      WaitAndQueue(30,true,0L);
+      return true;
+      }
+    else
+      {
+      return false;
+      }
     }
   else
-    {
-    return false;
+    {// B) Snelle mode zonder controles. 
+    for(x=0;x<Queue.Position;x++)
+      {
+      Nodo_2_RawSignal(Queue.Event[x]);
+      RawSendRF();
+      if(Queue.Position>1)
+        delay(250);// Korte pauze anders gaat het veel te snel voor de ontvangende Nodo
+      }
+    Queue.Position=0;
     }
+  Settings.TransmitRF=TransmitRFOrg;// Herstel de TransmitRF setting zoals de gebruiker die had ingesteld.
   }
 #endif
 

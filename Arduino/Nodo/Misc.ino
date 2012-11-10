@@ -980,15 +980,15 @@ int StringFind(char *string, char *keyword)
  * Schrijft een event in de Eventlist. Deze Eventlist bevindt zich in het EEPROM geheugen.
  \*********************************************************************************************/
 boolean Eventlist_Write(int address, unsigned long Event, unsigned long Action)// LET OP: eerste adres=1
-{
+  {
   unsigned long TempEvent,TempAction;
 
   // als adres=0, zoek dan de eerste vrije plaats.
   if(address==0)
-  {
+    {
     address++;
     while(Eventlist_Read(address,&TempEvent,&TempAction))address++;
-  }
+    }
 
   if(address>EVENTLIST_MAX)
     return false;// geen geldig adres meer c.q. alles is vol.
@@ -1006,7 +1006,7 @@ boolean Eventlist_Write(int address, unsigned long Event, unsigned long Action)/
   EEPROM.write(address++,(Action     & 0xFF));
 
   return true;
-}
+  }
 
 /**********************************************************************************************\
  * 
