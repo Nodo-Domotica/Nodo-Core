@@ -749,7 +749,7 @@ int ExecuteLine(char *Line, byte Port)
   int error,Par1,Par2,Cmd;
   byte State_EventlistWrite=0;
   unsigned long v,event,a;
-  byte SendTo=0; // Als deze waarde ongelijk aan nul, dan wordt het commando niet uitgevoerd maar doorgestuurd naar de andere Nodo
+  byte SendToOption, SendTo=0; // Als deze waarde ongelijk aan nul, dan wordt het commando niet uitgevoerd maar doorgestuurd naar de andere Nodo
 
   Led(RED);
   
@@ -962,7 +962,8 @@ int ExecuteLine(char *Line, byte Port)
               
             case CMD_SEND:
               // als de SendTo is gevuld, dan event versturen naar een andere Nodo en niet zelf uitvoeren
-              SendTo=Par1;             
+              SendTo=Par1;
+              SendToOption=Par2;             
               break;
   
             case CMD_PASSWORD:
@@ -1302,6 +1303,11 @@ int ExecuteLine(char *Line, byte Port)
           if(State_EventlistWrite==2)
             {
             a=v;            
+            if(Settings.NewNodo)
+              {
+              Settings.NewNodo=false;
+              Save_Settings();
+              }
             if(!Eventlist_Write(EventlistWriteLine,event,a))
               {
               RaiseMessage(MESSAGE_06);
@@ -1338,7 +1344,7 @@ int ExecuteLine(char *Line, byte Port)
   
     if(SendTo!=0)// Verzend de inhoud van de queue naar de slave Nodo
       {
-      if(!QueueSend(SendTo))
+      if(!QueueSend(SendTo,SendToOption==VALUE_ON?false:true))
         RaiseMessage(MESSAGE_12);
       
       // Verwerk eventuele events die in de queue zijn geplaatst.
