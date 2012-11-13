@@ -266,22 +266,8 @@ boolean CheckEvent(unsigned long Event, unsigned long MacroEvent, byte Port)
     z=(MacroEvent>>8)&0xff; // Par1 deel van de Wildcard bevat de poort
     if(z!=VALUE_ALL && z!=Port)return false;
 
-    switch(Command) // Command deel van binnengekomen event.
-      {
-      case CMD_BOOT_EVENT:
-      case CMD_MESSAGE:  
-      case CMD_KAKU:
-      case CMD_KAKU_NEW:
-      case CMD_PULSE_COUNT:
-      case CMD_PULSE_TIME:
-      case CMD_USEREVENT:
-        x=Command;
-        break;
-      default:
-        x=0;
-      }
     z=MacroEvent&0xff; // Par2 deel Wildcard bevat type event
-    if(z!=VALUE_ALL && z!=x)return false;
+    if(z!=VALUE_ALL && z!=Command)return false;
     return true;
     }
 

@@ -288,6 +288,15 @@ void Event2str(unsigned long Code, char* EventString)
       P2=P_DIM;
       break;
 
+    case CMD_WAIT_EVENT:
+      if(Par1==VALUE_ALL)
+        P1=P_TEXT;
+      else
+        P1=P_VALUE;
+
+      P2=P_TEXT;
+      break;
+
       // Par1 als waarde en par2 als tekst
     case CMD_RAWSIGNAL_SEND:
     case CMD_DELAY:

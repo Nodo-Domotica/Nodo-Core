@@ -1,10 +1,13 @@
 
 /**************************************************************************************************************************\
 Known Errors / ToDo:
-- SendBusy op de Master zet de slaves tijdelijk op onbereikbaar. Hierdoor werkt SendTo niet
+
+
 - In geval van onbereikbare Nodo-Small: Hoe resetten?
-- status all zet pulsen tellen in werking. 
-- Vreemde weergave events: Internal=System
+- testen:status uitvraag op Small
+- waitfreerf in de fastmode van sendto
+
+
 
 Aanpassingen t.o.v. laatste build:
 
