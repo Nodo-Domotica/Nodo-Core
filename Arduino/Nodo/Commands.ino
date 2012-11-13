@@ -127,6 +127,10 @@ byte Commanderror(unsigned long Content)
       if(x<1 || x>WIRED_PORTS)return MESSAGE_02;
       return false;
 
+    case CMD_WAIT_EVENT:
+      if((Par1<1 || Par1>UNIT_MAX) &&  Par1!=VALUE_ALL)return MESSAGE_02;
+      return false;
+
     case CMD_UNIT:
     case CMD_NEWNODO:
     case CMD_BOOT_EVENT:
@@ -232,22 +236,6 @@ byte Commanderror(unsigned long Content)
         default:
           return MESSAGE_02;
         }
-
-      switch(Par2)
-        {
-        case VALUE_ALL:
-        case CMD_MESSAGE:
-        case CMD_KAKU:
-        case CMD_KAKU_NEW:
-        case CMD_USEREVENT:
-        case CMD_PULSE_COUNT:
-        case CMD_PULSE_TIME:
-        case CMD_BOOT_EVENT:
-        
-          break;
-        default:
-          return MESSAGE_02;
-        } 
       return false;
 
      // par1 alleen On of Off.
@@ -481,11 +469,13 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       UserTimer[Par1-1]=millis()+random(Par2)*60000;// Par1=timer, Par2=maximaal aantal minuten
       break;
 
+    case CMD_WAIT_EVENT:
+      WaitAndQueue(180,false,0,Par1,Par2);
+      break;
+
     case CMD_DELAY:
-      Led(BLUE);
-      
-      if(Par2==VALUE_ON)    
-        WaitAndQueue(Par1,false,0);
+      if(Par2==VALUE_SOURCE_QUEUE)    
+        WaitAndQueue(Par1,false,0,0,0);
       else      
         delay(Par1*1000);      
       break;        
@@ -605,7 +595,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
     case CMD_WIRED_THRESHOLD:
       z=EventPart4Bit(Content);
       y=EventPart10Bit(Content);
-      Settings.WiredInputThreshold[z-1]=y;
+      Settings.WiredInputThreshold[z]=y;
       break;                  
 
     case CMD_STATUS:

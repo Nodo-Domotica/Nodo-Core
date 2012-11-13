@@ -98,12 +98,14 @@ boolean QueueSend(byte DestUnit, boolean SaveMode)
   Led(BLUE);
 
   // Voorkom dat als TransmitRF door gebruiker is uitgezet, het SendTo commando niet meer werkt.
-  byte TransmitRFOrg=Settings.TransmitRF; 
-  Settings.TransmitRF=VALUE_ON;
   
   if(SaveMode)
     { // A) Save mode met checksumcontrole en [Busy] mechanisme 
     Led(BLUE);
+
+    byte TransmitRFOrg=Settings.TransmitRF; 
+    Settings.TransmitRF=VALUE_ON;
+
     // Eerst wachten op bezige Nodo. Als gebruiker deze setting niet heeft geactiveerd, dan tijdelijk hiervoor 30 sec. nemen.
     if(Settings.WaitBusyAll<30)
       x=30;
@@ -173,18 +175,22 @@ boolean QueueSend(byte DestUnit, boolean SaveMode)
     // 3. master ontvangt error message van de slave.
   
   
-    if(WaitAndQueue(4,false,command2event(DestUnit,CMD_BUSY,VALUE_ON,0)))
+    if(WaitAndQueue(4,false,command2event(DestUnit,CMD_BUSY,VALUE_ON,0),0,0))
       {
-      WaitAndQueue(30,true,0L);
+      WaitAndQueue(30,true,0L,0,0);
       return true;
       }
     else
       {
       return false;
       }
+    Settings.TransmitRF=TransmitRFOrg;// Herstel de TransmitRF setting zoals de gebruiker die had ingesteld.
     }
   else
     {// B) Snelle mode zonder controles. 
+    if(Settings.WaitFreeRF==VALUE_ON)
+      WaitFreeRF();  
+
     for(x=0;x<Queue.Position;x++)
       {
       Nodo_2_RawSignal(Queue.Event[x]);
@@ -194,7 +200,6 @@ boolean QueueSend(byte DestUnit, boolean SaveMode)
       }
     Queue.Position=0;
     }
-  Settings.TransmitRF=TransmitRFOrg;// Herstel de TransmitRF setting zoals de gebruiker die had ingesteld.
   }
 #endif
 
@@ -213,7 +218,7 @@ unsigned long GetEvent_IRRF(unsigned long *Content, int *Port)
         {
         *Content=AnalyzeRawSignal(); // Bereken uit de tabel met de pulstijden de 32-bit code. 
         if(*Content)// als AnalyzeRawSignal een event heeft opgeleverd
-          {//???@ hier pulsen schakelen?/uitschakelen 
+          {
           StaySharpTimer=millis()+SHARP_TIME;
           if(PreviousTimer<millis())
             Previous=0L;
@@ -223,6 +228,9 @@ unsigned long GetEvent_IRRF(unsigned long *Content, int *Port)
             *Port=VALUE_SOURCE_IR;
             PreviousTimer=millis()+SIGNAL_REPEAT_TIME;
             Previous=*Content;
+            #ifdef NODO_MEGA
+            Received=Previous; // Received wordt gebruikt om later de status van laatste ontvangen event te kunnen gebruiken t.b.v. substitutie van vars.
+            #endif
             return true;
             }
           Checksum=*Content;
@@ -252,6 +260,9 @@ unsigned long GetEvent_IRRF(unsigned long *Content, int *Port)
               *Port=VALUE_SOURCE_RF;
               PreviousTimer=millis()+SIGNAL_REPEAT_TIME;
               Previous=Checksum;
+              #ifdef NODO_MEGA
+              Received=Previous; // Received wordt gebruikt om later de status van laatste ontvangen event te kunnen gebruiken t.b.v. substitutie van vars.
+              #endif
               return true;
               }
             }

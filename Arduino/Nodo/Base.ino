@@ -1,5 +1,5 @@
 #define SETTINGS_VERSION     18
-#define NODO_BUILD          469
+#define NODO_BUILD          470
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -83,7 +83,7 @@ prog_char PROGMEM Cmd_047[]="SendBusy";
 prog_char PROGMEM Cmd_048[]="ClientIP";
 prog_char PROGMEM Cmd_049[]="Password";
 prog_char PROGMEM Cmd_050[]="EventlistFile";
-prog_char PROGMEM Cmd_051[]="";
+prog_char PROGMEM Cmd_051[]="WaitEvent";
 prog_char PROGMEM Cmd_052[]="";
 prog_char PROGMEM Cmd_053[]="Lock";
 prog_char PROGMEM Cmd_054[]="Status"; 
@@ -342,7 +342,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_CLIENT_IP                   48
 #define CMD_PASSWORD                    49
 #define CMD_EVENTLIST_FILE              50
-#define CMD_RES51                       51
+#define CMD_WAIT_EVENT                  51
 #define CMD_RES52                       52
 #define CMD_LOCK                        53
 #define CMD_STATUS                      54

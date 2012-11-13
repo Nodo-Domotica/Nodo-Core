@@ -1,14 +1,13 @@
-
 /*********************************************************************************************\
  * wachtloop die wordt afgebroken als:
  * - <Timeout> seconden zijn voorbij. In dit geval geeft deze funktie een <false> terug.
- * - <QueueTime> opgegeven en tijd is verstreken na laatst ontvangen event
  * - <BreakNoBusyNodo>==true en alle Nodo's na een "Busy On" ook weer een "Busy Off" hebben verzonden.
- * - <BreakEvent> is opgegeven en dit event is ontvangen.
- * - de Nodo expliciet een "Queue Off" opdracht heeft ontvangen.
+ * - <BreakEvent> is opgegeven en dit specifiek opgegeven event is ontvangen.
+ * - de Nodo expliciet een "Delay Off" opdracht heeft ontvangen.
+ * - Het eerste Event dat voldoet aan Unit en Command is voorbij gekomen.
  \*********************************************************************************************/
-boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEvent)
-{
+boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEvent, int Unit, int Command)
+  {
   unsigned long TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
   unsigned long Event=0L;
   int x,y,z,Port;
@@ -17,27 +16,27 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
   Led(BLUE);
   Queue.Position=0;    
 
-#ifdef NODO_MEGA
+  #ifdef NODO_MEGA
   PrintTerminal(ProgmemString(Text_24));
-#endif
+  #endif
 
   while(TimeoutTimer>millis())
-  {
+    {
     if(BreakNoBusyNodo && Busy.Status==0)
       break; // Geen Busy Nodo meer
 
     if(GetEvent_IRRF(&Event,&Port))
-    {      
+      {      
       TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
 
-#ifdef NODO_MEGA
+      #ifdef NODO_MEGA
       CheckRawSignalKey(&Event); // check of er een RawSignal key op de SDCard aanwezig is en vul met Nodo Event. Call by reference!
       PrintEvent(Event,VALUE_DIRECTION_INPUT,Port);
-#endif
+      #endif
 
-      x=(byte)((Event>>16)&0xff); // cmd
-      y=(byte)((Event>>24)&0xf); // unit
-      z=(byte)((Event>>8)&0xff); // par1
+      x=(byte)(EventPartCommand(Event)); // cmd
+      y=(byte)(EventPartUnit(Event)); // unit
+      z=(byte)(EventPartPar1(Event)); // par1
 
       if(x==CMD_BUSY) // command
         NodoBusy(Event,0);
@@ -46,35 +45,37 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
         break;
 
       else if(x==CMD_DELAY) // command
-      {
-        if(y==Settings.Unit) // Als commando voor deze unit bestemd
         {
+        if(y==Settings.Unit) // Als commando voor deze unit bestemd
+          {
           if(z==0) // Par1
             break;// QueueAndWait weer uitschakelen.
+          }
         }
-      }
 
       // Het is geen Busy event of Queue commando event, dan deze in de queue plaatsen.
       else if(x!=CMD_BUSY )
-      {
+        {
         // sla event op in de queue. De Nodo-Small heeft de queue is een kleine array <QueueEvent> staan.
         if(Queue.Position<EVENT_QUEUE_MAX)
-        {
+          {
           Queue.Event[Queue.Position]=Event;
           Queue.Port[Queue.Position]=Port;
           Queue.Position++;           
-        }       
+          }       
         else
           error=true;
-      }
-    }    
-  }   
+        }
+      }    
+    if((Command | Unit) && (x==Command || Command==VALUE_ALL) && (y==Unit || Unit==VALUE_ALL))
+      break;
+    }   
 
   if(TimeoutTimer<=millis())
     error=true;
 
   return !error;
-}
+  }
 
 
 /*********************************************************************************************\
@@ -132,7 +133,7 @@ boolean NodoBusy(unsigned long Event, int Wait)
     free(TempString);
 #endif
 
-    if(!WaitAndQueue(Wait,true,0))
+    if(!WaitAndQueue(Wait,true,0,0,0))
     {
       RaiseMessage(MESSAGE_13);
       Busy.Status=0;
@@ -218,8 +219,9 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
     case CMD_WIRED_SMITTTRIGGER:
     case CMD_WIRED_IN_EVENT:
     case CMD_WIRED_OUT:
-    case CMD_LOG:
     case CMD_LOCK:
+#ifdef NODO_MEGA
+    case CMD_LOG:
     case CMD_NODO_IP:
     case CMD_GATEWAY:
     case CMD_SUBNET:
@@ -229,6 +231,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
     case CMD_HTTP_REQUEST:
     case CMD_ID:
     case CMD_TEMP:
+#endif
       break;
   
     default:
@@ -388,13 +391,13 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
     *Par2=(WiredOutputStatus[xPar1-1])?VALUE_ON:VALUE_OFF;
     break;
 
+  case CMD_LOCK:
+    *Par1=Settings.Lock==0?0:0x80;// uit 16-bit combi van Par1+Par2 staat de on/off in bit 15.
+    break;
+
 #ifdef NODO_MEGA
   case CMD_LOG:
     *Par1=Settings.Log;
-    break;
-
-  case CMD_LOCK:
-    *Par1=Settings.Lock==0?0:0x80;// uit 16-bit combi van Par1+Par2 staat de on/off in bit 15.
     break;
 
     // pro-forma de commando's die geen fout op mogen leveren omdat deze elders in de statusafhandeling worden weergegeven
