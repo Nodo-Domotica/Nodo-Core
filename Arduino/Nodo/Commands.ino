@@ -552,10 +552,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
             
     case CMD_WAITBUSY:
       if(Par2==VALUE_ALL)
-        {
         Settings.WaitBusyAll=Par1;
-        
-        }
       else
         NodoBusy(0L, Par1);
       break;
@@ -605,9 +602,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       #ifdef NODO_MEGA
       if(TempLogFile[0]!=0 || Src==VALUE_SOURCE_SERIAL || Src==VALUE_SOURCE_TELNET)
       #else
-      if(Src==VALUE_SOURCE_SERIAL || Src==VALUE_SOURCE_TELNET)
+      if(Src==VALUE_SOURCE_SERIAL)
       #endif
-
         Status(Par1, Par2, false);
       else
         {
@@ -622,7 +618,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       if(Busy.BusyOnSent)
         TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
       Settings.Unit=Par1;
-      Save_Settings();
+      Save_Settings();@@
       FactoryEventlist();      
       Reset();
 
@@ -644,11 +640,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       else
         {            
         Led(BLUE);
-        if(Settings.NewNodo)
-          {
-          Settings.NewNodo=false;
-          Save_Settings();
-          }
 
         if(Par1==0)
           {
@@ -865,12 +856,6 @@ int ExecuteLine(char *Line, byte Port)
               break;
                 
             case CMD_EVENTLIST_WRITE:
-              if(Settings.NewNodo==true)
-                {
-                Settings.NewNodo=false;
-                Save_Settings();
-                }
-
               if(SendTo!=0)
                 v=command2event(Settings.Unit, CMD_EVENTLIST_WRITE,Par1,0);      // verwerk binnengekomen event.
               else
@@ -1293,11 +1278,6 @@ int ExecuteLine(char *Line, byte Port)
           if(State_EventlistWrite==2)
             {
             a=v;            
-            if(Settings.NewNodo)
-              {
-              Settings.NewNodo=false;
-              Save_Settings();
-              }
             if(!Eventlist_Write(EventlistWriteLine,event,a))
               {
               RaiseMessage(MESSAGE_06);

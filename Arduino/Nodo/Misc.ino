@@ -378,7 +378,8 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
     event=PulseCount&0xffff;
     *Par1=EventPartPar1(event);      
     *Par2=EventPartPar2(event);      
-    PulseCount=0;
+    if(xPar2!=VALUE_ALL)
+      PulseCount=0;
     break;
 
   case CMD_WIRED_IN_EVENT:
@@ -479,10 +480,12 @@ boolean LoadSettings()
  * Alle settings van de Nodo weer op default.
  \*********************************************************************************************/
 void ResetFactory(void)
-{
+  {
   int x,y;
   Led(BLUE);
   Beep(2000,2000);
+
+  FactoryEventlist();
 
   Settings.Version                    = SETTINGS_VERSION;
   Settings.NewNodo                    = true;
@@ -533,21 +536,20 @@ void ResetFactory(void)
 
   // zet analoge waarden op default
   for(x=0;x<WIRED_PORTS;x++)
-  {
+    {
     Settings.WiredInputThreshold[x]=512; 
     Settings.WiredInputSmittTrigger[x]=10;
     Settings.WiredInputPullUp[x]=VALUE_ON;
-  }
+    }
 
-#if NODO_MEGA
+  #if NODO_MEGA
   // maak alle variabelen leeg
   for(byte x=0;x<USER_VARIABLES_MAX;x++)
     Settings.UserVar[x]=0;     
-#endif
+  #endif
 
   Save_Settings();
 
-  FactoryEventlist();
   delay(250);// kleine pauze, anders kans fout bij seriële communicatie
   Reset();
 }
@@ -562,12 +564,7 @@ void FactoryEventlist(void)
     Eventlist_Write(x,0L,0L);
 
   // schrijf default regels.
-#ifdef NODO_MEGA
   Eventlist_Write(0,command2event(Settings.Unit,CMD_BOOT_EVENT,Settings.Unit,0),command2event(Settings.Unit,CMD_SOUND,7,0)); // geluidssignaal na opstarten Nodo
-  Eventlist_Write(0,command2event(Settings.Unit,CMD_COMMAND_WILDCARD,VALUE_SOURCE_IR,CMD_KAKU),command2event(Settings.Unit,CMD_RAWSIGNAL_SEND,0,0)); 
-#else
-  Eventlist_Write(0,command2event(Settings.Unit,CMD_BOOT_EVENT,Settings.Unit,0),command2event(Settings.Unit,CMD_SOUND,7,0)); // geluidssignaal na opstarten Nodo
-#endif
 }
 
 
@@ -595,26 +592,26 @@ void Status(byte Par1, byte Par2, byte Transmit)
     Par2==0;
 
   if(Par1==CMD_BOOT_EVENT || Par1==0)
-  {
+    {
     PrintWelcome();
     return;
-  }
+    }
 
   if(Par1==VALUE_ALL)
-  {
+    {
     Par2=0;
     if(!Transmit)
       PrintWelcome();
     CMD_Start=FIRST_COMMAND;
     CMD_End=COMMAND_MAX;
-  }
+    }
   else
-  {
+    {
     if(!GetStatus(&Par1,&P1,&P2,false))// kijk of voor de opgegeven parameter de status opvraagbaar is. Zo niet dan klaar.
       return;
     CMD_Start=Par1;
     CMD_End=Par1;
-  }
+    }
 
 #ifdef NODO_MEGA          
   boolean dhcp=(Settings.Nodo_IP[0] + Settings.Nodo_IP[1] + Settings.Nodo_IP[2] + Settings.Nodo_IP[3])==0;
@@ -702,11 +699,11 @@ void Status(byte Par1, byte Par2, byte Transmit)
     }
 
     if(!s && GetStatus(&x,&P1,&P2,false)) // Als het een geldige uitvraag is. let op: call by reference !
-    {
-      if(Par2==0) // Als in het commando 'Status Par1, Par2' Par2 niet is gevuld met een waarde
       {
-        switch(x)
+      if(Par2==0) // Als in het commando 'Status Par1, Par2' Par2 niet is gevuld met een waarde
         {
+        switch(x)
+          {
         case CMD_OUTPUT:
           Par1_Start=VALUE_SOURCE_IR;
           #ifdef NODO_MEGA
@@ -739,33 +736,33 @@ void Status(byte Par1, byte Par2, byte Transmit)
         default:
           Par1_Start=0;
           Par1_End=0;
+          }
         }
-      }
       else
-      {
+        {
         Par1_Start=Par2;
         Par1_End=Par2;
-      }
+        }
 
       for(byte y=Par1_Start;y<=Par1_End;y++)
-      {
+        {
         P1=y;
-        P2=0;
+        P2=Par1; // Leen deze variabele om in GetStatus() te kunnen achterhalen of de status uitvraag naar aanleiding van een [Status All] plaats vond.
         GetStatus(&x,&P1,&P2,true); // haal status op. Call by Reference!
 
         if(Transmit)
           TransmitCode(command2event(Settings.Unit,x,P1,P2),VALUE_ALL); // verzend als event
 
-#ifdef NODO_MEGA
+        #ifdef NODO_MEGA
         else
-        {
+          {
           Event2str(command2event(Settings.Unit,x,P1,P2),TempString);
           PrintTerminal(TempString);
+          }
+        #endif
         }
-#endif
       }
     }
-  }
 
 #ifdef NODO_MEGA
   if(!Transmit && Par1==VALUE_ALL)
@@ -841,19 +838,18 @@ boolean GetArgv(char *string, char *argv, int argc)
  \*********************************************************************************************/
 
 void Beep(int frequency, int duration)//Herz,millisec 
-{
+  {
   long halfperiod=500000L/frequency;
   long loops=(long)duration*frequency/(long)1000;
 
   for(loops;loops>0;loops--) 
-  {
+    {
     digitalWrite(PIN_SPEAKER, HIGH);
     delayMicroseconds(halfperiod);
     digitalWrite(PIN_SPEAKER, LOW);
     delayMicroseconds(halfperiod);
+    }
   }
-  //interrupts();
-}
 
 /**********************************************************************************************\
  * Geeft een belsignaal.
@@ -985,6 +981,13 @@ int StringFind(char *string, char *keyword)
 boolean Eventlist_Write(int address, unsigned long Event, unsigned long Action)// LET OP: eerste adres=1
   {
   unsigned long TempEvent,TempAction;
+
+  // Als Eventlist voor eerste keer beschreven wordt, dan is het geen vers geresette Nodo meer. Na beschrijven dan ook geen NewNodo event meer sturen
+  if(Settings.NewNodo)
+    {
+    Settings.NewNodo=false;
+    Save_Settings();
+    }
 
   // als adres=0, zoek dan de eerste vrije plaats.
   if(address==0)
@@ -1474,14 +1477,18 @@ void Trace(int Func, int Pos, unsigned long Value)
 }
 
 void PulseCounterISR()
-{
+  {
   static unsigned long PulseTimePrevious=0L;                // Tijdsduur tussen twee pulsen teller in milliseconden: vorige meting
 
   // in deze interrupt service routine staat millis() stil. Dit is echter geen bezwaar voor de meting.
   PulseTime=millis()-PulseTimePrevious;
+  if(PulseTime>=PULSE_DEBOUNCE_TIME)
+    PulseCount++;
+  else
+    PulseTime=0;
+
   PulseTimePrevious=millis();
-  PulseCount++;   
-}     
+  }     
 
 
 #ifdef NODO_MEGA
