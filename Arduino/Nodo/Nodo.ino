@@ -42,10 +42,10 @@
   // Voor een arduino anders dan een Mega1280 of Mega2560 de onderstaande vier regels vooraf laten gaan door twee slashes //
   // Anders worden de niet gebruikte libraries meegecompileerd en zal deze niet in een ATMega328 passen.
 
-  #include <SD.h>
-  #include <EthernetNodo.h>
-  #include <SPI.h>
-  #include <Arduino.h>
+//  #include <SD.h>
+//  #include <EthernetNodo.h>
+//  #include <SPI.h>
+//  #include <Arduino.h>
   
 #else
   // definities Small

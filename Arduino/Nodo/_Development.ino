@@ -6,6 +6,8 @@ Known Errors / ToDo:
 - In geval van onbereikbare Nodo-Small: Hoe resetten?
 - testen:status uitvraag op Small
 - waitfreerf in de fastmode van sendto
+- Status PulseCount,Reset wordt niet goed weergegeven
+- Status PulseCount. Reset of All afvangen?
 
 
 

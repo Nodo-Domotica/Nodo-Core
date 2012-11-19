@@ -298,6 +298,7 @@ void Event2str(unsigned long Code, char* EventString)
       break;
 
       // Par1 als waarde en par2 als tekst
+    case CMD_WAITBUSY:
     case CMD_RAWSIGNAL_SEND:
     case CMD_DELAY:
     case CMD_WIRED_PULLUP:
@@ -321,6 +322,7 @@ void Event2str(unsigned long Code, char* EventString)
       break;
 
       // Par1 als tekst en par2 niet
+    case CMD_WAITBUSY:
     case CMD_SEND_EVENT:
     case CMD_DEBUG:
     case CMD_LOG:
@@ -334,7 +336,6 @@ void Event2str(unsigned long Code, char* EventString)
       break;
 
       // Par1 als waarde en par2 niet
-    case CMD_WAITBUSY:
     case CMD_EVENTLIST_SHOW:
     case CMD_EVENTLIST_ERASE:
     case CMD_FILE_EXECUTE:

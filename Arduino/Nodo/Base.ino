@@ -1,5 +1,5 @@
 #define SETTINGS_VERSION     18
-#define NODO_BUILD          470
+#define NODO_BUILD          475
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -550,6 +550,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define SIGNAL_TYPE_NEWKAKU          3 // Type ontvangen of te verzenden signaal in de eventcode
 #define NODO_TYPE_EVENT              1
 #define NODO_TYPE_COMMAND            2
+#define PULSE_DEBOUNCE_TIME         10 // pulsen kleiner dan deze waarde worden niet geteld. Bedoeld on verstoringen a.g.v. ruis of dender te voorkomen
 
 // Hardware in gebruik: Bits worden geset in de variabele HW_Config, uit te lezen met [Status HWConfig]
 #define HW_BOARD_UNO    0
