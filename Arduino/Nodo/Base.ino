@@ -551,6 +551,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define NODO_TYPE_EVENT              1
 #define NODO_TYPE_COMMAND            2
 #define PULSE_DEBOUNCE_TIME         10 // pulsen kleiner dan deze waarde worden niet geteld. Bedoeld on verstoringen a.g.v. ruis of dender te voorkomen
+#define PULSE_TRANSITION       FALLING // FALLING of RISING: Geeft aan op welke flank de PulseCounter start.
 
 // Hardware in gebruik: Bits worden geset in de variabele HW_Config, uit te lezen met [Status HWConfig]
 #define HW_BOARD_UNO    0
@@ -605,7 +606,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define WIRED_PORTS                  8 // aantal WiredIn/WiredOut poorten
 #define PASSWORD_MAX_RETRY           5 // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
 #define PASSWORD_TIMEOUT           300 // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
-#define TERMINAL_TIMEOUT           300 // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
+#define TERMINAL_TIMEOUT           600 // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
 #define COOKIE_REFRESH_TIME         60 // Tijd tussen automatisch verzenden van een nieuw Cookie als de beveiligde HTTP modus is inschakeld.
 
 #else // als het voor de Nodo-Small variant is
@@ -748,7 +749,7 @@ void setup()
   // IRQ behorende bij PIN_IR_RX_DATA
   // Als er toch een reeks pulsen komt, dan wordt in FetchSignal() het tellen van pulsen gedisabled.
   bitWrite(HW_Config,HW_IR_PULSE,true);
-  attachInterrupt(PULSE_IRQ,PulseCounterISR,FALLING); 
+  attachInterrupt(PULSE_IRQ,PulseCounterISR,PULSE_TRANSITION); 
     
   #ifdef NODO_MEGA
   pinMode(PIN_LED_RGB_G,  OUTPUT);
