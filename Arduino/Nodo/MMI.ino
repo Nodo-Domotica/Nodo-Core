@@ -322,7 +322,6 @@ void Event2str(unsigned long Code, char* EventString)
       break;
 
       // Par1 als tekst en par2 niet
-    case CMD_WAITBUSY:
     case CMD_SEND_EVENT:
     case CMD_DEBUG:
     case CMD_LOG:
