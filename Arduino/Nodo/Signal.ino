@@ -203,7 +203,7 @@ boolean QueueSend(byte DestUnit, boolean SaveMode)
   }
 #endif
 
-unsigned long GetEvent_IRRF(unsigned long *Content, int *Port)
+boolean GetEvent_IRRF(unsigned long *Content, int *Port)
   {
   unsigned long Checksum=0L;                           // Als gelijk aan Event dan tweemaal dezelfde code ontvangen: checksum funktie.
   unsigned long StaySharpTimer=millis();                      // timer die start bij ontvangen van een signaal. Dwingt om enige tijd te luisteren naar dezelfde poort.
@@ -772,7 +772,8 @@ boolean SaveRawSignal(byte Key)
 
   if(error)
     {
-    TransmitCode(command2event(Settings.Unit,CMD_MESSAGE, Settings.Unit, MESSAGE_03),VALUE_ALL);
+    LastMessage=MESSAGE_03;
+    TransmitCode(command2event(Settings.Unit,CMD_MESSAGE, Settings.Unit, LastMessage),VALUE_ALL);
     return false;
     }
   return true;

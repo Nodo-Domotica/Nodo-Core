@@ -12,6 +12,9 @@ Known Errors / ToDo:
 
 
 Aanpassingen t.o.v. laatste build:
+- WaitEvent operationeel
+- commando break
+- fileexecute stopt bij error
 
 
 Aanpassingen t.o.v. Final Beta Build 436:

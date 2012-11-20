@@ -62,6 +62,7 @@ byte Commanderror(unsigned long Content)
     {
     //test; geen, altijd goed
     case CMD_LOCK:
+    case CMD_BREAK:
     case CMD_WAITBUSY:
     case CMD_TRANSMIT_QUEUE:
     case CMD_EVENTLIST_ERASE:
@@ -334,6 +335,10 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         error=true;
       break;
       
+    case CMD_BREAK:
+        error=true;
+      break;
+
     case CMD_BREAK_ON_VAR_NEQU:
       y=EventPart4Bit(Content);
       f=EventPartFloat(Content);
@@ -470,7 +475,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;
 
     case CMD_WAIT_EVENT:
-      WaitAndQueue(180,false,0,Par1,Par2);
+      WaitAndQueue(60,false,0,Par1,Par2);
       break;
 
     case CMD_DELAY:
@@ -608,7 +613,10 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       else
         {
         if(Par1==0)
-          TransmitCode(command2event(Settings.Unit, CMD_MESSAGE ,Settings.Unit,MESSAGE_00),Src);        
+          {
+          LastMessage=MESSAGE_00;
+          TransmitCode(command2event(Settings.Unit, CMD_MESSAGE ,Settings.Unit,LastMessage),Src);        
+          }
         else
           Status(Par1, Par2, true);
         }
@@ -707,7 +715,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       ExecuteLine(TempString,Src);
       free(TempString);
       break;        
-#endif
+    #endif
     }
   return error?false:true;
   }
@@ -1068,7 +1076,8 @@ int ExecuteLine(char *Line, byte Port)
                 else
                   {
                   SelectSD(false);
-                  TransmitCode(command2event(Settings.Unit, CMD_MESSAGE, Settings.Unit, MESSAGE_03),VALUE_ALL);      
+                  LastMessage=MESSAGE_03;
+                  TransmitCode(command2event(Settings.Unit, CMD_MESSAGE, Settings.Unit, LastMessage),VALUE_ALL);      
                   }
                 }
               break;
@@ -1153,7 +1162,10 @@ int ExecuteLine(char *Line, byte Port)
                 {
                 strcat(TmpStr1,".dat");
                 if(!SaveEventlistSDCard(TmpStr1))
-                  TransmitCode(command2event(Settings.Unit, CMD_MESSAGE, Settings.Unit, MESSAGE_03),VALUE_ALL);// geen RaiseMessage() anders weer poging om te loggen naar SDCard ==> oneindige loop
+                  {
+                  LastMessage=MESSAGE_03;
+                  TransmitCode(command2event(Settings.Unit, CMD_MESSAGE, Settings.Unit, LastMessage),VALUE_ALL);// geen RaiseMessage() anders weer poging om te loggen naar SDCard ==> oneindige loop
+                  }
                 }
               break;
   

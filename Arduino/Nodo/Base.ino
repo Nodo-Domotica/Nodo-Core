@@ -1,5 +1,5 @@
 #define SETTINGS_VERSION     18
-#define NODO_BUILD          475
+#define NODO_BUILD          478
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -41,7 +41,7 @@ prog_char PROGMEM Cmd_011[]="ClockSetDOW";
 prog_char PROGMEM Cmd_012[]="EventlistErase";
 prog_char PROGMEM Cmd_013[]="EventlistShow";
 prog_char PROGMEM Cmd_014[]="EventlistWrite";
-prog_char PROGMEM Cmd_015[]="";
+prog_char PROGMEM Cmd_015[]="Break"; //???
 prog_char PROGMEM Cmd_016[]="RawSignalSave";
 prog_char PROGMEM Cmd_017[]="RawSignalSend";
 prog_char PROGMEM Cmd_018[]="Reset";
@@ -306,7 +306,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_EVENTLIST_ERASE             12
 #define CMD_EVENTLIST_SHOW              13
 #define CMD_EVENTLIST_WRITE             14
-#define CMD_res15                       15
+#define CMD_BREAK                       15
 #define CMD_RAWSIGNAL_SAVE              16
 #define CMD_RAWSIGNAL_SEND              17
 #define CMD_RESET                       18
@@ -692,6 +692,7 @@ void(*Reset)(void)=0;                                       // reset functie op 
 uint8_t RFbit,RFport,IRbit,IRport;                          // t.b.v. verwerking IR/FR signalen.
 float UserVar[USER_VARIABLES_MAX];                          // Gebruikers variabelen
 unsigned long HW_Config=0;                                  // Hardware configuratie zoals gedetecteerd door de Nodo. 
+byte LastMessage=MESSAGE_00;                                // Laatst opgetreden bericht / foutmelding. Start met 200=OK
 
 #ifdef NODO_MEGA
 unsigned long Received=0L;                                  // Laatst ontvangen event
