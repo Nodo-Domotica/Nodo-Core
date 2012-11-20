@@ -1753,7 +1753,7 @@ int Calculate(const char *input, float* result)
 //################### Einde Calculate #################################
 
 boolean Substitute(char* Input)
-{
+  {
   boolean Grab=false;
   byte Res;
   byte x;

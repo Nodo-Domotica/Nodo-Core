@@ -618,7 +618,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       if(Busy.BusyOnSent)
         TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
       Settings.Unit=Par1;
-      Save_Settings();@@
+      Save_Settings();
       FactoryEventlist();      
       Reset();
 
