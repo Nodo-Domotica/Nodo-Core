@@ -27,7 +27,7 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
 
     if(GetEvent_IRRF(&Event,&Port))
       {      
-      TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
+      //TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
 
       #ifdef NODO_MEGA
       CheckRawSignalKey(&Event); // check of er een RawSignal key op de SDCard aanwezig is en vul met Nodo Event. Call by reference!
@@ -66,11 +66,11 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
         else
           error=true;
         }
-      }    
-    if((Command | Unit) && (x==Command || Command==VALUE_ALL) && (y==Unit || Unit==VALUE_ALL))
-      break;
-    }   
 
+      if((Unit!=0 && (Unit==y || Unit==VALUE_ALL)) && (Command==0 || Command==x || Command==VALUE_ALL))
+        break;
+      }   
+    }
   if(TimeoutTimer<=millis())
     error=true;
 
@@ -1049,6 +1049,7 @@ void RaiseMessage(byte MessageCode)
   PrintEvent(eventcode,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM);  // geef event weer op Serial
   TransmitCode(eventcode,VALUE_ALL);
   ProcessEvent2(eventcode,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM,0,0);
+  LastMessage=MessageCode;
   }
 
 
@@ -1129,10 +1130,11 @@ boolean SaveEventlistSDCard(char *FileName)
     EventlistFile.close();
   }
   else 
-  {
+    {
     r=false; // niet meer weer proberen weg te schrijven.
-    TransmitCode(command2event(Settings.Unit,CMD_MESSAGE, Settings.Unit, MESSAGE_03),VALUE_ALL);
-  }
+    LastMessage=MESSAGE_03;
+    TransmitCode(command2event(Settings.Unit,CMD_MESSAGE, Settings.Unit, LastMessage),VALUE_ALL);
+    }
 
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip
   digitalWrite(Ethernetshield_CS_W5100, LOW);
@@ -1412,7 +1414,7 @@ boolean FileExecute(char* FileName)
   if(dataFile) 
     {
     y=0;       
-    while(dataFile.available())
+    while(dataFile.available() && !error)
       {
       x=dataFile.read();
       if(isprint(x) && y<INPUT_BUFFER_SIZE)
@@ -1423,14 +1425,20 @@ boolean FileExecute(char* FileName)
         y=0;
         SelectSD(false);
         PrintTerminal(TmpStr);
-        ExecuteLine(TmpStr,VALUE_SOURCE_FILE);
+        error=ExecuteLine(TmpStr,VALUE_SOURCE_FILE);
         SelectSD(true);
+        if(error)
+          {// stoppen met de rest van het script, maar niet terugkeren met nogmaals een error.
+          error=false;
+          break;
+          }
         }
       }
     dataFile.close();
     }  
   else
     error=true;
+    
   free(TmpStr);
   SelectSD(false);
   return error;
@@ -1807,6 +1815,10 @@ boolean Substitute(char* Input)
   
             case VALUE_THISUNIT:
               strcpy(TmpStr2,int2str(Settings.Unit));
+              break;    
+  
+            case CMD_MESSAGE:
+              strcpy(TmpStr2,int2str(LastMessage));
               break;    
   
             case CMD_UNIT: // Hier lenen we "Unit", maar bij dit het unitnummer van en binnengekomen event.
