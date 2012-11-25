@@ -427,9 +427,6 @@ void ExecuteIP(void)
   int x,y;
   unsigned long TimeoutTimer=millis() + 5000; // Na enkele seconden moet de gehele transactie gereed zijn, anders 'hik' in de lijn.
   
-  if(Settings.TransmitIP!=VALUE_ON)
-    return;
-
   char *InputBuffer_IP = (char*) malloc(IP_BUFFER_SIZE+1);
   char *Event          = (char*) malloc(INPUT_BUFFER_SIZE+1);
   char *TmpStr1        = (char*) malloc(INPUT_BUFFER_SIZE+1);
