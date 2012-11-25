@@ -62,7 +62,6 @@ byte Commanderror(unsigned long Content)
     {
     //test; geen, altijd goed
     case CMD_LOCK:
-    case CMD_BREAK:
     case CMD_WAITBUSY:
     case CMD_TRANSMIT_QUEUE:
     case CMD_EVENTLIST_ERASE:
@@ -82,6 +81,7 @@ byte Commanderror(unsigned long Content)
     case CMD_CLOCK_EVENT_THU:
     case CMD_CLOCK_EVENT_FRI:
     case CMD_CLOCK_EVENT_SAT:
+    case CMD_DEVICE:
     case CMD_STATUS:
     case CMD_DELAY:
     case CMD_SOUND: 
@@ -121,6 +121,10 @@ byte Commanderror(unsigned long Content)
       if(x<1 || x>USER_VARIABLES_MAX)return MESSAGE_02;
       return false;
 
+    case CMD_VARIABLE_DEVICE:
+      if(Par1<1 || Par1>USER_VARIABLES_MAX)return MESSAGE_02;
+      return false;
+
     case CMD_WIRED_ANALOG:
     case CMD_WIRED_THRESHOLD:
     case CMD_WIRED_SMITTTRIGGER:
@@ -134,6 +138,7 @@ byte Commanderror(unsigned long Content)
 
     case CMD_UNIT:
     case CMD_NEWNODO:
+    case CMD_CLOCK_SYNC:
     case CMD_BOOT_EVENT:
       if(Par1<1 || Par1>UNIT_MAX)return MESSAGE_02;
       return false;
@@ -335,10 +340,6 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         error=true;
       break;
       
-    case CMD_BREAK:
-        error=true;
-      break;
-
     case CMD_BREAK_ON_VAR_NEQU:
       y=EventPart4Bit(Content);
       f=EventPartFloat(Content);
@@ -410,6 +411,27 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         }        
       
       break;
+
+    case CMD_CLOCK_SYNC:
+      // ClockSync stuurt de juise klokinstellingen naar een andere Nodo. Als het opgegeven unitnummer het eigen unitnummer is
+      // dan wordt het verzoek naar HTTP verzonden.
+      
+      #ifdef NODO_MEGA
+      if(Par1==Settings.Unit)
+        {
+        SendHTTPEvent(command2event(Settings.Unit, CMD_CLOCK_SYNC,Par1,0));
+        }
+      else
+        {
+        Queue.Event[Queue.Position]=command2event(Settings.Unit, CMD_CLOCK_YEAR,Time.Year/100,Time.Year%100);Queue.Port[Queue.Position++]=VALUE_SOURCE_SYSTEM;
+        Queue.Event[Queue.Position]=command2event(Settings.Unit, CMD_CLOCK_DATE,Time.Date,Time.Month);Queue.Port[Queue.Position++]=VALUE_SOURCE_SYSTEM;
+        Queue.Event[Queue.Position]=command2event(Settings.Unit, CMD_CLOCK_TIME,Time.Hour,Time.Minutes);Queue.Port[Queue.Position++]=VALUE_SOURCE_SYSTEM;
+        Queue.Event[Queue.Position]=command2event(Settings.Unit, CMD_CLOCK_DOW ,Time.Day,0);Queue.Port[Queue.Position++]=VALUE_SOURCE_SYSTEM;
+        if(!QueueSend(Par1,true))
+          RaiseMessage(MESSAGE_12);
+        }
+
+      #endif
 
     case CMD_CLOCK_YEAR:
       x=Par1*100+Par2;
@@ -661,6 +683,15 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
     case CMD_WIRED_ANALOG://het kan zijn dat de gebruiker dit intypt. Geen geldig commando of event
       error=MESSAGE_01;
+      break;
+
+    case CMD_VARIABLE_DEVICE:
+      UserVar[Par1-1]=Device(Par2,Par1);
+      ProcessEvent2(float2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      break;
+
+    case CMD_DEVICE:
+      Device(Par1,Par2);
       break;
        
 #ifdef NODO_MEGA

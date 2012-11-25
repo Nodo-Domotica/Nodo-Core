@@ -281,7 +281,7 @@ void Event2str(unsigned long Code, char* EventString)
       P1=P_INT16;
       P2=P_NOT;
       break;
-
+        
     case CMD_KAKU_NEW:
     case CMD_SEND_KAKU_NEW:
       P1=P_VALUE;
@@ -338,6 +338,8 @@ void Event2str(unsigned long Code, char* EventString)
     case CMD_EVENTLIST_SHOW:
     case CMD_EVENTLIST_ERASE:
     case CMD_FILE_EXECUTE:
+    case CMD_CLOCK_SYNC:
+    case CMD_TIMER_EVENT:
     case CMD_UNIT:
     case CMD_RAWSIGNAL:
     case CMD_SIMULATE_DAY:
