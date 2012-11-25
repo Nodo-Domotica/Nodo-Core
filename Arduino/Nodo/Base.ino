@@ -1,5 +1,5 @@
 #define SETTINGS_VERSION     18
-#define NODO_BUILD          478
+#define NODO_BUILD          480
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -41,7 +41,7 @@ prog_char PROGMEM Cmd_011[]="ClockSetDOW";
 prog_char PROGMEM Cmd_012[]="EventlistErase";
 prog_char PROGMEM Cmd_013[]="EventlistShow";
 prog_char PROGMEM Cmd_014[]="EventlistWrite";
-prog_char PROGMEM Cmd_015[]="Break"; //???
+prog_char PROGMEM Cmd_015[]=""; //???
 prog_char PROGMEM Cmd_016[]="RawSignalSave";
 prog_char PROGMEM Cmd_017[]="RawSignalSend";
 prog_char PROGMEM Cmd_018[]="Reset";
@@ -109,9 +109,9 @@ prog_char PROGMEM Cmd_073[]="HTTPServerPort";
 prog_char PROGMEM Cmd_074[]="PortClient";
 // ??? prog_char PROGMEM Cmd_073[]="PortInput";
 // ??? prog_char PROGMEM Cmd_074[]="PortOutput";
-prog_char PROGMEM Cmd_075[]="";
-prog_char PROGMEM Cmd_076[]="";
-prog_char PROGMEM Cmd_077[]="";
+prog_char PROGMEM Cmd_075[]="ClockSync";
+prog_char PROGMEM Cmd_076[]="VariableDevice";
+prog_char PROGMEM Cmd_077[]="Device";
 prog_char PROGMEM Cmd_078[]="";
 prog_char PROGMEM Cmd_079[]="Reboot";
 prog_char PROGMEM Cmd_080[]="Echo";
@@ -306,7 +306,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_EVENTLIST_ERASE             12
 #define CMD_EVENTLIST_SHOW              13
 #define CMD_EVENTLIST_WRITE             14
-#define CMD_BREAK                       15
+#define CMD_res                         15
 #define CMD_RAWSIGNAL_SAVE              16
 #define CMD_RAWSIGNAL_SEND              17
 #define CMD_RESET                       18
@@ -366,9 +366,9 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_DNS_SERVER                  72
 #define CMD_PORT_SERVER                 73
 #define CMD_PORT_CLIENT                 74
-#define CMD_RES75                       75
-#define CMD_RES76                       76
-#define CMD_RES77                       77
+#define CMD_CLOCK_SYNC                  75
+#define CMD_VARIABLE_DEVICE             76
+#define CMD_DEVICE                      77
 #define CMD_RES78                       78
 #define CMD_REBOOT                      79
 #define CMD_ECHO                        80
@@ -550,26 +550,24 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define SIGNAL_TYPE_NEWKAKU          3 // Type ontvangen of te verzenden signaal in de eventcode
 #define NODO_TYPE_EVENT              1
 #define NODO_TYPE_COMMAND            2
-#define PULSE_DEBOUNCE_TIME         10 // pulsen kleiner dan deze waarde worden niet geteld. Bedoeld on verstoringen a.g.v. ruis of dender te voorkomen
-#define PULSE_TRANSITION       FALLING // FALLING of RISING: Geeft aan op welke flank de PulseCounter start.
 
 // Hardware in gebruik: Bits worden geset in de variabele HW_Config, uit te lezen met [Status HWConfig]
-#define HW_BOARD_UNO    0
-#define HW_BOARD_MEGA   1
-#define HW_ETHERNET     2
-#define HW_SDCARD       3
-#define HW_SERIAL       4
-#define HW_CLOCK        5
-#define HW_RF_RX        6
-#define HW_IR_RX        7
-#define HW_IR_PULSE     8
-#define HW_PLUGIN       9
-#define HW_RES10       10
-#define HW_RES11       11
-#define HW_RES12       12
-#define HW_RES13       13
-#define HW_RES14       14
-#define HW_RES15       15
+#define HW_BIC_0        0
+#define HW_BIC_1        1
+#define HW_BIC_2        2
+#define HW_BIC_3        3
+#define HW_BOARD_UNO    4
+#define HW_BOARD_MEGA   5
+#define HW_ETHERNET     6
+#define HW_SDCARD       7
+#define HW_SERIAL       8
+#define HW_CLOCK        9
+#define HW_RF_RX       10
+#define HW_IR_RX       11
+#define HW_IR_PULSE    12
+#define HW_PLUGIN      13
+#define HW_RES10       14
+#define HW_RES11       15
 
 #ifdef NODO_MEGA // Definities voor de Nodo-Mega variant.
 #define EVENT_QUEUE_MAX             32 // maximaal aantal plaatsen in de queue.
@@ -580,6 +578,18 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define USER_VARIABLES_RANGE_MIN  -100  // Laagste waarde die door de grbuiker kan worden opgeslagen in een gebruikersvariabele
 #define USER_VARIABLES_RANGE_MAX   100  // Hoogste waarde die door de grbuiker kan worden opgeslagen in een gebruikersvariabele
 #define PULSE_IRQ                    5  // IRQ verbonden aan de IR_RX_DATA pen 18 van de Mega
+#define PIN_BIC_0                   26 // Board Identification Code: bit-0
+#define PIN_BIC_1                   27 // Board Identification Code: bit-1
+#define PIN_BIC_2                   28 // Board Identification Code: bit-2
+#define PIN_BIC_3                   29 // Board Identification Code: bit-3
+#define PIN_BSF_0                   22 // Board Specific Function lijn-0
+#define PIN_BSF_1                   23 // Board Specific Function lijn-1
+#define PIN_BSF_2                   24 // Board Specific Function lijn-2
+#define PIN_BSF_3                   25 // Board Specific Function lijn-3
+#define PIN_IO_1                    38 // Extra IO-lijn 1 voor gebruikers / userplugins
+#define PIN_IO_2                    39 // Extra IO-lijn 2 voor gebruikers / userplugins
+#define PIN_IO_3                    40 // Extra IO-lijn 3 voor gebruikers / userplugins
+#define PIN_IO_4                    41 // Extra IO-lijn 4 voor gebruikers / userplugins
 #define PIN_WIRED_IN_1               8  // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
 #define PIN_LED_RGB_R               47  // RGB-Led, aansluiting rood
 #define PIN_LED_RGB_G               48  // RGB-Led, aansluiting groen
@@ -695,6 +705,7 @@ unsigned long HW_Config=0;                                  // Hardware configur
 byte LastMessage=MESSAGE_00;                                // Laatst opgetreden bericht / foutmelding. Start met 200=OK
 
 #ifdef NODO_MEGA
+byte BIC=0;                                                 // Board Identification Code: identificeert de hardware uitvoering van de Nodo
 unsigned long Received=0L;                                  // Laatst ontvangen event
 uint8_t MD5HashCode[16];                                    // tabel voor berekenen van MD5 hash codes.
 int CookieTimer;                                            // Seconden teller die bijhoudt wanneer er weer een nieuw Cookie naar de WebApp verzonden moet worden.
@@ -732,6 +743,17 @@ void setup()
   {    
   int x;
 
+  #ifdef NODO_MEGA
+  // initialiseer BIC-lijnen en lees de BIC uit/
+  for(x=0;x<=3;x++)
+    {
+    pinMode(PIN_BIC_0+x,INPUT);
+    pinMode(PIN_BIC_0+x,INPUT_PULLUP);
+    HW_Config|=digitalRead(PIN_BIC_0+x)<<x;
+    }  
+  #endif
+
+
   // Initialiseer in/output poorten.
   pinMode(PIN_IR_RX_DATA, INPUT);
   pinMode(PIN_RF_RX_DATA, INPUT);
@@ -746,6 +768,7 @@ void setup()
   digitalWrite(PIN_RF_RX_VCC,HIGH);   // Spanning naar de RF ontvanger aan.
   digitalWrite(PIN_IR_RX_DATA,INPUT_PULLUP);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.//???
   digitalWrite(PIN_RF_RX_DATA,INPUT_PULLUP);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.//???
+
 
   // IRQ behorende bij PIN_IR_RX_DATA
   // Als er toch een reeks pulsen komt, dan wordt in FetchSignal() het tellen van pulsen gedisabled.
@@ -800,7 +823,6 @@ void setup()
   DaylightPrevious=Time.Daylight;
   #endif
   
-  // Zet statussen WIRED_IN op hoog, anders wordt direct wij het opstarten meerdere malen een event gegenereerd omdat de pull-up weerstand analoge de waarden op hoog zet
   for(x=0;x<WIRED_PORTS;x++){WiredInputStatus[x]=true;}
 
   // SDCard initialiseren:

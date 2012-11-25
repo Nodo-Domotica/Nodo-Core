@@ -16,8 +16,6 @@
  Voor vragen of suggesties, mail naar              : p.k.tonkes@gmail.com
  Compiler                                          : Arduino Compiler met minimaal versie 1.0.1
 
-
-
 \****************************** Door gebruiker in te stellen: ***************************************************************/
 
 // De code kan worden gecompileerd als een Nodo-Small voor de Arduino met een ATMega328 processor of een Nodo-Mega met een ATMega1280/2560.
@@ -25,8 +23,11 @@
 // en pas eventueel de drie include statements aan (zie onder)
 
 
-#define USER_PLUGIN         "UserPlugin"                           // Commando naam waarmee de plugin kan worden aangeroepen. Remarken met // als UserPluging niet nodig is
-#define PULSE_TIME_DIVIDE    1                                     // PulseTime geeft waarden van 0..65535 milliseconden. Door de deelfactor te vergroten kan de tijdseenheid worden vergroot. 1000-seconden
+#define USER_PLUGIN       "UserPlugin"                             // Commando naam waarmee de plugin kan worden aangeroepen. Remarken met // als UserPluging niet nodig is
+#define PULSE_TIME_DIVIDE            1                             // PulseTime geeft waarden van 0..65535 milliseconden. Door de deelfactor te vergroten kan de tijdseenheid worden vergroot. 1000-seconden
+#define PULSE_DEBOUNCE_TIME         10                             // pulsen kleiner dan deze waarde worden niet geteld. Bedoeld on verstoringen a.g.v. ruis of dender te voorkomen
+#define PULSE_TRANSITION       FALLING                             // FALLING of RISING: Geeft aan op welke flank de PulseCounter start start met tellen. Default FALLING
+
 
 #if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)     // NIET veranderen
   #define NODO_MEGA          1                                     // NIET veranderen !
@@ -42,10 +43,10 @@
   // Voor een arduino anders dan een Mega1280 of Mega2560 de onderstaande vier regels vooraf laten gaan door twee slashes //
   // Anders worden de niet gebruikte libraries meegecompileerd en zal deze niet in een ATMega328 passen.
 
-  #include <SD.h>
-  #include <EthernetNodo.h>
-  #include <SPI.h>
-  #include <Arduino.h>
+//  #include <SD.h>
+//  #include <EthernetNodo.h>
+//  #include <SPI.h>
+//  #include <Arduino.h>
   
 #else
   // definities Small

@@ -368,8 +368,10 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
     *Par2=EventPartPar2(event);      
     break;
 
-  case CMD_PULSE_TIME:
-    event=PulseTime&0xffff/PULSE_TIME_DIVIDE;
+  case CMD_PULSE_TIME:    
+    //???
+    event=PulseTime/PULSE_TIME_DIVIDE;
+    event=event<=60000?event:60000;
     *Par1=EventPartPar1(event);      
     *Par2=EventPartPar2(event);      
     break;
@@ -1954,6 +1956,5 @@ boolean Substitute(char* Input)
   return error;
 }
 #endif
-
 
 

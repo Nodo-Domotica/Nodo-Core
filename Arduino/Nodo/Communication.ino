@@ -122,6 +122,10 @@ byte GetHTTPFile(char* filename)
 byte SendHTTPEvent(unsigned long event)
   {
   byte Unit,x;
+
+  if(Settings.TransmitIP!=VALUE_ON)
+    return false;
+  
   char *HttpRequest=(char*)malloc(INPUT_BUFFER_SIZE+1);
   char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
 
@@ -166,6 +170,9 @@ boolean SendHTTPCookie(void)
   {
   boolean Status;
 
+  if(Settings.TransmitIP!=VALUE_ON)
+    return false;
+
   char *HttpRequest=(char*)malloc(INPUT_BUFFER_SIZE+1);
 
   strcpy(HttpRequest,"?id=");
@@ -188,8 +195,6 @@ boolean SendHTTPRequest(char* Request)
   byte InByte;
   byte Try=0;
   unsigned long TimeoutTimer;
-  char *IPBuffer=(char*)malloc(IP_BUFFER_SIZE+1);
-  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
   char filename[13];
   const int TimeOut=10000;
   EthernetClient HTTPClient;                            // Client class voor HTTP sessie.
@@ -197,6 +202,13 @@ boolean SendHTTPRequest(char* Request)
                // 1 als 200 OK voorbij is gekomen,
                // 2 als &file= is gevonden en eerstvolgende lege regel moet worden gedetecteerd
                // 3 als lege regel is gevonden en file-capture moet starten.                
+
+
+  if(Settings.TransmitIP!=VALUE_ON)
+    return false;
+
+  char *IPBuffer=(char*)malloc(IP_BUFFER_SIZE+1);
+  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
   
   strcpy(IPBuffer,"GET ");
 
@@ -415,6 +427,9 @@ void ExecuteIP(void)
   int x,y;
   unsigned long TimeoutTimer=millis() + 5000; // Na enkele seconden moet de gehele transactie gereed zijn, anders 'hik' in de lijn.
   
+  if(Settings.TransmitIP!=VALUE_ON)
+    return;
+
   char *InputBuffer_IP = (char*) malloc(IP_BUFFER_SIZE+1);
   char *Event          = (char*) malloc(INPUT_BUFFER_SIZE+1);
   char *TmpStr1        = (char*) malloc(INPUT_BUFFER_SIZE+1);
