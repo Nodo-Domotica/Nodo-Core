@@ -34,8 +34,7 @@
   #define UNIT_NODO          1                                     // default unit nummer na een [Reset] commando
   #define ETHERNET           1                                     // op 0 zetten als ethernet kaart niet aanwezig
   #define NODO_MAC           0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF    // MAC adres voor de ethernet kaart. 
-// #define NODO_MAC 0x54, 0xa5, 0x8d, 0x17, 0xaf, 0x41 // Productie MAC Paul ???
-
+  
 
   // Keuze tussen SMALL of MEGA: **********************************************************************************************
   // Kies voor compilatie het juiste Arduino board. Dit kan een Arduino zijn gebaseerd op een zijn een ATMega1280, ATMega2560 of een ATMega328.
