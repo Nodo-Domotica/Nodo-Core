@@ -89,7 +89,8 @@ byte Commanderror(unsigned long Content)
     case CMD_SEND_USEREVENT:
     case CMD_KAKU:
     case CMD_SEND_KAKU:
-      return false;
+    case CMD_PULSE_COUNT:
+    return false;
  
     case CMD_SEND_KAKU_NEW:
     case CMD_KAKU_NEW:    
@@ -111,6 +112,7 @@ byte Commanderror(unsigned long Content)
 
     // test:Par1 binnen bereik maximaal beschikbare variabelen
     case CMD_VARIABLE_INC: 
+    case CMD_VARIABLE_SET:
     case CMD_VARIABLE_DEC: 
     case CMD_VARIABLE_EVENT:    
     case CMD_BREAK_ON_VAR_NEQU:
@@ -147,9 +149,6 @@ byte Commanderror(unsigned long Content)
       if(Par1<1 || Par1>50)return MESSAGE_02;
       return false;
 
-    case CMD_VARIABLE_SET:
-      if(Par1<1 || Par1>USER_VARIABLES_MAX)return MESSAGE_02;
-      return false;
       
     // test:Par1 en Par2 binnen bereik maximaal beschikbare variabelen
     case CMD_VARIABLE_VARIABLE:
@@ -330,7 +329,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
   
     case CMD_VARIABLE_VARIABLE:
       UserVar[Par1-1]=UserVar[Par2-1];
-      ProcessEvent2(float2event(UserVar[Par1-1], Par1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
+      ProcessEvent2(float2event(UserVar[Par1-1], Par1-1, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;        
 
     case CMD_BREAK_ON_VAR_EQU:
@@ -423,10 +422,10 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         }
       else
         {
-        Queue.Event[Queue.Position]=command2event(Settings.Unit, CMD_CLOCK_YEAR,Time.Year/100,Time.Year%100);Queue.Port[Queue.Position++]=VALUE_SOURCE_SYSTEM;
-        Queue.Event[Queue.Position]=command2event(Settings.Unit, CMD_CLOCK_DATE,Time.Date,Time.Month);Queue.Port[Queue.Position++]=VALUE_SOURCE_SYSTEM;
-        Queue.Event[Queue.Position]=command2event(Settings.Unit, CMD_CLOCK_TIME,Time.Hour,Time.Minutes);Queue.Port[Queue.Position++]=VALUE_SOURCE_SYSTEM;
-        Queue.Event[Queue.Position]=command2event(Settings.Unit, CMD_CLOCK_DOW ,Time.Day,0);Queue.Port[Queue.Position++]=VALUE_SOURCE_SYSTEM;
+        Queue.Event[Queue.Position]=command2event(Par1, CMD_CLOCK_YEAR,Time.Year/100,Time.Year%100);Queue.Port[Queue.Position++]=VALUE_SOURCE_SYSTEM;
+        Queue.Event[Queue.Position]=command2event(Par1, CMD_CLOCK_DATE,Time.Date,Time.Month);Queue.Port[Queue.Position++]=VALUE_SOURCE_SYSTEM;
+        Queue.Event[Queue.Position]=command2event(Par1, CMD_CLOCK_TIME,Time.Hour,Time.Minutes);Queue.Port[Queue.Position++]=VALUE_SOURCE_SYSTEM;
+        Queue.Event[Queue.Position]=command2event(Par1, CMD_CLOCK_DOW ,Time.Day,0);Queue.Port[Queue.Position++]=VALUE_SOURCE_SYSTEM;
         if(!QueueSend(Par1,true))
           RaiseMessage(MESSAGE_12);
         }
@@ -546,7 +545,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;
                          
     case CMD_SETTINGS_SAVE:
-      Settings.NewNodo=false;
+      UndoNewNodo();// Status NewNodo verwijderen indien van toepassing
       #ifdef NODO_MEGA
       for(x=0;x<USER_VARIABLES_MAX;x++)
         Settings.UserVar[x]=UserVar[x];
@@ -659,12 +658,17 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       Reset();
       break;        
 
+    case CMD_PULSE_COUNT:
+      PulseCount=EventPart16Bit(Content);
+      break;
+      
     case CMD_RESET:
       if(Busy.BusyOnSent)
         TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
       ResetFactory();
 
     case CMD_EVENTLIST_ERASE:
+      UndoNewNodo();// Status NewNodo verwijderen indien van toepassing
       if(Par1>EVENTLIST_MAX)
         error=MESSAGE_06;
       else
@@ -881,7 +885,13 @@ int ExecuteLine(char *Line, byte Port)
             case CMD_VARIABLE_INC:
             case CMD_VARIABLE_EVENT:
               if(GetArgv(Command,TmpStr1,3))
-                v=float2event(atof(TmpStr1), Par1-1, Cmd); // -1 omdat intern variabelen starten vanaf nul
+                {
+                float f=atof(TmpStr1);
+                if(f>=USER_VARIABLES_RANGE_MIN && f<=USER_VARIABLES_RANGE_MAX)
+                  v=float2event(f, Par1-1, Cmd); // -1 omdat intern variabelen starten vanaf nul
+                else
+                  error=MESSAGE_02;
+                }
               break;
   
             case CMD_WIRED_THRESHOLD:
@@ -1129,7 +1139,7 @@ int ExecuteLine(char *Line, byte Port)
                   }
   
                 else // Commando uitvoeren heeft alleen zin er geen eventlistwrite commando actief is
-                  FileExecute(FileName);        
+                  FileExecute(FileName, Par2==VALUE_ON);        
                   }
                 }
               break;
@@ -1268,7 +1278,19 @@ int ExecuteLine(char *Line, byte Port)
               break;
               }  
   
-            case CMD_PORT_CLIENT:
+          case CMD_PULSE_COUNT:
+              {
+              if(GetArgv(Command,TmpStr1,2))
+                {
+                a=str2int(TmpStr1)&0xffff;                  
+                Par1=EventPartPar1(a);      
+                Par2=EventPartPar2(a);      
+                v=command2event(Settings.Unit, Cmd, Par1, Par2);
+                }              
+              break;
+              }  
+
+          case CMD_PORT_CLIENT:
               {
               if(GetArgv(Command,TmpStr1,2))
                 Settings.PortClient=str2int(TmpStr1);
@@ -1285,7 +1307,7 @@ int ExecuteLine(char *Line, byte Port)
               if(error)
                 {
                 Command[8]=0;// Gebruik commando als een filename. Voor de zekerheid te lange filename afkappen
-                if(!FileExecute(Command))
+                if(!FileExecute(Command, Par1==VALUE_ON))
                   {
                   error=0;
                   v=0;
@@ -1321,6 +1343,7 @@ int ExecuteLine(char *Line, byte Port)
           if(State_EventlistWrite==2)
             {
             a=v;            
+            UndoNewNodo();// Status NewNodo verwijderen indien van toepassing
             if(!Eventlist_Write(EventlistWriteLine,event,a))
               {
               RaiseMessage(MESSAGE_06);

@@ -380,8 +380,6 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
     event=PulseCount&0xffff;
     *Par1=EventPartPar1(event);      
     *Par2=EventPartPar2(event);      
-    if(xPar2!=VALUE_ALL)
-      PulseCount=0;
     break;
 
   case CMD_WIRED_IN_EVENT:
@@ -560,14 +558,14 @@ void ResetFactory(void)
  * Maak de Eventlist leeg en herstel de default inhoud
  \*********************************************************************************************/
 void FactoryEventlist(void)
-{
+  {
   // maak de eventlist leeg.
   for(int x=1;x<=EVENTLIST_MAX;x++)
     Eventlist_Write(x,0L,0L);
 
   // schrijf default regels.
   Eventlist_Write(0,command2event(Settings.Unit,CMD_BOOT_EVENT,Settings.Unit,0),command2event(Settings.Unit,CMD_SOUND,7,0)); // geluidssignaal na opstarten Nodo
-}
+  }
 
 
 /**********************************************************************************************\
@@ -984,13 +982,6 @@ boolean Eventlist_Write(int address, unsigned long Event, unsigned long Action)/
   {
   unsigned long TempEvent,TempAction;
 
-  // Als Eventlist voor eerste keer beschreven wordt, dan is het geen vers geresette Nodo meer. Na beschrijven dan ook geen NewNodo event meer sturen
-  if(Settings.NewNodo)
-    {
-    Settings.NewNodo=false;
-    Save_Settings();
-    }
-
   // als adres=0, zoek dan de eerste vrije plaats.
   if(address==0)
     {
@@ -1401,7 +1392,7 @@ void md5(char* dest)
 }
 
 
-boolean FileExecute(char* FileName)
+boolean FileExecute(char* FileName, boolean ContinueOnError)
   {
   int x,y;
   char *TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
@@ -1427,9 +1418,9 @@ boolean FileExecute(char* FileName)
         y=0;
         SelectSD(false);
         PrintTerminal(TmpStr);
-        error=ExecuteLine(TmpStr,VALUE_SOURCE_FILE);
+        ExecuteLine(TmpStr,VALUE_SOURCE_FILE);
         SelectSD(true);
-        if(error)
+        if(!ContinueOnError && LastMessage!=MESSAGE_00)
           {// stoppen met de rest van het script, maar niet terugkeren met nogmaals een error.
           error=false;
           break;
@@ -1957,4 +1948,16 @@ boolean Substitute(char* Input)
 }
 #endif
 
+ /**********************************************************************************************\
+ * Indien het een vers geresette Nodo is, dan ongedaan maken van deze status.
+ \*********************************************************************************************/
+void UndoNewNodo(void)
+  {
+  // Als Eventlist voor eerste keer beschreven wordt, dan is het geen vers geresette Nodo meer. Na beschrijven dan ook geen NewNodo event meer sturen
+  if(Settings.NewNodo)
+    {
+    Settings.NewNodo=false;
+    Save_Settings();
+    }
+  }
 

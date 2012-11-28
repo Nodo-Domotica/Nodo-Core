@@ -153,7 +153,7 @@ void PrintWelcome(void)
   // print IP adres van de Nodo
   if(bitRead(HW_Config,HW_ETHERNET))
     {
-    sprintf(TempString,"MAC=%02X-%02X-%02X-%02X-%02X-%02X, NodoIP=%u.%u.%u.%u, %s=%d", NODO_MAC, Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3],cmd2str(CMD_PORT_SERVER),Settings.HTTPServerPort );
+    sprintf(TempString,"NodoIP=%u.%u.%u.%u, %s=%d", Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3],cmd2str(CMD_PORT_SERVER),Settings.HTTPServerPort );
     PrintTerminal(TempString);
     
     if((HTTPClientIP[0] + HTTPClientIP[1] + HTTPClientIP[2] + HTTPClientIP[3]) > 0)

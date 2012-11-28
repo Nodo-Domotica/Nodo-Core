@@ -33,7 +33,6 @@
   #define NODO_MEGA          1                                     // NIET veranderen !
   #define UNIT_NODO          1                                     // default unit nummer na een [Reset] commando
   #define ETHERNET           1                                     // op 0 zetten als ethernet kaart niet aanwezig
-  #define NODO_MAC           0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF    // MAC adres voor de ethernet kaart. 
   
 
   // Keuze tussen SMALL of MEGA: **********************************************************************************************
@@ -42,10 +41,10 @@
   // Voor een arduino anders dan een Mega1280 of Mega2560 de onderstaande vier regels vooraf laten gaan door twee slashes //
   // Anders worden de niet gebruikte libraries meegecompileerd en zal deze niet in een ATMega328 passen.
 
-//  #include <SD.h>
-//  #include <EthernetNodo.h>
-//  #include <SPI.h>
-//  #include <Arduino.h>
+  #include <SD.h>
+  #include <EthernetNodo.h>
+  #include <SPI.h>
+  #include <Arduino.h>
   
 #else
   // definities Small

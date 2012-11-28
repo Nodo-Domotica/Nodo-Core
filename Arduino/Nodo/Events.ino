@@ -21,7 +21,10 @@ void ProcessQueue(void)
       if(((Queue.Event[x]>>16)&0xff)==CMD_EVENTLIST_WRITE && ((Queue.Event[x]>>24)&0xf)==Settings.Unit && x<(Queue.Position-2)) // cmd
         {
         if(Eventlist_Write(((Queue.Event[x]>>8)&0xff),Queue.Event[x+1],Queue.Event[x+2]))
+          {
+          UndoNewNodo();// Status NewNodo verwijderen indien van toepassing
           x+=2;
+          }
         else
           RaiseMessage(MESSAGE_06);    
         }
@@ -44,6 +47,8 @@ boolean ProcessEvent1(unsigned long IncommingEvent, byte Direction, byte Port, u
   byte x;
   SerialHold(true);  // als er een regel ontvangen is, dan binnenkomst van signalen stopzetten met een seriele XOFF
 
+  LastMessage=MESSAGE_00;
+  
   Led(RED); // LED aan als er iets verwerkt wordt    
   
   #ifdef NODO_MEGA

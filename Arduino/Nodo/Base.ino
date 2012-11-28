@@ -1,5 +1,5 @@
 #define SETTINGS_VERSION     18
-#define NODO_BUILD          481
+#define NODO_BUILD          482
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -112,7 +112,7 @@ prog_char PROGMEM Cmd_074[]="PortClient";
 prog_char PROGMEM Cmd_075[]="ClockSync";
 prog_char PROGMEM Cmd_076[]="VariableDevice";
 prog_char PROGMEM Cmd_077[]="Device";
-prog_char PROGMEM Cmd_078[]="";
+prog_char PROGMEM Cmd_078[]="PulseCount";
 prog_char PROGMEM Cmd_079[]="Reboot";
 prog_char PROGMEM Cmd_080[]="Echo";
 prog_char PROGMEM Cmd_081[]="";
@@ -158,7 +158,7 @@ prog_char PROGMEM Cmd_117[]="NewNodo";
 prog_char PROGMEM Cmd_118[]="Message";
 prog_char PROGMEM Cmd_119[]="Boot";
 prog_char PROGMEM Cmd_120[]="PulseTime";
-prog_char PROGMEM Cmd_121[]="PulseCount";
+prog_char PROGMEM Cmd_121[]="";
 prog_char PROGMEM Cmd_122[]="";
 prog_char PROGMEM Cmd_123[]="";
 prog_char PROGMEM Cmd_124[]="";
@@ -369,11 +369,11 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_CLOCK_SYNC                  75
 #define CMD_VARIABLE_DEVICE             76
 #define CMD_DEVICE                      77
-#define CMD_RES78                       78
+#define CMD_PULSE_COUNT                 78
 #define CMD_REBOOT                      79
 #define CMD_ECHO                        80
 #define CMD_EVENT_SEND                  81
-//#define CMD_EVENT_SAVE                  82
+//#define CMD_EVENT_SAVE                82
 #define CMD_RES083                      83
 #define CMD_RES084                      84
 #define CMD_RES085                      85
@@ -416,7 +416,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_MESSAGE                    118
 #define CMD_BOOT_EVENT                 119
 #define CMD_PULSE_TIME                 120
-#define CMD_PULSE_COUNT                121
+#define CMD_RES_EVENT_121              121
 #define CMD_RES_EVENT_122              122
 #define CMD_RES_EVENT_123              123
 #define CMD_RES_EVENT_124              124
@@ -591,6 +591,13 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define PIN_IO_3                    40 // Extra IO-lijn 3 voor gebruikers / userplugins
 #define PIN_IO_4                    41 // Extra IO-lijn 4 voor gebruikers / userplugins
 #define PIN_WIRED_IN_1               8  // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_IN_2               9  // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_IN_3              10  // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_IN_4              11  // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_IN_5              12  // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_IN_6              13  // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_IN_7              14  // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_IN_8              15  // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
 #define PIN_LED_RGB_R               47  // RGB-Led, aansluiting rood
 #define PIN_LED_RGB_G               48  // RGB-Led, aansluiting groen
 #define PIN_LED_RGB_B               49  // RGB-Led, aansluiting blauw
@@ -602,6 +609,13 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define PIN_RF_RX_VCC               16  // Spanning naar de ontvanger via deze pin.
 #define PIN_RF_RX_DATA              19  // Op deze input komt het 433Mhz-RF signaal binnen. LOW bij geen signaal.
 #define PIN_WIRED_OUT_1             30  // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_OUT_2             31  // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_OUT_3             32  // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_OUT_4             33  // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_OUT_5             34  // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_OUT_6             35  // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_OUT_7             36  // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_OUT_8             37  // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
 #define EthernetShield_SCK          52  // NIET VERANDEREN. Ethernet shield: SCK-lijn van de ethernet kaart
 #define EthernetShield_CS_SDCardH   53  // NIET VERANDEREN. Ethernet shield: Gereserveerd voor correct funktioneren van de SDCard: Hardware CS/SPI ChipSelect
 #define EthernetShield_CS_SDCard     4  // NIET VERANDEREN. Ethernet shield: Chipselect van de SDCard. Niet gebruiken voor andere doeleinden
@@ -631,6 +645,9 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define PIN_LED_RGB_R               13 // RGB-Led, aansluiting rood
 #define PIN_LED_RGB_B               13 // RGB-Led, aansluiting blauw, maar voor de Nodo Small is dit de eveneens de rode led.
 #define PIN_WIRED_IN_1               0 // Eerste WIRED input pin. Wired-IN loopt van A0 tot en met 3
+#define PIN_WIRED_IN_2               1 // Eerste WIRED input pin. Wired-IN loopt van A0 tot en met 3
+#define PIN_WIRED_IN_3               2 // Eerste WIRED input pin. Wired-IN loopt van A0 tot en met 3
+#define PIN_WIRED_IN_4               3 // Eerste WIRED input pin. Wired-IN loopt van A0 tot en met 3
 #define PIN_SPEAKER                  6 // luidspreker aansluiting
 #define PIN_IR_TX_DATA              11 // NIET VERANDEREN. Aan deze pin zit een zender IR-Led. (gebufferd via transistor i.v.m. hogere stroom die nodig is voor IR-led)
 #define PIN_IR_RX_DATA               3 // Op deze input komt het IR signaal binnen van de TSOP. Bij HIGH bij geen signaal.
@@ -639,6 +656,9 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define PIN_RF_RX_DATA               2 // Op deze input komt het 433Mhz-RF signaal binnen. LOW bij geen signaal.
 #define PIN_RF_RX_VCC               12 // Spanning naar de ontvanger via deze pin.
 #define PIN_WIRED_OUT_1              7 // 7 digitale outputs D07 t/m D10 worden gebruikt voor WiredIn 1 tot en met 4
+#define PIN_WIRED_OUT_2              8 // 7 digitale outputs D07 t/m D10 worden gebruikt voor WiredIn 1 tot en met 4
+#define PIN_WIRED_OUT_3              9 // 7 digitale outputs D07 t/m D10 worden gebruikt voor WiredIn 1 tot en met 4
+#define PIN_WIRED_OUT_4             10 // 7 digitale outputs D07 t/m D10 worden gebruikt voor WiredIn 1 tot en met 4
 #endif
 //****************************************************************************************************************************************
 
@@ -718,9 +738,8 @@ char InputBuffer_Serial[INPUT_BUFFER_SIZE+2];               // Buffer voor input
 char InputBuffer_Terminal[INPUT_BUFFER_SIZE+2];             // Buffer voor input terminal verbinding Telnet sessie
 
 // ethernet classes voor IP communicatie Telnet terminal en HTTP.
-byte Ethernet_MAC_Address[]={NODO_MAC};                     // MAC adres van de Nodo.
 EthernetServer HTTPServer(80);                              // Server class voor HTTP sessie. Poort wordt later goed gezet.
-EthernetServer TerminalServer(23);                          // Server class voor Terminal sessie.
+EthernetServer TerminalServer(TERMINAL_PORT);               // Server class voor Terminal sessie.
 EthernetClient TerminalClient;                              // Client class voor Terminal sessie.
 byte ClientIPAddress[4];                                    // IP adres van de client die verbinding probeert te maken c.q. verbonden is.
 byte HTTPClientIP[4]; // IP adres van de Host
@@ -1034,18 +1053,17 @@ void loop()
                       }
                     }
                   }
-//??? voor testdoeleinden tijdelijk gedisabled.
-//                else 
-//                  {// bij een niet printbaar teken wordt de verbinding direct verbroken. Uit veiligheidsoverweging om te voorkomen dat bulk rommel naar de Nodo gestuurd wordt.
-//                  // TerminalSessie timeout, dan de verbinding netjes afsluiten
-//                  InputBuffer_Terminal[0]=0;
-//                  TerminalClient.println(ProgmemString(Text_30));
-//                  delay(100); // geef de client even de gelegenheid de tekst te ontvangen
-//                  TerminalClient.flush();// eventuele rommel weggooien.
-//                  TerminalClient.stop();
-//                  TerminalConnected=0;
-//                  break;
-//                  }
+                else 
+                  {// bij een niet printbaar teken wordt de verbinding direct verbroken. Uit veiligheidsoverweging om te voorkomen dat bulk rommel naar de Nodo gestuurd wordt.
+                  // TerminalSessie timeout, dan de verbinding netjes afsluiten
+                  InputBuffer_Terminal[0]=0;
+                  TerminalClient.println(ProgmemString(Text_30));
+                  delay(100); // geef de client even de gelegenheid de tekst te ontvangen
+                  TerminalClient.flush();// eventuele rommel weggooien.
+                  TerminalClient.stop();
+                  TerminalConnected=0;
+                  break;
+                  }
                 }
               }
             }
