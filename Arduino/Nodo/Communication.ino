@@ -23,6 +23,7 @@ boolean EthernetInit(void)
   {
   int x;
   boolean Ok=false;
+  byte Ethernet_MAC_Address[6];                                // MAC adres van de Nodo.
 
   if(!bitRead(HW_Config,HW_ETHERNET))
     return false;
@@ -30,7 +31,14 @@ boolean EthernetInit(void)
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
   SelectSD(false);
   
-  // Initialiseer ethernet device
+  Ethernet_MAC_Address[0]=0xAA;
+  Ethernet_MAC_Address[1]=0xBB;
+  Ethernet_MAC_Address[2]=0xCC;
+  Ethernet_MAC_Address[3]='_';
+  Ethernet_MAC_Address[4]=(Settings.Unit/10)+'0';
+  Ethernet_MAC_Address[5]=(Settings.Unit%10)+'0';
+  
+  // Initialiseer ethernet device  
   if((Settings.Nodo_IP[0] + Settings.Nodo_IP[1] + Settings.Nodo_IP[2] + Settings.Nodo_IP[3])==0)// Als door de user IP adres is ingesteld op 0.0.0.0 dan IP adres ophalen via DHCP
     {
     if(Ethernet.begin(Ethernet_MAC_Address)==0) // maak verbinding en verzoek IP via DHCP
@@ -42,8 +50,8 @@ boolean EthernetInit(void)
     }
   if((Ethernet.localIP()[0]+Ethernet.localIP()[1]+Ethernet.localIP()[2]+Ethernet.localIP()[3])!=0); // Als er een IP adres is, dan HTTP en TelNet servers inschakelen
     {
-    // Start server voor Terminalsessies via TelNet
-    TerminalServer=EthernetServer(23);
+   // Start server voor Terminalsessies via TelNet
+    TerminalServer=EthernetServer(TERMINAL_PORT);
     TerminalServer.begin(); 
 
     // Start Server voor ontvangst van HTTP-Events
@@ -191,12 +199,16 @@ boolean SendHTTPCookie(void)
 
 boolean SendHTTPRequest(char* Request)
   {
+  if(Settings.TransmitIP!=VALUE_ON)
+    return false;
+  
+  
   int InByteCounter,x,y,SlashPos;
   byte InByte;
   byte Try=0;
   unsigned long TimeoutTimer;
   char filename[13];
-  const int TimeOut=10000;
+  const int TimeOut=5000;
   EthernetClient HTTPClient;                            // Client class voor HTTP sessie.
   byte State=0;// 0 als start, 
                // 1 als 200 OK voorbij is gekomen,
@@ -204,8 +216,6 @@ boolean SendHTTPRequest(char* Request)
                // 3 als lege regel is gevonden en file-capture moet starten.                
 
 
-  if(Settings.TransmitIP!=VALUE_ON)
-    return false;
 
   char *IPBuffer=(char*)malloc(IP_BUFFER_SIZE+1);
   char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
@@ -324,7 +334,7 @@ boolean SendHTTPRequest(char* Request)
             }
           }
         }
-      delay(10);
+      delay(100);
       HTTPClient.flush();// Verwijder eventuele rommel in de buffer.
       HTTPClient.stop();
       State=true;
@@ -585,7 +595,7 @@ void ExecuteIP(void)
           }
         }
       }
-    delay(10);  // korte pauze om te voorkomen dat de verbinding wordt verbroken alvorens alle data door client verwerkt is.
+    delay(100);  // korte pauze om te voorkomen dat de verbinding wordt verbroken alvorens alle data door client verwerkt is.
     HTTPClient.flush();// Verwijder eventuele rommel in de buffer.
     HTTPClient.stop();
     }

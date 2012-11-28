@@ -22,9 +22,17 @@
 // - WiredOut uitgangen uitbreiden tot 8, 16, 32, 64 verschillende digitale uitgangen met behulp van 74HCT595
 // - I2C devices aansturen via de SLC en SDA lijnen van de arduino.
 // - etcetera.
-
-
-
+//
+// De Wired poorten en de additionele IO poorten op de Mega in uw eigen code gebruiken aan de hand van de naam zoals deze zijn gedefinieerd
+// in de code:
+//
+// PIN_WIRED_OUT_n staat voor WiredOut poort, waarbij n overeen komt met het nummer van de WiredOut poort te beginnen met 1.
+// PIN_WIRED_IN_n staat voor WiredOut poort, waarbij n overeen komt met het nummer van de WiredOut poort te beginnen met 1.
+// PIN_IO_n staat voor additionele IO-poort, waarbij n overeen komt met het nummer van deze poort, te beginnen met 1 (Alleen beschikbaar op de Mega).
+// 
+// Voor de verwijzing naar de Arduino pinnummers: zie schema of declaraties in tabblad "Base"
+// ANDERE POORTEN NIET GEBRUIKEN OMDAT DEZE (IN DE TOEKOMST) EEN SPECIFIEKE FUNKTIE HEBBEN.
+//
 //================================= Verwijzing naar code: ===========================================
 
 // Onderstaand de aanroep van de code. Funkties die niet in onderstaande switch worden opgenomen, worden ook door de compiler niet
@@ -36,7 +44,7 @@ float Device(byte Device, int Parameter)
   switch(Device)
     {
     case 1: 
-      return Sensor_Temp_Dallas1820(7); // Lees de Dallas DS1820 sensor uit die zich op Arduino poort 7 bevindt. Dit is WiredOut-1
+      return Sensor_Temp_Dallas1820(PIN_WIRED_OUT_1); // Lees de Dallas DS1820 sensor uit die zich op Arduino poort 7 bevindt. Dit is PIN_WIRED_OUT_1
 
     case 2:
       return 0; // Verwijs hier naar een funktie
@@ -117,8 +125,8 @@ float Sensor_Temp_Dallas1820(uint8_t port) // Arduino port.
     if (ScratchPad[1] & 0x80) // negative
       DSTemp = (DSTemp ^ 0xffff) + 1; // 2's complement
   
-    return float(DSTemp)/2; // DS1820 variant
-    // return float(DSTemp)*0.0625; // DS18-B-20 variant
+    // return float(DSTemp)/2; // Deze regel gebruiken voor de oudere en minder nauwkeurige DS1820 variant
+    return float(DSTemp)*0.0625; // DS18-B-20 variant
     }
   return 0;
   }
