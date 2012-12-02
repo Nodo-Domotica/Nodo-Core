@@ -12,24 +12,24 @@
  * Test NIET op geldigheid van de parameters
  * geeft de waarde 0, NODO_TYPE_EVENT of NODO_TYPE_COMMAND terug.
  \*********************************************************************************************/
-byte NodoType(unsigned long Content)
+byte NodoType(unsigned long InEvent)
   {
   byte x;
 
   // als het geen Nodo event of commando was dan zowieso geen commando
-  if(((Content>>28)&0xf)!=SIGNAL_TYPE_NODO)
+  if(((InEvent>>28)&0xf)!=SIGNAL_TYPE_NODO)
     return false;
   
   // als het een UserEvent was, dan is die altijd voor deze Nodo
-  if(((Content>>16)&0xff)==CMD_USEREVENT)
+  if(((InEvent>>16)&0xff)==CMD_USEREVENT)
     return NODO_TYPE_EVENT;
 
   // als Unit deel ongelijk is aan eigen adres en ongelijk aan wildcard unit=0, dan was het een event voor een andere Nodo
-  x=(Content>>24)&0xf;
+  x=(InEvent>>24)&0xf;
   if(x!=Settings.Unit && x!=0)
     return false;
 
-  x=(Content>>16)&0xff;
+  x=(InEvent>>16)&0xff;
 
   if(x>=FIRST_EVENT && x<=LAST_EVENT)
     return NODO_TYPE_EVENT;
@@ -46,17 +46,17 @@ byte NodoType(unsigned long Content)
  * Als het een correct commando is wordt een false teruggegeven 
  * in andere gevallen een foutcode
  \*********************************************************************************************/
-byte Commanderror(unsigned long Content)
+byte Commanderror(unsigned long InEvent)
   {
   int x,y;
   
-  x=NodoType(Content);
+  x=NodoType(InEvent);
   if(x!=NODO_TYPE_COMMAND && x!=NODO_TYPE_EVENT)
     return MESSAGE_01;
   
-  byte Command      = EventPartCommand(Content);
-  byte Par1         = EventPartPar1(Content);
-  byte Par2         = EventPartPar2(Content);
+  byte Command      = EventPartCommand(InEvent);
+  byte Par1         = EventPartPar1(InEvent);
+  byte Par2         = EventPartPar2(InEvent);
   
   switch(Command)
     {
@@ -68,6 +68,8 @@ byte Commanderror(unsigned long Content)
     case CMD_RESET:
     case CMD_RAWSIGNAL_SAVE:
     case CMD_RAWSIGNAL:
+    case CMD_ALARM_SET:
+    case CMD_ALARM:
     case CMD_MESSAGE:
     case CMD_REBOOT:
     case CMD_SETTINGS_SAVE:
@@ -119,7 +121,7 @@ byte Commanderror(unsigned long Content)
     case CMD_BREAK_ON_VAR_MORE:
     case CMD_BREAK_ON_VAR_LESS:
     case CMD_BREAK_ON_VAR_EQU:
-      x=EventPart4Bit(Content);
+      x=EventPart4Bit(InEvent);
       if(x<1 || x>USER_VARIABLES_MAX)return MESSAGE_02;
       return false;
 
@@ -130,7 +132,7 @@ byte Commanderror(unsigned long Content)
     case CMD_WIRED_ANALOG:
     case CMD_WIRED_THRESHOLD:
     case CMD_WIRED_SMITTTRIGGER:
-      x=EventPart4Bit(Content);
+      x=EventPart4Bit(InEvent);
       if(x<1 || x>WIRED_PORTS)return MESSAGE_02;
       return false;
 
@@ -205,7 +207,6 @@ byte Commanderror(unsigned long Content)
       if(Par1!=0 && Par1!=VALUE_OFF && Par1!=VALUE_ON && Par1!=VALUE_ALL)return MESSAGE_02;
       return false;
 
-    case CMD_EVENT_SEND: // t.b.v. compatibiliteit vorige versies. Tijdelijk
     case CMD_SEND_EVENT:
       switch(Par1)
         {
@@ -283,17 +284,17 @@ byte Commanderror(unsigned long Content)
  * true teruggegeven. Zo niet dan wordt er een 'false' retour gegeven.
  \*********************************************************************************************/
 
-boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousContent, int PreviousSrc)
+boolean ExecuteCommand(unsigned long InEvent, int Src, unsigned long PreviousInEvent, int PreviousSrc)
   {
   unsigned long Event, a;  
   int x,y,z;
     
   byte error        = false;
-  byte Command      = EventPartCommand(Content);
-  byte Par1         = EventPartPar1(Content);
-  byte Par2         = EventPartPar2(Content);
-  byte Type         = EventPartType(Content);
-  byte PreviousType = (PreviousContent>>28)&0x0f;
+  byte Command      = EventPartCommand(InEvent);
+  byte Par1         = EventPartPar1(InEvent);
+  byte Par2         = EventPartPar2(InEvent);
+  byte Type         = EventPartType(InEvent);
+  byte PreviousType = (PreviousInEvent>>28)&0x0f;
   float f;
   
   switch(Command)
@@ -307,22 +308,22 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;
       
     case CMD_VARIABLE_INC:
-      y=EventPart4Bit(Content);
-      f=EventPartFloat(Content);
+      y=EventPart4Bit(InEvent);
+      f=EventPartFloat(InEvent);
       UserVar[y]=(UserVar[y]+f)>USER_VARIABLES_RANGE_MAX?USER_VARIABLES_RANGE_MAX:UserVar[y]+=f;
       ProcessEvent2(float2event(UserVar[y], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;        
 
     case CMD_VARIABLE_DEC: 
-      y=EventPart4Bit(Content);
-      f=EventPartFloat(Content);
+      y=EventPart4Bit(InEvent);
+      f=EventPartFloat(InEvent);
       UserVar[y]=(UserVar[y]-f)<USER_VARIABLES_RANGE_MIN?USER_VARIABLES_RANGE_MIN:UserVar[y]-=f;
       ProcessEvent2(float2event(UserVar[y], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;        
 
     case CMD_VARIABLE_SET:
-      y=EventPart4Bit(Content);
-      f=EventPartFloat(Content);      
+      y=EventPart4Bit(InEvent);
+      f=EventPartFloat(InEvent);      
       UserVar[y]=f;
       ProcessEvent2(float2event(UserVar[y], y, CMD_VARIABLE_EVENT), VALUE_DIRECTION_INTERNAL, VALUE_SOURCE_VARIABLE, 0, 0);      // verwerk binnengekomen event.
       break;         
@@ -333,29 +334,29 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;        
 
     case CMD_BREAK_ON_VAR_EQU:
-      y=EventPart4Bit(Content);
-      f=EventPartFloat(Content);
+      y=EventPart4Bit(InEvent);
+      f=EventPartFloat(InEvent);
       if(int(UserVar[y])==int(f))
         error=true;
       break;
       
     case CMD_BREAK_ON_VAR_NEQU:
-      y=EventPart4Bit(Content);
-      f=EventPartFloat(Content);
+      y=EventPart4Bit(InEvent);
+      f=EventPartFloat(InEvent);
       if(int(UserVar[y])!=int(f))
         error=true;
       break;
 
     case CMD_BREAK_ON_VAR_MORE:
-      y=EventPart4Bit(Content);
-      f=EventPartFloat(Content);
+      y=EventPart4Bit(InEvent);
+      f=EventPartFloat(InEvent);
       if(UserVar[y]>f)
         error=true;
       break;
 
     case CMD_BREAK_ON_VAR_LESS:
-      y=EventPart4Bit(Content);
-      f=EventPartFloat(Content);
+      y=EventPart4Bit(InEvent);
+      f=EventPartFloat(InEvent);
       if(UserVar[y]<f)
         error=true;
       break;
@@ -385,8 +386,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
 
     case CMD_LOCK:
       // In de bits van Par1 en Par2 zit een sleutel die gegenereerd is uit het wachtwoord van de Nodo die het commando verstuurd heeft.
-      a=Content&0x7fff;// Zet de lock met de bits 0 t/m 15
-      if(Content&0x8000) // On/Off bevindt zich in bit nr. 15
+      a=InEvent&0x7fff;// Zet de lock met de bits 0 t/m 15
+      if(InEvent&0x8000) // On/Off bevindt zich in bit nr. 15
         {// Als verzoek om inschakelen dan Lock waarde vullen
         if(Settings.Lock==0)// mits niet al gelocked.
           {
@@ -431,6 +432,9 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         }
 
       #endif
+
+    case CMD_ALARM_SET:
+      Settings.Alarm[(InEvent>>14)  & 0x03]=InEvent&0xFFFF;
 
     case CMD_CLOCK_YEAR:
       x=Par1*100+Par2;
@@ -507,7 +511,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;        
       
     case CMD_SEND_EVENT:
-      TransmitCode(PreviousContent,Par1);
+      TransmitCode(PreviousInEvent,Par1);
       break;        
 
     case CMD_SOUND: 
@@ -539,8 +543,8 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
         {
         digitalWrite(PIN_WIRED_OUT_1+x-1,(Par2==VALUE_ON));
         WiredOutputStatus[x-1]=(Par2==VALUE_ON);
-        Content=(Content&0xffff00ff)|x<<8;
-        PrintEvent(Content,VALUE_DIRECTION_OUTPUT, VALUE_SOURCE_WIRED);
+        InEvent=(InEvent&0xffff00ff)|x<<8;
+        PrintEvent(InEvent,VALUE_DIRECTION_OUTPUT, VALUE_SOURCE_WIRED);
         }
       break;
                          
@@ -609,15 +613,15 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;        
 
     case CMD_WIRED_SMITTTRIGGER:
-      z=EventPart4Bit(Content);
-      y=EventPart10Bit(Content);
+      z=EventPart4Bit(InEvent);
+      y=EventPart10Bit(InEvent);
       Settings.WiredInputSmittTrigger[z]=y;
       
       break;                  
 
     case CMD_WIRED_THRESHOLD:
-      z=EventPart4Bit(Content);
-      y=EventPart10Bit(Content);
+      z=EventPart4Bit(InEvent);
+      y=EventPart10Bit(InEvent);
       Settings.WiredInputThreshold[z]=y;
       break;                  
 
@@ -659,7 +663,7 @@ boolean ExecuteCommand(unsigned long Content, int Src, unsigned long PreviousCon
       break;        
 
     case CMD_PULSE_COUNT:
-      PulseCount=EventPart16Bit(Content);
+      PulseCount=EventPart16Bit(InEvent);
       break;
       
     case CMD_RESET:
@@ -1029,7 +1033,48 @@ int ExecuteLine(char *Line, byte Port)
               strcpy(Settings.Temp,TmpStr1);
               break;
               }  
-  
+            
+            case CMD_ALARM_SET://@2
+              // Commando format: [AlarmSet <AlarmNumber 1..4>, <Enabled On|Off>, <Time HHMM>, <Day ALL,1..7>]
+              {
+              if(GetArgv(Command,TmpStr1,2)) // Alarm number
+                {
+                z=str2int(TmpStr1)-1;
+                if(GetArgv(Command,TmpStr1,3)) // Enabled
+                  {
+                  if(str2cmd(TmpStr1)==VALUE_ON)
+                    {
+                    if(GetArgv(Command,TmpStr1,4)) // Minutes
+                      {
+                      y=str2int(TmpStr1);
+                      x=((y/100)*60 + (y%100))/5; // Uren en minuten uit decimale weergave omzetten naar echte minuten na Sun 0:00.
+
+                      if(GetArgv(Command,TmpStr1,5)) // Day is optioneel. Maar als deze parameter ingevuld, dan meenemen in de berekening.
+                        x+=str2int(TmpStr1) * 288;
+                      
+                      if(z<ALARM_MAX)
+                        {
+                        // Een alarm heeft een resolutie van 5 minuten.
+                        // 12-bits nodig voor aantal minuten na zondag 0:00 uur (M),vier voor de dag (D) twee bits voor het alarmnummer (N) en een bit voor enabled(E) 
+                        // MSB  NNNEMMMMMMMMMMMM LSB
+                        
+                        v=  command2event(Settings.Unit,CMD_ALARM_SET, 0, 0)   /* Basis voor commando */
+                            | (((unsigned long)  x  & 0xFFF)      )            /* MIN */ 
+                            | (((unsigned long)  1         ) <<13 )            /* ENABLED */
+                            | (((unsigned long)  z  & 0x7  ) <<14 );           /* ALARM NUMMER*/                          
+                        }
+                      else
+                        error=MESSAGE_02;
+                      }
+                    }
+                  else
+                    {
+                    v=(command2event(Settings.Unit,CMD_ALARM_SET, 0, 0) | (unsigned long)Settings.Alarm[(z&0x7)<<14]) & 0xffffefff; // 13e bit leeg maken. Deze bevat enabled/disabled vlag
+                    }
+                  }                
+                }
+              }
+
             case CMD_FILE_LOG:
               if(GetArgv(Command,TmpStr1,2))
                 {

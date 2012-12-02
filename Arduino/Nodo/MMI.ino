@@ -210,6 +210,7 @@ void PrintTerminal(char* LineToPrint)
 #define P_INT16   6
 #define P_INT10   7
 #define P_FLOAT   8
+#define P_ALARM   9
 
 void Event2str(unsigned long Code, char* EventString)
   {
@@ -245,7 +246,12 @@ void Event2str(unsigned long Code, char* EventString)
       P2=P_NOT;
       break;
 
-      // Par1 en Par2 samengesteld voor weergave van COMMAND <nummer> , <analoge waarde>
+    case CMD_ALARM_SET:
+      P1=P_ALARM;
+      P2=P_NOT;
+      break;
+      
+    // Par1 en Par2 samengesteld voor weergave van COMMAND <nummer> , <analoge waarde>
     case CMD_BREAK_ON_VAR_EQU:
     case CMD_BREAK_ON_VAR_LESS:
     case CMD_BREAK_ON_VAR_MORE:
@@ -341,6 +347,7 @@ void Event2str(unsigned long Code, char* EventString)
     case CMD_CLOCK_SYNC:
     case CMD_TIMER_EVENT:
     case CMD_UNIT:
+    case CMD_ALARM:
     case CMD_RAWSIGNAL:
     case CMD_SIMULATE_DAY:
     case CMD_CLOCK_DOW:
@@ -383,6 +390,29 @@ void Event2str(unsigned long Code, char* EventString)
 
       case P_VALUE:
         strcat(EventString,int2str(Par1));
+        break;
+
+      case P_ALARM:
+        strcat(EventString,int2str(((Code>>14)&0x03)+1)); // Alarm nummer              
+
+        strcat(EventString,",");
+        strcat(EventString,cmd2str((Code>>13)&1?VALUE_ON:VALUE_OFF)); // Enabled
+
+        strcat(EventString,",");
+        x=(Code&0x1FF)*5; // Minuten na 0:00 met resolutie van 5 min.
+        strcat(EventString,int2str(x/60)); // uren
+
+        y=x-(x/60)*60;
+        if(y<10)
+          strcat(EventString,"0");
+        strcat(EventString,int2str(y)); // minuten
+
+        x=(Code>>9)&0x0F; // Dag
+        if(x>0)
+          {
+          strcat(EventString,",");
+          strcat(EventString,int2str(x)); // Dag
+          }
         break;
       
       case P_KAKU:
