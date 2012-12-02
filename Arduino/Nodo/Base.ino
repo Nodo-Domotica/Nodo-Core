@@ -1,5 +1,5 @@
-#define SETTINGS_VERSION     18
-#define NODO_BUILD          483
+#define SETTINGS_VERSION     20
+#define NODO_BUILD          484
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -41,7 +41,7 @@ prog_char PROGMEM Cmd_011[]="ClockSetDOW";
 prog_char PROGMEM Cmd_012[]="EventlistErase";
 prog_char PROGMEM Cmd_013[]="EventlistShow";
 prog_char PROGMEM Cmd_014[]="EventlistWrite";
-prog_char PROGMEM Cmd_015[]=""; //???
+prog_char PROGMEM Cmd_015[]="";
 prog_char PROGMEM Cmd_016[]="RawSignalSave";
 prog_char PROGMEM Cmd_017[]="RawSignalSend";
 prog_char PROGMEM Cmd_018[]="Reset";
@@ -105,17 +105,17 @@ prog_char PROGMEM Cmd_069[]="NodoIP";
 prog_char PROGMEM Cmd_070[]="Gateway";
 prog_char PROGMEM Cmd_071[]="Subnet";
 prog_char PROGMEM Cmd_072[]="DnsServer";
-prog_char PROGMEM Cmd_073[]="HTTPServerPort";
-prog_char PROGMEM Cmd_074[]="PortClient";
-// ??? prog_char PROGMEM Cmd_073[]="PortInput";
-// ??? prog_char PROGMEM Cmd_074[]="PortOutput";
+//prog_char PROGMEM Cmd_073[]="HTTPServerPort";//???
+//prog_char PROGMEM Cmd_074[]="PortClient";//???
+prog_char PROGMEM Cmd_073[]="PortInput";
+prog_char PROGMEM Cmd_074[]="PortOutput";
 prog_char PROGMEM Cmd_075[]="ClockSync";
 prog_char PROGMEM Cmd_076[]="VariableDevice";
 prog_char PROGMEM Cmd_077[]="Device";
 prog_char PROGMEM Cmd_078[]="PulseCount";
 prog_char PROGMEM Cmd_079[]="Reboot";
 prog_char PROGMEM Cmd_080[]="Echo";
-prog_char PROGMEM Cmd_081[]="";
+prog_char PROGMEM Cmd_081[]="AlarmSet";
 prog_char PROGMEM Cmd_082[]="";
 prog_char PROGMEM Cmd_083[]="";
 prog_char PROGMEM Cmd_084[]="";
@@ -158,7 +158,7 @@ prog_char PROGMEM Cmd_117[]="NewNodo";
 prog_char PROGMEM Cmd_118[]="Message";
 prog_char PROGMEM Cmd_119[]="Boot";
 prog_char PROGMEM Cmd_120[]="PulseTime";
-prog_char PROGMEM Cmd_121[]="";
+prog_char PROGMEM Cmd_121[]="Alarm";
 prog_char PROGMEM Cmd_122[]="";
 prog_char PROGMEM Cmd_123[]="";
 prog_char PROGMEM Cmd_124[]="";
@@ -372,8 +372,8 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_PULSE_COUNT                 78
 #define CMD_REBOOT                      79
 #define CMD_ECHO                        80
-#define CMD_EVENT_SEND                  81
-//#define CMD_EVENT_SAVE                82
+#define CMD_ALARM_SET                   81
+#define CMD_ALARM                       82
 #define CMD_RES083                      83
 #define CMD_RES084                      84
 #define CMD_RES085                      85
@@ -416,7 +416,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_MESSAGE                    118
 #define CMD_BOOT_EVENT                 119
 #define CMD_PULSE_TIME                 120
-#define CMD_RES_EVENT_121              121
+#define CMD_ALARM                      121
 #define CMD_RES_EVENT_122              122
 #define CMD_RES_EVENT_123              123
 #define CMD_RES_EVENT_124              124
@@ -528,6 +528,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define BLUE                         3  // Led = Blauw
 #define BAUD                     19200 // Baudrate voor seriële communicatie.
 #define UNIT_MAX                    15 // Hoogst mogelijke unit nummer van een Nodo
+#define ALARM_MAX                    4 // aantal alarmen voor de user
 #define SERIAL_TERMINATOR_1       0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>
 #define SERIAL_TERMINATOR_2       0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
 #define Loop_INTERVAL_1              5 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
@@ -676,7 +677,8 @@ struct SettingsStruct
   byte    WaitBusyAll;                                      // maximale tijd dat gewacht moet worden op Nodos die bezig zijn met verwerking
   int     Lock;                                             // bevat de pincode waarmee IR/RF ontvangst is geblokkeerd. Bit nummer hoogste bit wordt gebruiktvoor in/uitschakelen.
   byte    Debug;                                            // Weergeven van extra gegevens t.b.v. beter inzicht verloop van de verwerking
-    
+  int     Alarm[ALARM_MAX-1];                                            // Instelbaar alarm
+  
   #ifdef NODO_MEGA
   float   UserVar[USER_VARIABLES_MAX];
   byte    TransmitIP;                                       // Definitie van het gebruik van HTTP-communicatie via de IP-poort: [Off] of [On]
@@ -716,6 +718,7 @@ unsigned long PulseTime=0L;                                 // Tijdsduur tussen 
 unsigned long UserTimer[TIMER_MAX];                         // Timers voor de gebruiker.
 boolean WiredInputStatus[WIRED_PORTS];                      // Status van de WiredIn worden hierin opgeslagen.
 boolean WiredOutputStatus[WIRED_PORTS];                     // Wired variabelen.
+int AlarmPrevious[ALARM_MAX];                               // Bevat laatste afgelopen alarm. Ter voorkoming dat alarmen herhaald aflopen.
 byte DaylightPrevious;                                      // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet.
 byte ExecutionDepth=0;                                      // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's.
 void(*Reset)(void)=0;                                       // reset functie op adres 0.
@@ -772,6 +775,9 @@ void setup()
     }  
   #endif
 
+  // Zet de alarmen op nog niet afgegaan.
+  for(x=0;x<ALARM_MAX;x++)
+    AlarmPrevious[x]=0xffff; // Deze waarde kan niet bestaan en voldoet dus.
 
   // Initialiseer in/output poorten.
   pinMode(PIN_IR_RX_DATA, INPUT);
@@ -785,9 +791,8 @@ void setup()
   pinMode(PIN_LED_RGB_B,  OUTPUT);
   digitalWrite(PIN_IR_TX_DATA,LOW);   // Zet de IR zenders initiëel uit! Anders mogelijk overbelasting !
   digitalWrite(PIN_RF_RX_VCC,HIGH);   // Spanning naar de RF ontvanger aan.
-  digitalWrite(PIN_IR_RX_DATA,INPUT_PULLUP);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.//???
-  digitalWrite(PIN_RF_RX_DATA,INPUT_PULLUP);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.//???
-
+  digitalWrite(PIN_IR_RX_DATA,INPUT_PULLUP);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
+  digitalWrite(PIN_RF_RX_DATA,INPUT_PULLUP);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
 
   // IRQ behorende bij PIN_IR_RX_DATA
   // Als er toch een reeks pulsen komt, dan wordt in FetchSignal() het tellen van pulsen gedisabled.
@@ -1129,7 +1134,7 @@ void loop()
           {
           // CLOCK: **************** Lees periodiek de realtime klok uit en check op events  ***********************
           Content=ClockRead(); // Lees de Real Time Clock waarden in de struct Time
-          if(bitRead(HW_Config,HW_CLOCK))//check of de klok we aanwzig is
+          if(bitRead(HW_Config,HW_CLOCK))//check of de klok aanwzig is
             {
             if(CheckEventlist(Content,VALUE_SOURCE_CLOCK) && EventTimeCodePrevious!=Content)
               {
@@ -1193,8 +1198,8 @@ void loop()
           }
 
         case 3:
-          break;
-
+          {
+          }
         case 4:
           {
           // TIMER: **************** Genereer event als één van de Timers voor de gebruiker afgelopen is ***********************    
@@ -1222,6 +1227,33 @@ void loop()
     if(LoopIntervalTimer_3<millis())// lange interval: Iedere seconde.
       {
       LoopIntervalTimer_3=millis()+Loop_INTERVAL_3; // reset de timer  
+
+      // ALARM: **************** Genereer event als één van de alarmen afgelopen is ***********************    
+      if(bitRead(HW_Config,HW_CLOCK))//check of de klok aanwzig is
+        {
+        for(x=0;x<ALARM_MAX;x++)
+          {
+          if((Settings.Alarm[x]>>13)&1) // Als alarm enabled is, dan ingestelde alarmtijd vergelijke met de echte tijd.
+            {
+            y=(Settings.Alarm[x]&0xFFF)/288;
+            if(y==Time.Day || y==0) // als de dag correspondeert of de dag is een wildcard (0)
+              {
+              y=(Settings.Alarm[x]&0xFFF)%288;   // Alarmtijd filteren op minuten na 0:00 van dit etmaal met 5 min. resolutie.
+              z=(Time.Hour*60 + Time.Minutes)/5; // Huidige tijd omzetten naat minuten na 0:00 van dit etmaal met 5 min. resolutie.
+
+              if(y==z) // Als ingestelde alarmtijd overeen komt met huidige tijd.
+                {
+                if(AlarmPrevious[x]!=Settings.Alarm[x]) // Als alarm niet eerder is afgegaan
+                  {
+                  AlarmPrevious[x]=Settings.Alarm[x];
+                  Content=command2event(Settings.Unit, CMD_ALARM,x+1,0);
+                  ProcessEvent1(Content,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK,0,0);      // verwerk binnengekomen event.              
+                  }
+                }
+              }
+            }
+          }
+        }
 
       // loop periodiek langs de userplugin
       #ifdef USER_PLUGIN

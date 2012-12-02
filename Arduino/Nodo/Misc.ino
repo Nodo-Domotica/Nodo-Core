@@ -220,6 +220,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
     case CMD_WIRED_IN_EVENT:
     case CMD_WIRED_OUT:
     case CMD_LOCK:
+    case CMD_ALARM_SET:
 #ifdef NODO_MEGA
     case CMD_LOG:
     case CMD_NODO_IP:
@@ -265,6 +266,12 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
 
   case VALUE_HWCONFIG: 
     event=HW_Config&0xffff;
+    *Par1=EventPartPar1(event);      
+    *Par2=EventPartPar2(event);      
+    break;        
+
+  case CMD_ALARM_SET:
+    event=(unsigned long)Settings.Alarm[xPar1-1] | (xPar1-1)<<14;
     *Par1=EventPartPar1(event);      
     *Par2=EventPartPar2(event);      
     break;        
@@ -369,7 +376,6 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
     break;
 
   case CMD_PULSE_TIME:    
-    //???
     event=PulseTime/PULSE_TIME_DIVIDE;
     event=event<=60000?event:60000;
     *Par1=EventPartPar1(event);      
@@ -542,6 +548,10 @@ void ResetFactory(void)
     Settings.WiredInputPullUp[x]=VALUE_ON;
     }
 
+  // Maar de alarmen leeg
+  for(x=0;x<ALARM_MAX;x++)
+    Settings.Alarm[x]=0;
+    
   #if NODO_MEGA
   // maak alle variabelen leeg
   for(byte x=0;x<USER_VARIABLES_MAX;x++)
@@ -726,6 +736,11 @@ void Status(byte Par1, byte Par2, byte Transmit)
         case CMD_VARIABLE_SET:
           Par1_Start=1;
           Par1_End=USER_VARIABLES_MAX;
+          break;
+
+        case CMD_ALARM_SET:
+          Par1_Start=1;
+          Par1_End=ALARM_MAX;
           break;
 
         case CMD_TIMER_SET_MIN:

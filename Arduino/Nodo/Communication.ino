@@ -572,8 +572,7 @@ void ExecuteIP(void)
                         RequestFile=false;// gebruiken we even als vlag om de eerste keer de regel met asteriks af te drukken omdat deze variabele toch verder niet meer nodig is
                         }
                       HTTPClient.print(TmpStr1);
-                      HTTPClient.println();//??? Verzoek van Martin "<br />" verwijderd
-
+                      HTTPClient.println();
                       SelectSD(true);
                       }
                     }
