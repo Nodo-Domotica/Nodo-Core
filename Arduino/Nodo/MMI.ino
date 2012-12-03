@@ -90,6 +90,7 @@ void PrintEvent(unsigned long Content, byte Direction, byte Port )
  \*********************************************************************************************/
 void PrintEvent(unsigned long Content, byte Direction, byte Port)
   {
+  // Trace(0,0,0);
   Serial.print(Direction);
   Serial.print(",");
   Serial.print(Port);
@@ -134,7 +135,7 @@ void PrintWelcome(void)
   PrintTerminal(ProgmemString(Text_02));
 
   // print versienummer, unit en indien gevuld het ID
-  sprintf(TempString,"Version=3.0(Mega), Build=%04d, ThisUnit=%d", NODO_BUILD, Settings.Unit);
+  sprintf(TempString,ProgmemString(Text_15), NODO_BUILD, Settings.Unit);
   if(Settings.ID[0])
     {
     strcat(TempString,", ID=");
@@ -153,7 +154,7 @@ void PrintWelcome(void)
   // print IP adres van de Nodo
   if(bitRead(HW_Config,HW_ETHERNET))
     {
-    sprintf(TempString,"NodoIP=%u.%u.%u.%u, %s=%d", Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3],cmd2str(CMD_PORT_SERVER),Settings.HTTPServerPort );
+    sprintf(TempString,"NodoIP=%u.%u.%u.%u, %s=%d", Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3],cmd2str(CMD_PORT_SERVER),Settings.OutputPort );
     PrintTerminal(TempString);
     
     if((HTTPClientIP[0] + HTTPClientIP[1] + HTTPClientIP[2] + HTTPClientIP[3]) > 0)
@@ -490,7 +491,7 @@ void PrintWelcome(void)
   Serial.println(ProgmemString(Text_02));
 
   // print versienummer, unit en indien gevuld het ID
-  sprintf(str,"Version=3.0(Small), Revision=%04d, ThisUnit=%d", NODO_BUILD, Settings.Unit);
+  sprintf(str,ProgmemString(Text_15), NODO_BUILD, Settings.Unit);
   Serial.println(str);
 
   // Geef datum en tijd weer.

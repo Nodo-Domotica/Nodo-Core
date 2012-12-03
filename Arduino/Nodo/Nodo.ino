@@ -1,3 +1,5 @@
+void setup();
+int dummy;
 /****************************************************************************************************************************\
 * Arduino project "Nodo" © Copyright 2012 Paul Tonkes 
 * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License 
@@ -15,7 +17,8 @@
  Compiler voor deze programmacode te downloaden op : http://arduino.cc
  Voor vragen of suggesties, mail naar              : p.k.tonkes@gmail.com
  Compiler                                          : Arduino Compiler met minimaal versie 1.0.1
-
+ Libraties                                         : EthernetNodo library vervang de standaard Ethernet library!
+  
 \****************************** Door gebruiker in te stellen: ***************************************************************/
 
 // De code kan worden gecompileerd als een Nodo-Small voor de Arduino met een ATMega328 processor of een Nodo-Mega met een ATMega1280/2560.
