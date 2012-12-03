@@ -153,6 +153,8 @@ byte Commanderror(unsigned long InEvent)
 
       
     // test:Par1 en Par2 binnen bereik maximaal beschikbare variabelen
+    case CMD_BREAK_ON_VAR_LESS_VAR:
+    case CMD_BREAK_ON_VAR_MORE_VAR:
     case CMD_VARIABLE_VARIABLE:
       if(Par1<1 || Par1>USER_VARIABLES_MAX)return MESSAGE_02;
       if(Par2<1 || Par2>USER_VARIABLES_MAX)return MESSAGE_02;
@@ -351,6 +353,16 @@ boolean ExecuteCommand(unsigned long InEvent, int Src, unsigned long PreviousInE
       y=EventPart4Bit(InEvent);
       f=EventPartFloat(InEvent);
       if(UserVar[y]>f)
+        error=true;
+      break;
+
+    case CMD_BREAK_ON_VAR_LESS_VAR:
+      if(UserVar[Par1-1]<UserVar[Par2-1])
+        error=true;
+      break;
+
+    case CMD_BREAK_ON_VAR_MORE_VAR:
+      if(UserVar[Par1-1]>UserVar[Par2-1])
         error=true;
       break;
 
@@ -1034,7 +1046,7 @@ int ExecuteLine(char *Line, byte Port)
               break;
               }  
             
-            case CMD_ALARM_SET://@2
+            case CMD_ALARM_SET:
               // Commando format: [AlarmSet <AlarmNumber 1..4>, <Enabled On|Off>, <Time HHMM>, <Day ALL,1..7>]
               {
               if(GetArgv(Command,TmpStr1,2)) // Alarm number
@@ -1319,7 +1331,7 @@ int ExecuteLine(char *Line, byte Port)
             case CMD_PORT_SERVER:
               {
               if(GetArgv(Command,TmpStr1,2))
-                Settings.HTTPServerPort=str2int(TmpStr1);
+                Settings.OutputPort=str2int(TmpStr1);
               break;
               }  
   

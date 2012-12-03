@@ -491,8 +491,6 @@ void ResetFactory(void)
   Led(BLUE);
   Beep(2000,2000);
 
-  FactoryEventlist();
-
   Settings.Version                    = SETTINGS_VERSION;
   Settings.NewNodo                    = true;
   Settings.Lock                       = 0;
@@ -527,7 +525,7 @@ void ResetFactory(void)
   Settings.DnsServer[1]               = 0;
   Settings.DnsServer[2]               = 0;
   Settings.DnsServer[3]               = 0;
-  Settings.HTTPServerPort             = 6636;
+  Settings.OutputPort             = 6636;
   Settings.PortClient                 = 80;
   Settings.ID[0]                      = 0; // string leegmaken
   Settings.Temp[0]                    = 0; // string leegmaken
@@ -559,6 +557,7 @@ void ResetFactory(void)
   #endif
 
   Save_Settings();
+  FactoryEventlist();
 
   delay(250);// kleine pauze, anders kans fout bij seriële communicatie
   Reset();
@@ -628,13 +627,13 @@ void Status(byte Par1, byte Par2, byte Transmit)
 #endif
 
   for(x=CMD_Start; x<=CMD_End; x++)
-  {
+    {
     s=false;
     if(!Transmit)
-    {
+      {
       s=true;
       switch (x)
-      {
+        {
 #ifdef NODO_MEGA          
       case CMD_CLIENT_IP:
         sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_CLIENT_IP),Settings.Client_IP[0],Settings.Client_IP[1],Settings.Client_IP[2],Settings.Client_IP[3]);
@@ -651,32 +650,32 @@ void Status(byte Par1, byte Par2, byte Transmit)
       case CMD_GATEWAY:
         // Gateway
         if(!dhcp)
-        {
+          {
           sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_GATEWAY),Settings.Gateway[0],Settings.Gateway[1],Settings.Gateway[2],Settings.Gateway[3]);
           PrintTerminal(TempString);
-        }
+          }
         break;
 
       case CMD_SUBNET:
         // Subnetmask
         if(!dhcp)
-        {
+          {
           sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_SUBNET),Settings.Subnet[0],Settings.Subnet[1],Settings.Subnet[2],Settings.Subnet[3]);
           PrintTerminal(TempString);
-        }
+          }
         break;
 
       case CMD_DNS_SERVER:
         if(!dhcp)
-        {
+          {
           // DnsServer
           sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_DNS_SERVER),Settings.DnsServer[0],Settings.DnsServer[1],Settings.DnsServer[2],Settings.DnsServer[3]);
           PrintTerminal(TempString);
-        }
+          }
         break;
 
       case CMD_PORT_SERVER:
-        sprintf(TempString,"%s %d",cmd2str(CMD_PORT_SERVER), Settings.HTTPServerPort);
+        sprintf(TempString,"%s %d",cmd2str(CMD_PORT_SERVER), Settings.OutputPort);
         PrintTerminal(TempString);
         break;
 

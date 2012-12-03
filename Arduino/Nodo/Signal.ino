@@ -3,6 +3,8 @@ boolean QueueReceive(int Pos, int ChecksumOrg)
   int x,y,Checksum;
   unsigned long Mark, Space, Timeout, ul=0L;
 
+  Led(BLUE);
+
   // Voorkom dat als TransmitRF door gebruiker is uitgezet, het SendTo commando niet meer werkt.
   byte TransmitRFOrg=Settings.TransmitRF;
   Settings.TransmitRF=VALUE_ON;
@@ -94,8 +96,6 @@ boolean QueueSend(byte DestUnit, boolean SaveMode)
   int x,y,Checksum=0;
   boolean Bit;
   unsigned long Event,TimeoutTimer;
-
-  Led(BLUE);
 
   // Voorkom dat als TransmitRF door gebruiker is uitgezet, het SendTo commando niet meer werkt.
   

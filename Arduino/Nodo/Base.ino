@@ -1,5 +1,5 @@
 #define SETTINGS_VERSION     20
-#define NODO_BUILD          484
+#define NODO_BUILD          485
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -8,7 +8,13 @@ prog_char PROGMEM Text_01[] = "Nodo Domotica controller (c) Copyright 2012 P.K.T
 prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
 prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSat";
 prog_char PROGMEM Text_22[] = "!******************************************************************************!";
- 
+
+#ifdef NODO_MEGA
+prog_char PROGMEM Text_15[] = "Version=3.0.1 (Mega), Build=%04d, ThisUnit=%d";
+#else
+prog_char PROGMEM Text_15[] = "Version=3.0.1 (Small), Build=%04d, ThisUnit=%d";
+#endif
+
 #ifdef NODO_MEGA
 prog_char PROGMEM Text_03[] = "Enter your password: ";
 prog_char PROGMEM Text_05[] = "0123456789abcdef";
@@ -17,7 +23,6 @@ prog_char PROGMEM Text_07[] = "Waiting for signal...";
 prog_char PROGMEM Text_09[] = "(Last 10KByte)";
 prog_char PROGMEM Text_13[] = "RawSignal saved.";
 prog_char PROGMEM Text_14[] = "Event=";
-//prog_char PROGMEM Text_15[] = "";
 prog_char PROGMEM Text_23[] = "log.dat";
 prog_char PROGMEM Text_24[] = "Queue: Capturing events...";
 prog_char PROGMEM Text_26[] = "Queue: End capture.";
@@ -68,7 +73,7 @@ prog_char PROGMEM Cmd_032[]="WaitBusy";
 prog_char PROGMEM Cmd_033[]="VariableDec";
 prog_char PROGMEM Cmd_034[]="VariableInc";
 prog_char PROGMEM Cmd_035[]="VariableSet";
-prog_char PROGMEM Cmd_036[]="VariableVariable";
+prog_char PROGMEM Cmd_036[]="VariableSetVariable";
 prog_char PROGMEM Cmd_037[]="SendEvent";
 prog_char PROGMEM Cmd_038[]="WaitFreeRF";
 prog_char PROGMEM Cmd_039[]="WiredAnalog";
@@ -116,8 +121,8 @@ prog_char PROGMEM Cmd_078[]="PulseCount";
 prog_char PROGMEM Cmd_079[]="Reboot";
 prog_char PROGMEM Cmd_080[]="Echo";
 prog_char PROGMEM Cmd_081[]="AlarmSet";
-prog_char PROGMEM Cmd_082[]="";
-prog_char PROGMEM Cmd_083[]="";
+prog_char PROGMEM Cmd_082[]="BreakOnVarLessVar";
+prog_char PROGMEM Cmd_083[]="BreakOnVarMoreVar";
 prog_char PROGMEM Cmd_084[]="";
 prog_char PROGMEM Cmd_085[]="";
 prog_char PROGMEM Cmd_086[]="";
@@ -215,7 +220,7 @@ prog_char PROGMEM Cmd_172[]="All";
 prog_char PROGMEM Cmd_173[]="DaylightSaving";
 prog_char PROGMEM Cmd_174[]="EventlistCount";
 prog_char PROGMEM Cmd_175[]="Queue";
-prog_char PROGMEM Cmd_176[]="Port";
+prog_char PROGMEM Cmd_176[]="";
 prog_char PROGMEM Cmd_177[]="";
 prog_char PROGMEM Cmd_178[]="ThisUnit";
 prog_char PROGMEM Cmd_179[]="Event";
@@ -373,8 +378,8 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_REBOOT                      79
 #define CMD_ECHO                        80
 #define CMD_ALARM_SET                   81
-#define CMD_ALARM                       82
-#define CMD_RES083                      83
+#define CMD_BREAK_ON_VAR_LESS_VAR       82
+#define CMD_BREAK_ON_VAR_MORE_VAR       83
 #define CMD_RES084                      84
 #define CMD_RES085                      85
 #define CMD_RES086                      86
@@ -475,8 +480,8 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define VALUE_DLS                      173
 #define VALUE_EVENTLIST_COUNT          174
 #define VALUE_SOURCE_QUEUE             175
-#define VALUE_PORT                     176
-#define VALUE_res                      177
+#define VALUE_res176                   176
+#define VALUE_res177                   177
 #define VALUE_THISUNIT                 178
 #define VALUE_RECEIVED_EVENT           179
 #define VALUE_RECEIVED_PAR1            180
@@ -691,7 +696,7 @@ struct SettingsStruct
   byte    Subnet[4];                                        // Submask
   byte    Gateway[4];                                       // Gateway
   byte    DnsServer[4];                                     // DNS Server IP adres
-  int     HTTPServerPort;                                   // Poort van de inkomende IP communnicatie
+  int     OutputPort;                                   // Poort van de inkomende IP communnicatie
   int     PortClient;                                       // Poort van de uitgaande IP communnicatie
   byte    EchoSerial;
   byte    EchoTelnet;

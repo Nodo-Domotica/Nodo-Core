@@ -1,22 +1,4 @@
 #define IP_BUFFER_SIZE            256
-#define XON                       0x11
-#define XOFF                      0x13
-
-void SerialHold(boolean x)
-  {
-  static boolean previous=true;
-  
-  if(x==previous)
-    return;
-  else
-    {
-    if(x)
-      Serial.write(XOFF);
-    else
-      Serial.write(XON);
-    previous=x;
-    }
-  }
   
 #ifdef NODO_MEGA
 boolean EthernetInit(void)
@@ -55,7 +37,7 @@ boolean EthernetInit(void)
     TerminalServer.begin(); 
 
     // Start Server voor ontvangst van HTTP-Events
-    HTTPServer=EthernetServer(Settings.HTTPServerPort);
+    HTTPServer=EthernetServer(Settings.OutputPort);
     HTTPServer.begin(); 
     
     if(Settings.TransmitIP==VALUE_ON)
@@ -81,6 +63,7 @@ boolean EthernetInit(void)
         HTTPClientIP[1]=0;
         HTTPClientIP[2]=0;
         HTTPClientIP[3]=0;
+        Serial.println(F("Error: Unable to connect to host."));
         }
       free(TempString);    
       }
@@ -610,3 +593,23 @@ void ExecuteIP(void)
   return;
   }  
 #endif
+
+#define XON                       0x11
+#define XOFF                      0x13
+
+void SerialHold(boolean x)
+  {
+  static boolean previous=true;
+  
+  if(x==previous)
+    return;
+  else
+    {
+    if(x)
+      Serial.write(XOFF);
+    else
+      Serial.write(XON);
+    previous=x;
+    }
+  }
+
