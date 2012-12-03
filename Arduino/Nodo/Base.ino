@@ -1,5 +1,5 @@
 #define SETTINGS_VERSION     20
-#define NODO_BUILD          485
+#define NODO_BUILD          486
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -10,9 +10,9 @@ prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSat";
 prog_char PROGMEM Text_22[] = "!******************************************************************************!";
 
 #ifdef NODO_MEGA
-prog_char PROGMEM Text_15[] = "Version=3.0.1 (Mega), Build=%04d, ThisUnit=%d";
+prog_char PROGMEM Text_15[] = "Nodo V3.0.1 Mega, Product=SWACNC-MEGA-R%03d, ThisUnit=%d";
 #else
-prog_char PROGMEM Text_15[] = "Version=3.0.1 (Small), Build=%04d, ThisUnit=%d";
+prog_char PROGMEM Text_15[] = "Nodo V3.0.1 Small, Product=SWACNC-SMALL-R%03d, ThisUnit=%d";
 #endif
 
 #ifdef NODO_MEGA

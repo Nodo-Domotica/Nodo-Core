@@ -1,5 +1,3 @@
-void setup();
-int dummy;
 /****************************************************************************************************************************\
 * Arduino project "Nodo" © Copyright 2012 Paul Tonkes 
 * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License 
