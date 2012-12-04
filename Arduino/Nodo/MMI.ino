@@ -215,7 +215,7 @@ void PrintTerminal(char* LineToPrint)
 
 void Event2str(unsigned long Code, char* EventString)
   {
-  int x,y;
+  int x,y,z;
   byte P1,P2,Par2_b; 
   boolean P2Z=true;     // vlag: true=Par2 als nul waarde afdrukken false=nulwaarde weglaten
 
@@ -400,15 +400,18 @@ void Event2str(unsigned long Code, char* EventString)
         strcat(EventString,cmd2str((Code>>13)&1?VALUE_ON:VALUE_OFF)); // Enabled
 
         strcat(EventString,",");
-        x=(Code&0x1FF)*5; // Minuten na 0:00 met resolutie van 5 min.
-        strcat(EventString,int2str(x/60)); // uren
 
-        y=x-(x/60)*60;
+        x=(Code&0xFFF)/288;       // Dag
+        y=(Code&0xFFF)%288;       // Alarmtijd filteren op minuten na 0:00 van dit etmaal met 5 min. resolutie.
+        z=y/12;                   // Uren
+        y=(y%12)*5;               // Minuten
+        
+        strcat(EventString,int2str(z)); // uren
+
         if(y<10)
           strcat(EventString,"0");
         strcat(EventString,int2str(y)); // minuten
 
-        x=(Code>>9)&0x0F; // Dag
         if(x>0)
           {
           strcat(EventString,",");
