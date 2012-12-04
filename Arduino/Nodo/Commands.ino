@@ -1062,8 +1062,11 @@ int ExecuteLine(char *Line, byte Port)
                       x=((y/100)*60 + (y%100))/5; // Uren en minuten uit decimale weergave omzetten naar echte minuten na Sun 0:00.
 
                       if(GetArgv(Command,TmpStr1,5)) // Day is optioneel. Maar als deze parameter ingevuld, dan meenemen in de berekening.
-                        x+=str2int(TmpStr1) * 288;
-                      
+                        {
+                        y=str2int(TmpStr1);
+                        if(y<=7)x+=y*288;
+                        }
+                        
                       if(z<ALARM_MAX)
                         {
                         // Een alarm heeft een resolutie van 5 minuten.
