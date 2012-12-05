@@ -477,10 +477,23 @@ void RawSendRF(void)
       }
     }
   
-  interrupts();
+
   
   digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
   digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger weer aan.
+
+  #ifdef NODO_MEGA
+  // Board specifiek: Genereer een korte puls voor omschakelen van de Aurel tranceiver van TX naar RX mode.
+//  if(HW_Config&0xf==BIC_HWMESH_NES_V1X) ??? Nog in testfase.
+//    {
+    delayMicroseconds(36);
+    digitalWrite(PIN_BSF_0,LOW);
+    delayMicroseconds(16);
+    digitalWrite(PIN_BSF_0,HIGH);
+//    }
+  #endif
+
+  interrupts();
   }
 
 
