@@ -575,6 +575,11 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define HW_RES10       14
 #define HW_RES11       15
 
+
+// Definitie van de speciale hardware uitvoeringen van de Nodo.
+#define BIC_DEFAULT            0  // Standaard Nodo zonder specifike hardware aansturing
+#define BIC_HWMESH_NES_V1X     1  // Nodo Ethernet Shield V1.x met Aurel tranceiver. Vereist speciale pulse op PIN_BSF_0 voor omschakelen tussen Rx en Tx.
+
 #ifdef NODO_MEGA // Definities voor de Nodo-Mega variant.
 #define EVENT_QUEUE_MAX             32 // maximaal aantal plaatsen in de queue.
 #define MACRO_EXECUTION_DEPTH       10 // maximale nesting van macro's.
@@ -807,7 +812,20 @@ void setup()
   #ifdef NODO_MEGA
   pinMode(PIN_LED_RGB_G,  OUTPUT);
   pinMode(EthernetShield_CS_SDCardH, OUTPUT); // CS/SPI: nodig voor correct funktioneren van de SDCard!
+
+  // Hardware specifieke initialisatie.
+//  switch(HW_Config&0xf)??? nog in testfase
+//    {
+//    case BIC_DEFAULT:// Standaard Nodo zonder specifike hardware aansturing
+//      break;                 
+//
+//    case BIC_HWMESH_NES_V1X: // Nodo Ethernet Shield V1.x met Aurel tranceiver. Vereist speciale pulse op PIN_BSF_0 voor omschakelen tussen Rx en Tx.
+      pinMode(PIN_BSF_0,OUTPUT);
+      digitalWrite(PIN_BSF_0,HIGH);
+//      break;
+//    }
   #endif
+
 
   RFbit=digitalPinToBitMask(PIN_RF_RX_DATA);
   RFport=digitalPinToPort(PIN_RF_RX_DATA);  
