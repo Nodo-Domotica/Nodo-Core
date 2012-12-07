@@ -1,5 +1,5 @@
 #define SETTINGS_VERSION     20
-#define NODO_BUILD          490
+#define NODO_BUILD          491
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -534,14 +534,14 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define ALARM_MAX                    4 // aantal alarmen voor de user
 #define SERIAL_TERMINATOR_1       0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>
 #define SERIAL_TERMINATOR_2       0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
-#define Loop_INTERVAL_1              5 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
+#define Loop_INTERVAL_1             10 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
 #define Loop_INTERVAL_2            100 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
 #define Loop_INTERVAL_3           1000 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
 #define ENDSIGNAL_TIME            1500 // Dit is de tijd in milliseconden waarna wordt aangenomen dat het ontvangen één reeks signalen beëindigd is
 #define SIGNAL_ANALYZE_SHARPNESS    50 // Scherpte c.q. foutmarge die gehanteerd wordt bij decoderen van RF/IR signaal.
 #define SIGNAL_TIMEOUT_RF         5000 // na deze tijd in uSec. wordt één RF signaal als beëindigd beschouwd.
 #define SIGNAL_TIMEOUT_IR        10000 // na deze tijd in uSec. wordt één IR signaal als beëindigd beschouwd.
-#define SIGNAL_REPEAT_TIME        1000  // Tijd waarbinnen hetzelfde event niet nogmaals via RF of IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
+#define SIGNAL_REPEAT_TIME        1000 // Tijd waarbinnen hetzelfde event niet nogmaals via RF of IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
 #define RF_REPEATS                   5 // aantal herhalingen van een code binnen één RF reeks
 #define IR_REPEATS                   5 // aantal herhalingen van een code binnen één IR reeks
 #define MIN_PULSE_LENGTH           100 // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
@@ -600,42 +600,42 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define PIN_IO_2                    39 // Extra IO-lijn 2 voor gebruikers / userplugins
 #define PIN_IO_3                    40 // Extra IO-lijn 3 voor gebruikers / userplugins
 #define PIN_IO_4                    41 // Extra IO-lijn 4 voor gebruikers / userplugins
-#define PIN_WIRED_IN_1               8  // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_IN_2               9  // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_IN_3              10  // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_IN_4              11  // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_IN_5              12  // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_IN_6              13  // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_IN_7              14  // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_IN_8              15  // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_LED_RGB_R               47  // RGB-Led, aansluiting rood
-#define PIN_LED_RGB_G               48  // RGB-Led, aansluiting groen
-#define PIN_LED_RGB_B               49  // RGB-Led, aansluiting blauw
-#define PIN_SPEAKER                 42  // luidspreker aansluiting
-#define PIN_IR_TX_DATA              17  // NIET VERANDEREN. Aan deze pin zit een zender IR-Led. (gebufferd via transistor i.v.m. hogere stroom die nodig is voor IR-led)
-#define PIN_IR_RX_DATA              18  // Op deze input komt het IR signaal binnen van de TSOP. Bij HIGH bij geen signaal.
-#define PIN_RF_TX_VCC               15  // +5 volt / Vcc spanning naar de zender.
-#define PIN_RF_TX_DATA              14  // data naar de zender
-#define PIN_RF_RX_VCC               16  // Spanning naar de ontvanger via deze pin.
-#define PIN_RF_RX_DATA              19  // Op deze input komt het 433Mhz-RF signaal binnen. LOW bij geen signaal.
-#define PIN_WIRED_OUT_1             30  // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_OUT_2             31  // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_OUT_3             32  // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_OUT_4             33  // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_OUT_5             34  // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_OUT_6             35  // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_OUT_7             36  // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_OUT_8             37  // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
-#define EthernetShield_SCK          52  // NIET VERANDEREN. Ethernet shield: SCK-lijn van de ethernet kaart
-#define EthernetShield_CS_SDCardH   53  // NIET VERANDEREN. Ethernet shield: Gereserveerd voor correct funktioneren van de SDCard: Hardware CS/SPI ChipSelect
-#define EthernetShield_CS_SDCard     4  // NIET VERANDEREN. Ethernet shield: Chipselect van de SDCard. Niet gebruiken voor andere doeleinden
-#define Ethernetshield_CS_W5100     10  // NIET VERANDEREN. Ethernet shield: D10..D13  // gereserveerd voor Ethernet & SDCard
-#define Ethernet_shield_CS_SDCard    4  // NIET VERANDEREN. Ethernet shield: Chipselect van de SDCard. Niet gebruiken voor andere doeleinden
-#define Ethernet_shield_CS_W5100    10  // NIET VERANDEREN. Ethernet shield: D10..D13  // gereserveerd voor Ethernet & SDCard
-#define PIN_CLOCK_SDA               20  // I2C communicatie lijn voor de realtime clock.
-#define PIN_CLOCK_SLC               21  // I2C communicatie lijn voor de realtime clock.
-#define RAW_BUFFER_SIZE            256  // Maximaal aantal te ontvangen 128 bits.
-#define TERMINAL_PORT               23
+#define PIN_WIRED_IN_1               8 // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_IN_2               9 // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_IN_3              10 // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_IN_4              11 // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_IN_5              12 // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_IN_6              13 // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_IN_7              14 // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_IN_8              15 // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_LED_RGB_R               47 // RGB-Led, aansluiting rood
+#define PIN_LED_RGB_G               48 // RGB-Led, aansluiting groen
+#define PIN_LED_RGB_B               49 // RGB-Led, aansluiting blauw
+#define PIN_SPEAKER                 42 // luidspreker aansluiting
+#define PIN_IR_TX_DATA              17 // NIET VERANDEREN. Aan deze pin zit een zender IR-Led. (gebufferd via transistor i.v.m. hogere stroom die nodig is voor IR-led)
+#define PIN_IR_RX_DATA              18 // Op deze input komt het IR signaal binnen van de TSOP. Bij HIGH bij geen signaal.
+#define PIN_RF_TX_VCC               15 // +5 volt / Vcc spanning naar de zender.
+#define PIN_RF_TX_DATA              14 // data naar de zender
+#define PIN_RF_RX_VCC               16 // Spanning naar de ontvanger via deze pin.
+#define PIN_RF_RX_DATA              19 // Op deze input komt het 433Mhz-RF signaal binnen. LOW bij geen signaal.
+#define PIN_WIRED_OUT_1             30 // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_OUT_2             31 // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_OUT_3             32 // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_OUT_4             33 // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_OUT_5             34 // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_OUT_6             35 // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_OUT_7             36 // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_OUT_8             37 // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
+#define EthernetShield_SCK          52 // NIET VERANDEREN. Ethernet shield: SCK-lijn van de ethernet kaart
+#define EthernetShield_CS_SDCardH   53 // NIET VERANDEREN. Ethernet shield: Gereserveerd voor correct funktioneren van de SDCard: Hardware CS/SPI ChipSelect
+#define EthernetShield_CS_SDCard     4 // NIET VERANDEREN. Ethernet shield: Chipselect van de SDCard. Niet gebruiken voor andere doeleinden
+#define Ethernetshield_CS_W5100     10 // NIET VERANDEREN. Ethernet shield: D10..D13  // gereserveerd voor Ethernet & SDCard
+#define Ethernet_shield_CS_SDCard    4 // NIET VERANDEREN. Ethernet shield: Chipselect van de SDCard. Niet gebruiken voor andere doeleinden
+#define Ethernet_shield_CS_W5100    10 // NIET VERANDEREN. Ethernet shield: D10..D13  // gereserveerd voor Ethernet & SDCard
+#define PIN_CLOCK_SDA               20 // I2C communicatie lijn voor de realtime clock.
+#define PIN_CLOCK_SLC               21 // I2C communicatie lijn voor de realtime clock.
+#define RAW_BUFFER_SIZE            256 // Maximaal aantal te ontvangen 128 bits.
+#define TERMINAL_PORT               23 // TelNet poort. Standaard 23
 #define EVENTLIST_MAX              250 // aantal events dat de lijst bevat in het EEPROM geheugen. Iedere regel in de eventlist heeft 8 bytes nodig. eerste adres is 0
 #define WIRED_PORTS                  8 // aantal WiredIn/WiredOut poorten
 #define PASSWORD_MAX_RETRY           5 // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
