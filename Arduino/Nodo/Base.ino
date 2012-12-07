@@ -1,5 +1,5 @@
 #define SETTINGS_VERSION     20
-#define NODO_BUILD          487
+#define NODO_BUILD          488
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -110,8 +110,6 @@ prog_char PROGMEM Cmd_069[]="NodoIP";
 prog_char PROGMEM Cmd_070[]="Gateway";
 prog_char PROGMEM Cmd_071[]="Subnet";
 prog_char PROGMEM Cmd_072[]="DnsServer";
-//prog_char PROGMEM Cmd_073[]="HTTPServerPort";//???
-//prog_char PROGMEM Cmd_074[]="PortClient";//???
 prog_char PROGMEM Cmd_073[]="PortInput";
 prog_char PROGMEM Cmd_074[]="PortOutput";
 prog_char PROGMEM Cmd_075[]="ClockSync";
@@ -548,8 +546,9 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define IR_REPEATS                   5 // aantal herhalingen van een code binnen één IR reeks
 #define MIN_PULSE_LENGTH           100 // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define MIN_RAW_PULSES              32 // =16 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
-#define SHARP_TIME                 500 // tijd in milliseconden dat de nodo gefocust moet blijven luisteren naar één dezelfde poort na binnenkomst van een signaal
-#define RECEIVER_STABLE            750 // Tijd die de RF ontvanger nodig heeft om na inschakelen voedspanning signalen op te kunnen vangen.
+#define SHARP_TIME                 750 // tijd in milliseconden dat de nodo gefocust moet blijven luisteren naar één dezelfde poort na binnenkomst van een signaal
+#define RECEIVER_STABLE            750 // Tijd die de RF ontvanger nodig heeft om na inschakelen voedspanning signalen op te kunnen vangen. 
+#define DELAY_BEFORE_SEND         2000 // Korte pauze voor verzenden van een event, direct nadat er één is ontvangen van een andere Nodo. Alleen actief tijdens [WaitFreeRF On]
 #define SIGNAL_TYPE_UNKNOWN          0 // Type ontvangen of te verzenden signaal in de eventcode
 #define SIGNAL_TYPE_NODO             1 // Type ontvangen of te verzenden signaal in de eventcode
 #define SIGNAL_TYPE_KAKU             2 // Type ontvangen of te verzenden signaal in de eventcode
@@ -1047,7 +1046,8 @@ void loop()
                     {
                     TerminalClient.getRemoteIP(ClientIPAddress);  
                     ExecuteLine(InputBuffer_Terminal, VALUE_SOURCE_TELNET);
-                      TerminalClient.write('>');// prompt
+
+                    TerminalClient.write('>');// prompt
                     }
                   else
                     {

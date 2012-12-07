@@ -27,8 +27,6 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
 
     if(GetEvent_IRRF(&Event,&Port))
       {      
-      //TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
-
       #ifdef NODO_MEGA
       CheckRawSignalKey(&Event); // check of er een RawSignal key op de SDCard aanwezig is en vul met Nodo Event. Call by reference!
       PrintEvent(Event,VALUE_DIRECTION_INPUT,Port);

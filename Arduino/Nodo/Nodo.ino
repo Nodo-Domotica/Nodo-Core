@@ -33,7 +33,7 @@
 #if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)     // NIET veranderen
   #define NODO_MEGA          1                                     // NIET veranderen !
   #define UNIT_NODO          1                                     // default unit nummer na een [Reset] commando
-  #define ETHERNET           0                                     // op 0 zetten als ethernet kaart niet aanwezig ???terugzetten
+  #define ETHERNET           1                                     // op 0 zetten als ethernet kaart niet aanwezig
   
 
   // Keuze tussen SMALL of MEGA: **********************************************************************************************
