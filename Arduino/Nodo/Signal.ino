@@ -207,7 +207,7 @@ boolean GetEvent_IRRF(unsigned long *Content, int *Port)
   {
   unsigned long Checksum=0L;                           // Als gelijk aan Event dan tweemaal dezelfde code ontvangen: checksum funktie.
   unsigned long StaySharpTimer=millis();                      // timer die start bij ontvangen van een signaal. Dwingt om enige tijd te luisteren naar dezelfde poort.
-  static unsigned long Previous, PreviousTimer=0L;
+  static unsigned long Previous;
   
   // IR: *************** kijk of er data staat op IR en genereer een event als er een code ontvangen is **********************
   do
@@ -220,13 +220,13 @@ boolean GetEvent_IRRF(unsigned long *Content, int *Port)
         if(*Content)// als AnalyzeRawSignal een event heeft opgeleverd
           {
           StaySharpTimer=millis()+SHARP_TIME;
-          if(PreviousTimer<millis())
+          if((RawSignal.Timer+SIGNAL_REPEAT_TIME)<millis())
             Previous=0L;
           if(Previous!=*Content)
             {
             RawSignal.Source=VALUE_SOURCE_IR;
             *Port=VALUE_SOURCE_IR;
-            PreviousTimer=millis()+SIGNAL_REPEAT_TIME;
+            RawSignal.Timer=millis()+SIGNAL_REPEAT_TIME;
             Previous=*Content;
             #ifdef NODO_MEGA
             Received=Previous; // Received wordt gebruikt om later de status van laatste ontvangen event te kunnen gebruiken t.b.v. substitutie van vars.
@@ -252,13 +252,13 @@ boolean GetEvent_IRRF(unsigned long *Content, int *Port)
           StaySharpTimer=millis()+SHARP_TIME;          
           if(*Content==Checksum) // tweemaal hetzelfde event ontvangen
             {
-            if(PreviousTimer<millis())
+            if((RawSignal.Timer+SIGNAL_REPEAT_TIME)<millis())
               Previous=0L;
             if(Previous!=Checksum)
               {
               RawSignal.Source=VALUE_SOURCE_RF;
               *Port=VALUE_SOURCE_RF;
-              PreviousTimer=millis()+SIGNAL_REPEAT_TIME;
+              RawSignal.Timer=millis();
               Previous=Checksum;
               #ifdef NODO_MEGA
               Received=Previous; // Received wordt gebruikt om later de status van laatste ontvangen event te kunnen gebruiken t.b.v. substitutie van vars.
@@ -410,12 +410,13 @@ void WaitFreeRF(void)
   {
   unsigned long Timer, TimeOutTimer;  
       
-  // eerst de 'dode' wachttijd
   Led(BLUE);
+
+  // eerst de 'dode' wachttijd die afhankt van het unitnummer. Dit voorkomt dat alle units exact op hetzelfde moment gaan zenden als de ether vrij is.
   delay((Settings.Unit-1)*100);
     
   // dan kijken of de ether vrij is.
-  Timer=millis()+300; // reset de timer.
+  Timer=millis()+350; // reset de timer.
   TimeOutTimer=millis()+WAITFREERF_TIMEOUT; // tijd waarna de routine wordt afgebroken in milliseconden
 
   while(Timer>millis() && TimeOutTimer>millis())
@@ -423,7 +424,7 @@ void WaitFreeRF(void)
     if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
       {
       if(FetchSignal(PIN_RF_RX_DATA,HIGH,SIGNAL_TIMEOUT_RF))// Als het een duidelijk signaal was
-        Timer=millis()+300; // reset de timer weer.
+        Timer=millis()+350; // reset de timer weer.
       }
     }
   Led(RED);
@@ -652,6 +653,13 @@ boolean TransmitCode(unsigned long Event, byte Dest)
   if(Settings.TransmitRF==VALUE_ON && (Dest==VALUE_SOURCE_RF || Dest==VALUE_ALL))
     {
     PrintEvent(Event,VALUE_DIRECTION_OUTPUT, VALUE_SOURCE_RF);
+
+    // Als er een event is ontvangen, houdt er dan rekening mee dat, indien dit een Nodo was, deze mogelijk niet direct na het zenden
+    // weer gereed staat voor ontvangst van een antwoord van deze Nodo. Doe een korte pause om te voorkomen dat bij terugsturen van
+    // een event deze wordt gemist door de zendende Nodo die er voor heeft gezorgd dat we hier zijn terecht gekomen.
+    if(Settings.WaitFreeRF==VALUE_ON)
+      while((RawSignal.Timer+DELAY_BEFORE_SEND) > millis());
+
     RawSendRF();
     }
   else

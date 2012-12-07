@@ -30,6 +30,9 @@ void ProcessQueue(void)
         }
       else
         {
+        #ifdef NODO_MEGA
+        PrintEvent(Queue.Event[x],VALUE_DIRECTION_INPUT, VALUE_SOURCE_QUEUE);
+        #endif
         ProcessEvent2(Queue.Event[x],VALUE_DIRECTION_INPUT,Queue.Port[x],0,0);      // verwerk binnengekomen event.
         }
       }

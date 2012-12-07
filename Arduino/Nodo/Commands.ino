@@ -511,7 +511,7 @@ boolean ExecuteCommand(unsigned long InEvent, int Src, unsigned long PreviousInE
       UserTimer[Par1-1]=millis()+random(Par2)*60000;// Par1=timer, Par2=maximaal aantal minuten
       break;
 
-    case CMD_WAIT_EVENT:
+    case CMD_WAIT_EVENT:// WaitEvent <unit>, <command>
       WaitAndQueue(60,false,0,Par1,Par2);
       break;
 
@@ -571,7 +571,6 @@ boolean ExecuteCommand(unsigned long InEvent, int Src, unsigned long PreviousInE
 
     case CMD_WAITFREERF: 
       Settings.WaitFreeRF=Par1;
-      
       break;
 
     case CMD_SENDBUSY:
@@ -592,7 +591,7 @@ boolean ExecuteCommand(unsigned long InEvent, int Src, unsigned long PreviousInE
         }
       break;
             
-    case CMD_WAITBUSY:
+    case CMD_WAITBUSY: // WaitBusy <TimeOut> , <All>
       if(Par2==VALUE_ALL)
         Settings.WaitBusyAll=Par1;
       else
@@ -792,7 +791,7 @@ int ExecuteLine(char *Line, byte Port)
   byte SendToOption, SendTo=0; // Als deze waarde ongelijk aan nul, dan wordt het commando niet uitgevoerd maar doorgestuurd naar de andere Nodo
 
   Led(RED);
-  
+
   // verwerking van commando's is door gebruiker tijdelijk geblokkeerd door FileWrite commando
   error=false;
 
@@ -1438,24 +1437,28 @@ int ExecuteLine(char *Line, byte Port)
       LinePos++;
       }    
   
+
+
     if(SendTo!=0)// Verzend de inhoud van de queue naar de slave Nodo
       {
       if(!QueueSend(SendTo,SendToOption==VALUE_ON?false:true))
         RaiseMessage(MESSAGE_12);
-      
-      // Verwerk eventuele events die in de queue zijn geplaatst.
-      ProcessQueue();
       }
     }
+
+  free(TmpStr2);
+  free(TmpStr1);
+
+
+  // Verwerk eventuele events die in de queue zijn geplaatst.
+  ProcessQueue();
 
   if(Busy.BusyOnSent)
     {
     TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),Busy.BusyOnSent);
     Busy.BusyOnSent=0;
     }
-    
-  free(TmpStr2);
-  free(TmpStr1);
+
   return error;
   }
 #endif
