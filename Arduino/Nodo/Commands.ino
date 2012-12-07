@@ -424,11 +424,11 @@ boolean ExecuteCommand(unsigned long InEvent, int Src, unsigned long PreviousInE
       
       break;
 
+    #ifdef NODO_MEGA
     case CMD_CLOCK_SYNC:
       // ClockSync stuurt de juise klokinstellingen naar een andere Nodo. Als het opgegeven unitnummer het eigen unitnummer is
       // dan wordt het verzoek naar HTTP verzonden.
       
-      #ifdef NODO_MEGA
       if(Par1==Settings.Unit)
         {
         SendHTTPEvent(command2event(Settings.Unit, CMD_CLOCK_SYNC,Par1,0));
@@ -442,12 +442,13 @@ boolean ExecuteCommand(unsigned long InEvent, int Src, unsigned long PreviousInE
         if(!QueueSend(Par1,true))
           RaiseMessage(MESSAGE_12);
         }
-
-      #endif
+      break;
+    #endif
 
     case CMD_ALARM_SET:
       Settings.Alarm[(InEvent>>14)  & 0x03]=InEvent&0xFFFF;
-
+      break;
+      
     case CMD_CLOCK_YEAR:
       x=Par1*100+Par2;
       Time.Year=x;
