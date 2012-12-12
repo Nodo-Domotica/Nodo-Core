@@ -1,5 +1,5 @@
 #define SETTINGS_VERSION     20
-#define NODO_BUILD          491
+#define NODO_BUILD          492
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -649,7 +649,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define TIMER_MAX                    8 // aantal beschikbare timers voor de user, gerekend vanaf 1
 #define USER_VARIABLES_MAX           8 // aantal beschikbare gebruikersvariabelen voor de user.
 #define PULSE_IRQ                    1 // IRQ-1 verbonden aan de IR_RX_DATA pen 3 van de ATMega328 (Uno/Nano/Duemillanove)
-#define RAW_BUFFER_SIZE            160 // Maximaal aantal te ontvangen 128 bits.
+#define RAW_BUFFER_SIZE            160 // Maximaal aantal te ontvangen 80 bits.
 #define EVENTLIST_MAX              100 // aantal events dat de lijst bevat in het EEPROM geheugen. Iedere regel in de eventlist heeft 8 bytes nodig. eerste adres is 0
 #define WIRED_PORTS                  4 // aantal WiredIn/WiredOut poorten
 #define PIN_LED_RGB_R               13 // RGB-Led, aansluiting rood
@@ -884,15 +884,16 @@ void setup()
    
   // Start Ethernet kaart en start de HTTP-Server en de Telnet-server
   #if ETHERNET
-  bitWrite(HW_Config,HW_ETHERNET,1); // nog slim detecteren
+  bitWrite(HW_Config,HW_ETHERNET,1); // nog slim detecteren of fysieke laag is aangesloten. Wordt niet ondersteund door de Ethernet Library van Arduino
   #endif
+  
   if(bitRead(HW_Config,HW_ETHERNET))
     {
     if(EthernetInit())
       {
       // als het verkrijgen van een ethernet adres gelukt is en de servers draaien, zet dan de vlag dat ethernet present is
       // Als ethernet enabled en beveiligde modus, dan direct een Cookie sturen, ander worden eerste events niet opgepikt door de WebApp
-      if(Settings.Password[0]!=0 && Settings.TransmitIP==VALUE_ON)
+      if(Settings.Password[0]!=0 && Settings.TransmitIP==VALUE_ON && bitRead(HW_Config,HW_ETHERNET))
         SendHTTPCookie(); // Verzend een nieuw cookie
       }
     else

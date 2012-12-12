@@ -446,7 +446,7 @@ boolean ExecuteCommand(unsigned long InEvent, int Src, unsigned long PreviousInE
     #endif
 
     case CMD_ALARM_SET:
-      Settings.Alarm[(InEvent>>14)  & 0x03]=InEvent&0xFFFF;
+      Settings.Alarm[(InEvent>>13)&0x03]=InEvent&0xFFFF;
       break;
       
     case CMD_CLOCK_YEAR:
@@ -1048,46 +1048,41 @@ int ExecuteLine(char *Line, byte Port)
             
             case CMD_ALARM_SET:
               // Commando format: [AlarmSet <AlarmNumber 1..4>, <Enabled On|Off>, <Time HHMM>, <Day ALL,1..7>]
+              // Een alarm heeft een resolutie van 5 minuten.
+              // 12-bits nodig voor aantal minuten na zondag 0:00 uur (M),vier voor de dag (D) twee bits voor het alarmnummer (N) en een bit voor enabled(E) 
+              // MSB  NNNEMMMMMMMMMMMM LSB
               {
               if(GetArgv(Command,TmpStr1,2)) // Alarm number
                 {
                 z=str2int(TmpStr1)-1;
-                if(GetArgv(Command,TmpStr1,3)) // Enabled
+                if(z<ALARM_MAX)
                   {
-                  if(str2cmd(TmpStr1)==VALUE_ON)
-                    {
-                    if(GetArgv(Command,TmpStr1,4)) // Minutes
-                      {
-                      y=str2int(TmpStr1);
-                      x=((y/100)*60 + (y%100))/5; // Uren en minuten uit decimale weergave omzetten naar echte minuten na Sun 0:00.
+                  v=command2event(Settings.Unit,CMD_ALARM_SET, 0, 0) | (((unsigned long)  z  & 0x7  ) <<13 );           /* Bit 13..15 = ALARM NUMMER*/;
 
-                      if(GetArgv(Command,TmpStr1,5)) // Day is optioneel. Maar als deze parameter ingevuld, dan meenemen in de berekening.
+                  if(GetArgv(Command,TmpStr1,3)) // Enabled
+                    {
+                    if(str2cmd(TmpStr1)==VALUE_ON)
+                      {                        
+                      if(GetArgv(Command,TmpStr1,4)) // Minutes
                         {
                         y=str2int(TmpStr1);
-                        if(y<=7)x+=y*288;
+                        x=((y/100)*60 + (y%100))/5; // Uren en minuten uit decimale weergave omzetten naar echte minuten na Sun 0:00.
+  
+                        if(GetArgv(Command,TmpStr1,5)) // Day is optioneel. Maar als deze parameter ingevuld, dan meenemen in de berekening.
+                          {
+                          y=str2int(TmpStr1);
+                          if(y<=7)x+=y*288;
+                          }
+                          
+                        v|=   (((unsigned long)  x  & 0xFFF)      )            /* Bit 0..11  = MIN */ 
+                            | (((unsigned long)  1         ) <<12 );           /* Bit 12     = ENABLED */
                         }
-                        
-                      if(z<ALARM_MAX)
-                        {
-                        // Een alarm heeft een resolutie van 5 minuten.
-                        // 12-bits nodig voor aantal minuten na zondag 0:00 uur (M),vier voor de dag (D) twee bits voor het alarmnummer (N) en een bit voor enabled(E) 
-                        // MSB  NNNEMMMMMMMMMMMM LSB
-                        
-                        v=  command2event(Settings.Unit,CMD_ALARM_SET, 0, 0)   /* Basis voor commando */
-                            | (((unsigned long)  x  & 0xFFF)      )            /* MIN */ 
-                            | (((unsigned long)  1         ) <<13 )            /* ENABLED */
-                            | (((unsigned long)  z  & 0x7  ) <<14 );           /* ALARM NUMMER*/                          
-                        }
-                      else
-                        error=MESSAGE_02;
                       }
                     }
-                  else
-                    {
-                    v=(command2event(Settings.Unit,CMD_ALARM_SET, 0, 0) | (unsigned long)Settings.Alarm[(z&0x7)<<14]) & 0xffffefff; // 13e bit leeg maken. Deze bevat enabled/disabled vlag
-                    }
-                  }                
+                  }
                 }
+              else 
+                error=MESSAGE_02;
               }
 
             case CMD_FILE_LOG:

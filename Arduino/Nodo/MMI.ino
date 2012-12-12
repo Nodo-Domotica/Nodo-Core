@@ -394,28 +394,32 @@ void Event2str(unsigned long Code, char* EventString)
         break;
 
       case P_ALARM:
-        strcat(EventString,int2str(((Code>>14)&0x03)+1)); // Alarm nummer              
+        strcat(EventString,int2str(((Code>>13)&0x03)+1));/* Bit 13..15 = ALARM NUMMER*/
 
         strcat(EventString,",");
-        strcat(EventString,cmd2str((Code>>13)&1?VALUE_ON:VALUE_OFF)); // Enabled
-
-        strcat(EventString,",");
-
-        x=(Code&0xFFF)/288;       // Dag
-        y=(Code&0xFFF)%288;       // Alarmtijd filteren op minuten na 0:00 van dit etmaal met 5 min. resolutie.
-        z=y/12;                   // Uren
-        y=(y%12)*5;               // Minuten
+        x=(Code>>12)&1; /* Bit 12     = ENABLED */
+        strcat(EventString,cmd2str(x?VALUE_ON:VALUE_OFF));
         
-        strcat(EventString,int2str(z)); // uren
-
-        if(y<10)
-          strcat(EventString,"0");
-        strcat(EventString,int2str(y)); // minuten
-
-        if(x>0)
+        if(x)
           {
           strcat(EventString,",");
-          strcat(EventString,int2str(x)); // Dag
+  
+          x=(Code&0xFFF)/288;       // Dag
+          y=(Code&0xFFF)%288;       // Alarmtijd filteren op minuten na 0:00 van dit etmaal met 5 min. resolutie.
+          z=y/12;                   // Uren
+          y=(y%12)*5;               // Minuten
+          
+          strcat(EventString,int2str(z)); // uren
+  
+          if(y<10)
+            strcat(EventString,"0");
+          strcat(EventString,int2str(y)); // minuten
+  
+          if(x>0)
+            {
+            strcat(EventString,",");
+            strcat(EventString,int2str(x)); // Dag
+            }
           }
         break;
       
