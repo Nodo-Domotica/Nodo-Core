@@ -269,7 +269,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
     break;        
 
   case CMD_ALARM_SET:
-    event=(unsigned long)Settings.Alarm[xPar1-1] | (xPar1-1)<<14;
+    event=(unsigned long)Settings.Alarm[xPar1-1] | (xPar1-1)<<13;
     *Par1=EventPartPar1(event);      
     *Par2=EventPartPar2(event);      
     break;        
@@ -523,7 +523,7 @@ void ResetFactory(void)
   Settings.DnsServer[1]               = 0;
   Settings.DnsServer[2]               = 0;
   Settings.DnsServer[3]               = 0;
-  Settings.OutputPort             = 6636;
+  Settings.OutputPort                 = 6636;
   Settings.PortClient                 = 80;
   Settings.ID[0]                      = 0; // string leegmaken
   Settings.Temp[0]                    = 0; // string leegmaken
@@ -1418,6 +1418,7 @@ boolean FileExecute(char* FileName, boolean ContinueOnError)
   File dataFile=SD.open(TmpStr);
   if(dataFile) 
     {
+    LastMessage!=MESSAGE_00;
     y=0;       
     while(dataFile.available() && !error)
       {

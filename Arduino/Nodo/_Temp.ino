@@ -1,22 +1,51 @@
 
 /*
+NODO GOES I2C ???
+
+I2C poort event uitwisseling.
+
+* Alle Nodo's luisteren
+* Iedere Nodo kan een event op de bus zetten
+* conflicten: hoe detecteren en mee omgaan
+* Wat over de lijn?
 
 
-                          
-x=(v&0x1FF)*5; // Minuten na 0:00 met resolutie van 5 min.
-Serial.print("*** debug: uren         =");Serial.println(x/60) ; //??? Debug
-Serial.print("*** debug: minuten      =");Serial.println(x-(x/60)*60); //??? Debug
-Serial.print("*** debug: Alarm nummer =");Serial.println((v>>14)  & 0x03); //??? Debug
-Serial.print("*** debug: dag          =");Serial.println((v>> 9)  & 0x0F); //??? Debug
-Serial.print("*** debug: Enabled      =");Serial.println((v>>13)  & 1   ); //??? Debug 
+NODO GOES 64-BIT????
 
+            ---6---------5---------4---------3---------2---------1----------
+            3210987654321098765432109876543210987654321098765432109876543210
+IST:                                        TTTTUUUUCCCCCCCC1111111122222222
 
-Date=MM-DD-YYYY, Time=HH:MM:SS, Day=xxx, Dls=n
+T = type  (4-bit) 
+U = unit  (4-bit)
+C = Cmd   (8-bit)
+1 = Par-1 (8-bit)
+2 = Par-2 (8-bit)
 
-Event   = Alarm <nummer>
-Command = AlarmSet <nummer>, <hour>, <minute>
-                    0,1..4   00..23  00..59
-                    3        5       6
+            ---6---------5---------4---------3---------2---------1----------
+            3210987654321098765432109876543210987654321098765432109876543210
+SOLL:       
+
+== HEADER ==
+U = Unit     (8-bit) 
+C = Cmd      (8-bit) Command of Event
+B = Bytes    (8-bit) Aantal unsigned long data blokken signaalgroote
+V = Checksum (8-bit)
+
+== DATA ==
+1 = Par-1    (8-bit)
+2 = Par-2    (8-bit)
+3 = Par-3    (8-bit)
+3 = Par-4    (8-bit)
+
+- hoe omgaan in de eventlist?
+- backwards compatibel met vorige 32-bit nodo's
+- Vaste bloklengte of variabele bloklengte. Minimale blokgrootte 4 bytes = 1 datablok. Maximale datablokken?
+- Geen herhalingen, eenmaal verzenden.
+- Vastleggen in de Rasignal buffer of niet? Header opvangen met Rawsignal, de rest anders?
+- 64-bit alleen voor Mega Nodo's?
+- Eventlist laten vervallen in EEPROM en volledig runnen vanaf SDCard?
+
 
 
 Serial.print("*** debug: =");Serial.println(); //??? Debug

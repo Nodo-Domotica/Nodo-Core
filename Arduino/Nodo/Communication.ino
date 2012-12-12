@@ -23,16 +23,27 @@ boolean EthernetInit(void)
   // Initialiseer ethernet device  
   if((Settings.Nodo_IP[0] + Settings.Nodo_IP[1] + Settings.Nodo_IP[2] + Settings.Nodo_IP[3])==0)// Als door de user IP adres is ingesteld op 0.0.0.0 dan IP adres ophalen via DHCP
     {
-    if(Ethernet.begin(Ethernet_MAC_Address)==0) // maak verbinding en verzoek IP via DHCP
-      Serial.println(F("Error: Failed to configure Ethernet using DHCP"));
+    Serial.print(F("Obtaining Ethernet IP-address..."));
+    if(Ethernet.begin(Ethernet_MAC_Address)!=0) // maak verbinding en verzoek IP via DHCP
+      {
+      Serial.println(F(" Ok."));
+      Ok=true;
+      }
+    else
+      {
+      Serial.println(F(" Error: Failed to configure DHCP"));
+      Ok=false;
+      }
     }
   else      
     {
     Ethernet.begin(Ethernet_MAC_Address, Settings.Nodo_IP, Settings.DnsServer, Settings.Gateway, Settings.Subnet);
+    Ok=true;
     }
-  if((Ethernet.localIP()[0]+Ethernet.localIP()[1]+Ethernet.localIP()[2]+Ethernet.localIP()[3])!=0); // Als er een IP adres is, dan HTTP en TelNet servers inschakelen
+    
+  if(Ok) // Als er een IP adres is, dan HTTP en TelNet servers inschakelen
     {
-   // Start server voor Terminalsessies via TelNet
+    // Start server voor Terminalsessies via TelNet
     TerminalServer=EthernetServer(TERMINAL_PORT);
     TerminalServer.begin(); 
 
@@ -64,6 +75,7 @@ boolean EthernetInit(void)
         HTTPClientIP[2]=0;
         HTTPClientIP[3]=0;
         Serial.println(F("Error: Unable to connect to host."));
+        Ok=false;
         }
       free(TempString);    
       }

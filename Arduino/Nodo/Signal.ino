@@ -1,7 +1,7 @@
 boolean QueueReceive(int Pos, int ChecksumOrg)
   {
   int x,y,Checksum;
-  unsigned long Mark, Space, Timeout, ul=0L;
+  unsigned long Mark=0L, Space, Timeout, ul=0L;
 
   Led(BLUE);
 
@@ -673,8 +673,7 @@ boolean TransmitCode(unsigned long Event, byte Dest)
   else
     delay(250);
 
-
-#ifdef NODO_MEGA
+  #ifdef NODO_MEGA
   if(bitRead(HW_Config,HW_ETHERNET))// Als Ethernet shield aanwezig.
     {
     if(Settings.TransmitIP==VALUE_ON && (Dest==VALUE_SOURCE_HTTP || Dest==VALUE_ALL))
@@ -683,7 +682,8 @@ boolean TransmitCode(unsigned long Event, byte Dest)
       PrintEvent(Event,VALUE_DIRECTION_OUTPUT,VALUE_SOURCE_HTTP);
       }
     }
- #endif 
+   #endif 
+
   }
 
 
