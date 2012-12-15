@@ -446,7 +446,12 @@ boolean ExecuteCommand(unsigned long InEvent, int Src, unsigned long PreviousInE
     #endif
 
     case CMD_ALARM_SET:
-      Settings.Alarm[(InEvent>>13)&0x03]=InEvent&0xFFFF;
+      y=(InEvent>>13)&0x03; // Alarm nummer
+      if((InEvent&0xFFF) == 4000UL)
+        // er is geen tijd opgegeven, dus alleen de enabled bit (re)setten.
+        bitWrite(Settings.Alarm[y],12,(InEvent>>12)&1);
+      else
+        Settings.Alarm[y]=InEvent&0x1FFF;// minuten en enabled overnemen.
       break;
       
     case CMD_CLOCK_YEAR:
@@ -1051,20 +1056,26 @@ int ExecuteLine(char *Line, byte Port)
               // Een alarm heeft een resolutie van 5 minuten.
               // 12-bits nodig voor aantal minuten na zondag 0:00 uur (M),vier voor de dag (D) twee bits voor het alarmnummer (N) en een bit voor enabled(E) 
               // MSB  NNNEMMMMMMMMMMMM LSB
+              // Als de tijd niet is ingevuld, dan de fictieve waarde 4000 als minuten opgeven.
+              // Hiermee wordt bij het setten/unsetten de waarde van Settings.Alarm[] gebruikt.
+
               {
               if(GetArgv(Command,TmpStr1,2)) // Alarm number
                 {
                 z=str2int(TmpStr1)-1;
                 if(z<ALARM_MAX)
                   {
-                  v=command2event(Settings.Unit,CMD_ALARM_SET, 0, 0) | (((unsigned long)  z  & 0x7  ) <<13 );           /* Bit 13..15 = ALARM NUMMER*/;
+                  v=command2event(Settings.Unit,CMD_ALARM_SET, 0, 0) | (((unsigned long)  z  & 0x7  ) <<13 ) | 4000UL;           /* Bit 13..15 = ALARM NUMMER*/;
 
                   if(GetArgv(Command,TmpStr1,3)) // Enabled
                     {
                     if(str2cmd(TmpStr1)==VALUE_ON)
                       {                        
+                      v|=(1UL<<12 );           /* Bit 12     = ENABLED */
+
                       if(GetArgv(Command,TmpStr1,4)) // Minutes
                         {
+                        v&=0xfffff000; // er is een tijd ingevuld, dan de 4000 weghalen.
                         y=str2int(TmpStr1);
                         x=((y/100)*60 + (y%100))/5; // Uren en minuten uit decimale weergave omzetten naar echte minuten na Sun 0:00.
   
@@ -1074,8 +1085,7 @@ int ExecuteLine(char *Line, byte Port)
                           if(y<=7)x+=y*288;
                           }
                           
-                        v|=   (((unsigned long)  x  & 0xFFF)      )            /* Bit 0..11  = MIN */ 
-                            | (((unsigned long)  1         ) <<12 );           /* Bit 12     = ENABLED */
+                        v|=((unsigned long)x & 0xFFF);           /* Bit 0..11  = MIN */ 
                         }
                       }
                     }

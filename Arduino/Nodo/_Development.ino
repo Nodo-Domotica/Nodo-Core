@@ -7,12 +7,15 @@
 
 - Issue 635: Onnodig vaak verzoek DHCP voor IP adres
 - Issue 636: AlarmSet
-- Issue 639: FileEecute voert script niet altijd uit
+- Issue 639: FileExecute voert script niet altijd uit
 - Reactietijd an HTTP event naar RF output versneld.
 - Melding ophalen IP adres via DHCP bij booten
 
 
 @@@@ Next:
-
+- Issue 640: twee alarmsets, slechts 1 gaat af
+- Issue 641: alarmset settings verdwijnen
+- Issue 642: Alarmset instellen met status "off"
+- Issue 643: in arduino-nodo: WaitFreeRF als user define
 
 \*****************************************************************************************/

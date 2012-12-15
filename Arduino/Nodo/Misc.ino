@@ -497,10 +497,10 @@ void ResetFactory(void)
   Settings.SendBusy                   = VALUE_OFF;
   Settings.WaitBusyAll                = 30;
   Settings.Unit                       = UNIT_NODO;
+  Settings.WaitFreeRF                 = VALUE_OFF;
 
 #ifdef NODO_MEGA
   Settings.TransmitIP                 = VALUE_OFF;
-  Settings.WaitFreeRF                 = VALUE_OFF;
   Settings.Debug                      = VALUE_OFF;
   Settings.HTTPRequest[0]             = 0; // string van het HTTP adres leeg maken
   Settings.Client_IP[0]               = 0;
@@ -531,9 +531,6 @@ void ResetFactory(void)
   Settings.EchoTelnet                 = VALUE_OFF;  
   Settings.Log                        = VALUE_OFF;  
   Settings.Password[0]                = 0;
-
-#else
-  Settings.WaitFreeRF                 = VALUE_ON;
 #endif
 
   // zet analoge waarden op default

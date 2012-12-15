@@ -25,7 +25,7 @@
 
 
 #define USER_PLUGIN       "UserPlugin"                             // Commando naam waarmee de plugin kan worden aangeroepen. Remarken met // als UserPluging niet nodig is
-#define PULSE_TIME_DIVIDE            1                             // PulseTime geeft waarden van 0..65535 milliseconden. Door de deelfactor te vergroten kan de tijdseenheid worden vergroot. 1000-seconden
+#define PULSE_TIME_DIVIDE            1                             // PulseTime geeft waarden van 0..60000 milliseconden. Door de deelfactor te vergroten kan de tijdseenheid worden vergroot. 1000-seconden
 #define PULSE_DEBOUNCE_TIME         10                             // pulsen kleiner dan deze waarde worden niet geteld. Bedoeld on verstoringen a.g.v. ruis of dender te voorkomen
 #define PULSE_TRANSITION       FALLING                             // FALLING of RISING: Geeft aan op welke flank de PulseCounter start start met tellen. Default FALLING
 
