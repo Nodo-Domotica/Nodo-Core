@@ -1,5 +1,5 @@
 #define SETTINGS_VERSION     20
-#define NODO_BUILD          492
+#define NODO_BUILD          493
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -1257,13 +1257,13 @@ void loop()
         {
         for(x=0;x<ALARM_MAX;x++)
           {
-          if((Settings.Alarm[x]>>13)&1) // Als alarm enabled is, dan ingestelde alarmtijd vergelijke met de echte tijd.
+          if((Settings.Alarm[x]>>12)&1) // Als alarm enabled is, dan ingestelde alarmtijd vergelijke met de echte tijd.
             {
             y=(Settings.Alarm[x]&0xFFF)/288;
             if(y==Time.Day || y==0) // als de dag correspondeert of de dag is een wildcard (0)
               {
               y=(Settings.Alarm[x]&0xFFF)%288;   // Alarmtijd filteren op minuten na 0:00 van dit etmaal met 5 min. resolutie.
-              z=(Time.Hour*60 + Time.Minutes)/5; // Huidige tijd omzetten naat minuten na 0:00 van dit etmaal met 5 min. resolutie.
+              z=(Time.Hour*60 + Time.Minutes)/5; // Huidige tijd omzetten naar minuten na 0:00 van dit etmaal met 5 min. resolutie.
 
               if(y==z) // Als ingestelde alarmtijd overeen komt met huidige tijd.
                 {
