@@ -41,8 +41,8 @@ function HTTPRequest($Url){
     curl_setopt($ch, CURLOPT_HEADER, 0);
 	curl_setopt($ch, CURLOPT_PORT, $nodo_port);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($ch,CURLOPT_CONNECTTIMEOUT,10);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT,2);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
  
     $output = curl_exec($ch);
     curl_close($ch);

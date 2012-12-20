@@ -1,3 +1,6 @@
+
+var EventlistButtonPressed = 0; //variable welke bijhoudt of er op de eventlist read button is geklikt  
+
 $('#scripts_page').on('pageshow', function(event) {
 	
 	pagetitle = 'Setup: Scripts';
@@ -28,22 +31,23 @@ function getFiles() {
 	$.getJSON('../webservice/admin/json_scripts.php?files', function(data) {
 		files = data.files;
 		
+		function SortByName(x,y) {
+			return ((x.file == y.file) ? 0 : ((x.file > y.file) ? 1 : -1 ));
+		}
+		
+		files = data.files.sort(SortByName);
+		
+		
 		$('#scriptfile').empty();
-	
-		
-		
-			$('#scriptfile').append('<option data-placeholder="true" value="choose">Select script...</option>');
-		
-		
+		$('#scriptfile').append('<option data-placeholder="true" value="choose">Select script...</option>');
 		
 		$.each(files, function(index, file) {
 								
 			$('#scriptfile').append('<option value="'+file.file+'">'+file.file+'</option>');
-			
-						
+								
 		});
 		
-		
+				
 		//Bij een nieuwe file selecteren we deze
 		if ($('#scriptfilenew').val().toUpperCase() != '') {
 		
@@ -54,13 +58,13 @@ function getFiles() {
 		
 		$('#scriptfile').selectmenu('refresh', true);
 	});
-	
-	
 }
 
 
 $('#scriptfile').change( function( e ) { 
         
+		EventlistButtonPressed = 0;
+				
 		e.preventDefault();
 		
 		$('#scriptcontent').val('').css('height', '50px');
@@ -72,6 +76,11 @@ $('#scriptfile').change( function( e ) {
 				$('#checkbox').checkboxradio('enable');
 				$('#scriptcontent').textinput('enable');
 				
+				$.post("../webservice/admin/json_scripts.php", { read: "1", scriptfile: $('#scriptfile').val() },function(data) {   
+					$('#scriptcontent').val(data).keyup();
+					$('#scriptcontent').focus();
+				});
+				
 			}
 			else {
 				$('#delete').button('disable');
@@ -80,12 +89,6 @@ $('#scriptfile').change( function( e ) {
 				$('#scriptcontent').textinput('disable');
 			}
 						
-			if ($('#scriptfile').val() != 'choose') {			
-				$.post("../webservice/admin/json_scripts.php", { read: "1", scriptfile: $('#scriptfile').val() },function(data) {   
-				$('#scriptcontent').val(data).keyup();
-				$('#scriptcontent').focus();
-				});
-			}
 });
 
 //Eventlist wijkt af van de andere files
@@ -101,35 +104,50 @@ $('#eventlist').click( function( e ) {
 		$.post("../webservice/admin/json_scripts.php", { read: "1", scriptfile: "EVENTLST" },function(data) {   
 			$('#scriptcontent').val(data).keyup();
 			$('#scriptcontent').textinput('enable');
-			//$('#write').button('enable');
-		    //$('#checkbox').checkboxradio('enable');
+			$('#write').button('enable');
+		    $('#checkbox').checkboxradio('disable');
+			$("#checkbox").attr("checked", true);
+			$("#checkbox").checkboxradio('refresh');
 			$('#scriptcontent').focus();
 		});
+		
+		EventlistButtonPressed = 1;
+		
        
 });
 
 
 $('#write').click( function( e ) { 
 		
-		
 		e.preventDefault();
 		$('#write_message').empty();
 		
-        if ($('#scriptfile').val() != 'choose') {
-			$.post("../webservice/admin/json_scripts.php", { checkbox: $("#checkbox").is(":checked"), write: "1", scriptfile: $('#scriptfile').val(), script: $('#scriptcontent').val() },function(data) {   
-			
-			if ($("#checkbox").is(":checked")==true) {
-				$('#write_message').append('The script is sent to the Nodo<br \> and will be executed.');
+        if ($('#scriptfile').val() != 'choose' || EventlistButtonPressed == 1) {
+			if (EventlistButtonPressed == 1) {
+				$.post("../webservice/admin/json_scripts.php", { checkbox: $("#checkbox").is(":checked"), write: "1", scriptfile: "EVENTLST", script: $('#scriptcontent').val() },function(data) {   
+				
+					if ($("#checkbox").is(":checked")==true) {
+						$('#write_message').append('The eventlist is written to the Nodo');
+					}
+					
+					$( "#scripts_popup_msg" ).popup("open");
+									
+				});
 			}
 			else {
-				$('#write_message').append('The script is send to the Nodo.');
-			}
-			
-			//alert($("#checkbox").is(":checked"));
-			$( "#scripts_popup_msg" ).popup("open");
-			
+				$.post("../webservice/admin/json_scripts.php", { checkbox: $("#checkbox").is(":checked"), write: "1", scriptfile: $('#scriptfile').val(), script: $('#scriptcontent').val() },function(data) {   
 					
-			});
+						if ($("#checkbox").is(":checked")==true) {
+							$('#write_message').append('The script is sent to the Nodo<br \> and will be executed.');
+						}
+						else {
+							$('#write_message').append('The script is send to the Nodo.');
+						}
+						
+							$( "#scripts_popup_msg" ).popup("open");
+									
+				});
+			}
 		}
 });
 
@@ -164,7 +182,7 @@ $('#new3').click(function( e ) {
 	//controleren of het script al bestaat
 	var existingfiles = $('#scriptfilenew').val().toUpperCase();
 	var fileexists = 0 != $('#scriptfile option[value='+existingfiles+']').length;
-	//alert (exists);
+	
 	
 	if ($('#scriptfilenew').val() != '' && fileexists == false ) {
 	
@@ -180,12 +198,8 @@ $('#new3').click(function( e ) {
 		
 		getFiles()
 		
-		
-		
 		});
-	
 	}
-	
 	else {
 	
 		if ($('#scriptfilenew').val() == '') {
@@ -203,8 +217,6 @@ $('#new3').click(function( e ) {
 			$("#new2 .ui-btn-text").text("Cancel");
 			$('#new3').button('enable');
 		}
-		
-		
 		
 	}
 		

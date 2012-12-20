@@ -144,7 +144,7 @@ $(document).ready(function() {
 	 
 		  
 </script>
-<script src="js/commands.js"></script>
+<script src="js/setup_commands.js"></script>
 </body>
 </html>
 

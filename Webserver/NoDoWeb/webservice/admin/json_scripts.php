@@ -28,8 +28,6 @@ HTTPRequest function (do not output http headers)
 *************************************************************************************************/
 function HTTPRequest($Url){
 
-
-    
     if (!function_exists('curl_init')){
         die('Sorry cURL is not installed!');
     }
@@ -37,11 +35,11 @@ function HTTPRequest($Url){
     global $nodo_port;
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $Url);
-    curl_setopt($ch, CURLOPT_USERAGENT, "NoDoWeb");
+    curl_setopt($ch, CURLOPT_USERAGENT, "Nodo WebApp");
     curl_setopt($ch, CURLOPT_HEADER, 0);
 	curl_setopt($ch, CURLOPT_PORT, $nodo_port);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT,5);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT,1);
 	curl_setopt($ch, CURLOPT_TIMEOUT, 20);
  
     $output = curl_exec($ch);
@@ -49,10 +47,7 @@ function HTTPRequest($Url){
 	
 	return $output;
 	
-	}
-/************************************************************************************************
-END HTTPRequest function														
-*************************************************************************************************/
+}
 
 
 /************************************************************************************************
@@ -91,9 +86,7 @@ if (isset($_GET['files'])) {
 	
 	}
 
-echo '{"files":'. $json .'}'; 
-
-
+	echo '{"files":'. $json .'}'; 
 	
 }
 
@@ -143,11 +136,6 @@ if (isset($_POST['read']))
 		
 		
 	}
- 
-
-/************************************************************************************************
-END script Read															
-*************************************************************************************************/
 
 
 /************************************************************************************************
@@ -213,9 +201,7 @@ if (isset($_POST['write']))
 	echo $file;
 	echo $scriptpost;
 }
-/************************************************************************************************
-END Script write													
-*************************************************************************************************/
+
 
 /************************************************************************************************
 New File
@@ -239,12 +225,7 @@ if (isset($_POST['deletefile'])) {
 	$file = $_POST["scriptfile"];
 
 	HTTPRequest("http://$nodo_ip/?event=FileErase%20$file&key=$key");
-	
-	
 
 }
-
-
-
 ?>
 

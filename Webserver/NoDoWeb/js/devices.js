@@ -81,6 +81,7 @@ function getDevices() {
 				case "3": //WiredOut
 				case "4": //SendUserEvents
 				case "5": //UserEvents
+				case "6": //Rawsignalsend
 								
 					//Aan uit
 					if (device.toggle == 0) {

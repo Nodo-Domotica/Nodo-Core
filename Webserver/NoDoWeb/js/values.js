@@ -5,13 +5,11 @@ var SliderIndex;
 var ArrValueID=new Array();
 var ArrValueSuffix=new Array();
 var ArrValueHours=new Array();
-var ArrValueBar=new Array();
 var ArrValueType=new Array();
-var ArrTicksize=new Array();
 var ArrValueDisplay=new Array();
 var ArrValueInputoutput=new Array();
 var ArrValuePar1=new Array();
-var ArrLineColor=new Array();
+var ArrValueLineColor=new Array();
 
 var GraphTimer = new Array();
 
@@ -58,15 +56,7 @@ function getValues() {
 				ArrValueHours[index]=value.hours;
 				ArrValueType[index]=value.type;
 				ArrValuePar1[index]=value.par1;
-				ArrLineColor[index]=value.linecolor;
-							
-				//Lijn Grafiek
-				if (value.type == 1) {ArrValueBar[index]=0;}
-				
-				//Staaf Grafiek
-				if (value.type == 2) {ArrValueBar[index]=1;}
-				
-				ArrTicksize[index]=value.ticksize;
+				ArrValueLineColor[index]=value.linecolor;
 				ArrValueDisplay[index]=value.display;
 				ArrValueInputoutput[index]=value.inputoutput;
 				
@@ -116,13 +106,9 @@ $('div.value').live('expand', function(){
 	
 	
 	var collapsedid = $(this).data("collapsedid");
-	var sensor_id = ArrValueID[collapsedid];
-	var suffix = ArrValueSuffix[collapsedid];
-	var hours = ArrValueHours[collapsedid];
-	var bars = ArrValueBar[collapsedid];
-	var linecolor = ArrLineColor[collapsedid];
+	var linecolor = ArrValueLineColor[collapsedid];
 	
-	if (bars == 1){
+	if (ArrValueType[collapsedid] == 2){
 		var ticksize = 'day';
 	}
 	else {
@@ -135,9 +121,9 @@ $('div.value').live('expand', function(){
 		
 	if (display == 1 && inputoutput == 2) { //alleen grafiek gegevens ophalen indien het een value is en een output betreft
 		
-		Get_Graph_data(hours,sensor_id,suffix,bars,ticksize,linecolor);
+		Get_Graph_data(ArrValueHours[collapsedid],ArrValueID[collapsedid],ArrValueSuffix[collapsedid],ArrValueType[collapsedid],ticksize,ArrValueLineColor[collapsedid]);
 				
-		GraphTimer[collapsedid]=setInterval(function(){Get_Graph_data(hours,sensor_id,suffix,bars,ticksize,linecolor)},30000+Math.floor(Math.random() * 10000));	
+		GraphTimer[collapsedid]=setInterval(function(){Get_Graph_data(ArrValueHours[collapsedid],ArrValueID[collapsedid],ArrValueSuffix[collapsedid],ArrValueType[collapsedid],ticksize,ArrValueLineColor[collapsedid])},30000+Math.floor(Math.random() * 10000));	
 		
 	}
 });
@@ -149,8 +135,10 @@ $('div.value').live('collapse', function(){
 
 });
 
-function Get_Graph_data(hours,sensor_id,label,bars,ticksize,linecolor,date1,date2,filter) {  
+function Get_Graph_data(hours,sensor_id,label,type,ticksize,linecolor,date1,date2,filter) {  
      
+		if (type == 2) {bars = 1;} else {bars = 0};
+		
 		if (linecolor =='') {
 					
 				//Standaard lijn kleuren
@@ -180,8 +168,6 @@ function Get_Graph_data(hours,sensor_id,label,bars,ticksize,linecolor,date1,date
 			var options = {
 						xaxis: { mode: "time",minTickSize: [1,ticksize]},
 						legend: { backgroundOpacity: 0 },
-						bars: {lineWidth: 2},
-						lines: {lineWidth: 2,fill: true},
 						shadowSize: 3
 						
 						
@@ -196,16 +182,24 @@ function Get_Graph_data(hours,sensor_id,label,bars,ticksize,linecolor,date1,date
 		   
 				var plotarea = $("#graph_" + sensor_id);
 		   
-					if (bars != 1) {
+					if (type == 1) { //line
 						$.plot(plotarea , [
-								{ label: label, data: graph_data, color: linecolor }
+								{ label: label, data: graph_data, color: linecolor, lines: {lineWidth: 2,fill: false} }
 								],options );
 					}
-					else {
+					
+					if (type == 3) { //stepped line
+						$.plot(plotarea , [
+								{ label: label, data: graph_data, color: linecolor, lines: {lineWidth: 2,fill: false, steps: true} }
+								],options );
+					}
+					
+										
+					if (type == 2) { //bars
 					   
 					   $.plot(plotarea , [
-								 { label: label, data: graph_data, color: linecolor ,bars: {show: true, barWidth:43200000, align: "center"} }
-								 ],options );
+								 { label: label, data: graph_data, color: linecolor ,bars: {show: true, barWidth:43200000, align: "center", lineWidth: 2} }
+								 ],options);
 					}
 				}
 			

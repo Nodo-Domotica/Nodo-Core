@@ -37,7 +37,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 						if ($http) {
 
 				 
-						$http.open('GET', 'webservice/forward_http.php' + '?event=' + event + '&unique=' + new Date().getTime(), true);
+						$http.open('GET', '/webapp/webservice/forward_http.php' + '?event=' + event + '&unique=' + new Date().getTime(), true);
 						
 						
 						$http.send(null);

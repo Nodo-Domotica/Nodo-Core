@@ -36,19 +36,40 @@ $sql = "SELECT * FROM nodo_tbl_groups WHERE user_id='$userId'";
  // confirm that the 'id' value is a valid integer before getting the form data 
  if (is_numeric($_POST['id'])) 
  { 
- // get form data, making sure it is valid 
- $id = $_POST['id']; 
- $type = mysql_real_escape_string(htmlspecialchars($_POST['type']));
- $naam = mysql_real_escape_string(htmlspecialchars($_POST['naam']));
- $group_id = mysql_real_escape_string(htmlspecialchars($_POST['group'])); 
- $label_on = mysql_real_escape_string(htmlspecialchars($_POST['label_on']));
- $label_off = mysql_real_escape_string(htmlspecialchars($_POST['label_off']));
- $address = mysql_real_escape_string(htmlspecialchars($_POST['address']));  
- $user_event_on = mysql_real_escape_string(htmlspecialchars($_POST['user_event_on'])); 
- $user_event_off = mysql_real_escape_string(htmlspecialchars($_POST['user_event_off'])); 
- $dim = mysql_real_escape_string(htmlspecialchars($_POST['dim']));
- $homecode = mysql_real_escape_string(htmlspecialchars($_POST['homecode']));
- $toggle = mysql_real_escape_string(htmlspecialchars($_POST['presentation']));
+	 // get form data, making sure it is valid 
+	 $id = $_POST['id']; 
+	 $type = mysql_real_escape_string(htmlspecialchars($_POST['type']));
+	 $naam = mysql_real_escape_string(htmlspecialchars($_POST['naam']));
+	 $group_id = mysql_real_escape_string(htmlspecialchars($_POST['group'])); 
+	 $label_on = mysql_real_escape_string(htmlspecialchars($_POST['label_on']));
+	 $label_off = mysql_real_escape_string(htmlspecialchars($_POST['label_off']));
+	 $address = mysql_real_escape_string(htmlspecialchars($_POST['address']));  
+	 $user_event_on = mysql_real_escape_string(htmlspecialchars($_POST['user_event_on'])); 
+	 $user_event_off = mysql_real_escape_string(htmlspecialchars($_POST['user_event_off'])); 
+	 $dim = mysql_real_escape_string(htmlspecialchars($_POST['dim']));
+	 $homecode = mysql_real_escape_string(htmlspecialchars($_POST['homecode']));
+	 $toggle = mysql_real_escape_string(htmlspecialchars($_POST['presentation']));
+ 
+	//Eventueel ongebruikte velden opschonen
+	if ($type == 1) {
+		$dim = "";
+	}
+	
+	if ($type == 1 || $type == 2 || $type == 3) {
+		$user_event_on = "";
+		$user_event_off = "";
+	}
+
+	if ($type == 2 || $type == 3) {
+		$homecode = "";
+		
+	}
+
+	if ($type == 4 || $type == 5) {
+		$homecode = "";
+		$address = "";
+		$dim = "";
+	}
  
   
  // save the data to the database 
@@ -325,7 +346,7 @@ $('#label_adres_newkaku').hide();
 
 }
 
-if ($(this).attr('value')==4) {   
+if ($(this).attr('value')==4 || $(this).attr('value')==5) {     
 
 $('#name_div').show();  
 $('#adres_div').hide();

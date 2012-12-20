@@ -21,27 +21,21 @@ require_once('../include/auth.php');
 require_once('../include/user_settings.php');
 
 //Alleen events versturen indien de Nodo online is
-if ($heartbeat == "lost") {die('No Connection to Nodo!!!'); }
+if ($heartbeat == "lost") {die('No connection to Nodo!!!'); }
 
-
-
-
-//Stuur parameters naar HTTP server
+//Stuur event via HTTP naar Nodo
 function send_event($event)
 	{
 		global $nodo_ip, $nodo_port, $key;
-		
-		
-		
+				
 		$url = "http://$nodo_ip:$nodo_port/?event=$event&key=$key";
-		
-		
+				
 		$ch = curl_init();
 		$timeout = 0;
 		curl_setopt($ch,CURLOPT_URL,$url);
 		curl_setopt($ch,CURLOPT_RETURNTRANSFER,0);
-		curl_setopt($ch,CURLOPT_CONNECTTIMEOUT,10);
-		curl_setopt($ch,CURLOPT_TIMEOUT,10);	
+		curl_setopt($ch,CURLOPT_CONNECTTIMEOUT,5);
+		curl_setopt($ch,CURLOPT_TIMEOUT,2);	
 		$data = curl_exec($ch);
 		curl_close($ch);
 		return $data;
@@ -91,6 +85,13 @@ if ($action != NULL) {
 	$user_event = "UserEvent%20";
 	$user_event_on = $user_event . $row_RSdevices['user_event_on'];
 	$user_event_off = $user_event . $row_RSdevices['user_event_off'];
+	
+	$rawsignal_send = "Rawsignalsend%20";
+	$rawsignal_send_on = $rawsignal_send . $row_RSdevices['rawsignal_on'];
+	$rawsignal_send_off = $rawsignal_send . $row_RSdevices['rawsignal_off'];
+
+	
+	
 		
 			switch ($type) {
 			
@@ -205,9 +206,7 @@ if ($action != NULL) {
 				break;
 				
 				case 5: //UserEvent
-					
-					
-					
+										
 					switch ($action) {
 							
 						case "toggle":
@@ -225,6 +224,30 @@ if ($action != NULL) {
 						
 						case "off":
 							send_event($user_event_off);
+						break;
+					}
+									
+				break;
+				
+				case 6: //Rawsignalsend
+										
+					switch ($action) {
+							
+						case "toggle":
+							if ($status == 1) {
+							send_event($rawsignal_send_off);
+							}
+							elseif ($status == 0) {
+							send_event($rawsignal_send_on);
+							}
+						break;
+						
+						case "on":
+							send_event($rawsignal_send_on);
+						break;
+						
+						case "off":
+							send_event($rawsignal_send_off);
 						break;
 					}
 									
