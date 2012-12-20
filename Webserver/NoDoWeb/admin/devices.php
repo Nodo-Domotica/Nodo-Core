@@ -47,7 +47,28 @@ $homecode = mysql_real_escape_string(htmlspecialchars($_POST['homecode']));
 $toggle = mysql_real_escape_string(htmlspecialchars($_POST['presentation']));
 
 
+	//Eventueel ongebruikte velden opschonen
+	if ($type == 1) {
+		$dim = "";
+	}
+	
+	if ($type == 1 || $type == 2 || $type == 3) {
+		$user_event_on = "";
+		$user_event_off = "";
+	}
 
+	if ($type == 2 || $type == 3) {
+		$homecode = "";
+		
+	}
+
+	if ($type == 4 || $type == 5) {
+		$homecode = "";
+		$address = "";
+		$dim = "";
+	}
+
+	
 
 mysql_select_db($database, $db);
 

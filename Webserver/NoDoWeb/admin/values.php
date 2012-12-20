@@ -43,16 +43,15 @@ if (isset($_POST['submit']))
  $input_step = mysql_real_escape_string(htmlspecialchars($_POST['input_step_val']));
  $input_step = str_replace(",", ".", $input_step); //Als een gebruiker 0,5 invoerd slaan we de data op als 0.5
  $graph_hours = mysql_real_escape_string(htmlspecialchars($_POST['graph_hours']));
- $graph_min_ticksize = mysql_real_escape_string(htmlspecialchars($_POST['graph_min_ticksize']));
  $graph_type = mysql_real_escape_string(htmlspecialchars($_POST['graph_type']));
  $graph_line_color = mysql_real_escape_string(htmlspecialchars($_POST['graph_line_color']));
  $formula = mysql_real_escape_string($_POST['formula']);
  $round = mysql_real_escape_string($_POST['round']);
   
 //1=wiredin 2=variable
-//Als het wiredin betreft of een variable met output geselecteerd gaat het om een output gaan dus zetten we alle input velden op 0
-if ($_POST['type'] == 1 || $_POST['type'] == 2 || $_POST['type'] == 3 || $_POST['type'] == 4 && $_POST['input_output'] == 2 ) {
-	$input_output = "2"; // wiredanalog is output vanuit de nodo richting webapp
+//Als het type welke alleen output geeft dan zetten we alle input velden op 0
+if ($_POST['type'] == 1 || $_POST['type'] == 3 || $_POST['type'] == 4) {
+	$input_output = "2";
 	$input_control = "0";
 	$input_slider_min = "0";
 	$input_slider_max = "0";
@@ -60,16 +59,22 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 || $_POST['type'] == 3 || $_POST[
 		
 	}
 
-	else {
-	
-	//Een grafiek gebruiken we niet bij een output dus eventuele postdata leegmaken.
+if ($_POST['type'] == 2 && $_POST['input_output'] == 2 ) { //variable output
+	$input_output = "2";
+	$input_control = "0";
+	$input_slider_min = "0";
+	$input_slider_max = "0";
+	$input_step = "0";
+		
+	}
+
+if ($_POST['type'] == 2 && $_POST['input_output'] == 1 ) { 
+	//Een grafiek gebruiken we niet bij een input dus eventuele postdata leegmaken.
 	$graph_hours = "";
-	$graph_min_ticksize = "";
 	$graph_type = "";
 	$graph_line_color ="";
-	
-	
-	
+	$formula = "";
+		
 	}
 
  
@@ -106,9 +111,9 @@ $RSValues_rows = mysql_num_rows($RSValues);
 $sort_order = $RSValues_rows + 1;
  
    
- mysql_query("INSERT INTO nodo_tbl_sensor (sensor_type, display, formula, round, collapsed, input_output, input_control, input_step, input_min_val, input_max_val, sensor_prefix, sensor_suffix, sensor_suffix_true, sensor_suffix_false, user_id, nodo_unit_nr,par1,graph_hours,graph_min_ticksize,graph_type,graph_line_color,sort_order) 
+ mysql_query("INSERT INTO nodo_tbl_sensor (sensor_type, display, formula, round, collapsed, input_output, input_control, input_step, input_min_val, input_max_val, sensor_prefix, sensor_suffix, sensor_suffix_true, sensor_suffix_false, user_id, nodo_unit_nr,par1,graph_hours,graph_type,graph_line_color,sort_order) 
  VALUES 
- ('$type','$display','$formula','$round','$collapsed','$input_output','$input_control','$input_step','$input_slider_min','$input_slider_max','$prefix','$suffix','$suffix_true','$suffix_false','$userId','$unit','$par1','$graph_hours','$graph_min_ticksize','$graph_type','$graph_line_color','$sort_order')");
+ ('$type','$display','$formula','$round','$collapsed','$input_output','$input_control','$input_step','$input_slider_min','$input_slider_max','$prefix','$suffix','$suffix_true','$suffix_false','$userId','$unit','$par1','$graph_hours','$graph_type','$graph_line_color','$sort_order')");
  // once saved, redirect back to the view page 
  header("Location: values.php#saved");    }
  
@@ -178,7 +183,7 @@ else
 		<label for="select-choice-0" class="select" >Input type:</label>
 		<select name="type" id="type" data-native-menu="false" >
 			<option value="1" selected="selected">WiredAnalog</option>
-			<option value="2">Variable</option>
+			<option value="2">Variable</option> 
 			<option value="3">PulseTime</option>
 			<option value="4">PulseCount</option>
 		
@@ -201,10 +206,10 @@ else
 		<br \>
 		
 		<div id="input_output_div">
-			<label for="select-choice-3" class="select" >In or output:</label>
+			<label for="select-choice-3" class="select" >In or output: <i>(Input: WebApp > Nodo, Output: Nodo > WebApp)</i></label>
 		    <select name="input_output" id="input_output" data-native-menu="false" >
 				<option value="1" selected="selected">Input</option>
-				<option value="2">Output</option>
+				<option value="2" >Output</option>
 			</select>
 		
 		<br \>	
@@ -276,7 +281,8 @@ else
 			<label for="select-choice-5" class="select" >Graph: type:</label>
 			<select name="graph_type" id="graph_type" data-native-menu="false" >
 				<option value="1" selected="selected">Line</option>
-				<option value="2">Bar (totals per day)</option>
+				<option value="3">Stepped line</option>
+				<option value="2">Bars (totals per day)</option>
 			</select>
 			<br \>
 			<label for="select-choice-6" class="select" >Graph line color:</label>
@@ -307,17 +313,8 @@ else
 			<br \>	
 				<label for="round">Round: <i>(rounds the value to the specified precision)</i></label>
 				<input type="text" MaxLength="1" name="round" id="round" value="2"  />
-			<br \>	
-			<div id="graph_ticksize_div">
-				<label for="select-choice-7" class="select" >Graph: minimum tick size x-axis:</label>
-				<select name="graph_min_ticksize" id="graph_min_ticksize" data-native-menu="false" >
-					<option value="1" selected="selected">Minutes</option>
-					<option value="2">Hours</option>
-					<option value="3">Days</option>
-					<option value="5">Months</option>
-				</select>
-				<br \>
-			</div>
+				
+			
 				
 		</div>
 		<br \>	
@@ -466,6 +463,8 @@ $('#type').change(function() {
 	if ($(this).attr('value')==3 || $(this).attr('value')==4 ) {  
 		
 		$('#wiredanalog_wiredin_div').hide();
+		$('#input_output_div').hide();
+		$('#graph_div').show();
 		
 	}
 });
@@ -508,22 +507,6 @@ $('#input_control').change(function() {
 	}
 });
 
-$('#graph_type').change(function() {
-
-	//Line
-	if ($(this).attr('value')==1) {   
-	
-		$('#graph_ticksize_div').show(); 
-
-	}
-
-	//Bars 
-	if ($(this).attr('value')==2) {   
-
-		$('#graph_ticksize_div').hide();   
-
-	}
-});
 
 </script>
 </body>

@@ -22,7 +22,7 @@ require_once('../include/auth.php');
 
 
 mysql_select_db($database, $db);
-$query_RSvalue = "SELECT id,user_id,display,data,formula,round,sensor_suffix_false,sensor_suffix_true,graph_type,graph_hours,graph_min_ticksize FROM nodo_tbl_sensor WHERE user_id='$userId'";
+$query_RSvalue = "SELECT id,user_id,display,data,formula,round,sensor_suffix_false,sensor_suffix_true,graph_type,graph_hours FROM nodo_tbl_sensor WHERE user_id='$userId'";
 $RSvalue = mysql_query($query_RSvalue, $db) or die(mysql_error());
 $row_RSvalue = mysql_fetch_assoc($RSvalue);
 
@@ -38,7 +38,7 @@ function evalmath($equation) {
 
 	$result = 0;
 	 
-	// sanitize imput
+	// sanitize input
 	$equation = preg_replace("/[^0-9+\-.*\/()%]/","",$equation);
 	 
 	// convert percentages to decimal
@@ -68,8 +68,8 @@ do {
    
    if ($row_RSvalue['display'] == 1){
    
-		//Lijn grafiek dus laatste meting weergeven
-		if ($row_RSvalue['graph_type'] <=1 ){
+		//Lijn grafiek of geen grafiek dus laatste meting weergeven
+		if ($row_RSvalue['graph_type'] == 0 || $row_RSvalue['graph_type'] == 1 || $row_RSvalue['graph_type'] == 3 || $row_RSvalue['graph_type'] == 4  ){
 		
 			
 			if ($formula != '') {
@@ -84,7 +84,7 @@ do {
 			$value = $data;
 		}
 		
-		if ($row_RSvalue['graph_type'] == 2){
+		if ($row_RSvalue['graph_type'] == 2){ //Staaf grafiek, totaal meting per dag weergeven
 		
 			$sensor_id = $row_RSvalue['id'];
 		
@@ -97,21 +97,21 @@ do {
 					$graph_hours = $row_RSvalue['graph_hours'];
 				}
 		
-		//Staaf grafiek, totaal meting per dag weergeven
-		$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m-%d') as timestamp , SUM(data) as data FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= NOW() - INTERVAL $graph_hours HOUR GROUP BY date(timestamp) ORDER BY timestamp DESC LIMIT 1;";
-		$RSsensor_value_data = mysql_query($query_RSsensor_value_data, $db) or die(mysql_error()); 
-		$row_RSsensor_value_data = mysql_fetch_assoc($RSsensor_value_data);
-			
-		if ($formula != '') {
 				
-				$formula = str_ireplace("%value%",$row_RSsensor_value_data['data'],$formula);
-				$data = round(evalmath($formula),$row_RSvalue['round']);
-			}
-			else {
-				$data = $row_RSsensor_value_data['data'];
-			}
-		
-			$value = $data;	
+				$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m-%d') as timestamp , SUM(data) as data FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= NOW() - INTERVAL $graph_hours HOUR GROUP BY date(timestamp) ORDER BY timestamp DESC LIMIT 1;";
+				$RSsensor_value_data = mysql_query($query_RSsensor_value_data, $db) or die(mysql_error()); 
+				$row_RSsensor_value_data = mysql_fetch_assoc($RSsensor_value_data);
+					
+				if ($formula != '') {
+						
+						$formula = str_ireplace("%value%",$row_RSsensor_value_data['data'],$formula);
+						$data = round(evalmath($formula),$row_RSvalue['round']);
+					}
+					else {
+						$data = $row_RSsensor_value_data['data'];
+					}
+				
+					$value = $data;	
 		
 			
 		}

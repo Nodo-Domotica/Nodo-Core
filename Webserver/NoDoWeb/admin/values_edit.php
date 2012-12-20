@@ -45,7 +45,6 @@ $page_title="Setup: Edit values";
  $input_step = mysql_real_escape_string(htmlspecialchars($_POST['input_step_val']));
  $input_step = str_replace(",", ".", $input_step); //Als een gebruiker 0,5 invoerd slaan we de data op als 0.5
  $graph_hours = mysql_real_escape_string(htmlspecialchars($_POST['graph_hours']));
- $graph_min_ticksize = mysql_real_escape_string(htmlspecialchars($_POST['graph_min_ticksize']));
  $graph_type = mysql_real_escape_string(htmlspecialchars($_POST['graph_type']));
  $graph_line_color = mysql_real_escape_string(htmlspecialchars($_POST['graph_line_color']));
  $formula = mysql_real_escape_string($_POST['formula']);
@@ -54,9 +53,9 @@ $page_title="Setup: Edit values";
  
   
 //1=wiredin 2=variable
-//Als het wiredin betreft of een variable met output geselecteerd gaat het om een output gaan dus zetten we alle input velden op 0
-if ($_POST['type'] == 1 || $_POST['type'] == 2 || $_POST['type'] == 3 || $_POST['type'] == 4 && $_POST['input_output'] == 2 ) {
-	$input_output = "2"; // wiredanalog is output vanuit de nodo richting webapp
+//Als het type welke alleen output geeft dan zetten we alle input velden op 0
+if ($_POST['type'] == 1 || $_POST['type'] == 3 || $_POST['type'] == 4) {
+	$input_output = "2";
 	$input_control = "0";
 	$input_slider_min = "0";
 	$input_slider_max = "0";
@@ -64,18 +63,26 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 || $_POST['type'] == 3 || $_POST[
 		
 	}
 
-	else {
-	
-	//Een grafiek gebruiken we niet bij een output dus eventuele postdata leegmaken.
-	$graph_hours = "";
-	$graph_min_ticksize = "";
-	$graph_type = "";
-	$graph_line_color = "";
-	$formula = "";
-	
-	
-	
+if ($_POST['type'] == 2 && $_POST['input_output'] == 2 ) { //variable output
+	$input_output = "2";
+	$input_control = "0";
+	$input_slider_min = "0";
+	$input_slider_max = "0";
+	$input_step = "0";
+		
 	}
+
+if ($_POST['type'] == 2 && $_POST['input_output'] == 1 ) { 
+	//Een grafiek gebruiken we niet bij een input dus eventuele postdata leegmaken.
+	$graph_hours = "";
+	$graph_type = "";
+	$graph_line_color ="";
+	$formula = "";
+		
+	}	
+
+
+
 
  
  if ($_POST['display'] == 1) {
@@ -104,7 +111,7 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 || $_POST['type'] == 3 || $_POST[
  mysql_select_db($database, $db);
  mysql_query("UPDATE nodo_tbl_sensor SET sensor_type='$type',display='$display',collapsed='$collapsed',input_output='$input_output',input_control='$input_control',input_step='$input_step'
  ,input_min_val='$input_slider_min',input_max_val='$input_slider_max',formula='$formula',round='$round',sensor_prefix='$prefix', sensor_suffix='$suffix', sensor_suffix_true='$suffix_true'
- ,sensor_suffix_false='$suffix_false', nodo_unit_nr='$unit',par1='$par1',graph_hours='$graph_hours',graph_min_ticksize='$graph_min_ticksize',graph_type='$graph_type',graph_line_color='$graph_line_color'
+ ,sensor_suffix_false='$suffix_false', nodo_unit_nr='$unit',par1='$par1',graph_hours='$graph_hours',graph_type='$graph_type',graph_line_color='$graph_line_color'
  WHERE id='$id' AND user_id='$userId'") or die(mysql_error());   
  // once saved, redirect back to the view page 
  header("Location: values.php#saved");  
@@ -175,7 +182,7 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 || $_POST['type'] == 3 || $_POST[
 		<br \>
 		
 		<div id="input_output_div">
-			<label for="select-choice-3" class="select" >In or output:</label>
+			<label for="select-choice-3" class="select" >In or output: <i>(Input: WebApp > Nodo, Output: Nodo > WebApp)</i></label>
 		    <select name="input_output" id="input_output" data-native-menu="false" >
 				<option value="1" <?php if ($row['input_output'] == 1) {echo 'selected="selected"';}?>>Input</option>
 				<option value="2" <?php if ($row['input_output'] == 2) {echo 'selected="selected"';}?>>Output</option>
@@ -249,7 +256,8 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 || $_POST['type'] == 3 || $_POST[
 			<label for="select-choice-5" class="select" >Graph: type:</label>
 			<select name="graph_type" id="graph_type" data-native-menu="false" >
 				<option value="1" <?php if ($row['graph_type'] == 1) {echo 'selected="selected"';}?>>Line</option>
-				<option value="2" <?php if ($row['graph_type'] == 2) {echo 'selected="selected"';}?>>Bar (day totals)</option>
+				<option value="3" <?php if ($row['graph_type'] == 3) {echo 'selected="selected"';}?>>Stepped line</option>
+				<option value="2" <?php if ($row['graph_type'] == 2) {echo 'selected="selected"';}?>>Bars (day totals)</option>
 			</select>
 			<br \>
 			
@@ -282,20 +290,9 @@ if ($_POST['type'] == 1 || $_POST['type'] == 2 || $_POST['type'] == 3 || $_POST[
 			</select>
 			<br \>
 			
-			<div id="graph_ticksize_div">
-			<label for="select-choice-7" class="select" >Graph: minimum tick size x-axis:</label>
-			<select name="graph_min_ticksize" id="graph_min_ticksize" data-native-menu="false" >
-				<option value="1"<?php if ($row['graph_min_ticksize'] == 1) {echo 'selected="selected"';}?>>Minutes</option>
-				<option value="2"<?php if ($row['graph_min_ticksize'] == 2) {echo 'selected="selected"';}?>>Hours</option>
-				<option value="3"<?php if ($row['graph_min_ticksize'] == 3) {echo 'selected="selected"';}?>>Days</option>
-			<!--	<option value="4"<?php if ($row['graph_min_ticksize'] == 4) {echo 'selected="selected"';}?>>Weeks</option> -->
-				<option value="5"<?php if ($row['graph_min_ticksize'] == 5) {echo 'selected="selected"';}?>>Months</option>
-			</select>
-			<br \>
-				
-			</div>
+			
 		</div>
-		<br \>	
+			
 			
 	    <a href="values.php" data-role="button" data-ajax="false">Cancel</a>       
 		<input type="submit" name="submit" value="Save" >
@@ -337,12 +334,23 @@ if ($row['sensor_type'] == 1) {
 	
 }
 
- if ($row['sensor_type'] == 3 || $row['sensor_type'] == 4 ) {
+ if ($row['sensor_type'] == 2 && $row['input_output'] == 2) {
 
 	echo "$('#label_wiredanalog_div').hide();";
 	echo "$('#label_variable_div').show();";
 	echo "$('#graph_div').hide();";
-	echo "$('#input_output_div').show();";
+	echo "$('#input_div').hide();";
+	
+		
+	
+}
+
+ if ($row['sensor_type'] == 3 || $row['sensor_type'] == 4 ) {
+
+	echo "$('#label_wiredanalog_div').hide();";
+	echo "$('#label_variable_div').hide();";
+	echo "$('#graph_div').show();";
+	echo "$('#input_output_div').hide();";
 	echo "$('#wiredanalog_wiredin_div').hide();";
 	
 }
@@ -376,20 +384,6 @@ if ($row['display'] == 2) {
 
 }
 
-if ($row['input_output'] == 1) { 
-	
-	echo "$('#input_output_div').show();";
-	echo "$('#input_div').show();";
-	echo "$('#graph_div').hide();";
-}
-if ($row['input_output'] == 2) { 
-	
-	
-	echo "$('#input_output_div').show();";
-	echo "$('#input_div').hide();";
-	echo "$('#graph_div').show();";
-}
-
 if ($row['input_output'] == 2 && $row['display'] == 2 ) { 
 	
 	
@@ -408,13 +402,47 @@ if ($row['graph_type'] == 2) {
 	
 	
 	echo "$('#graph_ticksize_div').hide();";
-}	
+}
+
+if ($row['graph_type'] == 0) { 
+	
+	
+	echo "$('#graph_div').hide();";
+}		
 
 ?>
 
 
-$('#type').change(function() 
-{
+$('#display').change(function() {
+
+	//Value
+	if ($(this).attr('value')==1 || $(this).attr('value')==3 || $(this).attr('value')==4 ) {   
+
+		$('#state_div').hide(); 
+		$('#value_div').show(); 
+		$('#graph_div').show(); 
+
+	}
+	
+	
+	
+	
+	//State   
+	if ($(this).attr('value')==2) {   
+
+		$('#state_div').show(); 
+		$('#value_div').hide(); 
+		$('#graph_div').hide(); 
+
+ 
+
+	}
+   
+});
+
+
+$('#type').change(function() {
+
 	//WiredIn
 	if ($(this).attr('value')==1) {   
 
@@ -432,106 +460,61 @@ $('#type').change(function()
 		$('#label_wiredanalog_div').hide();  
 		$('#label_variable_div').show(); 
 		$('#input_output_div').show();  
-		$('#graph_div').hide(); 
+		$('#graph_div').hide();
 		$('#wiredanalog_wiredin_div').show();
 	 
 	}
-
+	
 	//PulseCount,PulseTime
 	if ($(this).attr('value')==3 || $(this).attr('value')==4 ) {  
 		
 		$('#wiredanalog_wiredin_div').hide();
+		$('#input_output_div').hide();
+		$('#graph_div').show();
 		
 	}
 });
 
-$('#display').change(function() 
-{
 
-//Value
-if ($(this).attr('value')==1) {   
+$('#input_output').change(function() {
 
-$('#state_div').hide(); 
-$('#value_div').show(); 
-$('#graph_div').show();
-
-      
-
-}
-//State   
-if ($(this).attr('value')==2) {   
-
-$('#state_div').show(); 
-$('#value_div').hide(); 
-$('#graph_div').hide();
-
- 
-
-}
-
-
-   
-});
-
-$('#input_output').change(function() 
-{
-
-//Input
-if ($(this).attr('value')==1) {   
-$('#input_div').show();
-$('#graph_div').hide();  
-
-}
-
-//Output  
-if ($(this).attr('value')==2) {   
-
-
-$('#input_div').hide(); 
-$('#graph_div').show();    
-
-
-}
-
-
-   
-});
-$('#input_control').change(function() 
-{
-
-//+/-Buttons
-if ($(this).attr('value')==1) {   
-$('#slider_min_max_div').hide(); 
-
-}
-
-//Slider 
-if ($(this).attr('value')==2) {   
-
-$('#slider_min_max_div').show();   
-
-}
-
-
-   
-});
-
-$('#graph_type').change(function() {
-
-	//Line
+	//Input
 	if ($(this).attr('value')==1) {   
-	
-		$('#graph_ticksize_div').show(); 
+		
+		$('#input_div').show();
+		$('#graph_div').hide();  
 
 	}
 
-	//Bars 
+	//Output  
 	if ($(this).attr('value')==2) {   
 
-		$('#graph_ticksize_div').hide();   
+		$('#input_div').hide(); 
+		$('#graph_div').show();    
+
+	}
+   
+});
+
+$('#input_control').change(function() {
+
+	//+/-Buttons
+	if ($(this).attr('value')==1) {   
+	
+		$('#slider_min_max_div').hide(); 
+
+	}
+
+	//Slider 
+	if ($(this).attr('value')==2) {   
+
+		$('#slider_min_max_div').show();   
 
 	}
 });
+
+
+
 
 
 </script> 

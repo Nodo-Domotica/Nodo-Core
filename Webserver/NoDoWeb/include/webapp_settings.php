@@ -1,4 +1,4 @@
-<?php 
+<?php
 /***********************************************************************************************************************
 "Nodo Web App" Copyright © 2012 Martin de Graaf
 
@@ -16,21 +16,17 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
-require_once('../../connections/db_connection.php');
-require_once('../../include/auth.php');
 
-$sensor_id = $_GET['id'];
+//$salt word gebruikt om er voor te zorgen dat ook slecht gekozen wachtwoorden zoals 1234, abc sterk worden gehashed
+$salt = "xxxxxxx"; //aanpassen naar gewenste salt
 
-mysql_select_db($database, $db);
+$DEFAULT_NODO_PWD = "Nodo";
+$DEFAULT_NODO_ID = "";
+$WEBAPP_HOST = "www.nodo-domotica.nl/webapp";
 
-$RSevent_log = mysql_query("SELECT data,timestamp FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id'") or die(mysql_error());
-    header("Content-Type: text/csv; charset=utf-8");
-    header("Content-Disposition:attachment;filename=values.csv");
-    print "Value, Timestamp\n";
-	while($row = mysql_fetch_row($RSevent_log)) {
-		print '"' . stripslashes(implode('","',$row)) . "\"\n";
-    }
-    exit;
-
+//SQL injection prevention
+//$_POST = array_map("mysql_real_escape_string", $_POST);
+$_GET = array_map("mysql_real_escape_string", $_GET);
+$_REQUEST = array_map("mysql_real_escape_string", $_REQUEST);
 
 ?>

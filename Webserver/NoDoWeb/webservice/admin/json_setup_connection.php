@@ -21,8 +21,6 @@ require_once('../../include/auth.php');
 require_once('../../include/user_settings.php');
 require_once('../../include/webapp_settings.php');
 
-$page_title = "Setup: Communication";
-
 $http_status; //Variable voor de HTTP status code
 $build;
 
@@ -146,11 +144,8 @@ if (isset($_POST['save'])) {
 		 $HTTPHost=get_phrase_after_string($httpresponse,'HTTPHost ');
 		 $OutputHTTP=get_phrase_after_string($httpresponse,'Output HTTP,');
 		 
-		 
 	}   
      
-   
-	
 	//Controle of een verbinding met een Nodo hebben
 	if ($http_status == '200' && strpos($headers['Server'], 'Nodo/') !== false) {
 		
@@ -207,90 +202,81 @@ if (isset($_POST['save'])) {
 				}
 				
 				else {
+					
 					HTTPRequest("http://$nodo_ip/?event=id%20$nodo_id;password%20$nodo_password;fileerase%20waconfig;OutputIp%20HTTP,on;reboot"); //oude manier
 				}
-				
-				
 						
 				$response = "6";	
 			
 			}
-			else{
-				
+			else {
 				$response = "7";
-			
 			}
-						
 		}
 	}
-else {
- 
-	$response = "3";
-}
+	else {
+	 
+		$response = "3";
+	}
 	
-if ($http_status == '403' && strpos($headers['Server'], 'Nodo/') !== false) {
-		
-		if (isset($_POST['auto_config'])){
-		
-			$response = "5";
-		}
-		else{
-			$response = "4";
-		}
-		
-}
+	if ($http_status == '403' && strpos($headers['Server'], 'Nodo/') !== false) {
+			
+			if (isset($_POST['auto_config'])){
+			
+				$response = "5";
+			}
+			else{
+				$response = "4";
+			}
+			
+	}
   
- //Gegevens opslaan in de database
- mysql_select_db($database, $db);
- mysql_query("UPDATE nodo_tbl_users SET nodo_ip='$nodo_ip', nodo_port='$nodo_port', send_method='$send_method', nodo_password='$nodo_password' WHERE id='$userId'") or die(mysql_error());   
+	 //Gegevens opslaan in de database
+	 mysql_select_db($database, $db);
+	 mysql_query("UPDATE nodo_tbl_users SET nodo_ip='$nodo_ip', nodo_port='$nodo_port', send_method='$send_method', nodo_password='$nodo_password' WHERE id='$userId'") or die(mysql_error());   
+	 
+	 
+		$rowsarray[] = array(
+		
+		"response"		=> $response);
+		 
+		 
+		$json = json_encode($rowsarray);
+
+		echo '{"connection":'. $json .'}'; 
+
  
-    
- 
- 
+}
+else {
+
+	mysql_select_db($database, $db);
+	$result = mysql_query("SELECT * FROM nodo_tbl_users WHERE id='$userId'") or die(mysql_error());  
+	$row = mysql_fetch_array($result);
+
+
+	//Indien er al een IP-adres in de database bekend is gebruiken we deze.
+	if ($row['nodo_ip'] != "") { 
+		$nodo_ip = $row['nodo_ip'];
+		$nodo_ip_message = "";
+	}
+	else 
+	//Indien er geen IP-adres of hostname is ingevoerd dan vullen we het IP-adres van de client in
+	{
+		$nodo_ip = get_ip_address();
+		$nodo_ip_message = "Your IP-address is automatically filled. <br \>Make sure that your Nodo can be reached on this IP-address.<br \><br \>";
+	}
 
 	$rowsarray[] = array(
-	
-	"response"		=> $response);
+	"nodoid" 		=> $row['nodo_id'],
+	"nodoip" 		=> $nodo_ip,
+	"nodoipmsg" 	=> $nodo_ip_message,
+	"nodoport" 		=> $row['nodo_port'],
+	"nodopassword"	=> $row['nodo_password']);
 	 
 	 
 	$json = json_encode($rowsarray);
 
 	echo '{"connection":'. $json .'}'; 
-
- 
- }
- 
-else 
-{
-
-mysql_select_db($database, $db);
-$result = mysql_query("SELECT * FROM nodo_tbl_users WHERE id='$userId'") or die(mysql_error());  
-$row = mysql_fetch_array($result);
-
-
-//Indien er al een IP-adres in de database bekend is gebruiken we deze.
-if ($row['nodo_ip'] != "") { 
-	$nodo_ip = $row['nodo_ip'];
-	$nodo_ip_message = "";
-}
-else 
-//Indien er geen IP-adres of hostname is ingevoerd dan vullen we het IP-adres van de client in
-{
-	$nodo_ip = get_ip_address();
-	$nodo_ip_message = "Your IP-address is automatically filled. <br \>Make sure that your Nodo can be reached on this IP-address.<br \><br \>";
-}
-
-$rowsarray[] = array(
-"nodoid" 		=> $row['nodo_id'],
-"nodoip" 		=> $nodo_ip,
-"nodoipmsg" 	=> $nodo_ip_message,
-"nodoport" 		=> $row['nodo_port'],
-"nodopassword"	=> $row['nodo_password']);
- 
- 
-$json = json_encode($rowsarray);
-
-echo '{"connection":'. $json .'}'; 
 
 }
 
