@@ -208,6 +208,14 @@ boolean GetEvent_IRRF(unsigned long *Content, int *Port)
   unsigned long Checksum=0L;                           // Als gelijk aan Event dan tweemaal dezelfde code ontvangen: checksum funktie.
   unsigned long StaySharpTimer=millis();                      // timer die start bij ontvangen van een signaal. Dwingt om enige tijd te luisteren naar dezelfde poort.
   static unsigned long Previous;
+
+  if(I2C_Event)
+    {
+    *Content=I2C_Event;
+    *Port=VALUE_SOURCE_I2C;
+    I2C_Event=0L;
+    return true;
+    }
   
   // IR: *************** kijk of er data staat op IR en genereer een event als er een code ontvangen is **********************
   do
@@ -637,6 +645,8 @@ boolean TransmitCode(unsigned long Event, byte Dest)
   byte SignalType=(Event>>28) & 0x0f;
   byte Command   =(Event>>16) & 0xff;
   
+  SendI2C(Event);
+
   if(Dest==VALUE_SOURCE_RF || (Settings.TransmitRF==VALUE_ON && Dest==VALUE_ALL))
     if(Settings.WaitFreeRF==VALUE_ON && SignalType!=SIGNAL_TYPE_UNKNOWN)// alleen WaitFreeRF als type bekend is, anders gaat SendSignal niet goed a.g.v. overschrijven buffer
       WaitFreeRF();  

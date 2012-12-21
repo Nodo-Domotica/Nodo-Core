@@ -1,5 +1,5 @@
 #define SETTINGS_VERSION     20
-#define NODO_BUILD          493
+#define NODO_BUILD          495
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -195,7 +195,7 @@ prog_char PROGMEM Cmd_149[]="";
 prog_char PROGMEM Cmd_150[]="Off";
 prog_char PROGMEM Cmd_151[]="On";
 prog_char PROGMEM Cmd_152[]="Build";
-prog_char PROGMEM Cmd_153[]="HWConfig";
+prog_char PROGMEM Cmd_153[]="I2C";
 prog_char PROGMEM Cmd_154[]="IR";
 prog_char PROGMEM Cmd_155[]="RF";
 prog_char PROGMEM Cmd_156[]="HTTP";
@@ -207,7 +207,7 @@ prog_char PROGMEM Cmd_161[]="Timers";
 prog_char PROGMEM Cmd_162[]="Variables";
 prog_char PROGMEM Cmd_163[]="Clock";
 prog_char PROGMEM Cmd_164[]="Terminal";
-prog_char PROGMEM Cmd_165[]="Received";
+prog_char PROGMEM Cmd_165[]="";
 prog_char PROGMEM Cmd_166[]="Status";
 prog_char PROGMEM Cmd_167[]="File";
 prog_char PROGMEM Cmd_168[]="Input";
@@ -218,7 +218,7 @@ prog_char PROGMEM Cmd_172[]="All";
 prog_char PROGMEM Cmd_173[]="DaylightSaving";
 prog_char PROGMEM Cmd_174[]="EventlistCount";
 prog_char PROGMEM Cmd_175[]="Queue";
-prog_char PROGMEM Cmd_176[]="";
+prog_char PROGMEM Cmd_176[]="HWConfig";
 prog_char PROGMEM Cmd_177[]="";
 prog_char PROGMEM Cmd_178[]="ThisUnit";
 prog_char PROGMEM Cmd_179[]="Event";
@@ -455,7 +455,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define VALUE_OFF                      150 
 #define VALUE_ON                       151 // Deze waarde MOET groter dan 16 zijn.
 #define VALUE_BUILD                    152
-#define VALUE_HWCONFIG                 153
+#define VALUE_SOURCE_I2C               153
 #define VALUE_SOURCE_IR                154
 #define VALUE_SOURCE_RF                155
 #define VALUE_SOURCE_HTTP              156
@@ -467,7 +467,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define VALUE_SOURCE_VARIABLE          162
 #define VALUE_SOURCE_CLOCK             163
 #define VALUE_SOURCE_TELNET            164
-#define VALUE_SOURCE_res165            165
+#define VALUE_res                      165
 #define VALUE_SOURCE_STATUS            166
 #define VALUE_SOURCE_FILE              167
 #define VALUE_DIRECTION_INPUT          168
@@ -478,7 +478,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define VALUE_DLS                      173
 #define VALUE_EVENTLIST_COUNT          174
 #define VALUE_SOURCE_QUEUE             175
-#define VALUE_res176                   176
+#define VALUE_HWCONFIG                   176
 #define VALUE_res177                   177
 #define VALUE_THISUNIT                 178
 #define VALUE_RECEIVED_EVENT           179
@@ -571,9 +571,10 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define HW_IR_RX       11
 #define HW_IR_PULSE    12
 #define HW_PLUGIN      13
-#define HW_RES10       14
+#define HW_I2C         14
 #define HW_RES11       15
 
+#define I2C_ADDRESS           10  // Slave mode Adres van de Nodo op de I2C bus.
 
 // Definitie van de speciale hardware uitvoeringen van de Nodo.
 #define BIC_DEFAULT            0  // Standaard Nodo zonder specifike hardware aansturing
@@ -700,13 +701,22 @@ struct SettingsStruct
   byte    Subnet[4];                                        // Submask
   byte    Gateway[4];                                       // Gateway
   byte    DnsServer[4];                                     // DNS Server IP adres
-  int     OutputPort;                                   // Poort van de inkomende IP communnicatie
+  int     OutputPort;                                       // Poort van de inkomende IP communnicatie
   int     PortClient;                                       // Poort van de uitgaande IP communnicatie
   byte    EchoSerial;
   byte    EchoTelnet;
   byte    Log;
   #endif
   }Settings;
+
+struct NodoEventStruct
+  {
+  byte Type;
+  byte Unit;
+  byte Command;
+  byte Par1;
+  byte Par2;
+  };
 
 struct NodoBusyStruct
   {
@@ -735,6 +745,7 @@ uint8_t RFbit,RFport,IRbit,IRport;                          // t.b.v. verwerking
 float UserVar[USER_VARIABLES_MAX];                          // Gebruikers variabelen
 unsigned long HW_Config=0;                                  // Hardware configuratie zoals gedetecteerd door de Nodo. 
 byte LastMessage=MESSAGE_00;                                // Laatst opgetreden bericht / foutmelding. Start met 200=OK
+unsigned long I2C_Event=0;//???
 
 #ifdef NODO_MEGA
 byte BIC=0;                                                 // Board Identification Code: identificeert de hardware uitvoering van de Nodo
@@ -833,7 +844,8 @@ void setup()
 
   Led(BLUE);
 
-  Wire.begin();        // zet I2C communicatie gereed voor uitlezen van de realtime clock.
+  Wire.begin(I2C_ADDRESS);      // verbind de I2C bus
+  Wire.onReceive(ReceiveI2C);   // verwijs naar ontvangstroutine
   Serial.begin(BAUD);  // Initialiseer de seriële poort
 
   #ifdef NODO_MEGA
