@@ -4,11 +4,22 @@ NODO GOES I2C ???
 
 I2C poort event uitwisseling.
 
-* Alle Nodo's luisteren
-* Iedere Nodo kan een event op de bus zetten
+* Alle Nodo's kunnen master zijn. Dus iedere Nodo kan een event op de bus zetten
 * conflicten: hoe detecteren en mee omgaan
 * Wat over de lijn?
+* Unitnummer verwerkt in het adres
+* Aantal units uitbreiden naar 32, dan kan dit ook nog in de 32-bit versie worden opgenomen. type terugbrengen naar 3 bits.
+* Bij commando's betreft het unitnummer de bestemming, bij een event de bron.
 
+I2C=data uitwiseling: 8 byte (64-bit) blok (exc. 7bits adres)
+Type
+Unit nummer
+Command
+CRC
+Par1
+Par2
+Par3
+Par4
 
 NODO GOES 64-BIT????
 

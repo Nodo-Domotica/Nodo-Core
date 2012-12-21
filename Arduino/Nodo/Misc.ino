@@ -1,3 +1,66 @@
+
+
+void ReceiveI2C(int n)
+{
+  struct NodoEventStruct EventBlock;
+  byte b,*B=(byte*)&EventBlock;
+  byte Checksum=0;
+  int x=0;
+
+  while(Wire.available()) // loop through all but the last
+  {
+    b=Wire.read();    // receive byte as an integer
+    if(x<sizeof(struct NodoEventStruct))
+    {
+      *(B+x)=b; 
+      Checksum^=b; 
+    }
+    x++;
+  }
+
+  // laatste ontvangen byte bevat de checksum. Als deze gelijk is aan de berekende checksum, dan event uitvoeren
+  if(b==Checksum)    
+  {   
+    bitWrite(HW_Config,HW_I2C,true);
+    // De inhoud van de struct is geladen. Nu verwerken als een event
+    I2C_Event=   ((unsigned long)EventBlock.Type)<<28              | 
+      ((unsigned long)EventBlock.Unit)<<24              | 
+      ((unsigned long)EventBlock.Command)<<16           | 
+      ((unsigned long)EventBlock.Par1)<<8               |
+      ((unsigned long)EventBlock.Par2);
+
+  }
+  else
+    I2C_Event=0L;
+}
+
+boolean SendI2C(unsigned long Event)
+{  
+  byte x;
+  struct NodoEventStruct EventBlock;
+
+  EventBlock.Type      = EventPartType(Event);
+  EventBlock.Unit      = Settings.Unit;
+  EventBlock.Command   = EventPartCommand(Event);
+  EventBlock.Par1      = EventPartPar1(Event);
+  EventBlock.Par2      = EventPartPar2(Event);
+
+  // bereken checksum: crc-8 uit alle bytes in de queue.
+  byte b,*B=(byte*)&EventBlock;
+  byte Checksum=0;
+
+  // verzend Event 
+  Wire.beginTransmission(I2C_ADDRESS);
+  for(x=0;x<sizeof(struct NodoEventStruct);x++)
+  {
+    b=*(B+x); 
+    Wire.write(b);
+    Checksum^=b; 
+  }
+  Wire.write(Checksum); 
+  Wire.endTransmission();
+}
+
 /*********************************************************************************************\
  * wachtloop die wordt afgebroken als:
  * - <Timeout> seconden zijn voorbij. In dit geval geeft deze funktie een <false> terug.
@@ -7,7 +70,7 @@
  * - Het eerste Event dat voldoet aan Unit en Command is voorbij gekomen.
  \*********************************************************************************************/
 boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEvent, int Unit, int Command)
-  {
+{
   unsigned long TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
   unsigned long Event=0L;
   int x,y,z,Port;
@@ -16,21 +79,21 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
   Led(BLUE);
   Queue.Position=0;    
 
-  #ifdef NODO_MEGA
+#ifdef NODO_MEGA
   PrintTerminal(ProgmemString(Text_24));
-  #endif
+#endif
 
   while(TimeoutTimer>millis())
-    {
+  {
     if(BreakNoBusyNodo && Busy.Status==0)
       break; // Geen Busy Nodo meer
 
     if(GetEvent_IRRF(&Event,&Port))
-      {      
-      #ifdef NODO_MEGA
+    {      
+#ifdef NODO_MEGA
       CheckRawSignalKey(&Event); // check of er een RawSignal key op de SDCard aanwezig is en vul met Nodo Event. Call by reference!
       PrintEvent(Event,VALUE_DIRECTION_INPUT,Port);
-      #endif
+#endif
 
       x=(byte)(EventPartCommand(Event)); // cmd
       y=(byte)(EventPartUnit(Event)); // unit
@@ -43,37 +106,37 @@ boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEv
         break;
 
       else if(x==CMD_DELAY) // command
-        {
+      {
         if(y==Settings.Unit) // Als commando voor deze unit bestemd
-          {
+        {
           if(z==0) // Par1
             break;// QueueAndWait weer uitschakelen.
-          }
         }
+      }
 
       // Het is geen Busy event of Queue commando event, dan deze in de queue plaatsen.
       else if(x!=CMD_BUSY )
-        {
+      {
         // sla event op in de queue. De Nodo-Small heeft de queue is een kleine array <QueueEvent> staan.
         if(Queue.Position<EVENT_QUEUE_MAX)
-          {
+        {
           Queue.Event[Queue.Position]=Event;
           Queue.Port[Queue.Position]=Port;
           Queue.Position++;           
-          }       
+        }       
         else
           error=true;
-        }
+      }
 
       if((Unit!=0 && (Unit==y || Unit==VALUE_ALL)) && (Command==0 || Command==x || Command==VALUE_ALL))
         break;
-      }   
-    }
+    }   
+  }
   if(TimeoutTimer<=millis())
     error=true;
 
   return !error;
-  }
+}
 
 
 /*********************************************************************************************\
@@ -182,7 +245,7 @@ void TimerSet(byte Timer, int Time)
  * Let op: call by reference!
  \*********************************************************************************************/
 boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
-  { 
+{ 
   int x;
   byte xPar1=*Par1,xPar2=*Par2;
   unsigned long event,UL;
@@ -192,50 +255,50 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
 
   // Eerst alleen een check of het een uitvraagbare stutus is.
   switch (*Command)
-    {
-    case VALUE_EVENTLIST_COUNT:
-    case VALUE_BUILD: 
-    case VALUE_HWCONFIG: 
-    case CMD_WAITFREERF: 
-    case CMD_UNIT: 
-    case CMD_SENDBUSY:
-    case CMD_DEBUG:
-    case CMD_WAITBUSY:
-    case CMD_CLOCK_EVENT_DAYLIGHT:
-    case CMD_OUTPUT:
-    case CMD_VARIABLE_SET:
-    case CMD_CLOCK_DATE:
-    case CMD_CLOCK_TIME:
-    case CMD_CLOCK_DOW:
-    case CMD_CLOCK_YEAR:
-    case CMD_TIMER_SET_MIN:
-    case CMD_WIRED_PULLUP:
-    case CMD_WIRED_ANALOG:
-    case CMD_PULSE_TIME:
-    case CMD_PULSE_COUNT:
-    case CMD_WIRED_THRESHOLD:
-    case CMD_WIRED_SMITTTRIGGER:
-    case CMD_WIRED_IN_EVENT:
-    case CMD_WIRED_OUT:
-    case CMD_LOCK:
-    case CMD_ALARM_SET:
+  {
+  case VALUE_EVENTLIST_COUNT:
+  case VALUE_BUILD: 
+  case VALUE_HWCONFIG: 
+  case CMD_WAITFREERF: 
+  case CMD_UNIT: 
+  case CMD_SENDBUSY:
+  case CMD_DEBUG:
+  case CMD_WAITBUSY:
+  case CMD_CLOCK_EVENT_DAYLIGHT:
+  case CMD_OUTPUT:
+  case CMD_VARIABLE_SET:
+  case CMD_CLOCK_DATE:
+  case CMD_CLOCK_TIME:
+  case CMD_CLOCK_DOW:
+  case CMD_CLOCK_YEAR:
+  case CMD_TIMER_SET_MIN:
+  case CMD_WIRED_PULLUP:
+  case CMD_WIRED_ANALOG:
+  case CMD_PULSE_TIME:
+  case CMD_PULSE_COUNT:
+  case CMD_WIRED_THRESHOLD:
+  case CMD_WIRED_SMITTTRIGGER:
+  case CMD_WIRED_IN_EVENT:
+  case CMD_WIRED_OUT:
+  case CMD_LOCK:
+  case CMD_ALARM_SET:
 #ifdef NODO_MEGA
-    case CMD_LOG:
-    case CMD_NODO_IP:
-    case CMD_GATEWAY:
-    case CMD_SUBNET:
-    case CMD_DNS_SERVER:
-    case CMD_PORT_SERVER:
-    case CMD_PORT_CLIENT:
-    case CMD_HTTP_REQUEST:
-    case CMD_ID:
-    case CMD_TEMP:
+  case CMD_LOG:
+  case CMD_NODO_IP:
+  case CMD_GATEWAY:
+  case CMD_SUBNET:
+  case CMD_DNS_SERVER:
+  case CMD_PORT_SERVER:
+  case CMD_PORT_CLIENT:
+  case CMD_HTTP_REQUEST:
+  case CMD_ID:
+  case CMD_TEMP:
 #endif
-      break;
-  
-    default:
-      return false;
-    }
+    break;
+
+  default:
+    return false;
+  }
 
   if(!ReturnStatus)
     return true;
@@ -447,16 +510,16 @@ char* ProgmemString(prog_char* text)
  * Sla alle settings op in het EEPROM geheugen.
  \*********************************************************************************************/
 void Save_Settings(void)  
-  {
+{
   Led(BLUE);
   char ByteToSave,*pointerToByteToSave=pointerToByteToSave=(char*)&Settings;    //pointer verwijst nu naar startadres van de struct. 
 
   for(int x=0; x<sizeof(struct SettingsStruct) ;x++)
-    {
+  {
     EEPROM.write(x,*pointerToByteToSave); 
     pointerToByteToSave++;
-    }  
-  }
+  }  
+}
 
 /*********************************************************************************************\
  * Laad de settings uit het EEPROM geheugen.
@@ -484,7 +547,7 @@ boolean LoadSettings()
  * Alle settings van de Nodo weer op default.
  \*********************************************************************************************/
 void ResetFactory(void)
-  {
+{
   int x,y;
   Led(BLUE);
   Beep(2000,2000);
@@ -535,21 +598,21 @@ void ResetFactory(void)
 
   // zet analoge waarden op default
   for(x=0;x<WIRED_PORTS;x++)
-    {
+  {
     Settings.WiredInputThreshold[x]=512; 
     Settings.WiredInputSmittTrigger[x]=10;
     Settings.WiredInputPullUp[x]=VALUE_ON;
-    }
+  }
 
   // Maar de alarmen leeg
   for(x=0;x<ALARM_MAX;x++)
     Settings.Alarm[x]=0;
-    
-  #if NODO_MEGA
+
+#if NODO_MEGA
   // maak alle variabelen leeg
   for(byte x=0;x<USER_VARIABLES_MAX;x++)
     Settings.UserVar[x]=0;     
-  #endif
+#endif
 
   Save_Settings();
   FactoryEventlist();
@@ -562,14 +625,14 @@ void ResetFactory(void)
  * Maak de Eventlist leeg en herstel de default inhoud
  \*********************************************************************************************/
 void FactoryEventlist(void)
-  {
+{
   // maak de eventlist leeg.
   for(int x=1;x<=EVENTLIST_MAX;x++)
     Eventlist_Write(x,0L,0L);
 
   // schrijf default regels.
   Eventlist_Write(0,command2event(Settings.Unit,CMD_BOOT_EVENT,Settings.Unit,0),command2event(Settings.Unit,CMD_SOUND,7,0)); // geluidssignaal na opstarten Nodo
-  }
+}
 
 
 /**********************************************************************************************\
@@ -596,39 +659,39 @@ void Status(byte Par1, byte Par2, byte Transmit)
     Par2==0;
 
   if(Par1==CMD_BOOT_EVENT || Par1==0)
-    {
+  {
     PrintWelcome();
     return;
-    }
+  }
 
   if(Par1==VALUE_ALL)
-    {
+  {
     Par2=0;
     if(!Transmit)
       PrintWelcome();
     CMD_Start=FIRST_COMMAND;
     CMD_End=COMMAND_MAX;
-    }
+  }
   else
-    {
+  {
     if(!GetStatus(&Par1,&P1,&P2,false))// kijk of voor de opgegeven parameter de status opvraagbaar is. Zo niet dan klaar.
       return;
     CMD_Start=Par1;
     CMD_End=Par1;
-    }
+  }
 
 #ifdef NODO_MEGA          
   boolean dhcp=(Settings.Nodo_IP[0] + Settings.Nodo_IP[1] + Settings.Nodo_IP[2] + Settings.Nodo_IP[3])==0;
 #endif
 
   for(x=CMD_Start; x<=CMD_End; x++)
-    {
+  {
     s=false;
     if(!Transmit)
-      {
+    {
       s=true;
       switch (x)
-        {
+      {
 #ifdef NODO_MEGA          
       case CMD_CLIENT_IP:
         sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_CLIENT_IP),Settings.Client_IP[0],Settings.Client_IP[1],Settings.Client_IP[2],Settings.Client_IP[3]);
@@ -645,28 +708,28 @@ void Status(byte Par1, byte Par2, byte Transmit)
       case CMD_GATEWAY:
         // Gateway
         if(!dhcp)
-          {
+        {
           sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_GATEWAY),Settings.Gateway[0],Settings.Gateway[1],Settings.Gateway[2],Settings.Gateway[3]);
           PrintTerminal(TempString);
-          }
+        }
         break;
 
       case CMD_SUBNET:
         // Subnetmask
         if(!dhcp)
-          {
+        {
           sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_SUBNET),Settings.Subnet[0],Settings.Subnet[1],Settings.Subnet[2],Settings.Subnet[3]);
           PrintTerminal(TempString);
-          }
+        }
         break;
 
       case CMD_DNS_SERVER:
         if(!dhcp)
-          {
+        {
           // DnsServer
           sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_DNS_SERVER),Settings.DnsServer[0],Settings.DnsServer[1],Settings.DnsServer[2],Settings.DnsServer[3]);
           PrintTerminal(TempString);
-          }
+        }
         break;
 
       case CMD_PORT_SERVER:
@@ -703,18 +766,18 @@ void Status(byte Par1, byte Par2, byte Transmit)
     }
 
     if(!s && GetStatus(&x,&P1,&P2,false)) // Als het een geldige uitvraag is. let op: call by reference !
-      {
+    {
       if(Par2==0) // Als in het commando 'Status Par1, Par2' Par2 niet is gevuld met een waarde
-        {
+      {
         switch(x)
-          {
+        {
         case CMD_OUTPUT:
-          Par1_Start=VALUE_SOURCE_IR;
-          #ifdef NODO_MEGA
+          Par1_Start=VALUE_SOURCE_I2C;
+#ifdef NODO_MEGA
           Par1_End=VALUE_SOURCE_HTTP;
-          #else
+#else
           Par1_End=VALUE_SOURCE_RF;
-          #endif
+#endif
           break;
 
         case CMD_WIRED_ANALOG:
@@ -745,16 +808,16 @@ void Status(byte Par1, byte Par2, byte Transmit)
         default:
           Par1_Start=0;
           Par1_End=0;
-          }
         }
+      }
       else
-        {
+      {
         Par1_Start=Par2;
         Par1_End=Par2;
-        }
+      }
 
       for(byte y=Par1_Start;y<=Par1_End;y++)
-        {
+      {
         P1=y;
         P2=Par1; // Leen deze variabele om in GetStatus() te kunnen achterhalen of de status uitvraag naar aanleiding van een [Status All] plaats vond.
         GetStatus(&x,&P1,&P2,true); // haal status op. Call by Reference!
@@ -762,16 +825,16 @@ void Status(byte Par1, byte Par2, byte Transmit)
         if(Transmit)
           TransmitCode(command2event(Settings.Unit,x,P1,P2),VALUE_ALL); // verzend als event
 
-        #ifdef NODO_MEGA
+#ifdef NODO_MEGA
         else
-          {
+        {
           Event2str(command2event(Settings.Unit,x,P1,P2),TempString);
           PrintTerminal(TempString);
-          }
-        #endif
         }
+#endif
       }
     }
+  }
 
 #ifdef NODO_MEGA
   if(!Transmit && Par1==VALUE_ALL)
@@ -847,18 +910,18 @@ boolean GetArgv(char *string, char *argv, int argc)
  \*********************************************************************************************/
 
 void Beep(int frequency, int duration)//Herz,millisec 
-  {
+{
   long halfperiod=500000L/frequency;
   long loops=(long)duration*frequency/(long)1000;
 
   for(loops;loops>0;loops--) 
-    {
+  {
     digitalWrite(PIN_SPEAKER, HIGH);
     delayMicroseconds(halfperiod);
     digitalWrite(PIN_SPEAKER, LOW);
     delayMicroseconds(halfperiod);
-    }
   }
+}
 
 /**********************************************************************************************\
  * Geeft een belsignaal.
@@ -988,15 +1051,15 @@ int StringFind(char *string, char *keyword)
  * Schrijft een event in de Eventlist. Deze Eventlist bevindt zich in het EEPROM geheugen.
  \*********************************************************************************************/
 boolean Eventlist_Write(int address, unsigned long Event, unsigned long Action)// LET OP: eerste adres=1
-  {
+{
   unsigned long TempEvent,TempAction;
 
   // als adres=0, zoek dan de eerste vrije plaats.
   if(address==0)
-    {
+  {
     address++;
     while(Eventlist_Read(address,&TempEvent,&TempAction))address++;
-    }
+  }
 
   if(address>EVENTLIST_MAX)
     return false;// geen geldig adres meer c.q. alles is vol.
@@ -1014,7 +1077,7 @@ boolean Eventlist_Write(int address, unsigned long Event, unsigned long Action)/
   EEPROM.write(address++,(Action     & 0xFF));
 
   return true;
-  }
+}
 
 /**********************************************************************************************\
  * 
@@ -1043,7 +1106,7 @@ boolean Eventlist_Read(int address, unsigned long *Event, unsigned long *Action)
 
 
 void RaiseMessage(byte MessageCode)
-  {
+{
   unsigned long eventcode;
   int x;
 
@@ -1052,7 +1115,7 @@ void RaiseMessage(byte MessageCode)
   TransmitCode(eventcode,VALUE_ALL);
   ProcessEvent2(eventcode,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM,0,0);
   LastMessage=MessageCode;
-  }
+}
 
 
 /**********************************************************************************************\
@@ -1132,11 +1195,11 @@ boolean SaveEventlistSDCard(char *FileName)
     EventlistFile.close();
   }
   else 
-    {
+  {
     r=false; // niet meer weer proberen weg te schrijven.
     LastMessage=MESSAGE_03;
     TransmitCode(command2event(Settings.Unit,CMD_MESSAGE, Settings.Unit, LastMessage),VALUE_ALL);
-    }
+  }
 
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip
   digitalWrite(Ethernetshield_CS_W5100, LOW);
@@ -1280,7 +1343,7 @@ typedef uint32_t md5_func_t(uint32_t, uint32_t, uint32_t);
 static void md5_core(uint32_t* a, void* block, uint8_t as, uint8_t s, uint8_t i, uint8_t fi){
   uint32_t t;
   md5_func_t* funcs[]={
-    md5_F, md5_G, md5_H, md5_I  };
+    md5_F, md5_G, md5_H, md5_I    };
   as &= 0x3;
   /* a = b + ((a + F(b,c,d) + X[k] + T[i]) <<< s). */
   t = a[as] + funcs[fi](a[(as+1)&3], a[(as+2)&3], a[(as+3)&3])
@@ -1299,7 +1362,7 @@ void md5_nextBlock(struct md5_ctx_t *state, const void* block){
 
   /* round 1 */
   uint8_t s1t[]={
-    7,12,17,22  }; // 1,-1   1,4   2,-1   3,-2
+    7,12,17,22    }; // 1,-1   1,4   2,-1   3,-2
   for(m=0;m<4;++m){
     for(n=0;n<4;++n){
       md5_core(a, &(((uint32_t*)block)[m*4+n]), 4-n, s1t[n],i++,0);
@@ -1307,7 +1370,7 @@ void md5_nextBlock(struct md5_ctx_t *state, const void* block){
   }
   /* round 2 */
   uint8_t s2t[]={
-    5,9,14,20  }; // 1,-3   1,1   2,-2   2,4
+    5,9,14,20    }; // 1,-3   1,1   2,-2   2,4
   for(m=0;m<4;++m){
     for(n=0;n<4;++n){
       md5_core(a, &(((uint32_t*)block)[(1+m*4+n*5)&0xf]), 4-n, s2t[n],i++,1);
@@ -1315,7 +1378,7 @@ void md5_nextBlock(struct md5_ctx_t *state, const void* block){
   }
   /* round 3 */
   uint8_t s3t[]={
-    4,11,16,23  }; // 0,4   1,3   2,0   3,-1
+    4,11,16,23    }; // 0,4   1,3   2,0   3,-1
   for(m=0;m<4;++m){
     for(n=0;n<4;++n){
       md5_core(a, &(((uint32_t*)block)[(5-m*4+n*3)&0xf]), 4-n, s3t[n],i++,2);
@@ -1323,7 +1386,7 @@ void md5_nextBlock(struct md5_ctx_t *state, const void* block){
   }
   /* round 4 */
   uint8_t s4t[]={
-    6,10,15,21  }; // 1,-2   1,2   2,-1   3,-3
+    6,10,15,21    }; // 1,-2   1,2   2,-1   3,-3
   for(m=0;m<4;++m){
     for(n=0;n<4;++n){
       md5_core(a, &(((uint32_t*)block)[(0-m*4+n*7)&0xf]), 4-n, s4t[n],i++,3);
@@ -1402,7 +1465,7 @@ void md5(char* dest)
 
 
 boolean FileExecute(char* FileName, boolean ContinueOnError)
-  {
+{
   int x,y;
   char *TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
   boolean error=false;
@@ -1414,16 +1477,16 @@ boolean FileExecute(char* FileName, boolean ContinueOnError)
   SelectSD(true);
   File dataFile=SD.open(TmpStr);
   if(dataFile) 
-    {
+  {
     LastMessage!=MESSAGE_00;
     y=0;       
     while(dataFile.available() && !error)
-      {
+    {
       x=dataFile.read();
       if(isprint(x) && y<INPUT_BUFFER_SIZE)
         TmpStr[y++]=x;
       else
-        {
+      {
         TmpStr[y]=0;
         y=0;
         SelectSD(false);
@@ -1431,21 +1494,21 @@ boolean FileExecute(char* FileName, boolean ContinueOnError)
         ExecuteLine(TmpStr,VALUE_SOURCE_FILE);
         SelectSD(true);
         if(!ContinueOnError && LastMessage!=MESSAGE_00)
-          {// stoppen met de rest van het script, maar niet terugkeren met nogmaals een error.
+        {// stoppen met de rest van het script, maar niet terugkeren met nogmaals een error.
           error=false;
           break;
-          }
         }
       }
+    }
     dataFile.close();
-    }  
+  }  
   else
     error=true;
-    
+
   free(TmpStr);
   SelectSD(false);
   return error;
-  }    
+}    
 #endif
 
 uint8_t *heapptr, *stackptr;
@@ -1488,7 +1551,7 @@ void Trace(int Func, int Pos, unsigned long Value)
 }
 
 void PulseCounterISR()
-  {
+{
   static unsigned long PulseTimePrevious=0L;                // Tijdsduur tussen twee pulsen teller in milliseconden: vorige meting
 
   // in deze interrupt service routine staat millis() stil. Dit is echter geen bezwaar voor de meting.
@@ -1499,7 +1562,7 @@ void PulseCounterISR()
     PulseTime=0;
 
   PulseTimePrevious=millis();
-  }     
+}     
 
 
 #ifdef NODO_MEGA
@@ -1764,7 +1827,7 @@ int Calculate(const char *input, float* result)
 //################### Einde Calculate #################################
 
 boolean Substitute(char* Input)
-  {
+{
   boolean Grab=false;
   byte Res;
   byte x;
@@ -1779,27 +1842,27 @@ boolean Substitute(char* Input)
 
   Res=0;
   while(*(InputPos)!=0)// zolang einde van de string Input nog niet bereikt
-    {
+  {
     if(*InputPos=='%') 
-      {
+    {
       if(!Grab)
-        {
+      {
         Grab=true;
         TmpStrPos=TmpStr;
-        }
+      }
       else
-        {
+      {
         Grab=false;
         *TmpStrPos=0;// Sluit string af
-        
+
         // Haal de status van de variabele
         byte Cmd=0;
         GetArgv(TmpStr,TmpStr2,1);
         Cmd=str2cmd(TmpStr2); // commando deel
         TmpStr2[0]=0;
-        
+
         if(Cmd!=0)
-          {
+        {
           // Er zijn twee type mogelijk: A)Direct te vullen omdat ze niet met status opvraagbaar zijn, B)Op te vragen met status
           byte Par1=0;
           byte Par2=0;
@@ -1807,84 +1870,84 @@ boolean Substitute(char* Input)
 
           // A)Direct te vullen omdat ze niet met status opvraagbaar zijn
           switch(Cmd)
-            {
-            case CMD_ID:
-              strcpy(TmpStr2,Settings.ID);
-              break;    
+          {
+          case CMD_ID:
+            strcpy(TmpStr2,Settings.ID);
+            break;    
 
-            case CMD_TEMP:
-              strcpy(TmpStr2,Settings.Temp);
-              break;    
-  
-            case VALUE_THISUNIT:
-              strcpy(TmpStr2,int2str(Settings.Unit));
-              break;    
-  
-            case CMD_MESSAGE:
-              strcpy(TmpStr2,int2str(LastMessage));
-              break;    
-  
-            case CMD_UNIT: // Hier lenen we "Unit", maar bij dit het unitnummer van en binnengekomen event.
-              strcpy(TmpStr2,int2str(EventPartUnit(Received)));
-              break;    
-  
-            case VALUE_RECEIVED_EVENT:
-              Event2str(Received,TmpStr);
-              GetArgv(TmpStr,TmpStr2,1);
-              break;    
-  
-            case VALUE_RECEIVED_PAR1:
-              Event2str(Received,TmpStr);
-              GetArgv(TmpStr,TmpStr2,2);
-              break;    
-  
-            case VALUE_RECEIVED_PAR2:
-              Event2str(Received,TmpStr);
-              GetArgv(TmpStr,TmpStr2,3);
-              break;    
-  
-            default:
-              {
+          case CMD_TEMP:
+            strcpy(TmpStr2,Settings.Temp);
+            break;    
+
+          case VALUE_THISUNIT:
+            strcpy(TmpStr2,int2str(Settings.Unit));
+            break;    
+
+          case CMD_MESSAGE:
+            strcpy(TmpStr2,int2str(LastMessage));
+            break;    
+
+          case CMD_UNIT: // Hier lenen we "Unit", maar bij dit het unitnummer van en binnengekomen event.
+            strcpy(TmpStr2,int2str(EventPartUnit(Received)));
+            break;    
+
+          case VALUE_RECEIVED_EVENT:
+            Event2str(Received,TmpStr);
+            GetArgv(TmpStr,TmpStr2,1);
+            break;    
+
+          case VALUE_RECEIVED_PAR1:
+            Event2str(Received,TmpStr);
+            GetArgv(TmpStr,TmpStr2,2);
+            break;    
+
+          case VALUE_RECEIVED_PAR2:
+            Event2str(Received,TmpStr);
+            GetArgv(TmpStr,TmpStr2,3);
+            break;    
+
+          default:
+            {
               // B) Op te vragen met status  
               if(GetArgv(TmpStr,TmpStr2,2))
-                {
+              {
                 Par1=str2cmd(TmpStr2);
                 if(!Par1)
                   Par1=str2int(TmpStr2);
-                }
+              }
               if(GetStatus(&Cmd,&Par1,&Par2,true)) // haal status op. Call by Reference!
-                {
+              {
                 Event2str(command2event(0, Cmd ,Par1,Par2),TmpStr);
                 if(!GetArgv(TmpStr,TmpStr2,3)) // Als de waarde niet in de 3e parameter zat...
                   GetArgv(TmpStr,TmpStr2,2);   // dan moet hij in de tweede zitten.
-                }
               }
             }
+          }
           // plak de opgehaalde waarde aan de output string
           for(x=0;x<strlen(TmpStr2);x++)
             *OutputPos++=TmpStr2[x];
-          }
-        }     
-      }
+        }
+      }     
+    }
     else if(Grab)
       *TmpStrPos++=*InputPos;// Voeg teken toe aan variabele      
     else
       *OutputPos++=*InputPos;// Voeg teken toe aan outputstring
 
     InputPos++;  
-    }
+  }
   *OutputPos=0;// Sluit string af.
 
   if(TmpStr[0]!=0)
-    {
+  {
     strcpy(Input,Output);  
     if(Settings.Debug==VALUE_ON)
-      {
+    {
       Serial.print(F("Substituted: "));
       Serial.println(Input);
-      }
-    strcpy(Input,Output);  
     }
+    strcpy(Input,Output);  
+  }
 
   if(Grab) // Als % niet correct afgesloten...
     error=true;
@@ -1958,16 +2021,17 @@ boolean Substitute(char* Input)
 }
 #endif
 
- /**********************************************************************************************\
+/**********************************************************************************************\
  * Indien het een vers geresette Nodo is, dan ongedaan maken van deze status.
  \*********************************************************************************************/
 void UndoNewNodo(void)
-  {
+{
   // Als Eventlist voor eerste keer beschreven wordt, dan is het geen vers geresette Nodo meer. Na beschrijven dan ook geen NewNodo event meer sturen
   if(Settings.NewNodo)
-    {
+  {
     Settings.NewNodo=false;
     Save_Settings();
-    }
   }
+}
+
 

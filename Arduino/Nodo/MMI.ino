@@ -5,9 +5,11 @@
  \*********************************************************************************************/
 void PrintEvent(unsigned long Content, byte Direction, byte Port )
   {
-
   byte x;
 
+  // deze funktie heeft alleen zin als er een kog naar de DSCard moet of als er 
+  // op een terminal scherm moet worden weergegevn
+  
   // Commando(s) die NIET aan de gebruiker getoond hoeven te worden.
   switch((Content>>16)&0xff)// Cmd
     {
