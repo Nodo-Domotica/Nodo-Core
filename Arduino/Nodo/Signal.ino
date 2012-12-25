@@ -1,337 +1,184 @@
-boolean QueueReceive(int Pos, int ChecksumOrg)
+
+boolean QueueReceive(byte Pos, byte ChecksumOrg, byte Port)
   {
   int x,y,Checksum;
   unsigned long Mark=0L, Space, Timeout, ul=0L;
 
-  Led(BLUE);
-
-  // Voorkom dat als TransmitRF door gebruiker is uitgezet, het SendTo commando niet meer werkt.
-  byte TransmitRFOrg=Settings.TransmitRF;
-  Settings.TransmitRF=VALUE_ON;
+  // Zet WaitFreeRF aan en bawaar originele instelling van de gebruiker.
+  byte OrgWaitFreeRF=Settings.WaitFreeRF;
+  Settings.WaitFreeRF=VALUE_ON;
   
-  // Hier aangekomen is de master nodo nog steeds bezig met het zenden van het aanloopsignaal bestaande uit de korte pulsenreeks.
-  // Wacht totdat het aanloopsignaal een duidelijke startbit bevat.
-  Timeout=millis() + 2000L; // binnen twee seconden moet het blok met gegevens zijn aangekomen.
-  x=0;
-  while(Timeout>millis() && !(x==50 && Mark>NODO_PULSE_MID))
+  // De Nodo vangt alle events op en plaatst deze in de queue. Alle andere Nodo's
+  // staan in de Wait-stand zonder queueing van events.
+  // Klaar met capturing als er een afsluitende TRANSMIT_QUEUE voorbij komt.  
+
+  Serial.println("*** debug: QueueReceive(); wacht op queue.");//???
+  if(Wait(true,20,0xffffffff,command2event(Settings.Unit,CMD_TRANSMIT_QUEUE,0,0)))
     {
-    Space = WaitForChangeState(PIN_RF_RX_DATA, LOW,  SIGNAL_TIMEOUT_RF);
-    Mark  = WaitForChangeState(PIN_RF_RX_DATA, HIGH, SIGNAL_TIMEOUT_RF);
-    if(x<50)
+    Serial.print("*** debug: Wachten gereed. Ontvangen=");Serial.println(Queue.Position); //??? Debug
+    if(Queue.Position==Pos)
       {
-      if(Space>MIN_PULSE_LENGTH && Space<NODO_PULSE_MID && Mark>MIN_PULSE_LENGTH && Mark<NODO_PULSE_MID)
-        x++;
-      else
-        x=0;
+      TransmitCode(command2event(Settings.Unit,CMD_MESSAGE, Settings.Unit, MESSAGE_00),Port);
+      Serial.println("*** debug: OK verzonden. Wacht op vrijgave {Select 0]");//???
       }
     }
 
-  // aanloopsignaal is gereed en de startbit is verzonden. Eerst bit van de pulsenreeks komt er direct aan.
-  Queue.Position=0;
-  x=0;
+  // Zet de originele WaitFreeRF instelling van de gebruiker weer terug
+  Settings.WaitFreeRF=OrgWaitFreeRF;
 
-  while(Timeout>millis() && Queue.Position<Pos)
-    {
-    Mark = WaitForChangeState(PIN_RF_RX_DATA,HIGH, SIGNAL_TIMEOUT_RF);
-    if(Mark>MIN_PULSE_LENGTH)
-      {        
-      if(Mark>NODO_PULSE_MID)
-        ul=ul | (unsigned long)(1L<<x);
-
-      if(++x>31)
-        {
-        x=0;
-        Queue.Event[Queue.Position]=ul;
-        Queue.Port[Queue.Position++]=VALUE_SOURCE_RF;
-        ul=0L;
-        }
-      }
-    }
-
-  // bereken checksum: crc-8 uit alle bytes in de queue.
-  Checksum=0;
-  byte *B=(byte*)&(Queue.Event[0]);    //pointer verwijst nu naar eerste byte van de queue
-  for(x=0;x<Queue.Position*4;x++) // maal vier, immers 4 bytes in een unsigned long
-    Checksum^=*(B+x); 
-
-  if(ChecksumOrg == Checksum)
-    {
-    // Korte wachttijd anders is de RF ontvanger van de master (mogelijk) nog niet gereed voor ontvangst. 
-    delay(RECEIVER_STABLE);
-
-    // Verzend [Busy On] zodat de master weet dat alles in goede orde ontvangen en verwerking start.
-    ul=command2event(Settings.Unit,CMD_BUSY,VALUE_ON,0);
-    Nodo_2_RawSignal(ul);
-    RawSendRF();
-    Busy.BusyOnSent=VALUE_SOURCE_RF;
-
-    if(Settings.Debug==VALUE_ON)
-      PrintEvent(ul,VALUE_DIRECTION_OUTPUT, VALUE_SOURCE_RF);
-
-    // Verwerk de inhoud van de Queue, Eerst Korte wachttijd anders is de RF ontvanger van de master (mogelijk) nog niet gereed voor ontvangst.
-    delay(RECEIVER_STABLE);
-
-    Settings.TransmitRF=TransmitRFOrg;// Herstel de TransmitRF setting zoals de gebruiker die had ingesteld.
-    ProcessQueue();
-    return true;
-    }
-  else
-    {
-    delay(1000);
-    Queue.Position=0;
-    Settings.TransmitRF=TransmitRFOrg;// Herstel de TransmitRF setting zoals de gebruiker die had ingesteld.
-    return false;
-    }
+  return false;
   }
 
 #ifdef NODO_MEGA  
 /*********************************************************************************************\
- * Deze routine verzend de inhoud van de queue naar een andere Nodo. Er zijn twee manieren van 
- * verzending: 
- * A) Save mode met checksumcontrole en [Busy] mechanisme 
- * B) Snelle mode zonder controles. 
+ * Deze routine verzend de inhoud van de queue naar een andere Nodo.
  \*********************************************************************************************/
-boolean QueueSend(byte DestUnit, boolean SaveMode)
+boolean QueueSend(byte DestUnit, byte Port)
   {
-  int x,y,Checksum=0;
-  boolean Bit;
-  unsigned long Event,TimeoutTimer;
-
-  // Voorkom dat als TransmitRF door gebruiker is uitgezet, het SendTo commando niet meer werkt.
-  
-  if(SaveMode)
-    { // A) Save mode met checksumcontrole en [Busy] mechanisme 
-    Led(BLUE);
-
-    byte TransmitRFOrg=Settings.TransmitRF; 
-    Settings.TransmitRF=VALUE_ON;
-
-    // Eerst wachten op bezige Nodo. Als gebruiker deze setting niet heeft geactiveerd, dan tijdelijk hiervoor 30 sec. nemen.
-    if(Settings.WaitBusyAll<30)
-      x=30;
-    else
-      x=Settings.WaitBusyAll;    
-    NodoBusy(0L, x);
-  
-    delay(RECEIVER_STABLE);
-    if(Settings.WaitFreeRF==VALUE_ON)
-      WaitFreeRF();  
-  
-    // bereken checksum: crc-8 uit alle bytes in de queue.
-    byte *B=(byte*)&(Queue.Event[0]);    //pointer verwijst nu naar eerste byte van de queue
-    for(x=0;x<Queue.Position*4;x++) // maal vier, immers 4 bytes in een unsigned long
-      Checksum^=*(B+x); 
-  
-    Nodo_2_RawSignal(command2event(DestUnit,CMD_TRANSMIT_QUEUE,Queue.Position,Checksum));
-    RawSendRF();
-      
-    // Verzend een aanloopsignaal bestaande uit reeks korte pulsen om slave tijd te geven klaar te staan voor ontvangst en voorkomen dat andere Nodo vrije ruimte in RF benut
-    digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
-    digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan
-  
-    for(x=0; x<100; x++)// Houd de 433 band bezet en geef slave gelegenheid om klaar voor ontvangst data uit queue.
-      {
-      digitalWrite(PIN_RF_TX_DATA,HIGH); // 1
-      delayMicroseconds(NODO_PULSE_0); 
-      digitalWrite(PIN_RF_TX_DATA,LOW); // 0
-      delayMicroseconds(NODO_SPACE); 
-      }
-  
-    // verzend startbit
-    digitalWrite(PIN_RF_TX_DATA,HIGH); // 1
-    delayMicroseconds(NODO_PULSE_1*3); 
-    digitalWrite(PIN_RF_TX_DATA,LOW); // 0
-    delayMicroseconds(NODO_SPACE); 
-  
-    // Verzend de content van de queue
-    for(x=0; x<Queue.Position; x++)
-      {
-      for(y=0; y<32; y++)
-        {
-        if(((Queue.Event[x])>>y)&1)
-          {// 1
-          digitalWrite(PIN_RF_TX_DATA,HIGH);
-          delayMicroseconds(NODO_PULSE_1); 
-          digitalWrite(PIN_RF_TX_DATA,LOW);
-          delayMicroseconds(NODO_SPACE); 
-          }
-        else
-          {// 0
-          digitalWrite(PIN_RF_TX_DATA,HIGH);
-          delayMicroseconds(NODO_PULSE_0); 
-          digitalWrite(PIN_RF_TX_DATA,LOW);
-          delayMicroseconds(NODO_SPACE); 
-          }
-        }
-      }
-    delayMicroseconds(NODO_SPACE*10); 
-    digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
-    digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger weer aan.    
-  
-    // Queue is verzonden. Wacht op bevestiging van de slave.
-    // Op dit moment kunnen er drie situaties voordoen:
-    // 1. master ontvangt Busy On van slave Nodo, hieruit kan worden afgeleid dat de Slave start met verwerking van de queue 
-    // 2. master ontvangt niets. Dan keert WaitAndQueue terug met een false.
-    // 3. master ontvangt error message van de slave.
-  
-  
-    if(WaitAndQueue(4,false,command2event(DestUnit,CMD_BUSY,VALUE_ON,0),0,0))
-      {
-      WaitAndQueue(30,true,0L,0,0);
-      return true;
-      }
-    else
-      {
-      return false;
-      }
-    Settings.TransmitRF=TransmitRFOrg;// Herstel de TransmitRF setting zoals de gebruiker die had ingesteld.
-    }
-  else
-    {// B) Snelle mode zonder controles. 
-    if(Settings.WaitFreeRF==VALUE_ON)
-      WaitFreeRF();  
-
-    for(x=0;x<Queue.Position;x++)
-      {
-      Nodo_2_RawSignal(Queue.Event[x]);
-      RawSendRF();
-      if(Queue.Position>1)
-        delay(250);// Korte pauze anders gaat het veel te snel voor de ontvangende Nodo
-      }
-    Queue.Position=0;
-    }
+  int x,Checksum=0;
+//  unsigned long Event;
+//
+//  // Zet WaitFreeRF aan en bawaar originele instelling van de gebruiker.
+//  byte OrgWaitFreeRF=Settings.WaitFreeRF;
+//  Settings.WaitFreeRF=VALUE_ON;
+//  
+//  if(Port==0)
+//    Port=VALUE_SOURCE_RF;
+//
+//  // 1: Zet alle Nodo's on hold.
+//  TransmitCode(command2event(DestUnit,CMD_SELECT,DestUnit,0),Port);
+//  Serial.println("*** debug: Nodo's on hold.");//???
+//
+//  // 2: Verzend naar de slave Nodo de opdracht om naar de QueueReceive funktie te gaan
+//  Settings.WaitFreeRF=VALUE_OFF;
+//  TransmitCode(command2event(DestUnit,CMD_TRANSMIT_QUEUE,Queue.Position,Checksum),Port);
+//  Serial.println("*** debug: TransmitQueue verzonden.");//???
+//
+//  // 3: Verzend alle events uit de queue. Alleen de bestemmings Nodo zal deze events in de queue plaatsen
+//  for(x=0;x<Queue.Position;x++)
+//    {
+//    TransmitCode(Queue.Event[x],Port);
+//    }
+//  Queue.Position=0;
+//
+//  // 4: Verzend en afsluitende TransmitQueue zodat de ontvangende Nodo weet dat verzending gereed is.
+//  TransmitCode(command2event(DestUnit,CMD_TRANSMIT_QUEUE,0,0),Port);
+//  Serial.println("*** debug: Queue verzonden. Wacht op message OK. van Slave Nodo.");//???
+//
+//  // 5: Wacht op een bevestiging van de slave Nodo
+//  x=false;
+//  if(Wait(true,5,0xffffffff,command2event(DestUnit,CMD_MESSAGE, DestUnit, MESSAGE_00)))
+//    x=true;
+//
+//  if(x)
+//    Serial.println("*** debug: OK ontvangen van slave.");//???
+//  else
+//    Serial.println("*** debug: OK =NIET= ontvangen van slave.");//???
+//  
+//  // 6: Haal alle andere Nodo's uit de hold mode    
+//  Settings.WaitFreeRF=VALUE_ON;
+//  TransmitCode(command2event(Settings.Unit, CMD_SELECT,0,0),Port);
+//  Serial.println("*** debug: Select 0 verzonden.");//???
+//
+//  // Zet de originele WaitFreeRF instelling van de gebruiker weer terug
+//  Settings.WaitFreeRF=OrgWaitFreeRF;
+//
+  return x;
   }
 #endif
 
-boolean GetEvent_IRRF(unsigned long *Content, int *Port)
+boolean ScanEvent(struct NodoEventStruct *Event, int *Port)
   {
-  unsigned long Checksum=0L;                           // Als gelijk aan Event dan tweemaal dezelfde code ontvangen: checksum funktie.
-  unsigned long StaySharpTimer=millis();                      // timer die start bij ontvangen van een signaal. Dwingt om enige tijd te luisteren naar dezelfde poort.
-  static unsigned long Previous;
+  static unsigned long Previous,PreviousTimer;
+  unsigned long Content, Checksum=0L;                           // Als gelijk aan Event dan tweemaal dezelfde code ontvangen: checksum funktie.
+  unsigned long StaySharpTimer=millis();
+  byte Fetched=0;
 
   if(I2C_Event)
     {
-    *Content=I2C_Event;
+    Content=I2C_Event;
     *Port=VALUE_SOURCE_I2C;
     I2C_Event=0L;
     return true;
     }
   
-  // IR: *************** kijk of er data staat op IR en genereer een event als er een code ontvangen is **********************
   do
     {
-    if((*portInputRegister(IRport)&IRbit)==0)// Kijk if er iets op de poort binnenkomt. (Pin=LAAG als signaal in de ether). 
-      {
+    // IR: *************** kijk of er data staat op IR en genereer een event als er een code ontvangen is **********************
+    if((*portInputRegister(IRport)&IRbit)==0)// Kijk of er iets op de poort binnenkomt. (Pin=LAAG als signaal in de ether). 
       if(FetchSignal(PIN_IR_RX_DATA,LOW,SIGNAL_TIMEOUT_RF))// Als het een duidelijk IR signaal was
+        Fetched=VALUE_SOURCE_IR;
+
+
+    // RF: *************** kijk of er data start op RF en genereer een event als er een code ontvangen is **********************
+    if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
+      if(FetchSignal(PIN_RF_RX_DATA,HIGH,SIGNAL_TIMEOUT_RF))// Als het een duidelijk RF signaal was
+        Fetched=VALUE_SOURCE_RF;
+  
+    if(Fetched)
+      {
+      if(AnalyzeRawSignal(Event))// als AnalyzeRawSignal een event heeft opgeleverd dan is het struct Event gevuld.
         {
-        *Content=AnalyzeRawSignal(); // Bereken uit de tabel met de pulstijden de 32-bit code. 
-        if(*Content)// als AnalyzeRawSignal een event heeft opgeleverd
+        Content=EventStruct2Event(Event);    
+        
+        // ??? Dit is een tijdelijke oplossing. Nodo signaal wordt eenmaal verzonden terwijl andere signalen worden herhaald waarbij
+        // de herhaling wordt gebruikt als checksum. Mgelijk komt hier een alternatief voor. Tot die tijd deze oplossing.
+        if(Event->Type==SIGNAL_TYPE_NODO)
+          Checksum=Content;
+                
+        StaySharpTimer=millis()+SHARP_TIME;          
+        if(Content==Checksum) // tweemaal hetzelfde event ontvangen
           {
-          StaySharpTimer=millis()+SHARP_TIME;
-          if((RawSignal.Timer+SIGNAL_REPEAT_TIME)<millis())
+          if((PreviousTimer+SIGNAL_REPEAT_TIME)<millis())
             Previous=0L;
-          if(Previous!=*Content)
+            
+          if(Previous!=Checksum)
             {
-            RawSignal.Source=VALUE_SOURCE_IR;
-            *Port=VALUE_SOURCE_IR;
-            RawSignal.Timer=millis()+SIGNAL_REPEAT_TIME;
-            Previous=*Content;
+            RawSignal.Source=Fetched;
+            *Port=Fetched;
+            PreviousTimer=millis();
+            Previous=Checksum;
             #ifdef NODO_MEGA
             Received=Previous; // Received wordt gebruikt om later de status van laatste ontvangen event te kunnen gebruiken t.b.v. substitutie van vars.
             #endif
             return true;
             }
-          Checksum=*Content;
           }
+        Checksum=Content;
         }
+      Fetched=0;
       }
     }while(StaySharpTimer>millis());
 
-  // RF: *************** kijk of er data start op RF en genereer een event als er een code ontvangen is **********************
-  do
-    {
-    if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
-      {
-      if(FetchSignal(PIN_RF_RX_DATA,HIGH,SIGNAL_TIMEOUT_RF))// Als het een duidelijk RF signaal was
-        {
-        *Content=AnalyzeRawSignal(); // Bereken uit de tabel met de pulstijden de 32-bit code. 
-        if(*Content)// als AnalyzeRawSignal een event heeft opgeleverd
-          {
-          StaySharpTimer=millis()+SHARP_TIME;          
-          if(*Content==Checksum) // tweemaal hetzelfde event ontvangen
-            {
-            if((RawSignal.Timer+SIGNAL_REPEAT_TIME)<millis())
-              Previous=0L;
-            if(Previous!=Checksum)
-              {
-              RawSignal.Source=VALUE_SOURCE_RF;
-              *Port=VALUE_SOURCE_RF;
-              RawSignal.Timer=millis();
-              Previous=Checksum;
-              #ifdef NODO_MEGA
-              Received=Previous; // Received wordt gebruikt om later de status van laatste ontvangen event te kunnen gebruiken t.b.v. substitutie van vars.
-              #endif
-              return true;
-              }
-            }
-          Checksum=*Content;
-          }
-        }
-      }
-    }while(StaySharpTimer>millis());
   return false;
   }
 
-unsigned long AnalyzeRawSignal(void)
+boolean AnalyzeRawSignal(struct NodoEventStruct *E)
   {
   unsigned long Code=0L;
   
-  if(RawSignal.Number==RAW_BUFFER_SIZE)return 0L;     // Als het signaal een volle buffer beslaat is het zeer waarschijnlijk ruis of ongeldig signaal
+  if(RawSignal.Number==RAW_BUFFER_SIZE)return false;     // Als het signaal een volle buffer beslaat is het zeer waarschijnlijk ruis of ongeldig signaal
 
-  #ifdef USER_PLUGIN
-  Code=RawSignal_2_UserPlugin(RawSignal.Source);
-  if(Code==1)
-    return 0;
-  else if(Code>1)
-    return Code;
-  #endif
+//  #ifdef USER_PLUGIN
+//  Code=RawSignal_2_UserPlugin(RawSignal.Source);
+//  if(Code==1)
+//    return 0;
+//  else if(Code>1)
+//    return Code;
+//  #endif // weer herstellen.
   
-  if(!(Code=RawSignal_2_Nodo()))           // Is het een Nodo signaal?
-    if(!(Code=RawSignal_2_KAKU()))         // Of een KAKU?
-      if(!(Code=RawSignal_2_NewKAKU()))    // Of een NewKAKU?
-        Code=RawSignal_2_32bit();          // Geen Nodo, KAKU of NewKAKU code. Genereer dan uit het onbekende signaal een (vrijwel) unieke 32-bit waarde.
-      
-  return Code;   
-  }
 
-/*********************************************************************************************\
-* Deze routine berekent de uit een RawSignal een NODO code
-* Geeft een false retour als geen geldig NODO signaal
-\*********************************************************************************************/
-unsigned long RawSignal_2_Nodo(void)
-  {
-  unsigned long bitstream=0L;
-  int x,y,z;
 
-  // NODO signaal bestaat uit start bit + 32 bits. Als ongelijk aan 66, dan geen Nodo signaal
-  if(RawSignal.Number!=66)return 0L;
+if(RawSignal_2_Nodo(E))           // Is het een Nodo signaal?@@
+    return true;
+    
+//  if(!(RawSignal_2_Nodo(E)))           // Is het een Nodo signaal?
+//    if(!(Code=RawSignal_2_KAKU()))         // Of een KAKU?
+//      if(!(Code=RawSignal_2_NewKAKU()))    // Of een NewKAKU?
+//        Code=RawSignal_2_32bit();          // Geen Nodo, KAKU of NewKAKU code. Genereer dan uit het onbekende signaal een (vrijwel) unieke 32-bit waarde.
+// ??? herstellen
 
-  // 0=aantal, 1=startpuls, 2=space na startpuls, 3=1e pulslengte. Dus start loop met drie.
-  z=0;
-  for(x=3;x<=RawSignal.Number;x+=2)
-    {
-    if(RawSignal.Pulses[x]>NODO_PULSE_MID)      
-      bitstream|=(long)(1L<<z); //LSB in signaal wordt  als eerste verzonden
-    z++;
-    }
-
-  if(((bitstream>>28)&0xf) == SIGNAL_TYPE_NODO)// is het type-nibble uit het signaal gevuld met de aanduiding NODO.
-    {
-    RawSignal.Type=SIGNAL_TYPE_NODO;
-    return bitstream;
-    }
-
-  return 0L;  
+  return false;   
   }
 
 
@@ -420,8 +267,13 @@ void WaitFreeRF(void)
       
   Led(BLUE);
 
-  // eerst de 'dode' wachttijd die afhankt van het unitnummer. Dit voorkomt dat alle units exact op hetzelfde moment gaan zenden als de ether vrij is.
+  // eerst de 'dode' wachttijd die afhangt van het unitnummer. Dit voorkomt dat alle units exact op hetzelfde moment gaan zenden als de ether vrij is.
   delay((Settings.Unit-1)*100);
+
+  // Als er recent een code is ontvangen door de Nodo, dan is één van de Nodo's wellicht nog niet volledig omgeschakeld van zenden 
+  // naar ontvangen. Dit omdat sommige ontvangers lange opstarttijd nodig hebben voordat deze RF signalen nunnen ontvangen.
+  // Daarom wachten totdat RECEIVER_STABLE tijd voorbij is na laatste verzending.
+//???  while(millis() < (RawSignal.Timer+RECEIVER_STABLE));        
     
   // dan kijken of de ether vrij is.
   Timer=millis()+350; // reset de timer.
@@ -474,7 +326,7 @@ void RawSendRF(void)
   delay(5);// kleine pause om de zender de tijd te geven om stabiel te worden 
   noInterrupts();
   
-  for(byte y=0; y<RF_REPEATS; y++) // herhaal verzenden RF code
+  for(byte y=0; y<RawSignal.Repeats; y++) // herhaal verzenden RF code
     {
     x=1;
     while(x<=RawSignal.Number)
@@ -485,8 +337,6 @@ void RawSendRF(void)
       delayMicroseconds(RawSignal.Pulses[x++]); 
       }
     }
-  
-
   
   digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
   digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger weer aan.
@@ -524,7 +374,7 @@ void RawSendIR(void)
   // kleine pause zodat verzenden event naar de USB poort gereed is, immers de IRQ's worden tijdelijk uitgezet
   delay(10);
 
-  for(int repeat=0; repeat<IR_REPEATS; repeat++) // herhaal verzenden IR code
+  for(int repeat=0; repeat<RawSignal.Repeats; repeat++) // herhaal verzenden IR code
     {
     pulse=1;
     noInterrupts(); // interrupts tijdelijk uitschakelen om zo en zuiverder signaal te krijgen
@@ -564,29 +414,38 @@ void RawSendIR(void)
   }
 
  /*********************************************************************************************\
- * Deze routine berekend de RAW pulsen van een 32-bit Nodo-code en plaatst deze in de buffer RawSignal
- * RawSignal.Bits het aantal pulsen*2+startbit*2 ==> 66
- * 
+ * Deze routine berekend de RAW pulsen van een 2x32-bit Nodo-code en plaatst deze in de buffer RawSignal
+ * RawSignal.Bits het aantal pulsen*2+startbit*2 ==> 130
  \*********************************************************************************************/
-void Nodo_2_RawSignal(unsigned long Code)
+void Nodo_2_RawSignal(struct NodoEventStruct Datablock)
   {
-  byte BitCounter,y=1;
-
+  byte BitCounter=1;
+  RawSignal.Repeats=1;
+  
+  // bereken checksum: crc-8 uit alle bytes in de queue.
+  byte c=0,*B=(byte*)&Datablock;
+  for(byte x=0;x<sizeof(struct NodoEventStruct);x++)
+      c^=*(B+x); 
+  Datablock.Checksum=c;
+  
   // begin met een lange startbit. Veilige timing gekozen zodat deze niet gemist kan worden
-  RawSignal.Pulses[y++]=NODO_PULSE_1*2; 
-  RawSignal.Pulses[y++]=NODO_SPACE*2;
+  RawSignal.Pulses[BitCounter++]=NODO_PULSE_1*4; 
+  RawSignal.Pulses[BitCounter++]=NODO_SPACE*2;
 
-  // de rest van de bits LSB als eerste de lucht in
-  for(BitCounter=0; BitCounter<=31; BitCounter++)
+  for(byte x=0;x<sizeof(struct NodoEventStruct);x++)
     {
-    if(Code>>BitCounter&1)
-      RawSignal.Pulses[y++]=NODO_PULSE_1; 
-    else
-      RawSignal.Pulses[y++]=NODO_PULSE_0;   
-    RawSignal.Pulses[y++]=NODO_SPACE;   
+    for(byte Bit=0; Bit<=7; Bit++)
+      {
+      if((*(B+x)>>Bit)&1)
+        RawSignal.Pulses[BitCounter++]=NODO_PULSE_1; 
+      else
+        RawSignal.Pulses[BitCounter++]=NODO_PULSE_0;   
+      RawSignal.Pulses[BitCounter++]=NODO_SPACE;   
+      }
     }
-  RawSignal.Pulses[y-1]=NODO_PULSE_1*10; // pauze tussen de pulsreeksen
-  RawSignal.Number=66; //  1 startbit bestaande uit een pulse/space + 32-bits is 64 pulse/space = totaal 66
+    
+  RawSignal.Pulses[BitCounter-1]=NODO_PULSE_1*10; // pauze tussen de pulsreeksen
+  RawSignal.Number=BitCounter;
   }
 
  
@@ -605,6 +464,7 @@ boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
   do{// lees de pulsen in microseconden en plaats deze in een tijdelijke buffer
     PulseLength=WaitForChangeState(DataPin, StateSignal, TimeOut);
 
+    // bij kleine stoorpulsen die geen betekenig hebben zo snel mogelijk weer terug
     if(PulseLength<MIN_PULSE_LENGTH)
       return false;
 
@@ -641,47 +501,59 @@ boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
 \**********************************************************************************************/
 boolean TransmitCode(unsigned long Event, byte Dest)
   {  
-  int x;
-  byte SignalType=(Event>>28) & 0x0f;
-  byte Command   =(Event>>16) & 0xff;
+  struct NodoEventStruct ES=Event2EventStruct(Event,0,0);
   
-  SendI2C(Event);
+  static unsigned long LastTransmitTime_RF=0;
+  static unsigned long LastTransmitTime_IR=0;
+  static unsigned long LastTransmitTime_I2C=0;
+
+  if(Settings.TransmitI2C==VALUE_ON && (Dest==VALUE_SOURCE_I2C || Dest==VALUE_ALL))
+    { 
+    PrintEvent(Event,VALUE_DIRECTION_OUTPUT, VALUE_SOURCE_I2C);
+
+    // Korte pauze om minimale tijd tussen verzenden te houden
+    while((LastTransmitTime_I2C+MIN_TIME_BETWEEN_SEND_I2C) > millis());
+    LastTransmitTime_I2C=millis();
+
+    SendI2C(Event,0,0);
+    }
 
   if(Dest==VALUE_SOURCE_RF || (Settings.TransmitRF==VALUE_ON && Dest==VALUE_ALL))
-    if(Settings.WaitFreeRF==VALUE_ON && SignalType!=SIGNAL_TYPE_UNKNOWN)// alleen WaitFreeRF als type bekend is, anders gaat SendSignal niet goed a.g.v. overschrijven buffer
+    if(Settings.WaitFreeRF==VALUE_ON && ES.Type!=SIGNAL_TYPE_UNKNOWN)// alleen WaitFreeRF als type bekend is, anders gaat SendSignal niet goed a.g.v. overschrijven buffer
       WaitFreeRF();  
 
-  if(Command==CMD_KAKU)
+  if(ES.Command==CMD_KAKU)
     KAKU_2_RawSignal(Event);
 
-  else if(Command==CMD_KAKU_NEW)
+  else if(ES.Command==CMD_KAKU_NEW)
     NewKAKU_2_RawSignal(Event);
 
-  else if(SignalType==SIGNAL_TYPE_NODO)
-    Nodo_2_RawSignal(Event);
+  else if(ES.Type==SIGNAL_TYPE_NODO)
+    {
+    Nodo_2_RawSignal(ES);
+    }
 
   if(Settings.TransmitRF==VALUE_ON && (Dest==VALUE_SOURCE_RF || Dest==VALUE_ALL))
     {
     PrintEvent(Event,VALUE_DIRECTION_OUTPUT, VALUE_SOURCE_RF);
 
-    // Als er een event is ontvangen, houdt er dan rekening mee dat, indien dit een Nodo was, deze mogelijk niet direct na het zenden
-    // weer gereed staat voor ontvangst van een antwoord van deze Nodo. Doe een korte pause om te voorkomen dat bij terugsturen van
-    // een event deze wordt gemist door de zendende Nodo die er voor heeft gezorgd dat we hier zijn terecht gekomen.
-    if(Settings.WaitFreeRF==VALUE_ON)
-      while((RawSignal.Timer+DELAY_BEFORE_SEND) > millis());
+    // Korte pauze om minimale tijd tussen verzenden te houden
+    while((LastTransmitTime_RF+MIN_TIME_BETWEEN_SEND_RF) > millis());
+    LastTransmitTime_RF=millis();
 
     RawSendRF();
     }
-  else
-    delay(250);
 
   if(Settings.TransmitIR==VALUE_ON && (Dest==VALUE_SOURCE_IR || Dest==VALUE_ALL))
     { 
     PrintEvent(Event,VALUE_DIRECTION_OUTPUT, VALUE_SOURCE_IR);
+
+    // Korte pauze om minimale tijd tussen verzenden te houden
+    while((LastTransmitTime_IR+MIN_TIME_BETWEEN_SEND_IR) > millis());
+    LastTransmitTime_IR=millis();
+
     RawSendIR();
     }
-  else
-    delay(250);
 
   #ifdef NODO_MEGA
   if(bitRead(HW_Config,HW_ETHERNET))// Als Ethernet shield aanwezig.
@@ -755,7 +627,7 @@ boolean SaveRawSignal(byte Key)
   unsigned long Event;
   char *TempString=(char*)malloc(40);
 
-  Event=AnalyzeRawSignal();
+//???herstellen  Event=AnalyzeRawSignal();
 
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
   SelectSD(true);
@@ -860,4 +732,54 @@ boolean RawSignalGet(int Key)
 
 #endif
 
+
+
+
+/*********************************************************************************************\
+* Deze routine berekent de uit een RawSignal een NODO code
+* Geeft een false retour als geen geldig NODO signaal
+\*********************************************************************************************/
+boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
+  {
+  byte b,x,y,z;
+ 
+  if(RawSignal.Number!=16*sizeof(struct NodoEventStruct)+2) // Per byte twee posities + startbit.
+    return false;
+
+  byte *B=(byte*)Event; // B wijst naar de eerste byte van de struct
+  z=3;  // RwaSignal pulse teller: 0=aantal, 1=startpuls, 2=space na startpuls, 3=1e pulslengte. Dus start loop met drie.
+
+  for(x=0;x<sizeof(struct NodoEventStruct);x++) // vul alle bytes van de struct 
+    {
+    b=0;
+    for(y=0;y<=7;y++) // vul alle bits binnen een byte
+      {
+      if(RawSignal.Pulses[z]>NODO_PULSE_MID)      
+        b|=1<<y; //LSB in signaal wordt  als eerste verzonden
+      z+=2;
+      }
+    *(B+x)=b;
+    }
+
+  // bereken checksum: crc-8 uit alle bytes in de queue.
+  // Een correcte Checksum met alle bytes levert een nul omdat de XOR van alle bytes in het datablok zit.
+  b=0;
+  for(x=0;x<sizeof(struct NodoEventStruct);x++)
+    b^=*(B+x); 
+
+//  Serial.print("\n*** debug: b=");Serial.println(b); //??? Debug
+//  Serial.print("*** debug: Event->Checksum=");Serial.println(Event->Checksum); //??? Debug
+//  Serial.print("*** debug: Event->Type=");Serial.println(Event->Type); //??? Debug
+//  Serial.print("*** debug: Event->TransmissionFlags=");Serial.println(Event->TransmissionFlags); //??? Debug
+//  Serial.print("*** debug: Event->DestinationUnit=");Serial.println(Event->DestinationUnit); //??? Debug
+//  Serial.print("*** debug: Event->SourceUnit=");Serial.println(Event->SourceUnit); //??? Debug
+//  Serial.print("*** debug: Event->Command=");Serial.println(Event->Command); //??? Debug
+//  Serial.print("*** debug: Event->Par1=");Serial.println(Event->Par1); //??? Debug
+//  Serial.print("*** debug: Event->Par2=");Serial.println(Event->Par2); //??? Debug
+
+  if(b==0)
+    return true;
+    
+  return false; 
+  }
 

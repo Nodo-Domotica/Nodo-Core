@@ -1,7 +1,9 @@
-#define SETTINGS_VERSION     20
+#define SETTINGS_VERSION     21
 #define NODO_BUILD          495
 #include <EEPROM.h>
 #include <Wire.h>
+
+// #include "settings.h" ???
 
 // strings met vaste tekst naar PROGMEM om hiermee RAM-geheugen te sparen.
 prog_char PROGMEM Text_01[] = "Nodo Domotica controller (c) Copyright 2012 P.K.Tonkes.";
@@ -18,14 +20,15 @@ prog_char PROGMEM Text_15[] = "Nodo V3.0.1 Small, Product=SWACNC-SMALL-R%03d, Th
 #ifdef NODO_MEGA
 prog_char PROGMEM Text_03[] = "Enter your password: ";
 prog_char PROGMEM Text_05[] = "0123456789abcdef";
-prog_char PROGMEM Text_06[] = "Waiting for busy Nodo: ";
+//prog_char PROGMEM Text_06[] = "Waiting for busy Nodo: ";
 prog_char PROGMEM Text_07[] = "Waiting for signal...";
 prog_char PROGMEM Text_09[] = "(Last 10KByte)";
 prog_char PROGMEM Text_13[] = "RawSignal saved.";
 prog_char PROGMEM Text_14[] = "Event=";
 prog_char PROGMEM Text_23[] = "log.dat";
-prog_char PROGMEM Text_24[] = "Queue: Capturing events...";
-prog_char PROGMEM Text_26[] = "Queue: End capture.";
+prog_char PROGMEM Text_24[] = "Capturing events...";
+prog_char PROGMEM Text_25[] = "Delay...";
+//prog_char PROGMEM Text_26[] = "Finished.";
 prog_char PROGMEM Text_27[] = "raw/raw"; // Directory op de SDCard voor opslag van sleutels naar .hex files
 prog_char PROGMEM Text_28[] = "raw/key"; // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_30[] = "Terminal connection closed.";
@@ -46,7 +49,7 @@ prog_char PROGMEM Cmd_011[]="ClockSetDOW";
 prog_char PROGMEM Cmd_012[]="EventlistErase";
 prog_char PROGMEM Cmd_013[]="EventlistShow";
 prog_char PROGMEM Cmd_014[]="EventlistWrite";
-prog_char PROGMEM Cmd_015[]="";
+prog_char PROGMEM Cmd_015[]="Select";
 prog_char PROGMEM Cmd_016[]="RawSignalSave";
 prog_char PROGMEM Cmd_017[]="RawSignalSend";
 prog_char PROGMEM Cmd_018[]="Reset";
@@ -69,7 +72,7 @@ prog_char PROGMEM Cmd_028[]="TimerSetSec";
 prog_char PROGMEM Cmd_029[]="TimerSetMin";
 prog_char PROGMEM Cmd_030[]="ID";
 prog_char PROGMEM Cmd_031[]="Unit";
-prog_char PROGMEM Cmd_032[]="WaitBusy";
+prog_char PROGMEM Cmd_032[]="";
 prog_char PROGMEM Cmd_033[]="VariableDec";
 prog_char PROGMEM Cmd_034[]="VariableInc";
 prog_char PROGMEM Cmd_035[]="VariableSet";
@@ -84,7 +87,7 @@ prog_char PROGMEM Cmd_043[]="WiredThreshold";
 prog_char PROGMEM Cmd_044[]="SendUserEvent";
 prog_char PROGMEM Cmd_045[]="Temp";
 prog_char PROGMEM Cmd_046[]="WildCard";
-prog_char PROGMEM Cmd_047[]="SendBusy";
+prog_char PROGMEM Cmd_047[]="";
 prog_char PROGMEM Cmd_048[]="ClientIP";
 prog_char PROGMEM Cmd_049[]="Password";
 prog_char PROGMEM Cmd_050[]="EventlistFile";
@@ -136,7 +139,7 @@ prog_char PROGMEM Cmd_095[]="";
 prog_char PROGMEM Cmd_096[]="";
 prog_char PROGMEM Cmd_097[]="";
 prog_char PROGMEM Cmd_098[]=""; 
-prog_char PROGMEM Cmd_099[]=""; // TransmitQueue: Niet voor gebruiker bestemd.
+prog_char PROGMEM Cmd_099[]="TransmitQueue"; // TransmitQueue: Niet voor gebruiker bestemd.???
 
 // events:
 #define RANGE_EVENT 100 // alle codes groter of gelijk aan deze waarde zijn events.
@@ -156,7 +159,7 @@ prog_char PROGMEM Cmd_112[]="NewKAKU";
 prog_char PROGMEM Cmd_113[]="Timer";
 prog_char PROGMEM Cmd_114[]="WiredIn";
 prog_char PROGMEM Cmd_115[]="Variable";
-prog_char PROGMEM Cmd_116[]="Busy";
+prog_char PROGMEM Cmd_116[]="";
 prog_char PROGMEM Cmd_117[]="NewNodo";
 prog_char PROGMEM Cmd_118[]="Message";
 prog_char PROGMEM Cmd_119[]="Boot";
@@ -207,13 +210,13 @@ prog_char PROGMEM Cmd_161[]="Timers";
 prog_char PROGMEM Cmd_162[]="Variables";
 prog_char PROGMEM Cmd_163[]="Clock";
 prog_char PROGMEM Cmd_164[]="Terminal";
-prog_char PROGMEM Cmd_165[]="";
+prog_char PROGMEM Cmd_165[]="Fast";
 prog_char PROGMEM Cmd_166[]="Status";
 prog_char PROGMEM Cmd_167[]="File";
 prog_char PROGMEM Cmd_168[]="Input";
 prog_char PROGMEM Cmd_169[]="Output";
 prog_char PROGMEM Cmd_170[]="Internal";
-prog_char PROGMEM Cmd_171[]="Busy";
+prog_char PROGMEM Cmd_171[]="";
 prog_char PROGMEM Cmd_172[]="All";
 prog_char PROGMEM Cmd_173[]="DaylightSaving";
 prog_char PROGMEM Cmd_174[]="EventlistCount";
@@ -255,8 +258,8 @@ prog_char PROGMEM Cmd_209[]="Error: Wireless access locked.";
 prog_char PROGMEM Cmd_210[]="Error: Access not allowed.";
 prog_char PROGMEM Cmd_211[]=""; 
 prog_char PROGMEM Cmd_212[]="Error: SendTo failed.";
-prog_char PROGMEM Cmd_213[]="Error: Timeout on busy Nodo.";
-prog_char PROGMEM Cmd_214[]="Waiting for busy Nodo(s)...";
+prog_char PROGMEM Cmd_213[]="Error: Timeout on excusive selected Nodo.";
+prog_char PROGMEM Cmd_214[]="";
 
 // tabel die refereert aan de commando strings
 PROGMEM const char *CommandText_tabel[]={
@@ -309,7 +312,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_EVENTLIST_ERASE             12
 #define CMD_EVENTLIST_SHOW              13
 #define CMD_EVENTLIST_WRITE             14
-#define CMD_res                         15
+#define CMD_SELECT                      15
 #define CMD_RAWSIGNAL_SAVE              16
 #define CMD_RAWSIGNAL_SEND              17
 #define CMD_RESET                       18
@@ -326,7 +329,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_TIMER_SET_MIN               29
 #define CMD_ID                          30
 #define CMD_UNIT                        31
-#define CMD_WAITBUSY                    32
+#define CMD_res32                    32
 #define CMD_VARIABLE_DEC                33
 #define CMD_VARIABLE_INC                34
 #define CMD_VARIABLE_SET                35
@@ -341,7 +344,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_SEND_USEREVENT              44
 #define CMD_TEMP                        45
 #define CMD_COMMAND_WILDCARD            46
-#define CMD_SENDBUSY                    47
+#define CMD_res47                    47
 #define CMD_CLIENT_IP                   48
 #define CMD_PASSWORD                    49
 #define CMD_EVENTLIST_FILE              50
@@ -414,7 +417,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_TIMER_EVENT                113
 #define CMD_WIRED_IN_EVENT             114
 #define CMD_VARIABLE_EVENT             115
-#define CMD_BUSY                       116
+#define CMD_res116                     116
 #define CMD_NEWNODO                    117
 #define CMD_MESSAGE                    118
 #define CMD_BOOT_EVENT                 119
@@ -467,19 +470,19 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define VALUE_SOURCE_VARIABLE          162
 #define VALUE_SOURCE_CLOCK             163
 #define VALUE_SOURCE_TELNET            164
-#define VALUE_res                      165
+#define VALUE_FAST                     165
 #define VALUE_SOURCE_STATUS            166
 #define VALUE_SOURCE_FILE              167
 #define VALUE_DIRECTION_INPUT          168
 #define VALUE_DIRECTION_OUTPUT         169
 #define VALUE_DIRECTION_INTERNAL       170
-#define VALUE_BUSY                     171
+#define VALUE_res171                   171
 #define VALUE_ALL                      172 // Deze waarde MOET groter dan 16 zijn.
 #define VALUE_DLS                      173
 #define VALUE_EVENTLIST_COUNT          174
 #define VALUE_SOURCE_QUEUE             175
-#define VALUE_HWCONFIG                   176
-#define VALUE_res177                   177
+#define VALUE_HWCONFIG                 176
+#define VALUE_res                      177
 #define VALUE_THISUNIT                 178
 #define VALUE_RECEIVED_EVENT           179
 #define VALUE_RECEIVED_PAR1            180
@@ -520,6 +523,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define LAST_VALUE                     214 // laatste VALUE uit de commando tabel
 #define COMMAND_MAX                    214 // hoogste commando
 
+#define MAX_SELECT_TIME          10000  // maximale tijd dat een unit geselecteerd mag zijn
 #define USER_VARIABLES_RANGE_MIN  -100  // Laagste waarde die door de gerbuiker kan worden opgeslagen in een gebruikersvariabele
 #define USER_VARIABLES_RANGE_MAX   100  // Hoogste waarde die door de gerbuiker kan worden opgeslagen in een gebruikersvariabele
 #define NODO_PULSE_0               500  // PWM: Tijdsduur van de puls bij verzenden van een '0' in uSec.
@@ -542,13 +546,15 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define SIGNAL_TIMEOUT_RF         5000 // na deze tijd in uSec. wordt één RF signaal als beëindigd beschouwd.
 #define SIGNAL_TIMEOUT_IR        10000 // na deze tijd in uSec. wordt één IR signaal als beëindigd beschouwd.
 #define SIGNAL_REPEAT_TIME        1000 // Tijd waarbinnen hetzelfde event niet nogmaals via RF of IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
-#define RF_REPEATS                   5 // aantal herhalingen van een code binnen één RF reeks
-#define IR_REPEATS                   5 // aantal herhalingen van een code binnen één IR reeks
+#define RF_REPEATS                   4 // aantal herhalingen van een code binnen één RF reeks
+#define IR_REPEATS                   4 // aantal herhalingen van een code binnen één IR reeks
 #define MIN_PULSE_LENGTH           100 // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define MIN_RAW_PULSES              32 // =16 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
 #define SHARP_TIME                 750 // tijd in milliseconden dat de nodo gefocust moet blijven luisteren naar één dezelfde poort na binnenkomst van een signaal
-#define RECEIVER_STABLE            750 // Tijd die de RF ontvanger nodig heeft om na inschakelen voedspanning signalen op te kunnen vangen. 
-#define DELAY_BEFORE_SEND         2000 // Korte pauze voor verzenden van een event, direct nadat er één is ontvangen van een andere Nodo. Alleen actief tijdens [WaitFreeRF On]
+#define RECEIVER_STABLE            500 // Tijd die de RF ontvanger nodig heeft om na inschakelen voedspanning signalen op te kunnen vangen. 
+#define MIN_TIME_BETWEEN_SEND_IR   250 // Minimale tijd tussen twee IR zend acties in milliseconden.
+#define MIN_TIME_BETWEEN_SEND_RF   500 // Minimale tijd tussen twee RF zend acties in milliseconden.
+#define MIN_TIME_BETWEEN_SEND_I2C  125 // Minimale tijd tussen twee I2C zend acties in milliseconden.
 #define SIGNAL_TYPE_UNKNOWN          0 // Type ontvangen of te verzenden signaal in de eventcode
 #define SIGNAL_TYPE_NODO             1 // Type ontvangen of te verzenden signaal in de eventcode
 #define SIGNAL_TYPE_KAKU             2 // Type ontvangen of te verzenden signaal in de eventcode
@@ -573,8 +579,6 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define HW_PLUGIN      13
 #define HW_I2C         14
 #define HW_RES11       15
-
-#define I2C_ADDRESS           10  // Slave mode Adres van de Nodo op de I2C bus.
 
 // Definitie van de speciale hardware uitvoeringen van de Nodo.
 #define BIC_DEFAULT            0  // Standaard Nodo zonder specifike hardware aansturing
@@ -680,11 +684,10 @@ struct SettingsStruct
   boolean NewNodo;
   int     WiredInputThreshold[WIRED_PORTS], WiredInputSmittTrigger[WIRED_PORTS];
   byte    WiredInputPullUp[WIRED_PORTS];
+  byte    TransmitI2C;
   byte    TransmitIR;
   byte    TransmitRF;
   byte    WaitFreeRF;
-  byte    SendBusy;
-  byte    WaitBusyAll;                                      // maximale tijd dat gewacht moet worden op Nodos die bezig zijn met verwerking
   int     Lock;                                             // bevat de pincode waarmee IR/RF ontvangst is geblokkeerd. Bit nummer hoogste bit wordt gebruiktvoor in/uitschakelen.
   byte    Debug;                                            // Weergeven van extra gegevens t.b.v. beter inzicht verloop van de verwerking
   int     Alarm[ALARM_MAX-1];                                            // Instelbaar alarm
@@ -709,21 +712,29 @@ struct SettingsStruct
   #endif
   }Settings;
 
+  // Een Nodo signaal bestaat uit een 32-bit Event en een 32-bit met meta-data t.b.v. het transport van Nodo naar Nodo.
+  // In het transport deel bevinden zich de volgende transmissievlaggen:
+  
+  #define TRANSMISSION_ANSWER    1   // A = Answer: Antwoord op een transmissie.
+  #define TRANSMISSION_CONFIRM   2   // C = Confirmation needed: Als deze vlag staat dan wordt een antwoord verwacht van de Slave.
+  #define TRANSMISSION_NEXT      4   // N = Next: Na dit event volgt direct nog een event.
+  #define TRANSMISSION_LOCK      8   // L = Lock: Verzoek om de ether te blokkeren voor exclusief toegang voor deze Nodo.
+  #define TRANSMISSION_RESEND    16  // R = Resend: Verzoek aan de master om signaal nogmaals te verzenden.
+  #define TRANSMISSION_ERROR     32  // E = Error: Communicatie error.
+  #define TRANSMISSION_SYSTEM    64  // S = System code: Event niet tonen aan de gebruiker. 
+  #define TRANSMISSION_FUTURE_2  128 // F = Future use.
+
 struct NodoEventStruct
   {
+  byte SourceUnit;
+  byte DestinationUnit;
+  byte TransmissionFlags;
   byte Type;
-  byte Unit;
   byte Command;
   byte Par1;
   byte Par2;
+  byte Checksum;
   };
-
-struct NodoBusyStruct
-  {
-  int Status;                                               // in deze variabele de status van het event 'Busy' van de betreffende units 1 t/m 15. bit-1 = unit-1.
-  byte BusyOnSent;                                          // Vlag die bijhoudt of en naar welke poort het Busy On event is verzonden.
-  int ResetTimer;                                           // Timer voor resetten van de status.
-  }Busy;
 
 struct QueueStruct
   {
@@ -778,7 +789,7 @@ struct RawsignalStruct
   int Number;                                               // aantal bits, maal twee omdat iedere bit een mark en een space heeft.
   int Key;                                                  // sleutel waaronder de pulsenreeks op SDCard opgeslagen moet worden.
   byte Type;                                                // Type signaal dan ontvangen is.
-  unsigned long Timer;                                      // Tijdstip millis() waarop event is binnengekomen.
+  byte Repeats;
   }RawSignal;
 
 void setup() 
@@ -844,8 +855,6 @@ void setup()
 
   Led(BLUE);
 
-  Wire.begin(I2C_ADDRESS);      // verbind de I2C bus
-  Wire.onReceive(ReceiveI2C);   // verwijs naar ontvangstroutine
   Serial.begin(BAUD);  // Initialiseer de seriële poort
 
   #ifdef NODO_MEGA
@@ -854,13 +863,11 @@ void setup()
   SerialHold(true);// XOFF verzenden zodat PC even wacht met versturen van data via Serial (Xon/Xoff-handshaking)
   #endif
 
-  // initialiseer de Busy Nodo gegevens
-  Busy.Status=0;
-  Busy.BusyOnSent=0;
-  Busy.ResetTimer=0;
-
   LoadSettings();      // laad alle settings zoals deze in de EEPROM zijn opgeslagen
   if(Settings.Version!=SETTINGS_VERSION)ResetFactory(); // Als versienummer in EEPROM niet correct is, dan een ResetFactory.
+
+  Wire.begin(Settings.Unit);      // verbind de I2C bus
+  Wire.onReceive(ReceiveI2C);   // verwijs naar ontvangstroutine
 
   // initialiseer de Wired ingangen.
   for(x=0;x<WIRED_PORTS;x++)
@@ -941,6 +948,7 @@ void loop()
   int SerialInByteCounter=0;
   int TerminalInbyteCounter=0;
   byte Slice_1=0,Slice_2=0;    
+  struct NodoEventStruct Event;
 
   unsigned long LoopIntervalTimer_1=millis();                 // Timer voor periodieke verwerking. millis() maakt dat de intervallen van 1 en 2 niet op zelfde moment vallen => 1 en 2 nu asynchroon.
   unsigned long LoopIntervalTimer_2=0L;                       // Timer voor periodieke verwerking.
@@ -965,8 +973,14 @@ void loop()
   while(true)
     {
     // Check voor IR of RF events
-    if(GetEvent_IRRF(&Content,&x)) 
+    if(ScanEvent(&Event,&x)) 
+      {
+      Content=EventStruct2Event(&Event);
+      // Status van Select bijwerken en alleen uitvoeren als Select op deze unit of leeg
+      if(UpdateSelect(Content))
       ProcessEvent1(Content,VALUE_DIRECTION_INPUT,x,0,0); // verwerk binnengekomen event.
+//      else ??? alleen printen 
+      }
       
     // 1: niet tijdkritische processen die periodiek uitgevoerd moeten worden
     if(LoopIntervalTimer_1<millis())// korte interval
@@ -1335,14 +1349,6 @@ void loop()
           }
         }
       #endif
-
-      // De Nodo houdt bij of andere Nodos bezig zijn. Periodiek wordt de status gereset
-      // om te voorkomen dat de Nodo lange tijd onnodig vast komt te zitten.
-      // Als deze teller nul is, dan wordt de status van de busy Nodos gereset.
-      if(Busy.ResetTimer>0)
-        Busy.ResetTimer--;
-      else
-        Busy.Status=0;      
       }
     }// while 
   }

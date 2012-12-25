@@ -46,6 +46,7 @@ void KAKU_2_RawSignal(unsigned long Code)
   Group   = (Code & KAKU_ALLOFF) == KAKU_ALLOFF;
   Code = Home | Unit << 4 | (0x600 | (Command << 11));
 
+  RawSignal.Repeats=5;
   RawSignal.Number=KAKU_CodeLength*4+2;
   RawSignal.Type=SIGNAL_TYPE_KAKU;
   
@@ -90,6 +91,7 @@ unsigned long RawSignal_2_KAKU(void)
 
   // conventionele KAKU bestaat altijd uit 12 data bits plus stop. Ongelijk, dan geen KAKU
   if (RawSignal.Number!=(KAKU_CodeLength*4)+2)return false;
+  RawSignal.Repeats=5;
 
   for (i=0; i<KAKU_CodeLength; i++)
     {

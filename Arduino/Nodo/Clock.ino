@@ -35,13 +35,17 @@ void DS1307_save(void)
   }
 
 // Aquire data from the RTC chip in BCD format, refresh the buffer
+
 void DS1307_read(void)
   {
   Wire.beginTransmission(DS1307_CTRL_ID);  // reset the register pointer to zero
   Wire.write((uint8_t)0x00);
-  Wire.endTransmission();
-  Wire.requestFrom(DS1307_CTRL_ID, 11);  // request the 9 bytes of data    (secs, min, hr, dow, date. mth, yr. ctrl, dls)
-  if(Wire.available() == 11) for(byte i=0; i<11; i++)rtc[i]=Wire.read();// store data in raw bcd format
+  if (Wire.endTransmission(false) == 0) // Try to become I2C Master, send data and collect bytes, keep master status for next request...
+  {
+    Wire.requestFrom(DS1307_CTRL_ID, 11);  // request the 9 bytes of data    (secs, min, hr, dow, date. mth, yr. ctrl, dls)
+    if(Wire.available() == 11) for(byte i=0; i<11; i++)rtc[i]=Wire.read();// store data in raw bcd format
+  }
+  Wire.endTransmission(true); // Release I2C Master status...
   }
 
     

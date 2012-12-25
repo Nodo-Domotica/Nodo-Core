@@ -397,3 +397,28 @@ boolean EventlistEntry2str(int entry, byte d, char* Line, boolean Script)
 }
 
 #endif
+
+unsigned long EventStruct2Event(struct NodoEventStruct *ES)
+  {
+  return  (((unsigned long)ES->Type)&0xf)<<28        | 
+          (((unsigned long)ES->SourceUnit)&0xf)<<24  | 
+          ((unsigned long)ES->Command)<<16           | 
+          ((unsigned long)ES->Par1)<<8               |
+          ((unsigned long)ES->Par2);
+  }
+
+struct NodoEventStruct Event2EventStruct(unsigned long Event32, byte Destination, byte Flags)
+  {
+  struct NodoEventStruct ReturnStruct;
+
+  ReturnStruct.Type               = EventPartType(Event32);
+  ReturnStruct.TransmissionFlags  = Flags;
+  ReturnStruct.DestinationUnit    = Destination;
+  ReturnStruct.SourceUnit         = Settings.Unit;
+  ReturnStruct.Command            = EventPartCommand(Event32);
+  ReturnStruct.Par1               = EventPartPar1(Event32);
+  ReturnStruct.Par2               = EventPartPar2(Event32);
+  ReturnStruct.Checksum           = 0;
+
+  return ReturnStruct;    
+  }
