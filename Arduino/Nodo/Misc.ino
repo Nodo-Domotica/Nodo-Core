@@ -1,207 +1,162 @@
-
-
 void ReceiveI2C(int n)
-{
-  struct NodoEventStruct EventBlock;
-  byte b,*B=(byte*)&EventBlock;
-  byte Checksum=0;
-  int x=0;
-
-  while(Wire.available()) // loop through all but the last
   {
-    b=Wire.read();    // receive byte as an integer
-    if(x<sizeof(struct NodoEventStruct))
-    {
-      *(B+x)=b; 
-      Checksum^=b; 
-    }
-    x++;
+//  struct NodoEventStruct EventBlock;
+//  byte b,*B=(byte*)&EventBlock;
+//  byte Checksum=0;
+//  int x=0;
+//
+//  while(Wire.available()) // Haal de bytes op
+//    {
+//    b=Wire.read();    // receive byte as an integer
+//    if(x<sizeof(struct NodoEventStruct))
+//      {
+//      *(B+x)=b; 
+//      Checksum^=b; 
+//      }
+//    x++;
+//    }
+//
+//  // laatste ontvangen byte bevat de checksum. Als deze gelijk is aan de berekende checksum, dan event uitvoeren
+//  if(b==Checksum)    
+//    {   
+//    bitWrite(HW_Config,HW_I2C,true);
+//    
+//    // De inhoud van de struct is geladen. Nu verwerken als een event
+//    I2C_Event=   ((unsigned long)EventBlock.Type)<<28   | 
+//      ((unsigned long)EventBlock.Unit)<<24              | 
+//      ((unsigned long)EventBlock.Command)<<16           | 
+//      ((unsigned long)EventBlock.Par1)<<8               |
+//      ((unsigned long)EventBlock.Par2);
+//
+//    }
+//  else
+//    I2C_Event=0L;
   }
 
-  // laatste ontvangen byte bevat de checksum. Als deze gelijk is aan de berekende checksum, dan event uitvoeren
-  if(b==Checksum)    
-  {   
-    bitWrite(HW_Config,HW_I2C,true);
-    // De inhoud van de struct is geladen. Nu verwerken als een event
-    I2C_Event=   ((unsigned long)EventBlock.Type)<<28              | 
-      ((unsigned long)EventBlock.Unit)<<24              | 
-      ((unsigned long)EventBlock.Command)<<16           | 
-      ((unsigned long)EventBlock.Par1)<<8               |
-      ((unsigned long)EventBlock.Par2);
-
+boolean SendI2C(unsigned long Event, byte Destination, byte Flags)
+  {  
+//  byte x;
+//  struct NodoEventStruct EventBlock;
+//
+//  EventBlock.Type      = EventPartType(Event);
+//  EventBlock.Unit      = EventPartUnit(Event);
+//  EventBlock.Command   = EventPartCommand(Event);
+//  EventBlock.Par1      = EventPartPar1(Event);
+//  EventBlock.Par2      = EventPartPar2(Event);
+//
+//  // bereken checksum: crc-8 uit alle bytes in de queue.
+//  byte b,*B=(byte*)&EventBlock;
+//  byte Checksum;
+//
+//  delay(10);
+//  for(int y=1;y<=UNIT_MAX;y++)
+//    {            
+//    // verzend Event 
+//    Wire.beginTransmission(y);
+//    Checksum=0;
+//    for(x=0;x<sizeof(struct NodoEventStruct);x++)
+//      {
+//      b=*(B+x); 
+//      Wire.write(b);
+//      Checksum^=b; 
+//      }
+//    Wire.write(Checksum); 
+//    Wire.endTransmission(false); // verzend de data, sluit af maar geef de bus NIET vrij
+//    }
+//  Wire.endTransmission(true); // Geef de bus vrij
   }
-  else
-    I2C_Event=0L;
-}
-
-boolean SendI2C(unsigned long Event)
-{  
-  byte x;
-  struct NodoEventStruct EventBlock;
-
-  EventBlock.Type      = EventPartType(Event);
-  EventBlock.Unit      = Settings.Unit;
-  EventBlock.Command   = EventPartCommand(Event);
-  EventBlock.Par1      = EventPartPar1(Event);
-  EventBlock.Par2      = EventPartPar2(Event);
-
-  // bereken checksum: crc-8 uit alle bytes in de queue.
-  byte b,*B=(byte*)&EventBlock;
-  byte Checksum=0;
-
-  // verzend Event 
-  Wire.beginTransmission(I2C_ADDRESS);
-  for(x=0;x<sizeof(struct NodoEventStruct);x++)
-  {
-    b=*(B+x); 
-    Wire.write(b);
-    Checksum^=b; 
-  }
-  Wire.write(Checksum); 
-  Wire.endTransmission();
-}
 
 /*********************************************************************************************\
+ * Wachtloop. Als <EventsInQueue>=true dan worden voorbijkomende events in de queue geplaatst
+ *
  * wachtloop die wordt afgebroken als:
  * - <Timeout> seconden zijn voorbij. In dit geval geeft deze funktie een <false> terug.
- * - <BreakNoBusyNodo>==true en alle Nodo's na een "Busy On" ook weer een "Busy Off" hebben verzonden.
  * - <BreakEvent> is opgegeven en dit specifiek opgegeven event is ontvangen.
  * - de Nodo expliciet een "Delay Off" opdracht heeft ontvangen.
  * - Het eerste Event dat voldoet aan Unit en Command is voorbij gekomen.
  \*********************************************************************************************/
-boolean WaitAndQueue(int Timeout, boolean BreakNoBusyNodo, unsigned long BreakEvent, int Unit, int Command)
-{
+boolean Wait(boolean EventsInQueue, int Timeout, unsigned long BreakEventMask,unsigned long BreakEvent)
+  {
   unsigned long TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
-  unsigned long Event=0L;
   int x,y,z,Port;
   boolean error=false, BusyReceived=false;
+  struct NodoEventStruct Event;
 
   Led(BLUE);
-  Queue.Position=0;    
 
-#ifdef NODO_MEGA
-  PrintTerminal(ProgmemString(Text_24));
-#endif
+Serial.println("*** debug: Wait()");//???
+
+  #ifdef NODO_MEGA
+  if(Settings.Debug==VALUE_ON)
+    {
+    if(EventsInQueue)
+      PrintTerminal(ProgmemString(Text_24));// capturing events
+    else
+      PrintTerminal(ProgmemString(Text_25));// delay
+    }
+  #endif
 
   while(TimeoutTimer>millis())
-  {
-    if(BreakNoBusyNodo && Busy.Status==0)
-      break; // Geen Busy Nodo meer
+    {
+    if(ScanEvent(&Event,&Port))
+      {        
+//??? herstellen      UpdateSelect(Event);
 
-    if(GetEvent_IRRF(&Event,&Port))
-    {      
-#ifdef NODO_MEGA
-      CheckRawSignalKey(&Event); // check of er een RawSignal key op de SDCard aanwezig is en vul met Nodo Event. Call by reference!
-      PrintEvent(Event,VALUE_DIRECTION_INPUT,Port);
-#endif
+//      #ifdef NODO_MEGA
+//???herstellen      CheckRawSignalKey(&Event); // check of er een RawSignal key op de SDCard aanwezig is en vul met Nodo Event. Call by reference!
+//      if(Settings.Debug==VALUE_ON)
+//        PrintEvent(Event,VALUE_DIRECTION_INPUT,Port);
+//      #endif
 
-      x=(byte)(EventPartCommand(Event)); // cmd
-      y=(byte)(EventPartUnit(Event)); // unit
-      z=(byte)(EventPartPar1(Event)); // par1
-
-      if(x==CMD_BUSY) // command
-        NodoBusy(Event,0);
-
-      if(BreakEvent!=0 && Event==BreakEvent)
-        break;
-
-      else if(x==CMD_DELAY) // command
-      {
-        if(y==Settings.Unit) // Als commando voor deze unit bestemd
+//      if(BreakEvent!=0 && (Event&BreakEventMask)==BreakEvent)
+//        break;
+// ???herstellen
+                
+//      else if(Event.Command==CMD_TRANSMIT_QUEUE && Event.DestinationUnit==Settings.Unit)
+//        {
+//        Serial.println("*** debug: CMD_TRANSMIT_QUEUE");//???
+//        if(!QueueReceive(z,0,Port))
+//          {
+//          Serial.println("*** debug: Fout tijdens SendTo!");//???
+//          error=MESSAGE_12;
+//          }
+//        }
+//herstellen
+      if(Event.Command==CMD_DELAY) // command
         {
-          if(z==0) // Par1
+        if(Event.DestinationUnit==Settings.Unit) // Als commando voor deze unit bestemd
+          {
+          if(Event.Par1==0) // Par1
             break;// QueueAndWait weer uitschakelen.
+          }
         }
-      }
 
-      // Het is geen Busy event of Queue commando event, dan deze in de queue plaatsen.
-      else if(x!=CMD_BUSY )
-      {
-        // sla event op in de queue. De Nodo-Small heeft de queue is een kleine array <QueueEvent> staan.
-        if(Queue.Position<EVENT_QUEUE_MAX)
+      else
         {
-          Queue.Event[Queue.Position]=Event;
-          Queue.Port[Queue.Position]=Port;
-          Queue.Position++;           
-        }       
-        else
-          error=true;
-      }
-
-      if((Unit!=0 && (Unit==y || Unit==VALUE_ALL)) && (Command==0 || Command==x || Command==VALUE_ALL))
-        break;
+        // sla event op in de queue. De Nodo-Small heeft de queue is een kleine array <QueueEvent> staan.
+        if(EventsInQueue)
+         {
+         if(Queue.Position<EVENT_QUEUE_MAX)
+           {
+           Queue.Event[Queue.Position]=EventStruct2Event(&Event);
+           Queue.Port[Queue.Position]=Port;
+           Queue.Position++;           
+           }       
+         else
+           error=true;
+         }
+       }
     }   
   }
+
   if(TimeoutTimer<=millis())
+    {
     error=true;
-
+    }
+    
+Serial.println("*** debug: Wait() verlaten.");//???
   return !error;
-}
-
-
-/*********************************************************************************************\
- * Controleert of er een Nodo busy is.
- * <Event> event t.b.v. actualiseren status.
- * <Wait> als ongelijk 0, dan wordt opgegeven tijd (seconden) gewacht tot alle Nodos vrij zijn.
- * geeft een true terug als er nog een Nodo busy is.
- \*********************************************************************************************/
-boolean NodoBusy(unsigned long Event, int Wait)
-{
-  int PreviousNodoBusyStatus=Busy.Status;
-
-  if(Event)
-  {
-    // Check of het event een Busy xxx event is en zet de betreffende status van de Nodo
-    if(((Event>>16)&0xff)==CMD_BUSY) // command
-    {
-      if(((Event>>8)&0xff)==VALUE_ON) // Par1
-        Busy.Status  |=  (1<<((Event>>24)&0xf)); // unit nummer
-      else
-        Busy.Status  &= ~(1<<((Event>>24)&0xf)); // unit nummer
-
-      Busy.ResetTimer=Settings.WaitBusyAll;// Na ingestelde tijd automtische reset van de statussen om te voorkomen dat deze Nodo hangt a.g.v. een gemist Busy Off signaal.
-    }
   }
-
-#ifdef NODO_MEGA
-  if(Busy.Status!=0 && Settings.TransmitIP==VALUE_ON)
-  {
-    // geef ook aan de WebApp te kennen dat de Nodo busy is.
-    // Alleen naar de WebApp omdat de bron dit al via RF heeft verzorgd.
-    TransmitCode(command2event(Settings.Unit, CMD_BUSY,VALUE_ON,0),VALUE_SOURCE_HTTP);
-    Busy.BusyOnSent=VALUE_SOURCE_HTTP;
-  }
-#endif
-
-  if(Wait>0 && Busy.Status!=0)
-  {
-#ifdef NODO_MEGA
-    char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
-    if(Settings.Debug==VALUE_ON)
-    {
-      // Geef weer op welke Nodo(s) wordt gewacht
-      strcpy(TempString, ProgmemString(Text_06));
-      for(byte x=1;x<=UNIT_MAX;x++)
-      {
-        if((Busy.Status>>x)&0x1)
-        {
-          strcat(TempString, int2str(x));  
-          strcat(TempString, "  ");         
-        }
-      }
-      PrintTerminal(TempString);
-    }
-    free(TempString);
-#endif
-
-    if(!WaitAndQueue(Wait,true,0,0,0))
-    {
-      RaiseMessage(MESSAGE_13);
-      Busy.Status=0;
-    }
-  }
-  return Busy.Status!=0;
-}
 
 
 /*********************************************************************************************\
@@ -261,9 +216,7 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
   case VALUE_HWCONFIG: 
   case CMD_WAITFREERF: 
   case CMD_UNIT: 
-  case CMD_SENDBUSY:
   case CMD_DEBUG:
-  case CMD_WAITBUSY:
   case CMD_CLOCK_EVENT_DAYLIGHT:
   case CMD_OUTPUT:
   case CMD_VARIABLE_SET:
@@ -337,16 +290,8 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
     *Par2=EventPartPar2(event);      
     break;        
 
-  case CMD_SENDBUSY:
-    *Par1=Settings.SendBusy;
-    break;
-
   case CMD_DEBUG:
     *Par1=Settings.Debug;
-    break;
-
-  case CMD_WAITBUSY:
-    *Par1=Settings.WaitBusyAll;
     break;
 
   case CMD_CLOCK_EVENT_DAYLIGHT:
@@ -359,6 +304,10 @@ boolean GetStatus(byte *Command, byte *Par1, byte *Par2, boolean ReturnStatus)
     {
     case VALUE_SOURCE_IR:
       *Par2=Settings.TransmitIR;
+      break;
+
+    case VALUE_SOURCE_I2C:
+      *Par2=Settings.TransmitI2C;
       break;
 
     case VALUE_SOURCE_RF:
@@ -555,14 +504,14 @@ void ResetFactory(void)
   Settings.Version                    = SETTINGS_VERSION;
   Settings.NewNodo                    = true;
   Settings.Lock                       = 0;
+  Settings.TransmitI2C                = VALUE_OFF;
   Settings.TransmitIR                 = VALUE_OFF;
   Settings.TransmitRF                 = VALUE_ON;
-  Settings.SendBusy                   = VALUE_OFF;
-  Settings.WaitBusyAll                = 30;
   Settings.Unit                       = UNIT_NODO;
-  Settings.WaitFreeRF                 = VALUE_OFF;
+  Settings.WaitFreeRF                 = VALUE_ON;
 
 #ifdef NODO_MEGA
+  Settings.WaitFreeRF                 = VALUE_OFF;
   Settings.TransmitIP                 = VALUE_OFF;
   Settings.Debug                      = VALUE_OFF;
   Settings.HTTPRequest[0]             = 0; // string van het HTTP adres leeg maken
@@ -1106,16 +1055,15 @@ boolean Eventlist_Read(int address, unsigned long *Event, unsigned long *Action)
 
 
 void RaiseMessage(byte MessageCode)
-{
+  {
   unsigned long eventcode;
   int x;
 
   eventcode=command2event(Settings.Unit,CMD_MESSAGE, Settings.Unit, MessageCode);
-  PrintEvent(eventcode,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM);  // geef event weer op Serial
   TransmitCode(eventcode,VALUE_ALL);
   ProcessEvent2(eventcode,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_SYSTEM,0,0);
   LastMessage=MessageCode;
-}
+  }
 
 
 /**********************************************************************************************\
@@ -2034,4 +1982,44 @@ void UndoNewNodo(void)
   }
 }
 
+boolean UpdateSelect(unsigned long Event)
+  {
+  byte Cmd  = EventPartCommand(Event); // Command
+  byte Par1 = EventPartPar1(Event);    // Par1
+  byte Unit = EventPartUnit(Event);    // Par2
+
+  static int Select=0;                                               // Unitnummer dat exclusief van communicatie gebruik mag maken. Geldt voor I2C, IR en RF.
+  static unsigned long SelectTime=0L;                                // Tijdstip waarop de exclusieve claim is gedaan.
+
+//onderscheid tussen binnenkomende select en uitgaand verzoek. hoe oplossen
+//Command [Select] en Event[Selected] ??
+//Dit maakt onderscheid tussen een master en een slave: 
+//A: Master ls van lege lijn DEZE nodo een select doet
+//B: Slave als andere Nodo een claim doet.
+//
+//Als deze unit is opgegeven, dan moet het select event worden verzonden
+
+
+
+//  // Status van Select bijwerken en alleen uitvoeren als Select op deze unit of leeg
+//  if((Unit==0 || Unit==Settings.Unit) && Cmd==CMD_SELECT)
+//    {
+//    Select=Par1;
+//    SelectTime=millis();
+//    Serial.print("*** debug: Select=");Serial.println(Par1); //??? Debug
+//    }
+//
+//  if((SelectTime+MAX_SELECT_TIME)<millis())
+//    Select=0;    
+//  else if (!(Select==0 || Select==Settings.Unit))
+//    {
+//    Led(BLUE);
+//    return false;
+//    }
+//  else
+//    SelectTime=millis();    
+//
+  return true;
+  }    
+    
 

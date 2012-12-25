@@ -11,7 +11,7 @@ void PrintEvent(unsigned long Content, byte Direction, byte Port )
   // op een terminal scherm moet worden weergegevn
   
   // Commando(s) die NIET aan de gebruiker getoond hoeven te worden.
-  switch((Content>>16)&0xff)// Cmd
+  switch(EventPartCommand(Content))
     {
     case CMD_TRANSMIT_QUEUE:
       return;
@@ -307,7 +307,6 @@ void Event2str(unsigned long Code, char* EventString)
       break;
 
       // Par1 als waarde en par2 als tekst
-    case CMD_WAITBUSY:
     case CMD_RAWSIGNAL_SEND:
     case CMD_DELAY:
     case CMD_WIRED_PULLUP:
@@ -335,15 +334,14 @@ void Event2str(unsigned long Code, char* EventString)
     case CMD_DEBUG:
     case CMD_LOG:
     case CMD_ECHO:
-    case CMD_BUSY:
     case CMD_WAITFREERF:
-    case CMD_SENDBUSY:
     case CMD_BREAK_ON_DAYLIGHT:
       P1=P_TEXT;
       P2=P_NOT;
       break;
 
       // Par1 als waarde en par2 niet
+    case CMD_SELECT:
     case CMD_EVENTLIST_SHOW:
     case CMD_EVENTLIST_ERASE:
     case CMD_FILE_EXECUTE:

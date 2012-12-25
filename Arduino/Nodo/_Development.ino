@@ -15,7 +15,9 @@
 - Issue 643: in arduino-nodo: WaitFreeRF als user define
 
 @@@@ Next:
-
+- Issue 648: Voorkomen van I2C busconflicten bij uitlezen clock
+- Syntax [SendBusy] gewijzigd.
+- ClockSync: Par2 kan de poort worden opgegeven: IR, RF, I2C. Zonder opgave van poort wordt RF gebruikt.
 
 
 \*****************************************************************************************/

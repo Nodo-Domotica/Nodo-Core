@@ -2,7 +2,7 @@
 #define EventPartUnit(Event)      ((Event>>24)&0x0f)
 #define EventPartCommand(Event)   ((Event>>16)&0xff)
 #define EventPartPar1(Event)      ((Event>>8) &0xff)
-#define EventPartPar2(Event)      (Event      &0xff)
+#define EventPartPar2(Event)      ( Event     &0xff)
 #define EventPart4Bit(Event)      ((Event>>12)&0x0f)
 #define EventPart10Bit(Event)     (Event&0x3ff)
 #define EventPart16Bit(Event)     (Event&0xffff)
@@ -62,7 +62,6 @@ byte Commanderror(unsigned long InEvent)
     {
     //test; geen, altijd goed
     case CMD_LOCK:
-    case CMD_WAITBUSY:
     case CMD_TRANSMIT_QUEUE:
     case CMD_EVENTLIST_ERASE:
     case CMD_RESET:
@@ -144,6 +143,7 @@ byte Commanderror(unsigned long InEvent)
     case CMD_NEWNODO:
     case CMD_CLOCK_SYNC:
     case CMD_BOOT_EVENT:
+    case CMD_SELECT:
       if(Par1<1 || Par1>UNIT_MAX)return MESSAGE_02;
       return false;
 
@@ -205,14 +205,11 @@ byte Commanderror(unsigned long InEvent)
       if(Par2!=VALUE_ON && Par2!=VALUE_OFF)return MESSAGE_02;
       return false;
 
-    case CMD_SENDBUSY:
-      if(Par1!=0 && Par1!=VALUE_OFF && Par1!=VALUE_ON && Par1!=VALUE_ALL)return MESSAGE_02;
-      return false;
-
     case CMD_SEND_EVENT:
       switch(Par1)
         {
         case VALUE_ALL:
+        case VALUE_SOURCE_I2C:
         case VALUE_SOURCE_IR:
         case VALUE_SOURCE_RF:
 #ifdef NODO_MEGA
@@ -228,6 +225,7 @@ byte Commanderror(unsigned long InEvent)
       switch(Par1)
         {
         case VALUE_ALL:
+        case VALUE_SOURCE_I2C:
         case VALUE_SOURCE_IR:
         case VALUE_SOURCE_RF:
         case VALUE_SOURCE_SERIAL:
@@ -248,14 +246,13 @@ byte Commanderror(unsigned long InEvent)
 
      // par1 alleen On of Off.
      // par2 mag alles zijn
-    case CMD_BUSY:
     case CMD_BREAK_ON_DAYLIGHT:
     case CMD_WAITFREERF:
       if(Par1!=VALUE_OFF && Par1!=VALUE_ON)return MESSAGE_02;
       return false;
 
     case CMD_OUTPUT:
-      if(Par1!=VALUE_SOURCE_IR && Par1!=VALUE_SOURCE_RF && Par1!=VALUE_SOURCE_HTTP)return MESSAGE_02;
+      if(Par1!=VALUE_SOURCE_I2C && Par1!=VALUE_SOURCE_IR && Par1!=VALUE_SOURCE_RF && Par1!=VALUE_SOURCE_HTTP)return MESSAGE_02;
       if(Par2!=VALUE_OFF && Par2!=VALUE_ON)return MESSAGE_02;
       return false;
 
@@ -391,6 +388,10 @@ boolean ExecuteCommand(unsigned long InEvent, int Src, unsigned long PreviousInE
         error=true;
       break;
 
+    case CMD_SELECT:
+      UpdateSelect(Event);
+      break;
+
     case CMD_SEND_USEREVENT:
       // Voeg Unit=0 want een UserEvent is ALTIJD voor ALLE Nodo's. Verzend deze vervolgens.
       TransmitCode(command2event(Settings.Unit, CMD_USEREVENT,Par1,Par2),VALUE_ALL);
@@ -429,7 +430,7 @@ boolean ExecuteCommand(unsigned long InEvent, int Src, unsigned long PreviousInE
       // ClockSync stuurt de juise klokinstellingen naar een andere Nodo. Als het opgegeven unitnummer het eigen unitnummer is
       // dan wordt het verzoek naar HTTP verzonden.
       
-      if(Par1==Settings.Unit)
+      if(Par1==Settings.Unit || Par1==0)
         {
         SendHTTPEvent(command2event(Settings.Unit, CMD_CLOCK_SYNC,Par1,0));
         }
@@ -439,8 +440,14 @@ boolean ExecuteCommand(unsigned long InEvent, int Src, unsigned long PreviousInE
         Queue.Event[Queue.Position]=command2event(Par1, CMD_CLOCK_DATE,Time.Date,Time.Month);Queue.Port[Queue.Position++]=VALUE_SOURCE_SYSTEM;
         Queue.Event[Queue.Position]=command2event(Par1, CMD_CLOCK_TIME,Time.Hour,Time.Minutes);Queue.Port[Queue.Position++]=VALUE_SOURCE_SYSTEM;
         Queue.Event[Queue.Position]=command2event(Par1, CMD_CLOCK_DOW ,Time.Day,0);Queue.Port[Queue.Position++]=VALUE_SOURCE_SYSTEM;
-        if(!QueueSend(Par1,true))
-          RaiseMessage(MESSAGE_12);
+        
+        if(Par2==0)
+          x=VALUE_SOURCE_RF;
+        else
+          x=Par2;
+          
+        if(!QueueSend(Par1,x))
+          error=MESSAGE_12;
         }
       break;
     #endif
@@ -518,14 +525,14 @@ boolean ExecuteCommand(unsigned long InEvent, int Src, unsigned long PreviousInE
       break;
 
     case CMD_WAIT_EVENT:// WaitEvent <unit>, <command>
-      WaitAndQueue(60,false,0,Par1,Par2);
+      Wait(true,60,0x0FFF0000,((unsigned long)Par1)<<24 | ((unsigned long)Par1)<<16);//?? Testen
       break;
 
     case CMD_DELAY:
       if(Par2==VALUE_SOURCE_QUEUE)    
-        WaitAndQueue(Par1,false,0,0,0);
+        Wait(true,Par1,0,0);
       else      
-        delay(Par1*1000);      
+        Wait(false,Par1,0,0);
       break;        
       
     case CMD_SEND_EVENT:
@@ -579,34 +586,12 @@ boolean ExecuteCommand(unsigned long InEvent, int Src, unsigned long PreviousInE
       Settings.WaitFreeRF=Par1;
       break;
 
-    case CMD_SENDBUSY:
-      if(Par1==VALUE_ALL)
-        {// All
-        Settings.SendBusy=Par1;
-        
-        }
-      else
-        {// on / off 
-        if(Settings.SendBusy==VALUE_ALL && Par1==VALUE_OFF)
-          {// De SendBusy mode moet worden uitgeschakeld
-          Settings.SendBusy=VALUE_OFF;
-          
-          }
-        else
-          TransmitCode(command2event(Settings.Unit, CMD_BUSY,Par1,0),VALUE_ALL);
-        }
-      break;
-            
-    case CMD_WAITBUSY: // WaitBusy <TimeOut> , <All>
-      if(Par2==VALUE_ALL)
-        Settings.WaitBusyAll=Par1;
-      else
-        NodoBusy(0L, Par1);
-      break;
-
     case CMD_OUTPUT:
       switch(Par1)
         {
+        case VALUE_SOURCE_I2C:
+          Settings.TransmitI2C=Par2;
+          break;       
         case VALUE_SOURCE_IR:
           Settings.TransmitIR=Par2;
           break;       
@@ -665,8 +650,6 @@ boolean ExecuteCommand(unsigned long InEvent, int Src, unsigned long PreviousInE
       break;
 
     case CMD_UNIT:
-      if(Busy.BusyOnSent)
-        TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
       Settings.Unit=Par1;
       Save_Settings();
       FactoryEventlist();      
@@ -674,8 +657,6 @@ boolean ExecuteCommand(unsigned long InEvent, int Src, unsigned long PreviousInE
 
     case CMD_REBOOT:
       delay(1000);
-      if(Busy.BusyOnSent)
-        TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
       Reset();
       break;        
 
@@ -684,8 +665,6 @@ boolean ExecuteCommand(unsigned long InEvent, int Src, unsigned long PreviousInE
       break;
       
     case CMD_RESET:
-      if(Busy.BusyOnSent)
-        TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),VALUE_ALL);
       ResetFactory();
 
     case CMD_EVENTLIST_ERASE:
@@ -746,23 +725,23 @@ boolean ExecuteCommand(unsigned long InEvent, int Src, unsigned long PreviousInE
       RawSignal.Key=Par1;
       break;              
 
-    case CMD_RAWSIGNAL_SEND:
-      if(Par1!=0)
-        {
-        if(RawSignalGet(Par1))
-          {
-          x=VALUE_ALL;
-          if(Par2==VALUE_SOURCE_RF || Par2==VALUE_SOURCE_IR)
-            x=Par2;
-          TransmitCode(AnalyzeRawSignal(),x);
-          }
-        else
-          error=MESSAGE_03;
-        }
-      else
-        TransmitCode(AnalyzeRawSignal(),VALUE_ALL);
-      break;        
-
+//    case CMD_RAWSIGNAL_SEND:
+//      if(Par1!=0)
+//        {
+//        if(RawSignalGet(Par1))
+//          {
+//          x=VALUE_ALL;
+//          if(Par2==VALUE_SOURCE_RF || Par2==VALUE_SOURCE_IR)
+//            x=Par2;
+//          TransmitCode(AnalyzeRawSignal(),x);
+//          }
+//        else
+//          error=MESSAGE_03;
+//        }
+//      else
+//        TransmitCode(AnalyzeRawSignal(),VALUE_ALL);
+//      break;        
+//??? 
     case CMD_FILE_EXECUTE:
       char *TempString=(char*)malloc(50);
       strcpy(TempString,cmd2str(CMD_FILE_EXECUTE));
@@ -873,14 +852,6 @@ int ExecuteLine(char *Line, byte Port)
               Par2=str2int(TmpStr1);
             }        
   
-          // Geef aan de WebApp en andere Nodo's te kennen dat deze Nodo bezig is met verwerking
-          // Maar niet met het SendTo commando, ander is de Slave niet bereikbaar!
-          if(Cmd!=CMD_SEND && Settings.SendBusy==VALUE_ALL && Busy.BusyOnSent==0)
-            {
-            TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_ON,0),VALUE_ALL);
-            Busy.BusyOnSent=VALUE_ALL;
-            }
-
           // Hier worden de commando's verwerkt die een afwijkende MMI hebben.
           switch(Cmd)
             {
@@ -1447,7 +1418,7 @@ int ExecuteLine(char *Line, byte Port)
 
     if(SendTo!=0)// Verzend de inhoud van de queue naar de slave Nodo
       {
-      if(!QueueSend(SendTo,SendToOption==VALUE_ON?false:true))
+      if(!QueueSend(SendTo,SendToOption))
         RaiseMessage(MESSAGE_12);
       }
     }
@@ -1458,12 +1429,6 @@ int ExecuteLine(char *Line, byte Port)
 
   // Verwerk eventuele events die in de queue zijn geplaatst.
   ProcessQueue();
-
-  if(Busy.BusyOnSent)
-    {
-    TransmitCode(command2event(Settings.Unit,CMD_BUSY,VALUE_OFF,0),Busy.BusyOnSent);
-    Busy.BusyOnSent=0;
-    }
 
   return error;
   }

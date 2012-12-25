@@ -28,12 +28,12 @@
 #define PULSE_TIME_DIVIDE            1                             // PulseTime geeft waarden van 0..60000 milliseconden. Door de deelfactor te vergroten kan de tijdseenheid worden vergroot. 1000-seconden
 #define PULSE_DEBOUNCE_TIME         10                             // pulsen kleiner dan deze waarde worden niet geteld. Bedoeld on verstoringen a.g.v. ruis of dender te voorkomen
 #define PULSE_TRANSITION       FALLING                             // FALLING of RISING: Geeft aan op welke flank de PulseCounter start start met tellen. Default FALLING
-
+#define I2C_ADDRESS                  1                             // Adres van de Nodo op de I2C bus is I2C_ADDRESS + Unitnummer. Eventueel kan een andere range worden gekozen. LET OP: RTC-Klok op 104
 
 #if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)     // NIET veranderen
   #define NODO_MEGA          1                                     // NIET veranderen !
   #define UNIT_NODO          1                                     // default unit nummer na een [Reset] commando
-  #define ETHERNET           1                                     // op 0 zetten als ethernet kaart niet aanwezig
+  #define ETHERNET           0//???                                     // op 0 zetten als ethernet kaart niet aanwezig
   
 
   // Keuze tussen SMALL of MEGA: **********************************************************************************************
