@@ -1,29 +1,19 @@
 /********************* Aanpassingen t.o.v. versie 3.0.1  **********************************\
-@@@@@ Todo:
-- eventlist nummering bij printen event niet correct (geleende variabele uit struct)
-- aanpassen unitnmmer leidt tot timeout error
-- Werkt event NewNodo nog wel?
-- Status all uitvraag op small:
-  * past niet in queue, geen alternatief zonder queue
-  * geeft vreemde resultate, worden opgevangen instructies ook door master uitgevoerd? (Display only flag toevoegen)
-  * 
-  
-- dubbele error als er tijdens de sendto een fout is opgetreden.
-- RawSignals nog in Par-2 (32-bit) opnemen
-- Commando SendEvent herstellen.
-- hoe worden rawsignal/hex events in de struct opgeslagen? nog uitwerken.
+Nog te doen:
+- aanpassen unitnmmer, reset en reboot via SendTo leidt tot timeout error
+- Status all uitvraag op small: Past niet in queue, geen alternatief zonder queue
+- Commando [Select]: Hiermee kan worden opgegeven dat events naar een specifieke Nodo moeten worden verzonden. Een niet geselecteerde Nodo kan ook niet zenden.
+- RawSignals geheel aanpassen
+- Commando SendEvent herstellen. ??
 - ClockSync: Par2 kan de poort worden opgegeven: IR, RF, I2C. Zonder opgave van poort wordt RF gebruikt.
-- bij verzenden moet unitnummer van de bestemming worden weergeven
 - testen: werkt ClockSync ook voor unit-0 dus alle units?
-- testen: RawSignal opslaan, ontvangen en verzenden. Dit i.v.m. verwijderen RawSignal.Type
-- in flags: show event only versus verwerken event.
-- CRC een XOR met BUILD
-- herhalingen rf onderdrukken
+- CRC een XOR met BUILD???
+- UserEvents compatibel oude Nodo versies 32-bit?
+- UserPlugin
 
 *****************************************************************************************
 
-- Commando's die via een [SendTo] worden ontvangen op een mega worden nu ook weergegeven
-- Reactietijd an HTTP event naar RF output versneld.
+- Reactietijd van HTTP event naar RF output versneld.
 - Melding ophalen IP adres via DHCP bij booten
 - Issue 632: R487 mini variabelen worden niet meer doorgestuurd via rf
 - Issue 633: Verwerken Queue vindt soms laat plaats
@@ -36,16 +26,19 @@
 - Issue 643: in arduino-nodo: WaitFreeRF als user define
 
 @@@@ Next:
+- I2C communicatie tussen Nodo's.
 - Issue 648: Voorkomen van I2C busconflicten bij uitlezen clock
-- ClockAll, ClockSun...ClockSat zijn vervallen. Hiervoor in de plaats gekomen het event [Time] 
+- SendTo voor RF versneld.
+- SendTo kiest automatisch kanaal I2C, RF of IR.
+- SendTo doet Retry bij een checksum error;
+- commando [Status EventlistCount] geeft nu ook aantal vrije plaatsen in de eventlist
+- ClockAll, ClockSun...ClockSat zijn vervallen. Hiervoor in de plaats gekomen het event [Time hh:mm,day] 
 - AlarmSet werkt nu ook met tijdweergave hh:mm en wildcards in de tijd.
 - [SendBusy], [WaitBusy] en [Busy] zijn komen te vervallen.
-- in code instelbare minimale tijd tussen verzenden events.
 - Commando delay vereenvoudigd. Er wordt altijd gequeued, mits de events ook voor deze unit bestemd zijn
-- Commando [Select] toegevoegd: Hiermee kan worden opgegeven dat events naar een specifieke Nodo moeten worden verzonden. Een niet geselecteerde Nodo kan ook niet zenden.
 - Eventlist default leeg.
 - Veranderen van unit nummer zonder wissen eventlist.
-- [SendTo] Hoeft niet voor iedere regel. Eenmalig inschakelen en eenmalig uitschakelen. Werkt nu ook op een Small.
-
+- 32 unit nummers beschikbaar.
+- Bij error tijdens uitvoer van een script wordt de verwerking gestopt. Tenzij de continue_on_error mode: [FileExecute <script>, ON]
 
 \*****************************************************************************************/

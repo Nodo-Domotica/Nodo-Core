@@ -1,13 +1,14 @@
 #ifdef NODO_MEGA
+
+
 /*********************************************************************************************\
  * Print een event volgens formaat:  'EVENT/ACTION: <port>, <type>, <content>
  \*********************************************************************************************/
 void PrintEvent(struct NodoEventStruct *Event)
   {
   int x;
-
-//  PrintNodoEventStruct("PrintEvent:",Event);//???
   
+
   // Systeem events niet weergeven.
   if(Event->Flags & TRANSMISSION_SYSTEM)
     return;
@@ -24,36 +25,36 @@ void PrintEvent(struct NodoEventStruct *Event)
     x=Event->Checksum*256+Event->Direction;
     Event->Direction=VALUE_DIRECTION_INTERNAL;
     }
-
+  
   // Direction
   if(Event->Direction)
     {
     strcat(StringToPrint,cmd2str(Event->Direction));      
     strcat(StringToPrint,"=");
+  
+    // Poort
+    strcat(StringToPrint, cmd2str(Event->Port));
+    if(Event->Port==VALUE_SOURCE_HTTP || Event->Port==VALUE_SOURCE_TELNET)
+      {
+      strcat(StringToPrint, "(");
+      strcat(StringToPrint, ip2str(ClientIPAddress));
+      strcat(StringToPrint, ")");
+      }
+      
+    if(Event->Port==VALUE_SOURCE_EVENTLIST)
+      {
+      // print de nessting diepte van de eventlist en de regel uit de eventlist.
+      // deze staan tijdelijk opgeslagen in Flags, Checksum en Direction.
+      strcat(StringToPrint, "(");
+      strcat(StringToPrint, int2str(Event->Flags-1));
+      strcat(StringToPrint, ".");
+      strcat(StringToPrint, int2str(x));
+      strcat(StringToPrint, ")");
+      }
+    strcat(StringToPrint, "; "); 
     }
-
-  // Poort
-  strcat(StringToPrint, cmd2str(Event->Port));
-  if(Event->Port==VALUE_SOURCE_HTTP || Event->Port==VALUE_SOURCE_TELNET)
-    {
-    strcat(StringToPrint, "(");
-    strcat(StringToPrint, ip2str(ClientIPAddress));
-    strcat(StringToPrint, ")");
-    }
-  if(Event->Port==VALUE_SOURCE_EVENTLIST)
-    {
-    // print de nessting diepte van de eventlist en de regel uit de eventlist.
-    // deze staan tijdelijk opgeslagen in Flags, Checksum en Direction.
-    strcat(StringToPrint, "(");
-    strcat(StringToPrint, int2str(Event->Flags-1));
-    strcat(StringToPrint, ".");
-    strcat(StringToPrint, int2str(x));
-    strcat(StringToPrint, ")");
-    }
-
 
   // Unit 
-  strcat(StringToPrint, "; "); 
   strcat(StringToPrint, cmd2str(CMD_UNIT));
   strcat(StringToPrint, "=");  
   if(Event->Direction==VALUE_DIRECTION_OUTPUT)
@@ -78,12 +79,12 @@ void PrintEvent(struct NodoEventStruct *Event)
     if(bitRead(HW_Config,HW_CLOCK)) // bitRead(HW_Config,HW_CLOCK)=true want dan is er een RTC aanwezig.
       {   
       strcat(TmpStr,DateTimeString());
-      strcat(TmpStr,", ");
+      strcat(TmpStr,"; ");
       }
     strcat(TmpStr,StringToPrint);
     AddFileSDCard(ProgmemString(Text_23),TmpStr);
     }
-    
+
   free(TmpStr);
   free(StringToPrint);
   } 
@@ -170,7 +171,6 @@ void PrintWelcome(void)
  \*********************************************************************************************/
 void PrintTerminal(char* LineToPrint)
   {  
-  
   if(bitRead(HW_Config,HW_SERIAL))
     Serial.println(LineToPrint);
 
@@ -200,7 +200,6 @@ void PrintTerminal(char* LineToPrint)
 void Event2str(struct NodoEventStruct *Event, char* EventString)
   {
   int x;
-  
   EventString[0]=0;
 
   // Enkele events/commando's hebben een geheel afwijkede weergave. Deze worden hieronder afzonderlijk opgebouwd.
@@ -337,7 +336,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_SENDTO:
       case CMD_EVENTLIST_SHOW:
       case CMD_EVENTLIST_ERASE:
-      case CMD_FILE_EXECUTE:
       case CMD_CLOCK_SYNC:
       case CMD_TIMER_EVENT:
       case CMD_UNIT:
@@ -350,6 +348,12 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         ParameterToView[0]=PAR1_INT;
         break;
 
+      // Par2 int en par1 als tekst
+      case CMD_FILE_EXECUTE:
+        ParameterToView[0]=PAR2_INT;
+        ParameterToView[1]=PAR1_TEXT;
+        break;
+        
       // geen parameters.
       case CMD_REBOOT:
       case CMD_RESET:
@@ -484,7 +488,7 @@ int ExecuteLine(char *Line, byte Port)
   unsigned long a;
   struct NodoEventStruct EventToExecute,TempEvent;
 
-  Serial.print(F("*** debug: ExecuteLine="));Serial.println(Line); //??? Debug
+//  Serial.print(F("*** debug: ExecuteLine="));Serial.println(Line); //??? Debug
 
   Led(RED);
 
@@ -534,7 +538,7 @@ int ExecuteLine(char *Line, byte Port)
         {
         Command[CommandPos]=0;
         CommandPos=0;
-Serial.print(F("*** debug: Command="));Serial.println(Command); //??? Debug
+// Serial.print(F("*** debug: Command="));Serial.println(Command); //??? Debug
         ClearEvent(&EventToExecute);
         EventToExecute.Port=Port;
         
@@ -1009,9 +1013,7 @@ Serial.print(F("*** debug: Command="));Serial.println(Command); //??? Debug
             if(GetArgv(Command,TmpStr1,2))
               {
               strcat(TmpStr1,".dat");
-              SelectSD(true);
-              SD.remove(TmpStr1);
-              SelectSD(false);
+              FileErase(TmpStr1);
               }
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
@@ -1037,55 +1039,7 @@ Serial.print(F("*** debug: Command="));Serial.println(Command); //??? Debug
               {
               Led(BLUE);
               strcat(FileName,".dat");
-              SelectSD(true);
-              File dataFile=SD.open(FileName);
-              if(dataFile) 
-                {
-                SelectSD(false);
-                PrintTerminal(ProgmemString(Text_22));
-                SelectSD(true);
-
-                // Als de file groter is dan 10K, dan alleen laatste stuk laten zien
-                if(EventToExecute.Par2 != VALUE_ALL)
-                  {
-                  a=dataFile.size();
-                  if(a>10000)
-                    {
-                    w=dataFile.seek(a-10000UL);                    
-                    while(dataFile.available() && isprint(dataFile.read())); // ga naar eerstvolgende nieuwe regel
-                    SelectSD(false);
-                    PrintTerminal(ProgmemString(Text_09));
-                    SelectSD(true);
-                    }
-                  }
-
-                TmpStr2[0]=0;
-                y=0;       
-                while(dataFile.available())
-                  {
-                  x=dataFile.read();
-                  if(isprint(x) && y<INPUT_BUFFER_SIZE)
-                    {
-                    TmpStr2[y++]=x;
-                    }
-                  else
-                    {
-                    TmpStr2[y]=0;
-                    y=0;
-                    SelectSD(false);
-                    PrintTerminal(TmpStr2);
-                    SelectSD(true);
-                    }
-                  }
-                dataFile.close();
-                SelectSD(false);
-                PrintTerminal(ProgmemString(Text_22));
-                }  
-              else
-                {
-                SelectSD(false);
-                error=MESSAGE_03;
-                }
+              error=FileShow(FileName);
               }
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
@@ -1093,15 +1047,21 @@ Serial.print(F("*** debug: Command="));Serial.println(Command); //??? Debug
     
           case CMD_FILE_EXECUTE:
             {
-            char FileName[13];
-            TmpStr1[8]=0;// voor de zekerheid te lange filename afkappen
-            if(GetArgv(Command,FileName,2))
+            if(EventToExecute.Par2==VALUE_ON)
+              EventToExecute.Par1=VALUE_ON;
+            else
+              EventToExecute.Par1=VALUE_OFF;
+            
+            if(GetArgv(Command,TmpStr1,2))
               {
+              EventToExecute.Par2=str2int(TmpStr1);
               if(State_EventlistWrite==0)
+                {
                 // Commando uitvoeren heeft alleen zin er geen eventlistwrite commando actief is
-                error=FileExecute(FileName, EventToExecute.Par2==VALUE_ON);        
+                error=FileExecute(TmpStr1, EventToExecute.Par1==VALUE_ON);
+                EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+                }
               }
-            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
             }
     
@@ -1165,7 +1125,6 @@ Serial.print(F("*** debug: Command="));Serial.println(Command); //??? Debug
               strcat(TmpStr1,".dat");
               if(!SaveEventlistSDCard(TmpStr1))
                 {
-                bitWrite(HW_Config,HW_SDCARD,0);
                 error=MESSAGE_14;
                 break;
                 }
@@ -1213,11 +1172,7 @@ Serial.print(F("*** debug: Command="));Serial.println(Command); //??? Debug
             }            
 
           case CMD_FILE_LIST:
-            if(!FileList())
-              {
-              bitWrite(HW_Config,HW_SDCARD,0);
-              error=MESSAGE_14;
-              }
+            error-FileList();
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
 
@@ -1265,10 +1220,10 @@ Serial.print(F("*** debug: Command="));Serial.println(Command); //??? Debug
 
           default:
             {              
-//            // Als het geen regulier commando was EN geen commando met afwijkende MMI, dan kijken of file op SDCard staat)
-//            strcpy(TmpStr1,Command);
-//            TmpStr1[8]=0;// Gebruik commando als een filename. Voor de zekerheid te lange filename afkappen ???? dit zorgt ook voor afkappen van commando bij foutcode
-//            error=FileExecute(Command, EventToExecute.Par1==VALUE_ON);
+            // Als het geen regulier commando was EN geen commando met afwijkende MMI, dan kijken of file op SDCard staat)
+            strcpy(TmpStr1,Command);
+            TmpStr1[8]=0;// Gebruik commando als een filename. Voor de zekerheid te lange filename afkappen ???? dit zorgt ook voor afkappen van commando bij foutcode
+            error=FileExecute(TmpStr1, EventToExecute.Par2==VALUE_ON);
             EventToExecute.Command=0;
 
             // als script niet te openen, dan is het ingevoerde commando ongeldig.
@@ -1350,7 +1305,6 @@ Serial.print(F("*** debug: Command="));Serial.println(Command); //??? Debug
   else
     QueueProcess();
     
-  Serial.print(F("*** debug: (2) error="));Serial.println(error); //??? Debug
   return error;
   }
 
@@ -1395,7 +1349,6 @@ void PrintWelcome(void)
  \*********************************************************************************************/
 void PrintEvent(struct NodoEventStruct *Event)
   {
-  // Trace(0,0,0);
   Serial.print(Event->Direction);
   Serial.print(",");
   Serial.print(Event->Port);

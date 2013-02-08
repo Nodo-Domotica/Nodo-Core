@@ -1,3 +1,261 @@
+//#######################################################################################################
+//##################################### Misc: EEPROM / Eventlist  #######################################
+//#######################################################################################################
+
+
+ // Niet alle gegevens uit een event zijn relevant. Om ruimte in EEPROM te besparen worden uitsluitend
+ // de alleen noodzakelijke gegevens in EEPROM opgeslagen. Hiervoor een struct vullen die later als
+ // één blok weggeschreven kan worden.
+
+ struct EventlistStruct
+   {
+   byte EventCommand;
+   byte EventPar1;
+   unsigned long EventPar2;
+   
+   byte ActionCommand;
+   byte ActionPar1;
+   unsigned long ActionPar2;
+   }EEPROM_Block;
+
+
+/**********************************************************************************************\
+ * Schrijft een event in de Eventlist. Deze Eventlist bevindt zich in het EEPROM geheugen.
+ \*********************************************************************************************/
+boolean Eventlist_Write(int address, struct NodoEventStruct *Event, struct NodoEventStruct *Action)// LET OP: Gebruikers input. Eerste adres=1
+  {
+  struct EventlistStruct EEPROM_Block;
+ 
+  EEPROM_Block.EventCommand=Event->Command;
+  EEPROM_Block.EventPar1=Event->Par1;
+  EEPROM_Block.EventPar2=Event->Par2;
+ 
+  EEPROM_Block.ActionCommand=Action->Command;
+  EEPROM_Block.ActionPar1=Action->Par1;
+  EEPROM_Block.ActionPar2=Action->Par2;
+   
+  // als opgegeven adres=0, zoek dan de eerste vrije plaats.
+  if(address==0)
+    {
+    struct NodoEventStruct dummy;
+    ClearEvent(&dummy);
+    address++;
+    while(Eventlist_Read(address,&dummy,&dummy) && dummy.Command!=0)address++;
+    }
+
+  address--;                                                                          // echte adressering begint vanaf nul. voor de user vanaf 1.
+  address=address*sizeof(struct EventlistStruct) + sizeof(struct SettingsStruct);     // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer deze bytes. Deze niet te gebruiken voor de Eventlist!
+  byte *B=(byte*)&EEPROM_Block;                                                       // B wijst naar de eerste byte van de struct
+
+  for(int x=0;x<sizeof(struct EventlistStruct);x++) // schrijf alle bytes van de struct
+    {
+    if(address<EEPROM_SIZE)
+      EEPROM.write(address++, *(B+x));
+    else
+      return false;
+    }
+
+  return true;
+  }
+
+/**********************************************************************************************\
+ * 
+ * Revision 01, 09-12-2009, P.K.Tonkes@gmail.com
+ \*********************************************************************************************/
+boolean Eventlist_Read(int address, struct NodoEventStruct *Event, struct NodoEventStruct *Action)// LET OP: eerste adres=1
+  {
+  struct EventlistStruct EEPROM_Block;
+
+  ClearEvent(Event);
+  ClearEvent(Action);
+
+  address--;// echte adressering begint vanaf nul. voor de user vanaf 1.
+  address=address*sizeof(struct EventlistStruct) + sizeof(struct SettingsStruct);     // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer deze bytes. Deze niet te gebruiken voor de Eventlist!
+  byte *B=(byte*)&EEPROM_Block; // B wijst naar de eerste byte van de struct
+
+  for(int x=0;x<sizeof(struct EventlistStruct);x++) // schrijf alle bytes van de struct
+    {
+    if(address<EEPROM_SIZE)
+      *(B+x)=EEPROM.read(address++);
+    else
+      return false;
+    }
+
+  Event->Command=EEPROM_Block.EventCommand;
+  Event->Par1=EEPROM_Block.EventPar1;
+  Event->Par2=EEPROM_Block.EventPar2;
+  
+  Action->Command=EEPROM_Block.ActionCommand;
+  Action->Par1=EEPROM_Block.ActionPar1;
+  Action->Par2=EEPROM_Block.ActionPar2;
+  Action->Port=VALUE_SOURCE_EVENTLIST;
+  Action->Direction=VALUE_DIRECTION_INPUT;
+  return true;
+  }
+
+
+void RaiseMessage(byte MessageCode)
+  {
+  int x;
+
+  // voor enkele foutcodes moet een setting worden aangepast om te voorkomen
+
+  struct NodoEventStruct TempEvent;
+  ClearEvent(&TempEvent);
+  TempEvent.Port      = VALUE_ALL;
+  TempEvent.Command   = CMD_MESSAGE;
+  TempEvent.Par1      = Settings.Unit;
+  TempEvent.Par2      = MessageCode;
+
+  SendEvent(&TempEvent,false,true);
+  }
+
+
+/**********************************************************************************************\
+ * Geef een geluidssignaal met toonhoogte van 'frequentie' in Herz en tijdsduur 'duration' in milliseconden.
+ * LET OP: toonhoogte is slechts een grove indicatie. Deze routine is bedoeld als signaalfunctie
+ * en is niet bruikbaar voor toepassingen waar de toonhoogte zuiver/exact moet zijn. Geen PWM.
+ * Definieer de constante:
+ * #define PIN_SPEAKER <LuidsprekerAansluiting>
+ * Neem in setup() de volgende regel op:
+ * pinMode(PIN_SPEAKER, OUTPUT);
+ * Routine wordt verlaten na beeindiging van de pieptoon.
+ * Revision 01, 13-02-2009, P.K.Tonkes@gmail.com
+ \*********************************************************************************************/
+
+void Beep(int frequency, int duration)//Herz,millisec 
+{
+  long halfperiod=500000L/frequency;
+  long loops=(long)duration*frequency/(long)1000;
+
+  for(loops;loops>0;loops--) 
+  {
+    digitalWrite(PIN_SPEAKER, HIGH);
+    delayMicroseconds(halfperiod);
+    digitalWrite(PIN_SPEAKER, LOW);
+    delayMicroseconds(halfperiod);
+  }
+}
+
+/**********************************************************************************************\
+ * Geeft een belsignaal.
+ * Revision 01, 09-03-2009, P.K.Tonkes@gmail.com
+ \*********************************************************************************************/
+void Alarm(int Variant,int Option)
+{
+  byte x,y;
+
+  switch (Variant)
+  { 
+  case 1:// four beeps
+    for(y=1;y<=(Option>1?Option:1);y++)
+    {
+      Beep(3000,30);
+      delay(100);
+      Beep(3000,30);
+      delay(100);
+      Beep(3000,30);
+      delay(100);
+      Beep(3000,30);
+      delay(1000);
+    }    
+    break;
+
+  case 2: // whoop up
+    for(y=1;y<=(Option>1?Option:1);y++)
+    {
+      for(x=1;x<=50;x++)
+        Beep(250*x/4,20);
+    }          
+    break;
+
+  case 3: // whoop down
+    for(y=1;y<=(Option>1?Option:1);y++)
+    {
+      for(x=50;x>0;x--)
+        Beep(250*x/4,20);
+    }          
+    break;
+
+  case 4:// Settings.O.Settings.
+    for(y=1;y<=(Option>1?Option:1);y++)
+    {
+      Beep(1200,50);
+      delay(100);
+      Beep(1200,50);
+      delay(100);
+      Beep(1200,50);
+      delay(200);
+      Beep(1200,300);
+      delay(100);
+      Beep(1200,300);
+      delay(100);
+      Beep(1200,300);
+      delay(200);
+      Beep(1200,50);
+      delay(100);
+      Beep(1200,50);
+      delay(100);
+      Beep(1200,50);
+      if(Option>1)delay(500);
+    }
+    break;
+
+  case 5:// ding-dong
+    for(x=1;x<=(Option>1?Option:1);x++)
+    {
+      if(x>1)delay(2000);
+      Beep(1500,500);
+      Beep(1200,500);
+    }    
+    break;
+
+  case 6: // phone ring
+    for(x=1;x<(15*(Option>1?Option:1));x++)
+    {
+      Beep(1000,40);
+      Beep(750,40);
+    }
+    break;
+
+  case 7: // boot
+    Beep(1500,100);
+    Beep(1000,100);
+    break;
+
+  default:// beep
+    if(Variant==0)
+      Variant=5; // tijdsduur
+
+    if(Option==0)
+      Option=20; // toonhoogte
+
+    Beep(100*Option,Variant*10);
+    break;
+  }
+}
+
+
+/**********************************************************************************************\
+ * Stuur de RGB-led.
+ *
+ * Voor de Nodo geldt:
+ *
+ * Groen = Nodo in rust en wacht op een event.
+ * Rood = Nodo verwerkt event of commando.
+ * Blauw = Bijzondere modus Nodo waarin Nodo niet in staat is om events te ontvangen of genereren.
+ \*********************************************************************************************/
+void Led(byte Color)
+{
+#ifdef NODO_MEGA
+  digitalWrite(PIN_LED_RGB_R,Color==RED);
+  digitalWrite(PIN_LED_RGB_B,Color==BLUE);
+  digitalWrite(PIN_LED_RGB_G,Color==GREEN);
+#else
+  digitalWrite(PIN_LED_RGB_R,(Color==RED || Color==BLUE));
+#endif
+}
+
 
 /*********************************************************************************************\
  * Wachtloop. Als <EventsInQueue>=true dan worden voorbijkomende events in de queue geplaatst
@@ -106,7 +364,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
   byte xCommand=Event->Command;  
   ClearEvent(Event);
 
-  Event->Flags|=TRANSMISSION_EVENT; // forceer dat deze wordt behandeld als een event
+  Event->Flags|=TRANSMISSION_EVENT | TRANSMISSION_DISPLAY; // forceer dat deze wordt behandeld als een event
   Event->Command=xCommand;
   
   switch (xCommand)
@@ -641,6 +899,7 @@ void Status(struct NodoEventStruct *Request, byte Transmit)
   }
 
 
+#ifdef NODO_MEGA
 /*********************************************************************************************\
  * Deze routine parsed string en geeft het opgegeven argument nummer Argc terug in Argv
  * argumenten worden van elkaar gescheiden door een komma of een spatie.
@@ -693,131 +952,6 @@ boolean GetArgv(char *string, char *argv, int argc)
 }
 
 
-/**********************************************************************************************\
- * Geef een geluidssignaal met toonhoogte van 'frequentie' in Herz en tijdsduur 'duration' in milliseconden.
- * LET OP: toonhoogte is slechts een grove indicatie. Deze routine is bedoeld als signaalfunctie
- * en is niet bruikbaar voor toepassingen waar de toonhoogte zuiver/exact moet zijn. Geen PWM.
- * Definieer de constante:
- * #define PIN_SPEAKER <LuidsprekerAansluiting>
- * Neem in setup() de volgende regel op:
- * pinMode(PIN_SPEAKER, OUTPUT);
- * Routine wordt verlaten na beeindiging van de pieptoon.
- * Revision 01, 13-02-2009, P.K.Tonkes@gmail.com
- \*********************************************************************************************/
-
-void Beep(int frequency, int duration)//Herz,millisec 
-{
-  long halfperiod=500000L/frequency;
-  long loops=(long)duration*frequency/(long)1000;
-
-  for(loops;loops>0;loops--) 
-  {
-    digitalWrite(PIN_SPEAKER, HIGH);
-    delayMicroseconds(halfperiod);
-    digitalWrite(PIN_SPEAKER, LOW);
-    delayMicroseconds(halfperiod);
-  }
-}
-
-/**********************************************************************************************\
- * Geeft een belsignaal.
- * Revision 01, 09-03-2009, P.K.Tonkes@gmail.com
- \*********************************************************************************************/
-void Alarm(int Variant,int Option)
-{
-  byte x,y;
-
-  switch (Variant)
-  { 
-  case 1:// four beeps
-    for(y=1;y<=(Option>1?Option:1);y++)
-    {
-      Beep(3000,30);
-      delay(100);
-      Beep(3000,30);
-      delay(100);
-      Beep(3000,30);
-      delay(100);
-      Beep(3000,30);
-      delay(1000);
-    }    
-    break;
-
-  case 2: // whoop up
-    for(y=1;y<=(Option>1?Option:1);y++)
-    {
-      for(x=1;x<=50;x++)
-        Beep(250*x/4,20);
-    }          
-    break;
-
-  case 3: // whoop down
-    for(y=1;y<=(Option>1?Option:1);y++)
-    {
-      for(x=50;x>0;x--)
-        Beep(250*x/4,20);
-    }          
-    break;
-
-  case 4:// Settings.O.Settings.
-    for(y=1;y<=(Option>1?Option:1);y++)
-    {
-      Beep(1200,50);
-      delay(100);
-      Beep(1200,50);
-      delay(100);
-      Beep(1200,50);
-      delay(200);
-      Beep(1200,300);
-      delay(100);
-      Beep(1200,300);
-      delay(100);
-      Beep(1200,300);
-      delay(200);
-      Beep(1200,50);
-      delay(100);
-      Beep(1200,50);
-      delay(100);
-      Beep(1200,50);
-      if(Option>1)delay(500);
-    }
-    break;
-
-  case 5:// ding-dong
-    for(x=1;x<=(Option>1?Option:1);x++)
-    {
-      if(x>1)delay(2000);
-      Beep(1500,500);
-      Beep(1200,500);
-    }    
-    break;
-
-  case 6: // phone ring
-    for(x=1;x<(15*(Option>1?Option:1));x++)
-    {
-      Beep(1000,40);
-      Beep(750,40);
-    }
-    break;
-
-  case 7: // boot
-    Beep(1500,100);
-    Beep(1000,100);
-    break;
-
-  default:// beep
-    if(Variant==0)
-      Variant=5; // tijdsduur
-
-    if(Option==0)
-      Option=20; // toonhoogte
-
-    Beep(100*Option,Variant*10);
-    break;
-  }
-}
-
-
 /*********************************************************************************************\
  * Deze routine parsed string en zoekt naar keyword. Geeft de startpositie terug waar het keyword
  * gevonden is. -1 indien niet gevonden. Niet casesensitive.
@@ -844,242 +978,6 @@ int StringFind(char *string, char *keyword)
 }
 
 
-//#######################################################################################################
-//##################################### Misc: EEPROM / Eventlist  #######################################
-//#######################################################################################################
-
-
- // Niet alle gegevens uit een event zijn relevant. Om ruimte in EEPROM te besparen worden uitsluitend
- // de alleen noodzakelijke gegevens in EEPROM opgeslagen. Hiervoor een struct vullen die later als
- // één blok weggeschreven kan worden.
-
- struct EventlistStruct
-   {
-   byte EventCommand;
-   byte EventPar1;
-   unsigned long EventPar2;
-   
-   byte ActionCommand;
-   byte ActionPar1;
-   unsigned long ActionPar2;
-   }EEPROM_Block;
-
-/**********************************************************************************************\
- * Schrijft een event in de Eventlist. Deze Eventlist bevindt zich in het EEPROM geheugen.
- \*********************************************************************************************/
-boolean Eventlist_Write(int address, struct NodoEventStruct *Event, struct NodoEventStruct *Action)// LET OP: Gebruikers input. Eerste adres=1
-  {
-  struct EventlistStruct EEPROM_Block;
- 
-  EEPROM_Block.EventCommand=Event->Command;
-  EEPROM_Block.EventPar1=Event->Par1;
-  EEPROM_Block.EventPar2=Event->Par2;
- 
-  EEPROM_Block.ActionCommand=Action->Command;
-  EEPROM_Block.ActionPar1=Action->Par1;
-  EEPROM_Block.ActionPar2=Action->Par2;
-   
-  // als opgegeven adres=0, zoek dan de eerste vrije plaats.
-  if(address==0)
-    {
-    struct NodoEventStruct dummy;
-    ClearEvent(&dummy);
-    address++;
-    while(Eventlist_Read(address,&dummy,&dummy) && dummy.Command!=0)address++;
-    }
-
-  address--;                                                                          // echte adressering begint vanaf nul. voor de user vanaf 1.
-  address=address*sizeof(struct EventlistStruct) + sizeof(struct SettingsStruct);     // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer deze bytes. Deze niet te gebruiken voor de Eventlist!
-  byte *B=(byte*)&EEPROM_Block;                                                       // B wijst naar de eerste byte van de struct
-
-  for(int x=0;x<sizeof(struct EventlistStruct);x++) // schrijf alle bytes van de struct
-    {
-    if(address<EEPROM_SIZE)
-      EEPROM.write(address++, *(B+x));
-    else
-      return false;
-    }
-
-  return true;
-  }
-
-/**********************************************************************************************\
- * 
- * Revision 01, 09-12-2009, P.K.Tonkes@gmail.com
- \*********************************************************************************************/
-boolean Eventlist_Read(int address, struct NodoEventStruct *Event, struct NodoEventStruct *Action)// LET OP: eerste adres=1
-  {
-  struct EventlistStruct EEPROM_Block;
-
-  ClearEvent(Event);
-  ClearEvent(Action);
-
-  address--;// echte adressering begint vanaf nul. voor de user vanaf 1.
-  address=address*sizeof(struct EventlistStruct) + sizeof(struct SettingsStruct);     // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer deze bytes. Deze niet te gebruiken voor de Eventlist!
-  byte *B=(byte*)&EEPROM_Block; // B wijst naar de eerste byte van de struct
-
-  for(int x=0;x<sizeof(struct EventlistStruct);x++) // schrijf alle bytes van de struct
-    {
-    if(address<EEPROM_SIZE)
-      *(B+x)=EEPROM.read(address++);
-    else
-      return false;
-    }
-
-  Event->Command=EEPROM_Block.EventCommand;
-  Event->Par1=EEPROM_Block.EventPar1;
-  Event->Par2=EEPROM_Block.EventPar2;
-  
-  Action->Command=EEPROM_Block.ActionCommand;
-  Action->Par1=EEPROM_Block.ActionPar1;
-  Action->Par2=EEPROM_Block.ActionPar2;
-  Action->Port=VALUE_SOURCE_EVENTLIST;
-  Action->Direction=VALUE_DIRECTION_INPUT;
-  return true;
-  }
-
-
-void RaiseMessage(byte MessageCode)
-  {
-  int x;
-
-  struct NodoEventStruct TempEvent;
-  ClearEvent(&TempEvent);
-  TempEvent.Port      = VALUE_ALL;
-  TempEvent.Command   = CMD_MESSAGE;
-  TempEvent.Par1      = Settings.Unit;
-  TempEvent.Par2      = MessageCode;
-
-  SendEvent(&TempEvent,false,true);
-  }
-
-
-/**********************************************************************************************\
- * Stuur de RGB-led.
- *
- * Voor de Nodo geldt:
- *
- * Groen = Nodo in rust en wacht op een event.
- * Rood = Nodo verwerkt event of commando.
- * Blauw = Bijzondere modus Nodo waarin Nodo niet in staat is om events te ontvangen of genereren.
- \*********************************************************************************************/
-void Led(byte Color)
-{
-#ifdef NODO_MEGA
-  digitalWrite(PIN_LED_RGB_R,Color==RED);
-  digitalWrite(PIN_LED_RGB_B,Color==BLUE);
-  digitalWrite(PIN_LED_RGB_G,Color==GREEN);
-#else
-  digitalWrite(PIN_LED_RGB_R,(Color==RED || Color==BLUE));
-#endif
-}
-
-#ifdef NODO_MEGA
-/**********************************************************************************************\
- * Voeg een regel toe aan de logfile.
- \*********************************************************************************************/
-boolean AddFileSDCard(char *FileName, char *Line)
-{
-  boolean r;
-
-  SelectSD(true);
-  File LogFile = SD.open(FileName, FILE_WRITE);
-  if(LogFile)
-  {
-    r=true;
-    LogFile.write((uint8_t*)Line,strlen(Line));
-    LogFile.write('\n'); // nieuwe regel
-    LogFile.close();
-  }
-  else
-    r=false;
-
-  SelectSD(false);
-  return r;
-}
-
-/**********************************************************************************************\
- * Voeg een regel toe aan de logfile.
- \*********************************************************************************************/
-boolean SaveEventlistSDCard(char *FileName)
- {
-  int x;
-  boolean r=true;
-  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
-
-  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-  digitalWrite(Ethernetshield_CS_W5100, HIGH);
-  digitalWrite(EthernetShield_CS_SDCard,LOW);
-
-  SD.remove(FileName); // eerst bestand wissen, anders wordt de data toegevoegd
-
-  File EventlistFile = SD.open(FileName, FILE_WRITE);
-  if(EventlistFile) 
-    {
-    strcpy(TempString,cmd2str(CMD_EVENTLIST_ERASE));
-    EventlistFile.write((uint8_t*)TempString,strlen(TempString));      
-    EventlistFile.write('\n'); // nieuwe regel
-
-    x=1;
-    while(EventlistEntry2str(x++,0,TempString,true))
-      {
-      if(TempString[0]!=0)// als de string niet leeg is, dan de regel weg schrijven
-        {
-        EventlistFile.write((uint8_t*)TempString,strlen(TempString));      
-        EventlistFile.write('\n'); // nieuwe regel
-        }
-      }
-    EventlistFile.close();
-    }
-  else 
-    {
-    r=false; // niet meer weer proberen weg te schrijven.
-    }
-
-  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip
-  digitalWrite(Ethernetshield_CS_W5100, LOW);
-  digitalWrite(EthernetShield_CS_SDCard,HIGH);
-
-  free(TempString);
-  return r;
-  }
-
-
-boolean FileList(void)
-{
-  boolean x=false;
-  File root;
-  File entry;
-  char *TempString=(char*)malloc(15);
-
-  PrintTerminal(ProgmemString(Text_22));
-  SelectSD(true);
-  if(root = SD.open("/"))
-    {
-    root.rewindDirectory();
-    while(entry = root.openNextFile())
-      {
-      if(!entry.isDirectory())
-        {
-        strcpy(TempString,entry.name());
-        TempString[StringFind(TempString,".")]=0;
-        SelectSD(false);
-        PrintTerminal(TempString);
-        SelectSD(true);
-        }
-      entry.close();
-      }
-    root.close();
-    x=true;
-    }
-  SelectSD(false);
-  PrintTerminal(ProgmemString(Text_22));
-
-  free(TempString);  
-  return x;
-  }
-
-
 /**********************************************************************************************\
  * Geeft een string terug met een cookie op basis van een random HEX-waarde van 32-bit.
  \*********************************************************************************************/
@@ -1096,17 +994,6 @@ void RandomCookie(char* Ck)
   }
 
 
-/*********************************************************************************************\
- * Op het Ethernetshield kunnen de W5100 chip en de SDCard niet gelijktijdig worden gebruikt
- * Deze funktie zorgt voor de juiste chipselect. Default wordt in de Nodo software uitgegaan dat
- * de ethernetchip W5100 is geselecteerd. Met deze routine kan de SDCard worden geselecteerd.
- * input: true = SD_Card geselecteerd.
- \*********************************************************************************************/
-void SelectSD(boolean sd)
-  {
-  digitalWrite(Ethernet_shield_CS_W5100, sd);
-  digitalWrite(Ethernet_shield_CS_SDCard, !sd);
-  }
 
 
 //#######################################################################################################
@@ -1299,96 +1186,34 @@ void md5(char* dest)
   free(Str);
 }
 
-
-byte FileExecute(char* FileName, boolean ContinueOnError)
-  {
-  int x,y;
-  char *TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
-  byte error=0;
-
-  Led(RED);
-
-  strcpy(TmpStr,FileName);
-  strcat(TmpStr,".dat");
-  SelectSD(true);
-  File dataFile=SD.open(TmpStr);
-  if(dataFile) 
-    {
-    y=0;       
-    while(dataFile.available() && !error)
-      {
-      x=dataFile.read();
-      if(isprint(x) && y<INPUT_BUFFER_SIZE)
-        TmpStr[y++]=x;
-      else
-        {
-        TmpStr[y]=0;
-        y=0;
-        SelectSD(false);
-        PrintTerminal(TmpStr);
-        if(ExecuteLine(TmpStr,VALUE_SOURCE_FILE)!=0)
-          error=MESSAGE_15;
-        SelectSD(true);
-
-        if(ContinueOnError)
-          error=0;
-
-        if(error)
-          break;
-        }
-      }
-    dataFile.close();
-    }  
-  else
-    error=MESSAGE_03;
-
-  free(TmpStr);
-  SelectSD(false);
-  return error;
-  }    
 #endif
 
 uint8_t *heapptr, *stackptr;
-void Trace(int Func, int Pos, unsigned long Value)
-{
+void Trace(char *Func, unsigned long Value)
+  {
   stackptr = (uint8_t *)malloc(4);        // use stackptr temporarily
   heapptr = stackptr;                     // save value of heap pointer
   free(stackptr);                         // free up the memory again (sets stackptr to 0)
   stackptr =  (uint8_t *)(SP);            // save value of stack pointer
+  static unsigned long time=millis();
 
-#ifdef NODO_MEGA
-  char* str=(char*)malloc(80);
-  strcpy(str,"=> Trace: Seconds=");
-  strcat(str,int2str(millis()/1000));
-  strcat(str,", Func=");
-  strcat(str,int2str(Func));
-  strcat(str,", Pos=");
-  strcat(str,int2str(Pos));
-  strcat(str,", Value=");
-  strcat(str,int2str(Value));
-  strcat(str,", Memory=");
-  strcat(str,int2str(stackptr-heapptr));
-  AddFileSDCard("TRACE.DAT", str);
-  free(str);
-
-#else
-  Serial.print(F("=> Trace: Seconds="));
-  Serial.print(millis()/1000);
-  Serial.print(F(", Func="));
-  Serial.print(Func);
-  Serial.print(F(", Pos="));
-  Serial.print(Pos);
-  Serial.print(F(", Value="));
-  Serial.print(Value);
-  Serial.print(F(", Memory="));
-  Serial.println(stackptr-heapptr);
-
-#endif
-
-}
+  if(Func!=0 && Func[0]!=0)
+    {
+    Serial.print(F("=> Trace: "));
+    Serial.print(Func);
+    Serial.print(F(", Value="));
+    Serial.print(Value);
+    Serial.print(F(", dTime="));
+    Serial.print(millis()-time);
+    Serial.print(F(", FreeMem="));
+    Serial.println(stackptr-heapptr);
+    delay(100);
+    }
+  time=millis();
+  }
 
 void PulseCounterISR()
-{
+  {
   static unsigned long PulseTimePrevious=0L;                // Tijdsduur tussen twee pulsen teller in milliseconden: vorige meting
 
   // in deze interrupt service routine staat millis() stil. Dit is echter geen bezwaar voor de meting.
@@ -2113,7 +1938,7 @@ void SimulateDay(void)
  * kopiëer de string van een commando naar een string[]
  \*********************************************************************************************/
 char* cmd2str(int i)
-{
+  {
   static char string[80];
 
   if(i<=COMMAND_MAX)
@@ -2122,7 +1947,7 @@ char* cmd2str(int i)
     string[0]=0;// als er geen gevonden wordt, dan is de string leeg
 
   return string;
-}
+  }
 
 /*********************************************************************************************\
  * Haal uit een string de commando code. False indien geen geldige commando code.
