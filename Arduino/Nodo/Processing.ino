@@ -64,7 +64,7 @@ boolean ProcessEvent1(struct NodoEventStruct *Event)
 
   // Een event kan een verzoek bevatten om bevestiging. Doe dit dan pas na alle verwerking.
   if(RequestForConfirm)
-    {
+    {  
     // Initialiseer een Event en Transmissie
     ClearEvent(&TempEvent);    
     TempEvent.DestinationUnit       = Event->SourceUnit;
@@ -73,24 +73,8 @@ boolean ProcessEvent1(struct NodoEventStruct *Event)
     TempEvent.Command               = SYSTEM_COMMAND_CONFIRMED;
     TempEvent.Par1                  = RequestForConfirm;
 
-    // De master die verzocht om de confirm zal direct na het zenden enige tijd nodig hebben om om te schakelen van zenden naar ontvangen.
-    // Korte wachttijd kiezen afhankelijk van het kanaal van transport.
-    
-    switch(LastReceived.Port)
-      {
-      case VALUE_SOURCE_RF:
-        delay(1000);
-        break;
-        
-      case VALUE_SOURCE_IR:
-        delay(100);
-        break;
-
-      case VALUE_SOURCE_I2C:
-        delay(100);
-        break;
-      }
     SendEvent(&TempEvent, false,false);
+    RequestForConfirm=0;
     }
   }
   
@@ -212,7 +196,6 @@ byte CheckEventlist(struct NodoEventStruct *Event)
   {
   struct NodoEventStruct MacroEvent,MacroAction;
 
-
   int x=1;
   while(Eventlist_Read(x++,&MacroEvent,&MacroAction))
     {
@@ -241,7 +224,19 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
   if(MacroEvent->Command==0 || Event->Command==0)
     return false;  
     
-  // als huidige event exact overeenkomt met het event in de regel uit de Eventlist, dan een match
+  // ### WILDCARD:      
+  if(MacroEvent->Command == CMD_COMMAND_WILDCARD) // is regel uit de eventlist een WildCard?
+    {
+    if(MacroEvent->Par1!=VALUE_ALL && MacroEvent->Par1!=Event->Port)return false;
+    if(MacroEvent->Par2!=VALUE_ALL && MacroEvent->Par2!=Event->Command)return false;
+    return true;
+    }
+
+  // ### DISPLAY_ONLY: //Devents met de transmissie vlag TRANSMISSION_DISPLAY worden niet verder behandeld.
+  if(Event->Flags & TRANSMISSION_DISPLAY)
+    return false;
+
+  // #### EXACT: als huidige event exact overeenkomt met het event in de regel uit de Eventlist, dan een match
   if(MacroEvent->Command == Event->Command &&
      MacroEvent->Par1    == Event->Par1    &&
      MacroEvent->Par2    == Event->Par2    )
@@ -277,20 +272,6 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
      if(Inp==Cmp) // Als ingestelde alarmtijd overeen komt met huidige tijd.
        return true;
      }
-
-//#######################################################################################################
-
-  // ### WILDCARD:      
-  if(MacroEvent->Command == CMD_COMMAND_WILDCARD) // is regel uit de eventlist een WildCard?
-    {
-    if(MacroEvent->Par1!=VALUE_ALL && MacroEvent->Par1!=Event->Port)
-      return false;
-
-    if(MacroEvent->Par2!=VALUE_ALL && MacroEvent->Par2!=Event->Command)
-      return false;
-      
-    return true;
-    }
 
   // USEREVENT:
   // beschouw bij een UserEvent een 0 voor Par1 of Par2 als een wildcard.
@@ -329,9 +310,6 @@ struct QueueStruct
 byte QueueSend(byte DestUnit)
   {
   byte x,Port,ReturnCode;
-
-    QueuePosition=0;
-     return MESSAGE_11;      //???
 
   // De port waar de SendTo naar toe moet halen we uit de lijst met Nodo's die wordt onderhouden door de funktie  NodoOnline();
   Port=NodoOnline(DestUnit,0);
@@ -395,7 +373,6 @@ byte QueueSend(byte DestUnit)
     
   if(ReturnCode)
     QueuePosition=0;
-
 
   return ReturnCode;
   }

@@ -20,7 +20,6 @@ void PrintNodoEventStruct(char* str, struct NodoEventStruct *Event)
 
 /*
 
-SendNewKAKU 0xB65B8A,On 
 
 Serial.print(F("*** debug: "));Serial.println(); //??? Debug
 PrintNodoEventStruct(Event,"");//???

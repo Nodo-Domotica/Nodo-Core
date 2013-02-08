@@ -25,8 +25,6 @@ prog_char PROGMEM Text_13[] = "RawSignal saved.";
 prog_char PROGMEM Text_14[] = "Event=";
 prog_char PROGMEM Text_23[] = "log.dat";
 prog_char PROGMEM Text_24[] = "Delay...";
-//prog_char PROGMEM Text_25[] = "";
-//prog_char PROGMEM Text_26[] = "";
 prog_char PROGMEM Text_27[] = "raw/raw"; // Directory op de SDCard voor opslag van sleutels naar .hex files
 prog_char PROGMEM Text_28[] = "raw/key"; // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_30[] = "Terminal connection closed.";
@@ -323,7 +321,7 @@ PROGMEM const char *CommandText_tabel[]={
   Cmd_180,Cmd_181,Cmd_182,Cmd_183,Cmd_184,Cmd_185,Cmd_186,Cmd_187,Cmd_188,Cmd_189,          
   Cmd_190,Cmd_191,Cmd_192,Cmd_193,Cmd_194,Cmd_195,Cmd_196,Cmd_197,Cmd_198,Cmd_199,          
   Cmd_200,Cmd_201,Cmd_202,Cmd_203,Cmd_204,Cmd_205,Cmd_206,Cmd_207,Cmd_208,Cmd_209,          
-  Cmd_210,Cmd_211,Cmd_212,Cmd_213,Cmd_214
+  Cmd_210,Cmd_211,Cmd_212,Cmd_213,Cmd_214,Cmd_215
   };          
 
 // Tabel met zonsopgang en -ondergang momenten. afgeleid van KNMI gegevens midden Nederland.
@@ -654,9 +652,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define EthernetShield_SCK          52 // NIET VERANDEREN. Ethernet shield: SCK-lijn van de ethernet kaart
 #define EthernetShield_CS_SDCardH   53 // NIET VERANDEREN. Ethernet shield: Gereserveerd voor correct funktioneren van de SDCard: Hardware CS/SPI ChipSelect
 #define EthernetShield_CS_SDCard     4 // NIET VERANDEREN. Ethernet shield: Chipselect van de SDCard. Niet gebruiken voor andere doeleinden
-#define Ethernetshield_CS_W5100     10 // NIET VERANDEREN. Ethernet shield: D10..D13  // gereserveerd voor Ethernet & SDCard
-#define Ethernet_shield_CS_SDCard    4 // NIET VERANDEREN. Ethernet shield: Chipselect van de SDCard. Niet gebruiken voor andere doeleinden
-#define Ethernet_shield_CS_W5100    10 // NIET VERANDEREN. Ethernet shield: D10..D13  // gereserveerd voor Ethernet & SDCard
+#define EthernetShield_CS_W5100     10 // NIET VERANDEREN. Ethernet shield: D10..D13  // gereserveerd voor Ethernet & SDCard
 #define PIN_CLOCK_SDA               20 // I2C communicatie lijn voor de realtime clock.
 #define PIN_CLOCK_SLC               21 // I2C communicatie lijn voor de realtime clock.
 #define TERMINAL_PORT               23 // TelNet poort. Standaard 23
@@ -739,6 +735,7 @@ struct SettingsStruct
   #define TRANSMISSION_SYSTEM      16  // System event
   #define TRANSMISSION_COMMAND     32  // 
   #define TRANSMISSION_EVENT       64  // 
+  #define TRANSMISSION_DISPLAY    128  // 
 
   // De Nodo kent naast gebruikers commando's en events eveneens Nodo interne events
   #define SYSTEM_COMMAND_CONFIRMED  1  // Bevestiging op verzoek van een TRANSMISSION_CONFIRM. Par1 bevat aantal verwerkte events. 
@@ -901,35 +898,22 @@ void setup()
 
 
   //Lees de tijd uit de RTC en zorg ervoor dat er niet direct na een boot een CMD_CLOCK_DAYLIGHT event optreedt
-  Wire.begin(Settings.Unit);      // verbind de I2C bus
+  Wire.begin(Settings.Unit + I2C_START_ADDRESS);
   ClockRead();
   #ifdef NODO_MEGA
   SetDaylight();
   DaylightPrevious=Time.Daylight;
-  #endif  
-  
-//  #ifdef NODO_MEGA
-//  // Schoon de tabel waarin wordt bijgehouden welke Nodo's online zijn.
-//  for(x=1;x<=UNIT_MAX;x++)
-//    UnitsOnline[x]=0;
-//  UnitsOnline[Settings.Unit]=VALUE_SOURCE_SYSTEM;
-//  #endif
 
-  // SDCard initialiseren:
-  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-  #ifdef NODO_MEGA
-  SelectSD(true);
-  if(SD.begin(EthernetShield_CS_SDCard))
-    {
-    SD.mkdir(ProgmemString(Text_27)); // maak directory aan waar de Rawsignal HEX bestanden in worden opgeslagen
-    SD.mkdir(ProgmemString(Text_28)); // maak directory aan waar de Rawsignal KEY bestanden in worden opgeslagen
-    bitWrite(HW_Config,HW_SDCARD,1);
-    }
+  // SDCard detecteren en evt. gereed maken voor gebruik in de Nodo
+  SDCardInit();
+
+
+  RawSignal.Key=-1; // Als deze variable ongelijk aan -1 dan wordt er een Rawsignal opgeslagen.  
+
    
   // Start Ethernet kaart en start de HTTP-Server en de Telnet-server
   #if ETHERNET
   bitWrite(HW_Config,HW_ETHERNET,1); // nog slim detecteren of fysieke laag is aangesloten. Wordt niet ondersteund door de Ethernet Library van Arduino
-  #endif
   
   if(bitRead(HW_Config,HW_ETHERNET))
     {
@@ -947,7 +931,8 @@ void setup()
       RaiseMessage(MESSAGE_07);
       }
     }
-  RawSignal.Key=-1; // Als deze variable ongelijk aan -1 dan wordt er een Rawsignal opgeslagen.  
+  #endif
+
   #endif
 
   Wire.onReceive(ReceiveI2C);   // verwijs naar ontvangstroutine
@@ -960,30 +945,33 @@ void setup()
   UserPlugin_Init();
   #endif
 
+  bitWrite(HW_Config,HW_I2C,true); // Zet I2C aan zodat het boot event op de I2C-bus wordt verzonden. Hiermee worden bij de andere Nodos de I2C geactiveerd.
+
   struct NodoEventStruct TempEvent;
   ClearEvent(&TempEvent);
   TempEvent.Direction=VALUE_DIRECTION_INTERNAL;
-  TempEvent.Port=VALUE_SOURCE_SYSTEM;
+  TempEvent.Port=VALUE_ALL;
   
   if(Settings.NewNodo)
     {
     TempEvent.Command=CMD_NEWNODO;
     TempEvent.Par1=Settings.Unit;
-    SendEvent(&TempEvent,VALUE_ALL,true); 
+    SendEvent(&TempEvent,false,true); 
     }
 
-
-  bitWrite(HW_Config,HW_I2C,true); // Zet I2C aan zodat het boot event op de I2C-bus wordt verzonden. Hiermee worden bij de andere Nodos de I2C geactiveerd.
-
-  TempEvent.Command=CMD_BOOT_EVENT;
-  TempEvent.Port=VALUE_ALL;
-  TempEvent.Par1=Settings.Unit;
+  TempEvent.Flags     = TRANSMISSION_CONFIRM;
+  TempEvent.Command   = CMD_BOOT_EVENT;
+  TempEvent.Par1      = Settings.Unit;
+  TempEvent.Port      = VALUE_ALL;
   SendEvent(&TempEvent,false,true);  
+
+  TempEvent.Flags     = 0;
+  TempEvent.Direction = VALUE_DIRECTION_INTERNAL;
+  TempEvent.Port      = VALUE_SOURCE_SYSTEM;
   ProcessEvent2(&TempEvent);  // Voer het 'Boot' event uit.
 
   bitWrite(HW_Config,HW_I2C,false); // Zet I2C weer uit. Wordt weer geactiveerd als er een I2C event op de bus verschijnt.
   }
-
 
 void loop() 
   {

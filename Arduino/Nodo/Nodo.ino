@@ -31,7 +31,7 @@
 #define PROTOCOL_1              "KAKU"                             // T.b.v. mee compileren van het KAKU-protocol. Indien niet nodig, dan deze regel remarken met //
 #define PROTOCOL_2           "NewKAKU"                             // T.b.v. mee compileren van het KAKU-protocol met automatische codering. Indien niet nodig, dan deze regel remarken met //
 #define DEVICE_1              "DS1820"                             // Device-1 (Temperatuursensor), remarken met // als niet in gebruik.
-#define NODO_30_COMPATIBLE       false                             // t.b.v. compatibiliteit met vorige Nodo versie: NewKAKU HEX waarden, 
+#define NODO_30_COMPATIBLE       false                             // t.b.v. compatibiliteit met vorige Nodo versie: NewKAKU HEX waarden en UserEvents
 #define I2C_START_ADDRESS            1                             // Alle Nodo's op de I2C bus hebben een uniek adres dat start vanaf dit nummer. Er zijn max. 32 Nodo's. Let op verlap met andere devices. RTC zit op adres 104.
 
 #if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)     // NIET veranderen
@@ -44,10 +44,10 @@
   // vanwege een bug in de Arduino compiler moeten daarnaast nog enkele regels handmatig worden aangepast!
   // Voor een arduino anders dan een Mega1280 of Mega2560 de onderstaande vier regels vooraf laten gaan door twee slashes //
   // Anders worden de niet gebruikte libraries toch meegecompileerd en zal deze niet in een ATMega328 passen.
-  #include <SD.h>
   #include <EthernetNodo.h>
   #include <SPI.h>
   #include <Arduino.h>
+  #include <SD.h>
   
 #else
   // definities Small

@@ -138,6 +138,12 @@ boolean Protocol_1_RawsignalToEvent(struct NodoEventStruct *Event)
   int i,j;
   unsigned long bitstream=0;
   
+  // Kaku verzendt een signaal meerdere malen.
+  // we willen graag een voorziening die er voor zorgt dat events die snel achtereenvolgens worden verzonden
+  // niet leidt tot meerdere events.
+  static unsigned long PreviousTime=0;
+  static unsigned int PreviousBitStream=0;
+  
   // conventionele KAKU bestaat altijd uit 12 data bits plus stop. Ongelijk, dan geen KAKU!
   if (RawSignal.Number!=(KAKU_CodeLength*4)+2)return false;
   RawSignal.Repeats=5;
@@ -151,8 +157,17 @@ boolean Protocol_1_RawsignalToEvent(struct NodoEventStruct *Event)
     else {return false;} // foutief signaal
     }
  
-  if ((bitstream&0x600)!=0x600)return false; // twee vaste bits van KAKU gebruiken als checksum
+  // twee vaste bits van KAKU gebruiken als checksum
+  if ((bitstream&0x600)!=0x600)return false; 
 
+
+  // kort geleden ook ontvangen, dan herhaling binnen 1000 milliseconden onderdrukken.
+  if(bitstream==PreviousBitStream && (PreviousTime+1000)>millis())return false;
+  PreviousTime         = millis();
+  PreviousBitStream    = bitstream;
+
+
+  // Alles is in orde, bouw event op   
   Event->Par2          = bitstream & 0xFF;
   Event->Par1         |= (bitstream >> 11) & 0x01;
   Event->Command       = CMD_PROTOCOL_1;
