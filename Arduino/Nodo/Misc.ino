@@ -6,8 +6,9 @@
  * - <Timeout> seconden zijn voorbij. In dit geval geeft deze funktie een <false> terug.
  * - Het opgegeven event <WaitForEvent> voorbij is gekomen
  * - De ether weer is vrijgegeven voor Nodo communicatie (WaitForFreeTransmission=true)
+ * - Er is een event opgevangen waar de TRANSMISSION_SEQUENCE vlag NIET staat.
  \*********************************************************************************************/
-boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruct *WaitForEvent)
+boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruct *WaitForEvent, boolean EndSequence)
   {
   unsigned long TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
 
@@ -24,12 +25,13 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
       // Events voor deze Nodo kunnen NU niet worden verwerkt. Plaats daarom in de queue
       QueueAdd(&Event);
 
+      if(EndSequence && (Event.Flags&TRANSMISSION_NEXT)==0)
+        break;
+        
       // als het gewacht wordt totdat de communicatie poorten weer beschikbaar zijn, dan wachtloop verlaten.        
       if(WaitForFreeTransmission && (Transmission_SelectedUnit==0 || Transmission_SelectedUnit==Settings.Unit))
         break;
       
-//        PrintNodoEventStruct("Binnengekomen tijdens Wait();",&Event);//???
-
       // break af als opgegeven eent voorbij komt. Let op, alleen events met als bestemming 0 of dit unitnummer worden gedetecteerd!
       // De check vind alleen plaats op Type, Command en Unit, dus niet op Par1 en Par2.
       // Als SourceUnit==0 dan wordt input van alle units geaccepteerd.
@@ -103,6 +105,8 @@ boolean GetStatus(struct NodoEventStruct *Event)
   byte xPar1=Event->Par1;
   byte xCommand=Event->Command;  
   ClearEvent(Event);
+
+  Event->Flags|=TRANSMISSION_EVENT; // forceer dat deze wordt behandeld als een event
   Event->Command=xCommand;
   
   switch (xCommand)
@@ -946,17 +950,7 @@ void RaiseMessage(byte MessageCode)
   TempEvent.Par1      = Settings.Unit;
   TempEvent.Par2      = MessageCode;
 
-  switch(MessageCode)
-    {
-    // Alleen verzenden, niet weergeven
-    case MESSAGE_03:
-      SendEvent(&TempEvent,false,false);
-      break;
-      
-    // Verzenden en weergeven
-    default:
-      SendEvent(&TempEvent,false,true);
-    }
+  SendEvent(&TempEvent,false,true);
   }
 
 
@@ -1040,13 +1034,6 @@ boolean SaveEventlistSDCard(char *FileName)
   else 
     {
     r=false; // niet meer weer proberen weg te schrijven.
-    struct NodoEventStruct TempEvent;
-    ClearEvent(&TempEvent);    
-    TempEvent.Port                  = VALUE_ALL;
-    TempEvent.Command               = CMD_MESSAGE;
-    TempEvent.Par1                  = Settings.Unit;
-    TempEvent.Par2                  = MESSAGE_03;
-    SendEvent(&TempEvent, false,true);
     }
 
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W510 chip
@@ -1055,7 +1042,7 @@ boolean SaveEventlistSDCard(char *FileName)
 
   free(TempString);
   return r;
-}
+  }
 
 
 boolean FileList(void)
@@ -1313,11 +1300,11 @@ void md5(char* dest)
 }
 
 
-boolean FileExecute(char* FileName, boolean ContinueOnError)
+byte FileExecute(char* FileName, boolean ContinueOnError)
   {
   int x,y;
   char *TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
-  boolean error=false;
+  byte error=0;
 
   Led(RED);
 
@@ -1339,11 +1326,12 @@ boolean FileExecute(char* FileName, boolean ContinueOnError)
         y=0;
         SelectSD(false);
         PrintTerminal(TmpStr);
-        error=ExecuteLine(TmpStr,VALUE_SOURCE_FILE);//???@@@
+        if(ExecuteLine(TmpStr,VALUE_SOURCE_FILE)!=0)
+          error=MESSAGE_15;
         SelectSD(true);
 
         if(ContinueOnError)
-          error=false;
+          error=0;
 
         if(error)
           break;
@@ -1352,7 +1340,7 @@ boolean FileExecute(char* FileName, boolean ContinueOnError)
     dataFile.close();
     }  
   else
-    error=true;
+    error=MESSAGE_03;
 
   free(TmpStr);
   SelectSD(false);
@@ -2479,7 +2467,7 @@ byte NodoOnline(byte Unit, byte Port)
       NodoOnlinePort[Unit]=VALUE_SOURCE_IR;
     else if(Port==VALUE_SOURCE_RF && NodoOnlinePort[Unit]!=VALUE_SOURCE_IR && NodoOnlinePort[Unit]!=VALUE_SOURCE_I2C)
       NodoOnlinePort[Unit]=VALUE_SOURCE_RF;
-    }
+    }    
   return NodoOnlinePort[Unit];
   }
 /*********************************************************************************************\

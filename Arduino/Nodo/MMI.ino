@@ -4,9 +4,9 @@
  \*********************************************************************************************/
 void PrintEvent(struct NodoEventStruct *Event)
   {
-  byte x;
+  int x;
 
-  PrintNodoEventStruct("PrintEvent:",Event);//???
+//  PrintNodoEventStruct("PrintEvent:",Event);//???
   
   // Systeem events niet weergeven.
   if(Event->Flags & TRANSMISSION_SYSTEM)
@@ -17,8 +17,13 @@ void PrintEvent(struct NodoEventStruct *Event)
 
   StringToPrint[0]=0; // als start een lege string
 
+  // Bij input uit de eventlist wordt tevens de executiondepth en regel uit de eventlist weergegeven. We hebben hiervoor uit de struct
+  // Checksum en Direction 'misbruikt'. Bewaar regelnummer in x en herstel direction weer. Deze oplossing is niet netjes maar bespaart veel code/ram,
   if(Event->Port==VALUE_SOURCE_EVENTLIST)
-    Event->Direction  = VALUE_DIRECTION_INTERNAL;
+    {
+    x=Event->Checksum*256+Event->Direction;
+    Event->Direction=VALUE_DIRECTION_INTERNAL;
+    }
 
   // Direction
   if(Event->Direction)
@@ -28,7 +33,6 @@ void PrintEvent(struct NodoEventStruct *Event)
     }
 
   // Poort
-  x=true;
   strcat(StringToPrint, cmd2str(Event->Port));
   if(Event->Port==VALUE_SOURCE_HTTP || Event->Port==VALUE_SOURCE_TELNET)
     {
@@ -43,7 +47,7 @@ void PrintEvent(struct NodoEventStruct *Event)
     strcat(StringToPrint, "(");
     strcat(StringToPrint, int2str(Event->Flags-1));
     strcat(StringToPrint, ".");
-    strcat(StringToPrint, int2str(Event->Checksum*256+Event->Direction));
+    strcat(StringToPrint, int2str(x));
     strcat(StringToPrint, ")");
     }
 
@@ -67,7 +71,7 @@ void PrintEvent(struct NodoEventStruct *Event)
   PrintTerminal(StringToPrint);   // stuur de regel naar Serial en/of naar Ethernet
 
   // LOG OP SDCARD
-  if(bitRead(HW_Config,HW_SDCARD && Settings.Log==VALUE_ON)) 
+  if(bitRead(HW_Config,HW_SDCARD) && Settings.Log==VALUE_ON) 
     {
     TmpStr[0]=0;
     // datum en tijd weergeven
@@ -474,12 +478,13 @@ int ExecuteLine(char *Line, byte Port)
   char *TmpStr2=(char*)malloc(INPUT_BUFFER_SIZE+2);
   int CommandPos;
   int LinePos;
-  int w,x,y,z;//??? allen nodig?
+  int w,x,y;
   int EventlistWriteLine=0;
-  byte error=0;
-  byte State_EventlistWrite=0;
+  byte error=0, State_EventlistWrite=0,SendToUnit=0;
   unsigned long a;
   struct NodoEventStruct EventToExecute,TempEvent;
+
+  Serial.print(F("*** debug: ExecuteLine="));Serial.println(Line); //??? Debug
 
   Led(RED);
 
@@ -529,6 +534,7 @@ int ExecuteLine(char *Line, byte Port)
         {
         Command[CommandPos]=0;
         CommandPos=0;
+Serial.print(F("*** debug: Command="));Serial.println(Command); //??? Debug
         ClearEvent(&EventToExecute);
         EventToExecute.Port=Port;
         
@@ -733,9 +739,12 @@ int ExecuteLine(char *Line, byte Port)
             break;
 
           case CMD_SENDTO:
-            if(EventToExecute.Par1!=VALUE_OFF && EventToExecute.Par1>UNIT_MAX)
-              error=MESSAGE_02;
-            break;
+            if(EventToExecute.Par1==VALUE_OFF)
+              SendToUnit=0;
+            else
+              SendToUnit=EventToExecute.Par1;
+            EventToExecute.Command=0;
+            break;    
 
 //          case CMD_LOCK: // Hier wordt de lock code o.b.v. het wachtwoord ingesteld. Alleen van toepassing voor de Mega.??? nog uitwerken
 //            a=0L;
@@ -1090,7 +1099,7 @@ int ExecuteLine(char *Line, byte Port)
               {
               if(State_EventlistWrite==0)
                 // Commando uitvoeren heeft alleen zin er geen eventlistwrite commando actief is
-                FileExecute(FileName, EventToExecute.Par2==VALUE_ON);        
+                error=FileExecute(FileName, EventToExecute.Par2==VALUE_ON);        
               }
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
@@ -1156,7 +1165,8 @@ int ExecuteLine(char *Line, byte Port)
               strcat(TmpStr1,".dat");
               if(!SaveEventlistSDCard(TmpStr1))
                 {
-                error=MESSAGE_03;
+                bitWrite(HW_Config,HW_SDCARD,0);
+                error=MESSAGE_14;
                 break;
                 }
               }
@@ -1204,7 +1214,10 @@ int ExecuteLine(char *Line, byte Port)
 
           case CMD_FILE_LIST:
             if(!FileList())
-              error=MESSAGE_03;
+              {
+              bitWrite(HW_Config,HW_SDCARD,0);
+              error=MESSAGE_14;
+              }
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
 
@@ -1252,15 +1265,14 @@ int ExecuteLine(char *Line, byte Port)
 
           default:
             {              
-            // Als het geen regulier commando was EN geen commando met afwijkende MMI, dan kijken of file op SDCard staat)
-            strcpy(TmpStr1,Command);
-            TmpStr1[8]=0;// Gebruik commando als een filename. Voor de zekerheid te lange filename afkappen ???? dit zorgt ook voor afkappen van commando bij foutcode
-            if(!FileExecute(Command, EventToExecute.Par1==VALUE_ON))
-              {
-              error=0;
-              EventToExecute.Command=0;
-              }
-            else
+//            // Als het geen regulier commando was EN geen commando met afwijkende MMI, dan kijken of file op SDCard staat)
+//            strcpy(TmpStr1,Command);
+//            TmpStr1[8]=0;// Gebruik commando als een filename. Voor de zekerheid te lange filename afkappen ???? dit zorgt ook voor afkappen van commando bij foutcode
+//            error=FileExecute(Command, EventToExecute.Par1==VALUE_ON);
+            EventToExecute.Command=0;
+
+            // als script niet te openen, dan is het ingevoerde commando ongeldig.
+            if(error==MESSAGE_03)
               error=MESSAGE_01;
             }
           }
@@ -1305,15 +1317,6 @@ int ExecuteLine(char *Line, byte Port)
             State_EventlistWrite=2;
             }
           }
-
-        if(error) // er heeft zich een fout voorgedaan
-          {
-          strcpy(TmpStr2,Command);
-          strcat(TmpStr2, " ?");
-          PrintTerminal(TmpStr2);
-          RaiseMessage(error);
-          Line[0]=0;
-          }
         }
         
       // Tekens toevoegen aan commando zolang er nog ruimte is in de string
@@ -1321,21 +1324,33 @@ int ExecuteLine(char *Line, byte Port)
         Command[CommandPos++]=LineChar;      
 
       LinePos++;
-      }    
+      }// einde commando behandeling    
   
     // Verzend de inhoud van de queue naar de slave Nodo
-    if(SendToUnit!=Settings.Unit && SendToUnit!=0)
+    if(SendToUnit!=Settings.Unit && SendToUnit!=0 && error==0)
       {
       error=QueueSend(SendToUnit);
+      if(error==MESSAGE_13)
+        {
+        CommandPos=0;
+        LinePos=0;
+        error=0;    
+        Serial.print(F("*** debug: SendTo retry."));Serial.println(); //??? Debug
+        }
       }
-    }
+    }// einde regel behandeling
 
   free(TmpStr2);
   free(TmpStr1);
 
   // Verwerk eventuele events die in de queue zijn geplaatst.
-  QueueProcess();//>>? error teruggeven???
 
+  if(error)
+    RaiseMessage(error);
+  else
+    QueueProcess();
+    
+  Serial.print(F("*** debug: (2) error="));Serial.println(error); //??? Debug
   return error;
   }
 
@@ -1380,15 +1395,15 @@ void PrintWelcome(void)
  \*********************************************************************************************/
 void PrintEvent(struct NodoEventStruct *Event)
   {
-  Trace(0,0,0);
+  // Trace(0,0,0);
   Serial.print(Event->Direction);
-  Serial.print(", ");
+  Serial.print(",");
   Serial.print(Event->Port);
-  Serial.print(", ");
+  Serial.print(",");
   Serial.print(Event->Command);
-  Serial.print(", ");
+  Serial.print(",");
   Serial.print(Event->Par1);
-  Serial.print(", ");
+  Serial.print(",");
   Serial.println(Event->Par2,HEX);
   } 
 
