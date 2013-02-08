@@ -4,7 +4,7 @@
 #define SIGNAL_REPEAT_TIME        1000 // Tijd waarbinnen hetzelfde event niet nogmaals via RF of IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
 
 boolean I2C_EventReceived=false;                            // Als deze vlag staat, is er een I2C event binnengekomen.
-struct NodoEventStruct     I2C_Event;
+struct NodoEventStruct I2C_Event;
 
 boolean ScanEvent(struct NodoEventStruct *Event)
   {
@@ -31,16 +31,23 @@ boolean ScanEvent(struct NodoEventStruct *Event)
 
     if(Fetched)
       {
-PrintNodoEventStruct("Fetch",Event);//???
       if(AnalyzeRawSignal(Event))// als AnalyzeRawSignal een event heeft opgeleverd dan is het struct Event gevuld.
         {
         //??? herstellen Content=EventStruct2Event(Event);    
         StaySharpTimer=millis()+SHARP_TIME;          
 
+        // Reset de timers nadat er een event is binnegekomen. Dit om later voorafgaand aan het zenden, indien nodig, een
+        // korte pauze te nemen zodat de andere Nodo weer gereed staat voor ontvangst.
+        DelayTransmission(Fetched,true);
+
         if(Event->Command)
           {
           Event->Port=Fetched;
           Event->Direction=VALUE_DIRECTION_INPUT;
+
+          // Een event kan een verzoek bevatten om bevestiging. Doe dit dan pas na verwerking.
+          if(Event->Flags & TRANSMISSION_CONFIRM)
+            RequestForConfirm=true;
 
           #ifdef NODO_MEGA
           // registreer welke Nodo's op welke poort zitten en actualiseer tabel.

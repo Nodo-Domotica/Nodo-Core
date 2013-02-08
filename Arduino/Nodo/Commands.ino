@@ -1,11 +1,3 @@
-#define EventPartType(Event)      ((Event>>28)&0x0f)
-#define EventPartUnit(Event)      ((Event>>24)&0x0f)
-#define EventPartCommand(Event)   ((Event>>16)&0xff)
-#define EventPartPar1(Event)      ((Event>>8) &0xff)
-#define EventPartPar2(Event)      ( Event     &0xff)
-#define EventPart4Bit(Event)      ((Event>>12)&0x0f)
-#define EventPart10Bit(Event)     (Event&0x3ff)
-#define EventPart16Bit(Event)     (Event&0xffff)
 
 /*********************************************************************************************\
  * Eenvoudige check of event een Nodo commando is die voor deze Nodo bestemd is.
@@ -16,10 +8,12 @@ byte NodoType(struct NodoEventStruct *InEvent)
   {
   byte x;
 
-//  // als het geen Nodo event of commando was dan zowieso geen commando
-//  if(InEvent->Type!=SIGNAL_TYPE_NODO)
-//    return false;??? achterhaalde check wijze?
-  
+  if(InEvent->Flags & TRANSMISSION_EVENT)
+     return NODO_TYPE_EVENT;  
+
+  if(InEvent->Flags & TRANSMISSION_COMMAND)
+     return NODO_TYPE_COMMAND;  
+
   if(InEvent->Command>=FIRST_EVENT && InEvent->Command<=LAST_EVENT)
     return NODO_TYPE_EVENT;
 
@@ -41,7 +35,8 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
   unsigned long a;
   int x,y;
   byte error=0;
-  struct NodoEventStruct TempEvent;
+  
+  struct NodoEventStruct TempEvent=*EventToExecute;
   
   #ifdef NODO_MEGA
   char *TempString=(char*)malloc(50);
@@ -51,33 +46,33 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
     {   
     #ifdef PROTOCOL_1
     case CMD_PROTOCOL_1_SEND:
-      EventToExecute->Command=CMD_PROTOCOL_1;
-      Protocol_1_EventToRawsignal(EventToExecute);  // Bouw het RawSignal op
-      SendEvent(EventToExecute,true,true);               // Verzenden signaal
+      TempEvent.Command=CMD_PROTOCOL_1;
+      Protocol_1_EventToRawsignal(&TempEvent);  // Bouw het RawSignal op
+      SendEvent(&TempEvent,true,true);               // Verzenden signaal
       break;
     #endif
       
     #ifdef PROTOCOL_2
     case CMD_PROTOCOL_2_SEND:
-      EventToExecute->Command=CMD_PROTOCOL_2;
-      Protocol_2_EventToRawsignal(EventToExecute);  // Bouw het RawSignal op
-      SendEvent(EventToExecute,true,true);               // Verzenden signaal
+      TempEvent.Command=CMD_PROTOCOL_2;
+      Protocol_2_EventToRawsignal(&TempEvent);  // Bouw het RawSignal op
+      SendEvent(&TempEvent,true,true);               // Verzenden signaal
       break;
     #endif
       
     #ifdef PROTOCOL_3
     case CMD_PROTOCOL_3_SEND:
-      EventToExecute->Command=CMD_PROTOCOL_3;
-      Protocol_3_EventToRawsignal(EventToExecute);  // Bouw het RawSignal op
-      SendEvent(EventToExecute,true,true);               // Verzenden signaal
+      TempEvent.Command=CMD_PROTOCOL_3;
+      Protocol_3_EventToRawsignal(&TempEvent);  // Bouw het RawSignal op
+      SendEvent(&TempEvent,true,true);               // Verzenden signaal
       break;
     #endif
       
     #ifdef PROTOCOL_4
     case CMD_PROTOCOL_4_SEND:
-      EventToExecute->Command=CMD_PROTOCOL_4;
-      Protocol_4_EventToRawsignal(EventToExecute);  // Bouw het RawSignal op
-      SendEvent(EventToExecute,true,true);               // Verzenden signaal
+      TempEvent.Command=CMD_PROTOCOL_4;
+      Protocol_4_EventToRawsignal(&TempEvent);  // Bouw het RawSignal op
+      SendEvent(&TempEvent,true,true);               // Verzenden signaal
       break;
     #endif      
       
@@ -85,11 +80,11 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       if(EventToExecute->Par1>0 || EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         UserVar[EventToExecute->Par1-1]+=ul2float(EventToExecute->Par2);
-        EventToExecute->Command      = CMD_VARIABLE_EVENT;
-        EventToExecute->Par2         = float2ul(UserVar[EventToExecute->Par1-1]);
-        EventToExecute->Direction    = VALUE_DIRECTION_INTERNAL;
-        EventToExecute->Port         = VALUE_SOURCE_VARIABLE;
-        ProcessEvent2(EventToExecute);
+        TempEvent.Command      = CMD_VARIABLE_EVENT;
+        TempEvent.Par2         = float2ul(UserVar[EventToExecute->Par1-1]);
+        TempEvent.Direction    = VALUE_DIRECTION_INTERNAL;
+        TempEvent.Port         = VALUE_SOURCE_VARIABLE;
+        ProcessEvent2(&TempEvent);
         }
       break;        
 
@@ -97,11 +92,11 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       if(EventToExecute->Par1>0 || EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         UserVar[EventToExecute->Par1-1]-=ul2float(EventToExecute->Par2);
-        EventToExecute->Command      = CMD_VARIABLE_EVENT;
-        EventToExecute->Par2         = float2ul(UserVar[EventToExecute->Par1-1]);
-        EventToExecute->Direction    = VALUE_DIRECTION_INTERNAL;
-        EventToExecute->Port         = VALUE_SOURCE_VARIABLE;
-        ProcessEvent2(EventToExecute);
+        TempEvent.Command      = CMD_VARIABLE_EVENT;
+        TempEvent.Par2         = float2ul(UserVar[EventToExecute->Par1-1]);
+        TempEvent.Direction    = VALUE_DIRECTION_INTERNAL;
+        TempEvent.Port         = VALUE_SOURCE_VARIABLE;
+        ProcessEvent2(&TempEvent);
         }
       break;        
 
@@ -109,10 +104,10 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       if(EventToExecute->Par1>0 || EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         UserVar[EventToExecute->Par1-1]=ul2float(EventToExecute->Par2);
-        EventToExecute->Command=CMD_VARIABLE_EVENT;
-        EventToExecute->Port=VALUE_SOURCE_VARIABLE;
-        EventToExecute->Direction=VALUE_DIRECTION_INTERNAL;
-        ProcessEvent2(EventToExecute);      // verwerk binnengekomen event.
+        TempEvent.Command=CMD_VARIABLE_EVENT;
+        TempEvent.Port=VALUE_SOURCE_VARIABLE;
+        TempEvent.Direction=VALUE_DIRECTION_INTERNAL;
+        ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
         }
       break;         
   
@@ -120,10 +115,10 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       if(EventToExecute->Par2>0 || EventToExecute->Par2<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         UserVar[EventToExecute->Par1-1]=UserVar[EventToExecute->Par2-1];
-        EventToExecute->Command=CMD_VARIABLE_EVENT;
-        EventToExecute->Port=VALUE_SOURCE_VARIABLE;
-        EventToExecute->Direction=VALUE_DIRECTION_INTERNAL;
-        ProcessEvent2(EventToExecute);      // verwerk binnengekomen event.
+        TempEvent.Command=CMD_VARIABLE_EVENT;
+        TempEvent.Port=VALUE_SOURCE_VARIABLE;
+        TempEvent.Direction=VALUE_DIRECTION_INTERNAL;
+        ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
         }
       break;        
 
@@ -336,7 +331,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       break;
 
     case CMD_TIMER_RANDOM:
-      UserTimer[EventToExecute->Par1-1]=millis()+random(EventToExecute->Par2)*60000;// EventToExecute->Par1=timer, EventToExecute->Par2=maximaal aantal minuten
+      UserTimer[EventToExecute->Par1-1]=millis()+random(EventToExecute->Par2)*60000;// EventToExecute->Par1=timer, EventToExecute->Par2=maximaal aantal minuten???
       break;
 
 //    case CMD_WAIT_EVENT:// WaitEvent <unit>, <command>
@@ -345,7 +340,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
 //??? herstellen
 
     case CMD_DELAY:
-      Wait(EventToExecute->Par1, false, 0);
+      Wait(EventToExecute->Par1, false, 0, false);
       break;        
 
     case CMD_SEND_EVENT://???@@
@@ -382,10 +377,10 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         {
         digitalWrite(PIN_WIRED_OUT_1+x-1,(EventToExecute->Par2==VALUE_ON));
         WiredOutputStatus[x-1]=(EventToExecute->Par2==VALUE_ON);
-        EventToExecute->Par1=x; // ??? Kan dit of moet hiervoor een nieuwe struct komen?
-        EventToExecute->Port=VALUE_SOURCE_WIRED;
-        EventToExecute->Direction=VALUE_DIRECTION_OUTPUT;
-        PrintEvent(EventToExecute);
+        TempEvent.Par1=x;
+        TempEvent.Port=VALUE_SOURCE_WIRED;
+        TempEvent.Direction=VALUE_DIRECTION_OUTPUT;
+        PrintEvent(&TempEvent);
         }
       break;
                          
@@ -434,13 +429,6 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
     case CMD_WIRED_THRESHOLD:
       Settings.WiredInputThreshold[EventToExecute->Par1]=EventToExecute->Par2;
       break;                  
-
-    case CMD_SENDTO:
-      if(EventToExecute->Par1==VALUE_OFF)
-        SendToUnit=0;
-      else
-        SendToUnit=EventToExecute->Par1;
-      break;    
 
     case CMD_STATUS:
       // Het commando [Status] verzendt de status naar de bron waar het verzoek van is ontvangen. Serial en TelNet worden beschouwd als dezelfde bron.

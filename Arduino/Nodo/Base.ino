@@ -294,10 +294,11 @@ prog_char PROGMEM Cmd_207[]="Unable to establish TCP/IP connection.";
 prog_char PROGMEM Cmd_208[]="Incorrect password.";
 prog_char PROGMEM Cmd_209[]="Wireless access locked.";
 prog_char PROGMEM Cmd_210[]="Access not allowed.";
-prog_char PROGMEM Cmd_211[]="Timeout error."; 
-prog_char PROGMEM Cmd_212[]="Unknown unit number."; 
-prog_char PROGMEM Cmd_213[]="Checksum error."; 
-prog_char PROGMEM Cmd_214[]="";
+prog_char PROGMEM Cmd_211[]="SendTo timeout error."; 
+prog_char PROGMEM Cmd_212[]="Unknown unit in SendTo."; 
+prog_char PROGMEM Cmd_213[]="Data lost during SendTo."; 
+prog_char PROGMEM Cmd_214[]="SDCard error.";
+prog_char PROGMEM Cmd_215[]="Aborted.";
 
 // tabel die refereert aan de commando strings
 PROGMEM const char *CommandText_tabel[]={
@@ -558,8 +559,9 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define MESSAGE_12                     212
 #define MESSAGE_13                     213
 #define MESSAGE_14                     214
-#define LAST_VALUE                     214 // laatste VALUE uit de commando tabel
-#define COMMAND_MAX                    214 // hoogste commando
+#define MESSAGE_15                     215
+#define LAST_VALUE                     215 // laatste VALUE uit de commando tabel
+#define COMMAND_MAX                    215 // hoogste commando
 
 #define RED                          1  // Led = Rood
 #define GREEN                        2  // Led = Groen
@@ -701,7 +703,6 @@ struct SettingsStruct
   boolean NewNodo;
   int     WiredInputThreshold[WIRED_PORTS], WiredInputSmittTrigger[WIRED_PORTS];
   byte    WiredInputPullUp[WIRED_PORTS];
-//???  byte    TransmitI2C;
   byte    TransmitIR;
   byte    TransmitRF;
   byte    WaitFreeRF;
@@ -731,14 +732,16 @@ struct SettingsStruct
 
   // Een Nodo signaal bestaat uit een 32-bit Event en een 32-bit met meta-data t.b.v. het transport van Nodo naar Nodo.
   // In het transport deel bevinden zich de volgende transmissievlaggen:
-  #define TRANSMISSION_SEQUENCE     1  // Master => Slave : Event maaakt deel uit van een reeks
+  #define TRANSMISSION_QUEUE        1  // Master => Slave : Event maaakt deel uit van een reeks die aan de slave zijde in de queue geplaatst moeten worden alvorens te verwerken.
   #define TRANSMISSION_NEXT         2  // Master => Slave : Na dit event volgt direct nog een event.
   #define TRANSMISSION_LOCK         4  // Master => Slave : Verzoek om de ether te blokkeren voor exclusieve communicatie tussen master en een slave Nodo.
   #define TRANSMISSION_CONFIRM      8  // Master => Slave : Verzoek aan master om bevestiging te sturen na ontvangst.
   #define TRANSMISSION_SYSTEM      16  // System event
+  #define TRANSMISSION_COMMAND     32  // 
+  #define TRANSMISSION_EVENT       64  // 
 
   // De Nodo kent naast gebruikers commando's en events eveneens Nodo interne events
-  #define SYSTEM_COMMAND_CONFIRMED    1  // Bevestiging op verzoek van een TRANSMISSION_CONFIRM. Par1 bevat aantal verwerkte events. 
+  #define SYSTEM_COMMAND_CONFIRMED  1  // Bevestiging op verzoek van een TRANSMISSION_CONFIRM. Par1 bevat aantal verwerkte events. 
   
 struct NodoEventStruct
   {
@@ -760,7 +763,6 @@ struct NodoEventStruct
 byte Transmission_SelectedUnit=0;                           // Nodo die door een master is geselecteerd om te zenden. 0=band vrij.
 boolean Transmission_ThisUnitIsMaster=false;
 boolean Transmission_NodoOnly=false;                        // Als deze vlag staat, dan worden er uitsluitend Nodo-eigen signalen ontvangen.
-byte SendToUnit;//??? waarom global???
   
 byte QueuePosition=0;
 unsigned long PulseCount=0L;                                // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
@@ -776,6 +778,7 @@ uint8_t RFbit,RFport,IRbit,IRport;                          // t.b.v. verwerking
 float UserVar[USER_VARIABLES_MAX];                          // Gebruikers variabelen
 unsigned long HW_Config=0;                                  // Hardware configuratie zoals gedetecteerd door de Nodo. 
 struct NodoEventStruct LastReceived;                        // Laatst ontvangen event
+byte RequestForConfirm=0;                                   // Als ongelijk nul, dan heeft deze Nodo een verzoek ontvangen om een systemevent 'Confirm' te verzenden. Waarde wordt in Par1 meegezonden.
     
 #ifdef NODO_MEGA //??? welke globalen kunnen verhuizen naar een funktie???
 byte BIC=0;                                                 // Board Identification Code: identificeert de hardware uitvoering van de Nodo
@@ -874,7 +877,6 @@ void setup()
   IRport=digitalPinToPort(PIN_IR_RX_DATA);
 
   Led(BLUE);
-
 
   #ifdef NODO_MEGA
   ClearEvent(&LastReceived);
@@ -1013,7 +1015,9 @@ void loop()
     {
     // Check voor IR, I2C of RF events
     if(ScanEvent(&ReceivedEvent)) 
+      {
       ProcessEvent1(&ReceivedEvent); // verwerk binnengekomen event.
+      }
       
     // 1: niet tijdkritische processen die periodiek uitgevoerd moeten worden
     if(LoopIntervalTimer_1<millis())// korte interval
@@ -1105,11 +1109,6 @@ void loop()
                   if(TerminalLocked==0) // als op niet op slot
                     {
                     TerminalClient.getRemoteIP(ClientIPAddress);  
-                    
-                    // Iedere nieuwe verwerking starten met uitvoer voor alle units
-                    SendToUnit=0;
-//                    SendToPort=VALUE_SOURCE_RF;//???
-                    
                     ExecuteLine(InputBuffer_Terminal, VALUE_SOURCE_TELNET);
                     TerminalClient.write('>');// prompt
                     }
@@ -1190,12 +1189,6 @@ void loop()
                   {
                   SerialHold(true);
                   InputBuffer_Serial[SerialInByteCounter]=0; // serieel ontvangen regel is compleet
-                  
-                  
-                  // Iedere nieuwe verwerking starten met uitvoer voor zichzelf.
-                  SendToUnit=0;
-//                  SendToPort=VALUE_SOURCE_RF;???
-                    
                   ExecuteLine(InputBuffer_Serial, VALUE_SOURCE_SERIAL);
                   Serial.write('>'); // Prompt
                   SerialInByteCounter=0;  

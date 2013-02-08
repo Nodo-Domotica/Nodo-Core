@@ -6,24 +6,17 @@
  \*********************************************************************************************/
 boolean ProcessEvent1(struct NodoEventStruct *Event)
   {
-  byte ProcessedFromQueue=0;
   struct NodoEventStruct TempEvent;
-  
-  PrintNodoEventStruct("ProcessEvent1:",Event);//???
   
   SerialHold(true);  // als er een regel ontvangen is, dan binnenkomst van signalen stopzetten met een seriele XOFF
   Led(RED); // LED aan als er iets verwerkt wordt      
-//  unsigned long Event32=EventStruct2Event(Event);
 
-  // Iedere nieuwe verwerking starten met uitvoer voor zichzelf.
-  SendToUnit=0;
-//  SendToPort=VALUE_SOURCE_RF;???
-  
   #ifdef NODO_MEGA
   if(FileWriteMode!=0)
     return true;
 
   LastReceived=*Event;            // LastReceived wordt gebruikt om later de status van laatste ontvangen event te kunnen gebruiken t.b.v. substitutie van vars.
+  ExecutionDepth=0;               // nesting nog niet aan de orde. Dit is het eerste begin.
 
 //??? Rawsignal later uitwerken.  CheckRawSignalKey(&Event32); // check of er een RawSignal key op de SDCard aanwezig is en vul met Nodo Event. Call by reference!
 //  // Als de RAW pulsen worden opgevraagd door de gebruiker...
@@ -42,34 +35,35 @@ boolean ProcessEvent1(struct NodoEventStruct *Event)
 
   // In het transmissie deel van event kan zijn aangegeven dat dit event er één is uit een reeks events direct achter elkaar worden
   // verzonden. Is dit het geval, dan event(s) niet direct verwerken maar in de queue plaatsen zodat er geen events worden gemist.
-
-  if(Event->Flags & TRANSMISSION_SEQUENCE) // Is dit event de eerste uit een reeks?
+  // In andere gevallen direct verwerken.
+  if(Event->Flags & TRANSMISSION_QUEUE) // Is dit event de eerste uit een reeks?
     {
-    Transmission_NodoOnly=true; // Zorg er voor dat de Nodo tijdelijk uitsluitend Nodo events kan ontvangen.
-      QueueAdd(Event);
+    QueueAdd(Event);
+    Transmission_NodoOnly=true;            // Zorg er voor dat de Nodo tijdelijk uitsluitend Nodo events kan ontvangen.
     
-    // was het de laatste uit de reeks? dan de queue verwerken.
-    if((Event->Flags & TRANSMISSION_NEXT)==0) 
-      {
-      ProcessedFromQueue=QueueProcess();    // Verwerk eventuele events die in de queue zijn geplaatst.
-      Transmission_NodoOnly=false;
-      }
+    // Als er nog meer events worden verwacht, sla dan alle voorbijkomende events op in de queue. Breek af zodra TRANSMISSION_SEQUENCE vlag niet meer aanwezig of timeout.
+    // Als er een timeout was, dan de queue weer leeg maken omdat we data niet kunnen vertrouwen. In dit geval zal de confirm nul teruggeven en dus aan de master
+    // zijde een foutmelding opleveren..
+    if(Event->Flags&TRANSMISSION_NEXT)
+      if(!Wait(10, false,0 , true))
+        QueuePosition=0;
+    
+    Transmission_NodoOnly=false;
+    // De queue is nu gevuld met de events van de master Nodo. Sla aantal events in de queue op t.b.v. verzenden van bevestiging naar de master.
+    // Op basis van deze terugkoppeling weet de master of er geen events verloren zijn gegaan of extra opgetreden.
+    RequestForConfirm=QueuePosition;    
     }
-
-  
-  if(Event->Flags & TRANSMISSION_SYSTEM)// als het een systeem event is
-    {
-    PrintNodoEventStruct("System commando!", Event);//???
-    }  
-  else // standaard event
+  else
     {
     // Verwerk het binnengekomen event
     ProcessEvent2(Event);
-    QueueProcess();    // Verwerk eventuele events die in de queue zijn geplaatst.
     }
     
-  // Een event kan een verzoek bevatten om bevestiging. Doe dit dan pas na verwerking.
-  if(Event->Flags & TRANSMISSION_CONFIRM)
+  // Verwerk eventuele events die in de queue zijn geplaatst.
+  QueueProcess();    
+
+  // Een event kan een verzoek bevatten om bevestiging. Doe dit dan pas na alle verwerking.
+  if(RequestForConfirm)
     {
     // Initialiseer een Event en Transmissie
     ClearEvent(&TempEvent);    
@@ -77,18 +71,38 @@ boolean ProcessEvent1(struct NodoEventStruct *Event)
     TempEvent.Port                  = Event->Port;
     TempEvent.Flags                 = TRANSMISSION_SYSTEM;    // Event is niet voor de gebruiker bedoeld
     TempEvent.Command               = SYSTEM_COMMAND_CONFIRMED;
-    TempEvent.Par1                  = ProcessedFromQueue;
+    TempEvent.Par1                  = RequestForConfirm;
 
-    delay(1000);//???
+    // De master die verzocht om de confirm zal direct na het zenden enige tijd nodig hebben om om te schakelen van zenden naar ontvangen.
+    // Korte wachttijd kiezen afhankelijk van het kanaal van transport.
+    
+    switch(LastReceived.Port)
+      {
+      case VALUE_SOURCE_RF:
+        delay(1000);
+        break;
+        
+      case VALUE_SOURCE_IR:
+        delay(100);
+        break;
 
+      case VALUE_SOURCE_I2C:
+        delay(100);
+        break;
+      }
     SendEvent(&TempEvent, false,false);
     }
   }
   
 byte ProcessEvent2(struct NodoEventStruct *Event)
   {
-  int x;
+  int x,y;
   
+  if(Event->Flags & TRANSMISSION_SYSTEM)// als het een systeem event is
+    {
+    //    PrintNodoEventStruct("System commando!", Event);//???
+    }  
+
   if(Settings.Lock) //??? verkassen naar ProcessEvent1 of scanevent???
     {
     if((Event->Port==VALUE_SOURCE_RF || Event->Port==VALUE_SOURCE_IR) && millis()>60000) // de eerste minuut is de lock nog niet actief. Ontsnapping voor als abusievelijk ingesteld
@@ -164,8 +178,8 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
         // De actie uit de eventlist kan van het type commando of event zijn. 
         if(NodoType(&EventlistAction)==NODO_TYPE_COMMAND) // is de ontvangen code een uitvoerbaar commando?
           {
-          PrintEvent(&EventlistAction); 
-          if(!ExecuteCommand(&EventlistAction))
+          PrintEvent(&EventlistAction);
+          if(ExecuteCommand(&EventlistAction) !=0)
             {
             ExecutionDepth--;
             break;
@@ -298,6 +312,9 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
 // De queue bevat event gegevens behalve de transmissie gegevens. 
 struct QueueStruct
   {
+  byte Flags;
+
+
   byte Port;
   byte Unit;
   byte Command;
@@ -311,34 +328,33 @@ struct QueueStruct
  \*********************************************************************************************/
 byte QueueSend(byte DestUnit)
   {
-  byte x;
-  byte ReturnCode;
-  
+  byte x,Port,ReturnCode;
+
+    QueuePosition=0;
+     return MESSAGE_11;      //???
+
   // De port waar de SendTo naar toe moet halen we uit de lijst met Nodo's die wordt onderhouden door de funktie  NodoOnline();
-  byte Port=NodoOnline(DestUnit,0);
+  Port=NodoOnline(DestUnit,0);
+
+  // indien te snel opvolgend, dan korte wachttijd.
   if(Port!=0)
     {
     // Zet WaitFreeRF aan en de Transmit poorten aan. Bewaar originele instelligen van de gebruiker.
     byte OrgWaitFreeRF  =Settings.WaitFreeRF;
-    byte OrgTransmitRF  =Settings.TransmitRF;
-    byte OrgTransmitIR  =Settings.TransmitIR;
-    Settings.WaitFreeRF  =VALUE_ON;
-    Settings.TransmitRF  =VALUE_ON;
-    Settings.TransmitIR  =VALUE_ON;
   
     // Initialiseer een Event en Transmissie
     struct NodoEventStruct Event;
     ClearEvent(&Event);
   
     // Geef aan dat er een reeks wordt verzonden, dat er na verzending nog een event volgt en reserveer de band exclusief voor deze Nodo.
-    Event.Flags = TRANSMISSION_SEQUENCE | TRANSMISSION_NEXT | TRANSMISSION_LOCK; 
+    Event.Flags = TRANSMISSION_QUEUE | TRANSMISSION_NEXT | TRANSMISSION_LOCK; 
     
     // Verzend alle events uit de queue. Alleen de bestemmings Nodo zal deze events in de queue plaatsen
     for(x=0;x<QueuePosition;x++)
       {    
       // laatste verzonden event markeren als laatste in de sequence.
       if(x==QueuePosition-1)
-        Event.Flags = TRANSMISSION_SEQUENCE | TRANSMISSION_CONFIRM; 
+        Event.Flags = TRANSMISSION_QUEUE | TRANSMISSION_CONFIRM; 
       
       Event.DestinationUnit     = DestUnit;
       Event.SourceUnit          = Settings.Unit;
@@ -358,15 +374,13 @@ byte QueueSend(byte DestUnit)
   
     // Zet originele instelligen van de gebruiker terug.
     Settings.WaitFreeRF  = OrgWaitFreeRF;
-    Settings.TransmitRF  = OrgTransmitRF;
-    Settings.TransmitIR  = OrgTransmitIR;
   
     // De ontvangende Nodo verzendt als het goed is een bevestiging dat het is ontvangen en het aantal commando's
     // wacht hierop, maar stop de voorbijkomende events in de queue.
     ClearEvent(&Event);
     Event.SourceUnit          = DestUnit;
     Event.Command             = SYSTEM_COMMAND_CONFIRMED;
-    if(Wait(30,false,&Event))
+    if(Wait(10,false,&Event,false))
       {
       if(x==Event.Par1)
         ReturnCode=0;
@@ -378,8 +392,12 @@ byte QueueSend(byte DestUnit)
     }
   else
     ReturnCode=MESSAGE_12;
-  
-  return ReturnCode;;
+    
+  if(ReturnCode)
+    QueuePosition=0;
+
+
+  return ReturnCode;
   }
 #endif
 
@@ -390,6 +408,7 @@ boolean QueueAdd(struct NodoEventStruct *Event)
   {
   if(QueuePosition<EVENT_QUEUE_MAX)
     {
+    Queue[QueuePosition].Flags   = Event->Flags;
     Queue[QueuePosition].Port    = Event->Port;
     Queue[QueuePosition].Unit    = Event->SourceUnit;
     Queue[QueuePosition].Command = Event->Command;
@@ -421,8 +440,7 @@ byte QueueProcess(void)
     for(x=0;x<QueuePosition;x++)
       {  
       // Als er in de queue een EventlistWrite commando zit, dan moeten de twee opvolgende posities uit de queue
-      // worden weggeschreven naar de eventlist.
-      
+      // worden weggeschreven naar de eventlist.      
       if(Queue[x].Command==CMD_EVENTLIST_WRITE && x<(QueuePosition-2)) // cmd
         {
         struct NodoEventStruct E;
@@ -452,6 +470,7 @@ byte QueueProcess(void)
         Event.Par2=Queue[x].Par2;
         Event.Direction=VALUE_DIRECTION_INPUT;
         Event.Port=Queue[x].Port;
+        Event.Flags=Queue[x].Flags;
         
         if(ProcessEvent2(&Event)==0);      // verwerk binnengekomen event.
           Processed++;

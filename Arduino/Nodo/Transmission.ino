@@ -1,3 +1,4 @@
+
 #define NODO_PULSE_0               500  // PWM: Tijdsduur van de puls bij verzenden van een '0' in uSec.
 #define NODO_PULSE_MID            1000  // PWM: Pulsen langer zijn '1'
 #define NODO_PULSE_1              1500  // PWM: Tijdsduur van de puls bij verzenden van een '1' in uSec. (3x NODO_PULSE_0)
@@ -8,10 +9,9 @@
 #define IR_REPEATS                   4 // aantal herhalingen van een code binnen één IR reeks
 #define MIN_PULSE_LENGTH           100 // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define MIN_RAW_PULSES              32 // =16 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
-#define RECEIVER_STABLE            500 // Tijd die de RF ontvanger nodig heeft om na inschakelen voedspanning signalen op te kunnen vangen. 
-#define MIN_TIME_BETWEEN_SEND_IR   250 // Minimale tijd tussen twee IR zend acties in milliseconden.
+#define MIN_TIME_BETWEEN_SEND_IR   100 // Minimale tijd tussen twee IR zend acties in milliseconden.
 #define MIN_TIME_BETWEEN_SEND_RF   500 // Minimale tijd tussen twee RF zend acties in milliseconden.
-#define MIN_TIME_BETWEEN_SEND_I2C  100 // Minimale tijd tussen twee I2C zend acties in milliseconden.
+#define MIN_TIME_BETWEEN_SEND_I2C   10 // Minimale tijd tussen twee I2C zend acties in milliseconden.
 
 boolean AnalyzeRawSignal(struct NodoEventStruct *E)
   {
@@ -401,32 +401,74 @@ boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
   return false;
 }
 
+/**********************************************************************************************\
+ * Bij uitwisseling van eventss tussen Nodo's moeten aan beide zijde rekening worden gehouden 
+ * met processingtijd en setup-tijd van de RF ontvangers. eze funktie houdt timers bij en voorziet
+ * in wachtloops die de setup-tijd en processing tijden rspecteren, maar niet voor onnodige
+ * vertraging zorgen.
+ *
+ * Na zenden timers setten, voor verzenden een wachttijd inlassen.
+ \*********************************************************************************************/
+void DelayTransmission(byte Port, boolean Set)
+  {
+  static unsigned long LastTransmitTime_RF=0L;
+  static unsigned long LastTransmitTime_IR=0L;
+  static unsigned long LastTransmitTime_I2C=0L;
+
+  // Als set, dan alleen tijdstip markeren
+  if(Set)
+    {
+    switch(Port)
+      {
+      case VALUE_SOURCE_RF:
+        LastTransmitTime_RF=millis();
+        break;
+
+      case VALUE_SOURCE_IR:
+        LastTransmitTime_IR=millis();
+        break;
+
+      case VALUE_SOURCE_I2C:
+        LastTransmitTime_I2C=millis();
+        break;
+      }
+    }
+  else    
+    {
+    switch(Port)
+      {
+      case VALUE_SOURCE_RF:
+        while((LastTransmitTime_RF+MIN_TIME_BETWEEN_SEND_RF) > millis());
+        break;
+
+      case VALUE_SOURCE_IR:
+        while((LastTransmitTime_IR+MIN_TIME_BETWEEN_SEND_IR) > millis());
+        break;
+
+      case VALUE_SOURCE_I2C:
+        while((LastTransmitTime_I2C+MIN_TIME_BETWEEN_SEND_I2C) > millis());
+        break;
+      }
+    }  
+  }
 
 /**********************************************************************************************\
  * verzendt een event en geeft dit tevens weer op SERIAL
  * Als UseRawSignal=true, dan wordt er geen signaal opgebouwd, maar de actuele content van de
  * RawSignal buffer gebruikt. In dit geval werkt de WaitFreeRF niet.
- \**********************************************************************************************/
+ \*********************************************************************************************/
 boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Display)
   {  
-  static unsigned long LastTransmitTime_RF=0L;
-  static unsigned long LastTransmitTime_IR=0L;
-  static unsigned long LastTransmitTime_I2C=0L;
-
-
-PrintNodoEventStruct("SendEvent:",ES);//???
-
-
   ES->Direction=VALUE_DIRECTION_OUTPUT;
   byte Port=ES->Port;
 
   // Als een andere Nodo actief is en excusief communiceert met een andere Nodo, c.q. de ruimte geclaimd is, dan mag deze Nodo niet zenden.
   // In dit geval resteert deze Nodo niets anders dan even te wachten tot de lijn weer vrijgegeven wordt of de wachttijd verlopen is.
-  // Als er een timeout optreedt, dan de blokkade opheffen. Dit ter voorkoing dat Nodo's oneindig wachten op vrije lijn.
+  // Als er een timeout optreedt, dan de blokkade opheffen. Dit ter voorkoming dat Nodo's oneindig wachten op vrije lijn.
   // Uitzondering is als de Nodo zelf de master was, dan deze mag altijd zenden.
 
   if(Transmission_SelectedUnit!=0 && Transmission_SelectedUnit!=Settings.Unit && !Transmission_ThisUnitIsMaster)
-    if(!Wait(30,true,0))
+    if(!Wait(30,true,0,false))
       {
       Transmission_SelectedUnit=0;//??? testen 
       Transmission_NodoOnly=false;
@@ -436,12 +478,11 @@ PrintNodoEventStruct("SendEvent:",ES);//???
   // te zorgen dat er een minimale wachttijd tussen de signlen zit. Tot slot wordt het signaal verzonden.
 
   // Verstuur signaal als I2C
-  if(bitRead(HW_Config,HW_I2C))
+  if(Port==VALUE_SOURCE_I2C || (bitRead(HW_Config,HW_I2C) && Port==VALUE_ALL))
     {
     ES->Port=VALUE_SOURCE_I2C;
     if(Display)PrintEvent(ES);
-    while((LastTransmitTime_I2C+MIN_TIME_BETWEEN_SEND_I2C) > millis());
-    LastTransmitTime_I2C=millis();
+    DelayTransmission(VALUE_SOURCE_I2C,false);
     SendI2C(ES);
     }
 
@@ -457,8 +498,7 @@ PrintNodoEventStruct("SendEvent:",ES);//???
     {
     ES->Port=VALUE_SOURCE_RF;
     if(Display)PrintEvent(ES);
-    while((LastTransmitTime_RF+MIN_TIME_BETWEEN_SEND_RF) > millis());
-    LastTransmitTime_RF=millis();
+    DelayTransmission(VALUE_SOURCE_RF,false);
     RawSendRF();
     }
 
@@ -467,8 +507,7 @@ PrintNodoEventStruct("SendEvent:",ES);//???
     { 
     ES->Port=VALUE_SOURCE_IR;
     if(Display)PrintEvent(ES);
-    while((LastTransmitTime_IR+MIN_TIME_BETWEEN_SEND_IR) > millis());
-    LastTransmitTime_IR=millis();
+    DelayTransmission(VALUE_SOURCE_IR,false);
     RawSendIR();
     }
 
@@ -588,7 +627,8 @@ byte SaveRawSignal(byte Key)
 
   if(error)
     {
-    RaiseMessage(MESSAGE_03);
+    bitWrite(HW_Config,HW_SDCARD,0);
+    RaiseMessage(MESSAGE_14);
     return false;
     }
   return true;
@@ -689,7 +729,6 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
     Event->Command=DataBlock.Command;
     Event->Par1=DataBlock.Par1;
     Event->Par2=DataBlock.Par2;
-PrintNodoEventStruct("Rawsignal_2_Nodo()", Event);
     return true;
     }
 
@@ -1345,11 +1384,7 @@ void ExecuteIP(void)
   free(InputBuffer_IP);
 
   if(RequestEvent)
-    {
-    // Iedere nieuwe verwerking starten met uitvoer voor zichzelf.
-    SendToUnit=0;
-    ExecuteLine(Event, Protocol);//??? returnwaarde = error ???
-    }
+    ExecuteLine(Event, Protocol);
     
   free(Event);
   return;
