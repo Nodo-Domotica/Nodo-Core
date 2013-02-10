@@ -32,6 +32,7 @@ Nog te doen:
 - SendTo kiest automatisch kanaal I2C, RF of IR.
 - SendTo doet Retry bij een checksum error;
 - commando [Status EventlistCount] geeft nu ook aantal vrije plaatsen in de eventlist
+- Limiet +100/-100 voor variabelen vervallen. LET OP: Vergelijken met [BreakOnVarEqu] vindt plaats met integer deel voor de komma.
 - ClockAll, ClockSun...ClockSat zijn vervallen. Hiervoor in de plaats gekomen het event [Time hh:mm,day] 
 - AlarmSet werkt nu ook met tijdweergave hh:mm en wildcards in de tijd.
 - [SendBusy], [WaitBusy] en [Busy] zijn komen te vervallen.
@@ -40,5 +41,5 @@ Nog te doen:
 - Veranderen van unit nummer zonder wissen eventlist.
 - 32 unit nummers beschikbaar.
 - Bij error tijdens uitvoer van een script wordt de verwerking gestopt. Tenzij de continue_on_error mode: [FileExecute <script>, ON]
-
+- [Status All] wordt alleen nog ondersteund vanaf Terminal en HTTP. Niet meer via een [SendTo]
 \*****************************************************************************************/

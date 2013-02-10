@@ -1,5 +1,5 @@
 #define SETTINGS_VERSION     26
-#define NODO_BUILD          496//??? ophogen.
+#define NODO_BUILD          501//??? ophogen.
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -10,9 +10,9 @@ prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSat";
 prog_char PROGMEM Text_22[] = "!******************************************************************************!";
 
 #ifdef NODO_MEGA
-prog_char PROGMEM Text_15[] = "Nodo V3.0.1 Mega, Product=SWACNC-MEGA-R%03d, ThisUnit=%d";
+prog_char PROGMEM Text_15[] = "Nodo V3.0.9 Mega, Product=SWACNC-MEGA-R%03d, ThisUnit=%d";
 #else
-prog_char PROGMEM Text_15[] = "Nodo V3.0.1 Small, Product=SWACNC-SMALL-R%03d, ThisUnit=%d";
+prog_char PROGMEM Text_15[] = "Nodo V3.0.9 Small, Product=SWACNC-SMALL-R%03d, ThisUnit=%d";
 #endif
 
 #ifdef NODO_MEGA
@@ -83,7 +83,7 @@ prog_char PROGMEM Cmd_043[]="WiredThreshold";
 prog_char PROGMEM Cmd_044[]="SendUserEvent";
 prog_char PROGMEM Cmd_045[]="Temp";
 prog_char PROGMEM Cmd_046[]="WildCard";
-prog_char PROGMEM Cmd_047[]="";
+prog_char PROGMEM Cmd_047[]="VariableSetWiredAnalog";
 prog_char PROGMEM Cmd_048[]="ClientIP";
 prog_char PROGMEM Cmd_049[]="Password";
 prog_char PROGMEM Cmd_050[]="EventlistFile";
@@ -112,7 +112,7 @@ prog_char PROGMEM Cmd_072[]="DnsServer";
 prog_char PROGMEM Cmd_073[]="PortInput";
 prog_char PROGMEM Cmd_074[]="PortOutput";
 prog_char PROGMEM Cmd_075[]="ClockSync";
-prog_char PROGMEM Cmd_076[]="VariableDevice";
+prog_char PROGMEM Cmd_076[]="";
 prog_char PROGMEM Cmd_077[]="Device";
 prog_char PROGMEM Cmd_078[]="PulseCount";
 prog_char PROGMEM Cmd_079[]="Reboot";
@@ -251,7 +251,7 @@ prog_char PROGMEM Cmd_166[]="Status";
 prog_char PROGMEM Cmd_167[]="File";
 prog_char PROGMEM Cmd_168[]="Input";
 prog_char PROGMEM Cmd_169[]="Output";
-prog_char PROGMEM Cmd_170[]="Internal";
+prog_char PROGMEM Cmd_170[]="";
 prog_char PROGMEM Cmd_171[]="";
 prog_char PROGMEM Cmd_172[]="All";
 prog_char PROGMEM Cmd_173[]="DaylightSaving";
@@ -381,7 +381,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_SEND_USEREVENT              44
 #define CMD_TEMP                        45
 #define CMD_COMMAND_WILDCARD            46
-#define CMD_res47                       47
+#define CMD_VARIABLE_SET_WIRED_ANALOG   47
 #define CMD_CLIENT_IP                   48
 #define CMD_PASSWORD                    49
 #define CMD_EVENTLIST_FILE              50
@@ -410,7 +410,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_PORT_SERVER                 73
 #define CMD_PORT_CLIENT                 74
 #define CMD_CLOCK_SYNC                  75
-#define CMD_VARIABLE_DEVICE             76
+#define CMD_res76                       76
 #define CMD_DEVICE                      77
 #define CMD_PULSE_COUNT                 78
 #define CMD_REBOOT                      79
@@ -426,10 +426,10 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_RES089                      89
 #define CMD_RES090                      90
 #define CMD_RES091                      91
-#define CMD_RES092                      92
-#define CMD_RES093                      93
-#define CMD_RES094                      94
-#define CMD_RES095                      95
+#define CMD_res92                       92
+#define CMD_res93                       93
+#define CMD_res94                       94
+#define CMD_res95                       95
 #define CMD_PROTOCOL_1_SEND             96
 #define CMD_PROTOCOL_2_SEND             97
 #define CMD_PROTOCOL_3_SEND             98
@@ -512,7 +512,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define VALUE_SOURCE_FILE              167
 #define VALUE_DIRECTION_INPUT          168
 #define VALUE_DIRECTION_OUTPUT         169
-#define VALUE_DIRECTION_INTERNAL       170
+#define VALUE_RES170                   170
 #define VALUE_RES171                   171
 #define VALUE_ALL                      172 // Deze waarde MOET groter dan 16 zijn.
 #define VALUE_DLS                      173
@@ -769,7 +769,7 @@ boolean WiredInputStatus[WIRED_PORTS];                      // Status van de Wir
 boolean WiredOutputStatus[WIRED_PORTS];                     // Wired variabelen.
 byte AlarmPrevious[ALARM_MAX];                              // Bevat laatste afgelopen alarm. Ter voorkoming dat alarmen herhaald aflopen.
 byte DaylightPrevious;                                      // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet.
-byte ExecutionDepth=0;                                      // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's.
+int ExecutionDepth=0;                                      // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's.
 void(*Reset)(void)=0;                                       // reset functie op adres 0.
 uint8_t RFbit,RFport,IRbit,IRport;                          // t.b.v. verwerking IR/FR signalen.
 float UserVar[USER_VARIABLES_MAX];                          // Gebruikers variabelen
@@ -949,7 +949,7 @@ void setup()
 
   struct NodoEventStruct TempEvent;
   ClearEvent(&TempEvent);
-  TempEvent.Direction=VALUE_DIRECTION_INTERNAL;
+  TempEvent.Direction=VALUE_DIRECTION_INPUT;
   TempEvent.Port=VALUE_ALL;
   
   if(Settings.NewNodo)
@@ -966,7 +966,7 @@ void setup()
   SendEvent(&TempEvent,false,true);  
 
   TempEvent.Flags     = 0;
-  TempEvent.Direction = VALUE_DIRECTION_INTERNAL;
+  TempEvent.Direction = VALUE_DIRECTION_INPUT;
   TempEvent.Port      = VALUE_SOURCE_SYSTEM;
   ProcessEvent2(&TempEvent);  // Voer het 'Boot' event uit.
 
@@ -1096,8 +1096,9 @@ void loop()
                 
                   if(TerminalLocked==0) // als op niet op slot
                     {
-                    TerminalClient.getRemoteIP(ClientIPAddress);  
-                    ExecuteLine(InputBuffer_Terminal, VALUE_SOURCE_TELNET);
+                    TerminalClient.getRemoteIP(ClientIPAddress);
+                    ExecutionDepth=0;
+                    RaiseMessage(ExecuteLine(InputBuffer_Terminal, VALUE_SOURCE_TELNET));
                     TerminalClient.write('>');// prompt
                     }
                   else
@@ -1177,7 +1178,8 @@ void loop()
                   {
                   SerialHold(true);
                   InputBuffer_Serial[SerialInByteCounter]=0; // serieel ontvangen regel is compleet
-                  ExecuteLine(InputBuffer_Serial, VALUE_SOURCE_SERIAL);
+                  ExecutionDepth=0;
+                  RaiseMessage(ExecuteLine(InputBuffer_Serial, VALUE_SOURCE_SERIAL));
                   Serial.write('>'); // Prompt
                   SerialInByteCounter=0;  
                   InputBuffer_Serial[0]=0; // serieel ontvangen regel is verwerkt. String leegmaken
@@ -1300,7 +1302,7 @@ void loop()
                 ClearEvent(&ReceivedEvent);
                 ReceivedEvent.Command          = CMD_TIMER_EVENT;
                 ReceivedEvent.Par1             = x+1;
-                ReceivedEvent.Direction        = VALUE_DIRECTION_INTERNAL;
+                ReceivedEvent.Direction        = VALUE_DIRECTION_INPUT;
                 ReceivedEvent.Port             = VALUE_SOURCE_TIMER;
                 ProcessEvent1(&ReceivedEvent); // verwerk binnengekomen event.
                 }

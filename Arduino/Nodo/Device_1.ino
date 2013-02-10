@@ -1,17 +1,11 @@
 /*****************************************************************************************************************\
-* De Nodo beschikt over de mogelijkheid om diverse sensoren uit te lezen. Er kunnen vier devices worden opgenomen in de 
-* Nodo code.
-* 
-* Een Device kan zowel input als output zijn. Er zijn voor de gebruiker twee manieren om een device aan te spreken:
 *
-* A) Lezen van een waarde: [VariableDevice <Variabele>, <DeviceNummer>, <Parameter-3>]
-*         Na aanroep van dit commando wordet de funktie aangeroepen die hoort bij het betreffence device wn
-*         wordt bij terugkeer aan de opgegeven variabele een waarde toegekend. Vervolgens verzendt de Nodo
-*         automatisch een event zodat waarden kunnen worden verwerkt door deze of een andere Nodo.
-*         Bij deze aanroep zal de parameter het variabelenummer bevatten waarvoor opdracht is gegeven om deze te vullen.
-*         Eventueel kan deze variabele worden gebruikt om extra gegevens door te geven aan uw routine.
+*  === ALGEMENE BESCHRIJVING VOOR DEVECES ===
+*
+* De Nodo beschikt over de mogelijkheid om diverse sensoren uit te lezen of devices te sturen.
+* Er kunnen vier devices worden opgenomen in de Nodo code.
 * 
-* B) Sturen van een device: [Device <DeviceNummer>, <Parameter-2>, <Paramter-3>]
+* Syntax: [Device_n <Par1:Parameterr>, <Par2:Parameter>]
 *         De funktie die hoort bij het betreffende device wordt aangeroepen waarbij <Parameter> kan worden
 *         gebruikt als optionele stuurinformatie. Mocht het noodzakelijk zijn om nog andere gegevens mee te sturen
 *         naar het device, dan kunnen hiervoor vooraf gevulde Nodo variabelen worden gebruikt.
@@ -34,11 +28,11 @@
 * Voor de verwijzing naar de Arduino pinnummers: zie schema of declaraties in tabblad "Base"
 * ANDERE POORTEN NIET GEBRUIKEN OMDAT DEZE (IN DE TOEKOMST) EEN SPECIFIEKE FUNKTIE HEBBEN.
 *
-* Om een device mee te compileren moet in het tabblad van Nodo.INO de folgende regel worden opgenonen:
+* Om een device mee te compileren moet in het tabblad van Nodo.INO de volgende regel worden opgenonen:
 *
 * #define DEVICE_n "MijnDeviceNaam"
 *
-* De 'n' staat in dit geval voor het devicenummer. 
+* Naam van de device wordt NIET gebruikt in de gebruikersinterface. De 'n' staat in dit geval voor het devicenummer. 
 *
 * Let op dat de geheugenruimte in de Arduino beperkt is. Schrijf compact, maak bij voorkeur geen gebruik van globale variabelen en zorg er 
 * voor dat in de eigen code een lange verwerkings/wachttijden zitten die de betrouwbaarheid van de werking van de Nodo kunnen verstoren.
@@ -56,49 +50,22 @@
 \*****************************************************************************************************************/
 
 
-#ifdef DEVICE_1  
 
 //#######################################################################################################
 //######################## DEVICE_1: Dallas Temp. sensor DS18B20      ###################################
 //#######################################################################################################
 
-/*********************************************************************************************\
- * Deze code leest een Dallas temperatuursensor uit. De sensor moet volgens de paracitaire
- * mode worden aangesloten. Des de signaallijn tevens verbinden met een 4K7 naar de Vcc/+5
- * Deze fountie kan worden gebruikt voor alle digitale poorten van de Arduino.
- * Er wordt gebruik gemaakt van de ROM-skip techniek, dus er worden geen adressen uitgelezen.
- * Dit betekent max. één sensor per poort. Dit om geheugen te besparen en geen code kwijt
- * 
- * Deze funktie kan met een kleine aanpassing worden gebruikt voor zowel de DS1820 als de DS18B20
- * variant. Zie comments in de code.
- *
- *
- * Auteur             : Nodo-team (P.K.Tonkes) www.nodo-domotca.nl
- * Support            : www.nodo-domotica.nl
- * Datum              : Jan.2013
- * Versie             : 1.0
- * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
- * Compatibiliteit    : Vanaf Nodo build nummer 500
- * Compiled size      : 800 bytes voor een Mega, 540 voor een Small
- * Vereiste library   : - geen -
- * Externe funkties   : 
- *
- ***********************************************************************************************
- * Gebruik van de parameters in het Nodo commando "Device <DeviceNummer>, <Poortnummer>, <Variabele>":
- *
- * Par1 : Device routine nummer.
- * Par2 : Poort waar de sensor op is aangesloten.
- * Par3 : Variabele opgegeven door de gebruiker.
- \*********************************************************************************************/
-
-
+#ifdef DEVICE_1
 
 /*********************************************************************************************\
+ * Gebruik van de parameters in het Nodo commando "Device_1 <Par1:Poortnummer>, <Par2:Variabele>"
+ **********************************************************************************************
  * Deze funktie leest een Dallas temperatuursensor uit. De sensor moet volgens de paracitaire
- * mode worden aangesloten. Des de signaallijn tevens verbinden met een 4K7 naar de Vcc/+5
- * Deze fountie kan worden gebruikt voor alle digitale poorten van de Arduino.
+ * mode worden aangesloten. De signaallijn tevens verbinden met een 4K7 naar de Vcc/+5
+ * Deze fucntie kan worden gebruikt voor alle digitale poorten van de Arduino.
  * Er wordt gebruik gemaakt van de ROM-skip techniek, dus er worden geen adressen uitgelezen.
- * Dit betekent max. één sensor per poort. Dit om geheugen te besparen en geen code kwijt
+ * Dit betekent max. één sensor per poort. Dit om geheugen te besparen. De uitgelezen waarde
+ * wordt in de opgegeven variabele opgeslagen.
  * 
  * Deze funktie kan met een kleine aanpassing worden gebruikt voor zowel de DS1820 als de DS18B20
  * variant. Zie comments in de code.
@@ -112,7 +79,7 @@
  \*********************************************************************************************/
 
 uint8_t DallasPin;
-boolean Device_1(struct NodoEventStruct *Event) // Arduino port.
+boolean Device_1(struct NodoEventStruct *Event)
   {        
   int DSTemp;                 // Temperature in 16-bit Dallas format.
   byte ScratchPad[12];        // Scratchpad buffer Dallas sensor.   
@@ -141,10 +108,8 @@ boolean Device_1(struct NodoEventStruct *Event) // Arduino port.
     }
 
   // Indien gewenst kan de struct Event worden gevuld met een nieuw event of commando. De Nodo verwerkt deze dan als een regulier
-  // event. Zorg er dan wel voor dat de struct Event correct is gevuld met Command, Par1, Par2 en Par3. Is verdere verwerking niet nodig
-  // dan het event leeg maken.
-
-  // we verwerken de uitgelezen waarde van de sensor door deze in een variabele te stoppen. Omdat het binnengekomen event nu geen nut 
+  // event. Zorg er dan wel voor dat de struct Event correct is gevuld met Command, Par1 en Par2.
+  // We verwerken de uitgelezen waarde van de sensor door deze in een variabele te stoppen. Omdat het binnengekomen event nu geen nut 
   // meer heeft, mag zonder bezwaar de struct Event worden gebruikt om een nieuw event te genereren, dan hoeven we geen nieuwe te declareren. 
   // Bij terugkomst zal de Nodo dit event verwerken. Als er niets verwerkt moet worden, dan Event->Command gelijk maken aan nul.
   // Par3 wordt gebruikt voor opslag van de waarde. Dit is een 32-bit variabele. Om een float te converteren naar een Par3 hebben we hulp nodig
@@ -154,11 +119,14 @@ boolean Device_1(struct NodoEventStruct *Event) // Arduino port.
   ClearEvent(Event);                                      // Ga uit van een default schone event. Oude eventgegevens wissen.
   Event->Command      = CMD_VARIABLE_SET;                 // Commando "VariableSet"
   Event->Par1         = VarNr;                            // Par1 is de variabele die we willen vullen.
-  Event->Par2         = float2ul(float(DSTemp)*0.0625); // Deze regel gebruiken voor de oudere en minder nauwkeurige DS1820 variant  
-  //  Event->Par2         = float2ul(float(DSTemp)*0.0625); // DS18B20 variant;
+  Event->Par2         = float2ul(float(DSTemp)*0.0625); // DS18B20 variant;
+  // Event->Par2         = float2ul(float(DSTemp)*0.0625); // Deze regel gebruiken voor de oudere en minder nauwkeurige DS1820 variant  
+
+Serial.print(F("*** debug: Device_1: "));Serial.println(float(DSTemp)*0.0625); //??? Debug
+
   }
   
-  uint8_t DS_read(void)
+uint8_t DS_read(void)
   {
   uint8_t bitMask;
   uint8_t r = 0;
@@ -224,7 +192,7 @@ uint8_t DS_reset()
   return r;
   }
 
+#endif
 // *************************** Einde: Sensor_Temp_Dallas1820(); **************************************************
 
-#endif
 

@@ -1,4 +1,3 @@
-
 #define NODO_PULSE_0               500  // PWM: Tijdsduur van de puls bij verzenden van een '0' in uSec.
 #define NODO_PULSE_MID            1000  // PWM: Pulsen langer zijn '1'
 #define NODO_PULSE_1              1500  // PWM: Tijdsduur van de puls bij verzenden van een '1' in uSec. (3x NODO_PULSE_0)
@@ -458,10 +457,10 @@ void DelayTransmission(byte Port, boolean Set)
  * RawSignal buffer gebruikt. In dit geval werkt de WaitFreeRF niet.
  \*********************************************************************************************/
 boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Display)
-{  
+  {  
   ES->Direction=VALUE_DIRECTION_OUTPUT;
   byte Port=ES->Port;
-
+  
   // Als een andere Nodo actief is en excusief communiceert met een andere Nodo, c.q. de ruimte geclaimd is, dan mag deze Nodo niet zenden.
   // In dit geval resteert deze Nodo niets anders dan even te wachten tot de lijn weer vrijgegeven wordt of de wachttijd verlopen is.
   // Als er een timeout optreedt, dan de blokkade opheffen. Dit ter voorkoming dat Nodo's oneindig wachten op vrije lijn.
@@ -1376,7 +1375,10 @@ void ExecuteIP(void)
   free(InputBuffer_IP);
 
   if(RequestEvent)
-    ExecuteLine(Event, Protocol);
+    {
+    ExecutionDepth=0;
+    RaiseMessage(ExecuteLine(Event, Protocol));
+    }
 
   free(Event);
   return;
