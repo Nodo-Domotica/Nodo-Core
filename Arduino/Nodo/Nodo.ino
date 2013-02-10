@@ -24,7 +24,7 @@
 // en pas eventueel de drie include statements aan (zie onder)
 
 
-#define USER_PLUGIN       "UserPlugin"                             // Commando naam waarmee de plugin kan worden aangeroepen. Remarken met // als UserPluging niet nodig is
+//#define USER_PLUGIN       "UserPlugin"                             // Commando naam waarmee de plugin kan worden aangeroepen. Remarken met // als UserPluging niet nodig is
 #define PULSE_DEBOUNCE_TIME         10                             // pulsen kleiner dan deze waarde worden niet geteld. Bedoeld on verstoringen a.g.v. ruis of dender te voorkomen
 #define PULSE_TRANSITION       FALLING                             // FALLING of RISING: Geeft aan op welke flank de PulseCounter start start met tellen. Default FALLING
 #define I2C_ADDRESS                  1                             // Adres van de Nodo op de I2C bus is I2C_ADDRESS + Unitnummer. Eventueel kan een andere range worden gekozen. LET OP: RTC-Klok op 104

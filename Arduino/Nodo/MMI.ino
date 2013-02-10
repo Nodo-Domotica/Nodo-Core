@@ -7,7 +7,6 @@
 void PrintEvent(struct NodoEventStruct *Event)
   {
   int x;
-  
 
   // Systeem events niet weergeven.
   if(Event->Flags & TRANSMISSION_SYSTEM)
@@ -23,7 +22,7 @@ void PrintEvent(struct NodoEventStruct *Event)
   if(Event->Port==VALUE_SOURCE_EVENTLIST)
     {
     x=Event->Checksum*256+Event->Direction;
-    Event->Direction=VALUE_DIRECTION_INTERNAL;
+    Event->Direction=VALUE_DIRECTION_INPUT;
     }
   
   // Direction
@@ -44,9 +43,8 @@ void PrintEvent(struct NodoEventStruct *Event)
     if(Event->Port==VALUE_SOURCE_EVENTLIST)
       {
       // print de nessting diepte van de eventlist en de regel uit de eventlist.
-      // deze staan tijdelijk opgeslagen in Flags, Checksum en Direction.
       strcat(StringToPrint, "(");
-      strcat(StringToPrint, int2str(Event->Flags-1));
+      strcat(StringToPrint, int2str(ExecutionDepth));
       strcat(StringToPrint, ".");
       strcat(StringToPrint, int2str(x));
       strcat(StringToPrint, ")");
@@ -196,13 +194,17 @@ void PrintTerminal(char* LineToPrint)
 #define PAR2_DIM           8
 #define PAR2_WDAYTIME      9
 #define PAR2_ALARMENABLED 10
+#define PAR2_INT8         11
+#define PAR3_INT          12
+#define PAR4_INT          13
+#define PAR5_INT          14
 
 void Event2str(struct NodoEventStruct *Event, char* EventString)
   {
   int x;
   EventString[0]=0;
 
-  // Enkele events/commando's hebben een geheel afwijkede weergave. Deze worden hieronder afzonderlijk opgebouwd.
+  // Enkele events/commando's hebben een geheel afwijkende weergave. Deze worden hieronder afzonderlijk opgebouwd.
   // De overige hebben overeenkomsten en worden als groep gelijk opgebouwd.
   switch(Event->Command)
     {
@@ -233,7 +235,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       Protocol_4_EventToString(Event, EventString);
       break;
     #endif      
-          }
+    }
 
 // Er kunnen een aantal parameters worden weergegeven. In een kleine tabel wordt aangegeven op welke wijze de parameters aan de gebruiker
 // moeten worden getoond. Het is niet per defiitie zo dat de interne Par1, Par2 en Par3 ook dezelfe parameters zijn die aan de gebruiker
@@ -279,8 +281,12 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_WIRED_SMITTTRIGGER:
       case CMD_WIRED_THRESHOLD:
       case CMD_WIRED_ANALOG:
+      case CMD_DEVICE:
         ParameterToView[0]=PAR1_INT;
-        ParameterToView[1]=PAR2_INT;
+        ParameterToView[1]=PAR2_INT8;
+        ParameterToView[2]=PAR3_INT;
+        ParameterToView[3]=PAR4_INT;
+        ParameterToView[4]=PAR5_INT;
         break;
 
       case VALUE_BUILD:
@@ -310,10 +316,15 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         break;
 
         // Par1 als tekst en par2 als tekst
-      case CMD_COMMAND_WILDCARD:
       case CMD_OUTPUT:
         ParameterToView[0]=PAR1_TEXT;
         ParameterToView[1]=PAR2_TEXT;
+        break;
+
+      case CMD_COMMAND_WILDCARD:
+        ParameterToView[0]=PAR1_TEXT;
+        ParameterToView[1]=PAR2_TEXT;
+        ParameterToView[2]=PAR3_INT;
         break;
 
       // Par1 als tekst en par2 als getal
@@ -390,8 +401,24 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
           strcat(EventString,int2str(Event->Par2));
           break;
 
+        case PAR2_INT8:
+          strcat(EventString,int2str(Event->Par2&0xff));
+          break;
+
+        case PAR3_INT:
+          strcat(EventString,int2str((Event->Par2>>8)&0xff));
+          break;
+
+        case PAR4_INT:
+          strcat(EventString,int2str((Event->Par2>>16)&0xff));
+          break;
+
+        case PAR5_INT:
+          strcat(EventString,int2str((Event->Par2>>24)&0xff));
+          break;
+
         case PAR2_TEXT:
-          strcat(EventString,cmd2str(Event->Par2));
+          strcat(EventString,cmd2str(Event->Par2 &0xff));
           break;
 
         case PAR2_DIM:
@@ -538,7 +565,7 @@ int ExecuteLine(char *Line, byte Port)
         {
         Command[CommandPos]=0;
         CommandPos=0;
-// Serial.print(F("*** debug: Command="));Serial.println(Command); //??? Debug
+/// Serial.print(F("*** debug: Command="));Serial.println(Command); //??? Debug
         ClearEvent(&EventToExecute);
         EventToExecute.Port=Port;
         
@@ -578,7 +605,6 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_SETTINGS_SAVE:
           case CMD_USERPLUGIN: 
           case CMD_CLOCK_EVENT_DAYLIGHT:
-          case CMD_DEVICE:
           case CMD_STATUS:
           case CMD_DELAY:
           case CMD_SOUND: 
@@ -604,12 +630,7 @@ int ExecuteLine(char *Line, byte Port)
             if(EventToExecute.Par1>TIMER_MAX)
               error=MESSAGE_02;
             break;
-      
-          case CMD_VARIABLE_DEVICE:
-            if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
-              error=MESSAGE_02;
-            break;
-            
+                  
           case CMD_WAIT_EVENT:
             if((EventToExecute.Par1<1 || EventToExecute.Par1>UNIT_MAX) &&  EventToExecute.Par1!=VALUE_ALL)
               error=MESSAGE_02;
@@ -635,6 +656,13 @@ int ExecuteLine(char *Line, byte Port)
             if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
               error=MESSAGE_02;
             if(EventToExecute.Par2<1 || EventToExecute.Par2>USER_VARIABLES_MAX)
+              error=MESSAGE_02;
+            break;
+              
+          case CMD_VARIABLE_SET_WIRED_ANALOG:
+            if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
+              error=MESSAGE_02;
+            if(EventToExecute.Par2<1 || EventToExecute.Par2>WIRED_PORTS)
               error=MESSAGE_02;
             break;
               
@@ -691,7 +719,26 @@ int ExecuteLine(char *Line, byte Port)
             if(EventToExecute.Par2!=VALUE_ON && EventToExecute.Par2!=VALUE_OFF)
               error=MESSAGE_02;
             break;
-      
+
+
+          case CMD_DEVICE:
+            // Par1 wordt gebruikt om het device nummer aan te geven. Par2, 3, 4 en 5 kunnen optioneel ook worden opgegeven
+            // Deze plaatsen we echter in unsigned long NodoEventStruct.Par2. Worden Par3,4 en 5 niet opgegeven dan
+            // Kan voor Pa2 het volledige 32-bit bereik worden benut.
+            if(EventToExecute.Par1<1 || EventToExecute.Par1>4)
+              error=MESSAGE_02;
+
+            if(GetArgv(Command,TmpStr1,4))
+              EventToExecute.Par2|=(str2int(TmpStr1)&0xff)<<8;
+
+            if(GetArgv(Command,TmpStr1,5))
+              EventToExecute.Par2|=(str2int(TmpStr1)&0xff)<<16;
+
+            if(GetArgv(Command,TmpStr1,6))
+              EventToExecute.Par2|=(str2int(TmpStr1)&0xff)<<24;
+PrintNodoEventStruct("Device",&EventToExecute);//???
+            break;            
+          
           case CMD_SEND_EVENT:
             switch(EventToExecute.Par1)
               {
@@ -725,6 +772,10 @@ int ExecuteLine(char *Line, byte Port)
               default:
                 error=MESSAGE_02;
               }
+              
+            if(GetArgv(Command,TmpStr1,4))
+              EventToExecute.Par2|=(str2int(TmpStr1)<<8);
+
             break;
       
            // par1 alleen On of Off.
@@ -1299,10 +1350,7 @@ int ExecuteLine(char *Line, byte Port)
   free(TmpStr1);
 
   // Verwerk eventuele events die in de queue zijn geplaatst.
-
-  if(error)
-    RaiseMessage(error);
-  else
+  if(error==0)
     QueueProcess();
     
   return error;

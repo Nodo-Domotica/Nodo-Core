@@ -4,19 +4,21 @@
  * Doorlopen van een volledig gevulde eventlist duurt ongeveer 15ms inclusief printen naar serial
  * maar exclusief verwerking n.a.v. een 'hit' in de eventlist
  \*********************************************************************************************/
-boolean ProcessEvent1(struct NodoEventStruct *Event)
+byte ProcessEvent1(struct NodoEventStruct *Event)
   {
   struct NodoEventStruct TempEvent;
+  ExecutionDepth=0;               // nesting nog niet aan de orde. Dit is het eerste begin.
+  byte error=0;
+  
   
   SerialHold(true);  // als er een regel ontvangen is, dan binnenkomst van signalen stopzetten met een seriele XOFF
   Led(RED); // LED aan als er iets verwerkt wordt      
 
   #ifdef NODO_MEGA
   if(FileWriteMode!=0)
-    return true;
+    return 0;
 
   LastReceived=*Event;            // LastReceived wordt gebruikt om later de status van laatste ontvangen event te kunnen gebruiken t.b.v. substitutie van vars.
-  ExecutionDepth=0;               // nesting nog niet aan de orde. Dit is het eerste begin.
 
 //??? Rawsignal later uitwerken.  CheckRawSignalKey(&Event32); // check of er een RawSignal key op de SDCard aanwezig is en vul met Nodo Event. Call by reference!
 //  // Als de RAW pulsen worden opgevraagd door de gebruiker...
@@ -56,7 +58,7 @@ boolean ProcessEvent1(struct NodoEventStruct *Event)
   else
     {
     // Verwerk het binnengekomen event
-    ProcessEvent2(Event);
+    error=ProcessEvent2(Event);
     }
     
   // Verwerk eventuele events die in de queue zijn geplaatst.
@@ -76,15 +78,21 @@ boolean ProcessEvent1(struct NodoEventStruct *Event)
     SendEvent(&TempEvent, false,false);
     RequestForConfirm=0;
     }
+  return error;
   }
   
 byte ProcessEvent2(struct NodoEventStruct *Event)
   {
   int x,y;
+  byte error=0;
+//  PrintNodoEventStruct("ProcessEvent();", Event);//???
+
+  ExecutionDepth++;
   
   if(Event->Flags & TRANSMISSION_SYSTEM)// als het een systeem event is
     {
-    //    PrintNodoEventStruct("System commando!", Event);//???
+    ;
+    // PrintNodoEventStruct("System commando!", Event);//???
     }  
 
   if(Settings.Lock) //??? verkassen naar ProcessEvent1 of scanevent???
@@ -104,7 +112,7 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
           break;
           
         default:
-          return MESSAGE_09;    
+          error=MESSAGE_09;    
         }
       }
     }
@@ -114,77 +122,69 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
 //    return true;
 //  #endif
 // ??? UserPlugin Entry herstellen
-
-  PrintEvent(Event);  // geef event weer op Terminal
-  LastReceived=*Event;// Bewaar event als -vorig- event. 
-
-  if(ExecutionDepth++>=MACRO_EXECUTION_DEPTH)
+  if(error==0)
     {
-    ExecutionDepth=0;
-    QueuePosition=0;
-    return MESSAGE_05; // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
-    }
-
-  // ############# Verwerk event ################  
-  // als het een Nodo event is en een geldig commando, dan deze uitvoeren
-  if(NodoType(Event)==NODO_TYPE_COMMAND)
-    { // Er is een geldig Commando voor deze Nodo binnengekomen                   
-    x=ExecuteCommand(Event);
-    if(x!=0)
+    PrintEvent(Event);  // geef event weer op Terminal
+    LastReceived=*Event;// Bewaar event als -vorig- event. 
+  
+    if(ExecutionDepth>=MACRO_EXECUTION_DEPTH)
       {
-      ExecutionDepth--;
-      return x;
+      QueuePosition=0;
+      error=MESSAGE_05; // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
       }
-    }
-  else
-    {// Er is een Event binnengekomen  
-    // loop de gehele eventlist langs om te kijken of er een treffer is.   
-    struct NodoEventStruct EventlistEvent, EventlistAction;
-    ClearEvent(&EventlistEvent);
-    ClearEvent(&EventlistAction);
-   
-    x=0;
-    while(Eventlist_Read(++x,&EventlistEvent,&EventlistAction)) // Zolang er nog regels zijn in de eventlist...
+  
+    else
       {
-      if(CheckEvent(Event,&EventlistEvent)) // Als er een match is tussen het binnengekomen event en de regel uit de eventlist.
-        {        
-        EventlistAction.Port        = VALUE_SOURCE_EVENTLIST;
-        
-        #ifdef NODO_MEGA
-        // op dit punt in de code worden de Checksum, Type en flags niet gebruikt.
-        // Wellicht niet mooi, maar deze misbruiken we even om de positie in de eventlist en de nesting
-        // diepte aan te geven.
-        EventlistAction.Checksum=x/256;
-        EventlistAction.Direction=x%256;
-        EventlistAction.Flags=ExecutionDepth;        
-        #endif
-        
-        // De actie uit de eventlist kan van het type commando of event zijn. 
-        if(NodoType(&EventlistAction)==NODO_TYPE_COMMAND) // is de ontvangen code een uitvoerbaar commando?
-          {
-          PrintEvent(&EventlistAction);
-          if(ExecuteCommand(&EventlistAction) !=0)
-            {
-            ExecutionDepth--;
-            break;
+      // ############# Verwerk event ################  
+      // als het een Nodo event is en een geldig commando, dan deze uitvoeren
+      if(NodoType(Event)==NODO_TYPE_COMMAND)
+        { // Er is een geldig Commando voor deze Nodo binnengekomen                   
+        error=ExecuteCommand(Event);
+        }
+      else
+        {// Er is een Event binnengekomen  
+        // loop de gehele eventlist langs om te kijken of er een treffer is.   
+        struct NodoEventStruct EventlistEvent, EventlistAction;   
+    
+        x=0;
+        while(Eventlist_Read(++x,&EventlistEvent,&EventlistAction)) // Zolang er nog regels zijn in de eventlist...
+          {      
+          if(CheckEvent(Event,&EventlistEvent)) // Als er een match is tussen het binnengekomen event en de regel uit de eventlist.
+            {        
+            EventlistAction.Port        = VALUE_SOURCE_EVENTLIST;
+            
+            #ifdef NODO_MEGA
+            // op dit punt in de code worden de Checksum, Type niet gebruikt.
+            // Wellicht niet mooi, maar deze misbruiken we even om de positie in de eventlist en de nesting
+            // diepte aan te geven.
+            EventlistAction.Checksum=x/256;
+            EventlistAction.Direction=x%256;
+            #endif
+    
+            // De actie uit de eventlist kan van het type commando of event zijn. 
+            if(NodoType(&EventlistAction)==NODO_TYPE_COMMAND) // is de ontvangen code een uitvoerbaar commando?
+              {
+              PrintEvent(&EventlistAction);
+              if(error=ExecuteCommand(&EventlistAction))
+                break;
+              }
+            else
+              {// het is een (nieuw) event;
+              if(error=ProcessEvent2(&EventlistAction))
+                break;
+              }
             }
-          }
-        else
-          {// het is een (nieuw) event;
-          x=ProcessEvent2(&EventlistAction);
-          if(x==CMD_BREAK)
-            {
-            ExecutionDepth--;
-            return 0;
-            }
-          else
-            return x;
           }
         }
       }
     }
+
+  // abort is geen fatale error. Deze niet verder behandelen als een error.
+  if(error==MESSAGE_15)
+    error=0;
+    
   ExecutionDepth--;
-  return 0;
+  return error;
   }
 
 
@@ -227,8 +227,9 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
   // ### WILDCARD:      
   if(MacroEvent->Command == CMD_COMMAND_WILDCARD) // is regel uit de eventlist een WildCard?
     {
-    if(MacroEvent->Par1!=VALUE_ALL && MacroEvent->Par1!=Event->Port)return false;
-    if(MacroEvent->Par2!=VALUE_ALL && MacroEvent->Par2!=Event->Command)return false;
+    if( MacroEvent->Par1!=VALUE_ALL        &&  MacroEvent->Par1!=Event->Port)                return false;
+    if((MacroEvent->Par2)&0xff!=VALUE_ALL  && (MacroEvent->Par2)&0xff!=Event->Command)       return false;
+    if((MacroEvent->Par2>>8)&0xff!=0       && (MacroEvent->Par2>>8)&0xff!=Event->SourceUnit) return false;
     return true;
     }
 

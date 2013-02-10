@@ -127,7 +127,7 @@ boolean ScanAlarm(struct NodoEventStruct *Event)
          AlarmPrevious[x]=Time.Minutes;
 
          ClearEvent(Event);
-         Event->Direction=VALUE_DIRECTION_INTERNAL;
+         Event->Direction=VALUE_DIRECTION_INPUT;
          Event->Port=VALUE_SOURCE_CLOCK;
          Event->Command=CMD_ALARM;
          Event->Par1=x+1;

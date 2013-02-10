@@ -44,6 +44,36 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
   
   switch(EventToExecute->Command)
     {   
+    case CMD_DEVICE:
+      {
+      switch(EventToExecute->Par1) //devicenummer in Par1
+        {
+        case 1:
+          #ifdef DEVICE_1
+          Device_1(EventToExecute);  // Bouw het RawSignal op
+          #endif
+          break;
+        case 2:
+          #ifdef DEVICE_2
+          Device_2(EventToExecute);  // Bouw het RawSignal op
+          #endif
+          break;
+        case 3:
+          #ifdef DEVICE_3
+          Device_3(EventToExecute);  // Bouw het RawSignal op
+          #endif
+          break;
+        case 4:
+          #ifdef DEVICE_4
+          Device_4(EventToExecute);  // Bouw het RawSignal op
+          #endif
+          break;
+          }
+        }
+      if(EventToExecute->Command)
+        ProcessEvent2(EventToExecute);      
+      break;
+        
     #ifdef PROTOCOL_1
     case CMD_PROTOCOL_1_SEND:
       TempEvent.Command=CMD_PROTOCOL_1;
@@ -77,100 +107,113 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
     #endif      
       
     case CMD_VARIABLE_INC:
-      if(EventToExecute->Par1>0 || EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
+      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         UserVar[EventToExecute->Par1-1]+=ul2float(EventToExecute->Par2);
         TempEvent.Command      = CMD_VARIABLE_EVENT;
         TempEvent.Par2         = float2ul(UserVar[EventToExecute->Par1-1]);
-        TempEvent.Direction    = VALUE_DIRECTION_INTERNAL;
+        TempEvent.Direction    = VALUE_DIRECTION_INPUT;
         TempEvent.Port         = VALUE_SOURCE_VARIABLE;
         ProcessEvent2(&TempEvent);
         }
       break;        
 
     case CMD_VARIABLE_DEC:
-      if(EventToExecute->Par1>0 || EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
+      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         UserVar[EventToExecute->Par1-1]-=ul2float(EventToExecute->Par2);
         TempEvent.Command      = CMD_VARIABLE_EVENT;
         TempEvent.Par2         = float2ul(UserVar[EventToExecute->Par1-1]);
-        TempEvent.Direction    = VALUE_DIRECTION_INTERNAL;
+        TempEvent.Direction    = VALUE_DIRECTION_INPUT;
         TempEvent.Port         = VALUE_SOURCE_VARIABLE;
         ProcessEvent2(&TempEvent);
         }
       break;        
 
     case CMD_VARIABLE_SET:
-      if(EventToExecute->Par1>0 || EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
+      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         UserVar[EventToExecute->Par1-1]=ul2float(EventToExecute->Par2);
         TempEvent.Command=CMD_VARIABLE_EVENT;
         TempEvent.Port=VALUE_SOURCE_VARIABLE;
-        TempEvent.Direction=VALUE_DIRECTION_INTERNAL;
+        TempEvent.Direction=VALUE_DIRECTION_INPUT;
+        ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
+        }
+      break;         
+
+    case CMD_VARIABLE_SET_WIRED_ANALOG:
+      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
+        {
+        UserVar[EventToExecute->Par1-1]=analogRead(PIN_WIRED_IN_1+EventToExecute->Par2-1);
+        TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
+        TempEvent.Command=CMD_VARIABLE_EVENT;
+        TempEvent.Port=VALUE_SOURCE_VARIABLE;
+        TempEvent.Direction=VALUE_DIRECTION_INPUT;
         ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
         }
       break;         
   
     case CMD_VARIABLE_VARIABLE:
-      if(EventToExecute->Par2>0 || EventToExecute->Par2<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
+      if(EventToExecute->Par2>0 && EventToExecute->Par2<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         UserVar[EventToExecute->Par1-1]=UserVar[EventToExecute->Par2-1];
         TempEvent.Command=CMD_VARIABLE_EVENT;
         TempEvent.Port=VALUE_SOURCE_VARIABLE;
-        TempEvent.Direction=VALUE_DIRECTION_INTERNAL;
+        TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
+        TempEvent.Direction=VALUE_DIRECTION_INPUT;
         ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
         }
       break;        
 
     case CMD_BREAK_ON_VAR_EQU:
       {
-      if(int(UserVar[EventToExecute->Par1-1])==int(ul2float(EventToExecute->Par2)))
-        error=true;
+      if((int)UserVar[EventToExecute->Par1-1]==(int)ul2float(EventToExecute->Par2))
+        error=MESSAGE_15;
       break;
       }
       
     case CMD_BREAK_ON_VAR_NEQU:
-      if(int(UserVar[EventToExecute->Par1-1])!=int(ul2float(EventToExecute->Par2)))
-        error=true;
+      if((int)UserVar[EventToExecute->Par1-1]!=(int)ul2float(EventToExecute->Par2))
+        error=MESSAGE_15;
       break;
 
     case CMD_BREAK_ON_VAR_MORE:
       if(UserVar[EventToExecute->Par1-1] > ul2float(EventToExecute->Par2))
-        error=true;
+        error=MESSAGE_15;
       break;
 
     case CMD_BREAK_ON_VAR_LESS:
       if(UserVar[EventToExecute->Par1-1] < ul2float(EventToExecute->Par2))
-        error=true;
+        error=MESSAGE_15;
       break;
 
     case CMD_BREAK_ON_VAR_LESS_VAR:
       if(UserVar[EventToExecute->Par1-1] < UserVar[EventToExecute->Par2-1])
-        error=true;
+        error=MESSAGE_15;
       break;
 
     case CMD_BREAK_ON_VAR_MORE_VAR:
       if(UserVar[EventToExecute->Par1-1] > UserVar[EventToExecute->Par2-1])
-        error=true;
+        error=MESSAGE_15;
       break;
 
 
     case CMD_BREAK_ON_DAYLIGHT:
       if(EventToExecute->Par1==VALUE_ON && (Time.Daylight==2 || Time.Daylight==3))
-        error=true;
+        error=MESSAGE_15;
 
       if(EventToExecute->Par1==VALUE_OFF && (Time.Daylight==0 || Time.Daylight==1 || Time.Daylight==4))
-        error=true;
+        error=MESSAGE_15;
       break;
 
     case CMD_BREAK_ON_TIME_LATER:
       if((EventToExecute->Par1*60+EventToExecute->Par2)<(Time.Hour*60+Time.Minutes))
-        error=true;
+        error=MESSAGE_15;
       break;
 
     case CMD_BREAK_ON_TIME_EARLIER:
       if((EventToExecute->Par1*60+EventToExecute->Par2)>(Time.Hour*60+Time.Minutes))
-        error=true;
+        error=MESSAGE_15;
       break;
 
     case CMD_SEND_USEREVENT:
@@ -478,35 +521,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         Eventlist_Write(EventToExecute->Par1,&TempEvent,&TempEvent);
         }
       break;        
-
-    case CMD_DEVICE:
-      switch(EventToExecute->Par2)
-        {
-        #ifdef DEVICE_1
-        case 1:
-          Device_1(EventToExecute);
-        #endif
-      
-        #ifdef DEVICE_2
-        case 2:
-          Device_2(EventToExecute);
-        #endif
-      
-        #ifdef DEVICE_3
-        case 3:
-          Device_3(EventToExecute);
-        #endif
-      
-        #ifdef DEVICE_4
-        case 4:
-          Device_4(EventToExecute);
-        #endif
-        }
         
-      if(EventToExecute->Command)
-        ProcessEvent2(EventToExecute);      
-      break;
-
 #ifdef NODO_MEGA
 
     case CMD_PORT_SERVER:

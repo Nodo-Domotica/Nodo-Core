@@ -66,9 +66,6 @@ boolean Eventlist_Read(int address, struct NodoEventStruct *Event, struct NodoEv
   {
   struct EventlistStruct EEPROM_Block;
 
-  ClearEvent(Event);
-  ClearEvent(Action);
-
   address--;// echte adressering begint vanaf nul. voor de user vanaf 1.
   address=address*sizeof(struct EventlistStruct) + sizeof(struct SettingsStruct);     // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer deze bytes. Deze niet te gebruiken voor de Eventlist!
   byte *B=(byte*)&EEPROM_Block; // B wijst naar de eerste byte van de struct
@@ -81,10 +78,12 @@ boolean Eventlist_Read(int address, struct NodoEventStruct *Event, struct NodoEv
       return false;
     }
 
+  ClearEvent(Event);
   Event->Command=EEPROM_Block.EventCommand;
   Event->Par1=EEPROM_Block.EventPar1;
   Event->Par2=EEPROM_Block.EventPar2;
   
+  ClearEvent(Action);
   Action->Command=EEPROM_Block.ActionCommand;
   Action->Par1=EEPROM_Block.ActionPar1;
   Action->Par2=EEPROM_Block.ActionPar2;
@@ -96,17 +95,20 @@ boolean Eventlist_Read(int address, struct NodoEventStruct *Event, struct NodoEv
 
 void RaiseMessage(byte MessageCode)
   {
-  int x;
-
-  // voor enkele foutcodes moet een setting worden aangepast om te voorkomen
+  if(MessageCode==0)
+    return;
 
   struct NodoEventStruct TempEvent;
   ClearEvent(&TempEvent);
-  TempEvent.Port      = VALUE_ALL;
   TempEvent.Command   = CMD_MESSAGE;
   TempEvent.Par1      = Settings.Unit;
   TempEvent.Par2      = MessageCode;
 
+  TempEvent.Direction = VALUE_DIRECTION_INPUT;
+  TempEvent.Port      = VALUE_SOURCE_SYSTEM;
+  PrintEvent(&TempEvent);
+
+  TempEvent.Port      = VALUE_ALL;
   SendEvent(&TempEvent,false,true);
   }
 
@@ -364,7 +366,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
   byte xCommand=Event->Command;  
   ClearEvent(Event);
 
-  Event->Flags|=TRANSMISSION_EVENT | TRANSMISSION_DISPLAY; // forceer dat deze wordt behandeld als een event
+  Event->Flags|=TRANSMISSION_EVENT; // forceer dat deze wordt behandeld als een event
   Event->Command=xCommand;
   
   switch (xCommand)
@@ -684,7 +686,6 @@ void ResetFactory(void)
  * Geeft de status weer of verzendt deze.
  * verzend de status van een setting als event.
  * Par1 = Command
- * Par2 = selectie (poort, variabele, timer) Als nul, dan wildcard voor alle.
  \**********************************************************************************************/
 void Status(struct NodoEventStruct *Request, byte Transmit)
   {
@@ -875,7 +876,7 @@ void Status(struct NodoEventStruct *Request, byte Transmit)
 
         if(Transmit)
           {
-          Result.Port=VALUE_ALL;//??? naar alle of alleen naar de bron???
+          Result.Port=VALUE_ALL;//??? naar alle of alleen naar @@de bron???
           SendEvent(&Result,false,true); // verzend als event
           }
 
@@ -1215,7 +1216,6 @@ void Trace(char *Func, unsigned long Value)
 void PulseCounterISR()
   {
   static unsigned long PulseTimePrevious=0L;                // Tijdsduur tussen twee pulsen teller in milliseconden: vorige meting
-
   // in deze interrupt service routine staat millis() stil. Dit is echter geen bezwaar voor de meting.
   PulseTime=millis()-PulseTimePrevious;
   if(PulseTime>=PULSE_DEBOUNCE_TIME)
@@ -1903,7 +1903,7 @@ void SimulateDay(void)
     // Kijk of er op het gesimuleerde tijdstip een hit is in de EventList
 //    SimulatedClockEvent=command2event( CMD_CLOCK_EVENT_ALL+Time.Day,Time.Hour,Time.Minutes);
 //    if(CheckEventlist(SimulatedClockEvent,VALUE_SOURCE_CLOCK)) // kijk of er een hit is in de EventList
-//      ProcessEvent2_old(SimulatedClockEvent,VALUE_DIRECTION_INTERNAL,VALUE_SOURCE_CLOCK);
+//      ProcessEvent2_old(SimulatedClockEvent,VALUE_DIRECTION_INPUT,VALUE_SOURCE_CLOCK);
 //??? klok events nog aanpassen
 
     // Kijk of er op het gesimuleerde tijdstip een zonsondergang of zonsopkomst wisseling heeft voorgedaan
@@ -1912,7 +1912,7 @@ void SimulateDay(void)
       {
       struct NodoEventStruct TempEvent;
       ClearEvent(&TempEvent);
-      TempEvent.Direction = VALUE_DIRECTION_INTERNAL;
+      TempEvent.Direction = VALUE_DIRECTION_INPUT;
       TempEvent.Port      = VALUE_SOURCE_CLOCK;
       TempEvent.Command   = CMD_CLOCK_EVENT_DAYLIGHT;
       TempEvent.Par1      = Time.Daylight;
