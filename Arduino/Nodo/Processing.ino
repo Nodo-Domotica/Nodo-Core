@@ -233,8 +233,17 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
     return true;
     }
 
-  // ### DISPLAY_ONLY: //Devents met de transmissie vlag TRANSMISSION_DISPLAY worden niet verder behandeld.
-  if(Event->Flags & TRANSMISSION_DISPLAY)
+  // USEREVENT:
+  // beschouw bij een UserEvent een 0 voor Par1 of Par2 als een wildcard.
+  if(Event->Command==CMD_USEREVENT && MacroEvent->Command==CMD_USEREVENT)// Command
+    {
+    if( (Event->Par1==MacroEvent->Par1 || MacroEvent->Par1==0 || Event->Par1==0)  // Par1 deel een match
+     && (Event->Par2==MacroEvent->Par2 || MacroEvent->Par2==0 || Event->Par2==0)) // Par2 deel een match
+        return true; 
+    }
+
+  // Herkomst van een andere Nodo, dan er niets meer mee doen TENZIJ het een UserEvent is.
+  if(Event->SourceUnit!=0  && Event->SourceUnit!=Settings.Unit)
     return false;
 
   // #### EXACT: als huidige event exact overeenkomt met het event in de regel uit de Eventlist, dan een match
@@ -274,14 +283,6 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
        return true;
      }
 
-  // USEREVENT:
-  // beschouw bij een UserEvent een 0 voor Par1 of Par2 als een wildcard.
-  if(Event->Command==CMD_USEREVENT && MacroEvent->Command==CMD_USEREVENT)// Command
-    {
-    if( (Event->Par1==MacroEvent->Par1 || MacroEvent->Par1==0 || Event->Par1==0)  // Par1 deel een match
-     && (Event->Par2==MacroEvent->Par2 || MacroEvent->Par2==0 || Event->Par2==0)) // Par2 deel een match
-        return true; 
-    }
   return false; // geen match gevonden
   }
 

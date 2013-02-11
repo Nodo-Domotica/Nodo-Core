@@ -241,7 +241,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
 // moeten worden getoond. Het is niet per defiitie zo dat de interne Par1, Par2 en Par3 ook dezelfe parameters zijn die aan de gebruiker
 // worden getoond. 
 
-  byte ParameterToView[5]={0,0,0,0,0};
+  byte ParameterToView[8]={0,0,0,0,0,0,0,0};
 
   if(EventString[0]==0)
     {
@@ -283,10 +283,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_WIRED_ANALOG:
       case CMD_DEVICE:
         ParameterToView[0]=PAR1_INT;
-        ParameterToView[1]=PAR2_INT8;
-        ParameterToView[2]=PAR3_INT;
-        ParameterToView[3]=PAR4_INT;
-        ParameterToView[4]=PAR5_INT;
+        ParameterToView[1]=PAR2_INT;
         break;
 
       case VALUE_BUILD:
@@ -848,9 +845,14 @@ PrintNodoEventStruct("Device",&EventToExecute);//???
           case CMD_EVENTLIST_WRITE:
             if(SendToUnit==Settings.Unit || SendToUnit==0)
               {                          
-              EventlistWriteLine=EventToExecute.Par1;
-              State_EventlistWrite=1;
-              EventToExecute.Command=0;// geen verdere verwerking
+              if(EventToExecute.Par1<=EVENTLIST_MAX)
+                {
+                EventlistWriteLine=EventToExecute.Par1;
+                State_EventlistWrite=1;
+                EventToExecute.Command=0;// geen verdere verwerking
+                }
+              else
+                error=MESSAGE_02;
               }
             break;
 
@@ -1117,22 +1119,27 @@ PrintNodoEventStruct("Device",&EventToExecute);//???
             }
     
           case CMD_EVENTLIST_SHOW:
-            PrintTerminal(ProgmemString(Text_22));
-            if(EventToExecute.Par1==0)
+            if(EventToExecute.Par1<=EVENTLIST_MAX)
               {
-              x=1;
-              while(EventlistEntry2str(x++,0,TmpStr2, false))
-                if(TmpStr2[0]!=0)
-                  PrintTerminal(TmpStr2);
+              PrintTerminal(ProgmemString(Text_22));
+              if(EventToExecute.Par1==0)
+                {
+                x=1;
+                while(EventlistEntry2str(x++,0,TmpStr2, false))
+                  if(TmpStr2[0]!=0)
+                    PrintTerminal(TmpStr2);
+                }
+              else
+                {
+                EventlistEntry2str(EventToExecute.Par1,0,TmpStr2, false);//??? buiten bereik afvangen
+                  if(TmpStr2[0]!=0)
+                    PrintTerminal(TmpStr2);
+                }
+              PrintTerminal(ProgmemString(Text_22));
+              EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
               }
             else
-              {
-              EventlistEntry2str(EventToExecute.Par1,0,TmpStr2, false);//??? buiten bereik afvangen
-                if(TmpStr2[0]!=0)
-                  PrintTerminal(TmpStr2);
-              }
-            PrintTerminal(ProgmemString(Text_22));
-            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+              error=MESSAGE_02;
             break;
               
           case CMD_NODO_IP:

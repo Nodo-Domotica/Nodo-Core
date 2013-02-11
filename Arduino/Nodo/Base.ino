@@ -1,10 +1,10 @@
-#define SETTINGS_VERSION     26
+#define SETTINGS_VERSION     27
 #define NODO_BUILD          501//??? ophogen.
 #include <EEPROM.h>
 #include <Wire.h>
 
 // strings met vaste tekst naar PROGMEM om hiermee RAM-geheugen te sparen.
-prog_char PROGMEM Text_01[] = "Nodo Domotica controller (c) Copyright 2012 P.K.Tonkes.";
+prog_char PROGMEM Text_01[] = "Nodo Domotica controller (c) Copyright 2013 P.K.Tonkes.";
 prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
 prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSat";
 prog_char PROGMEM Text_22[] = "!******************************************************************************!";
@@ -18,7 +18,6 @@ prog_char PROGMEM Text_15[] = "Nodo V3.0.9 Small, Product=SWACNC-SMALL-R%03d, Th
 #ifdef NODO_MEGA
 prog_char PROGMEM Text_03[] = "Enter your password: ";
 prog_char PROGMEM Text_05[] = "0123456789abcdef";
-//prog_char PROGMEM Text_06[] = "Waiting for busy Nodo: ";
 prog_char PROGMEM Text_07[] = "Waiting for signal...";
 prog_char PROGMEM Text_09[] = "(Last 10KByte)";
 prog_char PROGMEM Text_13[] = "RawSignal saved.";
@@ -605,6 +604,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define BIC_HWMESH_NES_V1X     1  // Nodo Ethernet Shield V1.x met Aurel tranceiver. Vereist speciale pulse op PIN_BSF_0 voor omschakelen tussen Rx en Tx.
 
 #ifdef NODO_MEGA // Definities voor de Nodo-Mega variant.
+#define EVENTLIST_MAX              250 // maximaal aantal regels in de eventlist
 #define EVENT_QUEUE_MAX             16 // maximaal aantal plaatsen in de queue.
 #define MACRO_EXECUTION_DEPTH       10 // maximale nesting van macro's.
 #define INPUT_BUFFER_SIZE          128  // Buffer waar de karakters van de seriele/IP poort in worden opgeslagen.
@@ -664,6 +664,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define COOKIE_REFRESH_TIME         60 // Tijd tussen automatisch verzenden van een nieuw Cookie als de beveiligde HTTP modus is inschakeld.
 
 #else // als het voor de Nodo-Small variant is
+#define EVENTLIST_MAX               75 // maximaal aantal regels in de eventlist
 #define EVENT_QUEUE_MAX              8 // maximaal aantal plaatsen in de queue
 #define MACRO_EXECUTION_DEPTH        4 // maximale nesting van macro's.
 #define TIMER_MAX                    8 // aantal beschikbare timers voor de user, gerekend vanaf 1
@@ -788,7 +789,6 @@ char HTTPCookie[10];                                        // Cookie voor uitwi
 int FileWriteMode=0;                                        // Het aantal seconden dat deze timer ingesteld staat zal er geen verwerking plaats vinden van TerminalInvoer. Iedere seconde --.
 char InputBuffer_Serial[INPUT_BUFFER_SIZE+2];               // Buffer voor input Seriele data
 char InputBuffer_Terminal[INPUT_BUFFER_SIZE+2];             // Buffer voor input terminal verbinding Telnet sessie
-//???byte UnitsOnline[UNIT_MAX+1];                               // Tabel waarin wordt bijgehouden welke Nodo's online zijn. Inhoud 
 
 // ethernet classes voor IP communicatie Telnet terminal en HTTP.
 EthernetServer HTTPServer(80);                              // Server class voor HTTP sessie. Poort wordt later goed gezet.

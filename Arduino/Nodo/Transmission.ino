@@ -28,14 +28,19 @@ boolean AnalyzeRawSignal(struct NodoEventStruct *E)
   if(RawSignal_2_Nodo(E))           // Is het een Nodo signaal
     return true;
 
+#if NODO_30_COMPATIBLE
+  if(RawSignal_2_Nodo_OLD(E))       // Is het een Nodo signaal: oude 32-bit format.
+    return true;
+#endif
+
   if(I2C_EventReceived)
-  {
+   {
     // Er is een I2C event binnen gekomen. De gegevens kunnen dan eenvoudig uit de binnengekomen struct worden gekopieerd. 
     *E=I2C_Event;
     bitWrite(HW_Config,HW_I2C,true);
     I2C_EventReceived    = false;
     return true;
-  }
+   }
 
   if(Transmission_NodoOnly)
     return false;
@@ -683,8 +688,6 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
 #endif
 
 
-
-
 /*********************************************************************************************\
  * Deze routine berekent de uit een RawSignal een NODO code
  * Geeft een false retour als geen geldig NODO signaal
@@ -719,7 +722,7 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
     b^=*(B+x); 
 
   if(b==0)
-  {
+    {
     Event->SourceUnit=DataBlock.SourceUnit;  
     Event->DestinationUnit=DataBlock.DestinationUnit;
     Event->Flags=DataBlock.Flags;
@@ -728,10 +731,10 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
     Event->Par1=DataBlock.Par1;
     Event->Par2=DataBlock.Par2;
     return true;
-  }
+    }
 
   return false; 
-}
+  }
 
 
 //#######################################################################################################
@@ -808,14 +811,13 @@ boolean SendI2C(struct NodoEventStruct *EventBlock)
 
 #ifdef NODO_MEGA
 boolean EthernetInit(void)
-{
+  {
   int x;
   boolean Ok=false;
   byte Ethernet_MAC_Address[6];                                // MAC adres van de Nodo.
 
   if(!bitRead(HW_Config,HW_ETHERNET))
     return false;
-
   Ethernet_MAC_Address[0]=0xAA;
   Ethernet_MAC_Address[1]=0xBB;
   Ethernet_MAC_Address[2]=0xCC;
@@ -825,20 +827,20 @@ boolean EthernetInit(void)
 
   // Initialiseer ethernet device  
   if((Settings.Nodo_IP[0] + Settings.Nodo_IP[1] + Settings.Nodo_IP[2] + Settings.Nodo_IP[3])==0)// Als door de user IP adres is ingesteld op 0.0.0.0 dan IP adres ophalen via DHCP
-  {
+    {
     if(Ethernet.begin(Ethernet_MAC_Address)!=0) // maak verbinding en verzoek IP via DHCP
       Ok=true;
     else
       Ok=false;
-  }
+    }
   else      
-  {
+    {
     Ethernet.begin(Ethernet_MAC_Address, Settings.Nodo_IP, Settings.DnsServer, Settings.Gateway, Settings.Subnet);
     Ok=true;
-  }
+    }
 
   if(Ok) // Als er een IP adres is, dan HTTP en TelNet servers inschakelen
-  {
+    {
     // Start server voor Terminalsessies via TelNet
     TerminalServer=EthernetServer(TERMINAL_PORT);
     TerminalServer.begin(); 
@@ -848,7 +850,7 @@ boolean EthernetInit(void)
     HTTPServer.begin(); 
 
     if(Settings.TransmitIP==VALUE_ON && Settings.HTTPRequest[0]!=0)
-    {
+      {
       // Haal IP adres op van de Host waar de nodo de HTTP events naar verzendt zodat niet iedere transactie een DNS-resolve plaats hoeft te vinden.
       // Haal uit het HTTP request URL de Host. Zoek naar de eerste slash in de opgegeven HTTP-Host adres
       char *TempString=(char*)malloc(80);
@@ -857,29 +859,29 @@ boolean EthernetInit(void)
       TempString[x]=0;
       EthernetClient HTTPClient;
       if(HTTPClient.connect(TempString,Settings.PortClient))   
-      {
+        {
         HTTPClient.getRemoteIP(HTTPClientIP);
         Ok=true;
         delay(10); //even wachten op response van de server.
         HTTPClient.flush(); // gooi alles weg, alleen IP adres was van belang.
         HTTPClient.stop();
-      }
+        }
       else
-      {
+        {
         HTTPClientIP[0]=0;
         HTTPClientIP[1]=0;
         HTTPClientIP[2]=0;
         HTTPClientIP[3]=0;
         Serial.println(F("Error: No TCP/IP connection to host."));
         Ok=false;
-      }
+        }
       free(TempString);    
-    }
+      }
     else
       Ok=true;
-  }
+    }
   return Ok;
-}
+  }
 
 /*******************************************************************************************************\
  * Haal via een HTTP-request een file op
@@ -1408,6 +1410,46 @@ void SerialHold(boolean x)
   }
 }
 
+
+//#######################################################################################################
+//##################################### Transmission: Legacy!  ###########################################
+//#######################################################################################################
+
+/*********************************************************************************************\
+* Deze routine berekent de uit een RawSignal een NODO code
+* Geeft een false retour als geen geldig NODO signaal
+\*********************************************************************************************/
+boolean RawSignal_2_Nodo_OLD(struct NodoEventStruct *Event)
+  {
+  unsigned long bitstream=0L;
+  int x,y,z;
+
+  // NODO signaal bestaat uit start bit + 32 bits. Als ongelijk aan 66, dan geen Nodo signaal
+  if(RawSignal.Number!=66)return 0L;
+
+  // 0=aantal, 1=startpuls, 2=space na startpuls, 3=1e pulslengte. Dus start loop met drie.
+  z=0;
+  for(x=3;x<=RawSignal.Number;x+=2)
+    {
+    if(RawSignal.Pulses[x]>NODO_PULSE_MID)      
+      bitstream|=(long)(1L<<z); //LSB in signaal wordt  als eerste verzonden
+    z++;
+    }
+
+  ClearEvent(Event);
+  Event->SourceUnit=(bitstream>>24)&0xf;  
+  Event->DestinationUnit=0;
+  Event->Flags=0;
+  Event->Checksum=0;
+  Event->Command=CMD_USEREVENT;
+  Event->Par1=(bitstream>>8)&0xff;
+  Event->Par2=bitstream&0xff;
+  
+  if((bitstream>>16)&0xff==100) // in code 100 heeft altijd het userevent gezeten.
+    return true;
+
+  return false;  
+  }
 
 
 

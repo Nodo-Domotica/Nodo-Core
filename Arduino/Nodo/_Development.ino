@@ -27,8 +27,11 @@ Nog te doen:
 
 @@@@ Next:
 - I2C communicatie tussen Nodo's.
+- Aantal regels in Eventlist: Small=75, Mega=250
+- EventlistErase wist nu alleen de bezette regels in de eventlist
 - Issue 648: Voorkomen van I2C busconflicten bij uitlezen clock
 - SendTo voor RF versneld.
+- Legacy ondersteuning: Oude 32-bit userevents kunnen nog worden ontvangen.
 - SendTo kiest automatisch kanaal I2C, RF of IR.
 - SendTo doet Retry bij een checksum error;
 - commando [Status EventlistCount] geeft nu ook aantal vrije plaatsen in de eventlist
