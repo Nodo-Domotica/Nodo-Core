@@ -22,10 +22,42 @@
 /**********************************************************************************************\
  * Schrijft een event in de Eventlist. Deze Eventlist bevindt zich in het EEPROM geheugen.
  \*********************************************************************************************/
-boolean Eventlist_Write(int address, struct NodoEventStruct *Event, struct NodoEventStruct *Action)// LET OP: Gebruikers input. Eerste adres=1
+boolean Eventlist_Write(int Line, struct NodoEventStruct *Event, struct NodoEventStruct *Action)// LET OP: Gebruikers input. Eerste adres=1
   {
   struct EventlistStruct EEPROM_Block;
- 
+  struct NodoEventStruct dummy;
+  int x,address;
+  
+  // als opgegeven adres=0, zoek dan de eerste vrije plaats.
+  if(Line==0)
+    {
+    Line++;
+    while(Eventlist_Read(Line,&dummy,&dummy) && dummy.Command!=0)Line++;
+    }
+  Line--;                                                                          // echte adressering begint vanaf nul. voor de user vanaf 1.
+
+  if(Line>EVENTLIST_MAX)
+    return false;
+
+  address=Line * sizeof(struct EventlistStruct) + sizeof(struct SettingsStruct);     // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer deze bytes. Deze niet te gebruiken voor de Eventlist!
+  byte *B=(byte*)&EEPROM_Block;                                                       // B wijst naar de eerste byte van de struct
+
+  // Indien wissen van een regel, dan eerst kijken of de positie niet al leeg is. Is dit wel het geval, dan is beschrijven niet nodig.
+  if(Event->Command==0)
+    {
+    for(x=0;x<sizeof(struct EventlistStruct);x++) // lees alle bytes van de struct
+      {
+      if(address<EEPROM_SIZE)
+        *(B+x)=EEPROM.read(address++);
+      else
+        return false;
+      }
+    if(EEPROM_Block.EventCommand==0)
+      return true;
+    }
+
+  // Nu wegschrijven.
+  address=Line * sizeof(struct EventlistStruct) + sizeof(struct SettingsStruct);     // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer deze bytes. Deze niet te gebruiken voor de Eventlist!
   EEPROM_Block.EventCommand=Event->Command;
   EEPROM_Block.EventPar1=Event->Par1;
   EEPROM_Block.EventPar2=Event->Par2;
@@ -33,28 +65,14 @@ boolean Eventlist_Write(int address, struct NodoEventStruct *Event, struct NodoE
   EEPROM_Block.ActionCommand=Action->Command;
   EEPROM_Block.ActionPar1=Action->Par1;
   EEPROM_Block.ActionPar2=Action->Par2;
-   
-  // als opgegeven adres=0, zoek dan de eerste vrije plaats.
-  if(address==0)
-    {
-    struct NodoEventStruct dummy;
-    ClearEvent(&dummy);
-    address++;
-    while(Eventlist_Read(address,&dummy,&dummy) && dummy.Command!=0)address++;
-    }
 
-  address--;                                                                          // echte adressering begint vanaf nul. voor de user vanaf 1.
-  address=address*sizeof(struct EventlistStruct) + sizeof(struct SettingsStruct);     // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer deze bytes. Deze niet te gebruiken voor de Eventlist!
-  byte *B=(byte*)&EEPROM_Block;                                                       // B wijst naar de eerste byte van de struct
-
-  for(int x=0;x<sizeof(struct EventlistStruct);x++) // schrijf alle bytes van de struct
+  for(x=0;x<sizeof(struct EventlistStruct);x++) // schrijf alle bytes van de struct
     {
     if(address<EEPROM_SIZE)
       EEPROM.write(address++, *(B+x));
     else
       return false;
     }
-
   return true;
   }
 
@@ -66,11 +84,14 @@ boolean Eventlist_Read(int address, struct NodoEventStruct *Event, struct NodoEv
   {
   struct EventlistStruct EEPROM_Block;
 
+  if(address>EVENTLIST_MAX)
+    return false;
+
   address--;// echte adressering begint vanaf nul. voor de user vanaf 1.
   address=address*sizeof(struct EventlistStruct) + sizeof(struct SettingsStruct);     // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer deze bytes. Deze niet te gebruiken voor de Eventlist!
   byte *B=(byte*)&EEPROM_Block; // B wijst naar de eerste byte van de struct
 
-  for(int x=0;x<sizeof(struct EventlistStruct);x++) // schrijf alle bytes van de struct
+  for(int x=0;x<sizeof(struct EventlistStruct);x++) // lees alle bytes van de struct
     {
     if(address<EEPROM_SIZE)
       *(B+x)=EEPROM.read(address++);

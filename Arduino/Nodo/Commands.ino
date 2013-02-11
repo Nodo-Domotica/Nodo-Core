@@ -386,10 +386,10 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       Wait(EventToExecute->Par1, false, 0, false);
       break;        
 
-    case CMD_SEND_EVENT://???@@
+    case CMD_SEND_EVENT://???@@ rawsignal nog uitwerken
       ClearEvent(&TempEvent);
       TempEvent=LastReceived;
-      TempEvent.Port                  = VALUE_ALL;
+      TempEvent.Port=EventToExecute->Par1==0?VALUE_ALL:EventToExecute->Par1;
       SendEvent(&TempEvent, TempEvent.Command==CMD_RAWSIGNAL,true);
       break;        
 
