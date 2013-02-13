@@ -220,18 +220,16 @@ byte CheckEventlist(struct NodoEventStruct *Event)
  \*********************************************************************************************/
 boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroEvent)
   {  
-  // geen lege events zoeken en verwerken
+  // geen lege events verwerken
   if(MacroEvent->Command==0 || Event->Command==0)
     return false;  
-    
+
   // ### WILDCARD:      
   if(MacroEvent->Command == CMD_COMMAND_WILDCARD) // is regel uit de eventlist een WildCard?
-    {
-    if( MacroEvent->Par1!=VALUE_ALL        &&  MacroEvent->Par1!=Event->Port)                return false;
-    if((MacroEvent->Par2)&0xff!=VALUE_ALL  && (MacroEvent->Par2)&0xff!=Event->Command)       return false;
-    if((MacroEvent->Par2>>8)&0xff!=0       && (MacroEvent->Par2>>8)&0xff!=Event->SourceUnit) return false;
-    return true;
-    }
+    if( MacroEvent->Par1==VALUE_ALL        ||  MacroEvent->Par1==Event->Port)
+      if((MacroEvent->Par2&0xff)==VALUE_ALL  || (MacroEvent->Par2&0xff)==Event->Command)
+        if(((MacroEvent->Par2>>8)&0xff)==0       || ((MacroEvent->Par2>>8)&0xff)==Event->SourceUnit)
+          return true;
 
   // USEREVENT:
   // beschouw bij een UserEvent een 0 voor Par1 of Par2 als een wildcard.
@@ -245,13 +243,13 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
   // Herkomst van een andere Nodo, dan er niets meer mee doen TENZIJ het een UserEvent is.
   if(Event->SourceUnit!=0  && Event->SourceUnit!=Settings.Unit)
     return false;
-
+    
   // #### EXACT: als huidige event exact overeenkomt met het event in de regel uit de Eventlist, dan een match
   if(MacroEvent->Command == Event->Command &&
      MacroEvent->Par1    == Event->Par1    &&
      MacroEvent->Par2    == Event->Par2    )
        return true; 
-
+       
   // ### TIME:
 //Serial.print(F("*** debug: CheckEvent(); Event="));Serial.print(Event->Par2,HEX); //??? Debug
 //Serial.print(F(", MacroEvent"));Serial.println(MacroEvent->Par2,HEX); //??? Debug

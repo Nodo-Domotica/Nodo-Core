@@ -1,5 +1,5 @@
 #define SETTINGS_VERSION     27
-#define NODO_BUILD          501//??? ophogen.
+#define NODO_BUILD          502//??? ophogen.
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -928,6 +928,7 @@ void setup()
     else
       {
       // niet gelukt om ethernet verbinding op gang te krijgen
+      bitWrite(HW_Config,HW_ETHERNET,0);
       RaiseMessage(MESSAGE_07);
       }
     }
@@ -971,6 +972,8 @@ void setup()
   ProcessEvent2(&TempEvent);  // Voer het 'Boot' event uit.
 
   bitWrite(HW_Config,HW_I2C,false); // Zet I2C weer uit. Wordt weer geactiveerd als er een I2C event op de bus verschijnt.
+
+  #include <Protocol/KAKU.c>
   }
 
 void loop() 
