@@ -10,6 +10,7 @@ Nog te doen:
 - CRC een XOR met BUILD???
 - UserEvents compatibel oude Nodo versies 32-bit?
 - UserPlugin
+- Portinput geeft parameter teveel weer
 
 *****************************************************************************************
 
@@ -45,4 +46,6 @@ Nog te doen:
 - 32 unit nummers beschikbaar.
 - Bij error tijdens uitvoer van een script wordt de verwerking gestopt. Tenzij de continue_on_error mode: [FileExecute <script>, ON]
 - [Status All] wordt alleen nog ondersteund vanaf Terminal en HTTP. Niet meer via een [SendTo]
+- Als een HTTP-request via de browser wordt gedaan dan wordt het resultaat aan de gebruiker getoond op de brouwser.
+
 \*****************************************************************************************/

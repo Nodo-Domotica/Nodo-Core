@@ -701,8 +701,6 @@ void ResetFactory(void)
   Reset();
 }
 
-
-
 /**********************************************************************************************\
  * Geeft de status weer of verzendt deze.
  * verzend de status van een setting als event.

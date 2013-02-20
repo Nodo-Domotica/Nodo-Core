@@ -1229,9 +1229,8 @@ void ExecuteIP(void)
   boolean Completed=false;
   int Protocol=0;
   int InByteCounter;
-  char FileName[13];
   boolean RequestEvent=false;
-  boolean RequestFile=false;
+  boolean SendBodyText=false;
   int x,y;
   unsigned long TimeoutTimer=millis() + 5000; // Na enkele seconden moet de gehele transactie gereed zijn, anders 'hik' in de lijn.
 
@@ -1245,7 +1244,7 @@ void ExecuteIP(void)
   EthernetClient HTTPClient=HTTPServer.available();
 
   if(HTTPClient)
-  {
+    {
     HTTPClient.getRemoteIP(ClientIPAddress);  
 
     // Controleer of het IP adres van de Client geldig is. 
@@ -1253,25 +1252,25 @@ void ExecuteIP(void)
       (Settings.Client_IP[1]!=0 && ClientIPAddress[1]!=Settings.Client_IP[1]) ||
       (Settings.Client_IP[2]!=0 && ClientIPAddress[2]!=Settings.Client_IP[2]) ||
       (Settings.Client_IP[3]!=0 && ClientIPAddress[3]!=Settings.Client_IP[3]))
-    {
+      {
       RaiseMessage(MESSAGE_10);
-    }
+      }
     else
-    {
+      {
       InByteCounter=0;
       while(HTTPClient.connected()  && !Completed && TimeoutTimer>millis())
-      {
-        if(HTTPClient.available()) 
         {
+        if(HTTPClient.available()) 
+          {
           InByte=HTTPClient.read();
 
           if(isprint(InByte) && InByteCounter<IP_BUFFER_SIZE)
-          {
+            {
             InputBuffer_IP[InByteCounter++]=InByte;
-          }
+            }
 
           else if((InByte==0x0D || InByte==0x0A))
-          {
+            {
             InputBuffer_IP[InByteCounter]=0;
             InByteCounter=0;
 
@@ -1280,135 +1279,141 @@ void ExecuteIP(void)
 
             // Kijk of het een HTTP-request is
             if(Protocol==0)
-            {
+              {
               if(StringFind(InputBuffer_IP,"GET")!=-1)
                 Protocol=VALUE_SOURCE_HTTP;// HTTP-Request
-            }
+              }
 
             if(Protocol==VALUE_SOURCE_HTTP)
-            {
-              if(!RequestCompleted)
               {
+              if(!RequestCompleted)
+                {
                 Completed=true;
 
                 // als de beveiliging aan staat, dan kijken of de juiste pin ip meegegeven in het http-request. x is vlag voor toestemming verwerking event
                 x=false;
                 if(Settings.Password[0]!=0)
-                {
+                  {
                   sprintf(TmpStr2,"%s:%s",HTTPCookie,Settings.Password);  
                   md5(TmpStr2);
 
                   if(ParseHTTPRequest(InputBuffer_IP,"key",TmpStr1))
-                  {
+                    {
                     if(strcmp(TmpStr2,TmpStr1)==0)
                       x=true;
+                    }
                   }
-                }
                 else
                   x=true;
 
                 if(x)
-                {                
+                  {                
                   if(ParseHTTPRequest(InputBuffer_IP,"event",Event))
+                    {
                     RequestEvent=true;
-
-                  if(ParseHTTPRequest(InputBuffer_IP,"file",TmpStr1))
-                  {
-                    TmpStr1[8]=0; // voorkom dat een file meer dan 8 posities heeft (en een afsluitende 0)
-                    strcpy(FileName,TmpStr1);
-                    strcat(FileName,".dat");
-                    RequestFile=true;
-                  }
-
-                  if(RequestFile || RequestEvent)
-                  {
                     RequestCompleted=true;
                     strcpy(TmpStr1,"HTTP/1.1 200 Ok");
                     HTTPClient.println(TmpStr1);
-                  }
+                    HTTPClient.println(TmpStr1);
+                    
+                    // De resultaten die anders naar de terminal waren gestuurd nu eveneens naar file schrijven
+                    // De filehandler is globaal gedefinieerd en schrijven vindt plaatsin de funktie PrintTerminal();
+                    SelectSDCard(true);
+                    SD.remove(ProgmemString(Text_06));
+                    HTTPResultFile = SD.open(ProgmemString(Text_06), FILE_WRITE);
+                    SelectSDCard(false);
+
+                    // Voer binnengekomen event uit
+                    RaiseMessage(ExecuteLine(Event, Protocol));
+                    
+                    // Sluit logging naar file weer uit zodat deze als bodytext retour gestuurd kan worden
+                    RequestEvent=true;
+                    SelectSDCard(true);
+                    HTTPResultFile.close();
+                    SelectSDCard(false);
+                    SendBodyText=true;
+                    }
                   else
                     HTTPClient.println(F("HTTP/1.1 400 Bad Request"));
-                }
+                  }
                 else                    
                   HTTPClient.println(F("HTTP/1.1 403 Forbidden"));
-              }
+                }
 
               HTTPClient.println(F("Content-Type: text/html"));
               HTTPClient.print(F("Server: Nodo/Build="));
               HTTPClient.println(int2str(NODO_BUILD));             
               if(bitRead(HW_Config,HW_CLOCK))
-              {
+                {
                 HTTPClient.print(F("Date: "));
                 HTTPClient.println(DateTimeString());             
-              }
+                }
               HTTPClient.println(""); // HTTP Request wordt altijd afgesloten met een lege regel
 
-              if(RequestFile)
-              {              
+              // Haal nu de resultaten op van het verwerken van de binnengekomen HTTP-regel. Stuur de inhoud als bodytext terug
+              // naar de client. De WebApp zal deze content uitparsen. Indien toegang via browser, dan wordt het verwerkings-
+              // resultaat getoond in de browser.
+              if(SendBodyText)
+                {              
                 // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
                 SelectSDCard(true);
-                File dataFile=SD.open(FileName);
-                if(dataFile) 
-                {
-                  y=0;       
-                  while(dataFile.available())
+                HTTPResultFile=SD.open(ProgmemString(Text_06));
+                if(HTTPResultFile) 
                   {
-                    x=dataFile.read();
+                  y=0;       
+                  while(HTTPResultFile.available())
+                    {
+                    x=HTTPResultFile.read();
                     if(isprint(x) && y<INPUT_BUFFER_SIZE)
-                    {
+                      {
                       TmpStr1[y++]=x;
-                    }
+                      }
                     else
-                    {
+                      {
                       TmpStr1[y]=0;
                       y=0;                    
                       SelectSDCard(false);
-
-                      if(RequestFile)
-                      {
-                        HTTPClient.println();
-                        RequestFile=false;// gebruiken we even als vlag om de eerste keer de regel met asteriks af te drukken omdat deze variabele toch verder niet meer nodig is
-                      }
                       HTTPClient.print(TmpStr1);
-                      HTTPClient.println();
+                      HTTPClient.print("<br>");
+                      //Serial.print(F("*** debug: BODY TEXT -> "));Serial.println(TmpStr1); //??? Debug
                       SelectSDCard(true);
+                      }
                     }
-                  }
-                  dataFile.close();
+                  HTTPResultFile.close();
                   SelectSDCard(false);
-                }  
+                  }  
                 else 
                   HTTPClient.println(cmd2str(MESSAGE_03));
-              }
-            } // einde HTTP-request
-          }
+                }
+              } // einde HTTP-request
+            }
           else
-          {
+            {
             // Er is geen geldig teken binnen gekomen. Even wachten en afbreken.
             delay(1000);
             Completed=true;
+            }
           }
         }
       }
-    }
     delay(100);  // korte pauze om te voorkomen dat de verbinding wordt verbroken alvorens alle data door client verwerkt is.
     HTTPClient.flush();// Verwijder eventuele rommel in de buffer.
     HTTPClient.stop();
-  }
+    }
 
   free(TmpStr1);
   free(TmpStr2);
   free(InputBuffer_IP);
 
-  if(RequestEvent)
-    {
-    ExecutionDepth=0;
-    RaiseMessage(ExecuteLine(Event, Protocol));
-    }
+//  if(RequestEvent)
+//    {
+//    ExecutionDepth=0;
+//    RaiseMessage(ExecuteLine(Event, Protocol));
+//    }
 
   free(Event);
   return;
-}  
+  }  
 #endif
 
 //#######################################################################################################

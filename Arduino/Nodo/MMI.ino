@@ -176,9 +176,17 @@ void PrintTerminal(char* LineToPrint)
     {
     if(TerminalClient.connected() && TerminalConnected>0 && TerminalLocked==0)
       TerminalClient.println(LineToPrint);
+      
+    if(HTTPResultFile)
+      {
+      SelectSDCard(true);
+      HTTPResultFile.write((uint8_t*)LineToPrint,strlen(LineToPrint));
+      HTTPResultFile.write('\n'); // nieuwe regel
+      SelectSDCard(false);
+      }
     }
 
-  // FileLog wordt hier uitgevoerd.
+  // FileLog wordt hier uitgevoerd. ??? kan dit wel nav de nieuwe HTTPRequestFile voorziening?
   if(TempLogFile[0]!=0)
     if(bitRead(HW_Config,HW_SDCARD))
       AddFileSDCard(TempLogFile,LineToPrint); // Extra logfile op verzoek van gebruiker: CMD_FILE_LOG
