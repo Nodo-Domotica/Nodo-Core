@@ -4,7 +4,7 @@
 // In de queue geplaatste events in een slave queue kunnen (mogelijk) pas leiden tot een zendactie na vrijgave van de band.
 // 
 
-void PrintNodoEventStruct(char* str, struct NodoEventStruct *Event)
+void PrintNodoEvent(char* str, struct NodoEventStruct *Event)
   {    
   Serial.println(str);
   Serial.print(F("*** debug: Event->Port=             = "));Serial.println(Event->Port); //??? Debug

@@ -8,12 +8,12 @@
 #define IR_REPEATS                   4 // aantal herhalingen van een code binnen één IR reeks
 #define MIN_PULSE_LENGTH           100 // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define MIN_RAW_PULSES              32 // =16 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
-#define MIN_TIME_BETWEEN_SEND_IR   100 // Minimale tijd tussen twee IR zend acties in milliseconden.
+#define MIN_TIME_BETWEEN_SEND_IR   500 // Minimale tijd tussen twee IR zend acties in milliseconden.
 #define MIN_TIME_BETWEEN_SEND_RF   500 // Minimale tijd tussen twee RF zend acties in milliseconden.
 #define MIN_TIME_BETWEEN_SEND_I2C   10 // Minimale tijd tussen twee I2C zend acties in milliseconden.
 
 boolean AnalyzeRawSignal(struct NodoEventStruct *E)
-{
+  {
   if(RawSignal.Number==RAW_BUFFER_SIZE)return false;     // Als het signaal een volle buffer beslaat is het zeer waarschijnlijk ruis of ongeldig signaal
   ClearEvent(E);
 
@@ -65,8 +65,12 @@ boolean AnalyzeRawSignal(struct NodoEventStruct *E)
     return true;
 #endif
 
+
+  if(RawSignal_2_32bit(E))
+    return true;
+    
   return false;   
-}
+  }
 
 
 /**********************************************************************************************\
@@ -76,25 +80,26 @@ boolean AnalyzeRawSignal(struct NodoEventStruct *E)
  * meegenomen zodat deze functie geschikt is voor PWM, PDM en Bi-Pase modulatie.
  * LET OP: Het betreft een unieke hash-waarde zonder betekenis van waarde.
  \*********************************************************************************************/
-unsigned long RawSignal_2_32bit(void)
-{
+boolean RawSignal_2_32bit(struct NodoEventStruct *event)
+  {
   int x,y,z;
   int Counter_pulse=0,Counter_space=0;
   int MinPulse=0xffff;
   int MinSpace=0xffff;
   unsigned long CodeP=0L;
   unsigned long CodeS=0L;
-  unsigned long Event;
+  static unsigned long Previous,PreviousTime; // t.b.v. onderdrukken herhaal binnengekomen signalen.
 
   // zoek de kortste tijd (PULSE en SPACE)
   x=5; // 0=aantal, 1=startpuls, 2=space na startpuls, 3=1e puls
   while(x<=RawSignal.Number-4)
-  {
+    {
     if(RawSignal.Pulses[x]<MinPulse)MinPulse=RawSignal.Pulses[x]; // Zoek naar de kortste pulstijd.
     x++;
     if(RawSignal.Pulses[x]<MinSpace)MinSpace=RawSignal.Pulses[x]; // Zoek naar de kortste spacetijd.
     x++;
-  }
+    }
+
   MinPulse+=(MinPulse*SIGNAL_ANALYZE_SHARPNESS)/100;
   MinSpace+=(MinSpace*SIGNAL_ANALYZE_SHARPNESS)/100;
 
@@ -102,44 +107,62 @@ unsigned long RawSignal_2_32bit(void)
   z=0; // bit in de Code die geset moet worden 
   do{
     if(z>31)
-    {
+      {
       CodeP=CodeP>>1;
       CodeS=CodeS>>1;
-    }
+      }
 
     if(RawSignal.Pulses[x]>MinPulse)
-    {
+      {
       if(z<=31)// de eerste 32 bits vullen in de 32-bit variabele
         CodeP|=(long)(1L<<z); //LSB in signaal wordt  als eerste verzonden
       else // daarna de resterende doorschuiven
       CodeP|=0x80000000L;
       Counter_pulse++;
-    }
+      }
     x++;
 
     if(RawSignal.Pulses[x]>MinSpace)
-    {
+      {
       if(z<=31)// de eerste 32 bits vullen in de 32-bit variabele
         CodeS|=(long)(1L<<z); //LSB in signaal wordt als eerste verzonden
       else // daarna de resterende doorschuiven
       CodeS|=0x80000000L;
       Counter_space++;
-    }
+      }
     x++;
     z++;
-  }
+    }
   while(x<RawSignal.Number);
 
 
   if(Counter_pulse>=1 && Counter_space<=1)
-    Event=CodeP; // data zat in de pulsbreedte
+    event->Par2=CodeP; // data zat in de pulsbreedte
   else if(Counter_pulse<=1 && Counter_space>=1)
-    Event=CodeS; // data zat in de pulse afstand
+    event->Par2=CodeS; // data zat in de pulse afstand
   else
-    Event=CodeS^CodeP; // data zat in beide = bi-phase, maak er een leuke mix van.
+    event->Par2=CodeS^CodeP; // data zat in beide = bi-phase, maak er een leuke mix van.
 
-  return (Event&0x0fffffff)|((unsigned long)SIGNAL_TYPE_UNKNOWN<<28);
-}
+  event->Par2=(event->Par2&0x0fffffff)|((unsigned long)SIGNAL_TYPE_UNKNOWN<<28);
+
+  // Indien het een RawSignal was, dan kunnen we niet achterhalen of het een zinvol en netjes afgerond signaal was
+  // we gebruiken daarom de herhalingen die de zender uitzendt als checksum. Komt het event een tweede maal binnen
+  // dan kan worden aangenomen dat het een goed signaal was.
+  if(event->Par2!=Previous || PreviousTime>millis())
+    {
+    Previous=event->Par2;
+    return false;
+    }
+    
+  event->SourceUnit=0;  
+  event->DestinationUnit=0;
+  event->Command=CMD_RAWSIGNAL;
+  event->Par1=0;
+  PreviousTime=millis()+SIGNAL_REPEAT_TIME;
+  Previous=0L;
+  return true;
+
+  }
 
 
 /**********************************************************************************************\
@@ -254,7 +277,7 @@ void RawSendRF(void)
  \*********************************************************************************************/
 
 void RawSendIR(void)
-{
+  {
   int pulse;  // pulse (bestaande uit een mark en een space) uit de RawSignal tabel die moet worden verzonden
   int mod;    // pulsenteller van het 38Khz modulatie signaal
 
@@ -421,9 +444,9 @@ void DelayTransmission(byte Port, boolean Set)
 
   // Als set, dan alleen tijdstip markeren
   if(Set)
-  {
-    switch(Port)
     {
+    switch(Port)
+      {
     case VALUE_SOURCE_RF:
       LastTransmitTime_RF=millis();
       break;
@@ -483,12 +506,12 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
 
   // Verstuur signaal als I2C
   if(Port==VALUE_SOURCE_I2C || (bitRead(HW_Config,HW_I2C) && Port==VALUE_ALL))
-  {
+    {
     ES->Port=VALUE_SOURCE_I2C;
     if(Display)PrintEvent(ES);
     DelayTransmission(VALUE_SOURCE_I2C,false);
     SendI2C(ES);
-  }
+    }
 
   if(Port==VALUE_SOURCE_RF || (Settings.TransmitRF==VALUE_ON && Port==VALUE_ALL))
     if(Settings.WaitFreeRF==VALUE_ON && UseRawSignal==false) //??? als de RawSend optie toegevoegd, dan geen WaitFreeRF doen! nog inbouwen
@@ -818,6 +841,7 @@ boolean EthernetInit(void)
 
   if(!bitRead(HW_Config,HW_ETHERNET))
     return false;
+    
   Ethernet_MAC_Address[0]=0xAA;
   Ethernet_MAC_Address[1]=0xBB;
   Ethernet_MAC_Address[2]=0xCC;
@@ -1416,13 +1440,18 @@ void SerialHold(boolean x)
 //#######################################################################################################
 
 /*********************************************************************************************\
-* Deze routine berekent de uit een RawSignal een NODO code
-* Geeft een false retour als geen geldig NODO signaal
+* Deze routine berekent de uit een RawSignal een NODO code van het type UserEvent
+* Geeft een false retour als geen geldig NODO signaal.
+* Deze funktie is opgenomen om compatibibel te zijn met universele afstandsbedieningen
+* die de gebruiker met de oude Nodo versies heeft geprogrammeerd.
 \*********************************************************************************************/
 boolean RawSignal_2_Nodo_OLD(struct NodoEventStruct *Event)
   {
   unsigned long bitstream=0L;
   int x,y,z;
+
+  static unsigned long PreviousTime=0;
+  static unsigned long PreviousBitstream=0;
 
   // NODO signaal bestaat uit start bit + 32 bits. Als ongelijk aan 66, dan geen Nodo signaal
   if(RawSignal.Number!=66)return 0L;
@@ -1435,20 +1464,36 @@ boolean RawSignal_2_Nodo_OLD(struct NodoEventStruct *Event)
       bitstream|=(long)(1L<<z); //LSB in signaal wordt  als eerste verzonden
     z++;
     }
+  
+  // We hoeven alleen maar compatible te zijn met de userevents van de oude Nodo.
+  // in code 100 heeft in de vorige versies altijd het userevent gezeten.
+  if(((bitstream>>16)&0xff)!=100) 
+    return false;
+
+  // Indien het een RawSignal was, dan kunnen we niet achterhalen of het een zinvol en netjes afgerond signaal was
+  // we gebruiken daarom de herhalingen die de zender uitzendt als checksum. Komt het event een tweede maal binnen
+  // dan kan worden aangenomen dat het een goed signaal was.
+  if(bitstream!=PreviousBitstream || PreviousTime>millis())
+    {
+    PreviousBitstream=bitstream;
+    return false;
+    }    
+  PreviousTime=millis()+SIGNAL_REPEAT_TIME;
+  PreviousBitstream=0L;
 
   ClearEvent(Event);
-  Event->SourceUnit=(bitstream>>24)&0xf;  
+  Event->SourceUnit=(bitstream>>24)&0xf;
   Event->DestinationUnit=0;
   Event->Flags=0;
   Event->Checksum=0;
   Event->Command=CMD_USEREVENT;
   Event->Par1=(bitstream>>8)&0xff;
   Event->Par2=bitstream&0xff;
-  
-  if((bitstream>>16)&0xff==100) // in code 100 heeft altijd het userevent gezeten.
-    return true;
 
-  return false;  
+  // Het oude Nodo signaal herhaald zich enkele malen. Deze herhalingen zijn nodig om een valide checksum op te leveren maar
+  // kunnen onterecht ook nieuwe events opleveren. Om deze reden moet er voor dit type event wachttijd worden toegepast
+
+  return true;  
   }
 
 

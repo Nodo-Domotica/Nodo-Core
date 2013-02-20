@@ -283,7 +283,7 @@ void Led(byte Color)
 /*********************************************************************************************\
  * Wachtloop. Als <EventsInQueue>=true dan worden voorbijkomende events in de queue geplaatst
  *
- * wachtloop die wordt afgebroken als:??? bijwerken!
+ * wachtloop die wordt afgebroken als:
  * - <Timeout> seconden zijn voorbij. In dit geval geeft deze funktie een <false> terug.
  * - Het opgegeven event <WaitForEvent> voorbij is gekomen
  * - De ether weer is vrijgegeven voor Nodo communicatie (WaitForFreeTransmission=true)
