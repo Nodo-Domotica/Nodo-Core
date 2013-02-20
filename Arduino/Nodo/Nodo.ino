@@ -16,7 +16,15 @@
  Voor vragen of suggesties, mail naar              : p.k.tonkes@gmail.com
  Compiler                                          : Arduino Compiler met minimaal versie 1.0.1
  Libraties                                         : EthernetNodo library vervang de standaard Ethernet library!
-  
+ 
+ Default settings voor verbinding met de WebApp    : HTTPHost www.nodo-domotica.nl/webapp/nodo.php
+                                                     PortOutput 80
+                                                     InputPort 6636
+                                                     Password <iedentiek aan in WebApp opgegeven>
+                                                     Output HTTP,On
+                                                     
+                                                     Bovenstaande settinge opslaan met SettingsSave waarna een reboot!
+
 \****************************** Door gebruiker in te stellen: ***************************************************************/
 
 // De code kan worden gecompileerd als een Nodo-Small voor de Arduino met een ATMega328 processor of een Nodo-Mega met een ATMega1280/2560.

@@ -480,7 +480,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       // Als het door de gebruiker is verzocht om logging naar een file te doen, dan wordt de output NIET als events verzonden.
 
       #ifdef NODO_MEGA
-      if(TempLogFile[0]!=0 || EventToExecute->Port==VALUE_SOURCE_SERIAL || EventToExecute->Port==VALUE_SOURCE_TELNET)
+      if(TempLogFile[0]!=0 || EventToExecute->Port==VALUE_SOURCE_SERIAL || EventToExecute->Port==VALUE_SOURCE_TELNET || EventToExecute->Port==VALUE_SOURCE_HTTP)
       #else
       if(EventToExecute->Port==VALUE_SOURCE_SERIAL)
       #endif

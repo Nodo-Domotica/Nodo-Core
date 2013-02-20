@@ -1,5 +1,5 @@
 #define SETTINGS_VERSION     27
-#define NODO_BUILD          504//??? ophogen.
+#define NODO_BUILD          505//??? ophogen.
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -18,6 +18,7 @@ prog_char PROGMEM Text_15[] = "Nodo V3.0.9 Small, Product=SWACNC-SMALL-R%03d, Th
 #ifdef NODO_MEGA
 prog_char PROGMEM Text_03[] = "Enter your password: ";
 prog_char PROGMEM Text_05[] = "0123456789abcdef";
+prog_char PROGMEM Text_06[] = "HTTP.DAT";
 prog_char PROGMEM Text_07[] = "Waiting for signal...";
 prog_char PROGMEM Text_09[] = "(Last 10KByte)";
 prog_char PROGMEM Text_13[] = "RawSignal saved.";
@@ -795,7 +796,8 @@ EthernetServer HTTPServer(80);                              // Server class voor
 EthernetServer TerminalServer(TERMINAL_PORT);               // Server class voor Terminal sessie.
 EthernetClient TerminalClient;                              // Client class voor Terminal sessie.
 byte ClientIPAddress[4];                                    // IP adres van de client die verbinding probeert te maken c.q. verbonden is.
-byte HTTPClientIP[4]; // IP adres van de Host
+byte HTTPClientIP[4];                                       // IP adres van de Host
+File HTTPResultFile;                                            // Filehandler voor opslaan en weer teruggeven van tekst n.a.v. uitvoeren HTTP-event
 #endif
 
 // RealTimeclock DS1307
