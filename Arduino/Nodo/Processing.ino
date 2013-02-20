@@ -75,7 +75,14 @@ byte ProcessEvent1(struct NodoEventStruct *Event)
     TempEvent.Command               = SYSTEM_COMMAND_CONFIRMED;
     TempEvent.Par1                  = RequestForConfirm;
 
+    // Stel de poortsettings veilig zodat ze tijdelijk verzet kunnen worden.
+    byte OrgWaitFreeRF=Settings.WaitFreeRF;    
+    Settings.WaitFreeRF  = VALUE_ON;
+
     SendEvent(&TempEvent, false,false);
+
+    // Zet originele instelligen van de gebruiker terug.
+    Settings.WaitFreeRF  = OrgWaitFreeRF;
     RequestForConfirm=0;
     }
   return error;
@@ -85,7 +92,6 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
   {
   int x,y;
   byte error=0;
-//  PrintNodoEventStruct("ProcessEvent();", Event);//???
 
   ExecutionDepth++;
   
@@ -95,7 +101,7 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
     // PrintNodoEventStruct("System commando!", Event);//???
     }  
 
-  if(Settings.Lock) //??? verkassen naar ProcessEvent1 of scanevent???
+  if(Settings.Lock) // verkassen naar ProcessEvent1 of scanevent???
     {
     if((Event->Port==VALUE_SOURCE_RF || Event->Port==VALUE_SOURCE_IR) && millis()>60000) // de eerste minuut is de lock nog niet actief. Ontsnapping voor als abusievelijk ingesteld
       {
@@ -201,14 +207,8 @@ byte CheckEventlist(struct NodoEventStruct *Event)
     {
     if(MacroEvent.Command)
       {
-//      PrintNodoEventStruct("CheckEventlist();",&MacroEvent);//???
       if(CheckEvent(Event,&MacroEvent))
-        {
-//Serial.print(F("*** debug: GEVONDEN: Event.Par2="));Serial.print(Event->Par2,HEX); //??? Debug
-//Serial.print(F(", Action.Par2="));Serial.println(MacroEvent.Par2,HEX); //??? Debug
-
         return x; // match gevonden
-        }
       }
     }
   return false;
@@ -251,12 +251,9 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
        return true; 
        
   // ### TIME:
-//Serial.print(F("*** debug: CheckEvent(); Event="));Serial.print(Event->Par2,HEX); //??? Debug
-//Serial.print(F(", MacroEvent"));Serial.println(MacroEvent->Par2,HEX); //??? Debug
-
   if(Event->Command==CMD_TIME) // het binnengekomen event is een clock event.//???
     {
-    // Structuur technisch hoort onderstaande regel hier thuis, maar que performance niet wenselijk!
+    // Structuur technisch hoort onderstaande regel hier thuis, maar qua performance niet wenselijk!
     unsigned long Cmp=MacroEvent->Par2; //???Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12 | (unsigned long)Time.Day<<16;
     unsigned long Inp=Event->Par2;
 
@@ -311,15 +308,17 @@ byte QueueSend(byte DestUnit)
   {
   byte x,Port,ReturnCode;
 
+
+
   // De port waar de SendTo naar toe moet halen we uit de lijst met Nodo's die wordt onderhouden door de funktie  NodoOnline();
   Port=NodoOnline(DestUnit,0);
 
-  // indien te snel opvolgend, dan korte wachttijd.
   if(Port!=0)
     {
-    // Zet WaitFreeRF aan en de Transmit poorten aan. Bewaar originele instelligen van de gebruiker.
-    byte OrgWaitFreeRF  =Settings.WaitFreeRF;
-  
+    // Stel de poortsettings veilig zodat ze tijdelijk verzet kunnen worden.
+    byte OrgWaitFreeRF=Settings.WaitFreeRF;
+    Settings.WaitFreeRF=VALUE_ON;
+
     // Initialiseer een Event en Transmissie
     struct NodoEventStruct Event;
     ClearEvent(&Event);

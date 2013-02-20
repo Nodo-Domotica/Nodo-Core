@@ -1,5 +1,5 @@
 #define SETTINGS_VERSION     27
-#define NODO_BUILD          502//??? ophogen.
+#define NODO_BUILD          504//??? ophogen.
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -985,6 +985,7 @@ void loop()
   int TerminalInbyteCounter=0;
   byte Slice_1=0,Slice_2=0;    
   struct NodoEventStruct ReceivedEvent;
+  byte PreviousMinutes=0;                                     // Sla laatst gecheckte minuut op zodat niet vaker dan nodig (eenmaal per minuut de eventlist wordt doorlopen
   
   unsigned long LoopIntervalTimer_1=millis();                 // Timer voor periodieke verwerking. millis() maakt dat de intervallen van 1 en 2 niet op zelfde moment vallen => 1 en 2 nu asynchroon.
   unsigned long LoopIntervalTimer_2=0L;                       // Timer voor periodieke verwerking.
@@ -1159,7 +1160,7 @@ void loop()
           if(Serial.available())
             {
             bitWrite(HW_Config,HW_SERIAL,1);// Input op seriele poort ontvangen. Vanaf nu ook output naar Seriele poort want er is klaarblijkelijk een actieve verbinding
-            StaySharpTimer=millis()+500; //??? is dit een goede waarde
+            StaySharpTimer=millis()+500;
 
             while(StaySharpTimer>millis()) // blijf even paraat voor luisteren naar deze poort en voorkom dat andere input deze communicatie onderbreekt
               {          
@@ -1212,8 +1213,10 @@ void loop()
           {
           // CLOCK: **************** Lees periodiek de realtime klok uit en check op events  ***********************
           ClockRead(); // Lees de Real Time Clock waarden in de struct Time
-          if(bitRead(HW_Config,HW_CLOCK))//check of de klok aanwzig is
+          
+          if(bitRead(HW_Config,HW_CLOCK) && Time.Minutes!=PreviousMinutes)//check of de klok aanwzig is
             {
+            PreviousMinutes=Time.Minutes;
             ClearEvent(&ReceivedEvent);
             ReceivedEvent.Command          = CMD_TIME;
             ReceivedEvent.Par2             = Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12 | (unsigned long)Time.Day<<16;

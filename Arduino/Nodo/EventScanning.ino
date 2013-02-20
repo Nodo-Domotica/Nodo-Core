@@ -1,4 +1,3 @@
-#define SHARP_TIME                 750 // tijd in milliseconden dat de nodo gefocust moet blijven luisteren naar één dezelfde poort na binnenkomst van een signaal
 #define SIGNAL_TIMEOUT_RF         5000 // na deze tijd in uSec. wordt één RF signaal als beëindigd beschouwd.
 #define SIGNAL_TIMEOUT_IR        10000 // na deze tijd in uSec. wordt één IR signaal als beëindigd beschouwd.
 #define SIGNAL_REPEAT_TIME        1000 // Tijd waarbinnen hetzelfde event niet nogmaals via RF of IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
@@ -8,88 +7,75 @@ struct NodoEventStruct I2C_Event;
 
 boolean ScanEvent(struct NodoEventStruct *Event)
   {
-  static unsigned long Previous,PreviousTimer;
-  unsigned long Content, Checksum=0L;                           // Als gelijk aan Event dan tweemaal dezelfde code ontvangen: checksum funktie.
-  unsigned long StaySharpTimer=millis();
   byte Fetched=0;
 
-  do
+  // we willen graag een voorziening die er voor zorgt dat events die snel achtereenvolgens worden verzonden
+  // niet leidt tot meerdere events.
+  static unsigned long PreviousTime=0L;
+  static unsigned long PreviousHash=0L;
+  
+  // IR: *************** kijk of er data staat op IR en genereer een event als er een code ontvangen is **********************
+  if((*portInputRegister(IRport)&IRbit)==0)// Kijk of er iets op de poort binnenkomt. (Pin=LAAG als signaal in de ether). 
+    if(FetchSignal(PIN_IR_RX_DATA,LOW,SIGNAL_TIMEOUT_RF))// Als het een duidelijk IR signaal was
+      Fetched=VALUE_SOURCE_IR;
+
+  // RF: *************** kijk of er data start op RF en genereer een event als er een code ontvangen is **********************
+  if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
+    if(FetchSignal(PIN_RF_RX_DATA,HIGH,SIGNAL_TIMEOUT_RF))// Als het een duidelijk RF signaal was
+      Fetched=VALUE_SOURCE_RF;
+
+  // I2C: *************** kijk of er data is binnengekomen op de I2Cbus **********************
+  if(I2C_EventReceived)
+    Fetched=VALUE_SOURCE_I2C;
+
+  if(Fetched)
     {
-    // IR: *************** kijk of er data staat op IR en genereer een event als er een code ontvangen is **********************
-    if((*portInputRegister(IRport)&IRbit)==0)// Kijk of er iets op de poort binnenkomt. (Pin=LAAG als signaal in de ether). 
-      if(FetchSignal(PIN_IR_RX_DATA,LOW,SIGNAL_TIMEOUT_RF))// Als het een duidelijk IR signaal was
-        Fetched=VALUE_SOURCE_IR;
-
-    // RF: *************** kijk of er data start op RF en genereer een event als er een code ontvangen is **********************
-    if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
-      if(FetchSignal(PIN_RF_RX_DATA,HIGH,SIGNAL_TIMEOUT_RF))// Als het een duidelijk RF signaal was
-        Fetched=VALUE_SOURCE_RF;
-
-    // I2C: *************** kijk of er data is binnengekomen op de I2Cbus **********************
-    if(I2C_EventReceived)
-      Fetched=VALUE_SOURCE_I2C;
-
-    if(Fetched)
+    if(AnalyzeRawSignal(Event))// als AnalyzeRawSignal een event heeft opgeleverd dan is het struct Event gevuld.
       {
-      if(AnalyzeRawSignal(Event))// als AnalyzeRawSignal een event heeft opgeleverd dan is het struct Event gevuld.
+      // Reset de timers nadat er een event is binnegekomen. Dit om later voorafgaand aan het zenden, indien nodig, een
+      // korte pauze te nemen zodat de andere Nodo weer gereed staat voor ontvangst.
+      DelayTransmission(Fetched,true);
+
+      // kort geleden ook ontvangen, dan herhaling binnen 1000 milliseconden onderdrukken.
+      // Geldt alleen voor IR en RF signalen.
+      if(Fetched==VALUE_SOURCE_RF || Fetched==VALUE_SOURCE_IR)
         {
-        //??? herstellen Content=EventStruct2Event(Event);    
-        StaySharpTimer=millis()+SHARP_TIME;          
-
-        // Reset de timers nadat er een event is binnegekomen. Dit om later voorafgaand aan het zenden, indien nodig, een
-        // korte pauze te nemen zodat de andere Nodo weer gereed staat voor ontvangst.
-        DelayTransmission(Fetched,true);
-
-        if(Event->Command)
+        unsigned long Hash=(unsigned long)(Event->Command<<24) || (unsigned long)(Event->Par1<<16) || (unsigned long)(Event->Par2&0xffff);
+        if(Hash==PreviousHash && (PreviousTime+1000)>millis())
           {
-          Event->Port=Fetched;
-          Event->Direction=VALUE_DIRECTION_INPUT;
-
-          // Een event kan een verzoek bevatten om bevestiging. Doe dit dan pas na verwerking.
-          if(Event->Flags & TRANSMISSION_CONFIRM)
-            RequestForConfirm=true;
-
-          #ifdef NODO_MEGA
-          // registreer welke Nodo's op welke poort zitten en actualiseer tabel.
-          // Wordt gebruikt voor SendTo en I2C communicatie op de Mega.
-          // Hiermee kan later automatisch de juiste poort worden geselecteerd met de SendTo en kan in
-          // geval van I2C communicatie uitsluitend naar de I2C verbonden Nodo's worden gecommuniceerd.
-          NodoOnline(Event->SourceUnit,Event->Port);
-          #endif
-
-          // Als er een specifieke Nodo is geselecteerd, dan moeten andere Nodo's worden gelocked.
-          // Hierdoor is het mogelijk dat een master en een slave Nodo tijdelijk exclusief gebruik kunnen maken van de bandbreedte
-          // zodat de communicatie niet wordt verstoord.  
-          Transmission_SelectedUnit = Event->DestinationUnit;
-
-          // Als het Nodo event voor deze unit bestemd is, dan klaar. Zo niet, dan terugkeren met een false
-          // zodat er geen verdere verwerking plaatsvindt.
-          if(Event->DestinationUnit==0 || Event->DestinationUnit==Settings.Unit)
-            return true;
-          else            
-            return false;              
+          while((PreviousTime+1000)>millis());
+          return false;
           }
-
-        if(Content==Checksum) // tweemaal hetzelfde event ontvangen ??? hoe oplossen bij de struct?
-          {
-          if((PreviousTimer+SIGNAL_REPEAT_TIME)<millis())
-            Previous=0L;
-
-          if(Previous!=Checksum)
-            {
-            RawSignal.Source=Fetched;
-            Event->Port=Fetched;
-            PreviousTimer=millis();
-            Previous=Checksum;
-            return true;
-            }
-          }
-        Checksum=Content;
+        PreviousTime=millis();
+        PreviousHash=Hash;
         }
-      Fetched=0;
+
+      Event->Port=Fetched;
+      Event->Direction=VALUE_DIRECTION_INPUT;
+
+      // Een event kan een verzoek bevatten om bevestiging. Doe dit dan pas na verwerking.
+      if(Event->Flags & TRANSMISSION_CONFIRM)
+        RequestForConfirm=true;
+
+      #ifdef NODO_MEGA
+      // registreer welke Nodo's op welke poort zitten en actualiseer tabel.
+      // Wordt gebruikt voor SendTo en I2C communicatie op de Mega.
+      // Hiermee kan later automatisch de juiste poort worden geselecteerd met de SendTo en kan in
+      // geval van I2C communicatie uitsluitend naar de I2C verbonden Nodo's worden gecommuniceerd.
+      NodoOnline(Event->SourceUnit,Event->Port);
+      #endif
+
+      // Als er een specifieke Nodo is geselecteerd, dan moeten andere Nodo's worden gelocked.
+      // Hierdoor is het mogelijk dat een master en een slave Nodo tijdelijk exclusief gebruik kunnen maken van de bandbreedte
+      // zodat de communicatie niet wordt verstoord.  
+      Transmission_SelectedUnit = Event->DestinationUnit;
+     
+      // Als het Nodo event voor deze unit bestemd is, dan klaar. Zo niet, dan terugkeren met een false
+      // zodat er geen verdere verwerking plaatsvindt.
+      if(Event->DestinationUnit==0 || Event->DestinationUnit==Settings.Unit)
+        return true;
       }
     }
-  while(StaySharpTimer>millis());
 
   return false;
   }
@@ -98,7 +84,6 @@ boolean ScanAlarm(struct NodoEventStruct *Event)
   {
   unsigned long Mask;
   
-//Serial.println(F("*** debug: ScanAlarm()"));
   for(byte x=0;x<ALARM_MAX;x++)
     {
     if((Settings.Alarm[x]>>20)&1) // Als alarm enabled is, dan ingestelde alarmtijd vergelijke met de echte tijd.

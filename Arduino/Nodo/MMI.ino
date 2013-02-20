@@ -278,6 +278,10 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         ParameterToView[1]=PAR2_FLOAT;
         break;
 
+      case CMD_RAWSIGNAL:
+        ParameterToView[0]=PAR2_INT_HEX;
+        break;
+
       case CMD_WIRED_SMITTTRIGGER:
       case CMD_WIRED_THRESHOLD:
       case CMD_WIRED_ANALOG:
@@ -348,7 +352,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_TIMER_EVENT:
       case CMD_UNIT:
       case CMD_ALARM:
-      case CMD_RAWSIGNAL:
       case CMD_SIMULATE_DAY:
       case CMD_CLOCK_DOW:
       case CMD_BOOT_EVENT:
@@ -595,7 +598,6 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_EVENTLIST_ERASE:
           case CMD_RESET:
           case CMD_RAWSIGNAL_SAVE:
-          case CMD_RAWSIGNAL:
           case CMD_ALARM:
           case CMD_MESSAGE:
           case CMD_REBOOT:
@@ -733,7 +735,7 @@ int ExecuteLine(char *Line, byte Port)
 
             if(GetArgv(Command,TmpStr1,6))
               EventToExecute.Par2|=(str2int(TmpStr1)&0xff)<<24;
-PrintNodoEventStruct("Device",&EventToExecute);//???
+PrintNodoEvent("Device",&EventToExecute);//???
             break;            
           
           case CMD_SEND_EVENT:
@@ -835,11 +837,7 @@ PrintNodoEventStruct("Device",&EventToExecute);//???
             if(EventToExecute.Par1<1 || EventToExecute.Par1>WIRED_PORTS)
               error=MESSAGE_02;
             else if(GetArgv(Command,TmpStr1,3))
-              {
-              EventToExecute.Par1--; // -1 want intern beginnen de poorten bij nul
               EventToExecute.Par2=str2int(TmpStr1);
-              // buiten bereik afvangen ???
-              }
             break;
               
           case CMD_EVENTLIST_WRITE:
@@ -939,6 +937,14 @@ PrintNodoEventStruct("Device",&EventToExecute);//???
             break;
             }  
           
+          case CMD_RAWSIGNAL:
+            if(GetArgv(Command,TmpStr1,2))
+              {
+              EventToExecute.Par1=0;
+              EventToExecute.Par2=str2int(TmpStr1);
+              }
+            break;
+
           case CMD_ALARM_SET:
             // Commando format: [AlarmSet <AlarmNumber 1..4>, <Enabled On|Off>, <Time HHMM>, <Day 1..7>]
             //                  [Time <Time HHMM>, <Day 1..7>]

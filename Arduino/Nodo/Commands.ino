@@ -386,7 +386,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       Wait(EventToExecute->Par1, false, 0, false);
       break;        
 
-    case CMD_SEND_EVENT://???@@ rawsignal nog uitwerken
+    case CMD_SEND_EVENT:
       ClearEvent(&TempEvent);
       TempEvent=LastReceived;
       TempEvent.Port=EventToExecute->Par1==0?VALUE_ALL:EventToExecute->Par1;
@@ -465,12 +465,14 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       #endif
       break;        
 
-    case CMD_WIRED_SMITTTRIGGER://??? voor veilighed bereik nog afvangen?
-      Settings.WiredInputSmittTrigger[EventToExecute->Par1]=EventToExecute->Par2;
+    case CMD_WIRED_SMITTTRIGGER://??? voor veilighed bereik nog afvangen?@@@
+      if(EventToExecute->Par1>0 && EventToExecute->Par1<=WIRED_PORTS)
+        Settings.WiredInputSmittTrigger[EventToExecute->Par1-1]=EventToExecute->Par2;
       break;                  
 
     case CMD_WIRED_THRESHOLD:
-      Settings.WiredInputThreshold[EventToExecute->Par1]=EventToExecute->Par2;
+      if(EventToExecute->Par1>0 && EventToExecute->Par1<=WIRED_PORTS)
+        Settings.WiredInputThreshold[EventToExecute->Par1-1]=EventToExecute->Par2;
       break;                  
 
     case CMD_STATUS:
