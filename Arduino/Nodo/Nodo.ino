@@ -20,7 +20,7 @@
  Default settings voor verbinding met de WebApp    : HTTPHost www.nodo-domotica.nl/webapp/nodo.php
                                                      PortOutput 80
                                                      InputPort 6636
-                                                     Password <iedentiek aan in WebApp opgegeven>
+                                                     Password <gelijk aan in WebApp opgegeven>
                                                      Output HTTP,On
                                                      
                                                      Bovenstaande settinge opslaan met SettingsSave waarna een reboot!
@@ -45,7 +45,7 @@
 #if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)     // NIET veranderen
   #define NODO_MEGA          1                                     // NIET veranderen !
   #define UNIT_NODO          1                                     // default unit nummer na een [Reset] commando
-  #define ETHERNET           1                                     // op 0 zetten als ethernet kaart niet aanwezig
+  #define ETHERNET           1//???                                     // op 0 zetten als ethernet kaart niet aanwezig
   
   // Keuze tussen SMALL of MEGA: **********************************************************************************************
   // Kies voor compilatie het juiste Arduino board. Dit kan een Arduino zijn gebaseerd op een zijn een ATMega1280, ATMega2560 of een ATMega328.

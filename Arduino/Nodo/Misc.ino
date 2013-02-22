@@ -305,7 +305,6 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
       {
       // Events voor deze Nodo kunnen NU niet worden verwerkt. Plaats daarom in de queue
       QueueAdd(&Event);
-
       if(EndSequence && (Event.Flags&TRANSMISSION_NEXT)==0)
         break;
         
@@ -327,16 +326,6 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
             }
           }
         }
-        
-
-      // @@3
-      //      #ifdef NODO_MEGA
-      //???herstellen      CheckRawSignalKey(&Event); // check of er een RawSignal key op de SDCard aanwezig is en vul met Nodo Event. Call by reference!
-      //      if(Settings.Debug==VALUE_ON)
-      //        PrintEvent_OLD(Event,VALUE_DIRECTION_INPUT,Port);
-      //      #endif
-
-
       }
     }   
     
@@ -353,26 +342,26 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
  * Timer 1..15. Timer=0 is een wildcard voor alle timers
  * Als de timer op 0 wordt gezet, wordt er geen event gegenereerd.
  \*********************************************************************************************/
-void TimerSet(byte Timer, int Time)
-{
-  if(Timer==0)// 0=wildcard voor alle timers
+void TimerSet(byte Timer, unsigned long Time)
   {
-    for(int x=0;x<TIMER_MAX;x++)
+  if(Timer==0)// 0=wildcard voor alle timers
     {
+    for(int x=0;x<TIMER_MAX;x++)
+      {
       if(Time==0)
         UserTimer[x]=0L;
       else
         UserTimer[x]=millis()+(unsigned long)(Time)*1000L;
+      }
     }
-  }
-  else
-  {
+  else if(Timer<=TIMER_MAX)
+    {
     if(Time==0)
       UserTimer[Timer-1]=0L;
     else
       UserTimer[Timer-1]=millis()+(unsigned long)Time*1000L;
+    }
   }
-}
 
 /*********************************************************************************************\
  * Haal voor het opgegeven Command de status op door resultaat in de event struct te plaatsen.
@@ -420,11 +409,10 @@ boolean GetStatus(struct NodoEventStruct *Event)
     Event->Par2=HW_Config;      
     break;        
 
-//  case CMD_ALARM_SET:
-//    event=(unsigned long)Settings.Alarm[xPar1-1] | (xPar1-1)<<13;
-//    Event->Par1=EventPartPar1(event);      
-//    Event->Par2=EventPartPar2(event);      
-//    break;        /// Alarmen nog oppakken???
+  case CMD_ALARM_SET:
+    Event->Par1=xPar1;
+    Event->Par2=Settings.Alarm[xPar1-1];
+    break;
 
   case CMD_DEBUG:
     Event->Par1=Settings.Debug;
@@ -482,10 +470,10 @@ boolean GetStatus(struct NodoEventStruct *Event)
     Event->Par2=Time.Year-2000;
     break;
 
-  case CMD_TIMER_SET_MIN:
+  case CMD_TIMER_SET:
     Event->Par1=xPar1;
     if(UserTimer[xPar1-1])
-      Event->Par2=(byte)((UserTimer[xPar1-1]-millis()+59999UL)/60000UL);
+      Event->Par2=(UserTimer[xPar1-1]-millis())/1000;
     else
       Event->Par2=0;
     break;
@@ -547,6 +535,10 @@ boolean GetStatus(struct NodoEventStruct *Event)
     Event->Par1=Settings.Log;
     break;
 
+  case CMD_RAWSIGNAL_SAVE:
+    Event->Par1=Settings.RawSignalSave;
+    break;
+
     // pro-forma de commando's die geen fout op mogen leveren omdat deze elders in de statusafhandeling worden weergegeven
   case CMD_NODO_IP:
   case CMD_GATEWAY:
@@ -600,33 +592,35 @@ void Save_Settings(void)
  * Laad de settings uit het EEPROM geheugen.
  \*********************************************************************************************/
 boolean LoadSettings()
-{
+ {
   byte x;
 
   char ByteToSave,*pointerToByteToRead=(char*)&Settings;    //pointer verwijst nu naar startadres van de struct.
 
   for(int x=0; x<sizeof(struct SettingsStruct);x++)
-  {
+    {
     *pointerToByteToRead=EEPROM.read(x);
     pointerToByteToRead++;// volgende byte uit de struct
+    }
   }
-
-#if NODO_MEGA
-  for(x=0;x<USER_VARIABLES_MAX;x++)
-    UserVar[x]=Settings.UserVar[x];
-#endif
-}
 
 
 /*********************************************************************************************\
  * Alle settings van de Nodo weer op default.
  \*********************************************************************************************/
 void ResetFactory(void)
-{
+  {
   int x,y;
   Led(BLUE);
   Beep(2000,2000);
 
+  // maak de eventlist leeg.
+  struct NodoEventStruct dummy;
+  ClearEvent(&dummy);
+  x=1;
+  while(Eventlist_Write(x++,&dummy,&dummy));
+
+  // Herstel alle settings naar defaults
   Settings.Version                    = SETTINGS_VERSION;
   Settings.NewNodo                    = true;
   Settings.Lock                       = 0;
@@ -668,38 +662,26 @@ void ResetFactory(void)
   Settings.EchoSerial                 = VALUE_ON;
   Settings.EchoTelnet                 = VALUE_OFF;  
   Settings.Log                        = VALUE_OFF;  
+  Settings.RawSignalSave              = VALUE_ON;  
   Settings.Password[0]                = 0;
 #endif
 
   // zet analoge waarden op default
   for(x=0;x<WIRED_PORTS;x++)
-  {
+    {
     Settings.WiredInputThreshold[x]=512; 
     Settings.WiredInputSmittTrigger[x]=10;
     Settings.WiredInputPullUp[x]=VALUE_ON;
-  }
+    }
 
   // Maar de alarmen leeg
   for(x=0;x<ALARM_MAX;x++)
     Settings.Alarm[x]=0L;
 
-#if NODO_MEGA
-  // maak alle variabelen leeg
-  for(byte x=0;x<USER_VARIABLES_MAX;x++)
-    Settings.UserVar[x]=0;     
-#endif
-
   Save_Settings();
 
-  // maak de eventlist leeg.
-  struct NodoEventStruct dummy;
-  ClearEvent(&dummy);
-  x=1;
-  while(Eventlist_Write(x++,&dummy,&dummy));
-
-  delay(250);// kleine pauze, anders kans fout bij seriële communicatie
-  Reset();
-}
+  RebootNodo=true;
+  }
 
 /**********************************************************************************************\
  * Geeft de status weer of verzendt deze.
@@ -710,13 +692,13 @@ void Status(struct NodoEventStruct *Request, byte Transmit)
   {
   byte CMD_Start,CMD_End;
   byte Par1_Start,Par1_End;
+  byte x;
+  boolean s;
   
   struct NodoEventStruct Result;
   ClearEvent(&Result);
   Result.Command=Request->Par1;
   
-  byte x;
-  boolean s;
 
   #ifdef NODO_MEGA          
   char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
@@ -871,7 +853,7 @@ void Status(struct NodoEventStruct *Request, byte Transmit)
             Par1_End=ALARM_MAX;
             break;
   
-          case CMD_TIMER_SET_MIN:
+          case CMD_TIMER_SET:
             Par1_Start=1;
             Par1_End=TIMER_MAX;
             break;
@@ -1706,7 +1688,6 @@ boolean Substitute(char* Input)
  \*********************************************************************************************/
 void UndoNewNodo(void)
   {
-  // Als Eventlist voor eerste keer beschreven wordt, dan is het geen vers geresette Nodo meer. Na beschrijven dan ook geen NewNodo event meer sturen
   if(Settings.NewNodo)
     {
     Settings.NewNodo=false;
@@ -2283,7 +2264,7 @@ int str2weekday(char *Input)
 
 /*******************************************************************************************************\
  * Houdt bij welke Nodo's binnen bereik zijn en via welke Poort.
- Als Port ongelijk aan nul, dan wordt de lijst geactualiseerd.
+ * Als Port ongelijk aan nul, dan wordt de lijst geactualiseerd.
  \*******************************************************************************************************/
 byte NodoOnline(byte Unit, byte Port)
   {

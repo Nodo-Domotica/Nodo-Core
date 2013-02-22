@@ -40,11 +40,9 @@ Idee:
 - resultaat van html event naar bodytext plakken.
 - websocket implementeren op arduino?
 
-Onder de motorkap:
-
-- Een 64-bit event bestaat uit een 32-bit transport deel en een 32-bit data deel. 
-- Bestemming en bron unitnummers bevinden zich in het transportdeel.
-- Nodo events worden eenmaal verzonden (zonder herhalingen) en hebben een CRC-8 checksum die meegezonden wordt.
+      digitalWrite(PIN_IO_2,HIGH);//??? debugging
+      delay(1);//???
+      digitalWrite(PIN_IO_2,LOW);//???
 
 
 
@@ -66,22 +64,6 @@ Onder de motorkap:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  **:**,*
-E,HH:MM,D
 
 
 

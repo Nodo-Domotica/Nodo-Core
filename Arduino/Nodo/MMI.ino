@@ -346,6 +346,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_SEND_EVENT:
       case CMD_DEBUG:
       case CMD_LOG:
+      case CMD_RAWSIGNAL_SAVE:
       case CMD_ECHO:
       case CMD_WAITFREERF:
       case CMD_BREAK_ON_DAYLIGHT:
@@ -356,7 +357,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_SENDTO:
       case CMD_EVENTLIST_SHOW:
       case CMD_EVENTLIST_ERASE:
-      case CMD_CLOCK_SYNC:
       case CMD_TIMER_EVENT:
       case CMD_UNIT:
       case CMD_ALARM:
@@ -375,6 +375,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         
       // geen parameters.
       case CMD_REBOOT:
+      case CMD_CLOCK_SYNC:
       case CMD_RESET:
       case CMD_SETTINGS_SAVE:
       case CMD_UNIT_LIST:
@@ -605,7 +606,6 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_SIMULATE_DAY:
           case CMD_EVENTLIST_ERASE:
           case CMD_RESET:
-          case CMD_RAWSIGNAL_SAVE:
           case CMD_ALARM:
           case CMD_MESSAGE:
           case CMD_REBOOT:
@@ -618,6 +618,7 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_USEREVENT:
           case CMD_SEND_USEREVENT:
           case CMD_UNIT_LIST:
+          case CMD_CLOCK_SYNC:
             break; 
       
           case CMD_LOG:
@@ -632,8 +633,7 @@ int ExecuteLine(char *Line, byte Port)
               error=MESSAGE_02;
             break;
             
-          case CMD_TIMER_SET_SEC:
-          case CMD_TIMER_SET_MIN:
+          case CMD_TIMER_SET:
             if(EventToExecute.Par1>TIMER_MAX)
               error=MESSAGE_02;
             break;
@@ -643,7 +643,6 @@ int ExecuteLine(char *Line, byte Port)
               error=MESSAGE_02;
             break;
       
-          case CMD_CLOCK_SYNC:
           case CMD_UNIT:
           case CMD_NEWNODO:
           case CMD_BOOT_EVENT:
@@ -1085,6 +1084,15 @@ PrintNodoEvent("Device",&EventToExecute);//???
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
     
+          case CMD_RAWSIGNAL_ERASE:      
+            if(GetArgv(Command,TmpStr1,2))
+              {
+              sprintf(TmpStr2,"%s/%s.raw",ProgmemString(Text_28),TmpStr1);
+              FileErase(TmpStr2);
+              }
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+            break;
+    
           case CMD_FILE_GET_HTTP:
             {
             if(GetArgv(Command,TmpStr1,2))
@@ -1243,8 +1251,13 @@ PrintNodoEvent("Device",&EventToExecute);//???
             break;
             }            
 
+          case CMD_RAWSIGNAL_LIST:
+            FileList("/RAW");
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+            break;
+
           case CMD_FILE_LIST:
-            error-FileList();
+            FileList("/");
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
 
@@ -1326,9 +1339,8 @@ PrintNodoEvent("Device",&EventToExecute);//???
             }
     
           if(State_EventlistWrite==2)
-            {
+            {            
             UndoNewNodo();// Status NewNodo verwijderen indien van toepassing
-            
             if(!Eventlist_Write(EventlistWriteLine,&TempEvent,&EventToExecute))
               {
               RaiseMessage(MESSAGE_06);

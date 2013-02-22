@@ -2,7 +2,7 @@
 #define SIGNAL_TIMEOUT_IR        10000 // na deze tijd in uSec. wordt één IR signaal als beëindigd beschouwd.
 #define SIGNAL_REPEAT_TIME        1000 // Tijd waarbinnen hetzelfde event niet nogmaals via RF of IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
 
-boolean I2C_EventReceived=false;                            // Als deze vlag staat, is er een I2C event binnengekomen.
+boolean I2C_EventReceived=false;       // Als deze vlag staat, is er een I2C event binnengekomen.
 struct NodoEventStruct I2C_Event;
 
 boolean ScanEvent(struct NodoEventStruct *Event)
@@ -10,23 +10,29 @@ boolean ScanEvent(struct NodoEventStruct *Event)
   byte Fetched=0;
 
   // we willen graag een voorziening die er voor zorgt dat events die snel achtereenvolgens worden verzonden
-  // niet leidt tot meerdere events.
+  // niet leidt tot meerdere events. onderstaand een timer en een opslag voor het laatst ontvangen event.
   static unsigned long PreviousTime=0L;
   static unsigned long PreviousHash=0L;
   
-  // IR: *************** kijk of er data staat op IR en genereer een event als er een code ontvangen is **********************
-  if((*portInputRegister(IRport)&IRbit)==0)// Kijk of er iets op de poort binnenkomt. (Pin=LAAG als signaal in de ether). 
-    if(FetchSignal(PIN_IR_RX_DATA,LOW,SIGNAL_TIMEOUT_RF))// Als het een duidelijk IR signaal was
-      Fetched=VALUE_SOURCE_IR;
-
-  // RF: *************** kijk of er data start op RF en genereer een event als er een code ontvangen is **********************
-  if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
-    if(FetchSignal(PIN_RF_RX_DATA,HIGH,SIGNAL_TIMEOUT_RF))// Als het een duidelijk RF signaal was
-      Fetched=VALUE_SOURCE_RF;
-
   // I2C: *************** kijk of er data is binnengekomen op de I2Cbus **********************
   if(I2C_EventReceived)
+    {
     Fetched=VALUE_SOURCE_I2C;
+    }
+    
+  // IR: *************** kijk of er data staat op IR en genereer een event als er een code ontvangen is **********************
+  else if((*portInputRegister(IRport)&IRbit)==0)// Kijk of er iets op de poort binnenkomt. (Pin=LAAG als signaal in de ether).
+    {
+    if(FetchSignal(PIN_IR_RX_DATA,LOW,SIGNAL_TIMEOUT_IR))// Als het een duidelijk IR signaal was
+      Fetched=VALUE_SOURCE_IR;
+    }
+
+  // RF: *************** kijk of er data start op RF en genereer een event als er een code ontvangen is **********************
+  else if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether).
+    {
+    if(FetchSignal(PIN_RF_RX_DATA,HIGH,SIGNAL_TIMEOUT_RF))// Als het een duidelijk RF signaal was
+      Fetched=VALUE_SOURCE_RF;
+    }
 
   if(Fetched)
     {
@@ -37,13 +43,12 @@ boolean ScanEvent(struct NodoEventStruct *Event)
       DelayTransmission(Fetched,true);
 
       // kort geleden ook ontvangen, dan herhaling binnen 1000 milliseconden onderdrukken.
-      // Geldt alleen voor IR en RF signalen.
-      if(Fetched==VALUE_SOURCE_RF || Fetched==VALUE_SOURCE_IR)
+      if(Event->Flags&TRANSMISSION_REPEATING)
         {
         unsigned long Hash=(unsigned long)(Event->Command<<24) || (unsigned long)(Event->Par1<<16) || (unsigned long)(Event->Par2&0xffff);
-        if(Hash==PreviousHash && (PreviousTime+1000)>millis())
+        if(Hash==PreviousHash && (PreviousTime+SIGNAL_REPEAT_TIME)>millis())
           {
-          while((PreviousTime+1000)>millis());
+          while((PreviousTime+SIGNAL_REPEAT_TIME)>millis());
           return false;
           }
         PreviousTime=millis();
@@ -76,9 +81,9 @@ boolean ScanEvent(struct NodoEventStruct *Event)
         return true;
       }
     }
-
   return false;
   }
+
 
 boolean ScanAlarm(struct NodoEventStruct *Event)
   {
