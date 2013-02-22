@@ -9,8 +9,7 @@ byte ProcessEvent1(struct NodoEventStruct *Event)
   struct NodoEventStruct TempEvent;
   ExecutionDepth=0;               // nesting nog niet aan de orde. Dit is het eerste begin.
   byte error=0;
-  
-  
+    
   SerialHold(true);  // als er een regel ontvangen is, dan binnenkomst van signalen stopzetten met een seriele XOFF
   Led(RED); // LED aan als er iets verwerkt wordt      
 
@@ -19,19 +18,6 @@ byte ProcessEvent1(struct NodoEventStruct *Event)
     return 0;
 
   LastReceived=*Event;            // LastReceived wordt gebruikt om later de status van laatste ontvangen event te kunnen gebruiken t.b.v. substitutie van vars.
-
-//??? Rawsignal later uitwerken.  CheckRawSignalKey(&Event32); // check of er een RawSignal key op de SDCard aanwezig is en vul met Nodo Event. Call by reference!
-//  // Als de RAW pulsen worden opgevraagd door de gebruiker...
-//  if(RawSignal.Key!=-1 && Event32)
-//    {
-//    if(SaveRawSignal(RawSignal.Key))
-//      {
-//      PrintEvent_OLD(Event32,Event->Direction,Event->Port);  // geef event weer op Terminal
-//      PrintTerminal(ProgmemString(Text_13));
-//      }
-//    RawSignal.Key=-1;
-//    return true;
-//    }
 
   #endif
 
@@ -47,9 +33,11 @@ byte ProcessEvent1(struct NodoEventStruct *Event)
     // Als er een timeout was, dan de queue weer leeg maken omdat we data niet kunnen vertrouwen. In dit geval zal de confirm nul teruggeven en dus aan de master
     // zijde een foutmelding opleveren..
     if(Event->Flags&TRANSMISSION_NEXT)
-      if(!Wait(10, false,0 , true))
+      {
+      if(!Wait(5, false,0 , true))
         QueuePosition=0;
-    
+      }
+
     Transmission_NodoOnly=false;
     // De queue is nu gevuld met de events van de master Nodo. Sla aantal events in de queue op t.b.v. verzenden van bevestiging naar de master.
     // Op basis van deze terugkoppeling weet de master of er geen events verloren zijn gegaan of extra opgetreden.
@@ -123,11 +111,20 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
       }
     }
 
+  #ifdef NODO_MEGA
+  if(Event->Command==CMD_RAWSIGNAL && Settings.RawSignalSave==VALUE_ON)
+    {
+    if(!RawSignalExist(Event->Par2))
+      RawSignalSave(Event->Par2);
+    }
+  #endif    
+  
 //  #ifdef USER_PLUGIN
 //  if(!UserPlugin_Receive(Event32))
 //    return true;
 //  #endif
 // ??? UserPlugin Entry herstellen
+
   if(error==0)
     {
     PrintEvent(Event);  // geef event weer op Terminal
@@ -157,7 +154,7 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
           {      
           if(CheckEvent(Event,&EventlistEvent)) // Als er een match is tussen het binnengekomen event en de regel uit de eventlist.
             {        
-            EventlistAction.Port        = VALUE_SOURCE_EVENTLIST;
+            EventlistAction.Port = VALUE_SOURCE_EVENTLIST;
             
             #ifdef NODO_MEGA
             // op dit punt in de code worden de Checksum, Type niet gebruikt.
@@ -308,14 +305,14 @@ byte QueueSend(byte DestUnit)
   {
   byte x,Port,ReturnCode;
 
-
-
   // De port waar de SendTo naar toe moet halen we uit de lijst met Nodo's die wordt onderhouden door de funktie  NodoOnline();
   Port=NodoOnline(DestUnit,0);
 
   if(Port!=0)
     {
-    // Stel de poortsettings veilig zodat ze tijdelijk verzet kunnen worden.
+    // Stel de WaitFreeRF settings veilig zodat ze tijdelijk verzet kunnen worden.
+    // Doe eenmaal een WaitFreeRF, daarna alle events als 1 reeks verzenden.
+    
     byte OrgWaitFreeRF=Settings.WaitFreeRF;
     Settings.WaitFreeRF=VALUE_ON;
 
@@ -328,7 +325,11 @@ byte QueueSend(byte DestUnit)
     
     // Verzend alle events uit de queue. Alleen de bestemmings Nodo zal deze events in de queue plaatsen
     for(x=0;x<QueuePosition;x++)
-      {    
+      {
+      // Alleen de eerste vooraf laten gaan door een WaitFreeRF;
+      if(x>0)
+        Settings.WaitFreeRF=VALUE_OFF;
+            
       // laatste verzonden event markeren als laatste in de sequence.
       if(x==QueuePosition-1)
         Event.Flags = TRANSMISSION_QUEUE | TRANSMISSION_CONFIRM; 
@@ -340,7 +341,8 @@ byte QueueSend(byte DestUnit)
       Event.Par1                = Queue[x].Par1;
       Event.Par2                = Queue[x].Par2;
   
-      SendEvent(&Event, false, true);//??? is niet weergeven netter?
+      SendEvent(&Event, false, true);
+      DelayTransmission(Port,false);
       }
 
     // Inhoud van de queue is verzonden. Maak de queue nu weer leeg zodat tijdens het achten op de 
@@ -357,7 +359,7 @@ byte QueueSend(byte DestUnit)
     ClearEvent(&Event);
     Event.SourceUnit          = DestUnit;
     Event.Command             = SYSTEM_COMMAND_CONFIRMED;
-    if(Wait(10,false,&Event,false))
+    if(Wait(30,false,&Event,false))
       {
       if(x==Event.Par1)
         ReturnCode=0;
@@ -431,7 +433,6 @@ byte QueueProcess(void)
        
         if(Eventlist_Write(Queue[x].Par1, &E, &A))
           {
-          UndoNewNodo();// Status NewNodo verwijderen indien van toepassing
           x+=2;
           Processed+=2;
           }

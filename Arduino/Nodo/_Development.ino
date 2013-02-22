@@ -1,17 +1,14 @@
 /********************* Aanpassingen t.o.v. versie 3.0.1  **********************************\
 Nog te doen:
-- aanpassen unitnmmer, reset en reboot via SendTo leidt tot timeout error
-- Status all uitvraag op small: Past niet in queue, geen alternatief zonder queue
-- Commando [Select]: Hiermee kan worden opgegeven dat events naar een specifieke Nodo moeten worden verzonden. Een niet geselecteerde Nodo kan ook niet zenden.
-- RawSignals geheel aanpassen
-- Commando SendEvent herstellen. ??
-- ClockSync: Par2 kan de poort worden opgegeven: IR, RF, I2C. Zonder opgave van poort wordt RF gebruikt.
-- testen: werkt ClockSync ook voor unit-0 dus alle units?
-- CRC een XOR met BUILD???
-- UserEvents compatibel oude Nodo versies 32-bit?
-- UserPlugin
-- Portinput geeft parameter teveel weer
 
+- Commando [Select]: Hiermee kan worden opgegeven dat events naar een specifieke Nodo moeten worden verzonden. Een niet geselecteerde Nodo kan ook niet zenden.
+- Commando SendEvent herstellen. ??
+- CRC een XOR met BUILD???
+- UserPlugins werken nog niet
+- [AlarmSet] toont na invoer een onjuist tijdstip.
+- Portinput geeft parameter teveel weer
+- Naast unit ook Home realiseren.
+- als ethernet define op nul staat worden er toch pogingen gedaan om cookies te verzenden.
 *****************************************************************************************
 
 - Reactietijd van HTTP event naar RF output versneld.
@@ -25,6 +22,7 @@ Nog te doen:
 - Issue 641: alarmset settings verdwijnen
 - Issue 642: Alarmset instellen met status "off"
 - Issue 643: in arduino-nodo: WaitFreeRF als user define
+- Bug in verzenden IR signaal opgelost (aan einde van het signaal werden onterecht vervolgpulsen verzonden)
 
 @@@@ Next:
 - I2C communicatie tussen Nodo's.
@@ -47,5 +45,8 @@ Nog te doen:
 - Bij error tijdens uitvoer van een script wordt de verwerking gestopt. Tenzij de continue_on_error mode: [FileExecute <script>, ON]
 - [Status All] wordt alleen nog ondersteund vanaf Terminal en HTTP. Niet meer via een [SendTo]
 - Als een HTTP-request via de browser wordt gedaan dan wordt het resultaat aan de gebruiker getoond op de brouwser.
-
+- [TimerSetSec] en [TimerSetMin] vervallen. Nu [TimerSet <seconden>] geworden.
+- Variabelen worden niet meer als setting opgeslagen 
+- ClockSync nu zonder parameters. Nodo regelt synchronisatie met WebApp en Nodo's die online zijn.
+- Toegevoegde commando's: [RawSignalList] en [RawSignalErase]. [RawSignalSave] is nu een setting. Default worden alleRawSignals die binnenkomen opgeslagen op SDCard.
 \*****************************************************************************************/

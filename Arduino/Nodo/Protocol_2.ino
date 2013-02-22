@@ -168,6 +168,7 @@ boolean Protocol_2_RawsignalToEvent(struct NodoEventStruct *Event)
 
   Event->Command       = CMD_PROTOCOL_2;        // Command deel t.b.v. weergave van de string "NewKAKU"
   Event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
+  Event->Flags         = TRANSMISSION_REPEATING;// het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
 
   return true;
   }

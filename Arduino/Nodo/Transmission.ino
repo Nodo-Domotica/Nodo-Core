@@ -2,15 +2,15 @@
 #define NODO_PULSE_MID            1000  // PWM: Pulsen langer zijn '1'
 #define NODO_PULSE_1              1500  // PWM: Tijdsduur van de puls bij verzenden van een '1' in uSec. (3x NODO_PULSE_0)
 #define NODO_SPACE                 500  // PWM: Tijdsduur van de space tussen de bitspuls bij verzenden van een '1' in uSec.   
-#define ENDSIGNAL_TIME            1500 // Dit is de tijd in milliseconden waarna wordt aangenomen dat het ontvangen één reeks signalen beëindigd is
-#define SIGNAL_ANALYZE_SHARPNESS    50 // Scherpte c.q. foutmarge die gehanteerd wordt bij decoderen van RF/IR signaal.
-#define RF_REPEATS                   4 // aantal herhalingen van een code binnen één RF reeks
-#define IR_REPEATS                   4 // aantal herhalingen van een code binnen één IR reeks
-#define MIN_PULSE_LENGTH           100 // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
-#define MIN_RAW_PULSES              32 // =16 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
-#define MIN_TIME_BETWEEN_SEND_IR   500 // Minimale tijd tussen twee IR zend acties in milliseconden.
-#define MIN_TIME_BETWEEN_SEND_RF   500 // Minimale tijd tussen twee RF zend acties in milliseconden.
-#define MIN_TIME_BETWEEN_SEND_I2C   10 // Minimale tijd tussen twee I2C zend acties in milliseconden.
+#define ENDSIGNAL_TIME            1500  // Dit is de tijd in milliseconden waarna wordt aangenomen dat het ontvangen één reeks signalen beëindigd is
+#define SIGNAL_ANALYZE_SHARPNESS    50  // Scherpte c.q. foutmarge die gehanteerd wordt bij decoderen van RF/IR signaal.
+#define RF_REPEATS                   4  // aantal herhalingen van een code binnen één RF reeks
+#define IR_REPEATS                   4  // aantal herhalingen van een code binnen één IR reeks
+#define MIN_PULSE_LENGTH           100  // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
+#define MIN_RAW_PULSES              32  // =16 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
+#define MIN_TIME_BETWEEN_SEND_IR   250  // Minimale tijd tussen twee IR zend acties in milliseconden.
+#define MIN_TIME_BETWEEN_SEND_RF   500  // Minimale tijd tussen twee RF zend acties in milliseconden.
+#define MIN_TIME_BETWEEN_SEND_I2C   10  // Minimale tijd tussen twee I2C zend acties in milliseconden.
 
 boolean AnalyzeRawSignal(struct NodoEventStruct *E)
   {
@@ -135,7 +135,6 @@ boolean RawSignal_2_32bit(struct NodoEventStruct *event)
     }
   while(x<RawSignal.Number);
 
-
   if(Counter_pulse>=1 && Counter_space<=1)
     event->Par2=CodeP; // data zat in de pulsbreedte
   else if(Counter_pulse<=1 && Counter_space>=1)
@@ -157,6 +156,7 @@ boolean RawSignal_2_32bit(struct NodoEventStruct *event)
   event->SourceUnit=0;  
   event->DestinationUnit=0;
   event->Command=CMD_RAWSIGNAL;
+  event->Flags=TRANSMISSION_REPEATING; // het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
   event->Par1=0;
   PreviousTime=millis()+SIGNAL_REPEAT_TIME;
   Previous=0L;
@@ -172,8 +172,9 @@ boolean RawSignal_2_32bit(struct NodoEventStruct *event)
 # define WAITFREERF_TIMEOUT             30000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
 
 void WaitFreeRF(void)
-{
+ {
   unsigned long Timer, TimeOutTimer;  
+Serial.print(F("*** debug: WaitFreeRF();"));Serial.println(); //??? Debug
 
   Led(BLUE);
 
@@ -183,22 +184,22 @@ void WaitFreeRF(void)
   // Als er recent een code is ontvangen door de Nodo, dan is één van de Nodo's wellicht nog niet volledig omgeschakeld van zenden 
   // naar ontvangen. Dit omdat sommige ontvangers lange opstarttijd nodig hebben voordat deze RF signalen nunnen ontvangen.
   // Daarom wachten totdat RECEIVER_STABLE tijd voorbij is na laatste verzending.
-  //???  while(millis() < (RawSignal.Timer+RECEIVER_STABLE));        
+  DelayTransmission(VALUE_SOURCE_RF,false);
 
   // dan kijken of de ether vrij is.
   Timer=millis()+350; // reset de timer. //??? nog een define van maken
   TimeOutTimer=millis()+WAITFREERF_TIMEOUT; // tijd waarna de routine wordt afgebroken in milliseconden
 
   while(Timer>millis() && TimeOutTimer>millis())
-  {
-    if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
     {
+    if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
+      {
       if(FetchSignal(PIN_RF_RX_DATA,HIGH,SIGNAL_TIMEOUT_RF))// Als het een duidelijk signaal was
         Timer=millis()+350; // reset de timer weer.
+      }
     }
-  }
   Led(RED);
-}
+  }
 
 
 /**********************************************************************************************\
@@ -206,7 +207,7 @@ void WaitFreeRF(void)
  * Als geen verandering, dan wordt na timeout teruggekeerd met de waarde 0L
  \*********************************************************************************************/
 unsigned long WaitForChangeState(uint8_t pin, uint8_t state, unsigned long timeout)
-{
+  {
   uint8_t bit = digitalPinToBitMask(pin);
   uint8_t port = digitalPinToPort(pin);
   uint8_t stateMask = (state ? bit : 0);
@@ -218,7 +219,7 @@ unsigned long WaitForChangeState(uint8_t pin, uint8_t state, unsigned long timeo
     if (numloops++ == maxloops)
       return 0;//timeout opgetreden
   return clockCyclesToMicroseconds(numloops * 19 + 16); 
-}
+  }
 
 
 /*********************************************************************************************\
@@ -227,9 +228,8 @@ unsigned long WaitForChangeState(uint8_t pin, uint8_t state, unsigned long timeo
  * RawSignal.Number het aantal pulsen*2
  \*********************************************************************************************/
 void RawSendRF(void)
-{
+  {
   int x;
-
   digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
   digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan
 
@@ -237,16 +237,16 @@ void RawSendRF(void)
   noInterrupts();
 
   for(byte y=0; y<RawSignal.Repeats; y++) // herhaal verzenden RF code
-  {
-    x=1;
-    while(x<=RawSignal.Number)
     {
+    x=1;
+    while(x<RawSignal.Number)
+      {
       digitalWrite(PIN_RF_TX_DATA,HIGH); // 1
       delayMicroseconds(RawSignal.Pulses[x++]); 
       digitalWrite(PIN_RF_TX_DATA,LOW); // 0
       delayMicroseconds(RawSignal.Pulses[x++]); 
+      }
     }
-  }
 
   digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
   digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger weer aan.
@@ -280,47 +280,46 @@ void RawSendIR(void)
   {
   int pulse;  // pulse (bestaande uit een mark en een space) uit de RawSignal tabel die moet worden verzonden
   int mod;    // pulsenteller van het 38Khz modulatie signaal
-
+  int repeat;
+  
   // kleine pause zodat verzenden event naar de USB poort gereed is, immers de IRQ's worden tijdelijk uitgezet
   delay(10);
 
-  for(int repeat=0; repeat<RawSignal.Repeats; repeat++) // herhaal verzenden IR code
-  {
+  for(repeat=0; repeat<RawSignal.Repeats; repeat++) // herhaal verzenden IR code
+    {
     pulse=1;
     noInterrupts(); // interrupts tijdelijk uitschakelen om zo en zuiverder signaal te krijgen
-    while(pulse<=RawSignal.Number)
-    {
+    while(pulse<RawSignal.Number)
+      {
       // Mark verzenden. Bereken hoeveel pulsen van 26uSec er nodig zijn die samen de lengte van de mark zijn.
       mod=RawSignal.Pulses[pulse++]/26; // delen om aantal pulsen uit te rekenen
 
-      do
-      {
+      while(mod)
+        {
         // Hoog
-#ifdef NODO_MEGA
+        #ifdef NODO_MEGA
         bitWrite(PORTH,0, HIGH);
-#else
+        #else
         bitWrite(PORTB,3, HIGH);
-#endif
-
+        #endif
+  
         delayMicroseconds(12);
         __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");// per nop 62.6 nano sec. @16Mhz
-
+  
         // Laag
-#ifdef NODO_MEGA
-        bitWrite(PORTH,0, LOW);
-#else
+        #ifdef NODO_MEGA
+        bitWrite(PORTH,0, LOW);    
+        #else
         bitWrite(PORTB,3, LOW);
-#endif
-
+        #endif
         delayMicroseconds(12);
         __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");// per nop 62.6 nano sec. @16Mhz
-      }
-      while(--mod);
-
+        mod--;
+        }
       // Laag
       delayMicroseconds(RawSignal.Pulses[pulse++]);
     }
-    interrupts(); // interupts weer inschakelen.
+  interrupts(); // interupts weer inschakelen.
   }
 }
 
@@ -394,6 +393,7 @@ boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
 {
   int RawCodeLength=1;
   unsigned long PulseLength=0;
+
 
   do{// lees de pulsen in microseconden en plaats deze in een tijdelijke buffer
     PulseLength=WaitForChangeState(DataPin, StateSignal, TimeOut);
@@ -488,7 +488,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   {  
   ES->Direction=VALUE_DIRECTION_OUTPUT;
   byte Port=ES->Port;
-  
+
   // Als een andere Nodo actief is en excusief communiceert met een andere Nodo, c.q. de ruimte geclaimd is, dan mag deze Nodo niet zenden.
   // In dit geval resteert deze Nodo niets anders dan even te wachten tot de lijn weer vrijgegeven wordt of de wachttijd verlopen is.
   // Als er een timeout optreedt, dan de blokkade opheffen. Dit ter voorkoming dat Nodo's oneindig wachten op vrije lijn.
@@ -497,8 +497,8 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   if(Transmission_SelectedUnit!=0 && Transmission_SelectedUnit!=Settings.Unit && !Transmission_ThisUnitIsMaster)
     if(!Wait(30,true,0,false))
     {
-      Transmission_SelectedUnit=0;//??? testen 
-      Transmission_NodoOnly=false;
+    Transmission_SelectedUnit=0;//??? testen 
+    Transmission_NodoOnly=false;
     }
 
   // Stuur afhankelijk van de instellingen het event door naar I2C, RF, IR. Eerst wordt het event geprint,daarna een korte wachttijd om
@@ -511,6 +511,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     if(Display)PrintEvent(ES);
     DelayTransmission(VALUE_SOURCE_I2C,false);
     SendI2C(ES);
+    DelayTransmission(VALUE_SOURCE_I2C,true);
     }
 
   if(Port==VALUE_SOURCE_RF || (Settings.TransmitRF==VALUE_ON && Port==VALUE_ALL))
@@ -522,192 +523,39 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
 
   // Verstuur signaal als RF
   if(Settings.TransmitRF==VALUE_ON && (Port==VALUE_SOURCE_RF || Port==VALUE_ALL))
-  {
+    {
     ES->Port=VALUE_SOURCE_RF;
     if(Display)PrintEvent(ES);
     DelayTransmission(VALUE_SOURCE_RF,false);
     RawSendRF();
-  }
+    DelayTransmission(VALUE_SOURCE_RF,true);
+    }
 
   // Verstuur signaal als IR
   if(Settings.TransmitIR==VALUE_ON && (Port==VALUE_SOURCE_IR || Port==VALUE_ALL))
-  { 
+    { 
     ES->Port=VALUE_SOURCE_IR;
     if(Display)PrintEvent(ES);
     DelayTransmission(VALUE_SOURCE_IR,false);
     RawSendIR();
-  }
+    DelayTransmission(VALUE_SOURCE_IR,true);
+    }
 
 #ifdef NODO_MEGA
   // Verstuur signaal als HTTP-event.
   if(bitRead(HW_Config,HW_ETHERNET))// Als Ethernet shield aanwezig.
-  {
-    if(Settings.TransmitIP==VALUE_ON && (Port==VALUE_SOURCE_HTTP || Port==VALUE_ALL))
     {
+    if(Settings.TransmitIP==VALUE_ON && (Port==VALUE_SOURCE_HTTP || Port==VALUE_ALL))
+      {
       SendHTTPEvent(ES);
       ES->Port=VALUE_SOURCE_HTTP;
       if(Display)PrintEvent(ES);
+      }
     }
-  }
 #endif 
-
-}
-
-
+  }
+  
 #ifdef NODO_MEGA
-///*********************************************************************************************\
-// * Kijk of voor de opgegeven Hex-event (Code) een rawsignal file op de SDCard bestaat.
-// * Als deze bestaat, dan het Hex-event vervangen door het commando "RawSignal <key>"
-// * Call by referece !
-// \*********************************************************************************************/
-//void CheckRawSignalKey(unsigned long *Code)//??? nog herstellen
-//  {
-//  int x,y;
-//  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
-//  boolean Finished=false;
-//
-//  SelectSD(true);
-//  sprintf(TempString,"%s/%s.key",ProgmemString(Text_28),int2str(*Code)+2); // +2 omdat dan de tekens '0x' niet worden meegenomen. anders groter dan acht posities in filenaam.
-//
-//  File dataFile=SD.open(TempString);
-//  if(dataFile) 
-//    {
-//    y=0;       
-//    while(!Finished && dataFile.available())
-//      {
-//      x=dataFile.read();
-//      if(isDigit(x) && y<INPUT_BUFFER_SIZE)
-//        {
-//        TempString[y++]=x;
-//        }
-//      else if(x=='\n' || isPunct(x))
-//        {
-//        TempString[y]=0;
-//        y=0;
-//       //??? herstellen *Code=command2event(CMD_RAWSIGNAL,str2int(TempString),0);
-//        Finished=true;
-//        }
-//      }
-//    dataFile.close();
-//    }  
-//
-//  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
-//  SelectSD(false);
-//  free(TempString);
-//}
-
-///*********************************************************************************************\
-// * Sla de pulsen in de buffer Rawsignal op op de SDCard
-// \*********************************************************************************************/
-//byte SaveRawSignal(byte Key)
-//{
-//  boolean error=false;
-//  unsigned long Event;
-//  char *TempString=(char*)malloc(40);
-//
-//  //???herstellen  Event=AnalyzeRawSignal();
-//
-//  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-//  SelectSD(true);
-//
-//  // Sla Raw-pulsenreeks op in bestand met door gebruiker gekozen nummer als filenaam
-//  sprintf(TempString,"%s/%s.raw",ProgmemString(Text_27),int2str(Key));
-//  SD.remove(TempString); // eventueel bestaande file wissen, anders wordt de data toegevoegd.    
-//  File KeyFile = SD.open(TempString, FILE_WRITE);
-//  if(KeyFile) 
-//    {
-//    for(int x=1;x<=RawSignal.Number;x++)
-//      {
-//      TempString[0]=0;
-//      if(x>1)
-//        strcat(TempString,",");
-//      strcat(TempString,int2str(RawSignal.Pulses[x]));
-//      KeyFile.write(TempString);
-//      }
-//    strcpy(TempString,"\n");
-//    KeyFile.write(TempString);
-//    KeyFile.close();
-//
-//
-//    // bestand met HEX-event als naam en verwijzing naar door gebruiker gekozen key als inhoud
-//    sprintf(TempString,"%s/%s.key",ProgmemString(Text_28),int2str(Event)+2); // +2 omdat dan de tekens '0x' niet worden meegenomen. anders groter dan acht posities in filenaam.
-//    SD.remove(TempString); // eventueel bestaande file wissen, anders wordt de data toegevoegd.      
-//    KeyFile = SD.open(TempString, FILE_WRITE);
-//    if(KeyFile) 
-//      {
-//      strcpy(TempString,int2str(Key));
-//      strcat(TempString,";\n");
-//      KeyFile.write(TempString);
-//      KeyFile.close();
-//      }
-//    else 
-//      error=true;
-//    }
-//  else 
-//    error=true;
-//
-//  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
-//  SelectSD(false);
-//
-//  free(TempString);
-//
-//  if(error)
-//    {
-//    bitWrite(HW_Config,HW_SDCARD,0);
-//    RaiseMessage(MESSAGE_14);
-//    return false;
-//    }
-//  return true;
-//  }
-//
-//
-///*********************************************************************************************\
-// * Haal de RawSignal pulsen op uit het bestand <key>.raw en sla de reeks op in de 
-// * RawSignal buffer, zodat deze vervolgens weer kan worden gebruikt om te verzenden.
-// \*********************************************************************************************/
-//boolean RawSignalGet(int Key)
-//{
-//  int x,y,z;
-//  boolean Ok;
-//  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
-//
-//  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-//  SelectSD(true);
-//  sprintf(TempString,"%s/%s.raw",ProgmemString(Text_27),int2str(Key));
-//
-//  File dataFile=SD.open(TempString);
-//  if(dataFile) 
-//  {
-//    y=0;
-//    z=1;// [0] van RawSignal.Pulses wordt niet gebruikt
-//    while(dataFile.available())
-//    {
-//      x=dataFile.read();
-//      if(isDigit(x) && y<INPUT_BUFFER_SIZE)
-//      {
-//        TempString[y++]=x;
-//      }
-//      else if(x=='\n' || isPunct(x))
-//      {
-//        TempString[y]=0;
-//        y=0;
-//        RawSignal.Pulses[z++]=str2int(TempString);
-//      }
-//    }
-//    dataFile.close();
-//    Ok=true;
-//    RawSignal.Number=z-1;
-//  }
-//  else
-//    Ok=false;
-//
-//  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
-//  SelectSD(false);
-//
-//  free(TempString);
-//  return Ok;
-//}
-//
 #endif
 
 
@@ -716,34 +564,38 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
  * Geeft een false retour als geen geldig NODO signaal
  \*********************************************************************************************/
 boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
-{
+  {
   byte b,x,y,z;
 
   if(RawSignal.Number!=16*sizeof(struct DataBlockStruct)+2) // Per byte twee posities + startbit.
+    {
+//Serial.print(F("*** debug: Aantal bits klopt niet. Bits="));Serial.println(RawSignal.Number); //??? Debug
+//Serial.print(F("*** debug: Startbit tijd=="));Serial.println(RawSignal.Pulses[1]); //??? Debug
     return false;
-
+    }
+    
   struct DataBlockStruct DataBlock;
   byte *B=(byte*)&DataBlock; // B wijst naar de eerste byte van de struct
   z=3;  // RwaSignal pulse teller: 0=aantal, 1=startpuls, 2=space na startpuls, 3=1e pulslengte. Dus start loop met drie.
 
   for(x=0;x<sizeof(struct DataBlockStruct);x++) // vul alle bytes van de struct 
-  {
+    {
     b=0;
     for(y=0;y<=7;y++) // vul alle bits binnen een byte
-    {
+      {
       if(RawSignal.Pulses[z]>NODO_PULSE_MID)      
         b|=1<<y; //LSB in signaal wordt  als eerste verzonden
       z+=2;
-    }
+      }
     *(B+x)=b;
-  }
+    }
 
   // bereken checksum: crc-8 uit alle bytes in de queue.
   // Een correcte Checksum met alle bytes levert een nul omdat de XOR van alle bytes in het datablok zit.
   b=0;
   for(x=0;x<sizeof(struct DataBlockStruct);x++)
     b^=*(B+x); 
-
+    
   if(b==0)
     {
     Event->SourceUnit=DataBlock.SourceUnit;  
@@ -755,6 +607,8 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
     Event->Par2=DataBlock.Par2;
     return true;
     }
+//  else
+//    Serial.print(F("*** debug: Checksum error."));Serial.println(b); //??? Debug
 
   return false; 
   }
@@ -886,6 +740,7 @@ boolean EthernetInit(void)
         {
         HTTPClient.getRemoteIP(HTTPClientIP);
         Ok=true;
+        bitWrite(HW_Config,HW_WEBAPP,1);
         delay(10); //even wachten op response van de server.
         HTTPClient.flush(); // gooi alles weg, alleen IP adres was van belang.
         HTTPClient.stop();
@@ -1319,7 +1174,6 @@ void ExecuteIP(void)
                     // De resultaten die anders naar de terminal waren gestuurd nu eveneens naar file schrijven
                     // De filehandler is globaal gedefinieerd en schrijven vindt plaatsin de funktie PrintTerminal();
                     SelectSDCard(true);
-                    SD.remove(ProgmemString(Text_06));
                     HTTPResultFile = SD.open(ProgmemString(Text_06), FILE_WRITE);
                     SelectSDCard(false);
 
@@ -1380,6 +1234,7 @@ void ExecuteIP(void)
                       }
                     }
                   HTTPResultFile.close();
+                  SD.remove(ProgmemString(Text_06));
                   SelectSDCard(false);
                   }  
                 else 

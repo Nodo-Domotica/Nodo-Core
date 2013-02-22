@@ -273,27 +273,50 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       break;
 
     case CMD_CLOCK_SYNC:
-      // ClockSync stuurt de juise klokinstellingen naar een andere Nodo. Als het opgegeven unitnummer het eigen unitnummer is
-      // dan wordt het verzoek naar HTTP verzonden.
-      
-      if(EventToExecute->Par1==Settings.Unit || EventToExecute->Par1==0)
-        {        
-        SendHTTPEvent(EventToExecute);
-        }
-      else
+      // Haal eerst de juiste tijd op van de WebApp
+      if(bitRead(HW_Config,HW_WEBAPP))
         {
-        // oplossen met nieuwe adressering ???
-//        Queue.Event[Queue.Position]=command2event(Par1, CMD_CLOCK_YEAR,Time.Year/100,Time.Year%100);Queue.Port[Queue.Position++]=VALUE_SOURCE_SYSTEM;
-//        Queue.Event[Queue.Position]=command2event(Par1, CMD_CLOCK_DATE,Time.Date,Time.Month);Queue.Port[Queue.Position++]=VALUE_SOURCE_SYSTEM;
-//        Queue.Event[Queue.Position]=command2event(Par1, CMD_CLOCK_TIME,Time.Hour,Time.Minutes);Queue.Port[Queue.Position++]=VALUE_SOURCE_SYSTEM;
-//        Queue.Event[Queue.Position]=command2event(Par1, CMD_CLOCK_DOW ,Time.Day,0);Queue.Port[Queue.Position++]=VALUE_SOURCE_SYSTEM;
-        
-        if(EventToExecute->Par2==0)
-          x=VALUE_SOURCE_RF;
-        else
-          x=EventToExecute->Par2;
-          
-        error=QueueSend(EventToExecute->Par1);
+        SendHTTPEvent(EventToExecute);
+        Wait(5,false,0,false);
+        QueueProcess();
+        }
+      
+      // Geef de juiste tijd nu door aan alle andere Nodo's
+      for(y=1; y<=UNIT_MAX; y++)
+        {
+        if(y!=Settings.Unit)
+          {        
+          x=NodoOnline(y,0);
+          if(x)
+            {           
+            // oplossen met nieuwe adressering ???
+            ClearEvent(&TempEvent);    
+            TempEvent.Port                  = x;
+            TempEvent.DestinationUnit       = y;    
+            TempEvent.Flags                 = TRANSMISSION_QUEUE | TRANSMISSION_NEXT | TRANSMISSION_LOCK; 
+
+            TempEvent.Command               = CMD_CLOCK_YEAR;
+            TempEvent.Par1                  = Time.Year/100;
+            TempEvent.Par2                  = Time.Year%100;
+            SendEvent(&TempEvent, false, true);
+            
+            TempEvent.Command               = CMD_CLOCK_DATE;
+            TempEvent.Par1                  = Time.Date;
+            TempEvent.Par2                  = Time.Month;
+            SendEvent(&TempEvent, false, true);
+            
+            TempEvent.Command               = CMD_CLOCK_TIME;
+            TempEvent.Par1                  = Time.Hour;
+            TempEvent.Par2                  = Time.Minutes;
+            SendEvent(&TempEvent, false, true);
+            
+            TempEvent.Flags                 = 0; 
+            TempEvent.Command               = CMD_CLOCK_DOW;
+            TempEvent.Par1                  = Time.Day;
+            TempEvent.Par2                  = 0;
+            SendEvent(&TempEvent, false, true);
+            }
+          }
         }
       break;
     #endif
@@ -339,38 +362,9 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       Time.Day=EventToExecute->Par1;
       ClockSet();
       break;
-
-    case CMD_TIMER_SET_MIN:
-      // EventToExecute->Par1=timer, EventToExecute->Par2=minuten. Timers werken op een resolutie van seconden maar worden door de gebruiker ingegeven in minuten        
-      if(EventToExecute->Par1==0)
-        {
-        x=1;
-        y=TIMER_MAX;
-        }
-      else
-        {
-        x=EventToExecute->Par1;
-        y=EventToExecute->Par1;
-        }
-      for(x;x<=y;x++)
-        TimerSet(x,int(EventToExecute->Par2)*60);
-        
-      break;
       
-    case CMD_TIMER_SET_SEC:
-      // EventToExecute->Par1=timer, EventToExecute->Par2=seconden. Timers werken op een resolutie van seconden.            
-     if(EventToExecute->Par1==0)
-        {
-        x=1;
-        y=TIMER_MAX;
-        }
-      else
-        {
-        x=EventToExecute->Par1;
-        y=EventToExecute->Par1;
-        }
-      for(x;x<=y;x++)
-       TimerSet(x,EventToExecute->Par2);
+    case CMD_TIMER_SET:
+       TimerSet(EventToExecute->Par1,EventToExecute->Par2);
       break;
 
     case CMD_TIMER_RANDOM:
@@ -429,10 +423,6 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
                          
     case CMD_SETTINGS_SAVE:
       UndoNewNodo();// Status NewNodo verwijderen indien van toepassing
-      #ifdef NODO_MEGA
-      for(x=0;x<USER_VARIABLES_MAX;x++)
-        Settings.UserVar[x]=UserVar[x];
-      #endif  
       Save_Settings();
       break;
 
@@ -494,11 +484,11 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       if(EventToExecute->Par2 !=0)
         Settings.Home=(byte)EventToExecute->Par2;
       Save_Settings();
-      Reset();
-
+      RebootNodo=true;
+      break;
+      
     case CMD_REBOOT:
-      delay(1000);
-      Reset();
+      RebootNodo=true;
       break;        
 
     case CMD_PULSE_COUNT:
@@ -507,15 +497,16 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       
     case CMD_RESET:
       ResetFactory();
+      break;
 
     case CMD_EVENTLIST_ERASE:
-      UndoNewNodo();// Status NewNodo verwijderen indien van toepassing
       Led(BLUE);
       ClearEvent(&TempEvent);
       
       if(EventToExecute->Par1==0)
         {
         x=1;
+        UndoNewNodo();// Status NewNodo verwijderen indien van toepassing
         while(Eventlist_Write(x++,&TempEvent,&TempEvent));
         }
       else
@@ -553,12 +544,6 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       SimulateDay(); 
       break;     
       
-    case CMD_RAWSIGNAL_SAVE:
-      Led(BLUE);
-      PrintTerminal(ProgmemString(Text_07));
-      RawSignal.Key=EventToExecute->Par1;
-      break;              
-
 //    case CMD_RAWSIGNAL_SEND:
 //      if(EventToExecute->Par1!=0)
 //        {

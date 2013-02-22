@@ -158,6 +158,7 @@ boolean Protocol_1_RawsignalToEvent(struct NodoEventStruct *Event)
   Event->Par2          = bitstream & 0xFF;
   Event->Par1         |= (bitstream >> 11) & 0x01;
   Event->Command       = CMD_PROTOCOL_1;
+  Event->Flags         = TRANSMISSION_REPEATING;// het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
   Event->SourceUnit    = 0; // Komt niet van een Nodo unit af.
   return true;
   }

@@ -1,5 +1,5 @@
-#define SETTINGS_VERSION     27
-#define NODO_BUILD          505//??? ophogen.
+#define NODO_BUILD          506//??? ophogen.
+#define SETTINGS_VERSION     29
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -18,15 +18,15 @@ prog_char PROGMEM Text_15[] = "Nodo V3.0.9 Small, Product=SWACNC-SMALL-R%03d, Th
 #ifdef NODO_MEGA
 prog_char PROGMEM Text_03[] = "Enter your password: ";
 prog_char PROGMEM Text_05[] = "0123456789abcdef";
-prog_char PROGMEM Text_06[] = "HTTP.DAT";
+prog_char PROGMEM Text_06[] = "NODO/HTTPBODY.DAT";
 prog_char PROGMEM Text_07[] = "Waiting for signal...";
 prog_char PROGMEM Text_09[] = "(Last 10KByte)";
 prog_char PROGMEM Text_13[] = "RawSignal saved.";
 prog_char PROGMEM Text_14[] = "Event=";
-prog_char PROGMEM Text_23[] = "log.dat";
-prog_char PROGMEM Text_24[] = "Delay...";
-prog_char PROGMEM Text_27[] = "raw/raw"; // Directory op de SDCard voor opslag van sleutels naar .hex files
-prog_char PROGMEM Text_28[] = "raw/key"; // Directory op de SDCard voor opslag RawSignal
+prog_char PROGMEM Text_23[] = "LOG.DAT";
+//prog_char PROGMEM Text_24[] = "Delay...";
+prog_char PROGMEM Text_28[] = "RAW"; // Directory op de SDCard voor opslag RawSignal
+prog_char PROGMEM Text_29[] = "NODO"; // Directory op de SDCard voor opslag tijdelijke bestanden
 prog_char PROGMEM Text_30[] = "Terminal connection closed.";
 
 // Commando's:
@@ -64,8 +64,8 @@ prog_char PROGMEM Cmd_025[]="Debug";
 #endif
 
 prog_char PROGMEM Cmd_027[]="TimerRandom";
-prog_char PROGMEM Cmd_028[]="TimerSetSec";
-prog_char PROGMEM Cmd_029[]="TimerSetMin"; // ??? Komt in toekomstige release te vervallen. 
+prog_char PROGMEM Cmd_028[]="TimerSet";
+prog_char PROGMEM Cmd_029[]="";
 prog_char PROGMEM Cmd_030[]="ID";
 prog_char PROGMEM Cmd_031[]="Unit";
 prog_char PROGMEM Cmd_032[]="UnitList";
@@ -120,8 +120,8 @@ prog_char PROGMEM Cmd_080[]="Echo";
 prog_char PROGMEM Cmd_081[]="AlarmSet";
 prog_char PROGMEM Cmd_082[]="BreakOnVarLessVar";
 prog_char PROGMEM Cmd_083[]="BreakOnVarMoreVar";
-prog_char PROGMEM Cmd_084[]="";
-prog_char PROGMEM Cmd_085[]="";
+prog_char PROGMEM Cmd_084[]="RawSignalList";
+prog_char PROGMEM Cmd_085[]="RawSignalErase";
 prog_char PROGMEM Cmd_086[]="";
 prog_char PROGMEM Cmd_087[]="";
 prog_char PROGMEM Cmd_088[]="";
@@ -293,10 +293,11 @@ prog_char PROGMEM Cmd_208[]="Incorrect password.";
 prog_char PROGMEM Cmd_209[]="Wireless access locked.";
 prog_char PROGMEM Cmd_210[]="Access not allowed.";
 prog_char PROGMEM Cmd_211[]="SendTo timeout error."; 
-prog_char PROGMEM Cmd_212[]="Unknown unit in SendTo."; 
+prog_char PROGMEM Cmd_212[]="Unit not online."; 
 prog_char PROGMEM Cmd_213[]="Data lost during SendTo."; 
 prog_char PROGMEM Cmd_214[]="SDCard error.";
 prog_char PROGMEM Cmd_215[]="Aborted.";
+prog_char PROGMEM Cmd_216[]="RawSignal saved.";
 
 // tabel die refereert aan de commando strings
 PROGMEM const char *CommandText_tabel[]={
@@ -321,7 +322,7 @@ PROGMEM const char *CommandText_tabel[]={
   Cmd_180,Cmd_181,Cmd_182,Cmd_183,Cmd_184,Cmd_185,Cmd_186,Cmd_187,Cmd_188,Cmd_189,          
   Cmd_190,Cmd_191,Cmd_192,Cmd_193,Cmd_194,Cmd_195,Cmd_196,Cmd_197,Cmd_198,Cmd_199,          
   Cmd_200,Cmd_201,Cmd_202,Cmd_203,Cmd_204,Cmd_205,Cmd_206,Cmd_207,Cmd_208,Cmd_209,          
-  Cmd_210,Cmd_211,Cmd_212,Cmd_213,Cmd_214,Cmd_215
+  Cmd_210,Cmd_211,Cmd_212,Cmd_213,Cmd_214,Cmd_215,Cmd_216
   };          
 
 // Tabel met zonsopgang en -ondergang momenten. afgeleid van KNMI gegevens midden Nederland.
@@ -362,8 +363,8 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_DEBUG                       25
 #define CMD_USERPLUGIN                  26
 #define CMD_TIMER_RANDOM                27
-#define CMD_TIMER_SET_SEC               28
-#define CMD_TIMER_SET_MIN               29
+#define CMD_TIMER_SET                   28
+#define CMD_res29                       29
 #define CMD_ID                          30
 #define CMD_UNIT                        31
 #define CMD_UNIT_LIST                   32
@@ -418,8 +419,8 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_ALARM_SET                   81
 #define CMD_BREAK_ON_VAR_LESS_VAR       82
 #define CMD_BREAK_ON_VAR_MORE_VAR       83
-#define CMD_RES084                      84
-#define CMD_RES085                      85
+#define CMD_RAWSIGNAL_LIST              84
+#define CMD_RAWSIGNAL_ERASE             85
 #define CMD_RES086                      86
 #define CMD_RES087                      87
 #define CMD_RES088                      88
@@ -558,8 +559,9 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define MESSAGE_13                     213
 #define MESSAGE_14                     214
 #define MESSAGE_15                     215
-#define LAST_VALUE                     215 // laatste VALUE uit de commando tabel
-#define COMMAND_MAX                    215 // hoogste commando
+#define MESSAGE_16                     216
+#define LAST_VALUE                     216 // laatste VALUE uit de commando tabel
+#define COMMAND_MAX                    216 // hoogste commando
 
 #define RED                          1  // Led = Rood
 #define GREEN                        2  // Led = Groen
@@ -598,7 +600,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define HW_IR_PULSE    12
 #define HW_PLUGIN      13
 #define HW_I2C         14
-#define HW_RES11       15
+#define HW_WEBAPP      15
 
 // Definitie van de speciale hardware uitvoeringen van de Nodo.
 #define BIC_DEFAULT            0  // Standaard Nodo zonder specifike hardware aansturing
@@ -662,7 +664,8 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define PASSWORD_MAX_RETRY           5 // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
 #define PASSWORD_TIMEOUT           300 // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
 #define TERMINAL_TIMEOUT           600 // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
-#define COOKIE_REFRESH_TIME         60 // Tijd tussen automatisch verzenden van een nieuw Cookie als de beveiligde HTTP modus is inschakeld.
+#define COOKIE_REFRESH_TIME         60 // Tijd in sec. tussen automatisch verzenden van een nieuw Cookie als de beveiligde HTTP modus is inschakeld.
+#define SERIAL_STAY_SHARP_TIME      50 // Tijd in mSec. dat na ontvangen van een tken uitsluitend naar Serial als input wordt geluisterd. 
 
 #else // als het voor de Nodo-Small variant is
 #define EVENTLIST_MAX               75 // maximaal aantal regels in de eventlist
@@ -704,12 +707,11 @@ struct SettingsStruct
   byte    TransmitIR;
   byte    TransmitRF;
   byte    WaitFreeRF;
-  int     Lock;                                             // bevat de pincode waarmee IR/RF ontvangst is geblokkeerd. Bit nummer hoogste bit wordt gebruiktvoor in/uitschakelen.
   byte    Debug;                                            // Weergeven van extra gegevens t.b.v. beter inzicht verloop van de verwerking
+  unsigned long Lock;                                       // bevat de pincode waarmee IR/RF ontvangst is geblokkeerd. Bit nummer hoogste bit wordt gebruiktvoor in/uitschakelen.
   unsigned long Alarm[ALARM_MAX-1];                         // Instelbaar alarm
   
   #ifdef NODO_MEGA
-  float   UserVar[USER_VARIABLES_MAX];
   byte    TransmitIP;                                       // Definitie van het gebruik van HTTP-communicatie via de IP-poort: [Off] of [On]
   char    Password[26];                                     // String met wachtwoord.
   char    ID[10];                                           // ID waar de Nodo uniek mee geïdentificeerd kan worden in een netwerk
@@ -725,6 +727,7 @@ struct SettingsStruct
   byte    EchoSerial;
   byte    EchoTelnet;
   byte    Log;
+  byte    RawSignalSave;
   #endif
   }Settings;
 
@@ -737,7 +740,7 @@ struct SettingsStruct
   #define TRANSMISSION_SYSTEM      16  // System event
   #define TRANSMISSION_COMMAND     32  // 
   #define TRANSMISSION_EVENT       64  // 
-  #define TRANSMISSION_DISPLAY    128  // 
+  #define TRANSMISSION_REPEATING  128  // 
 
   // De Nodo kent naast gebruikers commando's en events eveneens Nodo interne events
   #define SYSTEM_COMMAND_CONFIRMED  1  // Bevestiging op verzoek van een TRANSMISSION_CONFIRM. Par1 bevat aantal verwerkte events. 
@@ -753,16 +756,15 @@ struct NodoEventStruct
   byte SourceUnit;
   byte DestinationUnit;
   byte Flags;
-//  byte Type;
   byte Port;
   byte Direction;
   byte Checksum;
   };
 
+boolean RebootNodo=false;                                   // Als deze vlag staat, dan reboot de Nodo (cold-start)
 byte Transmission_SelectedUnit=0;                           // Nodo die door een master is geselecteerd om te zenden. 0=band vrij.
 boolean Transmission_ThisUnitIsMaster=false;
-boolean Transmission_NodoOnly=false;                        // Als deze vlag staat, dan worden er uitsluitend Nodo-eigen signalen ontvangen.
-  
+boolean Transmission_NodoOnly=false;                        // Als deze vlag staat, dan worden er uitsluitend Nodo-eigen signalen ontvangen.  
 byte QueuePosition=0;
 unsigned long PulseCount=0L;                                // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
 unsigned long PulseTime=0L;                                 // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
@@ -771,8 +773,8 @@ boolean WiredInputStatus[WIRED_PORTS];                      // Status van de Wir
 boolean WiredOutputStatus[WIRED_PORTS];                     // Wired variabelen.
 byte AlarmPrevious[ALARM_MAX];                              // Bevat laatste afgelopen alarm. Ter voorkoming dat alarmen herhaald aflopen.
 byte DaylightPrevious;                                      // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet.
-int ExecutionDepth=0;                                      // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's.
-void(*Reset)(void)=0;                                       // reset functie op adres 0.
+int ExecutionDepth=0;                                       // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's.
+void(*Reboot)(void)=0;                                       // reset functie op adres 0.
 uint8_t RFbit,RFport,IRbit,IRport;                          // t.b.v. verwerking IR/FR signalen.
 float UserVar[USER_VARIABLES_MAX];                          // Gebruikers variabelen
 unsigned long HW_Config=0;                                  // Hardware configuratie zoals gedetecteerd door de Nodo. 
@@ -809,7 +811,6 @@ struct RawsignalStruct
   unsigned int Pulses[RAW_BUFFER_SIZE+2];                   // Tabel met de gemeten pulsen in microseconden. eerste waarde [0] wordt NIET gebruikt. (legacy redenen).
   byte Source;                                              // Bron waar het signaal op is binnengekomen.
   int Number;                                               // aantal bits, maal twee omdat iedere bit een mark en een space heeft.
-  int Key;                                                  // sleutel waaronder de pulsenreeks op SDCard opgeslagen moet worden.
   byte Repeats;                                             // Aantal maal dat de pulsreeks verzonden moet worden bij een zendactie.
   }RawSignal;
 
@@ -860,6 +861,11 @@ void setup()
   // Hardware specifieke initialisatie.
 //  switch(HW_Config&0xf)??? nog in testfase
 //    {
+  
+    pinMode(PIN_IO_2,OUTPUT); // ???t.b.v. debugging
+    digitalWrite(PIN_IO_2,LOW);
+  
+  
 //    case BIC_DEFAULT:// Standaard Nodo zonder specifike hardware aansturing
 //      break;                 
 //
@@ -909,10 +915,6 @@ void setup()
   // SDCard detecteren en evt. gereed maken voor gebruik in de Nodo
   SDCardInit();
 
-
-  RawSignal.Key=-1; // Als deze variable ongelijk aan -1 dan wordt er een Rawsignal opgeslagen.  
-
-   
   // Start Ethernet kaart en start de HTTP-Server en de Telnet-server
   #if ETHERNET
   bitWrite(HW_Config,HW_ETHERNET,1); // nog slim detecteren of fysieke laag is aangesloten. Wordt niet ondersteund door de Ethernet Library van Arduino
@@ -965,7 +967,6 @@ void setup()
   TempEvent.Flags     = TRANSMISSION_CONFIRM;
   TempEvent.Command   = CMD_BOOT_EVENT;
   TempEvent.Par1      = Settings.Unit;
-  TempEvent.Port      = VALUE_ALL;
   SendEvent(&TempEvent,false,true);  
 
   TempEvent.Flags     = 0;
@@ -974,8 +975,6 @@ void setup()
   ProcessEvent2(&TempEvent);  // Voer het 'Boot' event uit.
 
   bitWrite(HW_Config,HW_I2C,false); // Zet I2C weer uit. Wordt weer geactiveerd als er een I2C event op de bus verschijnt.
-
-  #include <Protocol/KAKU.c>
   }
 
 void loop() 
@@ -992,7 +991,7 @@ void loop()
   unsigned long LoopIntervalTimer_1=millis();                 // Timer voor periodieke verwerking. millis() maakt dat de intervallen van 1 en 2 niet op zelfde moment vallen => 1 en 2 nu asynchroon.
   unsigned long LoopIntervalTimer_2=0L;                       // Timer voor periodieke verwerking.
   unsigned long LoopIntervalTimer_3=0L;                       // Timer voor periodieke verwerking.
-  unsigned long StaySharpTimer;                               // Timer die er voor zorgt dat bij communicatie via een kanaal de focus hier ook enige tijd op blijft
+  unsigned long StaySharpTimer;                               // Timer die er voor zorgt dat bij communicatie via een kanaal de focus hier ook enige tijd op blijft??? nodig???
   unsigned long PreviousTimeEvent=0L; 
 
   #ifdef NODO_MEGA
@@ -1162,7 +1161,7 @@ void loop()
           if(Serial.available())
             {
             bitWrite(HW_Config,HW_SERIAL,1);// Input op seriele poort ontvangen. Vanaf nu ook output naar Seriele poort want er is klaarblijkelijk een actieve verbinding
-            StaySharpTimer=millis()+500;
+            StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;
 
             while(StaySharpTimer>millis()) // blijf even paraat voor luisteren naar deze poort en voorkom dat andere input deze communicatie onderbreekt
               {          
@@ -1171,8 +1170,7 @@ void loop()
                 SerialInByte=Serial.read();                
                 if(Settings.EchoSerial==VALUE_ON)
                   Serial.write(SerialInByte);// echo ontvangen teken
-
-                StaySharpTimer=millis()+500;      
+                StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
                 
                 if(isprint(SerialInByte))
                   {
@@ -1190,7 +1188,7 @@ void loop()
                   SerialInByteCounter=0;  
                   InputBuffer_Serial[0]=0; // serieel ontvangen regel is verwerkt. String leegmaken
                   SerialHold(false);
-                  StaySharpTimer=millis()+500;      
+                  StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
                   }
                 }
               }
@@ -1319,7 +1317,6 @@ void loop()
           break;
           }
                   
-
         default:
           Slice_2=0;
         }
@@ -1330,12 +1327,16 @@ void loop()
       {
       LoopIntervalTimer_3=millis()+Loop_INTERVAL_3; // reset de timer  
 
+      // rebooten van de Nodo is buiten de processing routines geplaatst om zo te voorkomen dat er een reboot van de Arduino
+      // plaats vindt terwijl er nog open bestanden of communicatie is. dDt kan mogelijk leiden tot problemen.
+      // Op deze plek kan een reboot veilig plaats vinden.
+      if(RebootNodo)
+        Reboot();
 
       // ALARM: **************** Genereer event als één van de alarmen afgelopen is ***********************    
       if(bitRead(HW_Config,HW_CLOCK))//check of de klok aanwzig is
         if(ScanAlarm(&ReceivedEvent)) 
           ProcessEvent1(&ReceivedEvent); // verwerk binnengekomen event.
-
 
       // loop periodiek langs de userplugin
       #ifdef USER_PLUGIN

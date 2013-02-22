@@ -20,8 +20,8 @@ void SDCardInit(void)
   SelectSDCard(true);
   if(SD.begin(EthernetShield_CS_SDCard))
     {
-    SD.mkdir(ProgmemString(Text_27)); // maak directory aan waar de Rawsignal HEX bestanden in worden opgeslagen
     SD.mkdir(ProgmemString(Text_28)); // maak directory aan waar de Rawsignal KEY bestanden in worden opgeslagen
+    SD.mkdir(ProgmemString(Text_29)); // maak directory aan waar niet-gebruikers files in worden opgeslagen
     bitWrite(HW_Config,HW_SDCARD,1);
     }
   SelectSDCard(false);
@@ -102,7 +102,7 @@ boolean SaveEventlistSDCard(char *FileName)
   }
 
 
-boolean FileList(void)
+boolean FileList(char *rootdir)
   {
   byte error=0;
   File root;
@@ -110,7 +110,7 @@ boolean FileList(void)
   char *TempString=(char*)malloc(15);
 
   SelectSDCard(true);
-  if(root = SD.open("/"))
+  if(root = SD.open(rootdir))
     {
     SelectSDCard(false);
     PrintTerminal(ProgmemString(Text_22));
@@ -244,4 +244,121 @@ byte FileShow(char *FileName)
   free(TmpStr2);
   return error;
   }
+
+/*********************************************************************************************\
+ * Kijk of voor de opgegeven Hex-event (Code) een rawsignal file op de SDCard bestaat.
+ * Als deze bestaat dan return met 'true'
+ \*********************************************************************************************/
+boolean RawSignalExist(unsigned long Code)
+  {
+  int exist=false;  
+  char *TempString=(char*)malloc(25);
+
+  SelectSDCard(true);
+  sprintf(TempString,"%s/%s.raw",ProgmemString(Text_28),int2strhex(Code)+2); // +2 omdat dan de tekens '0x' niet worden meegenomen. anders groter dan acht posities in filenaam.
+
+  File dataFile=SD.open(TempString);
+  if(dataFile) 
+    {
+    exist=true;
+    dataFile.close();
+    }  
+
+  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
+  SelectSDCard(false);
+  free(TempString);
+  return exist;
+  }
+
+/*********************************************************************************************\
+ * Sla de pulsen in de buffer Rawsignal op op de SDCard
+ \*********************************************************************************************/
+byte RawSignalSave(unsigned long Key)
+  {
+  boolean error=false;
+  char *TempString=(char*)malloc(40);
+
+  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+  SelectSDCard(true);
+
+  // Sla Raw-pulsenreeks op in bestand met door gebruiker gekozen nummer als filenaam
+  sprintf(TempString,"%s/%s.raw",ProgmemString(Text_28),int2strhex(Key)+2);
+  SD.remove(TempString); // eventueel bestaande file wissen, anders wordt de data toegevoegd.    
+  File KeyFile = SD.open(TempString, FILE_WRITE);
+  if(KeyFile) 
+    {
+    for(int x=1;x<=RawSignal.Number;x++)
+      {
+      TempString[0]=0;
+      if(x>1)
+        strcat(TempString,",");
+      strcat(TempString,int2str(RawSignal.Pulses[x]));
+      KeyFile.write(TempString);
+      }
+    strcpy(TempString,"\n");
+    KeyFile.write(TempString);
+    KeyFile.close();
+    }
+  else 
+    error=true;
+
+  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
+  SelectSDCard(false);
+
+  free(TempString);
+
+  if(error)
+    RaiseMessage(MESSAGE_14);
+
+  return !error;
+  }
+
+
+/*********************************************************************************************\
+ * Haal de RawSignal pulsen op uit het bestand <key>.raw en sla de reeks op in de 
+ * RawSignal buffer, zodat deze vervolgens weer kan worden gebruikt om te verzenden.
+ \*********************************************************************************************/
+boolean RawSignalGet(unsigned long Key)
+  {
+  int x,y,z;
+  boolean Ok;
+  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+
+  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+  SelectSDCard(true);
+  sprintf(TempString,"%s/%s.raw",ProgmemString(Text_28),int2strhex(Key)+2);
+
+  File dataFile=SD.open(TempString);
+  if(dataFile) 
+    {
+    y=0;
+    z=1;// [0] van RawSignal.Pulses wordt niet gebruikt
+    while(dataFile.available())
+      {
+      x=dataFile.read();
+      if(isDigit(x) && y<INPUT_BUFFER_SIZE)
+        {
+        TempString[y++]=x;
+        }
+      else if(x=='\n' || isPunct(x))
+        {
+        TempString[y]=0;
+        y=0;
+        RawSignal.Pulses[z++]=str2int(TempString);
+        }
+      }
+    dataFile.close();
+    Ok=true;
+    RawSignal.Number=z-1;
+    }
+  else
+    Ok=false;
+
+  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
+  SelectSDCard(false);
+
+  free(TempString);
+  return Ok;
+  }
+
 #endif
