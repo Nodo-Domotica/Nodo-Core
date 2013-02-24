@@ -394,7 +394,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
       break;
 
   case CMD_WAITFREERF: 
-    Event->Par1=Settings.WaitFreeRF;
+    Event->Par1=Settings.WaitFree;
     break;
 
   case CMD_UNIT: 
@@ -408,11 +408,6 @@ boolean GetStatus(struct NodoEventStruct *Event)
   case VALUE_HWCONFIG: 
     Event->Par2=HW_Config;      
     break;        
-
-  case CMD_ALARM_SET:
-    Event->Par1=xPar1;
-    Event->Par2=Settings.Alarm[xPar1-1];
-    break;
 
   case CMD_DEBUG:
     Event->Par1=Settings.Debug;
@@ -493,10 +488,13 @@ boolean GetStatus(struct NodoEventStruct *Event)
     Event->Par2=Settings.WiredInputThreshold[xPar1-1];
     break;
 
-
   case CMD_WIRED_SMITTTRIGGER:
     Event->Par1=xPar1;
     Event->Par2=Settings.WiredInputSmittTrigger[xPar1-1];
+    break;
+
+  case VALUE_FREEMEM:    
+    Event->Par2=FreeMem();
     break;
 
   case CMD_PULSE_TIME:    
@@ -522,6 +520,11 @@ boolean GetStatus(struct NodoEventStruct *Event)
 //    break;///??? lock herstellen
 
 #ifdef NODO_MEGA
+
+  case CMD_ALARM_SET:
+    Event->Par1=xPar1;
+    Event->Par2=Settings.Alarm[xPar1-1];
+    break;
 
   case CMD_PORT_SERVER:
     Event->Par2=Settings.OutputPort;
@@ -628,10 +631,10 @@ void ResetFactory(void)
   Settings.TransmitRF                 = VALUE_ON;
   Settings.Unit                       = UNIT_NODO;
   Settings.Home                       = 1;
-  Settings.WaitFreeRF                 = VALUE_ON;
+  Settings.WaitFree                   = VALUE_ON;
 
 #ifdef NODO_MEGA
-  Settings.WaitFreeRF                 = VALUE_OFF;
+  Settings.WaitFree                   = VALUE_OFF;
   Settings.TransmitIP                 = VALUE_OFF;
   Settings.Debug                      = VALUE_OFF;
   Settings.HTTPRequest[0]             = 0; // string van het HTTP adres leeg maken
@@ -664,6 +667,11 @@ void ResetFactory(void)
   Settings.Log                        = VALUE_OFF;  
   Settings.RawSignalSave              = VALUE_ON;  
   Settings.Password[0]                = 0;
+
+  // Maak de alarmen leeg
+  for(x=0;x<ALARM_MAX;x++)
+    Settings.Alarm[x]=0L;
+
 #endif
 
   // zet analoge waarden op default
@@ -673,10 +681,6 @@ void ResetFactory(void)
     Settings.WiredInputSmittTrigger[x]=10;
     Settings.WiredInputPullUp[x]=VALUE_ON;
     }
-
-  // Maar de alarmen leeg
-  for(x=0;x<ALARM_MAX;x++)
-    Settings.Alarm[x]=0L;
 
   Save_Settings();
 
@@ -847,17 +851,19 @@ void Status(struct NodoEventStruct *Request, byte Transmit)
             Par1_Start=1;
             Par1_End=USER_VARIABLES_MAX;
             break;
-  
-          case CMD_ALARM_SET:
-            Par1_Start=1;
-            Par1_End=ALARM_MAX;
-            break;
-  
+    
           case CMD_TIMER_SET:
             Par1_Start=1;
             Par1_End=TIMER_MAX;
             break;
   
+          #ifdef NODO_MEGA
+          case CMD_ALARM_SET:
+            Par1_Start=1;
+            Par1_End=ALARM_MAX;
+            break;
+          #endif
+
           default:
             Par1_Start=0;
             Par1_End=0;
@@ -1191,6 +1197,16 @@ void md5(char* dest)
 #endif
 
 uint8_t *heapptr, *stackptr;
+
+unsigned long FreeMem(void)
+  {
+  stackptr = (uint8_t *)malloc(4);        // use stackptr temporarily
+  heapptr = stackptr;                     // save value of heap pointer
+  free(stackptr);                         // free up the memory again (sets stackptr to 0)
+  stackptr =  (uint8_t *)(SP);            // save value of stack pointer
+  return (stackptr-heapptr);
+  }
+    
 void Trace(char *Func, unsigned long Value)
   {
   stackptr = (uint8_t *)malloc(4);        // use stackptr temporarily
@@ -2313,3 +2329,9 @@ float ul2float(unsigned long ul)
   memcpy(&f, &ul,4);
   return f;
   }
+  
+  
+void  Test(void)
+  {    
+  }
+  

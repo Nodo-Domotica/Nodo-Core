@@ -47,6 +47,15 @@ Nog te doen:
 - Als een HTTP-request via de browser wordt gedaan dan wordt het resultaat aan de gebruiker getoond op de brouwser.
 - [TimerSetSec] en [TimerSetMin] vervallen. Nu [TimerSet <seconden>] geworden.
 - Variabelen worden niet meer als setting opgeslagen 
+
+
+=== LET OP: Deze versie vereist een aanpassing aan de WebApp ===
+
 - ClockSync nu zonder parameters. Nodo regelt synchronisatie met WebApp en Nodo's die online zijn.
 - Toegevoegde commando's: [RawSignalList] en [RawSignalErase]. [RawSignalSave] is nu een setting. Default worden alleRawSignals die binnenkomen opgeslagen op SDCard.
+- Device voor Dalles sensor aangepast aan nieuwe eventt-format. [Device <WiredOutPort>, <VariabeleNummer>]. Default voor DS18B20
+- [Status FreeMem] toegevoegd. Geeft vrije werkgeheugen in bytes.
+- [RawSignalErase] zonder parameters wist alle Rawsignals van SDCard.
+- [FileErase] zonder parameters wist alle scriptfiles van SDCard.
+
 \*****************************************************************************************/

@@ -36,16 +36,33 @@
 #define PULSE_DEBOUNCE_TIME         10                             // pulsen kleiner dan deze waarde worden niet geteld. Bedoeld on verstoringen a.g.v. ruis of dender te voorkomen
 #define PULSE_TRANSITION       FALLING                             // FALLING of RISING: Geeft aan op welke flank de PulseCounter start start met tellen. Default FALLING
 #define I2C_ADDRESS                  1                             // Adres van de Nodo op de I2C bus is I2C_ADDRESS + Unitnummer. Eventueel kan een andere range worden gekozen. LET OP: RTC-Klok op 104
-#define PROTOCOL_1              "KAKU"                             // T.b.v. mee compileren van het KAKU-protocol. Indien niet nodig, dan deze regel remarken met //
 #define PROTOCOL_2           "NewKAKU"                             // T.b.v. mee compileren van het KAKU-protocol met automatische codering. Indien niet nodig, dan deze regel remarken met //
 #define DEVICE_1              "DS1820"                             // Device-1 (Temperatuursensor), remarken met // als niet in gebruik.
 #define NODO_30_COMPATIBLE        true                             // t.b.v. compatibiliteit met vorige Nodo versie: NewKAKU HEX waarden en UserEvents
 #define I2C_START_ADDRESS            1                             // Alle Nodo's op de I2C bus hebben een uniek adres dat start vanaf dit nummer. Er zijn max. 32 Nodo's. Let op verlap met andere devices. RTC zit op adres 104.
 
+
+//#include "C:\Users\tonkes\Google Drive\Paul\Nodo\SVN\Nodo\KAKU.CPP"
+
+// Compileer het protocol: KAKU
+#define PROTOCOL_1 "KAKU"
+#define Protocol_1_EventToRawsignal(Event)           KAKU_EventToRawsignal(Event)
+#define Protocol_1_RawsignalToEvent(Event)           KAKU_RawsignalToEvent(Event)
+#define Protocol_1_StringToEvent(InputString,Event)  KAKU_StringToEvent(InputString,Event)
+#define Protocol_1_EventToString(Event,OutputString) KAKU_EventToString(Event,OutputString)
+
+// Compileer het protocol: NewKAKU
+#define PROTOCOL_2 "NewKAKU"
+#define Protocol_2_EventToRawsignal(Event)           NewKAKU_EventToRawsignal(Event)
+#define Protocol_2_RawsignalToEvent(Event)           NewKAKU_RawsignalToEvent(Event)
+#define Protocol_2_StringToEvent(InputString,Event)  NewKAKU_StringToEvent(InputString,Event)
+#define Protocol_2_EventToString(Event,OutputString) NewKAKU_EventToString(Event,OutputString)
+
+
 #if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)     // NIET veranderen
   #define NODO_MEGA          1                                     // NIET veranderen !
   #define UNIT_NODO          1                                     // default unit nummer na een [Reset] commando
-  #define ETHERNET           1//???                                     // op 0 zetten als ethernet kaart niet aanwezig
+  #define ETHERNET           0//???                                     // op 0 zetten als ethernet kaart niet aanwezig
   
   // Keuze tussen SMALL of MEGA: **********************************************************************************************
   // Kies voor compilatie het juiste Arduino board. Dit kan een Arduino zijn gebaseerd op een zijn een ATMega1280, ATMega2560 of een ATMega328.

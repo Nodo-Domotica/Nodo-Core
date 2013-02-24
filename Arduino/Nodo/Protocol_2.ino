@@ -52,11 +52,14 @@
  /*******************************************************************************************************\
  * Vult aan de hand van een Nodo event de RawSignal buffer zodat deze kan worden verzonden via RF of IR.
  \*******************************************************************************************************/
-void Protocol_2_EventToRawsignal(struct NodoEventStruct *Event)
+void NewKAKU_EventToRawsignal(struct NodoEventStruct *Event)
   {
   unsigned long bitstream=0L;
   byte Bit, i=1;
   byte x; /// aantal posities voor pulsen/spaces in RawSignal
+
+  const byte PTMF=25;
+  RawSignal.Pulses[0]=PTMF;
 
   // bouw het KAKU adres op. Er zijn twee mogelijkheden: Een adres door de gebruiker opgegeven binnen het bereik van 0..255 of een lange hex-waarde
   if(Event->Par2<=255)
@@ -77,24 +80,24 @@ void Protocol_2_EventToRawsignal(struct NodoEventStruct *Event)
  
   // bitstream bevat nu de KAKU-bits die verzonden moeten worden.
 
-  for(i=3;i<=x;i++)RawSignal.Pulses[i]=NewKAKU_1T;  // De meeste tijden in signaal zijn T. Vul alle pulstijden met deze waarde. Later worden de 4T waarden op hun plek gezet
+  for(i=3;i<=x;i++)RawSignal.Pulses[i]=NewKAKU_1T/PTMF;  // De meeste tijden in signaal zijn T. Vul alle pulstijden met deze waarde. Later worden de 4T waarden op hun plek gezet
   
   i=1;
-  RawSignal.Pulses[i++]=NewKAKU_1T; //pulse van de startbit
-  RawSignal.Pulses[i++]=NewKAKU_8T; //space na de startbit
+  RawSignal.Pulses[i++]=NewKAKU_1T/PTMF; //pulse van de startbit
+  RawSignal.Pulses[i++]=NewKAKU_8T/PTMF; //space na de startbit
   
   byte y=31; // bit uit de bitstream
   while(i<x)
     {
     if((bitstream>>(y--))&1)
-      RawSignal.Pulses[i+1]=NewKAKU_4T;     // Bit=1; // T,4T,T,T
+      RawSignal.Pulses[i+1]=NewKAKU_4T/PTMF;     // Bit=1; // T,4T,T,T
     else
-      RawSignal.Pulses[i+3]=NewKAKU_4T;     // Bit=0; // T,T,T,4T
+      RawSignal.Pulses[i+3]=NewKAKU_4T/PTMF;     // Bit=0; // T,T,T,4T
 
     if(x==146)  // als het een dim opdracht betreft
       {
       if(i==111) // Plaats van de Commando-bit uit KAKU 
-        RawSignal.Pulses[i+3]=NewKAKU_1T;  // moet een T,T,T,T zijn bij een dim commando.
+        RawSignal.Pulses[i+3]=NewKAKU_1T/PTMF;  // moet een T,T,T,T zijn bij een dim commando.
       if(i==127)  // als alle pulsen van de 32-bits weggeschreven zijn
         {
         bitstream=(unsigned long)Event->Par1-1; //  nog vier extra dim-bits om te verzenden. -1 omdat dim niveau voor gebruiker begint bij 1
@@ -103,8 +106,8 @@ void Protocol_2_EventToRawsignal(struct NodoEventStruct *Event)
       }
     i+=4;
     }
-  RawSignal.Pulses[i++]=NewKAKU_1T; //pulse van de stopbit
-  RawSignal.Pulses[i]=NewKAKU_1T*32; //space van de stopbit tevens pause tussen signalen
+  RawSignal.Pulses[i++]=NewKAKU_1T/PTMF; //pulse van de stopbit
+  RawSignal.Pulses[i]=NewKAKU_1T*32/PTMF; //space van de stopbit tevens pause tussen signalen
   RawSignal.Number=i; // aantal bits*2 die zich in het opgebouwde RawSignal bevinden
   }
 
@@ -112,12 +115,14 @@ void Protocol_2_EventToRawsignal(struct NodoEventStruct *Event)
 * Deze routine berekent de uit een RawSignal een Nodo event.
 * Geeft een false retour als geen geldig KAKU signaal uit het signaal te destilleren
 \*********************************************************************************************/
-boolean Protocol_2_RawsignalToEvent(struct NodoEventStruct *Event)
+boolean NewKAKU_RawsignalToEvent(struct NodoEventStruct *Event)
   {
   unsigned long bitstream=0L;
   boolean Bit;
   int i;
+  int PTMF=RawSignal.Pulses[0]; // in eerste element zit de waarde waarmee vermenigvuldigd moet worden om te komen tot de echte pulstijden in uSec.
   
+  int P0,P1,P2,P3;
   Event->Par1=0;
   
   // nieuwe KAKU bestaat altijd uit start bit + 32 bits + evt 4 dim bits. Ongelijk, dan geen NewKAKU
@@ -130,9 +135,14 @@ boolean Protocol_2_RawsignalToEvent(struct NodoEventStruct *Event)
   
   do 
     {
-    if     (RawSignal.Pulses[i]<NewKAKU_mT && RawSignal.Pulses[i+1]<NewKAKU_mT && RawSignal.Pulses[i+2]<NewKAKU_mT && RawSignal.Pulses[i+3]>NewKAKU_mT)Bit=0; // T,T,T,4T
-    else if(RawSignal.Pulses[i]<NewKAKU_mT && RawSignal.Pulses[i+1]>NewKAKU_mT && RawSignal.Pulses[i+2]<NewKAKU_mT && RawSignal.Pulses[i+3]<NewKAKU_mT)Bit=1; // T,4T,T,T
-    else if(RawSignal.Pulses[i]<NewKAKU_mT && RawSignal.Pulses[i+1]<NewKAKU_mT && RawSignal.Pulses[i+2]<NewKAKU_mT && RawSignal.Pulses[i+3]<NewKAKU_mT)       // T,T,T,T Deze hoort te zitten op i=111 want: 27e NewKAKU bit maal 4 plus 2 posities voor startbit
+    P0=RawSignal.Pulses[i]    * PTMF;
+    P1=RawSignal.Pulses[i+1]  * PTMF;
+    P2=RawSignal.Pulses[i+2]  * PTMF;
+    P3=RawSignal.Pulses[i+3]  * PTMF;
+    
+    if     (P0<NewKAKU_mT && P1<NewKAKU_mT && P2<NewKAKU_mT && P3>NewKAKU_mT)Bit=0; // T,T,T,4T
+    else if(P0<NewKAKU_mT && P1>NewKAKU_mT && P2<NewKAKU_mT && P3<NewKAKU_mT)Bit=1; // T,4T,T,T
+    else if(P0<NewKAKU_mT && P1<NewKAKU_mT && P2<NewKAKU_mT && P3<NewKAKU_mT)       // T,T,T,T Deze hoort te zitten op i=111 want: 27e NewKAKU bit maal 4 plus 2 posities voor startbit
       {
       if(RawSignal.Number!=NewKAKUdim_RawSignalLength) // als de dim-bits er niet zijn
         return false;
@@ -168,7 +178,7 @@ boolean Protocol_2_RawsignalToEvent(struct NodoEventStruct *Event)
 
   Event->Command       = CMD_PROTOCOL_2;        // Command deel t.b.v. weergave van de string "NewKAKU"
   Event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
-  Event->Flags         = TRANSMISSION_REPEATING;// het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
+  RawSignal.Repeats    = true;                  // het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
 
   return true;
   }
@@ -179,7 +189,7 @@ boolean Protocol_2_RawsignalToEvent(struct NodoEventStruct *Event)
  * Converteert een Nodo event naar een string volgens de NewKAKU adressering 'NewKaku 0x123456A1,On'
  * In plaats van On/Off kan ook het dim niveau 1..16 worden weergegeven.
  \*******************************************************************************************************/
-void Protocol_2_EventToString(struct NodoEventStruct *Event, char *OutputString)
+void NewKAKU_EventToString(struct NodoEventStruct *Event, char *OutputString)
   {
   strcpy(OutputString,cmd2str(Event->Command));
   strcat(OutputString," ");
@@ -205,7 +215,7 @@ void Protocol_2_EventToString(struct NodoEventStruct *Event, char *OutputString)
  * Converteert een string volgens de KAKU adressering 'NewKaku 0x123456,On' naar een Nodo Event.
  * Als er geen geldige parameters worden opgegeven dan keert de funktie terug met een false.
  \*******************************************************************************************************/
-boolean Protocol_2_StringToEvent(char *InputString, struct NodoEventStruct *Event)
+boolean NewKAKU_StringToEvent(char *InputString, struct NodoEventStruct *Event)
   {
   char* str=(char*)malloc(40);
   boolean ok=false;

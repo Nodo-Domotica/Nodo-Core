@@ -102,37 +102,52 @@ boolean SaveEventlistSDCard(char *FileName)
   }
 
 
-boolean FileList(char *rootdir)
+boolean FileList(char *rootdir, boolean Erase)
   {
   byte error=0;
   File root;
   File entry;
-  char *TempString=(char*)malloc(15);
+  char *TempString=(char*)malloc(30);
 
   SelectSDCard(true);
   if(root = SD.open(rootdir))
     {
-    SelectSDCard(false);
-    PrintTerminal(ProgmemString(Text_22));
-    SelectSDCard(true);
+    if(!Erase)
+      {
+      SelectSDCard(false);
+      PrintTerminal(ProgmemString(Text_22));
+      SelectSDCard(true);
+      }
   
     root.rewindDirectory();
     while(entry = root.openNextFile())
       {
       if(!entry.isDirectory())
         {
-        strcpy(TempString,entry.name());
-        TempString[StringFind(TempString,".")]=0;
-        SelectSDCard(false);
-        PrintTerminal(TempString);
-        SelectSDCard(true);
+        
+        if(Erase)
+          {
+          strcpy(TempString,rootdir);
+          strcat(TempString,"/");
+          strcat(TempString,entry.name());
+          FileErase(TempString);
+          }
+        else
+          {
+          strcpy(TempString,entry.name());
+          TempString[StringFind(TempString,".")]=0;
+          SelectSDCard(false);
+          PrintTerminal(TempString);
+          SelectSDCard(true);
+          }
         }
       entry.close();
       }
     root.close();
 
     SelectSDCard(false);
-    PrintTerminal(ProgmemString(Text_22));
+    if(!Erase)
+      PrintTerminal(ProgmemString(Text_22));
     }
   else
     error=MESSAGE_14;
@@ -278,34 +293,40 @@ byte RawSignalSave(unsigned long Key)
   boolean error=false;
   char *TempString=(char*)malloc(40);
 
-  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-  SelectSDCard(true);
-
-  // Sla Raw-pulsenreeks op in bestand met door gebruiker gekozen nummer als filenaam
-  sprintf(TempString,"%s/%s.raw",ProgmemString(Text_28),int2strhex(Key)+2);
-  SD.remove(TempString); // eventueel bestaande file wissen, anders wordt de data toegevoegd.    
-  File KeyFile = SD.open(TempString, FILE_WRITE);
-  if(KeyFile) 
+  if(Key!=0)
     {
-    for(int x=1;x<=RawSignal.Number;x++)
+    // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+    SelectSDCard(true);
+  
+    // Sla Raw-pulsenreeks op in bestand met door gebruiker gekozen nummer als filenaam
+  
+  
+    sprintf(TempString,"%s/%s.raw",ProgmemString(Text_28),int2strhex(Key)+2);
+  
+    SD.remove(TempString); // eventueel bestaande file wissen, anders wordt de data toegevoegd.    
+    File KeyFile = SD.open(TempString, FILE_WRITE);
+    if(KeyFile) 
       {
-      TempString[0]=0;
-      if(x>1)
-        strcat(TempString,",");
-      strcat(TempString,int2str(RawSignal.Pulses[x]));
+      for(int x=1;x<=RawSignal.Number;x++)
+        {
+        TempString[0]=0;
+        if(x>1)
+          strcat(TempString,",");
+        strcat(TempString,int2str(RawSignal.Pulses[x]));
+        KeyFile.write(TempString);
+        }
+      strcpy(TempString,"\n");
       KeyFile.write(TempString);
+      KeyFile.close();
       }
-    strcpy(TempString,"\n");
-    KeyFile.write(TempString);
-    KeyFile.close();
+    else 
+      error=true;
+  
+    // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
+    SelectSDCard(false);
+  
+    free(TempString);
     }
-  else 
-    error=true;
-
-  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
-  SelectSDCard(false);
-
-  free(TempString);
 
   if(error)
     RaiseMessage(MESSAGE_14);

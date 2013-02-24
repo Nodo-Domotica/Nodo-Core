@@ -2,10 +2,7 @@
 #define NODO_PULSE_MID            1000  // PWM: Pulsen langer zijn '1'
 #define NODO_PULSE_1              1500  // PWM: Tijdsduur van de puls bij verzenden van een '1' in uSec. (3x NODO_PULSE_0)
 #define NODO_SPACE                 500  // PWM: Tijdsduur van de space tussen de bitspuls bij verzenden van een '1' in uSec.   
-#define ENDSIGNAL_TIME            1500  // Dit is de tijd in milliseconden waarna wordt aangenomen dat het ontvangen één reeks signalen beëindigd is
 #define SIGNAL_ANALYZE_SHARPNESS    50  // Scherpte c.q. foutmarge die gehanteerd wordt bij decoderen van RF/IR signaal.
-#define RF_REPEATS                   4  // aantal herhalingen van een code binnen één RF reeks
-#define IR_REPEATS                   4  // aantal herhalingen van een code binnen één IR reeks
 #define MIN_PULSE_LENGTH           100  // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define MIN_RAW_PULSES              32  // =16 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
 #define MIN_TIME_BETWEEN_SEND_IR   250  // Minimale tijd tussen twee IR zend acties in milliseconden.
@@ -68,7 +65,7 @@ boolean AnalyzeRawSignal(struct NodoEventStruct *E)
 
   if(RawSignal_2_32bit(E))
     return true;
-    
+
   return false;   
   }
 
@@ -84,8 +81,8 @@ boolean RawSignal_2_32bit(struct NodoEventStruct *event)
   {
   int x,y,z;
   int Counter_pulse=0,Counter_space=0;
-  int MinPulse=0xffff;
-  int MinSpace=0xffff;
+  byte MinPulse=0xff;
+  byte MinSpace=0xff;
   unsigned long CodeP=0L;
   unsigned long CodeS=0L;
   static unsigned long Previous,PreviousTime; // t.b.v. onderdrukken herhaal binnengekomen signalen.
@@ -153,15 +150,14 @@ boolean RawSignal_2_32bit(struct NodoEventStruct *event)
     return false;
     }
     
+  RawSignal.Repeats    = true; // het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
   event->SourceUnit=0;  
   event->DestinationUnit=0;
   event->Command=CMD_RAWSIGNAL;
-  event->Flags=TRANSMISSION_REPEATING; // het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
   event->Par1=0;
   PreviousTime=millis()+SIGNAL_REPEAT_TIME;
   Previous=0L;
   return true;
-
   }
 
 
@@ -169,35 +165,33 @@ boolean RawSignal_2_32bit(struct NodoEventStruct *event)
  * Deze functie wacht totdat de 433 band vrij is of er een timeout heeft plaats gevonden 
  * Window en delay tijd in milliseconden
  \*********************************************************************************************/
-# define WAITFREERF_TIMEOUT             30000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
-
-void WaitFreeRF(void)
- {
+#define WAITFREE_TIMEOUT             30000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
+void WaitFree(int Window)
+  {
   unsigned long Timer, TimeOutTimer;  
-Serial.print(F("*** debug: WaitFreeRF();"));Serial.println(); //??? Debug
-
-  Led(BLUE);
-
-  // eerst de 'dode' wachttijd die afhangt van het unitnummer. Dit voorkomt dat alle units exact op hetzelfde moment gaan zenden als de ether vrij is.
-  delay((Settings.Unit-1)*100);
-
-  // Als er recent een code is ontvangen door de Nodo, dan is één van de Nodo's wellicht nog niet volledig omgeschakeld van zenden 
-  // naar ontvangen. Dit omdat sommige ontvangers lange opstarttijd nodig hebben voordat deze RF signalen nunnen ontvangen.
-  // Daarom wachten totdat RECEIVER_STABLE tijd voorbij is na laatste verzending.
-  DelayTransmission(VALUE_SOURCE_RF,false);
-
+  
   // dan kijken of de ether vrij is.
-  Timer=millis()+350; // reset de timer. //??? nog een define van maken
-  TimeOutTimer=millis()+WAITFREERF_TIMEOUT; // tijd waarna de routine wordt afgebroken in milliseconden
+  Timer=millis()+Window;                                                   // reset de timer.
+  TimeOutTimer=millis()+WAITFREE_TIMEOUT;                                  // tijd waarna de routine wordt afgebroken in milliseconden
 
   while(Timer>millis() && TimeOutTimer>millis())
     {
-    if((*portInputRegister(RFport)&RFbit)==RFbit)// Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
+    if((*portInputRegister(IRport)&IRbit)==0)                              // Kijk of er iets op de IR poort binnenkomt. (Pin=LAAG als signaal in de ether).
+      if(FetchSignal(PIN_IR_RX_DATA,LOW,SIGNAL_TIMEOUT_IR))                // Als het een duidelijk IR signaal was
+        Timer=0;                                                           // zorg dan dat de timer weer gereset wordt.
+
+    if((*portInputRegister(RFport)&RFbit)==RFbit)                          // Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
+      if(FetchSignal(PIN_RF_RX_DATA,HIGH,SIGNAL_TIMEOUT_RF))               // Als het een duidelijk signaal was
+        Timer=0;                                                           // zorg dan dat de timer weer gereset wordt.
+        
+    if(Timer==0)
       {
-      if(FetchSignal(PIN_RF_RX_DATA,HIGH,SIGNAL_TIMEOUT_RF))// Als het een duidelijk signaal was
-        Timer=millis()+350; // reset de timer weer.
+      Led(BLUE);
+//      delay((Settings.Unit-1)*100);                                        // Unit afhankelijke wachttijd om te voorkomen dat alle Nodo's tegelijk gaan zenden.
+      Timer=millis()+Window;                                               // reset de timer weer.
       }
     }
+
   Led(RED);
   }
 
@@ -232,6 +226,7 @@ void RawSendRF(void)
   int x;
   digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
   digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan
+  byte PTMF=RawSignal.Pulses[0];
 
   delay(5);// kleine pause om de zender de tijd te geven om stabiel te worden 
   noInterrupts();
@@ -242,9 +237,9 @@ void RawSendRF(void)
     while(x<RawSignal.Number)
       {
       digitalWrite(PIN_RF_TX_DATA,HIGH); // 1
-      delayMicroseconds(RawSignal.Pulses[x++]); 
+      delayMicroseconds(RawSignal.Pulses[x++]*PTMF); 
       digitalWrite(PIN_RF_TX_DATA,LOW); // 0
-      delayMicroseconds(RawSignal.Pulses[x++]); 
+      delayMicroseconds(RawSignal.Pulses[x++]*PTMF); 
       }
     }
 
@@ -281,6 +276,7 @@ void RawSendIR(void)
   int pulse;  // pulse (bestaande uit een mark en een space) uit de RawSignal tabel die moet worden verzonden
   int mod;    // pulsenteller van het 38Khz modulatie signaal
   int repeat;
+  byte PTMF=RawSignal.Pulses[0];
   
   // kleine pause zodat verzenden event naar de USB poort gereed is, immers de IRQ's worden tijdelijk uitgezet
   delay(10);
@@ -292,7 +288,7 @@ void RawSendIR(void)
     while(pulse<RawSignal.Number)
       {
       // Mark verzenden. Bereken hoeveel pulsen van 26uSec er nodig zijn die samen de lengte van de mark zijn.
-      mod=RawSignal.Pulses[pulse++]/26; // delen om aantal pulsen uit te rekenen
+      mod=(RawSignal.Pulses[pulse++]*PTMF)/26; // delen om aantal pulsen uit te rekenen
 
       while(mod)
         {
@@ -317,7 +313,7 @@ void RawSendIR(void)
         mod--;
         }
       // Laag
-      delayMicroseconds(RawSignal.Pulses[pulse++]);
+      delayMicroseconds(RawSignal.Pulses[pulse++]*PTMF);
     }
   interrupts(); // interupts weer inschakelen.
   }
@@ -331,7 +327,7 @@ void RawSendIR(void)
 // Definieer een datablock die gebruikt wordt voor de gegevens die via de ether verzonden moeten worden.
 // Zo kunnen exact die gevens worden verzonden die nodig zijn en niets teveel.  
 struct DataBlockStruct
-{
+  {
   byte SourceUnit;
   byte DestinationUnit;
   byte Flags;
@@ -339,12 +335,14 @@ struct DataBlockStruct
   byte Command;
   byte Par1;
   unsigned long Par2;
-};  
+  };  
 
 void Nodo_2_RawSignal(struct NodoEventStruct *Event)
-{
+  {
   byte BitCounter=1;
   RawSignal.Repeats=1;
+  const byte PTMF=100;
+  RawSignal.Pulses[0]=PTMF;
 
   struct DataBlockStruct DataBlock;
   DataBlock.SourceUnit=Event->SourceUnit;  
@@ -362,24 +360,24 @@ void Nodo_2_RawSignal(struct NodoEventStruct *Event)
   DataBlock.Checksum=c;
 
   // begin met een lange startbit. Veilige timing gekozen zodat deze niet gemist kan worden
-  RawSignal.Pulses[BitCounter++]=NODO_PULSE_1*4; 
-  RawSignal.Pulses[BitCounter++]=NODO_SPACE*2;
+  RawSignal.Pulses[BitCounter++]=(NODO_PULSE_1*4)/PTMF; 
+  RawSignal.Pulses[BitCounter++]=(NODO_SPACE*2)/PTMF;
 
   for(byte x=0;x<sizeof(struct DataBlockStruct);x++)
-  {
-    for(byte Bit=0; Bit<=7; Bit++)
     {
+    for(byte Bit=0; Bit<=7; Bit++)
+      {
       if((*(B+x)>>Bit)&1)
-        RawSignal.Pulses[BitCounter++]=NODO_PULSE_1; 
+        RawSignal.Pulses[BitCounter++]=NODO_PULSE_1/PTMF; 
       else
-        RawSignal.Pulses[BitCounter++]=NODO_PULSE_0;   
-      RawSignal.Pulses[BitCounter++]=NODO_SPACE;   
+        RawSignal.Pulses[BitCounter++]=NODO_PULSE_0/PTMF;   
+      RawSignal.Pulses[BitCounter++]=NODO_SPACE/PTMF;   
+      }
     }
-  }
 
-  RawSignal.Pulses[BitCounter-1]=NODO_PULSE_1*10; // pauze tussen de pulsreeksen
+  RawSignal.Pulses[BitCounter-1]=NODO_SPACE/PTMF; // pauze tussen de pulsreeksen
   RawSignal.Number=BitCounter;
-}
+  }
 
 
 /**********************************************************************************************\
@@ -390,43 +388,45 @@ void Nodo_2_RawSignal(struct NodoEventStruct *Event)
  \*********************************************************************************************/
 
 boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
-{
+  {
   int RawCodeLength=1;
   unsigned long PulseLength=0;
+  const byte PTMF=50;
+  RawSignal.Pulses[0]=PTMF;
 
 
   do{// lees de pulsen in microseconden en plaats deze in een tijdelijke buffer
-    PulseLength=WaitForChangeState(DataPin, StateSignal, TimeOut);
+    PulseLength=WaitForChangeState(DataPin, StateSignal, TimeOut)/PTMF;
 
     // bij kleine stoorpulsen die geen betekenig hebben zo snel mogelijk weer terug
-    if(PulseLength<MIN_PULSE_LENGTH)
+    if(PulseLength<(MIN_PULSE_LENGTH/PTMF))
       return false;
 
     RawSignal.Pulses[RawCodeLength++]=PulseLength;
-    PulseLength=WaitForChangeState(DataPin, !StateSignal, TimeOut);
+    PulseLength=WaitForChangeState(DataPin, !StateSignal, TimeOut)/PTMF;
     RawSignal.Pulses[RawCodeLength++]=PulseLength;
-  }
+    }
   while(RawCodeLength<RAW_BUFFER_SIZE && PulseLength!=0);// Zolang nog niet alle bits ontvangen en er niet vroegtijdig een timeout plaats vindt
 
   if(RawCodeLength>=MIN_RAW_PULSES)
-  {
+    {
     RawSignal.Number=RawCodeLength-1;
     if(DataPin==PIN_IR_RX_DATA)
-    {
+      {
       // er is een IR signaal binnen gekomen. Zet de hardware vlag voor IR
       bitWrite(HW_Config,HW_IR_RX,1);
 
       // dit houdt dan ook in dat er geen pulsen worden geteld. Schakel de pulsentellerfaciliteit uit
       bitWrite(HW_Config,HW_IR_PULSE,0);
       detachInterrupt(PULSE_IRQ); // IRQ behorende bij PIN_IR_RX_DATA
-    }
+      }
     if(DataPin==PIN_RF_RX_DATA)
       bitWrite(HW_Config,HW_RF_RX,1);
     return true;
-  }
+    }
   RawSignal.Number=0;
   return false;
-}
+  }
 
 /**********************************************************************************************\
  * Bij uitwisseling van eventss tussen Nodo's moeten aan beide zijde rekening worden gehouden 
@@ -482,7 +482,7 @@ void DelayTransmission(byte Port, boolean Set)
 /**********************************************************************************************\
  * verzendt een event en geeft dit tevens weer op SERIAL
  * Als UseRawSignal=true, dan wordt er geen signaal opgebouwd, maar de actuele content van de
- * RawSignal buffer gebruikt. In dit geval werkt de WaitFreeRF niet.
+ * RawSignal buffer gebruikt. In dit geval werkt de WaitFree niet.
  \*********************************************************************************************/
 boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Display)
   {  
@@ -514,9 +514,9 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     DelayTransmission(VALUE_SOURCE_I2C,true);
     }
 
-  if(Port==VALUE_SOURCE_RF || (Settings.TransmitRF==VALUE_ON && Port==VALUE_ALL))
-    if(Settings.WaitFreeRF==VALUE_ON && UseRawSignal==false) //??? als de RawSend optie toegevoegd, dan geen WaitFreeRF doen! nog inbouwen
-      WaitFreeRF();  
+  if(Port==VALUE_SOURCE_RF || Port==VALUE_SOURCE_IR ||(Settings.TransmitRF==VALUE_ON && Port==VALUE_ALL))
+    if(Settings.WaitFree==VALUE_ON && UseRawSignal==false)
+      WaitFree(250); //??? unit afhankelijke pauze
 
   if(!UseRawSignal)
     Nodo_2_RawSignal(ES);
@@ -566,13 +566,10 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
 boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
   {
   byte b,x,y,z;
+  const byte PTMF=RawSignal.Pulses[0];
 
   if(RawSignal.Number!=16*sizeof(struct DataBlockStruct)+2) // Per byte twee posities + startbit.
-    {
-//Serial.print(F("*** debug: Aantal bits klopt niet. Bits="));Serial.println(RawSignal.Number); //??? Debug
-//Serial.print(F("*** debug: Startbit tijd=="));Serial.println(RawSignal.Pulses[1]); //??? Debug
     return false;
-    }
     
   struct DataBlockStruct DataBlock;
   byte *B=(byte*)&DataBlock; // B wijst naar de eerste byte van de struct
@@ -583,7 +580,7 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
     b=0;
     for(y=0;y<=7;y++) // vul alle bits binnen een byte
       {
-      if(RawSignal.Pulses[z]>NODO_PULSE_MID)      
+      if((RawSignal.Pulses[z]*PTMF)>NODO_PULSE_MID)      
         b|=1<<y; //LSB in signaal wordt  als eerste verzonden
       z+=2;
       }
@@ -598,6 +595,7 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
     
   if(b==0)
     {
+    RawSignal.Repeats    = false; // het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
     Event->SourceUnit=DataBlock.SourceUnit;  
     Event->DestinationUnit=DataBlock.DestinationUnit;
     Event->Flags=DataBlock.Flags;
@@ -607,9 +605,6 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
     Event->Par2=DataBlock.Par2;
     return true;
     }
-//  else
-//    Serial.print(F("*** debug: Checksum error."));Serial.println(b); //??? Debug
-
   return false; 
   }
 
@@ -1309,6 +1304,7 @@ boolean RawSignal_2_Nodo_OLD(struct NodoEventStruct *Event)
   {
   unsigned long bitstream=0L;
   int x,y,z;
+  const byte PTMF=RawSignal.Pulses[0];
 
   static unsigned long PreviousTime=0;
   static unsigned long PreviousBitstream=0;
@@ -1320,7 +1316,7 @@ boolean RawSignal_2_Nodo_OLD(struct NodoEventStruct *Event)
   z=0;
   for(x=3;x<=RawSignal.Number;x+=2)
     {
-    if(RawSignal.Pulses[x]>NODO_PULSE_MID)      
+    if((RawSignal.Pulses[x]*PTMF)>NODO_PULSE_MID)      
       bitstream|=(long)(1L<<z); //LSB in signaal wordt  als eerste verzonden
     z++;
     }

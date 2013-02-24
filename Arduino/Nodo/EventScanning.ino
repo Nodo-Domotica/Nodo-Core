@@ -40,20 +40,32 @@ boolean ScanEvent(struct NodoEventStruct *Event)
       {
       // Reset de timers nadat er een event is binnegekomen. Dit om later voorafgaand aan het zenden, indien nodig, een
       // korte pauze te nemen zodat de andere Nodo weer gereed staat voor ontvangst.
-      DelayTransmission(Fetched,true);
+//???      DelayTransmission(Fetched,true);
 
-      // kort geleden ook ontvangen, dan herhaling binnen 1000 milliseconden onderdrukken.
-      if(Event->Flags&TRANSMISSION_REPEATING)
+//      // Herhaling onderdrukken.
+//      if(PreviousTime>millis())
+//        {
+//        WaitFree(100);
+//        return false;
+//        }
+//      PreviousTime=millis()+100;
+
+      // Sommige signaal typen kunnen door de zender herhaald worden verzonden.
+      // Indien signaal kort geleden ook ontvangen, dan herhaling gebruiken als checksum. Daarna verdere herhalingen onderdrukken.
+      if(RawSignal.Repeats)
         {
         unsigned long Hash=(unsigned long)(Event->Command<<24) || (unsigned long)(Event->Par1<<16) || (unsigned long)(Event->Par2&0xffff);
-        if(Hash==PreviousHash && (PreviousTime+SIGNAL_REPEAT_TIME)>millis())
+        
+        if(Hash!=PreviousHash)
           {
-          while((PreviousTime+SIGNAL_REPEAT_TIME)>millis());
+          PreviousHash=Hash;
           return false;
           }
-        PreviousTime=millis();
-        PreviousHash=Hash;
+          
+        if(PreviousTime>(millis()-SIGNAL_REPEAT_TIME))
+          return false;
         }
+      PreviousTime=millis();
 
       Event->Port=Fetched;
       Event->Direction=VALUE_DIRECTION_INPUT;
@@ -85,6 +97,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)
   }
 
 
+#ifdef NODO_MEGA
 boolean ScanAlarm(struct NodoEventStruct *Event)
   {
   unsigned long Mask;
@@ -108,7 +121,6 @@ boolean ScanAlarm(struct NodoEventStruct *Event)
         }
       
      //Serial.print(F("*** debug: Alarm (bron)="));Serial.print(Settings.Alarm[x],HEX);Serial.print(F(", Cmp="));Serial.println(Cmp,HEX); //??? Debug
-      
      if(Settings.Alarm[x]==Cmp) // Als ingestelde alarmtijd overeen komt met huidige tijd.
        {
        // Serial.print(F("*** Time.Minutes="));Serial.print(Time.Minutes);Serial.print(F(", Prev="));Serial.println(AlarmPrevious[x]); //??? Debug
@@ -130,4 +142,5 @@ boolean ScanAlarm(struct NodoEventStruct *Event)
    }
  return false; 
  }
+#endif
 

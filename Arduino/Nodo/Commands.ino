@@ -254,6 +254,22 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
 //??? Lock herstellen
 
     #ifdef NODO_MEGA
+    case CMD_ALARM_SET:
+      if(EventToExecute->Par1<ALARM_MAX) // niet buiten bereik array!
+        {
+        for(x=0;x<8;x++)// loop de acht nibbles van de 32-bit Par2 langs
+          {          
+          y=(EventToExecute->Par2>>(x*4))&0xF; // selecter nibble
+          if(y!=0xE) // als de waarde geset moet worden
+            {
+            a=0xffffffff  ^ (0xfUL <<(x*4)); // Mask maken om de nibble positie y te wissen.
+            Settings.Alarm[EventToExecute->Par1-1]&=a; // Maak nibble leeg
+            Settings.Alarm[EventToExecute->Par1-1]|=((unsigned long)y)<<(x*4); // vul met door user opgegeven token
+            }
+          }
+        }
+      break;
+
     case CMD_UNIT_LIST:
       PrintTerminal(ProgmemString(Text_22));
       for(x=1;x<=UNIT_MAX;x++)
@@ -320,22 +336,6 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         }
       break;
     #endif
-
-    case CMD_ALARM_SET:
-      if(EventToExecute->Par1<ALARM_MAX) // niet buiten bereik array!
-        {
-        for(x=0;x<8;x++)// loop de acht nibbles van de 32-bit Par2 langs
-          {          
-          y=(EventToExecute->Par2>>(x*4))&0xF; // selecter nibble
-          if(y!=0xE) // als de waarde geset moet worden
-            {
-            a=0xffffffff  ^ (0xfUL <<(x*4)); // Mask maken om de nibble positie y te wissen.
-            Settings.Alarm[EventToExecute->Par1-1]&=a; // Maak nibble leeg
-            Settings.Alarm[EventToExecute->Par1-1]|=((unsigned long)y)<<(x*4); // vul met door user opgegeven token
-            }
-          }
-        }
-      break;
       
     case CMD_CLOCK_YEAR:
       x=EventToExecute->Par1*100+EventToExecute->Par2;
@@ -427,7 +427,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       break;
 
     case CMD_WAITFREERF: 
-      Settings.WaitFreeRF=EventToExecute->Par1;
+      Settings.WaitFree=EventToExecute->Par1;
       break;
 
     case CMD_OUTPUT:
@@ -530,6 +530,10 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         Settings.EchoTelnet=EventToExecute->Par1;
       if(EventToExecute->Port==VALUE_SOURCE_SERIAL) 
         Settings.EchoSerial=EventToExecute->Par1;        
+      break;
+
+    case CMD_TEST: 
+      Test();
       break;
 
     case CMD_DEBUG: 
