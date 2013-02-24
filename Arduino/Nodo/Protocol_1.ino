@@ -1,3 +1,4 @@
+
 /*****************************************************************************************************************\
 Een RF/IR signaal kan worden ontvangen en verzonden. Er is voorzien in vier verschillende
 protocollen, PROTOCOL_1...PROTOCOL_4. Neem in tabblad 'Nodo.ino' een regel op met: 
@@ -41,7 +42,6 @@ Tips en aandachtspunten voor programmeren van een protocol:
 
 \*****************************************************************************************************************/
 
-#ifdef PROTOCOL_1  
 
 //#######################################################################################################
 //##################################### Protocol_1: KAKU      ###########################################
@@ -85,15 +85,17 @@ Tips en aandachtspunten voor programmeren van een protocol:
 #define KAKU_T            350  // us
 
 
-//??? hoe omgaan met waitfreerf;
-
  /*******************************************************************************************************\
  * Vult aan de hand van een Nodo event de RawSignal buffer zodat deze kan worden verzonden via RF of IR.
  \*******************************************************************************************************/
-void Protocol_1_EventToRawsignal(struct NodoEventStruct *Event)
+
+
+void KAKU_EventToRawsignal(struct NodoEventStruct *Event)
   {
   unsigned long Bitstream;
-
+  byte PTMF=50;
+  
+  RawSignal.Pulses[0]=PTMF;
   RawSignal.Repeats=5;                   // KAKU heeft vijf herhalingen nodig om te schakelen.
   RawSignal.Number=KAKU_CodeLength*4+2;
   Event->Port=VALUE_ALL;                 // Signaal mag naar alle door de gebruiker met [Output] ingestelde poorten worden verzonden.
@@ -103,37 +105,37 @@ void Protocol_1_EventToRawsignal(struct NodoEventStruct *Event)
   // loop de 12-bits langs en vertaal naar pulse/space signalen.  
   for (byte i=0; i<KAKU_CodeLength; i++)
     {
-    RawSignal.Pulses[4*i+1]=KAKU_T;
-    RawSignal.Pulses[4*i+2]=KAKU_T*3;
+    RawSignal.Pulses[4*i+1]=KAKU_T/PTMF;
+    RawSignal.Pulses[4*i+2]=(KAKU_T*3)/PTMF;
 
     if (((Event->Par1>>1)&1) /* Groep */ && i>=4 && i<8) 
       {
-      RawSignal.Pulses[4*i+3]=KAKU_T;
-      RawSignal.Pulses[4*i+4]=KAKU_T;
+      RawSignal.Pulses[4*i+3]=KAKU_T/PTMF;
+      RawSignal.Pulses[4*i+4]=KAKU_T/PTMF;
       } // short 0
     else
       {
       if((Bitstream>>i)&1)// 1
         {
-        RawSignal.Pulses[4*i+3]=KAKU_T*3;
-        RawSignal.Pulses[4*i+4]=KAKU_T;
+        RawSignal.Pulses[4*i+3]=(KAKU_T*3)/PTMF;
+        RawSignal.Pulses[4*i+4]=KAKU_T/PTMF;
         }
       else //0
         {
-        RawSignal.Pulses[4*i+3]=KAKU_T;
-        RawSignal.Pulses[4*i+4]=KAKU_T*3;          
+        RawSignal.Pulses[4*i+3]=KAKU_T/PTMF;
+        RawSignal.Pulses[4*i+4]=(KAKU_T*3)/PTMF;          
         }          
       }
     }
-  RawSignal.Pulses[(KAKU_CodeLength*4)+1] = KAKU_T;
-  RawSignal.Pulses[(KAKU_CodeLength*4)+2] = KAKU_T*32; // pauze tussen de pulsreeksen
+  RawSignal.Pulses[(KAKU_CodeLength*4)+1] = KAKU_T/PTMF;
+  RawSignal.Pulses[(KAKU_CodeLength*4)+2] = (KAKU_T*48)/PTMF;// space van de stopbit nodig voor pauze tussen herhalingen
   }
 
 /*********************************************************************************************\
 * Deze routine berekent de uit een RawSignal een Nodo event.
 * Geeft een false retour als geen geldig KAKU signaal uit het signaal te destilleren
 \*********************************************************************************************/
-boolean Protocol_1_RawsignalToEvent(struct NodoEventStruct *Event)
+boolean KAKU_RawsignalToEvent(struct NodoEventStruct *Event)
   {
   int i,j;
   unsigned long bitstream=0;
@@ -144,7 +146,8 @@ boolean Protocol_1_RawsignalToEvent(struct NodoEventStruct *Event)
 
   for (i=0; i<KAKU_CodeLength; i++)
     {
-    j=KAKU_T*2;        
+    j=(KAKU_T*2)/RawSignal.Pulses[0]; // Deelfactor zit is eerste element van de array.   
+    
     if      (RawSignal.Pulses[4*i+1]<j && RawSignal.Pulses[4*i+2]>j && RawSignal.Pulses[4*i+3]<j && RawSignal.Pulses[4*i+4]>j) {bitstream=(bitstream >> 1);} // 0
     else if (RawSignal.Pulses[4*i+1]<j && RawSignal.Pulses[4*i+2]>j && RawSignal.Pulses[4*i+3]>j && RawSignal.Pulses[4*i+4]<j) {bitstream=(bitstream >> 1 | (1 << (KAKU_CodeLength-1))); }// 1
     else if (RawSignal.Pulses[4*i+1]<j && RawSignal.Pulses[4*i+2]>j && RawSignal.Pulses[4*i+3]<j && RawSignal.Pulses[4*i+4]<j) {bitstream=(bitstream >> 1); Event->Par1=2;} // Short 0, Groep commando op 2e bit.
@@ -155,10 +158,10 @@ boolean Protocol_1_RawsignalToEvent(struct NodoEventStruct *Event)
   if ((bitstream&0x600)!=0x600)return false; 
 
   // Alles is in orde, bouw event op   
+  RawSignal.Repeats    = true; // het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
   Event->Par2          = bitstream & 0xFF;
   Event->Par1         |= (bitstream >> 11) & 0x01;
   Event->Command       = CMD_PROTOCOL_1;
-  Event->Flags         = TRANSMISSION_REPEATING;// het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
   Event->SourceUnit    = 0; // Komt niet van een Nodo unit af.
   return true;
   }
@@ -168,7 +171,7 @@ boolean Protocol_1_RawsignalToEvent(struct NodoEventStruct *Event)
  /*******************************************************************************************************\
  * Converteert een Nodo event naar een string volgens de KAKU adressering 'Kaku A1,On'
  \*******************************************************************************************************/
-void Protocol_1_EventToString(struct NodoEventStruct *Event, char *OutputString)
+void KAKU_EventToString(struct NodoEventStruct *Event, char *OutputString)
   {
   strcpy(OutputString,cmd2str(Event->Command));            // Commando / event 
   strcat(OutputString," ");                
@@ -195,7 +198,7 @@ void Protocol_1_EventToString(struct NodoEventStruct *Event, char *OutputString)
  * Eventueel mag in plaats van de HomeAdres notatie 'A1' een decimale waarde van 0..255
  * worden opgegeven.
  \*******************************************************************************************************/
-boolean Protocol_1_StringToEvent(char *InputString, struct NodoEventStruct *Event)
+boolean KAKU_StringToEvent(char *InputString, struct NodoEventStruct *Event)
   {
   byte grp=0,c;
   byte x=0;       // teller die wijst naar het het te behandelen teken
@@ -240,6 +243,5 @@ boolean Protocol_1_StringToEvent(char *InputString, struct NodoEventStruct *Even
   }
 
 #endif // NODO_MEGA
-#endif // PROTOCOL_1
 
 

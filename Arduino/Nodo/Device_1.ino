@@ -63,13 +63,10 @@
  * Deze funktie leest een Dallas temperatuursensor uit. De sensor moet volgens de paracitaire
  * mode worden aangesloten. De signaallijn tevens verbinden met een 4K7 naar de Vcc/+5
  * Deze fucntie kan worden gebruikt voor alle digitale poorten van de Arduino.
- * Er wordt gebruik gemaakt van de ROM-skip techniek, dus er worden geen adressen uitgelezen.
- * Dit betekent max. één sensor per poort. Dit om geheugen te besparen. De uitgelezen waarde
+ * Er wordt gebruik gemaakt van de ROM-skip techniek, dus er worden geen I2C adressen uitgelezen.
+ * Dit betekent max. één sensor per poort. Dit om (veel) geheugen te besparen. De uitgelezen waarde
  * wordt in de opgegeven variabele opgeslagen.
  * 
- * Deze funktie kan met een kleine aanpassing worden gebruikt voor zowel de DS1820 als de DS18B20
- * variant. Zie comments in de code.
- *
  * Auteur           : Nodo-team (P.K.Tonkes) www.nodo-domotca.nl
  * Datum            : Jan.2013
  * Compatibiliteit  : Vanaf Nodo build nummer 500
@@ -79,51 +76,56 @@
  \*********************************************************************************************/
 
 uint8_t DallasPin;
-boolean Device_1(struct NodoEventStruct *Event)
+void Device_1(struct NodoEventStruct *Event)
   {        
-  int DSTemp;                 // Temperature in 16-bit Dallas format.
-  byte ScratchPad[12];        // Scratchpad buffer Dallas sensor.   
-  DallasPin=Event->Par2;      // Hier heeft de user het poortnummer in opgegeven
-      
-  noInterrupts();
-  boolean present=DS_reset();DS_write(0xCC /* rom skip */); DS_write(0x44 /* start conversion */);
-  interrupts();
+  int DSTemp;                           // Temperature in 16-bit Dallas format.
+  byte ScratchPad[12];                  // Scratchpad buffer Dallas sensor.   
+  byte var=Event->Par2;                 // Variabele die gevuld moet worden.
+  static byte RepeatFirstTime=2;        // Sommige varianten van de Dallas sensor geven de eerste uitlezing een 0 retour. Daarom de eerste keer tweemaal aanroepen.
   
-  if(present)
-    {
-    delay(800);     // uitleestijd die de sensor nodig heeft
+  // De Dallas sensor kan worden aangesloten op iedere digitale poort van de Arduino. In ons geval kiezen we er voor
+  // om de sensor aan te sluiten op de Wired-Out poorten van de Nodo. Met Par2 is de Wired poort aangegeven.
+  // 1 = WiredOut poort 1.  
+  DallasPin=PIN_WIRED_OUT_1+Event->Par1-1;
 
-    noInterrupts();
-    DS_reset(); DS_write(0xCC /* rom skip */); DS_write(0xBE /* Read Scratchpad */);
-
-    // Maak de lijn floating zodat de sensor de data op de lijn kan zetten.
-    digitalWrite(DallasPin,LOW);
-    pinMode(DallasPin,INPUT);
-
-    for (byte i = 0; i < 9; i++)            // copy 8 bytes
-      ScratchPad[i] = DS_read();
-    interrupts();
-  
-    DSTemp = (ScratchPad[1] << 8) + ScratchPad[0];  
-    }
-
-  // Indien gewenst kan de struct Event worden gevuld met een nieuw event of commando. De Nodo verwerkt deze dan als een regulier
-  // event. Zorg er dan wel voor dat de struct Event correct is gevuld met Command, Par1 en Par2.
-  // We verwerken de uitgelezen waarde van de sensor door deze in een variabele te stoppen. Omdat het binnengekomen event nu geen nut 
-  // meer heeft, mag zonder bezwaar de struct Event worden gebruikt om een nieuw event te genereren, dan hoeven we geen nieuwe te declareren. 
-  // Bij terugkomst zal de Nodo dit event verwerken. Als er niets verwerkt moet worden, dan Event->Command gelijk maken aan nul.
-  // Par3 wordt gebruikt voor opslag van de waarde. Dit is een 32-bit variabele. Om een float te converteren naar een Par3 hebben we hulp nodig
-  // van de funktie float2ul()
-
-  byte VarNr = Event->Par2;                               // De originele Par1 tijdelijk opslaan want hier zit de variabelenummer in waar de gebruiker de uitgelezen waarde in wil hebben
   ClearEvent(Event);                                      // Ga uit van een default schone event. Oude eventgegevens wissen.
-  Event->Command      = CMD_VARIABLE_SET;                 // Commando "VariableSet"
-  Event->Par1         = VarNr;                            // Par1 is de variabele die we willen vullen.
-  Event->Par2         = float2ul(float(DSTemp)*0.0625); // DS18B20 variant;
-  // Event->Par2         = float2ul(float(DSTemp)*0.0625); // Deze regel gebruiken voor de oudere en minder nauwkeurige DS1820 variant  
 
-Serial.print(F("*** debug: Device_1: "));Serial.println(float(DSTemp)*0.0625); //??? Debug
-
+  do
+    {
+    noInterrupts();
+    boolean present=DS_reset();DS_write(0xCC /* rom skip */); DS_write(0x44 /* start conversion */);
+    interrupts();
+    
+    if(present)
+      {
+      delay(800);     // uitleestijd die de sensor nodig heeft
+  
+      noInterrupts();
+      DS_reset(); DS_write(0xCC /* rom skip */); DS_write(0xBE /* Read Scratchpad */);
+  
+      // Maak de lijn floating zodat de sensor de data op de lijn kan zetten.
+      digitalWrite(DallasPin,LOW);
+      pinMode(DallasPin,INPUT);
+  
+      for (byte i = 0; i < 9; i++)            // copy 8 bytes
+        ScratchPad[i] = DS_read();
+      interrupts();
+    
+      DSTemp = (ScratchPad[1] << 8) + ScratchPad[0];  
+  
+      // Indien gewenst kan de struct Event worden gevuld met een nieuw event of commando. De Nodo verwerkt deze dan als een regulier
+      // event. Zorg er dan wel voor dat de struct Event correct is gevuld met Command, Par1 en Par2.
+      // We verwerken de uitgelezen waarde van de sensor door deze in een variabele te stoppen. Omdat het binnengekomen event nu geen nut 
+      // meer heeft, mag zonder bezwaar de struct Event worden gebruikt om een nieuw event te genereren, dan hoeven we geen nieuwe te declareren. 
+      // Bij terugkomst zal de Nodo dit event verwerken. Als er niets verwerkt moet worden, dan Event->Command gelijk maken aan nul.
+      // De Par2 is een 32-bit variabele. Om een float te converteren naar een Par2 hebben we hulp nodig
+      // van de funktie float2ul()
+    
+      Event->Command      = CMD_VARIABLE_SET;                 // Commando "VariableSet"
+      Event->Par1         = var;                              // Variabele die gevuld moet worden.
+      Event->Par2         = float2ul(float(DSTemp)*0.0625);   // DS18B20 variant. Waarde terugstoppen in de variabele
+      }
+    }while(--RepeatFirstTime);
   }
   
 uint8_t DS_read(void)

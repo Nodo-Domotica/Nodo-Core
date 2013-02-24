@@ -4,19 +4,6 @@
 // In de queue geplaatste events in een slave queue kunnen (mogelijk) pas leiden tot een zendactie na vrijgave van de band.
 // 
 
-void PrintNodoEvent(char* str, struct NodoEventStruct *Event)
-  {    
-  Serial.println(str);
-  Serial.print(F("*** debug: Event->Port=             = "));Serial.println(Event->Port); //??? Debug
-  Serial.print(F("*** debug: Event->Direction         = "));Serial.println(Event->Direction); //??? Debug
-  Serial.print(F("*** debug: Event->Flags             = "));Serial.println(Event->Flags); //??? Debug
-  Serial.print(F("*** debug: Event->DestinationUnit   = "));Serial.println(Event->DestinationUnit); //??? Debug
-  Serial.print(F("*** debug: Event->SourceUnit        = "));Serial.println(Event->SourceUnit); //??? Debug
-  Serial.print(F("*** debug: Event->Checksum=         = "));Serial.println(Event->Checksum); //??? Debug
-  Serial.print(F("*** debug: Event->Command           = "));Serial.println(Event->Command); //??? Debug
-  Serial.print(F("*** debug: Event->Par1              = "));Serial.println(Event->Par1); //??? Debug
-  Serial.print(F("*** debug: Event->Par2              = "));Serial.print(Event->Par2);Serial.print(", 0x");Serial.println(Event->Par2,HEX); //??? Debug
-  }
 
 /*
 
@@ -68,4 +55,50 @@ Idee:
 
 
 */
+
+
+void PrintNodoEvent(char* str, struct NodoEventStruct *Event)
+  {    
+  Serial.println(str);
+  Serial.print(F("*** debug: Event->Port=             = "));Serial.println(Event->Port); //??? Debug
+  Serial.print(F("*** debug: Event->Direction         = "));Serial.println(Event->Direction); //??? Debug
+  Serial.print(F("*** debug: Event->Flags             = "));Serial.println(Event->Flags); //??? Debug
+  Serial.print(F("*** debug: Event->DestinationUnit   = "));Serial.println(Event->DestinationUnit); //??? Debug
+  Serial.print(F("*** debug: Event->SourceUnit        = "));Serial.println(Event->SourceUnit); //??? Debug
+  Serial.print(F("*** debug: Event->Checksum=         = "));Serial.println(Event->Checksum); //??? Debug
+  Serial.print(F("*** debug: Event->Command           = "));Serial.println(Event->Command); //??? Debug
+  Serial.print(F("*** debug: Event->Par1              = "));Serial.println(Event->Par1); //??? Debug
+  Serial.print(F("*** debug: Event->Par2              = "));Serial.print(Event->Par2);Serial.print(", 0x");Serial.println(Event->Par2,HEX); //??? Debug
+  }
+
+void RawSignalShow(void)
+  {    
+  int x,y;
+  byte PTMF=RawSignal.Pulses[0];
+  
+  Serial.println(F("==================================== RawSignal ==================================="));
+
+  Serial.print(F("Resolution="));
+  Serial.println(RawSignal.Pulses[0]);
+
+  Serial.print(RawSignal.Number/2);
+  Serial.print(F(" bits received. Pulses (uSec): "));
+  for(x=1;x<=RawSignal.Number;x++)
+    {
+    Serial.print(RawSignal.Pulses[x]*PTMF); 
+    Serial.write(',');       
+    }
+  Serial.println();
+
+  const int dev=250;  
+  for(x=1;x<=RawSignal.Number;x+=2)
+    {
+    for(y=1+(RawSignal.Pulses[x]*PTMF)/dev; y;y--)
+      Serial.write('M');  // Mark  
+    for(y=1+(RawSignal.Pulses[x+1]*PTMF)/dev; y;y--)
+      Serial.write('_');    // Space  
+    }
+  Serial.println();
+  Serial.println(F("=================================================================================="));
+  }
 

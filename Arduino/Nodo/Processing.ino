@@ -64,13 +64,13 @@ byte ProcessEvent1(struct NodoEventStruct *Event)
     TempEvent.Par1                  = RequestForConfirm;
 
     // Stel de poortsettings veilig zodat ze tijdelijk verzet kunnen worden.
-    byte OrgWaitFreeRF=Settings.WaitFreeRF;    
-    Settings.WaitFreeRF  = VALUE_ON;
+    byte OrgWaitFree=Settings.WaitFree;    
+    Settings.WaitFree  = VALUE_ON;
 
     SendEvent(&TempEvent, false,false);
 
     // Zet originele instelligen van de gebruiker terug.
-    Settings.WaitFreeRF  = OrgWaitFreeRF;
+    Settings.WaitFree  = OrgWaitFree;
     RequestForConfirm=0;
     }
   return error;
@@ -112,11 +112,10 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
     }
 
   #ifdef NODO_MEGA
-  if(Event->Command==CMD_RAWSIGNAL && Settings.RawSignalSave==VALUE_ON)
-    {
-    if(!RawSignalExist(Event->Par2))
-      RawSignalSave(Event->Par2);
-    }
+  if(bitRead(HW_Config,HW_SDCARD))
+    if(Event->Command==CMD_RAWSIGNAL && Settings.RawSignalSave==VALUE_ON)
+      if(!RawSignalExist(Event->Par2))
+        RawSignalSave(Event->Par2);
   #endif    
   
 //  #ifdef USER_PLUGIN
@@ -310,11 +309,11 @@ byte QueueSend(byte DestUnit)
 
   if(Port!=0)
     {
-    // Stel de WaitFreeRF settings veilig zodat ze tijdelijk verzet kunnen worden.
-    // Doe eenmaal een WaitFreeRF, daarna alle events als 1 reeks verzenden.
+    // Stel de WaitFree settings veilig zodat ze tijdelijk verzet kunnen worden.
+    // Doe eenmaal een WaitFree, daarna alle events als 1 reeks verzenden.
     
-    byte OrgWaitFreeRF=Settings.WaitFreeRF;
-    Settings.WaitFreeRF=VALUE_ON;
+    byte OrgWaitFree=Settings.WaitFree;
+    Settings.WaitFree=VALUE_ON;
 
     // Initialiseer een Event en Transmissie
     struct NodoEventStruct Event;
@@ -326,9 +325,9 @@ byte QueueSend(byte DestUnit)
     // Verzend alle events uit de queue. Alleen de bestemmings Nodo zal deze events in de queue plaatsen
     for(x=0;x<QueuePosition;x++)
       {
-      // Alleen de eerste vooraf laten gaan door een WaitFreeRF;
+      // Alleen de eerste vooraf laten gaan door een WaitFree;
       if(x>0)
-        Settings.WaitFreeRF=VALUE_OFF;
+        Settings.WaitFree=VALUE_OFF;
             
       // laatste verzonden event markeren als laatste in de sequence.
       if(x==QueuePosition-1)
@@ -352,7 +351,7 @@ byte QueueSend(byte DestUnit)
     QueuePosition=0;           
   
     // Zet originele instelligen van de gebruiker terug.
-    Settings.WaitFreeRF  = OrgWaitFreeRF;
+    Settings.WaitFree  = OrgWaitFree;
   
     // De ontvangende Nodo verzendt als het goed is een bevestiging dat het is ontvangen en het aantal commando's
     // wacht hierop, maar stop de voorbijkomende events in de queue.

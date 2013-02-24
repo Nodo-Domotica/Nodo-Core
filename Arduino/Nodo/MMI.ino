@@ -300,6 +300,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
 
       case VALUE_BUILD:
       case VALUE_HWCONFIG:
+      case VALUE_FREEMEM:
       case CMD_PULSE_TIME:
       case CMD_PULSE_COUNT:
         ParameterToView[0]=PAR2_INT;
@@ -613,6 +614,7 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_USERPLUGIN: 
           case CMD_CLOCK_EVENT_DAYLIGHT:
           case CMD_STATUS:
+          case CMD_TEST:
           case CMD_DELAY:
           case CMD_SOUND: 
           case CMD_USEREVENT:
@@ -742,7 +744,6 @@ int ExecuteLine(char *Line, byte Port)
 
             if(GetArgv(Command,TmpStr1,6))
               EventToExecute.Par2|=(str2int(TmpStr1)&0xff)<<24;
-PrintNodoEvent("Device",&EventToExecute);//???
             break;            
           
           case CMD_SEND_EVENT:
@@ -1081,6 +1082,9 @@ PrintNodoEvent("Device",&EventToExecute);//???
               strcat(TmpStr1,".dat");
               FileErase(TmpStr1);
               }
+            else
+              FileList("",true);
+
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
     
@@ -1090,6 +1094,9 @@ PrintNodoEvent("Device",&EventToExecute);//???
               sprintf(TmpStr2,"%s/%s.raw",ProgmemString(Text_28),TmpStr1);
               FileErase(TmpStr2);
               }
+            else
+              FileList("/RAW",true);
+              
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
     
@@ -1252,12 +1259,12 @@ PrintNodoEvent("Device",&EventToExecute);//???
             }            
 
           case CMD_RAWSIGNAL_LIST:
-            FileList("/RAW");
+            FileList("/RAW",false);
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
 
           case CMD_FILE_LIST:
-            FileList("/");
+            FileList("/",false);
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
 

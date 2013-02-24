@@ -1,4 +1,4 @@
-#define NODO_BUILD          506//??? ophogen.
+#define NODO_BUILD          507//??? ophogen.
 #define SETTINGS_VERSION     29
 #include <EEPROM.h>
 #include <Wire.h>
@@ -87,7 +87,7 @@ prog_char PROGMEM Cmd_047[]="VariableSetWiredAnalog";
 prog_char PROGMEM Cmd_048[]="ClientIP";
 prog_char PROGMEM Cmd_049[]="Password";
 prog_char PROGMEM Cmd_050[]="EventlistFile";
-prog_char PROGMEM Cmd_051[]="";
+prog_char PROGMEM Cmd_051[]="Test"; //??? commando voor testdoeleinden
 prog_char PROGMEM Cmd_052[]="WaitEvent";
 prog_char PROGMEM Cmd_053[]="Lock";
 prog_char PROGMEM Cmd_054[]="Status"; 
@@ -258,7 +258,7 @@ prog_char PROGMEM Cmd_173[]="DaylightSaving";
 prog_char PROGMEM Cmd_174[]="EventlistCount";
 prog_char PROGMEM Cmd_175[]="Queue";
 prog_char PROGMEM Cmd_176[]="HWConfig";
-prog_char PROGMEM Cmd_177[]="";
+prog_char PROGMEM Cmd_177[]="FreeMem";
 prog_char PROGMEM Cmd_178[]="ThisUnit";
 prog_char PROGMEM Cmd_179[]="Event";
 prog_char PROGMEM Cmd_180[]="Par1";
@@ -386,7 +386,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_CLIENT_IP                   48
 #define CMD_PASSWORD                    49
 #define CMD_EVENTLIST_FILE              50
-#define CMD_RES51                       51
+#define CMD_TEST                        51
 #define CMD_WAIT_EVENT                  52
 #define CMD_LOCK                        53
 #define CMD_STATUS                      54
@@ -520,7 +520,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define VALUE_EVENTLIST_COUNT          174
 #define VALUE_SOURCE_QUEUE             175
 #define VALUE_HWCONFIG                 176
-#define VALUE_res                      177
+#define VALUE_FREEMEM                  177
 #define VALUE_THISUNIT                 178
 #define VALUE_RECEIVED_EVENT           179
 #define VALUE_RECEIVED_PAR1            180
@@ -568,7 +568,6 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define BLUE                         3  // Led = Blauw
 #define BAUD                     19200 // Baudrate voor seriële communicatie.
 #define UNIT_MAX                    32 // Hoogst mogelijke unit nummer van een Nodo
-#define ALARM_MAX                    8 // aantal alarmen voor de user
 #define SERIAL_TERMINATOR_1       0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>
 #define SERIAL_TERMINATOR_2       0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
 #define Loop_INTERVAL_1             10 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
@@ -578,11 +577,9 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define SIGNAL_TYPE_UNKNOWN          0 // Type ontvangen of te verzenden signaal in de eventcode
 #define SIGNAL_TYPE_NODO             1 // Type ontvangen of te verzenden signaal in de eventcode
 #define SIGNAL_TYPE_NODO_SYSTEM      2  // Type ontvangen of te verzenden signaal in de eventcode
-//#define SIGNAL_TYPE_KAKU             2 // Type ontvangen of te verzenden signaal in de eventcode
 
 #define NODO_TYPE_EVENT              1
 #define NODO_TYPE_COMMAND            2
-#define SIGNAL_TYPE_NEWKAKU          3 // Type ontvangen of te verzenden signaal in de eventcode
 
 // Hardware in gebruik: Bits worden geset in de variabele HW_Config, uit te lezen met [Status HWConfig]
 #define HW_BIC_0        0
@@ -612,6 +609,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define MACRO_EXECUTION_DEPTH       10 // maximale nesting van macro's.
 #define INPUT_BUFFER_SIZE          128  // Buffer waar de karakters van de seriele/IP poort in worden opgeslagen.
 #define TIMER_MAX                   15  // aantal beschikbare timers voor de user, gerekend vanaf 1
+#define ALARM_MAX                    8 // aantal alarmen voor de user
 #define USER_VARIABLES_MAX          15  // aantal beschikbare gebruikersvariabelen voor de user.
 #define PULSE_IRQ                    5  // IRQ verbonden aan de IR_RX_DATA pen 18 van de Mega
 #define PIN_BIC_0                   26 // Board Identification Code: bit-0
@@ -706,12 +704,12 @@ struct SettingsStruct
   byte    WiredInputPullUp[WIRED_PORTS];
   byte    TransmitIR;
   byte    TransmitRF;
-  byte    WaitFreeRF;
+  byte    WaitFree;
   byte    Debug;                                            // Weergeven van extra gegevens t.b.v. beter inzicht verloop van de verwerking
   unsigned long Lock;                                       // bevat de pincode waarmee IR/RF ontvangst is geblokkeerd. Bit nummer hoogste bit wordt gebruiktvoor in/uitschakelen.
-  unsigned long Alarm[ALARM_MAX-1];                         // Instelbaar alarm
   
   #ifdef NODO_MEGA
+  unsigned long Alarm[ALARM_MAX-1];                         // Instelbaar alarm
   byte    TransmitIP;                                       // Definitie van het gebruik van HTTP-communicatie via de IP-poort: [Off] of [On]
   char    Password[26];                                     // String met wachtwoord.
   char    ID[10];                                           // ID waar de Nodo uniek mee geïdentificeerd kan worden in een netwerk
@@ -740,7 +738,6 @@ struct SettingsStruct
   #define TRANSMISSION_SYSTEM      16  // System event
   #define TRANSMISSION_COMMAND     32  // 
   #define TRANSMISSION_EVENT       64  // 
-  #define TRANSMISSION_REPEATING  128  // 
 
   // De Nodo kent naast gebruikers commando's en events eveneens Nodo interne events
   #define SYSTEM_COMMAND_CONFIRMED  1  // Bevestiging op verzoek van een TRANSMISSION_CONFIRM. Par1 bevat aantal verwerkte events. 
@@ -771,7 +768,6 @@ unsigned long PulseTime=0L;                                 // Tijdsduur tussen 
 unsigned long UserTimer[TIMER_MAX];                         // Timers voor de gebruiker.
 boolean WiredInputStatus[WIRED_PORTS];                      // Status van de WiredIn worden hierin opgeslagen.
 boolean WiredOutputStatus[WIRED_PORTS];                     // Wired variabelen.
-byte AlarmPrevious[ALARM_MAX];                              // Bevat laatste afgelopen alarm. Ter voorkoming dat alarmen herhaald aflopen.
 byte DaylightPrevious;                                      // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet.
 int ExecutionDepth=0;                                       // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's.
 void(*Reboot)(void)=0;                                       // reset functie op adres 0.
@@ -782,6 +778,7 @@ struct NodoEventStruct LastReceived;                        // Laatst ontvangen 
 byte RequestForConfirm=0;                                   // Als ongelijk nul, dan heeft deze Nodo een verzoek ontvangen om een systemevent 'Confirm' te verzenden. Waarde wordt in Par1 meegezonden.
     
 #ifdef NODO_MEGA //??? welke globalen kunnen verhuizen naar een funktie???
+byte AlarmPrevious[ALARM_MAX];                              // Bevat laatste afgelopen alarm. Ter voorkoming dat alarmen herhaald aflopen.
 byte BIC=0;                                                 // Board Identification Code: identificeert de hardware uitvoering van de Nodo
 uint8_t MD5HashCode[16];                                    // tabel voor berekenen van MD5 hash codes.
 int CookieTimer;                                            // Seconden teller die bijhoudt wanneer er weer een nieuw Cookie naar de WebApp verzonden moet worden.
@@ -805,18 +802,20 @@ File HTTPResultFile;                                            // Filehandler v
 // RealTimeclock DS1307
 struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,DaylightSaving,DaylightSavingSetMonth,DaylightSavingSetDate; int Year;}Time; // Hier wordt datum & tijd in opgeslagen afkomstig van de RTC.
 
-#define RAW_BUFFER_SIZE            256 // Maximaal aantal te ontvangen 128 bits.
+#define RAW_BUFFER_SIZE            256 // Maximaal aantal te ontvangen 128 bits.???
 struct RawsignalStruct
   {
-  unsigned int Pulses[RAW_BUFFER_SIZE+2];                   // Tabel met de gemeten pulsen in microseconden. eerste waarde [0] wordt NIET gebruikt. (legacy redenen).
+  byte Pulses[RAW_BUFFER_SIZE+2];                           // Tabel met de gemeten pulsen in microseconden. eerste waarde [0] bevat de vermenigingsvuldigingsfactor PTMF.
   byte Source;                                              // Bron waar het signaal op is binnengekomen.
   int Number;                                               // aantal bits, maal twee omdat iedere bit een mark en een space heeft.
   byte Repeats;                                             // Aantal maal dat de pulsreeks verzonden moet worden bij een zendactie.
+  byte Multiply;                                            // Pulses[] * Multiply is de echte tijd van een puls in microseconden
   }RawSignal;
 
 void setup() 
   {    
   int x;
+  struct NodoEventStruct TempEvent;
 
   Serial.begin(BAUD);  // Initialiseer de seriële poort
 
@@ -828,11 +827,13 @@ void setup()
     pinMode(PIN_BIC_0+x,INPUT_PULLUP);
     HW_Config|=digitalRead(PIN_BIC_0+x)<<x;
     }  
-  #endif
 
   // Zet de alarmen op nog niet afgegaan.
   for(x=0;x<ALARM_MAX;x++)
     AlarmPrevious[x]=0xff; // Deze waarde kan niet bestaan en voldoet dus.
+
+  #endif
+
 
   // Initialiseer in/output poorten.
   pinMode(PIN_IR_RX_DATA, INPUT);
@@ -908,6 +909,7 @@ void setup()
   //Lees de tijd uit de RTC en zorg ervoor dat er niet direct na een boot een CMD_CLOCK_DAYLIGHT event optreedt
   Wire.begin(Settings.Unit + I2C_START_ADDRESS);
   ClockRead();
+
   #ifdef NODO_MEGA
   SetDaylight();
   DaylightPrevious=Time.Daylight;
@@ -951,8 +953,7 @@ void setup()
   #endif
 
   bitWrite(HW_Config,HW_I2C,true); // Zet I2C aan zodat het boot event op de I2C-bus wordt verzonden. Hiermee worden bij de andere Nodos de I2C geactiveerd.
-
-  struct NodoEventStruct TempEvent;
+  
   ClearEvent(&TempEvent);
   TempEvent.Direction=VALUE_DIRECTION_INPUT;
   TempEvent.Port=VALUE_ALL;
@@ -1333,17 +1334,17 @@ void loop()
       if(RebootNodo)
         Reboot();
 
-      // ALARM: **************** Genereer event als één van de alarmen afgelopen is ***********************    
-      if(bitRead(HW_Config,HW_CLOCK))//check of de klok aanwzig is
-        if(ScanAlarm(&ReceivedEvent)) 
-          ProcessEvent1(&ReceivedEvent); // verwerk binnengekomen event.
-
       // loop periodiek langs de userplugin
       #ifdef USER_PLUGIN
         UserPlugin_Periodically();
       #endif
 
       #ifdef NODO_MEGA
+      // ALARM: **************** Genereer event als één van de alarmen afgelopen is ***********************    
+      if(bitRead(HW_Config,HW_CLOCK))//check of de klok aanwzig is
+        if(ScanAlarm(&ReceivedEvent)) 
+          ProcessEvent1(&ReceivedEvent); // verwerk binnengekomen event.
+
       // Terminal onderhoudstaken
       // tel seconden terug nadat de gebruiker driemaal foutief wachtwoord ingegeven
       if(TerminalLocked>PASSWORD_MAX_RETRY)
