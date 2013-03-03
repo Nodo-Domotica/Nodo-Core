@@ -1,4 +1,5 @@
-#define NODO_BUILD          507//??? ophogen.
+
+#define NODO_BUILD          508//??? ophogen.
 #define SETTINGS_VERSION     29
 #include <EEPROM.h>
 #include <Wire.h>
@@ -50,7 +51,7 @@ prog_char PROGMEM Cmd_016[]="RawSignalSave";
 prog_char PROGMEM Cmd_017[]="RawSignalSend";
 prog_char PROGMEM Cmd_018[]="Reset";
 prog_char PROGMEM Cmd_019[]="";
-prog_char PROGMEM Cmd_020[]="";
+prog_char PROGMEM Cmd_020[]=""; 
 prog_char PROGMEM Cmd_021[]="Delay";
 prog_char PROGMEM Cmd_022[]="SendTo";
 prog_char PROGMEM Cmd_023[]="SimulateDay";
@@ -132,30 +133,10 @@ prog_char PROGMEM Cmd_092[]="";
 prog_char PROGMEM Cmd_093[]="";
 prog_char PROGMEM Cmd_094[]="";
 prog_char PROGMEM Cmd_095[]="";
-
-#ifdef PROTOCOL_1
-prog_char PROGMEM Cmd_096[]="Send"PROTOCOL_1;
-#else
 prog_char PROGMEM Cmd_096[]="";
-#endif
-
-#ifdef PROTOCOL_2
-prog_char PROGMEM Cmd_097[]="Send"PROTOCOL_2;
-#else
 prog_char PROGMEM Cmd_097[]="";
-#endif
-
-#ifdef PROTOCOL_3
-prog_char PROGMEM Cmd_098[]="Send"PROTOCOL_3;
-#else
 prog_char PROGMEM Cmd_098[]="";
-#endif
-
-#ifdef PROTOCOL_4
-prog_char PROGMEM Cmd_099[]="Send"PROTOCOL_4;
-#else
 prog_char PROGMEM Cmd_099[]="";
-#endif
 
 // events:
 #define RANGE_EVENT 100 // alle codes groter of gelijk aan deze waarde zijn events.
@@ -205,30 +186,10 @@ prog_char PROGMEM Cmd_142[]="";
 prog_char PROGMEM Cmd_143[]="";
 prog_char PROGMEM Cmd_144[]="";
 prog_char PROGMEM Cmd_145[]="";
-
-#ifdef PROTOCOL_1
-prog_char PROGMEM Cmd_146[]=PROTOCOL_1; 
-#else
-prog_char PROGMEM Cmd_146[]=""; 
-#endif
-
-#ifdef PROTOCOL_2
-prog_char PROGMEM Cmd_147[]=PROTOCOL_2; 
-#else
-prog_char PROGMEM Cmd_147[]=""; 
-#endif
-
-#ifdef PROTOCOL_3
-prog_char PROGMEM Cmd_148[]=PROTOCOL_3; 
-#else
-prog_char PROGMEM Cmd_148[]=""; 
-#endif
-
-#ifdef PROTOCOL_4
-prog_char PROGMEM Cmd_149[]=PROTOCOL4; 
-#else
-prog_char PROGMEM Cmd_149[]=""; 
-#endif
+prog_char PROGMEM Cmd_146[]="";
+prog_char PROGMEM Cmd_147[]="";
+prog_char PROGMEM Cmd_148[]="";
+prog_char PROGMEM Cmd_149[]="";
 
 // Waarden:
 prog_char PROGMEM Cmd_150[]="Off";
@@ -298,6 +259,7 @@ prog_char PROGMEM Cmd_213[]="Data lost during SendTo.";
 prog_char PROGMEM Cmd_214[]="SDCard error.";
 prog_char PROGMEM Cmd_215[]="Aborted.";
 prog_char PROGMEM Cmd_216[]="RawSignal saved.";
+
 
 // tabel die refereert aan de commando strings
 PROGMEM const char *CommandText_tabel[]={
@@ -412,7 +374,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_PORT_CLIENT                 74
 #define CMD_CLOCK_SYNC                  75
 #define CMD_res76                       76
-#define CMD_DEVICE                      77
+#define CMD_res77                       77
 #define CMD_PULSE_COUNT                 78
 #define CMD_REBOOT                      79
 #define CMD_ECHO                        80
@@ -431,10 +393,10 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_res93                       93
 #define CMD_res94                       94
 #define CMD_res95                       95
-#define CMD_PROTOCOL_1_SEND             96
-#define CMD_PROTOCOL_2_SEND             97
-#define CMD_PROTOCOL_3_SEND             98
-#define CMD_PROTOCOL_4_SEND             99
+#define CMD_P001_SEND                   96
+#define CMD_P002_SEND                   97
+#define CMD_P003_SEND                   98
+#define CMD_P004_SEND                   99
 #define LAST_COMMAND                    99 // Laatste COMMANDO uit de commando tabel
 
 // events:
@@ -485,10 +447,10 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_RES_EVENT_143              143
 #define CMD_RES_EVENT_144              144
 #define CMD_RES_EVENT_145              145
-#define CMD_PROTOCOL_1                 146
-#define CMD_PROTOCOL_2                 147
-#define CMD_PROTOCOL_3                 148
-#define CMD_PROTOCOL_4                 149
+#define CMD_P001_EVENT                 146
+#define CMD_P002_EVENT                 147
+#define CMD_P003_EVENT                 148
+#define CMD_P004_EVENT                 149
 #define LAST_EVENT                     149 // Laatste EVENT uit de commando tabel
                                         
 // Waarden:
@@ -562,22 +524,24 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define MESSAGE_16                     216
 #define LAST_VALUE                     216 // laatste VALUE uit de commando tabel
 #define COMMAND_MAX                    216 // hoogste commando
+#define CMD_DEVICE_FIRST               220
 
+#define DEVICE_MMI_IN                1
+#define DEVICE_MMI_OUT               2
+#define DEVICE_EVENT_IN              3
+#define DEVICE_EVENT_OUT             4 
 #define RED                          1  // Led = Rood
 #define GREEN                        2  // Led = Groen
 #define BLUE                         3  // Led = Blauw
-#define BAUD                     19200 // Baudrate voor seriële communicatie.
 #define UNIT_MAX                    32 // Hoogst mogelijke unit nummer van een Nodo
 #define SERIAL_TERMINATOR_1       0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>
 #define SERIAL_TERMINATOR_2       0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
 #define Loop_INTERVAL_1             10 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
 #define Loop_INTERVAL_2            100 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
 #define Loop_INTERVAL_3           1000 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
-
 #define SIGNAL_TYPE_UNKNOWN          0 // Type ontvangen of te verzenden signaal in de eventcode
 #define SIGNAL_TYPE_NODO             1 // Type ontvangen of te verzenden signaal in de eventcode
 #define SIGNAL_TYPE_NODO_SYSTEM      2  // Type ontvangen of te verzenden signaal in de eventcode
-
 #define NODO_TYPE_EVENT              1
 #define NODO_TYPE_COMMAND            2
 
@@ -604,6 +568,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define BIC_HWMESH_NES_V1X     1  // Nodo Ethernet Shield V1.x met Aurel tranceiver. Vereist speciale pulse op PIN_BSF_0 voor omschakelen tussen Rx en Tx.
 
 #ifdef NODO_MEGA // Definities voor de Nodo-Mega variant.
+#define DEVICE_MAX                  32 // Maximaal aantal devices 
 #define EVENTLIST_MAX              250 // maximaal aantal regels in de eventlist
 #define EVENT_QUEUE_MAX             16 // maximaal aantal plaatsen in de queue.
 #define MACRO_EXECUTION_DEPTH       10 // maximale nesting van macro's.
@@ -659,13 +624,11 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define TERMINAL_PORT               23 // TelNet poort. Standaard 23
 #define EEPROM_SIZE               4096 // Groote van het EEPROM geheugen.
 #define WIRED_PORTS                  8 // aantal WiredIn/WiredOut poorten
-#define PASSWORD_MAX_RETRY           5 // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
-#define PASSWORD_TIMEOUT           300 // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
-#define TERMINAL_TIMEOUT           600 // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
 #define COOKIE_REFRESH_TIME         60 // Tijd in sec. tussen automatisch verzenden van een nieuw Cookie als de beveiligde HTTP modus is inschakeld.
 #define SERIAL_STAY_SHARP_TIME      50 // Tijd in mSec. dat na ontvangen van een tken uitsluitend naar Serial als input wordt geluisterd. 
 
 #else // als het voor de Nodo-Small variant is
+#define DEVICE_MAX                   8 // Maximaal aantal devices 
 #define EVENTLIST_MAX               75 // maximaal aantal regels in de eventlist
 #define EVENT_QUEUE_MAX              8 // maximaal aantal plaatsen in de queue
 #define MACRO_EXECUTION_DEPTH        4 // maximale nesting van macro's.
@@ -776,7 +739,9 @@ float UserVar[USER_VARIABLES_MAX];                          // Gebruikers variab
 unsigned long HW_Config=0;                                  // Hardware configuratie zoals gedetecteerd door de Nodo. 
 struct NodoEventStruct LastReceived;                        // Laatst ontvangen event
 byte RequestForConfirm=0;                                   // Als ongelijk nul, dan heeft deze Nodo een verzoek ontvangen om een systemevent 'Confirm' te verzenden. Waarde wordt in Par1 meegezonden.
-    
+boolean (*Device_ptr[DEVICE_MAX])(byte, struct NodoEventStruct*, char*);
+byte Device_id[DEVICE_MAX];
+
 #ifdef NODO_MEGA //??? welke globalen kunnen verhuizen naar een funktie???
 byte AlarmPrevious[ALARM_MAX];                              // Bevat laatste afgelopen alarm. Ter voorkoming dat alarmen herhaald aflopen.
 byte BIC=0;                                                 // Board Identification Code: identificeert de hardware uitvoering van de Nodo
@@ -818,6 +783,11 @@ void setup()
   struct NodoEventStruct TempEvent;
 
   Serial.begin(BAUD);  // Initialiseer de seriële poort
+
+
+  // Alle devices moeten aan te roepen zijn vanuit de Devicenummers zoals die in de events worden opgegeven
+  // initialiseer de lijst met pointers naar de device funkties.
+  DeviceWrapper();
 
   #ifdef NODO_MEGA
   // initialiseer BIC-lijnen en lees de BIC uit/

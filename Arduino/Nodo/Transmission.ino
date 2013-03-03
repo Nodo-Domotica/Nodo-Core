@@ -42,26 +42,10 @@ boolean AnalyzeRawSignal(struct NodoEventStruct *E)
   if(Transmission_NodoOnly)
     return false;
 
-#ifdef PROTOCOL_1
-  if(Protocol_1_RawsignalToEvent(E))         // Of protocol nummer 1
-    return true;
-#endif
-
-#ifdef PROTOCOL_2
-  if(Protocol_2_RawsignalToEvent(E))         // Of protocol nummer 2
-    return true;
-#endif
-
-#ifdef PROTOCOL_3
-  if(Protocol_3_RawsignalToEvent(E))         // Of protocol nummer 3
-    return true;
-#endif
-
-#ifdef PROTOCOL_4
-  if(Protocol_4_RawsignalToEvent(E))         // Of protocol nummer 4
-    return true;
-#endif
-
+  for(byte x=0;x<DEVICE_MAX && E->Command==0; x++)
+    if(Device_ptr[x]!=0)
+      if(Device_ptr[x](DEVICE_EVENT_IN,E,0))
+        return true;
 
   if(RawSignal_2_32bit(E))
     return true;

@@ -9,7 +9,7 @@
 
 
 Serial.print(F("*** debug: "));Serial.println(); //??? Debug
-PrintNodoEventStruct(Event,"");//???
+PrintNodoEvent(Event,"");//???
 
 Nodo adressering en event uitwisseling:
 

@@ -80,6 +80,9 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
   {
   int x,y;
   byte error=0;
+  
+ if(Event->Command==0)
+   return error;
 
   ExecutionDepth++;
   
@@ -101,10 +104,8 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
         case CMD_STATUS:              // uitvragen status is onschuldig en kan handig zijn.
         case CMD_MESSAGE:             // Voorkomt dat een message van een andere Nodo een error genereert
         case CMD_BOOT_EVENT:          // Voorkomt dat een boot van een adere Nodo een error genereert
-        case CMD_PROTOCOL_1:
-        case CMD_PROTOCOL_2:
           break;
-          
+        //??? devices hier nog opnemen!          
         default:
           error=MESSAGE_09;    
         }
@@ -138,11 +139,18 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
     else
       {
       // ############# Verwerk event ################  
+
+      // kijk of het een Device betreft. De device ID's bevinden zich in een kleine tabel. Zoek din de tabel naar het betreffende ID en voer 
+      // de DEVICE_EVENT_OUT opdracht uit. Als het betreffende device geen DEVICE_EVENT_OUT code heeft, dan wordt er ook niets uitgevoerd.
+      for(x=0; x<DEVICE_MAX; x++)
+        if(Device_id[x]==(Event->Command-CMD_DEVICE_FIRST))
+          Device_ptr[x](DEVICE_EVENT_OUT,Event,0);
+
       // als het een Nodo event is en een geldig commando, dan deze uitvoeren
       if(NodoType(Event)==NODO_TYPE_COMMAND)
         { // Er is een geldig Commando voor deze Nodo binnengekomen                   
         error=ExecuteCommand(Event);
-        }
+        }        
       else
         {// Er is een Event binnengekomen  
         // loop de gehele eventlist langs om te kijken of er een treffer is.   
@@ -177,7 +185,7 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
               }
             }
           }
-        }
+        }      
       }
     }
 
