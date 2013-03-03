@@ -1,5 +1,5 @@
 
-#define NODO_BUILD          508//??? ophogen.
+#define NODO_BUILD          509//??? ophogen.
 #define SETTINGS_VERSION     29
 #include <EEPROM.h>
 #include <Wire.h>
