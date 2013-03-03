@@ -212,44 +212,16 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
   int x;
   EventString[0]=0;
 
-  // Enkele events/commando's hebben een geheel afwijkende weergave. Deze worden hieronder afzonderlijk opgebouwd.
-  // De overige hebben overeenkomsten en worden als groep gelijk opgebouwd.
-  switch(Event->Command)
-    {
-    #ifdef PROTOCOL_1
-    case CMD_PROTOCOL_1:
-    case CMD_PROTOCOL_1_SEND:
-      Protocol_1_EventToString(Event, EventString);
-      break;
-    #endif      
-
-    #ifdef PROTOCOL_2
-    case CMD_PROTOCOL_2:
-    case CMD_PROTOCOL_2_SEND:
-      Protocol_2_EventToString(Event, EventString);
-      break;
-    #endif      
-
-    #ifdef PROTOCOL_3
-    case CMD_PROTOCOL_3:
-    case CMD_PROTOCOL_3_SEND:
-      Protocol_3_EventToString(Event, EventString);
-      break;
-    #endif      
-
-    #ifdef PROTOCOL_4
-    case CMD_PROTOCOL_4:
-    case CMD_PROTOCOL_4_SEND:
-      Protocol_4_EventToString(Event, EventString);
-      break;
-    #endif      
-    }
-
-// Er kunnen een aantal parameters worden weergegeven. In een kleine tabel wordt aangegeven op welke wijze de parameters aan de gebruiker
-// moeten worden getoond. Het is niet per defiitie zo dat de interne Par1, Par2 en Par3 ook dezelfe parameters zijn die aan de gebruiker
-// worden getoond. 
-
+  // Er kunnen een aantal parameters worden weergegeven. In een kleine tabel wordt aangegeven op welke wijze de parameters aan de gebruiker
+  // moeten worden getoond. Het is niet per defiitie zo dat de interne Par1, Par2 en Par3 ook dezelfe parameters zijn die aan de gebruiker
+  // worden getoond.   
   byte ParameterToView[8]={0,0,0,0,0,0,0,0};
+
+  // Devices hebben een eigen MMI. Loop de devices langs. Als er een device is die hoort bij het opgegeven command
+  // dan zal de string worden teruggegeven met de correct ingevulde MMI
+  for(x=0;x<DEVICE_MAX && EventString[0]==0; x++)
+    if(Device_ptr[x]!=0)
+      Device_ptr[x](DEVICE_MMI_OUT,Event,EventString);
 
   if(EventString[0]==0)
     {
@@ -293,7 +265,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_WIRED_SMITTTRIGGER:
       case CMD_WIRED_THRESHOLD:
       case CMD_WIRED_ANALOG:
-      case CMD_DEVICE:
         ParameterToView[0]=PAR1_INT;
         ParameterToView[1]=PAR2_INT;
         break;
@@ -575,17 +546,12 @@ int ExecuteLine(char *Line, byte Port)
         {
         Command[CommandPos]=0;
         CommandPos=0;
-/// Serial.print(F("*** debug: Command="));Serial.println(Command); //??? Debug
         ClearEvent(&EventToExecute);
         EventToExecute.Port=Port;
         
-//        // string met commando compleet
-//        if(GetArgv(Command,TmpStr1,1));
-//          v=str2int(TmpStr1); // als hex event dan is v gevuld met waarde
-//  ??? HEX-Events nog uitwerken!
-
         GetArgv(Command,TmpStr1,1);
-        EventToExecute.Command=str2cmd(TmpStr1); // als bestaand commando of event, dan EventToExecute.Command gevuld met waarde
+        EventToExecute.Command=str2cmd(TmpStr1); 
+        
         
         if(GetArgv(Command,TmpStr1,2))
           {
@@ -600,7 +566,7 @@ int ExecuteLine(char *Line, byte Port)
           if(!EventToExecute.Par2)
             EventToExecute.Par2=str2int(TmpStr1);
           }        
-
+        
         switch(EventToExecute.Command)
           {
           //test; geen, altijd goed
@@ -728,23 +694,6 @@ int ExecuteLine(char *Line, byte Port)
               error=MESSAGE_02;
             break;
 
-
-          case CMD_DEVICE:
-            // Par1 wordt gebruikt om het device nummer aan te geven. Par2, 3, 4 en 5 kunnen optioneel ook worden opgegeven
-            // Deze plaatsen we echter in unsigned long NodoEventStruct.Par2. Worden Par3,4 en 5 niet opgegeven dan
-            // Kan voor Pa2 het volledige 32-bit bereik worden benut.
-            if(EventToExecute.Par1<1 || EventToExecute.Par1>4)
-              error=MESSAGE_02;
-
-            if(GetArgv(Command,TmpStr1,4))
-              EventToExecute.Par2|=(str2int(TmpStr1)&0xff)<<8;
-
-            if(GetArgv(Command,TmpStr1,5))
-              EventToExecute.Par2|=(str2int(TmpStr1)&0xff)<<16;
-
-            if(GetArgv(Command,TmpStr1,6))
-              EventToExecute.Par2|=(str2int(TmpStr1)&0xff)<<24;
-            break;            
           
           case CMD_SEND_EVENT:
             switch(EventToExecute.Par1)
@@ -861,46 +810,6 @@ int ExecuteLine(char *Line, byte Port)
                 error=MESSAGE_02;
               }
             break;
-
-          #ifdef PROTOCOL_1
-          case CMD_PROTOCOL_1:
-          case CMD_PROTOCOL_1_SEND:
-            if(Protocol_1_StringToEvent(Command, &EventToExecute))
-              Protocol_1_EventToString(&EventToExecute,TmpStr1);
-            else
-              error=MESSAGE_02;                
-            break;
-          #endif
-
-          #ifdef PROTOCOL_2
-          case CMD_PROTOCOL_2:
-          case CMD_PROTOCOL_2_SEND:
-            if(Protocol_2_StringToEvent(Command, &EventToExecute))
-              Protocol_2_EventToString(&EventToExecute,TmpStr1);
-            else
-              error=MESSAGE_02;                
-            break;
-          #endif
-
-          #ifdef PROTOCOL_3
-          case CMD_PROTOCOL_3:
-          case CMD_PROTOCOL_3_SEND:
-            if(Protocol_3_StringToEvent(Command, &EventToExecute))
-              Protocol_3_EventToString(&EventToExecute,TmpStr1);
-            else
-              error=MESSAGE_02;                
-            break;
-          #endif
-
-          #ifdef PROTOCOL_4
-          case CMD_PROTOCOL_4:
-          case CMD_PROTOCOL_4_SEND:
-            if(Protocol_4_StringToEvent(Command, &EventToExecute))
-              Protocol_4_EventToString(&EventToExecute,TmpStr1);
-            else
-              error=MESSAGE_02;                
-            break;
-          #endif
 
           case CMD_PASSWORD:
             {
@@ -1288,7 +1197,6 @@ int ExecuteLine(char *Line, byte Port)
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
 
-
           case CMD_PULSE_COUNT:
             {
             if(GetArgv(Command,TmpStr1,2))
@@ -1312,15 +1220,26 @@ int ExecuteLine(char *Line, byte Port)
 
           default:
             {              
-            // Als het geen regulier commando was EN geen commando met afwijkende MMI, dan kijken of file op SDCard staat)
-            strcpy(TmpStr1,Command);
-            TmpStr1[8]=0;// Gebruik commando als een filename. Voor de zekerheid te lange filename afkappen ???? dit zorgt ook voor afkappen van commando bij foutcode
-            error=FileExecute(TmpStr1, EventToExecute.Par2==VALUE_ON);
-            EventToExecute.Command=0;
+            // Als er geen vast commando is ingevoerd, dan kan het zijn dat er een Device commando is opgegeven.
+            // Loop de devices langs om te checken if er een hit is. Zo ja, dan heeft de Device_xx funktie de struct
+            // met de juiste waarden gevuld.
+            y=false;
+            for(x=0;x<DEVICE_MAX && EventToExecute.Command==0; x++)
+              if(Device_ptr[x]!=0)
+                y=Device_ptr[x](DEVICE_MMI_IN,&EventToExecute,Command);
 
-            // als script niet te openen, dan is het ingevoerde commando ongeldig.
-            if(error==MESSAGE_03)
-              error=MESSAGE_01;
+            if(!y)
+              {
+              // Als het geen regulier commando was EN geen commando met afwijkende MMI en geen Device, dan kijken of file op SDCard staat)
+              strcpy(TmpStr1,Command);
+              TmpStr1[8]=0;// Gebruik commando als een filename. Voor de zekerheid te lange filename afkappen ???? dit zorgt ook voor afkappen van commando bij foutcode
+              error=FileExecute(TmpStr1, EventToExecute.Par2==VALUE_ON);
+              EventToExecute.Command=0;
+  
+              // als script niet te openen, dan is het ingevoerde commando ongeldig.
+              if(error==MESSAGE_03)
+                error=MESSAGE_01;
+              }
             }
           }
             

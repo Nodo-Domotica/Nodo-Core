@@ -6,8 +6,8 @@
  \*********************************************************************************************/
 byte NodoType(struct NodoEventStruct *InEvent)
   {
-  byte x;
-
+  int x;
+  
   if(InEvent->Flags & TRANSMISSION_EVENT)
      return NODO_TYPE_EVENT;  
 
@@ -19,6 +19,19 @@ byte NodoType(struct NodoEventStruct *InEvent)
 
   if(InEvent->Command>=FIRST_COMMAND && InEvent->Command<=LAST_COMMAND)
     return NODO_TYPE_COMMAND;
+
+//  struct NodoEventStruct Event;
+//  ClearEvent(&Event);
+//  x=InEvent->Command-CMD_DEVICE_FIRST;
+//  if(x>=0 && x<DEVICE_MAX)
+//    if(Device_ptr[x]!=0)
+//      {
+//      Device_ptr[x](DEVICE_TYPE,&Event,0);
+//      if(Event.Flags | TRANSMISSION_EVENT)
+//        return NODO_TYPE_EVENT;
+//      if(Event.Flags | TRANSMISSION_COMMAND)
+//        return NODO_TYPE_COMMAND;      
+//      }???
 
   return false;
   }  
@@ -44,68 +57,6 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
   
   switch(EventToExecute->Command)
     {   
-    case CMD_DEVICE:
-      {
-      switch(EventToExecute->Par1) //devicenummer in Par1
-        {
-        case 1:
-          #ifdef DEVICE_1
-          Device_1(EventToExecute);  // Bouw het RawSignal op
-          #endif
-          break;
-        case 2:
-          #ifdef DEVICE_2
-          Device_2(EventToExecute);  // Bouw het RawSignal op
-          #endif
-          break;
-        case 3:
-          #ifdef DEVICE_3
-          Device_3(EventToExecute);  // Bouw het RawSignal op
-          #endif
-          break;
-        case 4:
-          #ifdef DEVICE_4
-          Device_4(EventToExecute);  // Bouw het RawSignal op
-          #endif
-          break;
-          }
-        }
-      if(EventToExecute->Command)
-        ProcessEvent2(EventToExecute);      
-      break;
-        
-    #ifdef PROTOCOL_1
-    case CMD_PROTOCOL_1_SEND:
-      TempEvent.Command=CMD_PROTOCOL_1;
-      Protocol_1_EventToRawsignal(&TempEvent);  // Bouw het RawSignal op
-      SendEvent(&TempEvent,true,true);               // Verzenden signaal
-      break;
-    #endif
-      
-    #ifdef PROTOCOL_2
-    case CMD_PROTOCOL_2_SEND:
-      TempEvent.Command=CMD_PROTOCOL_2;
-      Protocol_2_EventToRawsignal(&TempEvent);  // Bouw het RawSignal op
-      SendEvent(&TempEvent,true,true);               // Verzenden signaal
-      break;
-    #endif
-      
-    #ifdef PROTOCOL_3
-    case CMD_PROTOCOL_3_SEND:
-      TempEvent.Command=CMD_PROTOCOL_3;
-      Protocol_3_EventToRawsignal(&TempEvent);  // Bouw het RawSignal op
-      SendEvent(&TempEvent,true,true);               // Verzenden signaal
-      break;
-    #endif
-      
-    #ifdef PROTOCOL_4
-    case CMD_PROTOCOL_4_SEND:
-      TempEvent.Command=CMD_PROTOCOL_4;
-      Protocol_4_EventToRawsignal(&TempEvent);  // Bouw het RawSignal op
-      SendEvent(&TempEvent,true,true);               // Verzenden signaal
-      break;
-    #endif      
-      
     case CMD_VARIABLE_INC:
       if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
@@ -570,8 +521,9 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       strcat(TempString," ");
       strcat(TempString,int2str(EventToExecute->Par1));
       ExecuteLine(TempString,EventToExecute->Port);
-      break;        
-    #endif
+      break;      
+              
+    #endif    
     }
 
   #ifdef NODO_MEGA

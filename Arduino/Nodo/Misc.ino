@@ -2335,3 +2335,71 @@ void  Test(void)
   {    
   }
   
+void DeviceWrapper(void)
+  {
+  byte x;
+
+  for(x=0;x<DEVICE_MAX;x++)
+    {
+    Device_ptr[x]=0;
+    Device_id[x]=0;
+    }
+    
+  x=0;
+      
+  #ifdef DEVICE_01
+  Device_ptr[x]=&Device_01;
+  Device_id[x++]=1;
+  #endif
+
+  #ifdef DEVICE_02
+  Device_ptr[x]=&Device_02;
+  Device_id[x++]=2;
+  #endif
+
+  #ifdef DEVICE_03
+  Device_ptr[x]=&Device_03;
+  Device_id[x++]=3;
+  #endif
+
+  #ifdef DEVICE_04
+  Device_ptr[x]=&Device_04;
+  Device_id[x++]=4;
+  #endif
+
+  #ifdef DEVICE_05
+  Device_ptr[x]=&Device_05;
+  Device_id[x++]=5;
+  #endif
+
+  #ifdef DEVICE_06
+  Device_ptr[x]=&Device_06;
+  Device_id[x++]=6;
+  #endif
+
+  #ifdef DEVICE_07
+  Device_ptr[x]=&Device_07;
+  Device_id[x++]=7;
+  #endif
+
+  #ifdef DEVICE_08
+  Device_ptr[x]=&Device_08;
+  Device_id[x++]=8;
+  #endif
+
+  #ifdef DEVICE_09
+  Device_ptr[x]=&Device_09;
+  Device_id[x++]=9;
+  #endif
+
+  #ifdef DEVICE_10
+  Device_ptr[x]=&Device_10;
+  Device_id[x++]=10;
+  #endif
+
+  #ifdef DEVICE_99
+  Device_ptr[x]=&Device_99;
+  Device_id[x++]=99;
+  #endif    
+  }
+
