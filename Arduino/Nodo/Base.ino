@@ -530,6 +530,8 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define DEVICE_MMI_OUT               2
 #define DEVICE_EVENT_IN              3
 #define DEVICE_EVENT_OUT             4 
+#define DEVICE_INIT                  5
+
 #define RED                          1  // Led = Rood
 #define GREEN                        2  // Led = Groen
 #define BLUE                         3  // Led = Blauw
@@ -784,11 +786,6 @@ void setup()
 
   Serial.begin(BAUD);  // Initialiseer de seriële poort
 
-
-  // Alle devices moeten aan te roepen zijn vanuit de Devicenummers zoals die in de events worden opgegeven
-  // initialiseer de lijst met pointers naar de device funkties.
-  DeviceWrapper();
-
   #ifdef NODO_MEGA
   // initialiseer BIC-lijnen en lees de BIC uit/
   for(x=0;x<=3;x++)
@@ -921,6 +918,10 @@ void setup()
   #ifdef USER_PLUGIN
   UserPlugin_Init();
   #endif
+
+  // Alle devices moeten aan te roepen zijn vanuit de Devicenummers zoals die in de events worden opgegeven
+  // initialiseer de lijst met pointers naar de device funkties.
+  DeviceInit();
 
   bitWrite(HW_Config,HW_I2C,true); // Zet I2C aan zodat het boot event op de I2C-bus wordt verzonden. Hiermee worden bij de andere Nodos de I2C geactiveerd.
   
