@@ -31,15 +31,15 @@
 // De code kan worden gecompileerd als een Nodo-Small voor de Arduino met een ATMega328 processor of een Nodo-Mega met een ATMega1280/2560.
 // stel allereerst het juiste board-type en COM-poort in op de Arduino compiler.
 // en pas eventueel de vier include statements aan (zie onder)
-//#include <EthernetNodo.h>
-//#include <SPI.h>
-//#include <Arduino.h>
-//#include <SD.h>
+#include <EthernetNodo.h>
+#include <SPI.h>
+#include <Arduino.h>
+#include <SD.h>
 
 // Stel hieronder in welk Nodo unit nummer u gaat compileren. De set instellingen moet dan wel hieronder beschreven staan!
 // als je eenmalig per unit nummer de definities vastlegt, dan hoef je daarna bij compileren slechts het juiste unit nummer te kiezen.
 
-#define UNIT_NODO          15
+#define UNIT_NODO          1
 
 // Let op, dit volgende blokje moet u handmatig instellen afhankelijk van het Arduino type!!!!!!!!!!!!
 // Vanwege een bug in de Arduino compiler moeten enkele regels handmatig worden aangepast!

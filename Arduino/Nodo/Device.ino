@@ -12,7 +12,8 @@
  #define DEVICE_03  // NewKAKU         : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno.
  #define DEVICE_04  // SendNewKAKU     : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno. 
  #define DEVICE_05  // TempSensor      : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
- #define DEVICE_99  // UserDevice      : Device voor eigen toepassing door gebruiker. 
+ #define DEVICE_13  // UserEventOld    : UserEvents van de oude Nodo. t.b.v. compatibiliteit reeds geprogrammeerde universele afstandsbedieningen.
+ #define DEVICE_99  // UserDevice      : Device voor eigen toepassing door gebruiker te bouwen.
  
  \***********************************************************************************************/
 
@@ -1094,6 +1095,11 @@ boolean Device_99(byte function, struct NodoEventStruct *event, char *string)
   switch(function)
     {
     #ifdef DEVICE_CORE_99
+    case DEVICE_INIT:
+      {
+      // Code hier wordt eenmalig aangeroepen na een reboot van de Nodo.
+      break;
+      }
     case DEVICE_EVENT_IN:
       {
       // Code op deze plaats wordt uitgevoerd zodra er een event via RF of IR is binnengekomen

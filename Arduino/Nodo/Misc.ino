@@ -2335,7 +2335,7 @@ void  Test(void)
   {    
   }
   
-void DeviceWrapper(void)
+void DeviceInit(void)
   {
   byte x;
 
@@ -2401,5 +2401,9 @@ void DeviceWrapper(void)
   Device_ptr[x]=&Device_99;
   Device_id[x++]=99;
   #endif    
+
+  for(byte x=0;x<DEVICE_MAX; x++)
+    if(Device_ptr[x]!=0)
+      Device_ptr[x](DEVICE_INIT,0,0);
   }
 
