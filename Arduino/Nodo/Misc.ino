@@ -303,6 +303,7 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
     {
     if(ScanEvent(&Event))
       {
+      // PrintNodoEvent("Wait();",&Event);//???
       // Events voor deze Nodo kunnen NU niet worden verwerkt. Plaats daarom in de queue
       QueueAdd(&Event);
       if(EndSequence && (Event.Flags&TRANSMISSION_NEXT)==0)
@@ -312,8 +313,8 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
       if(WaitForFreeTransmission && (Transmission_SelectedUnit==0 || Transmission_SelectedUnit==Settings.Unit))
         break;
       
-      // break af als opgegeven eent voorbij komt. Let op, alleen events met als bestemming 0 of dit unitnummer worden gedetecteerd!
-      // De check vind alleen plaats op Type, Command en Unit, dus niet op Par1 en Par2.
+      // break af als opgegeven event voorbij komt. Let op, alleen events met als bestemming 0 of dit unitnummer worden gedetecteerd!
+      // De check vindt alleen plaats Command en Unit, dus niet op Par1 en Par2.
       // Als SourceUnit==0 dan wordt input van alle units geaccepteerd.
       if(WaitForEvent!=0)
         {
@@ -627,7 +628,7 @@ void ResetFactory(void)
   Settings.Version                    = SETTINGS_VERSION;
   Settings.NewNodo                    = true;
   Settings.Lock                       = 0;
-  Settings.TransmitIR                 = VALUE_OFF;
+  Settings.TransmitIR                 = VALUE_ON;
   Settings.TransmitRF                 = VALUE_ON;
   Settings.Unit                       = UNIT_NODO;
   Settings.Home                       = 1;
@@ -692,7 +693,7 @@ void ResetFactory(void)
  * verzend de status van een setting als event.
  * Par1 = Command
  \**********************************************************************************************/
-void Status(struct NodoEventStruct *Request, byte Transmit)
+void Status(struct NodoEventStruct *Request, byte Port)
   {
   byte CMD_Start,CMD_End;
   byte Par1_Start,Par1_End;
@@ -703,7 +704,6 @@ void Status(struct NodoEventStruct *Request, byte Transmit)
   ClearEvent(&Result);
   Result.Command=Request->Par1;
   
-
   #ifdef NODO_MEGA          
   char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
   #endif
@@ -717,10 +717,10 @@ void Status(struct NodoEventStruct *Request, byte Transmit)
     return;
     }
 
-  if(Request->Par1==VALUE_ALL)
+  if((Port==VALUE_SOURCE_SERIAL || Port==VALUE_SOURCE_TELNET) && Request->Par1==VALUE_ALL)
     {
     Request->Par2=0;
-    if(!Transmit)
+    if(Port==VALUE_SOURCE_SERIAL || Port==VALUE_SOURCE_TELNET)
       PrintWelcome();
     CMD_Start=FIRST_COMMAND;
     CMD_End=COMMAND_MAX;
@@ -741,7 +741,7 @@ void Status(struct NodoEventStruct *Request, byte Transmit)
   for(x=CMD_Start; x<=CMD_End; x++)
     {
     s=false;
-    if(!Transmit)
+    if(Port==VALUE_SOURCE_SERIAL || Port==VALUE_SOURCE_TELNET)
       {
       s=true;
       switch (x)
@@ -881,9 +881,9 @@ void Status(struct NodoEventStruct *Request, byte Transmit)
         Result.Par1=y;
         GetStatus(&Result); 
 
-        if(Transmit)
+      if(Port==VALUE_SOURCE_RF || Port==VALUE_SOURCE_IR || Port==VALUE_SOURCE_I2C || Port==VALUE_SOURCE_HTTP)
           {
-          Result.Port=VALUE_ALL;//??? naar alle of alleen naar @@de bron???
+          Result.Port=Port;
           SendEvent(&Result,false,true); // verzend als event
           }
 
@@ -899,7 +899,7 @@ void Status(struct NodoEventStruct *Request, byte Transmit)
     }
 
   #ifdef NODO_MEGA
-  if(!Transmit && Request->Par1==VALUE_ALL)
+  if((Port==VALUE_SOURCE_SERIAL || Port==VALUE_SOURCE_TELNET) && Request->Par1==VALUE_ALL)
     PrintTerminal(ProgmemString(Text_22));
 
   free(TempString);

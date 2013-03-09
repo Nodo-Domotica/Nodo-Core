@@ -1,11 +1,9 @@
-// Als een Nodo tijdens verzending één specifieke Nodo adresseert, dan is de zender de master en de ontvanger de slave
-// Er is gelijktijdig slechs één master actief en één slave kan geselecteerd zijn.
-// Niet geselecteerde slaves kunnen niet zenden, wel events opvangen die voor de slave bestemd zijn (queue)
-// In de queue geplaatste events in een slave queue kunnen (mogelijk) pas leiden tot een zendactie na vrijgave van de band.
-// 
-
-
 /*
+
+      pinMode(PIN_WIRED_OUT_1,OUTPUT); // definieer Arduino pin's voor Wired-Out
+      digitalWrite(PIN_WIRED_OUT_1,HIGH);//??
+      delay(10);
+      digitalWrite(PIN_WIRED_OUT_1,LOW);//??
 
 
 Serial.print(F("*** debug: "));Serial.println(); //??? Debug
@@ -26,13 +24,6 @@ Nodo adressering en event uitwisseling:
 Idee:
 - resultaat van html event naar bodytext plakken.
 - websocket implementeren op arduino?
-
-      digitalWrite(PIN_IO_2,HIGH);//??? debugging
-      delay(1);//???
-      digitalWrite(PIN_IO_2,LOW);//???
-
-
-
 
 
 
