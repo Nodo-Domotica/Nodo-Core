@@ -1,5 +1,5 @@
 
-#define NODO_BUILD          509//??? ophogen.
+#define NODO_BUILD          513//??? ophogen.
 #define SETTINGS_VERSION     29
 #include <EEPROM.h>
 #include <Wire.h>
@@ -654,8 +654,8 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define PIN_RF_RX_VCC               12 // Spanning naar de ontvanger via deze pin.
 #define PIN_WIRED_OUT_1              7 // 7 digitale outputs D07 t/m D10 worden gebruikt voor WiredIn 1 tot en met 4
 #define PIN_WIRED_OUT_2              8 // 7 digitale outputs D07 t/m D10 worden gebruikt voor WiredIn 1 tot en met 4
-#define PIN_WIRED_OUT_3              9 // 7 digitale outputs D07 t/m D10 worden gebruikt voor WiredIn 1 tot en met 4
-#define PIN_WIRED_OUT_4             10 // 7 digitale outputs D07 t/m D10 worden gebruikt voor WiredIn 1 tot en met 4
+#define PIN_WIRED_OUT_3              9 // (pwm) 7 digitale outputs D07 t/m D10 worden gebruikt voor WiredIn 1 tot en met 4
+#define PIN_WIRED_OUT_4             10 // (pwm) 7 digitale outputs D07 t/m D10 worden gebruikt voor WiredIn 1 tot en met 4
 #endif
 //****************************************************************************************************************************************
 
@@ -694,18 +694,20 @@ struct SettingsStruct
   #endif
   }Settings;
 
-  // Een Nodo signaal bestaat uit een 32-bit Event en een 32-bit met meta-data t.b.v. het transport van Nodo naar Nodo.
-  // In het transport deel bevinden zich de volgende transmissievlaggen:
-  #define TRANSMISSION_QUEUE        1  // Master => Slave : Event maaakt deel uit van een reeks die aan de slave zijde in de queue geplaatst moeten worden alvorens te verwerken.
-  #define TRANSMISSION_NEXT         2  // Master => Slave : Na dit event volgt direct nog een event.
-  #define TRANSMISSION_LOCK         4  // Master => Slave : Verzoek om de ether te blokkeren voor exclusieve communicatie tussen master en een slave Nodo.
-  #define TRANSMISSION_CONFIRM      8  // Master => Slave : Verzoek aan master om bevestiging te sturen na ontvangst.
-  #define TRANSMISSION_SYSTEM      16  // System event
-  #define TRANSMISSION_COMMAND     32  // 
-  #define TRANSMISSION_EVENT       64  // 
+// Een Nodo signaal bestaat uit een 32-bit Event en een 32-bit met meta-data t.b.v. het transport van Nodo naar Nodo.
+// In het transport deel bevinden zich de volgende transmissievlaggen:
+#define TRANSMISSION_QUEUE        1  // Master => Slave : Event maakt deel uit van een reeks die aan de slave zijde in de queue geplaatst moeten worden alvorens te verwerken.
+#define TRANSMISSION_SENDTO       2  // Master => Slave : Event maakt deel uit van een SendTo reeks die in de queue geplaatst moet worden
+#define TRANSMISSION_NEXT         4  // Master => Slave : Na dit event volgt direct nog een event.
+#define TRANSMISSION_LOCK         8  // Master => Slave : Verzoek om de ether te blokkeren voor exclusieve communicatie tussen master en een slave Nodo.
+#define TRANSMISSION_CONFIRM     16  // Master => Slave : Verzoek aan master om bevestiging te sturen na ontvangst.
+#define TRANSMISSION_SYSTEM      32  // System event
+#define TRANSMISSION_COMMAND     64  // 
+#define TRANSMISSION_EVENT      128  // 
 
-  // De Nodo kent naast gebruikers commando's en events eveneens Nodo interne events
-  #define SYSTEM_COMMAND_CONFIRMED  1  // Bevestiging op verzoek van een TRANSMISSION_CONFIRM. Par1 bevat aantal verwerkte events. 
+// De Nodo kent naast gebruikers commando's en events eveneens Nodo interne events
+#define SYSTEM_COMMAND_CONFIRMED  1
+
   
 struct NodoEventStruct
   {
@@ -868,6 +870,7 @@ void setup()
       pinMode(A0+PIN_WIRED_IN_1+x,INPUT_PULLUP);
     else
       pinMode(A0+PIN_WIRED_IN_1+x,INPUT);
+
     pinMode(PIN_WIRED_OUT_1+x,OUTPUT); // definieer Arduino pin's voor Wired-Out
     }
   for(x=0;x<WIRED_PORTS;x++){WiredInputStatus[x]=true;}
@@ -911,7 +914,7 @@ void setup()
 
   Wire.onReceive(ReceiveI2C);   // verwijs naar ontvangstroutine
 
-  bitWrite(HW_Config,HW_SERIAL,1); // Serial weer uitschakelen.
+  bitWrite(HW_Config,HW_SERIAL,1); // Serial inschakelen.
   PrintWelcome(); // geef de welkomsttekst weer
   bitWrite(HW_Config,HW_SERIAL,Serial.available()?1:0); // Serial weer uitschakelen.
 
@@ -924,28 +927,35 @@ void setup()
   DeviceInit();
 
   bitWrite(HW_Config,HW_I2C,true); // Zet I2C aan zodat het boot event op de I2C-bus wordt verzonden. Hiermee worden bij de andere Nodos de I2C geactiveerd.
-  
+    
+  // Zend boot event naar alle Nodo's en vraag om een bevestiging. Tevens heeft de gebruiker de gelegenheid om direct na een boot
+  // een eventlisterase/reset te verzenden als een small in de problemen.
+  // Alle Nodo's die online zenden zullen een Confirm event verzenden.
   ClearEvent(&TempEvent);
-  TempEvent.Direction=VALUE_DIRECTION_INPUT;
-  TempEvent.Port=VALUE_ALL;
-  
-  if(Settings.NewNodo)
-    {
-    TempEvent.Command=CMD_NEWNODO;
-    TempEvent.Par1=Settings.Unit;
-    SendEvent(&TempEvent,false,true); 
-    }
-
+  TempEvent.Direction = VALUE_DIRECTION_INPUT;
+  TempEvent.Port      = VALUE_ALL;
   TempEvent.Flags     = TRANSMISSION_CONFIRM;
   TempEvent.Command   = CMD_BOOT_EVENT;
   TempEvent.Par1      = Settings.Unit;
   SendEvent(&TempEvent,false,true);  
-
+  Wait(5, false,0 , false);  
+  QueueProcess();
+  
+  // Voer boot-event uit.
+  ClearEvent(&TempEvent);
   TempEvent.Flags     = 0;
   TempEvent.Direction = VALUE_DIRECTION_INPUT;
   TempEvent.Port      = VALUE_SOURCE_SYSTEM;
   ProcessEvent2(&TempEvent);  // Voer het 'Boot' event uit.
 
+  // Als er nog geen settings aangepast, dan een NewNodo-event sturen.
+  if(Settings.NewNodo)
+    {
+    TempEvent.Port     = VALUE_ALL;
+    TempEvent.Command=CMD_NEWNODO;
+    TempEvent.Par1=Settings.Unit;
+    SendEvent(&TempEvent,false,true); 
+    }
   bitWrite(HW_Config,HW_I2C,false); // Zet I2C weer uit. Wordt weer geactiveerd als er een I2C event op de bus verschijnt.
   }
 

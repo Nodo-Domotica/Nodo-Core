@@ -5,9 +5,11 @@
 #define SIGNAL_ANALYZE_SHARPNESS    50  // Scherpte c.q. foutmarge die gehanteerd wordt bij decoderen van RF/IR signaal.
 #define MIN_PULSE_LENGTH           100  // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define MIN_RAW_PULSES              32  // =16 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
-#define MIN_TIME_BETWEEN_SEND_IR   250  // Minimale tijd tussen twee IR zend acties in milliseconden.
-#define MIN_TIME_BETWEEN_SEND_RF   500  // Minimale tijd tussen twee RF zend acties in milliseconden.
-#define MIN_TIME_BETWEEN_SEND_I2C   10  // Minimale tijd tussen twee I2C zend acties in milliseconden.
+#define SWITCH_TIME_RX_TX_IR        50  // Minimale tijd tussen omschakelen van ontvangen naar zenden. 
+#define SWITCH_TIME_RX_TX_RF       500  // Minimale tijd tussen omschakelen van ontvangen naar zenden. 
+#define SWITCH_TIME_RX_TX_I2C       50  // Minimale tijd tussen omschakelen van ontvangen naar zenden. 
+#define MIN_TIME_BETWEEN_TX        100
+#define WAIT_FREE_RX_WINDOW        250
 
 boolean AnalyzeRawSignal(struct NodoEventStruct *E)
   {
@@ -421,7 +423,7 @@ boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
  * Na zenden timers setten, voor verzenden een wachttijd inlassen.
  \*********************************************************************************************/
 void DelayTransmission(byte Port, boolean Set)
-{
+  {
   static unsigned long LastTransmitTime_RF=0L;
   static unsigned long LastTransmitTime_IR=0L;
   static unsigned long LastTransmitTime_I2C=0L;
@@ -449,15 +451,15 @@ void DelayTransmission(byte Port, boolean Set)
     switch(Port)
     {
     case VALUE_SOURCE_RF:
-      while((LastTransmitTime_RF+MIN_TIME_BETWEEN_SEND_RF) > millis());
+      while((LastTransmitTime_RF+SWITCH_TIME_RX_TX_RF) > millis());
       break;
 
     case VALUE_SOURCE_IR:
-      while((LastTransmitTime_IR+MIN_TIME_BETWEEN_SEND_IR) > millis());
+      while((LastTransmitTime_IR+SWITCH_TIME_RX_TX_IR) > millis());
       break;
 
     case VALUE_SOURCE_I2C:
-      while((LastTransmitTime_I2C+MIN_TIME_BETWEEN_SEND_I2C) > millis());
+      while((LastTransmitTime_I2C+SWITCH_TIME_RX_TX_I2C) > millis());
       break;
     }
   }  
@@ -495,25 +497,15 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     if(Display)PrintEvent(ES);
     DelayTransmission(VALUE_SOURCE_I2C,false);
     SendI2C(ES);
-    DelayTransmission(VALUE_SOURCE_I2C,true);
+    delay(MIN_TIME_BETWEEN_TX);//???
     }
 
   if(Port==VALUE_SOURCE_RF || Port==VALUE_SOURCE_IR ||(Settings.TransmitRF==VALUE_ON && Port==VALUE_ALL))
     if(Settings.WaitFree==VALUE_ON && UseRawSignal==false)
-      WaitFree(250); //??? unit afhankelijke pauze
+      WaitFree(WAIT_FREE_RX_WINDOW); //??? unit afhankelijke pauze
 
   if(!UseRawSignal)
     Nodo_2_RawSignal(ES);
-
-  // Verstuur signaal als RF
-  if(Settings.TransmitRF==VALUE_ON && (Port==VALUE_SOURCE_RF || Port==VALUE_ALL))
-    {
-    ES->Port=VALUE_SOURCE_RF;
-    if(Display)PrintEvent(ES);
-    DelayTransmission(VALUE_SOURCE_RF,false);
-    RawSendRF();
-    DelayTransmission(VALUE_SOURCE_RF,true);
-    }
 
   // Verstuur signaal als IR
   if(Settings.TransmitIR==VALUE_ON && (Port==VALUE_SOURCE_IR || Port==VALUE_ALL))
@@ -522,7 +514,17 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     if(Display)PrintEvent(ES);
     DelayTransmission(VALUE_SOURCE_IR,false);
     RawSendIR();
-    DelayTransmission(VALUE_SOURCE_IR,true);
+    delay(MIN_TIME_BETWEEN_TX);
+    }
+
+  // Verstuur signaal als RF
+  if(Settings.TransmitRF==VALUE_ON && (Port==VALUE_SOURCE_RF || Port==VALUE_ALL))
+    {
+    ES->Port=VALUE_SOURCE_RF;
+    if(Display)PrintEvent(ES);
+    DelayTransmission(VALUE_SOURCE_RF,false);
+    RawSendRF();
+    delay(MIN_TIME_BETWEEN_TX);
     }
 
 #ifdef NODO_MEGA
@@ -589,6 +591,8 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
     Event->Par2=DataBlock.Par2;
     return true;
     }
+  else
+    Trace("Checksum error.",b);
   return false; 
   }
 
@@ -1337,4 +1341,33 @@ boolean RawSignal_2_Nodo_OLD(struct NodoEventStruct *Event)
   }
 
 
+#ifdef NODO_MEGA
+boolean SendEventDirect(struct NodoEventStruct *ES, byte Port)
+  {
+  // Verstuur signaal als I2C
+  if(Port==VALUE_SOURCE_I2C)
+    SendI2C(ES);
 
+  // Verstuur signaal als HTTP-event.
+  else if(Port==VALUE_SOURCE_HTTP && bitRead(HW_Config,HW_ETHERNET))// Als Ethernet shield aanwezig.
+    SendHTTPEvent(ES);
+
+  else
+    {
+    Nodo_2_RawSignal(ES);
+  
+    // Verstuur signaal als RF
+    if(Port==VALUE_SOURCE_RF)
+      RawSendRF();
+  
+    // Verstuur signaal als IR
+    else if(Port==VALUE_SOURCE_IR)
+      RawSendIR();
+    }
+  delay(MIN_TIME_BETWEEN_TX);
+  }
+#endif 
+  
+  
+  
+  

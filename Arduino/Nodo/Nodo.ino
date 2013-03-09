@@ -54,7 +54,7 @@
 #define DEVICE_02 // SendKaku        : Klik-Aan-Klik-Uit / HomeEasy protocol verzenden 
 #define DEVICE_03 // NewKAKU         : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno.
 #define DEVICE_04 // SendNewKAKU     : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno.
-#define DEVICE_05 // TempRead        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
+//#define DEVICE_05 // TempRead        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
 
 // hieronder kunt u de instellingen per unit nummer vastleggen. Bij compileren wordt a.d.h.v. het UNIT_NODO nummer de juiste set gekozen.
 // het is handig om per gebruikte Nodo eenmalig een blokje met definities te maken. 
@@ -85,7 +85,7 @@
 #if (UNIT_NODO == 15)
 
   // Devices in gebruik op deze Nodo:
-  #define DEVICE_CORE_05 // TempRead        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
+//  #define DEVICE_CORE_05 // TempRead        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
 
 #endif 
 // ----------------------------------------------------------------------------------------------------------------------------------------

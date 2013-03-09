@@ -256,7 +256,6 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
           x=NodoOnline(y,0);
           if(x)
             {           
-            // oplossen met nieuwe adressering ???
             ClearEvent(&TempEvent);    
             TempEvent.Port                  = x;
             TempEvent.DestinationUnit       = y;    
@@ -417,17 +416,8 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       break;                  
 
     case CMD_STATUS:
-      // Het commando [Status] verzendt de status naar de bron waar het verzoek van is ontvangen. Serial en TelNet worden beschouwd als dezelfde bron.
-      // Als het door de gebruiker is verzocht om logging naar een file te doen, dan wordt de output NIET als events verzonden.
-
-      #ifdef NODO_MEGA
-      if(TempLogFile[0]!=0 || EventToExecute->Port==VALUE_SOURCE_SERIAL || EventToExecute->Port==VALUE_SOURCE_TELNET || EventToExecute->Port==VALUE_SOURCE_HTTP)
-      #else
-      if(EventToExecute->Port==VALUE_SOURCE_SERIAL)
-      #endif
-        Status(EventToExecute, false);
-      else
-        Status(EventToExecute, true);
+      // ??? Als het door de gebruiker is verzocht om logging naar een file te doen, dan wordt de output NIET als events verzonden.
+      Status(EventToExecute, EventToExecute->Port);
       break;
       
     case CMD_UNIT:

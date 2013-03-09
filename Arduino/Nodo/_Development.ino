@@ -58,4 +58,10 @@ Nog te doen:
 - [RawSignalErase] zonder parameters wist alle Rawsignals van SDCard.
 - [FileErase] zonder parameters wist alle scriptfiles van SDCard.
 
+######
+- Escape bij loop: Binnen vijf seconden na een reboot kan een commando naar de Nodo worden gestuurd om te resetten. Uitvoer vindt plaats voor uitvoer van het boot event.
+- SendTo commando aanpassing.
+- Status allalleen nog maar uitvraagbaar via Terminal of Serial.
+
+
 \*****************************************************************************************/

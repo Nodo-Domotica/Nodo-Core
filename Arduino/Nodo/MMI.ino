@@ -492,7 +492,8 @@ int ExecuteLine(char *Line, byte Port)
   int LinePos;
   int w,x,y;
   int EventlistWriteLine=0;
-  byte error=0, State_EventlistWrite=0,SendToUnit=0;
+  byte error=0, State_EventlistWrite=0;
+  static byte SendToUnit=0;
   unsigned long a;
   struct NodoEventStruct EventToExecute,TempEvent;
 
@@ -1259,7 +1260,8 @@ int ExecuteLine(char *Line, byte Port)
               }
             else
               {
-              QueueAdd(&EventToExecute);        // Plaats in queue voor latere verzending.
+              if(EventToExecute.Command)          // geen lege events in de queue plaatsen
+                QueueAdd(&EventToExecute);        // Plaats in queue voor latere verzending.
               }
             continue;
             }
@@ -1292,15 +1294,13 @@ int ExecuteLine(char *Line, byte Port)
       }// einde commando behandeling    
   
     // Verzend de inhoud van de queue naar de slave Nodo
-    if(SendToUnit!=Settings.Unit && SendToUnit!=0 && error==0)
+    if(SendToUnit!=Settings.Unit && SendToUnit!=0 && error==0 && QueuePosition>0)
       {
       error=QueueSend(SendToUnit);
-      if(error==MESSAGE_13)
+      if(error)
         {
         CommandPos=0;
         LinePos=0;
-        error=0;    
-        Serial.print(F("*** debug: SendTo retry."));Serial.println(); //??? Debug
         }
       }
     }// einde regel behandeling

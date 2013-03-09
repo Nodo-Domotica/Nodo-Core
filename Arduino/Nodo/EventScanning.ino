@@ -40,15 +40,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)
       {
       // Reset de timers nadat er een event is binnegekomen. Dit om later voorafgaand aan het zenden, indien nodig, een
       // korte pauze te nemen zodat de andere Nodo weer gereed staat voor ontvangst.
-//???      DelayTransmission(Fetched,true);
-
-//      // Herhaling onderdrukken.
-//      if(PreviousTime>millis())
-//        {
-//        WaitFree(100);
-//        return false;
-//        }
-//      PreviousTime=millis()+100;
+      DelayTransmission(Fetched,true);
 
       // Sommige signaal typen kunnen door de zender herhaald worden verzonden.
       // Indien signaal kort geleden ook ontvangen, dan herhaling gebruiken als checksum. Daarna verdere herhalingen onderdrukken.
