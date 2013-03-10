@@ -46,7 +46,7 @@ boolean AnalyzeRawSignal(struct NodoEventStruct *E)
 
   for(byte x=0;x<DEVICE_MAX && E->Command==0; x++)
     if(Device_ptr[x]!=0)
-      if(Device_ptr[x](DEVICE_EVENT_IN,E,0))
+      if(Device_ptr[x](DEVICE_RAWSIGNAL_IN,E,0))
         return true;
 
   if(RawSignal_2_32bit(E))

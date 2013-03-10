@@ -528,8 +528,8 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 
 #define DEVICE_MMI_IN                1
 #define DEVICE_MMI_OUT               2
-#define DEVICE_EVENT_IN              3
-#define DEVICE_EVENT_OUT             4 
+#define DEVICE_RAWSIGNAL_IN          3
+#define DEVICE_COMMAND               4 
 #define DEVICE_INIT                  5
 
 #define RED                          1  // Led = Rood
@@ -918,9 +918,6 @@ void setup()
   PrintWelcome(); // geef de welkomsttekst weer
   bitWrite(HW_Config,HW_SERIAL,Serial.available()?1:0); // Serial weer uitschakelen.
 
-  #ifdef USER_PLUGIN
-  UserPlugin_Init();
-  #endif
 
   // Alle devices moeten aan te roepen zijn vanuit de Devicenummers zoals die in de events worden opgegeven
   // initialiseer de lijst met pointers naar de device funkties.

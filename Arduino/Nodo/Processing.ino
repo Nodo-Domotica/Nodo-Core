@@ -128,10 +128,10 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
       // ############# Verwerk event ################  
 
       // kijk of het een Device betreft. De device ID's bevinden zich in een kleine tabel. Zoek din de tabel naar het betreffende ID en voer 
-      // de DEVICE_EVENT_OUT opdracht uit. Als het betreffende device geen DEVICE_EVENT_OUT code heeft, dan wordt er ook niets uitgevoerd.
+      // de DEVICE_COMMAND opdracht uit. Als het betreffende device geen DEVICE_COMMAND code heeft, dan wordt er ook niets uitgevoerd.
       for(x=0; x<DEVICE_MAX; x++)
         if(Device_id[x]==(Event->Command-CMD_DEVICE_FIRST))
-          Device_ptr[x](DEVICE_EVENT_OUT,Event,0);
+          Device_ptr[x](DEVICE_COMMAND,Event,0);
 
       // als het een Nodo event is en een geldig commando, dan deze uitvoeren
       if(NodoType(Event)==NODO_TYPE_COMMAND)
