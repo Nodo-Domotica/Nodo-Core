@@ -2397,6 +2397,41 @@ void DeviceInit(void)
   Device_id[x++]=10;
   #endif
 
+  #ifdef DEVICE_11
+  Device_ptr[x]=&Device_11;
+  Device_id[x++]=11;
+  #endif
+
+  #ifdef DEVICE_12
+  Device_ptr[x]=&Device_12;
+  Device_id[x++]=12;
+  #endif
+
+  #ifdef DEVICE_13
+  Device_ptr[x]=&Device_13;
+  Device_id[x++]=13;
+  #endif
+
+  #ifdef DEVICE_14
+  Device_ptr[x]=&Device_14;
+  Device_id[x++]=14;
+  #endif
+
+  #ifdef DEVICE_15
+  Device_ptr[x]=&Device_15;
+  Device_id[x++]=15;
+  #endif
+
+  #ifdef DEVICE_16
+  Device_ptr[x]=&Device_16;
+  Device_id[x++]=16;
+  #endif
+
+  #ifdef DEVICE_17
+  Device_ptr[x]=&Device_17;
+  Device_id[x++]=17;
+  #endif
+
   #ifdef DEVICE_99
   Device_ptr[x]=&Device_99;
   Device_id[x++]=99;

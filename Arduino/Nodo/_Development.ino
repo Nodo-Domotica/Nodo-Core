@@ -60,8 +60,8 @@ Nog te doen:
 
 ######
 - Escape bij loop: Binnen vijf seconden na een reboot kan een commando naar de Nodo worden gestuurd om te resetten. Uitvoer vindt plaats voor uitvoer van het boot event.
-- SendTo commando aanpassing.
-- Status allalleen nog maar uitvraagbaar via Terminal of Serial.
+- SendTo commando aanpassing. Onder de motorkap aangepast EN SendTo blijft actief totdat SendTo Off wordt ingegeven
+- Status alleen nog maar uitvraagbaar via Terminal of Serial.
 
 
 \*****************************************************************************************/

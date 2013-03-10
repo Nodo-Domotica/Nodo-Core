@@ -7,13 +7,15 @@
 
  De volgende devices kunnen worden gekozen:
 
- #define DEVICE_01  // Kaku            : Klik-Aan-Klik-Uit / HomeEasy protocol ontvangst
- #define DEVICE_02  // SendKaku        : Klik-Aan-Klik-Uit / HomeEasy protocol verzenden 
- #define DEVICE_03  // NewKAKU         : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno.
- #define DEVICE_04  // SendNewKAKU     : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno. 
- #define DEVICE_05  // TempSensor      : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
- #define DEVICE_13  // UserEventOld    : UserEvents van de oude Nodo. t.b.v. compatibiliteit reeds geprogrammeerde universele afstandsbedieningen.
- #define DEVICE_99  // UserDevice      : Device voor eigen toepassing door gebruiker te bouwen.
+ #define DEVICE_01  // Kaku              : Klik-Aan-Klik-Uit / HomeEasy protocol ontvangst
+ #define DEVICE_02  // SendKaku          : Klik-Aan-Klik-Uit / HomeEasy protocol verzenden 
+ #define DEVICE_03  // NewKAKU           : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno.
+ #define DEVICE_04  // SendNewKAKU       : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno. 
+ #define DEVICE_05  // TempSensor        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
+ #define DEVICE_13  // UserEventOld      : UserEvents van de oude Nodo. t.b.v. compatibiliteit reeds geprogrammeerde universele afstandsbedieningen.
+ #define DEVICE_14  // MonitorAnalog     : Laat continue analoge metingen zien van alle Wired-In poorten. 
+ #define DEVICE_15  // RawSignalAnalyze  : Geeft bij een binnenkomend signaal informatie over de pulsen weer.
+ #define DEVICE_99  // UserDevice        : Device voor eigen toepassing door gebruiker te bouwen.
  
  \***********************************************************************************************/
 
@@ -70,7 +72,7 @@ boolean Device_01(byte function, struct NodoEventStruct *event, char *string)
   switch(function)
     {
     #ifdef DEVICE_CORE_01
-    case DEVICE_EVENT_IN:
+    case DEVICE_RAWSIGNAL_IN:
       {
       int i,j;
       unsigned long bitstream=0;
@@ -103,7 +105,7 @@ boolean Device_01(byte function, struct NodoEventStruct *event, char *string)
       break;
       }
       
-    case DEVICE_EVENT_OUT:
+    case DEVICE_COMMAND:
       {
       // Niet gebruikt voor dit device.
       break;
@@ -244,13 +246,13 @@ boolean Device_02(byte function, struct NodoEventStruct *event, char *string)
   switch(function)
     {
     #ifdef DEVICE_CORE_02
-    case DEVICE_EVENT_IN:
+    case DEVICE_RAWSIGNAL_IN:
       {
       // Niet in gebruik. Een device is altijd In of Uit.
       break;
       }
       
-    case DEVICE_EVENT_OUT:
+    case DEVICE_COMMAND:
       {
       if(event->Command==CMD_DEVICE_FIRST+2) // SendKAKU is device 2
         {
@@ -437,7 +439,7 @@ boolean Device_03(byte function, struct NodoEventStruct *event, char *string)
   switch(function)
     {
     #ifdef DEVICE_CORE_03
-    case DEVICE_EVENT_IN:
+    case DEVICE_RAWSIGNAL_IN:
       {
       unsigned long bitstream=0L;
       boolean Bit;
@@ -504,7 +506,7 @@ boolean Device_03(byte function, struct NodoEventStruct *event, char *string)
       break;
       }
       
-    case DEVICE_EVENT_OUT:
+    case DEVICE_COMMAND:
       break;
     #endif // DEVICE_CORE_03
       
@@ -634,10 +636,10 @@ boolean Device_04(byte function, struct NodoEventStruct *event, char *string)
   switch(function)
     {
     #ifdef DEVICE_CORE_04
-    case DEVICE_EVENT_IN:
+    case DEVICE_RAWSIGNAL_IN:
       break;
       
-    case DEVICE_EVENT_OUT:
+    case DEVICE_COMMAND:
       {
       unsigned long bitstream=0L;
       byte Bit, i=1;
@@ -821,10 +823,10 @@ boolean Device_05(byte function, struct NodoEventStruct *event, char *string)
   switch(function)
     {
     #ifdef DEVICE_CORE_05
-    case DEVICE_EVENT_IN:
+    case DEVICE_RAWSIGNAL_IN:
       break;
       
-    case DEVICE_EVENT_OUT:
+    case DEVICE_COMMAND:
       {
       int DSTemp;                           // Temperature in 16-bit Dallas format.
       byte ScratchPad[12];                  // Scratchpad buffer Dallas sensor.   
@@ -987,6 +989,236 @@ uint8_t DS_reset()
           
 
 //#######################################################################################################
+//#################################### Device-15: Signal Analyzer   #####################################
+//#######################################################################################################
+
+
+/*********************************************************************************************\
+ * Dit device geeft een pulsenreeks weer die op RF of IR is binnengekomen. Het is bedoeld
+ * als hulpmiddel om signalen te analyseren in geval je niet beschikt over een scope of
+ * een logic analyzer. Signaal wordt alleen weergegeven op Serial/USB. Manchster laat alle
+ * Mark & Spaces zien. 
+ *
+ * Auteur             : Paul Tonkes
+ * Support            : www.nodo-domotica.nl
+ * Datum              : 10-03-2013
+ * Versie             : 0.1
+ * Nodo productnummer : <Nodo productnummer. Toegekend door Nodo team>
+ * Compatibiliteit    : R513
+ * Syntax             : "SignalAnalyze"
+ *
+ ***********************************************************************************************
+ * Technische beschrijving:
+ *
+ * Compiled size      : 1200 bytes voor een Mega.
+ * Externe funkties   : <geef hier aan welke funkties worden gebruikt. 
+ *
+ * 
+ \*********************************************************************************************/
+ 
+#ifdef DEVICE_15
+
+#define DEVICE_ID 15
+#define DEVICE_NAME "RawSignalAnalyze"
+
+boolean Device_15(byte function, struct NodoEventStruct *event, char *string)
+  {
+  boolean success=false;
+  
+  switch(function)
+    {
+    #ifdef DEVICE_CORE_15
+    case DEVICE_RAWSIGNAL_IN:
+      {
+      return false;
+      }      
+
+    case DEVICE_COMMAND:
+      {
+      if(RawSignal.Number<8)return false;
+      
+      int x;
+      unsigned int y,z;
+      byte PTMF=RawSignal.Pulses[0];
+    
+      // zoek naar de langste kortst puls en de kortste lange puls
+      unsigned int MarkShort=50000;
+      unsigned int MarkLong=0;
+      for(x=1;x<RawSignal.Number;x+=2)
+        {
+        y=RawSignal.Pulses[x]*PTMF;
+        if(y<MarkShort)
+          MarkShort=y;
+        if(y>MarkLong)
+          MarkLong=y;
+        }
+      z=true;
+      while(z)
+        {
+        z=false;
+        for(x=1;x<RawSignal.Number;x+=2)
+          {
+          y=RawSignal.Pulses[x]*PTMF;
+          if(y>MarkShort && y<(MarkShort+MarkShort/2))
+            {
+            MarkShort=y;
+            z=true;
+            }
+          if(y<MarkLong && y>(MarkLong-MarkLong/2))
+            {
+            MarkLong=y;
+            z=true;
+            }
+          }
+        }
+      unsigned int MarkMid=((MarkLong-MarkShort)/2)+MarkShort;
+  
+      // zoek naar de langste kortst puls en de kortste lange puls
+      unsigned int SpaceShort=50000;
+      unsigned int SpaceLong=0;
+      for(x=2;x<RawSignal.Number;x+=2)
+        {
+        y=RawSignal.Pulses[x]*PTMF;
+        if(y<SpaceShort)
+          SpaceShort=y;
+        if(y>SpaceLong)
+          SpaceLong=y;
+        }
+      z=true;
+      while(z)
+        {
+        z=false;
+        for(x=2;x<RawSignal.Number;x+=2)
+          {
+          y=RawSignal.Pulses[x]*PTMF;
+          if(y>SpaceShort && y<(SpaceShort+SpaceShort/2))
+            {
+            SpaceShort=y;
+            z=true;
+            }
+          if(y<SpaceLong && y>(SpaceLong-SpaceLong/2))
+            {
+            SpaceLong=y;
+            z=true;
+            }
+          }
+        }
+      int SpaceMid=((SpaceLong-SpaceShort)/2)+SpaceShort;
+    
+      // Bepaal soort signaal
+      y=0;
+      if(MarkLong  > (2*MarkShort  ))y=1; // PWM
+      if(SpaceLong > (2*SpaceShort ))y+=2;// PDM
+
+      Serial.print(F( "Bits="));
+
+      if(y==0)Serial.println(F("?"));
+      if(y==1)
+        {
+        for(x=1;x<RawSignal.Number;x+=2)
+          {
+          y=RawSignal.Pulses[x]*PTMF;
+          if(y>MarkMid)
+            Serial.write('1');
+          else
+            Serial.write('0');
+          }
+        Serial.print(F("Type=PWM, "));
+        }
+      if(y==2)
+        {
+        for(x=2;x<RawSignal.Number;x+=2)
+          {
+          y=RawSignal.Pulses[x]*PTMF;
+          if(y>SpaceMid)
+            Serial.write('1');
+          else
+            Serial.write('0');
+          }
+        Serial.print(F("Type=PDM, "));
+        }
+      if(y==3)
+        {
+        for(x=1;x<RawSignal.Number;x+=2)
+          {
+          y=RawSignal.Pulses[x]*PTMF;
+          if(y>MarkMid)
+            Serial.write('1');
+          else
+            Serial.write('0');
+          
+          y=RawSignal.Pulses[x+1]*PTMF;
+          if(y>SpaceMid)
+            Serial.write('1');
+          else
+            Serial.write('0');
+          }
+        Serial.print(F( ", Type=Manchester"));
+        }
+
+      Serial.print(F(", Pulses="));
+      Serial.print(RawSignal.Number/2);
+
+      Serial.print(F(", Pulses(uSec)="));      
+      for(x=1;x<RawSignal.Number;x++)
+        {
+        Serial.print(RawSignal.Pulses[x]*PTMF); 
+        Serial.write(',');       
+        }
+      Serial.println();
+      
+//      int dev=250;  
+//      for(x=1;x<=RawSignal.Number;x+=2)
+//        {
+//        for(y=1+int(RawSignal.Pulses[x])*PTMF/dev; y;y--)
+//          Serial.write('M');  // Mark  
+//        for(y=1+int(RawSignal.Pulses[x+1])*PTMF/dev; y;y--)
+//          Serial.write('_');  // Space  
+//        }    
+//      Serial.println();
+//      PrintTerminal(ProgmemString(Text_22));
+
+      break;
+      }      
+    #endif // CORE
+      
+    #ifdef NODO_MEGA
+    case DEVICE_MMI_IN:
+      {
+      char *TempStr=(char*)malloc(26);
+      string[25]=0;
+      if(GetArgv(string,TempStr,1))
+        {
+        if(strcasecmp(TempStr,DEVICE_NAME)==0)
+          {
+          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
+          success=true;
+          }
+        }
+      free(TempStr);
+      break;
+      }
+
+    case DEVICE_MMI_OUT:
+      {
+      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
+        {
+        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+        strcat(string," ");
+        strcat(string,int2str(event->Par1));
+        }
+      break;
+      }
+    #endif //NODO_MEGA
+    }      
+  return success;
+  }
+#endif //DEVICE_15
+
+
+          
+
+//#######################################################################################################
 //#################################### Device-99: Leeg   ################################################
 //#######################################################################################################
 
@@ -1080,8 +1312,8 @@ uint8_t DS_reset()
 
 // Deze device code waidt vanuit meerdere plaatsen in de Nodo code aangeroepen, steeds met een doel. Dit doel bevindt zich
 // in de variabele [function]. De volgende doelen zijn gedefinieerd:
-// DEVICE_EVENT_IN    => Afhandeling van een via RF/IR ontvangen event
-// DEVICE_EVENT_OUT   => Commando voor afhandelen/uitsturen van een event.
+// DEVICE_RAWSIGNAL_IN    => Afhandeling van een via RF/IR ontvangen event
+// DEVICE_COMMAND   => Commando voor afhandelen/uitsturen van een event.
 // DEVICE_MMI_IN      => Invoer van de gebruiker/script omzetten naar een event. (Alleen voor mega)
 // DEVICE_MMI_OUT     => Omzetten van een event naar een voor de gebruiker leesbare tekst (Alleen voor Mega)
 //
@@ -1100,7 +1332,7 @@ boolean Device_99(byte function, struct NodoEventStruct *event, char *string)
       // Code hier wordt eenmalig aangeroepen na een reboot van de Nodo.
       break;
       }
-    case DEVICE_EVENT_IN:
+    case DEVICE_RAWSIGNAL_IN:
       {
       // Code op deze plaats wordt uitgevoerd zodra er een event via RF of IR is binnengekomen
       // De RawSignal buffer is gevuld met pulsen. de struct [event] moet hier worden samengesteld.      
@@ -1109,7 +1341,7 @@ boolean Device_99(byte function, struct NodoEventStruct *event, char *string)
       break;
       }
       
-    case DEVICE_EVENT_OUT:
+    case DEVICE_COMMAND:
       {
       // Als er vanuit de gebruiker, script of eventlist dit device een event moet uitsturen, dan is op het
       // moment dat de code hier wordt aangeroepen, de struct [event] gevuld en gereed voor verwerking.
@@ -1129,8 +1361,9 @@ boolean Device_99(byte function, struct NodoEventStruct *event, char *string)
       char *TempStr=(char*)malloc(26);
       string[25]=0;
 
+      // Met DEVICE_MMI_IN wordt de invoer van de gebruiker (string) omgezet naar een event zodat de Nodo deze intern kan verwerken.
       // Hier aangekomen bevat string het volledige commando. Test als eerste of het opgegeven commando overeen komt met DEVICE_NAME
-      // Dit is het eerste argument in het commando.
+      // Dit is het eerste argument in het commando. 
       if(GetArgv(string,TempStr,1))
         {
         if(strcasecmp(TempStr,DEVICE_NAME)==0)
@@ -1157,7 +1390,7 @@ boolean Device_99(byte function, struct NodoEventStruct *event, char *string)
       free(TempStr);
       break;
       }
-    #endif // DEVICE_CORE_99
+    #endif // MEGA
 
     case DEVICE_MMI_OUT:
       {
