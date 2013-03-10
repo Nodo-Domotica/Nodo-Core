@@ -1044,7 +1044,7 @@ boolean Device_15(byte function, struct NodoEventStruct *event, char *string)
       // zoek naar de langste kortst puls en de kortste lange puls
       unsigned int MarkShort=50000;
       unsigned int MarkLong=0;
-      for(x=1;x<RawSignal.Number;x+=2)
+      for(x=5;x<RawSignal.Number;x+=2)
         {
         y=RawSignal.Pulses[x]*PTMF;
         if(y<MarkShort)
@@ -1056,7 +1056,7 @@ boolean Device_15(byte function, struct NodoEventStruct *event, char *string)
       while(z)
         {
         z=false;
-        for(x=1;x<RawSignal.Number;x+=2)
+        for(x=5;x<RawSignal.Number;x+=2)
           {
           y=RawSignal.Pulses[x]*PTMF;
           if(y>MarkShort && y<(MarkShort+MarkShort/2))
@@ -1076,7 +1076,7 @@ boolean Device_15(byte function, struct NodoEventStruct *event, char *string)
       // zoek naar de langste kortst puls en de kortste lange puls
       unsigned int SpaceShort=50000;
       unsigned int SpaceLong=0;
-      for(x=2;x<RawSignal.Number;x+=2)
+      for(x=4;x<RawSignal.Number;x+=2)
         {
         y=RawSignal.Pulses[x]*PTMF;
         if(y<SpaceShort)
@@ -1088,7 +1088,7 @@ boolean Device_15(byte function, struct NodoEventStruct *event, char *string)
       while(z)
         {
         z=false;
-        for(x=2;x<RawSignal.Number;x+=2)
+        for(x=4;x<RawSignal.Number;x+=2)
           {
           y=RawSignal.Pulses[x]*PTMF;
           if(y>SpaceShort && y<(SpaceShort+SpaceShort/2))
@@ -1123,7 +1123,7 @@ boolean Device_15(byte function, struct NodoEventStruct *event, char *string)
           else
             Serial.write('0');
           }
-        Serial.print(F("Type=PWM, "));
+        Serial.print(F(", Type=PWM"));
         }
       if(y==2)
         {
@@ -1135,7 +1135,7 @@ boolean Device_15(byte function, struct NodoEventStruct *event, char *string)
           else
             Serial.write('0');
           }
-        Serial.print(F("Type=PDM, "));
+        Serial.print(F(", Type=PDM"));
         }
       if(y==3)
         {
@@ -1176,7 +1176,6 @@ boolean Device_15(byte function, struct NodoEventStruct *event, char *string)
 //          Serial.write('_');  // Space  
 //        }    
 //      Serial.println();
-//      PrintTerminal(ProgmemString(Text_22));
 
       break;
       }      
