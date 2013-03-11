@@ -42,19 +42,19 @@ boolean Eventlist_Write(int Line, struct NodoEventStruct *Event, struct NodoEven
   address=Line * sizeof(struct EventlistStruct) + sizeof(struct SettingsStruct);     // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer deze bytes. Deze niet te gebruiken voor de Eventlist!
   byte *B=(byte*)&EEPROM_Block;                                                       // B wijst naar de eerste byte van de struct
 
-  // Indien wissen van een regel, dan eerst kijken of de positie niet al leeg is. Is dit wel het geval, dan is beschrijven niet nodig.
-  if(Event->Command==0)
-    {
-    for(x=0;x<sizeof(struct EventlistStruct);x++) // lees alle bytes van de struct
-      {
-      if(address<EEPROM_SIZE)
-        *(B+x)=EEPROM.read(address++);
-      else
-        return false;
-      }
-    if(EEPROM_Block.EventCommand==0)
-      return true;
-    }
+//  // Indien wissen van een regel, dan eerst kijken of de positie niet al leeg is. Is dit wel het geval, dan is beschrijven niet nodig.
+//  if(Event->Command==0)
+//    {
+//    for(x=0;x<sizeof(struct EventlistStruct);x++) // lees alle bytes van de struct
+//      {
+//      if(address<EEPROM_SIZE)
+//        *(B+x)=EEPROM.read(address++);
+//      else
+//        return false;
+//      }
+//    if(EEPROM_Block.EventCommand==0)
+//      return true;
+//    }??? partitieel wissen herstellen.
 
   // Nu wegschrijven.
   address=Line * sizeof(struct EventlistStruct) + sizeof(struct SettingsStruct);     // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer deze bytes. Deze niet te gebruiken voor de Eventlist!
@@ -2430,6 +2430,21 @@ void DeviceInit(void)
   #ifdef DEVICE_17
   Device_ptr[x]=&Device_17;
   Device_id[x++]=17;
+  #endif
+
+  #ifdef DEVICE_18
+  Device_ptr[x]=&Device_18;
+  Device_id[x++]=18;
+  #endif
+
+  #ifdef DEVICE_19
+  Device_ptr[x]=&Device_19;
+  Device_id[x++]=19;
+  #endif
+
+  #ifdef DEVICE_20
+  Device_ptr[x]=&Device207;
+  Device_id[x++]=20;
   #endif
 
   #ifdef DEVICE_99

@@ -9,7 +9,7 @@ byte NodoType(struct NodoEventStruct *InEvent)
   int x;
   
   if(InEvent->Flags & TRANSMISSION_EVENT)
-     return NODO_TYPE_EVENT;  
+     return NODO_TYPE_EVENT;
 
   if(InEvent->Flags & TRANSMISSION_COMMAND)
      return NODO_TYPE_COMMAND;  
