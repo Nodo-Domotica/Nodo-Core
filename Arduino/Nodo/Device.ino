@@ -12,9 +12,19 @@
  #define DEVICE_03  // NewKAKU           : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno.
  #define DEVICE_04  // SendNewKAKU       : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno. 
  #define DEVICE_05  // TempSensor        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
- #define DEVICE_13  // UserEventOld      : UserEvents van de oude Nodo. t.b.v. compatibiliteit reeds geprogrammeerde universele afstandsbedieningen.
- #define DEVICE_14  // MonitorAnalog     : Laat continue analoge metingen zien van alle Wired-In poorten. 
- #define DEVICE_15  // RawSignalAnalyze  : Geeft bij een binnenkomend signaal informatie over de pulsen weer.
+ #define DEVICE_06  // DHT11Read         : Uitlezen temperatuur & vochtigheidsgraad sensor DHT-11
+ #define DEVICE_07  // Reserved! UserEventOld      : UserEvents van de oude Nodo. t.b.v. compatibiliteit reeds geprogrammeerde universele afstandsbedieningen.
+ #define DEVICE_08  // AlectoV1          : Dit protocol zorgt voor ontvangst van Alecto weerstation buitensensoren met protocol V1
+ #define DEVICE_09  // AlectoV2          : Dit protocol zorgt voor ontvangst van Alecto weerstation buitensensoren met protocol V2
+ #define DEVICE_10  // AlectoV3          : Dit protocol zorgt voor ontvangst van Alecto weerstation buitensensoren met protocol V3
+ #define DEVICE_11  // Reserved!
+ #define DEVICE_12  // OregonV2          : Dit protocol zorgt voor ontvangst van Oregon buitensensoren met protocol versie V2
+ #define DEVICE_13  // FA20RF            : Dit protocol zorgt voor ontvangst van Flamingo FA20RF rookmelder signalen
+ #define DEVICE_14  // FA20RFSend        : Dit protocol zorgt voor aansturen van Flamingo FA20RF rookmelder
+ #define DEVICE_15  // HomeEasy          : Dit protocol zorgt voor ontvangst HomeEasy EU zenders die werken volgens de automatische codering (Ontvangers met leer-knop)
+ #define DEVICE_16  // HomeEasySend      : Dit protocol stuurt HomeEasy EU ontvangers aan die werken volgens de automatische codering (Ontvangers met leer-knop)
+ #define DEVICE_17  // Reserved! MonitorAnalog     : Laat continue analoge metingen zien van alle Wired-In poorten. 
+ #define DEVICE_18  // RawSignalAnalyze  : Geeft bij een binnenkomend signaal informatie over de pulsen weer.
  #define DEVICE_99  // UserDevice        : Device voor eigen toepassing door gebruiker te bouwen.
  
  \***********************************************************************************************/
@@ -986,7 +996,1561 @@ uint8_t DS_reset()
   }
 #endif // DEVICE_05_CORE
 
-          
+
+
+//#######################################################################################################
+//######################## DEVICE-06 Temperatuur en Luchtvochtigheid sensor DHT 11 ######################
+//#######################################################################################################
+
+/*********************************************************************************************\
+ * Deze funktie leest een DHT11 temperatuur en luchtvochtigheidssensor uit.
+ * Deze funktie kan worden gebruikt voor alle digitale poorten van de Arduino.
+ * De uitgelezen temperatuur waarde wordt in de opgegeven variabele opgeslagen.
+ * De uitgelezen luchtvochtigheidsgraad wordt in de opgegeven variabele +1 opgeslagen.
+ * 
+ * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
+ * Datum              : Mrt.2013
+ * Compatibiliteit    : Vanaf Nodo build nummer 508
+ * Syntax             : "DHT11 <Par1:Poortnummer>, <Par2:Basis Variabele>"
+ *********************************************************************************************
+ * Technische informatie:
+ * De DHT11 sensor is een 3 pin sensor met een bidirectionele datapin
+ * Het principe is "onewire" maar dit protocol is NIET compatible met het bekende Dallas onewire protocol
+ * Dit protocol gebruikt twee variabelen, 1 voor temperatuur en 1 voor luchtvochtigheid
+ \*********************************************************************************************/
+
+#ifdef DEVICE_06
+#define DEVICE_ID 06
+#define DEVICE_NAME "DHT11Read"
+uint8_t DHT11_Pin;
+
+boolean Device_06(byte function, struct NodoEventStruct *event, char *string)
+{
+
+  boolean success=false;
+
+  switch(function)
+  {
+#ifdef DEVICE_CORE_06
+  case DEVICE_RAWSIGNAL_IN:
+    break;
+
+  case DEVICE_COMMAND:
+    {
+      DHT11_Pin=PIN_WIRED_OUT_1+event->Par1-1;
+      byte dht11_dat[5];
+      byte dht11_in;
+      byte i;
+      byte temperature=0;
+      byte humidity=0;
+
+      pinMode(DHT11_Pin,OUTPUT);
+
+      // DHT11 start condition, pull-down i/o pin for 18ms
+      digitalWrite(DHT11_Pin,LOW);               // Pull low
+      delay(18);
+      digitalWrite(DHT11_Pin,HIGH);              // Pull high
+      delayMicroseconds(40);
+      pinMode(DHT11_Pin,INPUT);                  // change pin to input
+      delayMicroseconds(40);
+
+      dht11_in = digitalRead(DHT11_Pin);
+      if(dht11_in) return false;
+
+      delayMicroseconds(80);
+      dht11_in = digitalRead(DHT11_Pin);
+      if(!dht11_in) return false;
+
+      delayMicroseconds(40);                     // now ready for data reception
+      for (i=0; i<5; i++)
+        dht11_dat[i] = read_dht11_dat();
+        
+      // Checksum calculation is a Rollover Checksum by design!
+      byte dht11_check_sum = dht11_dat[0]+dht11_dat[1]+dht11_dat[2]+dht11_dat[3];// check check_sum
+      if(dht11_dat[4]!= dht11_check_sum) return false;
+
+      temperature = dht11_dat[2];
+      humidity = dht11_dat[0];
+
+      byte VarNr = event->Par2; // De originele Par1 tijdelijk opslaan want hier zit de variabelenummer in waar de gebruiker de uitgelezen waarde in wil hebben
+        ClearEvent(event);                                    // Ga uit van een default schone event. Oude eventgegevens wissen.
+      event->Command      = CMD_VARIABLE_SET;                 // Commando "VariableSet"
+      event->Par1         = VarNr;                            // Par1 is de variabele die we willen vullen.
+      event->Par2         = float2ul(float(temperature));
+      QueueAdd(event);                                        // Event opslaan in de event queue, hierna komt de volgende meetwaarde
+      event->Par1         = VarNr+1;                          // Par1+1 is de variabele die we willen vullen voor luchtvochtigheid
+      event->Par2         = float2ul(float(humidity));
+      QueueAdd(event);
+      success=true;
+
+      break;
+    }
+#endif // DEVICE_CORE_06
+
+#ifdef NODO_MEGA
+  case DEVICE_MMI_IN:
+    {
+      char *TempStr=(char*)malloc(26);
+      string[25]=0;
+
+      if(GetArgv(string,TempStr,1))
+      {
+        if(strcasecmp(TempStr,DEVICE_NAME)==0)
+        {
+          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
+          if(event->Par1>0 && event->Par1<WIRED_PORTS && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX-1)
+            success=true;
+        }
+      }
+      free(TempStr);
+      break;
+    }
+
+  case DEVICE_MMI_OUT:
+    {
+      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
+      {
+        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+        strcat(string," ");
+        strcat(string,int2str(event->Par1));
+        strcat(string,",");
+        strcat(string,int2str(event->Par2));
+      }
+      break;
+    }
+#endif //NODO_MEGA
+  }      
+  return success;
+}
+
+#ifdef DEVICE_CORE_06
+/*********************************************************************************************\
+ * DHT11 sub to get an 8 bit value from the receiving bitstream
+ \*********************************************************************************************/
+byte read_dht11_dat()
+{
+  byte i = 0;
+  byte result=0;
+  noInterrupts();
+  for(i=0; i< 8; i++)
+  {
+    while(!digitalRead(DHT11_Pin));  // wait for 50us
+    delayMicroseconds(30);
+    if(digitalRead(DHT11_Pin)) 
+      result |=(1<<(7-i));
+    while(digitalRead(DHT11_Pin));  // wait '1' finish
+  }
+  interrupts();
+  return result;
+}
+#endif //DEVICE_CORE_06
+#endif //DEVICE_06
+
+
+//#######################################################################################################
+//############################### Generic code for all Alecto devices  ##################################
+//#######################################################################################################
+
+#if defined(DEVICE_CORE_08) || defined(DEVICE_CORE_09) || defined(DEVICE_CORE_10)
+byte ProtocolAlectoValidID[5];
+byte ProtocolAlectoVar[5];
+unsigned int ProtocolAlectoRainBase=0;
+
+/*********************************************************************************************\
+ * Calculates CRC-8 checksum
+ * reference http://lucsmall.com/2012/04/29/weather-station-hacking-part-2/
+ *           http://lucsmall.com/2012/04/30/weather-station-hacking-part-3/
+ *           https://github.com/lucsmall/WH2-Weather-Sensor-Library-for-Arduino/blob/master/WeatherSensorWH2.cpp
+ \*********************************************************************************************/
+uint8_t ProtocolAlectoCRC8( uint8_t *addr, uint8_t len)
+{
+  uint8_t crc = 0;
+  // Indicated changes are from reference CRC-8 function in OneWire library
+  while (len--) {
+    uint8_t inbyte = *addr++;
+    for (uint8_t i = 8; i; i--) {
+      uint8_t mix = (crc ^ inbyte) & 0x80; // changed from & 0x01
+      crc <<= 1; // changed from right shift
+      if (mix) crc ^= 0x31;// changed from 0x8C;
+      inbyte <<= 1; // changed from right shift
+    }
+  }
+  return crc;
+}
+
+/*********************************************************************************************\
+ * Check for valid sensor ID
+ \*********************************************************************************************/
+byte ProtocolAlectoCheckID(byte checkID)
+{
+  for (byte x=0; x<5; x++) if (ProtocolAlectoValidID[x] == checkID) return ProtocolAlectoVar[x];
+  return 0;
+}
+#endif // ALECTO Basic stuff...
+
+//#######################################################################################################
+//##################################### Device-08 AlectoV1  #############################################
+//#######################################################################################################
+
+/*********************************************************************************************\
+ * Dit protocol zorgt voor ontvangst van Alecto weerstation buitensensoren met protocol V1
+ * 
+ * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
+ * Support            : www.nodo-domotica.nl
+ * Datum              : Mrt.2013
+ * Versie             : 1.0
+ * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
+ * Compatibiliteit    : Vanaf Nodo build nummer 508
+ * Syntax             : "AlectoV1 <Par1:Sensor ID>, <Par2:Basis Variabele>"
+ *********************************************************************************************
+ * Technische informatie:
+ * Message Format: (9 nibbles, 36 bits):
+ *
+ * Format for Temperature Humidity
+ *   AAAAAAAA BBBB CCCC CCCC CCCC DDDDDDDD EEEE
+ *   RC       Type Temperature___ Humidity Checksum
+ *   A = Rolling Code
+ *   B = Message type (xyyx = temp/humidity if yy <> '11')
+ *   C = Temperature (two's complement)
+ *   D = Humidity BCD format
+ *   E = Checksum
+ *
+ * Format for Rain
+ *   AAAAAAAA BBBB CCCC DDDD DDDD DDDD DDDD EEEE
+ *   RC       Type      Rain                Checksum
+ *   A = Rolling Code
+ *   B = Message type (xyyx = NON temp/humidity data if yy = '11')
+ *   C = fixed to 1100
+ *   D = Rain (bitvalue * 0.25 mm)
+ *   E = Checksum
+ *
+ * Format for Windspeed
+ *   AAAAAAAA BBBB CCCC CCCC CCCC DDDDDDDD EEEE
+ *   RC       Type                Windspd  Checksum
+ *   A = Rolling Code
+ *   B = Message type (xyyx = NON temp/humidity data if yy = '11')
+ *   C = Fixed to 1000 0000 0000
+ *   D = Windspeed  (bitvalue * 0.2 m/s, correction for webapp = 3600/1000 * 0.2 * 100 = 72)
+ *   E = Checksum
+ *
+ * Format for Winddirection & Windgust
+ *   AAAAAAAA BBBB CCCD DDDD DDDD EEEEEEEE FFFF
+ *   RC       Type      Winddir   Windgust Checksum
+ *   A = Rolling Code
+ *   B = Message type (xyyx = NON temp/humidity data if yy = '11')
+ *   C = Fixed to 111
+ *   D = Wind direction
+ *   E = Windgust (bitvalue * 0.2 m/s, correction for webapp = 3600/1000 * 0.2 * 100 = 72)
+ *   F = Checksum
+ \*********************************************************************************************/
+ 
+#ifdef DEVICE_08
+#define DEVICE_ID 8
+#define DEVICE_NAME "AlectoV1"
+
+#define WS3500_PULSECOUNT 74
+
+boolean Device_08(byte function, struct NodoEventStruct *event, char *string)
+{
+  boolean success=false;
+
+  switch(function)
+  {
+#ifdef DEVICE_CORE_08
+  case DEVICE_RAWSIGNAL_IN:
+    {
+      if (RawSignal.Number != WS3500_PULSECOUNT) return false;
+
+      const byte PTMF=50;
+      unsigned long bitstream=0;
+      byte nibble0=0;
+      byte nibble1=0;
+      byte nibble2=0;
+      byte nibble3=0;
+      byte nibble4=0;
+      byte nibble5=0;
+      byte nibble6=0;
+      byte nibble7=0;
+      byte checksum=0;
+      int temperature=0;
+      byte humidity=0;
+      unsigned int rain=0;
+      byte windspeed=0;
+      byte windgust=0;
+      int winddirection=0;
+      byte checksumcalc = 0;
+      byte rc=0;
+      byte basevar=0;
+
+      for(byte x=2; x<=64; x=x+2)
+      {
+        if(RawSignal.Pulses[x]*PTMF > 0xA00) bitstream = ((bitstream >> 1) |(0x1L << 31)); 
+        else bitstream = (bitstream >> 1);
+      }
+
+      for(byte x=66; x<=72; x=x+2)
+      {
+        if(RawSignal.Pulses[x]*PTMF > 0xA00) checksum = ((checksum >> 1) |(0x1L << 3)); 
+        else checksum = (checksum >> 1);
+      }
+
+      nibble7 = (bitstream >> 28) & 0xf;
+      nibble6 = (bitstream >> 24) & 0xf;
+      nibble5 = (bitstream >> 20) & 0xf;
+      nibble4 = (bitstream >> 16) & 0xf;
+      nibble3 = (bitstream >> 12) & 0xf;
+      nibble2 = (bitstream >> 8) & 0xf;
+      nibble1 = (bitstream >> 4) & 0xf;
+      nibble0 = bitstream & 0xf;
+
+      // checksum calculations
+      if ((nibble2 & 0x6) != 6) {
+        checksumcalc = (0xf - nibble0 - nibble1 - nibble2 - nibble3 - nibble4 - nibble5 - nibble6 - nibble7) & 0xf;
+      }
+      else
+      {
+        // Alecto checksums are Rollover Checksums by design!
+        if (nibble3 == 3)
+          checksumcalc = (0x7 + nibble0 + nibble1 + nibble2 + nibble3 + nibble4 + nibble5 + nibble6 + nibble7) & 0xf;
+        else
+          checksumcalc = (0xf - nibble0 - nibble1 - nibble2 - nibble3 - nibble4 - nibble5 - nibble6 - nibble7) & 0xf;
+      }
+
+      if (checksum != checksumcalc) return false;
+      rc = bitstream & 0xff;
+
+      basevar = ProtocolAlectoCheckID(rc);
+
+      event->Command       = CMD_DEVICE_FIRST+DEVICE_ID;
+      event->Par1=rc;
+      event->Par2=basevar;
+      event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
+      event->Port          = VALUE_SOURCE_RF;
+
+      if (basevar == 0) return true;
+
+      if ((nibble2 & 0x6) != 6) {
+
+        temperature = (bitstream >> 12) & 0xfff;
+        //fix 12 bit signed number conversion
+        if ((temperature & 0x800) == 0x800) temperature = temperature - 0x1000;
+        UserVar[basevar -1] = (float)temperature/10;
+
+        humidity = (10 * nibble7) + nibble6;
+        UserVar[basevar +1 -1] = (float)humidity;
+        RawSignal.Number=0;
+        return true;
+      }
+      else
+      {
+        if (nibble3 == 3)
+        {
+          rain = ((bitstream >> 16) & 0xffff);
+          // check if rain unit has been reset!
+          if (rain < ProtocolAlectoRainBase) ProtocolAlectoRainBase=rain;
+          if (ProtocolAlectoRainBase > 0)
+          {
+            UserVar[basevar+1 -1] += ((float)rain - ProtocolAlectoRainBase) * 0.25;
+          }
+          ProtocolAlectoRainBase = rain;
+          return true;
+        }
+
+        if (nibble3 == 1)
+        {
+          windspeed = ((bitstream >> 24) & 0xff);
+          UserVar[basevar +3 -1] = (float)windspeed * 0.72;
+          RawSignal.Number=0;
+          return true;
+        }
+
+        if ((nibble3 & 0x7) == 7)
+        {
+          winddirection = ((bitstream >> 15) & 0x1ff) / 45;
+          UserVar[basevar +4 -1] = (float)winddirection;
+
+          windgust = ((bitstream >> 24) & 0xff);
+          UserVar[basevar +5 -1] = (float)windgust * 0.72;
+
+          RawSignal.Number=0;
+          return true;
+        }
+      }
+      success = true;
+      break;
+    }
+  case DEVICE_COMMAND:
+    {
+      if ((event->Par2 > 0) && (ProtocolAlectoCheckID(event->Par1) == 0))
+        {
+          for (byte x=0; x<5; x++)
+          {
+            if (ProtocolAlectoValidID[x] == 0)
+            {
+              ProtocolAlectoValidID[x] = event->Par1;
+              ProtocolAlectoVar[x] = event->Par2;
+              break;
+            }
+          }
+        }
+      break;
+    }
+#endif // DEVICE_CORE_08
+
+#ifdef NODO_MEGA
+  case DEVICE_MMI_IN:
+    {
+      char *TempStr=(char*)malloc(26);
+      string[25]=0;
+
+      if(GetArgv(string,TempStr,1))
+      {
+        if(strcasecmp(TempStr,DEVICE_NAME)==0)
+        {
+          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
+          if(event->Par1>0 && event->Par1<255 && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX)
+            success=true;
+        }
+      }
+      free(TempStr);
+      break;
+    }
+
+  case DEVICE_MMI_OUT:
+    {
+      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
+      {
+        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+        strcat(string," ");
+        strcat(string,int2str(event->Par1));
+        strcat(string,",");
+        strcat(string,int2str(event->Par2));
+      }
+      break;
+    }
+#endif //NODO_MEGA
+  }      
+  return success;
+}
+#endif //DEVICE_08
+
+
+//#######################################################################################################
+//##################################### Device-09 AlectoV2  #############################################
+//#######################################################################################################
+
+/*********************************************************************************************\
+ * Dit protocol zorgt voor ontvangst van Alecto weerstation buitensensoren
+ * 
+ * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
+ *                      Support ACH2010 en code optimalisatie door forumlid: Arendst
+ * Support            : www.nodo-domotica.nl
+ * Datum              : Mrt.2013
+ * Versie             : 1.0
+ * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
+ * Compatibiliteit    : Vanaf Nodo build nummer 508
+ * Syntax             : "AlectoV2 <Par1:Sensor ID>, <Par2:Basis Variabele>"
+ *********************************************************************************************
+ * Technische informatie:
+ * DKW2012 Message Format: (11 Bytes, 88 bits):
+ * AAAAAAAA AAAABBBB BBBB__CC CCCCCCCC DDDDDDDD EEEEEEEE FFFFFFFF GGGGGGGG GGGGGGGG HHHHHHHH IIIIIIII
+ *                         Temperature Humidity Windspd_ Windgust Rain____ ________ Winddir  Checksum
+ * A = start/unknown, first 8 bits are always 11111111
+ * B = Rolling code
+ * C = Temperature (10 bit value with -400 base)
+ * D = Humidity
+ * E = windspeed (* 0.3 m/s, correction for webapp = 3600/1000 * 0.3 * 100 = 108))
+ * F = windgust (* 0.3 m/s, correction for webapp = 3600/1000 * 0.3 * 100 = 108))
+ * G = Rain ( * 0.3 mm)
+ * H = winddirection (0 = north, 4 = east, 8 = south 12 = west)
+ * I = Checksum, calculation is still under investigation
+ *
+ * WS3000 and ACH2010 systems have no winddirection, message format is 8 bit shorter
+ * Message Format: (10 Bytes, 80 bits):
+ * AAAAAAAA AAAABBBB BBBB__CC CCCCCCCC DDDDDDDD EEEEEEEE FFFFFFFF GGGGGGGG GGGGGGGG HHHHHHHH
+ *                         Temperature Humidity Windspd_ Windgust Rain____ ________ Checksum
+ * 
+ * DCF Time Message Format: (NOT DECODED!, we already have time sync through webapp)
+ * AAAAAAAA BBBBCCCC DDDDDDDD EFFFFFFF GGGGGGGG HHHHHHHH IIIIIIII JJJJJJJJ KKKKKKKK LLLLLLLL MMMMMMMM
+ * 	    11                 Hours   Minutes  Seconds  Year     Month    Day      ?        Checksum
+ * B = 11 = DCF
+ * C = ?
+ * D = ?
+ * E = ?
+ * F = Hours BCD format (7 bits only for this byte, MSB could be '1')
+ * G = Minutes BCD format
+ * H = Seconds BCD format
+ * I = Year BCD format (only two digits!)
+ * J = Month BCD format
+ * K = Day BCD format
+ * L = ?
+ * M = Checksum
+ \*********************************************************************************************/
+
+#ifdef DEVICE_09
+#define DEVICE_ID 9
+#define DEVICE_NAME "AlectoV2"
+
+#define DKW2012_PULSECOUNT 176
+#define ACH2010_MIN_PULSECOUNT 160 // reduce this value (144?) in case of bad reception
+#define ACH2010_MAX_PULSECOUNT 160
+
+boolean Device_09(byte function, struct NodoEventStruct *event, char *string)
+{
+  boolean success=false;
+
+  switch(function)
+  {
+#ifdef DEVICE_CORE_09
+  case DEVICE_RAWSIGNAL_IN:
+    {
+      if (!(((RawSignal.Number >= ACH2010_MIN_PULSECOUNT) && (RawSignal.Number <= ACH2010_MAX_PULSECOUNT)) || (RawSignal.Number == DKW2012_PULSECOUNT))) return false;
+
+      const byte PTMF=50;
+      byte c=0;
+      byte rfbit;
+      byte data[9]; 
+      byte msgtype=0;
+      byte rc=0;
+      unsigned int rain=0;
+      byte checksum=0;
+      byte checksumcalc=0;
+      byte basevar;
+      byte maxidx = 8;
+
+      if(RawSignal.Number > ACH2010_MAX_PULSECOUNT) maxidx = 9;  
+      // Get message back to front as the header is almost never received complete for ACH2010
+      byte idx = maxidx;
+      for(byte x=RawSignal.Number; x>0; x=x-2)
+        {
+          if(RawSignal.Pulses[x-1]*PTMF < 0x300) rfbit = 0x80; else rfbit = 0;  
+          data[idx] = (data[idx] >> 1) | rfbit;
+          c++;
+          if (c == 8) 
+          {
+            if (idx == 0) break;
+            c = 0;
+            idx--;
+          }   
+        }
+
+      checksum = data[maxidx];
+      checksumcalc = ProtocolAlectoCRC8(data, maxidx);
+  
+      msgtype = (data[0] >> 4) & 0xf;
+      rc = (data[0] << 4) | (data[1] >> 4);
+
+      if (checksum != checksumcalc) return false;
+  
+      basevar = ProtocolAlectoCheckID(rc);
+
+      event->Command       = CMD_DEVICE_FIRST+DEVICE_ID;
+      event->Par1=rc;
+      event->Par2=basevar;
+      event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
+      event->Port          = VALUE_SOURCE_RF;
+
+      if (basevar == 0) return true;
+      if ((msgtype != 10) && (msgtype != 5)) return true;
+  
+      UserVar[basevar -1] = (float)(((data[1] & 0x3) * 256 + data[2]) - 400) / 10;
+      UserVar[basevar +1 -1] = (float)data[3];
+
+      rain = (data[6] * 256) + data[7];
+      // check if rain unit has been reset!
+      if (rain < ProtocolAlectoRainBase) ProtocolAlectoRainBase=rain;
+      if (ProtocolAlectoRainBase > 0)
+      {
+        UserVar[basevar+1 -1] += ((float)rain - ProtocolAlectoRainBase) * 0.30;
+      }
+      ProtocolAlectoRainBase = rain;
+
+      UserVar[basevar +3 -1] = (float)data[4] * 1.08;
+      UserVar[basevar +4 -1] = (float)data[5] * 1.08;
+      if (RawSignal.Number == DKW2012_PULSECOUNT) UserVar[basevar +5 -1] = (float)(data[8] & 0xf);
+
+      success = true;
+      break;
+    }
+  case DEVICE_COMMAND:
+    {
+      if ((event->Par2 > 0) && (ProtocolAlectoCheckID(event->Par1) == 0))
+        {
+          for (byte x=0; x<5; x++)
+          {
+            if (ProtocolAlectoValidID[x] == 0)
+            {
+              ProtocolAlectoValidID[x] = event->Par1;
+              ProtocolAlectoVar[x] = event->Par2;
+              break;
+            }
+          }
+        }
+      break;
+    }
+#endif // DEVICE_CORE_09
+
+#ifdef NODO_MEGA
+  case DEVICE_MMI_IN:
+    {
+      char *TempStr=(char*)malloc(26);
+      string[25]=0;
+
+      if(GetArgv(string,TempStr,1))
+      {
+        if(strcasecmp(TempStr,DEVICE_NAME)==0)
+        {
+          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
+          if(event->Par1>0 && event->Par1<255 && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX)
+            success=true;
+        }
+      }
+      free(TempStr);
+      break;
+    }
+
+  case DEVICE_MMI_OUT:
+    {
+      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
+      {
+        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+        strcat(string," ");
+        strcat(string,int2str(event->Par1));
+        strcat(string,",");
+        strcat(string,int2str(event->Par2));
+      }
+      break;
+    }
+#endif //NODO_MEGA
+  }      
+  return success;
+}
+#endif //DEVICE_09
+
+
+//#######################################################################################################
+//##################################### Device-10 AlectoV3  #############################################
+//#######################################################################################################
+
+/*********************************************************************************************\
+ * Dit protocol zorgt voor ontvangst van Alecto weerstation buitensensoren
+ * 
+ * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
+ *                      Support WS1100 door forumlid: Arendst
+ * Support            : www.nodo-domotica.nl
+ * Datum              : Mrt.2013
+ * Versie             : 1.0
+ * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
+ * Compatibiliteit    : Vanaf Nodo build nummer 508
+ * Syntax             : "AlectoV3 <Par1:Sensor ID>, <Par2:Basis Variabele>"
+ *********************************************************************************************
+ * Technische informatie:
+ * Decodes signals from Alecto Weatherstation outdoor unit, type 3 (94/126 pulses, 47/63 bits, 433 MHz).
+ * WS1100 Message Format: (7 bits preamble, 5 Bytes, 40 bits):
+ * AAAAAAA AAAABBBB BBBB__CC CCCCCCCC DDDDDDDD EEEEEEEE
+ *                        Temperature Humidity Checksum
+ * A = start/unknown, first 8 bits are always 11111111
+ * B = Rolling code
+ * C = Temperature (10 bit value with -400 base)
+ * D = Checksum
+ * E = Humidity
+ *
+ * WS1200 Message Format: (7 bits preamble, 7 Bytes, 56 bits):
+ * AAAAAAA AAAABBBB BBBB__CC CCCCCCCC DDDDDDDD DDDDDDDD EEEEEEEE FFFFFFFF 
+ *                        Temperature Rain LSB Rain MSB ???????? Checksum
+ * A = start/unknown, first 8 bits are always 11111111
+ * B = Rolling code
+ * C = Temperature (10 bit value with -400 base)
+ * D = Rain ( * 0.3 mm)
+ * E = ?
+ * F = Checksum
+ \*********************************************************************************************/
+ 
+#ifdef DEVICE_10
+#define DEVICE_ID 10
+#define DEVICE_NAME "AlectoV3"
+
+#define WS1100_PULSECOUNT 94
+#define WS1200_PULSECOUNT 126
+
+boolean Device_10(byte function, struct NodoEventStruct *event, char *string)
+{
+  boolean success=false;
+
+  switch(function)
+  {
+#ifdef DEVICE_CORE_10
+  case DEVICE_RAWSIGNAL_IN:
+    {
+      if ((RawSignal.Number != WS1100_PULSECOUNT) && (RawSignal.Number != WS1200_PULSECOUNT)) return false;
+
+      const byte PTMF=50;
+      unsigned long bitstream1=0;
+      unsigned long bitstream2=0;
+      byte rc=0;
+      int temperature=0;
+      byte humidity=0;
+      unsigned int rain=0;
+      byte checksum=0;
+      byte checksumcalc=0;
+      byte basevar=0;
+      byte data[6];
+
+      // get first 32 relevant bits
+      for(byte x=15; x<=77; x=x+2) if(RawSignal.Pulses[x]*PTMF < 0x300) bitstream1 = (bitstream1 << 1) | 0x1; 
+      else bitstream1 = (bitstream1 << 1);
+      // get second 32 relevant bits
+      for(byte x=79; x<=141; x=x+2) if(RawSignal.Pulses[x]*PTMF < 0x300) bitstream2 = (bitstream2 << 1) | 0x1; 
+      else bitstream2 = (bitstream2 << 1);
+
+      data[0] = (bitstream1 >> 24) & 0xff;
+      data[1] = (bitstream1 >> 16) & 0xff;
+      data[2] = (bitstream1 >>  8) & 0xff;
+      data[3] = (bitstream1 >>  0) & 0xff;
+      data[4] = (bitstream2 >> 24) & 0xff;
+      data[5] = (bitstream2 >> 16) & 0xff;
+
+      if (RawSignal.Number == WS1200_PULSECOUNT)
+      {
+        checksum = (bitstream2 >> 8) & 0xff;
+        checksumcalc = ProtocolAlectoCRC8(data, 6);
+      }
+      else
+      {
+        checksum = (bitstream2 >> 24) & 0xff;
+        checksumcalc = ProtocolAlectoCRC8(data, 4);
+      }
+
+      rc = (bitstream1 >> 20) & 0xff;
+
+      if (checksum != checksumcalc) return false;
+      basevar = ProtocolAlectoCheckID(rc);
+
+      event->Command       = CMD_DEVICE_FIRST+DEVICE_ID;
+      event->Par1=rc;
+      event->Par2=basevar;
+      event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
+      event->Port          = VALUE_SOURCE_RF;
+
+      if (basevar == 0) return true;
+
+      temperature = ((bitstream1 >> 8) & 0x3ff) - 400;
+      UserVar[basevar-1] = (float)temperature / 10;
+
+      if (RawSignal.Number == WS1200_PULSECOUNT)
+      {
+        rain = (((bitstream2 >> 24) & 0xff) * 256) + ((bitstream1 >> 0) & 0xff);
+        // check if rain unit has been reset!
+        if (rain < ProtocolAlectoRainBase) ProtocolAlectoRainBase=rain;
+        if (ProtocolAlectoRainBase > 0)
+        {
+          UserVar[basevar+1 -1] += ((float)rain - ProtocolAlectoRainBase) * 0.30;
+        }
+        ProtocolAlectoRainBase = rain;
+      }
+      else
+      {
+        humidity = bitstream1 & 0xff;
+        UserVar[basevar+1 -1] = (float)humidity / 10;
+      }
+
+      RawSignal.Number=0;
+      success = true;
+      break;
+    }
+  case DEVICE_COMMAND:
+    {
+      if ((event->Par2 > 0) && (ProtocolAlectoCheckID(event->Par1) == 0))
+        {
+          for (byte x=0; x<5; x++)
+          {
+            if (ProtocolAlectoValidID[x] == 0)
+            {
+              ProtocolAlectoValidID[x] = event->Par1;
+              ProtocolAlectoVar[x] = event->Par2;
+              break;
+            }
+          }
+        }
+      break;
+    }
+#endif // DEVICE_CORE_10
+
+#ifdef NODO_MEGA
+  case DEVICE_MMI_IN:
+    {
+      char *TempStr=(char*)malloc(26);
+      string[25]=0;
+
+      if(GetArgv(string,TempStr,1))
+      {
+        if(strcasecmp(TempStr,DEVICE_NAME)==0)
+        {
+          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
+          if(event->Par1>0 && event->Par1<255 && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX)
+            success=true;
+        }
+      }
+      free(TempStr);
+      break;
+    }
+
+  case DEVICE_MMI_OUT:
+    {
+      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
+      {
+        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+        strcat(string," ");
+        strcat(string,int2str(event->Par1));
+        strcat(string,",");
+        strcat(string,int2str(event->Par2));
+      }
+      break;
+    }
+#endif //NODO_MEGA
+  }      
+  return success;
+}
+#endif //DEVICE_10
+
+
+//#######################################################################################################
+//##################################### Device-12 OregonV2  #############################################
+//#######################################################################################################
+
+/*********************************************************************************************\
+ * Dit protocol zorgt voor ontvangst van Oregon buitensensoren
+ * 
+ * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
+ *                      Support THGN132N en code optimalisatie door forumlid: Arendst
+ * Support            : www.nodo-domotica.nl
+ * Datum              : Mrt.2013
+ * Versie             : 1.0
+ * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
+ * Compatibiliteit    : Vanaf Nodo build nummer 508
+ * Syntax             : "OregonV2 <Par1:Sensor ID>, <Par2:Basis Variabele>"
+ *********************************************************************************************
+ * Technische informatie:
+ * Only supports Oregon V2 protocol messages, message format consists of 18 or 21 nibbles:
+ * THN132
+ * AAAA AAAA AAAA AAAA BBBB CCCC CCCC CCCC CCCC DDDD EEEE EEEE FFFF GGGG GGGG GGGG HHHH IIII IIII
+ *                          0    1    2    3    4    5    6    7    8    9    10   11   12   13
+ *   A = preamble, B = sync bits, C = ID, D = Channel, E = RC, F = Flags,
+ *   G = Measured value, 3 digits BCD encoded, H = sign, bit3 set if negative temperature
+ *   I = Checksum, sum of nibbles C,D,E,F,G,H
+ *
+ * THGN132
+ * AAAA AAAA AAAA AAAA BBBB CCCC CCCC CCCC CCCC DDDD EEEE EEEE FFFF GGGG GGGG GGGG HHHH IIII IIII JJJJ KKKK KKKK
+ *                          0    1    2    3    4    5    6    7    8    9    10   11   12   13   14   15   16
+ *   A = preamble, B = sync bits, C = ID, D = Channel, E = RC, F = Flags,
+ *   G = Measured value, 3 digits BCD encoded, H = sign, bit3 set if negative temperature
+ *   I = Humidity value
+ *   J = Unknown
+ *   K = Checksum, sum of nibbles C,D,E,F,G,H,I,J
+ **********************************************************************************************/
+ 
+#ifdef DEVICE_12
+#define DEVICE_ID 12
+#define DEVICE_NAME   "OregonV2"
+
+#define THN132N_ID              1230
+#define THGN123N_ID              721
+#define THGR810_ID             17039
+#define THN132N_MIN_PULSECOUNT   196
+#define THN132N_MAX_PULSECOUNT   205
+#define THGN123N_MIN_PULSECOUNT  228
+#define THGN123N_MAX_PULSECOUNT  238
+
+byte ProtocolOregonValidID[5];
+byte ProtocolOregonVar[5];
+
+boolean Device_12(byte function, struct NodoEventStruct *event, char *string)
+{
+  boolean success=false;
+
+  switch(function)
+  {
+#ifdef DEVICE_CORE_12
+  case DEVICE_RAWSIGNAL_IN:
+    {
+      const byte PTMF=50;
+      byte nibble[17]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+      byte y = 1;
+      byte c = 1;
+      byte rfbit = 1;
+      byte sync = 0; 
+      int id = 0;
+      byte checksum = 0;
+      byte checksumcalc = 0;
+      int datavalue = 0;
+      byte basevar=0;
+
+      if (!((RawSignal.Number >= THN132N_MIN_PULSECOUNT && RawSignal.Number <= THN132N_MAX_PULSECOUNT) || (RawSignal.Number >= THGN123N_MIN_PULSECOUNT && RawSignal.Number <= THGN123N_MAX_PULSECOUNT))) return false;
+
+      for(byte x=1;x<=RawSignal.Number;x++)
+      {
+        if(RawSignal.Pulses[x]*PTMF < 600)
+        {
+          rfbit = (RawSignal.Pulses[x]*PTMF < RawSignal.Pulses[x+1]*PTMF);
+          x++;
+          y = 2;
+        }
+        if (y%2 == 1)
+        {
+          // Find sync pattern as THN132N and THGN132N have different preamble length
+          if (c == 1)
+          {
+            sync = (sync >> 1) | (rfbit << 3);
+            sync = sync & 0xf;
+            if (sync == 0xA) 
+            {
+              c = 2;
+              if (x < 40) return false;
+            }
+          }
+          else
+          {
+            if (c < 70) nibble[(c-2)/4] = (nibble[(c-2)/4] >> 1) | rfbit << 3;
+            c++;
+          }
+        }
+        y++;
+      }
+      // if no sync pattern match found, return
+      if (c == 1) return false;
+      
+      // calculate sensor ID
+      id = (nibble[3] << 16) |(nibble[2] << 8) | (nibble[1] << 4) | nibble[0];
+ 
+      // calculate and verify checksum
+      for(byte x=0; x<12;x++) checksumcalc += nibble[x];
+      checksum = (nibble[13] << 4) | nibble[12];
+      if ((id == THGN123N_ID) || (id == THGR810_ID))                           // Units with humidity sensor have extra data
+        {
+          checksum = (nibble[16] << 4) | nibble[15];
+          for(byte x=13; x<16;x++) checksumcalc += nibble[x];
+        }
+      if (checksum != checksumcalc) return false;
+
+      basevar = ProtocolOregonCheckID((nibble[6] << 4) | nibble[5]);
+
+      event->Command       = CMD_DEVICE_FIRST+DEVICE_ID;
+      event->Par1=(nibble[6] << 4) | nibble[5];
+      event->Par2=basevar;
+      event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
+      event->Port          = VALUE_SOURCE_RF;
+
+      if (basevar == 0) return true;
+
+      // if valid sensor type, update user variable and process event
+      if ((id == THGN123N_ID) || (id == THGR810_ID) || (id == THN132N_ID))
+      {
+        datavalue = ((1000 * nibble[10]) + (100 * nibble[9]) + (10 * nibble[8]));
+        if ((nibble[11] & 0x8) == 8) datavalue = -1 * datavalue;
+        UserVar[basevar -1] = (float)datavalue/100;
+        if ((id == THGN123N_ID) || (id == THGR810_ID))
+        {
+          datavalue = ((1000 * nibble[13]) + (100 * nibble[12]));
+          UserVar[basevar + 1 -1] = (float)datavalue/100;
+        }
+      }
+      success = true;
+      break;
+    }
+  case DEVICE_COMMAND:
+    {
+      if ((event->Par2 > 0) && (ProtocolOregonCheckID(event->Par1) == 0))
+        {
+          for (byte x=0; x<5; x++)
+          {
+            if (ProtocolOregonValidID[x] == 0)
+            {
+              ProtocolOregonValidID[x] = event->Par1;
+              ProtocolOregonVar[x] = event->Par2;
+              break;
+            }
+          }
+        }
+      break;
+    }
+#endif // DEVICE_CORE_12
+
+#ifdef NODO_MEGA
+  case DEVICE_MMI_IN:
+    {
+      char *TempStr=(char*)malloc(26);
+      string[25]=0;
+
+      if(GetArgv(string,TempStr,1))
+      {
+        if(strcasecmp(TempStr,DEVICE_NAME)==0)
+        {
+          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
+          if(event->Par1>0 && event->Par1<255 && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX)
+            success=true;
+        }
+      }
+      free(TempStr);
+      break;
+    }
+
+  case DEVICE_MMI_OUT:
+    {
+      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
+      {
+        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+        strcat(string," ");
+        strcat(string,int2str(event->Par1));
+        strcat(string,",");
+        strcat(string,int2str(event->Par2));
+      }
+      break;
+    }
+#endif //NODO_MEGA
+  }      
+  return success;
+}
+
+#ifdef DEVICE_CORE_12
+/*********************************************************************************************\
+ * Check for valid sensor ID
+ \*********************************************************************************************/
+byte ProtocolOregonCheckID(byte checkID)
+{
+  for (byte x=0; x<5; x++) if (ProtocolOregonValidID[x] == checkID) return ProtocolOregonVar[x];
+  return 0;
+}
+#endif //DEVICE_CORE_12
+#endif //DEVICE_12
+
+
+//#######################################################################################################
+//##################################### Device-13 Flamingo FA20RF Rookmelder ############################
+//#######################################################################################################
+
+/*********************************************************************************************\
+ * Dit protocol zorgt voor ontvangst van Flamingo FA20RF rookmelder
+ * 
+ * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
+ * Support            : www.nodo-domotica.nl
+ * Datum              : Mrt.2013
+ * Versie             : 1.0
+ * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
+ * Compatibiliteit    : Vanaf Nodo build nummer 508
+ * Syntax             : "SmokeAlert 0, <Par2: rookmelder ID>"
+ *********************************************************************************************
+ * Technische informatie:
+ * De Flamingo FA20RF rookmelder bevat een RF zender en ontvanger. Standaard heeft elke unit een uniek ID
+ * De rookmelder heeft een learn knop waardoor hij het ID van een andere unit kan overnemen
+ * Daardoor kunnen ze onderling worden gekoppeld.
+ * Na het koppelen hebben ze dus allemaal hetzelfde ID!
+ * Je gebruikt 1 unit als master, waarvan de je code aanleert aan de andere units (slaves)
+ \*********************************************************************************************/
+#define FA20RFSTART                 3000
+#define FA20RFSPACE                  800
+#define FA20RFLOW                   1300
+#define FA20RFHIGH                  2600
+
+#ifdef DEVICE_13
+#define DEVICE_ID 13
+#define DEVICE_NAME "SmokeAlert"
+
+boolean Device_13(byte function, struct NodoEventStruct *event, char *string)
+{
+  boolean success=false;
+
+  switch(function)
+  {
+#ifdef DEVICE_CORE_13
+  case DEVICE_RAWSIGNAL_IN:
+    {
+      byte PTMF=50;
+      if (RawSignal.Number != 52) return false;
+
+      unsigned long bitstream=0L;
+      for(byte x=4;x<=50;x=x+2)
+      {
+        if (RawSignal.Pulses[x]*PTMF > 1800) bitstream = (bitstream << 1) | 0x1; 
+        else bitstream = bitstream << 1;
+      }
+
+      event->Command       = CMD_DEVICE_FIRST+DEVICE_ID;
+      event->Par1=0;
+      event->Par2=bitstream;
+      event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
+      event->Port          = VALUE_SOURCE_RF;
+
+      return true;
+      break;
+    }
+  case DEVICE_COMMAND:
+    {
+      break;
+    }
+#endif // DEVICE_CORE_13
+
+#ifdef NODO_MEGA
+  case DEVICE_MMI_IN:
+    {
+      break;
+    }
+
+  case DEVICE_MMI_OUT:
+    {
+      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
+      {
+        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+        strcat(string," ");
+        strcat(string,int2str(event->Par1));
+        strcat(string,",");
+        strcat(string,int2str(event->Par2));
+      }
+      break;
+    }
+#endif //NODO_MEGA
+  }      
+  return success;
+}
+#endif //DEVICE_13
+
+
+//#######################################################################################################
+//##################################### Device-14 Flamingo FA20RF Rookmelder ############################
+//#######################################################################################################
+
+/*********************************************************************************************\
+ * Dit protocol zorgt voor aansturen van Flamingo FA20RF rookmelder
+ * 
+ * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
+ * Support            : www.nodo-domotica.nl
+ * Datum              : Mrt.2013
+ * Versie             : 1.0
+ * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
+ * Compatibiliteit    : Vanaf Nodo build nummer 508
+ * Syntax             : "SmokeAlertSend 0, <Par2: rookmelder ID>"
+ *********************************************************************************************
+ * Technische informatie:
+ * De Flamingo FA20RF rookmelder bevat een RF zender en ontvanger. Standaard heeft elke unit een uniek ID
+ * De rookmelder heeft een learn knop waardoor hij het ID van een andere unit kan overnemen
+ * Daardoor kunnen ze onderling worden gekoppeld.
+ * Na het koppelen hebben ze dus allemaal hetzelfde ID!
+ * Je gebruikt 1 unit als master, waarvan de je code aanleert aan de andere units (slaves)
+ *
+ * Let op: De rookmelder geeft alarm zolang dit bericht wordt verzonden en stopt daarna automatisch
+ \*********************************************************************************************/
+
+#ifdef DEVICE_14
+#define DEVICE_ID 14
+#define DEVICE_NAME "SmokeAlertSend"
+
+boolean Device_14(byte function, struct NodoEventStruct *event, char *string)
+{
+  boolean success=false;
+
+  switch(function)
+  {
+#ifdef DEVICE_CORE_14
+  case DEVICE_RAWSIGNAL_IN:
+    {
+      break;
+    }
+
+  case DEVICE_COMMAND:
+    {
+      unsigned long bitstream=event->Par2;
+      byte PTMF=50;
+      RawSignal.Pulses[0]=PTMF;
+
+      RawSignal.Repeats=1;
+      RawSignal.Pulses[1]=FA20RFSTART/PTMF;
+      RawSignal.Pulses[2]=FA20RFSPACE/PTMF;
+      RawSignal.Pulses[3]=FA20RFSPACE/PTMF;
+      for(byte x=49;x>=3;x=x-2)
+      {
+        RawSignal.Pulses[x]=FA20RFSPACE/PTMF;
+        if ((bitstream & 1) == 1) RawSignal.Pulses[x+1] = FA20RFHIGH/PTMF; 
+        else RawSignal.Pulses[x+1] = FA20RFLOW/PTMF;
+        bitstream = bitstream >> 1;
+      }
+
+      RawSignal.Pulses[51]=FA20RFSPACE/PTMF;
+      RawSignal.Pulses[52]=0;
+      RawSignal.Number=52;
+
+      for (byte x =0; x<50; x++) RawSendRF();
+      break;
+    } 
+#endif // DEVICE_CORE_14
+
+#ifdef NODO_MEGA
+  case DEVICE_MMI_IN:
+    {
+      char *TempStr=(char*)malloc(26);
+      string[25]=0;
+
+      if(GetArgv(string,TempStr,1))
+      {
+        if(strcasecmp(TempStr,DEVICE_NAME)==0)
+        {
+          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
+          success=true;
+        }
+      }
+      free(TempStr);
+      break;
+    }
+
+  case DEVICE_MMI_OUT:
+    {
+      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
+      {
+        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+        strcat(string," ");
+        strcat(string,int2str(event->Par1));
+        strcat(string,",");
+        strcat(string,int2str(event->Par2));
+      }
+      break;
+    }
+#endif //NODO_MEGA
+  }      
+  return success;
+}
+#endif //DEVICE_14
+
+
+//#######################################################################################################
+//#################################### Device-15: HomeEasy EU ###########################################
+//#######################################################################################################
+
+/*********************************************************************************************\
+ * Dit protocol zorgt voor ontvangst HomeEasy EU zenders
+ * die werken volgens de automatische codering (Ontvangers met leer-knop)
+ *
+ * LET OP: GEEN SUPPORT VOOR DIRECTE DIMWAARDES!!!
+ *
+ * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotca.nl
+ * Support            : www.nodo-domotica.nl
+ * Datum              : Mrt.2013
+ * Versie             : 1.0
+ * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
+ * Compatibiliteit    : Vanaf Nodo build nummer 508
+ * Syntax             : "HomeEasy <Adres>,<On|Off|>
+ *********************************************************************************************
+ * Technische informatie:
+ * Analyses Home Easy Messages and convert these into NewKaku compatible eventcode
+ * Only new EU devices with automatic code system are supported
+ * Only  On / Off status is decoded, no DIM values
+ * Only tested with Home Easy HE300WEU transmitter, doorsensor and PIR sensor
+ * Home Easy message structure, by analyzing bitpatterns so far ...
+ * AAAAAAAAAAABBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBCCCCDDEEFFFFFFG
+ *       A = startbits/preamble, B = address, C = ?, D = Command, E = ?, F = Channel, G = Stopbit
+ \*********************************************************************************************/
+ 
+#define HomeEasy_LongLow    0x490    // us
+#define HomeEasy_ShortHigh  200      // us
+#define HomeEasy_ShortLow   150      // us
+
+#ifdef DEVICE_15
+#define DEVICE_ID 15
+#define DEVICE_NAME "HomeEasy"
+
+boolean Device_15(byte function, struct NodoEventStruct *event, char *string)
+{
+  boolean success=false;
+
+  switch(function)
+  {
+#ifdef DEVICE_CORE_15
+  case DEVICE_RAWSIGNAL_IN:
+    {
+      byte PTMF=50;
+      unsigned long address = 0;
+      unsigned long bitstream = 0;
+      int counter = 0;
+      byte rfbit =0;
+      byte state = 0;
+      unsigned long channel = 0;
+
+      // valid messages are 116 pulses          
+      if (RawSignal.Number != 116) return false;
+
+      for(byte x=1;x<=RawSignal.Number;x=x+2)
+      {
+        if ((RawSignal.Pulses[x]*PTMF < 500) & (RawSignal.Pulses[x+1]*PTMF > 500)) 
+          rfbit = 1;
+        else
+          rfbit = 0;
+
+        if ((x>=23) && (x<=86)) address = (address << 1) | rfbit;
+        if ((x>=87) && (x<=114)) bitstream = (bitstream << 1) | rfbit;
+
+      }
+      state = (bitstream >> 8) & 0x3;
+      channel = (bitstream) & 0x3f;
+
+      // Add channel info to base address, first shift channel info 6 positions, so it can't interfere with bit 5
+      channel = channel << 6;
+      address = address + channel;
+
+      // Set bit 5 based on command information in the Home Easy protocol
+      if (state == 1) address = address & 0xFFFFFEF;
+      else address = address | 0x00000010;
+
+      event->Par1=((address>>4)&0x01)?VALUE_ON:VALUE_OFF; // On/Off bit omzetten naar een Nodo waarde. 
+      event->Par2=address &0x0FFFFFCF;         // Op hoogste nibble zat vroeger het signaaltype. 
+      event->Command       = CMD_DEVICE_FIRST+DEVICE_ID;        // Command deel t.b.v. weergave van de string "HomeEasy"
+      event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
+      RawSignal.Repeats    = true; // het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
+      
+      return true;      
+      break;
+    }
+
+  case DEVICE_COMMAND:
+    break;
+#endif // DEVICE_CORE_15
+
+#ifdef NODO_MEGA
+  case DEVICE_MMI_IN:
+    {
+      char* str=(char*)malloc(40);
+      string[25]=0; // kap voor de zekerheid de string af.
+
+      if(GetArgv(string,str,1))
+      {
+        if(strcasecmp(str,DEVICE_NAME)==0)
+        {
+          // Hier wordt de tekst van de protocolnaam gekoppeld aan het device ID.
+          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
+          if(GetArgv(string,str,2))
+          {
+            event->Par2=str2int(str);    
+            if(GetArgv(string,str,3))
+            {
+              // Vul Par1 met het HomeEasy commando. Dit kan zijn: VALUE_ON, VALUE_OFF, Andere waarden zijn ongeldig.
+
+              // haal uit de tweede parameter een 'On' of een 'Off'.
+              if(event->Par1=str2cmd(str))
+                success=true;
+            }
+          }
+        }
+      }
+      free(str);
+      break;
+    }
+
+  case DEVICE_MMI_OUT:
+    {
+      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
+      {
+        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+        strcat(string," ");
+
+        // In Par3 twee mogelijkheden: Het bevat een door gebruiker ingegeven adres 0..255 of een volledig HomeEasy adres.
+        if(event->Par2>=0x0ff)
+          strcat(string,int2strhex(event->Par2)); 
+        else
+          strcat(string,int2str(event->Par2)); 
+
+        strcat(string,",");
+
+        if(event->Par1==VALUE_ON)
+          strcat(string,"On");  
+        else if(event->Par1==VALUE_OFF)
+          strcat(string,"Off");
+        else
+          strcat(string,int2str(event->Par1));
+        success=true;
+      }
+      break;
+    }
+#endif //NODO_MEGA
+  }      
+  return success;
+}
+#endif //DEVICE_15
+
+
+//#######################################################################################################
+//#################################### Device-16: SendHome Easy EU ######################################
+//#######################################################################################################
+
+/*********************************************************************************************\
+ * Dit protocol zorgt voor aansturing van Home Easy EU ontvangers
+ * die werken volgens de automatische codering (Ontvangers met leer-knop)
+ *
+ * LET OP: GEEN SUPPORT VOOR DIRECTE DIMWAARDES!!!
+ * 
+ * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotca.nl
+ * Support            : www.nodo-domotica.nl
+ * Datum              : Mrt.2013
+ * Versie             : 1.0
+ * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
+ * Compatibiliteit    : Vanaf Nodo build nummer 508
+ * Syntax             : "HomeEasySend <Adres>,<On|Off|>
+ \*********************************************************************************************/
+
+#ifdef DEVICE_16
+#define DEVICE_ID 16
+#define DEVICE_NAME "HomeEasySend"
+
+boolean Device_16(byte function, struct NodoEventStruct *event, char *string)
+{
+  boolean success=false;
+
+  switch(function)
+  {
+#ifdef DEVICE_CORE_16
+  case DEVICE_RAWSIGNAL_IN:
+    break;
+
+  case DEVICE_COMMAND:
+    {
+      const byte PTMF=50;
+      unsigned long bitstream=0L;
+      byte address = 0;
+      byte channel = 0;
+      byte channelcode = 0;
+      byte command = 0;
+      byte i=1; // bitcounter in stream
+      byte y; // size of partial bitstreams
+
+      address = (event->Par2 >> 4) & 0x7;   // 3 bits address (higher bits from HomeEasy address, bit 7 not used
+      channel = event->Par2 & 0xF;    // 4 bits channel (lower bits from HomeEasy address
+      command = event->Par1 & 0xF;    // 12 = on, 0 = off
+
+      if (channel == 0) channelcode = 0x8E;
+      else if (channel == 1) channelcode = 0x96;
+      else if (channel == 2) channelcode = 0x9A;
+      else if (channel == 3) channelcode = 0x9C;
+      else if (channel == 4) channelcode = 0xA6;
+      else if (channel == 5) channelcode = 0xAA;
+      else if (channel == 6) channelcode = 0xAC;
+      else if (channel == 7) channelcode = 0xB2;
+      else if (channel == 8) channelcode = 0xB4;
+      else if (channel == 9) channelcode = 0xB8;
+      else if (channel == 10) channelcode = 0xC6;
+      else if (channel == 11) channelcode = 0xCA;
+      else if (channel == 12) channelcode = 0xCC;
+      else if (channel == 13) channelcode = 0xD2;
+      else if (channel == 14) channelcode = 0xD4;
+      else if (channel == 15) channelcode = 0xD8;
+
+      y=11; // bit uit de bitstream, startbits
+      bitstream = 0x63C;
+      for (i=1;i<=22;i=i+2)
+      {
+        RawSignal.Pulses[i] = HomeEasy_ShortHigh/PTMF;
+        if((bitstream>>(y-1))&1)          // bit 1
+            RawSignal.Pulses[i+1] = HomeEasy_LongLow/PTMF;
+        else                              // bit 0
+        RawSignal.Pulses[i+1] = HomeEasy_ShortLow/PTMF;
+        y--;
+      }
+
+      y=32; // bit uit de bitstream, address
+      bitstream = 0xDAB8F56C + address;
+
+      for (i=23;i<=86;i=i+2)
+      {
+        RawSignal.Pulses[i] = HomeEasy_ShortHigh/PTMF;
+        if((bitstream>>(y-1))&1)          // bit 1
+            RawSignal.Pulses[i+1] = HomeEasy_LongLow/PTMF;
+        else                              // bit 0
+        RawSignal.Pulses[i+1] = HomeEasy_ShortLow/PTMF;
+        y--;
+      }
+
+      y=15; // bit uit de bitstream, other stuff
+
+      bitstream = 0x5C00;  // bit 10 on, bit 11 off indien OFF
+      if (event->Par1==VALUE_OFF) bitstream = 0x5A00;
+
+      bitstream = bitstream + channelcode;
+
+      for (i=87;i<=116;i=i+2)
+      {
+        RawSignal.Pulses[i] = HomeEasy_ShortHigh/PTMF;
+        if((bitstream>>(y-1))&1)          // bit 1
+            RawSignal.Pulses[i+1] = HomeEasy_LongLow/PTMF;
+        else                              // bit 0
+        RawSignal.Pulses[i+1] = HomeEasy_ShortLow/PTMF;
+        y--;
+      }
+
+      RawSignal.Pulses[116]=0;
+      RawSignal.Number=116; // aantal bits*2 die zich in het opgebouwde RawSignal bevinden  unsigned long bitstream=0L;
+      event->Port=VALUE_ALL; // Signaal mag naar alle door de gebruiker met [Output] ingestelde poorten worden verzonden.
+      RawSignal.Repeats=5;   // vijf herhalingen.
+      SendEvent(event,true,true);
+      success=true;
+      break;
+    }
+#endif // DEVICE_CORE_16
+
+#ifdef NODO_MEGA
+  case DEVICE_MMI_IN:
+    {
+      char* str=(char*)malloc(40);
+      string[25]=0; // kap voor de zekerheid de string af.
+
+      if(GetArgv(string,str,1))
+      {
+        if(strcasecmp(str,DEVICE_NAME)==0)
+        {
+          // Hier wordt de tekst van de protocolnaam gekoppeld aan het device ID.
+          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
+          if(GetArgv(string,str,2))
+          {
+            event->Par2=str2int(str);    
+            if(GetArgv(string,str,3))
+            {
+              // Vul Par1 met het HomeEasy commando. Dit kan zijn: VALUE_ON, VALUE_OFF, Andere waarden zijn ongeldig.
+              // haal uit de tweede parameter een 'On' of een 'Off'.
+              if(event->Par1=str2cmd(str))
+                success=true;
+            }
+          }
+        }
+      }
+      free(str);
+      break;
+    }
+
+  case DEVICE_MMI_OUT:
+    {
+      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
+      {
+        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+        strcat(string," ");
+
+        // In Par3 twee mogelijkheden: Het bevat een door gebruiker ingegeven adres 0..255 of een volledig HomeEasy adres.
+        if(event->Par2>=0x0ff)
+          strcat(string,int2strhex(event->Par2)); 
+        else
+          strcat(string,int2str(event->Par2)); 
+
+        strcat(string,",");
+
+        if(event->Par1==VALUE_ON)
+          strcat(string,"On");  
+        else if(event->Par1==VALUE_OFF)
+          strcat(string,"Off");
+        else
+          strcat(string,int2str(event->Par1));
+        success=true;
+      }
+      break;
+    }
+#endif //NODO_MEGA
+  }      
+  return success;
+}
+#endif //DEVICE_16
+
+
 
 //#######################################################################################################
 //#################################### Device-15: Signal Analyzer   #####################################
@@ -1016,18 +2580,18 @@ uint8_t DS_reset()
  * 
  \*********************************************************************************************/
  
-#ifdef DEVICE_15
+#ifdef DEVICE_18
 
-#define DEVICE_ID 15
+#define DEVICE_ID 18
 #define DEVICE_NAME "RawSignalAnalyze"
 
-boolean Device_15(byte function, struct NodoEventStruct *event, char *string)
+boolean Device_18(byte function, struct NodoEventStruct *event, char *string)
   {
   boolean success=false;
   
   switch(function)
     {
-    #ifdef DEVICE_CORE_15
+    #ifdef DEVICE_CORE_18
     case DEVICE_RAWSIGNAL_IN:
       {
       return false;
@@ -1212,7 +2776,7 @@ boolean Device_15(byte function, struct NodoEventStruct *event, char *string)
     }      
   return success;
   }
-#endif //DEVICE_15
+#endif //DEVICE_18
 
 
           
@@ -1307,7 +2871,7 @@ boolean Device_15(byte function, struct NodoEventStruct *event, char *string)
 
 // Een device heeft naast een uniek ID ook een eigen MMI string die de gebruiker kan invoeren via Telnet, Serial, HTTP 
 // of een script. Geef hier de naam op. De afhandeling is niet hoofdletter gevoelig.
-#define DEVICE_NAME "UserDevice"
+#define DEVICE_NAME "MyUserDevice"
 
 // Deze device code waidt vanuit meerdere plaatsen in de Nodo code aangeroepen, steeds met een doel. Dit doel bevindt zich
 // in de variabele [function]. De volgende doelen zijn gedefinieerd:

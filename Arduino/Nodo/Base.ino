@@ -1,5 +1,5 @@
 
-#define NODO_BUILD          515//??? ophogen.
+#define NODO_BUILD          516//??? ophogen.
 #define SETTINGS_VERSION     29
 #include <EEPROM.h>
 #include <Wire.h>
@@ -914,11 +914,6 @@ void setup()
 
   Wire.onReceive(ReceiveI2C);   // verwijs naar ontvangstroutine
 
-  bitWrite(HW_Config,HW_SERIAL,1); // Serial inschakelen.
-  PrintWelcome(); // geef de welkomsttekst weer
-  bitWrite(HW_Config,HW_SERIAL,Serial.available()?1:0); // Serial weer uitschakelen.
-
-
   // Alle devices moeten aan te roepen zijn vanuit de Devicenummers zoals die in de events worden opgegeven
   // initialiseer de lijst met pointers naar de device funkties.
   DeviceInit();
@@ -935,14 +930,24 @@ void setup()
   TempEvent.Command   = CMD_BOOT_EVENT;
   TempEvent.Par1      = Settings.Unit;
   SendEvent(&TempEvent,false,true);  
-  Wait(5, false,0 , false);  
+
+  // Wacht even kort op reacties van andere Nodo's 
+  Wait(3, false,0 , false);  
+
+  bitWrite(HW_Config,HW_SERIAL,1); // Serial inschakelen.
+  PrintWelcome(); // geef de welkomsttekst weer
+  bitWrite(HW_Config,HW_SERIAL,Serial.available()?1:0); // Serial weer uitschakelen.
+
   QueueProcess();
   
   // Voer boot-event uit.
   ClearEvent(&TempEvent);
-  TempEvent.Flags     = 0;
-  TempEvent.Direction = VALUE_DIRECTION_INPUT;
   TempEvent.Port      = VALUE_SOURCE_SYSTEM;
+  TempEvent.Direction = VALUE_DIRECTION_INPUT;
+  TempEvent.Flags     = TRANSMISSION_CONFIRM;
+  TempEvent.Command   = CMD_BOOT_EVENT;
+  TempEvent.Par1      = Settings.Unit;
+  TempEvent.Flags     = 0;
   ProcessEvent2(&TempEvent);  // Voer het 'Boot' event uit.
 
   // Als er nog geen settings aangepast, dan een NewNodo-event sturen.
