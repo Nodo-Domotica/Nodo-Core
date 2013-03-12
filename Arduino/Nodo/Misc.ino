@@ -42,19 +42,19 @@ boolean Eventlist_Write(int Line, struct NodoEventStruct *Event, struct NodoEven
   address=Line * sizeof(struct EventlistStruct) + sizeof(struct SettingsStruct);     // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer deze bytes. Deze niet te gebruiken voor de Eventlist!
   byte *B=(byte*)&EEPROM_Block;                                                       // B wijst naar de eerste byte van de struct
 
-//  // Indien wissen van een regel, dan eerst kijken of de positie niet al leeg is. Is dit wel het geval, dan is beschrijven niet nodig.
-//  if(Event->Command==0)
-//    {
-//    for(x=0;x<sizeof(struct EventlistStruct);x++) // lees alle bytes van de struct
-//      {
-//      if(address<EEPROM_SIZE)
-//        *(B+x)=EEPROM.read(address++);
-//      else
-//        return false;
-//      }
-//    if(EEPROM_Block.EventCommand==0)
-//      return true;
-//    }??? partitieel wissen herstellen.
+  // Indien wissen van een regel, dan eerst kijken of de positie niet al leeg is. Is dit wel het geval, dan is beschrijven niet nodig.
+  if(Event->Command==0)
+    {
+    for(x=0;x<sizeof(struct EventlistStruct);x++) // lees alle bytes van de struct
+      {
+      if(address<EEPROM_SIZE)
+        *(B+x)=EEPROM.read(address++);
+      else
+        return false;
+      }
+    if(EEPROM_Block.EventCommand==0)
+      return true;
+    }
 
   // Nu wegschrijven.
   address=Line * sizeof(struct EventlistStruct) + sizeof(struct SettingsStruct);     // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer deze bytes. Deze niet te gebruiken voor de Eventlist!
@@ -293,6 +293,11 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
   {
   unsigned long TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
 
+  #ifdef NODO_MEGA
+  unsigned long MessageTimer=millis() + 5000;
+  boolean WaitMessage=false;
+  #endif
+  
   // Initialiseer een Event en Transmissie
   struct NodoEventStruct Event;
   ClearEvent(&Event);
@@ -301,6 +306,14 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
 
   while(TimeoutTimer>millis())
     {
+    #ifdef NODO_MEGA
+    if(!WaitMessage && MessageTimer<millis())
+      {
+      WaitMessage=true;
+      PrintTerminal(ProgmemString(Text_07));
+      }
+    #endif
+      
     if(ScanEvent(&Event))
       {
       // PrintNodoEvent("Wait();",&Event);//???
@@ -397,10 +410,6 @@ boolean GetStatus(struct NodoEventStruct *Event)
   case CMD_WAITFREERF: 
     Event->Par1=Settings.WaitFree;
     break;
-
-  case CMD_UNIT: 
-    Event->Par1=Settings.Unit;
-    break;        
 
   case VALUE_BUILD:
     Event->Par2=NODO_BUILD;      
@@ -521,6 +530,18 @@ boolean GetStatus(struct NodoEventStruct *Event)
 //    break;///??? lock herstellen
 
 #ifdef NODO_MEGA
+
+  case CMD_UNIT_SET:
+    x=NodoOnline(xPar1,0);
+    if(x!=0)
+      {
+      Event->Par1=xPar1;
+      Event->Par2=x;
+      }
+    else
+      Event->Command=0;// Als resultaat niet geldig is en niet weergegeven mag worden
+    
+    break;
 
   case CMD_ALARM_SET:
     Event->Par1=xPar1;
@@ -862,6 +883,11 @@ void Status(struct NodoEventStruct *Request, byte Port)
             Par1_Start=1;
             Par1_End=ALARM_MAX;
             break;
+
+          case CMD_UNIT_SET:
+            Par1_Start=1;
+            Par1_End=UNIT_MAX;
+            break;
           #endif
 
           default:
@@ -880,20 +906,23 @@ void Status(struct NodoEventStruct *Request, byte Port)
         Result.Command=x;
         Result.Par1=y;
         GetStatus(&Result); 
-
-      if(Port==VALUE_SOURCE_RF || Port==VALUE_SOURCE_IR || Port==VALUE_SOURCE_I2C || Port==VALUE_SOURCE_HTTP)
+        
+        if(Result.Command!=0)
           {
-          Result.Port=Port;
-          SendEvent(&Result,false,true); // verzend als event
+          if(Port==VALUE_SOURCE_RF || Port==VALUE_SOURCE_IR || Port==VALUE_SOURCE_I2C || Port==VALUE_SOURCE_HTTP)
+            {
+            Result.Port=Port;
+            SendEvent(&Result,false,true); // verzend als event
+            }
+  
+          #ifdef NODO_MEGA
+          else
+            {
+            Event2str(&Result,TempString);
+            PrintTerminal(TempString); // geef weer op terminal
+            }
+          #endif
           }
-
-        #ifdef NODO_MEGA
-        else
-          {
-          Event2str(&Result,TempString);
-          PrintTerminal(TempString); // geef weer op terminal
-          }
-        #endif
         }
       }
     }
@@ -1558,11 +1587,11 @@ boolean Substitute(char* Input)
             strcpy(TmpStr2,Settings.Temp);
             break;    
 
-          case VALUE_THISUNIT:
+          case VALUE_THIS_UNIT:
             strcpy(TmpStr2,int2str(Settings.Unit));
             break;    
 
-          case CMD_UNIT: // Hier lenen we "Unit", maar bij dit het unitnummer van en binnengekomen event.
+          case VALUE_UNIT:
             strcpy(TmpStr2,int2str(LastReceived.SourceUnit));
             break;    
 

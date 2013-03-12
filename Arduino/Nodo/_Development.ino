@@ -57,11 +57,22 @@ Nog te doen:
 - [Status FreeMem] toegevoegd. Geeft vrije werkgeheugen in bytes.
 - [RawSignalErase] zonder parameters wist alle Rawsignals van SDCard.
 - [FileErase] zonder parameters wist alle scriptfiles van SDCard.
-
-######
+- Issue 642: Alarmset instellen met status "off"
+- Issue 641: alarmset settings verdwijnen
+R513
 - Escape bij loop: Binnen vijf seconden na een reboot kan een commando naar de Nodo worden gestuurd om te resetten. Uitvoer vindt plaats voor uitvoer van het boot event.
 - SendTo commando aanpassing. Onder de motorkap aangepast EN SendTo blijft actief totdat SendTo Off wordt ingegeven
 - Status alleen nog maar uitvraagbaar via Terminal of Serial.
 
+R517
+- SendTo uitgebreid met parameter All.
+- Issue 653: Break
+- Issue 675: Eventlist bevat ghost entries
+- Issue 474: Slave reboot en reset
+- Issue 674: NodoList
+- Issue 577: SendTo naar unit met Output RF,Off
+- Issue 672: Sendto geeft erg vaak timeout
+- UserPlugin verwijderd. Hiervoor zijn de devices in de plaats gekomen.
+- Commando [Unit] gerenamed naar [UnitSet]. Dit is consequenter.
 
 \*****************************************************************************************/

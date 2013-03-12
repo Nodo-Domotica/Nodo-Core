@@ -53,7 +53,7 @@ void PrintEvent(struct NodoEventStruct *Event)
     }
 
   // Unit 
-  strcat(StringToPrint, cmd2str(CMD_UNIT));
+  strcat(StringToPrint, cmd2str(VALUE_UNIT));
   strcat(StringToPrint, "=");  
   if(Event->Direction==VALUE_DIRECTION_OUTPUT)
     strcat(StringToPrint, int2str(Event->DestinationUnit));
@@ -292,6 +292,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_WIRED_PULLUP:
       case CMD_WIRED_OUT:
       case CMD_WIRED_IN_EVENT:
+      case CMD_UNIT_SET:
         ParameterToView[0]=PAR1_INT;
         ParameterToView[1]=PAR2_TEXT;
         break;
@@ -330,7 +331,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_EVENTLIST_SHOW:
       case CMD_EVENTLIST_ERASE:
       case CMD_TIMER_EVENT:
-      case CMD_UNIT:
       case CMD_ALARM:
       case CMD_SIMULATE_DAY:
       case CMD_CLOCK_DOW:
@@ -350,7 +350,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_CLOCK_SYNC:
       case CMD_RESET:
       case CMD_SETTINGS_SAVE:
-      case CMD_UNIT_LIST:
         break;
         
       // Twee getallen en een aanvullende tekst
@@ -493,13 +492,19 @@ int ExecuteLine(char *Line, byte Port)
   int w,x,y;
   int EventlistWriteLine=0;
   byte error=0, State_EventlistWrite=0;
-  static byte SendToUnit=0;
   unsigned long a;
   struct NodoEventStruct EventToExecute,TempEvent;
 
 //  Serial.print(F("*** debug: ExecuteLine="));Serial.println(Line); //??? Debug
 
   Led(RED);
+
+  // Het SendTo commando kan door de gebruiker zijn ingesteld voor alle invoer. In dit geval bij aankomst hier
+  // de SendTo weer instellen.
+  static byte SendToUnitAll=0;
+  byte SendToUnit=0;
+  if(SendToUnitAll!=0)
+    SendToUnit=SendToUnitAll;
 
   // verwerking van commando's is door gebruiker tijdelijk geblokkeerd door FileWrite commando
   if(FileWriteMode>0)
@@ -578,7 +583,6 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_MESSAGE:
           case CMD_REBOOT:
           case CMD_SETTINGS_SAVE:
-          case CMD_USERPLUGIN: 
           case CMD_CLOCK_EVENT_DAYLIGHT:
           case CMD_STATUS:
           case CMD_TEST:
@@ -586,7 +590,6 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_SOUND: 
           case CMD_USEREVENT:
           case CMD_SEND_USEREVENT:
-          case CMD_UNIT_LIST:
           case CMD_CLOCK_SYNC:
             break; 
       
@@ -612,7 +615,7 @@ int ExecuteLine(char *Line, byte Port)
               error=MESSAGE_02;
             break;
       
-          case CMD_UNIT:
+          case CMD_UNIT_SET:
           case CMD_NEWNODO:
           case CMD_BOOT_EVENT:
             if(EventToExecute.Par1<1 || EventToExecute.Par1>UNIT_MAX)
@@ -752,9 +755,16 @@ int ExecuteLine(char *Line, byte Port)
 
           case CMD_SENDTO:
             if(EventToExecute.Par1==VALUE_OFF)
+              {
               SendToUnit=0;
+              SendToUnitAll=0;
+              }
             else
+              {
               SendToUnit=EventToExecute.Par1;
+              if(EventToExecute.Par2==VALUE_ALL)
+                SendToUnitAll=SendToUnit;
+              }
             EventToExecute.Command=0;
             break;    
 
