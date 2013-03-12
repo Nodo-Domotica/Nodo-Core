@@ -1,5 +1,5 @@
 
-#define NODO_BUILD          516//??? ophogen.
+#define NODO_BUILD          517//??? ophogen.
 #define SETTINGS_VERSION     29
 #include <EEPROM.h>
 #include <Wire.h>
@@ -20,7 +20,7 @@ prog_char PROGMEM Text_15[] = "Nodo V3.0.9 Small, Product=SWACNC-SMALL-R%03d, Th
 prog_char PROGMEM Text_03[] = "Enter your password: ";
 prog_char PROGMEM Text_05[] = "0123456789abcdef";
 prog_char PROGMEM Text_06[] = "NODO/HTTPBODY.DAT";
-prog_char PROGMEM Text_07[] = "Waiting for signal...";
+prog_char PROGMEM Text_07[] = "Waiting...";
 prog_char PROGMEM Text_09[] = "(Last 10KByte)";
 prog_char PROGMEM Text_13[] = "RawSignal saved.";
 prog_char PROGMEM Text_14[] = "Event=";
@@ -57,19 +57,13 @@ prog_char PROGMEM Cmd_022[]="SendTo";
 prog_char PROGMEM Cmd_023[]="SimulateDay";
 prog_char PROGMEM Cmd_024[]="Sound";
 prog_char PROGMEM Cmd_025[]="Debug";
-
-#ifdef USER_PLUGIN
-  prog_char PROGMEM Cmd_026[]=USER_PLUGIN;
-#else
-  prog_char PROGMEM Cmd_026[]="";
-#endif
-
+prog_char PROGMEM Cmd_026[]="";
 prog_char PROGMEM Cmd_027[]="TimerRandom";
 prog_char PROGMEM Cmd_028[]="TimerSet";
 prog_char PROGMEM Cmd_029[]="";
 prog_char PROGMEM Cmd_030[]="ID";
-prog_char PROGMEM Cmd_031[]="Unit";
-prog_char PROGMEM Cmd_032[]="UnitList";
+prog_char PROGMEM Cmd_031[]="UnitSet";
+prog_char PROGMEM Cmd_032[]="";
 prog_char PROGMEM Cmd_033[]="VariableDec";
 prog_char PROGMEM Cmd_034[]="VariableInc";
 prog_char PROGMEM Cmd_035[]="VariableSet";
@@ -212,7 +206,7 @@ prog_char PROGMEM Cmd_166[]="Status";
 prog_char PROGMEM Cmd_167[]="File";
 prog_char PROGMEM Cmd_168[]="Input";
 prog_char PROGMEM Cmd_169[]="Output";
-prog_char PROGMEM Cmd_170[]="";
+prog_char PROGMEM Cmd_170[]="ThisUnit";
 prog_char PROGMEM Cmd_171[]="";
 prog_char PROGMEM Cmd_172[]="All";
 prog_char PROGMEM Cmd_173[]="DaylightSaving";
@@ -220,7 +214,7 @@ prog_char PROGMEM Cmd_174[]="EventlistCount";
 prog_char PROGMEM Cmd_175[]="Queue";
 prog_char PROGMEM Cmd_176[]="HWConfig";
 prog_char PROGMEM Cmd_177[]="FreeMem";
-prog_char PROGMEM Cmd_178[]="ThisUnit";
+prog_char PROGMEM Cmd_178[]="Unit";
 prog_char PROGMEM Cmd_179[]="Event";
 prog_char PROGMEM Cmd_180[]="Par1";
 prog_char PROGMEM Cmd_181[]="Par2";
@@ -323,13 +317,13 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_SIMULATE_DAY                23
 #define CMD_SOUND                       24
 #define CMD_DEBUG                       25
-#define CMD_USERPLUGIN                  26
+#define CMD_res26                       26
 #define CMD_TIMER_RANDOM                27
 #define CMD_TIMER_SET                   28
 #define CMD_res29                       29
 #define CMD_ID                          30
-#define CMD_UNIT                        31
-#define CMD_UNIT_LIST                   32
+#define CMD_UNIT_SET                    31
+#define CMD_res32                       32
 #define CMD_VARIABLE_DEC                33
 #define CMD_VARIABLE_INC                34
 #define CMD_VARIABLE_SET                35
@@ -475,7 +469,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define VALUE_SOURCE_FILE              167
 #define VALUE_DIRECTION_INPUT          168
 #define VALUE_DIRECTION_OUTPUT         169
-#define VALUE_RES170                   170
+#define VALUE_THIS_UNIT                170
 #define VALUE_RES171                   171
 #define VALUE_ALL                      172 // Deze waarde MOET groter dan 16 zijn.
 #define VALUE_DLS                      173
@@ -483,7 +477,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define VALUE_SOURCE_QUEUE             175
 #define VALUE_HWCONFIG                 176
 #define VALUE_FREEMEM                  177
-#define VALUE_THISUNIT                 178
+#define VALUE_UNIT                     178
 #define VALUE_RECEIVED_EVENT           179
 #define VALUE_RECEIVED_PAR1            180
 #define VALUE_RECEIVED_PAR2            181
@@ -587,10 +581,10 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define PIN_BSF_1                   23 // Board Specific Function lijn-1
 #define PIN_BSF_2                   24 // Board Specific Function lijn-2
 #define PIN_BSF_3                   25 // Board Specific Function lijn-3
-#define PIN_IO_1                    38 // Extra IO-lijn 1 voor gebruikers / userplugins
-#define PIN_IO_2                    39 // Extra IO-lijn 2 voor gebruikers / userplugins
-#define PIN_IO_3                    40 // Extra IO-lijn 3 voor gebruikers / userplugins
-#define PIN_IO_4                    41 // Extra IO-lijn 4 voor gebruikers / userplugins
+#define PIN_IO_1                    38 // Extra IO-lijn 1 voor gebruikers.
+#define PIN_IO_2                    39 // Extra IO-lijn 2 voor gebruikers.
+#define PIN_IO_3                    40 // Extra IO-lijn 3 voor gebruikers.
+#define PIN_IO_4                    41 // Extra IO-lijn 4 voor gebruikers.
 #define PIN_WIRED_IN_1               8 // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
 #define PIN_WIRED_IN_2               9 // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
 #define PIN_WIRED_IN_3              10 // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
@@ -1316,11 +1310,6 @@ void loop()
       // Op deze plek kan een reboot veilig plaats vinden.
       if(RebootNodo)
         Reboot();
-
-      // loop periodiek langs de userplugin
-      #ifdef USER_PLUGIN
-        UserPlugin_Periodically();
-      #endif
 
       #ifdef NODO_MEGA
       // ALARM: **************** Genereer event als één van de alarmen afgelopen is ***********************    

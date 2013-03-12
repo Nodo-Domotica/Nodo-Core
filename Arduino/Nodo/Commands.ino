@@ -221,24 +221,6 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         }
       break;
 
-    case CMD_UNIT_LIST:
-      PrintTerminal(ProgmemString(Text_22));
-      for(x=1;x<=UNIT_MAX;x++)
-        {
-        y=NodoOnline(x,0);
-        if(y!=0)
-          {
-          strcpy(TempString,cmd2str(CMD_UNIT));
-          strcat(TempString," ");
-          strcat(TempString,int2str(x));
-          strcat(TempString," on port ");
-          strcat(TempString,cmd2str(y));
-          PrintTerminal(TempString);
-          } 
-        }
-      PrintTerminal(ProgmemString(Text_22));
-      break;
-
     case CMD_CLOCK_SYNC:
       // Haal eerst de juiste tijd op van de WebApp
       if(bitRead(HW_Config,HW_WEBAPP))
@@ -399,12 +381,6 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       
       break;
       
-    case CMD_USERPLUGIN:
-      #ifdef USER_PLUGIN
-        UserPlugin_Command(EventToExecute->Par1,EventToExecute->Par2);
-      #endif
-      break;        
-
     case CMD_WIRED_SMITTTRIGGER://??? voor veilighed bereik nog afvangen?@@@
       if(EventToExecute->Par1>0 && EventToExecute->Par1<=WIRED_PORTS)
         Settings.WiredInputSmittTrigger[EventToExecute->Par1-1]=EventToExecute->Par2;
@@ -420,7 +396,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       Status(EventToExecute, EventToExecute->Port);
       break;
       
-    case CMD_UNIT:
+    case CMD_UNIT_SET:
       Settings.Unit=EventToExecute->Par1;
       if(EventToExecute->Par2 !=0)
         Settings.Home=(byte)EventToExecute->Par2;

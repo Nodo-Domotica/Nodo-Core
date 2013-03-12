@@ -16,14 +16,6 @@ boolean AnalyzeRawSignal(struct NodoEventStruct *E)
   if(RawSignal.Number==RAW_BUFFER_SIZE)return false;     // Als het signaal een volle buffer beslaat is het zeer waarschijnlijk ruis of ongeldig signaal
   ClearEvent(E);
 
-  //  #ifdef USER_PLUGIN
-  //  Code=RawSignal_2_UserPlugin(RawSignal.Source);
-  //  if(Code==1)
-  //    return 0;
-  //  else if(Code>1)
-  //    return Code;
-  //  #endif // weer herstellen.???
-
   if(RawSignal_2_Nodo(E))           // Is het een Nodo signaal
     return true;
 

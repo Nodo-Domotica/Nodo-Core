@@ -106,12 +106,6 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
         RawSignalSave(Event->Par2);
   #endif    
   
-//  #ifdef USER_PLUGIN
-//  if(!UserPlugin_Receive(Event32))
-//    return true;
-//  #endif
-// ??? UserPlugin Entry herstellen
-
   if(error==0)
     {
     PrintEvent(Event);  // geef event weer op Terminal
