@@ -206,16 +206,16 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
 
     #ifdef NODO_MEGA
     case CMD_ALARM_SET:
-      if(EventToExecute->Par1<ALARM_MAX) // niet buiten bereik array!
+      if(EventToExecute->Par1<=ALARM_MAX)                                         // niet buiten bereik array!
         {
-        for(x=0;x<8;x++)// loop de acht nibbles van de 32-bit Par2 langs
+        for(x=0;x<8;x++)                                                          // loop de acht nibbles van de 32-bit Par2 langs
           {          
-          y=(EventToExecute->Par2>>(x*4))&0xF; // selecter nibble
-          if(y!=0xE) // als de waarde geset moet worden
+          y=(EventToExecute->Par2>>(x*4))&0xF;                                    // selecter nibble
+          if(y!=0xE)                                                              // als de waarde geset moet worden
             {
-            a=0xffffffff  ^ (0xfUL <<(x*4)); // Mask maken om de nibble positie y te wissen.
-            Settings.Alarm[EventToExecute->Par1-1]&=a; // Maak nibble leeg
-            Settings.Alarm[EventToExecute->Par1-1]|=((unsigned long)y)<<(x*4); // vul met door user opgegeven token
+            a=0xffffffff  ^ (0xfUL <<(x*4));                                      // Mask maken om de nibble positie y te wissen.
+            Settings.Alarm[EventToExecute->Par1-1]  &=  a;                        // Maak nibble leeg
+            Settings.Alarm[EventToExecute->Par1-1]  |= ((unsigned long)y)<<(x*4); // vul met door user opgegeven token
             }
           }
         }
@@ -384,7 +384,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       
       break;
       
-    case CMD_WIRED_SMITTTRIGGER://??? voor veilighed bereik nog afvangen?@@@
+    case CMD_WIRED_SMITTTRIGGER:
       if(EventToExecute->Par1>0 && EventToExecute->Par1<=WIRED_PORTS)
         Settings.WiredInputSmittTrigger[EventToExecute->Par1-1]=EventToExecute->Par2;
       break;                  
@@ -395,14 +395,20 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       break;                  
 
     case CMD_STATUS:
-      // ??? Als het door de gebruiker is verzocht om logging naar een file te doen, dan wordt de output NIET als events verzonden.
       Status(EventToExecute);
       break;
       
     case CMD_UNIT_SET:
-      Settings.Unit=EventToExecute->Par1;
-      if(EventToExecute->Par2 !=0)
-        Settings.Home=(byte)EventToExecute->Par2;
+      x=Settings.Unit>>5;
+      
+      if(EventToExecute->Par1>0 && EventToExecute->Par1<=UNIT_MAX)
+        {
+        Settings.Unit=EventToExecute->Par1;  
+        
+        if(EventToExecute->Par2>0 && EventToExecute->Par2<=7)
+          Settings.Home=EventToExecute->Par2;
+        }
+        
       Save_Settings();
       RebootNodo=true;
       break;
@@ -450,10 +456,6 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         Settings.EchoTelnet=EventToExecute->Par1;
       if(EventToExecute->Port==VALUE_SOURCE_SERIAL) 
         Settings.EchoSerial=EventToExecute->Par1;        
-      break;
-
-    case CMD_TEST: 
-      Test();
       break;
 
     case CMD_DEBUG: 

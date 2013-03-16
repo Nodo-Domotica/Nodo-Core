@@ -13,18 +13,24 @@
  #define DEVICE_04  // SendNewKAKU       : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno. 
  #define DEVICE_05  // TempSensor        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
  #define DEVICE_06  // DHT11Read         : Uitlezen temperatuur & vochtigheidsgraad sensor DHT-11
- #define DEVICE_07  // Reserved! UserEventOld      : UserEvents van de oude Nodo. t.b.v. compatibiliteit reeds geprogrammeerde universele afstandsbedieningen.
+ #define DEVICE_07  // Reserved!         : UserEvents van de oude Nodo. t.b.v. compatibiliteit reeds geprogrammeerde universele afstandsbedieningen.
  #define DEVICE_08  // AlectoV1          : Dit protocol zorgt voor ontvangst van Alecto weerstation buitensensoren met protocol V1
  #define DEVICE_09  // AlectoV2          : Dit protocol zorgt voor ontvangst van Alecto weerstation buitensensoren met protocol V2
  #define DEVICE_10  // AlectoV3          : Dit protocol zorgt voor ontvangst van Alecto weerstation buitensensoren met protocol V3
- #define DEVICE_11  // Reserved!
+ #define DEVICE_11  // Reserved!         : OpenTherm (SWACDE-11-V10)
  #define DEVICE_12  // OregonV2          : Dit protocol zorgt voor ontvangst van Oregon buitensensoren met protocol versie V2
  #define DEVICE_13  // FA20RF            : Dit protocol zorgt voor ontvangst van Flamingo FA20RF rookmelder signalen
  #define DEVICE_14  // FA20RFSend        : Dit protocol zorgt voor aansturen van Flamingo FA20RF rookmelder
  #define DEVICE_15  // HomeEasy          : Dit protocol zorgt voor ontvangst HomeEasy EU zenders die werken volgens de automatische codering (Ontvangers met leer-knop)
  #define DEVICE_16  // HomeEasySend      : Dit protocol stuurt HomeEasy EU ontvangers aan die werken volgens de automatische codering (Ontvangers met leer-knop)
- #define DEVICE_17  // Reserved! MonitorAnalog     : Laat continue analoge metingen zien van alle Wired-In poorten. 
+ #define DEVICE_17  // Reserved!         : Laat continue analoge metingen zien van alle Wired-In poorten. 
  #define DEVICE_18  // RawSignalAnalyze  : Geeft bij een binnenkomend signaal informatie over de pulsen weer.
+ #define DEVICE_19  // Reserved!         : Innovations ID-12 RFID Tag reader (SWACDE-19-V10) 
+ #define DEVICE_20  // Reserved!         : BMP085 Barometric pressure sensor (SWACDE-20-V10)
+ #define DEVICE_21 
+ #define DEVICE_22 
+ #define DEVICE_23 
+ #define DEVICE_24 
  #define DEVICE_99  // UserDevice        : Device voor eigen toepassing door gebruiker te bouwen.
  
  \***********************************************************************************************/
@@ -2873,28 +2879,28 @@ boolean Device_18(byte function, struct NodoEventStruct *event, char *string)
 // of een script. Geef hier de naam op. De afhandeling is niet hoofdletter gevoelig.
 #define DEVICE_NAME "MyUserDevice"
 
-// Deze device code waidt vanuit meerdere plaatsen in de Nodo code aangeroepen, steeds met een doel. Dit doel bevindt zich
+// Deze device code wordt vanuit meerdere plaatsen in de Nodo code aangeroepen, steeds met een doel. Dit doel bevindt zich
 // in de variabele [function]. De volgende doelen zijn gedefinieerd:
-// DEVICE_RAWSIGNAL_IN    => Afhandeling van een via RF/IR ontvangen event
-// DEVICE_COMMAND   => Commando voor afhandelen/uitsturen van een event.
-// DEVICE_MMI_IN      => Invoer van de gebruiker/script omzetten naar een event. (Alleen voor mega)
-// DEVICE_MMI_OUT     => Omzetten van een event naar een voor de gebruiker leesbare tekst (Alleen voor Mega)
 //
-// De struct [event] is het inhoudelijke event. Deze bevat twee parameters die vrij voor een device gebruikt kunnen worden. 
-// Deze zijn: (byte) event->Par1 en (unsigned long) event->par2. De string [string] wordt gebruikt voor binnenkomende of uitgaande
-// MMI tekst.
-boolean Device_99(byte function, struct NodoEventStruct *event, char *string)
-  {
-  boolean success=false;
-  
+// DEVICE_RAWSIGNAL_IN  => Afhandeling van een via RF/IR ontvangen event
+// DEVICE_COMMAND       => Commando voor afhandelen/uitsturen van een event.
+// DEVICE_MMI_IN        => Invoer van de gebruiker/script omzetten naar een event. (Alleen voor mega)
+// DEVICE_MMI_OUT       => Omzetten van een event naar een voor de gebruiker leesbare tekst (Alleen voor Mega)
+// DEVIDE_ONCE_A_SECOND => ongeveer iedere seconde.
+// DEVICE_INIT          => Eenmalig, direct na opstarten van de Nodo
+
+  #ifdef DEVICE_CORE_99
   switch(function)
-    {
-    #ifdef DEVICE_CORE_99
-    case DEVICE_INIT:
+    {    
+    case DEVICE_ONCE_A_SECOND:
       {
-      // Code hier wordt eenmalig aangeroepen na een reboot van de Nodo.
+      // Dit deel van de code wordt (ongeveer!) eenmaal per seconde aangeroepen. Let op dat deze code zich binnen een 
+      // tijdkritisch deel van de hoofdloop van de Nodo bevindt! Gebruik dus alleen om snel een waarde te (re)setten
+      // of om de status van een poort/variabele te checken. Zolang de verwerking zich hier plaats vindt zal de
+      // Nodo géén IR of RF events kunnen ontvangen.
       break;
       }
+
     case DEVICE_RAWSIGNAL_IN:
       {
       // Code op deze plaats wordt uitgevoerd zodra er een event via RF of IR is binnengekomen
@@ -2911,6 +2917,11 @@ boolean Device_99(byte function, struct NodoEventStruct *event, char *string)
       // Als voor verlaten de struct [event] is gevuld met een ander event, dan wordt deze uitgevoerd als een nieuw
       // event. Dit kan bijvoorbeeld worden benut als een variabele wordt uitgelezen en de waarde verder verwerkt
       // moet worden.
+      break;
+
+    case DEVICE_INIT:
+      {
+      // Code hier wordt eenmalig aangeroepen na een reboot van de Nodo.
       break;
       }
       
@@ -2932,7 +2943,7 @@ boolean Device_99(byte function, struct NodoEventStruct *event, char *string)
         if(strcasecmp(TempStr,DEVICE_NAME)==0)
           {
           // Hier wordt de tekst van de protocolnaam gekoppeld aan het device ID.
-            event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
+          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
                     
           // Vervolgens tweede parameter gebruiken
           if(GetArgv(string,TempStr,2)) 
@@ -2953,7 +2964,6 @@ boolean Device_99(byte function, struct NodoEventStruct *event, char *string)
       free(TempStr);
       break;
       }
-    #endif // MEGA
 
     case DEVICE_MMI_OUT:
       {
@@ -2971,6 +2981,7 @@ boolean Device_99(byte function, struct NodoEventStruct *event, char *string)
       }
     #endif //NODO_MEGA
     }      
+  #endif // CORE
   return success;
   }
 #endif //DEVICE_99

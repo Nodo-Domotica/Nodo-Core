@@ -1,6 +1,6 @@
 
-#define NODO_BUILD          517//??? ophogen.
-#define SETTINGS_VERSION     29
+#define NODO_BUILD          520//??? ophogen.
+#define SETTINGS_VERSION     31
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -17,9 +17,9 @@ prog_char PROGMEM Text_09[] = "(Last 10KByte)";
 prog_char PROGMEM Text_22[] = "!******************************************************************************!";
 
 #ifdef NODO_MEGA
-prog_char PROGMEM Text_15[] = "Nodo V3.0.9 Mega, Product=SWACNC-MEGA-R%03d, ThisUnit=%d";
+prog_char PROGMEM Text_15[] = "Nodo V3.0.9 Mega, Product=SWACNC-MEGA-R%03d, Home=%d, ThisUnit=%d";
 #else
-prog_char PROGMEM Text_15[] = "Nodo V3.0.9 Small, Product=SWACNC-SMALL-R%03d, ThisUnit=%d";
+prog_char PROGMEM Text_15[] = "Nodo V3.0.9 Small, Product=SWACNC-SMALL-R%03d, Home=%d, ThisUnit=%d";
 #endif
 
 #ifdef NODO_MEGA
@@ -519,18 +519,19 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define MESSAGE_16                     216
 #define LAST_VALUE                     216 // laatste VALUE uit de commando tabel
 #define COMMAND_MAX                    216 // hoogste commando
-#define CMD_DEVICE_FIRST               220
+#define CMD_DEVICE_FIRST               220 // De devices worden gekoppeld aan een command. 
 
 #define DEVICE_MMI_IN                1
 #define DEVICE_MMI_OUT               2
 #define DEVICE_RAWSIGNAL_IN          3
 #define DEVICE_COMMAND               4 
 #define DEVICE_INIT                  5
+#define DEVICE_ONCE_A_SECOND         6
 
 #define RED                          1  // Led = Rood
 #define GREEN                        2  // Led = Groen
 #define BLUE                         3  // Led = Blauw
-#define UNIT_MAX                    32 // Hoogst mogelijke unit nummer van een Nodo
+#define UNIT_MAX                    31 // Hoogst mogelijke unit nummer van een Nodo
 #define SERIAL_TERMINATOR_1       0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>
 #define SERIAL_TERMINATOR_2       0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
 #define Loop_INTERVAL_1             10 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
@@ -565,8 +566,9 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define BIC_DEFAULT            0  // Standaard Nodo zonder specifike hardware aansturing
 #define BIC_HWMESH_NES_V1X     1  // Nodo Ethernet Shield V1.x met Aurel tranceiver. Vereist speciale pulse op PIN_BSF_0 voor omschakelen tussen Rx en Tx.
 
-#ifdef NODO_MEGA // Definities voor de Nodo-Mega variant.
 #define DEVICE_MAX                  32 // Maximaal aantal devices 
+
+#ifdef NODO_MEGA // Definities voor de Nodo-Mega variant.
 #define EVENTLIST_MAX              250 // maximaal aantal regels in de eventlist
 #define EVENT_QUEUE_MAX             16 // maximaal aantal plaatsen in de queue.
 #define MACRO_EXECUTION_DEPTH       10 // maximale nesting van macro's.
@@ -626,7 +628,6 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define SERIAL_STAY_SHARP_TIME      50 // Tijd in mSec. dat na ontvangen van een tken uitsluitend naar Serial als input wordt geluisterd. 
 
 #else // als het voor de Nodo-Small variant is
-#define DEVICE_MAX                   8 // Maximaal aantal devices 
 #define EVENTLIST_MAX               75 // maximaal aantal regels in de eventlist
 #define EVENT_QUEUE_MAX              8 // maximaal aantal plaatsen in de queue
 #define MACRO_EXECUTION_DEPTH        4 // maximale nesting van macro's.
@@ -658,8 +659,8 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 struct SettingsStruct
   {
   int     Version;        
-  byte    Unit;
-  byte    Home;
+  byte    Unit; // Max 5 bits in bebruik
+  byte    Home; // Max 3 bits in gebruik, wordt voordat er verzonden wordt samen met Unit tot één byte gemaakt.
   boolean NewNodo;
   int     WiredInputThreshold[WIRED_PORTS], WiredInputSmittTrigger[WIRED_PORTS];
   byte    WiredInputPullUp[WIRED_PORTS];
@@ -670,7 +671,7 @@ struct SettingsStruct
   unsigned long Lock;                                       // bevat de pincode waarmee IR/RF ontvangst is geblokkeerd. Bit nummer hoogste bit wordt gebruiktvoor in/uitschakelen.
   
   #ifdef NODO_MEGA
-  unsigned long Alarm[ALARM_MAX-1];                         // Instelbaar alarm
+  unsigned long Alarm[ALARM_MAX];                           // Instelbaar alarm
   byte    TransmitIP;                                       // Definitie van het gebruik van HTTP-communicatie via de IP-poort: [Off] of [On]
   char    Password[26];                                     // String met wachtwoord.
   char    ID[10];                                           // ID waar de Nodo uniek mee geïdentificeerd kan worden in een netwerk
@@ -796,7 +797,6 @@ void setup()
   // Zet de alarmen op nog niet afgegaan.
   for(x=0;x<ALARM_MAX;x++)
     AlarmPrevious[x]=0xff; // Deze waarde kan niet bestaan en voldoet dus.
-
   #endif
 
 
@@ -1307,13 +1307,17 @@ void loop()
       }
 
     // 3: niet tijdkritische processen die periodiek uitgevoerd moeten worden
-    if(LoopIntervalTimer_3<millis())// lange interval: Iedere seconde.@@
+    if(LoopIntervalTimer_3<millis())// lange interval: Iedere seconde.
       {
       LoopIntervalTimer_3=millis()+Loop_INTERVAL_3; // reset de timer  
 
+      for(x=0;x<DEVICE_MAX; x++)
+        if(Device_ptr[x]!=0)
+          Device_ptr[x](DEVICE_ONCE_A_SECOND,0,0);
+
       // rebooten van de Nodo is buiten de processing routines geplaatst om zo te voorkomen dat er een reboot van de Arduino
-      // plaats vindt terwijl er nog open bestanden of communicatie is. dDt kan mogelijk leiden tot problemen.
-      // Op deze plek kan een reboot veilig plaats vinden.
+      // plaats vindt terwijl er nog open bestanden of communicatie is. Dit kan mogelijk leiden tot problemen.
+      // Op deze plek zijn files gesloten en kan een reboot veilig plaats vinden.
       if(RebootNodo)
         Reboot();
 

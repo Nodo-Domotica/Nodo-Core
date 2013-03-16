@@ -59,6 +59,10 @@ boolean ScanEvent(struct NodoEventStruct *Event)
         }
       PreviousTime=millis();
 
+      // Nodo's kunnen een Home adres ingesteld hebben. Als dit het geval is, dan moet het Home adres overeenkomen
+      if(Event->DestinationUnit>>5 !=Settings.Unit>>5)
+        return false;
+
       Event->Port=Fetched;
       Event->Direction=VALUE_DIRECTION_INPUT;
 
