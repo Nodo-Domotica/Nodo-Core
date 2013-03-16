@@ -42,20 +42,6 @@ boolean Eventlist_Write(int Line, struct NodoEventStruct *Event, struct NodoEven
   address=Line * sizeof(struct EventlistStruct) + sizeof(struct SettingsStruct);     // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer deze bytes. Deze niet te gebruiken voor de Eventlist!
   byte *B=(byte*)&EEPROM_Block;                                                       // B wijst naar de eerste byte van de struct
 
-  // Indien wissen van een regel, dan eerst kijken of de positie niet al leeg is. Is dit wel het geval, dan is beschrijven niet nodig.
-  if(Event->Command==0)
-    {
-    for(x=0;x<sizeof(struct EventlistStruct);x++) // lees alle bytes van de struct
-      {
-      if(address<EEPROM_SIZE)
-        *(B+x)=EEPROM.read(address++);
-      else
-        return false;
-      }
-    if(EEPROM_Block.EventCommand==0)
-      return true;
-    }
-
   // Nu wegschrijven.
   address=Line * sizeof(struct EventlistStruct) + sizeof(struct SettingsStruct);     // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer deze bytes. Deze niet te gebruiken voor de Eventlist!
   EEPROM_Block.EventCommand=Event->Command;
@@ -130,7 +116,7 @@ void RaiseMessage(byte MessageCode)
   PrintEvent(&TempEvent);
 
   TempEvent.Port      = VALUE_ALL;
-  SendEvent(&TempEvent,false,true);
+  SendEvent(&TempEvent,false,true,true);
   }
 
 
@@ -292,6 +278,8 @@ void Led(byte Color)
 boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruct *WaitForEvent, boolean EndSequence)
   {
   unsigned long TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
+
+digitalWrite(PIN_WIRED_OUT_1,HIGH);delay(10);digitalWrite(PIN_WIRED_OUT_1,LOW);//??? Debugging
 
   #ifdef NODO_MEGA
   unsigned long MessageTimer=millis() + 5000;
@@ -714,7 +702,7 @@ void ResetFactory(void)
  * verzend de status van een setting als event.
  * Par1 = Command
  \**********************************************************************************************/
-void Status(struct NodoEventStruct *Request, byte Port)
+void Status(struct NodoEventStruct *Request)
   {
   byte CMD_Start,CMD_End;
   byte Par1_Start,Par1_End;
@@ -738,11 +726,10 @@ void Status(struct NodoEventStruct *Request, byte Port)
     return;
     }
 
-  if((Port==VALUE_SOURCE_SERIAL || Port==VALUE_SOURCE_TELNET) && Request->Par1==VALUE_ALL)
+  if((Request->Port==VALUE_SOURCE_SERIAL || Request->Port==VALUE_SOURCE_TELNET || Request->Port==VALUE_SOURCE_HTTP) && Request->Par1==VALUE_ALL)
     {
     Request->Par2=0;
-    if(Port==VALUE_SOURCE_SERIAL || Port==VALUE_SOURCE_TELNET)
-      PrintWelcome();
+    PrintWelcome();
     CMD_Start=FIRST_COMMAND;
     CMD_End=COMMAND_MAX;
     }
@@ -762,7 +749,7 @@ void Status(struct NodoEventStruct *Request, byte Port)
   for(x=CMD_Start; x<=CMD_End; x++)
     {
     s=false;
-    if(Port==VALUE_SOURCE_SERIAL || Port==VALUE_SOURCE_TELNET)
+    if(Request->Port==VALUE_SOURCE_SERIAL || Request->Port==VALUE_SOURCE_TELNET || Request->Port==VALUE_SOURCE_HTTP)
       {
       s=true;
       switch (x)
@@ -909,10 +896,10 @@ void Status(struct NodoEventStruct *Request, byte Port)
         
         if(Result.Command!=0)
           {
-          if(Port==VALUE_SOURCE_RF || Port==VALUE_SOURCE_IR || Port==VALUE_SOURCE_I2C || Port==VALUE_SOURCE_HTTP)
+          if(Request->Port==VALUE_SOURCE_RF || Request->Port==VALUE_SOURCE_IR || Request->Port==VALUE_SOURCE_I2C)
             {
-            Result.Port=Port;
-            SendEvent(&Result,false,true); // verzend als event
+            Result.Port=Request->Port;
+            SendEvent(&Result,false,true,true); // verzend als event
             }
   
           #ifdef NODO_MEGA
@@ -928,7 +915,7 @@ void Status(struct NodoEventStruct *Request, byte Port)
     }
 
   #ifdef NODO_MEGA
-  if((Port==VALUE_SOURCE_SERIAL || Port==VALUE_SOURCE_TELNET) && Request->Par1==VALUE_ALL)
+  if((Request->Port==VALUE_SOURCE_TELNET || Request->Port==VALUE_SOURCE_SERIAL || Request->Port==VALUE_SOURCE_HTTP) && Request->Par1==VALUE_ALL)
     PrintTerminal(ProgmemString(Text_22));
 
   free(TempString);
@@ -1927,51 +1914,51 @@ void SetDaylight()
   if(now>=down)          Time.Daylight=4; // zonsondergang
 }
 
-void SimulateDay(void) 
-  {
-  unsigned long SimulatedClockEvent, Event, Action;
-
-  Time.Seconds=0;
-  Time.Minutes=0;
-  Time.Hour=0;
-  DaylightPrevious=4;// vullen met 4, dan wordt in de zomertijd 4 niet tweemaal per etmaal weergegeven
-
-  PrintTerminal(ProgmemString(Text_22));
-  for(int m=0;m<=1439;m++)  // loop alle minuten van één etmaal door
-   {
-    // Simuleer alle minuten van een etmaal
-    if(Time.Minutes==60){
-      Time.Minutes=0;
-      Time.Hour++;
-    }  // roll-over naar volgende uur
-
-    // Kijk of er op het gesimuleerde tijdstip een hit is in de EventList
-//    SimulatedClockEvent=command2event( CMD_CLOCK_EVENT_ALL+Time.Day,Time.Hour,Time.Minutes);
-//    if(CheckEventlist(SimulatedClockEvent,VALUE_SOURCE_CLOCK)) // kijk of er een hit is in de EventList
-//      ProcessEvent2_old(SimulatedClockEvent,VALUE_DIRECTION_INPUT,VALUE_SOURCE_CLOCK);
-//??? klok events nog aanpassen
-
-    // Kijk of er op het gesimuleerde tijdstip een zonsondergang of zonsopkomst wisseling heeft voorgedaan
-    SetDaylight(); // Zet in de struct ook de Time.DayLight status behorend bij de tijd
-    if(Time.Daylight!=DaylightPrevious)// er heeft een zonsondergang of zonsopkomst wisseling voorgedaan
-      {
-      struct NodoEventStruct TempEvent;
-      ClearEvent(&TempEvent);
-      TempEvent.Direction = VALUE_DIRECTION_INPUT;
-      TempEvent.Port      = VALUE_SOURCE_CLOCK;
-      TempEvent.Command   = CMD_CLOCK_EVENT_DAYLIGHT;
-      TempEvent.Par1      = Time.Daylight;
-      ProcessEvent2(&TempEvent);  
-      }
-    Time.Minutes++;
-    }
-
-  PrintTerminal(ProgmemString(Text_22));
-  ClockRead();// klok weer op de juiste tijd zetten.
-  SetDaylight();// daglicht status weer terug op de juiste stand zetten
-  DaylightPrevious=Time.Daylight;
-  }
-
+//void SimulateDay(void) //???
+//  {
+//  unsigned long SimulatedClockEvent, Event, Action;
+//
+//  Time.Seconds=0;
+//  Time.Minutes=0;
+//  Time.Hour=0;
+//  DaylightPrevious=4;// vullen met 4, dan wordt in de zomertijd 4 niet tweemaal per etmaal weergegeven
+//
+//  PrintTerminal(ProgmemString(Text_22));
+//  for(int m=0;m<=1439;m++)  // loop alle minuten van één etmaal door
+//   {
+//    // Simuleer alle minuten van een etmaal
+//    if(Time.Minutes==60){
+//      Time.Minutes=0;
+//      Time.Hour++;
+//    }  // roll-over naar volgende uur
+//
+//    // Kijk of er op het gesimuleerde tijdstip een hit is in de EventList
+////    SimulatedClockEvent=command2event( CMD_CLOCK_EVENT_ALL+Time.Day,Time.Hour,Time.Minutes);
+////    if(CheckEventlist(SimulatedClockEvent,VALUE_SOURCE_CLOCK)) // kijk of er een hit is in de EventList
+////      ProcessEvent2_old(SimulatedClockEvent,VALUE_DIRECTION_INPUT,VALUE_SOURCE_CLOCK);
+////??? klok events nog aanpassen
+//
+//    // Kijk of er op het gesimuleerde tijdstip een zonsondergang of zonsopkomst wisseling heeft voorgedaan
+//    SetDaylight(); // Zet in de struct ook de Time.DayLight status behorend bij de tijd
+//    if(Time.Daylight!=DaylightPrevious)// er heeft een zonsondergang of zonsopkomst wisseling voorgedaan
+//      {
+//      struct NodoEventStruct TempEvent;
+//      ClearEvent(&TempEvent);
+//      TempEvent.Direction = VALUE_DIRECTION_INPUT;
+//      TempEvent.Port      = VALUE_SOURCE_CLOCK;
+//      TempEvent.Command   = CMD_CLOCK_EVENT_DAYLIGHT;
+//      TempEvent.Par1      = Time.Daylight;
+//      ProcessEvent2(&TempEvent);  
+//      }
+//    Time.Minutes++;
+//    }
+//
+//  PrintTerminal(ProgmemString(Text_22));
+//  ClockRead();// klok weer op de juiste tijd zetten.
+//  SetDaylight();// daglicht status weer terug op de juiste stand zetten
+//  DaylightPrevious=Time.Daylight;
+//  }
+//
 #endif
 
 //#######################################################################################################

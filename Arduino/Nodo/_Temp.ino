@@ -1,10 +1,6 @@
 /*
 
-      pinMode(PIN_WIRED_OUT_1,OUTPUT); // definieer Arduino pin's voor Wired-Out
-      digitalWrite(PIN_WIRED_OUT_1,HIGH);//??
-      delay(10);
-      digitalWrite(PIN_WIRED_OUT_1,LOW);//??
-
+digitalWrite(PIN_WIRED_OUT_1,HIGH);delay(10);digitalWrite(PIN_WIRED_OUT_1,LOW);//??? Debugging
 
 Serial.print(F("*** debug: "));Serial.println(); //??? Debug
 PrintNodoEvent(Event,"");//???

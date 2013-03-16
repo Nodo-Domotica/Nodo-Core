@@ -6,9 +6,8 @@
 #define MIN_PULSE_LENGTH           100  // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define MIN_RAW_PULSES              32  // =16 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
 #define SWITCH_TIME_RX_TX_IR        50  // Minimale tijd tussen omschakelen van ontvangen naar zenden. 
-#define SWITCH_TIME_RX_TX_RF       500  // Minimale tijd tussen omschakelen van ontvangen naar zenden. 
+#define SWITCH_TIME_RX_TX_RF       750  // Minimale tijd tussen omschakelen van ontvangen naar zenden. 
 #define SWITCH_TIME_RX_TX_I2C       50  // Minimale tijd tussen omschakelen van ontvangen naar zenden. 
-#define MIN_TIME_BETWEEN_TX        100
 #define WAIT_FREE_RX_WINDOW        250
 
 boolean AnalyzeRawSignal(struct NodoEventStruct *E)
@@ -454,6 +453,7 @@ void DelayTransmission(byte Port, boolean Set)
       while((LastTransmitTime_I2C+SWITCH_TIME_RX_TX_I2C) > millis());
       break;
     }
+  delay(MIN_TIME_BETWEEN_TX);// Korte wachttijd tussen alle zendacties.
   }  
 }
 
@@ -462,7 +462,7 @@ void DelayTransmission(byte Port, boolean Set)
  * Als UseRawSignal=true, dan wordt er geen signaal opgebouwd, maar de actuele content van de
  * RawSignal buffer gebruikt. In dit geval werkt de WaitFree niet.
  \*********************************************************************************************/
-boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Display)
+boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Display, boolean WaitForFree)
   {  
   ES->Direction=VALUE_DIRECTION_OUTPUT;
   byte Port=ES->Port;
@@ -471,7 +471,6 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   // In dit geval resteert deze Nodo niets anders dan even te wachten tot de lijn weer vrijgegeven wordt of de wachttijd verlopen is.
   // Als er een timeout optreedt, dan de blokkade opheffen. Dit ter voorkoming dat Nodo's oneindig wachten op vrije lijn.
   // Uitzondering is als de Nodo zelf de master was, dan deze mag altijd zenden.
-
   if(Transmission_SelectedUnit!=0 && Transmission_SelectedUnit!=Settings.Unit && !Transmission_ThisUnitIsMaster)
     if(!Wait(30,true,0,false))
     {
@@ -489,12 +488,12 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     if(Display)PrintEvent(ES);
     DelayTransmission(VALUE_SOURCE_I2C,false);
     SendI2C(ES);
-    delay(MIN_TIME_BETWEEN_TX);//???
     }
 
-  if(Port==VALUE_SOURCE_RF || Port==VALUE_SOURCE_IR ||(Settings.TransmitRF==VALUE_ON && Port==VALUE_ALL))
-    if(Settings.WaitFree==VALUE_ON && UseRawSignal==false)
-      WaitFree(WAIT_FREE_RX_WINDOW); //??? unit afhankelijke pauze
+  if(WaitForFree)
+    if(Port==VALUE_SOURCE_RF || Port==VALUE_SOURCE_IR ||(Settings.TransmitRF==VALUE_ON && Port==VALUE_ALL))
+      if(Settings.WaitFree==VALUE_ON && UseRawSignal==false)
+        WaitFree(WAIT_FREE_RX_WINDOW);
 
   if(!UseRawSignal)
     Nodo_2_RawSignal(ES);
@@ -506,7 +505,6 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     if(Display)PrintEvent(ES);
     DelayTransmission(VALUE_SOURCE_IR,false);
     RawSendIR();
-    delay(MIN_TIME_BETWEEN_TX);
     }
 
   // Verstuur signaal als RF
@@ -516,7 +514,6 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     if(Display)PrintEvent(ES);
     DelayTransmission(VALUE_SOURCE_RF,false);
     RawSendRF();
-    delay(MIN_TIME_BETWEEN_TX);
     }
 
 #ifdef NODO_MEGA
@@ -683,8 +680,6 @@ boolean EthernetInit(void)
     {
     if(Ethernet.begin(Ethernet_MAC_Address)!=0) // maak verbinding en verzoek IP via DHCP
       Ok=true;
-    else
-      Ok=false;
     }
   else      
     {
@@ -1052,6 +1047,195 @@ boolean ParseHTTPRequest(char* HTTPRequest,char* Keyword, char* ResultString)
   return false;
 }
 
+#ifdef WEBAPP_OLD
+
+
+void ExecuteIP(void)
+  {
+  char InByte;
+  boolean RequestCompleted=false;  
+  boolean Completed=false;
+  int Protocol=0;
+  int InByteCounter;
+  char FileName[13];
+  boolean RequestEvent=false;
+  boolean RequestFile=false;
+  int x,y;
+  unsigned long TimeoutTimer=millis() + 5000; // Na enkele seconden moet de gehele transactie gereed zijn, anders 'hik' in de lijn.
+  
+  char *InputBuffer_IP = (char*) malloc(IP_BUFFER_SIZE+1);
+  char *Event          = (char*) malloc(INPUT_BUFFER_SIZE+1);
+  char *TmpStr1        = (char*) malloc(INPUT_BUFFER_SIZE+1);
+  char *TmpStr2        = (char*) malloc(40); 
+
+  Event[0]=0; // maak de string leeg.
+  
+  EthernetClient HTTPClient=HTTPServer.available();
+  
+  if(HTTPClient)
+    {
+    HTTPClient.getRemoteIP(ClientIPAddress);  
+
+    // Controleer of het IP adres van de Client geldig is. 
+    if((Settings.Client_IP[0]!=0 && ClientIPAddress[0]!=Settings.Client_IP[0]) ||
+       (Settings.Client_IP[1]!=0 && ClientIPAddress[1]!=Settings.Client_IP[1]) ||
+       (Settings.Client_IP[2]!=0 && ClientIPAddress[2]!=Settings.Client_IP[2]) ||
+       (Settings.Client_IP[3]!=0 && ClientIPAddress[3]!=Settings.Client_IP[3]))
+      {
+      RaiseMessage(MESSAGE_10);
+      }
+    else
+      {
+      InByteCounter=0;
+      while(HTTPClient.connected()  && !Completed && TimeoutTimer>millis())
+        {
+        if(HTTPClient.available()) 
+          {
+          InByte=HTTPClient.read();
+
+          if(isprint(InByte) && InByteCounter<IP_BUFFER_SIZE)
+            {
+            InputBuffer_IP[InByteCounter++]=InByte;
+            }
+      
+          else if((InByte==0x0D || InByte==0x0A))
+            {
+            InputBuffer_IP[InByteCounter]=0;
+            InByteCounter=0;
+
+            if(Settings.Debug==VALUE_ON)
+              Serial.println(InputBuffer_IP);
+
+            // Kijk of het een HTTP-request is
+            if(Protocol==0)
+              {
+              if(StringFind(InputBuffer_IP,"GET")!=-1)
+                Protocol=VALUE_SOURCE_HTTP;// HTTP-Request
+              }
+            
+            if(Protocol==VALUE_SOURCE_HTTP)
+              {
+              if(!RequestCompleted)
+                {
+                Completed=true;
+                
+                // als de beveiliging aan staat, dan kijken of de juiste pin ip meegegeven in het http-request. x is vlag voor toestemming verwerking event
+                x=false;
+                if(Settings.Password[0]!=0)
+                  {
+                  sprintf(TmpStr2,"%s:%s",HTTPCookie,Settings.Password);  
+                  md5(TmpStr2);
+                  
+                  if(ParseHTTPRequest(InputBuffer_IP,"key",TmpStr1))
+                    {
+                    if(strcmp(TmpStr2,TmpStr1)==0)
+                      x=true;
+                    }
+                  }
+                else
+                  x=true;
+
+                if(x)
+                  {                
+                  if(ParseHTTPRequest(InputBuffer_IP,"event",Event))
+                    RequestEvent=true;
+                   
+                  if(ParseHTTPRequest(InputBuffer_IP,"file",TmpStr1))
+                    {
+                    TmpStr1[8]=0; // voorkom dat een file meer dan 8 posities heeft (en een afsluitende 0)
+                    strcpy(FileName,TmpStr1);
+                    strcat(FileName,".dat");
+                    RequestFile=true;
+                    }
+                    
+                  if(RequestFile || RequestEvent)
+                    {
+                    RequestCompleted=true;
+                    strcpy(TmpStr1,"HTTP/1.1 200 Ok");
+                    HTTPClient.println(TmpStr1);
+                    }
+                  else
+                    HTTPClient.println(F("HTTP/1.1 400 Bad Request"));
+                  }
+                else                    
+                  HTTPClient.println(F("HTTP/1.1 403 Forbidden"));
+                }
+
+              HTTPClient.println(F("Content-Type: text/html"));
+              HTTPClient.print(F("Server: Nodo/Build="));
+              HTTPClient.println(int2str(NODO_BUILD));             
+              if(bitRead(HW_Config,HW_CLOCK))
+                {
+                HTTPClient.print(F("Date: "));
+                HTTPClient.println(DateTimeString());             
+                }
+              HTTPClient.println(""); // HTTP Request wordt altijd afgesloten met een lege regel
+  
+              if(RequestFile)
+                {              
+                // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
+                SelectSDCard(true);
+                File dataFile=SD.open(FileName);
+                if(dataFile) 
+                  {
+                  y=0;       
+                  while(dataFile.available())
+                    {
+                    x=dataFile.read();
+                    if(isprint(x) && y<INPUT_BUFFER_SIZE)
+                      {
+                      TmpStr1[y++]=x;
+                      }
+                    else
+                      {
+                      TmpStr1[y]=0;
+                      y=0;                    
+                      SelectSDCard(false);
+                      
+                      if(RequestFile)
+                        {
+                        HTTPClient.println();
+                        RequestFile=false;// gebruiken we even als vlag om de eerste keer de regel met asteriks af te drukken omdat deze variabele toch verder niet meer nodig is
+                        }
+                      HTTPClient.print(TmpStr1);
+                      HTTPClient.println();
+                      SelectSDCard(true);
+                      }
+                    }
+                  dataFile.close();
+                  SelectSDCard(false);
+                  }  
+                else 
+                  HTTPClient.println(cmd2str(MESSAGE_03));
+                }
+              } // einde HTTP-request
+            }
+          else
+            {
+            // Er is geen geldig teken binnen gekomen. Even wachten en afbreken.
+            delay(1000);
+            Completed=true;
+            }
+          }
+        }
+      }
+    delay(100);  // korte pauze om te voorkomen dat de verbinding wordt verbroken alvorens alle data door client verwerkt is.
+    HTTPClient.flush();// Verwijder eventuele rommel in de buffer.
+    HTTPClient.stop();
+    }
+
+  free(TmpStr1);
+  free(TmpStr2);
+  free(InputBuffer_IP);
+
+  if(RequestEvent)
+    ExecuteLine(Event, Protocol);
+
+  free(Event);
+  return;
+  }  
+
+#else
 void ExecuteIP(void)
 {
   char InByte;
@@ -1244,7 +1428,9 @@ void ExecuteIP(void)
   free(Event);
   return;
   }  
-#endif
+#endif //WEBAPP_NEW
+
+#endif //MEGA
 
 //#######################################################################################################
 //##################################### Transmission: SERIAL  ###########################################
@@ -1332,34 +1518,3 @@ boolean RawSignal_2_Nodo_OLD(struct NodoEventStruct *Event)
   return true;  
   }
 
-
-#ifdef NODO_MEGA
-boolean SendEventDirect(struct NodoEventStruct *ES, byte Port)
-  {
-  // Verstuur signaal als I2C
-  if(Port==VALUE_SOURCE_I2C)
-    SendI2C(ES);
-
-  // Verstuur signaal als HTTP-event.
-  else if(Port==VALUE_SOURCE_HTTP && bitRead(HW_Config,HW_ETHERNET))// Als Ethernet shield aanwezig.
-    SendHTTPEvent(ES);
-
-  else
-    {
-    Nodo_2_RawSignal(ES);
-  
-    // Verstuur signaal als RF
-    if(Port==VALUE_SOURCE_RF)
-      RawSendRF();
-  
-    // Verstuur signaal als IR
-    else if(Port==VALUE_SOURCE_IR)
-      RawSendIR();
-    }
-  delay(MIN_TIME_BETWEEN_TX);
-  }
-#endif 
-  
-  
-  
-  

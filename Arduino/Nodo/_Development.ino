@@ -59,6 +59,7 @@ Nog te doen:
 - [FileErase] zonder parameters wist alle scriptfiles van SDCard.
 - Issue 642: Alarmset instellen met status "off"
 - Issue 641: alarmset settings verdwijnen
+
 R513
 - Escape bij loop: Binnen vijf seconden na een reboot kan een commando naar de Nodo worden gestuurd om te resetten. Uitvoer vindt plaats voor uitvoer van het boot event.
 - SendTo commando aanpassing. Onder de motorkap aangepast EN SendTo blijft actief totdat SendTo Off wordt ingegeven
@@ -74,5 +75,9 @@ R517
 - Issue 672: Sendto geeft erg vaak timeout
 - UserPlugin verwijderd. Hiervoor zijn de devices in de plaats gekomen.
 - Commando [Unit] gerenamed naar [UnitSet]. Dit is consequenter.
+
+R518
+- Issue 675: Eventlist bevat ghost entries
+- Issue 687: SendTo is van de wijs te brengen!
 
 \*****************************************************************************************/

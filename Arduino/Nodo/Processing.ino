@@ -37,15 +37,8 @@ byte ProcessEvent1(struct NodoEventStruct *Event)
     TempEvent.Flags                 = TRANSMISSION_SYSTEM;    // Event is niet voor de gebruiker bedoeld
     TempEvent.Command               = SYSTEM_COMMAND_CONFIRMED;
     TempEvent.Par1                  = RequestForConfirm;
+    SendEvent(&TempEvent, false,false,false);
 
-    // Stel de poortsettings veilig zodat ze tijdelijk verzet kunnen worden.
-    byte OrgWaitFree=Settings.WaitFree;    
-    Settings.WaitFree  = VALUE_ON;
-
-    SendEvent(&TempEvent, false,false);
-
-    // Zet originele instelligen van de gebruiker terug.
-    Settings.WaitFree  = OrgWaitFree;
     RequestForConfirm=0;
     }
   return error;
@@ -88,10 +81,7 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
     QueueAdd(Event);
 
   else if(Event->Flags & TRANSMISSION_SENDTO)
-    {
-    Trace("TRANSMISSION_SENDTO",0);
     return 0;
-    }
 
   else if(Event->Flags & TRANSMISSION_SYSTEM)
     {
@@ -380,15 +370,9 @@ byte QueueSend(byte DestUnit)
   if(Port==0)
     Port=VALUE_SOURCE_RF;
     
-  // Stel de WaitFree settings veilig zodat ze tijdelijk verzet kunnen worden.
-  // Doe eenmaal een WaitFree, daarna alle events als 1 reeks verzenden.    
-  byte OrgWaitFree=Settings.WaitFree;
-  Settings.WaitFree=VALUE_ON;
-
   // Eerste fase: Zorg dat de inhoud van de queue correct aan komt op de slave.
   do
     {
-    DelayTransmission(Port,false); // Zorg dat de SendTo niet te snel kan volgen op een bevestiging van een slave
     ClearEvent(&Event);
     Event.DestinationUnit     = DestUnit;
     Event.SourceUnit          = Settings.Unit;
@@ -396,8 +380,8 @@ byte QueueSend(byte DestUnit)
     Event.Command             = CMD_SENDTO;      
     Event.Par1                = SendQueuePosition;
     Event.Par2                = ID;
-    Event.Flags               = TRANSMISSION_SENDTO | TRANSMISSION_NEXT | TRANSMISSION_LOCK; 
-    SendEventDirect(&Event, Port);
+    Event.Flags               = TRANSMISSION_SENDTO | TRANSMISSION_NEXT | TRANSMISSION_LOCK | TRANSMISSION_SYSTEM; 
+    SendEvent(&Event,false,false,false);
           
     // Verzend alle events uit de queue. Alleen de bestemmings Nodo zal deze events in de queue plaatsen
     for(x=0;x<SendQueuePosition;x++)
@@ -413,33 +397,22 @@ byte QueueSend(byte DestUnit)
       Event.Command             = SendQueue[x].Command;
       Event.Par1                = SendQueue[x].Par1;
       Event.Par2                = SendQueue[x].Par2;
-      SendEventDirect(&Event, Port);
+      SendEvent(&Event,false,false,false);
       }
-  
-    // Zet originele instelligen van de gebruiker terug.
-    Settings.WaitFree  = OrgWaitFree;
-  
+    
     // De ontvangende Nodo verzendt als het goed is een bevestiging dat het is ontvangen en het aantal commando's
     ClearEvent(&Event);
     Event.SourceUnit          = DestUnit;
     Event.Command             = SYSTEM_COMMAND_CONFIRMED;
+
     if(Wait(30,false,&Event,false))// waarde nog bepalen???
-      {
-      // Er zijn drie situaties: een correcte bevestiging, foutieve bevestiging of een timeout.
       if(x==Event.Par1)
         error=false;
 
-      else
-        {
-        Trace("SendTo: Slave heeft niet alle events ontvangen.",Event.Par1);
-        error=true;
-        }        
-      }
-    else
-      {
-      Trace("SendTo: slave heeft aantal ontvangen events niet bevestigd.",0);
-      error=true;
-      }
+    // Als er een timeout was of het aantel events is niet correct bevestigd, dan de gebruiker een waarschuwing tonen
+    if(error)
+      PrintTerminal(ProgmemString(Text_08));
+
     }while((++Retry<10) && error);    
 
   return error;
@@ -483,6 +456,8 @@ void QueueReceive(NodoEventStruct *Event)
   TempEvent.Par1                = count;
   TempEvent.Port                = Event->Port;
   TempEvent.Flags               = TRANSMISSION_SYSTEM; 
-  SendEvent(&TempEvent, false, false);
+
+  delay(MIN_TIME_BETWEEN_TX);//???
+  SendEvent(&TempEvent,false, false, false);
   Transmission_NodoOnly=false;
   }
