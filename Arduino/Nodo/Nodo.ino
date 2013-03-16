@@ -172,13 +172,12 @@
   #define DEVICE_05       // TempRead        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
   #define DEVICE_CORE_05  // TempRead        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820) 
 
-  ??? Compleet maken
 
 */
 // ----------------------------------------------------------------------------------------------------------------------------------------
 
 // hieronder volgen nog enkele instellingen voor alle Nodo unit nummers
-#define NODO_HOME                    0     // Home adres van Nodo's die tot één groep behoren (??? Nog niet operationeel!)
+#define HOME_NODO                    1     // Home adres van Nodo's die tot één groep behoren (1..7)
 #define PULSE_DEBOUNCE_TIME         10     // pulsen kleiner dan deze waarde worden niet geteld. Bedoeld on verstoringen a.g.v. ruis of dender te voorkomen
 #define PULSE_TRANSITION       FALLING     // FALLING of RISING: Geeft aan op welke flank de PulseCounter start start met tellen. Default FALLING
 #define I2C_START_ADDRESS            1     // Alle Nodo's op de I2C bus hebben een uniek adres dat start vanaf dit nummer. Er zijn max. 32 Nodo's. Let op verlap met andere devices. RTC zit op adres 104.

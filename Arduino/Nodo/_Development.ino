@@ -2,13 +2,9 @@
 Nog te doen:
 
 - Commando [Select]: Hiermee kan worden opgegeven dat events naar een specifieke Nodo moeten worden verzonden. Een niet geselecteerde Nodo kan ook niet zenden.
-- Commando SendEvent herstellen. ??
 - CRC een XOR met BUILD???
-- UserPlugins werken nog niet
-- [AlarmSet] toont na invoer een onjuist tijdstip.
 - Portinput geeft parameter teveel weer
 - Naast unit ook Home realiseren.
-- als ethernet define op nul staat worden er toch pogingen gedaan om cookies te verzenden.
 *****************************************************************************************
 
 - Reactietijd van HTTP event naar RF output versneld.
@@ -79,5 +75,17 @@ R517
 R518
 - Issue 675: Eventlist bevat ghost entries
 - Issue 687: SendTo is van de wijs te brengen!
+
+R519
+LET OP: Tevens WebApp aanpassing, echter deze build toont in de WebApp geen nog Eventlist die direct weer te programmeren is. (Actie: Martin)
+- Issue 692: Toevoegen van DEVICE_PERIODIC call.
+- Status All via HTTP geeft leeg resultaat
+- Toevoeging entries voor nieuwe devices 19 & 20 (Code nog niet beschikbaar: Actie Martinus)
+- Aanpassingen t.b.v. WebApp (resultaten terug in Bodytext)
+- DEVICE_ONCE_A_SECOND funktie toegevoegd aan devices.
+- Issue 688: File uitvoeren werkt soms niet
+- weergave alarmen werkt niet altijd correct.
+- EventlistShow weergave aangepast. Ëventlist <regel> is nu EventlistWrite <regel> geworden.
+- Tweede parameter in commando [UnitSet] is het Nodo Home adres [1..7]. Nodo s met verschillende Home adressen kunnen geen Nodo-events uitwisselen.
 
 \*****************************************************************************************/

@@ -640,7 +640,7 @@ void ResetFactory(void)
   Settings.TransmitIR                 = VALUE_ON;
   Settings.TransmitRF                 = VALUE_ON;
   Settings.Unit                       = UNIT_NODO;
-  Settings.Home                       = 1;
+  Settings.Home                       = HOME_NODO;
   Settings.WaitFree                   = VALUE_ON;
 
 #ifdef NODO_MEGA
@@ -708,6 +708,7 @@ void Status(struct NodoEventStruct *Request)
   byte Par1_Start,Par1_End;
   byte x;
   boolean s;
+  boolean Display=Request->Port==VALUE_SOURCE_SERIAL || Request->Port==VALUE_SOURCE_TELNET || Request->Port==VALUE_SOURCE_HTTP|| Request->Port==VALUE_SOURCE_FILE;
   
   struct NodoEventStruct Result;
   ClearEvent(&Result);
@@ -726,7 +727,7 @@ void Status(struct NodoEventStruct *Request)
     return;
     }
 
-  if((Request->Port==VALUE_SOURCE_SERIAL || Request->Port==VALUE_SOURCE_TELNET || Request->Port==VALUE_SOURCE_HTTP) && Request->Par1==VALUE_ALL)
+  if(Display && Request->Par1==VALUE_ALL)
     {
     Request->Par2=0;
     PrintWelcome();
@@ -749,7 +750,7 @@ void Status(struct NodoEventStruct *Request)
   for(x=CMD_Start; x<=CMD_End; x++)
     {
     s=false;
-    if(Request->Port==VALUE_SOURCE_SERIAL || Request->Port==VALUE_SOURCE_TELNET || Request->Port==VALUE_SOURCE_HTTP)
+    if(Display)
       {
       s=true;
       switch (x)
@@ -896,7 +897,7 @@ void Status(struct NodoEventStruct *Request)
         
         if(Result.Command!=0)
           {
-          if(Request->Port==VALUE_SOURCE_RF || Request->Port==VALUE_SOURCE_IR || Request->Port==VALUE_SOURCE_I2C)
+          if(!Display)
             {
             Result.Port=Request->Port;
             SendEvent(&Result,false,true,true); // verzend als event
@@ -915,7 +916,7 @@ void Status(struct NodoEventStruct *Request)
     }
 
   #ifdef NODO_MEGA
-  if((Request->Port==VALUE_SOURCE_TELNET || Request->Port==VALUE_SOURCE_SERIAL || Request->Port==VALUE_SOURCE_HTTP) && Request->Par1==VALUE_ALL)
+  if(Display && Request->Par1==VALUE_ALL)
     PrintTerminal(ProgmemString(Text_22));
 
   free(TempString);
@@ -2150,23 +2151,25 @@ boolean EventlistEntry2str(int entry, byte d, char* Line, boolean Script)
   ClearEvent(&Event);
   ClearEvent(&Action);
  
-  char *TempString=(char*)malloc(80);
+  char *TempString=(char*)malloc(100);
   boolean Ok;
 
   if(Ok=Eventlist_Read(entry,&Event,&Action)) // lees regel uit de Eventlist. Ga door als gelukt.
     {
     if(Event.Command) // Als de regel gevuld is
       {
-      strcpy(Line,cmd2str(Script?CMD_EVENTLIST_WRITE:VALUE_SOURCE_EVENTLIST));
-
       if(!Script)
         {
-        strcat(Line," ");
-        strcat(Line,int2str(entry));
+        strcpy(Line,int2str(entry));
+        strcat(Line,": ");
+        }
+      else
+        {
+        strcpy(Line,cmd2str(CMD_EVENTLIST_WRITE));
+        strcat(Line,"; ");
         }
   
       // geef het event weer
-      strcat(Line,"; ");
       Event2str(&Event, TempString);
       strcat(Line, TempString);
   
@@ -2345,12 +2348,7 @@ float ul2float(unsigned long ul)
   memcpy(&f, &ul,4);
   return f;
   }
-  
-  
-void  Test(void)
-  {    
-  }
-  
+    
 void DeviceInit(void)
   {
   byte x;
@@ -2459,8 +2457,28 @@ void DeviceInit(void)
   #endif
 
   #ifdef DEVICE_20
-  Device_ptr[x]=&Device207;
+  Device_ptr[x]=&Device20;
   Device_id[x++]=20;
+  #endif
+
+  #ifdef DEVICE_21
+  Device_ptr[x]=&Device21;
+  Device_id[x++]=21;
+  #endif
+
+  #ifdef DEVICE_22
+  Device_ptr[x]=&Device22;
+  Device_id[x++]=22;
+  #endif
+
+  #ifdef DEVICE_23
+  Device_ptr[x]=&Device23;
+  Device_id[x++]=23;
+  #endif
+
+  #ifdef DEVICE_24
+  Device_ptr[x]=&Device24;
+  Device_id[x++]=24;
   #endif
 
   #ifdef DEVICE_99

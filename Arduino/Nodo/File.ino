@@ -65,7 +65,7 @@ boolean SaveEventlistSDCard(char *FileName)
  {
   int x;
   boolean r=true;
-  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  char *TempString=(char*)malloc(100);
 
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
   SelectSDCard(true);
@@ -82,6 +82,7 @@ boolean SaveEventlistSDCard(char *FileName)
     x=1;
     while(EventlistEntry2str(x++,0,TempString,true))
       {
+
       if(TempString[0]!=0)// als de string niet leeg is, dan de regel weg schrijven
         {
         EventlistFile.write((uint8_t*)TempString,strlen(TempString));      

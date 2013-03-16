@@ -164,7 +164,7 @@ void WaitFree(int Window)
     if(Timer==0)
       {
       Led(BLUE);
-//      delay((Settings.Unit-1)*100);                                        // Unit afhankelijke wachttijd om te voorkomen dat alle Nodo's tegelijk gaan zenden.
+      delay((Settings.Unit-1)*25);                                        // Unit afhankelijke wachttijd om te voorkomen dat alle Nodo's tegelijk gaan zenden.
       Timer=millis()+Window;                                               // reset de timer weer.
       }
     }
@@ -322,7 +322,7 @@ void Nodo_2_RawSignal(struct NodoEventStruct *Event)
   RawSignal.Pulses[0]=PTMF;
 
   struct DataBlockStruct DataBlock;
-  DataBlock.SourceUnit=Event->SourceUnit;  
+  DataBlock.SourceUnit=Event->SourceUnit | (Settings.Home<<5);  
   DataBlock.DestinationUnit=Event->DestinationUnit;
   DataBlock.Flags=Event->Flags;
   DataBlock.Checksum=Event->Checksum;
@@ -570,8 +570,10 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
     
   if(b==0)
     {
+    if(DataBlock.SourceUnit>>5!=Settings.Home)
+      return false;
     RawSignal.Repeats    = false; // het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
-    Event->SourceUnit=DataBlock.SourceUnit;  
+    Event->SourceUnit=DataBlock.SourceUnit&0x1F;  
     Event->DestinationUnit=DataBlock.DestinationUnit;
     Event->Flags=DataBlock.Flags;
     Event->Checksum=DataBlock.Checksum;
@@ -580,8 +582,6 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
     Event->Par2=DataBlock.Par2;
     return true;
     }
-  else
-    Trace("Checksum error.",b);
   return false; 
   }
 
@@ -886,7 +886,10 @@ boolean SendHTTPRequest(char* Request)
   // IPBuffer bevat nu het volledige HTTP-request, gereed voor verzending.
 
   if(Settings.Debug==VALUE_ON)
+    {
+    Serial.print(F("DEBUG: HTTP-Output="));
     Serial.println(IPBuffer);
+    }
 
   strcpy(TempString,Settings.HTTPRequest);
   TempString[SlashPos]=0;
@@ -913,23 +916,23 @@ boolean SendHTTPRequest(char* Request)
       InByteCounter=0;
 
       while(TimeoutTimer>millis() && HTTPClient.connected())
-      {
-        if(HTTPClient.available())
         {
+        if(HTTPClient.available())
+          {
           InByte=HTTPClient.read();
           // DEBUG *** Serial.write(InByte);//???
           if(isprint(InByte) && InByteCounter<IP_BUFFER_SIZE)
             IPBuffer[InByteCounter++]=InByte;
 
           else if(InByte==0x0A)
-          {
+            {
             IPBuffer[InByteCounter]=0;
             if(Settings.Debug==VALUE_ON)
-            {
-              strcpy(TempString,"DEBUG HTTP Input: ");
+              {
+              strcpy(TempString,"DEBUG: HTTP-Input=");
               strcat(TempString,IPBuffer);
               Serial.println(TempString);
-            }
+              }
 
             TimeoutTimer=millis()+TimeOut; // er is nog data transport, dus de timeout timer weer op max. zetten.
 
@@ -1104,7 +1107,10 @@ void ExecuteIP(void)
             InByteCounter=0;
 
             if(Settings.Debug==VALUE_ON)
+              {
               Serial.println(InputBuffer_IP);
+              Serial.print(F("DEBUG: HTTP-Input="));
+              }
 
             // Kijk of het een HTTP-request is
             if(Protocol==0)
@@ -1289,7 +1295,10 @@ void ExecuteIP(void)
             InByteCounter=0;
 
             if(Settings.Debug==VALUE_ON)
+              {
+              Serial.print(F("DEBUG: HTTP-Input="));
               Serial.println(InputBuffer_IP);
+              }
 
             // Kijk of het een HTTP-request is
             if(Protocol==0)
@@ -1388,7 +1397,11 @@ void ExecuteIP(void)
                       SelectSDCard(false);
                       HTTPClient.print(TmpStr1);
                       HTTPClient.print("<br>");
-                      //Serial.print(F("*** debug: BODY TEXT -> "));Serial.println(TmpStr1); //??? Debug
+                      if(Settings.Debug==VALUE_ON)
+                        {
+                        Serial.print(F("DEBUG: HTTP-Output(Body)="));
+                        Serial.println(TmpStr1); //??? Debug
+                        }
                       SelectSDCard(true);
                       }
                     }
