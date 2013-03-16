@@ -7,7 +7,13 @@
 // strings met vaste tekst naar PROGMEM om hiermee RAM-geheugen te sparen.
 prog_char PROGMEM Text_01[] = "Nodo Domotica controller (c) Copyright 2013 P.K.Tonkes.";
 prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
+prog_char PROGMEM Text_03[] = "Enter your password: ";
 prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSat";
+prog_char PROGMEM Text_05[] = "0123456789abcdef";
+prog_char PROGMEM Text_06[] = "NODO/HTTPBODY.DAT";
+prog_char PROGMEM Text_07[] = "Waiting...";
+prog_char PROGMEM Text_08[] = "SendTo: Transmission error. Retry...";
+prog_char PROGMEM Text_09[] = "(Last 10KByte)";
 prog_char PROGMEM Text_22[] = "!******************************************************************************!";
 
 #ifdef NODO_MEGA
@@ -17,11 +23,6 @@ prog_char PROGMEM Text_15[] = "Nodo V3.0.9 Small, Product=SWACNC-SMALL-R%03d, Th
 #endif
 
 #ifdef NODO_MEGA
-prog_char PROGMEM Text_03[] = "Enter your password: ";
-prog_char PROGMEM Text_05[] = "0123456789abcdef";
-prog_char PROGMEM Text_06[] = "NODO/HTTPBODY.DAT";
-prog_char PROGMEM Text_07[] = "Waiting...";
-prog_char PROGMEM Text_09[] = "(Last 10KByte)";
 prog_char PROGMEM Text_13[] = "RawSignal saved.";
 prog_char PROGMEM Text_14[] = "Event=";
 prog_char PROGMEM Text_23[] = "LOG.DAT";
@@ -540,6 +541,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define SIGNAL_TYPE_NODO_SYSTEM      2  // Type ontvangen of te verzenden signaal in de eventcode
 #define NODO_TYPE_EVENT              1
 #define NODO_TYPE_COMMAND            2
+#define MIN_TIME_BETWEEN_TX         50
 
 // Hardware in gebruik: Bits worden geset in de variabele HW_Config, uit te lezen met [Status HWConfig]
 #define HW_BIC_0        0
@@ -883,7 +885,11 @@ void setup()
 
   // Start Ethernet kaart en start de HTTP-Server en de Telnet-server
   #if ETHERNET
-  bitWrite(HW_Config,HW_ETHERNET,1); // nog slim detecteren of fysieke laag is aangesloten. Wordt niet ondersteund door de Ethernet Library van Arduino
+  // Detecteren of fysieke laag is aangesloten wordt niet ondersteund door de Ethernet Library van Arduino.
+  // Uit meting blijkt dat als er geen W5100 aangesloten is de MISO en MOSI beiden laag zijn .
+  // Is de kaart wel aanwezig, dan is de MISO lijn hoog.
+  if(digitalRead(50))
+    bitWrite(HW_Config,HW_ETHERNET,1); 
   
   if(bitRead(HW_Config,HW_ETHERNET))
     {
@@ -923,7 +929,7 @@ void setup()
   TempEvent.Flags     = TRANSMISSION_CONFIRM;
   TempEvent.Command   = CMD_BOOT_EVENT;
   TempEvent.Par1      = Settings.Unit;
-  SendEvent(&TempEvent,false,true);  
+  SendEvent(&TempEvent,false,true,true);  
 
   // Wacht even kort op reacties van andere Nodo's 
   Wait(3, false,0 , false);  
@@ -950,7 +956,7 @@ void setup()
     TempEvent.Port     = VALUE_ALL;
     TempEvent.Command=CMD_NEWNODO;
     TempEvent.Par1=Settings.Unit;
-    SendEvent(&TempEvent,false,true); 
+    SendEvent(&TempEvent,false,true,true); 
     }
   bitWrite(HW_Config,HW_I2C,false); // Zet I2C weer uit. Wordt weer geactiveerd als er een I2C event op de bus verschijnt.
   }

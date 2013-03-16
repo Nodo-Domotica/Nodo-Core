@@ -1,3 +1,5 @@
+//#define WEBAPP_OLD
+
 /****************************************************************************************************************************\
 * Arduino project "Nodo" © Copyright 2013 Paul Tonkes 
 * 
@@ -33,12 +35,11 @@
 #include <Arduino.h>
 #include <SD.h>
 //
-// Stap 3.
+// Stap 3.tset
 // Stel hieronder in welk Nodo unit nummer u gaat compileren. Uitgangspunt is dat elke fysieke Nodo een uniek unit nummer krijgt toegekend.
 // Voor elk unit nummer kunt u verderop deze pagina een blokje kenmerken instellen.
 // Als dat eenmalig is gedaan, kunt u voortaan die set instellingen selecteren met het unit nummer:
-#define UNIT_NODO          10
-
+#define UNIT_NODO          1
 
 
 

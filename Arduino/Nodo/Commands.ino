@@ -173,7 +173,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       TempEvent.Command               = CMD_USEREVENT;
       TempEvent.Par1                  = EventToExecute->Par1;
       TempEvent.Par2                  = EventToExecute->Par2;
-      SendEvent(&TempEvent, false, true);
+      SendEvent(&TempEvent, false, true,true);
       break;
 
 //    case CMD_LOCK:
@@ -222,47 +222,50 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       break;
 
     case CMD_CLOCK_SYNC:
-      // Haal eerst de juiste tijd op van de WebApp
-      if(bitRead(HW_Config,HW_WEBAPP))
-        {
-        SendHTTPEvent(EventToExecute);
-        Wait(5,false,0,false);
-        QueueProcess();
-        }
-      
-      // Geef de juiste tijd nu door aan alle andere Nodo's
-      for(y=1; y<=UNIT_MAX; y++)
-        {
-        if(y!=Settings.Unit)
-          {        
-          x=NodoOnline(y,0);
-          if(x)
-            {           
-            ClearEvent(&TempEvent);    
-            TempEvent.Port                  = x;
-            TempEvent.DestinationUnit       = y;    
-            TempEvent.Flags                 = TRANSMISSION_QUEUE | TRANSMISSION_NEXT | TRANSMISSION_LOCK; 
-
-            TempEvent.Command               = CMD_CLOCK_YEAR;
-            TempEvent.Par1                  = Time.Year/100;
-            TempEvent.Par2                  = Time.Year%100;
-            SendEvent(&TempEvent, false, true);
-            
-            TempEvent.Command               = CMD_CLOCK_DATE;
-            TempEvent.Par1                  = Time.Date;
-            TempEvent.Par2                  = Time.Month;
-            SendEvent(&TempEvent, false, true);
-            
-            TempEvent.Command               = CMD_CLOCK_TIME;
-            TempEvent.Par1                  = Time.Hour;
-            TempEvent.Par2                  = Time.Minutes;
-            SendEvent(&TempEvent, false, true);
-            
-            TempEvent.Flags                 = 0; 
-            TempEvent.Command               = CMD_CLOCK_DOW;
-            TempEvent.Par1                  = Time.Day;
-            TempEvent.Par2                  = 0;
-            SendEvent(&TempEvent, false, true);
+      if(bitRead(HW_Config,HW_CLOCK)) // bitRead(HW_Config,HW_CLOCK)=true want dan is er een RTC aanwezig.
+        {   
+        // Haal eerst de juiste tijd op van de WebApp
+        if(bitRead(HW_Config,HW_WEBAPP && EventToExecute->Par1==VALUE_SOURCE_HTTP))
+          {
+          SendHTTPEvent(EventToExecute);
+          }
+        else
+          {
+          // Geef de juiste tijd nu door aan alle andere Nodo's
+          for(y=1; y<=UNIT_MAX; y++)
+            {
+            if(y!=Settings.Unit)
+              {        
+              x=NodoOnline(y,0);
+              if(x)
+                {           
+                ClearEvent(&TempEvent);    
+                TempEvent.Port                  = x;
+                TempEvent.DestinationUnit       = y;    
+                TempEvent.Flags                 = TRANSMISSION_QUEUE | TRANSMISSION_NEXT | TRANSMISSION_LOCK; 
+    
+                TempEvent.Command               = CMD_CLOCK_YEAR;
+                TempEvent.Par1                  = Time.Year/100;
+                TempEvent.Par2                  = Time.Year%100;
+                SendEvent(&TempEvent, false, true, true);
+                
+                TempEvent.Command               = CMD_CLOCK_DATE;
+                TempEvent.Par1                  = Time.Date;
+                TempEvent.Par2                  = Time.Month;
+                SendEvent(&TempEvent, false, true, true);
+                
+                TempEvent.Command               = CMD_CLOCK_TIME;
+                TempEvent.Par1                  = Time.Hour;
+                TempEvent.Par2                  = Time.Minutes;
+                SendEvent(&TempEvent, false, true, true);
+                
+                TempEvent.Flags                 = 0; 
+                TempEvent.Command               = CMD_CLOCK_DOW;
+                TempEvent.Par1                  = Time.Day;
+                TempEvent.Par2                  = 0;
+                SendEvent(&TempEvent, false, true, true);
+                }
+              }
             }
           }
         }
@@ -316,7 +319,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       ClearEvent(&TempEvent);
       TempEvent=LastReceived;
       TempEvent.Port=EventToExecute->Par1==0?VALUE_ALL:EventToExecute->Par1;
-      SendEvent(&TempEvent, TempEvent.Command==CMD_RAWSIGNAL,true);
+      SendEvent(&TempEvent, TempEvent.Command==CMD_RAWSIGNAL,true, true);
       break;        
 
     case CMD_SOUND: 
@@ -393,7 +396,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
 
     case CMD_STATUS:
       // ??? Als het door de gebruiker is verzocht om logging naar een file te doen, dan wordt de output NIET als events verzonden.
-      Status(EventToExecute, EventToExecute->Port);
+      Status(EventToExecute);
       break;
       
     case CMD_UNIT_SET:
@@ -461,9 +464,9 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       Settings.Log=EventToExecute->Par1;
       break;
 
-    case CMD_SIMULATE_DAY:
-      SimulateDay(); 
-      break;     
+//    case CMD_SIMULATE_DAY: // ??? gooien we dit commando weg?
+//      SimulateDay(); 
+//      break;     
       
 //    case CMD_RAWSIGNAL_SEND:
 //      if(EventToExecute->Par1!=0)

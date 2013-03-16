@@ -302,8 +302,8 @@ boolean Device_02(byte function, struct NodoEventStruct *event, char *string)
             }
           }
         RawSignal.Pulses[(KAKU_CodeLength*4)+1] = KAKU_T/PTMF;
-        RawSignal.Pulses[(KAKU_CodeLength*4)+2] = (KAKU_T*48)/PTMF;// space van de stopbit nodig voor pauze tussen herhalingen.@@@
-        SendEvent(event,true,true);
+        RawSignal.Pulses[(KAKU_CodeLength*4)+2] = (KAKU_T*30)/PTMF;// space van de stopbit nodig voor pauze tussen herhalingen.@@@
+        SendEvent(event,true,true,true);
         success=true;
         }
       break;
@@ -704,9 +704,9 @@ boolean Device_04(byte function, struct NodoEventStruct *event, char *string)
         i+=4;
         }
       RawSignal.Pulses[i++]=NewKAKU_1T/PTMF; //pulse van de stopbit
-      RawSignal.Pulses[i]=NewKAKU_1T*20/PTMF; //space van de stopbit tevens pause tussen signalen
+      RawSignal.Pulses[i]=255; //space van de stopbit tevens pause tussen signalen. 6.5 msec.
       RawSignal.Number=i; // aantal bits*2 die zich in het opgebouwde RawSignal bevinden
-      SendEvent(event,true,true);
+      SendEvent(event,true,true,true);
       success=true;
       break;
       }
@@ -2484,7 +2484,7 @@ boolean Device_16(byte function, struct NodoEventStruct *event, char *string)
       RawSignal.Number=116; // aantal bits*2 die zich in het opgebouwde RawSignal bevinden  unsigned long bitstream=0L;
       event->Port=VALUE_ALL; // Signaal mag naar alle door de gebruiker met [Output] ingestelde poorten worden verzonden.
       RawSignal.Repeats=5;   // vijf herhalingen.
-      SendEvent(event,true,true);
+      SendEvent(event,true,true,true);
       success=true;
       break;
     }
