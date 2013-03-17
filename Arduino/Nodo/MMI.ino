@@ -566,757 +566,752 @@ int ExecuteLine(char *Line, byte Port)
         
         GetArgv(Command,TmpStr1,1);
         EventToExecute.Command=str2cmd(TmpStr1); 
-                
-        if(EventToExecute.Command)
+
+        // Haal Par1 uit het commando.
+        if(GetArgv(Command,TmpStr1,2))
           {
-          if(GetArgv(Command,TmpStr1,2))
-            {
-            EventToExecute.Par1=str2cmd(TmpStr1);
-            if(!EventToExecute.Par1)
-              EventToExecute.Par1=str2int(TmpStr1);
-            }
+          EventToExecute.Par1=str2cmd(TmpStr1);
+          if(!EventToExecute.Par1)
+            EventToExecute.Par1=str2int(TmpStr1);
+          }
+        
+        // Haal Par2 uit het commando.
+        if(GetArgv(Command,TmpStr1,3))
+          {
+          EventToExecute.Par2=str2cmd(TmpStr1);
+          if(!EventToExecute.Par2)
+            EventToExecute.Par2=str2int(TmpStr1);
+          }        
+
+        switch(EventToExecute.Command)
+          {
+          //test; geen, altijd goed
+          case CMD_SIMULATE_DAY:
+          case CMD_EVENTLIST_ERASE:
+          case CMD_RESET:
+          case CMD_ALARM:
+          case CMD_MESSAGE:
+          case CMD_REBOOT:
+          case CMD_SETTINGS_SAVE:
+          case CMD_CLOCK_EVENT_DAYLIGHT:
+          case CMD_STATUS:
+          case CMD_TEST:
+          case CMD_DELAY:
+          case CMD_SOUND: 
+          case CMD_USEREVENT:
+          case CMD_SEND_USEREVENT:
+          case CMD_CLOCK_SYNC:
+            break; 
+      
+          case CMD_LOG:
+          case CMD_DEBUG:
+          case CMD_ECHO:
+            if(EventToExecute.Par1!=VALUE_OFF && EventToExecute.Par1!=VALUE_ON)
+              error=MESSAGE_02;
+           break;
+            
+          case CMD_RAWSIGNAL_SEND:    
+            if(EventToExecute.Par2!=VALUE_SOURCE_RF && EventToExecute.Par2!=VALUE_SOURCE_IR && EventToExecute.Par2!=0)
+              error=MESSAGE_02;
+            break;
+            
+          case CMD_TIMER_SET:
+            if(EventToExecute.Par1>TIMER_MAX)
+              error=MESSAGE_02;
+            break;
+                  
+          case CMD_WAIT_EVENT:
+            if((EventToExecute.Par1<1 || EventToExecute.Par1>UNIT_MAX) &&  EventToExecute.Par1!=VALUE_ALL)
+              error=MESSAGE_02;
+            break;
+      
+          case CMD_UNIT_SET:
+          case CMD_NEWNODO:
+          case CMD_BOOT_EVENT:
+            if(EventToExecute.Par1<1 || EventToExecute.Par1>UNIT_MAX)
+              error=MESSAGE_02;
+            break;
+      
+          case CMD_ANALYSE_SETTINGS:
+            if(EventToExecute.Par1<1 || EventToExecute.Par1>50)
+              error=MESSAGE_02;
+            break;
+      
+          // test:EventToExecute.Par1 en EventToExecute.Par2 binnen bereik maximaal beschikbare variabelen
+          case CMD_BREAK_ON_VAR_LESS_VAR:
+          case CMD_BREAK_ON_VAR_MORE_VAR:
+          case CMD_VARIABLE_VARIABLE:
+            if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
+              error=MESSAGE_02;
+            if(EventToExecute.Par2<1 || EventToExecute.Par2>USER_VARIABLES_MAX)
+              error=MESSAGE_02;
+            break;
+              
+          case CMD_VARIABLE_SET_WIRED_ANALOG:
+            if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
+              error=MESSAGE_02;
+            if(EventToExecute.Par2<1 || EventToExecute.Par2>WIRED_PORTS)
+              error=MESSAGE_02;
+            break;
+              
+          // test:EventToExecute.Par1 binnen bereik maximaal beschikbare timers
+          case CMD_TIMER_EVENT:
+          case CMD_TIMER_RANDOM:
+            if(EventToExecute.Par1<1 || EventToExecute.Par1>TIMER_MAX)
+              error=MESSAGE_02;
+            break;
+            
+          // geldig jaartal
+          case CMD_CLOCK_YEAR:
+            if(EventToExecute.Par1!=20 || EventToExecute.Par2>99)
+              error=MESSAGE_02;
+            break;
           
-          if(GetArgv(Command,TmpStr1,3))
-            {
-            EventToExecute.Par2=str2cmd(TmpStr1);
-            if(!EventToExecute.Par2)
+          // geldige tijd    
+          case CMD_BREAK_ON_TIME_LATER:
+          case CMD_BREAK_ON_TIME_EARLIER:
+          case CMD_CLOCK_TIME:
+            if(EventToExecute.Par1>23 || EventToExecute.Par2>59)
+              error=MESSAGE_02;
+            break;
+      
+          // geldige datum
+          case CMD_CLOCK_DATE: // data1=datum, data2=maand
+            if(EventToExecute.Par1>31 || EventToExecute.Par1<1 || EventToExecute.Par2>12 || EventToExecute.Par2<1)
+              error=MESSAGE_02;
+            break;
+      
+          case CMD_CLOCK_DOW:
+            if(EventToExecute.Par1<1 || EventToExecute.Par1>7)
+              error=MESSAGE_02;
+            break;
+      
+          // test:EventToExecute.Par1 binnen bereik maximaal beschikbare wired poorten.
+          case CMD_WIRED_IN_EVENT:
+            if(EventToExecute.Par1<1 || EventToExecute.Par1>WIRED_PORTS)
+              error=MESSAGE_02;
+            if(EventToExecute.Par2!=VALUE_ON && EventToExecute.Par2!=VALUE_OFF)
+              error=MESSAGE_02;
+            break;
+      
+          case CMD_WIRED_OUT:
+            if(EventToExecute.Par1>WIRED_PORTS)
+              error=MESSAGE_02;
+            if(EventToExecute.Par2!=VALUE_ON && EventToExecute.Par2!=VALUE_OFF)
+              error=MESSAGE_02;
+            break;
+      
+          case CMD_WIRED_PULLUP:
+            if(EventToExecute.Par1<1 || EventToExecute.Par1>WIRED_PORTS)
+              error=MESSAGE_02;
+            if(EventToExecute.Par2!=VALUE_ON && EventToExecute.Par2!=VALUE_OFF)
+              error=MESSAGE_02;
+            break;
+
+          
+          case CMD_SEND_EVENT:
+            switch(EventToExecute.Par1)
+              {
+              case VALUE_ALL:
+              case VALUE_SOURCE_I2C:
+              case VALUE_SOURCE_IR:
+              case VALUE_SOURCE_RF:
+              case VALUE_SOURCE_HTTP:
+                break;
+              default:
+                error=MESSAGE_02;
+              }
+            break;
+      
+          case CMD_COMMAND_WILDCARD:
+            switch(EventToExecute.Par1)
+              {
+              case VALUE_ALL:
+              case VALUE_SOURCE_I2C:
+              case VALUE_SOURCE_IR:
+              case VALUE_SOURCE_RF:
+              case VALUE_SOURCE_SERIAL:
+              case VALUE_SOURCE_WIRED:
+              case VALUE_SOURCE_EVENTLIST:
+              case VALUE_SOURCE_SYSTEM:
+              case VALUE_SOURCE_TIMER:
+              case VALUE_SOURCE_VARIABLE:
+              case VALUE_SOURCE_CLOCK:
+              case VALUE_SOURCE_HTTP:
+                break;
+              default:
+                error=MESSAGE_02;
+              }
+              
+            if(GetArgv(Command,TmpStr1,4))
+              EventToExecute.Par2|=(str2int(TmpStr1)<<8);
+
+            break;
+      
+           // par1 alleen On of Off.
+           // par2 mag alles zijn
+          case CMD_BREAK_ON_DAYLIGHT:
+          case CMD_WAITFREERF:
+            if(EventToExecute.Par1!=VALUE_OFF && EventToExecute.Par1!=VALUE_ON)
+              error=MESSAGE_02;
+            break;
+      
+          case CMD_OUTPUT:
+            if(EventToExecute.Par1!=VALUE_SOURCE_I2C && EventToExecute.Par1!=VALUE_SOURCE_IR && EventToExecute.Par1!=VALUE_SOURCE_RF && EventToExecute.Par1!=VALUE_SOURCE_HTTP)
+              error=MESSAGE_02;
+            if(EventToExecute.Par2!=VALUE_OFF && EventToExecute.Par2!=VALUE_ON)
+              error=MESSAGE_02;
+            break;
+
+          case CMD_SENDTO:
+            if(EventToExecute.Par1==VALUE_OFF)
+              {
+              SendToUnit=0;
+              SendToUnitAll=0;
+              }
+            else
+              {
+              SendToUnit=EventToExecute.Par1;
+              if(EventToExecute.Par2==VALUE_ALL)
+                SendToUnitAll=SendToUnit;
+              }
+            EventToExecute.Command=0;
+            break;    
+
+//          case CMD_LOCK: // Hier wordt de lock code o.b.v. het wachtwoord ingesteld. Alleen van toepassing voor de Mega.??? nog uitwerken
+//            a=0L;
+//            for(x=0;x<strlen(Settings.Password);x++)
+//              {
+//              a=a<<5;
+//              a^=Settings.Password[x];
+//              }
+//            a&=0x7fff;// 15-bits pincode uit wachtwoord samengesteld. 16e bit is lock aan/uit.
+//            if(EventToExecute.Par1==VALUE_ON)
+//              a |= (1<<15);
+//             EventToExecute.Command=CMD_LOCK;
+//             EventToExecute.Par1=(a>>8)&0xff;
+//             EventToExecute.Par2=a&0xff;
+//            break;
+
+          case CMD_BREAK_ON_VAR_EQU:
+          case CMD_BREAK_ON_VAR_LESS:
+          case CMD_BREAK_ON_VAR_MORE:
+          case CMD_BREAK_ON_VAR_NEQU:
+          case CMD_VARIABLE_DEC:
+          case CMD_VARIABLE_SET:
+          case CMD_VARIABLE_INC:
+          case CMD_VARIABLE_EVENT:
+            if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
+              error=MESSAGE_02;
+            else if(GetArgv(Command,TmpStr1,3))// waarde van de variabele
+              EventToExecute.Par2=float2ul(atof(TmpStr1));
+            else
+              error=MESSAGE_02;
+            break;
+
+          case CMD_WIRED_ANALOG:
+          case CMD_WIRED_THRESHOLD:
+          case CMD_WIRED_SMITTTRIGGER:
+            if(EventToExecute.Par1<1 || EventToExecute.Par1>WIRED_PORTS)
+              error=MESSAGE_02;
+            else if(GetArgv(Command,TmpStr1,3))
               EventToExecute.Par2=str2int(TmpStr1);
-            }        
-          
-          switch(EventToExecute.Command)
+            break;
+              
+          case CMD_EVENTLIST_WRITE:
+            if(SendToUnit==Settings.Unit || SendToUnit==0)
+              {                          
+              if(EventToExecute.Par1<=EVENTLIST_MAX)
+                {
+                EventlistWriteLine=EventToExecute.Par1;
+                State_EventlistWrite=1;
+                EventToExecute.Command=0;// geen verdere verwerking
+                }
+              else
+                error=MESSAGE_02;
+              }
+            break;
+
+          case CMD_PASSWORD:
             {
-            //test; geen, altijd goed
-            case CMD_SIMULATE_DAY:
-            case CMD_EVENTLIST_ERASE:
-            case CMD_RESET:
-            case CMD_ALARM:
-            case CMD_MESSAGE:
-            case CMD_REBOOT:
-            case CMD_SETTINGS_SAVE:
-            case CMD_CLOCK_EVENT_DAYLIGHT:
-            case CMD_STATUS:
-            case CMD_TEST:
-            case CMD_DELAY:
-            case CMD_SOUND: 
-            case CMD_USEREVENT:
-            case CMD_SEND_USEREVENT:
-            case CMD_CLOCK_SYNC:
-              break; 
-        
-            case CMD_LOG:
-            case CMD_DEBUG:
-            case CMD_ECHO:
-              if(EventToExecute.Par1!=VALUE_OFF && EventToExecute.Par1!=VALUE_ON)
-                error=MESSAGE_02;
-             break;
+            TmpStr1[0]=0;
+            GetArgv(Command,TmpStr1,2);
+            TmpStr1[25]=0; // voor geval de string te lang is.
+            strcpy(Settings.Password,TmpStr1);
+
+//            // Als een lock actief, dan lock op basis van nieuwe password instellen
+//            if(Settings.Lock)
+//              {
+//              a=0L;
+//              for(x=0;x<strlen(Settings.Password);x++)
+//                {
+//                a=a<<5;
+//                a^=Settings.Password[x];
+//                }
+//              Settings.Lock=a&0x7fff;
+//              }//??? lock nog aanpassen.
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+            break;
+            }  
+
+          case CMD_ID:
+            {
+            TmpStr1[0]=0;
+            GetArgv(Command,TmpStr1,2);
+            TmpStr1[9]=0; // voor geval de string te lang is.
+            strcpy(Settings.ID,TmpStr1);
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+            break;
+            }  
+
+          case CMD_TEMP:
+            {
+            x=StringFind(Command,cmd2str(CMD_TEMP))+strlen(cmd2str(CMD_TEMP));
+            while(Command[x]==' ')x++;             // eventuele spaties verwijderen
+            strcpy(TmpStr1,Command+x);             // Alles na de "temp" hoort bij de variabele
+            TmpStr1[25]=0;                         // voor geval de string te lang is.
+            strcpy(Settings.Temp,TmpStr1);
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+            break;
+            }  
+          
+          case CMD_RAWSIGNAL:
+            if(GetArgv(Command,TmpStr1,2))
+              {
+              EventToExecute.Par1=0;
+              EventToExecute.Par2=str2int(TmpStr1);
+              }
+            break;
+
+          case CMD_ALARM_SET:
+            // Commando format: [AlarmSet <AlarmNumber 1..4>, <Enabled On|Off>, <Time HHMM>, <Day 1..7>]
+            //                  [Time <Time HHMM>, <Day 1..7>]
+            // We moeten wat truucs uithalen om al deze info in een 32-bit variabele te krijgen.
+            // Alarmtijd wordt in Par2 opgeslagen volgens volgende format: MSB-EEEEWWWWAAAABBBBCCCCDDDD-LSB
+            // E=Enabled, WWWW=weekdag, AAAA=Uren tiental, BBBB=uren, CCCC=minuten tiental DDDD=minuten
+            // Als een deel gevuld met 0xE, dan waarde niet setten.
+            // Als gevuld met 0xF, dan wildcard.             
+            if(GetArgv(Command,TmpStr1,2)) // Alarm number
+              {
+              error=MESSAGE_02;
+              EventToExecute.Par1=str2int(TmpStr1);
+              EventToExecute.Par2=0xEEEEEEEE; 
               
-            case CMD_RAWSIGNAL_SEND:    
-              if(EventToExecute.Par2!=VALUE_SOURCE_RF && EventToExecute.Par2!=VALUE_SOURCE_IR && EventToExecute.Par2!=0)
-                error=MESSAGE_02;
-              break;
-              
-            case CMD_TIMER_SET:
-              if(EventToExecute.Par1>TIMER_MAX)
-                error=MESSAGE_02;
-              break;
-                    
-            case CMD_WAIT_EVENT:
-              if((EventToExecute.Par1<1 || EventToExecute.Par1>UNIT_MAX) &&  EventToExecute.Par1!=VALUE_ALL)
-                error=MESSAGE_02;
-              break;
-        
-            case CMD_UNIT_SET:
-            case CMD_NEWNODO:
-            case CMD_BOOT_EVENT:
-              if(EventToExecute.Par1<1 || EventToExecute.Par1>UNIT_MAX)
-                error=MESSAGE_02;
-              break;
-        
-            case CMD_ANALYSE_SETTINGS:
-              if(EventToExecute.Par1<1 || EventToExecute.Par1>50)
-                error=MESSAGE_02;
-              break;
-        
-            // test:EventToExecute.Par1 en EventToExecute.Par2 binnen bereik maximaal beschikbare variabelen
-            case CMD_BREAK_ON_VAR_LESS_VAR:
-            case CMD_BREAK_ON_VAR_MORE_VAR:
-            case CMD_VARIABLE_VARIABLE:
-              if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
-                error=MESSAGE_02;
-              if(EventToExecute.Par2<1 || EventToExecute.Par2>USER_VARIABLES_MAX)
-                error=MESSAGE_02;
-              break;
-                
-            case CMD_VARIABLE_SET_WIRED_ANALOG:
-              if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
-                error=MESSAGE_02;
-              if(EventToExecute.Par2<1 || EventToExecute.Par2>WIRED_PORTS)
-                error=MESSAGE_02;
-              break;
-                
-            // test:EventToExecute.Par1 binnen bereik maximaal beschikbare timers
-            case CMD_TIMER_EVENT:
-            case CMD_TIMER_RANDOM:
-              if(EventToExecute.Par1<1 || EventToExecute.Par1>TIMER_MAX)
-                error=MESSAGE_02;
-              break;
-              
-            // geldig jaartal
-            case CMD_CLOCK_YEAR:
-              if(EventToExecute.Par1!=20 || EventToExecute.Par2>99)
-                error=MESSAGE_02;
-              break;
-            
-            // geldige tijd    
-            case CMD_BREAK_ON_TIME_LATER:
-            case CMD_BREAK_ON_TIME_EARLIER:
-            case CMD_CLOCK_TIME:
-              if(EventToExecute.Par1>23 || EventToExecute.Par2>59)
-                error=MESSAGE_02;
-              break;
-        
-            // geldige datum
-            case CMD_CLOCK_DATE: // data1=datum, data2=maand
-              if(EventToExecute.Par1>31 || EventToExecute.Par1<1 || EventToExecute.Par2>12 || EventToExecute.Par2<1)
-                error=MESSAGE_02;
-              break;
-        
-            case CMD_CLOCK_DOW:
-              if(EventToExecute.Par1<1 || EventToExecute.Par1>7)
-                error=MESSAGE_02;
-              break;
-        
-            // test:EventToExecute.Par1 binnen bereik maximaal beschikbare wired poorten.
-            case CMD_WIRED_IN_EVENT:
-              if(EventToExecute.Par1<1 || EventToExecute.Par1>WIRED_PORTS)
-                error=MESSAGE_02;
-              if(EventToExecute.Par2!=VALUE_ON && EventToExecute.Par2!=VALUE_OFF)
-                error=MESSAGE_02;
-              break;
-        
-            case CMD_WIRED_OUT:
-              if(EventToExecute.Par1>WIRED_PORTS)
-                error=MESSAGE_02;
-              if(EventToExecute.Par2!=VALUE_ON && EventToExecute.Par2!=VALUE_OFF)
-                error=MESSAGE_02;
-              break;
-        
-            case CMD_WIRED_PULLUP:
-              if(EventToExecute.Par1<1 || EventToExecute.Par1>WIRED_PORTS)
-                error=MESSAGE_02;
-              if(EventToExecute.Par2!=VALUE_ON && EventToExecute.Par2!=VALUE_OFF)
-                error=MESSAGE_02;
-              break;
-  
-            
-            case CMD_SEND_EVENT:
-              switch(EventToExecute.Par1)
+              if(EventToExecute.Par1>0 && EventToExecute.Par1<=ALARM_MAX)
                 {
-                case VALUE_ALL:
-                case VALUE_SOURCE_I2C:
-                case VALUE_SOURCE_IR:
-                case VALUE_SOURCE_RF:
-                case VALUE_SOURCE_HTTP:
-                  break;
-                default:
-                  error=MESSAGE_02;
-                }
-              break;
-        
-            case CMD_COMMAND_WILDCARD:
-              switch(EventToExecute.Par1)
-                {
-                case VALUE_ALL:
-                case VALUE_SOURCE_I2C:
-                case VALUE_SOURCE_IR:
-                case VALUE_SOURCE_RF:
-                case VALUE_SOURCE_SERIAL:
-                case VALUE_SOURCE_WIRED:
-                case VALUE_SOURCE_EVENTLIST:
-                case VALUE_SOURCE_SYSTEM:
-                case VALUE_SOURCE_TIMER:
-                case VALUE_SOURCE_VARIABLE:
-                case VALUE_SOURCE_CLOCK:
-                case VALUE_SOURCE_HTTP:
-                  break;
-                default:
-                  error=MESSAGE_02;
-                }
-                
-              if(GetArgv(Command,TmpStr1,4))
-                EventToExecute.Par2|=(str2int(TmpStr1)<<8);
-  
-              break;
-        
-             // par1 alleen On of Off.
-             // par2 mag alles zijn
-            case CMD_BREAK_ON_DAYLIGHT:
-            case CMD_WAITFREERF:
-              if(EventToExecute.Par1!=VALUE_OFF && EventToExecute.Par1!=VALUE_ON)
-                error=MESSAGE_02;
-              break;
-        
-            case CMD_OUTPUT:
-              if(EventToExecute.Par1!=VALUE_SOURCE_I2C && EventToExecute.Par1!=VALUE_SOURCE_IR && EventToExecute.Par1!=VALUE_SOURCE_RF && EventToExecute.Par1!=VALUE_SOURCE_HTTP)
-                error=MESSAGE_02;
-              if(EventToExecute.Par2!=VALUE_OFF && EventToExecute.Par2!=VALUE_ON)
-                error=MESSAGE_02;
-              break;
-  
-            case CMD_SENDTO:
-              if(EventToExecute.Par1==VALUE_OFF)
-                {
-                SendToUnit=0;
-                SendToUnitAll=0;
-                }
-              else
-                {
-                SendToUnit=EventToExecute.Par1;
-                if(EventToExecute.Par2==VALUE_ALL)
-                  SendToUnitAll=SendToUnit;
-                }
-              EventToExecute.Command=0;
-              break;    
-  
-  //          case CMD_LOCK: // Hier wordt de lock code o.b.v. het wachtwoord ingesteld. Alleen van toepassing voor de Mega.??? nog uitwerken
-  //            a=0L;
-  //            for(x=0;x<strlen(Settings.Password);x++)
-  //              {
-  //              a=a<<5;
-  //              a^=Settings.Password[x];
-  //              }
-  //            a&=0x7fff;// 15-bits pincode uit wachtwoord samengesteld. 16e bit is lock aan/uit.
-  //            if(EventToExecute.Par1==VALUE_ON)
-  //              a |= (1<<15);
-  //             EventToExecute.Command=CMD_LOCK;
-  //             EventToExecute.Par1=(a>>8)&0xff;
-  //             EventToExecute.Par2=a&0xff;
-  //            break;
-  
-            case CMD_BREAK_ON_VAR_EQU:
-            case CMD_BREAK_ON_VAR_LESS:
-            case CMD_BREAK_ON_VAR_MORE:
-            case CMD_BREAK_ON_VAR_NEQU:
-            case CMD_VARIABLE_DEC:
-            case CMD_VARIABLE_SET:
-            case CMD_VARIABLE_INC:
-            case CMD_VARIABLE_EVENT:
-              if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
-                error=MESSAGE_02;
-              else if(GetArgv(Command,TmpStr1,3))// waarde van de variabele
-                EventToExecute.Par2=float2ul(atof(TmpStr1));
-              else
-                error=MESSAGE_02;
-              break;
-  
-            case CMD_WIRED_ANALOG:
-            case CMD_WIRED_THRESHOLD:
-            case CMD_WIRED_SMITTTRIGGER:
-              if(EventToExecute.Par1<1 || EventToExecute.Par1>WIRED_PORTS)
-                error=MESSAGE_02;
-              else if(GetArgv(Command,TmpStr1,3))
-                EventToExecute.Par2=str2int(TmpStr1);
-              break;
-                
-            case CMD_EVENTLIST_WRITE:
-              if(SendToUnit==Settings.Unit || SendToUnit==0)
-                {                          
-                if(EventToExecute.Par1<=EVENTLIST_MAX)
+                if(GetArgv(Command,TmpStr1,3)) // Enabled
                   {
-                  EventlistWriteLine=EventToExecute.Par1;
-                  State_EventlistWrite=1;
-                  EventToExecute.Command=0;// geen verdere verwerking
-                  }
-                else
-                  error=MESSAGE_02;
-                }
-              break;
-  
-            case CMD_PASSWORD:
-              {
-              TmpStr1[0]=0;
-              GetArgv(Command,TmpStr1,2);
-              TmpStr1[25]=0; // voor geval de string te lang is.
-              strcpy(Settings.Password,TmpStr1);
-  
-  //            // Als een lock actief, dan lock op basis van nieuwe password instellen
-  //            if(Settings.Lock)
-  //              {
-  //              a=0L;
-  //              for(x=0;x<strlen(Settings.Password);x++)
-  //                {
-  //                a=a<<5;
-  //                a^=Settings.Password[x];
-  //                }
-  //              Settings.Lock=a&0x7fff;
-  //              }//??? lock nog aanpassen.
-              EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
-              break;
-              }  
-  
-            case CMD_ID:
-              {
-              TmpStr1[0]=0;
-              GetArgv(Command,TmpStr1,2);
-              TmpStr1[9]=0; // voor geval de string te lang is.
-              strcpy(Settings.ID,TmpStr1);
-              EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
-              break;
-              }  
-  
-            case CMD_TEMP:
-              {
-              x=StringFind(Command,cmd2str(CMD_TEMP))+strlen(cmd2str(CMD_TEMP));
-              while(Command[x]==' ')x++;             // eventuele spaties verwijderen
-              strcpy(TmpStr1,Command+x);             // Alles na de "temp" hoort bij de variabele
-              TmpStr1[25]=0;                         // voor geval de string te lang is.
-              strcpy(Settings.Temp,TmpStr1);
-              EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
-              break;
-              }  
-            
-            case CMD_RAWSIGNAL:
-              if(GetArgv(Command,TmpStr1,2))
-                {
-                EventToExecute.Par1=0;
-                EventToExecute.Par2=str2int(TmpStr1);
-                }
-              break;
-  
-            case CMD_ALARM_SET:
-              // Commando format: [AlarmSet <AlarmNumber 1..4>, <Enabled On|Off>, <Time HHMM>, <Day 1..7>]
-              //                  [Time <Time HHMM>, <Day 1..7>]
-              // We moeten wat truucs uithalen om al deze info in een 32-bit variabele te krijgen.
-              // Alarmtijd wordt in Par2 opgeslagen volgens volgende format: MSB-EEEEWWWWAAAABBBBCCCCDDDD-LSB
-              // E=Enabled, WWWW=weekdag, AAAA=Uren tiental, BBBB=uren, CCCC=minuten tiental DDDD=minuten
-              // Als een deel gevuld met 0xE, dan waarde niet setten.
-              // Als gevuld met 0xF, dan wildcard.             
-              if(GetArgv(Command,TmpStr1,2)) // Alarm number
-                {
-                error=MESSAGE_02;
-                EventToExecute.Par1=str2int(TmpStr1);
-                EventToExecute.Par2=0xEEEEEEEE; 
-                
-                if(EventToExecute.Par1>0 && EventToExecute.Par1<=ALARM_MAX)
-                  {
-                  if(GetArgv(Command,TmpStr1,3)) // Enabled
+                  x=str2cmd(TmpStr1);
+                  if(x==VALUE_ON || x==VALUE_OFF)
                     {
-                    x=str2cmd(TmpStr1);
-                    if(x==VALUE_ON || x==VALUE_OFF)
+                    EventToExecute.Par2&=0xff0fffff;
+                    EventToExecute.Par2|=(unsigned long)(x==VALUE_ON)<<20; // Enabled bit setten.
+                    error=0;
+                    if(GetArgv(Command,TmpStr1,4)) // Minutes
                       {
-                      EventToExecute.Par2&=0xff0fffff;
-                      EventToExecute.Par2|=(unsigned long)(x==VALUE_ON)<<20; // Enabled bit setten.
-                      error=0;
-                      if(GetArgv(Command,TmpStr1,4)) // Minutes
+                      EventToExecute.Par2&=0xffff0000;
+                      y=0;
+                      for(x=strlen(TmpStr1)-1;x>=0;x--)
                         {
-                        EventToExecute.Par2&=0xffff0000;
-                        y=0;
-                        for(x=strlen(TmpStr1)-1;x>=0;x--)
+                        w=TmpStr1[x];
+                        if(w>='0' && w<='9' || w=='*')
                           {
-                          w=TmpStr1[x];
-                          if(w>='0' && w<='9' || w=='*')
-                            {
-  //???                          a=0xffffffff  ^ (0xfUL <<y); // Mask maken om de nibble positie y te wissen.
-  //                          EventToExecute.Par2&=a; // maak nibble leeg
-                            if(w=='*')
-                              EventToExecute.Par2|=(0xFUL<<y); // vul nibble met wildcard
-                            else
-                              EventToExecute.Par2|=(w-'0')<<y; // vul nibble met token
-                            y+=4;
-                            }
-                          else if(w==':');
+//???                          a=0xffffffff  ^ (0xfUL <<y); // Mask maken om de nibble positie y te wissen.
+//                          EventToExecute.Par2&=a; // maak nibble leeg
+                          if(w=='*')
+                            EventToExecute.Par2|=(0xFUL<<y); // vul nibble met wildcard
                           else
-                            {
-                            error=MESSAGE_02;
-                            break;
-                            }
+                            EventToExecute.Par2|=(w-'0')<<y; // vul nibble met token
+                          y+=4;
                           }
-                        if(GetArgv(Command,TmpStr1,5)) // Day is optioneel. Maar als deze parameter ingevuld, dan meenemen in de berekening.
-                          y=str2weekday(TmpStr1);
-                        else // Dag niet opgegeven
-                          y=0xF;
-  
-                        EventToExecute.Par2&=0xfff0ffff;
-                        if(y!=-1)
-                          EventToExecute.Par2|=(unsigned long)y<<16;
+                        else if(w==':');
                         else
+                          {
                           error=MESSAGE_02;
+                          break;
+                          }
                         }
+                      if(GetArgv(Command,TmpStr1,5)) // Day is optioneel. Maar als deze parameter ingevuld, dan meenemen in de berekening.
+                        y=str2weekday(TmpStr1);
+                      else // Dag niet opgegeven
+                        y=0xF;
+
+                      EventToExecute.Par2&=0xfff0ffff;
+                      if(y!=-1)
+                        EventToExecute.Par2|=(unsigned long)y<<16;
+                      else
+                        error=MESSAGE_02;
                       }
                     }
                   }
                 }
-              else 
-                error=MESSAGE_02;
-  
-              break;
-            
-            case CMD_TIME:
-              // Event format: [Time <Time HHMM>, <Day 1..7>]
-              // We moeten wat truucs uithalen om al deze info in een 32-bit variabele te krijgen.
-              // Tijd wordt in Par2 opgeslagen volgens volgende format: MSB-0000WWWWAAAABBBBCCCCDDDD-LSB
-              // WWWW=weekdag, AAAA=Uren tiental, BBBB=uren, CCCC=minuten tiental DDDD=minuten
-              {              
-              if(GetArgv(Command,TmpStr1,2)) // Minutes
+              }
+            else 
+              error=MESSAGE_02;
+
+            break;
+          
+          case CMD_TIME:
+            // Event format: [Time <Time HHMM>, <Day 1..7>]
+            // We moeten wat truucs uithalen om al deze info in een 32-bit variabele te krijgen.
+            // Tijd wordt in Par2 opgeslagen volgens volgende format: MSB-0000WWWWAAAABBBBCCCCDDDD-LSB
+            // WWWW=weekdag, AAAA=Uren tiental, BBBB=uren, CCCC=minuten tiental DDDD=minuten
+            {              
+            if(GetArgv(Command,TmpStr1,2)) // Minutes
+              {
+              EventToExecute.Par2=0L; 
+              y=0;
+              for(x=strlen(TmpStr1)-1;x>=0;x--)
                 {
-                EventToExecute.Par2=0L; 
-                y=0;
-                for(x=strlen(TmpStr1)-1;x>=0;x--)
+                w=TmpStr1[x];
+                if(w>='0' && w<='9' || w=='*')
                   {
-                  w=TmpStr1[x];
-                  if(w>='0' && w<='9' || w=='*')
-                    {
-                    a=0xffffffff  ^ (0xfUL <<y); // Mask maken om de nibble positie y te wissen.
-                    EventToExecute.Par2&=a; // maak nibble leeg
-                    if(w=='*')
-                      EventToExecute.Par2|=(0xFUL<<y); // vul nibble met wildcard
-                    else
-                      EventToExecute.Par2|=(w-'0')<<y; // vul nibble met token
-                    y+=4;
-                    }
-                  else if(w==':');
+                  a=0xffffffff  ^ (0xfUL <<y); // Mask maken om de nibble positie y te wissen.
+                  EventToExecute.Par2&=a; // maak nibble leeg
+                  if(w=='*')
+                    EventToExecute.Par2|=(0xFUL<<y); // vul nibble met wildcard
                   else
-                    {
-                    error=MESSAGE_02;
-                    break;
-                    }
+                    EventToExecute.Par2|=(w-'0')<<y; // vul nibble met token
+                  y+=4;
                   }
-                if(GetArgv(Command,TmpStr1,3)) // Day is optioneel. Maar als deze parameter ingevuld, dan meenemen in de berekening.
-                  y=str2weekday(TmpStr1);
-                else // Dag niet opgegeven
-                  y=0xF;
-  
-                EventToExecute.Par2&=0xfff0ffff;
-                if(y!=-1)
-                  EventToExecute.Par2|=(unsigned long)y<<16;
-                else
-                  error=MESSAGE_02;
-                }
-              else 
-                error=MESSAGE_02;
-              break;
-              }
-  
-            case CMD_FILE_LOG:
-              if(GetArgv(Command,TmpStr1,2))
-                {
-                strcat(TmpStr1,".dat");
-                strcpy(TempLogFile,TmpStr1);
-                }
-              else
-                TempLogFile[0]=0;
-              EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
-              break;
-            
-            case CMD_FILE_ERASE:      
-              if(GetArgv(Command,TmpStr1,2))
-                {
-                strcat(TmpStr1,".dat");
-                FileErase(TmpStr1);
-                }
-              else
-                FileList("",true);
-  
-              EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
-              break;
-      
-            case CMD_RAWSIGNAL_ERASE:      
-              if(GetArgv(Command,TmpStr1,2))
-                {
-                sprintf(TmpStr2,"%s/%s.raw",ProgmemString(Text_28),TmpStr1);
-                FileErase(TmpStr2);
-                }
-              else
-                FileList("/RAW",true);
-                
-              EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
-              break;
-      
-            case CMD_FILE_GET_HTTP:
-              {
-              if(GetArgv(Command,TmpStr1,2))
-                {
-                Led(BLUE);
-                GetHTTPFile(TmpStr1);
-                }
-              else
-                error=MESSAGE_02;            
-              EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
-              break; 
-              }
-              
-            case CMD_FILE_SHOW:
-              {
-              char FileName[13];
-              TmpStr1[8]=0;// voor de zekerheid te lange filename afkappen
-              if(GetArgv(Command,FileName,2))
-                {
-                Led(BLUE);
-                strcat(FileName,".dat");
-                error=FileShow(FileName);
-                }
-              EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
-              break;
-              }
-      
-            case CMD_FILE_EXECUTE:
-              {
-              if(EventToExecute.Par2==VALUE_ON)
-                EventToExecute.Par1=VALUE_ON;
-              else
-                EventToExecute.Par1=VALUE_OFF;
-              
-              if(GetArgv(Command,TmpStr1,2))
-                {
-                EventToExecute.Par2=str2int(TmpStr1);
-                if(State_EventlistWrite==0)
-                  {
-                  // Commando uitvoeren heeft alleen zin er geen eventlistwrite commando actief is
-                  error=FileExecute(TmpStr1, EventToExecute.Par1==VALUE_ON);
-                  EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
-                  }
-                }
-              break;
-              }
-      
-            case CMD_EVENTLIST_SHOW:
-              if(EventToExecute.Par1<=EVENTLIST_MAX)
-                {
-                PrintTerminal(ProgmemString(Text_22));
-                if(EventToExecute.Par1==0)
-                  {
-                  x=1;
-                  while(EventlistEntry2str(x++,0,TmpStr2,false))
-                    if(TmpStr2[0]!=0)
-                      PrintTerminal(TmpStr2);
-                  }
+                else if(w==':');
                 else
                   {
-                  EventlistEntry2str(EventToExecute.Par1,0,TmpStr2,false);//??? buiten bereik afvangen
-                    if(TmpStr2[0]!=0)
-                      PrintTerminal(TmpStr2);
-                  }
-                PrintTerminal(ProgmemString(Text_22));
-                EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
-                }
-              else
-                error=MESSAGE_02;
-              break;
-                
-            case CMD_NODO_IP:
-              if(GetArgv(Command,TmpStr1,2))
-                if(!str2ip(TmpStr1,Settings.Nodo_IP))
                   error=MESSAGE_02;
-              EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
-              break;
-              
-            case CMD_CLIENT_IP:
-              if(GetArgv(Command,TmpStr1,2))
-                if(!str2ip(TmpStr1,Settings.Client_IP))
-                  error=MESSAGE_02;
-              EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
-              break;
-              
-            case CMD_SUBNET:
-              if(GetArgv(Command,TmpStr1,2))
-                if(!str2ip(TmpStr1,Settings.Subnet))
-                  error=MESSAGE_02;
-              break;
-              
-            case CMD_DNS_SERVER:
-              if(GetArgv(Command,TmpStr1,2))
-                if(!str2ip(TmpStr1,Settings.DnsServer))
-                  error=MESSAGE_02;
-              EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
-              break;
-              
-            case CMD_GATEWAY:
-              if(GetArgv(Command,TmpStr1,2))
-                if(!str2ip(TmpStr1,Settings.Gateway))
-                  error=MESSAGE_02;
-              EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
-              break;
-              
-            case CMD_EVENTLIST_FILE:
-              Led(BLUE);
-              if(GetArgv(Command,TmpStr1,2))
-                {
-                strcat(TmpStr1,".dat");
-                if(!SaveEventlistSDCard(TmpStr1))
-                  {
-                  error=MESSAGE_14;
                   break;
                   }
                 }
-              EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
-              break;
-  
-            case CMD_IF:
-              {
-              x=StringFind(Command," ") ;           // laat x wijzen direct NA het if commando.
-              strcpy(TmpStr1,Command+x);            // Alles na de "if" hoort bij de voorwaarde
-  
-              // eventuele spaties er uithalen
-              y=0;
-              for(x=0;x<strlen(TmpStr1);x++)
-                {
-                if(TmpStr1[x]!=' ')
-                  TmpStr1[y++]=TmpStr1[x];
-                }
-              TmpStr1[y]=0;
-              
-              // Zoek '=' teken op en splitst naar linker en rechter operand.
-              x=StringFind(TmpStr1,"<>");
-              if(x!=-1)
-                {
-                strcpy(TmpStr2,TmpStr1+x+2);
-                TmpStr1[x]=0;
-                if(strcasecmp(TmpStr1,TmpStr2)==0)
-                  LinePos=LineLength+1; // ga direct naar einde van de regel.
-                }
-                
-              x=StringFind(TmpStr1,"=");
-              if(x!=-1)
-                {
-                strcpy(TmpStr2,TmpStr1+x+1);
-                TmpStr1[x]=0;
-                if(strcasecmp(TmpStr1,TmpStr2)!=0)
-                  LinePos=LineLength+1; // ga direct naar einde van de regel.
-                }
-                
+              if(GetArgv(Command,TmpStr1,3)) // Day is optioneel. Maar als deze parameter ingevuld, dan meenemen in de berekening.
+                y=str2weekday(TmpStr1);
+              else // Dag niet opgegeven
+                y=0xF;
+
+              EventToExecute.Par2&=0xfff0ffff;
+              if(y!=-1)
+                EventToExecute.Par2|=(unsigned long)y<<16;
               else
                 error=MESSAGE_02;
-              EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
-              break;
-              }            
-  
-            case CMD_RAWSIGNAL_LIST:
-              FileList("/RAW",false);
-              EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
-              break;
-  
-            case CMD_FILE_LIST:
-              FileList("/",false);
-              EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
-              break;
-  
-            case CMD_FILE_WRITE:
-              if(GetArgv(Command,TmpStr1,2) && strlen(TmpStr1)<=8)
+              }
+            else 
+              error=MESSAGE_02;
+            break;
+            }
+
+          case CMD_FILE_LOG:
+            if(GetArgv(Command,TmpStr1,2))
+              {
+              strcat(TmpStr1,".dat");
+              strcpy(TempLogFile,TmpStr1);
+              }
+            else
+              TempLogFile[0]=0;
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+            break;
+          
+          case CMD_FILE_ERASE:      
+            if(GetArgv(Command,TmpStr1,2))
+              {
+              strcat(TmpStr1,".dat");
+              FileErase(TmpStr1);
+              }
+            else
+              FileList("",true);
+
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+            break;
+    
+          case CMD_RAWSIGNAL_ERASE:      
+            if(GetArgv(Command,TmpStr1,2))
+              {
+              sprintf(TmpStr2,"%s/%s.raw",ProgmemString(Text_28),TmpStr1);
+              FileErase(TmpStr2);
+              }
+            else
+              FileList("/RAW",true);
+              
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+            break;
+    
+          case CMD_FILE_GET_HTTP:
+            {
+            if(GetArgv(Command,TmpStr1,2))
+              {
+              Led(BLUE);
+              GetHTTPFile(TmpStr1);
+              }
+            else
+              error=MESSAGE_02;            
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+            break; 
+            }
+            
+          case CMD_FILE_SHOW:
+            {
+            char FileName[13];
+            TmpStr1[8]=0;// voor de zekerheid te lange filename afkappen
+            if(GetArgv(Command,FileName,2))
+              {
+              Led(BLUE);
+              strcat(FileName,".dat");
+              error=FileShow(FileName);
+              }
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+            break;
+            }
+    
+          case CMD_FILE_EXECUTE:
+            {
+            if(EventToExecute.Par2==VALUE_ON)
+              EventToExecute.Par1=VALUE_ON;
+            else
+              EventToExecute.Par1=VALUE_OFF;
+            
+            if(GetArgv(Command,TmpStr1,2))
+              {
+              EventToExecute.Par2=str2int(TmpStr1);
+              if(State_EventlistWrite==0)
                 {
-                strcat(TmpStr1,".dat");
-                strcpy(TempLogFile,TmpStr1);
-                FileWriteMode=60;
+                // Commando uitvoeren heeft alleen zin er geen eventlistwrite commando actief is
+                error=FileExecute(TmpStr1, EventToExecute.Par1==VALUE_ON);
                 EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
                 }
-              else
-                error=MESSAGE_02;
-              break;
-  
-            case CMD_HTTP_REQUEST:
-              // zoek in de regel waar de string met het http request begint.
-              x=StringFind(Line,cmd2str(CMD_HTTP_REQUEST))+strlen(cmd2str(CMD_HTTP_REQUEST));
-              while(Line[x]==32)x++;
-              strcpy(Settings.HTTPRequest,&Line[0]+x);
-              EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
-              break;
-  
-            case CMD_PULSE_COUNT:
-              {
-              if(GetArgv(Command,TmpStr1,2))
-                EventToExecute.Par2=str2int(TmpStr1);                  
-              break;
-              }  
-  
-            case CMD_PORT_SERVER:
-              {
-              if(GetArgv(Command,TmpStr1,2))
-                EventToExecute.Par2=str2int(TmpStr1);
-              break;
-              }  
-  
-            case CMD_PORT_CLIENT:
-              {
-              if(GetArgv(Command,TmpStr1,2))
-                EventToExecute.Par2=str2int(TmpStr1);
-              break;
-              }  
-  
-            default:
-              {              
-              // Als er geen vast commando is ingevoerd, dan kan het zijn dat er een Device commando is opgegeven.
-              // Loop de devices langs om te checken if er een hit is. Zo ja, dan heeft de Device_xx funktie de struct
-              // met de juiste waarden gevuld.
-              y=false;
-              for(x=0;x<DEVICE_MAX && EventToExecute.Command==0; x++)
-                if(Device_ptr[x]!=0)
-                  y=Device_ptr[x](DEVICE_MMI_IN,&EventToExecute,Command);
-  
-              if(!y)
-                error=MESSAGE_01;
-              else
-                error=0;
               }
+            break;
             }
-              
-          if(EventToExecute.Command && error==0)
-            {
-            // Er kunnen zich twee situaties voordoen:
-            //
-            // A: Event is voor deze Nodo en moet gewoon worden uitgevoerd;
-            // B: SendTo is actief. Event moet worden verzonden naar een andere Nodo. Hier wordt de Queue voor gebruikt.
-            
-            if(State_EventlistWrite==0)// Gewoon uitvoeren
+    
+          case CMD_EVENTLIST_SHOW:
+            if(EventToExecute.Par1<=EVENTLIST_MAX)
               {
-              if(SendToUnit==Settings.Unit || SendToUnit==0)
+              PrintTerminal(ProgmemString(Text_22));
+              if(EventToExecute.Par1==0)
                 {
-                EventToExecute.Direction=VALUE_DIRECTION_INPUT;
-                error=ProcessEvent2(&EventToExecute);      // verwerk binnengekomen event.
+                x=1;
+                while(EventlistEntry2str(x++,0,TmpStr2,false))
+                  if(TmpStr2[0]!=0)
+                    PrintTerminal(TmpStr2);
                 }
               else
                 {
-                if(EventToExecute.Command)          // geen lege events in de queue plaatsen
-                  QueueAdd(&EventToExecute);        // Plaats in queue voor latere verzending.
+                EventlistEntry2str(EventToExecute.Par1,0,TmpStr2,false);//??? buiten bereik afvangen
+                  if(TmpStr2[0]!=0)
+                    PrintTerminal(TmpStr2);
                 }
-              continue;
+              PrintTerminal(ProgmemString(Text_22));
+              EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
               }
-      
-            if(State_EventlistWrite==2)
-              {            
-              UndoNewNodo();// Status NewNodo verwijderen indien van toepassing
-              if(!Eventlist_Write(EventlistWriteLine,&TempEvent,&EventToExecute))
+            else
+              error=MESSAGE_02;
+            break;
+              
+          case CMD_NODO_IP:
+            if(GetArgv(Command,TmpStr1,2))
+              if(!str2ip(TmpStr1,Settings.Nodo_IP))
+                error=MESSAGE_02;
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+            break;
+            
+          case CMD_CLIENT_IP:
+            if(GetArgv(Command,TmpStr1,2))
+              if(!str2ip(TmpStr1,Settings.Client_IP))
+                error=MESSAGE_02;
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+            break;
+            
+          case CMD_SUBNET:
+            if(GetArgv(Command,TmpStr1,2))
+              if(!str2ip(TmpStr1,Settings.Subnet))
+                error=MESSAGE_02;
+            break;
+            
+          case CMD_DNS_SERVER:
+            if(GetArgv(Command,TmpStr1,2))
+              if(!str2ip(TmpStr1,Settings.DnsServer))
+                error=MESSAGE_02;
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+            break;
+            
+          case CMD_GATEWAY:
+            if(GetArgv(Command,TmpStr1,2))
+              if(!str2ip(TmpStr1,Settings.Gateway))
+                error=MESSAGE_02;
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+            break;
+            
+          case CMD_EVENTLIST_FILE:
+            Led(BLUE);
+            if(GetArgv(Command,TmpStr1,2))
+              {
+              strcat(TmpStr1,".dat");
+              if(!SaveEventlistSDCard(TmpStr1))
                 {
-                RaiseMessage(MESSAGE_06);
+                error=MESSAGE_14;
                 break;
                 }
-              State_EventlistWrite=0;
-              continue;
-              }  
-              
-            if(State_EventlistWrite==1)
+              }
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+            break;
+
+          case CMD_IF:
+            {
+            x=StringFind(Command," ") ;           // laat x wijzen direct NA het if commando.
+            strcpy(TmpStr1,Command+x);            // Alles na de "if" hoort bij de voorwaarde
+
+            // eventuele spaties er uithalen
+            y=0;
+            for(x=0;x<strlen(TmpStr1);x++)
               {
-              TempEvent=EventToExecute; // TempEvent = >Event< dat moet worden weggeschreven in de eventlist;
-              State_EventlistWrite=2;
+              if(TmpStr1[x]!=' ')
+                TmpStr1[y++]=TmpStr1[x];
+              }
+            TmpStr1[y]=0;
+            
+            // Zoek '=' teken op en splitst naar linker en rechter operand.
+            x=StringFind(TmpStr1,"<>");
+            if(x!=-1)
+              {
+              strcpy(TmpStr2,TmpStr1+x+2);
+              TmpStr1[x]=0;
+              if(strcasecmp(TmpStr1,TmpStr2)==0)
+                LinePos=LineLength+1; // ga direct naar einde van de regel.
+              }
+              
+            x=StringFind(TmpStr1,"=");
+            if(x!=-1)
+              {
+              strcpy(TmpStr2,TmpStr1+x+1);
+              TmpStr1[x]=0;
+              if(strcasecmp(TmpStr1,TmpStr2)!=0)
+                LinePos=LineLength+1; // ga direct naar einde van de regel.
+              }
+              
+            else
+              error=MESSAGE_02;
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+            break;
+            }            
+
+          case CMD_RAWSIGNAL_LIST:
+            FileList("/RAW",false);
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+            break;
+
+          case CMD_FILE_LIST:
+            FileList("/",false);
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+            break;
+
+          case CMD_FILE_WRITE:
+            if(GetArgv(Command,TmpStr1,2) && strlen(TmpStr1)<=8)
+              {
+              strcat(TmpStr1,".dat");
+              strcpy(TempLogFile,TmpStr1);
+              FileWriteMode=60;
+              EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+              }
+            else
+              error=MESSAGE_02;
+            break;
+
+          case CMD_HTTP_REQUEST:
+            // zoek in de regel waar de string met het http request begint.
+            x=StringFind(Line,cmd2str(CMD_HTTP_REQUEST))+strlen(cmd2str(CMD_HTTP_REQUEST));
+            while(Line[x]==32)x++;
+            strcpy(Settings.HTTPRequest,&Line[0]+x);
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+            break;
+
+          case CMD_PULSE_COUNT:
+            {
+            if(GetArgv(Command,TmpStr1,2))
+              EventToExecute.Par2=str2int(TmpStr1);                  
+            break;
+            }  
+
+          case CMD_PORT_SERVER:
+            {
+            if(GetArgv(Command,TmpStr1,2))
+              EventToExecute.Par2=str2int(TmpStr1);
+            break;
+            }  
+
+          case CMD_PORT_CLIENT:
+            {
+            if(GetArgv(Command,TmpStr1,2))
+              EventToExecute.Par2=str2int(TmpStr1);
+            break;
+            }  
+
+          default:
+            {              
+            // Loop de devices langs om te checken if er een hit is. Zo ja, dan heeft de Device_xx funktie de struct
+            // met de juiste waarden gevuld.
+            y=false;
+            for(x=0;x<DEVICE_MAX && EventToExecute.Command==0; x++)
+              if(Device_ptr[x]!=0)
+                if(Device_ptr[x](DEVICE_MMI_IN,&EventToExecute,Command))
+                  y=true;
+      
+            if(!y)
+              {
+              // Als het geen regulier commando was EN geen commando met afwijkende MMI en geen Device, dan kijken of file op SDCard staat)
+              error=FileExecute(Command, EventToExecute.Par2==VALUE_ON);
+              EventToExecute.Command=0;
+      
+              // als script niet te openen, dan is het ingevoerde commando ongeldig.
+              if(error==MESSAGE_03)
+                error=MESSAGE_01;
               }
             }
-          }
-        else
+          }// switch(command...@2
+            
+        if(EventToExecute.Command && error==0)
           {
-          // Als het geen regulier commando was EN geen commando met afwijkende MMI en geen Device, dan kijken of file op SDCard staat)
-          error=FileExecute(Command, EventToExecute.Par2==VALUE_ON);
-          EventToExecute.Command=0;
-  
-          // als script niet te openen, dan is het ingevoerde commando ongeldig.
-          if(error==MESSAGE_03)
-            error=MESSAGE_01;
+          // Er kunnen zich twee situaties voordoen:
+          //
+          // A: Event is voor deze Nodo en moet gewoon worden uitgevoerd;
+          // B: SendTo is actief. Event moet worden verzonden naar een andere Nodo. Hier wordt de Queue voor gebruikt.
+          
+          if(State_EventlistWrite==0)// Gewoon uitvoeren
+            {
+            if(SendToUnit==Settings.Unit || SendToUnit==0)
+              {
+              EventToExecute.Direction=VALUE_DIRECTION_INPUT;
+              error=ProcessEvent2(&EventToExecute);      // verwerk binnengekomen event.
+              }
+            else
+              {
+              if(EventToExecute.Command)          // geen lege events in de queue plaatsen
+                QueueAdd(&EventToExecute);        // Plaats in queue voor latere verzending.
+              }
+            continue;
+            }
+    
+          if(State_EventlistWrite==2)
+            {            
+            UndoNewNodo();// Status NewNodo verwijderen indien van toepassing
+            if(!Eventlist_Write(EventlistWriteLine,&TempEvent,&EventToExecute))
+              {
+              RaiseMessage(MESSAGE_06);
+              break;
+              }
+            State_EventlistWrite=0;
+            continue;
+            }  
+            
+          if(State_EventlistWrite==1)
+            {
+            TempEvent=EventToExecute; // TempEvent = >Event< dat moet worden weggeschreven in de eventlist;
+            State_EventlistWrite=2;
+            }
           }
-        }
-      
+        }// if(LineChar... @3
+
       // Tekens toevoegen aan commando zolang er nog ruimte is in de string
       if(LineChar!=';' && CommandPos<MaxCommandLength)
         Command[CommandPos++]=LineChar;      
 
       LinePos++;
-      }// einde commando behandeling    
+      }// while(LinePos...
   
     // Verzend de inhoud van de queue naar de slave Nodo
     if(SendToUnit!=Settings.Unit && SendToUnit!=0 && error==0 && QueuePosition>0)
