@@ -5,24 +5,14 @@
 #define SIGNAL_ANALYZE_SHARPNESS    50  // Scherpte c.q. foutmarge die gehanteerd wordt bij decoderen van RF/IR signaal.
 #define MIN_PULSE_LENGTH           100  // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define MIN_RAW_PULSES              32  // =16 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
-#define SWITCH_TIME_RX_TX_IR        50  // Minimale tijd tussen omschakelen van ontvangen naar zenden. 
+#define SWITCH_TIME_RX_TX_IR       100  // Minimale tijd tussen omschakelen van ontvangen naar zenden. 
 #define SWITCH_TIME_RX_TX_RF       750  // Minimale tijd tussen omschakelen van ontvangen naar zenden. 
-#define SWITCH_TIME_RX_TX_I2C       50  // Minimale tijd tussen omschakelen van ontvangen naar zenden. 
-#define WAIT_FREE_RX_WINDOW        250
+#define SWITCH_TIME_RX_TX_I2C       25  // Minimale tijd tussen omschakelen van ontvangen naar zenden. 
+#define WAIT_FREE_RX_WINDOW        250  // minimale wachttijd wanneer wordt gewacht op een vrije RF of IR band.
 
 boolean AnalyzeRawSignal(struct NodoEventStruct *E)
   {
-  if(RawSignal.Number==RAW_BUFFER_SIZE)return false;     // Als het signaal een volle buffer beslaat is het zeer waarschijnlijk ruis of ongeldig signaal
   ClearEvent(E);
-
-  if(RawSignal_2_Nodo(E))           // Is het een Nodo signaal
-    return true;
-
-#if NODO_30_COMPATIBLE
-  if(RawSignal_2_Nodo_OLD(E))       // Is het een Nodo signaal: oude 32-bit format.
-    return true;
-#endif
-
   if(I2C_EventReceived)
    {
     // Er is een I2C event binnen gekomen. De gegevens kunnen dan eenvoudig uit de binnengekomen struct worden gekopieerd. 
@@ -31,6 +21,16 @@ boolean AnalyzeRawSignal(struct NodoEventStruct *E)
     I2C_EventReceived    = false;
     return true;
    }
+
+  if(RawSignal.Number==RAW_BUFFER_SIZE)return false;     // Als het signaal een volle buffer beslaat is het zeer waarschijnlijk ruis of ongeldig signaal
+  
+  if(RawSignal_2_Nodo(E))           // Is het een Nodo signaal
+    return true;
+
+#if NODO_30_COMPATIBLE
+  if(RawSignal_2_Nodo_OLD(E))       // Is het een Nodo signaal: oude 32-bit format.
+    return true;
+#endif
 
   if(Transmission_NodoOnly)
     return false;
@@ -322,7 +322,7 @@ void Nodo_2_RawSignal(struct NodoEventStruct *Event)
   RawSignal.Pulses[0]=PTMF;
 
   struct DataBlockStruct DataBlock;
-  DataBlock.SourceUnit=Event->SourceUnit | (Settings.Home<<5);  
+  DataBlock.SourceUnit=Event->SourceUnit; //??? Nog toevoegen en testen | (Settings.Home<<5);  
   DataBlock.DestinationUnit=Event->DestinationUnit;
   DataBlock.Flags=Event->Flags;
   DataBlock.Checksum=Event->Checksum;
@@ -388,17 +388,6 @@ boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
   if(RawCodeLength>=MIN_RAW_PULSES)
     {
     RawSignal.Number=RawCodeLength-1;
-    if(DataPin==PIN_IR_RX_DATA)
-      {
-      // er is een IR signaal binnen gekomen. Zet de hardware vlag voor IR
-      bitWrite(HW_Config,HW_IR_RX,1);
-
-      // dit houdt dan ook in dat er geen pulsen worden geteld. Schakel de pulsentellerfaciliteit uit
-      bitWrite(HW_Config,HW_IR_PULSE,0);
-      detachInterrupt(PULSE_IRQ); // IRQ behorende bij PIN_IR_RX_DATA
-      }
-    if(DataPin==PIN_RF_RX_DATA)
-      bitWrite(HW_Config,HW_RF_RX,1);
     return true;
     }
   RawSignal.Number=0;
@@ -424,38 +413,38 @@ void DelayTransmission(byte Port, boolean Set)
     {
     switch(Port)
       {
-    case VALUE_SOURCE_RF:
-      LastTransmitTime_RF=millis();
-      break;
-
-    case VALUE_SOURCE_IR:
-      LastTransmitTime_IR=millis();
-      break;
-
-    case VALUE_SOURCE_I2C:
-      LastTransmitTime_I2C=millis();
-      break;
+      case VALUE_SOURCE_RF:
+        LastTransmitTime_RF=millis();
+        break;
+  
+      case VALUE_SOURCE_IR:
+        LastTransmitTime_IR=millis();
+        break;
+  
+      case VALUE_SOURCE_I2C:
+        LastTransmitTime_I2C=millis();
+        break;
+      }
     }
-  }
   else    
-  {
-    switch(Port)
     {
-    case VALUE_SOURCE_RF:
-      while((LastTransmitTime_RF+SWITCH_TIME_RX_TX_RF) > millis());
-      break;
-
-    case VALUE_SOURCE_IR:
-      while((LastTransmitTime_IR+SWITCH_TIME_RX_TX_IR) > millis());
-      break;
-
-    case VALUE_SOURCE_I2C:
-      while((LastTransmitTime_I2C+SWITCH_TIME_RX_TX_I2C) > millis());
-      break;
-    }
-  delay(MIN_TIME_BETWEEN_TX);// Korte wachttijd tussen alle zendacties.
-  }  
-}
+    switch(Port)
+      {
+      case VALUE_SOURCE_RF:
+        while((LastTransmitTime_RF+SWITCH_TIME_RX_TX_RF) > millis());
+        break;
+  
+      case VALUE_SOURCE_IR:
+        while((LastTransmitTime_IR+SWITCH_TIME_RX_TX_IR) > millis());
+        break;
+  
+      case VALUE_SOURCE_I2C:
+        while((LastTransmitTime_I2C+SWITCH_TIME_RX_TX_I2C) > millis());
+        break;
+      }
+    delay(MIN_TIME_BETWEEN_TX);// Korte wachttijd tussen alle zendacties.
+    }    
+  }
 
 /**********************************************************************************************\
  * verzendt een event en geeft dit tevens weer op SERIAL
@@ -481,14 +470,6 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   // Stuur afhankelijk van de instellingen het event door naar I2C, RF, IR. Eerst wordt het event geprint,daarna een korte wachttijd om
   // te zorgen dat er een minimale wachttijd tussen de signlen zit. Tot slot wordt het signaal verzonden.
 
-  // Verstuur signaal als I2C
-  if(Port==VALUE_SOURCE_I2C || (bitRead(HW_Config,HW_I2C) && Port==VALUE_ALL))
-    {
-    ES->Port=VALUE_SOURCE_I2C;
-    if(Display)PrintEvent(ES);
-    DelayTransmission(VALUE_SOURCE_I2C,false);
-    SendI2C(ES);
-    }
 
   if(WaitForFree)
     if(Port==VALUE_SOURCE_RF || Port==VALUE_SOURCE_IR ||(Settings.TransmitRF==VALUE_ON && Port==VALUE_ALL))
@@ -516,7 +497,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     RawSendRF();
     }
 
-#ifdef NODO_MEGA
+  #ifdef NODO_MEGA
   // Verstuur signaal als HTTP-event.
   if(bitRead(HW_Config,HW_ETHERNET))// Als Ethernet shield aanwezig.
     {
@@ -527,7 +508,16 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
       if(Display)PrintEvent(ES);
       }
     }
-#endif 
+  #endif 
+
+  // Verstuur signaal als I2C
+  if(Port==VALUE_SOURCE_I2C || (bitRead(HW_Config,HW_I2C) && Port==VALUE_ALL))
+    {
+    ES->Port=VALUE_SOURCE_I2C;
+    if(Display)PrintEvent(ES);
+    DelayTransmission(VALUE_SOURCE_I2C,false);
+    SendI2C(ES);
+    }
   }
   
 #ifdef NODO_MEGA
@@ -570,8 +560,11 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
     
   if(b==0)
     {
-    if(DataBlock.SourceUnit>>5!=Settings.Home)
-      return false;
+
+//    if(DataBlock.SourceUnit>>5!=Settings.Home)
+//      return false;
+//??? nog toevoegen en testen
+
     RawSignal.Repeats    = false; // het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
     Event->SourceUnit=DataBlock.SourceUnit&0x1F;  
     Event->DestinationUnit=DataBlock.DestinationUnit;
@@ -594,28 +587,28 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
 // Deze routine wordt vanuit de Wire library aangeroepen zodra er data op de I2C bus verschijnt die voor deze nodo bestemd is.
 // er vindt geen verdere verwerking plaats, slechts opslaan van het event. 
 void ReceiveI2C(int n)
-{
+  {
   byte b,*B=(byte*)&I2C_Event;
   byte Checksum=0;
   int x=0;
 
   while(Wire.available()) // Haal de bytes op
-  {
+    {
     b=Wire.read(); 
     if(x<sizeof(struct NodoEventStruct))
-    {
+      {
       *(B+x)=b; 
       Checksum^=b; 
-    }
+      }
     x++;
-  }
+    }
 
   // laatste ontvangen byte bevat de checksum. Als deze gelijk is aan de berekende checksum, dan event uitvoeren
   if(b==Checksum)    
-  {   
+    {   
     bitWrite(HW_Config,HW_I2C,true);
     I2C_EventReceived=true;    
-  }
+    }
   else
     I2C_EventReceived=false;
 }
@@ -623,34 +616,34 @@ void ReceiveI2C(int n)
 /**********************************************************************************************\
  * Verstuur een Event naar de I2C bus. Omdat I2C geen generiek adres kent voor alle devices
  * ontkomen we er niet aan om een event te distribueren naar alle Nodo adressen. 
- * Hoewel dit wel realiseerbaar is, is hier niet voor gekozen omdat dit tegen de i2C-specificaties
+ * Hoewel dit wel realiseerbaar is, is hier niet voor gekozen omdat dit tegen de i2C-specifices
  * in druist. Daarom wordt een event altijd naar alle I2C adressen van alle Nodo's gestuurd.
  * Voor 32 unit nummers neemt deze actie 18 milliseconden in beslag. Nog steeds zeer snel ten 
  * opzichte van RF, HTTP en IR.
  \*********************************************************************************************/
 boolean SendI2C(struct NodoEventStruct *EventBlock)
-{  
+  {  
   byte x;
 
   // bereken checksum: crc-8 uit alle bytes in de queue.
   byte b,*B=(byte*)EventBlock;
   delay(10);
   for(int y=0;y<UNIT_MAX;y++)
-  {            
+    {            
     // verzend Event 
     Wire.beginTransmission(I2C_START_ADDRESS+y);
     byte Checksum=0;
     for(x=0;x<sizeof(struct NodoEventStruct);x++)
-    {
+      {
       b=*(B+x); 
       Wire.write(b);
       Checksum^=b; 
-    }
+      }
     Wire.write(Checksum); 
     Wire.endTransmission(false); // verzend de data, sluit af maar geef de bus NIET vrij
-  }
+    }
   Wire.endTransmission(true); // Geef de bus vrij
-}
+  }
 
 //#######################################################################################################
 //##################################### Transmission: HTTP  #############################################
@@ -920,7 +913,6 @@ boolean SendHTTPRequest(char* Request)
         if(HTTPClient.available())
           {
           InByte=HTTPClient.read();
-          // DEBUG *** Serial.write(InByte);//???
           if(isprint(InByte) && InByteCounter<IP_BUFFER_SIZE)
             IPBuffer[InByteCounter++]=InByte;
 

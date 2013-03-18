@@ -1,5 +1,4 @@
-
-#define NODO_BUILD          521//??? ophogen.
+#define NODO_BUILD          522  //??? ophogen bij iedere build
 #define SETTINGS_VERSION     31
 #include <EEPROM.h>
 #include <Wire.h>
@@ -51,7 +50,7 @@ prog_char PROGMEM Cmd_015[]="Break";
 prog_char PROGMEM Cmd_016[]="RawSignalSave";
 prog_char PROGMEM Cmd_017[]="RawSignalSend";
 prog_char PROGMEM Cmd_018[]="Reset";
-prog_char PROGMEM Cmd_019[]="";
+prog_char PROGMEM Cmd_019[]="HomeSet";
 prog_char PROGMEM Cmd_020[]=""; 
 prog_char PROGMEM Cmd_021[]="Delay";
 prog_char PROGMEM Cmd_022[]="SendTo";
@@ -249,7 +248,7 @@ prog_char PROGMEM Cmd_208[]="Incorrect password.";
 prog_char PROGMEM Cmd_209[]="Wireless access locked.";
 prog_char PROGMEM Cmd_210[]="Access not allowed.";
 prog_char PROGMEM Cmd_211[]="SendTo timeout error."; 
-prog_char PROGMEM Cmd_212[]="Unit not online."; 
+prog_char PROGMEM Cmd_212[]="Unit not online or within range."; 
 prog_char PROGMEM Cmd_213[]="Data lost during SendTo."; 
 prog_char PROGMEM Cmd_214[]="SDCard error.";
 prog_char PROGMEM Cmd_215[]="Aborted.";
@@ -311,7 +310,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_RAWSIGNAL_SAVE              16
 #define CMD_RAWSIGNAL_SEND              17
 #define CMD_RESET                       18
-#define CMD_res19                       19
+#define CMD_HOME_SET                    19
 #define CMD_res20                       20
 #define CMD_DELAY                       21
 #define CMD_SENDTO                      22
@@ -532,6 +531,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define GREEN                        2  // Led = Groen
 #define BLUE                         3  // Led = Blauw
 #define UNIT_MAX                    31 // Hoogst mogelijke unit nummer van een Nodo
+#define HOME_MAX                     7 // Hoogst mogelijke unit nummer van een Nodo
 #define SERIAL_TERMINATOR_1       0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>
 #define SERIAL_TERMINATOR_2       0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
 #define Loop_INTERVAL_1             10 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
@@ -557,7 +557,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define HW_CLOCK        9
 #define HW_RF_RX       10
 #define HW_IR_RX       11
-#define HW_IR_PULSE    12
+#define HW_PULSE       12
 #define HW_PLUGIN      13
 #define HW_I2C         14
 #define HW_WEBAPP      15
@@ -722,13 +722,13 @@ struct NodoEventStruct
   byte Checksum;
   };
 
+volatile unsigned long PulseCount=0L;                       // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
+volatile unsigned long PulseTime=0L;                        // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
 boolean RebootNodo=false;                                   // Als deze vlag staat, dan reboot de Nodo (cold-start)
 byte Transmission_SelectedUnit=0;                           // Nodo die door een master is geselecteerd om te zenden. 0=band vrij.
 boolean Transmission_ThisUnitIsMaster=false;
 boolean Transmission_NodoOnly=false;                        // Als deze vlag staat, dan worden er uitsluitend Nodo-eigen signalen ontvangen.  
 byte QueuePosition=0;
-unsigned long PulseCount=0L;                                // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
-unsigned long PulseTime=0L;                                 // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
 unsigned long UserTimer[TIMER_MAX];                         // Timers voor de gebruiker.
 boolean WiredInputStatus[WIRED_PORTS];                      // Status van de WiredIn worden hierin opgeslagen.
 boolean WiredOutputStatus[WIRED_PORTS];                     // Wired variabelen.
@@ -767,6 +767,7 @@ File HTTPResultFile;                                            // Filehandler v
 
 // RealTimeclock DS1307
 struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,DaylightSaving,DaylightSavingSetMonth,DaylightSavingSetDate; int Year;}Time; // Hier wordt datum & tijd in opgeslagen afkomstig van de RTC.
+
 
 #define RAW_BUFFER_SIZE            256 // Maximaal aantal te ontvangen 128 bits.???
 struct RawsignalStruct
@@ -817,7 +818,7 @@ void setup()
 
   // IRQ behorende bij PIN_IR_RX_DATA
   // Als er toch een reeks pulsen komt, dan wordt in FetchSignal() het tellen van pulsen gedisabled.
-  bitWrite(HW_Config,HW_IR_PULSE,true);
+  bitWrite(HW_Config,HW_PULSE,true);
   attachInterrupt(PULSE_IRQ,PulseCounterISR,PULSE_TRANSITION); 
     
   #ifdef NODO_MEGA
@@ -826,12 +827,7 @@ void setup()
 
   // Hardware specifieke initialisatie.
 //  switch(HW_Config&0xf)??? nog in testfase
-//    {
-  
-    pinMode(PIN_IO_2,OUTPUT); // ???t.b.v. debugging
-    digitalWrite(PIN_IO_2,LOW);
-  
-  
+//    {    
 //    case BIC_DEFAULT:// Standaard Nodo zonder specifike hardware aansturing
 //      break;                 
 //
@@ -886,10 +882,7 @@ void setup()
   // Start Ethernet kaart en start de HTTP-Server en de Telnet-server
   #if ETHERNET
   // Detecteren of fysieke laag is aangesloten wordt niet ondersteund door de Ethernet Library van Arduino.
-  // Uit meting blijkt dat als er geen W5100 aangesloten is de MISO en MOSI beiden laag zijn .
-  // Is de kaart wel aanwezig, dan is de MISO lijn hoog.
-  if(digitalRead(50))
-    bitWrite(HW_Config,HW_ETHERNET,1); 
+  bitWrite(HW_Config,HW_ETHERNET,1); 
   
   if(bitRead(HW_Config,HW_ETHERNET))
     {
@@ -1011,7 +1004,7 @@ void loop()
         
         #ifdef NODO_MEGA
         case 1: // binnen Slice_1
-          {        
+          {
           if(bitRead(HW_Config,HW_ETHERNET))
             // IP Event: *************** kijk of er een Event van IP  **********************    
             if(HTTPServer.available())
@@ -1087,7 +1080,7 @@ void loop()
                     {
                     TerminalClient.getRemoteIP(ClientIPAddress);
                     ExecutionDepth=0;
-                    RaiseMessage(ExecuteLine(InputBuffer_Terminal, VALUE_SOURCE_TELNET));
+                    RaiseMessage(ExecuteLine(InputBuffer_Terminal,VALUE_SOURCE_TELNET));
                     TerminalClient.write('>');// prompt
                     }
                   else
@@ -1167,7 +1160,7 @@ void loop()
                   SerialHold(true);
                   InputBuffer_Serial[SerialInByteCounter]=0; // serieel ontvangen regel is compleet
                   ExecutionDepth=0;
-                  RaiseMessage(ExecuteLine(InputBuffer_Serial, VALUE_SOURCE_SERIAL));
+                  RaiseMessage(ExecuteLine(InputBuffer_Serial,VALUE_SOURCE_SERIAL));
                   Serial.write('>'); // Prompt
                   SerialInByteCounter=0;  
                   InputBuffer_Serial[0]=0; // serieel ontvangen regel is verwerkt. String leegmaken
@@ -1311,6 +1304,7 @@ void loop()
       {
       LoopIntervalTimer_3=millis()+Loop_INTERVAL_3; // reset de timer  
 
+      // Loopt voor de devices de periodieke aanroep langs.
       for(x=0;x<DEVICE_MAX; x++)
         if(Device_ptr[x]!=0)
           Device_ptr[x](DEVICE_ONCE_A_SECOND,0,0);

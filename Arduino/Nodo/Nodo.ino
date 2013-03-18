@@ -28,7 +28,7 @@
 // Vanwege een bug in de Arduino linker moeten enkele '#include' regels handmatig worden aangepast.
 // Voor een arduino anders dan een Mega1280 of Mega2560 de onderstaande vier regels vooraf laten gaan door twee slashes //
 // Anders worden de niet gebruikte libraries toch meegecompileerd en zal deze niet in een ATMega328 passen.
-// en pas eventueel de vier include statements aan (zie onder)
+// en pas eventueel de vier include statements aan (zie onder):
 #include <EthernetNodo.h>
 #include <SPI.h>
 #include <Arduino.h>

@@ -38,13 +38,24 @@ boolean ScanEvent(struct NodoEventStruct *Event)
     {
     if(AnalyzeRawSignal(Event))// als AnalyzeRawSignal een event heeft opgeleverd dan is het struct Event gevuld.
       {
+      if(Fetched==VALUE_SOURCE_IR)
+        {
+        // er is een IR signaal binnen gekomen. Zet de hardware vlag voor IR en disable tellen van pulsen.
+        bitWrite(HW_Config,HW_IR_RX,1);
+        bitWrite(HW_Config,HW_PULSE,0);
+        detachInterrupt(PULSE_IRQ); // IRQ behorende bij PIN_IR_RX_DATA
+        }
+      if(Fetched==VALUE_SOURCE_RF)
+        bitWrite(HW_Config,HW_RF_RX,1);
+
+      
       // Reset de timers nadat er een event is binnegekomen. Dit om later voorafgaand aan het zenden, indien nodig, een
       // korte pauze te nemen zodat de andere Nodo weer gereed staat voor ontvangst.
       DelayTransmission(Fetched,true);
 
       // Sommige signaal typen kunnen door de zender herhaald worden verzonden.
       // Indien signaal kort geleden ook ontvangen, dan herhaling gebruiken als checksum. Daarna verdere herhalingen onderdrukken.
-      if(RawSignal.Repeats)
+      if(RawSignal.Repeats && (Fetched==VALUE_SOURCE_RF || Fetched==VALUE_SOURCE_IR))
         {
         unsigned long Hash=(unsigned long)(Event->Command<<24) || (unsigned long)(Event->Par1<<16) || (unsigned long)(Event->Par2&0xffff);
         
@@ -53,15 +64,16 @@ boolean ScanEvent(struct NodoEventStruct *Event)
           PreviousHash=Hash;
           return false;
           }
-          
+
         if(PreviousTime>(millis()-SIGNAL_REPEAT_TIME))
           return false;
         }
       PreviousTime=millis();
 
-      // Nodo's kunnen een Home adres ingesteld hebben. Als dit het geval is, dan moet het Home adres overeenkomen
-      if(Event->DestinationUnit>>5 !=Settings.Unit>>5)
-        return false;
+//      // Nodo's kunnen een Home adres ingesteld hebben. Als dit het geval is, dan moet het Home adres overeenkomen
+//      if(Event->DestinationUnit>>5 !=Settings.Home)
+//        return false;
+//???
 
       Event->Port=Fetched;
       Event->Direction=VALUE_DIRECTION_INPUT;
@@ -86,7 +98,9 @@ boolean ScanEvent(struct NodoEventStruct *Event)
       // Als het Nodo event voor deze unit bestemd is, dan klaar. Zo niet, dan terugkeren met een false
       // zodat er geen verdere verwerking plaatsvindt.
       if(Event->DestinationUnit==0 || Event->DestinationUnit==Settings.Unit)
+        {
         return true;
+        }
       }
     }
   return false;

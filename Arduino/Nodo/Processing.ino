@@ -9,7 +9,7 @@ byte ProcessEvent1(struct NodoEventStruct *Event)
   struct NodoEventStruct TempEvent;
   ExecutionDepth=0;               // nesting nog niet aan de orde. Dit is het eerste begin.
   byte error=0;
-    
+  
   SerialHold(true);  // als er een regel ontvangen is, dan binnenkomst van signalen stopzetten met een seriele XOFF
   Led(RED); // LED aan als er iets verwerkt wordt      
 
@@ -17,9 +17,7 @@ byte ProcessEvent1(struct NodoEventStruct *Event)
   if(FileWriteMode!=0)
     return 0;
   LastReceived=*Event;            // LastReceived wordt gebruikt om later de status van laatste ontvangen event te kunnen gebruiken t.b.v. substitutie van vars.
-
   #endif
-
 
   // Verwerk het binnengekomen event
   error=ProcessEvent2(Event);
@@ -48,9 +46,10 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
   {
   int x,y;
   byte error=0;
+  boolean Continue=true;
   
- if(Event->Command==0)
-   return error;
+  if(Event->Command==0)
+    return error;
 
   ExecutionDepth++;
       
@@ -74,20 +73,24 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
       }
     }
 
-  if(Event->Command==CMD_SENDTO) // Is dit event de eerste uit een reeks?
-    QueueReceive(Event);
-
-  else if(Event->Flags & TRANSMISSION_QUEUE)
-    QueueAdd(Event);
-
-  else if(Event->Flags & TRANSMISSION_SENDTO)
-    return 0;
-
-  else if(Event->Flags & TRANSMISSION_SYSTEM)
+  if(Continue && (Event->Command==CMD_SENDTO)) // Is dit event de eerste uit een [SendTo] reeks?
     {
-    // PrintNodoEventStruct("System commando!", Event);//???
-    return 0;
+    QueueReceive(Event);
+    Continue=false;
     }
+
+  if(Continue && (Event->Flags & TRANSMISSION_SYSTEM))
+    {
+    // PrintNodoEvent("*** Debug: System commando", Event);//???
+    Continue=false;
+    }
+
+  if(Continue && (Event->Flags & TRANSMISSION_QUEUE))
+    {
+    QueueAdd(Event);
+    Continue=false;
+    }
+
 
   #ifdef NODO_MEGA
   if(bitRead(HW_Config,HW_SDCARD))
@@ -96,7 +99,7 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
         RawSignalSave(Event->Par2);
   #endif    
   
-  if(error==0)
+  if(Continue && error==0)
     {
     PrintEvent(Event);  // geef event weer op Terminal
     LastReceived=*Event;// Bewaar event als -vorig- event. 
@@ -355,7 +358,7 @@ byte QueueSend(byte DestUnit)
   byte x,Port,error=true,Retry=0;
   unsigned long ID=millis();
   struct NodoEventStruct Event;
-  
+
   // We maken tijdelijk gebruik van een SendQueue zodat de regliere queue zijn werk kan blijven doen.
   struct QueueStruct SendQueue[EVENT_QUEUE_MAX];
   for(x=0;x<QueuePosition;x++)
@@ -368,56 +371,58 @@ byte QueueSend(byte DestUnit)
 
   // als de Nodo nog niet bekend is, dan nemen we aan dat deze via RF benaderbaar is.
   if(Port==0)
-    Port=VALUE_SOURCE_RF;
-    
-  // Eerste fase: Zorg dat de inhoud van de queue correct aan komt op de slave.
-  do
-    {
-    ClearEvent(&Event);
-    Event.DestinationUnit     = DestUnit;
-    Event.SourceUnit          = Settings.Unit;
-    Event.Port                = Port;
-    Event.Command             = CMD_SENDTO;      
-    Event.Par1                = SendQueuePosition;
-    Event.Par2                = ID;
-    Event.Flags               = TRANSMISSION_SENDTO | TRANSMISSION_NEXT | TRANSMISSION_LOCK | TRANSMISSION_SYSTEM; 
-    SendEvent(&Event,false,false,false);
-          
-    // Verzend alle events uit de queue. Alleen de bestemmings Nodo zal deze events in de queue plaatsen
-    for(x=0;x<SendQueuePosition;x++)
+    error=MESSAGE_12;
+  else
+    { 
+    // Eerste fase: Zorg dat de inhoud van de queue correct aan komt op de slave.
+    do
       {
-      // Alleen de eerste vooraf laten gaan door een WaitFree;
-      if(x>0)
-        Settings.WaitFree=VALUE_OFF;
-            
-      // laatste verzonden event markeren als laatste in de sequence.
-      if(x==SendQueuePosition-1)
-        Event.Flags = TRANSMISSION_SENDTO;
-      
-      Event.Command             = SendQueue[x].Command;
-      Event.Par1                = SendQueue[x].Par1;
-      Event.Par2                = SendQueue[x].Par2;
+      ClearEvent(&Event);
+      Event.DestinationUnit     = DestUnit;
+      Event.SourceUnit          = Settings.Unit;
+      Event.Port                = Port;
+      Event.Command             = CMD_SENDTO;      
+      Event.Par1                = SendQueuePosition;
+      Event.Par2                = ID;
+      Event.Flags               = TRANSMISSION_SENDTO | TRANSMISSION_NEXT | TRANSMISSION_LOCK | TRANSMISSION_SYSTEM; 
       SendEvent(&Event,false,false,false);
-      }
-    
-    // De ontvangende Nodo verzendt als het goed is een bevestiging dat het is ontvangen en het aantal commando's
-    ClearEvent(&Event);
-    Event.SourceUnit          = DestUnit;
-    Event.Command             = SYSTEM_COMMAND_CONFIRMED;
-
-    if(Wait(30,false,&Event,false))// waarde nog bepalen???
-      if(x==Event.Par1)
-        error=false;
-
-    // Als er een timeout was of het aantel events is niet correct bevestigd, dan de gebruiker een waarschuwing tonen
-    if(error)
-      PrintTerminal(ProgmemString(Text_08));
-
-    }while((++Retry<10) && error);    
-
+            
+      // Verzend alle events uit de queue. Alleen de bestemmings Nodo zal deze events in de queue plaatsen
+      for(x=0;x<SendQueuePosition;x++)
+        {
+        // Alleen de eerste vooraf laten gaan door een WaitFree;
+        if(x>0)
+          Settings.WaitFree=VALUE_OFF;
+              
+        // laatste verzonden event markeren als laatste in de sequence.
+        if(x==SendQueuePosition-1)
+          Event.Flags = TRANSMISSION_SENDTO;
+        
+        Event.Command             = SendQueue[x].Command;
+        Event.Par1                = SendQueue[x].Par1;
+        Event.Par2                = SendQueue[x].Par2;
+        SendEvent(&Event,false,false,false);
+        }
+      
+      // De ontvangende Nodo verzendt als het goed is een bevestiging dat het is ontvangen en het aantal commando's
+      ClearEvent(&Event);
+      Event.SourceUnit          = DestUnit;
+      Event.Command             = SYSTEM_COMMAND_CONFIRMED;
+  
+      if(Wait(30,false,&Event,false))
+        if(x==Event.Par1)
+          error=false;
+  
+      // Als er een timeout was of het aantel events is niet correct bevestigd, dan de gebruiker een waarschuwing tonen
+      if(error)
+        PrintTerminal(ProgmemString(Text_08));
+  
+      }while((++Retry<10) && error);    
+    }
   return error;
   }
 #endif
+
 
 unsigned long PreviousID=0L;
 void QueueReceive(NodoEventStruct *Event)
@@ -433,6 +438,7 @@ void QueueReceive(NodoEventStruct *Event)
   // Als aantal regels in de queue overeenkomt met wat in het SendTo verzoek is vermeldt
   // EN de queue is nog niet eerder binnen gekomen (ID) dan uitvoeren.
   // Stuur vervolgens de master ter bevestiging het aantal ontvangen events die zich nu in de queue bevinden.
+
   if(PreviousID!=Event->Par2)
     {
     if(QueuePosition==Event->Par1)
@@ -441,7 +447,7 @@ void QueueReceive(NodoEventStruct *Event)
 
       // Haal de SendTo vlag van de events af.
       for(byte x=0;x<QueuePosition;x++)
-        // bitClear(Queue[x].Flags,TRANSMISSION_SENDTO);
+        // bitClear(Queue[x].Flags,TRANSMISSION_SENDTO);//???
         Queue[x].Flags=0;
         
       QueueProcess();
@@ -457,7 +463,6 @@ void QueueReceive(NodoEventStruct *Event)
   TempEvent.Port                = Event->Port;
   TempEvent.Flags               = TRANSMISSION_SYSTEM; 
 
-  delay(MIN_TIME_BETWEEN_TX);//???
   SendEvent(&TempEvent,false, false, false);
   Transmission_NodoOnly=false;
   }

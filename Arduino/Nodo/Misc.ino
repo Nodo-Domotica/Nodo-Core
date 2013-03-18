@@ -279,8 +279,6 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
   {
   unsigned long TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
 
-digitalWrite(PIN_WIRED_OUT_1,HIGH);delay(10);digitalWrite(PIN_WIRED_OUT_1,LOW);//??? Debugging
-
   #ifdef NODO_MEGA
   unsigned long MessageTimer=millis() + 5000;
   boolean WaitMessage=false;
@@ -698,8 +696,7 @@ void ResetFactory(void)
   }
 
 /**********************************************************************************************\
- * Geeft de status weer of verzendt deze.
- * verzend de status van een setting als event.
+ * Geeft de status weer of genereert een event.
  * Par1 = Command
  \**********************************************************************************************/
 void Status(struct NodoEventStruct *Request)
@@ -899,7 +896,10 @@ void Status(struct NodoEventStruct *Request)
           {
           if(!Display)
             {
-            Result.Port=Request->Port;
+            if(Request->Port==VALUE_SOURCE_EVENTLIST)            
+              Result.Port=VALUE_ALL;
+            else
+              Result.Port=Request->Port;
             SendEvent(&Result,false,true,true); // verzend als event
             }
   
@@ -1249,7 +1249,8 @@ void Trace(char *Func, unsigned long Value)
 
 void PulseCounterISR()
   {
-  static unsigned long PulseTimePrevious=0L;                // Tijdsduur tussen twee pulsen teller in milliseconden: vorige meting
+  static unsigned long PulseTimePrevious=0L;
+
   // in deze interrupt service routine staat millis() stil. Dit is echter geen bezwaar voor de meting.
   PulseTime=millis()-PulseTimePrevious;
   if(PulseTime>=PULSE_DEBOUNCE_TIME)
@@ -1258,7 +1259,7 @@ void PulseCounterISR()
     PulseTime=0;
 
   PulseTimePrevious=millis();
-}     
+  }     
 
 
 #ifdef NODO_MEGA

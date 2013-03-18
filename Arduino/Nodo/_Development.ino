@@ -88,4 +88,10 @@ LET OP: Tevens WebApp aanpassing, echter deze build toont in de WebApp geen nog 
 - EventlistShow weergave aangepast. Ëventlist <regel> is nu EventlistWrite <regel> geworden.
 - Tweede parameter in commando [UnitSet] is het Nodo Home adres [1..7]. Nodo s met verschillende Home adressen kunnen geen Nodo-events uitwisselen.
 
+R522
+- Bug gevonden in SendTo voor I2C
+- LET OP: Commando Home is nog niet operationeel
+- FileExecute leverde aan einde bestand een Abort message.
+- Automatische detectie ethernetkaart er weer uitgehaald. (MOSI/MISO detectie niet betrouwbaar)
+
 \*****************************************************************************************/

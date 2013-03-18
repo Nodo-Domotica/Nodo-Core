@@ -268,7 +268,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_WIRED_SMITTTRIGGER:
       case CMD_WIRED_THRESHOLD:
       case CMD_WIRED_ANALOG:
-      case CMD_UNIT_SET:
         ParameterToView[0]=PAR1_INT;
         ParameterToView[1]=PAR2_INT;
         break;
@@ -296,6 +295,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_WIRED_PULLUP:
       case CMD_WIRED_OUT:
       case CMD_WIRED_IN_EVENT:
+      case CMD_UNIT_SET:
         ParameterToView[0]=PAR1_INT;
         ParameterToView[1]=PAR2_TEXT;
         break;
@@ -339,6 +339,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_CLOCK_DOW:
       case CMD_BOOT_EVENT:
       case CMD_NEWNODO:
+      case CMD_HOME_SET:
         ParameterToView[0]=PAR1_INT;
         break;
 
@@ -629,6 +630,11 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_NEWNODO:
           case CMD_BOOT_EVENT:
             if(EventToExecute.Par1<1 || EventToExecute.Par1>UNIT_MAX)
+              error=MESSAGE_02;
+            break;
+      
+          case CMD_HOME_SET:
+            if(EventToExecute.Par1<1 || EventToExecute.Par1>HOME_MAX)
               error=MESSAGE_02;
             break;
       
