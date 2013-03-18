@@ -399,18 +399,17 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       break;
       
     case CMD_UNIT_SET:
-      x=Settings.Unit>>5;
-      
       if(EventToExecute->Par1>0 && EventToExecute->Par1<=UNIT_MAX)
         {
         Settings.Unit=EventToExecute->Par1;  
-        
-        if(EventToExecute->Par2>0 && EventToExecute->Par2<=7)
-          Settings.Home=EventToExecute->Par2;
+        Save_Settings();
+        RebootNodo=true;
+        break;
         }
-        
-      Save_Settings();
-      RebootNodo=true;
+      
+    case CMD_HOME_SET:
+      if(EventToExecute->Par1>0 && EventToExecute->Par1<=HOME_MAX)
+        Settings.Home=EventToExecute->Par1;  
       break;
       
     case CMD_REBOOT:

@@ -184,8 +184,7 @@ byte FileExecute(char* FileName, boolean ContinueOnError)
         y=0;
         SelectSDCard(false);
         PrintTerminal(TmpStr);
-        if(ExecuteLine(TmpStr,VALUE_SOURCE_FILE)!=0)
-          error=MESSAGE_15;
+        error=ExecuteLine(TmpStr,VALUE_SOURCE_FILE);
         SelectSDCard(true);
 
         if(ContinueOnError)
