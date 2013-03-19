@@ -424,10 +424,9 @@ byte QueueSend(byte DestUnit)
 #endif
 
 
-unsigned long PreviousID=0L;
 void QueueReceive(NodoEventStruct *Event)
   {
-  struct NodoEventStruct TempEvent;
+  static unsigned long PreviousID=0L;
 
   // Alle Nodo events die nu binnen komen op slaan in de queue.
   Transmission_NodoOnly=true;
@@ -455,6 +454,7 @@ void QueueReceive(NodoEventStruct *Event)
     }
   QueuePosition=0;
 
+  struct NodoEventStruct TempEvent;
   ClearEvent(&TempEvent);
   TempEvent.DestinationUnit     = Event->SourceUnit;
   TempEvent.SourceUnit          = Settings.Unit;

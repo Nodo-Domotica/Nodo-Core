@@ -19,10 +19,11 @@
                                                                   
                                                                                                                                                                                   
 //****************************** Door gebruiker in te stellen - voor elke keer dat u compileert ***************************************************************
+
 // Stap 1.
 // De code kan worden gecompileerd als een Nodo-Small voor de Arduino met een ATMega328 processor of een Nodo-Mega met een ATMega1280/2560.
 // stel allereerst het juiste board-type en COM-poort in op de Arduino compiler.
-//
+
 // Stap 2.
 // Dit volgende blokje moet u handmatig instellen afhankelijk van het Arduino type!
 // Vanwege een bug in de Arduino linker moeten enkele '#include' regels handmatig worden aangepast.
@@ -33,7 +34,7 @@
 #include <SPI.h>
 #include <Arduino.h>
 #include <SD.h>
-//
+
 // Stap 3.tset
 // Stel hieronder in welk Nodo unit nummer u gaat compileren. Uitgangspunt is dat elke fysieke Nodo een uniek unit nummer krijgt toegekend.
 // Voor elk unit nummer kunt u verderop deze pagina een blokje kenmerken instellen.
@@ -51,8 +52,7 @@
   #define DEVICE_02       // SendKaku        : Klik-Aan-Klik-Uit verzenden
   #define DEVICE_03       // NewKAKU         : Klik-Aan-Klik-Uit ontvangen, automatische codering. 
   #define DEVICE_04       // SendNewKAKU     : Klik-Aan-Klik-Uit zenden, automatische codering. 
-  #define DEVICE_05       // TempRead        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
-  #define DEVICE_18       // SignalAnalyzer  : Geeft bij een binnenkomend signaal informatie over de pulsen weer.
+  #define DEVICE_05       // TempRead        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820) 
 
 // Geef in onderstaande tabel aan welke devices die in ALLE Nodo's feitelijk worden gebruikt: 
   #define DEVICE_CORE_01  // Kaku            : Klik-Aan-Klik-Uit ontvangen  
@@ -91,7 +91,6 @@
   #define NODO_MEGA                    true
   #define ETHERNET                     false 
   // Devices in gebruik op deze Nodo:
-  #define DEVICE_CORE_05  // TempRead        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820) 
   #define DEVICE_CORE_18  // SignalAnalyzer  : Geeft bij een binnenkomend signaal informatie over de pulsen weer.
 #endif 
 // ----------------------------------------------------------------------------------------------------------------------------------------
@@ -113,10 +112,10 @@
 
 
 // ----------------------------------------------------------------------------------------------------------------------------------------
-// Definities voor Nodo unit nummer 4
+// Definities voor Nodo unit nummer 2
 // Hardware    : Arduino Duemilanove, Dallas sensor op poort 1
 // Toepassing  :
-#if (UNIT_NODO == 4)
+#if (UNIT_NODO == 2)
   // Specificatie van deze Nodo:
   // geen
   // Devices in gebruik op deze Nodo:
