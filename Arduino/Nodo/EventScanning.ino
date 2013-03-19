@@ -66,7 +66,9 @@ boolean ScanEvent(struct NodoEventStruct *Event)
           }
 
         if(PreviousTime>(millis()-SIGNAL_REPEAT_TIME))
+          {
           return false;
+          }
         }
       PreviousTime=millis();
 

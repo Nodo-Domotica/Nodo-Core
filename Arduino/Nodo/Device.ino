@@ -796,7 +796,7 @@ boolean Device_04(byte function, struct NodoEventStruct *event, char *string)
 
 /*********************************************************************************************\
  * Deze funktie leest een Dallas temperatuursensor uit. 
- * Na uitgelezen van de waard wordt in de opgegeven variabele de temperatuur opgeslagen. 
+ * Na uitgelezen van de waarde wordt in de opgegeven variabele de temperatuur opgeslagen. 
  * Na uitlezing wordt er een event gegenereerd.
  *
  * Auteur             : Paul Tonkes, p.k.tonkes@gmail.com
@@ -805,7 +805,7 @@ boolean Device_04(byte function, struct NodoEventStruct *event, char *string)
  * Versie             : 1.1
  * Nodo productnummer : ???
  * Compatibiliteit    : Vanaf Nodo build nummer 508
- * Syntax             : "TempSensor <Par1:Poortnummer>, <Par2:Variabele>"
+ * Syntax             : "TempRead <Par1:Poortnummer>, <Par2:Variabele>"
  *
  ***********************************************************************************************
  * Technische beschrijving:
@@ -1204,7 +1204,7 @@ byte ProtocolAlectoCheckID(byte checkID)
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  * Support            : www.nodo-domotica.nl
  * Datum              : Mrt.2013
- * Versie             : 1.0
+ * Versie             : 1.1
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
  * Compatibiliteit    : Vanaf Nodo build nummer 508
  * Syntax             : "AlectoV1 <Par1:Sensor ID>, <Par2:Basis Variabele>"
@@ -1356,7 +1356,7 @@ boolean Device_08(byte function, struct NodoEventStruct *event, char *string)
           if (rain < ProtocolAlectoRainBase) ProtocolAlectoRainBase=rain;
           if (ProtocolAlectoRainBase > 0)
           {
-            UserVar[basevar+1 -1] += ((float)rain - ProtocolAlectoRainBase) * 0.25;
+            UserVar[basevar +2 -1] += ((float)rain - ProtocolAlectoRainBase) * 0.25;
           }
           ProtocolAlectoRainBase = rain;
           return true;
@@ -1452,7 +1452,7 @@ boolean Device_08(byte function, struct NodoEventStruct *event, char *string)
  *                      Support ACH2010 en code optimalisatie door forumlid: Arendst
  * Support            : www.nodo-domotica.nl
  * Datum              : Mrt.2013
- * Versie             : 1.0
+ * Versie             : 1.1
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
  * Compatibiliteit    : Vanaf Nodo build nummer 508
  * Syntax             : "AlectoV2 <Par1:Sensor ID>, <Par2:Basis Variabele>"
@@ -1567,7 +1567,7 @@ boolean Device_09(byte function, struct NodoEventStruct *event, char *string)
       if (rain < ProtocolAlectoRainBase) ProtocolAlectoRainBase=rain;
       if (ProtocolAlectoRainBase > 0)
       {
-        UserVar[basevar+1 -1] += ((float)rain - ProtocolAlectoRainBase) * 0.30;
+        UserVar[basevar +2 -1] += ((float)rain - ProtocolAlectoRainBase) * 0.30;
       }
       ProtocolAlectoRainBase = rain;
 
