@@ -1,4 +1,4 @@
-#define NODO_BUILD          522  //??? ophogen bij iedere build
+#define NODO_BUILD          523  //??? ophogen bij iedere build
 #define SETTINGS_VERSION     31
 #include <EEPROM.h>
 #include <Wire.h>
@@ -8,11 +8,6 @@ prog_char PROGMEM Text_01[] = "Nodo Domotica controller (c) Copyright 2013 P.K.T
 prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
 prog_char PROGMEM Text_03[] = "Enter your password: ";
 prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSat";
-prog_char PROGMEM Text_05[] = "0123456789abcdef";
-prog_char PROGMEM Text_06[] = "NODO/HTTPBODY.DAT";
-prog_char PROGMEM Text_07[] = "Waiting...";
-prog_char PROGMEM Text_08[] = "SendTo: Transmission error. Retry...";
-prog_char PROGMEM Text_09[] = "(Last 10KByte)";
 prog_char PROGMEM Text_22[] = "!******************************************************************************!";
 
 #ifdef NODO_MEGA
@@ -22,10 +17,15 @@ prog_char PROGMEM Text_15[] = "Nodo V3.0.9 Small, Product=SWACNC-SMALL-R%03d, Ho
 #endif
 
 #ifdef NODO_MEGA
+prog_char PROGMEM Text_05[] = "0123456789abcdef";
+prog_char PROGMEM Text_06[] = "NODO/HTTPBODY.DAT";
+prog_char PROGMEM Text_07[] = "Waiting...";
+prog_char PROGMEM Text_08[] = "SendTo: Transmission error. Retry...";
+prog_char PROGMEM Text_09[] = "(Last 10KByte)";
+prog_char PROGMEM Text_10[] = "SendTo active for unit %d.";
 prog_char PROGMEM Text_13[] = "RawSignal saved.";
 prog_char PROGMEM Text_14[] = "Event=";
 prog_char PROGMEM Text_23[] = "LOG.DAT";
-//prog_char PROGMEM Text_24[] = "Delay...";
 prog_char PROGMEM Text_28[] = "RAW"; // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_29[] = "NODO"; // Directory op de SDCard voor opslag tijdelijke bestanden
 prog_char PROGMEM Text_30[] = "Terminal connection closed.";
@@ -51,7 +51,7 @@ prog_char PROGMEM Cmd_016[]="RawSignalSave";
 prog_char PROGMEM Cmd_017[]="RawSignalSend";
 prog_char PROGMEM Cmd_018[]="Reset";
 prog_char PROGMEM Cmd_019[]="HomeSet";
-prog_char PROGMEM Cmd_020[]=""; 
+prog_char PROGMEM Cmd_020[]="Reserve"; 
 prog_char PROGMEM Cmd_021[]="Delay";
 prog_char PROGMEM Cmd_022[]="SendTo";
 prog_char PROGMEM Cmd_023[]="SimulateDay";
@@ -245,8 +245,8 @@ prog_char PROGMEM Cmd_205[]="Eventlist nesting error.";
 prog_char PROGMEM Cmd_206[]="Reading/writing eventlist failed.";
 prog_char PROGMEM Cmd_207[]="Unable to establish TCP/IP connection.";
 prog_char PROGMEM Cmd_208[]="Incorrect password.";
-prog_char PROGMEM Cmd_209[]="Wireless access locked.";
-prog_char PROGMEM Cmd_210[]="Access not allowed.";
+prog_char PROGMEM Cmd_209[]="";
+prog_char PROGMEM Cmd_210[]="Access denied.";
 prog_char PROGMEM Cmd_211[]="SendTo timeout error."; 
 prog_char PROGMEM Cmd_212[]="Unit not online or within range."; 
 prog_char PROGMEM Cmd_213[]="Data lost during SendTo."; 
@@ -311,7 +311,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_RAWSIGNAL_SEND              17
 #define CMD_RESET                       18
 #define CMD_HOME_SET                    19
-#define CMD_res20                       20
+#define CMD_RESERVE                     20//???
 #define CMD_DELAY                       21
 #define CMD_SENDTO                      22
 #define CMD_SIMULATE_DAY                23
@@ -725,7 +725,8 @@ struct NodoEventStruct
 volatile unsigned long PulseCount=0L;                       // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
 volatile unsigned long PulseTime=0L;                        // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
 boolean RebootNodo=false;                                   // Als deze vlag staat, dan reboot de Nodo (cold-start)
-byte Transmission_SelectedUnit=0;                           // Nodo die door een master is geselecteerd om te zenden. 0=band vrij.
+byte Transmission_SelectedUnit=0;                           // 
+byte  Transmission_SendToUnit=0;                            // Unitnummer waar de events naar toe gestuurd worden. 0=alle.
 boolean Transmission_ThisUnitIsMaster=false;
 boolean Transmission_NodoOnly=false;                        // Als deze vlag staat, dan worden er uitsluitend Nodo-eigen signalen ontvangen.  
 byte QueuePosition=0;

@@ -322,7 +322,7 @@ void Nodo_2_RawSignal(struct NodoEventStruct *Event)
   RawSignal.Pulses[0]=PTMF;
 
   struct DataBlockStruct DataBlock;
-  DataBlock.SourceUnit=Event->SourceUnit; //??? Nog toevoegen en testen | (Settings.Home<<5);  
+  DataBlock.SourceUnit=Event->SourceUnit | (Settings.Home<<5);  
   DataBlock.DestinationUnit=Event->DestinationUnit;
   DataBlock.Flags=Event->Flags;
   DataBlock.Checksum=Event->Checksum;
@@ -454,6 +454,7 @@ void DelayTransmission(byte Port, boolean Set)
 boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Display, boolean WaitForFree)
   {  
   ES->Direction=VALUE_DIRECTION_OUTPUT;
+  ES->DestinationUnit=Transmission_SendToUnit;
   byte Port=ES->Port;
 
   // Als een andere Nodo actief is en excusief communiceert met een andere Nodo, c.q. de ruimte geclaimd is, dan mag deze Nodo niet zenden.
@@ -461,15 +462,23 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   // Als er een timeout optreedt, dan de blokkade opheffen. Dit ter voorkoming dat Nodo's oneindig wachten op vrije lijn.
   // Uitzondering is als de Nodo zelf de master was, dan deze mag altijd zenden.
   if(Transmission_SelectedUnit!=0 && Transmission_SelectedUnit!=Settings.Unit && !Transmission_ThisUnitIsMaster)
-    if(!Wait(30,true,0,false))
     {
-    Transmission_SelectedUnit=0;//??? testen 
-    Transmission_NodoOnly=false;
+    #ifdef NODO_MEGA
+    char* TempString=(char*)malloc(25);
+    sprintf(TempString,ProgmemString(Text_10), Transmission_SelectedUnit);    
+    PrintTerminal(TempString);
+    free(TempString);
+    #endif
+
+    if(!Wait(120,true,0,false))
+      {
+      Transmission_SelectedUnit=0;
+      Transmission_NodoOnly=false;
+      }
     }
 
   // Stuur afhankelijk van de instellingen het event door naar I2C, RF, IR. Eerst wordt het event geprint,daarna een korte wachttijd om
   // te zorgen dat er een minimale wachttijd tussen de signlen zit. Tot slot wordt het signaal verzonden.
-
 
   if(WaitForFree)
     if(Port==VALUE_SOURCE_RF || Port==VALUE_SOURCE_IR ||(Settings.TransmitRF==VALUE_ON && Port==VALUE_ALL))
@@ -561,12 +570,11 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
   if(b==0)
     {
 
-//    if(DataBlock.SourceUnit>>5!=Settings.Home)
-//      return false;
-//??? nog toevoegen en testen
+    if(DataBlock.SourceUnit>>5!=Settings.Home)
+      return false;
 
-    RawSignal.Repeats    = false; // het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
-    Event->SourceUnit=DataBlock.SourceUnit&0x1F;  
+    RawSignal.Repeats    = false; // het is geen herhalend signaal. Bij ontvangst hoeven herhalingen oniet onderdrukt te worden.
+    Event->SourceUnit=DataBlock.SourceUnit&0x1F;  // Maskeer de bits van het Home adres.
     Event->DestinationUnit=DataBlock.DestinationUnit;
     Event->Flags=DataBlock.Flags;
     Event->Checksum=DataBlock.Checksum;

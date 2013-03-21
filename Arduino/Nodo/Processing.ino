@@ -53,9 +53,15 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
 
   ExecutionDepth++;
       
-  if(Settings.Lock) // verkassen naar ProcessEvent1 of scanevent???
+  if(Continue && (Event->Command==CMD_SENDTO)) // Is dit event de eerste uit een [SendTo] reeks?
     {
-    if((Event->Port==VALUE_SOURCE_RF || Event->Port==VALUE_SOURCE_IR) && millis()>60000) // de eerste minuut is de lock nog niet actief. Ontsnapping voor als abusievelijk ingesteld
+    QueueReceive(Event);
+    Continue=false;
+    }
+
+  if(Settings.Lock && (Event->Port==VALUE_SOURCE_RF || Event->Port==VALUE_SOURCE_IR ))
+    {
+    if(millis()>60000) // de eerste minuut is de lock nog niet actief. Ontsnapping voor als abusievelijk ingesteld
       {
       switch(Event->Command) // command
         {
@@ -66,17 +72,12 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
         case CMD_MESSAGE:             // Voorkomt dat een message van een andere Nodo een error genereert
         case CMD_BOOT_EVENT:          // Voorkomt dat een boot van een adere Nodo een error genereert
           break;
-        //??? devices hier nog opnemen!          
+
         default:
-          error=MESSAGE_09;    
+          Continue=false;
+          RaiseMessage(MESSAGE_10);
         }
       }
-    }
-
-  if(Continue && (Event->Command==CMD_SENDTO)) // Is dit event de eerste uit een [SendTo] reeks?
-    {
-    QueueReceive(Event);
-    Continue=false;
     }
 
   if(Continue && (Event->Flags & TRANSMISSION_SYSTEM))
@@ -353,13 +354,14 @@ void QueueProcess(void)
 /*********************************************************************************************\
  * Deze routine verzendt de inhoud van de queue naar een andere Nodo.
  \*********************************************************************************************/
-byte QueueSend(byte DestUnit)
+byte QueueSend(void)
   {
   byte x,Port,error=true,Retry=0;
   unsigned long ID=millis();
   struct NodoEventStruct Event;
 
-  // We maken tijdelijk gebruik van een SendQueue zodat de regliere queue zijn werk kan blijven doen.
+
+  // We maken tijdelijk gebruik van een SendQueue zodat de reguliere queue zijn werk kan blijven doen.
   struct QueueStruct SendQueue[EVENT_QUEUE_MAX];
   for(x=0;x<QueuePosition;x++)
     SendQueue[x]=Queue[x];
@@ -367,7 +369,7 @@ byte QueueSend(byte DestUnit)
   QueuePosition=0;
   
   // De port waar de SendTo naar toe moet halen we uit de lijst met Nodo's die wordt onderhouden door de funktie NodoOnline();
-  Port=NodoOnline(DestUnit,0);
+  Port=NodoOnline(Transmission_SendToUnit,0);
 
   // als de Nodo nog niet bekend is, dan nemen we aan dat deze via RF benaderbaar is.
   if(Port==0)
@@ -378,7 +380,6 @@ byte QueueSend(byte DestUnit)
     do
       {
       ClearEvent(&Event);
-      Event.DestinationUnit     = DestUnit;
       Event.SourceUnit          = Settings.Unit;
       Event.Port                = Port;
       Event.Command             = CMD_SENDTO;      
@@ -401,12 +402,12 @@ byte QueueSend(byte DestUnit)
         Event.Command             = SendQueue[x].Command;
         Event.Par1                = SendQueue[x].Par1;
         Event.Par2                = SendQueue[x].Par2;
-        SendEvent(&Event,false,false,false);
+        SendEvent(&Event,false,true,false);
         }
       
       // De ontvangende Nodo verzendt als het goed is een bevestiging dat het is ontvangen en het aantal commando's
       ClearEvent(&Event);
-      Event.SourceUnit          = DestUnit;
+      Event.SourceUnit          = Transmission_SendToUnit;
       Event.Command             = SYSTEM_COMMAND_CONFIRMED;
   
       if(Wait(30,false,&Event,false))

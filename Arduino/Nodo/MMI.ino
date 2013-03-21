@@ -55,7 +55,7 @@ void PrintEvent(struct NodoEventStruct *Event)
   // Unit 
   strcat(StringToPrint, cmd2str(VALUE_UNIT));
   strcat(StringToPrint, "=");  
-  if(Event->Direction==VALUE_DIRECTION_OUTPUT)
+  if(Event->Direction==VALUE_DIRECTION_OUTPUT && Event->Port!=VALUE_SOURCE_HTTP)
     strcat(StringToPrint, int2str(Event->DestinationUnit));
   else
     strcat(StringToPrint, int2str(Event->SourceUnit)); 
@@ -230,12 +230,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
     strcat(EventString," ");      
     switch(Event->Command)
       {
-//      case CMD_LOCK:
-//        Par1=(Code&0x8000)?VALUE_ON:VALUE_OFF;
-//        P1=P_TEXT;
-//        P2=P_NOT;
-//        break;??? lock later uitwerken
-
       case CMD_TIME:
         ParameterToView[0]=PAR2_TIME;         // tijd
         ParameterToView[1]=PAR2_WDAY;         // dag van de week of een wildcard
@@ -320,6 +314,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
 
       // Par1 als tekst en par2 niet
       case CMD_SEND_EVENT:
+      case CMD_LOCK:
       case CMD_DEBUG:
       case CMD_LOG:
       case CMD_RAWSIGNAL_SAVE:
@@ -359,8 +354,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       // Twee getallen en een aanvullende tekst
       case CMD_MESSAGE:
         ParameterToView[0]=PAR1_INT;
-        ParameterToView[1]=PAR2_INT;
-        ParameterToView[2]=PAR2_TEXT;
+        ParameterToView[1]=PAR1_TEXT;
         break;
 
       // Par1 als waarde en par2 als waarde
@@ -402,7 +396,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
           break;
 
         case PAR2_TEXT:
-          strcat(EventString,cmd2str(Event->Par2 &0xff));
+          strcat(EventString,cmd2str(Event->Par2 & 0xff));
           break;
 
         case PAR2_DIM:
@@ -512,13 +506,6 @@ int ExecuteLine(char *Line, byte Port)
 
   Led(RED);
 
-  // Het SendTo commando kan door de gebruiker zijn ingesteld voor alle invoer. In dit geval bij aankomst hier
-  // de SendTo weer instellen.
-  static byte SendToUnitAll=0;
-  byte SendToUnit=0;
-  if(SendToUnitAll!=0)
-    SendToUnit=SendToUnitAll;
-
   // verwerking van commando's is door gebruiker tijdelijk geblokkeerd door FileWrite commando
   if(FileWriteMode>0)
     {
@@ -558,7 +545,7 @@ int ExecuteLine(char *Line, byte Port)
         LinePos=LineLength+1; // ga direct naar einde van de regel.
 
       // als puntkomma (scheidt opdrachten) of einde string
-      if((LineChar=='!' || LineChar==';' || LineChar==0) && CommandPos>0)
+      if((LineChar=='$' || LineChar=='!' || LineChar==';' || LineChar==0) && CommandPos>0)
         {
         Command[CommandPos]=0;
         CommandPos=0;
@@ -770,34 +757,22 @@ int ExecuteLine(char *Line, byte Port)
             break;
 
           case CMD_SENDTO:
-            if(EventToExecute.Par1==VALUE_OFF)
-              {
-              SendToUnit=0;
-              SendToUnitAll=0;
-              }
+            if(EventToExecute.Par1<=UNIT_MAX)
+              Transmission_SendToUnit=EventToExecute.Par1;
             else
-              {
-              SendToUnit=EventToExecute.Par1;
-              if(EventToExecute.Par2==VALUE_ALL)
-                SendToUnitAll=SendToUnit;
-              }
+              Transmission_SendToUnit=0;
+            ExecuteCommand(&EventToExecute);            
             EventToExecute.Command=0;
             break;    
 
-//          case CMD_LOCK: // Hier wordt de lock code o.b.v. het wachtwoord ingesteld. Alleen van toepassing voor de Mega.??? nog uitwerken
-//            a=0L;
-//            for(x=0;x<strlen(Settings.Password);x++)
-//              {
-//              a=a<<5;
-//              a^=Settings.Password[x];
-//              }
-//            a&=0x7fff;// 15-bits pincode uit wachtwoord samengesteld. 16e bit is lock aan/uit.
-//            if(EventToExecute.Par1==VALUE_ON)
-//              a |= (1<<15);
-//             EventToExecute.Command=CMD_LOCK;
-//             EventToExecute.Par1=(a>>8)&0xff;
-//             EventToExecute.Par2=a&0xff;
-//            break;
+          case CMD_LOCK: // Hier wordt de lock code o.b.v. het wachtwoord ingesteld. Alleen van toepassing voor de Mega
+            EventToExecute.Par2=0L;
+            for(x=0;x<strlen(Settings.Password);x++)
+              {
+              EventToExecute.Par2=EventToExecute.Par2<<5;
+              EventToExecute.Par2^=Settings.Password[x];
+              }
+            break;
 
           case CMD_BREAK_ON_VAR_EQU:
           case CMD_BREAK_ON_VAR_LESS:
@@ -825,7 +800,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
               
           case CMD_EVENTLIST_WRITE:
-            if(SendToUnit==Settings.Unit || SendToUnit==0)
+            if(Transmission_SendToUnit==Settings.Unit || Transmission_SendToUnit==0)
               {                          
               if(EventToExecute.Par1<=EVENTLIST_MAX)
                 {
@@ -1279,7 +1254,7 @@ int ExecuteLine(char *Line, byte Port)
           
           if(State_EventlistWrite==0)// Gewoon uitvoeren
             {
-            if(SendToUnit==Settings.Unit || SendToUnit==0)
+            if(Transmission_SendToUnit==Settings.Unit || Transmission_SendToUnit==0)
               {
               EventToExecute.Direction=VALUE_DIRECTION_INPUT;
               error=ProcessEvent2(&EventToExecute);      // verwerk binnengekomen event.
@@ -1320,9 +1295,9 @@ int ExecuteLine(char *Line, byte Port)
       }// while(LinePos...
   
     // Verzend de inhoud van de queue naar de slave Nodo
-    if(SendToUnit!=Settings.Unit && SendToUnit!=0 && error==0 && QueuePosition>0)
+    if(Transmission_SendToUnit!=Settings.Unit && Transmission_SendToUnit!=0 && error==0 && QueuePosition>0)
       {
-      error=QueueSend(SendToUnit);
+      error=QueueSend();
       if(error)
         {
         CommandPos=0;
