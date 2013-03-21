@@ -176,33 +176,24 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       SendEvent(&TempEvent, false, true,true);
       break;
 
-//    case CMD_LOCK:
-//      // In de bits van EventToExecute->Par1 en EventToExecute->Par2 zit een sleutel die gegenereerd is uit het wachtwoord van de Nodo die het commando verstuurd heeft.
-//      a=InEvent&0x7fff;// Zet de lock met de bits 0 t/m 15
-//      if(InEvent&0x8000) // On/Off bevindt zich in bit nr. 15
-//        {// Als verzoek om inschakelen dan Lock waarde vullen
-//        if(Settings.Lock==0)// mits niet al gelocked.
-//          {
-//          Settings.Lock=a; 
-//          }
-//        else
-//          {
-//          error=MESSAGE_10;
-//          }
-//        }
-//      else
-//        {// Verzoek om uitschakelen
-//        if(Settings.Lock==a || Settings.Lock==0)// als lock code overeen komt of nog niet gevuld
-//          {
-//          Settings.Lock=0;
-//          }
-//        else
-//          {
-//          error=MESSAGE_10;
-//          }
-//        }              
-//      break;
-//??? Lock herstellen
+    case CMD_LOCK:
+      if(EventToExecute->Par1==VALUE_ON)
+        {// Als verzoek om inschakelen dan Lock waarde vullen
+        if(Settings.Lock==0)// mits niet al gelocked.
+          Settings.Lock=EventToExecute->Par2; 
+        else
+          error=MESSAGE_10;
+        }
+      else
+        {// Verzoek om uitschakelen
+        if(Settings.Lock==EventToExecute->Par2 || Settings.Lock==0)// als lock code overeen komt of nog niet gevuld
+          Settings.Lock=0;
+        else
+          error=MESSAGE_10;
+        }              
+      Save_Settings();
+      break;
+
 
     #ifdef NODO_MEGA
     case CMD_ALARM_SET:
@@ -287,8 +278,8 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       break;
 
     case CMD_CLOCK_DATE: // data1=datum, data2=maand
-      Time.Date=EventToExecute->Par1;
-      Time.Month=EventToExecute->Par2;
+      Time.Date  = EventToExecute->Par1;
+      Time.Month = EventToExecute->Par2;
       ClockSet();
       ClockRead();
       break;
@@ -303,13 +294,15 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       break;
 
     case CMD_TIMER_RANDOM:
-      UserTimer[EventToExecute->Par1-1]=millis()+random(EventToExecute->Par2)*60000;// EventToExecute->Par1=timer, EventToExecute->Par2=maximaal aantal minuten???
+      UserTimer[EventToExecute->Par1-1]=millis()+random(EventToExecute->Par2)*1000;
       break;
 
-//    case CMD_WAIT_EVENT:// WaitEvent <unit>, <command>
-//      Wait(true,60,0x0FFF0000,((unsigned long)EventToExecute->Par1)<<24 | ((unsigned long)EventToExecute->Par1)<<16);//?? Testen
-//      break;
-//??? herstellen
+    case CMD_WAIT_EVENT:// WaitEvent <unit>, <command>
+      ClearEvent(&TempEvent);
+      TempEvent.SourceUnit=EventToExecute->Par1;
+      TempEvent.Command=EventToExecute->Par2;
+      Wait(30,false,&TempEvent,false);
+      break;
 
     case CMD_DELAY:
       Wait(EventToExecute->Par1, false, 0, false);
@@ -423,6 +416,17 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
     case CMD_RESET:
       ResetFactory();
       break;
+
+    case CMD_SENDTO:
+      Transmission_SendToUnit=EventToExecute->Par1;
+      // als de SendTo wordt opgeheven vanuit de master, geef dit dan aan alle Nodo's te kennen
+      // anders blijven deze in de wachtstand staan.
+      if(Transmission_SendToUnit==0)
+        {
+        EventToExecute->Port=VALUE_ALL;
+        SendEvent(EventToExecute, false,true, true);
+        }
+      break;    
 
     case CMD_EVENTLIST_ERASE:
       Led(BLUE);

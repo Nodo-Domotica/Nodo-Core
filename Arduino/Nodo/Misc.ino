@@ -108,9 +108,7 @@ void RaiseMessage(byte MessageCode)
   struct NodoEventStruct TempEvent;
   ClearEvent(&TempEvent);
   TempEvent.Command   = CMD_MESSAGE;
-  TempEvent.Par1      = Settings.Unit;
-  TempEvent.Par2      = MessageCode;
-
+  TempEvent.Par1      = MessageCode;
   TempEvent.Direction = VALUE_DIRECTION_INPUT;
   TempEvent.Port      = VALUE_SOURCE_SYSTEM;
   PrintEvent(&TempEvent);
@@ -936,36 +934,33 @@ boolean GetArgv(char *string, char *argv, int argc)
   int string_pos=0,argv_pos=0,argc_pos=0; 
   char c,d;
 
-  boolean InArg=false;
-
   while(string_pos<strlen(string))
   {
     c=string[string_pos];
     d=string[string_pos+1];
 
-    if       (c==' ' && d==' '){
-    }
-    else if  (c==' ' && d==','){
-    }
-    else if  (c==',' && d==' '){
-    }
-    else if  (c==' ' && d>=33 && d<=126){
-    }
+    // dit is niet meer de handigste methode. Op termijn vereenvoudigen.???
+    if       (c==' ' && d==' '){}
+    else if  (c==' ' && d==','){}
+    else if  (c==',' && d==' '){}
+    else if  (c==' ' && d>=33 && d<=126){}
+    else if  (c==',' && d>=33 && d<=126){}
     else 
-    {
+      {
       argv[argv_pos++]=c;
       argv[argv_pos]=0;          
 
       if(d==' ' || d==',' || d==0)
-      {
+        {
         // Bezig met toevoegen van tekens aan een argument, maar er kwam een scheidingsteken.
-        InArg=false;
         argv[argv_pos]=0;
         argc_pos++;
 
         if(argc_pos==argc)
+          {
           return true;
-
+          }
+          
         argv[0]=0;
         argv_pos=0;
         string_pos++;

@@ -3,8 +3,9 @@ Nog te doen:
 
 - Commando [Select]: Hiermee kan worden opgegeven dat events naar een specifieke Nodo moeten worden verzonden. Een niet geselecteerde Nodo kan ook niet zenden.
 - CRC een XOR met BUILD???
-- Portinput geeft parameter teveel weer
-- Naast unit ook Home realiseren.
+- SendTo: Na een retry kans op twee maal uitvoeren commando's aan slave zijde???
+- NewNodo blijft soms nog onterecht worden verzonden?
+- [Break] commando
 *****************************************************************************************
 
 - Reactietijd van HTTP event naar RF output versneld.
@@ -90,8 +91,17 @@ LET OP: Tevens WebApp aanpassing, echter deze build toont in de WebApp geen nog 
 
 R522
 - Bug gevonden in SendTo voor I2C
-- LET OP: Commando Home is nog niet operationeel
+- LET OP: Commando [HomeSet] is nog niet operationeel
 - FileExecute leverde aan einde bestand een Abort message.
 - Automatische detectie ethernetkaart er weer uitgehaald. (MOSI/MISO detectie niet betrouwbaar)
 
+R523
+- Unitnummer van Mega naar WebApp niet correct als event afkomstig van Small
+- [Lock] commando weer beschikbaar
+- [TimerRandom] opgegven tijd nu evenals andere timers in seconden in plaats van minuten
+- Kleine bug uit command regel parser verwijderd. Deze bug leverde soms onterecht een par2=0 op als er teveel spaties in commando regel zitten.
+- [HomeSet] commando operationeel gemaakt.
+- [WaitEvent <unit>,<command>] weer hersteld n.a.v. 96-bit migratie
+- [SendTo] werkt nu ook op small en vanuit de eventlist. LET OP: geen handshaking bij gebruik vanuit eventlist. Snelle variant. Events worden direct op de bestemming afgevuurd zonder terugkoppeling.
+- [SendTo] Zodra vanaf de master het eerste event wordt verstuurd, zullen alle andere units worden geblokkeerd voor vezrenden via IR/RF (??? nog testen in landschap)
 \*****************************************************************************************/
