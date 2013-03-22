@@ -115,7 +115,7 @@
 // Definities voor Nodo unit nummer 2
 // Hardware    : Arduino Duemilanove, Dallas sensor op poort 1
 // Toepassing  :
-#if (UNIT_NODO == 2)
+#if (UNIT_NODO == 4)
   // Specificatie van deze Nodo:
   // geen
   // Devices in gebruik op deze Nodo:

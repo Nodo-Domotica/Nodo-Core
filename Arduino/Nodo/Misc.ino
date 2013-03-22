@@ -300,7 +300,6 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
       
     if(ScanEvent(&Event))
       {
-      // PrintNodoEvent("Wait();",&Event);//???
       // Events voor deze Nodo kunnen NU niet worden verwerkt. Plaats daarom in de queue
       QueueAdd(&Event);
       if(EndSequence && (Event.Flags&TRANSMISSION_NEXT)==0)
@@ -509,9 +508,9 @@ boolean GetStatus(struct NodoEventStruct *Event)
     Event->Par2=(WiredOutputStatus[xPar1-1])?VALUE_ON:VALUE_OFF;
     break;
 
-//  case CMD_LOCK:
-//    Event->Par1=Settings.Lock==0?0:0x80;// uit 16-bit combi van Par1+Par2 staat de on/off in bit 15.
-//    break;///??? lock herstellen
+  case CMD_LOCK:
+    Event->Par1=Settings.Lock?VALUE_ON:VALUE_OFF;;
+    break;
 
 #ifdef NODO_MEGA
 

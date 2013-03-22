@@ -5,7 +5,6 @@ Nog te doen:
 - CRC een XOR met BUILD???
 - SendTo: Na een retry kans op twee maal uitvoeren commando's aan slave zijde???
 - NewNodo blijft soms nog onterecht worden verzonden?
-- [Break] commando
 *****************************************************************************************
 
 - Reactietijd van HTTP event naar RF output versneld.
@@ -95,7 +94,7 @@ R522
 - FileExecute leverde aan einde bestand een Abort message.
 - Automatische detectie ethernetkaart er weer uitgehaald. (MOSI/MISO detectie niet betrouwbaar)
 
-R523
+R524
 - Unitnummer van Mega naar WebApp niet correct als event afkomstig van Small
 - [Lock] commando weer beschikbaar
 - [TimerRandom] opgegven tijd nu evenals andere timers in seconden in plaats van minuten
@@ -104,4 +103,8 @@ R523
 - [WaitEvent <unit>,<command>] weer hersteld n.a.v. 96-bit migratie
 - [SendTo] werkt nu ook op small en vanuit de eventlist. LET OP: geen handshaking bij gebruik vanuit eventlist. Snelle variant. Events worden direct op de bestemming afgevuurd zonder terugkoppeling.
 - [SendTo] Zodra vanaf de master het eerste event wordt verstuurd, zullen alle andere units worden geblokkeerd voor vezrenden via IR/RF (??? nog testen in landschap)
+
+R525
+- 
+
 \*****************************************************************************************/

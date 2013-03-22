@@ -419,10 +419,12 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
 
     case CMD_SENDTO:
       Transmission_SendToUnit=EventToExecute->Par1;
+      Transmission_SendToAll=EventToExecute->Par2;
       // als de SendTo wordt opgeheven vanuit de master, geef dit dan aan alle Nodo's te kennen
       // anders blijven deze in de wachtstand staan.
       if(Transmission_SendToUnit==0)
         {
+        EventToExecute->SourceUnit=Settings.Unit;
         EventToExecute->Port=VALUE_ALL;
         SendEvent(EventToExecute, false,true, true);
         }
