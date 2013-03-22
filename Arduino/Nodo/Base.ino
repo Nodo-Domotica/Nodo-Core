@@ -1,4 +1,4 @@
-#define NODO_BUILD          523  //??? ophogen bij iedere build
+#define NODO_BUILD          525  //??? ophogen bij iedere build
 #define SETTINGS_VERSION     31
 #include <EEPROM.h>
 #include <Wire.h>
@@ -727,6 +727,7 @@ volatile unsigned long PulseTime=0L;                        // Tijdsduur tussen 
 boolean RebootNodo=false;                                   // Als deze vlag staat, dan reboot de Nodo (cold-start)
 byte Transmission_SelectedUnit=0;                           // 
 byte  Transmission_SendToUnit=0;                            // Unitnummer waar de events naar toe gestuurd worden. 0=alle.
+byte  Transmission_SendToAll=0;                             // Vlag die aangeeft of de SendTo permanent staat ingesteld of eenmalig (VALUE_ALL)
 boolean Transmission_ThisUnitIsMaster=false;
 boolean Transmission_NodoOnly=false;                        // Als deze vlag staat, dan worden er uitsluitend Nodo-eigen signalen ontvangen.  
 byte QueuePosition=0;

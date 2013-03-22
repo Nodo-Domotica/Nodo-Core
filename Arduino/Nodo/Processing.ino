@@ -161,6 +161,8 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
             }
           }
         }      
+     // Als de SendTo niet permanent is ingeschakeld, dan deze weer uitzetten
+      if(Transmission_SendToAll!=VALUE_ALL)Transmission_SendToUnit=0;
       }
     }
 

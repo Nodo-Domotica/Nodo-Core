@@ -186,7 +186,7 @@ void PrintTerminal(char* LineToPrint)
       }
     }
 
-  // FileLog wordt hier uitgevoerd. ??? kan dit wel nav de nieuwe HTTPRequestFile voorziening?
+  // FileLog wordt hier uitgevoerd.
   if(TempLogFile[0]!=0)
     if(bitRead(HW_Config,HW_SDCARD))
       AddFileSDCard(TempLogFile,LineToPrint); // Extra logfile op verzoek van gebruiker: CMD_FILE_LOG
@@ -325,7 +325,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         break;
 
       // Par1 als waarde en par2 niet
-      case CMD_SENDTO:
       case CMD_EVENTLIST_SHOW:
       case CMD_EVENTLIST_ERASE:
       case CMD_TIMER_EVENT:
@@ -339,6 +338,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         break;
 
       // Par2 int en par1 als tekst
+      case CMD_SENDTO:
       case CMD_FILE_EXECUTE:
         ParameterToView[0]=PAR2_INT;
         ParameterToView[1]=PAR1_TEXT;
@@ -505,6 +505,9 @@ int ExecuteLine(char *Line, byte Port)
   struct NodoEventStruct EventToExecute,TempEvent;
 
   Led(RED);
+
+  // Als de SendTo niet permanent is ingeschakeld, dan deze weer uitzetten
+  if(Transmission_SendToAll!=VALUE_ALL)Transmission_SendToUnit=0;
 
   // verwerking van commando's is door gebruiker tijdelijk geblokkeerd door FileWrite commando
   if(FileWriteMode>0)
@@ -757,8 +760,11 @@ int ExecuteLine(char *Line, byte Port)
             break;
 
           case CMD_SENDTO:
+            Transmission_SendToAll=EventToExecute.Par2;
             if(EventToExecute.Par1<=UNIT_MAX)
+              {
               Transmission_SendToUnit=EventToExecute.Par1;
+              }
             else
               Transmission_SendToUnit=0;
             ExecuteCommand(&EventToExecute);            
@@ -831,6 +837,7 @@ int ExecuteLine(char *Line, byte Port)
 //                }
 //              Settings.Lock=a&0x7fff;
 //              }//??? lock nog aanpassen.
+
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
             }  
@@ -1285,7 +1292,7 @@ int ExecuteLine(char *Line, byte Port)
             State_EventlistWrite=2;
             }
           }
-        }// if(LineChar... @3
+        }// if(LineChar.
 
       // Tekens toevoegen aan commando zolang er nog ruimte is in de string
       if(LineChar!=';' && CommandPos<MaxCommandLength)
