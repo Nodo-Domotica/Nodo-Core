@@ -21,7 +21,6 @@ void SDCardInit(void)
   if(SD.begin(EthernetShield_CS_SDCard))
     {
     SD.mkdir(ProgmemString(Text_28)); // maak directory aan waar de Rawsignal KEY bestanden in worden opgeslagen
-    SD.mkdir(ProgmemString(Text_29)); // maak directory aan waar niet-gebruikers files in worden opgeslagen
     bitWrite(HW_Config,HW_SDCARD,1);
     }
   SelectSDCard(false);

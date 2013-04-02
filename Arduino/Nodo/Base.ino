@@ -1,5 +1,5 @@
-#define NODO_BUILD          525  //??? ophogen bij iedere build
-#define SETTINGS_VERSION     31
+#define NODO_BUILD          526  //??? ophogen bij iedere build
+#define SETTINGS_VERSION     33  
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -11,14 +11,13 @@ prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSat";
 prog_char PROGMEM Text_22[] = "!******************************************************************************!";
 
 #ifdef NODO_MEGA
-prog_char PROGMEM Text_15[] = "Nodo V3.0.9 Mega, Product=SWACNC-MEGA-R%03d, Home=%d, ThisUnit=%d";
+prog_char PROGMEM Text_15[] = "Nodo V3.5.0 Mega, Product=SWACNC-MEGA-R%03d, Home=%d, ThisUnit=%d";
 #else
-prog_char PROGMEM Text_15[] = "Nodo V3.0.9 Small, Product=SWACNC-SMALL-R%03d, Home=%d, ThisUnit=%d";
+prog_char PROGMEM Text_15[] = "Nodo V3.5.0 Small, Product=SWACNC-SMALL-R%03d, Home=%d, ThisUnit=%d";
 #endif
 
 #ifdef NODO_MEGA
 prog_char PROGMEM Text_05[] = "0123456789abcdef";
-prog_char PROGMEM Text_06[] = "NODO/HTTPBODY.DAT";
 prog_char PROGMEM Text_07[] = "Waiting...";
 prog_char PROGMEM Text_08[] = "SendTo: Transmission error. Retry...";
 prog_char PROGMEM Text_09[] = "(Last 10KByte)";
@@ -27,7 +26,6 @@ prog_char PROGMEM Text_13[] = "RawSignal saved.";
 prog_char PROGMEM Text_14[] = "Event=";
 prog_char PROGMEM Text_23[] = "LOG.DAT";
 prog_char PROGMEM Text_28[] = "RAW"; // Directory op de SDCard voor opslag RawSignal
-prog_char PROGMEM Text_29[] = "NODO"; // Directory op de SDCard voor opslag tijdelijke bestanden
 prog_char PROGMEM Text_30[] = "Terminal connection closed.";
 
 // Commando's:
@@ -46,24 +44,24 @@ prog_char PROGMEM Cmd_011[]="ClockSetDOW";
 prog_char PROGMEM Cmd_012[]="EventlistErase";
 prog_char PROGMEM Cmd_013[]="EventlistShow";
 prog_char PROGMEM Cmd_014[]="EventlistWrite";
-prog_char PROGMEM Cmd_015[]="Break";
+prog_char PROGMEM Cmd_015[]="RawSignalReceive";
 prog_char PROGMEM Cmd_016[]="RawSignalSave";
 prog_char PROGMEM Cmd_017[]="RawSignalSend";
 prog_char PROGMEM Cmd_018[]="Reset";
 prog_char PROGMEM Cmd_019[]="HomeSet";
-prog_char PROGMEM Cmd_020[]="Reserve"; 
+prog_char PROGMEM Cmd_020[]="UnitSet"; 
 prog_char PROGMEM Cmd_021[]="Delay";
 prog_char PROGMEM Cmd_022[]="SendTo";
 prog_char PROGMEM Cmd_023[]="SimulateDay";
 prog_char PROGMEM Cmd_024[]="Sound";
 prog_char PROGMEM Cmd_025[]="Debug";
-prog_char PROGMEM Cmd_026[]="";
+prog_char PROGMEM Cmd_026[]="Stop";
 prog_char PROGMEM Cmd_027[]="TimerRandom";
 prog_char PROGMEM Cmd_028[]="TimerSet";
-prog_char PROGMEM Cmd_029[]="";
-prog_char PROGMEM Cmd_030[]="ID";
-prog_char PROGMEM Cmd_031[]="UnitSet";
-prog_char PROGMEM Cmd_032[]="";
+prog_char PROGMEM Cmd_029[]="ID";
+prog_char PROGMEM Cmd_030[]="";
+prog_char PROGMEM Cmd_031[]="VariablePulseTime";
+prog_char PROGMEM Cmd_032[]="VariablePulseCount";
 prog_char PROGMEM Cmd_033[]="VariableDec";
 prog_char PROGMEM Cmd_034[]="VariableInc";
 prog_char PROGMEM Cmd_035[]="VariableSet";
@@ -78,7 +76,7 @@ prog_char PROGMEM Cmd_043[]="WiredThreshold";
 prog_char PROGMEM Cmd_044[]="SendUserEvent";
 prog_char PROGMEM Cmd_045[]="Temp";
 prog_char PROGMEM Cmd_046[]="WildCard";
-prog_char PROGMEM Cmd_047[]="VariableSetWiredAnalog";
+prog_char PROGMEM Cmd_047[]="VariableWiredAnalog";
 prog_char PROGMEM Cmd_048[]="ClientIP";
 prog_char PROGMEM Cmd_049[]="Password";
 prog_char PROGMEM Cmd_050[]="EventlistFile";
@@ -109,7 +107,7 @@ prog_char PROGMEM Cmd_074[]="PortOutput";
 prog_char PROGMEM Cmd_075[]="ClockSync";
 prog_char PROGMEM Cmd_076[]="";
 prog_char PROGMEM Cmd_077[]="Device";
-prog_char PROGMEM Cmd_078[]="PulseCount";
+prog_char PROGMEM Cmd_078[]="";
 prog_char PROGMEM Cmd_079[]="Reboot";
 prog_char PROGMEM Cmd_080[]="Echo";
 prog_char PROGMEM Cmd_081[]="AlarmSet";
@@ -154,7 +152,7 @@ prog_char PROGMEM Cmd_116[]="";
 prog_char PROGMEM Cmd_117[]="NewNodo";
 prog_char PROGMEM Cmd_118[]="Message";
 prog_char PROGMEM Cmd_119[]="Boot";
-prog_char PROGMEM Cmd_120[]="PulseTime";
+prog_char PROGMEM Cmd_120[]="";
 prog_char PROGMEM Cmd_121[]="Alarm";
 prog_char PROGMEM Cmd_122[]="";
 prog_char PROGMEM Cmd_123[]="";
@@ -245,13 +243,13 @@ prog_char PROGMEM Cmd_205[]="Eventlist nesting error.";
 prog_char PROGMEM Cmd_206[]="Reading/writing eventlist failed.";
 prog_char PROGMEM Cmd_207[]="Unable to establish TCP/IP connection.";
 prog_char PROGMEM Cmd_208[]="Incorrect password.";
-prog_char PROGMEM Cmd_209[]="";
+prog_char PROGMEM Cmd_209[]="Execution stopped.";
 prog_char PROGMEM Cmd_210[]="Access denied.";
 prog_char PROGMEM Cmd_211[]="SendTo timeout error."; 
 prog_char PROGMEM Cmd_212[]="Unit not online or within range."; 
 prog_char PROGMEM Cmd_213[]="Data lost during SendTo."; 
 prog_char PROGMEM Cmd_214[]="SDCard error.";
-prog_char PROGMEM Cmd_215[]="Aborted.";
+prog_char PROGMEM Cmd_215[]="Break.";
 prog_char PROGMEM Cmd_216[]="RawSignal saved.";
 
 
@@ -306,24 +304,24 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_EVENTLIST_ERASE             12
 #define CMD_EVENTLIST_SHOW              13
 #define CMD_EVENTLIST_WRITE             14
-#define CMD_BREAK                       15
+#define CMD_RAWSIGNAL_RECEIVE           15
 #define CMD_RAWSIGNAL_SAVE              16
 #define CMD_RAWSIGNAL_SEND              17
 #define CMD_RESET                       18
 #define CMD_HOME_SET                    19
-#define CMD_RESERVE                     20//???
+#define CMD_UNIT_SET                    20
 #define CMD_DELAY                       21
 #define CMD_SENDTO                      22
 #define CMD_SIMULATE_DAY                23
 #define CMD_SOUND                       24
 #define CMD_DEBUG                       25
-#define CMD_res26                       26
+#define CMD_STOP                        26
 #define CMD_TIMER_RANDOM                27
 #define CMD_TIMER_SET                   28
-#define CMD_res29                       29
-#define CMD_ID                          30
-#define CMD_UNIT_SET                    31
-#define CMD_res32                       32
+#define CMD_ID                          29
+#define CMD_VARIABLE_LAST_EVENT         30
+#define CMD_VARIABLE_PULSE_TIME         31
+#define CMD_VARIABLE_PULSE_COUNT        32
 #define CMD_VARIABLE_DEC                33
 #define CMD_VARIABLE_INC                34
 #define CMD_VARIABLE_SET                35
@@ -369,7 +367,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_CLOCK_SYNC                  75
 #define CMD_res76                       76
 #define CMD_res77                       77
-#define CMD_PULSE_COUNT                 78
+#define CMD_res78                       78
 #define CMD_REBOOT                      79
 #define CMD_ECHO                        80
 #define CMD_ALARM_SET                   81
@@ -415,7 +413,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_NEWNODO                    117
 #define CMD_MESSAGE                    118
 #define CMD_BOOT_EVENT                 119
-#define CMD_PULSE_TIME                 120
+#define CMD_res120                     120
 #define CMD_ALARM                      121
 #define CMD_RES_EVENT_122              122
 #define CMD_RES_EVENT_123              123
@@ -668,6 +666,7 @@ struct SettingsStruct
   byte    TransmitRF;
   byte    WaitFree;
   byte    Debug;                                            // Weergeven van extra gegevens t.b.v. beter inzicht verloop van de verwerking
+  byte    RawSignalReceive;
   unsigned long Lock;                                       // bevat de pincode waarmee IR/RF ontvangst is geblokkeerd. Bit nummer hoogste bit wordt gebruiktvoor in/uitschakelen.
   
   #ifdef NODO_MEGA
@@ -760,11 +759,12 @@ char InputBuffer_Terminal[INPUT_BUFFER_SIZE+2];             // Buffer voor input
 
 // ethernet classes voor IP communicatie Telnet terminal en HTTP.
 EthernetServer HTTPServer(80);                              // Server class voor HTTP sessie. Poort wordt later goed gezet.
+EthernetClient HTTPClient;                                  // Client calls voor HTTP sessie.
 EthernetServer TerminalServer(TERMINAL_PORT);               // Server class voor Terminal sessie.
 EthernetClient TerminalClient;                              // Client class voor Terminal sessie.
+
 byte ClientIPAddress[4];                                    // IP adres van de client die verbinding probeert te maken c.q. verbonden is.
 byte HTTPClientIP[4];                                       // IP adres van de Host
-File HTTPResultFile;                                            // Filehandler voor opslaan en weer teruggeven van tekst n.a.v. uitvoeren HTTP-event
 #endif
 
 // RealTimeclock DS1307

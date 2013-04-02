@@ -40,8 +40,9 @@ boolean AnalyzeRawSignal(struct NodoEventStruct *E)
       if(Device_ptr[x](DEVICE_RAWSIGNAL_IN,E,0))
         return true;
 
-  if(RawSignal_2_32bit(E))
-    return true;
+  if(Settings.RawSignalReceive==VALUE_ON)
+    if(RawSignal_2_32bit(E))
+      return true;
 
   return false;   
   }
@@ -672,7 +673,7 @@ boolean EthernetInit(void)
   Ethernet_MAC_Address[0]=0xAA;
   Ethernet_MAC_Address[1]=0xBB;
   Ethernet_MAC_Address[2]=0xCC;
-  Ethernet_MAC_Address[3]='_';
+  Ethernet_MAC_Address[3]=(Settings.Home%10)+'0';
   Ethernet_MAC_Address[4]=(Settings.Unit/10)+'0';
   Ethernet_MAC_Address[5]=(Settings.Unit%10)+'0';
 
@@ -1250,10 +1251,10 @@ void ExecuteIP(void)
   int Protocol=0;
   int InByteCounter;
   boolean RequestEvent=false;
-  boolean SendBodyText=false;
+  boolean ExecuteEvent=false;
   int x,y;
-  unsigned long TimeoutTimer=millis() + 5000; // Na enkele seconden moet de gehele transactie gereed zijn, anders 'hik' in de lijn.
-
+  unsigned long TimeoutTimer=millis() + 60000; //
+ 
   char *InputBuffer_IP = (char*) malloc(IP_BUFFER_SIZE+1);
   char *Event          = (char*) malloc(INPUT_BUFFER_SIZE+1);
   char *TmpStr1        = (char*) malloc(INPUT_BUFFER_SIZE+1);
@@ -1261,7 +1262,7 @@ void ExecuteIP(void)
 
   Event[0]=0; // maak de string leeg.
 
-  EthernetClient HTTPClient=HTTPServer.available();
+  HTTPClient=HTTPServer.available();
 
   if(HTTPClient)
     {
@@ -1338,22 +1339,7 @@ void ExecuteIP(void)
                     strcpy(TmpStr1,"HTTP/1.1 200 Ok");
                     HTTPClient.println(TmpStr1);
                     HTTPClient.println(TmpStr1);
-                    
-                    // De resultaten die anders naar de terminal waren gestuurd nu eveneens naar file schrijven
-                    // De filehandler is globaal gedefinieerd en schrijven vindt plaatsin de funktie PrintTerminal();
-                    SelectSDCard(true);
-                    HTTPResultFile = SD.open(ProgmemString(Text_06), FILE_WRITE);
-                    SelectSDCard(false);
-
-                    // Voer binnengekomen event uit
-                    RaiseMessage(ExecuteLine(Event, Protocol));
-                    
-                    // Sluit logging naar file weer uit zodat deze als bodytext retour gestuurd kan worden
-                    RequestEvent=true;
-                    SelectSDCard(true);
-                    HTTPResultFile.close();
-                    SelectSDCard(false);
-                    SendBodyText=true;
+                    ExecuteEvent=true;
                     }
                   else
                     HTTPClient.println(F("HTTP/1.1 400 Bad Request"));
@@ -1375,42 +1361,10 @@ void ExecuteIP(void)
               // Haal nu de resultaten op van het verwerken van de binnengekomen HTTP-regel. Stuur de inhoud als bodytext terug
               // naar de client. De WebApp zal deze content uitparsen. Indien toegang via browser, dan wordt het verwerkings-
               // resultaat getoond in de browser.
-              if(SendBodyText)
+              if(ExecuteEvent)
                 {              
-                // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-                SelectSDCard(true);
-                HTTPResultFile=SD.open(ProgmemString(Text_06));
-                if(HTTPResultFile) 
-                  {
-                  y=0;       
-                  while(HTTPResultFile.available())
-                    {
-                    x=HTTPResultFile.read();
-                    if(isprint(x) && y<INPUT_BUFFER_SIZE)
-                      {
-                      TmpStr1[y++]=x;
-                      }
-                    else
-                      {
-                      TmpStr1[y]=0;
-                      y=0;                    
-                      SelectSDCard(false);
-                      HTTPClient.print(TmpStr1);
-                      HTTPClient.print("<br>");
-                      if(Settings.Debug==VALUE_ON)
-                        {
-                        Serial.print(F("DEBUG: HTTP-Output(Body)="));
-                        Serial.println(TmpStr1); //??? Debug
-                        }
-                      SelectSDCard(true);
-                      }
-                    }
-                  HTTPResultFile.close();
-                  SD.remove(ProgmemString(Text_06));
-                  SelectSDCard(false);
-                  }  
-                else 
-                  HTTPClient.println(cmd2str(MESSAGE_03));
+                // Voer binnengekomen event uit
+                RaiseMessage(ExecuteLine(Event, Protocol));
                 }
               } // einde HTTP-request
             }
