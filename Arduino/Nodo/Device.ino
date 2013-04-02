@@ -276,7 +276,7 @@ boolean Device_02(byte function, struct NodoEventStruct *event, char *string)
         byte PTMF=50;
         
         RawSignal.Pulses[0]=PTMF;
-        RawSignal.Repeats=5;                   // KAKU heeft vijf herhalingen nodig om te schakelen.
+        RawSignal.Repeats=7;                   // KAKU heeft minimaal vijf herhalingen nodig om te schakelen.
         RawSignal.Number=KAKU_CodeLength*4+2;
         event->Port=VALUE_ALL;                 // Signaal mag naar alle door de gebruiker met [Output] ingestelde poorten worden verzonden.
        
@@ -671,7 +671,7 @@ boolean Device_04(byte function, struct NodoEventStruct *event, char *string)
         bitstream=event->Par2 & 0xFFFFFFCF; // adres geheel over nemen behalve de twee bits 5 en 6 die het schakel commando bevatten.
     
       event->Port=VALUE_ALL; // Signaal mag naar alle door de gebruiker met [Output] ingestelde poorten worden verzonden.
-      RawSignal.Repeats=5;   // vijf herhalingen.
+      RawSignal.Repeats=7;   // Aantal herhalingen van het signaal.
     
       if(event->Par1==VALUE_ON || event->Par1==VALUE_OFF)
         {

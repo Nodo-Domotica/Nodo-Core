@@ -166,7 +166,7 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
       }
     }
 
-  // abort is geen fatale error. Deze niet verder behandelen als een error.
+  // abort is geen fatale error/break. Deze niet verder behandelen als een error.
   if(error==MESSAGE_15)
     error=0;
     
@@ -404,7 +404,7 @@ byte QueueSend(void)
         Event.Command             = SendQueue[x].Command;
         Event.Par1                = SendQueue[x].Par1;
         Event.Par2                = SendQueue[x].Par2;
-        SendEvent(&Event,false,true,false);
+        SendEvent(&Event,false,false,false);
         }
       
       // De ontvangende Nodo verzendt als het goed is een bevestiging dat het is ontvangen en het aantal commando's

@@ -39,7 +39,7 @@
 // Stel hieronder in welk Nodo unit nummer u gaat compileren. Uitgangspunt is dat elke fysieke Nodo een uniek unit nummer krijgt toegekend.
 // Voor elk unit nummer kunt u verderop deze pagina een blokje kenmerken instellen.
 // Als dat eenmalig is gedaan, kunt u voortaan die set instellingen selecteren met het unit nummer:
-#define UNIT_NODO          1
+#define UNIT_NODO          10
 
 
 
@@ -91,18 +91,15 @@
   #define NODO_MEGA                    true
   #define ETHERNET                     false 
   // Devices in gebruik op deze Nodo:
-  #define DEVICE_CORE_18  // SignalAnalyzer  : Geeft bij een binnenkomend signaal informatie over de pulsen weer.
 #endif 
 // ----------------------------------------------------------------------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------------------------------------------------------------------
 // Definities voor Nodo unit nummer 3 
-// Hardware    : Arduino Mega 2560, Ethernetkaart
+// Hardware    : Arduino Uno
 // Toepassing  :
 #if (UNIT_NODO == 3)
   // Specificatie van deze Nodo:
-  #define NODO_MEGA                    true
-  #define ETHERNET                     false 
   // Devices in gebruik op deze Nodo:
 
 #endif 
@@ -122,6 +119,11 @@
   #define DEVICE_CORE_05 // TempRead        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
 #endif 
 // ----------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------------------------------------------------------------------
+
 
 // ----------------------------------------------------------------------------------------------------------------------------------------
 // Definities voor Nodo unit nummer 15

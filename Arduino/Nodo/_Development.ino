@@ -1,10 +1,10 @@
 /********************* Aanpassingen t.o.v. versie 3.0.1  **********************************\
 Nog te doen:
 
-- Commando [Select]: Hiermee kan worden opgegeven dat events naar een specifieke Nodo moeten worden verzonden. Een niet geselecteerde Nodo kan ook niet zenden.
 - CRC een XOR met BUILD???
 - SendTo: Na een retry kans op twee maal uitvoeren commando's aan slave zijde???
 - NewNodo blijft soms nog onterecht worden verzonden?
+- Hoe een variabele van een Nodo oversturen naar een variabele in een andere Nodo?
 *****************************************************************************************
 
 - Reactietijd van HTTP event naar RF output versneld.
@@ -86,7 +86,7 @@ LET OP: Tevens WebApp aanpassing, echter deze build toont in de WebApp geen nog 
 - Issue 688: File uitvoeren werkt soms niet
 - weergave alarmen werkt niet altijd correct.
 - EventlistShow weergave aangepast. Ëventlist <regel> is nu EventlistWrite <regel> geworden.
-- Tweede parameter in commando [UnitSet] is het Nodo Home adres [1..7]. Nodo s met verschillende Home adressen kunnen geen Nodo-events uitwisselen.
+- Tweede parameter in commando [UnitSet] is het Nodo Home adres [1..7]. Nodos met verschillende Home adressen kunnen geen Nodo-events uitwisselen.
 
 R522
 - Bug gevonden in SendTo voor I2C
@@ -105,6 +105,23 @@ R524
 - [SendTo] Zodra vanaf de master het eerste event wordt verstuurd, zullen alle andere units worden geblokkeerd voor vezrenden via IR/RF (??? nog testen in landschap)
 
 R525
-- 
+- [SendTo <unit>, All] werkt nu op op de Small en vanuit de eventlist.
+
+R526
+- Commando [Stop] toegevoegd. Stopt de verwerking van een eventlist voor alle iteraties.
+- [SendTo] Zolang de All optie actief is, wachten alle andere Nodos totdat de band weer vrij is.
+
+R527
+- Nieuw commando [VariablePulseCount <variabele>] voor vullen van een variabele met het aantal pulsen. [Status PulseCount] vervallen.
+- Nieuw commando [VariablePulseTime <variabele>] voor vullen van een variabele met tijdsduur laatste puls in mSec. [Status PulseTime] vervallen.
+- Nieuw commando [VariableLastEvent <BestemmingVariabele>, <BronVariable>]. Kan i.c.m. een wildcard worden gebruikt om de waarde van een event op te slaan in een variabele. Kan waarde halen uit [WiredAnalog], [Variable], [VariableSet].
+
+R528
+- Issue 669: override MAC address
+- PortInput en PortOutput geven incorrecte MMI
+- Nieuw commando [RawsignalReceive <on|off>]. Ontvangst van Rawsignals aan/uitschakelen. Default aan.
+- BodyText naar HTTP-Sessie verloopt niet meer door tussenkomst van file op SDCard. (Verbeteren performance en voorkomen slijtage SDCard bij intensief gebruik).
+- Home adres van de Nodo verwerkt in MAC adres.
+
 
 \*****************************************************************************************/

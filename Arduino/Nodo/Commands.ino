@@ -105,7 +105,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       break;         
   
     case CMD_VARIABLE_VARIABLE:
-      if(EventToExecute->Par2>0 && EventToExecute->Par2<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
+      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         UserVar[EventToExecute->Par1-1]=UserVar[EventToExecute->Par2-1];
         TempEvent.Command=CMD_VARIABLE_EVENT;
@@ -115,6 +115,66 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
         }
       break;        
+
+    case CMD_VARIABLE_LAST_EVENT://???@@
+      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
+        {
+        // Als het vorige event betrekking had op variabele/poort die de gebruiker heeft opgegeven in Par2
+        // dan de waardeuit het vorige event overnemen.
+        if(EventToExecute->Par2==LastReceived.Par1)
+          {
+          x=EventToExecute->Par1-1;
+          
+          switch(LastReceived.Command)
+            {
+            case CMD_VARIABLE_EVENT:
+            case CMD_VARIABLE_SET:
+              UserVar[x]=ul2float(LastReceived.Par2);
+              break;
+            case CMD_WIRED_ANALOG:
+            case CMD_TIMER_SET:
+              UserVar[x]=LastReceived.Par2;
+            default:
+              UserVar[x]=0;
+            }          
+            
+          TempEvent.Command=CMD_VARIABLE_EVENT;
+          TempEvent.Port=VALUE_SOURCE_VARIABLE;
+          TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
+          TempEvent.Direction=VALUE_DIRECTION_INPUT;
+          ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
+          }
+        }
+      break;        
+
+    case CMD_VARIABLE_PULSE_COUNT:
+      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
+        {
+        UserVar[EventToExecute->Par1-1]=PulseCount;
+        TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
+        TempEvent.Command=CMD_VARIABLE_EVENT;
+        TempEvent.Port=VALUE_SOURCE_VARIABLE;
+        TempEvent.Direction=VALUE_DIRECTION_INPUT;
+        PulseCount=0;
+        ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
+        }
+      break;         
+
+    case CMD_VARIABLE_PULSE_TIME:
+      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
+        {
+        UserVar[EventToExecute->Par1-1]=PulseTime;
+        TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
+        TempEvent.Command=CMD_VARIABLE_EVENT;
+        TempEvent.Port=VALUE_SOURCE_VARIABLE;
+        TempEvent.Direction=VALUE_DIRECTION_INPUT;
+        ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
+        }
+      break;         
+
+    case CMD_STOP:
+      error=MESSAGE_09;
+      break;
 
     case CMD_BREAK_ON_VAR_EQU:
       {
@@ -197,7 +257,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
 
     #ifdef NODO_MEGA
     case CMD_ALARM_SET:
-      if(EventToExecute->Par1<=ALARM_MAX)                                         // niet buiten bereik array!
+      if(EventToExecute->Par1>=1 && EventToExecute->Par1<=ALARM_MAX)              // niet buiten bereik array!
         {
         for(x=0;x<8;x++)                                                          // loop de acht nibbles van de 32-bit Par2 langs
           {          
@@ -408,10 +468,6 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
     case CMD_REBOOT:
       RebootNodo=true;
       break;        
-
-    case CMD_PULSE_COUNT:
-      PulseCount=EventToExecute->Par2;
-      break;
       
     case CMD_RESET:
       ResetFactory();
@@ -419,7 +475,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
 
     case CMD_SENDTO:
       Transmission_SendToUnit=EventToExecute->Par1;
-      Transmission_SendToAll=EventToExecute->Par2;
+       Transmission_SendToAll=EventToExecute->Par2;
       // als de SendTo wordt opgeheven vanuit de master, geef dit dan aan alle Nodo's te kennen
       // anders blijven deze in de wachtstand staan.
       if(Transmission_SendToUnit==0)
@@ -465,6 +521,14 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
 
     case CMD_DEBUG: 
       Settings.Debug=EventToExecute->Par1;
+      break;
+
+    case CMD_RAWSIGNAL_RECEIVE: 
+      Settings.RawSignalReceive=EventToExecute->Par1;
+      break;
+
+    case CMD_RAWSIGNAL_SAVE: 
+      Settings.RawSignalSave=EventToExecute->Par1;
       break;
 
     case CMD_LOG: 

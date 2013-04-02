@@ -113,6 +113,9 @@ void RaiseMessage(byte MessageCode)
   TempEvent.Port      = VALUE_SOURCE_SYSTEM;
   PrintEvent(&TempEvent);
 
+  if(MessageCode==MESSAGE_09)// Stop
+    return;
+
   TempEvent.Port      = VALUE_ALL;
   SendEvent(&TempEvent,false,true,true);
   }
@@ -406,6 +409,10 @@ boolean GetStatus(struct NodoEventStruct *Event)
     Event->Par1=Settings.Debug;
     break;
 
+  case CMD_RAWSIGNAL_RECEIVE:
+    Event->Par1=Settings.RawSignalReceive;
+    break;
+
   case CMD_CLOCK_EVENT_DAYLIGHT:
     Event->Par1=Time.Daylight;
     break;
@@ -488,14 +495,6 @@ boolean GetStatus(struct NodoEventStruct *Event)
 
   case VALUE_FREEMEM:    
     Event->Par2=FreeMem();
-    break;
-
-  case CMD_PULSE_TIME:    
-    Event->Par2=PulseTime;
-    break;
-
-  case CMD_PULSE_COUNT:
-    Event->Par2=PulseCount;
     break;
 
   case CMD_WIRED_IN_EVENT:
@@ -637,6 +636,7 @@ void ResetFactory(void)
   Settings.Unit                       = UNIT_NODO;
   Settings.Home                       = HOME_NODO;
   Settings.WaitFree                   = VALUE_ON;
+  Settings.RawSignalReceive           = VALUE_ON;
 
 #ifdef NODO_MEGA
   Settings.WaitFree                   = VALUE_OFF;

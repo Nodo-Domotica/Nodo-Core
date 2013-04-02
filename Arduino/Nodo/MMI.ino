@@ -177,12 +177,10 @@ void PrintTerminal(char* LineToPrint)
     if(TerminalClient.connected() && TerminalConnected>0 && TerminalLocked==0)
       TerminalClient.println(LineToPrint);
       
-    if(HTTPResultFile)
+    if(HTTPClient.connected())
       {
-      SelectSDCard(true);
-      HTTPResultFile.write((uint8_t*)LineToPrint,strlen(LineToPrint));
-      HTTPResultFile.write('\n'); // nieuwe regel
-      SelectSDCard(false);
+      HTTPClient.print(LineToPrint);
+      HTTPClient.println("<br>");
       }
     }
 
@@ -191,7 +189,7 @@ void PrintTerminal(char* LineToPrint)
     if(bitRead(HW_Config,HW_SDCARD))
       AddFileSDCard(TempLogFile,LineToPrint); // Extra logfile op verzoek van gebruiker: CMD_FILE_LOG
   }
-
+  
 
 #define PAR1_INT           1
 #define PAR1_TEXT          2
@@ -262,6 +260,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_WIRED_SMITTTRIGGER:
       case CMD_WIRED_THRESHOLD:
       case CMD_WIRED_ANALOG:
+      case CMD_VARIABLE_LAST_EVENT:
         ParameterToView[0]=PAR1_INT;
         ParameterToView[1]=PAR2_INT;
         break;
@@ -269,8 +268,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case VALUE_BUILD:
       case VALUE_HWCONFIG:
       case VALUE_FREEMEM:
-      case CMD_PULSE_TIME:
-      case CMD_PULSE_COUNT:
         ParameterToView[0]=PAR2_INT;
         break;
         
@@ -315,9 +312,10 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       // Par1 als tekst en par2 niet
       case CMD_SEND_EVENT:
       case CMD_LOCK:
+      case CMD_RAWSIGNAL_RECEIVE:
+      case CMD_RAWSIGNAL_SAVE:
       case CMD_DEBUG:
       case CMD_LOG:
-      case CMD_RAWSIGNAL_SAVE:
       case CMD_ECHO:
       case CMD_WAITFREERF:
       case CMD_BREAK_ON_DAYLIGHT:
@@ -334,6 +332,10 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_BOOT_EVENT:
       case CMD_NEWNODO:
       case CMD_HOME_SET:
+      case CMD_VARIABLE_PULSE_TIME:
+      case CMD_VARIABLE_PULSE_COUNT:
+      case CMD_PORT_SERVER:
+      case CMD_PORT_CLIENT:
         ParameterToView[0]=PAR1_INT;
         break;
 
@@ -348,6 +350,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_REBOOT:
       case CMD_CLOCK_SYNC:
       case CMD_RESET:
+      case CMD_STOP:
       case CMD_SETTINGS_SAVE:
         break;
         
@@ -579,8 +582,8 @@ int ExecuteLine(char *Line, byte Port)
           //test; geen, altijd goed
           case CMD_SIMULATE_DAY:
           case CMD_EVENTLIST_ERASE:
+          case CMD_STOP:
           case CMD_RESET:
-          case CMD_ALARM:
           case CMD_MESSAGE:
           case CMD_REBOOT:
           case CMD_SETTINGS_SAVE:
@@ -595,6 +598,8 @@ int ExecuteLine(char *Line, byte Port)
             break; 
       
           case CMD_LOG:
+          case CMD_RAWSIGNAL_RECEIVE:
+          case CMD_RAWSIGNAL_SAVE:
           case CMD_DEBUG:
           case CMD_ECHO:
             if(EventToExecute.Par1!=VALUE_OFF && EventToExecute.Par1!=VALUE_ON)
@@ -616,6 +621,10 @@ int ExecuteLine(char *Line, byte Port)
               error=MESSAGE_02;
             break;
       
+          case CMD_ALARM:
+            if(EventToExecute.Par1<1 || EventToExecute.Par1>ALARM_MAX)
+              error=MESSAGE_02;
+
           case CMD_UNIT_SET:
           case CMD_NEWNODO:
           case CMD_BOOT_EVENT:
@@ -633,10 +642,16 @@ int ExecuteLine(char *Line, byte Port)
               error=MESSAGE_02;
             break;
       
-          // test:EventToExecute.Par1 en EventToExecute.Par2 binnen bereik maximaal beschikbare variabelen
+          case CMD_VARIABLE_PULSE_TIME:
+          case CMD_VARIABLE_PULSE_COUNT:
+            if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
+              error=MESSAGE_02;
+            break;
+
           case CMD_BREAK_ON_VAR_LESS_VAR:
           case CMD_BREAK_ON_VAR_MORE_VAR:
           case CMD_VARIABLE_VARIABLE:
+          case CMD_VARIABLE_LAST_EVENT:
             if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
               error=MESSAGE_02;
             if(EventToExecute.Par2<1 || EventToExecute.Par2>USER_VARIABLES_MAX)
@@ -1207,13 +1222,6 @@ int ExecuteLine(char *Line, byte Port)
             strcpy(Settings.HTTPRequest,&Line[0]+x);
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
-
-          case CMD_PULSE_COUNT:
-            {
-            if(GetArgv(Command,TmpStr1,2))
-              EventToExecute.Par2=str2int(TmpStr1);                  
-            break;
-            }  
 
           case CMD_PORT_SERVER:
             {
