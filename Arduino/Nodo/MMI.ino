@@ -253,6 +253,9 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         ParameterToView[1]=PAR2_FLOAT;
         break;
 
+      // Par2 als hex waarde
+      case CMD_RAWSIGNAL_SEND:
+      case CMD_RAWSIGNAL_ERASE:
       case CMD_RAWSIGNAL:
         ParameterToView[0]=PAR2_INT_HEX;
         break;
@@ -281,7 +284,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         break;
 
       // Par1 als waarde en par2 als tekst
-      case CMD_RAWSIGNAL_SEND:
       case CMD_DELAY:
       case CMD_WIRED_PULLUP:
       case CMD_WIRED_OUT:
@@ -605,12 +607,7 @@ int ExecuteLine(char *Line, byte Port)
             if(EventToExecute.Par1!=VALUE_OFF && EventToExecute.Par1!=VALUE_ON)
               error=MESSAGE_02;
            break;
-            
-          case CMD_RAWSIGNAL_SEND:    
-            if(EventToExecute.Par2!=VALUE_SOURCE_RF && EventToExecute.Par2!=VALUE_SOURCE_IR && EventToExecute.Par2!=0)
-              error=MESSAGE_02;
-            break;
-            
+                        
           case CMD_TIMER_SET:
             if(EventToExecute.Par1>TIMER_MAX)
               error=MESSAGE_02;
@@ -1024,15 +1021,14 @@ int ExecuteLine(char *Line, byte Port)
             break;
     
           case CMD_RAWSIGNAL_ERASE:      
+          case CMD_RAWSIGNAL_SEND:      
+            // Haal Par1 uit het commando. let op Par1 gebruiker is een 32-bit hex-getal die wordt opgeslagen in struct Par2.
             if(GetArgv(Command,TmpStr1,2))
               {
-              sprintf(TmpStr2,"%s/%s.raw",ProgmemString(Text_28),TmpStr1);
-              FileErase(TmpStr2);
+              EventToExecute.Par2=str2int(TmpStr1);
+              if(GetArgv(Command,TmpStr1,3))
+                EventToExecute.Par1=str2cmd(TmpStr1);
               }
-            else
-              FileList("/RAW",true);
-              
-            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
     
           case CMD_FILE_GET_HTTP:

@@ -531,6 +531,33 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       Settings.RawSignalSave=EventToExecute->Par1;
       break;
 
+    case CMD_RAWSIGNAL_ERASE: 
+      if(EventToExecute->Par2)
+        {
+        sprintf(TempString,"%s/%s.raw",ProgmemString(Text_28),int2strhex(EventToExecute->Par2)+2); // +2 om zo de "0x" van de string te strippen.
+        FileErase(TempString);
+        }
+      else
+        FileList("/RAW",true);
+      break;
+
+    case CMD_RAWSIGNAL_SEND: 
+      if(RawSignalLoad(EventToExecute->Par2))
+        {
+        ClearEvent(&TempEvent);
+        TempEvent.Port=VALUE_ALL;
+        TempEvent.Command=CMD_RAWSIGNAL;
+        TempEvent.Par2=EventToExecute->Par2;
+        TempEvent.Par1=EventToExecute->Par1;
+        RawSignal.Repeats=5;
+        //repeats zetten / en de poorten correct/???@1
+        SendEvent(&TempEvent, true ,true, false);
+        }
+      else
+        error=MESSAGE_03;
+
+      break;
+
     case CMD_LOG: 
       Settings.Log=EventToExecute->Par1;
       break;
@@ -539,23 +566,6 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
 //      SimulateDay(); 
 //      break;     
       
-//    case CMD_RAWSIGNAL_SEND:
-//      if(EventToExecute->Par1!=0)
-//        {
-//        if(RawSignalGet(EventToExecute->Par1))
-//          {
-//          x=VALUE_ALL;
-//          if(EventToExecute->Par2==VALUE_SOURCE_RF || EventToExecute->Par2==VALUE_SOURCE_IR)
-//            x=EventToExecute->Par2;
-//          SendEvent_OLD(AnalyzeRawSignal(),x);
-//          }
-//        else
-//          error=MESSAGE_03;
-//        }
-//      else
-//        SendEvent_OLD(AnalyzeRawSignal(),VALUE_ALL);
-//      break;        
-//??? 
     case CMD_FILE_EXECUTE:
       strcpy(TempString,cmd2str(CMD_FILE_EXECUTE));
       strcat(TempString," ");
