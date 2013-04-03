@@ -5,6 +5,7 @@ Nog te doen:
 - SendTo: Na een retry kans op twee maal uitvoeren commando's aan slave zijde???
 - NewNodo blijft soms nog onterecht worden verzonden?
 - Hoe een variabele van een Nodo oversturen naar een variabele in een andere Nodo?
+- Opnemen en weer verzenden van een rawsignal testen.
 *****************************************************************************************
 
 - Reactietijd van HTTP event naar RF output versneld.

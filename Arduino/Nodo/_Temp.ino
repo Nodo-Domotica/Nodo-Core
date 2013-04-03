@@ -1,3 +1,22 @@
+//    case CMD_RAWSIGNAL_SEND:
+//      if(EventToExecute->Par1!=0)
+//        {
+//        if(RawSignalGet(EventToExecute->Par1))
+//          {
+//          x=VALUE_ALL;
+//          if(EventToExecute->Par2==VALUE_SOURCE_RF || EventToExecute->Par2==VALUE_SOURCE_IR)
+//            x=EventToExecute->Par2;
+//          SendEvent_OLD(AnalyzeRawSignal(),x);
+//          }
+//        else
+//          error=MESSAGE_03;
+//        }
+//      else
+//        SendEvent_OLD(AnalyzeRawSignal(),VALUE_ALL);
+//      break;        
+//??? 
+
+
 /*
 
 digitalWrite(PIN_WIRED_OUT_1,HIGH);delay(10);digitalWrite(PIN_WIRED_OUT_1,LOW);//??? Debugging: Wired-Out 1

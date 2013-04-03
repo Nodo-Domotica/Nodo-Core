@@ -670,7 +670,7 @@ void ResetFactory(void)
   Settings.EchoSerial                 = VALUE_ON;
   Settings.EchoTelnet                 = VALUE_OFF;  
   Settings.Log                        = VALUE_OFF;  
-  Settings.RawSignalSave              = VALUE_ON;  
+  Settings.RawSignalSave              = VALUE_OFF;  
   Settings.Password[0]                = 0;
 
   // Maak de alarmen leeg
@@ -2077,19 +2077,19 @@ char* int2str(unsigned long x)
   *OutputLinePosPtr=0;
 
   if(x==0)
-  {
-    *--OutputLinePosPtr='0';
-  }
-  else
-  {  
-    while(x>0)
     {
+    *--OutputLinePosPtr='0';
+    }
+  else
+    {  
+    while(x>0)
+      {
       *--OutputLinePosPtr='0'+(x%10);
       x/=10;
-    }
-  }    
+      }
+    }    
   return OutputLinePosPtr;
-}
+  }
 
 /**********************************************************************************************\
  * Converteert een unsigned long naar een hexadecimale string.

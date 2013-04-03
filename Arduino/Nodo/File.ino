@@ -134,7 +134,12 @@ boolean FileList(char *rootdir, boolean Erase)
           }
         else
           {
-          strcpy(TempString,entry.name());
+          TempString[0]=0;
+          // Als de fuktie is aangeroepen vanuit RawSignalList, dan voor de bestandnamen 0x plakken omdat de bestandsnamen een 
+          // hexadecimale warde representeren. Niet nietjes op deze wijze maar bespaart code. 
+          if(strcasecmp(rootdir,"/RAW")==0)
+            strcat(TempString,"0x");
+          strcat(TempString,entry.name());
           TempString[StringFind(TempString,".")]=0;
           SelectSDCard(false);
           PrintTerminal(TempString);
@@ -306,7 +311,7 @@ byte RawSignalSave(unsigned long Key)
     File KeyFile = SD.open(TempString, FILE_WRITE);
     if(KeyFile) 
       {
-      for(int x=1;x<=RawSignal.Number;x++)
+      for(int x=0;x<=RawSignal.Number;x++)
         {
         TempString[0]=0;
         if(x>1)
@@ -338,7 +343,7 @@ byte RawSignalSave(unsigned long Key)
  * Haal de RawSignal pulsen op uit het bestand <key>.raw en sla de reeks op in de 
  * RawSignal buffer, zodat deze vervolgens weer kan worden gebruikt om te verzenden.
  \*********************************************************************************************/
-boolean RawSignalGet(unsigned long Key)
+boolean RawSignalLoad(unsigned long Key)
   {
   int x,y,z;
   boolean Ok;
@@ -352,7 +357,7 @@ boolean RawSignalGet(unsigned long Key)
   if(dataFile) 
     {
     y=0;
-    z=1;// [0] van RawSignal.Pulses wordt niet gebruikt
+    z=0;
     while(dataFile.available())
       {
       x=dataFile.read();

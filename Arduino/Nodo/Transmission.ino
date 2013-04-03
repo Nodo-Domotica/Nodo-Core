@@ -833,11 +833,11 @@ boolean SendHTTPCookie(void)
   Status=SendHTTPRequest(HttpRequest);
   free(HttpRequest);
   return Status;
-}
+  }
 
 
 boolean SendHTTPRequest(char* Request)
-{
+  {
   if(Settings.TransmitIP!=VALUE_ON)
     return false;
 
@@ -849,6 +849,7 @@ boolean SendHTTPRequest(char* Request)
   const int TimeOut=5000;
   EthernetClient HTTPClient;                            // Client class voor HTTP sessie.
   byte State=0;// 0 als start, 
+
   // 1 als 200 OK voorbij is gekomen,
   // 2 als &file= is gevonden en eerstvolgende lege regel moet worden gedetecteerd
   // 3 als lege regel is gevonden en file-capture moet starten.                
@@ -864,22 +865,22 @@ boolean SendHTTPRequest(char* Request)
   if(SlashPos!=-1)
     strcat(IPBuffer,Settings.HTTPRequest+SlashPos);
 
+
   // Alle spaties omzetten naar %20 en toevoegen aan de te verzenden regel.
   y=strlen(IPBuffer);
-
   for(x=0;x<strlen(Request);x++)
-  {            
+    {            
     if(Request[x]==32)
-    {
+      {
       IPBuffer[y++]='%';
       IPBuffer[y++]='2';
       IPBuffer[y++]='0';
-    }
+      }
     else
-    {
+      {
       IPBuffer[y++]=Request[x];
+      }
     }
-  }
   IPBuffer[y]=0;
 
   // Sluit HTTP-request af met protocol versienummer
@@ -897,9 +898,9 @@ boolean SendHTTPRequest(char* Request)
   TempString[SlashPos]=0;
 
   do
-  {
-    if(HTTPClient.connect(HTTPClientIP,Settings.PortClient))
     {
+    if(HTTPClient.connect(HTTPClientIP,Settings.PortClient))
+      {
       ClientIPAddress[0]=HTTPClientIP[0];
       ClientIPAddress[1]=HTTPClientIP[1];
       ClientIPAddress[2]=HTTPClientIP[2];
@@ -934,7 +935,6 @@ boolean SendHTTPRequest(char* Request)
               strcat(TempString,IPBuffer);
               Serial.println(TempString);
               }
-
             TimeoutTimer=millis()+TimeOut; // er is nog data transport, dus de timeout timer weer op max. zetten.
 
             // De regel is binnen 
@@ -942,17 +942,18 @@ boolean SendHTTPRequest(char* Request)
               State=3;
 
             else if(State==3)
+              //??? ipv AddFileSDCard hier zelf de fileafhandeling maken en eenmalig openen/sluiten. Dit scheelt veel SDCard IO.
               AddFileSDCard(filename,IPBuffer); // Capture de bodytext uit het HTTP-request en sla regels op in opgegeven filename
 
             else if(State==0 && StringFind(IPBuffer,"HTTP")!=-1)
-            {
+              {
               // Response n.a.v. HTTP-request is ontvangen
               if(StringFind(IPBuffer,"200")!=-1)
-              {
+                {
                 State=1;
                 // pluk de filename uit het http request als die er is, dan de body text van het HTTP-request opslaan.
                 if(ParseHTTPRequest(Request,"file", TempString))
-                {
+                  {
                   State=2;
                   TempString[8]=0; // voorkom dat filenaam meer dan acht posities heeft
                   strcpy(filename,TempString);                
@@ -960,40 +961,40 @@ boolean SendHTTPRequest(char* Request)
 
                   // evntueel vorig bestand wissen
                   FileErase(filename);
+                  }
                 }
-              }
               IPBuffer[InByteCounter]=0;
-            }
+              }
             InByteCounter=0;          
+            }
           }
         }
-      }
       delay(100);
       HTTPClient.flush();// Verwijder eventuele rommel in de buffer.
       HTTPClient.stop();
       State=true;
-    }
+      }
     else
-    {
+      {
       // niet gelukt om de TCP-IP verbinding op te zetten. Genereerd error en herinitialiseer de ethernetkaart.
       State=false;
       delay(1000); // korte pause tussen de nieuwe pogingen om verbinding te maken.
       if(EthernetInit())
         CookieTimer=1;// gelijk een nieuwe cookie versturen.
+      }
     }
-  }
   while(!State && ++Try<3);
 
   free(TempString);
   free(IPBuffer);
 
   if(!State)
-  {
+    {
     x=Settings.TransmitIP; // HTTP tijdelijk uitzetten want die deed het immers niet.
     Settings.TransmitIP=VALUE_OFF; // HTTP tijdelijk uitzetten want die deed het immers niet.
     RaiseMessage(MESSAGE_07);
     Settings.TransmitIP=x; // HTTP weer terugzetten naar oorspronkelijke waarde.
-  }
+    }
 
   return State;
 }
