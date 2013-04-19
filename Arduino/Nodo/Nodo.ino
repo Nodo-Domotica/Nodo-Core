@@ -47,7 +47,6 @@
 // Voor een beschrijving van de beschikbare devices: zie de Wiki pagina's. 
 // Onder aan deze pagina vindt u een complete lijst met de benodigde statements om een device te kunnen gebruiken.
 // In dit blokje geeft u aan welke devices gebruikt worden in het landschap met Nodo's. 
-
   #define DEVICE_01       // Kaku            : Klik-Aan-Klik-Uit ontvangen
   #define DEVICE_02       // SendKaku        : Klik-Aan-Klik-Uit verzenden
   #define DEVICE_03       // NewKAKU         : Klik-Aan-Klik-Uit ontvangen, automatische codering. 

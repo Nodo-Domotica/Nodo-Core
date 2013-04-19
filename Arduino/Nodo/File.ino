@@ -295,7 +295,9 @@ boolean RawSignalExist(unsigned long Code)
 byte RawSignalSave(unsigned long Key)
   {
   boolean error=false;
-  char *TempString=(char*)malloc(40);
+  char *TempString=(char*)malloc(25);
+
+  int x;
 
   if(Key!=0)
     {
@@ -304,23 +306,18 @@ byte RawSignalSave(unsigned long Key)
   
     // Sla Raw-pulsenreeks op in bestand met door gebruiker gekozen nummer als filenaam
   
-  
     sprintf(TempString,"%s/%s.raw",ProgmemString(Text_28),int2strhex(Key)+2);
-  
+
     SD.remove(TempString); // eventueel bestaande file wissen, anders wordt de data toegevoegd.    
     File KeyFile = SD.open(TempString, FILE_WRITE);
     if(KeyFile) 
       {
-      for(int x=0;x<=RawSignal.Number;x++)
+      byte b,*B=(byte*)&RawSignal;
+      for(x=0;x<sizeof(struct RawSignalStruct);x++)
         {
-        TempString[0]=0;
-        if(x>1)
-          strcat(TempString,",");
-        strcat(TempString,int2str(RawSignal.Pulses[x]));
-        KeyFile.write(TempString);
+        b=*(B+x); 
+        KeyFile.write(b);
         }
-      strcpy(TempString,"\n");
-      KeyFile.write(TempString);
       KeyFile.close();
       }
     else 
@@ -345,9 +342,8 @@ byte RawSignalSave(unsigned long Key)
  \*********************************************************************************************/
 boolean RawSignalLoad(unsigned long Key)
   {
-  int x,y,z;
   boolean Ok;
-  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  char *TempString=(char*)malloc(25);
 
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
   SelectSDCard(true);
@@ -356,25 +352,17 @@ boolean RawSignalLoad(unsigned long Key)
   File dataFile=SD.open(TempString);
   if(dataFile) 
     {
-    y=0;
-    z=0;
-    while(dataFile.available())
+    byte b,*B=(byte*)&RawSignal;
+    int x=0;
+    
+    while(dataFile.available() && x<sizeof(struct RawSignalStruct))
       {
-      x=dataFile.read();
-      if(isDigit(x) && y<INPUT_BUFFER_SIZE)
-        {
-        TempString[y++]=x;
-        }
-      else if(x=='\n' || isPunct(x))
-        {
-        TempString[y]=0;
-        y=0;
-        RawSignal.Pulses[z++]=str2int(TempString);
-        }
+      b=dataFile.read();
+      *(B+x)=b; 
+      x++;
       }
     dataFile.close();
     Ok=true;
-    RawSignal.Number=z-1;
     }
   else
     Ok=false;

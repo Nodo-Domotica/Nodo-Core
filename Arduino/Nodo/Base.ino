@@ -1,4 +1,4 @@
-#define NODO_BUILD          526  //??? ophogen bij iedere build
+#define NODO_BUILD          528  //??? ophogen bij iedere build
 #define SETTINGS_VERSION     33  
 #include <EEPROM.h>
 #include <Wire.h>
@@ -38,9 +38,9 @@ prog_char PROGMEM Cmd_005[]="BreakOnVarNEqu";
 prog_char PROGMEM Cmd_006[]="BreakOnLater";
 prog_char PROGMEM Cmd_007[]="BreakOnEarlier";
 prog_char PROGMEM Cmd_008[]="ClockSetDate";
-prog_char PROGMEM Cmd_009[]="ClockSetYear";
-prog_char PROGMEM Cmd_010[]="ClockSetTime";
-prog_char PROGMEM Cmd_011[]="ClockSetDOW";
+prog_char PROGMEM Cmd_009[]="ClockSetTime";
+prog_char PROGMEM Cmd_010[]="";
+prog_char PROGMEM Cmd_011[]="";
 prog_char PROGMEM Cmd_012[]="EventlistErase";
 prog_char PROGMEM Cmd_013[]="EventlistShow";
 prog_char PROGMEM Cmd_014[]="EventlistWrite";
@@ -59,7 +59,7 @@ prog_char PROGMEM Cmd_026[]="Stop";
 prog_char PROGMEM Cmd_027[]="TimerRandom";
 prog_char PROGMEM Cmd_028[]="TimerSet";
 prog_char PROGMEM Cmd_029[]="ID";
-prog_char PROGMEM Cmd_030[]="";
+prog_char PROGMEM Cmd_030[]="VariableEvent";
 prog_char PROGMEM Cmd_031[]="VariablePulseTime";
 prog_char PROGMEM Cmd_032[]="VariablePulseCount";
 prog_char PROGMEM Cmd_033[]="VariableDec";
@@ -88,7 +88,7 @@ prog_char PROGMEM Cmd_055[]="Log";
 prog_char PROGMEM Cmd_056[]="AnalyseSettings";
 prog_char PROGMEM Cmd_057[]="Output";
 prog_char PROGMEM Cmd_058[]="SettingsSave";
-prog_char PROGMEM Cmd_059[]="If";
+prog_char PROGMEM Cmd_059[]="if";
 prog_char PROGMEM Cmd_060[]="ReceiveSettings";
 prog_char PROGMEM Cmd_061[]="HTTPHost";
 prog_char PROGMEM Cmd_062[]="FileErase";
@@ -298,9 +298,9 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_BREAK_ON_TIME_LATER          6
 #define CMD_BREAK_ON_TIME_EARLIER        7
 #define CMD_CLOCK_DATE                   8
-#define CMD_CLOCK_YEAR                   9
-#define CMD_CLOCK_TIME                  10
-#define CMD_CLOCK_DOW                   11
+#define CMD_CLOCK_TIME                   9
+#define CMD_res10                       10
+#define CMD_res11                       11
 #define CMD_EVENTLIST_ERASE             12
 #define CMD_EVENTLIST_SHOW              13
 #define CMD_EVENTLIST_WRITE             14
@@ -319,7 +319,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_TIMER_RANDOM                27
 #define CMD_TIMER_SET                   28
 #define CMD_ID                          29
-#define CMD_VARIABLE_LAST_EVENT         30
+#define CMD_VARIABLE_FROM_EVENT         30
 #define CMD_VARIABLE_PULSE_TIME         31
 #define CMD_VARIABLE_PULSE_COUNT        32
 #define CMD_VARIABLE_DEC                33
@@ -756,7 +756,7 @@ char HTTPCookie[10];                                        // Cookie voor uitwi
 int FileWriteMode=0;                                        // Het aantal seconden dat deze timer ingesteld staat zal er geen verwerking plaats vinden van TerminalInvoer. Iedere seconde --.
 char InputBuffer_Serial[INPUT_BUFFER_SIZE+2];               // Buffer voor input Seriele data
 char InputBuffer_Terminal[INPUT_BUFFER_SIZE+2];             // Buffer voor input terminal verbinding Telnet sessie
-
+boolean ClockSyncHTTP=false;
 // ethernet classes voor IP communicatie Telnet terminal en HTTP.
 EthernetServer HTTPServer(80);                              // Server class voor HTTP sessie. Poort wordt later goed gezet.
 EthernetClient HTTPClient;                                  // Client calls voor HTTP sessie.
@@ -771,15 +771,21 @@ byte HTTPClientIP[4];                                       // IP adres van de H
 struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,DaylightSaving,DaylightSavingSetMonth,DaylightSavingSetDate; int Year;}Time; // Hier wordt datum & tijd in opgeslagen afkomstig van de RTC.
 
 
-#define RAW_BUFFER_SIZE            256 // Maximaal aantal te ontvangen 128 bits.???
-struct RawsignalStruct
+#define RAW_BUFFER_SIZE            256                      // Maximaal aantal te ontvangen 128 bits is voldoende voor capture signalen.
+struct RawSignalStruct                                      // Variabelen geplaatst in struct zodat deze later eenvoudig kunnen worden weggeschreven naar SDCard
   {
-  byte Pulses[RAW_BUFFER_SIZE+2];                           // Tabel met de gemeten pulsen in microseconden. eerste waarde [0] bevat de vermenigingsvuldigingsfactor PTMF.
   byte Source;                                              // Bron waar het signaal op is binnengekomen.
-  int Number;                                               // aantal bits, maal twee omdat iedere bit een mark en een space heeft.
+  int  Number;                                              // aantal bits, maal twee omdat iedere bit een mark en een space heeft.
   byte Repeats;                                             // Aantal maal dat de pulsreeks verzonden moet worden bij een zendactie.
+  byte Delay;                                               // Pauze in ms. na verzenden van één enkele pulsenreeks
   byte Multiply;                                            // Pulses[] * Multiply is de echte tijd van een puls in microseconden
-  }RawSignal;
+  byte reserved_1;                                          // future use: voorkomt dat bij uitbreiding alle RawSignals niet meer van SDCard te lezen zijn
+  byte reserved_2;                                          // future use: voorkomt dat bij uitbreiding alle RawSignals niet meer van SDCard te lezen zijn
+  byte reserved_3;                                          // future use: voorkomt dat bij uitbreiding alle RawSignals niet meer van SDCard te lezen zijn
+  byte reserved_4;                                          // future use: voorkomt dat bij uitbreiding alle RawSignals niet meer van SDCard te lezen zijn
+  byte Pulses[RAW_BUFFER_SIZE+2];                           // Tabel met de gemeten pulsen in microseconden gedeeld door RawSignal.Multiply. Dit scheelt helft aan RAM geheugen.
+                                                            // Om legacy redenen zit de eerste puls in element 1. Element 0 wordt dus niet gebruikt.
+  }RawSignal={0,0,0,0,0,0,0,0,0};
 
 void setup() 
   {    

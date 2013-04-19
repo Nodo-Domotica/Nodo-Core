@@ -116,11 +116,11 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         }
       break;        
 
-    case CMD_VARIABLE_LAST_EVENT://???@@
+    case CMD_VARIABLE_FROM_EVENT://???@@
       if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         // Als het vorige event betrekking had op variabele/poort die de gebruiker heeft opgegeven in Par2
-        // dan de waardeuit het vorige event overnemen.
+        // dan de waarde uit het vorige event overnemen.
         if(EventToExecute->Par2==LastReceived.Par1)
           {
           x=EventToExecute->Par1-1;
@@ -128,11 +128,9 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
           switch(LastReceived.Command)
             {
             case CMD_VARIABLE_EVENT:
-            case CMD_VARIABLE_SET:
               UserVar[x]=ul2float(LastReceived.Par2);
               break;
             case CMD_WIRED_ANALOG:
-            case CMD_TIMER_SET:
               UserVar[x]=LastReceived.Par2;
             default:
               UserVar[x]=0;
@@ -218,12 +216,12 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       break;
 
     case CMD_BREAK_ON_TIME_LATER:
-      if((EventToExecute->Par1*60+EventToExecute->Par2)<(Time.Hour*60+Time.Minutes))
+      if(EventToExecute->Par2<(Time.Hour*100+Time.Minutes))
         error=MESSAGE_15;
       break;
 
     case CMD_BREAK_ON_TIME_EARLIER:
-      if((EventToExecute->Par1*60+EventToExecute->Par2)>(Time.Hour*60+Time.Minutes))
+      if(EventToExecute->Par2>(Time.Hour*100+Time.Minutes))
         error=MESSAGE_15;
       break;
 
@@ -273,82 +271,63 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       break;
 
     case CMD_CLOCK_SYNC:
+
       if(bitRead(HW_Config,HW_CLOCK)) // bitRead(HW_Config,HW_CLOCK)=true want dan is er een RTC aanwezig.
         {   
-        // Haal eerst de juiste tijd op van de WebApp
-        if(bitRead(HW_Config,HW_WEBAPP && EventToExecute->Par1==VALUE_SOURCE_HTTP))
+        // haal de tijd op van de Webserver. Dit vind plaats in de funktie: boolean SendHTTPRequest(char* Request)
+        if(bitRead(HW_Config,HW_WEBAPP))
           {
-          SendHTTPEvent(EventToExecute);
+          ClockSyncHTTP=true;
+          EventToExecute->Port=VALUE_SOURCE_HTTP;
+          SendEvent(EventToExecute, false, true, true);
+          ClockSyncHTTP=false;
           }
-        else
+  
+        // Geef de juiste tijd nu door aan alle andere Nodo's
+        for(y=1; y<=UNIT_MAX; y++)
           {
-          // Geef de juiste tijd nu door aan alle andere Nodo's
-          for(y=1; y<=UNIT_MAX; y++)
-            {
-            if(y!=Settings.Unit)
-              {        
-              x=NodoOnline(y,0);
-              if(x)
-                {           
-                ClearEvent(&TempEvent);    
-                TempEvent.Port                  = x;
-                TempEvent.DestinationUnit       = y;    
-                TempEvent.Flags                 = TRANSMISSION_QUEUE | TRANSMISSION_NEXT | TRANSMISSION_LOCK; 
-    
-                TempEvent.Command               = CMD_CLOCK_YEAR;
-                TempEvent.Par1                  = Time.Year/100;
-                TempEvent.Par2                  = Time.Year%100;
-                SendEvent(&TempEvent, false, true, true);
-                
-                TempEvent.Command               = CMD_CLOCK_DATE;
-                TempEvent.Par1                  = Time.Date;
-                TempEvent.Par2                  = Time.Month;
-                SendEvent(&TempEvent, false, true, true);
-                
-                TempEvent.Command               = CMD_CLOCK_TIME;
-                TempEvent.Par1                  = Time.Hour;
-                TempEvent.Par2                  = Time.Minutes;
-                SendEvent(&TempEvent, false, true, true);
-                
-                TempEvent.Flags                 = 0; 
-                TempEvent.Command               = CMD_CLOCK_DOW;
-                TempEvent.Par1                  = Time.Day;
-                TempEvent.Par2                  = 0;
-                SendEvent(&TempEvent, false, true, true);
-                }
+          if(y!=Settings.Unit)
+            {        
+            x=NodoOnline(y,0);
+            if(x || true)
+              {           
+              ClearEvent(&TempEvent);    
+              TempEvent.Port                  = x;
+              TempEvent.DestinationUnit       = y;    
+              TempEvent.Flags                 = TRANSMISSION_QUEUE | TRANSMISSION_NEXT | TRANSMISSION_LOCK; 
+
+              // Verzend datum
+              TempEvent.Command=CMD_CLOCK_DATE;
+              TempEvent.Par2= ((unsigned long)Time.Year  %10)      | ((unsigned long)Time.Year  /10)%10<<4  | ((unsigned long)Time.Year/100)%10<<8 | ((unsigned long)Time.Year/1000)%10<<12 | 
+                              ((unsigned long)Time.Month %10) <<16 | ((unsigned long)Time.Month /10)%10<<20 | 
+                              ((unsigned long)Time.Date  %10) <<24 | ((unsigned long)Time.Date  /10)%10<<28 ;
+              SendEvent(&TempEvent, false, true, true);
+              
+              // Verzend tijd
+              TempEvent.Command=CMD_CLOCK_TIME;
+              TempEvent.Par2=Time.Minutes%10 | Time.Minutes/10<<4 | Time.Hour%10<<8 | Time.Hour/10<<12;
+              SendEvent(&TempEvent, false, true, true);
               }
             }
           }
         }
       break;
     #endif
-      
-    case CMD_CLOCK_YEAR:
-      x=EventToExecute->Par1*100+EventToExecute->Par2;
-      Time.Year=x;
-      ClockSet();
-      ClockRead();
-      break;
-    
+          
     case CMD_CLOCK_TIME:
-      Time.Hour=EventToExecute->Par1;
-      Time.Minutes=EventToExecute->Par2;
+      Time.Hour    =((EventToExecute->Par2>>12)&0xf)*10 + ((EventToExecute->Par2>>8)&0xf);
+      Time.Minutes =((EventToExecute->Par2>>4 )&0xf)*10 + ((EventToExecute->Par2   )&0xf);
       Time.Seconds=0;
       ClockSet();
       break;
 
-    case CMD_CLOCK_DATE: // data1=datum, data2=maand
-      Time.Date  = EventToExecute->Par1;
-      Time.Month = EventToExecute->Par2;
+    case CMD_CLOCK_DATE:
+      Time.Date    =((EventToExecute->Par2>>28 )&0xf)*10   + ((EventToExecute->Par2>>24 )&0xf);
+      Time.Month   =((EventToExecute->Par2>>20 )&0xf)*10   + ((EventToExecute->Par2>>16 )&0xf);
+      Time.Year    =((EventToExecute->Par2>>12 )&0xf)*1000 + ((EventToExecute->Par2>>8 )&0xf)*100 + ((EventToExecute->Par2>>4)&0xf)*10 + ((EventToExecute->Par2)&0xf);
       ClockSet();
-      ClockRead();
       break;
 
-    case CMD_CLOCK_DOW:
-      Time.Day=EventToExecute->Par1;
-      ClockSet();
-      break;
-      
     case CMD_TIMER_SET:
        TimerSet(EventToExecute->Par1,EventToExecute->Par2);
       break;
@@ -547,10 +526,10 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         ClearEvent(&TempEvent);
         TempEvent.Port=VALUE_ALL;
         TempEvent.Command=CMD_RAWSIGNAL;
-        TempEvent.Par2=EventToExecute->Par2;
         TempEvent.Par1=EventToExecute->Par1;
+        TempEvent.Par2=EventToExecute->Par2;
         RawSignal.Repeats=5;
-        //repeats zetten / en de poorten correct/???@1
+        RawSignal.Delay=50;
         SendEvent(&TempEvent, true ,true, false);
         }
       else
@@ -561,10 +540,6 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
     case CMD_LOG: 
       Settings.Log=EventToExecute->Par1;
       break;
-
-//    case CMD_SIMULATE_DAY: // ??? gooien we dit commando weg?
-//      SimulateDay(); 
-//      break;     
       
     case CMD_FILE_EXECUTE:
       strcpy(TempString,cmd2str(CMD_FILE_EXECUTE));

@@ -1,27 +1,10 @@
-//    case CMD_RAWSIGNAL_SEND:
-//      if(EventToExecute->Par1!=0)
-//        {
-//        if(RawSignalGet(EventToExecute->Par1))
-//          {
-//          x=VALUE_ALL;
-//          if(EventToExecute->Par2==VALUE_SOURCE_RF || EventToExecute->Par2==VALUE_SOURCE_IR)
-//            x=EventToExecute->Par2;
-//          SendEvent_OLD(AnalyzeRawSignal(),x);
-//          }
-//        else
-//          error=MESSAGE_03;
-//        }
-//      else
-//        SendEvent_OLD(AnalyzeRawSignal(),VALUE_ALL);
-//      break;        
-//??? 
 
 
 /*
 
 digitalWrite(PIN_WIRED_OUT_1,HIGH);delay(10);digitalWrite(PIN_WIRED_OUT_1,LOW);//??? Debugging: Wired-Out 1
 
-Serial.print(F("*** debug: "));Serial.println(); //??? Debug
+Serial.print(F("*** debug: "));Serial.Println(); //??? Debug
 PrintNodoEvent(Event,"");//???
 
 Nodo adressering en event uitwisseling:
@@ -37,8 +20,7 @@ Nodo adressering en event uitwisseling:
 - Een niet geselecteerde Nodo kan geen gegevens verzenden totdat de selectie is opgeheven of de betreffende Nodo is geselecteerd.
 
 Idee:
-- resultaat van html event naar bodytext plakken.
-- websocket implementeren op arduino?
+- mini webserver implementeren op arduino?
 
 
 
@@ -77,33 +59,34 @@ void PrintNodoEvent(char* str, struct NodoEventStruct *Event)
   Serial.print(F("*** debug: Event->Par2              = "));Serial.print(Event->Par2);Serial.print(", 0x");Serial.println(Event->Par2,HEX); //??? Debug
   }
 
-void RawSignalShow(void)
+void PrintRawSignal(void)
   {    
   int x,y;
-  byte PTMF=RawSignal.Pulses[0];
   
   Serial.println(F("==================================== RawSignal ==================================="));
 
-  Serial.print(F("Resolution="));
-  Serial.println(RawSignal.Pulses[0]);
+  Serial.print(F("Repeats="));
+  Serial.println(RawSignal.Repeats);
 
-  Serial.print(RawSignal.Number/2);
-  Serial.print(F(" bits received. Pulses (uSec): "));
+  Serial.print(F("Delay="));
+  Serial.println(RawSignal.Delay);
+
+  Serial.print(F("Source="));
+  Serial.println(cmd2str(RawSignal.Source));
+
+  Serial.print(F("Multiply="));
+  Serial.println(RawSignal.Multiply);
+
+  Serial.print(F("Number="));
+  Serial.println(RawSignal.Number);
+
+  Serial.print(F("Pulses (uSec): "));
   for(x=1;x<=RawSignal.Number;x++)
     {
-    Serial.print(RawSignal.Pulses[x]*PTMF); 
+    Serial.print(RawSignal.Pulses[x]*RawSignal.Multiply); 
     Serial.write(',');       
     }
-  Serial.println();
-
-  const int dev=250;  
-  for(x=1;x<=RawSignal.Number;x+=2)
-    {
-    for(y=1+(RawSignal.Pulses[x]*PTMF)/dev; y;y--)
-      Serial.write('M');  // Mark  
-    for(y=1+(RawSignal.Pulses[x+1]*PTMF)/dev; y;y--)
-      Serial.write('_');    // Space  
-    }
+    
   Serial.println();
   Serial.println(F("=================================================================================="));
   }
