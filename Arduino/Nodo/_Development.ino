@@ -1,11 +1,7 @@
 /********************* Aanpassingen t.o.v. versie 3.0.1  **********************************\
 Nog te doen:
 
-- CRC een XOR met BUILD???
-- SendTo: Na een retry kans op twee maal uitvoeren commando's aan slave zijde???
-- NewNodo blijft soms nog onterecht worden verzonden?
-- Hoe een variabele van een Nodo oversturen naar een variabele in een andere Nodo?
-- Opnemen en weer verzenden van een rawsignal testen.
+- Testen [VariableEvent]
 *****************************************************************************************
 
 - Reactietijd van HTTP event naar RF output versneld.
@@ -115,14 +111,28 @@ R526
 R527
 - Nieuw commando [VariablePulseCount <variabele>] voor vullen van een variabele met het aantal pulsen. [Status PulseCount] vervallen.
 - Nieuw commando [VariablePulseTime <variabele>] voor vullen van een variabele met tijdsduur laatste puls in mSec. [Status PulseTime] vervallen.
-- Nieuw commando [VariableLastEvent <BestemmingVariabele>, <BronVariable>]. Kan i.c.m. een wildcard worden gebruikt om de waarde van een event op te slaan in een variabele. Kan waarde halen uit [WiredAnalog], [Variable], [VariableSet].
-
-R528
+- Nieuw commando [VariableEvent <BestemmingVariabele>, <BronVariable>]. Kan i.c.m. een wildcard worden gebruikt om de waarde van een event op te slaan in een variabele. Kan waarde halen uit een [WiredAnalog] of [Variable] event.
 - Issue 669: override MAC address
 - PortInput en PortOutput geven incorrecte MMI
 - Nieuw commando [RawsignalReceive <on|off>]. Ontvangst van Rawsignals aan/uitschakelen. Default aan.
 - BodyText naar HTTP-Sessie verloopt niet meer door tussenkomst van file op SDCard. (Verbeteren performance en voorkomen slijtage SDCard bij intensief gebruik).
 - Home adres van de Nodo verwerkt in MAC adres.
 
+R528
+- RawSignal aanpassingen: Ander format op SDCard. Tevens 0x voor hexwaarden bij RawSignalList. Oude files voor RawSignal zijn NIET compatibel!
+- Technisch: Toevoeging elementen Delay en Multiply aan de struct RawSignal
+- Technisch: Workaround voor delayMicroSeconds(0); bug in Arduino compiler 1.0.1 en later.
+- Technisch: Reductie I/O-bewerkingen bij opslaan van files op SDCard ontvangen via HTTP. Verbetering performance.
+- Commando [ClockSimulate] vervallen.
+- Commando [ClockSetDate] nu volgens formaat: DD-MM-YYYY. Commando [ClockSetYear] komen te vervallen.
+- Commando [ClockSetDOW] komen te vervallen. Dag van de week wordt nu automatisch bereken.
+- Commando [ClockSetTime] nu volgens formaat: HH:MM. (Seconden worden op 00 gezet bij instellen van de klok.
+- Commando [ClockSync] zet klokken van alle bekende Nodos gelijk. Eerst wordt tijd opgehaald van de WebApp, daarna slaves gelijk gezet.
+- Issue 704: Defaults
+- Issue 705: Status HomeSet
+- Issue 706: Ontvangen NewKaku display onjuist
+- Toevoeging DEVICE_18: RawSignalAnalyze
+- Toevoeging DEVICE_19: Innovations ID-12 RFID Tag reader
+- Toevoeging DEVICE_21: DFRobot LCD I2C/TWI 1602 Display
 
 \*****************************************************************************************/

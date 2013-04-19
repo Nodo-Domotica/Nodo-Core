@@ -25,9 +25,9 @@
  #define DEVICE_16  // HomeEasySend      : Dit protocol stuurt HomeEasy EU ontvangers aan die werken volgens de automatische codering (Ontvangers met leer-knop)
  #define DEVICE_17  // Reserved!         : Laat continue analoge metingen zien van alle Wired-In poorten. 
  #define DEVICE_18  // RawSignalAnalyze  : Geeft bij een binnenkomend signaal informatie over de pulsen weer.
- #define DEVICE_19  // Reserved!         : Innovations ID-12 RFID Tag reader (SWACDE-19-V10) 
+ #define DEVICE_19  RFID                 : Innovations ID-12 RFID Tag reader (SWACDE-19-V10) 
  #define DEVICE_20  // Reserved!         : BMP085 Barometric pressure sensor (SWACDE-20-V10)
- #define DEVICE_21 
+ #define DEVICE_21  // LCDI2CWrite       : DFRobot LCD I2C/TWI 1602 display
  #define DEVICE_22 
  #define DEVICE_23 
  #define DEVICE_24 
@@ -95,11 +95,10 @@ boolean Device_01(byte function, struct NodoEventStruct *event, char *string)
       
       // conventionele KAKU bestaat altijd uit 12 data bits plus stop. Ongelijk, dan geen KAKU!
       if (RawSignal.Number!=(KAKU_CodeLength*4)+2)return false;
-      RawSignal.Repeats=5;
     
       for (i=0; i<KAKU_CodeLength; i++)
         {
-        j=(KAKU_T*2)/RawSignal.Pulses[0]; // Deelfactor zit is eerste element van de array.   
+        j=(KAKU_T*2)/RawSignal.Multiply; // Deelfactor zit is eerste element van de array.   
         
         if      (RawSignal.Pulses[4*i+1]<j && RawSignal.Pulses[4*i+2]>j && RawSignal.Pulses[4*i+3]<j && RawSignal.Pulses[4*i+4]>j) {bitstream=(bitstream >> 1);} // 0
         else if (RawSignal.Pulses[4*i+1]<j && RawSignal.Pulses[4*i+2]>j && RawSignal.Pulses[4*i+3]>j && RawSignal.Pulses[4*i+4]<j) {bitstream=(bitstream >> 1 | (1 << (KAKU_CodeLength-1))); }// 1
@@ -273,10 +272,9 @@ boolean Device_02(byte function, struct NodoEventStruct *event, char *string)
       if(event->Command==CMD_DEVICE_FIRST+2) // SendKAKU is device 2
         {
         unsigned long Bitstream;
-        byte PTMF=50;
-        
-        RawSignal.Pulses[0]=PTMF;
+        RawSignal.Multiply=50;
         RawSignal.Repeats=7;                   // KAKU heeft minimaal vijf herhalingen nodig om te schakelen.
+        RawSignal.Delay=20;                    // Tussen iedere pulsenreeks enige tijd rust.
         RawSignal.Number=KAKU_CodeLength*4+2;
         event->Port=VALUE_ALL;                 // Signaal mag naar alle door de gebruiker met [Output] ingestelde poorten worden verzonden.
        
@@ -285,30 +283,28 @@ boolean Device_02(byte function, struct NodoEventStruct *event, char *string)
         // loop de 12-bits langs en vertaal naar pulse/space signalen.  
         for (byte i=0; i<KAKU_CodeLength; i++)
           {
-          RawSignal.Pulses[4*i+1]=KAKU_T/PTMF;
-          RawSignal.Pulses[4*i+2]=(KAKU_T*3)/PTMF;
+          RawSignal.Pulses[4*i+1]=KAKU_T/RawSignal.Multiply;
+          RawSignal.Pulses[4*i+2]=(KAKU_T*3)/RawSignal.Multiply;
       
           if (((event->Par1>>1)&1) /* Groep */ && i>=4 && i<8) 
             {
-            RawSignal.Pulses[4*i+3]=KAKU_T/PTMF;
-            RawSignal.Pulses[4*i+4]=KAKU_T/PTMF;
+            RawSignal.Pulses[4*i+3]=KAKU_T/RawSignal.Multiply;
+            RawSignal.Pulses[4*i+4]=KAKU_T/RawSignal.Multiply;
             } // short 0
           else
             {
             if((Bitstream>>i)&1)// 1
               {
-              RawSignal.Pulses[4*i+3]=(KAKU_T*3)/PTMF;
-              RawSignal.Pulses[4*i+4]=KAKU_T/PTMF;
+              RawSignal.Pulses[4*i+3]=(KAKU_T*3)/RawSignal.Multiply;
+              RawSignal.Pulses[4*i+4]=KAKU_T/RawSignal.Multiply;
               }
             else //0
               {
-              RawSignal.Pulses[4*i+3]=KAKU_T/PTMF;
-              RawSignal.Pulses[4*i+4]=(KAKU_T*3)/PTMF;          
+              RawSignal.Pulses[4*i+3]=KAKU_T/RawSignal.Multiply;
+              RawSignal.Pulses[4*i+4]=(KAKU_T*3)/RawSignal.Multiply;          
               }          
             }
           }
-        RawSignal.Pulses[(KAKU_CodeLength*4)+1] = KAKU_T/PTMF;
-        RawSignal.Pulses[(KAKU_CodeLength*4)+2] = (KAKU_T*30)/PTMF;// space van de stopbit nodig voor pauze tussen herhalingen.@@@
         SendEvent(event,true,true,true);
         success=true;
         }
@@ -460,25 +456,23 @@ boolean Device_03(byte function, struct NodoEventStruct *event, char *string)
       unsigned long bitstream=0L;
       boolean Bit;
       int i;
-      int PTMF=RawSignal.Pulses[0]; // in eerste element zit de waarde waarmee vermenigvuldigd moet worden om te komen tot de echte pulstijden in uSec.
-      
       int P0,P1,P2,P3;
       event->Par1=0;
       
       // nieuwe KAKU bestaat altijd uit start bit + 32 bits + evt 4 dim bits. Ongelijk, dan geen NewKAKU
-      if (RawSignal.Number==NewKAKU_RawSignalLength && (RawSignal.Number!=NewKAKUdim_RawSignalLength))
+      if (RawSignal.Number==NewKAKU_RawSignalLength || RawSignal.Number==NewKAKUdim_RawSignalLength)
         {
-        // RawSignal.Number bevat aantal pulsen * 2  => negeren
+        // RawSignal.Number bevat aantal pulsRawSignal.Multiplyen * 2  => negeren
         // RawSignal.Pulses[1] bevat startbit met tijdsduur van 1T => negeren
         // RawSignal.Pulses[2] bevat lange space na startbit met tijdsduur van 8T => negeren
         i=3; // RawSignal.Pulses[3] is de eerste van een T,xT,T,xT combinatie
         
         do 
           {
-          P0=RawSignal.Pulses[i]    * PTMF;
-          P1=RawSignal.Pulses[i+1]  * PTMF;
-          P2=RawSignal.Pulses[i+2]  * PTMF;
-          P3=RawSignal.Pulses[i+3]  * PTMF;
+          P0=RawSignal.Pulses[i]    * RawSignal.Multiply;
+          P1=RawSignal.Pulses[i+1]  * RawSignal.Multiply;
+          P2=RawSignal.Pulses[i+2]  * RawSignal.Multiply;
+          P3=RawSignal.Pulses[i+3]  * RawSignal.Multiply;
           
           if     (P0<NewKAKU_mT && P1<NewKAKU_mT && P2<NewKAKU_mT && P3>NewKAKU_mT)Bit=0; // T,T,T,4T
           else if(P0<NewKAKU_mT && P1>NewKAKU_mT && P2<NewKAKU_mT && P3<NewKAKU_mT)Bit=1; // T,4T,T,T
@@ -519,6 +513,7 @@ boolean Device_03(byte function, struct NodoEventStruct *event, char *string)
         RawSignal.Repeats    = true;                  // het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
         success=true;
         }
+   
       break;
       }
       
@@ -660,10 +655,7 @@ boolean Device_04(byte function, struct NodoEventStruct *event, char *string)
       unsigned long bitstream=0L;
       byte Bit, i=1;
       byte x; /// aantal posities voor pulsen/spaces in RawSignal
-    
-      const byte PTMF=25;
-      RawSignal.Pulses[0]=PTMF;
-    
+        
       // bouw het KAKU adres op. Er zijn twee mogelijkheden: Een adres door de gebruiker opgegeven binnen het bereik van 0..255 of een lange hex-waarde
       if(event->Par2<=255)
         bitstream=1|(event->Par2<<6);  // Door gebruiker gekozen adres uit de Nodo_code toevoegen aan adres deel van de KAKU code. 
@@ -672,7 +664,9 @@ boolean Device_04(byte function, struct NodoEventStruct *event, char *string)
     
       event->Port=VALUE_ALL; // Signaal mag naar alle door de gebruiker met [Output] ingestelde poorten worden verzonden.
       RawSignal.Repeats=7;   // Aantal herhalingen van het signaal.
-    
+      RawSignal.Delay=20; // Tussen iedere pulsenreeks enige tijd rust.
+      RawSignal.Multiply=25;
+
       if(event->Par1==VALUE_ON || event->Par1==VALUE_OFF)
         {
         bitstream|=(event->Par1==VALUE_ON)<<4; // bit-5 is het on/off commando in KAKU signaal
@@ -683,24 +677,24 @@ boolean Device_04(byte function, struct NodoEventStruct *event, char *string)
      
       // bitstream bevat nu de KAKU-bits die verzonden moeten worden.
     
-      for(i=3;i<=x;i++)RawSignal.Pulses[i]=NewKAKU_1T/PTMF;  // De meeste tijden in signaal zijn T. Vul alle pulstijden met deze waarde. Later worden de 4T waarden op hun plek gezet
+      for(i=3;i<=x;i++)RawSignal.Pulses[i]=NewKAKU_1T/RawSignal.Multiply;  // De meeste tijden in signaal zijn T. Vul alle pulstijden met deze waarde. Later worden de 4T waarden op hun plek gezet
       
       i=1;
-      RawSignal.Pulses[i++]=NewKAKU_1T/PTMF; //pulse van de startbit
-      RawSignal.Pulses[i++]=NewKAKU_8T/PTMF; //space na de startbit
+      RawSignal.Pulses[i++]=NewKAKU_1T/RawSignal.Multiply; //pulse van de startbit
+      RawSignal.Pulses[i++]=NewKAKU_8T/RawSignal.Multiply; //space na de startbit
       
       byte y=31; // bit uit de bitstream
       while(i<x)
         {
         if((bitstream>>(y--))&1)
-          RawSignal.Pulses[i+1]=NewKAKU_4T/PTMF;     // Bit=1; // T,4T,T,T
+          RawSignal.Pulses[i+1]=NewKAKU_4T/RawSignal.Multiply;     // Bit=1; // T,4T,T,T
         else
-          RawSignal.Pulses[i+3]=NewKAKU_4T/PTMF;     // Bit=0; // T,T,T,4T
+          RawSignal.Pulses[i+3]=NewKAKU_4T/RawSignal.Multiply;     // Bit=0; // T,T,T,4T
     
         if(x==146)  // als het een dim opdracht betreft
           {
           if(i==111) // Plaats van de Commando-bit uit KAKU 
-            RawSignal.Pulses[i+3]=NewKAKU_1T/PTMF;  // moet een T,T,T,T zijn bij een dim commando.
+            RawSignal.Pulses[i+3]=NewKAKU_1T/RawSignal.Multiply;  // moet een T,T,T,T zijn bij een dim commando.
           if(i==127)  // als alle pulsen van de 32-bits weggeschreven zijn
             {
             bitstream=(unsigned long)event->Par1-1; //  nog vier extra dim-bits om te verzenden. -1 omdat dim niveau voor gebruiker begint bij 1
@@ -709,8 +703,8 @@ boolean Device_04(byte function, struct NodoEventStruct *event, char *string)
           }
         i+=4;
         }
-      RawSignal.Pulses[i++]=NewKAKU_1T/PTMF; //pulse van de stopbit
-      RawSignal.Pulses[i]=255; //space van de stopbit tevens pause tussen signalen. 6.5 msec.
+      RawSignal.Pulses[i++]=NewKAKU_1T/RawSignal.Multiply; //pulse van de stopbit
+      RawSignal.Pulses[i]=0; //space van de stopbit
       RawSignal.Number=i; // aantal bits*2 die zich in het opgebouwde RawSignal bevinden
       SendEvent(event,true,true,true);
       success=true;
@@ -1204,7 +1198,7 @@ byte ProtocolAlectoCheckID(byte checkID)
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  * Support            : www.nodo-domotica.nl
  * Datum              : Mrt.2013
- * Versie             : 1.1
+ * Versie             : 1.0
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
  * Compatibiliteit    : Vanaf Nodo build nummer 508
  * Syntax             : "AlectoV1 <Par1:Sensor ID>, <Par2:Basis Variabele>"
@@ -1452,7 +1446,7 @@ boolean Device_08(byte function, struct NodoEventStruct *event, char *string)
  *                      Support ACH2010 en code optimalisatie door forumlid: Arendst
  * Support            : www.nodo-domotica.nl
  * Datum              : Mrt.2013
- * Versie             : 1.1
+ * Versie             : 1.0
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
  * Compatibiliteit    : Vanaf Nodo build nummer 508
  * Syntax             : "AlectoV2 <Par1:Sensor ID>, <Par2:Basis Variabele>"
@@ -1690,7 +1684,7 @@ boolean Device_10(byte function, struct NodoEventStruct *event, char *string)
     {
       if ((RawSignal.Number != WS1100_PULSECOUNT) && (RawSignal.Number != WS1200_PULSECOUNT)) return false;
 
-      const byte PTMF=50;
+      RawSignal.Multiply=50;
       unsigned long bitstream1=0;
       unsigned long bitstream2=0;
       byte rc=0;
@@ -1703,10 +1697,10 @@ boolean Device_10(byte function, struct NodoEventStruct *event, char *string)
       byte data[6];
 
       // get first 32 relevant bits
-      for(byte x=15; x<=77; x=x+2) if(RawSignal.Pulses[x]*PTMF < 0x300) bitstream1 = (bitstream1 << 1) | 0x1; 
+      for(byte x=15; x<=77; x=x+2) if(RawSignal.Pulses[x]*RawSignal.Multiply < 0x300) bitstream1 = (bitstream1 << 1) | 0x1; 
       else bitstream1 = (bitstream1 << 1);
       // get second 32 relevant bits
-      for(byte x=79; x<=141; x=x+2) if(RawSignal.Pulses[x]*PTMF < 0x300) bitstream2 = (bitstream2 << 1) | 0x1; 
+      for(byte x=79; x<=141; x=x+2) if(RawSignal.Pulses[x]*RawSignal.Multiply < 0x300) bitstream2 = (bitstream2 << 1) | 0x1; 
       else bitstream2 = (bitstream2 << 1);
 
       data[0] = (bitstream1 >> 24) & 0xff;
@@ -1879,7 +1873,7 @@ boolean Device_12(byte function, struct NodoEventStruct *event, char *string)
 #ifdef DEVICE_CORE_12
   case DEVICE_RAWSIGNAL_IN:
     {
-      const byte PTMF=50;
+      RawSignal.Multiply=50;
       byte nibble[17]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
       byte y = 1;
       byte c = 1;
@@ -1895,9 +1889,9 @@ boolean Device_12(byte function, struct NodoEventStruct *event, char *string)
 
       for(byte x=1;x<=RawSignal.Number;x++)
       {
-        if(RawSignal.Pulses[x]*PTMF < 600)
+        if(RawSignal.Pulses[x]*RawSignal.Multiply < 600)
         {
-          rfbit = (RawSignal.Pulses[x]*PTMF < RawSignal.Pulses[x+1]*PTMF);
+          rfbit = (RawSignal.Pulses[x]*RawSignal.Multiply < RawSignal.Pulses[x+1]*RawSignal.Multiply);
           x++;
           y = 2;
         }
@@ -2070,13 +2064,13 @@ boolean Device_13(byte function, struct NodoEventStruct *event, char *string)
 #ifdef DEVICE_CORE_13
   case DEVICE_RAWSIGNAL_IN:
     {
-      byte PTMF=50;
+      RawSignal.Multiply=50;
       if (RawSignal.Number != 52) return false;
 
       unsigned long bitstream=0L;
       for(byte x=4;x<=50;x=x+2)
       {
-        if (RawSignal.Pulses[x]*PTMF > 1800) bitstream = (bitstream << 1) | 0x1; 
+        if (RawSignal.Pulses[x]*RawSignal.Multiply > 1800) bitstream = (bitstream << 1) | 0x1; 
         else bitstream = bitstream << 1;
       }
 
@@ -2164,22 +2158,21 @@ boolean Device_14(byte function, struct NodoEventStruct *event, char *string)
   case DEVICE_COMMAND:
     {
       unsigned long bitstream=event->Par2;
-      byte PTMF=50;
-      RawSignal.Pulses[0]=PTMF;
-
+      RawSignal.Multiply=50;
       RawSignal.Repeats=1;
-      RawSignal.Pulses[1]=FA20RFSTART/PTMF;
-      RawSignal.Pulses[2]=FA20RFSPACE/PTMF;
-      RawSignal.Pulses[3]=FA20RFSPACE/PTMF;
+      RawSignal.Delay=0;
+      RawSignal.Pulses[1]=FA20RFSTART/RawSignal.Multiply;
+      RawSignal.Pulses[2]=FA20RFSPACE/RawSignal.Multiply;
+      RawSignal.Pulses[3]=FA20RFSPACE/RawSignal.Multiply;
       for(byte x=49;x>=3;x=x-2)
       {
-        RawSignal.Pulses[x]=FA20RFSPACE/PTMF;
-        if ((bitstream & 1) == 1) RawSignal.Pulses[x+1] = FA20RFHIGH/PTMF; 
-        else RawSignal.Pulses[x+1] = FA20RFLOW/PTMF;
+        RawSignal.Pulses[x]=FA20RFSPACE/RawSignal.Multiply;
+        if ((bitstream & 1) == 1) RawSignal.Pulses[x+1] = FA20RFHIGH/RawSignal.Multiply; 
+        else RawSignal.Pulses[x+1] = FA20RFLOW/RawSignal.Multiply;
         bitstream = bitstream >> 1;
       }
 
-      RawSignal.Pulses[51]=FA20RFSPACE/PTMF;
+      RawSignal.Pulses[51]=FA20RFSPACE/RawSignal.Multiply;
       RawSignal.Pulses[52]=0;
       RawSignal.Number=52;
 
@@ -2270,20 +2263,20 @@ boolean Device_15(byte function, struct NodoEventStruct *event, char *string)
 #ifdef DEVICE_CORE_15
   case DEVICE_RAWSIGNAL_IN:
     {
-      byte PTMF=50;
       unsigned long address = 0;
       unsigned long bitstream = 0;
       int counter = 0;
       byte rfbit =0;
       byte state = 0;
       unsigned long channel = 0;
+      RawSignal.Multiply=50;
 
       // valid messages are 116 pulses          
       if (RawSignal.Number != 116) return false;
 
       for(byte x=1;x<=RawSignal.Number;x=x+2)
       {
-        if ((RawSignal.Pulses[x]*PTMF < 500) & (RawSignal.Pulses[x+1]*PTMF > 500)) 
+        if ((RawSignal.Pulses[x]*RawSignal.Multiply < 500) & (RawSignal.Pulses[x+1]*RawSignal.Multiply > 500)) 
           rfbit = 1;
         else
           rfbit = 0;
@@ -2414,7 +2407,6 @@ boolean Device_16(byte function, struct NodoEventStruct *event, char *string)
 
   case DEVICE_COMMAND:
     {
-      const byte PTMF=50;
       unsigned long bitstream=0L;
       byte address = 0;
       byte channel = 0;
@@ -2422,6 +2414,8 @@ boolean Device_16(byte function, struct NodoEventStruct *event, char *string)
       byte command = 0;
       byte i=1; // bitcounter in stream
       byte y; // size of partial bitstreams
+
+      RawSignal.Multiply=50;
 
       address = (event->Par2 >> 4) & 0x7;   // 3 bits address (higher bits from HomeEasy address, bit 7 not used
       channel = event->Par2 & 0xF;    // 4 bits channel (lower bits from HomeEasy address
@@ -2448,11 +2442,11 @@ boolean Device_16(byte function, struct NodoEventStruct *event, char *string)
       bitstream = 0x63C;
       for (i=1;i<=22;i=i+2)
       {
-        RawSignal.Pulses[i] = HomeEasy_ShortHigh/PTMF;
+        RawSignal.Pulses[i] = HomeEasy_ShortHigh/RawSignal.Multiply;
         if((bitstream>>(y-1))&1)          // bit 1
-            RawSignal.Pulses[i+1] = HomeEasy_LongLow/PTMF;
+            RawSignal.Pulses[i+1] = HomeEasy_LongLow/RawSignal.Multiply;
         else                              // bit 0
-        RawSignal.Pulses[i+1] = HomeEasy_ShortLow/PTMF;
+        RawSignal.Pulses[i+1] = HomeEasy_ShortLow/RawSignal.Multiply;
         y--;
       }
 
@@ -2461,11 +2455,11 @@ boolean Device_16(byte function, struct NodoEventStruct *event, char *string)
 
       for (i=23;i<=86;i=i+2)
       {
-        RawSignal.Pulses[i] = HomeEasy_ShortHigh/PTMF;
+        RawSignal.Pulses[i] = HomeEasy_ShortHigh/RawSignal.Multiply;
         if((bitstream>>(y-1))&1)          // bit 1
-            RawSignal.Pulses[i+1] = HomeEasy_LongLow/PTMF;
+            RawSignal.Pulses[i+1] = HomeEasy_LongLow/RawSignal.Multiply;
         else                              // bit 0
-        RawSignal.Pulses[i+1] = HomeEasy_ShortLow/PTMF;
+        RawSignal.Pulses[i+1] = HomeEasy_ShortLow/RawSignal.Multiply;
         y--;
       }
 
@@ -2478,11 +2472,11 @@ boolean Device_16(byte function, struct NodoEventStruct *event, char *string)
 
       for (i=87;i<=116;i=i+2)
       {
-        RawSignal.Pulses[i] = HomeEasy_ShortHigh/PTMF;
+        RawSignal.Pulses[i] = HomeEasy_ShortHigh/RawSignal.Multiply;
         if((bitstream>>(y-1))&1)          // bit 1
-            RawSignal.Pulses[i+1] = HomeEasy_LongLow/PTMF;
+            RawSignal.Pulses[i+1] = HomeEasy_LongLow/RawSignal.Multiply;
         else                              // bit 0
-        RawSignal.Pulses[i+1] = HomeEasy_ShortLow/PTMF;
+        RawSignal.Pulses[i+1] = HomeEasy_ShortLow/RawSignal.Multiply;
         y--;
       }
 
@@ -2490,6 +2484,7 @@ boolean Device_16(byte function, struct NodoEventStruct *event, char *string)
       RawSignal.Number=116; // aantal bits*2 die zich in het opgebouwde RawSignal bevinden  unsigned long bitstream=0L;
       event->Port=VALUE_ALL; // Signaal mag naar alle door de gebruiker met [Output] ingestelde poorten worden verzonden.
       RawSignal.Repeats=5;   // vijf herhalingen.
+      RawSignal.Delay=20; // Tussen iedere pulsenreeks enige tijd rust.
       SendEvent(event,true,true,true);
       success=true;
       break;
@@ -2609,14 +2604,13 @@ boolean Device_18(byte function, struct NodoEventStruct *event, char *string)
       
       int x;
       unsigned int y,z;
-      byte PTMF=RawSignal.Pulses[0];
     
       // zoek naar de langste kortst puls en de kortste lange puls
       unsigned int MarkShort=50000;
       unsigned int MarkLong=0;
       for(x=5;x<RawSignal.Number;x+=2)
         {
-        y=RawSignal.Pulses[x]*PTMF;
+        y=RawSignal.Pulses[x]*RawSignal.Multiply;
         if(y<MarkShort)
           MarkShort=y;
         if(y>MarkLong)
@@ -2628,7 +2622,7 @@ boolean Device_18(byte function, struct NodoEventStruct *event, char *string)
         z=false;
         for(x=5;x<RawSignal.Number;x+=2)
           {
-          y=RawSignal.Pulses[x]*PTMF;
+          y=RawSignal.Pulses[x]*RawSignal.Multiply;
           if(y>MarkShort && y<(MarkShort+MarkShort/2))
             {
             MarkShort=y;
@@ -2648,7 +2642,7 @@ boolean Device_18(byte function, struct NodoEventStruct *event, char *string)
       unsigned int SpaceLong=0;
       for(x=4;x<RawSignal.Number;x+=2)
         {
-        y=RawSignal.Pulses[x]*PTMF;
+        y=RawSignal.Pulses[x]*RawSignal.Multiply;
         if(y<SpaceShort)
           SpaceShort=y;
         if(y>SpaceLong)
@@ -2660,7 +2654,7 @@ boolean Device_18(byte function, struct NodoEventStruct *event, char *string)
         z=false;
         for(x=4;x<RawSignal.Number;x+=2)
           {
-          y=RawSignal.Pulses[x]*PTMF;
+          y=RawSignal.Pulses[x]*RawSignal.Multiply;
           if(y>SpaceShort && y<(SpaceShort+SpaceShort/2))
             {
             SpaceShort=y;
@@ -2687,7 +2681,7 @@ boolean Device_18(byte function, struct NodoEventStruct *event, char *string)
         {
         for(x=1;x<RawSignal.Number;x+=2)
           {
-          y=RawSignal.Pulses[x]*PTMF;
+          y=RawSignal.Pulses[x]*RawSignal.Multiply;
           if(y>MarkMid)
             Serial.write('1');
           else
@@ -2699,7 +2693,7 @@ boolean Device_18(byte function, struct NodoEventStruct *event, char *string)
         {
         for(x=2;x<RawSignal.Number;x+=2)
           {
-          y=RawSignal.Pulses[x]*PTMF;
+          y=RawSignal.Pulses[x]*RawSignal.Multiply;
           if(y>SpaceMid)
             Serial.write('1');
           else
@@ -2711,13 +2705,13 @@ boolean Device_18(byte function, struct NodoEventStruct *event, char *string)
         {
         for(x=1;x<RawSignal.Number;x+=2)
           {
-          y=RawSignal.Pulses[x]*PTMF;
+          y=RawSignal.Pulses[x]*RawSignal.Multiply;
           if(y>MarkMid)
             Serial.write('1');
           else
             Serial.write('0');
           
-          y=RawSignal.Pulses[x+1]*PTMF;
+          y=RawSignal.Pulses[x+1]*RawSignal.Multiply;
           if(y>SpaceMid)
             Serial.write('1');
           else
@@ -2732,7 +2726,7 @@ boolean Device_18(byte function, struct NodoEventStruct *event, char *string)
       Serial.print(F(", Pulses(uSec)="));      
       for(x=1;x<RawSignal.Number;x++)
         {
-        Serial.print(RawSignal.Pulses[x]*PTMF); 
+        Serial.print(RawSignal.Pulses[x]*RawSignal.Multiply); 
         Serial.write(',');       
         }
       Serial.println();
@@ -2740,9 +2734,9 @@ boolean Device_18(byte function, struct NodoEventStruct *event, char *string)
 //      int dev=250;  
 //      for(x=1;x<=RawSignal.Number;x+=2)
 //        {
-//        for(y=1+int(RawSignal.Pulses[x])*PTMF/dev; y;y--)
+//        for(y=1+int(RawSignal.Pulses[x])*RawSignal.Multiply/dev; y;y--)
 //          Serial.write('M');  // Mark  
-//        for(y=1+int(RawSignal.Pulses[x+1])*PTMF/dev; y;y--)
+//        for(y=1+int(RawSignal.Pulses[x+1])*RawSignal.Multiply/dev; y;y--)
 //          Serial.write('_');  // Space  
 //        }    
 //      Serial.println();
@@ -2784,6 +2778,882 @@ boolean Device_18(byte function, struct NodoEventStruct *event, char *string)
   }
 #endif //DEVICE_18
 
+//#######################################################################################################
+//#################################### Device-19: ID-12 RFID Tag Reader #################################
+//#######################################################################################################
+
+/*********************************************************************************************\
+ * Dit protocol zorgt voor verwerking van ID-12 RFID Tag Readers
+ * 
+ * Auteur             : Martinus van den Broek
+ * Support            : www.nodo-domotica.nl
+ * Datum              : Mrt.2013
+ * Versie             : 1.0
+ * Nodo productnummer : 
+ * Compatibiliteit    : Vanaf Nodo build nummer 508
+ * Syntax             : "RFID <customer ID>,<tag ID>
+ ***********************************************************************************************
+ * Technische beschrijving:
+ *
+ * De ID-12 Tag Reader is een device die 125KHz EM4001 compatible tags kan uitlezen. De data wordt serieel aangeboden
+ * baudrate is 9600 BAUD
+ * We maken gebruik van een analoge input die we als digitale input gebruiken
+ * Op de ATMEGA328P platformen gebruiken we poort A3
+ * Op de ATMEGA2560 platformen gebruiken we poort A15
+ * Elke EM4001 tag levert een unieke code, bestaande uit een 8 bits customer of version ID en een 32 bits serienummer
+ * Par1 bevat het customer ID
+ * Par2 bevat het 32 bits serienummer
+ * Dit device genereert een event, zodat actie kan worden ondernomen via de Nodo eventlist indien een bekende tag wordt gebruikt
+ \*********************************************************************************************/
+#ifdef DEVICE_19
+#define DEVICE_ID       19
+#define DEVICE_NAME "RFID"
+
+#ifdef NODO_MEGA
+  #define RFID_PIN         A15 // A0-A7 are not PCINT capable on a ATMega2560!
+#else
+  #define RFID_PIN         A3
+#endif
+
+#include <avr/interrupt.h>
+#define _SS_MAX_RX_BUFF       16 // RX buffer size
+#define RX_DELAY_CENTERING   114
+#define RX_DELAY_INTRABIT    236
+#define RX_DELAY_STOPBIT     236
+
+#ifdef DEVICE_CORE_19
+uint16_t _buffer_overflow;
+uint8_t _receivePin=RFID_PIN;
+uint8_t _receiveBitMask;
+volatile uint8_t *_receivePortRegister;
+char _receive_buffer[_SS_MAX_RX_BUFF]; 
+volatile uint8_t _receive_buffer_tail = 0;
+volatile uint8_t _receive_buffer_head = 0;
+#endif
+
+boolean Device_19(byte function, struct NodoEventStruct *event, char *string)
+{
+  boolean success=false;
+
+  switch(function)
+  {
+#ifdef DEVICE_CORE_19
+  case DEVICE_INIT:
+    {
+      // Init IO pin
+      pinMode(_receivePin, INPUT);
+      digitalWrite(_receivePin, HIGH);
+      _receivePin = _receivePin;
+      _receiveBitMask = digitalPinToBitMask(_receivePin);
+      uint8_t port = digitalPinToPort(_receivePin);
+      _receivePortRegister = portInputRegister(port);
+  
+      if (digitalPinToPCICR(_receivePin))
+        {
+          *digitalPinToPCICR(_receivePin) |= _BV(digitalPinToPCICRbit(_receivePin));
+          *digitalPinToPCMSK(_receivePin) |= _BV(digitalPinToPCMSKbit(_receivePin));
+        }
+      break;
+    }
+
+  case DEVICE_ONCE_A_SECOND:
+    {
+      if(rfid_available() > 0)
+        {
+          byte val = 0;
+          byte code[6];
+          byte checksum = 0;
+          byte bytesread = 0;
+          byte tempbyte = 0;
+
+          if((val = rfid_read()) == 2)
+            {                  // check for header 
+              bytesread = 0; 
+              while (bytesread < 12) {                        // read 10 digit code + 2 digit checksum
+              if( rfid_available() > 0) { 
+                val = rfid_read();
+                if((val == 0x0D)||(val == 0x0A)||(val == 0x03)||(val == 0x02)) {
+                  // if header or stop bytes before the 10 digit reading 
+                  break;
+                 }
+
+               // Do Ascii/Hex conversion:
+              if ((val >= '0') && (val <= '9')) {
+                val = val - '0';
+              } 
+              else if ((val >= 'A') && (val <= 'F')) {
+                val = 10 + val - 'A';
+              }
+
+              // Every two hex-digits, add byte to code:
+              if (bytesread & 1 == 1) {
+                // make some space for this hex-digit by
+                // shifting the previous hex-digit with 4 bits to the left:
+                code[bytesread >> 1] = (val | (tempbyte << 4));
+
+                if (bytesread >> 1 != 5) {                // If we're at the checksum byte,
+                  checksum ^= code[bytesread >> 1];       // Calculate the checksum... (XOR)
+                  };
+                } 
+                else {
+                  tempbyte = val;                           // Store the first hex digit first...
+                };
+              bytesread++;                                // ready to read next digit
+          } 
+        }
+      }
+
+      // Output to Serial:
+      if (bytesread == 12)
+        {
+          if (code[5]==checksum)
+            {
+              struct NodoEventStruct TempEvent;
+              ClearEvent(&TempEvent);
+              TempEvent.SourceUnit = 0;
+              TempEvent.Direction  = VALUE_DIRECTION_OUTPUT;
+              TempEvent.Command    = CMD_DEVICE_FIRST+DEVICE_ID;
+              TempEvent.Port       = VALUE_ALL;
+              TempEvent.Par1       = code[0];
+              TempEvent.Par2       = 0;
+              for (byte i=1; i<5; i++) TempEvent.Par2 = TempEvent.Par2 | (((unsigned long) code[i] << ((4-i)*8)));
+              ProcessEvent2(&TempEvent);
+            }
+        }
+
+      } // available 
+      break;
+    }
+    
+  case DEVICE_RAWSIGNAL_IN:
+    {
+      break;
+    }
+
+  case DEVICE_COMMAND:
+    {
+      break;
+    }
+#endif // DEVICE_CORE_19
+
+#ifdef NODO_MEGA
+  case DEVICE_MMI_IN:
+    {
+      char* str=(char*)malloc(40);
+      string[25]=0; // kap voor de zekerheid de string af.
+    
+      if(GetArgv(string,str,1))
+        {
+        if(strcasecmp(str,DEVICE_NAME)==0)
+          {
+          // Hier wordt de tekst van de protocolnaam gekoppeld aan het device ID.
+          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
+          if(GetArgv(string,str,2))
+            {
+            event->Par1=str2int(str);    
+            if(GetArgv(string,str,3))
+              {
+                event->Par2=str2int(str);    
+                success=true;
+              }
+            }
+          }
+        }
+      free(str);
+      break;
+      }
+
+  case DEVICE_MMI_OUT:
+    {
+      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
+      {
+        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+        strcat(string," ");
+        strcat(string,int2str(event->Par1)); 
+        strcat(string,",");
+        strcat(string,int2strhex(event->Par2));
+        success=true;
+      }
+      break;
+    }
+#endif //NODO_MEGA
+  }      
+  return success;
+}
+#ifdef DEVICE_CORE_19
+/*********************************************************************/
+inline void rfidDelay(uint16_t delay) { 
+/*********************************************************************/
+  uint8_t tmp=0;
+
+  asm volatile("sbiw    %0, 0x01 \n\t"
+    "ldi %1, 0xFF \n\t"
+    "cpi %A0, 0xFF \n\t"
+    "cpc %B0, %1 \n\t"
+    "brne .-10 \n\t"
+    : "+r" (delay), "+a" (tmp)
+    : "0" (delay)
+    );
+}
+
+/*********************************************************************/
+void rfid_recv()
+/*********************************************************************/
+{
+  uint8_t d = 0;
+
+  // If RX line is high, then we don't see any start bit, so interrupt is probably not for us
+  if (!rfid_rx_pin_read())
+  {
+    // Wait approximately 1/2 of a bit width to "center" the sample
+    rfidDelay(RX_DELAY_CENTERING);
+
+    // Read each of the 8 bits
+    for (uint8_t i=0x1; i; i <<= 1)
+    {
+      rfidDelay(RX_DELAY_INTRABIT);
+      uint8_t noti = ~i;
+      if (rfid_rx_pin_read())
+        d |= i;
+      else // else clause added to ensure function timing is ~balanced
+        d &= noti;
+    }
+
+    // skip the stop bit
+    rfidDelay(RX_DELAY_STOPBIT);
+
+    // if buffer full, set the overflow flag and return
+    if ((_receive_buffer_tail + 1) % _SS_MAX_RX_BUFF != _receive_buffer_head) 
+    {
+      // save new data in buffer: tail points to where byte goes
+      _receive_buffer[_receive_buffer_tail] = d; // save new byte
+      _receive_buffer_tail = (_receive_buffer_tail + 1) % _SS_MAX_RX_BUFF;
+    } 
+    else 
+    {
+      _buffer_overflow = true;
+    }
+  }
+}
+
+/*********************************************************************/
+uint8_t rfid_rx_pin_read()
+/*********************************************************************/
+{
+  return *_receivePortRegister & _receiveBitMask;
+}
+
+/*********************************************************************/
+int rfid_read()
+/*********************************************************************/
+{
+  // Empty buffer?
+  if (_receive_buffer_head == _receive_buffer_tail)
+    return -1;
+
+  // Read from "head"
+  uint8_t d = _receive_buffer[_receive_buffer_head]; // grab next byte
+  _receive_buffer_head = (_receive_buffer_head + 1) % _SS_MAX_RX_BUFF;
+  return d;
+}
+
+/*********************************************************************/
+int rfid_available()
+/*********************************************************************/
+{
+  return (_receive_buffer_tail + _SS_MAX_RX_BUFF - _receive_buffer_head) % _SS_MAX_RX_BUFF;
+}
+
+/*********************************************************************/
+inline void rfid_handle_interrupt()
+/*********************************************************************/
+{
+  rfid_recv();
+}
+
+#if defined(PCINT0_vect)
+ISR(PCINT0_vect) { rfid_handle_interrupt(); }
+#endif
+
+#if defined(PCINT1_vect)
+ISR(PCINT1_vect) { rfid_handle_interrupt(); }
+#endif
+
+#if defined(PCINT2_vect)
+ISR(PCINT2_vect) { rfid_handle_interrupt(); }
+#endif
+
+#if defined(PCINT3_vect)
+ISR(PCINT3_vect) { rfid_handle_interrupt(); }
+#endif
+
+#endif //DEVICE_CORE_19
+#endif //DEVICE_19
+
+
+//#######################################################################################################
+//######################## DEVICE-20 BMP0685 I2C Barometric Pressure Sensor  ############################
+//#######################################################################################################
+
+/*********************************************************************************************\
+ * Deze funktie leest een BMP085 Luchtdruk sensor uit.
+ * Deze funktie moet worden gebruikt via de I2C bus van de Nodo.
+ * De uitgelezen temperatuur waarde wordt in de opgegeven variabele opgeslagen.
+ * De uitgelezen luchtvochtigheidsgraad wordt in de opgegeven variabele +1 opgeslagen.
+ * 
+ * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
+ * Support            : www.nodo-domotica.nl
+ * Datum              : Mrt.2013
+ * Compatibiliteit    : Vanaf Nodo build nummer 508
+ * Syntax             : "BMP085Read <Par2:Basis Variabele>"
+ *********************************************************************************************
+ * Technische informatie:
+ * De BMP085 is een sensor die via I2C moet worden aangesloten
+ * Dit protocol gebruikt twee variabelen, 1 voor temperatuur en 1 voor luchtdruk
+ \*********************************************************************************************/
+
+#ifdef DEVICE_20
+#define DEVICE_ID 20
+#define DEVICE_NAME "BMP085Read"
+
+#define BMP085_I2CADDR           0x77
+#define BMP085_ULTRAHIGHRES         3
+#define BMP085_CAL_AC1           0xAA  // R   Calibration data (16 bits)
+#define BMP085_CAL_AC2           0xAC  // R   Calibration data (16 bits)
+#define BMP085_CAL_AC3           0xAE  // R   Calibration data (16 bits)    
+#define BMP085_CAL_AC4           0xB0  // R   Calibration data (16 bits)
+#define BMP085_CAL_AC5           0xB2  // R   Calibration data (16 bits)
+#define BMP085_CAL_AC6           0xB4  // R   Calibration data (16 bits)
+#define BMP085_CAL_B1            0xB6  // R   Calibration data (16 bits)
+#define BMP085_CAL_B2            0xB8  // R   Calibration data (16 bits)
+#define BMP085_CAL_MB            0xBA  // R   Calibration data (16 bits)
+#define BMP085_CAL_MC            0xBC  // R   Calibration data (16 bits)
+#define BMP085_CAL_MD            0xBE  // R   Calibration data (16 bits)
+#define BMP085_CONTROL           0xF4 
+#define BMP085_TEMPDATA          0xF6
+#define BMP085_PRESSUREDATA      0xF6
+#define BMP085_READTEMPCMD       0x2E
+#define BMP085_READPRESSURECMD   0x34
+
+uint8_t oversampling = BMP085_ULTRAHIGHRES;
+int16_t ac1, ac2, ac3, b1, b2, mb, mc, md;
+uint16_t ac4, ac5, ac6;
+
+boolean Device_20(byte function, struct NodoEventStruct *event, char *string)
+{
+
+  boolean success=false;
+
+  switch(function)
+  {
+#ifdef DEVICE_CORE_20
+
+  case DEVICE_INIT:
+    {
+      bmp085_begin();
+      break;
+    }
+
+  case DEVICE_RAWSIGNAL_IN:
+    break;
+
+  case DEVICE_COMMAND:
+    {
+      byte VarNr = event->Par2; // De originele Par1 tijdelijk opslaan want hier zit de variabelenummer in waar de gebruiker de uitgelezen waarde in wil hebben
+        ClearEvent(event);                                    // Ga uit van een default schone event. Oude eventgegevens wissen.
+      event->Command      = CMD_VARIABLE_SET;                 // Commando "VariableSet"
+      event->Par1         = VarNr;                            // Par1 is de variabele die we willen vullen.
+      event->Par2         = float2ul(float(bmp085_readTemperature()));
+      QueueAdd(event);                                        // Event opslaan in de event queue, hierna komt de volgende meetwaarde
+      event->Par1         = VarNr+1;                          // Par1+1 is de variabele die we willen vullen voor luchtvochtigheid
+      event->Par2         = float2ul(float(bmp085_readPressure()-100000));
+      QueueAdd(event);
+      success=true;
+    }
+#endif // DEVICE_CORE_20
+
+#ifdef NODO_MEGA
+  case DEVICE_MMI_IN:
+    {
+      char *TempStr=(char*)malloc(26);
+      string[25]=0;
+
+      if(GetArgv(string,TempStr,1))
+      {
+        if(strcasecmp(TempStr,DEVICE_NAME)==0)
+        {
+          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
+          if(event->Par1 >0 && event->Par1<=USER_VARIABLES_MAX-1)
+            success=true;
+        }
+      }
+      free(TempStr);
+      break;
+    }
+
+  case DEVICE_MMI_OUT:
+    {
+      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
+      {
+        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+        strcat(string," ");
+        strcat(string,int2str(event->Par1));
+      }
+      break;
+    }
+#endif //NODO_MEGA
+  }      
+  return success;
+}
+
+#ifdef DEVICE_CORE_20
+/*********************************************************************/
+boolean bmp085_begin()
+/*********************************************************************/
+{
+  if (bmp085_read8(0xD0) != 0x55) return false;
+
+  /* read calibration data */
+  ac1 = bmp085_read16(BMP085_CAL_AC1);
+  ac2 = bmp085_read16(BMP085_CAL_AC2);
+  ac3 = bmp085_read16(BMP085_CAL_AC3);
+  ac4 = bmp085_read16(BMP085_CAL_AC4);
+  ac5 = bmp085_read16(BMP085_CAL_AC5);
+  ac6 = bmp085_read16(BMP085_CAL_AC6);
+
+  b1 = bmp085_read16(BMP085_CAL_B1);
+  b2 = bmp085_read16(BMP085_CAL_B2);
+
+  mb = bmp085_read16(BMP085_CAL_MB);
+  mc = bmp085_read16(BMP085_CAL_MC);
+  md = bmp085_read16(BMP085_CAL_MD);
+}
+
+/*********************************************************************/
+uint16_t bmp085_readRawTemperature(void)
+/*********************************************************************/
+{
+  bmp085_write8(BMP085_CONTROL, BMP085_READTEMPCMD);
+  delay(5);
+  return bmp085_read16(BMP085_TEMPDATA);
+}
+
+/*********************************************************************/
+uint32_t bmp085_readRawPressure(void)
+/*********************************************************************/
+{
+  uint32_t raw;
+
+  bmp085_write8(BMP085_CONTROL, BMP085_READPRESSURECMD + (oversampling << 6));
+
+  delay(26);
+
+  raw = bmp085_read16(BMP085_PRESSUREDATA);
+  raw <<= 8;
+  raw |= bmp085_read8(BMP085_PRESSUREDATA+2);
+  raw >>= (8 - oversampling);
+
+  return raw;
+}
+
+/*********************************************************************/
+int32_t bmp085_readPressure(void)
+/*********************************************************************/
+{
+  int32_t UT, UP, B3, B5, B6, X1, X2, X3, p;
+  uint32_t B4, B7;
+
+  UT = bmp085_readRawTemperature();
+  UP = bmp085_readRawPressure();
+
+  // do temperature calculations
+  X1=(UT-(int32_t)(ac6))*((int32_t)(ac5))/pow(2,15);
+  X2=((int32_t)mc*pow(2,11))/(X1+(int32_t)md);
+  B5=X1 + X2;
+
+  // do pressure calcs
+  B6 = B5 - 4000;
+  X1 = ((int32_t)b2 * ( (B6 * B6)>>12 )) >> 11;
+  X2 = ((int32_t)ac2 * B6) >> 11;
+  X3 = X1 + X2;
+  B3 = ((((int32_t)ac1*4 + X3) << oversampling) + 2) / 4;
+
+  X1 = ((int32_t)ac3 * B6) >> 13;
+  X2 = ((int32_t)b1 * ((B6 * B6) >> 12)) >> 16;
+  X3 = ((X1 + X2) + 2) >> 2;
+  B4 = ((uint32_t)ac4 * (uint32_t)(X3 + 32768)) >> 15;
+  B7 = ((uint32_t)UP - B3) * (uint32_t)( 50000UL >> oversampling );
+
+  if (B7 < 0x80000000) {
+    p = (B7 * 2) / B4;
+  } else {
+    p = (B7 / B4) * 2;
+  }
+  X1 = (p >> 8) * (p >> 8);
+  X1 = (X1 * 3038) >> 16;
+  X2 = (-7357 * p) >> 16;
+
+  p = p + ((X1 + X2 + (int32_t)3791)>>4);
+  return p;
+}
+
+/*********************************************************************/
+float bmp085_readTemperature(void)
+/*********************************************************************/
+{
+  int32_t UT, X1, X2, B5;     // following ds convention
+  float temp;
+
+  UT = bmp085_readRawTemperature();
+
+  // step 1
+  X1 = (UT - (int32_t)ac6) * ((int32_t)ac5) / pow(2,15);
+  X2 = ((int32_t)mc * pow(2,11)) / (X1+(int32_t)md);
+  B5 = X1 + X2;
+  temp = (B5+8)/pow(2,4);
+  temp /= 10;
+  
+  return temp;
+}
+
+/*********************************************************************/
+uint8_t bmp085_read8(uint8_t a)
+/*********************************************************************/
+{
+  uint8_t ret;
+
+  Wire.beginTransmission(BMP085_I2CADDR); // start transmission to device 
+  Wire.write(a); // sends register address to read from
+  Wire.endTransmission(); // end transmission
+  
+  Wire.beginTransmission(BMP085_I2CADDR); // start transmission to device 
+  Wire.requestFrom(BMP085_I2CADDR, 1);// send data n-bytes read
+  ret = Wire.read(); // receive DATA
+  Wire.endTransmission(); // end transmission
+
+  return ret;
+}
+
+/*********************************************************************/
+uint16_t bmp085_read16(uint8_t a)
+/*********************************************************************/
+{
+  uint16_t ret;
+
+  Wire.beginTransmission(BMP085_I2CADDR); // start transmission to device 
+  Wire.write(a); // sends register address to read from
+  Wire.endTransmission(); // end transmission
+  
+  Wire.beginTransmission(BMP085_I2CADDR); // start transmission to device 
+  Wire.requestFrom(BMP085_I2CADDR, 2);// send data n-bytes read
+  ret = Wire.read(); // receive DATA
+  ret <<= 8;
+  ret |= Wire.read(); // receive DATA
+  Wire.endTransmission(); // end transmission
+
+  return ret;
+}
+
+/*********************************************************************/
+void bmp085_write8(uint8_t a, uint8_t d)
+/*********************************************************************/
+{
+  Wire.beginTransmission(BMP085_I2CADDR); // start transmission to device 
+  Wire.write(a); // sends register address to read from
+  Wire.write(d);  // write data
+  Wire.endTransmission(); // end transmission
+}
+#endif //DEVICE_CORE_20
+#endif //DEVICE_20
+
+
+//#######################################################################################################
+//#################################### Device-21: LCD I2C 1602 ##########################################
+//#######################################################################################################
+
+/*********************************************************************************************\
+ * Dit protocol zorgt voor communicatie met een DFRobot LCD I2C/TWI 1602 display
+ * 
+ * Auteur             : Martinus van den Broek
+ * Support            : www.nodo-domotica.nl
+ * Datum              : Mrt.2013
+ * Versie             : 1.0
+ * Nodo productnummer : 
+ * Compatibiliteit    : Vanaf Nodo build nummer 508
+ * Syntax             : "LCDI2CWrite <row>,<message id>
+ ***********************************************************************************************
+ * Technische beschrijving:
+ *
+ * De LCDI2C1602 is een LCD Display van twee regels en 16 tekens per regel.
+ * De aansturing vindt plaats via de standaard TwoWire interface van de Nodo (I2C)
+ * Het display heeft een vast adres van 0x27
+ * Er kan dus maar 1 display per I2C bus worden aangesloten.
+ \*********************************************************************************************/
+
+#ifdef DEVICE_21
+#define DEVICE_ID 21
+#define DEVICE_NAME "LCDI2CWrite"
+
+prog_char PROGMEM LCD_01[] = "Nodo Domotica";
+prog_char PROGMEM LCD_02[] = "Mega R:%03d U:%d";
+prog_char PROGMEM LCD_03[] = "Small R:%03d U:%d";
+prog_char PROGMEM LCD_04[] = "Alarm On";
+prog_char PROGMEM LCD_05[] = "Alarm Off";
+prog_char PROGMEM LCD_06[] = "6";
+prog_char PROGMEM LCD_07[] = "7";
+prog_char PROGMEM LCD_08[] = "8";
+prog_char PROGMEM LCD_09[] = "9";
+prog_char PROGMEM LCD_10[] = "10";
+#define LCDI2C_MSG_MAX        10
+
+PROGMEM const char *LCDText_tabel[]={LCD_01,LCD_02,LCD_03,LCD_04,LCD_05,LCD_06,LCD_07,LCD_08,LCD_09,LCD_10};
+
+#define LCD_I2C_ADDRESS 0x27
+
+#define LCD_CLEARDISPLAY 0x01
+#define LCD_RETURNHOME 0x02
+#define LCD_ENTRYMODESET 0x04
+#define LCD_DISPLAYCONTROL 0x08
+#define LCD_CURSORSHIFT 0x10
+#define LCD_FUNCTIONSET 0x20
+#define LCD_SETCGRAMADDR 0x40
+#define LCD_SETDDRAMADDR 0x80
+
+// flags for display entry mode
+#define LCD_ENTRYRIGHT 0x00
+#define LCD_ENTRYLEFT 0x02
+#define LCD_ENTRYSHIFTINCREMENT 0x01
+#define LCD_ENTRYSHIFTDECREMENT 0x00
+
+// flags for display on/off control
+#define LCD_DISPLAYON 0x04
+#define LCD_DISPLAYOFF 0x00
+#define LCD_CURSORON 0x02
+#define LCD_CURSOROFF 0x00
+#define LCD_BLINKON 0x01
+#define LCD_BLINKOFF 0x00
+
+// flags for display/cursor shift
+#define LCD_DISPLAYMOVE 0x08
+#define LCD_CURSORMOVE 0x00
+#define LCD_MOVERIGHT 0x04
+#define LCD_MOVELEFT 0x00
+
+// flags for function set
+#define LCD_8BITMODE 0x10
+#define LCD_4BITMODE 0x00
+#define LCD_2LINE 0x08
+#define LCD_1LINE 0x00
+#define LCD_5x10DOTS 0x04
+#define LCD_5x8DOTS 0x00
+
+// flags for backlight control
+#define LCD_BACKLIGHT 0x08
+#define LCD_NOBACKLIGHT 0x00
+
+#define En B00000100  // Enable bit
+#define Rw B00000010  // Read/Write bit
+#define Rs B00000001  // Register select bit
+
+#ifdef DEVICE_CORE_21
+uint8_t _displayfunction;
+uint8_t _displaycontrol;
+uint8_t _displaymode;
+uint8_t _numlines;
+uint8_t _backlightval=LCD_BACKLIGHT;
+#endif
+
+boolean Device_21(byte function, struct NodoEventStruct *event, char *string)
+{
+  boolean success=false;
+
+  switch(function)
+  {
+#ifdef DEVICE_CORE_21
+    case DEVICE_INIT:
+      {
+        _displayfunction = LCD_2LINE;
+        _numlines = 2;
+        delay(50); 
+        // Now we pull both RS and R/W low to begin commands
+        LCD_I2C_expanderWrite(_backlightval);	// reset expanderand turn backlight off (Bit 8 =1)
+        delay(1000);
+
+        //put the LCD into 4 bit mode, this is according to the hitachi HD44780 datasheet, figure 24, pg 46
+        LCD_I2C_write4bits(0x03 << 4);        // we start in 8bit mode, try to set 4 bit mode
+        delayMicroseconds(4500);              // wait min 4.1ms
+        LCD_I2C_write4bits(0x03 << 4);        // second try
+        delayMicroseconds(4500);              // wait min 4.1ms
+        LCD_I2C_write4bits(0x03 << 4);        // third go!
+        delayMicroseconds(150);
+        LCD_I2C_write4bits(0x02 << 4);        // finally, set to 4-bit interface
+        LCD_I2C_command(LCD_FUNCTIONSET | _displayfunction);              // set # lines, font size, etc.
+        _displaycontrol = LCD_DISPLAYON | LCD_CURSOROFF | LCD_BLINKOFF;   // turn the display on with no cursor or blinking default
+        LCD_I2C_display();
+        LCD_I2C_clear();                                                  // clear it off
+        _displaymode = LCD_ENTRYLEFT | LCD_ENTRYSHIFTDECREMENT;           // Initialize to default text direction (for roman languages)
+        LCD_I2C_command(LCD_ENTRYMODESET | _displaymode);                 // set the entry mode
+        LCD_I2C_home();
+
+        LCD_I2C_printline(0,ProgmemString(LCD_01));
+        char TempString[18];
+        #if NODO_MEGA
+         sprintf(TempString,ProgmemString(LCD_02), NODO_BUILD, Settings.Unit);
+        #else
+          sprintf(TempString,ProgmemString(LCD_03), NODO_BUILD, Settings.Unit);
+        #endif
+        LCD_I2C_printline(1,TempString);
+      }
+   case DEVICE_COMMAND:
+      {
+        if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
+          {
+            if ((event->Par1 == 1) || (event->Par1 == 2))
+            {
+              if (event->Par2 == 0) LCD_I2C_printline(event->Par1-1,"");
+              if ((event->Par2 > 0) && (event->Par2 <= LCDI2C_MSG_MAX))
+                {
+                  char TempString[18];
+                  strcpy_P(TempString,(char*)pgm_read_word(&(LCDText_tabel[event->Par2-1])));
+                  LCD_I2C_printline(event->Par1-1, TempString);
+                }
+              success=true;
+            }
+          }
+        break;
+      }
+#endif // DEVICE_CORE_21
+    #ifdef NODO_MEGA
+    case DEVICE_MMI_IN:
+      {
+      char *TempStr=(char*)malloc(26);
+      string[25]=0;
+
+      if(GetArgv(string,TempStr,1))
+        {
+        if(strcasecmp(TempStr,DEVICE_NAME)==0)
+          {
+          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
+          if(event->Par1>0 && event->Par1<=2 && event->Par2>0 && event->Par2<=LCDI2C_MSG_MAX)
+            success=true;
+          }
+        }
+      free(TempStr);
+      break;
+      }
+
+    case DEVICE_MMI_OUT:
+      {
+      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
+        {
+        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+        strcat(string," ");
+        strcat(string,int2str(event->Par1));
+        strcat(string,",");
+        strcat(string,int2str(event->Par2));
+        }
+      break;
+      }
+    #endif //NODO_MEGA
+  }      
+  return success;
+}
+
+#ifdef DEVICE_CORE_21
+/*********************************************************************/
+void LCD_I2C_printline(byte row, char* message)
+/*********************************************************************/
+{
+  LCD_I2C_setCursor(0,row);
+  for (byte x=0; x<16; x++) LCD_I2C_write(' ');
+  LCD_I2C_setCursor(0,row);
+  for (byte x=0; x<16; x++)
+    {
+      if (message[x] != 0) LCD_I2C_write(message[x]);
+      else break;
+    }
+}
+
+/*********************************************************************/
+inline size_t LCD_I2C_write(uint8_t value)
+/*********************************************************************/
+{
+	LCD_I2C_send(value, Rs);
+	return 0;
+}
+
+/*********************************************************************/
+void LCD_I2C_display() {
+/*********************************************************************/
+  _displaycontrol |= LCD_DISPLAYON;
+  LCD_I2C_command(LCD_DISPLAYCONTROL | _displaycontrol);
+}
+
+/*********************************************************************/
+void LCD_I2C_clear(){
+/*********************************************************************/
+  LCD_I2C_command(LCD_CLEARDISPLAY);// clear display, set cursor position to zero
+  delayMicroseconds(2000);  // this command takes a long time!
+}
+
+/*********************************************************************/
+void LCD_I2C_home(){
+/*********************************************************************/
+  LCD_I2C_command(LCD_RETURNHOME);  // set cursor position to zero
+  delayMicroseconds(2000);  // this command takes a long time!
+}
+
+/*********************************************************************/
+void LCD_I2C_setCursor(uint8_t col, uint8_t row){
+/*********************************************************************/
+  int row_offsets[] = { 0x00, 0x40, 0x14, 0x54 };
+  if ( row > _numlines ) {
+ 	row = _numlines-1;    // we count rows starting w/0
+  }
+  LCD_I2C_command(LCD_SETDDRAMADDR | (col + row_offsets[row]));
+}
+
+/*********************************************************************/
+inline void LCD_I2C_command(uint8_t value) {
+/*********************************************************************/
+  LCD_I2C_send(value, 0);
+}
+
+/*********************************************************************/
+void LCD_I2C_send(uint8_t value, uint8_t mode) {
+/*********************************************************************/
+  uint8_t highnib=value&0xf0;
+  uint8_t lownib=(value<<4)&0xf0;
+  LCD_I2C_write4bits((highnib)|mode);
+  LCD_I2C_write4bits((lownib)|mode); 
+}
+
+/*********************************************************************/
+void LCD_I2C_write4bits(uint8_t value) {
+/*********************************************************************/
+  LCD_I2C_expanderWrite(value);
+  LCD_I2C_pulseEnable(value);
+}
+
+/*********************************************************************/
+void LCD_I2C_expanderWrite(uint8_t _data){                                        
+/*********************************************************************/
+  Wire.beginTransmission(LCD_I2C_ADDRESS);
+  Wire.write((int)(_data) | _backlightval);
+  Wire.endTransmission();   
+}
+
+/*********************************************************************/
+void LCD_I2C_pulseEnable(uint8_t _data){
+/*********************************************************************/
+  LCD_I2C_expanderWrite(_data | En);	// En high
+  delayMicroseconds(1);		// enable pulse must be >450ns
+	
+  LCD_I2C_expanderWrite(_data & ~En);	// En low
+  delayMicroseconds(50);		// commands need > 37us to settle
+} 
+#endif //DEVICE_CORE_21
+#endif //DEVICE_21
 
           
 

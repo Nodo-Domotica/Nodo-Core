@@ -443,26 +443,13 @@ boolean GetStatus(struct NodoEventStruct *Event)
     break;
 
   case CMD_CLOCK_DATE:
-    if(!bitRead(HW_Config,HW_CLOCK))return false;
-    Event->Par1=Time.Date;
-    Event->Par2=Time.Month;
+    Event->Par2= ((unsigned long)Time.Year  %10)      | ((unsigned long)Time.Year  /10)%10<<4  | ((unsigned long)Time.Year/100)%10<<8 | ((unsigned long)Time.Year/1000)%10<<12 | 
+                 ((unsigned long)Time.Month %10) <<16 | ((unsigned long)Time.Month /10)%10<<20 | 
+                 ((unsigned long)Time.Date  %10) <<24 | ((unsigned long)Time.Date  /10)%10<<28 ;                
     break;
 
   case CMD_CLOCK_TIME:
-    if(!bitRead(HW_Config,HW_CLOCK))return false;
-    Event->Par1=Time.Hour;
-    Event->Par2=Time.Minutes;
-    break;
-
-  case CMD_CLOCK_DOW:
-    if(!bitRead(HW_Config,HW_CLOCK))return false;
-    Event->Par1=Time.Day;
-    break;
-
-  case CMD_CLOCK_YEAR:
-    if(!bitRead(HW_Config,HW_CLOCK))return false;
-    Event->Par1=Time.Year/100;
-    Event->Par2=Time.Year-2000;
+    Event->Par2=Time.Minutes%10 | Time.Minutes/10<<4 | Time.Hour%10<<8 | Time.Hour/10<<12;
     break;
 
   case CMD_TIMER_SET:
@@ -938,7 +925,7 @@ boolean GetArgv(char *string, char *argv, int argc)
     c=string[string_pos];
     d=string[string_pos+1];
 
-    // dit is niet meer de handigste methode. Op termijn vereenvoudigen.???
+    // dit is niet meer de handigste methode. Op termijn vereenvoudigen.
     if       (c==' ' && d==' '){}
     else if  (c==' ' && d==','){}
     else if  (c==',' && d==' '){}
@@ -1800,11 +1787,18 @@ void DS1307_read(void)
  * Zet de RTC op tijd.
  \*********************************************************************************************/
 void ClockSet(void) 
-{
-  rtc[DS1307_SEC]  =DS1307_CLOCKHALT;  // Stop the clock. Set the ClockHalt bit high to stop the rtc. This bit is part of the seconds byte
+  {
+  // bereken uit de datum de dag van de week.
+  const int t[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
+  int y = Time.Year;
+  y-=Time.Month<3;
+  Time.Day=(y + y/4 - y/100 + y/400 + t[Time.Month-1] + Time.Date) % 7 +1;
+
+  rtc[DS1307_SEC]      =DS1307_CLOCKHALT;  // Stop the clock. Set the ClockHalt bit high to stop the rtc. This bit is part of the seconds byte
   DS1307_save();
+  
   rtc[DS1307_MIN]      = ((Time.Minutes/10)<<4)+(Time.Minutes%10);
-  rtc[DS1307_HR]       = ((Time.Hour/10)<<4)+(Time.Hour%10); // schrijf de wintertijd weg.
+  rtc[DS1307_HR]       = ((Time.Hour/10)<<4)+(Time.Hour%10); // schrijf de wintertijd weg. (???? Omschakeling zit bug in)
   rtc[DS1307_DOW]      = Time.Day;
   rtc[DS1307_DATE]     = ((Time.Date/10)<<4)+(Time.Date%10);
   rtc[DS1307_MTH]      = ((Time.Month/10)<<4)+(Time.Month%10);
@@ -1837,7 +1831,7 @@ void ClockRead(void)
   Time.DaylightSavingSetMonth = rtc[DS1307_DLS_M];
   Time.DaylightSavingSetDate  = rtc[DS1307_DLS_D];
 
-  // Het kan zijn als de klok niet aangesloten is, dat er 'rommel' gelezen is. Doe eenvoudige check.
+  // Het kan zijn als de klok niet aangesloten is, dat er via I2C 'rommel' gelezen is. Doe eenvoudige check.
   if(Time.Minutes>60 || Time.Hour>23 || Time.Day>8 || Time.Month>12 || Time.Date>31)
     {
     Time.Day=0; // De dag wordt gebruikt als checksum of de klok aanwezig is. Deze nooit op 0 als klok juist aangesloten
@@ -1910,51 +1904,6 @@ void SetDaylight()
   if(now>=down)          Time.Daylight=4; // zonsondergang
 }
 
-//void SimulateDay(void) //???
-//  {
-//  unsigned long SimulatedClockEvent, Event, Action;
-//
-//  Time.Seconds=0;
-//  Time.Minutes=0;
-//  Time.Hour=0;
-//  DaylightPrevious=4;// vullen met 4, dan wordt in de zomertijd 4 niet tweemaal per etmaal weergegeven
-//
-//  PrintTerminal(ProgmemString(Text_22));
-//  for(int m=0;m<=1439;m++)  // loop alle minuten van één etmaal door
-//   {
-//    // Simuleer alle minuten van een etmaal
-//    if(Time.Minutes==60){
-//      Time.Minutes=0;
-//      Time.Hour++;
-//    }  // roll-over naar volgende uur
-//
-//    // Kijk of er op het gesimuleerde tijdstip een hit is in de EventList
-////    SimulatedClockEvent=command2event( CMD_CLOCK_EVENT_ALL+Time.Day,Time.Hour,Time.Minutes);
-////    if(CheckEventlist(SimulatedClockEvent,VALUE_SOURCE_CLOCK)) // kijk of er een hit is in de EventList
-////      ProcessEvent2_old(SimulatedClockEvent,VALUE_DIRECTION_INPUT,VALUE_SOURCE_CLOCK);
-////??? klok events nog aanpassen
-//
-//    // Kijk of er op het gesimuleerde tijdstip een zonsondergang of zonsopkomst wisseling heeft voorgedaan
-//    SetDaylight(); // Zet in de struct ook de Time.DayLight status behorend bij de tijd
-//    if(Time.Daylight!=DaylightPrevious)// er heeft een zonsondergang of zonsopkomst wisseling voorgedaan
-//      {
-//      struct NodoEventStruct TempEvent;
-//      ClearEvent(&TempEvent);
-//      TempEvent.Direction = VALUE_DIRECTION_INPUT;
-//      TempEvent.Port      = VALUE_SOURCE_CLOCK;
-//      TempEvent.Command   = CMD_CLOCK_EVENT_DAYLIGHT;
-//      TempEvent.Par1      = Time.Daylight;
-//      ProcessEvent2(&TempEvent);  
-//      }
-//    Time.Minutes++;
-//    }
-//
-//  PrintTerminal(ProgmemString(Text_22));
-//  ClockRead();// klok weer op de juiste tijd zetten.
-//  SetDaylight();// daglicht status weer terug op de juiste stand zetten
-//  DaylightPrevious=Time.Daylight;
-//  }
-//
 #endif
 
 //#######################################################################################################
@@ -1977,11 +1926,94 @@ char* cmd2str(int i)
   return string;
   }
 
+
+/*********************************************************************************************\
+ * converteer een string met tijd volgens format HH:MM naar een UL int met tijd ----HHMM
+ * 0xffffffff indien geen geldige invoer.
+ \*********************************************************************************************/
+unsigned long str2ultime(char* str)
+  {
+  byte y=0;
+  unsigned long TimeInt=0L;
+  byte x=strlen(str);
+  
+  while(!isdigit(str[x]))x--;
+  while(isdigit(str[x]))
+    {
+    TimeInt|=(str[x]-'0')<<y;
+    x--;
+    y+=4;
+    }
+  
+  y=8;
+  while(!isdigit(str[x]))x--;
+  while(isdigit(str[x]))
+    {
+    TimeInt|=(str[x]-'0')<<y;
+    x--;
+    y+=4;
+    }
+    
+  x=((TimeInt>>12)&0xf)*10 + ((TimeInt>>8)&0xf); // Uren
+  y=((TimeInt>>4 )&0xf)*10 + ((TimeInt   )&0xf); // Minuten
+  
+  if(x >23 || y>59)
+    TimeInt=0xffffffff;
+  return TimeInt;
+  }
+
+/*********************************************************************************************\
+ * converteer een string met datum volgens format DD-MM-YYYY naar een UL int met datum ddmmyyyy
+ * 0xffffffff indien geen geldige invoer.
+ \*********************************************************************************************/
+unsigned long str2uldate(char* str)
+  {
+  int x,y;
+  unsigned long DateInt=0L;
+  
+  x=strlen(str);
+  y=0;
+  
+  while(!isdigit(str[x]))x--;
+  while(isdigit(str[x]))
+    {
+    DateInt|=((unsigned long)(str[x--]-'0'))<<y;
+    y+=4;
+    }
+ 
+  if(DateInt<0x100)
+    DateInt+=0x2000;
+
+  y=16;
+  while(!isdigit(str[x]))x--;
+  while(isdigit(str[x]))
+    {
+    DateInt|=((unsigned long)(str[x--]-'0'))<<y;
+    y+=4;
+    }
+
+  if((((DateInt>>20)&0xf)*10 + ((DateInt>>16 )&0xf))>12)// Maand: ongeldige invoer
+    return 0xffffffff;
+  
+  y=24;
+  while(!isdigit(str[x]))x--;
+  while(isdigit(str[x]))
+    {
+    DateInt|=((unsigned long)(str[x--]-'0'))<<y;
+    y+=4;
+    }
+
+  if((((DateInt>>28)&0xf)*10 + ((DateInt>>24 )&0xf))>31)// Maand: ongeldige invoer
+    return 0xffffffff;
+  
+  return DateInt;
+  }
+
 /*********************************************************************************************\
  * Haal uit een string de commando code. False indien geen geldige commando code.
  \*********************************************************************************************/
 int str2cmd(char *command)
-{
+  {
   for(int x=0;x<=COMMAND_MAX;x++)
     if(strcasecmp(command,cmd2str(x))==0)
       return x;      
@@ -2124,14 +2156,6 @@ char* int2strhex(unsigned long x)
     *--OutputLinePosPtr='0';
   }
   return OutputLinePosPtr;
-}
-
-
-char* Float2str(float f) // ??? Is deze funktie dubbel?
-{
-  static char rString[25];
-  dtostrf(f, 0, 2, rString); // Kaboem... 2100 bytes programmacode extra !
-  return rString;
 }
 
 

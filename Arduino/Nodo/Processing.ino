@@ -87,6 +87,7 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
     }
 
   if(Continue && (Event->Flags & TRANSMISSION_QUEUE))
+  
     {
     QueueAdd(Event);
     Continue=false;
@@ -234,7 +235,7 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
   // ### TIME:
   if(Event->Command==CMD_TIME) // het binnengekomen event is een clock event.//???
     {
-    // Structuur technisch hoort onderstaande regel hier thuis, maar qua performance niet wenselijk!
+    // Structuur technisch hoort onderstaande regel hier thuis, maar qua performance niet optimaal!
     unsigned long Cmp=MacroEvent->Par2; //???Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12 | (unsigned long)Time.Day<<16;
     unsigned long Inp=Event->Par2;
 

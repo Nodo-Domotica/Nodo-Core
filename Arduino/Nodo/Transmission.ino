@@ -204,21 +204,28 @@ void RawSendRF(void)
   int x;
   digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
   digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan
-  byte PTMF=RawSignal.Pulses[0];
 
   delay(5);// kleine pause om de zender de tijd te geven om stabiel te worden 
-  noInterrupts();
+
+  // ??? 
+  // LET OP: In de Arduino versie 1.0.1 zit een bug in de funktie delayMicroSeconds(). Als deze wordt aangeroepen met een nul dan zal er
+  // een pause optreden van 16 milliseconden. Omdat het laatste element van RawSignal af sluit met een nul (omdat de space van de stopbit 
+  // feitelijk niet bestaat) zal deze bug optreden. Daarom wordt deze op 1 gezet om de bug te omzeilen. 
+  RawSignal.Pulses[RawSignal.Number]=1;
 
   for(byte y=0; y<RawSignal.Repeats; y++) // herhaal verzenden RF code
     {
     x=1;
+    noInterrupts();
     while(x<RawSignal.Number)
       {
       digitalWrite(PIN_RF_TX_DATA,HIGH); // 1
-      delayMicroseconds(RawSignal.Pulses[x++]*PTMF); 
+      delayMicroseconds(RawSignal.Pulses[x++]*RawSignal.Multiply); 
       digitalWrite(PIN_RF_TX_DATA,LOW); // 0
-      delayMicroseconds(RawSignal.Pulses[x++]*PTMF); 
+      delayMicroseconds(RawSignal.Pulses[x++]*RawSignal.Multiply); 
       }
+    interrupts();
+    delay(RawSignal.Delay);// Delay buiten het gebied waar de interrupts zijn uitgeschakeld! Anders werkt deze funktie niet
     }
 
   digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
@@ -235,7 +242,6 @@ void RawSendRF(void)
   //    }
 #endif
 
-  interrupts();
 }
 
 
@@ -253,20 +259,25 @@ void RawSendIR(void)
   {
   int pulse;  // pulse (bestaande uit een mark en een space) uit de RawSignal tabel die moet worden verzonden
   int mod;    // pulsenteller van het 38Khz modulatie signaal
-  int repeat;
-  byte PTMF=RawSignal.Pulses[0];
   
   // kleine pause zodat verzenden event naar de USB poort gereed is, immers de IRQ's worden tijdelijk uitgezet
   delay(10);
-
-  for(repeat=0; repeat<RawSignal.Repeats; repeat++) // herhaal verzenden IR code
+  
+  // ??? 
+  // LET OP: In de Arduino versie 1.0.1 zit een bug in de funktie delayMicroSeconds(). Als deze wordt aangeroepen met een nul dan zal er
+  // een pause optreden van 16 milliseconden. Omdat het laatste element van RawSignal af sluit met een nul (omdat de space van de stopbit 
+  // feitelijk niet bestaat) zal deze bug optreden. Daarom wordt deze op 1 gezet om de bug te omzeilen. 
+  RawSignal.Pulses[RawSignal.Number]=1;
+  
+  
+  for(int repeat=0; repeat<RawSignal.Repeats; repeat++) // herhaal verzenden IR code
     {
     pulse=1;
-    noInterrupts(); // interrupts tijdelijk uitschakelen om zo en zuiverder signaal te krijgen
-    while(pulse<RawSignal.Number)
+    noInterrupts();
+    while(pulse<(RawSignal.Number))
       {
-      // Mark verzenden. Bereken hoeveel pulsen van 26uSec er nodig zijn die samen de lengte van de mark zijn.
-      mod=(RawSignal.Pulses[pulse++]*PTMF)/26; // delen om aantal pulsen uit te rekenen
+      // Mark verzenden. Bereken hoeveel pulsen van 26uSec er nodig zijn die samen de lengte van de mark/space zijn.
+      mod=(RawSignal.Pulses[pulse++]*RawSignal.Multiply)/26; // delen om aantal pulsen uit te rekenen
 
       while(mod)
         {
@@ -276,7 +287,7 @@ void RawSendIR(void)
         #else
         bitWrite(PORTB,3, HIGH);
         #endif
-  
+
         delayMicroseconds(12);
         __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");// per nop 62.6 nano sec. @16Mhz
   
@@ -290,12 +301,14 @@ void RawSendIR(void)
         __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");// per nop 62.6 nano sec. @16Mhz
         mod--;
         }
+
       // Laag
-      delayMicroseconds(RawSignal.Pulses[pulse++]*PTMF);
+      delayMicroseconds(RawSignal.Pulses[pulse++]*RawSignal.Multiply);
+      }
+    interrupts(); // interupts weer inschakelen.  
+    delay(RawSignal.Delay);// Delay buiten het gebied waar de interrupts zijn uitgeschakeld! Anders werkt deze funktie niet
     }
-  interrupts(); // interupts weer inschakelen.
   }
-}
 
 /*********************************************************************************************\
  * Deze routine berekend de RAW pulsen van een Nodo event en plaatst deze in de buffer RawSignal
@@ -303,7 +316,7 @@ void RawSendIR(void)
  \*********************************************************************************************/
 
 // Definieer een datablock die gebruikt wordt voor de gegevens die via de ether verzonden moeten worden.
-// Zo kunnen exact die gevens worden verzonden die nodig zijn en niets teveel.  
+// Zo kunnen exact die gegevens worden verzonden die nodig zijn en niets teveel.  
 struct DataBlockStruct
   {
   byte SourceUnit;
@@ -319,8 +332,8 @@ void Nodo_2_RawSignal(struct NodoEventStruct *Event)
   {
   byte BitCounter=1;
   RawSignal.Repeats=1;
-  const byte PTMF=100;
-  RawSignal.Pulses[0]=PTMF;
+  RawSignal.Delay=0;
+  RawSignal.Multiply=100;
 
   struct DataBlockStruct DataBlock;
   DataBlock.SourceUnit=Event->SourceUnit | (Settings.Home<<5);  
@@ -338,22 +351,22 @@ void Nodo_2_RawSignal(struct NodoEventStruct *Event)
   DataBlock.Checksum=c;
 
   // begin met een lange startbit. Veilige timing gekozen zodat deze niet gemist kan worden
-  RawSignal.Pulses[BitCounter++]=(NODO_PULSE_1*4)/PTMF; 
-  RawSignal.Pulses[BitCounter++]=(NODO_SPACE*2)/PTMF;
+  RawSignal.Pulses[BitCounter++]=(NODO_PULSE_1*4)/RawSignal.Multiply; 
+  RawSignal.Pulses[BitCounter++]=(NODO_SPACE*2)/RawSignal.Multiply;
 
   for(byte x=0;x<sizeof(struct DataBlockStruct);x++)
     {
     for(byte Bit=0; Bit<=7; Bit++)
       {
       if((*(B+x)>>Bit)&1)
-        RawSignal.Pulses[BitCounter++]=NODO_PULSE_1/PTMF; 
+        RawSignal.Pulses[BitCounter++]=NODO_PULSE_1/RawSignal.Multiply; 
       else
-        RawSignal.Pulses[BitCounter++]=NODO_PULSE_0/PTMF;   
-      RawSignal.Pulses[BitCounter++]=NODO_SPACE/PTMF;   
+        RawSignal.Pulses[BitCounter++]=NODO_PULSE_0/RawSignal.Multiply;   
+      RawSignal.Pulses[BitCounter++]=NODO_SPACE/RawSignal.Multiply;   
       }
     }
 
-  RawSignal.Pulses[BitCounter-1]=NODO_SPACE/PTMF; // pauze tussen de pulsreeksen
+  RawSignal.Pulses[BitCounter-1]=NODO_SPACE/RawSignal.Multiply; // pauze tussen de pulsreeksen
   RawSignal.Number=BitCounter;
   }
 
@@ -369,19 +382,17 @@ boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
   {
   int RawCodeLength=1;
   unsigned long PulseLength=0;
-  const byte PTMF=50;
-  RawSignal.Pulses[0]=PTMF;
+  RawSignal.Multiply=50;
 
-
-  do{// lees de pulsen in microseconden en plaats deze in een tijdelijke buffer
-    PulseLength=WaitForChangeState(DataPin, StateSignal, TimeOut)/PTMF;
+  do{// lees de pulsen in microseconden en plaats deze in de tijdelijke buffer RawSignal
+    PulseLength=WaitForChangeState(DataPin, StateSignal, TimeOut)/RawSignal.Multiply;
 
     // bij kleine stoorpulsen die geen betekenig hebben zo snel mogelijk weer terug
-    if(PulseLength<(MIN_PULSE_LENGTH/PTMF))
+    if(PulseLength<(MIN_PULSE_LENGTH/RawSignal.Multiply))
       return false;
 
     RawSignal.Pulses[RawCodeLength++]=PulseLength;
-    PulseLength=WaitForChangeState(DataPin, !StateSignal, TimeOut)/PTMF;
+    PulseLength=WaitForChangeState(DataPin, !StateSignal, TimeOut)/RawSignal.Multiply;
     RawSignal.Pulses[RawCodeLength++]=PulseLength;
     }
   while(RawCodeLength<RAW_BUFFER_SIZE && PulseLength!=0);// Zolang nog niet alle bits ontvangen en er niet vroegtijdig een timeout plaats vindt
@@ -541,7 +552,6 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
 boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
   {
   byte b,x,y,z;
-  const byte PTMF=RawSignal.Pulses[0];
 
   if(RawSignal.Number!=16*sizeof(struct DataBlockStruct)+2) // Per byte twee posities + startbit.
     return false;
@@ -555,7 +565,7 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
     b=0;
     for(y=0;y<=7;y++) // vul alle bits binnen een byte
       {
-      if((RawSignal.Pulses[z]*PTMF)>NODO_PULSE_MID)      
+      if((RawSignal.Pulses[z]*RawSignal.Multiply)>NODO_PULSE_MID)      
         b|=1<<y; //LSB in signaal wordt  als eerste verzonden
       z+=2;
       }
@@ -570,11 +580,10 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
     
   if(b==0)
     {
-
     if(DataBlock.SourceUnit>>5!=Settings.Home)
       return false;
 
-    RawSignal.Repeats    = false; // het is geen herhalend signaal. Bij ontvangst hoeven herhalingen oniet onderdrukt te worden.
+    RawSignal.Repeats    = false; // het is geen herhalend signaal. Bij ontvangst hoeven herhalingen dus niet onderdrukt te worden.
     Event->SourceUnit=DataBlock.SourceUnit&0x1F;  // Maskeer de bits van het Home adres.
     Event->DestinationUnit=DataBlock.DestinationUnit;
     Event->Flags=DataBlock.Flags;
@@ -665,14 +674,14 @@ boolean EthernetInit(void)
   {
   int x;
   boolean Ok=false;
-  byte Ethernet_MAC_Address[6];                                // MAC adres van de Nodo.
+  byte Ethernet_MAC_Address[6];                                // MAC adres van de NodO
 
   if(!bitRead(HW_Config,HW_ETHERNET))
     return false;
     
-  Ethernet_MAC_Address[0]=0xAA;
+  Ethernet_MAC_Address[0]=0xCC;
   Ethernet_MAC_Address[1]=0xBB;
-  Ethernet_MAC_Address[2]=0xCC;
+  Ethernet_MAC_Address[2]=0xAA;//??? terugzetten aa,bb,cc;
   Ethernet_MAC_Address[3]=(Settings.Home%10)+'0';
   Ethernet_MAC_Address[4]=(Settings.Unit/10)+'0';
   Ethernet_MAC_Address[5]=(Settings.Unit%10)+'0';
@@ -740,7 +749,7 @@ boolean EthernetInit(void)
  * in de funktie SendHTTPRequest()
  \*******************************************************************************************************/
 byte GetHTTPFile(char* filename)
-{
+  {
   char *HttpRequest=(char*)malloc(INPUT_BUFFER_SIZE+1);
   char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
   byte Ok;
@@ -751,7 +760,7 @@ byte GetHTTPFile(char* filename)
   strcat(HttpRequest,filename);
 
   if(Settings.Password[0]!=0)
-  {
+    {
     // pin-code genereren en meesturen in het http-request
     strcpy(TempString,HTTPCookie);
     strcat(TempString,":");
@@ -759,7 +768,7 @@ byte GetHTTPFile(char* filename)
     md5(TempString);
     strcat(HttpRequest,"&key=");
     strcat(HttpRequest,TempString); 
-  }
+    }
 
   free(TempString);
   Ok=SendHTTPRequest(HttpRequest);
@@ -772,7 +781,7 @@ byte GetHTTPFile(char* filename)
  *
  \*******************************************************************************************************/
 byte SendHTTPEvent(struct NodoEventStruct *Event)
-{
+  {
   byte Unit,x;
 
   if(Settings.TransmitIP!=VALUE_ON || Settings.HTTPRequest[0]==0)
@@ -788,7 +797,7 @@ byte SendHTTPEvent(struct NodoEventStruct *Event)
   strcat(HttpRequest,int2str(Event->SourceUnit));  
 
   if(Settings.Password[0]!=0)
-  {
+    {
     // pin-code genereren en meesturen in het http-request
     strcpy(TempString,HTTPCookie);
     strcat(TempString,":");
@@ -796,7 +805,7 @@ byte SendHTTPEvent(struct NodoEventStruct *Event)
     md5(TempString);
     strcat(HttpRequest,"&key=");
     strcat(HttpRequest,TempString);    
-  }
+    }
 
   strcat(HttpRequest,"&event=");
   Event2str(Event,TempString);
@@ -847,15 +856,24 @@ boolean SendHTTPRequest(char* Request)
   unsigned long TimeoutTimer;
   char filename[13];
   const int TimeOut=5000;
-  EthernetClient HTTPClient;                            // Client class voor HTTP sessie.
-  byte State=0;// 0 als start, 
-
-  // 1 als 200 OK voorbij is gekomen,
-  // 2 als &file= is gevonden en eerstvolgende lege regel moet worden gedetecteerd
-  // 3 als lege regel is gevonden en file-capture moet starten.                
-
+  EthernetClient HTTPClient; // Client class voor HTTP sessie.
+  byte State=0;
   char *IPBuffer=(char*)malloc(IP_BUFFER_SIZE+1);
   char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  File BodyTextFile;
+  struct NodoEventStruct TempEvent;
+
+  // pluk de filename uit het http request als die er is.
+  filename[0]=0;
+  if(ParseString(Request,"file=", TempString,"&? "))
+    {
+    TempString[8]=0; // voorkom dat filenaam meer dan acht posities heeft
+    strcpy(filename,TempString);                
+    strcat(filename,".dat");
+    SelectSDCard(true);
+    FileErase(filename);
+    SelectSDCard(false);
+    }  
 
   strcpy(IPBuffer,"GET ");
 
@@ -864,7 +882,6 @@ boolean SendHTTPRequest(char* Request)
   SlashPos=StringFind(Settings.HTTPRequest,"/");
   if(SlashPos!=-1)
     strcat(IPBuffer,Settings.HTTPRequest+SlashPos);
-
 
   // Alle spaties omzetten naar %20 en toevoegen aan de te verzenden regel.
   y=strlen(IPBuffer);
@@ -929,6 +946,8 @@ boolean SendHTTPRequest(char* Request)
           else if(InByte==0x0A)
             {
             IPBuffer[InByteCounter]=0;
+            // De regel is binnen 
+
             if(Settings.Debug==VALUE_ON)
               {
               strcpy(TempString,"DEBUG: HTTP-Input=");
@@ -937,53 +956,93 @@ boolean SendHTTPRequest(char* Request)
               }
             TimeoutTimer=millis()+TimeOut; // er is nog data transport, dus de timeout timer weer op max. zetten.
 
-            // De regel is binnen 
-            if(State==2 && InByteCounter==0) // als lege regel in HTTP request gevonden
-              State=3;
-
-            else if(State==3)
-              //??? ipv AddFileSDCard hier zelf de fileafhandeling maken en eenmalig openen/sluiten. Dit scheelt veel SDCard IO.
-              AddFileSDCard(filename,IPBuffer); // Capture de bodytext uit het HTTP-request en sla regels op in opgegeven filename
-
-            else if(State==0 && StringFind(IPBuffer,"HTTP")!=-1)
+            // State 0: wachten totdat in de initial-request line OK/200 voorbij komt en er dus response is van de server.
+            if(State==0)
               {
-              // Response n.a.v. HTTP-request is ontvangen
-              if(StringFind(IPBuffer,"200")!=-1)
+              if(StringFind(IPBuffer,"200")!=-1 && StringFind(IPBuffer,"HTTP")!=-1)
                 {
                 State=1;
-                // pluk de filename uit het http request als die er is, dan de body text van het HTTP-request opslaan.
-                if(ParseHTTPRequest(Request,"file", TempString))
+                }
+              }
+    
+            // State 1: In deze state komen de header-lines voorbij. Deze state is klaar zodra er een lege header-line voorbij komt.
+            else if(State==1)
+              {            
+              if(InByteCounter==0)
+                {
+                State=2;
+                if(filename[0])
                   {
-                  State=2;
-                  TempString[8]=0; // voorkom dat filenaam meer dan acht posities heeft
-                  strcpy(filename,TempString);                
-                  strcat(filename,".dat");
-
-                  // evntueel vorig bestand wissen
-                  FileErase(filename);
+                  // Openen nieuw bestand.
+                  SelectSDCard(true);
+                  BodyTextFile = SD.open(filename, FILE_WRITE);
+                  SelectSDCard(false);
                   }
                 }
-              IPBuffer[InByteCounter]=0;
+              else
+                {
+                // als de tijd wordt meegeleverd, dan de clock gelijkzetten.
+                if(ClockSyncHTTP)
+                  {
+                  if(ParseString(IPBuffer,"time=", TempString,";, "))
+                    {
+                    ClearEvent(&TempEvent);
+                    TempEvent.Command=CMD_CLOCK_TIME;
+                    TempEvent.Par2=str2ultime(TempString);
+                    if(TempEvent.Par2<0xffffffff)
+                      ExecuteCommand(&TempEvent);
+
+                    }            
+                  if(ParseString(IPBuffer,"date=", TempString,";, "))
+                    {
+                    ClearEvent(&TempEvent);
+                    TempEvent.Command=CMD_CLOCK_DATE;
+                    TempEvent.Par2=str2uldate(TempString);
+                    if(TempEvent.Par2<0xffffffff)
+                      ExecuteCommand(&TempEvent);
+                    }            
+                  }            
+                }
+              }
+
+            // State 2: In deze state komen de regels van de body-text voorbij
+            else if(State==2)
+              {
+              // als bodytext moet worden opgeslagen in en bestand
+              SelectSDCard(true);
+              if(BodyTextFile)
+                {
+                BodyTextFile.write((uint8_t*)IPBuffer,strlen(IPBuffer));
+                BodyTextFile.write('\n'); // nieuwe regel
+                }
+              SelectSDCard(false);
               }
             InByteCounter=0;          
             }
           }
         }
+
+      // eventueel geopende bestand op SDCard afsluiten
+      if(BodyTextFile)
+        {
+        SelectSDCard(true);
+        BodyTextFile.close();
+        SelectSDCard(false);
+        }        
       delay(100);
       HTTPClient.flush();// Verwijder eventuele rommel in de buffer.
       HTTPClient.stop();
-      State=true;
       }
     else
       {
-      // niet gelukt om de TCP-IP verbinding op te zetten. Genereerd error en herinitialiseer de ethernetkaart.
-      State=false;
-      delay(1000); // korte pause tussen de nieuwe pogingen om verbinding te maken.
+      // niet gelukt om de TCP-IP verbinding op te zetten. Genereer error en her-initialiseer de ethernetkaart.
+      State=0;
+      delay(3000); // korte pause tussen de nieuwe pogingen om verbinding te maken.
       if(EthernetInit())
         CookieTimer=1;// gelijk een nieuwe cookie versturen.
       }
     }
-  while(!State && ++Try<3);
+  while(State==0 && ++Try<3);
 
   free(TempString);
   free(IPBuffer);
@@ -997,255 +1056,70 @@ boolean SendHTTPRequest(char* Request)
     }
 
   return State;
-}
+  }
 
 
 /*********************************************************************************************\
- * Deze routine haalt uit een http request de waarden die bij de opgegeven parameter hoort
- * Niet case-sinsitive.
+ * Deze routine haalt uit een string de waarde die bij de opgegeven parameter hoort
+ * er wordt niet case sensitief gezocht naar KeyWord. Opvolgende spaties worden verwijderd en de tekens
+ * tot aan de eerste worden toegevoed aan ResultString
  \*********************************************************************************************/
-boolean ParseHTTPRequest(char* HTTPRequest,char* Keyword, char* ResultString)
-{
+boolean ParseString(char* StringToParse,char* Keyword, char* ResultString,char* BreakChars)
+  {
   int x,y,z;
   int Keyword_len=strlen(Keyword);
-  int HTTPRequest_len=strlen(HTTPRequest);
+  int StringToParse_len=strlen(StringToParse);
 
   ResultString[0]=0;
 
-  if(HTTPRequest_len<3) // doe geen moeite als de string te weinig tekens heeft
+  if(StringToParse_len<3) // doe geen moeite als de string te weinig tekens heeft.
     return -1;
 
-  for(x=0; x<=(HTTPRequest_len-Keyword_len); x++)
-  {
+  for(x=0; x<=(StringToParse_len-Keyword_len); x++)
+    {
     y=0;
-    while(y<Keyword_len && (tolower(HTTPRequest[x+y])==tolower(Keyword[y])))
+    while(y<Keyword_len && (tolower(StringToParse[x+y])==tolower(Keyword[y])))
       y++;
 
     z=x+y;
-    if(y==Keyword_len && HTTPRequest[z]=='=' && (HTTPRequest[x-1]=='?' || HTTPRequest[x-1]=='&' || HTTPRequest[x-1]==' ')) // als tekst met een opvolgend '=' teken is gevonden
-    {
-      // Keyword gevonden. sla spaties en '=' teken over.
-
-      //Test tekens voor Keyword
-      while(z<HTTPRequest_len && (HTTPRequest[z]=='=' || HTTPRequest[z]==' '))z++;
+    if(y==Keyword_len)
+      {
+      // tekens die overgeslagen kunnen worden
+      while(z<StringToParse_len && StringToParse[z]==' ')z++;
 
       x=0; // we komen niet meer terug in de 'for'-loop, daarom kunnen we x hier even gebruiken.
-      while(z<HTTPRequest_len && HTTPRequest[z]!='&' && HTTPRequest[z]!=' ')
-      {
-        if(HTTPRequest[z]=='+')
-          ResultString[x]=' ';
-        else if(HTTPRequest[z]=='%' && HTTPRequest[z+1]=='2' && HTTPRequest[z+2]=='0')
+      y=0; // Vlag die aangeeft if een break teken is gevonden
+      // Tekens waarbij afgebroken moet worden
+      while(z<StringToParse_len && y<100)
         {
+        if(StringToParse[z]=='+')
+          ResultString[x]=' ';
+        else if(StringToParse[z]=='%' && StringToParse[z+1]=='2' && StringToParse[z+2]=='0')
+          {
           ResultString[x]=' ';
           z+=2;
-        }
+          }
         else
-          ResultString[x]=HTTPRequest[z];
+          ResultString[x]=StringToParse[z];
 
         z++;
         x++;
-      }
+        
+        for(y=0;y<strlen(BreakChars);y++)
+          if(BreakChars[y]==StringToParse[z])
+            y=100; // stop tekens toevoegen aan resultstring
+        }
+        
       ResultString[x]=0;
+      
       return true;
+      }
     }
-  }
   return false;
-}
-
-#ifdef WEBAPP_OLD
-
+  }
 
 void ExecuteIP(void)
   {
-  char InByte;
-  boolean RequestCompleted=false;  
-  boolean Completed=false;
-  int Protocol=0;
-  int InByteCounter;
-  char FileName[13];
-  boolean RequestEvent=false;
-  boolean RequestFile=false;
-  int x,y;
-  unsigned long TimeoutTimer=millis() + 5000; // Na enkele seconden moet de gehele transactie gereed zijn, anders 'hik' in de lijn.
-  
-  char *InputBuffer_IP = (char*) malloc(IP_BUFFER_SIZE+1);
-  char *Event          = (char*) malloc(INPUT_BUFFER_SIZE+1);
-  char *TmpStr1        = (char*) malloc(INPUT_BUFFER_SIZE+1);
-  char *TmpStr2        = (char*) malloc(40); 
-
-  Event[0]=0; // maak de string leeg.
-  
-  EthernetClient HTTPClient=HTTPServer.available();
-  
-  if(HTTPClient)
-    {
-    HTTPClient.getRemoteIP(ClientIPAddress);  
-
-    // Controleer of het IP adres van de Client geldig is. 
-    if((Settings.Client_IP[0]!=0 && ClientIPAddress[0]!=Settings.Client_IP[0]) ||
-       (Settings.Client_IP[1]!=0 && ClientIPAddress[1]!=Settings.Client_IP[1]) ||
-       (Settings.Client_IP[2]!=0 && ClientIPAddress[2]!=Settings.Client_IP[2]) ||
-       (Settings.Client_IP[3]!=0 && ClientIPAddress[3]!=Settings.Client_IP[3]))
-      {
-      RaiseMessage(MESSAGE_10);
-      }
-    else
-      {
-      InByteCounter=0;
-      while(HTTPClient.connected()  && !Completed && TimeoutTimer>millis())
-        {
-        if(HTTPClient.available()) 
-          {
-          InByte=HTTPClient.read();
-
-          if(isprint(InByte) && InByteCounter<IP_BUFFER_SIZE)
-            {
-            InputBuffer_IP[InByteCounter++]=InByte;
-            }
-      
-          else if((InByte==0x0D || InByte==0x0A))
-            {
-            InputBuffer_IP[InByteCounter]=0;
-            InByteCounter=0;
-
-            if(Settings.Debug==VALUE_ON)
-              {
-              Serial.println(InputBuffer_IP);
-              Serial.print(F("DEBUG: HTTP-Input="));
-              }
-
-            // Kijk of het een HTTP-request is
-            if(Protocol==0)
-              {
-              if(StringFind(InputBuffer_IP,"GET")!=-1)
-                Protocol=VALUE_SOURCE_HTTP;// HTTP-Request
-              }
-            
-            if(Protocol==VALUE_SOURCE_HTTP)
-              {
-              if(!RequestCompleted)
-                {
-                Completed=true;
-                
-                // als de beveiliging aan staat, dan kijken of de juiste pin ip meegegeven in het http-request. x is vlag voor toestemming verwerking event
-                x=false;
-                if(Settings.Password[0]!=0)
-                  {
-                  sprintf(TmpStr2,"%s:%s",HTTPCookie,Settings.Password);  
-                  md5(TmpStr2);
-                  
-                  if(ParseHTTPRequest(InputBuffer_IP,"key",TmpStr1))
-                    {
-                    if(strcmp(TmpStr2,TmpStr1)==0)
-                      x=true;
-                    }
-                  }
-                else
-                  x=true;
-
-                if(x)
-                  {                
-                  if(ParseHTTPRequest(InputBuffer_IP,"event",Event))
-                    RequestEvent=true;
-                   
-                  if(ParseHTTPRequest(InputBuffer_IP,"file",TmpStr1))
-                    {
-                    TmpStr1[8]=0; // voorkom dat een file meer dan 8 posities heeft (en een afsluitende 0)
-                    strcpy(FileName,TmpStr1);
-                    strcat(FileName,".dat");
-                    RequestFile=true;
-                    }
-                    
-                  if(RequestFile || RequestEvent)
-                    {
-                    RequestCompleted=true;
-                    strcpy(TmpStr1,"HTTP/1.1 200 Ok");
-                    HTTPClient.println(TmpStr1);
-                    }
-                  else
-                    HTTPClient.println(F("HTTP/1.1 400 Bad Request"));
-                  }
-                else                    
-                  HTTPClient.println(F("HTTP/1.1 403 Forbidden"));
-                }
-
-              HTTPClient.println(F("Content-Type: text/html"));
-              HTTPClient.print(F("Server: Nodo/Build="));
-              HTTPClient.println(int2str(NODO_BUILD));             
-              if(bitRead(HW_Config,HW_CLOCK))
-                {
-                HTTPClient.print(F("Date: "));
-                HTTPClient.println(DateTimeString());             
-                }
-              HTTPClient.println(""); // HTTP Request wordt altijd afgesloten met een lege regel
-  
-              if(RequestFile)
-                {              
-                // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
-                SelectSDCard(true);
-                File dataFile=SD.open(FileName);
-                if(dataFile) 
-                  {
-                  y=0;       
-                  while(dataFile.available())
-                    {
-                    x=dataFile.read();
-                    if(isprint(x) && y<INPUT_BUFFER_SIZE)
-                      {
-                      TmpStr1[y++]=x;
-                      }
-                    else
-                      {
-                      TmpStr1[y]=0;
-                      y=0;                    
-                      SelectSDCard(false);
-                      
-                      if(RequestFile)
-                        {
-                        HTTPClient.println();
-                        RequestFile=false;// gebruiken we even als vlag om de eerste keer de regel met asteriks af te drukken omdat deze variabele toch verder niet meer nodig is
-                        }
-                      HTTPClient.print(TmpStr1);
-                      HTTPClient.println();
-                      SelectSDCard(true);
-                      }
-                    }
-                  dataFile.close();
-                  SelectSDCard(false);
-                  }  
-                else 
-                  HTTPClient.println(cmd2str(MESSAGE_03));
-                }
-              } // einde HTTP-request
-            }
-          else
-            {
-            // Er is geen geldig teken binnen gekomen. Even wachten en afbreken.
-            delay(1000);
-            Completed=true;
-            }
-          }
-        }
-      }
-    delay(100);  // korte pauze om te voorkomen dat de verbinding wordt verbroken alvorens alle data door client verwerkt is.
-    HTTPClient.flush();// Verwijder eventuele rommel in de buffer.
-    HTTPClient.stop();
-    }
-
-  free(TmpStr1);
-  free(TmpStr2);
-  free(InputBuffer_IP);
-
-  if(RequestEvent)
-    ExecuteLine(Event, Protocol);
-
-  free(Event);
-  return;
-  }  
-
-#else
-void ExecuteIP(void)
-{
   char InByte;
   boolean RequestCompleted=false;  
   boolean Completed=false;
@@ -1322,7 +1196,7 @@ void ExecuteIP(void)
                   sprintf(TmpStr2,"%s:%s",HTTPCookie,Settings.Password);  
                   md5(TmpStr2);
 
-                  if(ParseHTTPRequest(InputBuffer_IP,"key",TmpStr1))
+                  if(ParseString(InputBuffer_IP,"key=",TmpStr1,"&? "))
                     {
                     if(strcmp(TmpStr2,TmpStr1)==0)
                       x=true;
@@ -1333,7 +1207,7 @@ void ExecuteIP(void)
 
                 if(x)
                   {                
-                  if(ParseHTTPRequest(InputBuffer_IP,"event",Event))
+                  if(ParseString(InputBuffer_IP,"event=",Event,"&? "))
                     {
                     RequestEvent=true;
                     RequestCompleted=true;
@@ -1396,7 +1270,6 @@ void ExecuteIP(void)
   free(Event);
   return;
   }  
-#endif //WEBAPP_NEW
 
 #endif //MEGA
 
@@ -1438,7 +1311,6 @@ boolean RawSignal_2_Nodo_OLD(struct NodoEventStruct *Event)
   {
   unsigned long bitstream=0L;
   int x,y,z;
-  const byte PTMF=RawSignal.Pulses[0];
 
   static unsigned long PreviousTime=0;
   static unsigned long PreviousBitstream=0;
@@ -1450,7 +1322,7 @@ boolean RawSignal_2_Nodo_OLD(struct NodoEventStruct *Event)
   z=0;
   for(x=3;x<=RawSignal.Number;x+=2)
     {
-    if((RawSignal.Pulses[x]*PTMF)>NODO_PULSE_MID)      
+    if((RawSignal.Pulses[x]*RawSignal.Multiply)>NODO_PULSE_MID)      
       bitstream|=(long)(1L<<z); //LSB in signaal wordt  als eerste verzonden
     z++;
     }

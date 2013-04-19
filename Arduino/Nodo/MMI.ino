@@ -102,7 +102,7 @@ char* DateTimeString(void)
     s[x]=(*(ProgmemString(Text_04)+(Time.Day-1)*3+x));
   s[x]=0;
 
-  sprintf(dt,"Date=%d-%02d-%02d (%s), Time=%02d:%02d", Time.Year, Time.Month, Time.Date, s, Time.Hour, Time.Minutes);
+  sprintf(dt,"Date=%02d-%02d-%d (%s), Time=%02d:%02d",Time.Date,Time.Month,Time.Year, s, Time.Hour, Time.Minutes);
 
   return dt;
   }
@@ -200,11 +200,13 @@ void PrintTerminal(char* LineToPrint)
 #define PAR2_DIM           8
 #define PAR2_WDAY          9
 #define PAR2_TIME         10
-#define PAR2_ALARMENABLED 11
-#define PAR2_INT8         12
-#define PAR3_INT          13
-#define PAR4_INT          14
-#define PAR5_INT          15
+#define PAR2_DATE         11
+#define PAR2_ALARMENABLED 12
+#define PAR2_INT8         13
+#define PAR3_INT          14
+#define PAR4_INT          15
+#define PAR5_INT          16
+
 
 void Event2str(struct NodoEventStruct *Event, char* EventString)
   {
@@ -240,7 +242,17 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         ParameterToView[3]=PAR2_WDAY;         // dag van de week of een wildcard
         break;
 
-    // Par1 en Par2 samengesteld voor weergave van COMMAND <nummer> , <analoge waarde>
+      case CMD_BREAK_ON_TIME_LATER:
+      case CMD_BREAK_ON_TIME_EARLIER:
+      case CMD_CLOCK_TIME:
+        ParameterToView[0]=PAR2_TIME;         // tijd
+        break;
+
+      case CMD_CLOCK_DATE:
+        ParameterToView[0]=PAR2_DATE;         // datum
+        break;
+
+      // Par1 en Par2 samengesteld voor weergave van COMMAND <nummer> , <analoge waarde>
       case CMD_BREAK_ON_VAR_EQU:
       case CMD_BREAK_ON_VAR_LESS:
       case CMD_BREAK_ON_VAR_MORE:
@@ -263,7 +275,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_WIRED_SMITTTRIGGER:
       case CMD_WIRED_THRESHOLD:
       case CMD_WIRED_ANALOG:
-      case CMD_VARIABLE_LAST_EVENT:
+      case CMD_VARIABLE_FROM_EVENT:
         ParameterToView[0]=PAR1_INT;
         ParameterToView[1]=PAR2_INT;
         break;
@@ -330,7 +342,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_TIMER_EVENT:
       case CMD_ALARM:
       case CMD_SIMULATE_DAY:
-      case CMD_CLOCK_DOW:
       case CMD_BOOT_EVENT:
       case CMD_NEWNODO:
       case CMD_HOME_SET:
@@ -453,6 +464,19 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
             strcat(EventString, "-");
           else
             strcat(EventString, int2str(x));
+          break;
+          
+        case PAR2_DATE:
+          strcat(EventString, int2str((Event->Par2>>28)&0xf));
+          strcat(EventString, int2str((Event->Par2>>24)&0xf));
+            strcat(EventString, "-");
+          strcat(EventString, int2str((Event->Par2>>20)&0xf));
+          strcat(EventString, int2str((Event->Par2>>16)&0xf));
+            strcat(EventString, "-");
+          strcat(EventString, int2str((Event->Par2>>12)&0xf));
+          strcat(EventString, int2str((Event->Par2>>8)&0xf));
+          strcat(EventString, int2str((Event->Par2>>4 )&0xf));
+          strcat(EventString, int2str((Event->Par2    )&0xf));
           break;
           
         case PAR2_WDAY:
@@ -648,7 +672,7 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_BREAK_ON_VAR_LESS_VAR:
           case CMD_BREAK_ON_VAR_MORE_VAR:
           case CMD_VARIABLE_VARIABLE:
-          case CMD_VARIABLE_LAST_EVENT:
+          case CMD_VARIABLE_FROM_EVENT:
             if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
               error=MESSAGE_02;
             if(EventToExecute.Par2<1 || EventToExecute.Par2>USER_VARIABLES_MAX)
@@ -668,32 +692,24 @@ int ExecuteLine(char *Line, byte Port)
             if(EventToExecute.Par1<1 || EventToExecute.Par1>TIMER_MAX)
               error=MESSAGE_02;
             break;
-            
-          // geldig jaartal
-          case CMD_CLOCK_YEAR:
-            if(EventToExecute.Par1!=20 || EventToExecute.Par2>99)
-              error=MESSAGE_02;
-            break;
-          
+                      
           // geldige tijd    
           case CMD_BREAK_ON_TIME_LATER:
           case CMD_BREAK_ON_TIME_EARLIER:
           case CMD_CLOCK_TIME:
-            if(EventToExecute.Par1>23 || EventToExecute.Par2>59)
+            EventToExecute.Par1=0;
+            if((EventToExecute.Par2=str2ultime(Command))==0xffffffff)
               error=MESSAGE_02;
             break;
-      
+    
           // geldige datum
-          case CMD_CLOCK_DATE: // data1=datum, data2=maand
-            if(EventToExecute.Par1>31 || EventToExecute.Par1<1 || EventToExecute.Par2>12 || EventToExecute.Par2<1)
+          case CMD_CLOCK_DATE:
+            // datum in Par2 volgens format DDMMYYYY. 
+            EventToExecute.Par1=0;
+            if((EventToExecute.Par2=str2uldate(Command))==0xffffffff)
               error=MESSAGE_02;
             break;
-      
-          case CMD_CLOCK_DOW:
-            if(EventToExecute.Par1<1 || EventToExecute.Par1>7)
-              error=MESSAGE_02;
-            break;
-      
+            
           // test:EventToExecute.Par1 binnen bereik maximaal beschikbare wired poorten.
           case CMD_WIRED_IN_EVENT:
             if(EventToExecute.Par1<1 || EventToExecute.Par1>WIRED_PORTS)
@@ -916,8 +932,6 @@ int ExecuteLine(char *Line, byte Port)
                         w=TmpStr1[x];
                         if(w>='0' && w<='9' || w=='*')
                           {
-//???                          a=0xffffffff  ^ (0xfUL <<y); // Mask maken om de nibble positie y te wissen.
-//                          EventToExecute.Par2&=a; // maak nibble leeg
                           if(w=='*')
                             EventToExecute.Par2|=(0xFUL<<y); // vul nibble met wildcard
                           else
@@ -932,7 +946,7 @@ int ExecuteLine(char *Line, byte Port)
                           }
                         }
                       if(GetArgv(Command,TmpStr1,5)) // Day is optioneel. Maar als deze parameter ingevuld, dan meenemen in de berekening.
-                        y=str2weekday(TmpStr1);
+                        y=str2weekday (TmpStr1);
                       else // Dag niet opgegeven
                         y=0xF;
 
@@ -1356,7 +1370,7 @@ void PrintWelcome(void)
       s[x]=(*(ProgmemString(Text_04)+(Time.Day-1)*3+x));
     s[x]=0;
 
-    sprintf(str,"Date=%d-%02d-%02d (%s), Time=%02d:%02d, DaylightSaving=%d", Time.Year, Time.Month, Time.Date, s, Time.Hour, Time.Minutes,Time.DaylightSaving);
+    sprintf(str,"Date=%02d-%02d-%2d (%s), Time=%02d:%02d, DaylightSaving=%d", Time.Date, Time.Month, Time.Year, s, Time.Hour, Time.Minutes,Time.DaylightSaving);
     Serial.println(str);
     }
   Serial.println(ProgmemString(Text_22));
