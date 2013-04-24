@@ -216,12 +216,12 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       break;
 
     case CMD_BREAK_ON_TIME_LATER:
-      if(EventToExecute->Par2<(Time.Hour*100+Time.Minutes))
+      if(EventToExecute->Par2<(Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12))
         error=MESSAGE_15;
       break;
 
     case CMD_BREAK_ON_TIME_EARLIER:
-      if(EventToExecute->Par2>(Time.Hour*100+Time.Minutes))
+      if(EventToExecute->Par2>(Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12))
         error=MESSAGE_15;
       break;
 
@@ -271,7 +271,6 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       break;
 
     case CMD_CLOCK_SYNC:
-
       if(bitRead(HW_Config,HW_CLOCK)) // bitRead(HW_Config,HW_CLOCK)=true want dan is er een RTC aanwezig.
         {   
         // haal de tijd op van de Webserver. Dit vind plaats in de funktie: boolean SendHTTPRequest(char* Request)
@@ -544,6 +543,8 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
     case CMD_FILE_EXECUTE:
       strcpy(TempString,cmd2str(CMD_FILE_EXECUTE));
       strcat(TempString," ");
+      strcat(TempString,int2str(EventToExecute->Par2));
+      strcat(TempString,",");
       strcat(TempString,int2str(EventToExecute->Par1));
       ExecuteLine(TempString,EventToExecute->Port);
       break;      

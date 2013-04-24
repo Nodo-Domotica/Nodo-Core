@@ -1959,6 +1959,7 @@ unsigned long str2ultime(char* str)
   
   if(x >23 || y>59)
     TimeInt=0xffffffff;
+
   return TimeInt;
   }
 
