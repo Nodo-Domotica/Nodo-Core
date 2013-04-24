@@ -118,7 +118,7 @@ R527
 - BodyText naar HTTP-Sessie verloopt niet meer door tussenkomst van file op SDCard. (Verbeteren performance en voorkomen slijtage SDCard bij intensief gebruik).
 - Home adres van de Nodo verwerkt in MAC adres.
 
-R528
+R528 (Ter beschikking gesteld aan gebruikers als Beta 3.4.9)
 - RawSignal aanpassingen: Ander format op SDCard. Tevens 0x voor hexwaarden bij RawSignalList. Oude files voor RawSignal zijn NIET compatibel!
 - Technisch: Toevoeging elementen Delay en Multiply aan de struct RawSignal
 - Technisch: Workaround voor delayMicroSeconds(0); bug in Arduino compiler 1.0.1 en later.
@@ -134,5 +134,15 @@ R528
 - Toevoeging DEVICE_18: RawSignalAnalyze
 - Toevoeging DEVICE_19: Innovations ID-12 RFID Tag reader
 - Toevoeging DEVICE_21: DFRobot LCD I2C/TWI 1602 Display
+
+==========================================================================================
+- Issue 660: ClockAll met voorloopnul geeft bizar resultaat
+- Issue 708: BreakOnEarlier en Later: syntax error
+- Issue 710: ClockSetTime par2
+- Issue 711: SimulateDay wordt geaccepteerd
+- Issue 712: BreakOnLater werkt niet
+- Issue 713: FileExecute vanuit de Eventlist werkt niet altijd
+- Commando [Test] verwijderd. Deze was in gebruik voor testdoeleinden tijdens ontwikkeling
+- Toevoeging Device-22 HC-SR04 Distance sensor (SWACDE-22-V10) == Integratie in Nodo-code nog testen ==
 
 \*****************************************************************************************/

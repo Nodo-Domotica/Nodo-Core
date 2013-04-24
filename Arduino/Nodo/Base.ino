@@ -1,4 +1,4 @@
-#define NODO_BUILD          528  //??? ophogen bij iedere build
+#define NODO_BUILD          529  //??? ophogen bij iedere build
 #define SETTINGS_VERSION     33  
 #include <EEPROM.h>
 #include <Wire.h>
@@ -11,9 +11,9 @@ prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSat";
 prog_char PROGMEM Text_22[] = "!******************************************************************************!";
 
 #ifdef NODO_MEGA
-prog_char PROGMEM Text_15[] = "Nodo V3.5.0 Mega, Product=SWACNC-MEGA-R%03d, Home=%d, ThisUnit=%d";
+prog_char PROGMEM Text_15[] = "Nodo Beta V3.4.9 Mega, Product=SWACNC-MEGA-R%03d, Home=%d, ThisUnit=%d";
 #else
-prog_char PROGMEM Text_15[] = "Nodo V3.5.0 Small, Product=SWACNC-SMALL-R%03d, Home=%d, ThisUnit=%d";
+prog_char PROGMEM Text_15[] = "Nodo Beta V3.4.9 Small, Product=SWACNC-SMALL-R%03d, Home=%d, ThisUnit=%d";
 #endif
 
 #ifdef NODO_MEGA
@@ -52,7 +52,7 @@ prog_char PROGMEM Cmd_019[]="HomeSet";
 prog_char PROGMEM Cmd_020[]="UnitSet"; 
 prog_char PROGMEM Cmd_021[]="Delay";
 prog_char PROGMEM Cmd_022[]="SendTo";
-prog_char PROGMEM Cmd_023[]="SimulateDay";
+prog_char PROGMEM Cmd_023[]="";
 prog_char PROGMEM Cmd_024[]="Sound";
 prog_char PROGMEM Cmd_025[]="Debug";
 prog_char PROGMEM Cmd_026[]="Stop";
@@ -80,7 +80,7 @@ prog_char PROGMEM Cmd_047[]="VariableWiredAnalog";
 prog_char PROGMEM Cmd_048[]="ClientIP";
 prog_char PROGMEM Cmd_049[]="Password";
 prog_char PROGMEM Cmd_050[]="EventlistFile";
-prog_char PROGMEM Cmd_051[]="Test"; //??? commando voor testdoeleinden
+prog_char PROGMEM Cmd_051[]="";
 prog_char PROGMEM Cmd_052[]="WaitEvent";
 prog_char PROGMEM Cmd_053[]="Lock";
 prog_char PROGMEM Cmd_054[]="Status"; 
@@ -312,7 +312,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_UNIT_SET                    20
 #define CMD_DELAY                       21
 #define CMD_SENDTO                      22
-#define CMD_SIMULATE_DAY                23
+#define CMD_res23                       23
 #define CMD_SOUND                       24
 #define CMD_DEBUG                       25
 #define CMD_STOP                        26
@@ -340,7 +340,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_CLIENT_IP                   48
 #define CMD_PASSWORD                    49
 #define CMD_EVENTLIST_FILE              50
-#define CMD_TEST                        51
+#define CMD_res51                       51
 #define CMD_WAIT_EVENT                  52
 #define CMD_LOCK                        53
 #define CMD_STATUS                      54

@@ -28,7 +28,7 @@
  #define DEVICE_19  RFID                 : Innovations ID-12 RFID Tag reader (SWACDE-19-V10) 
  #define DEVICE_20  // Reserved!         : BMP085 Barometric pressure sensor (SWACDE-20-V10)
  #define DEVICE_21  // LCDI2CWrite       : DFRobot LCD I2C/TWI 1602 display
- #define DEVICE_22 
+ #define DEVICE_22  HCSR04_Read          : Ultrasoon afstandsmeter HC-SR04
  #define DEVICE_23 
  #define DEVICE_24 
  #define DEVICE_99  // UserDevice        : Device voor eigen toepassing door gebruiker te bouwen.
@@ -3658,6 +3658,121 @@ void LCD_I2C_pulseEnable(uint8_t _data){
           
 
 //#######################################################################################################
+//#################################### Device-22: HCSR04_Read  ##########################################
+//#######################################################################################################
+
+/*********************************************************************************************\
+ * Funktionele beschrijving:
+ * 
+ * Deze device code zorgt voor uitlezing van een ultrasone afstandsmeter HC-SR04. Dit is een low-cost
+ * sensor die met behulp van ultrasone pulsen de afstand tot een object kan meten met een bereik van
+ * 2 tot 400 centimeter. Kan worden gebruikt als bijvoorbeeld parkeerhulp of als beveiliging van een  
+ * ruimte of object. Na aanroep van dit device wordt de afstand tot het object in centimeters geplaatst
+ * in de opgegeven variabele.
+ *
+ * Auteur             : Paul Tonkes, p.k.tonkes@gmail.com
+ * Support            : www.nodo-domotica.nl
+ * Datum              : 23-04-2013
+ * Versie             : 1.0
+ * Nodo productnummer : Device-22 HC-SR04 Distance sensor (SWACDE-22-V10)
+ * Compatibiliteit    : Nodo release 3.5.0
+ * Syntax             : "HCSR04_Read <variabele>"
+ *
+ ***********************************************************************************************
+ * Technische beschrijving:
+ *
+ * Compiled size      : 675 bytes voor een Mega en 660 voor een Small.
+ * Externe funkties   : float2ul(), GetArgv()
+ *
+ * De sensor heeft vier aansluitingen:
+ * VCC  => +5
+ * TRIG => Aansluiten op WiredOut-1
+ * ECHO => Aansluiten op WiredOut-2 (sluit uit veiligheid aan via een weerstand van 1K Ohm)
+ * GND  => Massa
+ *
+ \*********************************************************************************************/
+ 
+#ifdef DEVICE_22
+#define DEVICE_NAME_22 "HCSR04_Read"
+
+boolean Device22(byte function, struct NodoEventStruct *event, char *string)
+  {
+  #ifdef DEVICE_CORE_22
+  boolean success=false;
+  switch(function)
+    {        
+    case DEVICE_COMMAND:
+      {
+      // start de meting en zend een trigger puls van 10mSec.
+      digitalWrite(PIN_WIRED_OUT_1, LOW);
+      delayMicroseconds(2);
+      digitalWrite(PIN_WIRED_OUT_1, HIGH);
+      delayMicroseconds(10);
+      digitalWrite(PIN_WIRED_OUT_1, LOW);
+      
+      // meet de tijd van de echo puls. Uit dit gegeven berekenen we de afstand.
+      float distance=pulseIn(PIN_WIRED_OUT_1+1,HIGH);
+      distance=distance/58;
+  
+      Serial.println(distance);//??? debbug
+      
+      event->Command      = CMD_VARIABLE_SET;     // Commando "VariableSet"
+      event->Par2         = float2ul(distance);   // Waarde terugstoppen in de variabele
+      success=true;
+      break;
+      }
+      
+    case DEVICE_INIT:
+      {
+      pinMode(PIN_WIRED_OUT_1  , OUTPUT); // TRIG
+      pinMode(PIN_WIRED_OUT_1+1, INPUT ); // ECHO
+      break;
+      }
+
+    #ifdef NODO_MEGA
+    case DEVICE_MMI_IN:
+      {
+      char *TempStr=(char*)malloc(26);
+      string[25]=0;
+
+      if(GetArgv(string,TempStr,1))
+        {
+        if(strcasecmp(TempStr,DEVICE_NAME_22)==0)
+          {
+          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
+          // Par1 en Par2 hoeven niet te worden geparsed omdat deze default al door de MMI invoer van de Nodo 
+          // worden gevuld indien het integer waarden zijn. Toetsen op bereikenmoet nog wel plaats vinden.
+          if(event->Par1>0 && event->Par1<=USER_VARIABLES_MAX)
+            success=true;
+          }
+        }
+      free(TempStr);
+      break;
+      }
+
+    case DEVICE_MMI_OUT:
+      {
+      if(event->Command==(CMD_DEVICE_FIRST+DEVICE_ID))
+        {
+        strcpy(string,DEVICE_NAME_22);            // Eerste argument=het commando deel
+        strcat(string," ");
+        strcat(string,int2str(event->Par1));
+        strcat(string,",");
+        strcat(string,int2str(event->Par2));
+        }
+      success=true;
+      break;
+      }
+    #endif //NODO_MEGA
+
+    #endif //CORE_22
+    }
+  return success;
+  }
+#endif //DEVICE_22
+
+
+//#######################################################################################################
 //#################################### Device-99: Leeg   ################################################
 //#######################################################################################################
 
@@ -3736,8 +3851,8 @@ void LCD_I2C_pulseEnable(uint8_t _data){
  * Op de Nodo Mega zijn nog vier extra communicatielijnen die gebruikt kunnen worden voor User input/output: PIN_IO_1 t/m PIN_IO_4 (Arduino pin 38 t/m 41)
  \*********************************************************************************************/
  
-// Compileer de code van dit divice alleen als de gebruiker in het Nodo tabblad de definitie DEVICE_99 heeft
-// opgenomen. Ins dit niet het geval, dan zal de code ook niet worden gecompileerd en geen geheugenruimte in beslag nemen.
+// Compileer de code van dit device alleen als de gebruiker in het Nodo tabblad de definitie DEVICE_99 heeft
+// opgenomen. Is dit niet het geval, dan zal de code ook niet worden gecompileerd en geen geheugenruimte in beslag nemen.
 #ifdef DEVICE_99
 
 // Ieder device heeft een uniek ID. Deze worden onderhouden door het Nodo team. Als je een device hebt geprogrammeerd
@@ -3747,7 +3862,7 @@ void LCD_I2C_pulseEnable(uint8_t _data){
 
 // Een device heeft naast een uniek ID ook een eigen MMI string die de gebruiker kan invoeren via Telnet, Serial, HTTP 
 // of een script. Geef hier de naam op. De afhandeling is niet hoofdletter gevoelig.
-#define DEVICE_NAME "MyUserDevice"
+#define DEVICE_NAME_99 "MyUserDevice"
 
 // Deze device code wordt vanuit meerdere plaatsen in de Nodo code aangeroepen, steeds met een doel. Dit doel bevindt zich
 // in de variabele [function]. De volgende doelen zijn gedefinieerd:
@@ -3794,7 +3909,7 @@ void LCD_I2C_pulseEnable(uint8_t _data){
       // Code hier wordt eenmalig aangeroepen na een reboot van de Nodo.
       break;
       }
-      
+    
     #ifdef NODO_MEGA
     case DEVICE_MMI_IN:
       {
@@ -3810,7 +3925,7 @@ void LCD_I2C_pulseEnable(uint8_t _data){
       // Dit is het eerste argument in het commando. 
       if(GetArgv(string,TempStr,1))
         {
-        if(strcasecmp(TempStr,DEVICE_NAME)==0)
+        if(strcasecmp(TempStr,DEVICE_NAME_99)==0)
           {
           // Hier wordt de tekst van de protocolnaam gekoppeld aan het device ID.
           event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
@@ -3818,8 +3933,8 @@ void LCD_I2C_pulseEnable(uint8_t _data){
           // Vervolgens tweede parameter gebruiken
           if(GetArgv(string,TempStr,2)) 
             {
-            // plaats hier je code die de tweede parameter die zich in [TempStr] bevindt verder uitparsed
-            // De byte Par1 en unsigned long Par2 die zic in de struct [event] bevindt kunnen worden gebruikt.
+            // plaats hier je code die de eerste parameter die zich in [TempStr] bevindt verder uitparsed
+            // De byte Par1 en unsigned long Par2 die zich in de struct [event] bevindt kunnen worden gebruikt.
               
             if(GetArgv(string,TempStr,3))
               {
@@ -3843,7 +3958,7 @@ void LCD_I2C_pulseEnable(uint8_t _data){
       // Dit deel van de code wordt alleen uitgevoerd door een Nodo Mega, omdat alleen deze over een MMI beschikt.
       if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
         {
-        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+        strcpy(string,DEVICE_NAME_99);            // Eerste argument=het commando deel
 
         // Vervolgens kan met strcat() hier de parameters aan worden toegevoegd      
         }

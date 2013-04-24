@@ -341,7 +341,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_EVENTLIST_ERASE:
       case CMD_TIMER_EVENT:
       case CMD_ALARM:
-      case CMD_SIMULATE_DAY:
       case CMD_BOOT_EVENT:
       case CMD_NEWNODO:
       case CMD_HOME_SET:
@@ -606,7 +605,6 @@ int ExecuteLine(char *Line, byte Port)
         switch(EventToExecute.Command)
           {
           //test; geen, altijd goed
-          case CMD_SIMULATE_DAY:
           case CMD_EVENTLIST_ERASE:
           case CMD_STOP:
           case CMD_RESET:
@@ -615,7 +613,6 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_SETTINGS_SAVE:
           case CMD_CLOCK_EVENT_DAYLIGHT:
           case CMD_STATUS:
-          case CMD_TEST:
           case CMD_DELAY:
           case CMD_SOUND: 
           case CMD_USEREVENT:
@@ -697,9 +694,14 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_BREAK_ON_TIME_LATER:
           case CMD_BREAK_ON_TIME_EARLIER:
           case CMD_CLOCK_TIME:
-            EventToExecute.Par1=0;
-            if((EventToExecute.Par2=str2ultime(Command))==0xffffffff)
-              error=MESSAGE_02;
+            error=MESSAGE_02;
+            if(GetArgv(Command,TmpStr1,2))
+              {
+              EventToExecute.Par1=0;
+              if((EventToExecute.Par2=str2ultime(TmpStr1))!=0xffffffff)
+                error=0;
+              }
+              
             break;
     
           // geldige datum
