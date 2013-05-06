@@ -103,8 +103,8 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
   
   if(Continue && error==0)
     {
-    PrintEvent(Event);  // geef event weer op Terminal
     LastReceived=*Event;// Bewaar event als -vorig- event. 
+    PrintEvent(Event);
   
     if(ExecutionDepth>=MACRO_EXECUTION_DEPTH)
       {
@@ -116,7 +116,7 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
       {
       // ############# Verwerk event ################  
 
-      // kijk of het een Device betreft. De device ID's bevinden zich in een kleine tabel. Zoek din de tabel naar het betreffende ID en voer 
+      // kijk of het een Device betreft. De device ID's bevinden zich in een kleine tabel. Zoek dan de tabel naar het betreffende ID en voer 
       // de DEVICE_COMMAND opdracht uit. Als het betreffende device geen DEVICE_COMMAND code heeft, dan wordt er ook niets uitgevoerd.
       for(x=0; x<DEVICE_MAX; x++)
         if(Device_id[x]==(Event->Command-CMD_DEVICE_FIRST))
@@ -138,27 +138,9 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
           if(CheckEvent(Event,&EventlistEvent)) // Als er een match is tussen het binnengekomen event en de regel uit de eventlist.
             {        
             EventlistAction.Port = VALUE_SOURCE_EVENTLIST;
-            
-            #ifdef NODO_MEGA
-            // op dit punt in de code worden de Checksum, Type niet gebruikt.
-            // Wellicht niet mooi, maar deze misbruiken we even om de positie in de eventlist en de nesting
-            // diepte aan te geven.
-            EventlistAction.Checksum=x/256;
-            EventlistAction.Direction=x%256;
-            #endif
-    
-            // De actie uit de eventlist kan van het type commando of event zijn. 
-            if(NodoType(&EventlistAction)==NODO_TYPE_COMMAND) // is de ontvangen code een uitvoerbaar commando?
-              {
-              PrintEvent(&EventlistAction);
-              if(error=ExecuteCommand(&EventlistAction))
-                break;
-              }
-            else
-              {// het is een (nieuw) event;
-              if(error=ProcessEvent2(&EventlistAction))
-                break;
-              }
+            ExecutionLine=x;
+            if(error=ProcessEvent2(&EventlistAction))
+              break;
             }
           }
         }      

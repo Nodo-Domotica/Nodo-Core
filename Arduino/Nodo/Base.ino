@@ -1,4 +1,4 @@
-#define NODO_BUILD          529  //??? ophogen bij iedere build
+#define NODO_BUILD          530  //??? ophogen bij iedere build
 #define SETTINGS_VERSION     33  
 #include <EEPROM.h>
 #include <Wire.h>
@@ -52,13 +52,13 @@ prog_char PROGMEM Cmd_019[]="HomeSet";
 prog_char PROGMEM Cmd_020[]="UnitSet"; 
 prog_char PROGMEM Cmd_021[]="Delay";
 prog_char PROGMEM Cmd_022[]="SendTo";
-prog_char PROGMEM Cmd_023[]="";
+prog_char PROGMEM Cmd_023[]="DI";
 prog_char PROGMEM Cmd_024[]="Sound";
 prog_char PROGMEM Cmd_025[]="Debug";
 prog_char PROGMEM Cmd_026[]="Stop";
 prog_char PROGMEM Cmd_027[]="TimerRandom";
 prog_char PROGMEM Cmd_028[]="TimerSet";
-prog_char PROGMEM Cmd_029[]="ID";
+prog_char PROGMEM Cmd_029[]="TimerSetVariable";
 prog_char PROGMEM Cmd_030[]="VariableEvent";
 prog_char PROGMEM Cmd_031[]="VariablePulseTime";
 prog_char PROGMEM Cmd_032[]="VariablePulseCount";
@@ -312,13 +312,13 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define CMD_UNIT_SET                    20
 #define CMD_DELAY                       21
 #define CMD_SENDTO                      22
-#define CMD_res23                       23
+#define CMD_ID                          23
 #define CMD_SOUND                       24
 #define CMD_DEBUG                       25
 #define CMD_STOP                        26
 #define CMD_TIMER_RANDOM                27
 #define CMD_TIMER_SET                   28
-#define CMD_ID                          29
+#define CMD_TIMER_SET_VARIABLE          29
 #define CMD_VARIABLE_FROM_EVENT         30
 #define CMD_VARIABLE_PULSE_TIME         31
 #define CMD_VARIABLE_PULSE_COUNT        32
@@ -681,8 +681,8 @@ struct SettingsStruct
   byte    Subnet[4];                                        // Submask
   byte    Gateway[4];                                       // Gateway
   byte    DnsServer[4];                                     // DNS Server IP adres
-  int     OutputPort;                                       // Poort van de inkomende IP communnicatie
-  int     PortClient;                                       // Poort van de uitgaande IP communnicatie
+  unsigned int  OutputPort;                                 // Poort van de inkomende IP communnicatie
+  unsigned int  PortClient;                                 // Poort van de uitgaande IP communnicatie
   byte    EchoSerial;
   byte    EchoTelnet;
   byte    Log;
@@ -734,8 +734,9 @@ unsigned long UserTimer[TIMER_MAX];                         // Timers voor de ge
 boolean WiredInputStatus[WIRED_PORTS];                      // Status van de WiredIn worden hierin opgeslagen.
 boolean WiredOutputStatus[WIRED_PORTS];                     // Wired variabelen.
 byte DaylightPrevious;                                      // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet.
-int ExecutionDepth=0;                                       // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's.
-void(*Reboot)(void)=0;                                       // reset functie op adres 0.
+byte ExecutionDepth=0;                                      // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's.
+int ExecutionLine=0;                                        // Regel in de eventlist die in uitvoer is.
+void(*Reboot)(void)=0;                                      // reset functie op adres 0.
 uint8_t RFbit,RFport,IRbit,IRport;                          // t.b.v. verwerking IR/FR signalen.
 float UserVar[USER_VARIABLES_MAX];                          // Gebruikers variabelen
 unsigned long HW_Config=0;                                  // Hardware configuratie zoals gedetecteerd door de Nodo. 

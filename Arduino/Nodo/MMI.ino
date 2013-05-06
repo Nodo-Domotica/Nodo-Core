@@ -16,14 +16,6 @@ void PrintEvent(struct NodoEventStruct *Event)
   char* TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
 
   StringToPrint[0]=0; // als start een lege string
-
-  // Bij input uit de eventlist wordt tevens de executiondepth en regel uit de eventlist weergegeven. We hebben hiervoor uit de struct
-  // Checksum en Direction 'misbruikt'. Bewaar regelnummer in x en herstel direction weer. Deze oplossing is niet netjes maar bespaart veel code/ram,
-  if(Event->Port==VALUE_SOURCE_EVENTLIST)
-    {
-    x=Event->Checksum*256+Event->Direction;
-    Event->Direction=VALUE_DIRECTION_INPUT;
-    }
   
   // Direction
   if(Event->Direction)
@@ -44,9 +36,9 @@ void PrintEvent(struct NodoEventStruct *Event)
       {
       // print de nessting diepte van de eventlist en de regel uit de eventlist.
       strcat(StringToPrint, "(");
-      strcat(StringToPrint, int2str(ExecutionDepth));
+      strcat(StringToPrint, int2str(ExecutionDepth-1));
       strcat(StringToPrint, ".");
-      strcat(StringToPrint, int2str(x));
+      strcat(StringToPrint, int2str(ExecutionLine));
       strcat(StringToPrint, ")");
       }
     strcat(StringToPrint, "; "); 
@@ -283,6 +275,8 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case VALUE_BUILD:
       case VALUE_HWCONFIG:
       case VALUE_FREEMEM:
+      case CMD_PORT_SERVER:
+      case CMD_PORT_CLIENT:
         ParameterToView[0]=PAR2_INT;
         break;
         
@@ -346,8 +340,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_HOME_SET:
       case CMD_VARIABLE_PULSE_TIME:
       case CMD_VARIABLE_PULSE_COUNT:
-      case CMD_PORT_SERVER:
-      case CMD_PORT_CLIENT:
         ParameterToView[0]=PAR1_INT;
         break;
 
@@ -631,6 +623,11 @@ int ExecuteLine(char *Line, byte Port)
                         
           case CMD_TIMER_SET:
             if(EventToExecute.Par1>TIMER_MAX)
+              error=MESSAGE_02;
+            break;
+                  
+          case CMD_TIMER_SET_VARIABLE:
+            if(EventToExecute.Par1>TIMER_MAX || EventToExecute.Par2<1 || EventToExecute.Par2>USER_VARIABLES_MAX)
               error=MESSAGE_02;
             break;
                   
@@ -1236,16 +1233,12 @@ int ExecuteLine(char *Line, byte Port)
             break;
 
           case CMD_PORT_SERVER:
-            {
-            if(GetArgv(Command,TmpStr1,2))
-              EventToExecute.Par2=str2int(TmpStr1);
-            break;
-            }  
-
           case CMD_PORT_CLIENT:
             {
             if(GetArgv(Command,TmpStr1,2))
               EventToExecute.Par2=str2int(TmpStr1);
+            if(EventToExecute.Par2 > 0xffff)
+              error=MESSAGE_02;
             break;
             }  
 

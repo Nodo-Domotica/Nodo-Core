@@ -82,7 +82,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       break;        
 
     case CMD_VARIABLE_SET:
-      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
+      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afgevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         UserVar[EventToExecute->Par1-1]=ul2float(EventToExecute->Par2);
         TempEvent.Command=CMD_VARIABLE_EVENT;
@@ -328,7 +328,11 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       break;
 
     case CMD_TIMER_SET:
-       TimerSet(EventToExecute->Par1,EventToExecute->Par2);
+      TimerSet(EventToExecute->Par1,EventToExecute->Par2);
+      break;
+
+    case CMD_TIMER_SET_VARIABLE:
+       TimerSet(EventToExecute->Par1,(unsigned long)UserVar[EventToExecute->Par2-1]);
       break;
 
     case CMD_TIMER_RANDOM:

@@ -16,8 +16,6 @@ Nog te doen:
 - Issue 642: Alarmset instellen met status "off"
 - Issue 643: in arduino-nodo: WaitFreeRF als user define
 - Bug in verzenden IR signaal opgelost (aan einde van het signaal werden onterecht vervolgpulsen verzonden)
-
-@@@@ Next:
 - I2C communicatie tussen Nodo's.
 - Aantal regels in Eventlist: Small=75, Mega=250
 - EventlistErase wist nu alleen de bezette regels in de eventlist
@@ -136,13 +134,16 @@ R528 (Ter beschikking gesteld aan gebruikers als Beta 3.4.9)
 - Toevoeging DEVICE_21: DFRobot LCD I2C/TWI 1602 Display
 
 ==========================================================================================
+R530
 - Issue 660: ClockAll met voorloopnul geeft bizar resultaat
 - Issue 708: BreakOnEarlier en Later: syntax error
 - Issue 710: ClockSetTime par2
 - Issue 711: SimulateDay wordt geaccepteerd
 - Issue 712: BreakOnLater werkt niet
 - Issue 713: FileExecute vanuit de Eventlist werkt niet altijd
-- Commando [Test] verwijderd. Deze was in gebruik voor testdoeleinden tijdens ontwikkeling
-- Toevoeging Device-22 HC-SR04 Distance sensor (SWACDE-22-V10) == Integratie in Nodo-code nog testen ==
-
+- Issue 715: in arduino-nodo: PortInput invoer niet correct verwerkt
+- Aanpassing: Bij uitvoer eventlist werd nesting diepte niet altijd correct weergegeven.
+- Verwijderd: Commando [Test] verwijderd. Deze was in gebruik voor testdoeleinden tijdens ontwikkeling
+- Toegevoegd: Commando [TimerSetVariable <timer>, <variable>]. Vult een timer met de inhoud van een variabele.
+- Toegevoegd: Device-22 HC-SR04 Distance sensor (SWACDE-22-V10) == Integratie in Nodo-code nog testen ==
 \*****************************************************************************************/

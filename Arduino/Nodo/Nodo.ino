@@ -30,16 +30,16 @@
 // Voor een arduino anders dan een Mega1280 of Mega2560 de onderstaande vier regels vooraf laten gaan door twee slashes //
 // Anders worden de niet gebruikte libraries toch meegecompileerd en zal deze niet in een ATMega328 passen.
 // en pas eventueel de vier include statements aan (zie onder):
-//#include <EthernetNodo.h>
-//#include <SPI.h>
-//#include <Arduino.h>
-//#include <SD.h>
+#include <EthernetNodo.h>
+#include <SPI.h>
+#include <Arduino.h>
+#include <SD.h>
 
 // Stap 3.tset
 // Stel hieronder in welk Nodo unit nummer u gaat compileren. Uitgangspunt is dat elke fysieke Nodo een uniek unit nummer krijgt toegekend.
 // Voor elk unit nummer kunt u verderop deze pagina een blokje kenmerken instellen.
 // Als dat eenmalig is gedaan, kunt u voortaan die set instellingen selecteren met het unit nummer:
-#define UNIT_NODO          3
+#define UNIT_NODO          10
 
 
 
