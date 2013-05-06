@@ -783,6 +783,7 @@ boolean Device_04(byte function, struct NodoEventStruct *event, char *string)
 
 
 
+
 //#######################################################################################################
 //#################################### Device-05: TempSensor Dallas DS18B20  ############################
 //#######################################################################################################
@@ -810,7 +811,7 @@ boolean Device_04(byte function, struct NodoEventStruct *event, char *string)
  * De sensor kan volgens de paracitaire mode worden aangesloten. De signaallijn tevens verbinden met een 4K7 naar de Vcc/+5
  * Deze fucntie kan worden gebruikt voor alle Wired poorten van de Nodo.
  * Er wordt gebruik gemaakt van de ROM-skip techniek, dus er worden geen adressering gebruikt.
- * Dit betekent max. één sensor per poort. Dit om (veel) geheugen te besparen.  *
+ * Dit betekent max. Ã©Ã©n sensor per poort. Dit om (veel) geheugen te besparen.  *
  \*********************************************************************************************/
 
 #ifdef DEVICE_05
@@ -828,7 +829,7 @@ uint8_t DallasPin;
 boolean Device_05(byte function, struct NodoEventStruct *event, char *string)
   {
   boolean success=false;
-  static byte RepeatFirstTime=2;        // Sommige varianten van de Dallas sensor geven de eerste uitlezing een 0 retour. Daarom de eerste keer tweemaal aanroepen.
+  static byte Call_Status = 0x00; // Each bit represents one relative port. 0=not called before, 1=already called before. 
   
   switch(function)
     {
@@ -841,45 +842,47 @@ boolean Device_05(byte function, struct NodoEventStruct *event, char *string)
       int DSTemp;                           // Temperature in 16-bit Dallas format.
       byte ScratchPad[12];                  // Scratchpad buffer Dallas sensor.   
       byte var=event->Par2;                 // Variabele die gevuld moet worden.
+      byte RelativePort=event->Par1-1;
       
       // De Dallas sensor kan worden aangesloten op iedere digitale poort van de Arduino. In ons geval kiezen we er voor
       // om de sensor aan te sluiten op de Wired-Out poorten van de Nodo. Met Par2 is de Wired poort aangegeven.
       // 1 = WiredOut poort 1.  
       DallasPin=PIN_WIRED_OUT_1+event->Par1-1;
-    
-      ClearEvent(event);                                      // Ga uit van een default schone event. Oude eventgegevens wissen.
-    
-      do
+      
+      ClearEvent(event);                                      // Ga uit van een default schone event. Oude eventgegevens wissen.        
+  
+      noInterrupts();
+      while (!(bitRead(Call_Status, RelativePort)))
         {
+        // if this is the very first call to the sensor on this port, reset it to wake it up 
+        boolean present=DS_reset();
+        bitSet(Call_Status, RelativePort);
+        }        
+      boolean present=DS_reset();DS_write(0xCC /* rom skip */); DS_write(0x44 /* start conversion */);
+      interrupts();
+              
+      if(present)
+        {
+        delay(800);     // uitleestijd die de sensor nodig heeft
+    
         noInterrupts();
-        boolean present=DS_reset();DS_write(0xCC /* rom skip */); DS_write(0x44 /* start conversion */);
+        DS_reset(); DS_write(0xCC /* rom skip */); DS_write(0xBE /* Read Scratchpad */);
+    
+        // Maak de lijn floating zodat de sensor de data op de lijn kan zetten.
+        digitalWrite(DallasPin,LOW);
+        pinMode(DallasPin,INPUT);
+    
+        for (byte i = 0; i < 9; i++)            // copy 8 bytes
+          ScratchPad[i] = DS_read();
         interrupts();
-        
-        if(present)
-          {
-          delay(800);     // uitleestijd die de sensor nodig heeft
       
-          noInterrupts();
-          DS_reset(); DS_write(0xCC /* rom skip */); DS_write(0xBE /* Read Scratchpad */);
-      
-          // Maak de lijn floating zodat de sensor de data op de lijn kan zetten.
-          digitalWrite(DallasPin,LOW);
-          pinMode(DallasPin,INPUT);
-      
-          for (byte i = 0; i < 9; i++)            // copy 8 bytes
-            ScratchPad[i] = DS_read();
-          interrupts();
-        
-          DSTemp = (ScratchPad[1] << 8) + ScratchPad[0];  
-      
-          event->Command      = CMD_VARIABLE_SET;                 // Commando "VariableSet"
-          event->Par1         = var;                              // Variabele die gevuld moet worden.
-          event->Par2         = float2ul(float(DSTemp)*0.0625);   // DS18B20 variant. Waarde terugstoppen in de variabele
-          success=true;
-          }
-        if(RepeatFirstTime)
-          RepeatFirstTime--;
-        }while(RepeatFirstTime);
+        DSTemp = (ScratchPad[1] << 8) + ScratchPad[0];  
+    
+        event->Command      = CMD_VARIABLE_SET;                 // Commando "VariableSet"
+        event->Par1         = var;                              // Variabele die gevuld moet worden.
+        event->Par2         = float2ul(float(DSTemp)*0.0625);   // DS18B20 variant. Waarde terugstoppen in de variabele
+        success=true;
+        }
       break;
       }
     #endif // DEVICE_CORE_05
