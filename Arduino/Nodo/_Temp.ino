@@ -2,7 +2,7 @@
 
 /*
 
-digitalWrite(PIN_WIRED_OUT_1,HIGH);delay(10);digitalWrite(PIN_WIRED_OUT_1,LOW);//??? Debugging: Wired-Out 1
+digitalWrite(PIN_WIRED_OUT_1,HIGH);digitalWrite(PIN_WIRED_OUT_1,LOW);//??? Debugging: Wired-Out 1
 
 Serial.print(F("*** debug: "));Serial.println(); //??? Debug
 PrintNodoEvent(Event,"");//???

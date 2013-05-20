@@ -1,4 +1,4 @@
-#ifdef NODO_MEGA
+#if NODO_MEGA
 
 /*********************************************************************************************\
  * Op het Ethernetshield kunnen de W5100 chip en de SDCard niet gelijktijdig worden gebruikt

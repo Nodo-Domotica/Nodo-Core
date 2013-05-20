@@ -47,11 +47,11 @@
 // Voor een beschrijving van de beschikbare devices: zie de Wiki pagina's. 
 // Onder aan deze pagina vindt u een complete lijst met de benodigde statements om een device te kunnen gebruiken.
 // In dit blokje geeft u aan welke devices gebruikt worden in het landschap met Nodo's. 
+
   #define DEVICE_01       // Kaku            : Klik-Aan-Klik-Uit ontvangen
   #define DEVICE_02       // SendKaku        : Klik-Aan-Klik-Uit verzenden
   #define DEVICE_03       // NewKAKU         : Klik-Aan-Klik-Uit ontvangen, automatische codering. 
   #define DEVICE_04       // SendNewKAKU     : Klik-Aan-Klik-Uit zenden, automatische codering. 
-  #define DEVICE_05       // TempRead        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820) 
 
 // Geef in onderstaande tabel aan welke devices die in ALLE Nodo's feitelijk worden gebruikt: 
   #define DEVICE_CORE_01  // Kaku            : Klik-Aan-Klik-Uit ontvangen  
@@ -88,10 +88,8 @@
 #if (UNIT_NODO == 10)
   // Specificatie van deze Nodo:
   #define NODO_MEGA                    true
-  #define ETHERNET                     false 
-  // Devices in gebruik op deze Nodo:
-  #define DEVICE_22_CORE//???
-  
+  #define ETHERNET                     true
+  // Devices in gebruik op deze Nodo:  
 #endif 
 // ----------------------------------------------------------------------------------------------------------------------------------------
 
@@ -184,11 +182,8 @@
 #define I2C_START_ADDRESS            1     // Alle Nodo's op de I2C bus hebben een uniek adres dat start vanaf dit nummer. Er zijn max. 32 Nodo's. Let op verlap met andere devices. RTC zit op adres 104.
 #define NODO_30_COMPATIBLE        true     // t.b.v. compatibiliteit met vorige Nodo versie: NewKAKU HEX waarden en UserEvents
 #define BAUD                     19200     // Baudrate voor seriële communicatie.
-#define PASSWORD_MAX_RETRY           5     // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
-#define PASSWORD_TIMEOUT           300     // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
-#define TERMINAL_TIMEOUT           600     // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
 #define SMALL_DEBUG_INFO         false     // Laat op serial van een Small debug info zien als er events worden verzonden of ontvangen.
-
+#define WAIT_FREE_RX             false     // true: wacht default op verzenden van een event tot de IR/RF lijn onbezet is. Wordt overruled door commando [WaitFree]
 //****************************** Einde gedeelte door gebruiker in te stellen ************************************************
 
 

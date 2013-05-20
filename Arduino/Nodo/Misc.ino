@@ -257,7 +257,7 @@ void Alarm(int Variant,int Option)
  \*********************************************************************************************/
 void Led(byte Color)
 {
-#ifdef NODO_MEGA
+#if NODO_MEGA
   digitalWrite(PIN_LED_RGB_R,Color==RED);
   digitalWrite(PIN_LED_RGB_B,Color==BLUE);
   digitalWrite(PIN_LED_RGB_G,Color==GREEN);
@@ -280,7 +280,7 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
   {
   unsigned long TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
 
-  #ifdef NODO_MEGA
+  #if NODO_MEGA
   unsigned long MessageTimer=millis() + 5000;
   boolean WaitMessage=false;
   #endif
@@ -293,7 +293,7 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
 
   while(TimeoutTimer>millis())
     {
-    #ifdef NODO_MEGA
+    #if NODO_MEGA
     if(!WaitMessage && MessageTimer<millis())
       {
       WaitMessage=true;
@@ -429,7 +429,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
         Event->Par2=Settings.TransmitRF;
         break;
   
-  #ifdef NODO_MEGA
+  #if NODO_MEGA
       case VALUE_SOURCE_HTTP:
         Event->Par2=Settings.TransmitIP;
         break;
@@ -498,7 +498,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
     Event->Par1=Settings.Lock?VALUE_ON:VALUE_OFF;;
     break;
 
-#ifdef NODO_MEGA
+#if NODO_MEGA
 
   case CMD_UNIT_SET:
     x=NodoOnline(xPar1,0);
@@ -622,11 +622,15 @@ void ResetFactory(void)
   Settings.TransmitRF                 = VALUE_ON;
   Settings.Unit                       = UNIT_NODO;
   Settings.Home                       = HOME_NODO;
-  Settings.WaitFree                   = VALUE_ON;
   Settings.RawSignalReceive           = VALUE_ON;
 
-#ifdef NODO_MEGA
+#if WAIT_FREE_RX
+  Settings.WaitFree                   = VALUE_ON;
+#else
   Settings.WaitFree                   = VALUE_OFF;
+#endif
+
+#if NODO_MEGA
   Settings.TransmitIP                 = VALUE_OFF;
   Settings.Debug                      = VALUE_OFF;
   Settings.HTTPRequest[0]             = 0; // string van het HTTP adres leeg maken
@@ -689,25 +693,27 @@ void Status(struct NodoEventStruct *Request)
   byte Par1_Start,Par1_End;
   byte x;
   boolean s;
-  boolean Display=Request->Port==VALUE_SOURCE_SERIAL || Request->Port==VALUE_SOURCE_TELNET || Request->Port==VALUE_SOURCE_HTTP|| Request->Port==VALUE_SOURCE_FILE;
+  boolean Display=Request->Port==VALUE_SOURCE_SERIAL || Request->Port==VALUE_SOURCE_TELNET || Request->Port==VALUE_SOURCE_FILE || Request->Port==VALUE_SOURCE_HTTP;// Issue 690 ???
   
   struct NodoEventStruct Result;
   ClearEvent(&Result);
   Result.Command=Request->Par1;
   
-  #ifdef NODO_MEGA          
+  #if NODO_MEGA          
   char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
   #endif
 
   if(Request->Par2==VALUE_ALL)
     Request->Par2==0;
 
+  #if NODO_MEGA          
   if(Request->Par1==CMD_BOOT_EVENT || Request->Par1==0)
     {
     PrintWelcome();
     return;
     }
-
+  #endif
+  
   if(Display && Request->Par1==VALUE_ALL)
     {
     Request->Par2=0;
@@ -724,7 +730,7 @@ void Status(struct NodoEventStruct *Request)
     CMD_End=Request->Par1;
     }
 
-#ifdef NODO_MEGA          
+#if NODO_MEGA          
   boolean dhcp=(Settings.Nodo_IP[0] + Settings.Nodo_IP[1] + Settings.Nodo_IP[2] + Settings.Nodo_IP[3])==0;
 #endif
 
@@ -736,7 +742,7 @@ void Status(struct NodoEventStruct *Request)
       s=true;
       switch (x)
         {
-        #ifdef NODO_MEGA          
+        #if NODO_MEGA          
         case CMD_CLIENT_IP:
           sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_CLIENT_IP),Settings.Client_IP[0],Settings.Client_IP[1],Settings.Client_IP[2],Settings.Client_IP[3]);
           PrintTerminal(TempString);
@@ -820,7 +826,7 @@ void Status(struct NodoEventStruct *Request)
           {
           case CMD_OUTPUT:
             Par1_Start=VALUE_SOURCE_IR;
-            #ifdef NODO_MEGA
+            #if NODO_MEGA
             Par1_End=VALUE_SOURCE_HTTP;
             #else
             Par1_End=VALUE_SOURCE_RF;
@@ -847,7 +853,7 @@ void Status(struct NodoEventStruct *Request)
             Par1_End=TIMER_MAX;
             break;
   
-          #ifdef NODO_MEGA
+          #if NODO_MEGA
           case CMD_ALARM_SET:
             Par1_Start=1;
             Par1_End=ALARM_MAX;
@@ -887,7 +893,7 @@ void Status(struct NodoEventStruct *Request)
             SendEvent(&Result,false,true,true); // verzend als event
             }
   
-          #ifdef NODO_MEGA
+          #if NODO_MEGA
           else
             {
             Event2str(&Result,TempString);
@@ -899,7 +905,7 @@ void Status(struct NodoEventStruct *Request)
       }
     }
 
-  #ifdef NODO_MEGA
+  #if NODO_MEGA
   if(Display && Request->Par1==VALUE_ALL)
     PrintTerminal(ProgmemString(Text_22));
 
@@ -908,7 +914,7 @@ void Status(struct NodoEventStruct *Request)
   }
 
 
-#ifdef NODO_MEGA
+#if NODO_MEGA
 /*********************************************************************************************\
  * Deze routine parsed string en geeft het opgegeven argument nummer Argc terug in Argv
  * argumenten worden van elkaar gescheiden door een komma of een spatie.
@@ -1243,7 +1249,7 @@ void PulseCounterISR()
   }     
 
 
-#ifdef NODO_MEGA
+#if NODO_MEGA
 //################### Calculate #################################
 
 #define CALCULATE_OK                            0
@@ -1861,7 +1867,7 @@ void ClockRead(void)
     }
   }
 
-#ifdef NODO_MEGA
+#if NODO_MEGA
 /**********************************************************************************************\
  * 
  * Deze functie vult de globale variabele Time.DayLight met de status van zonsopkomst & -opgang
@@ -1910,7 +1916,7 @@ void SetDaylight()
 //##################################### Misc: Conversions     ###########################################
 //#######################################################################################################
 
-#ifdef NODO_MEGA
+#if NODO_MEGA
 /*********************************************************************************************\
  * kopiëer de string van een commando naar een string[]
  \*********************************************************************************************/
@@ -2373,141 +2379,114 @@ void DeviceInit(void)
   {
   byte x;
 
+  // Wis te pointertabel voor de devices.
   for(x=0;x<DEVICE_MAX;x++)
-    {
     Device_ptr[x]=0;
-    Device_id[x]=0;
-    }
     
   x=0;
       
   #ifdef DEVICE_01
-  Device_ptr[x]=&Device_01;
-  Device_id[x++]=1;
+  Device_ptr[x++]=&Device_01;
   #endif
 
   #ifdef DEVICE_02
-  Device_ptr[x]=&Device_02;
-  Device_id[x++]=2;
+  Device_ptr[x++]=&Device_02;
   #endif
 
   #ifdef DEVICE_03
-  Device_ptr[x]=&Device_03;
-  Device_id[x++]=3;
+  Device_ptr[x++]=&Device_03;
   #endif
 
   #ifdef DEVICE_04
-  Device_ptr[x]=&Device_04;
-  Device_id[x++]=4;
+  Device_ptr[x++]=&Device_04;
   #endif
 
   #ifdef DEVICE_05
-  Device_ptr[x]=&Device_05;
-  Device_id[x++]=5;
+  Device_ptr[x++]=&Device_05;
   #endif
 
   #ifdef DEVICE_06
-  Device_ptr[x]=&Device_06;
-  Device_id[x++]=6;
+  Device_ptr[x++]=&Device_06;
   #endif
 
   #ifdef DEVICE_07
-  Device_ptr[x]=&Device_07;
-  Device_id[x++]=7;
+  Device_ptr[x++]=&Device_07;
   #endif
 
   #ifdef DEVICE_08
-  Device_ptr[x]=&Device_08;
-  Device_id[x++]=8;
+  Device_ptr[x++]=&Device_08;
   #endif
 
   #ifdef DEVICE_09
-  Device_ptr[x]=&Device_09;
-  Device_id[x++]=9;
+  Device_ptr[x++]=&Device_09;
   #endif
 
   #ifdef DEVICE_10
-  Device_ptr[x]=&Device_10;
-  Device_id[x++]=10;
+  Device_ptr[x++]=&Device_10;
   #endif
 
   #ifdef DEVICE_11
-  Device_ptr[x]=&Device_11;
-  Device_id[x++]=11;
+  Device_ptr[x++]=&Device_11;
   #endif
 
   #ifdef DEVICE_12
-  Device_ptr[x]=&Device_12;
-  Device_id[x++]=12;
+  Device_ptr[x++]=&Device_12;
   #endif
 
   #ifdef DEVICE_13
-  Device_ptr[x]=&Device_13;
-  Device_id[x++]=13;
+  Device_ptr[x++]=&Device_13;
   #endif
 
   #ifdef DEVICE_14
-  Device_ptr[x]=&Device_14;
-  Device_id[x++]=14;
+  Device_ptr[x++]=&Device_14;
   #endif
 
   #ifdef DEVICE_15
-  Device_ptr[x]=&Device_15;
-  Device_id[x++]=15;
+  Device_ptr[x++]=&Device_15;
   #endif
 
   #ifdef DEVICE_16
-  Device_ptr[x]=&Device_16;
-  Device_id[x++]=16;
+  Device_ptr[x++]=&Device_16;
   #endif
 
   #ifdef DEVICE_17
-  Device_ptr[x]=&Device_17;
-  Device_id[x++]=17;
+  Device_ptr[x++]=&Device_17;
   #endif
 
   #ifdef DEVICE_18
-  Device_ptr[x]=&Device_18;
-  Device_id[x++]=18;
+  Device_ptr[x++]=&Device_18;
   #endif
 
   #ifdef DEVICE_19
-  Device_ptr[x]=&Device_19;
-  Device_id[x++]=19;
+  Device_ptr[x++]=&Device_19;
   #endif
 
   #ifdef DEVICE_20
-  Device_ptr[x]=&Device20;
-  Device_id[x++]=20;
+  Device_ptr[x++]=&Device_20;
   #endif
 
   #ifdef DEVICE_21
-  Device_ptr[x]=&Device21;
-  Device_id[x++]=21;
+  Device_ptr[x++]=&Device_21;
   #endif
 
   #ifdef DEVICE_22
-  Device_ptr[x]=&Device22;
-  Device_id[x++]=22;
+  Device_ptr[x++]=&Device_22;
   #endif
 
   #ifdef DEVICE_23
-  Device_ptr[x]=&Device23;
-  Device_id[x++]=23;
+  Device_ptr[x++]=&Device_23;
   #endif
 
   #ifdef DEVICE_24
-  Device_ptr[x]=&Device24;
-  Device_id[x++]=24;
+  Device_ptr[x++]=&Device_24;
   #endif
 
   #ifdef DEVICE_99
-  Device_ptr[x]=&Device_99;
-  Device_id[x++]=99;
+  Device_ptr[x++]=&Device_99;
   #endif    
 
-  for(byte x=0;x<DEVICE_MAX; x++)
-    if(Device_ptr[x]!=0)
-      Device_ptr[x](DEVICE_INIT,0,0);
+  // Initialiseer alle devices door aanroep met verwerkingsparameter DEVICE_INIT
+  for(byte x=0;Device_ptr[x]!=0 && x<DEVICE_MAX; x++)
+    Device_ptr[x](DEVICE_INIT,0,0);
   }
 

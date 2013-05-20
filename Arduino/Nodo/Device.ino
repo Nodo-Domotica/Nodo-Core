@@ -25,10 +25,10 @@
  #define DEVICE_16  // HomeEasySend      : Dit protocol stuurt HomeEasy EU ontvangers aan die werken volgens de automatische codering (Ontvangers met leer-knop)
  #define DEVICE_17  // Reserved!         : Laat continue analoge metingen zien van alle Wired-In poorten. 
  #define DEVICE_18  // RawSignalAnalyze  : Geeft bij een binnenkomend signaal informatie over de pulsen weer.
- #define DEVICE_19  RFID                 : Innovations ID-12 RFID Tag reader (SWACDE-19-V10) 
+ #define DEVICE_19  // RFID              : Innovations ID-12 RFID Tag reader (SWACDE-19-V10) 
  #define DEVICE_20  // Reserved!         : BMP085 Barometric pressure sensor (SWACDE-20-V10)
  #define DEVICE_21  // LCDI2CWrite       : DFRobot LCD I2C/TWI 1602 display
- #define DEVICE_22  HCSR04_Read          : Ultrasoon afstandsmeter HC-SR04
+ #define DEVICE_22  // HCSR04_Read       : Ultrasoon afstandsmeter HC-SR04
  #define DEVICE_23 
  #define DEVICE_24 
  #define DEVICE_99  // UserDevice        : Device voor eigen toepassing door gebruiker te bouwen.
@@ -113,7 +113,6 @@ boolean Device_01(byte function, struct NodoEventStruct *event, char *string)
         RawSignal.Repeats    = true; // het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
         event->Par2          = bitstream & 0xFF;
         event->Par1         |= (bitstream >> 11) & 0x01;
-        event->Command       = CMD_DEVICE_FIRST+1; // KAKU is device 1;
         event->SourceUnit    = 0; // Komt niet van een Nodo unit af.
         success=true;
         }
@@ -127,7 +126,7 @@ boolean Device_01(byte function, struct NodoEventStruct *event, char *string)
       }
     #endif //DEVICE_CORE_01
       
-    #ifdef NODO_MEGA
+    #if NODO_MEGA
     case DEVICE_MMI_IN:
       {
       // Reserveer een kleine string en kap voor de zekerheid de inputstring af om te voorkomen dat er
@@ -141,8 +140,6 @@ boolean Device_01(byte function, struct NodoEventStruct *event, char *string)
         {
         if(strcasecmp(TempStr,"Kaku")==0)
           {
-          event->Command=CMD_DEVICE_FIRST+1; // KAKU is device 1
-            
           byte grp=0,c;
           byte x=0;       // teller die wijst naar het het te behandelen teken
           byte Home=0;    // KAKU home A..P
@@ -181,26 +178,24 @@ boolean Device_01(byte function, struct NodoEventStruct *event, char *string)
 
     case DEVICE_MMI_OUT:
       {
-      if(event->Command==CMD_DEVICE_FIRST+1) // KAKU is device 1
-        {
-        strcpy(string,"Kaku");            // Commando / event 
-        strcat(string," ");                
-      
-        char t[3];                                               // Mini string
-        t[0]='A' + (event->Par2 & 0x0f);                         // Home A..P
-        t[1]= 0;                                                 // en de mini-string afsluiten.
-        strcat(string,t);
-      
-        if(event->Par1&2) // als 2e bit in commando staat, dan groep.
-          strcat(string,int2str(0));                       // Als Groep, dan adres 0       
-        else
-          strcat(string,int2str(((event->Par2 & 0xf0)>>4)+1)); // Anders adres toevoegen             
-      
-        if(event->Par1&1) // Het 1e bit is get aan/uit commando
-          strcat(string,",On");  
-        else
-          strcat(string,",Off");  
-        }
+      strcpy(string,"Kaku");            // Commando / event 
+      strcat(string," ");                
+    
+      char t[3];                                               // Mini string
+      t[0]='A' + (event->Par2 & 0x0f);                         // Home A..P
+      t[1]= 0;                                                 // en de mini-string afsluiten.
+      strcat(string,t);
+    
+      if(event->Par1&2) // als 2e bit in commando staat, dan groep.
+        strcat(string,int2str(0));                       // Als Groep, dan adres 0       
+      else
+        strcat(string,int2str(((event->Par2 & 0xf0)>>4)+1)); // Anders adres toevoegen             
+    
+      if(event->Par1&1) // Het 1e bit is get aan/uit commando
+        strcat(string,",On");  
+      else
+        strcat(string,",Off");  
+
       break;
       }
     #endif //NODO_MEGA
@@ -269,50 +264,47 @@ boolean Device_02(byte function, struct NodoEventStruct *event, char *string)
       
     case DEVICE_COMMAND:
       {
-      if(event->Command==CMD_DEVICE_FIRST+2) // SendKAKU is device 2
-        {
-        unsigned long Bitstream;
-        RawSignal.Multiply=50;
-        RawSignal.Repeats=7;                   // KAKU heeft minimaal vijf herhalingen nodig om te schakelen.
-        RawSignal.Delay=20;                    // Tussen iedere pulsenreeks enige tijd rust.
-        RawSignal.Number=KAKU_CodeLength*4+2;
-        event->Port=VALUE_ALL;                 // Signaal mag naar alle door de gebruiker met [Output] ingestelde poorten worden verzonden.
-       
-        Bitstream = event->Par2 | (0x600 | ((event->Par1&1/*Commando*/) << 11)); // Stel een bitstream samen
-        
-        // loop de 12-bits langs en vertaal naar pulse/space signalen.  
-        for (byte i=0; i<KAKU_CodeLength; i++)
-          {
-          RawSignal.Pulses[4*i+1]=KAKU_T/RawSignal.Multiply;
-          RawSignal.Pulses[4*i+2]=(KAKU_T*3)/RawSignal.Multiply;
+      unsigned long Bitstream;
+      RawSignal.Multiply=50;
+      RawSignal.Repeats=7;                   // KAKU heeft minimaal vijf herhalingen nodig om te schakelen.
+      RawSignal.Delay=20;                    // Tussen iedere pulsenreeks enige tijd rust.
+      RawSignal.Number=KAKU_CodeLength*4+2;
+      event->Port=VALUE_ALL;                 // Signaal mag naar alle door de gebruiker met [Output] ingestelde poorten worden verzonden.
+     
+      Bitstream = event->Par2 | (0x600 | ((event->Par1&1/*Commando*/) << 11)); // Stel een bitstream samen
       
-          if (((event->Par1>>1)&1) /* Groep */ && i>=4 && i<8) 
+      // loop de 12-bits langs en vertaal naar pulse/space signalen.  
+      for (byte i=0; i<KAKU_CodeLength; i++)
+        {
+        RawSignal.Pulses[4*i+1]=KAKU_T/RawSignal.Multiply;
+        RawSignal.Pulses[4*i+2]=(KAKU_T*3)/RawSignal.Multiply;
+    
+        if (((event->Par1>>1)&1) /* Groep */ && i>=4 && i<8) 
+          {
+          RawSignal.Pulses[4*i+3]=KAKU_T/RawSignal.Multiply;
+          RawSignal.Pulses[4*i+4]=KAKU_T/RawSignal.Multiply;
+          } // short 0
+        else
+          {
+          if((Bitstream>>i)&1)// 1
+            {
+            RawSignal.Pulses[4*i+3]=(KAKU_T*3)/RawSignal.Multiply;
+            RawSignal.Pulses[4*i+4]=KAKU_T/RawSignal.Multiply;
+            }
+          else //0
             {
             RawSignal.Pulses[4*i+3]=KAKU_T/RawSignal.Multiply;
-            RawSignal.Pulses[4*i+4]=KAKU_T/RawSignal.Multiply;
-            } // short 0
-          else
-            {
-            if((Bitstream>>i)&1)// 1
-              {
-              RawSignal.Pulses[4*i+3]=(KAKU_T*3)/RawSignal.Multiply;
-              RawSignal.Pulses[4*i+4]=KAKU_T/RawSignal.Multiply;
-              }
-            else //0
-              {
-              RawSignal.Pulses[4*i+3]=KAKU_T/RawSignal.Multiply;
-              RawSignal.Pulses[4*i+4]=(KAKU_T*3)/RawSignal.Multiply;          
-              }          
-            }
+            RawSignal.Pulses[4*i+4]=(KAKU_T*3)/RawSignal.Multiply;          
+            }          
           }
-        SendEvent(event,true,true,true);
-        success=true;
         }
+      SendEvent(event,true,true,true);
+      success=true;
       break;
       }
     #endif // DEVICE_CORE_02
       
-    #ifdef NODO_MEGA
+    #if NODO_MEGA
     case DEVICE_MMI_IN:
       {
       // Reserveer een kleine string en kap voor de zekerheid de inputstring af om te voorkomen dat er
@@ -326,8 +318,6 @@ boolean Device_02(byte function, struct NodoEventStruct *event, char *string)
         {
         if(strcasecmp(TempStr,"SendKaku")==0)
           {
-          event->Command=CMD_DEVICE_FIRST+2; //Send KAKU is device 2
-            
           byte grp=0,c;
           byte x=0;       // teller die wijst naar het het te behandelen teken
           byte Home=0;    // KAKU home A..P
@@ -366,26 +356,24 @@ boolean Device_02(byte function, struct NodoEventStruct *event, char *string)
 
     case DEVICE_MMI_OUT:
       {
-      if(event->Command==CMD_DEVICE_FIRST+2) // KAKU is device 2
-        {
-        strcpy(string,"SendKaku");            // Commando / event 
-        strcat(string," ");                
-      
-        char t[3];                                               // Mini string
-        t[0]='A' + (event->Par2 & 0x0f);                         // Home A..P
-        t[1]= 0;                                                 // en de mini-string afsluiten.
-        strcat(string,t);
-      
-        if(event->Par1&2) // als 2e bit in commando staat, dan groep.
-          strcat(string,int2str(0));                       // Als Groep, dan adres 0       
-        else
-          strcat(string,int2str(((event->Par2 & 0xf0)>>4)+1)); // Anders adres toevoegen             
-      
-        if(event->Par1&1) // Het 1e bit is get aan/uit commando
-          strcat(string,",On");  
-        else
-          strcat(string,",Off");  
-        }
+      strcpy(string,"SendKaku");            // Commando / event 
+      strcat(string," ");                
+    
+      char t[3];                                               // Mini string
+      t[0]='A' + (event->Par2 & 0x0f);                         // Home A..P
+      t[1]= 0;                                                 // en de mini-string afsluiten.
+      strcat(string,t);
+    
+      if(event->Par1&2) // als 2e bit in commando staat, dan groep.
+        strcat(string,int2str(0));                       // Als Groep, dan adres 0       
+      else
+        strcat(string,int2str(((event->Par2 & 0xf0)>>4)+1)); // Anders adres toevoegen             
+    
+      if(event->Par1&1) // Het 1e bit is get aan/uit commando
+        strcat(string,",On");  
+      else
+        strcat(string,",Off");  
+
       break;
       }
     #endif //NODO_MEGA
@@ -508,7 +496,6 @@ boolean Device_03(byte function, struct NodoEventStruct *event, char *string)
           event->Par1++;                             // Dim level. +1 omdat gebruiker dim level begint bij één.
         else
           event->Par1=((bitstream>>4)&0x01)?VALUE_ON:VALUE_OFF; // On/Off bit omzetten naar een Nodo waarde. 
-        event->Command       = CMD_DEVICE_FIRST+DEVICE_ID;
         event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
         RawSignal.Repeats    = true;                  // het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
         success=true;
@@ -521,7 +508,7 @@ boolean Device_03(byte function, struct NodoEventStruct *event, char *string)
       break;
     #endif // DEVICE_CORE_03
       
-    #ifdef NODO_MEGA
+    #if NODO_MEGA
     case DEVICE_MMI_IN:
       {
       char* str=(char*)malloc(40);
@@ -531,8 +518,6 @@ boolean Device_03(byte function, struct NodoEventStruct *event, char *string)
         {
         if(strcasecmp(str,DEVICE_NAME)==0)
           {
-          // Hier wordt de tekst van de protocolnaam gekoppeld aan het device ID.
-          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
           if(GetArgv(string,str,2))
             {
             event->Par2=str2int(str);    
@@ -561,27 +546,24 @@ boolean Device_03(byte function, struct NodoEventStruct *event, char *string)
 
     case DEVICE_MMI_OUT:
       {
-      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
-        {
-        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
-        strcat(string," ");
+      strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+      strcat(string," ");
+    
+      // In Par3 twee mogelijkheden: Het bevat een door gebruiker ingegeven adres 0..255 of een volledig NewKAKU adres.
+      if(event->Par2>=0x0ff)
+        strcat(string,int2strhex(event->Par2)); 
+      else
+        strcat(string,int2str(event->Par2)); 
       
-        // In Par3 twee mogelijkheden: Het bevat een door gebruiker ingegeven adres 0..255 of een volledig NewKAKU adres.
-        if(event->Par2>=0x0ff)
-          strcat(string,int2strhex(event->Par2)); 
-        else
-          strcat(string,int2str(event->Par2)); 
-        
-        strcat(string,",");
-        
-        if(event->Par1==VALUE_ON)
-          strcat(string,"On");  
-        else if(event->Par1==VALUE_OFF)
-          strcat(string,"Off");
-        else
-          strcat(string,int2str(event->Par1));
-        success=true;
-        }
+      strcat(string,",");
+      
+      if(event->Par1==VALUE_ON)
+        strcat(string,"On");  
+      else if(event->Par1==VALUE_OFF)
+        strcat(string,"Off");
+      else
+        strcat(string,int2str(event->Par1));
+
       break;
       }
     #endif //NODO_MEGA
@@ -712,7 +694,7 @@ boolean Device_04(byte function, struct NodoEventStruct *event, char *string)
       }
     #endif // DEVICE_CORE_04
       
-    #ifdef NODO_MEGA
+    #if NODO_MEGA
     case DEVICE_MMI_IN:
       {
       char* str=(char*)malloc(40);
@@ -722,8 +704,6 @@ boolean Device_04(byte function, struct NodoEventStruct *event, char *string)
         {
         if(strcasecmp(str,DEVICE_NAME)==0)
           {
-          // Hier wordt de tekst van de protocolnaam gekoppeld aan het device ID.
-          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
           if(GetArgv(string,str,2))
             {
             event->Par2=str2int(str);    
@@ -752,27 +732,24 @@ boolean Device_04(byte function, struct NodoEventStruct *event, char *string)
 
     case DEVICE_MMI_OUT:
       {
-      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
-        {
-        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
-        strcat(string," ");
+      strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+      strcat(string," ");
+    
+      // In Par3 twee mogelijkheden: Het bevat een door gebruiker ingegeven adres 0..255 of een volledig NewKAKU adres.
+      if(event->Par2>=0x0ff)
+        strcat(string,int2strhex(event->Par2)); 
+      else
+        strcat(string,int2str(event->Par2)); 
       
-        // In Par3 twee mogelijkheden: Het bevat een door gebruiker ingegeven adres 0..255 of een volledig NewKAKU adres.
-        if(event->Par2>=0x0ff)
-          strcat(string,int2strhex(event->Par2)); 
-        else
-          strcat(string,int2str(event->Par2)); 
-        
-        strcat(string,",");
-        
-        if(event->Par1==VALUE_ON)
-          strcat(string,"On");  
-        else if(event->Par1==VALUE_OFF)
-          strcat(string,"Off");
-        else
-          strcat(string,int2str(event->Par1));
-        success=true;
-        }
+      strcat(string,",");
+      
+      if(event->Par1==VALUE_ON)
+        strcat(string,"On");  
+      else if(event->Par1==VALUE_OFF)
+        strcat(string,"Off");
+      else
+        strcat(string,int2str(event->Par1));
+
       break;
       }
     #endif //NODO_MEGA
@@ -887,7 +864,7 @@ boolean Device_05(byte function, struct NodoEventStruct *event, char *string)
       }
     #endif // DEVICE_CORE_05
       
-    #ifdef NODO_MEGA
+    #if NODO_MEGA
     case DEVICE_MMI_IN:
       {
       char *TempStr=(char*)malloc(26);
@@ -897,7 +874,6 @@ boolean Device_05(byte function, struct NodoEventStruct *event, char *string)
         {
         if(strcasecmp(TempStr,DEVICE_NAME)==0)
           {
-          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
           // Par1 en Par2 hoeven niet te worden geparsed omdat deze default al door de MMI invoer van de Nodo 
           // worden gevuld indien het integer waarden zijn. Toetsen op bereikenmoet nog wel plaats vinden.
           if(event->Par1>0 && event->Par1<WIRED_PORTS && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX)
@@ -910,19 +886,12 @@ boolean Device_05(byte function, struct NodoEventStruct *event, char *string)
 
     case DEVICE_MMI_OUT:
       {
-      // De code die zich hier bevindt zorgt er voor dan een event met het unieke ID in de struct [event] weer wordt
-      // omgezet naar een leesbaar event voor de gebruiker. het resultaat moet worden geplaatst in de string [string]
-      // let op dat het totale commando niet meer dan 25 posities in beslag neemt.
-      // Dit deel van de code wordt alleen uitgevoerd door een Nodo Mega, omdat alleen deze over een MMI beschikt.
-      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
-        {
-        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
-        strcat(string," ");
-        strcat(string,int2str(event->Par1));
-        strcat(string,",");
-        strcat(string,int2str(event->Par2));
-        // Vervolgens kan met strcat() hier de parameters aan worden toegevoegd      
-        }
+      strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+      strcat(string," ");
+      strcat(string,int2str(event->Par1));
+      strcat(string,",");
+      strcat(string,int2str(event->Par2));
+
       break;
       }
     #endif //NODO_MEGA
@@ -1040,69 +1009,68 @@ boolean Device_06(byte function, struct NodoEventStruct *event, char *string)
 
   case DEVICE_COMMAND:
     {
-      DHT11_Pin=PIN_WIRED_OUT_1+event->Par1-1;
-      byte dht11_dat[5];
-      byte dht11_in;
-      byte i;
-      byte temperature=0;
-      byte humidity=0;
+    DHT11_Pin=PIN_WIRED_OUT_1+event->Par1-1;
+    byte dht11_dat[5];
+    byte dht11_in;
+    byte i;
+    byte temperature=0;
+    byte humidity=0;
 
-      pinMode(DHT11_Pin,OUTPUT);
+    pinMode(DHT11_Pin,OUTPUT);
 
-      // DHT11 start condition, pull-down i/o pin for 18ms
-      digitalWrite(DHT11_Pin,LOW);               // Pull low
-      delay(18);
-      digitalWrite(DHT11_Pin,HIGH);              // Pull high
-      delayMicroseconds(40);
-      pinMode(DHT11_Pin,INPUT);                  // change pin to input
-      delayMicroseconds(40);
+    // DHT11 start condition, pull-down i/o pin for 18ms
+    digitalWrite(DHT11_Pin,LOW);               // Pull low
+    delay(18);
+    digitalWrite(DHT11_Pin,HIGH);              // Pull high
+    delayMicroseconds(40);
+    pinMode(DHT11_Pin,INPUT);                  // change pin to input
+    delayMicroseconds(40);
 
-      dht11_in = digitalRead(DHT11_Pin);
-      if(dht11_in) return false;
+    dht11_in = digitalRead(DHT11_Pin);
+    if(dht11_in) return false;
 
-      delayMicroseconds(80);
-      dht11_in = digitalRead(DHT11_Pin);
-      if(!dht11_in) return false;
+    delayMicroseconds(80);
+    dht11_in = digitalRead(DHT11_Pin);
+    if(!dht11_in) return false;
 
-      delayMicroseconds(40);                     // now ready for data reception
-      for (i=0; i<5; i++)
-        dht11_dat[i] = read_dht11_dat();
-        
-      // Checksum calculation is a Rollover Checksum by design!
-      byte dht11_check_sum = dht11_dat[0]+dht11_dat[1]+dht11_dat[2]+dht11_dat[3];// check check_sum
-      if(dht11_dat[4]!= dht11_check_sum) return false;
+    delayMicroseconds(40);                     // now ready for data reception
+    for (i=0; i<5; i++)
+      dht11_dat[i] = read_dht11_dat();
+      
+    // Checksum calculation is a Rollover Checksum by design!
+    byte dht11_check_sum = dht11_dat[0]+dht11_dat[1]+dht11_dat[2]+dht11_dat[3];// check check_sum
+    if(dht11_dat[4]!= dht11_check_sum) return false;
 
-      temperature = dht11_dat[2];
-      humidity = dht11_dat[0];
+    temperature = dht11_dat[2];
+    humidity = dht11_dat[0];
 
-      byte VarNr = event->Par2; // De originele Par1 tijdelijk opslaan want hier zit de variabelenummer in waar de gebruiker de uitgelezen waarde in wil hebben
-        ClearEvent(event);                                    // Ga uit van een default schone event. Oude eventgegevens wissen.
-      event->Command      = CMD_VARIABLE_SET;                 // Commando "VariableSet"
-      event->Par1         = VarNr;                            // Par1 is de variabele die we willen vullen.
-      event->Par2         = float2ul(float(temperature));
-      QueueAdd(event);                                        // Event opslaan in de event queue, hierna komt de volgende meetwaarde
-      event->Par1         = VarNr+1;                          // Par1+1 is de variabele die we willen vullen voor luchtvochtigheid
-      event->Par2         = float2ul(float(humidity));
-      QueueAdd(event);
-      success=true;
+    byte VarNr = event->Par2; // De originele Par1 tijdelijk opslaan want hier zit de variabelenummer in waar de gebruiker de uitgelezen waarde in wil hebben
+      ClearEvent(event);                                    // Ga uit van een default schone event. Oude eventgegevens wissen.
+    event->Command      = CMD_VARIABLE_SET;                 // Commando "VariableSet"
+    event->Par1         = VarNr;                            // Par1 is de variabele die we willen vullen.
+    event->Par2         = float2ul(float(temperature));
+    QueueAdd(event);                                        // Event opslaan in de event queue, hierna komt de volgende meetwaarde
+    event->Par1         = VarNr+1;                          // Par1+1 is de variabele die we willen vullen voor luchtvochtigheid
+    event->Par2         = float2ul(float(humidity));
+    QueueAdd(event);
+    success=true;
 
-      break;
+    break;
     }
 #endif // DEVICE_CORE_06
 
-#ifdef NODO_MEGA
+#if NODO_MEGA
   case DEVICE_MMI_IN:
     {
-      char *TempStr=(char*)malloc(26);
-      string[25]=0;
+    char *TempStr=(char*)malloc(26);
+    string[25]=0;
 
-      if(GetArgv(string,TempStr,1))
+    if(GetArgv(string,TempStr,1))
       {
-        if(strcasecmp(TempStr,DEVICE_NAME)==0)
+      if(strcasecmp(TempStr,DEVICE_NAME)==0)
         {
-          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
-          if(event->Par1>0 && event->Par1<WIRED_PORTS && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX-1)
-            success=true;
+        if(event->Par1>0 && event->Par1<WIRED_PORTS && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX-1)
+          success=true;
         }
       }
       free(TempStr);
@@ -1111,15 +1079,12 @@ boolean Device_06(byte function, struct NodoEventStruct *event, char *string)
 
   case DEVICE_MMI_OUT:
     {
-      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
-      {
-        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
-        strcat(string," ");
-        strcat(string,int2str(event->Par1));
-        strcat(string,",");
-        strcat(string,int2str(event->Par2));
-      }
-      break;
+    strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+    strcat(string," ");
+    strcat(string,int2str(event->Par1));
+    strcat(string,",");
+    strcat(string,int2str(event->Par2));
+    break;
     }
 #endif //NODO_MEGA
   }      
@@ -1324,7 +1289,6 @@ boolean Device_08(byte function, struct NodoEventStruct *event, char *string)
 
       basevar = ProtocolAlectoCheckID(rc);
 
-      event->Command       = CMD_DEVICE_FIRST+DEVICE_ID;
       event->Par1=rc;
       event->Par2=basevar;
       event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
@@ -1384,35 +1348,31 @@ boolean Device_08(byte function, struct NodoEventStruct *event, char *string)
     }
   case DEVICE_COMMAND:
     {
-      if ((event->Par2 > 0) && (ProtocolAlectoCheckID(event->Par1) == 0))
+    if ((event->Par2 > 0) && (ProtocolAlectoCheckID(event->Par1) == 0))
+      {
+      for (byte x=0; x<5; x++)
         {
-          for (byte x=0; x<5; x++)
+        if (ProtocolAlectoValidID[x] == 0)
           {
-            if (ProtocolAlectoValidID[x] == 0)
-            {
-              ProtocolAlectoValidID[x] = event->Par1;
-              ProtocolAlectoVar[x] = event->Par2;
-              break;
-            }
           }
         }
-      break;
+      }
+    break;
     }
 #endif // DEVICE_CORE_08
 
-#ifdef NODO_MEGA
+#if NODO_MEGA
   case DEVICE_MMI_IN:
     {
-      char *TempStr=(char*)malloc(26);
-      string[25]=0;
+    char *TempStr=(char*)malloc(26);
+    string[25]=0;
 
-      if(GetArgv(string,TempStr,1))
+    if(GetArgv(string,TempStr,1))
       {
-        if(strcasecmp(TempStr,DEVICE_NAME)==0)
+      if(strcasecmp(TempStr,DEVICE_NAME)==0)
         {
-          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
-          if(event->Par1>0 && event->Par1<255 && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX)
-            success=true;
+        if(event->Par1>0 && event->Par1<255 && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX)
+          success=true;
         }
       }
       free(TempStr);
@@ -1421,15 +1381,12 @@ boolean Device_08(byte function, struct NodoEventStruct *event, char *string)
 
   case DEVICE_MMI_OUT:
     {
-      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
-      {
-        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
-        strcat(string," ");
-        strcat(string,int2str(event->Par1));
-        strcat(string,",");
-        strcat(string,int2str(event->Par2));
-      }
-      break;
+    strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+    strcat(string," ");
+    strcat(string,int2str(event->Par1));
+    strcat(string,",");
+    strcat(string,int2str(event->Par2));
+    break;
     }
 #endif //NODO_MEGA
   }      
@@ -1547,7 +1504,6 @@ boolean Device_09(byte function, struct NodoEventStruct *event, char *string)
   
       basevar = ProtocolAlectoCheckID(rc);
 
-      event->Command       = CMD_DEVICE_FIRST+DEVICE_ID;
       event->Par1=rc;
       event->Par2=basevar;
       event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
@@ -1577,35 +1533,34 @@ boolean Device_09(byte function, struct NodoEventStruct *event, char *string)
     }
   case DEVICE_COMMAND:
     {
-      if ((event->Par2 > 0) && (ProtocolAlectoCheckID(event->Par1) == 0))
+    if ((event->Par2 > 0) && (ProtocolAlectoCheckID(event->Par1) == 0))
+      {
+      for (byte x=0; x<5; x++)
         {
-          for (byte x=0; x<5; x++)
+        if (ProtocolAlectoValidID[x] == 0)
           {
-            if (ProtocolAlectoValidID[x] == 0)
-            {
-              ProtocolAlectoValidID[x] = event->Par1;
-              ProtocolAlectoVar[x] = event->Par2;
-              break;
-            }
+            ProtocolAlectoValidID[x] = event->Par1;
+            ProtocolAlectoVar[x] = event->Par2;
+            break;
           }
         }
-      break;
+      }
+    break;
     }
 #endif // DEVICE_CORE_09
 
-#ifdef NODO_MEGA
+#if NODO_MEGA
   case DEVICE_MMI_IN:
     {
-      char *TempStr=(char*)malloc(26);
-      string[25]=0;
+    char *TempStr=(char*)malloc(26);
+    string[25]=0;
 
-      if(GetArgv(string,TempStr,1))
+    if(GetArgv(string,TempStr,1))
       {
-        if(strcasecmp(TempStr,DEVICE_NAME)==0)
+      if(strcasecmp(TempStr,DEVICE_NAME)==0)
         {
-          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
-          if(event->Par1>0 && event->Par1<255 && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX)
-            success=true;
+        if(event->Par1>0 && event->Par1<255 && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX)
+          success=true;
         }
       }
       free(TempStr);
@@ -1614,15 +1569,12 @@ boolean Device_09(byte function, struct NodoEventStruct *event, char *string)
 
   case DEVICE_MMI_OUT:
     {
-      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
-      {
-        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
-        strcat(string," ");
-        strcat(string,int2str(event->Par1));
-        strcat(string,",");
-        strcat(string,int2str(event->Par2));
-      }
-      break;
+    strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+    strcat(string," ");
+    strcat(string,int2str(event->Par1));
+    strcat(string,",");
+    strcat(string,int2str(event->Par2));
+    break;
     }
 #endif //NODO_MEGA
   }      
@@ -1729,7 +1681,6 @@ boolean Device_10(byte function, struct NodoEventStruct *event, char *string)
       if (checksum != checksumcalc) return false;
       basevar = ProtocolAlectoCheckID(rc);
 
-      event->Command       = CMD_DEVICE_FIRST+DEVICE_ID;
       event->Par1=rc;
       event->Par2=basevar;
       event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
@@ -1763,35 +1714,34 @@ boolean Device_10(byte function, struct NodoEventStruct *event, char *string)
     }
   case DEVICE_COMMAND:
     {
-      if ((event->Par2 > 0) && (ProtocolAlectoCheckID(event->Par1) == 0))
+    if ((event->Par2 > 0) && (ProtocolAlectoCheckID(event->Par1) == 0))
+      {
+      for (byte x=0; x<5; x++)
         {
-          for (byte x=0; x<5; x++)
+        if (ProtocolAlectoValidID[x] == 0)
           {
-            if (ProtocolAlectoValidID[x] == 0)
-            {
-              ProtocolAlectoValidID[x] = event->Par1;
-              ProtocolAlectoVar[x] = event->Par2;
-              break;
-            }
+          ProtocolAlectoValidID[x] = event->Par1;
+          ProtocolAlectoVar[x] = event->Par2;
+          break;
           }
         }
-      break;
+      }
+    break;
     }
 #endif // DEVICE_CORE_10
 
-#ifdef NODO_MEGA
+#if NODO_MEGA
   case DEVICE_MMI_IN:
     {
-      char *TempStr=(char*)malloc(26);
-      string[25]=0;
+    char *TempStr=(char*)malloc(26);
+    string[25]=0;
 
-      if(GetArgv(string,TempStr,1))
+    if(GetArgv(string,TempStr,1))
       {
-        if(strcasecmp(TempStr,DEVICE_NAME)==0)
+      if(strcasecmp(TempStr,DEVICE_NAME)==0)
         {
-          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
-          if(event->Par1>0 && event->Par1<255 && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX)
-            success=true;
+        if(event->Par1>0 && event->Par1<255 && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX)
+          success=true;
         }
       }
       free(TempStr);
@@ -1800,15 +1750,12 @@ boolean Device_10(byte function, struct NodoEventStruct *event, char *string)
 
   case DEVICE_MMI_OUT:
     {
-      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
-      {
-        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
-        strcat(string," ");
-        strcat(string,int2str(event->Par1));
-        strcat(string,",");
-        strcat(string,int2str(event->Par2));
-      }
-      break;
+    strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+    strcat(string," ");
+    strcat(string,int2str(event->Par1));
+    strcat(string,",");
+    strcat(string,int2str(event->Par2));
+    break;
     }
 #endif //NODO_MEGA
   }      
@@ -1937,7 +1884,6 @@ boolean Device_12(byte function, struct NodoEventStruct *event, char *string)
 
       basevar = ProtocolOregonCheckID((nibble[6] << 4) | nibble[5]);
 
-      event->Command       = CMD_DEVICE_FIRST+DEVICE_ID;
       event->Par1=(nibble[6] << 4) | nibble[5];
       event->Par2=basevar;
       event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
@@ -1962,35 +1908,34 @@ boolean Device_12(byte function, struct NodoEventStruct *event, char *string)
     }
   case DEVICE_COMMAND:
     {
-      if ((event->Par2 > 0) && (ProtocolOregonCheckID(event->Par1) == 0))
+    if ((event->Par2 > 0) && (ProtocolOregonCheckID(event->Par1) == 0))
+      {
+      for (byte x=0; x<5; x++)
         {
-          for (byte x=0; x<5; x++)
+        if (ProtocolOregonValidID[x] == 0)
           {
-            if (ProtocolOregonValidID[x] == 0)
-            {
-              ProtocolOregonValidID[x] = event->Par1;
-              ProtocolOregonVar[x] = event->Par2;
-              break;
-            }
+          ProtocolOregonValidID[x] = event->Par1;
+          ProtocolOregonVar[x] = event->Par2;
+          break;
           }
         }
-      break;
+      }
+    break;
     }
 #endif // DEVICE_CORE_12
 
-#ifdef NODO_MEGA
+#if NODO_MEGA
   case DEVICE_MMI_IN:
     {
-      char *TempStr=(char*)malloc(26);
-      string[25]=0;
+    char *TempStr=(char*)malloc(26);
+    string[25]=0;
 
-      if(GetArgv(string,TempStr,1))
+    if(GetArgv(string,TempStr,1))
       {
-        if(strcasecmp(TempStr,DEVICE_NAME)==0)
+      if(strcasecmp(TempStr,DEVICE_NAME)==0)
         {
-          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
-          if(event->Par1>0 && event->Par1<255 && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX)
-            success=true;
+        if(event->Par1>0 && event->Par1<255 && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX)
+          success=true;
         }
       }
       free(TempStr);
@@ -1999,15 +1944,12 @@ boolean Device_12(byte function, struct NodoEventStruct *event, char *string)
 
   case DEVICE_MMI_OUT:
     {
-      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
-      {
-        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
-        strcat(string," ");
-        strcat(string,int2str(event->Par1));
-        strcat(string,",");
-        strcat(string,int2str(event->Par2));
-      }
-      break;
+    strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+    strcat(string," ");
+    strcat(string,int2str(event->Par1));
+    strcat(string,",");
+    strcat(string,int2str(event->Par2));
+    break;
     }
 #endif //NODO_MEGA
   }      
@@ -2077,7 +2019,6 @@ boolean Device_13(byte function, struct NodoEventStruct *event, char *string)
         else bitstream = bitstream << 1;
       }
 
-      event->Command       = CMD_DEVICE_FIRST+DEVICE_ID;
       event->Par1=0;
       event->Par2=bitstream;
       event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
@@ -2092,7 +2033,7 @@ boolean Device_13(byte function, struct NodoEventStruct *event, char *string)
     }
 #endif // DEVICE_CORE_13
 
-#ifdef NODO_MEGA
+#if NODO_MEGA
   case DEVICE_MMI_IN:
     {
       break;
@@ -2100,15 +2041,12 @@ boolean Device_13(byte function, struct NodoEventStruct *event, char *string)
 
   case DEVICE_MMI_OUT:
     {
-      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
-      {
-        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
-        strcat(string," ");
-        strcat(string,int2str(event->Par1));
-        strcat(string,",");
-        strcat(string,int2str(event->Par2));
-      }
-      break;
+    strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+    strcat(string," ");
+    strcat(string,int2str(event->Par1));
+    strcat(string,",");
+    strcat(string,int2str(event->Par2));
+    break;
     }
 #endif //NODO_MEGA
   }      
@@ -2147,7 +2085,7 @@ boolean Device_13(byte function, struct NodoEventStruct *event, char *string)
 #define DEVICE_NAME "SmokeAlertSend"
 
 boolean Device_14(byte function, struct NodoEventStruct *event, char *string)
-{
+  {
   boolean success=false;
 
   switch(function)
@@ -2160,43 +2098,40 @@ boolean Device_14(byte function, struct NodoEventStruct *event, char *string)
 
   case DEVICE_COMMAND:
     {
-      unsigned long bitstream=event->Par2;
-      RawSignal.Multiply=50;
-      RawSignal.Repeats=1;
-      RawSignal.Delay=0;
-      RawSignal.Pulses[1]=FA20RFSTART/RawSignal.Multiply;
-      RawSignal.Pulses[2]=FA20RFSPACE/RawSignal.Multiply;
-      RawSignal.Pulses[3]=FA20RFSPACE/RawSignal.Multiply;
-      for(byte x=49;x>=3;x=x-2)
+    unsigned long bitstream=event->Par2;
+    RawSignal.Multiply=50;
+    RawSignal.Repeats=1;
+    RawSignal.Delay=0;
+    RawSignal.Pulses[1]=FA20RFSTART/RawSignal.Multiply;
+    RawSignal.Pulses[2]=FA20RFSPACE/RawSignal.Multiply;
+    RawSignal.Pulses[3]=FA20RFSPACE/RawSignal.Multiply;
+    for(byte x=49;x>=3;x=x-2)
       {
-        RawSignal.Pulses[x]=FA20RFSPACE/RawSignal.Multiply;
-        if ((bitstream & 1) == 1) RawSignal.Pulses[x+1] = FA20RFHIGH/RawSignal.Multiply; 
-        else RawSignal.Pulses[x+1] = FA20RFLOW/RawSignal.Multiply;
-        bitstream = bitstream >> 1;
+      RawSignal.Pulses[x]=FA20RFSPACE/RawSignal.Multiply;
+      if ((bitstream & 1) == 1) RawSignal.Pulses[x+1] = FA20RFHIGH/RawSignal.Multiply; 
+      else RawSignal.Pulses[x+1] = FA20RFLOW/RawSignal.Multiply;
+      bitstream = bitstream >> 1;
       }
 
-      RawSignal.Pulses[51]=FA20RFSPACE/RawSignal.Multiply;
-      RawSignal.Pulses[52]=0;
-      RawSignal.Number=52;
+    RawSignal.Pulses[51]=FA20RFSPACE/RawSignal.Multiply;
+    RawSignal.Pulses[52]=0;
+    RawSignal.Number=52;
 
-      for (byte x =0; x<50; x++) RawSendRF();
-      break;
+    for (byte x =0; x<50; x++) RawSendRF();
+    break;
     } 
 #endif // DEVICE_CORE_14
 
-#ifdef NODO_MEGA
+#if NODO_MEGA
   case DEVICE_MMI_IN:
     {
-      char *TempStr=(char*)malloc(26);
-      string[25]=0;
+    char *TempStr=(char*)malloc(26);
+    string[25]=0;
 
-      if(GetArgv(string,TempStr,1))
+    if(GetArgv(string,TempStr,1))
       {
-        if(strcasecmp(TempStr,DEVICE_NAME)==0)
-        {
-          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
-          success=true;
-        }
+      if(strcasecmp(TempStr,DEVICE_NAME)==0)
+        success=true;
       }
       free(TempStr);
       break;
@@ -2204,15 +2139,12 @@ boolean Device_14(byte function, struct NodoEventStruct *event, char *string)
 
   case DEVICE_MMI_OUT:
     {
-      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
-      {
-        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
-        strcat(string," ");
-        strcat(string,int2str(event->Par1));
-        strcat(string,",");
-        strcat(string,int2str(event->Par2));
-      }
-      break;
+    strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+    strcat(string," ");
+    strcat(string,int2str(event->Par1));
+    strcat(string,",");
+    strcat(string,int2str(event->Par2));
+    break;
     }
 #endif //NODO_MEGA
   }      
@@ -2301,7 +2233,6 @@ boolean Device_15(byte function, struct NodoEventStruct *event, char *string)
 
       event->Par1=((address>>4)&0x01)?VALUE_ON:VALUE_OFF; // On/Off bit omzetten naar een Nodo waarde. 
       event->Par2=address &0x0FFFFFCF;         // Op hoogste nibble zat vroeger het signaaltype. 
-      event->Command       = CMD_DEVICE_FIRST+DEVICE_ID;        // Command deel t.b.v. weergave van de string "HomeEasy"
       event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
       RawSignal.Repeats    = true; // het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
       
@@ -2313,28 +2244,26 @@ boolean Device_15(byte function, struct NodoEventStruct *event, char *string)
     break;
 #endif // DEVICE_CORE_15
 
-#ifdef NODO_MEGA
+#if NODO_MEGA
   case DEVICE_MMI_IN:
     {
-      char* str=(char*)malloc(40);
-      string[25]=0; // kap voor de zekerheid de string af.
+    char* str=(char*)malloc(40);
+    string[25]=0; // kap voor de zekerheid de string af.
 
-      if(GetArgv(string,str,1))
+    if(GetArgv(string,str,1))
       {
-        if(strcasecmp(str,DEVICE_NAME)==0)
+      if(strcasecmp(str,DEVICE_NAME)==0)
         {
-          // Hier wordt de tekst van de protocolnaam gekoppeld aan het device ID.
-          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
-          if(GetArgv(string,str,2))
+        if(GetArgv(string,str,2))
           {
-            event->Par2=str2int(str);    
-            if(GetArgv(string,str,3))
+          event->Par2=str2int(str);    
+          if(GetArgv(string,str,3))
             {
-              // Vul Par1 met het HomeEasy commando. Dit kan zijn: VALUE_ON, VALUE_OFF, Andere waarden zijn ongeldig.
+            // Vul Par1 met het HomeEasy commando. Dit kan zijn: VALUE_ON, VALUE_OFF, Andere waarden zijn ongeldig.
 
-              // haal uit de tweede parameter een 'On' of een 'Off'.
-              if(event->Par1=str2cmd(str))
-                success=true;
+            // haal uit de tweede parameter een 'On' of een 'Off'.
+            if(event->Par1=str2cmd(str))
+              success=true;
             }
           }
         }
@@ -2345,28 +2274,25 @@ boolean Device_15(byte function, struct NodoEventStruct *event, char *string)
 
   case DEVICE_MMI_OUT:
     {
-      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
-      {
-        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
-        strcat(string," ");
+    strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+    strcat(string," ");
 
-        // In Par3 twee mogelijkheden: Het bevat een door gebruiker ingegeven adres 0..255 of een volledig HomeEasy adres.
-        if(event->Par2>=0x0ff)
-          strcat(string,int2strhex(event->Par2)); 
-        else
-          strcat(string,int2str(event->Par2)); 
+    // In Par3 twee mogelijkheden: Het bevat een door gebruiker ingegeven adres 0..255 of een volledig HomeEasy adres.
+    if(event->Par2>=0x0ff)
+      strcat(string,int2strhex(event->Par2)); 
+    else
+      strcat(string,int2str(event->Par2)); 
 
-        strcat(string,",");
+    strcat(string,",");
 
-        if(event->Par1==VALUE_ON)
-          strcat(string,"On");  
-        else if(event->Par1==VALUE_OFF)
-          strcat(string,"Off");
-        else
-          strcat(string,int2str(event->Par1));
-        success=true;
-      }
-      break;
+    if(event->Par1==VALUE_ON)
+      strcat(string,"On");  
+    else if(event->Par1==VALUE_OFF)
+      strcat(string,"Off");
+    else
+      strcat(string,int2str(event->Par1));
+
+    break;
     }
 #endif //NODO_MEGA
   }      
@@ -2410,103 +2336,101 @@ boolean Device_16(byte function, struct NodoEventStruct *event, char *string)
 
   case DEVICE_COMMAND:
     {
-      unsigned long bitstream=0L;
-      byte address = 0;
-      byte channel = 0;
-      byte channelcode = 0;
-      byte command = 0;
-      byte i=1; // bitcounter in stream
-      byte y; // size of partial bitstreams
+    unsigned long bitstream=0L;
+    byte address = 0;
+    byte channel = 0;
+    byte channelcode = 0;
+    byte command = 0;
+    byte i=1; // bitcounter in stream
+    byte y; // size of partial bitstreams
 
-      RawSignal.Multiply=50;
+    RawSignal.Multiply=50;
 
-      address = (event->Par2 >> 4) & 0x7;   // 3 bits address (higher bits from HomeEasy address, bit 7 not used
-      channel = event->Par2 & 0xF;    // 4 bits channel (lower bits from HomeEasy address
-      command = event->Par1 & 0xF;    // 12 = on, 0 = off
+    address = (event->Par2 >> 4) & 0x7;   // 3 bits address (higher bits from HomeEasy address, bit 7 not used
+    channel = event->Par2 & 0xF;    // 4 bits channel (lower bits from HomeEasy address
+    command = event->Par1 & 0xF;    // 12 = on, 0 = off
 
-      if (channel == 0) channelcode = 0x8E;
-      else if (channel == 1) channelcode = 0x96;
-      else if (channel == 2) channelcode = 0x9A;
-      else if (channel == 3) channelcode = 0x9C;
-      else if (channel == 4) channelcode = 0xA6;
-      else if (channel == 5) channelcode = 0xAA;
-      else if (channel == 6) channelcode = 0xAC;
-      else if (channel == 7) channelcode = 0xB2;
-      else if (channel == 8) channelcode = 0xB4;
-      else if (channel == 9) channelcode = 0xB8;
-      else if (channel == 10) channelcode = 0xC6;
-      else if (channel == 11) channelcode = 0xCA;
-      else if (channel == 12) channelcode = 0xCC;
-      else if (channel == 13) channelcode = 0xD2;
-      else if (channel == 14) channelcode = 0xD4;
-      else if (channel == 15) channelcode = 0xD8;
+    if (channel == 0) channelcode = 0x8E;
+    else if (channel == 1) channelcode = 0x96;
+    else if (channel == 2) channelcode = 0x9A;
+    else if (channel == 3) channelcode = 0x9C;
+    else if (channel == 4) channelcode = 0xA6;
+    else if (channel == 5) channelcode = 0xAA;
+    else if (channel == 6) channelcode = 0xAC;
+    else if (channel == 7) channelcode = 0xB2;
+    else if (channel == 8) channelcode = 0xB4;
+    else if (channel == 9) channelcode = 0xB8;
+    else if (channel == 10) channelcode = 0xC6;
+    else if (channel == 11) channelcode = 0xCA;
+    else if (channel == 12) channelcode = 0xCC;
+    else if (channel == 13) channelcode = 0xD2;
+    else if (channel == 14) channelcode = 0xD4;
+    else if (channel == 15) channelcode = 0xD8;
 
-      y=11; // bit uit de bitstream, startbits
-      bitstream = 0x63C;
-      for (i=1;i<=22;i=i+2)
+    y=11; // bit uit de bitstream, startbits
+    bitstream = 0x63C;
+    for (i=1;i<=22;i=i+2)
       {
-        RawSignal.Pulses[i] = HomeEasy_ShortHigh/RawSignal.Multiply;
-        if((bitstream>>(y-1))&1)          // bit 1
-            RawSignal.Pulses[i+1] = HomeEasy_LongLow/RawSignal.Multiply;
-        else                              // bit 0
-        RawSignal.Pulses[i+1] = HomeEasy_ShortLow/RawSignal.Multiply;
-        y--;
+      RawSignal.Pulses[i] = HomeEasy_ShortHigh/RawSignal.Multiply;
+      if((bitstream>>(y-1))&1)          // bit 1
+          RawSignal.Pulses[i+1] = HomeEasy_LongLow/RawSignal.Multiply;
+      else                              // bit 0
+      RawSignal.Pulses[i+1] = HomeEasy_ShortLow/RawSignal.Multiply;
+      y--;
       }
 
-      y=32; // bit uit de bitstream, address
-      bitstream = 0xDAB8F56C + address;
+    y=32; // bit uit de bitstream, address
+    bitstream = 0xDAB8F56C + address;
 
-      for (i=23;i<=86;i=i+2)
+    for (i=23;i<=86;i=i+2)
       {
-        RawSignal.Pulses[i] = HomeEasy_ShortHigh/RawSignal.Multiply;
-        if((bitstream>>(y-1))&1)          // bit 1
-            RawSignal.Pulses[i+1] = HomeEasy_LongLow/RawSignal.Multiply;
-        else                              // bit 0
-        RawSignal.Pulses[i+1] = HomeEasy_ShortLow/RawSignal.Multiply;
-        y--;
+      RawSignal.Pulses[i] = HomeEasy_ShortHigh/RawSignal.Multiply;
+      if((bitstream>>(y-1))&1)          // bit 1
+          RawSignal.Pulses[i+1] = HomeEasy_LongLow/RawSignal.Multiply;
+      else                              // bit 0
+      RawSignal.Pulses[i+1] = HomeEasy_ShortLow/RawSignal.Multiply;
+      y--;
       }
 
-      y=15; // bit uit de bitstream, other stuff
+    y=15; // bit uit de bitstream, other stuff
 
-      bitstream = 0x5C00;  // bit 10 on, bit 11 off indien OFF
-      if (event->Par1==VALUE_OFF) bitstream = 0x5A00;
+    bitstream = 0x5C00;  // bit 10 on, bit 11 off indien OFF
+    if (event->Par1==VALUE_OFF) bitstream = 0x5A00;
 
-      bitstream = bitstream + channelcode;
+    bitstream = bitstream + channelcode;
 
-      for (i=87;i<=116;i=i+2)
+    for (i=87;i<=116;i=i+2)
       {
-        RawSignal.Pulses[i] = HomeEasy_ShortHigh/RawSignal.Multiply;
-        if((bitstream>>(y-1))&1)          // bit 1
-            RawSignal.Pulses[i+1] = HomeEasy_LongLow/RawSignal.Multiply;
-        else                              // bit 0
-        RawSignal.Pulses[i+1] = HomeEasy_ShortLow/RawSignal.Multiply;
-        y--;
+      RawSignal.Pulses[i] = HomeEasy_ShortHigh/RawSignal.Multiply;
+      if((bitstream>>(y-1))&1)          // bit 1
+          RawSignal.Pulses[i+1] = HomeEasy_LongLow/RawSignal.Multiply;
+      else                              // bit 0
+      RawSignal.Pulses[i+1] = HomeEasy_ShortLow/RawSignal.Multiply;
+      y--;
       }
 
-      RawSignal.Pulses[116]=0;
-      RawSignal.Number=116; // aantal bits*2 die zich in het opgebouwde RawSignal bevinden  unsigned long bitstream=0L;
-      event->Port=VALUE_ALL; // Signaal mag naar alle door de gebruiker met [Output] ingestelde poorten worden verzonden.
-      RawSignal.Repeats=5;   // vijf herhalingen.
-      RawSignal.Delay=20; // Tussen iedere pulsenreeks enige tijd rust.
-      SendEvent(event,true,true,true);
-      success=true;
-      break;
+    RawSignal.Pulses[116]=0;
+    RawSignal.Number=116; // aantal bits*2 die zich in het opgebouwde RawSignal bevinden  unsigned long bitstream=0L;
+    event->Port=VALUE_ALL; // Signaal mag naar alle door de gebruiker met [Output] ingestelde poorten worden verzonden.
+    RawSignal.Repeats=5;   // vijf herhalingen.
+    RawSignal.Delay=20; // Tussen iedere pulsenreeks enige tijd rust.
+    SendEvent(event,true,true,true);
+    success=true;
+    break;
     }
 #endif // DEVICE_CORE_16
 
-#ifdef NODO_MEGA
+#if NODO_MEGA
   case DEVICE_MMI_IN:
     {
-      char* str=(char*)malloc(40);
-      string[25]=0; // kap voor de zekerheid de string af.
+    char* str=(char*)malloc(40);
+    string[25]=0; // kap voor de zekerheid de string af.
 
-      if(GetArgv(string,str,1))
+    if(GetArgv(string,str,1))
       {
-        if(strcasecmp(str,DEVICE_NAME)==0)
+      if(strcasecmp(str,DEVICE_NAME)==0)
         {
-          // Hier wordt de tekst van de protocolnaam gekoppeld aan het device ID.
-          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
-          if(GetArgv(string,str,2))
+        if(GetArgv(string,str,2))
           {
             event->Par2=str2int(str);    
             if(GetArgv(string,str,3))
@@ -2525,28 +2449,25 @@ boolean Device_16(byte function, struct NodoEventStruct *event, char *string)
 
   case DEVICE_MMI_OUT:
     {
-      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
-      {
-        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
-        strcat(string," ");
+    strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+    strcat(string," ");
 
-        // In Par3 twee mogelijkheden: Het bevat een door gebruiker ingegeven adres 0..255 of een volledig HomeEasy adres.
-        if(event->Par2>=0x0ff)
-          strcat(string,int2strhex(event->Par2)); 
-        else
-          strcat(string,int2str(event->Par2)); 
+    // In Par3 twee mogelijkheden: Het bevat een door gebruiker ingegeven adres 0..255 of een volledig HomeEasy adres.
+    if(event->Par2>=0x0ff)
+      strcat(string,int2strhex(event->Par2)); 
+    else
+      strcat(string,int2str(event->Par2)); 
 
-        strcat(string,",");
+    strcat(string,",");
 
-        if(event->Par1==VALUE_ON)
-          strcat(string,"On");  
-        else if(event->Par1==VALUE_OFF)
-          strcat(string,"Off");
-        else
-          strcat(string,int2str(event->Par1));
-        success=true;
-      }
-      break;
+    if(event->Par1==VALUE_ON)
+      strcat(string,"On");  
+    else if(event->Par1==VALUE_OFF)
+      strcat(string,"Off");
+    else
+      strcat(string,int2str(event->Par1));
+
+    break;
     }
 #endif //NODO_MEGA
   }      
@@ -2557,7 +2478,7 @@ boolean Device_16(byte function, struct NodoEventStruct *event, char *string)
 
 
 //#######################################################################################################
-//#################################### Device-15: Signal Analyzer   #####################################
+//#################################### Device-18: Signal Analyzer   #####################################
 //#######################################################################################################
 
 
@@ -2748,7 +2669,7 @@ boolean Device_18(byte function, struct NodoEventStruct *event, char *string)
       }      
     #endif // CORE
       
-    #ifdef NODO_MEGA
+    #if NODO_MEGA
     case DEVICE_MMI_IN:
       {
       char *TempStr=(char*)malloc(26);
@@ -2756,10 +2677,7 @@ boolean Device_18(byte function, struct NodoEventStruct *event, char *string)
       if(GetArgv(string,TempStr,1))
         {
         if(strcasecmp(TempStr,DEVICE_NAME)==0)
-          {
-          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
           success=true;
-          }
         }
       free(TempStr);
       break;
@@ -2767,12 +2685,9 @@ boolean Device_18(byte function, struct NodoEventStruct *event, char *string)
 
     case DEVICE_MMI_OUT:
       {
-      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
-        {
-        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
-        strcat(string," ");
-        strcat(string,int2str(event->Par1));
-        }
+      strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+      strcat(string," ");
+      strcat(string,int2str(event->Par1));
       break;
       }
     #endif //NODO_MEGA
@@ -2812,7 +2727,7 @@ boolean Device_18(byte function, struct NodoEventStruct *event, char *string)
 #define DEVICE_ID       19
 #define DEVICE_NAME "RFID"
 
-#ifdef NODO_MEGA
+#if NODO_MEGA
   #define RFID_PIN         A15 // A0-A7 are not PCINT capable on a ATMega2560!
 #else
   #define RFID_PIN         A3
@@ -2939,45 +2854,40 @@ boolean Device_19(byte function, struct NodoEventStruct *event, char *string)
     }
 #endif // DEVICE_CORE_19
 
-#ifdef NODO_MEGA
+#if NODO_MEGA
   case DEVICE_MMI_IN:
     {
-      char* str=(char*)malloc(40);
-      string[25]=0; // kap voor de zekerheid de string af.
-    
-      if(GetArgv(string,str,1))
+    char* str=(char*)malloc(40);
+    string[25]=0; // kap voor de zekerheid de string af.
+  
+    if(GetArgv(string,str,1))
+      {
+      if(strcasecmp(str,DEVICE_NAME)==0)
         {
-        if(strcasecmp(str,DEVICE_NAME)==0)
+        if(GetArgv(string,str,2))
           {
-          // Hier wordt de tekst van de protocolnaam gekoppeld aan het device ID.
-          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
-          if(GetArgv(string,str,2))
+          event->Par1=str2int(str);    
+          if(GetArgv(string,str,3))
             {
-            event->Par1=str2int(str);    
-            if(GetArgv(string,str,3))
-              {
-                event->Par2=str2int(str);    
-                success=true;
-              }
+            event->Par2=str2int(str);    
+            success=true;
             }
           }
         }
-      free(str);
-      break;
       }
+    free(str);
+    break;
+    }
 
   case DEVICE_MMI_OUT:
     {
-      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
-      {
-        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
-        strcat(string," ");
-        strcat(string,int2str(event->Par1)); 
-        strcat(string,",");
-        strcat(string,int2strhex(event->Par2));
-        success=true;
-      }
-      break;
+    strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+    strcat(string," ");
+    strcat(string,int2str(event->Par1)); 
+    strcat(string,",");
+    strcat(string,int2strhex(event->Par2));
+
+    break;
     }
 #endif //NODO_MEGA
   }      
@@ -3162,32 +3072,31 @@ boolean Device_20(byte function, struct NodoEventStruct *event, char *string)
 
   case DEVICE_COMMAND:
     {
-      byte VarNr = event->Par2; // De originele Par1 tijdelijk opslaan want hier zit de variabelenummer in waar de gebruiker de uitgelezen waarde in wil hebben
-        ClearEvent(event);                                    // Ga uit van een default schone event. Oude eventgegevens wissen.
-      event->Command      = CMD_VARIABLE_SET;                 // Commando "VariableSet"
-      event->Par1         = VarNr;                            // Par1 is de variabele die we willen vullen.
-      event->Par2         = float2ul(float(bmp085_readTemperature()));
-      QueueAdd(event);                                        // Event opslaan in de event queue, hierna komt de volgende meetwaarde
-      event->Par1         = VarNr+1;                          // Par1+1 is de variabele die we willen vullen voor luchtvochtigheid
-      event->Par2         = float2ul(float(bmp085_readPressure()-100000));
-      QueueAdd(event);
-      success=true;
+    byte VarNr = event->Par2; // De originele Par1 tijdelijk opslaan want hier zit de variabelenummer in waar de gebruiker de uitgelezen waarde in wil hebben
+      ClearEvent(event);                                    // Ga uit van een default schone event. Oude eventgegevens wissen.
+    event->Command      = CMD_VARIABLE_SET;                 // Commando "VariableSet"
+    event->Par1         = VarNr;                            // Par1 is de variabele die we willen vullen.
+    event->Par2         = float2ul(float(bmp085_readTemperature()));
+    QueueAdd(event);                                        // Event opslaan in de event queue, hierna komt de volgende meetwaarde
+    event->Par1         = VarNr+1;                          // Par1+1 is de variabele die we willen vullen voor luchtvochtigheid
+    event->Par2         = float2ul(float(bmp085_readPressure()-100000));
+    QueueAdd(event);
+    success=true;
     }
 #endif // DEVICE_CORE_20
 
-#ifdef NODO_MEGA
+#if NODO_MEGA
   case DEVICE_MMI_IN:
     {
-      char *TempStr=(char*)malloc(26);
-      string[25]=0;
+    char *TempStr=(char*)malloc(26);
+    string[25]=0;
 
-      if(GetArgv(string,TempStr,1))
+    if(GetArgv(string,TempStr,1))
       {
-        if(strcasecmp(TempStr,DEVICE_NAME)==0)
+      if(strcasecmp(TempStr,DEVICE_NAME)==0)
         {
-          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
-          if(event->Par1 >0 && event->Par1<=USER_VARIABLES_MAX-1)
-            success=true;
+        if(event->Par1 >0 && event->Par1<=USER_VARIABLES_MAX-1)
+          success=true;
         }
       }
       free(TempStr);
@@ -3196,13 +3105,11 @@ boolean Device_20(byte function, struct NodoEventStruct *event, char *string)
 
   case DEVICE_MMI_OUT:
     {
-      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
-      {
-        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
-        strcat(string," ");
-        strcat(string,int2str(event->Par1));
-      }
-      break;
+    strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+    strcat(string," ");
+    strcat(string,int2str(event->Par1));
+
+    break;
     }
 #endif //NODO_MEGA
   }      
@@ -3509,24 +3416,22 @@ boolean Device_21(byte function, struct NodoEventStruct *event, char *string)
       }
    case DEVICE_COMMAND:
       {
-        if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
-          {
-            if ((event->Par1 == 1) || (event->Par1 == 2))
+      if ((event->Par1 == 1) || (event->Par1 == 2))
+        {
+          if (event->Par2 == 0) LCD_I2C_printline(event->Par1-1,"");
+          if ((event->Par2 > 0) && (event->Par2 <= LCDI2C_MSG_MAX))
             {
-              if (event->Par2 == 0) LCD_I2C_printline(event->Par1-1,"");
-              if ((event->Par2 > 0) && (event->Par2 <= LCDI2C_MSG_MAX))
-                {
-                  char TempString[18];
-                  strcpy_P(TempString,(char*)pgm_read_word(&(LCDText_tabel[event->Par2-1])));
-                  LCD_I2C_printline(event->Par1-1, TempString);
-                }
-              success=true;
+              char TempString[18];
+              strcpy_P(TempString,(char*)pgm_read_word(&(LCDText_tabel[event->Par2-1])));
+              LCD_I2C_printline(event->Par1-1, TempString);
             }
-          }
-        break;
+          success=true;
+        }
+      break;
       }
 #endif // DEVICE_CORE_21
-    #ifdef NODO_MEGA
+
+    #if NODO_MEGA
     case DEVICE_MMI_IN:
       {
       char *TempStr=(char*)malloc(26);
@@ -3536,7 +3441,6 @@ boolean Device_21(byte function, struct NodoEventStruct *event, char *string)
         {
         if(strcasecmp(TempStr,DEVICE_NAME)==0)
           {
-          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
           if(event->Par1>0 && event->Par1<=2 && event->Par2>0 && event->Par2<=LCDI2C_MSG_MAX)
             success=true;
           }
@@ -3547,14 +3451,11 @@ boolean Device_21(byte function, struct NodoEventStruct *event, char *string)
 
     case DEVICE_MMI_OUT:
       {
-      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
-        {
-        strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
-        strcat(string," ");
-        strcat(string,int2str(event->Par1));
-        strcat(string,",");
-        strcat(string,int2str(event->Par2));
-        }
+      strcpy(string,DEVICE_NAME);            // Eerste argument=het commando deel
+      strcat(string," ");
+      strcat(string,int2str(event->Par1));
+      strcat(string,",");
+      strcat(string,int2str(event->Par2));
       break;
       }
     #endif //NODO_MEGA
@@ -3698,7 +3599,7 @@ void LCD_I2C_pulseEnable(uint8_t _data){
 #ifdef DEVICE_22
 #define DEVICE_NAME_22 "HCSR04_Read"
 
-boolean Device22(byte function, struct NodoEventStruct *event, char *string)
+boolean Device_22(byte function, struct NodoEventStruct *event, char *string)
   {
   #ifdef DEVICE_CORE_22
   boolean success=false;
@@ -3732,7 +3633,7 @@ boolean Device22(byte function, struct NodoEventStruct *event, char *string)
       break;
       }
 
-    #ifdef NODO_MEGA
+    #if NODO_MEGA
     case DEVICE_MMI_IN:
       {
       char *TempStr=(char*)malloc(26);
@@ -3742,7 +3643,6 @@ boolean Device22(byte function, struct NodoEventStruct *event, char *string)
         {
         if(strcasecmp(TempStr,DEVICE_NAME_22)==0)
           {
-          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
           // Par1 en Par2 hoeven niet te worden geparsed omdat deze default al door de MMI invoer van de Nodo 
           // worden gevuld indien het integer waarden zijn. Toetsen op bereikenmoet nog wel plaats vinden.
           if(event->Par1>0 && event->Par1<=USER_VARIABLES_MAX)
@@ -3755,15 +3655,11 @@ boolean Device22(byte function, struct NodoEventStruct *event, char *string)
 
     case DEVICE_MMI_OUT:
       {
-      if(event->Command==(CMD_DEVICE_FIRST+DEVICE_ID))
-        {
-        strcpy(string,DEVICE_NAME_22);            // Eerste argument=het commando deel
-        strcat(string," ");
-        strcat(string,int2str(event->Par1));
-        strcat(string,",");
-        strcat(string,int2str(event->Par2));
-        }
-      success=true;
+      strcpy(string,DEVICE_NAME_22);            // Eerste argument=het commando deel
+      strcat(string," ");
+      strcat(string,int2str(event->Par1));
+      strcat(string,",");
+      strcat(string,int2str(event->Par2));
       break;
       }
     #endif //NODO_MEGA
@@ -3865,17 +3761,20 @@ boolean Device22(byte function, struct NodoEventStruct *event, char *string)
 
 // Een device heeft naast een uniek ID ook een eigen MMI string die de gebruiker kan invoeren via Telnet, Serial, HTTP 
 // of een script. Geef hier de naam op. De afhandeling is niet hoofdletter gevoelig.
-#define DEVICE_NAME_99 "MyUserDevice"
+#define DEVICE_NAME_99 "MyDevice"
+boolean Device_99(byte function, struct NodoEventStruct *event, char *string)
+  {
+  boolean success=false;
 
-// Deze device code wordt vanuit meerdere plaatsen in de Nodo code aangeroepen, steeds met een doel. Dit doel bevindt zich
-// in de variabele [function]. De volgende doelen zijn gedefinieerd:
-//
-// DEVICE_RAWSIGNAL_IN  => Afhandeling van een via RF/IR ontvangen event
-// DEVICE_COMMAND       => Commando voor afhandelen/uitsturen van een event.
-// DEVICE_MMI_IN        => Invoer van de gebruiker/script omzetten naar een event. (Alleen voor mega)
-// DEVICE_MMI_OUT       => Omzetten van een event naar een voor de gebruiker leesbare tekst (Alleen voor Mega)
-// DEVIDE_ONCE_A_SECOND => ongeveer iedere seconde.
-// DEVICE_INIT          => Eenmalig, direct na opstarten van de Nodo
+  // Deze device code wordt vanuit meerdere plaatsen in de Nodo code aangeroepen, steeds met een doel. Dit doel bevindt zich
+  // in de variabele [function]. De volgende doelen zijn gedefinieerd:
+  //
+  // DEVICE_RAWSIGNAL_IN  => Afhandeling van een via RF/IR ontvangen event
+  // DEVICE_COMMAND       => Commando voor afhandelen/uitsturen van een event.
+  // DEVICE_MMI_IN        => Invoer van de gebruiker/script omzetten naar een event. (Alleen voor mega)
+  // DEVICE_MMI_OUT       => Omzetten van een event naar een voor de gebruiker leesbare tekst (Alleen voor Mega)
+  // DEVIDE_ONCE_A_SECOND => ongeveer iedere seconde.
+  // DEVICE_INIT          => Eenmalig, direct na opstarten van de Nodo
 
   #ifdef DEVICE_CORE_99
   switch(function)
@@ -3886,6 +3785,7 @@ boolean Device22(byte function, struct NodoEventStruct *event, char *string)
       // tijdkritisch deel van de hoofdloop van de Nodo bevindt! Gebruik dus alleen om snel een waarde te (re)setten
       // of om de status van een poort/variabele te checken. Zolang de verwerking zich hier plaats vindt zal de
       // Nodo géén IR of RF events kunnen ontvangen.
+      Serial.println(F("*** debug: MyDevice: DEVICE_ONCE_A_SECOND")); //??? Debug
       break;
       }
 
@@ -3895,6 +3795,7 @@ boolean Device22(byte function, struct NodoEventStruct *event, char *string)
       // De RawSignal buffer is gevuld met pulsen. de struct [event] moet hier worden samengesteld.      
       // Als decoderen is gelukt, dan de variabele [success] vullen met een true. De Nodo zal het 
       // event vervolgens als een regulier event afhandelen.
+      Serial.println(F("*** debug: MyDevice: DEVICE_RAWSIGNAL_IN")); //??? Debug
       break;
       }
       
@@ -3905,20 +3806,24 @@ boolean Device22(byte function, struct NodoEventStruct *event, char *string)
       // Als voor verlaten de struct [event] is gevuld met een ander event, dan wordt deze uitgevoerd als een nieuw
       // event. Dit kan bijvoorbeeld worden benut als een variabele wordt uitgelezen en de waarde verder verwerkt
       // moet worden.
+      Serial.println(F("*** debug: MyDevice: DEVICE_COMMAND")); //??? Debug
       break;
-
+      }
+      
     case DEVICE_INIT:
       {
       // Code hier wordt eenmalig aangeroepen na een reboot van de Nodo.
+      Serial.println(F("*** debug: MyDevice: DEVICE_INIT")); //??? Debug
       break;
       }
     
-    #ifdef NODO_MEGA
+    #if NODO_MEGA
     case DEVICE_MMI_IN:
       {
       // Zodra er via een script, HTTP, Telnet of Serial een commando wordt ingevoerd, wordt dit deel van de code langs gelopen.
-      // Op deze plet kan de invoer [string] worden gepardsed en omgezet naar een struct [event]. Als parsen van de invoerstring [string]
-      // is gelukt en de struct is gevuld, dan de variabele [success] vullen met true zodat de Nod zorg kan dragen voor verdere verwerking van het event.
+      // Op deze plek kan de invoer [string] worden geparsed en omgezet naar een struct [event]. Als parsen van de invoerstring [string]
+      // is gelukt en de struct is gevuld, dan de variabele [success] vullen met true zodat de Nodo zorg kan dragen voor verdere verwerking van het event.
+      Serial.print(F("*** debug: MyDevice: DEVICE_MMI_IN, string="));Serial.println(string); //??? Debug
 
       char *TempStr=(char*)malloc(26);
       string[25]=0;
@@ -3928,11 +3833,9 @@ boolean Device22(byte function, struct NodoEventStruct *event, char *string)
       // Dit is het eerste argument in het commando. 
       if(GetArgv(string,TempStr,1))
         {
+        // Als het door de gebruiker ingegeven ommando/event overeenkomt met de naam van dit device...
         if(strcasecmp(TempStr,DEVICE_NAME_99)==0)
           {
-          // Hier wordt de tekst van de protocolnaam gekoppeld aan het device ID.
-          event->Command=CMD_DEVICE_FIRST+DEVICE_ID;
-                    
           // Vervolgens tweede parameter gebruiken
           if(GetArgv(string,TempStr,2)) 
             {
@@ -3945,6 +3848,10 @@ boolean Device22(byte function, struct NodoEventStruct *event, char *string)
               // Plaats wederom de code paar uitparsen van de parameter hier.
               // heb je het laatste parameter geparsen, dan de variabele [success] vullen 
               // met een true zodat verdere verwerking van het event plaats kan vinden.
+
+              // Als success wordt gevuld met true, dan wordt het commando/event
+              // geaccepteerd als geldig.
+              success=true;
               }
             }
           }
@@ -3959,12 +3866,14 @@ boolean Device22(byte function, struct NodoEventStruct *event, char *string)
       // omgezet naar een leesbaar event voor de gebruiker. het resultaat moet worden geplaatst in de string [string]
       // let op dat het totale commando niet meer dan 25 posities in beslag neemt.
       // Dit deel van de code wordt alleen uitgevoerd door een Nodo Mega, omdat alleen deze over een MMI beschikt.
-      if(event->Command==CMD_DEVICE_FIRST+DEVICE_ID)
-        {
-        strcpy(string,DEVICE_NAME_99);            // Eerste argument=het commando deel
+      Serial.println(F("*** debug: MyDevice: DEVICE_MMI_OUT")); //??? Debug
 
-        // Vervolgens kan met strcat() hier de parameters aan worden toegevoegd      
-        }
+      strcpy(string,DEVICE_NAME_99);            // Commando 
+      strcat(string," ");
+      strcat(string,int2str(event->Par1));      // Parameter-1 (8-bit)
+      strcat(string,",");
+      strcat(string,int2str(event->Par2));      // Parameter-2 (32-bit)
+
       break;
       }
     #endif //NODO_MEGA

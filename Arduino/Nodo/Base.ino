@@ -1,5 +1,5 @@
-#define NODO_BUILD          530  //??? ophogen bij iedere build
-#define SETTINGS_VERSION     33  
+#define NODO_BUILD          531  //??? ophogen bij iedere build
+#define SETTINGS_VERSION     35  
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -10,13 +10,13 @@ prog_char PROGMEM Text_03[] = "Enter your password: ";
 prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSat";
 prog_char PROGMEM Text_22[] = "!******************************************************************************!";
 
-#ifdef NODO_MEGA
-prog_char PROGMEM Text_15[] = "Nodo Beta V3.4.9 Mega, Product=SWACNC-MEGA-R%03d, Home=%d, ThisUnit=%d";
+#if NODO_MEGA
+prog_char PROGMEM Text_15[] = "Nodo Beta V3.5.1 Mega, Product=SWACNC-MEGA-R%03d, Home=%d, ThisUnit=%d";
 #else
-prog_char PROGMEM Text_15[] = "Nodo Beta V3.4.9 Small, Product=SWACNC-SMALL-R%03d, Home=%d, ThisUnit=%d";
+prog_char PROGMEM Text_15[] = "Nodo Beta V3.5.1 Small, Product=SWACNC-SMALL-R%03d, Home=%d, ThisUnit=%d";
 #endif
 
-#ifdef NODO_MEGA
+#if NODO_MEGA
 prog_char PROGMEM Text_05[] = "0123456789abcdef";
 prog_char PROGMEM Text_07[] = "Waiting...";
 prog_char PROGMEM Text_08[] = "SendTo: Transmission error. Retry...";
@@ -52,7 +52,7 @@ prog_char PROGMEM Cmd_019[]="HomeSet";
 prog_char PROGMEM Cmd_020[]="UnitSet"; 
 prog_char PROGMEM Cmd_021[]="Delay";
 prog_char PROGMEM Cmd_022[]="SendTo";
-prog_char PROGMEM Cmd_023[]="DI";
+prog_char PROGMEM Cmd_023[]="ID";
 prog_char PROGMEM Cmd_024[]="Sound";
 prog_char PROGMEM Cmd_025[]="Debug";
 prog_char PROGMEM Cmd_026[]="Stop";
@@ -532,8 +532,8 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define HOME_MAX                     7 // Hoogst mogelijke unit nummer van een Nodo
 #define SERIAL_TERMINATOR_1       0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>
 #define SERIAL_TERMINATOR_2       0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
-#define Loop_INTERVAL_1             10 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
-#define Loop_INTERVAL_2            100 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
+#define Loop_INTERVAL_1             50 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
+#define Loop_INTERVAL_2            250 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
 #define Loop_INTERVAL_3           1000 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
 #define SIGNAL_TYPE_UNKNOWN          0 // Type ontvangen of te verzenden signaal in de eventcode
 #define SIGNAL_TYPE_NODO             1 // Type ontvangen of te verzenden signaal in de eventcode
@@ -541,6 +541,9 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define NODO_TYPE_EVENT              1
 #define NODO_TYPE_COMMAND            2
 #define MIN_TIME_BETWEEN_TX         50
+#define PASSWORD_MAX_RETRY           5     // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
+#define PASSWORD_TIMEOUT           300     // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
+#define TERMINAL_TIMEOUT           600     // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
 
 // Hardware in gebruik: Bits worden geset in de variabele HW_Config, uit te lezen met [Status HWConfig]
 #define HW_BIC_0        0
@@ -565,8 +568,9 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define BIC_HWMESH_NES_V1X     1  // Nodo Ethernet Shield V1.x met Aurel tranceiver. Vereist speciale pulse op PIN_BSF_0 voor omschakelen tussen Rx en Tx.
 
 #define DEVICE_MAX                  32 // Maximaal aantal devices 
+#define WAITFREE_TIMEOUT         30000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
 
-#ifdef NODO_MEGA // Definities voor de Nodo-Mega variant.
+#if NODO_MEGA // Definities voor de Nodo-Mega variant.
 #define EVENTLIST_MAX              250 // maximaal aantal regels in de eventlist
 #define EVENT_QUEUE_MAX             16 // maximaal aantal plaatsen in de queue.
 #define MACRO_EXECUTION_DEPTH       10 // maximale nesting van macro's.
@@ -669,7 +673,7 @@ struct SettingsStruct
   byte    RawSignalReceive;
   unsigned long Lock;                                       // bevat de pincode waarmee IR/RF ontvangst is geblokkeerd. Bit nummer hoogste bit wordt gebruiktvoor in/uitschakelen.
   
-  #ifdef NODO_MEGA
+  #if NODO_MEGA
   unsigned long Alarm[ALARM_MAX];                           // Instelbaar alarm
   byte    TransmitIP;                                       // Definitie van het gebruik van HTTP-communicatie via de IP-poort: [Off] of [On]
   char    Password[26];                                     // String met wachtwoord.
@@ -743,9 +747,8 @@ unsigned long HW_Config=0;                                  // Hardware configur
 struct NodoEventStruct LastReceived;                        // Laatst ontvangen event
 byte RequestForConfirm=0;                                   // Als ongelijk nul, dan heeft deze Nodo een verzoek ontvangen om een systemevent 'Confirm' te verzenden. Waarde wordt in Par1 meegezonden.
 boolean (*Device_ptr[DEVICE_MAX])(byte, struct NodoEventStruct*, char*);
-byte Device_id[DEVICE_MAX];
 
-#ifdef NODO_MEGA //??? welke globalen kunnen verhuizen naar een funktie???
+#if NODO_MEGA
 byte AlarmPrevious[ALARM_MAX];                              // Bevat laatste afgelopen alarm. Ter voorkoming dat alarmen herhaald aflopen.
 byte BIC=0;                                                 // Board Identification Code: identificeert de hardware uitvoering van de Nodo
 uint8_t MD5HashCode[16];                                    // tabel voor berekenen van MD5 hash codes.
@@ -758,6 +761,7 @@ int FileWriteMode=0;                                        // Het aantal second
 char InputBuffer_Serial[INPUT_BUFFER_SIZE+2];               // Buffer voor input Seriele data
 char InputBuffer_Terminal[INPUT_BUFFER_SIZE+2];             // Buffer voor input terminal verbinding Telnet sessie
 boolean ClockSyncHTTP=false;
+
 // ethernet classes voor IP communicatie Telnet terminal en HTTP.
 EthernetServer HTTPServer(80);                              // Server class voor HTTP sessie. Poort wordt later goed gezet.
 EthernetClient HTTPClient;                                  // Client calls voor HTTP sessie.
@@ -795,7 +799,7 @@ void setup()
 
   Serial.begin(BAUD);  // Initialiseer de seriële poort
 
-  #ifdef NODO_MEGA
+  #if NODO_MEGA
   // initialiseer BIC-lijnen en lees de BIC uit/
   for(x=0;x<=3;x++)
     {
@@ -824,27 +828,22 @@ void setup()
   digitalWrite(PIN_RF_RX_VCC,HIGH);   // Spanning naar de RF ontvanger aan.
   digitalWrite(PIN_IR_RX_DATA,INPUT_PULLUP);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
   digitalWrite(PIN_RF_RX_DATA,INPUT_PULLUP);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
-
-  // IRQ behorende bij PIN_IR_RX_DATA
-  // Als er toch een reeks pulsen komt, dan wordt in FetchSignal() het tellen van pulsen gedisabled.
-  bitWrite(HW_Config,HW_PULSE,true);
-  attachInterrupt(PULSE_IRQ,PulseCounterISR,PULSE_TRANSITION); 
     
-  #ifdef NODO_MEGA
+  #if NODO_MEGA
   pinMode(PIN_LED_RGB_G,  OUTPUT);
   pinMode(EthernetShield_CS_SDCardH, OUTPUT); // CS/SPI: nodig voor correct funktioneren van de SDCard!
 
   // Hardware specifieke initialisatie.
-//  switch(HW_Config&0xf)??? nog in testfase
-//    {    
-//    case BIC_DEFAULT:// Standaard Nodo zonder specifike hardware aansturing
-//      break;                 
-//
-//    case BIC_HWMESH_NES_V1X: // Nodo Ethernet Shield V1.x met Aurel tranceiver. Vereist speciale pulse op PIN_BSF_0 voor omschakelen tussen Rx en Tx.
+  switch(HW_Config&0xf)
+    {    
+    case BIC_DEFAULT:// Standaard Nodo zonder specifike hardware aansturing
+      break;                 
+
+    case BIC_HWMESH_NES_V1X: // Nodo Ethernet Shield V1.x met Aurel tranceiver. Vereist speciale pulse op PIN_BSF_0 voor omschakelen tussen Rx en Tx.
       pinMode(PIN_BSF_0,OUTPUT);
       digitalWrite(PIN_BSF_0,HIGH);
-//      break;
-//    }
+      break;
+    }
   #endif
 
   RFbit=digitalPinToBitMask(PIN_RF_RX_DATA);
@@ -854,8 +853,9 @@ void setup()
 
   Led(BLUE);
 
-  #ifdef NODO_MEGA
   ClearEvent(&LastReceived);
+
+  #if NODO_MEGA
   bitWrite(HW_Config,HW_BOARD_MEGA,1);
   Serial.println(F("Booting..."));
   SerialHold(true);// XOFF verzenden zodat PC even wacht met versturen van data via Serial (Xon/Xoff-handshaking)
@@ -881,7 +881,7 @@ void setup()
   Wire.begin(Settings.Unit + I2C_START_ADDRESS);
   ClockRead();
 
-  #ifdef NODO_MEGA
+  #if NODO_MEGA
   SetDaylight();
   DaylightPrevious=Time.Daylight;
 
@@ -977,10 +977,10 @@ void loop()
   unsigned long LoopIntervalTimer_1=millis();                 // Timer voor periodieke verwerking. millis() maakt dat de intervallen van 1 en 2 niet op zelfde moment vallen => 1 en 2 nu asynchroon.
   unsigned long LoopIntervalTimer_2=0L;                       // Timer voor periodieke verwerking.
   unsigned long LoopIntervalTimer_3=0L;                       // Timer voor periodieke verwerking.
-  unsigned long StaySharpTimer;                               // Timer die er voor zorgt dat bij communicatie via een kanaal de focus hier ook enige tijd op blijft??? nodig???
+  unsigned long StaySharpTimer;                               // Timer die er voor zorgt dat bij communicatie via een kanaal de focus hier ook enige tijd op blijft
   unsigned long PreviousTimeEvent=0L; 
 
-  #ifdef NODO_MEGA
+  #if NODO_MEGA
   SerialHold(false); // er mogen weer tekens binnen komen van SERIAL
   InputBuffer_Serial[0]=0; // serieel buffer string leeg maken
   TempLogFile[0]=0; // geen extra logging
@@ -994,9 +994,7 @@ void loop()
     {
     // Check voor IR, I2C of RF events
     if(ScanEvent(&ReceivedEvent)) 
-      {
       ProcessEvent1(&ReceivedEvent); // verwerk binnengekomen event.
-      }
       
     // 1: niet tijdkritische processen die periodiek uitgevoerd moeten worden
     if(LoopIntervalTimer_1<millis())// korte interval
@@ -1011,7 +1009,7 @@ void loop()
           break;
           }
         
-        #ifdef NODO_MEGA
+        #if NODO_MEGA
         case 1: // binnen Slice_1
           {
           if(bitRead(HW_Config,HW_ETHERNET))
@@ -1197,10 +1195,8 @@ void loop()
         {
         case 0:
           {
-          // CLOCK: **************** Lees periodiek de realtime klok uit en check op events  ***********************
-          ClockRead(); // Lees de Real Time Clock waarden in de struct Time
-          
-          if(bitRead(HW_Config,HW_CLOCK) && Time.Minutes!=PreviousMinutes)//check of de klok aanwzig is
+          // CLOCK: **************** Check op time events  ***********************          
+          if(bitRead(HW_Config,HW_CLOCK) && Time.Minutes!=PreviousMinutes)//Als klok aanwezig en er is een minuut verstreken
             {
             PreviousMinutes=Time.Minutes;
             ClearEvent(&ReceivedEvent);
@@ -1225,7 +1221,7 @@ void loop()
 
         case 1:
           {
-          #ifdef NODO_MEGA    
+          #if NODO_MEGA    
           // DAYLIGHT: **************** Check zonsopkomst & zonsondergang  ***********************
           if(bitRead(HW_Config,HW_CLOCK))
             {
@@ -1313,6 +1309,9 @@ void loop()
       {
       LoopIntervalTimer_3=millis()+Loop_INTERVAL_3; // reset de timer  
 
+      // CLOCK: **************** Lees periodiek de realtime klok uit en check op events  ***********************
+      ClockRead(); // Lees de Real Time Clock waarden in de struct Time
+
       // Loopt voor de devices de periodieke aanroep langs.
       for(x=0;x<DEVICE_MAX; x++)
         if(Device_ptr[x]!=0)
@@ -1324,14 +1323,14 @@ void loop()
       if(RebootNodo)
         Reboot();
 
-      #ifdef NODO_MEGA
+      #if NODO_MEGA
       // ALARM: **************** Genereer event als één van de alarmen afgelopen is ***********************    
       if(bitRead(HW_Config,HW_CLOCK))//check of de klok aanwzig is
         if(ScanAlarm(&ReceivedEvent)) 
           ProcessEvent1(&ReceivedEvent); // verwerk binnengekomen event.
 
       // Terminal onderhoudstaken
-      // tel seconden terug nadat de gebruiker driemaal foutief wachtwoord ingegeven
+      // tel seconden terug nadat de gebruiker gedefinieerd maal foutief wachtwoord ingegeven
       if(TerminalLocked>PASSWORD_MAX_RETRY)
         if(--TerminalLocked==PASSWORD_MAX_RETRY)TerminalLocked=1;
 
