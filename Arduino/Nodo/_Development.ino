@@ -1,7 +1,14 @@
 /********************* Aanpassingen t.o.v. versie 3.0.1  **********************************\
 Nog te doen:
 
-- Testen [VariableEvent]
+- Testen: [VariableEvent]
+- Testen: Tellen pulsen 
+- Testen: I2C i.c.m. Ethernet: stabiliteit?
+- Testen: Lock mechanisme
+- Methode voor WaitFree is aangepast. Opnieuw testen en fijnafstelling in multi-nodo-omgeving
+- MMI wordt altijd opgebouwd, ook al als er geen uitvoer plaats vindt. Besparing / versnelling mogelijk?
+- Aanroep van devices is gewijzigd. Devices allen compileren en testen of deze aangeroepen worden.
+
 *****************************************************************************************
 
 - Reactietijd van HTTP event naar RF output versneld.
@@ -146,4 +153,21 @@ R530
 - Verwijderd: Commando [Test] verwijderd. Deze was in gebruik voor testdoeleinden tijdens ontwikkeling
 - Toegevoegd: Commando [TimerSetVariable <timer>, <variable>]. Vult een timer met de inhoud van een variabele.
 - Toegevoegd: Device-22 HC-SR04 Distance sensor (SWACDE-22-V10) == Integratie in Nodo-code nog testen ==
+
+R531
+- Issue 730: Commando ID werkt niet.
+- Issue 727: #define NODO_MEGA
+- Issue 726: Raw Event herhaling
+- Issue 724: SendEvent commando met Release 3.5 werkt niet naar behoren.
+- Issue 723: Status Boot toont nog 3.4.9 Beta
+- Issue 722: Commentaar fout
+- Issue 720: Variable set wildcard
+- Issue 718: Pulsen ISR verstoort RF/IR ontvangst mogelijk.
+- Issue 691: Device MyUserDevice (99) geeft incorrecte weergave in eventlist
+??? - Issue 690: Status VariableSet geeft geen output meer via HTTP
+- Issue 643: WaitFreeRF als user define
+
+
+
+
 \*****************************************************************************************/

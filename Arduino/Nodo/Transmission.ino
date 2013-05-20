@@ -3,8 +3,7 @@
 #define NODO_PULSE_1              1500  // PWM: Tijdsduur van de puls bij verzenden van een '1' in uSec. (3x NODO_PULSE_0)
 #define NODO_SPACE                 500  // PWM: Tijdsduur van de space tussen de bitspuls bij verzenden van een '1' in uSec.   
 #define SIGNAL_ANALYZE_SHARPNESS    50  // Scherpte c.q. foutmarge die gehanteerd wordt bij decoderen van RF/IR signaal.
-#define MIN_PULSE_LENGTH           100  // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
-#define MIN_RAW_PULSES              32  // =16 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
+#define MIN_RAW_PULSES              16  // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
 #define SWITCH_TIME_RX_TX_IR       100  // Minimale tijd tussen omschakelen van ontvangen naar zenden. 
 #define SWITCH_TIME_RX_TX_RF       750  // Minimale tijd tussen omschakelen van ontvangen naar zenden. 
 #define SWITCH_TIME_RX_TX_I2C       25  // Minimale tijd tussen omschakelen van ontvangen naar zenden. 
@@ -13,32 +12,28 @@
 boolean AnalyzeRawSignal(struct NodoEventStruct *E)
   {
   ClearEvent(E);
-  if(I2C_EventReceived)
-   {
-    // Er is een I2C event binnen gekomen. De gegevens kunnen dan eenvoudig uit de binnengekomen struct worden gekopieerd. 
-    *E=I2C_Event;
-    bitWrite(HW_Config,HW_I2C,true);
-    I2C_EventReceived    = false;
-    return true;
-   }
 
-  if(RawSignal.Number==RAW_BUFFER_SIZE)return false;     // Als het signaal een volle buffer beslaat is het zeer waarschijnlijk ruis of ongeldig signaal
+  if(RawSignal.Number==RAW_BUFFER_SIZE)// Als het signaal een volle buffer beslaat is het zeer waarschijnlijk ruis of ongeldig signaal
+    return false;     
   
   if(RawSignal_2_Nodo(E))           // Is het een Nodo signaal
     return true;
-
-#if NODO_30_COMPATIBLE
+  
+  #if NODO_30_COMPATIBLE
   if(RawSignal_2_Nodo_OLD(E))       // Is het een Nodo signaal: oude 32-bit format.
     return true;
-#endif
+  #endif
 
   if(Transmission_NodoOnly)
     return false;
 
-  for(byte x=0;x<DEVICE_MAX && E->Command==0; x++)
-    if(Device_ptr[x]!=0)
-      if(Device_ptr[x](DEVICE_RAWSIGNAL_IN,E,0))
-        return true;
+  // Loop de devices langs. Indien een device dit nodig heeft, zal deze het rawsignal gebruiken,
+  for(byte x=0;x<DEVICE_MAX && Device_ptr[x]!=0; x++)
+    {
+    E->Command=CMD_DEVICE_FIRST+x;
+    if(Device_ptr[x](DEVICE_RAWSIGNAL_IN,E,0))
+      return true;
+    }
 
   if(Settings.RawSignalReceive==VALUE_ON)
     if(RawSignal_2_32bit(E))
@@ -63,7 +58,6 @@ boolean RawSignal_2_32bit(struct NodoEventStruct *event)
   byte MinSpace=0xff;
   unsigned long CodeP=0L;
   unsigned long CodeS=0L;
-  static unsigned long Previous,PreviousTime; // t.b.v. onderdrukken herhaal binnengekomen signalen.
 
   // zoek de kortste tijd (PULSE en SPACE)
   x=5; // 0=aantal, 1=startpuls, 2=space na startpuls, 3=1e puls
@@ -118,79 +112,40 @@ boolean RawSignal_2_32bit(struct NodoEventStruct *event)
     event->Par2=CodeS^CodeP; // data zat in beide = bi-phase, maak er een leuke mix van.
 
   event->Par2=(event->Par2&0x0fffffff)|((unsigned long)SIGNAL_TYPE_UNKNOWN<<28);
-
-  // Indien het een RawSignal was, dan kunnen we niet achterhalen of het een zinvol en netjes afgerond signaal was
-  // we gebruiken daarom de herhalingen die de zender uitzendt als checksum. Komt het event een tweede maal binnen
-  // dan kan worden aangenomen dat het een goed signaal was.
-  if(event->Par2!=Previous || PreviousTime>millis())
-    {
-    Previous=event->Par2;
-    return false;
-    }
-    
-  RawSignal.Repeats    = true; // het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
+  
+  // Indien ehet signaal via RF is binnengekomen, dan gebruik maken van het feit dat RF signalen herhaald worden verzonden.
+  // Herhalingen vormen dan de checksum. Voor IR is dit niet nodig omdat de kans op ruis veel kleiner is
+  RawSignal.Repeats=(RawSignal.Source==VALUE_SOURCE_RF);
   event->SourceUnit=0;  
   event->DestinationUnit=0;
   event->Command=CMD_RAWSIGNAL;
   event->Par1=0;
-  PreviousTime=millis()+SIGNAL_REPEAT_TIME;
-  Previous=0L;
   return true;
   }
 
 
 /**********************************************************************************************\
- * Deze functie wacht totdat de 433 band vrij is of er een timeout heeft plaats gevonden 
+ * Deze functie wacht totdat de 433 en IR band vrij zijn of er een timeout heeft plaats gevonden 
  * Window en delay tijd in milliseconden
  \*********************************************************************************************/
-#define WAITFREE_TIMEOUT             30000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
-void WaitFree(int Window)
+void WaitFree(byte Port, int TimeOut)
   {
-  unsigned long Timer, TimeOutTimer;  
-  
-  // dan kijken of de ether vrij is.
-  Timer=millis()+Window;                                                   // reset de timer.
-  TimeOutTimer=millis()+WAITFREE_TIMEOUT;                                  // tijd waarna de routine wordt afgebroken in milliseconden
+  unsigned long WindowTimer, TimeOutTimer=millis()+TimeOut;  // tijd waarna de routine wordt afgebroken in milliseconden
 
-  while(Timer>millis() && TimeOutTimer>millis())
+  Led(BLUE);
+
+  // luister een tijdwindow of er pulsen wijn
+  WindowTimer=millis()+WAIT_FREE_RX_WINDOW;
+
+  while(WindowTimer>millis() && TimeOutTimer>millis())
     {
-    if((*portInputRegister(IRport)&IRbit)==0)                              // Kijk of er iets op de IR poort binnenkomt. (Pin=LAAG als signaal in de ether).
-      if(FetchSignal(PIN_IR_RX_DATA,LOW,SIGNAL_TIMEOUT_IR))                // Als het een duidelijk IR signaal was
-        Timer=0;                                                           // zorg dan dat de timer weer gereset wordt.
+    // Luister of er pulsen zijn
+    if( (( Port==VALUE_SOURCE_IR || Port==VALUE_ALL) && pulseIn(PIN_IR_RX_DATA,LOW  ,1000) > MIN_PULSE_LENGTH)   ||
+        (( Port==VALUE_SOURCE_RF || Port==VALUE_ALL) && pulseIn(PIN_RF_RX_DATA,HIGH ,1000) > MIN_PULSE_LENGTH)   )
 
-    if((*portInputRegister(RFport)&RFbit)==RFbit)                          // Kijk if er iets op de RF poort binnenkomt. (Pin=HOOG als signaal in de ether). 
-      if(FetchSignal(PIN_RF_RX_DATA,HIGH,SIGNAL_TIMEOUT_RF))               // Als het een duidelijk signaal was
-        Timer=0;                                                           // zorg dan dat de timer weer gereset wordt.
-        
-    if(Timer==0)
-      {
-      Led(BLUE);
-      delay((Settings.Unit-1)*25);                                        // Unit afhankelijke wachttijd om te voorkomen dat alle Nodo's tegelijk gaan zenden.
-      Timer=millis()+Window;                                               // reset de timer weer.
-      }
+        WindowTimer=millis()+WAIT_FREE_RX_WINDOW;
     }
-
   Led(RED);
-  }
-
-
-/**********************************************************************************************\
- * Wacht totdat de pin verandert naar status state. Geeft de tijd in uSec. terug. 
- * Als geen verandering, dan wordt na timeout teruggekeerd met de waarde 0L
- \*********************************************************************************************/
-unsigned long WaitForChangeState(uint8_t pin, uint8_t state, unsigned long timeout)
-  {
-  uint8_t bit = digitalPinToBitMask(pin);
-  uint8_t port = digitalPinToPort(pin);
-  uint8_t stateMask = (state ? bit : 0);
-  unsigned long numloops = 0; // keep initialization out of time critical area
-  unsigned long maxloops = microsecondsToClockCycles(timeout) / 19;
-
-  // wait for the pulse to stop. One loop takes 19 clock-cycles
-  while((*portInputRegister(port) & bit) == stateMask)
-    if (numloops++ == maxloops)
-      return 0;//timeout opgetreden
-  return clockCyclesToMicroseconds(numloops * 19 + 16); 
   }
 
 
@@ -231,7 +186,7 @@ void RawSendRF(void)
   digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
   digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger weer aan.
 
-#ifdef NODO_MEGA
+#if NODO_MEGA
   // Board specifiek: Genereer een korte puls voor omschakelen van de Aurel tranceiver van TX naar RX mode.
   //  if(HW_Config&0xf==BIC_HWMESH_NES_V1X) ??? Nog in testfase.
   //    {
@@ -282,7 +237,7 @@ void RawSendIR(void)
       while(mod)
         {
         // Hoog
-        #ifdef NODO_MEGA
+        #if NODO_MEGA
         bitWrite(PORTH,0, HIGH);
         #else
         bitWrite(PORTB,3, HIGH);
@@ -292,7 +247,7 @@ void RawSendIR(void)
         __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");// per nop 62.6 nano sec. @16Mhz
   
         // Laag
-        #ifdef NODO_MEGA
+        #if NODO_MEGA
         bitWrite(PORTH,0, LOW);    
         #else
         bitWrite(PORTB,3, LOW);
@@ -372,30 +327,47 @@ void Nodo_2_RawSignal(struct NodoEventStruct *Event)
 
 
 /**********************************************************************************************\
- * Haal de pulsen en plaats in buffer. Op het moment hier aangekomen is de startbit actief.
+ * Haal de pulsen en plaats in buffer. 
  * bij de TSOP1738 is in rust is de uitgang hoog. StateSignal moet LOW zijn
  * bij de 433RX is in rust is de uitgang laag. StateSignal moet HIGH zijn
  * 
  \*********************************************************************************************/
-
-boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
+inline boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
   {
+  uint8_t bit = digitalPinToBitMask(DataPin);
+  uint8_t port = digitalPinToPort(DataPin);
+  uint8_t stateMask = (StateSignal ? bit : 0);
+
+  // Kijk of er een signaal binnen komt. Zo niet, dan direct deze funktie verlaten.
+  if((*portInputRegister(port) & bit) != stateMask)
+    return false;
+
   int RawCodeLength=1;
   unsigned long PulseLength=0;
+  unsigned long numloops = 0;
+  const unsigned long LoopsPerMilli=400; // Aantal while() *A* loops binnen een milliseconde inc. compensatie overige overhead binnen de while() *B* loop. Uitgeklokt met een analyser 16Mhz ATMega.
+  unsigned long maxloops = (unsigned long)TimeOut * LoopsPerMilli;
+  boolean toggle=false;
   RawSignal.Multiply=50;
 
   do{// lees de pulsen in microseconden en plaats deze in de tijdelijke buffer RawSignal
-    PulseLength=WaitForChangeState(DataPin, StateSignal, TimeOut)/RawSignal.Multiply;
+    numloops = 0;
+    while(((*portInputRegister(port) & bit) == stateMask) ^ toggle) // while() loop *A*
+      if(numloops++ == maxloops)
+        break;//timeout opgetreden
 
-    // bij kleine stoorpulsen die geen betekenig hebben zo snel mogelijk weer terug
-    if(PulseLength<(MIN_PULSE_LENGTH/RawSignal.Multiply))
+    PulseLength=(numloops * 1000) / LoopsPerMilli;// Bevat nu de pulslengte in microseconden
+
+    // bij kleine stoorpulsen die geen betekenis hebben zo snel mogelijk weer terug
+    if(PulseLength<MIN_PULSE_LENGTH)
       return false;
 
-    RawSignal.Pulses[RawCodeLength++]=PulseLength;
-    PulseLength=WaitForChangeState(DataPin, !StateSignal, TimeOut)/RawSignal.Multiply;
-    RawSignal.Pulses[RawCodeLength++]=PulseLength;
+    toggle=!toggle;    
+
+    // sla op in de tabel RawSignal
+    RawSignal.Pulses[RawCodeLength++]=PulseLength/(unsigned long)RawSignal.Multiply;
     }
-  while(RawCodeLength<RAW_BUFFER_SIZE && PulseLength!=0);// Zolang nog niet alle bits ontvangen en er niet vroegtijdig een timeout plaats vindt
+  while(RawCodeLength<RAW_BUFFER_SIZE && numloops<=maxloops);// loop *B* Zolang nog ruimte in de buffer
 
   if(RawCodeLength>=MIN_RAW_PULSES)
     {
@@ -475,7 +447,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   // Uitzondering is als de Nodo zelf de master was, dan deze mag altijd zenden.
   if(Transmission_SelectedUnit!=0 && Transmission_SelectedUnit!=Settings.Unit && !Transmission_ThisUnitIsMaster)
     {
-    #ifdef NODO_MEGA
+    #if NODO_MEGA
     char* TempString=(char*)malloc(25);
     sprintf(TempString,ProgmemString(Text_10), Transmission_SelectedUnit);    
     PrintTerminal(TempString);
@@ -495,7 +467,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   if(WaitForFree)
     if(Port==VALUE_SOURCE_RF || Port==VALUE_SOURCE_IR ||(Settings.TransmitRF==VALUE_ON && Port==VALUE_ALL))
       if(Settings.WaitFree==VALUE_ON && UseRawSignal==false)
-        WaitFree(WAIT_FREE_RX_WINDOW);
+        WaitFree(VALUE_ALL, WAITFREE_TIMEOUT);
 
   if(!UseRawSignal)
     Nodo_2_RawSignal(ES);
@@ -518,7 +490,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     RawSendRF();
     }
 
-  #ifdef NODO_MEGA
+  #if NODO_MEGA
   // Verstuur signaal als HTTP-event.
   if(bitRead(HW_Config,HW_ETHERNET))// Als Ethernet shield aanwezig.
     {
@@ -541,7 +513,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     }
   }
   
-#ifdef NODO_MEGA
+#if NODO_MEGA
 #endif
 
 
@@ -669,7 +641,7 @@ boolean SendI2C(struct NodoEventStruct *EventBlock)
 
 #define IP_BUFFER_SIZE            256
 
-#ifdef NODO_MEGA
+#if NODO_MEGA
 boolean EthernetInit(void)
   {
   int x;
@@ -681,7 +653,7 @@ boolean EthernetInit(void)
     
   Ethernet_MAC_Address[0]=0xCC;
   Ethernet_MAC_Address[1]=0xBB;
-  Ethernet_MAC_Address[2]=0xAA;//??? terugzetten aa,bb,cc;
+  Ethernet_MAC_Address[2]=0xAA;
   Ethernet_MAC_Address[3]=(Settings.Home%10)+'0';
   Ethernet_MAC_Address[4]=(Settings.Unit/10)+'0';
   Ethernet_MAC_Address[5]=(Settings.Unit%10)+'0';

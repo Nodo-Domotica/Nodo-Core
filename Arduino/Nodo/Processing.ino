@@ -13,11 +13,13 @@ byte ProcessEvent1(struct NodoEventStruct *Event)
   SerialHold(true);  // als er een regel ontvangen is, dan binnenkomst van signalen stopzetten met een seriele XOFF
   Led(RED); // LED aan als er iets verwerkt wordt      
 
-  #ifdef NODO_MEGA
+  #if NODO_MEGA
   if(FileWriteMode!=0)
     return 0;
-  LastReceived=*Event;            // LastReceived wordt gebruikt om later de status van laatste ontvangen event te kunnen gebruiken t.b.v. substitutie van vars.
   #endif
+
+  // sla event op voor later gebruik in SendEvent en VariableEvent
+  LastReceived=*Event;
 
   // Verwerk het binnengekomen event
   error=ProcessEvent2(Event);
@@ -82,7 +84,6 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
 
   if(Continue && (Event->Flags & TRANSMISSION_SYSTEM))
     {
-    // PrintNodoEvent("*** Debug: System commando", Event);//???
     Continue=false;
     }
 
@@ -94,7 +95,7 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
     }
 
 
-  #ifdef NODO_MEGA
+  #if NODO_MEGA
   if(bitRead(HW_Config,HW_SDCARD))
     if(Event->Command==CMD_RAWSIGNAL && Settings.RawSignalSave==VALUE_ON)
       if(!RawSignalExist(Event->Par2))
@@ -103,7 +104,6 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
   
   if(Continue && error==0)
     {
-    LastReceived=*Event;// Bewaar event als -vorig- event. 
     PrintEvent(Event);
   
     if(ExecutionDepth>=MACRO_EXECUTION_DEPTH)
@@ -115,12 +115,10 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
     else
       {
       // ############# Verwerk event ################  
-
-      // kijk of het een Device betreft. De device ID's bevinden zich in een kleine tabel. Zoek dan de tabel naar het betreffende ID en voer 
-      // de DEVICE_COMMAND opdracht uit. Als het betreffende device geen DEVICE_COMMAND code heeft, dan wordt er ook niets uitgevoerd.
-      for(x=0; x<DEVICE_MAX; x++)
-        if(Device_id[x]==(Event->Command-CMD_DEVICE_FIRST))
-          Device_ptr[x](DEVICE_COMMAND,Event,0);
+      // Roep het device aan voor verwerking van de parameter DECIVE_COMMAND. Zorg voor aanroep dat een invalide commando
+      // niet wordt uitgevoerd, anders een vastloper.
+      if(Event->Command>=CMD_DEVICE_FIRST && Event->Command<=CMD_DEVICE_FIRST+DEVICE_MAX && (Device_ptr[Event->Command-CMD_DEVICE_FIRST]!=0))
+        Device_ptr[Event->Command-CMD_DEVICE_FIRST](DEVICE_COMMAND,Event,0); 
 
       // als het een Nodo event is en een geldig commando, dan deze uitvoeren
       if(NodoType(Event)==NODO_TYPE_COMMAND)
@@ -194,7 +192,7 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
       if((MacroEvent->Par2&0xff)==VALUE_ALL  || (MacroEvent->Par2&0xff)==Event->Command)
         if(((MacroEvent->Par2>>8)&0xff)==0       || ((MacroEvent->Par2>>8)&0xff)==Event->SourceUnit)
           return true;
-
+          
   // USEREVENT:
   // beschouw bij een UserEvent een 0 voor Par1 of Par2 als een wildcard.
   if(Event->Command==CMD_USEREVENT && MacroEvent->Command==CMD_USEREVENT)// Command
@@ -207,18 +205,18 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
   // Herkomst van een andere Nodo, dan er niets meer mee doen TENZIJ het een UserEvent is.
   if(Event->SourceUnit!=0  && Event->SourceUnit!=Settings.Unit)
     return false;
-    
+
   // #### EXACT: als huidige event exact overeenkomt met het event in de regel uit de Eventlist, dan een match
   if(MacroEvent->Command == Event->Command &&
      MacroEvent->Par1    == Event->Par1    &&
      MacroEvent->Par2    == Event->Par2    )
        return true; 
-       
+
   // ### TIME:
-  if(Event->Command==CMD_TIME) // het binnengekomen event is een clock event.//???
+  if(Event->Command==CMD_TIME) // het binnengekomen event is een clock event.
     {
     // Structuur technisch hoort onderstaande regel hier thuis, maar qua performance niet optimaal!
-    unsigned long Cmp=MacroEvent->Par2; //???Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12 | (unsigned long)Time.Day<<16;
+    unsigned long Cmp=MacroEvent->Par2;
     unsigned long Inp=Event->Par2;
 
     // In het event in de eventlist kunnen zich wildcards bevinden. Maskeer de posities met 0xF wildcard nibble 
@@ -335,7 +333,7 @@ void QueueProcess(void)
   QueuePosition=0;
   }
 
-#ifdef NODO_MEGA  
+#if NODO_MEGA  
 /*********************************************************************************************\
  * Deze routine verzendt de inhoud van de queue naar een andere Nodo.
  \*********************************************************************************************/

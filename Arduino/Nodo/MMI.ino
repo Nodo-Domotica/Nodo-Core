@@ -1,4 +1,4 @@
-#ifdef NODO_MEGA
+#if NODO_MEGA
 
 
 /*********************************************************************************************\
@@ -132,21 +132,33 @@ void PrintWelcome(void)
   // print IP adres van de Nodo
   if(bitRead(HW_Config,HW_ETHERNET))
     {
-    sprintf(TempString,"NodoIP=%u.%u.%u.%u, %s=%d", Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3],cmd2str(CMD_PORT_SERVER),Settings.OutputPort );
+    sprintf(TempString,"NodoIP=%u.%u.%u.%u, ", Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
+
+    strcat(TempString,cmd2str(CMD_PORT_CLIENT));
+    strcat(TempString,"=");        
+    strcat(TempString,int2str(Settings.OutputPort));
+
+    strcat(TempString,", ");        
+
+    strcat(TempString,cmd2str(CMD_PORT_SERVER));
+    strcat(TempString,"=");        
+    strcat(TempString,int2str(Settings.PortClient));
+
     PrintTerminal(TempString);
     
-    if((HTTPClientIP[0] + HTTPClientIP[1] + HTTPClientIP[2] + HTTPClientIP[3]) > 0)
+    if(Settings.HTTPRequest[0])
       {
       strcpy(TempString,"Host=");        
       strcat(TempString,Settings.HTTPRequest);
       int x=StringFind(TempString,"/");
       TempString[x]=0;    
       strcat(TempString,", HostIP=");        
-      strcat(TempString,ip2str(HTTPClientIP));
-      strcat(TempString,", ");        
-      strcat(TempString,cmd2str(CMD_PORT_CLIENT));        
-      strcat(TempString,"=");        
-      strcat(TempString,int2str(Settings.PortClient));
+  
+      if((HTTPClientIP[0] + HTTPClientIP[1] + HTTPClientIP[2] + HTTPClientIP[3]) > 0)
+        strcat(TempString,ip2str(HTTPClientIP));
+      else
+        strcat(TempString,"?");        
+  
       PrintTerminal(TempString);
       }
     }
@@ -210,12 +222,12 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
   // worden getoond.   
   byte ParameterToView[8]={0,0,0,0,0,0,0,0};
 
-  // Devices hebben een eigen MMI. Loop de devices langs. Als er een device is die hoort bij het opgegeven command
-  // dan zal de string worden teruggegeven met de correct ingevulde MMI
-  for(x=0;x<DEVICE_MAX && EventString[0]==0; x++)
-    if(Device_ptr[x]!=0)
-      Device_ptr[x](DEVICE_MMI_OUT,Event,EventString);
-
+  // Devices hebben een eigen MMI. 
+  // Roep het device aan voor verwerking van de parameter DEVICE_MMI_OUT. Zorg voor aanroep dat een invalide commando
+  // niet wordt uitgevoerd, anders een vastloper.
+  if(Event->Command>=CMD_DEVICE_FIRST && Event->Command<=CMD_DEVICE_FIRST+DEVICE_MAX && (Device_ptr[Event->Command-CMD_DEVICE_FIRST]!=0))
+    Device_ptr[Event->Command-CMD_DEVICE_FIRST](DEVICE_MMI_OUT,Event,EventString);
+    
   if(EventString[0]==0)
     {
     strcat(EventString,cmd2str(Event->Command));
@@ -318,9 +330,9 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         break;
 
       // Par1 als tekst en par2 niet
+      case CMD_RAWSIGNAL_RECEIVE:
       case CMD_SEND_EVENT:
       case CMD_LOCK:
-      case CMD_RAWSIGNAL_RECEIVE:
       case CMD_RAWSIGNAL_SAVE:
       case CMD_DEBUG:
       case CMD_LOG:
@@ -807,12 +819,20 @@ int ExecuteLine(char *Line, byte Port)
               }
             break;
 
+          case CMD_VARIABLE_SET://?? Is
+            if(EventToExecute.Par1>USER_VARIABLES_MAX)
+              error=MESSAGE_02;
+            else if(GetArgv(Command,TmpStr1,3))// waarde van de variabele
+              EventToExecute.Par2=float2ul(atof(TmpStr1));
+            else
+              error=MESSAGE_02;
+            break;
+
           case CMD_BREAK_ON_VAR_EQU:
           case CMD_BREAK_ON_VAR_LESS:
           case CMD_BREAK_ON_VAR_MORE:
           case CMD_BREAK_ON_VAR_NEQU:
           case CMD_VARIABLE_DEC:
-          case CMD_VARIABLE_SET:
           case CMD_VARIABLE_INC:
           case CMD_VARIABLE_EVENT:
             if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
@@ -1245,12 +1265,16 @@ int ExecuteLine(char *Line, byte Port)
           default:
             {              
             // Loop de devices langs om te checken if er een hit is. Zo ja, dan heeft de Device_xx funktie de struct
-            // met de juiste waarden gevuld.
+            // met de juiste waarden gevuld. Koppel eveneens het juiste Command aan het event omdat deze binnen de
+            // Device_nn funktie niet bekend is.
             y=false;
-            for(x=0;x<DEVICE_MAX && EventToExecute.Command==0; x++)
+            for(x=0; !y && x<DEVICE_MAX; x++)
               if(Device_ptr[x]!=0)
+                {
+                EventToExecute.Command=CMD_DEVICE_FIRST+x;
                 if(Device_ptr[x](DEVICE_MMI_IN,&EventToExecute,Command))
                   y=true;
+                }
       
             if(!y)
               {
@@ -1277,7 +1301,7 @@ int ExecuteLine(char *Line, byte Port)
             if(Transmission_SendToUnit==Settings.Unit || Transmission_SendToUnit==0)
               {
               EventToExecute.Direction=VALUE_DIRECTION_INPUT;
-              error=ProcessEvent2(&EventToExecute);      // verwerk binnengekomen event.
+              error=ProcessEvent1(&EventToExecute);      // verwerk binnengekomen event.//??? dit was ...2 maar aangepast i.v.m. SendEvent en LastReceived vulling
               }
             else
               {

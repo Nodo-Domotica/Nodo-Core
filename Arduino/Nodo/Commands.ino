@@ -20,19 +20,6 @@ byte NodoType(struct NodoEventStruct *InEvent)
   if(InEvent->Command>=FIRST_COMMAND && InEvent->Command<=LAST_COMMAND)
     return NODO_TYPE_COMMAND;
 
-//  struct NodoEventStruct Event;
-//  ClearEvent(&Event);
-//  x=InEvent->Command-CMD_DEVICE_FIRST;
-//  if(x>=0 && x<DEVICE_MAX)
-//    if(Device_ptr[x]!=0)
-//      {
-//      Device_ptr[x](DEVICE_TYPE,&Event,0);
-//      if(Event.Flags | TRANSMISSION_EVENT)
-//        return NODO_TYPE_EVENT;
-//      if(Event.Flags | TRANSMISSION_COMMAND)
-//        return NODO_TYPE_COMMAND;      
-//      }???
-
   return false;
   }  
   
@@ -51,7 +38,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
   
   struct NodoEventStruct TempEvent=*EventToExecute;
   
-  #ifdef NODO_MEGA
+  #if NODO_MEGA
   char *TempString=(char*)malloc(50);
   #endif
   
@@ -116,7 +103,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         }
       break;        
 
-    case CMD_VARIABLE_FROM_EVENT://???@@
+    case CMD_VARIABLE_FROM_EVENT:
       if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         // Als het vorige event betrekking had op variabele/poort die de gebruiker heeft opgegeven in Par2
@@ -146,6 +133,11 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       break;        
 
     case CMD_VARIABLE_PULSE_COUNT:
+      // Tellen van pulsen actief: enable IRQ behorende bij PIN_IR_RX_DATA
+      // Als er toch een reeks pulsen komt, dan wordt in FetchSignal() het tellen van pulsen gedisabled.
+      bitWrite(HW_Config,HW_PULSE,true);
+      attachInterrupt(PULSE_IRQ,PulseCounterISR,PULSE_TRANSITION); 
+      
       if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         UserVar[EventToExecute->Par1-1]=PulseCount;
@@ -159,6 +151,11 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       break;         
 
     case CMD_VARIABLE_PULSE_TIME:
+      // Tellen van pulsen actief: enable IRQ behorende bij PIN_IR_RX_DATA
+      // Als er toch een reeks pulsen komt, dan wordt in FetchSignal() het tellen van pulsen gedisabled.
+      bitWrite(HW_Config,HW_PULSE,true);
+      attachInterrupt(PULSE_IRQ,PulseCounterISR,PULSE_TRANSITION); 
+
       if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         UserVar[EventToExecute->Par1-1]=PulseTime;
@@ -253,7 +250,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       break;
 
 
-    #ifdef NODO_MEGA
+    #if NODO_MEGA
     case CMD_ALARM_SET:
       if(EventToExecute->Par1>=1 && EventToExecute->Par1<=ALARM_MAX)              // niet buiten bereik array!
         {
@@ -410,7 +407,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
           Settings.TransmitRF=EventToExecute->Par2;
           break;       
 
-        #ifdef NODO_MEGA
+        #if NODO_MEGA
         case VALUE_SOURCE_HTTP:
           Settings.TransmitIP=EventToExecute->Par2;        
           break;       
@@ -484,7 +481,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         }
       break;        
         
-#ifdef NODO_MEGA
+#if NODO_MEGA
 
     case CMD_PORT_SERVER:
       Settings.OutputPort=EventToExecute->Par2;
@@ -504,8 +501,8 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
     case CMD_DEBUG: 
       Settings.Debug=EventToExecute->Par1;
       break;
-
-    case CMD_RAWSIGNAL_RECEIVE: 
+      
+    case CMD_RAWSIGNAL_RECEIVE:
       Settings.RawSignalReceive=EventToExecute->Par1;
       break;
 
@@ -556,7 +553,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
     #endif    
     }
 
-  #ifdef NODO_MEGA
+  #if NODO_MEGA
   free(TempString);
   #endif
 
