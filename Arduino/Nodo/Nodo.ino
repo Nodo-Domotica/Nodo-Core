@@ -39,7 +39,7 @@
 // Stel hieronder in welk Nodo unit nummer u gaat compileren. Uitgangspunt is dat elke fysieke Nodo een uniek unit nummer krijgt toegekend.
 // Voor elk unit nummer kunt u verderop deze pagina een blokje kenmerken instellen.
 // Als dat eenmalig is gedaan, kunt u voortaan die set instellingen selecteren met het unit nummer:
-#define UNIT_NODO          10
+#define UNIT_NODO          1
 
 
 
@@ -82,19 +82,7 @@
 
 
 // ----------------------------------------------------------------------------------------------------------------------------------------
-// Definities voor Nodo unit nummer 10 
-// Hardware    : Arduino Mega 2560, Geen Ethernetkaart, Dallas sensoren op poort 1 en 2
-// Toepassing  :
-#if (UNIT_NODO == 10)
-  // Specificatie van deze Nodo:
-  #define NODO_MEGA                    true
-  #define ETHERNET                     true
-  // Devices in gebruik op deze Nodo:  
-#endif 
-// ----------------------------------------------------------------------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------------------------------------------------------------------
-// Definities voor Nodo unit nummer 3 
+// Definities voor Nodo unit nummer 15
 // Hardware    : Arduino Uno
 // Toepassing  :
 #if (UNIT_NODO == 3)

@@ -1,4 +1,4 @@
-#define NODO_BUILD          531  //??? ophogen bij iedere build
+#define NODO_BUILD          532  //??? ophogen bij iedere build
 #define SETTINGS_VERSION     35  
 #include <EEPROM.h>
 #include <Wire.h>

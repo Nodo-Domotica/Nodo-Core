@@ -1,15 +1,4 @@
 /********************* Aanpassingen t.o.v. versie 3.0.1  **********************************\
-Nog te doen:
-
-- Testen: [VariableEvent]
-- Testen: Tellen pulsen 
-- Testen: I2C i.c.m. Ethernet: stabiliteit?
-- Testen: Lock mechanisme
-- Methode voor WaitFree is aangepast. Opnieuw testen en fijnafstelling in multi-nodo-omgeving
-- MMI wordt altijd opgebouwd, ook al als er geen uitvoer plaats vindt. Besparing / versnelling mogelijk?
-- Aanroep van devices is gewijzigd. Devices allen compileren en testen of deze aangeroepen worden.
-
-*****************************************************************************************
 
 - Reactietijd van HTTP event naar RF output versneld.
 - Melding ophalen IP adres via DHCP bij booten
@@ -164,10 +153,18 @@ R531
 - Issue 720: Variable set wildcard
 - Issue 718: Pulsen ISR verstoort RF/IR ontvangst mogelijk.
 - Issue 691: Device MyUserDevice (99) geeft incorrecte weergave in eventlist
-??? - Issue 690: Status VariableSet geeft geen output meer via HTTP
+- Issue 690: Status VariableSet geeft geen output meer via HTTP
 - Issue 643: WaitFreeRF als user define
 
+Nog te doen:
 
+- Testen: [VariableEvent]
+- Testen: Tellen pulsen 
+- Testen: I2C i.c.m. Ethernet: stabiliteit?
+- Testen: Lock mechanisme
+- Methode voor WaitFree is aangepast. Opnieuw testen en fijnafstelling in multi-nodo-omgeving
+- MMI wordt altijd opgebouwd, ook al als er geen uitvoer plaats vindt. Besparing / versnelling mogelijk?
+- Aanroep van devices is gewijzigd. Devices allen compileren en testen of deze aangeroepen worden.
 
 
 \*****************************************************************************************/
