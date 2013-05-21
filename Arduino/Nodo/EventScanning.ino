@@ -81,9 +81,8 @@ boolean ScanEvent(struct NodoEventStruct *Event)// Deze routine maakt deel uit v
     // Als het Nodo event voor deze unit bestemd is, dan klaar. Zo niet, dan terugkeren met een false
     // zodat er geen verdere verwerking plaatsvindt.
     if(Event->DestinationUnit==0 || Event->DestinationUnit==Settings.Unit)
-      {
       return true;
-      }
+
     }
   return false;
   }

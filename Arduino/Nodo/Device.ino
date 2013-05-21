@@ -3574,6 +3574,9 @@ void LCD_I2C_pulseEnable(uint8_t _data){
  * ruimte of object. Na aanroep van dit device wordt de afstand tot het object in centimeters geplaatst
  * in de opgegeven variabele.
  *
+ * Iedere keer als [HCSR04_Read <variabele>] wordt aangeroepen, zal de opgegeven variabele worden gevuld
+ * met de gemeten afstand. De variabele kan vervolgens worden gebruikt voor eigen toepassing.
+ * 
  * Auteur             : Paul Tonkes, p.k.tonkes@gmail.com
  * Support            : www.nodo-domotica.nl
  * Datum              : 23-04-2013
@@ -3608,6 +3611,7 @@ boolean Device_22(byte function, struct NodoEventStruct *event, char *string)
     case DEVICE_COMMAND:
       {
       // start de meting en zend een trigger puls van 10mSec.
+      noInterrupts();
       digitalWrite(PIN_WIRED_OUT_1, LOW);
       delayMicroseconds(2);
       digitalWrite(PIN_WIRED_OUT_1, HIGH);
@@ -3616,9 +3620,9 @@ boolean Device_22(byte function, struct NodoEventStruct *event, char *string)
       
       // meet de tijd van de echo puls. Uit dit gegeven berekenen we de afstand.
       float distance=pulseIn(PIN_WIRED_OUT_1+1,HIGH);
+      interrupts();
+      
       distance=distance/58;
-  
-      Serial.println(distance);//??? debbug
       
       event->Command      = CMD_VARIABLE_SET;     // Commando "VariableSet"
       event->Par2         = float2ul(distance);   // Waarde terugstoppen in de variabele
