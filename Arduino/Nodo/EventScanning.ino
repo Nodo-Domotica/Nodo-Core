@@ -1,4 +1,4 @@
-#define MIN_PULSE_LENGTH           200  // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
+#define MIN_PULSE_LENGTH           100  // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define SIGNAL_TIMEOUT_RF            5 // na deze tijd in mSec. wordt één RF signaal als beëindigd beschouwd.
 #define SIGNAL_TIMEOUT_IR           10 // na deze tijd in mSec. wordt één IR signaal als beëindigd beschouwd.
 #define SIGNAL_REPEAT_TIME        1000 // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal

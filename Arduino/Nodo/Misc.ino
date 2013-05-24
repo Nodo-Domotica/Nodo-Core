@@ -111,7 +111,7 @@ void RaiseMessage(byte MessageCode)
   TempEvent.Par1      = MessageCode;
   TempEvent.Direction = VALUE_DIRECTION_INPUT;
   TempEvent.Port      = VALUE_SOURCE_SYSTEM;
-  PrintEvent(&TempEvent);
+  PrintEvent(&TempEvent, VALUE_ALL);
 
   if(MessageCode==MESSAGE_09)// Stop
     return;
@@ -297,7 +297,7 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
     if(!WaitMessage && MessageTimer<millis())
       {
       WaitMessage=true;
-      PrintTerminal(ProgmemString(Text_07));
+      PrintString(ProgmemString(Text_07),VALUE_ALL);
       }
     #endif
       
@@ -622,7 +622,7 @@ void ResetFactory(void)
   Settings.TransmitRF                 = VALUE_ON;
   Settings.Unit                       = UNIT_NODO;
   Settings.Home                       = HOME_NODO;
-  Settings.RawSignalReceive           = VALUE_ON;
+  Settings.RawSignalReceive           = VALUE_OFF;
 
 #if WAIT_FREE_RX
   Settings.WaitFree                   = VALUE_ON;
@@ -693,7 +693,7 @@ void Status(struct NodoEventStruct *Request)
   byte Par1_Start,Par1_End;
   byte x;
   boolean s;
-  boolean Display=Request->Port==VALUE_SOURCE_SERIAL || Request->Port==VALUE_SOURCE_TELNET || Request->Port==VALUE_SOURCE_FILE || Request->Port==VALUE_SOURCE_HTTP;// Issue 690 ???
+  boolean Display=Request->Port==VALUE_SOURCE_SERIAL || Request->Port==VALUE_SOURCE_TELNET || Request->Port==VALUE_SOURCE_FILE || Request->Port==VALUE_SOURCE_HTTP;
   
   struct NodoEventStruct Result;
   ClearEvent(&Result);
@@ -745,14 +745,14 @@ void Status(struct NodoEventStruct *Request)
         #if NODO_MEGA          
         case CMD_CLIENT_IP:
           sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_CLIENT_IP),Settings.Client_IP[0],Settings.Client_IP[1],Settings.Client_IP[2],Settings.Client_IP[3]);
-          PrintTerminal(TempString);
+          PrintString(TempString, Request->Port);
           break;
 
         case CMD_NODO_IP:
           sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_NODO_IP), Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
           if(dhcp)
             strcat(TempString,"(DHCP)");
-          PrintTerminal(TempString);
+          PrintString(TempString,Request->Port);
           break;
   
         case CMD_GATEWAY:
@@ -760,7 +760,7 @@ void Status(struct NodoEventStruct *Request)
           if(!dhcp)
             {
             sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_GATEWAY),Settings.Gateway[0],Settings.Gateway[1],Settings.Gateway[2],Settings.Gateway[3]);
-            PrintTerminal(TempString);
+            PrintString(TempString,Request->Port);
             }
           break;
   
@@ -769,7 +769,7 @@ void Status(struct NodoEventStruct *Request)
           if(!dhcp)
             {
             sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_SUBNET),Settings.Subnet[0],Settings.Subnet[1],Settings.Subnet[2],Settings.Subnet[3]);
-            PrintTerminal(TempString);
+            PrintString(TempString,Request->Port);
             }
           break;
   
@@ -778,33 +778,33 @@ void Status(struct NodoEventStruct *Request)
             {
             // DnsServer
             sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_DNS_SERVER),Settings.DnsServer[0],Settings.DnsServer[1],Settings.DnsServer[2],Settings.DnsServer[3]);
-            PrintTerminal(TempString);
+            PrintString(TempString, Request->Port);
             }
           break;
   
         case CMD_PORT_SERVER:
           sprintf(TempString,"%s %d",cmd2str(CMD_PORT_SERVER), Settings.OutputPort);
-          PrintTerminal(TempString);
+          PrintString(TempString,Request->Port);
           break;
   
         case CMD_PORT_CLIENT:
           sprintf(TempString,"%s %d",cmd2str(CMD_PORT_CLIENT), Settings.PortClient);
-          PrintTerminal(TempString);
+          PrintString(TempString,Request->Port);
           break;
   
         case CMD_HTTP_REQUEST:
           sprintf(TempString,"%s %s",cmd2str(CMD_HTTP_REQUEST),Settings.HTTPRequest);
-          PrintTerminal(TempString);
+          PrintString(TempString,Request->Port);
           break;
   
         case CMD_ID:
           sprintf(TempString,"%s %s",cmd2str(CMD_ID), Settings.ID);
-          PrintTerminal(TempString);
+          PrintString(TempString,Request->Port);
           break;
   
         case CMD_TEMP:
           sprintf(TempString,"%s %s",cmd2str(CMD_TEMP), Settings.Temp);
-          PrintTerminal(TempString);
+          PrintString(TempString, Request->Port);
           break;
   
   #endif
@@ -897,7 +897,7 @@ void Status(struct NodoEventStruct *Request)
           else
             {
             Event2str(&Result,TempString);
-            PrintTerminal(TempString); // geef weer op terminal
+            PrintString(TempString, Request->Port); // geef weer op terminal
             }
           #endif
           }
@@ -907,7 +907,7 @@ void Status(struct NodoEventStruct *Request)
 
   #if NODO_MEGA
   if(Display && Request->Par1==VALUE_ALL)
-    PrintTerminal(ProgmemString(Text_22));
+    PrintString(ProgmemString(Text_22), Request->Port);
 
   free(TempString);
   #endif
@@ -1804,7 +1804,7 @@ void ClockSet(void)
   DS1307_save();
   
   rtc[DS1307_MIN]      = ((Time.Minutes/10)<<4)+(Time.Minutes%10);
-  rtc[DS1307_HR]       = ((Time.Hour/10)<<4)+(Time.Hour%10); // schrijf de wintertijd weg. (???? Omschakeling zit bug in)
+  rtc[DS1307_HR]       = ((Time.Hour/10)<<4)+(Time.Hour%10); // schrijf de wintertijd weg. (??? Omschakeling zit bug in. Issue 695
   rtc[DS1307_DOW]      = Time.Day;
   rtc[DS1307_DATE]     = ((Time.Date/10)<<4)+(Time.Date%10);
   rtc[DS1307_MTH]      = ((Time.Month/10)<<4)+(Time.Month%10);

@@ -280,32 +280,24 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
           }
   
         // Geef de juiste tijd nu door aan alle andere Nodo's
-        for(y=1; y<=UNIT_MAX; y++)
-          {
-          if(y!=Settings.Unit)
-            {        
-            x=NodoOnline(y,0);
-            if(x || true)
-              {           
-              ClearEvent(&TempEvent);    
-              TempEvent.Port                  = x;
-              TempEvent.DestinationUnit       = y;    
-              TempEvent.Flags                 = TRANSMISSION_QUEUE | TRANSMISSION_NEXT | TRANSMISSION_LOCK; 
+        ClearEvent(&TempEvent);    
+        TempEvent.Port                  = VALUE_ALL;
+        TempEvent.DestinationUnit       = 0;    
+        TempEvent.Flags                 = TRANSMISSION_QUEUE | TRANSMISSION_NEXT | TRANSMISSION_LOCK; 
 
-              // Verzend datum
-              TempEvent.Command=CMD_CLOCK_DATE;
-              TempEvent.Par2= ((unsigned long)Time.Year  %10)      | ((unsigned long)Time.Year  /10)%10<<4  | ((unsigned long)Time.Year/100)%10<<8 | ((unsigned long)Time.Year/1000)%10<<12 | 
-                              ((unsigned long)Time.Month %10) <<16 | ((unsigned long)Time.Month /10)%10<<20 | 
-                              ((unsigned long)Time.Date  %10) <<24 | ((unsigned long)Time.Date  /10)%10<<28 ;
-              SendEvent(&TempEvent, false, true, true);
+        // Verzend datum
+        TempEvent.Command=CMD_CLOCK_DATE;
+        TempEvent.Par2= ((unsigned long)Time.Year  %10)      | ((unsigned long)Time.Year  /10)%10<<4  | ((unsigned long)Time.Year/100)%10<<8 | ((unsigned long)Time.Year/1000)%10<<12 | 
+                        ((unsigned long)Time.Month %10) <<16 | ((unsigned long)Time.Month /10)%10<<20 | 
+                        ((unsigned long)Time.Date  %10) <<24 | ((unsigned long)Time.Date  /10)%10<<28 ;
+        SendEvent(&TempEvent, false, true, true);
               
-              // Verzend tijd
-              TempEvent.Command=CMD_CLOCK_TIME;
-              TempEvent.Par2=Time.Minutes%10 | Time.Minutes/10<<4 | Time.Hour%10<<8 | Time.Hour/10<<12;
-              SendEvent(&TempEvent, false, true, true);
-              }
-            }
-          }
+        // Verzend tijd
+        TempEvent.Command=CMD_CLOCK_TIME;
+        TempEvent.Flags =0;
+        TempEvent.Par2=Time.Minutes%10 | Time.Minutes/10<<4 | Time.Hour%10<<8 | Time.Hour/10<<12;
+        SendEvent(&TempEvent, false, true, true);
+        
         }
       break;
     #endif
@@ -384,7 +376,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         TempEvent.Par1=x;
         TempEvent.Port=VALUE_SOURCE_WIRED;
         TempEvent.Direction=VALUE_DIRECTION_OUTPUT;
-        PrintEvent(&TempEvent);
+        PrintEvent(&TempEvent,VALUE_ALL);
         }
       break;
                          
@@ -517,7 +509,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         FileErase(TempString);
         }
       else
-        FileList("/RAW",true);
+        FileList("/RAW",true,0);
       break;
 
     case CMD_RAWSIGNAL_SEND: 
