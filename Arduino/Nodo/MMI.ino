@@ -2,16 +2,23 @@
 
 
 /*********************************************************************************************\
- * Print een event volgens formaat:  'EVENT/ACTION: <port>, <type>, <content>
+ * Print een event naar de opgegeven poort. Dit kan zijn:
+ * 
+ * VALUE_ALL, VALUE_SOURCE_SERIAL, VALUE_SOURCE_TELNET, VALUE_SOURCE_FILE
+ * 
+ * 
+ * 
+ * 
+ * 
  \*********************************************************************************************/
-void PrintEvent(struct NodoEventStruct *Event)
+void PrintEvent(struct NodoEventStruct *Event, byte Port)
   {
   int x;
 
   // Systeem events niet weergeven.
   if(Event->Flags & TRANSMISSION_SYSTEM)
     return;
-    
+  
   char* StringToPrint=(char*)malloc(100);
   char* TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
 
@@ -59,7 +66,7 @@ void PrintEvent(struct NodoEventStruct *Event)
   strcat(StringToPrint, TmpStr);
 
   // WEERGEVEN OP TERMINAL
-  PrintTerminal(StringToPrint);   // stuur de regel naar Serial en/of naar Ethernet
+  PrintString(StringToPrint,Port);   // stuur de regel naar Serial en/of naar Ethernet
 
   // LOG OP SDCARD
   if(bitRead(HW_Config,HW_SDCARD) && Settings.Log==VALUE_ON) 
@@ -107,10 +114,10 @@ void PrintWelcome(void)
   char *TempString=(char*)malloc(80);
 
   // Print Welkomsttekst
-  PrintTerminal("");
-  PrintTerminal(ProgmemString(Text_22));
-  PrintTerminal(ProgmemString(Text_01));
-  PrintTerminal(ProgmemString(Text_02));
+  PrintString("",VALUE_ALL);
+  PrintString(ProgmemString(Text_22),VALUE_ALL);
+  PrintString(ProgmemString(Text_01),VALUE_ALL);
+  PrintString(ProgmemString(Text_02),VALUE_ALL);
 
   // print versienummer, unit en indien gevuld het ID
   sprintf(TempString,ProgmemString(Text_15), NODO_BUILD, Settings.Home, Settings.Unit);
@@ -120,13 +127,13 @@ void PrintWelcome(void)
     strcat(TempString,Settings.ID);
     }
 
-  PrintTerminal(TempString);
+  PrintString(TempString,VALUE_ALL);
 
   // Geef datum en tijd weer.
   if(bitRead(HW_Config,HW_CLOCK))
     {
     sprintf(TempString,"%s %s",DateTimeString(), cmd2str(Time.DaylightSaving?VALUE_DLS:0));
-    PrintTerminal(TempString);
+    PrintString(TempString,VALUE_ALL);
     }
 
   // print IP adres van de Nodo
@@ -144,7 +151,7 @@ void PrintWelcome(void)
     strcat(TempString,"=");        
     strcat(TempString,int2str(Settings.PortClient));
 
-    PrintTerminal(TempString);
+    PrintString(TempString,VALUE_ALL);
     
     if(Settings.HTTPRequest[0])
       {
@@ -159,11 +166,11 @@ void PrintWelcome(void)
       else
         strcat(TempString,"?");        
   
-      PrintTerminal(TempString);
+      PrintString(TempString,VALUE_ALL);
       }
     }
     
-  PrintTerminal(ProgmemString(Text_22));
+  PrintString(ProgmemString(Text_22),VALUE_ALL);
   free(TempString);
   }
 
@@ -171,17 +178,17 @@ void PrintWelcome(void)
  /**********************************************************************************************\
  * Verzend teken(s) naar de Terminal
  \*********************************************************************************************/
-void PrintTerminal(char* LineToPrint)
+void PrintString(char* LineToPrint, byte Port)
   {  
-  if(bitRead(HW_Config,HW_SERIAL))
+  if((Port==VALUE_SOURCE_SERIAL || Port==VALUE_ALL) && bitRead(HW_Config,HW_SERIAL))
     Serial.println(LineToPrint);
 
   if(bitRead(HW_Config,HW_ETHERNET))
     {
-    if(TerminalClient.connected() && TerminalConnected>0 && TerminalLocked==0)
+    if((Port==VALUE_SOURCE_TELNET || Port==VALUE_ALL) && TerminalClient.connected() && TerminalConnected>0 && TerminalLocked==0)
       TerminalClient.println(LineToPrint);
       
-    if(HTTPClient.connected())
+    if((Port==VALUE_SOURCE_HTTP || Port==VALUE_ALL) && HTTPClient.connected())
       {
       HTTPClient.print(LineToPrint);
       HTTPClient.println("<br>");
@@ -565,16 +572,6 @@ int ExecuteLine(char *Line, byte Port)
       {
       char LineChar=Line[LinePos];
   
-      // Chat teken. 
-      if(LineChar=='$')
-        {
-        y=bitRead(HW_Config,HW_SERIAL);
-        bitWrite(HW_Config,HW_SERIAL,1);
-        PrintTerminal(Line+LinePos);
-        bitWrite(HW_Config,HW_SERIAL,y);
-        LinePos=LineLength+1; // ga direct naar einde van de regel.
-        }
-
       // Comment teken. hierna verder niets meer doen.
       if(LineChar=='!') 
         LinePos=LineLength+1; // ga direct naar einde van de regel.
@@ -773,6 +770,25 @@ int ExecuteLine(char *Line, byte Port)
               case VALUE_SOURCE_VARIABLE:
               case VALUE_SOURCE_CLOCK:
               case VALUE_SOURCE_HTTP:
+                break;
+              default:
+                error=MESSAGE_02;
+              }
+              
+            switch(EventToExecute.Par2)
+              {
+              case VALUE_ALL:
+              case CMD_USEREVENT:
+              case CMD_CLOCK_EVENT_DAYLIGHT:
+              case CMD_TIME:
+              case CMD_RAWSIGNAL:
+              case CMD_TIMER_EVENT:
+              case CMD_WIRED_IN_EVENT:
+              case CMD_VARIABLE_EVENT:
+              case CMD_NEWNODO:
+              case CMD_MESSAGE:
+              case CMD_BOOT_EVENT:
+              case CMD_ALARM:
                 break;
               default:
                 error=MESSAGE_02;
@@ -1048,7 +1064,7 @@ int ExecuteLine(char *Line, byte Port)
               FileErase(TmpStr1);
               }
             else
-              FileList("",true);
+              FileList("",true,Port);
 
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
@@ -1085,7 +1101,7 @@ int ExecuteLine(char *Line, byte Port)
               {
               Led(BLUE);
               strcat(FileName,".dat");
-              error=FileShow(FileName);
+              error=FileShow(FileName,Port);
               }
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
@@ -1114,21 +1130,21 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_EVENTLIST_SHOW:
             if(EventToExecute.Par1<=EVENTLIST_MAX)
               {
-              PrintTerminal(ProgmemString(Text_22));
+              PrintString(ProgmemString(Text_22),Port);
               if(EventToExecute.Par1==0)
                 {
                 x=1;
                 while(EventlistEntry2str(x++,0,TmpStr2,false))
                   if(TmpStr2[0]!=0)
-                    PrintTerminal(TmpStr2);
+                    PrintString(TmpStr2,Port);
                 }
               else
                 {
-                EventlistEntry2str(EventToExecute.Par1,0,TmpStr2,false);//??? buiten bereik afvangen
+                EventlistEntry2str(EventToExecute.Par1,0,TmpStr2,false);
                   if(TmpStr2[0]!=0)
-                    PrintTerminal(TmpStr2);
+                    PrintString(TmpStr2,Port);
                 }
-              PrintTerminal(ProgmemString(Text_22));
+              PrintString(ProgmemString(Text_22),Port);
               EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
               }
             else
@@ -1223,12 +1239,12 @@ int ExecuteLine(char *Line, byte Port)
             }            
 
           case CMD_RAWSIGNAL_LIST:
-            FileList("/RAW",false);
+            FileList("/RAW",false,Port);
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
 
           case CMD_FILE_LIST:
-            FileList("/",false);
+            FileList("/",false,Port);
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
 
@@ -1301,7 +1317,7 @@ int ExecuteLine(char *Line, byte Port)
             if(Transmission_SendToUnit==Settings.Unit || Transmission_SendToUnit==0)
               {
               EventToExecute.Direction=VALUE_DIRECTION_INPUT;
-              error=ProcessEvent1(&EventToExecute);      // verwerk binnengekomen event.//??? dit was ...2 maar aangepast i.v.m. SendEvent en LastReceived vulling
+              error=ProcessEvent1(&EventToExecute);
               }
             else
               {

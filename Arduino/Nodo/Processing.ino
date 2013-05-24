@@ -104,7 +104,7 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
   
   if(Continue && error==0)
     {
-    PrintEvent(Event);
+    PrintEvent(Event, VALUE_ALL);
   
     if(ExecutionDepth>=MACRO_EXECUTION_DEPTH)
       {
@@ -399,7 +399,7 @@ byte QueueSend(void)
   
       // Als er een timeout was of het aantel events is niet correct bevestigd, dan de gebruiker een waarschuwing tonen
       if(error)
-        PrintTerminal(ProgmemString(Text_08));
+        PrintString(ProgmemString(Text_08),VALUE_ALL);
   
       }while((++Retry<10) && error);    
     }

@@ -102,7 +102,7 @@ boolean SaveEventlistSDCard(char *FileName)
   }
 
 
-boolean FileList(char *rootdir, boolean Erase)
+boolean FileList(char *rootdir, boolean Erase, byte Port)
   {
   byte error=0;
   File root;
@@ -115,7 +115,7 @@ boolean FileList(char *rootdir, boolean Erase)
     if(!Erase)
       {
       SelectSDCard(false);
-      PrintTerminal(ProgmemString(Text_22));
+      PrintString(ProgmemString(Text_22), Port);
       SelectSDCard(true);
       }
   
@@ -135,14 +135,14 @@ boolean FileList(char *rootdir, boolean Erase)
         else
           {
           TempString[0]=0;
-          // Als de fuktie is aangeroepen vanuit RawSignalList, dan voor de bestandnamen 0x plakken omdat de bestandsnamen een 
+          // Als de funktie is aangeroepen vanuit RawSignalList, dan voor de bestandnamen 0x plakken omdat de bestandsnamen een 
           // hexadecimale warde representeren. Niet nietjes op deze wijze maar bespaart code. 
           if(strcasecmp(rootdir,"/RAW")==0)
             strcat(TempString,"0x");
           strcat(TempString,entry.name());
           TempString[StringFind(TempString,".")]=0;
           SelectSDCard(false);
-          PrintTerminal(TempString);
+          PrintString(TempString,Port);
           SelectSDCard(true);
           }
         }
@@ -152,7 +152,7 @@ boolean FileList(char *rootdir, boolean Erase)
 
     SelectSDCard(false);
     if(!Erase)
-      PrintTerminal(ProgmemString(Text_22));
+      PrintString(ProgmemString(Text_22),Port);
     }
   else
     error=MESSAGE_14;
@@ -187,7 +187,7 @@ byte FileExecute(char* FileName, boolean ContinueOnError)
         TmpStr[y]=0;
         y=0;
         SelectSDCard(false);
-        PrintTerminal(TmpStr);
+        PrintString(TmpStr, VALUE_ALL);
         error=ExecuteLine(TmpStr,VALUE_SOURCE_FILE);
         SelectSDCard(true);
 
@@ -209,7 +209,7 @@ byte FileExecute(char* FileName, boolean ContinueOnError)
   }    
 
 
-byte FileShow(char *FileName)
+byte FileShow(char *FileName, byte Port)
   {
   SelectSDCard(true);
   char *TmpStr2=(char*)malloc(INPUT_BUFFER_SIZE+2);
@@ -219,7 +219,7 @@ byte FileShow(char *FileName)
   if(dataFile) 
     {
     SelectSDCard(false);
-    PrintTerminal(ProgmemString(Text_22));
+    PrintString(ProgmemString(Text_22), Port);
     SelectSDCard(true);
 
     // Als de file groter is dan 10K, dan alleen laatste stuk laten zien
@@ -229,7 +229,7 @@ byte FileShow(char *FileName)
       unsigned long w=dataFile.seek(a-10000UL);                    
       while(dataFile.available() && isprint(dataFile.read()));
       SelectSDCard(false);
-      PrintTerminal(ProgmemString(Text_09));
+      PrintString(ProgmemString(Text_09),Port);
       SelectSDCard(true);
       }
 
@@ -247,13 +247,13 @@ byte FileShow(char *FileName)
         TmpStr2[y]=0;
         y=0;
         SelectSDCard(false);
-        PrintTerminal(TmpStr2);
+        PrintString(TmpStr2,Port);
         SelectSDCard(true);
         }
       }
     dataFile.close();
     SelectSDCard(false);
-    PrintTerminal(ProgmemString(Text_22));
+    PrintString(ProgmemString(Text_22),Port);
     }  
   else
     error=MESSAGE_03;

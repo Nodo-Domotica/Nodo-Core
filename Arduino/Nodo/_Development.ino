@@ -47,12 +47,12 @@
 - Issue 642: Alarmset instellen met status "off"
 - Issue 641: alarmset settings verdwijnen
 
-R513
+R513:
 - Escape bij loop: Binnen vijf seconden na een reboot kan een commando naar de Nodo worden gestuurd om te resetten. Uitvoer vindt plaats voor uitvoer van het boot event.
 - SendTo commando aanpassing. Onder de motorkap aangepast EN SendTo blijft actief totdat SendTo Off wordt ingegeven
 - Status alleen nog maar uitvraagbaar via Terminal of Serial.
 
-R517
+R517:
 - SendTo uitgebreid met parameter All.
 - Issue 653: Break
 - Issue 675: Eventlist bevat ghost entries
@@ -63,11 +63,11 @@ R517
 - UserPlugin verwijderd. Hiervoor zijn de devices in de plaats gekomen.
 - Commando [Unit] gerenamed naar [UnitSet]. Dit is consequenter.
 
-R518
+R518:
 - Issue 675: Eventlist bevat ghost entries
 - Issue 687: SendTo is van de wijs te brengen!
 
-R519
+R519:
 LET OP: Tevens WebApp aanpassing, echter deze build toont in de WebApp geen nog Eventlist die direct weer te programmeren is. (Actie: Martin)
 - Issue 692: Toevoegen van DEVICE_PERIODIC call.
 - Status All via HTTP geeft leeg resultaat
@@ -79,13 +79,13 @@ LET OP: Tevens WebApp aanpassing, echter deze build toont in de WebApp geen nog 
 - EventlistShow weergave aangepast. Ëventlist <regel> is nu EventlistWrite <regel> geworden.
 - Tweede parameter in commando [UnitSet] is het Nodo Home adres [1..7]. Nodos met verschillende Home adressen kunnen geen Nodo-events uitwisselen.
 
-R522
+R522:
 - Bug gevonden in SendTo voor I2C
 - LET OP: Commando [HomeSet] is nog niet operationeel
 - FileExecute leverde aan einde bestand een Abort message.
 - Automatische detectie ethernetkaart er weer uitgehaald. (MOSI/MISO detectie niet betrouwbaar)
 
-R524
+R524:
 - Unitnummer van Mega naar WebApp niet correct als event afkomstig van Small
 - [Lock] commando weer beschikbaar
 - [TimerRandom] opgegven tijd nu evenals andere timers in seconden in plaats van minuten
@@ -95,14 +95,14 @@ R524
 - [SendTo] werkt nu ook op small en vanuit de eventlist. LET OP: geen handshaking bij gebruik vanuit eventlist. Snelle variant. Events worden direct op de bestemming afgevuurd zonder terugkoppeling.
 - [SendTo] Zodra vanaf de master het eerste event wordt verstuurd, zullen alle andere units worden geblokkeerd voor vezrenden via IR/RF (??? nog testen in landschap)
 
-R525
+R525:
 - [SendTo <unit>, All] werkt nu op op de Small en vanuit de eventlist.
 
-R526
+R526:
 - Commando [Stop] toegevoegd. Stopt de verwerking van een eventlist voor alle iteraties.
 - [SendTo] Zolang de All optie actief is, wachten alle andere Nodos totdat de band weer vrij is.
 
-R527
+R527:
 - Nieuw commando [VariablePulseCount <variabele>] voor vullen van een variabele met het aantal pulsen. [Status PulseCount] vervallen.
 - Nieuw commando [VariablePulseTime <variabele>] voor vullen van een variabele met tijdsduur laatste puls in mSec. [Status PulseTime] vervallen.
 - Nieuw commando [VariableEvent <BestemmingVariabele>, <BronVariable>]. Kan i.c.m. een wildcard worden gebruikt om de waarde van een event op te slaan in een variabele. Kan waarde halen uit een [WiredAnalog] of [Variable] event.
@@ -112,7 +112,7 @@ R527
 - BodyText naar HTTP-Sessie verloopt niet meer door tussenkomst van file op SDCard. (Verbeteren performance en voorkomen slijtage SDCard bij intensief gebruik).
 - Home adres van de Nodo verwerkt in MAC adres.
 
-R528 (Ter beschikking gesteld aan gebruikers als Beta 3.4.9)
+R528: (Ter beschikking gesteld aan gebruikers als Beta 3.4.9)
 - RawSignal aanpassingen: Ander format op SDCard. Tevens 0x voor hexwaarden bij RawSignalList. Oude files voor RawSignal zijn NIET compatibel!
 - Technisch: Toevoeging elementen Delay en Multiply aan de struct RawSignal
 - Technisch: Workaround voor delayMicroSeconds(0); bug in Arduino compiler 1.0.1 en later.
@@ -129,8 +129,7 @@ R528 (Ter beschikking gesteld aan gebruikers als Beta 3.4.9)
 - Toevoeging DEVICE_19: Innovations ID-12 RFID Tag reader
 - Toevoeging DEVICE_21: DFRobot LCD I2C/TWI 1602 Display
 
-==========================================================================================
-R530
+R530:
 - Issue 660: ClockAll met voorloopnul geeft bizar resultaat
 - Issue 708: BreakOnEarlier en Later: syntax error
 - Issue 710: ClockSetTime par2
@@ -143,7 +142,7 @@ R530
 - Toegevoegd: Commando [TimerSetVariable <timer>, <variable>]. Vult een timer met de inhoud van een variabele.
 - Toegevoegd: Device-22 HC-SR04 Distance sensor (SWACDE-22-V10) == Integratie in Nodo-code nog testen ==
 
-R531
+R531:
 - Issue 730: Commando ID werkt niet.
 - Issue 727: #define NODO_MEGA
 - Issue 726: Raw Event herhaling
@@ -156,15 +155,20 @@ R531
 - Issue 690: Status VariableSet geeft geen output meer via HTTP
 - Issue 643: WaitFreeRF als user define
 
-Nog te doen:
+R532:
+- Minor aanpassingen (geen funktionele impact)
 
+R533:
+- Issue 736: Schakelaar KAKU niet zichtbaar in Eventlog
+- Output commando's verschijnt nu alleen waar het commando vandaan kwam (TELNET, HTTP, SERIAL)
+- RawSiganlReceive default op OFF
+- Ontvangstroutines RF en RF herschreven: Snellere response en aanpassing i.v.m. frequent missen van events.
+- Methode voor WaitFree is aangepast. Noodzakelijk i.v.m. nieuwe ontvangstroutines.
+
+Nog te doen:
 - Testen: [VariableEvent]
-- Testen: Tellen pulsen 
-- Testen: I2C i.c.m. Ethernet: stabiliteit?
+- Testen: Tellen pulsen
 - Testen: Lock mechanisme
 - Methode voor WaitFree is aangepast. Opnieuw testen en fijnafstelling in multi-nodo-omgeving
-- MMI wordt altijd opgebouwd, ook al als er geen uitvoer plaats vindt. Besparing / versnelling mogelijk?
-- Aanroep van devices is gewijzigd. Devices allen compileren en testen of deze aangeroepen worden.
-
 
 \*****************************************************************************************/

@@ -186,18 +186,17 @@ void RawSendRF(void)
   digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
   digitalWrite(PIN_RF_RX_VCC,HIGH); // Spanning naar de RF ontvanger weer aan.
 
-#if NODO_MEGA
-  // Board specifiek: Genereer een korte puls voor omschakelen van de Aurel tranceiver van TX naar RX mode.
-  //  if(HW_Config&0xf==BIC_HWMESH_NES_V1X) ??? Nog in testfase.
-  //    {
-  delayMicroseconds(36);
-  digitalWrite(PIN_BSF_0,LOW);
-  delayMicroseconds(16);
-  digitalWrite(PIN_BSF_0,HIGH);
-  //    }
-#endif
-
-}
+  #if NODO_MEGA
+  //Board specifiek: Genereer een korte puls voor omschakelen van de Aurel tranceiver van TX naar RX mode.
+  if((HW_Config&0xf) == BIC_HWMESH_NES_V1X)
+   {
+   delayMicroseconds(36);
+   digitalWrite(PIN_BSF_0,LOW);
+   delayMicroseconds(16);
+   digitalWrite(PIN_BSF_0,HIGH);
+   }
+  #endif
+  }
 
 
 /*********************************************************************************************\
@@ -218,7 +217,6 @@ void RawSendIR(void)
   // kleine pause zodat verzenden event naar de USB poort gereed is, immers de IRQ's worden tijdelijk uitgezet
   delay(10);
   
-  // ??? 
   // LET OP: In de Arduino versie 1.0.1 zit een bug in de funktie delayMicroSeconds(). Als deze wordt aangeroepen met een nul dan zal er
   // een pause optreden van 16 milliseconden. Omdat het laatste element van RawSignal af sluit met een nul (omdat de space van de stopbit 
   // feitelijk niet bestaat) zal deze bug optreden. Daarom wordt deze op 1 gezet om de bug te omzeilen. 
@@ -450,7 +448,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     #if NODO_MEGA
     char* TempString=(char*)malloc(25);
     sprintf(TempString,ProgmemString(Text_10), Transmission_SelectedUnit);    
-    PrintTerminal(TempString);
+    PrintString(TempString, VALUE_ALL);
     free(TempString);
     #endif
 
@@ -476,7 +474,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   if(Settings.TransmitIR==VALUE_ON && (Port==VALUE_SOURCE_IR || Port==VALUE_ALL))
     { 
     ES->Port=VALUE_SOURCE_IR;
-    if(Display)PrintEvent(ES);
+    if(Display)PrintEvent(ES,VALUE_ALL);
     DelayTransmission(VALUE_SOURCE_IR,false);
     RawSendIR();
     }
@@ -485,7 +483,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   if(Settings.TransmitRF==VALUE_ON && (Port==VALUE_SOURCE_RF || Port==VALUE_ALL))
     {
     ES->Port=VALUE_SOURCE_RF;
-    if(Display)PrintEvent(ES);
+    if(Display)PrintEvent(ES,VALUE_ALL);
     DelayTransmission(VALUE_SOURCE_RF,false);
     RawSendRF();
     }
@@ -498,7 +496,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
       {
       SendHTTPEvent(ES);
       ES->Port=VALUE_SOURCE_HTTP;
-      if(Display)PrintEvent(ES);
+      if(Display)PrintEvent(ES,VALUE_ALL);
       }
     }
   #endif 
@@ -507,7 +505,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   if(Port==VALUE_SOURCE_I2C || (bitRead(HW_Config,HW_I2C) && Port==VALUE_ALL))
     {
     ES->Port=VALUE_SOURCE_I2C;
-    if(Display)PrintEvent(ES);
+    if(Display)PrintEvent(ES,VALUE_ALL);
     DelayTransmission(VALUE_SOURCE_I2C,false);
     SendI2C(ES);
     }
@@ -719,6 +717,17 @@ boolean EthernetInit(void)
  * Haal via een HTTP-request een file op
  * De content van de file bevindt zich in de body text die de server terugstuurt en wordt opgevangen
  * in de funktie SendHTTPRequest()
+ *
+ * Het naar de Nodo schrijven van een scriptfile werkt als volgt:
+ *
+ * 1. Webserver: Stuurt een regulier http-request naar de Nodo met daarin het commando 'FileGetHttp <filename>'
+ * 2. Nodo: Stuurt een http-request terug met '&file=<filename>'
+ * 3. WebServer: geeft een standaard response OK 200 terug en verzendt in dezelfde sessie de file als http-bodytext
+ * 4. Nodo: ontvangt de OK 200 en slaat alle regels in de bodytext op in de opgegeven bestandsnaam
+ * 5. Sessie wordt door server beeindigd en file op de Nodo wordt gesloten.
+ * 
+ * Een Nodo file bestaat uit acht posities zonder spaties, andere leestekens en zonder extentie.
+ * 
  \*******************************************************************************************************/
 byte GetHTTPFile(char* filename)
   {
@@ -743,10 +752,11 @@ byte GetHTTPFile(char* filename)
     }
 
   free(TempString);
+
   Ok=SendHTTPRequest(HttpRequest);
   free(HttpRequest);
   return Ok;
-}
+  }
 
 /*******************************************************************************************************\
  * Verzend een event als HTTP-request 
@@ -1232,13 +1242,6 @@ void ExecuteIP(void)
   free(TmpStr1);
   free(TmpStr2);
   free(InputBuffer_IP);
-
-//  if(RequestEvent)
-//    {
-//    ExecutionDepth=0;
-//    RaiseMessage(ExecuteLine(Event, Protocol));
-//    }
-
   free(Event);
   return;
   }  

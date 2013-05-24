@@ -1,4 +1,4 @@
-#define NODO_BUILD          532  //??? ophogen bij iedere build
+#define NODO_BUILD          533  //??? ophogen bij iedere build
 #define SETTINGS_VERSION     35  
 #include <EEPROM.h>
 #include <Wire.h>
@@ -199,7 +199,7 @@ prog_char PROGMEM Cmd_161[]="Timers";
 prog_char PROGMEM Cmd_162[]="Variables";
 prog_char PROGMEM Cmd_163[]="Clock";
 prog_char PROGMEM Cmd_164[]="Terminal";
-prog_char PROGMEM Cmd_165[]="Fast";
+prog_char PROGMEM Cmd_165[]="";
 prog_char PROGMEM Cmd_166[]="Status";
 prog_char PROGMEM Cmd_167[]="File";
 prog_char PROGMEM Cmd_168[]="Input";
@@ -462,7 +462,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define VALUE_SOURCE_VARIABLE          162
 #define VALUE_SOURCE_CLOCK             163
 #define VALUE_SOURCE_TELNET            164
-#define VALUE_FAST                     165
+#define VALUE_RES165                   165
 #define VALUE_SOURCE_STATUS            166
 #define VALUE_SOURCE_FILE              167
 #define VALUE_DIRECTION_INPUT          168

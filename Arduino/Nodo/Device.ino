@@ -499,8 +499,7 @@ boolean Device_03(byte function, struct NodoEventStruct *event, char *string)
         event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
         RawSignal.Repeats    = true;                  // het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
         success=true;
-        }
-   
+        }   
       break;
       }
       
