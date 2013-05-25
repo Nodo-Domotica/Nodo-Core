@@ -166,6 +166,13 @@ R533:
 - Methode voor WaitFree is aangepast. Noodzakelijk i.v.m. nieuwe ontvangstroutines.
 - Bij een niet printbaar teken wordt een Telnet sessie niet meer direct afgebroken.
 
+R534:
+- Foutje opgelost die veroorzaakte dat de Small code niet door de compiler kwam.
+
+R535:
+- Issue 733: sendnewkaku loop via I2C
+- [Output IR] staat default op [Off]
+
 Nog te doen:
 - Testen: [VariableEvent]
 - Testen: Tellen pulsen

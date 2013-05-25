@@ -1,4 +1,4 @@
-#define NODO_BUILD          534  //??? ophogen bij iedere build
+#define NODO_BUILD          535  //??? ophogen bij iedere build
 #define SETTINGS_VERSION     35  
 #include <EEPROM.h>
 #include <Wire.h>
@@ -877,8 +877,10 @@ void setup()
   for(x=0;x<WIRED_PORTS;x++){WiredInputStatus[x]=true;}
 
 
-  //Lees de tijd uit de RTC en zorg ervoor dat er niet direct na een boot een CMD_CLOCK_DAYLIGHT event optreedt
+  // Start de I2C poort. 
   Wire.begin(Settings.Unit + I2C_START_ADDRESS);
+
+  //Lees de tijd uit de RTC en zorg ervoor dat er niet direct na een boot een CMD_CLOCK_DAYLIGHT event optreedt
   ClockRead();
 
   #if NODO_MEGA

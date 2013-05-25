@@ -31,16 +31,16 @@
 // Anders worden de niet gebruikte libraries toch meegecompileerd en zal deze niet in een ATMega328 passen.
 // en pas eventueel de vier include statements aan (zie onder):
 
-//#include <EthernetNodo.h>
-//#include <SPI.h>
-//#include <Arduino.h>
-//#include <SD.h>
+#include <EthernetNodo.h>
+#include <SPI.h>
+#include <Arduino.h>
+#include <SD.h>
 
 // Stap 3.
 // Stel hieronder in welk Nodo unit nummer u gaat compileren. Uitgangspunt is dat elke fysieke Nodo een uniek unit nummer krijgt toegekend.
 // Default heeft een Nodo Mega unit nummer 1. Een Nodo Small heeft defaut unit nummer 15. Geef bij onderstaande definitie het unitnummer op.
 // Deze kan naar behoefte naderhand met het commando [UnitSet <nummer>] worden gewijgigd.
-#define UNIT_NODO          15
+#define UNIT_NODO          1
 
 
 // Stap-4: Definitie welke devices worden gebruikt.
