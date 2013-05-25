@@ -1415,7 +1415,7 @@ void PrintWelcome(void)
 /*********************************************************************************************\
  * Print een event: debug mode Nodo-Small
  \*********************************************************************************************/
-void PrintEvent(struct NodoEventStruct *Event)
+void PrintEvent(struct NodoEventStruct *Event, byte Port)
   {
   #if (SMALL_DEBUG_INFO ==true)
   Serial.print(Event->Direction);
