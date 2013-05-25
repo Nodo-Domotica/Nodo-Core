@@ -1,4 +1,4 @@
-#define NODO_BUILD          533  //??? ophogen bij iedere build
+#define NODO_BUILD          534  //??? ophogen bij iedere build
 #define SETTINGS_VERSION     35  
 #include <EEPROM.h>
 #include <Wire.h>
@@ -1122,17 +1122,17 @@ void loop()
                       }
                     }
                   }
-                else 
-                  {// bij een niet printbaar teken wordt de verbinding direct verbroken. Uit veiligheidsoverweging om te voorkomen dat bulk rommel naar de Nodo gestuurd wordt.
-                  // TerminalSessie timeout, dan de verbinding netjes afsluiten
-                  InputBuffer_Terminal[0]=0;
-                  TerminalClient.println(ProgmemString(Text_30));
-                  delay(100); // geef de client even de gelegenheid de tekst te ontvangen
-                  TerminalClient.flush();// eventuele rommel weggooien.
-                  TerminalClient.stop();
-                  TerminalConnected=0;
-                  break;
-                  }
+//                else 
+//                  {// bij een niet printbaar teken wordt de verbinding direct verbroken. Uit veiligheidsoverweging om te voorkomen dat bulk rommel naar de Nodo gestuurd wordt.
+//                  // TerminalSessie timeout, dan de verbinding netjes afsluiten
+//                  InputBuffer_Terminal[0]=0;
+//                  TerminalClient.println(ProgmemString(Text_30));
+//                  delay(100); // geef de client even de gelegenheid de tekst te ontvangen
+//                  TerminalClient.flush();// eventuele rommel weggooien.
+//                  TerminalClient.stop();
+//                  TerminalConnected=0;
+//                  break;
+//                  }//??? test
                 }
               }
             }

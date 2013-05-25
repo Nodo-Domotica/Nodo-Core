@@ -164,6 +164,7 @@ R533:
 - RawSiganlReceive default op OFF
 - Ontvangstroutines RF en RF herschreven: Snellere response en aanpassing i.v.m. frequent missen van events.
 - Methode voor WaitFree is aangepast. Noodzakelijk i.v.m. nieuwe ontvangstroutines.
+- Bij een niet printbaar teken wordt een Telnet sessie niet meer direct afgebroken.
 
 Nog te doen:
 - Testen: [VariableEvent]
