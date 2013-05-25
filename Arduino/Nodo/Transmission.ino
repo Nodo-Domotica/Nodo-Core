@@ -488,6 +488,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     RawSendRF();
     }
 
+
   #if NODO_MEGA
   // Verstuur signaal als HTTP-event.
   if(bitRead(HW_Config,HW_ETHERNET))// Als Ethernet shield aanwezig.
@@ -501,13 +502,20 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     }
   #endif 
 
-  // Verstuur signaal als I2C
-  if(Port==VALUE_SOURCE_I2C || (bitRead(HW_Config,HW_I2C) && Port==VALUE_ALL))
+  // Verstuur event vaiI2C
+  // LET OP:  Voor I2C geldt een uitzondering: Als een device een signaal verzendt, dan mag dit commando alleen er toe leiden dat het
+  //          RawSignal wordt verzonden via RF/IR. Anders zal het commando worden verstuurd over I2C waarna de Nodo's op I2C het commando nogmaal
+  //          zullen uitvoeren. Zo zal er een ongewenste loop ontstaan.
+  
+  if(!UseRawSignal)
     {
-    ES->Port=VALUE_SOURCE_I2C;
-    if(Display)PrintEvent(ES,VALUE_ALL);
-    DelayTransmission(VALUE_SOURCE_I2C,false);
-    SendI2C(ES);
+    if((Port==VALUE_SOURCE_I2C || Port==VALUE_ALL) && bitRead(HW_Config,HW_I2C))
+      {
+      ES->Port=VALUE_SOURCE_I2C;
+      if(Display)PrintEvent(ES,VALUE_ALL);
+      DelayTransmission(VALUE_SOURCE_I2C,false);
+      SendI2C(ES);
+      }
     }
   }
   

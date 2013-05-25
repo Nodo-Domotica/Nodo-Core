@@ -618,7 +618,7 @@ void ResetFactory(void)
   Settings.Version                    = SETTINGS_VERSION;
   Settings.NewNodo                    = true;
   Settings.Lock                       = 0;
-  Settings.TransmitIR                 = VALUE_ON;
+  Settings.TransmitIR                 = VALUE_OFF;
   Settings.TransmitRF                 = VALUE_ON;
   Settings.Unit                       = UNIT_NODO;
   Settings.Home                       = HOME_NODO;
