@@ -176,6 +176,9 @@ R535:
 R536:
 - Device_23 toegevoegd: LED-Dimmer.
 
+R537:
+-Issue 738: AlectoV1 device
+
 Nog te doen:
 - Testen: [VariableEvent]
 - Testen: Tellen pulsen
