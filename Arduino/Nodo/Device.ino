@@ -1353,6 +1353,9 @@ boolean Device_08(byte function, struct NodoEventStruct *event, char *string)
         {
         if (ProtocolAlectoValidID[x] == 0)
           {
+            ProtocolAlectoValidID[x] = event->Par1;
+            ProtocolAlectoVar[x] = event->Par2;
+            break;
           }
         }
       }
