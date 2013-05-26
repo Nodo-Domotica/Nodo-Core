@@ -1250,16 +1250,16 @@ boolean Device_08(byte function, struct NodoEventStruct *event, char *string)
       byte basevar=0;
 
       for(byte x=2; x<=64; x=x+2)
-      {
+        {
         if(RawSignal.Pulses[x]*PTMF > 0xA00) bitstream = ((bitstream >> 1) |(0x1L << 31)); 
         else bitstream = (bitstream >> 1);
-      }
+        }
 
       for(byte x=66; x<=72; x=x+2)
-      {
+        {
         if(RawSignal.Pulses[x]*PTMF > 0xA00) checksum = ((checksum >> 1) |(0x1L << 3)); 
         else checksum = (checksum >> 1);
-      }
+        }
 
       nibble7 = (bitstream >> 28) & 0xf;
       nibble6 = (bitstream >> 24) & 0xf;
@@ -1275,13 +1275,13 @@ boolean Device_08(byte function, struct NodoEventStruct *event, char *string)
         checksumcalc = (0xf - nibble0 - nibble1 - nibble2 - nibble3 - nibble4 - nibble5 - nibble6 - nibble7) & 0xf;
       }
       else
-      {
+        {
         // Alecto checksums are Rollover Checksums by design!
         if (nibble3 == 3)
           checksumcalc = (0x7 + nibble0 + nibble1 + nibble2 + nibble3 + nibble4 + nibble5 + nibble6 + nibble7) & 0xf;
         else
           checksumcalc = (0xf - nibble0 - nibble1 - nibble2 - nibble3 - nibble4 - nibble5 - nibble6 - nibble7) & 0xf;
-      }
+        }
 
       if (checksum != checksumcalc) return false;
       rc = bitstream & 0xff;
@@ -1353,9 +1353,9 @@ boolean Device_08(byte function, struct NodoEventStruct *event, char *string)
         {
         if (ProtocolAlectoValidID[x] == 0)
           {
-            ProtocolAlectoValidID[x] = event->Par1;
-            ProtocolAlectoVar[x] = event->Par2;
-            break;
+          ProtocolAlectoValidID[x] = event->Par1;
+          ProtocolAlectoVar[x] = event->Par2;
+          break;
           }
         }
       }
