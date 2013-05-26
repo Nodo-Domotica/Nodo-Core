@@ -401,7 +401,7 @@ byte QueueSend(void)
       if(error)
         PrintString(ProgmemString(Text_08),VALUE_ALL);
   
-      }while((++Retry<10) && error);    
+      }while((++Retry<5) && error);    
     }
   return error;
   }

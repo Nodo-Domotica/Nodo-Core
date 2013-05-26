@@ -65,8 +65,8 @@
 // Hardware    : Nodo-Mega op basis van een Arduino Mega met een ATMega2560 chip.
 // Toepassing  : Master nodo in verbinding met de WebApp
 #if (UNIT_NODO == 1)
-  #define NODO_MEGA                    true // true=Nodo Mega, false=Nodo-Small
-  #define ETHERNET                     true // true= Deze Nodo beschikt over een ethernet kaart
+  #define NODO_MEGA                    true  // true=Nodo Mega, false=Nodo-Small
+  #define ETHERNET                     false // true= Deze Nodo beschikt over een ethernet kaart
 
   // Geef in onderstaande tabel aan welke devices DEZE nodo gebruikt.
   #define DEVICE_CORE_01  // Kaku            : Klik-Aan-Klik-Uit ontvangen  

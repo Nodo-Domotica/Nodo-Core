@@ -173,6 +173,9 @@ R535:
 - Issue 733: sendnewkaku loop via I2C
 - [Output IR] staat default op [Off]
 
+R536:
+- Device_23 toegevoegd: LED-Dimmer.
+
 Nog te doen:
 - Testen: [VariableEvent]
 - Testen: Tellen pulsen
