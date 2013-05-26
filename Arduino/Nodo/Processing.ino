@@ -18,8 +18,6 @@ byte ProcessEvent1(struct NodoEventStruct *Event)
     return 0;
   #endif
 
-  // sla event op voor later gebruik in SendEvent en VariableEvent
-  LastReceived=*Event;
 
   // Verwerk het binnengekomen event
   error=ProcessEvent2(Event);
@@ -129,7 +127,10 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
         {// Er is een Event binnengekomen  
         // loop de gehele eventlist langs om te kijken of er een treffer is.   
         struct NodoEventStruct EventlistEvent, EventlistAction;   
-    
+
+        // sla event op voor later gebruik in SendEvent en VariableEvent???plaats hier?
+        LastReceived=*Event;
+
         x=0;
         while(Eventlist_Read(++x,&EventlistEvent,&EventlistAction)) // Zolang er nog regels zijn in de eventlist...
           {      
