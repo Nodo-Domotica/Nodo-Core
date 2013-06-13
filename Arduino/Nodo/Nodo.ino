@@ -31,27 +31,27 @@
 // Anders worden de niet gebruikte libraries toch meegecompileerd en zal deze niet in een ATMega328 passen.
 // en pas eventueel de vier include statements aan (zie onder):
 
-#include <EthernetNodo.h>
-#include <SPI.h>
-#include <Arduino.h>
-#include <SD.h>
+//#include <EthernetNodo.h>
+//#include <SPI.h>
+//#include <Arduino.h>
+//#include <SD.h>
 
 // Stap 3.
 // Stel hieronder in welk Nodo unit nummer u gaat compileren. Uitgangspunt is dat elke fysieke Nodo een uniek unit nummer krijgt toegekend.
 // Default heeft een Nodo Mega unit nummer 1. Een Nodo Small heeft defaut unit nummer 15. Geef bij onderstaande definitie het unitnummer op.
 // Deze kan naar behoefte naderhand met het commando [UnitSet <nummer>] worden gewijgigd.
-#define UNIT_NODO          1
+#define UNIT_NODO          15
 
 
 // Stap-4: Definitie welke devices worden gebruikt.
 // Maak een keuze welke devices u wilt gebruiken. Geef onderstaand op welke devices u gaat gebruiken in uw Nodo omgeving
 // Voor een beschrijving van de beschikbare devices: zie de Wiki pagina's. 
 
-  #define DEVICE_01       // Kaku            : Klik-Aan-Klik-Uit ontvangen
-  #define DEVICE_02       // SendKaku        : Klik-Aan-Klik-Uit verzenden
-  #define DEVICE_03       // NewKAKU         : Klik-Aan-Klik-Uit ontvangen, automatische codering. 
-  #define DEVICE_04       // SendNewKAKU     : Klik-Aan-Klik-Uit zenden, automatische codering. 
-  #define DEVICE_05       // TempRead        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
+  #define DEVICE_001       // Kaku            : Klik-Aan-Klik-Uit ontvangen
+  #define DEVICE_002       // SendKaku        : Klik-Aan-Klik-Uit verzenden
+  #define DEVICE_003       // NewKAKU         : Klik-Aan-Klik-Uit ontvangen, automatische codering. 
+  #define DEVICE_004       // SendNewKAKU     : Klik-Aan-Klik-Uit zenden, automatische codering. 
+  #define DEVICE_005       // TempRead        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
 
 // Stap-5
 // hieronder kunt u de instellingen per unit nummer vastleggen. Bij compileren wordt a.d.h.v. het UNIT_NODO nummer de juiste set gekozen.
@@ -69,10 +69,11 @@
   #define ETHERNET                     false // true= Deze Nodo beschikt over een ethernet kaart
 
   // Geef in onderstaande tabel aan welke devices DEZE nodo gebruikt.
-  #define DEVICE_CORE_01  // Kaku            : Klik-Aan-Klik-Uit ontvangen  
-  #define DEVICE_CORE_02  // SendKaku        : Klik-Aan-Klik-Uit verzenden 
-  #define DEVICE_CORE_03  // NewKAKU         : Klik-Aan-Klik-Uit ontvangen, automatische codering.
-  #define DEVICE_CORE_04  // SendNewKAKU     : Klik-Aan-Klik-Uit zenden, automatische codering.
+  #define DEVICE_CORE_001  // Kaku            : Klik-Aan-Klik-Uit ontvangen  
+  #define DEVICE_CORE_002  // SendKaku        : Klik-Aan-Klik-Uit verzenden 
+  #define DEVICE_CORE_003  // NewKAKU         : Klik-Aan-Klik-Uit ontvangen, automatische codering.
+  #define DEVICE_CORE_004  // SendNewKAKU     : Klik-Aan-Klik-Uit zenden, automatische codering.
+
 #endif 
 // ----------------------------------------------------------------------------------------------------------------------------------------
 
@@ -86,11 +87,11 @@
 #if (UNIT_NODO == 15)
 
   // Geef in onderstaande tabel aan welke devices DEZE nodo gebruikt.
-  #define DEVICE_CORE_01  // Kaku            : Klik-Aan-Klik-Uit ontvangen  
-  #define DEVICE_CORE_02  // SendKaku        : Klik-Aan-Klik-Uit verzenden 
-  #define DEVICE_CORE_03  // NewKAKU         : Klik-Aan-Klik-Uit ontvangen, automatische codering.
-  #define DEVICE_CORE_04  // SendNewKAKU     : Klik-Aan-Klik-Uit zenden, automatische codering.
-  #define DEVICE_CORE_05 // TempRead        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
+  #define DEVICE_CORE_001  // Kaku            : Klik-Aan-Klik-Uit ontvangen  
+  #define DEVICE_CORE_002  // SendKaku        : Klik-Aan-Klik-Uit verzenden 
+  #define DEVICE_CORE_003  // NewKAKU         : Klik-Aan-Klik-Uit ontvangen, automatische codering.
+  #define DEVICE_CORE_004  // SendNewKAKU     : Klik-Aan-Klik-Uit zenden, automatische codering.
+  #define DEVICE_CORE_005 // TempRead        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
 
 #endif 
 // ----------------------------------------------------------------------------------------------------------------------------------------
@@ -99,42 +100,6 @@
 
 
 
-
-
-// ----------------------------------------------------------------------------------------------------------------------------------------
-// Hieronder vindt u een complete lijst van alle device selectie statements.
-// Kopieer de gewenste statements naar:
-// * ofwel het blokje waarin u aangeeft dat een device in alle Nodo's moet worden gebruikt;
-// * ofwel naar het definitie blokje van de specifieke Nodo die het device nodig heeft.
-//
-// toelichting:
-// De regel die de toevoeging "CORE" in de naam heeft, zorgt ervoor dat de kern van de code wordt meegecompileerd. 
-// Beschouw dit als een driver voor het device. Compileer hem alleen mee in de Nodo die het device fysiek aan boord heeft. 
-//
-// de regel die "MMI" in de naam heeft, is het front end. Dit is nodig in alle Nodo's die op een of andere manier met het device gaan werken.
-// Het heeft geen zin om dit mee te compileren in een small, want die kent geen MMI.
-// Wel is het nodig in een Mega, als die het device ofwel zelf aan boord heeft, ofwel het device in een andere Nodo gebruikt (of moet begrijpen).
-// Met dat laatste bedoelen we het tonen van events als die binnenkomen op een Mega vanuit een andere Nodo.
-//
-// Tip: laat de lijst hieronder compleet voor toekomstig gebruik.
-// Dus met copy/paste overnemen, niet met cut/paste!
-//
-// Repository:
-//
-/*
-  #define DEVICE_01       // Kaku            : Klik-Aan-Klik-Uit ontvangen
-  #define DEVICE_CORE_01  // Kaku            : Klik-Aan-Klik-Uit ontvangen  
-  #define DEVICE_02       // SendKaku        : Klik-Aan-Klik-Uit verzenden
-  #define DEVICE_CORE_02  // SendKaku        : Klik-Aan-Klik-Uit verzenden 
-  #define DEVICE_03       // NewKAKU         : Klik-Aan-Klik-Uit ontvangen, automatische codering. 
-  #define DEVICE_CORE_03  // NewKAKU         : Klik-Aan-Klik-Uit ontvangen, automatische codering.
-  #define DEVICE_04       // SendNewKAKU     : Klik-Aan-Klik-Uit zenden, automatische codering. 
-  #define DEVICE_CORE_04  // SendNewKAKU     : Klik-Aan-Klik-Uit zenden, automatische codering. 
-  #define DEVICE_05       // TempRead        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
-  #define DEVICE_CORE_05  // TempRead        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820) 
-
-
-*/
 // ----------------------------------------------------------------------------------------------------------------------------------------
 
 // hieronder volgen nog enkele instellingen voor alle Nodo unit nummers

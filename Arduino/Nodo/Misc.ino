@@ -3,22 +3,6 @@
 //#######################################################################################################
 
 
- // Niet alle gegevens uit een event zijn relevant. Om ruimte in EEPROM te besparen worden uitsluitend
- // de alleen noodzakelijke gegevens in EEPROM opgeslagen. Hiervoor een struct vullen die later als
- // één blok weggeschreven kan worden.
-
- struct EventlistStruct
-   {
-   byte EventCommand;
-   byte EventPar1;
-   unsigned long EventPar2;
-   
-   byte ActionCommand;
-   byte ActionPar1;
-   unsigned long ActionPar2;
-   }EEPROM_Block;
-
-
 /**********************************************************************************************\
  * Schrijft een event in de Eventlist. Deze Eventlist bevindt zich in het EEPROM geheugen.
  \*********************************************************************************************/
@@ -27,27 +11,30 @@ boolean Eventlist_Write(int Line, struct NodoEventStruct *Event, struct NodoEven
   struct EventlistStruct EEPROM_Block;
   struct NodoEventStruct dummy;
   int x,address;
-  
+
   // als opgegeven adres=0, zoek dan de eerste vrije plaats.
   if(Line==0)
     {
     Line++;
     while(Eventlist_Read(Line,&dummy,&dummy) && dummy.Command!=0)Line++;
     }
-  Line--;                                                                          // echte adressering begint vanaf nul. voor de user vanaf 1.
+  Line--;                                                                          // echte adressering begint vanaf nul. voor de user vanaf 1.  
 
-  if(Line>EVENTLIST_MAX)
+  if(Line>EventlistMax)
     return false;
 
   address=Line * sizeof(struct EventlistStruct) + sizeof(struct SettingsStruct);     // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer deze bytes. Deze niet te gebruiken voor de Eventlist!
+  
   byte *B=(byte*)&EEPROM_Block;                                                       // B wijst naar de eerste byte van de struct
 
   // Nu wegschrijven.
   address=Line * sizeof(struct EventlistStruct) + sizeof(struct SettingsStruct);     // Eerste deel van het EEPROM geheugen is voor de settings. Reserveer deze bytes. Deze niet te gebruiken voor de Eventlist!
+  EEPROM_Block.EventType=Event->Type;
   EEPROM_Block.EventCommand=Event->Command;
   EEPROM_Block.EventPar1=Event->Par1;
   EEPROM_Block.EventPar2=Event->Par2;
  
+  EEPROM_Block.ActionType=Action->Type;
   EEPROM_Block.ActionCommand=Action->Command;
   EEPROM_Block.ActionPar1=Action->Par1;
   EEPROM_Block.ActionPar2=Action->Par2;
@@ -70,7 +57,7 @@ boolean Eventlist_Read(int address, struct NodoEventStruct *Event, struct NodoEv
   {
   struct EventlistStruct EEPROM_Block;
 
-  if(address>EVENTLIST_MAX)
+  if(address>EventlistMax)
     return false;
 
   address--;// echte adressering begint vanaf nul. voor de user vanaf 1.
@@ -86,14 +73,17 @@ boolean Eventlist_Read(int address, struct NodoEventStruct *Event, struct NodoEv
     }
 
   ClearEvent(Event);
+  Event->Type=EEPROM_Block.EventType;
   Event->Command=EEPROM_Block.EventCommand;
   Event->Par1=EEPROM_Block.EventPar1;
   Event->Par2=EEPROM_Block.EventPar2;
   
   ClearEvent(Action);
+  Action->Type=EEPROM_Block.ActionType;
   Action->Command=EEPROM_Block.ActionCommand;
   Action->Par1=EEPROM_Block.ActionPar1;
   Action->Par2=EEPROM_Block.ActionPar2;
+
   Action->Port=VALUE_SOURCE_EVENTLIST;
   Action->Direction=VALUE_DIRECTION_INPUT;
   return true;
@@ -107,7 +97,7 @@ void RaiseMessage(byte MessageCode)
 
   struct NodoEventStruct TempEvent;
   ClearEvent(&TempEvent);
-  TempEvent.Command   = CMD_MESSAGE;
+  TempEvent.Command   = EVENT_MESSAGE;
   TempEvent.Par1      = MessageCode;
   TempEvent.Direction = VALUE_DIRECTION_INPUT;
   TempEvent.Port      = VALUE_SOURCE_SYSTEM;
@@ -376,7 +366,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
   byte xCommand=Event->Command;  
   ClearEvent(Event);
 
-  Event->Flags|=TRANSMISSION_EVENT; // forceer dat deze wordt behandeld als een event
+  Event->Flags|=TRANSMISSION_VIEW_ONLY; // forceer dat deze wordt behandeld als een event
   Event->Command=xCommand;
   
   switch (xCommand)
@@ -413,7 +403,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
     Event->Par1=Settings.RawSignalReceive;
     break;
 
-  case CMD_CLOCK_EVENT_DAYLIGHT:
+  case EVENT_CLOCK_DAYLIGHT:
     Event->Par1=Time.Daylight;
     break;
 
@@ -484,7 +474,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
     Event->Par2=FreeMem();
     break;
 
-  case CMD_WIRED_IN_EVENT:
+  case EVENT_WIRED_IN:
     Event->Par1=xPar1;
     Event->Par2=(WiredInputStatus[xPar1-1])?VALUE_ON:VALUE_OFF;
     break;
@@ -707,7 +697,7 @@ void Status(struct NodoEventStruct *Request)
     Request->Par2==0;
 
   #if NODO_MEGA          
-  if(Request->Par1==CMD_BOOT_EVENT || Request->Par1==0)
+  if(Request->Par1==EVENT_BOOT || Request->Par1==0)
     {
     PrintWelcome();
     return;
@@ -718,7 +708,7 @@ void Status(struct NodoEventStruct *Request)
     {
     Request->Par2=0;
     PrintWelcome();
-    CMD_Start=FIRST_COMMAND;
+    CMD_Start=0;
     CMD_End=COMMAND_MAX;
     }
   else
@@ -838,7 +828,7 @@ void Status(struct NodoEventStruct *Request)
           case CMD_WIRED_PULLUP:
           case CMD_WIRED_SMITTTRIGGER:
           case CMD_WIRED_THRESHOLD:
-          case CMD_WIRED_IN_EVENT:
+          case EVENT_WIRED_IN:
             Par1_Start=1;
             Par1_End=WIRED_PORTS;
             break;      
@@ -1727,7 +1717,7 @@ void ClearEvent(struct NodoEventStruct *Event)
   Event->Par2               = 0L;
   Event->Flags              = 0;
   Event->Port               = 0;
-  Event->Checksum           = 0;
+  Event->Type               = 0;
   Event->Direction          = 0;
   Event->DestinationUnit    = 0;
   Event->SourceUnit         = Settings.Unit;
@@ -1795,7 +1785,7 @@ void DS1307_read(void)
 void ClockSet(void) 
   {
   // bereken uit de datum de dag van de week.
-  const int t[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
+  const int t[] = {0,3,2,5,0,3,5,1,4,6,2,4};
   int y = Time.Year;
   y-=Time.Month<3;
   Time.Day=(y + y/4 - y/100 + y/400 + t[Time.Month-1] + Time.Date) % 7 +1;
@@ -2381,108 +2371,111 @@ void DeviceInit(void)
 
   // Wis te pointertabel voor de devices.
   for(x=0;x<DEVICE_MAX;x++)
+    {
     Device_ptr[x]=0;
+    Device_id[x]=0;
+    }
     
   x=0;
       
-  #ifdef DEVICE_01
-  Device_ptr[x++]=&Device_01;
+  #ifdef DEVICE_001
+  Device_id[x]=1;Device_ptr[x++]=&Device_001;
   #endif
 
-  #ifdef DEVICE_02
-  Device_ptr[x++]=&Device_02;
+  #ifdef DEVICE_002
+  Device_id[x]=2;Device_ptr[x++]=&Device_002;
   #endif
 
-  #ifdef DEVICE_03
-  Device_ptr[x++]=&Device_03;
+  #ifdef DEVICE_003
+  Device_id[x]=3;Device_ptr[x++]=&Device_003;
   #endif
 
-  #ifdef DEVICE_04
-  Device_ptr[x++]=&Device_04;
+  #ifdef DEVICE_004
+  Device_id[x]=4;Device_ptr[x++]=&Device_004;
   #endif
 
-  #ifdef DEVICE_05
-  Device_ptr[x++]=&Device_05;
+  #ifdef DEVICE_005
+  Device_id[x]=5;Device_ptr[x++]=&Device_005;
   #endif
 
-  #ifdef DEVICE_06
-  Device_ptr[x++]=&Device_06;
+  #ifdef DEVICE_006
+  Device_id[x]=6;Device_ptr[x++]=&Device_006;
   #endif
 
-  #ifdef DEVICE_07
-  Device_ptr[x++]=&Device_07;
+  #ifdef DEVICE_007
+  Device_id[x]=7;Device_ptr[x++]=&Device_007;
   #endif
 
-  #ifdef DEVICE_08
-  Device_ptr[x++]=&Device_08;
+  #ifdef DEVICE_008
+  Device_id[x]=8;Device_ptr[x++]=&Device_008;
   #endif
 
-  #ifdef DEVICE_09
-  Device_ptr[x++]=&Device_09;
+  #ifdef DEVICE_009
+  Device_id[x]=9;Device_ptr[x++]=&Device_009;
   #endif
 
-  #ifdef DEVICE_10
-  Device_ptr[x++]=&Device_10;
+  #ifdef DEVICE_010
+  Device_id[x]=10;Device_ptr[x++]=&Device_010;
   #endif
 
-  #ifdef DEVICE_11
-  Device_ptr[x++]=&Device_11;
+  #ifdef DEVICE_011
+  Device_id[x]=11;Device_ptr[x++]=&Device_011;
   #endif
 
-  #ifdef DEVICE_12
-  Device_ptr[x++]=&Device_12;
+  #ifdef DEVICE_012
+  Device_id[x]=12;Device_ptr[x++]=&Device_012;
   #endif
 
-  #ifdef DEVICE_13
-  Device_ptr[x++]=&Device_13;
+  #ifdef DEVICE_013
+  Device_id[x]=13;Device_ptr[x++]=&Device_013;
   #endif
 
-  #ifdef DEVICE_14
-  Device_ptr[x++]=&Device_14;
+  #ifdef DEVICE_014
+  Device_id[x]=14;Device_ptr[x++]=&Device_014;
   #endif
 
-  #ifdef DEVICE_15
-  Device_ptr[x++]=&Device_15;
+  #ifdef DEVICE_015
+  Device_id[x]=15;Device_ptr[x++]=&Device_015;
   #endif
 
-  #ifdef DEVICE_16
-  Device_ptr[x++]=&Device_16;
+  #ifdef DEVICE_016
+  Device_id[x]=16;Device_ptr[x++]=&Device_016;
   #endif
 
-  #ifdef DEVICE_17
-  Device_ptr[x++]=&Device_17;
+  #ifdef DEVICE_017
+  Device_id[x]=17;Device_ptr[x++]=&Device_017;
   #endif
 
-  #ifdef DEVICE_18
-  Device_ptr[x++]=&Device_18;
+  #ifdef DEVICE_018
+  Device_id[x]=18;Device_ptr[x++]=&Device_018;
   #endif
 
-  #ifdef DEVICE_19
-  Device_ptr[x++]=&Device_19;
+  #ifdef DEVICE_019
+  Device_id[x]=19;Device_ptr[x++]=&Device_019;
   #endif
 
-  #ifdef DEVICE_20
-  Device_ptr[x++]=&Device_20;
+  #ifdef DEVICE_020
+  Device_id[x]=20;Device_ptr[x++]=&Device_020;
   #endif
 
-  #ifdef DEVICE_21
-  Device_ptr[x++]=&Device_21;
+  #ifdef DEVICE_021
+  Device_id[x]=21;Device_ptr[x++]=&Device_021;
   #endif
 
-  #ifdef DEVICE_22
-  Device_ptr[x++]=&Device_22;
+  #ifdef DEVICE_022
+  Device_id[x]=22;Device_ptr[x++]=&Device_022;
   #endif
 
-  #ifdef DEVICE_23
-  Device_ptr[x++]=&Device_23;
+  #ifdef DEVICE_023
+  Device_id[x]=23;Device_ptr[x++]=&Device_023;
   #endif
 
-  #ifdef DEVICE_24
-  Device_ptr[x++]=&Device_24;
+  #ifdef DEVICE_024
+  Device_id[x]=24;Device_ptr[x++]=&Device_024;
   #endif
 
-  #ifdef DEVICE_99
-  Device_ptr[x++]=&Device_99;
+  #ifdef DEVICE_255
+  Device_id[x]=255;Device_ptr[x++]=&Device_255;
   #endif    
 
   // Initialiseer alle devices door aanroep met verwerkingsparameter DEVICE_INIT

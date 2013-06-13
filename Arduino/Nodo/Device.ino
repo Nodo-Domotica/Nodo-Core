@@ -77,17 +77,18 @@
  *
  \*********************************************************************************************/
 
-#ifdef DEVICE_01
+#ifdef DEVICE_001
 #define KAKU_CodeLength    12  // aantal data bits
 #define KAKU_T            350  // us
 
-boolean Device_01(byte function, struct NodoEventStruct *event, char *string)
+boolean Device_001(byte function, struct NodoEventStruct *event, char *string)
   {
   boolean success=false;
   
   switch(function)
     {
-    #ifdef DEVICE_CORE_01
+    #ifdef DEVICE_CORE_001
+
     case DEVICE_RAWSIGNAL_IN:
       {
       int i,j;
@@ -119,12 +120,7 @@ boolean Device_01(byte function, struct NodoEventStruct *event, char *string)
       break;
       }
       
-    case DEVICE_COMMAND:
-      {
-      // Niet gebruikt voor dit device.
-      break;
-      }
-    #endif //DEVICE_CORE_01
+    #endif //DEVICE_CORE_001
       
     #if NODO_MEGA
     case DEVICE_MMI_IN:
@@ -245,23 +241,18 @@ boolean Device_01(byte function, struct NodoEventStruct *event, char *string)
  *
  \*********************************************************************************************/
 
-#ifdef DEVICE_02
+#ifdef DEVICE_002
 #define KAKU_CodeLength    12  // aantal data bits
 #define KAKU_T            350  // us
 
-boolean Device_02(byte function, struct NodoEventStruct *event, char *string)
+boolean Device_002(byte function, struct NodoEventStruct *event, char *string)
   {
   boolean success=false;
   
   switch(function)
     {
-    #ifdef DEVICE_CORE_02
-    case DEVICE_RAWSIGNAL_IN:
-      {
-      // Niet in gebruik. Een device is altijd In of Uit.
-      break;
-      }
-      
+    #ifdef DEVICE_CORE_002
+    
     case DEVICE_COMMAND:
       {
       unsigned long Bitstream;
@@ -302,7 +293,7 @@ boolean Device_02(byte function, struct NodoEventStruct *event, char *string)
       success=true;
       break;
       }
-    #endif // DEVICE_CORE_02
+    #endif // DEVICE_CORE_002
       
     #if NODO_MEGA
     case DEVICE_MMI_IN:
@@ -422,7 +413,7 @@ boolean Device_02(byte function, struct NodoEventStruct *event, char *string)
  *
  \*********************************************************************************************/
 
-#ifdef DEVICE_03
+#ifdef DEVICE_003
 #define DEVICE_ID 03
 #define DEVICE_NAME "NewKAKU"
 #define NewKAKU_RawSignalLength      132
@@ -432,13 +423,13 @@ boolean Device_02(byte function, struct NodoEventStruct *event, char *string)
 #define NewKAKU_4T                  1100        // us
 #define NewKAKU_8T                  2200        // us, Tijd van de space na de startbit
 
-boolean Device_03(byte function, struct NodoEventStruct *event, char *string)
+boolean Device_003(byte function, struct NodoEventStruct *event, char *string)
   {
   boolean success=false;
   
   switch(function)
     {
-    #ifdef DEVICE_CORE_03
+    #ifdef DEVICE_CORE_003
     case DEVICE_RAWSIGNAL_IN:
       {
       unsigned long bitstream=0L;
@@ -493,7 +484,7 @@ boolean Device_03(byte function, struct NodoEventStruct *event, char *string)
           
         // Commando en Dim deel
         if(i>140)
-          event->Par1++;                             // Dim level. +1 omdat gebruiker dim level begint bij één.
+          event->Par1++;                             // Dim level. +1 omdat gebruiker dim level begint bij Ã©Ã©n.
         else
           event->Par1=((bitstream>>4)&0x01)?VALUE_ON:VALUE_OFF; // On/Off bit omzetten naar een Nodo waarde. 
         event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
@@ -505,7 +496,7 @@ boolean Device_03(byte function, struct NodoEventStruct *event, char *string)
       
     case DEVICE_COMMAND:
       break;
-    #endif // DEVICE_CORE_03
+    #endif // DEVICE_CORE_003
       
     #if NODO_MEGA
     case DEVICE_MMI_IN:
@@ -611,7 +602,7 @@ boolean Device_03(byte function, struct NodoEventStruct *event, char *string)
  *
  \*********************************************************************************************/
 
-#ifdef DEVICE_04
+#ifdef DEVICE_004
 #define DEVICE_ID 04
 #define DEVICE_NAME "SendNewKAKU"
 #define NewKAKU_RawSignalLength      132
@@ -621,13 +612,13 @@ boolean Device_03(byte function, struct NodoEventStruct *event, char *string)
 #define NewKAKU_4T                  1100        // us
 #define NewKAKU_8T                  2200        // us, Tijd van de space na de startbit
 
-boolean Device_04(byte function, struct NodoEventStruct *event, char *string)
+boolean Device_004(byte function, struct NodoEventStruct *event, char *string)
   {
   boolean success=false;
   
   switch(function)
     {
-    #ifdef DEVICE_CORE_04
+    #ifdef DEVICE_CORE_004
     case DEVICE_RAWSIGNAL_IN:
       break;
       
@@ -691,7 +682,7 @@ boolean Device_04(byte function, struct NodoEventStruct *event, char *string)
       success=true;
       break;
       }
-    #endif // DEVICE_CORE_04
+    #endif // DEVICE_CORE_004
       
     #if NODO_MEGA
     case DEVICE_MMI_IN:
@@ -787,10 +778,10 @@ boolean Device_04(byte function, struct NodoEventStruct *event, char *string)
  * De sensor kan volgens de paracitaire mode worden aangesloten. De signaallijn tevens verbinden met een 4K7 naar de Vcc/+5
  * Deze fucntie kan worden gebruikt voor alle Wired poorten van de Nodo.
  * Er wordt gebruik gemaakt van de ROM-skip techniek, dus er worden geen adressering gebruikt.
- * Dit betekent max. Ã©Ã©n sensor per poort. Dit om (veel) geheugen te besparen.  *
+ * Dit betekent max. ÃƒÂ©ÃƒÂ©n sensor per poort. Dit om (veel) geheugen te besparen.  *
  \*********************************************************************************************/
 
-#ifdef DEVICE_05
+#ifdef DEVICE_005
 
 // Ieder device heeft een uniek ID. Deze worden onderhouden door het Nodo team. Als je een device hebt geprogrammeerd
 // die van waarde kan zijn voor andere gebruikers, meldt deze dan aan bij het Nodo team zodat deze kan worden meegenomen
@@ -802,16 +793,14 @@ uint8_t DallasPin;
 // of een script. Geef hier de naam op. De afhandeling is niet hoofdletter gevoelig.
 #define DEVICE_NAME "TempRead"
 
-boolean Device_05(byte function, struct NodoEventStruct *event, char *string)
+boolean Device_005(byte function, struct NodoEventStruct *event, char *string)
   {
   boolean success=false;
   static byte Call_Status = 0x00; // Each bit represents one relative port. 0=not called before, 1=already called before. 
   
   switch(function)
     {
-    #ifdef DEVICE_CORE_05
-    case DEVICE_RAWSIGNAL_IN:
-      break;
+    #ifdef DEVICE_CORE_005
       
     case DEVICE_COMMAND:
       {
@@ -861,7 +850,7 @@ boolean Device_05(byte function, struct NodoEventStruct *event, char *string)
         }
       break;
       }
-    #endif // DEVICE_CORE_05
+    #endif // DEVICE_CORE_005
       
     #if NODO_MEGA
     case DEVICE_MMI_IN:
@@ -899,7 +888,7 @@ boolean Device_05(byte function, struct NodoEventStruct *event, char *string)
   }
 #endif //DEVICE_05
 
-#ifdef DEVICE_CORE_05
+#ifdef DEVICE_CORE_005
 uint8_t DS_read(void)
   {
   uint8_t bitMask;
@@ -990,19 +979,19 @@ uint8_t DS_reset()
  * Dit protocol gebruikt twee variabelen, 1 voor temperatuur en 1 voor luchtvochtigheid
  \*********************************************************************************************/
 
-#ifdef DEVICE_06
+#ifdef DEVICE_006
 #define DEVICE_ID 06
 #define DEVICE_NAME "DHT11Read"
 uint8_t DHT11_Pin;
 
-boolean Device_06(byte function, struct NodoEventStruct *event, char *string)
+boolean Device_006(byte function, struct NodoEventStruct *event, char *string)
 {
 
   boolean success=false;
 
   switch(function)
   {
-#ifdef DEVICE_CORE_06
+#ifdef DEVICE_CORE_006
   case DEVICE_RAWSIGNAL_IN:
     break;
 
@@ -1056,7 +1045,7 @@ boolean Device_06(byte function, struct NodoEventStruct *event, char *string)
 
     break;
     }
-#endif // DEVICE_CORE_06
+#endif // DEVICE_CORE_006
 
 #if NODO_MEGA
   case DEVICE_MMI_IN:
@@ -1090,7 +1079,7 @@ boolean Device_06(byte function, struct NodoEventStruct *event, char *string)
   return success;
 }
 
-#ifdef DEVICE_CORE_06
+#ifdef DEVICE_CORE_006
 /*********************************************************************************************\
  * DHT11 sub to get an 8 bit value from the receiving bitstream
  \*********************************************************************************************/
@@ -1110,7 +1099,7 @@ byte read_dht11_dat()
   interrupts();
   return result;
 }
-#endif //DEVICE_CORE_06
+#endif //DEVICE_CORE_006
 #endif //DEVICE_06
 
 
@@ -1118,7 +1107,7 @@ byte read_dht11_dat()
 //############################### Generic code for all Alecto devices  ##################################
 //#######################################################################################################
 
-#if defined(DEVICE_CORE_08) || defined(DEVICE_CORE_09) || defined(DEVICE_CORE_10)
+#if defined(DEVICE_CORE_008) || defined(DEVICE_CORE_009) || defined(DEVICE_CORE_010)
 byte ProtocolAlectoValidID[5];
 byte ProtocolAlectoVar[5];
 unsigned int ProtocolAlectoRainBase=0;
@@ -1211,19 +1200,19 @@ byte ProtocolAlectoCheckID(byte checkID)
  *   F = Checksum
  \*********************************************************************************************/
  
-#ifdef DEVICE_08
+#ifdef DEVICE_008
 #define DEVICE_ID 8
 #define DEVICE_NAME "AlectoV1"
 
 #define WS3500_PULSECOUNT 74
 
-boolean Device_08(byte function, struct NodoEventStruct *event, char *string)
+boolean Device_008(byte function, struct NodoEventStruct *event, char *string)
 {
   boolean success=false;
 
   switch(function)
   {
-#ifdef DEVICE_CORE_08
+#ifdef DEVICE_CORE_008
   case DEVICE_RAWSIGNAL_IN:
     {
       if (RawSignal.Number != WS3500_PULSECOUNT) return false;
@@ -1361,7 +1350,7 @@ boolean Device_08(byte function, struct NodoEventStruct *event, char *string)
       }
     break;
     }
-#endif // DEVICE_CORE_08
+#endif // DEVICE_CORE_008
 
 #if NODO_MEGA
   case DEVICE_MMI_IN:
@@ -1449,7 +1438,7 @@ boolean Device_08(byte function, struct NodoEventStruct *event, char *string)
  * M = Checksum
  \*********************************************************************************************/
 
-#ifdef DEVICE_09
+#ifdef DEVICE_009
 #define DEVICE_ID 9
 #define DEVICE_NAME "AlectoV2"
 
@@ -1457,13 +1446,13 @@ boolean Device_08(byte function, struct NodoEventStruct *event, char *string)
 #define ACH2010_MIN_PULSECOUNT 160 // reduce this value (144?) in case of bad reception
 #define ACH2010_MAX_PULSECOUNT 160
 
-boolean Device_09(byte function, struct NodoEventStruct *event, char *string)
+boolean Device_009(byte function, struct NodoEventStruct *event, char *string)
 {
   boolean success=false;
 
   switch(function)
   {
-#ifdef DEVICE_CORE_09
+#ifdef DEVICE_CORE_009
   case DEVICE_RAWSIGNAL_IN:
     {
       if (!(((RawSignal.Number >= ACH2010_MIN_PULSECOUNT) && (RawSignal.Number <= ACH2010_MAX_PULSECOUNT)) || (RawSignal.Number == DKW2012_PULSECOUNT))) return false;
@@ -1549,7 +1538,7 @@ boolean Device_09(byte function, struct NodoEventStruct *event, char *string)
       }
     break;
     }
-#endif // DEVICE_CORE_09
+#endif // DEVICE_CORE_009
 
 #if NODO_MEGA
   case DEVICE_MMI_IN:
@@ -1623,20 +1612,20 @@ boolean Device_09(byte function, struct NodoEventStruct *event, char *string)
  * F = Checksum
  \*********************************************************************************************/
  
-#ifdef DEVICE_10
+#ifdef DEVICE_010
 #define DEVICE_ID 10
 #define DEVICE_NAME "AlectoV3"
 
 #define WS1100_PULSECOUNT 94
 #define WS1200_PULSECOUNT 126
 
-boolean Device_10(byte function, struct NodoEventStruct *event, char *string)
+boolean Device_010(byte function, struct NodoEventStruct *event, char *string)
 {
   boolean success=false;
 
   switch(function)
   {
-#ifdef DEVICE_CORE_10
+#ifdef DEVICE_CORE_010
   case DEVICE_RAWSIGNAL_IN:
     {
       if ((RawSignal.Number != WS1100_PULSECOUNT) && (RawSignal.Number != WS1200_PULSECOUNT)) return false;
@@ -1730,7 +1719,7 @@ boolean Device_10(byte function, struct NodoEventStruct *event, char *string)
       }
     break;
     }
-#endif // DEVICE_CORE_10
+#endif // DEVICE_CORE_010
 
 #if NODO_MEGA
   case DEVICE_MMI_IN:
@@ -1801,7 +1790,7 @@ boolean Device_10(byte function, struct NodoEventStruct *event, char *string)
  *   K = Checksum, sum of nibbles C,D,E,F,G,H,I,J
  **********************************************************************************************/
  
-#ifdef DEVICE_12
+#ifdef DEVICE_012
 #define DEVICE_ID 12
 #define DEVICE_NAME   "OregonV2"
 
@@ -1816,13 +1805,13 @@ boolean Device_10(byte function, struct NodoEventStruct *event, char *string)
 byte ProtocolOregonValidID[5];
 byte ProtocolOregonVar[5];
 
-boolean Device_12(byte function, struct NodoEventStruct *event, char *string)
+boolean Device_012(byte function, struct NodoEventStruct *event, char *string)
 {
   boolean success=false;
 
   switch(function)
   {
-#ifdef DEVICE_CORE_12
+#ifdef DEVICE_CORE_012
   case DEVICE_RAWSIGNAL_IN:
     {
       RawSignal.Multiply=50;
@@ -1924,7 +1913,7 @@ boolean Device_12(byte function, struct NodoEventStruct *event, char *string)
       }
     break;
     }
-#endif // DEVICE_CORE_12
+#endif // DEVICE_CORE_012
 
 #if NODO_MEGA
   case DEVICE_MMI_IN:
@@ -1958,7 +1947,7 @@ boolean Device_12(byte function, struct NodoEventStruct *event, char *string)
   return success;
 }
 
-#ifdef DEVICE_CORE_12
+#ifdef DEVICE_CORE_012
 /*********************************************************************************************\
  * Check for valid sensor ID
  \*********************************************************************************************/
@@ -1967,7 +1956,7 @@ byte ProtocolOregonCheckID(byte checkID)
   for (byte x=0; x<5; x++) if (ProtocolOregonValidID[x] == checkID) return ProtocolOregonVar[x];
   return 0;
 }
-#endif //DEVICE_CORE_12
+#endif //DEVICE_CORE_012
 #endif //DEVICE_12
 
 
@@ -1998,17 +1987,17 @@ byte ProtocolOregonCheckID(byte checkID)
 #define FA20RFLOW                   1300
 #define FA20RFHIGH                  2600
 
-#ifdef DEVICE_13
+#ifdef DEVICE_013
 #define DEVICE_ID 13
 #define DEVICE_NAME "SmokeAlert"
 
-boolean Device_13(byte function, struct NodoEventStruct *event, char *string)
+boolean Device_013(byte function, struct NodoEventStruct *event, char *string)
 {
   boolean success=false;
 
   switch(function)
   {
-#ifdef DEVICE_CORE_13
+#ifdef DEVICE_CORE_013
   case DEVICE_RAWSIGNAL_IN:
     {
       RawSignal.Multiply=50;
@@ -2033,7 +2022,7 @@ boolean Device_13(byte function, struct NodoEventStruct *event, char *string)
     {
       break;
     }
-#endif // DEVICE_CORE_13
+#endif // DEVICE_CORE_013
 
 #if NODO_MEGA
   case DEVICE_MMI_IN:
@@ -2082,17 +2071,17 @@ boolean Device_13(byte function, struct NodoEventStruct *event, char *string)
  * Let op: De rookmelder geeft alarm zolang dit bericht wordt verzonden en stopt daarna automatisch
  \*********************************************************************************************/
 
-#ifdef DEVICE_14
+#ifdef DEVICE_014
 #define DEVICE_ID 14
 #define DEVICE_NAME "SmokeAlertSend"
 
-boolean Device_14(byte function, struct NodoEventStruct *event, char *string)
+boolean Device_014(byte function, struct NodoEventStruct *event, char *string)
   {
   boolean success=false;
 
   switch(function)
   {
-#ifdef DEVICE_CORE_14
+#ifdef DEVICE_CORE_014
   case DEVICE_RAWSIGNAL_IN:
     {
       break;
@@ -2122,7 +2111,7 @@ boolean Device_14(byte function, struct NodoEventStruct *event, char *string)
     for (byte x =0; x<50; x++) RawSendRF();
     break;
     } 
-#endif // DEVICE_CORE_14
+#endif // DEVICE_CORE_014
 
 #if NODO_MEGA
   case DEVICE_MMI_IN:
@@ -2187,17 +2176,17 @@ boolean Device_14(byte function, struct NodoEventStruct *event, char *string)
 #define HomeEasy_ShortHigh  200      // us
 #define HomeEasy_ShortLow   150      // us
 
-#ifdef DEVICE_15
+#ifdef DEVICE_015
 #define DEVICE_ID 15
 #define DEVICE_NAME "HomeEasy"
 
-boolean Device_15(byte function, struct NodoEventStruct *event, char *string)
+boolean Device_015(byte function, struct NodoEventStruct *event, char *string)
 {
   boolean success=false;
 
   switch(function)
   {
-#ifdef DEVICE_CORE_15
+#ifdef DEVICE_CORE_015
   case DEVICE_RAWSIGNAL_IN:
     {
       unsigned long address = 0;
@@ -2244,7 +2233,7 @@ boolean Device_15(byte function, struct NodoEventStruct *event, char *string)
 
   case DEVICE_COMMAND:
     break;
-#endif // DEVICE_CORE_15
+#endif // DEVICE_CORE_015
 
 #if NODO_MEGA
   case DEVICE_MMI_IN:
@@ -2322,17 +2311,17 @@ boolean Device_15(byte function, struct NodoEventStruct *event, char *string)
  * Syntax             : "HomeEasySend <Adres>,<On|Off|>
  \*********************************************************************************************/
 
-#ifdef DEVICE_16
+#ifdef DEVICE_016
 #define DEVICE_ID 16
 #define DEVICE_NAME "HomeEasySend"
 
-boolean Device_16(byte function, struct NodoEventStruct *event, char *string)
+boolean Device_016(byte function, struct NodoEventStruct *event, char *string)
 {
   boolean success=false;
 
   switch(function)
   {
-#ifdef DEVICE_CORE_16
+#ifdef DEVICE_CORE_016
   case DEVICE_RAWSIGNAL_IN:
     break;
 
@@ -2420,7 +2409,7 @@ boolean Device_16(byte function, struct NodoEventStruct *event, char *string)
     success=true;
     break;
     }
-#endif // DEVICE_CORE_16
+#endif // DEVICE_CORE_016
 
 #if NODO_MEGA
   case DEVICE_MMI_IN:
@@ -2507,18 +2496,18 @@ boolean Device_16(byte function, struct NodoEventStruct *event, char *string)
  * 
  \*********************************************************************************************/
  
-#ifdef DEVICE_18
+#ifdef DEVICE_018
 
 #define DEVICE_ID 18
 #define DEVICE_NAME "RawSignalAnalyze"
 
-boolean Device_18(byte function, struct NodoEventStruct *event, char *string)
+boolean Device_018(byte function, struct NodoEventStruct *event, char *string)
   {
   boolean success=false;
   
   switch(function)
     {
-    #ifdef DEVICE_CORE_18
+    #ifdef DEVICE_CORE_018
     case DEVICE_RAWSIGNAL_IN:
       {
       return false;
@@ -2725,7 +2714,7 @@ boolean Device_18(byte function, struct NodoEventStruct *event, char *string)
  * Par2 bevat het 32 bits serienummer
  * Dit device genereert een event, zodat actie kan worden ondernomen via de Nodo eventlist indien een bekende tag wordt gebruikt
  \*********************************************************************************************/
-#ifdef DEVICE_19
+#ifdef DEVICE_019
 #define DEVICE_ID       19
 #define DEVICE_NAME "RFID"
 
@@ -2741,7 +2730,7 @@ boolean Device_18(byte function, struct NodoEventStruct *event, char *string)
 #define RX_DELAY_INTRABIT    236
 #define RX_DELAY_STOPBIT     236
 
-#ifdef DEVICE_CORE_19
+#ifdef DEVICE_CORE_019
 uint16_t _buffer_overflow;
 uint8_t _receivePin=RFID_PIN;
 uint8_t _receiveBitMask;
@@ -2751,13 +2740,13 @@ volatile uint8_t _receive_buffer_tail = 0;
 volatile uint8_t _receive_buffer_head = 0;
 #endif
 
-boolean Device_19(byte function, struct NodoEventStruct *event, char *string)
+boolean Device_019(byte function, struct NodoEventStruct *event, char *string)
 {
   boolean success=false;
 
   switch(function)
   {
-#ifdef DEVICE_CORE_19
+#ifdef DEVICE_CORE_019
   case DEVICE_INIT:
     {
       // Init IO pin
@@ -2854,7 +2843,7 @@ boolean Device_19(byte function, struct NodoEventStruct *event, char *string)
     {
       break;
     }
-#endif // DEVICE_CORE_19
+#endif // DEVICE_CORE_019
 
 #if NODO_MEGA
   case DEVICE_MMI_IN:
@@ -2895,7 +2884,7 @@ boolean Device_19(byte function, struct NodoEventStruct *event, char *string)
   }      
   return success;
 }
-#ifdef DEVICE_CORE_19
+#ifdef DEVICE_CORE_019
 /*********************************************************************/
 inline void rfidDelay(uint16_t delay) { 
 /*********************************************************************/
@@ -3002,7 +2991,7 @@ ISR(PCINT2_vect) { rfid_handle_interrupt(); }
 ISR(PCINT3_vect) { rfid_handle_interrupt(); }
 #endif
 
-#endif //DEVICE_CORE_19
+#endif //DEVICE_CORE_019
 #endif //DEVICE_19
 
 
@@ -3027,7 +3016,7 @@ ISR(PCINT3_vect) { rfid_handle_interrupt(); }
  * Dit protocol gebruikt twee variabelen, 1 voor temperatuur en 1 voor luchtdruk
  \*********************************************************************************************/
 
-#ifdef DEVICE_20
+#ifdef DEVICE_020
 #define DEVICE_ID 20
 #define DEVICE_NAME "BMP085Read"
 
@@ -3054,14 +3043,14 @@ uint8_t oversampling = BMP085_ULTRAHIGHRES;
 int16_t ac1, ac2, ac3, b1, b2, mb, mc, md;
 uint16_t ac4, ac5, ac6;
 
-boolean Device_20(byte function, struct NodoEventStruct *event, char *string)
+boolean Device_020(byte function, struct NodoEventStruct *event, char *string)
 {
 
   boolean success=false;
 
   switch(function)
   {
-#ifdef DEVICE_CORE_20
+#ifdef DEVICE_CORE_020
 
   case DEVICE_INIT:
     {
@@ -3085,7 +3074,7 @@ boolean Device_20(byte function, struct NodoEventStruct *event, char *string)
     QueueAdd(event);
     success=true;
     }
-#endif // DEVICE_CORE_20
+#endif // DEVICE_CORE_020
 
 #if NODO_MEGA
   case DEVICE_MMI_IN:
@@ -3118,7 +3107,7 @@ boolean Device_20(byte function, struct NodoEventStruct *event, char *string)
   return success;
 }
 
-#ifdef DEVICE_CORE_20
+#ifdef DEVICE_CORE_020
 /*********************************************************************/
 boolean bmp085_begin()
 /*********************************************************************/
@@ -3275,7 +3264,7 @@ void bmp085_write8(uint8_t a, uint8_t d)
   Wire.write(d);  // write data
   Wire.endTransmission(); // end transmission
 }
-#endif //DEVICE_CORE_20
+#endif //DEVICE_CORE_020
 #endif //DEVICE_20
 
 
@@ -3302,7 +3291,7 @@ void bmp085_write8(uint8_t a, uint8_t d)
  * Er kan dus maar 1 display per I2C bus worden aangesloten.
  \*********************************************************************************************/
 
-#ifdef DEVICE_21
+#ifdef DEVICE_021
 #define DEVICE_ID 21
 #define DEVICE_NAME "LCDI2CWrite"
 
@@ -3367,7 +3356,7 @@ PROGMEM const char *LCDText_tabel[]={LCD_01,LCD_02,LCD_03,LCD_04,LCD_05,LCD_06,L
 #define Rw B00000010  // Read/Write bit
 #define Rs B00000001  // Register select bit
 
-#ifdef DEVICE_CORE_21
+#ifdef DEVICE_CORE_021
 uint8_t _displayfunction;
 uint8_t _displaycontrol;
 uint8_t _displaymode;
@@ -3375,13 +3364,13 @@ uint8_t _numlines;
 uint8_t _backlightval=LCD_BACKLIGHT;
 #endif
 
-boolean Device_21(byte function, struct NodoEventStruct *event, char *string)
+boolean Device_021(byte function, struct NodoEventStruct *event, char *string)
 {
   boolean success=false;
 
   switch(function)
   {
-#ifdef DEVICE_CORE_21
+#ifdef DEVICE_CORE_021
     case DEVICE_INIT:
       {
         _displayfunction = LCD_2LINE;
@@ -3431,7 +3420,7 @@ boolean Device_21(byte function, struct NodoEventStruct *event, char *string)
         }
       break;
       }
-#endif // DEVICE_CORE_21
+#endif // DEVICE_CORE_021
 
     #if NODO_MEGA
     case DEVICE_MMI_IN:
@@ -3465,7 +3454,7 @@ boolean Device_21(byte function, struct NodoEventStruct *event, char *string)
   return success;
 }
 
-#ifdef DEVICE_CORE_21
+#ifdef DEVICE_CORE_021
 /*********************************************************************/
 void LCD_I2C_printline(byte row, char* message)
 /*********************************************************************/
@@ -3558,7 +3547,7 @@ void LCD_I2C_pulseEnable(uint8_t _data){
   LCD_I2C_expanderWrite(_data & ~En);	// En low
   delayMicroseconds(50);		// commands need > 37us to settle
 } 
-#endif //DEVICE_CORE_21
+#endif //DEVICE_CORE_021
 #endif //DEVICE_21
 
           
@@ -3601,12 +3590,12 @@ void LCD_I2C_pulseEnable(uint8_t _data){
  *
  \*********************************************************************************************/
  
-#ifdef DEVICE_22
+#ifdef DEVICE_022
 #define DEVICE_NAME_22 "HCSR04_Read"
 
-boolean Device_22(byte function, struct NodoEventStruct *event, char *string)
+boolean Device_022(byte function, struct NodoEventStruct *event, char *string)
   {
-  #ifdef DEVICE_CORE_22
+  #ifdef DEVICE_CORE_022
   boolean success=false;
   switch(function)
     {        
@@ -3718,7 +3707,7 @@ boolean Device_22(byte function, struct NodoEventStruct *event, char *string)
  *             
  \*********************************************************************************************/
  
-#ifdef DEVICE_23
+#ifdef DEVICE_023
 #define DEVICE_ID 23
 #define DEVICE_NAME_23 "LED"
 #if NODO_MEGA
@@ -3731,14 +3720,14 @@ boolean Device_22(byte function, struct NodoEventStruct *event, char *string)
 #define PWM_B    11
 #endif
 
-boolean Device_23(byte function, struct NodoEventStruct *event, char *string)
+boolean Device_023(byte function, struct NodoEventStruct *event, char *string)
   {
   boolean success=false;
   static byte InputLevelR=0, InputLevelG=0, InputLevelB=0;
   static byte OutputLevelR=0, OutputLevelG=0, OutputLevelB=0;
   static byte fade=VALUE_OFF;
   
-  #ifdef DEVICE_CORE_23
+  #ifdef DEVICE_CORE_023
   switch(function)
     { 
     case DEVICE_ONCE_A_SECOND:
