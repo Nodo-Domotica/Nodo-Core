@@ -1,30 +1,5 @@
 
 /*********************************************************************************************\
- * Eenvoudige check of event een Nodo commando is die voor deze Nodo bestemd is.
- * Test NIET op geldigheid van de parameters
- * geeft de waarde 0, NODO_TYPE_EVENT of NODO_TYPE_COMMAND terug.
- \*********************************************************************************************/
-byte NodoType(struct NodoEventStruct *InEvent)
-  {
-  int x;
-  
-  if(InEvent->Flags & TRANSMISSION_EVENT)
-     return NODO_TYPE_EVENT;
-
-  if(InEvent->Flags & TRANSMISSION_COMMAND)
-     return NODO_TYPE_COMMAND;  
-
-  if(InEvent->Command>=FIRST_EVENT && InEvent->Command<=LAST_EVENT)
-    return NODO_TYPE_EVENT;
-
-  if(InEvent->Command>=FIRST_COMMAND && InEvent->Command<=LAST_COMMAND)
-    return NODO_TYPE_COMMAND;
-
-  return false;
-  }  
-  
- 
-/*********************************************************************************************\
  * Deze functie checked of de code die ontvangen is een uitvoerbare opdracht is/
  * Als het een correct commando is wordt deze uitgevoerd en 
  * true teruggegeven. Zo niet dan wordt er een 'false' retour gegeven.
@@ -48,7 +23,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         UserVar[EventToExecute->Par1-1]+=ul2float(EventToExecute->Par2);
-        TempEvent.Command      = CMD_VARIABLE_EVENT;
+        TempEvent.Command      = EVENT_VARIABLE;
         TempEvent.Par2         = float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Direction    = VALUE_DIRECTION_INPUT;
         TempEvent.Port         = VALUE_SOURCE_VARIABLE;
@@ -60,7 +35,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         UserVar[EventToExecute->Par1-1]-=ul2float(EventToExecute->Par2);
-        TempEvent.Command      = CMD_VARIABLE_EVENT;
+        TempEvent.Command      = EVENT_VARIABLE;
         TempEvent.Par2         = float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Direction    = VALUE_DIRECTION_INPUT;
         TempEvent.Port         = VALUE_SOURCE_VARIABLE;
@@ -72,7 +47,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afgevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         UserVar[EventToExecute->Par1-1]=ul2float(EventToExecute->Par2);
-        TempEvent.Command=CMD_VARIABLE_EVENT;
+        TempEvent.Command=EVENT_VARIABLE;
         TempEvent.Port=VALUE_SOURCE_VARIABLE;
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
         ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
@@ -84,7 +59,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         {
         UserVar[EventToExecute->Par1-1]=analogRead(PIN_WIRED_IN_1+EventToExecute->Par2-1);
         TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
-        TempEvent.Command=CMD_VARIABLE_EVENT;
+        TempEvent.Command=EVENT_VARIABLE;
         TempEvent.Port=VALUE_SOURCE_VARIABLE;
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
         ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
@@ -95,7 +70,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         UserVar[EventToExecute->Par1-1]=UserVar[EventToExecute->Par2-1];
-        TempEvent.Command=CMD_VARIABLE_EVENT;
+        TempEvent.Command=EVENT_VARIABLE;
         TempEvent.Port=VALUE_SOURCE_VARIABLE;
         TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
@@ -114,7 +89,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
           
           switch(LastReceived.Command)
             {
-            case CMD_VARIABLE_EVENT:
+            case EVENT_VARIABLE:
               UserVar[x]=ul2float(LastReceived.Par2);
               break;
             case CMD_WIRED_ANALOG:
@@ -123,7 +98,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
               UserVar[x]=0;
             }          
             
-          TempEvent.Command=CMD_VARIABLE_EVENT;
+          TempEvent.Command=EVENT_VARIABLE;
           TempEvent.Port=VALUE_SOURCE_VARIABLE;
           TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
           TempEvent.Direction=VALUE_DIRECTION_INPUT;
@@ -142,7 +117,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         {
         UserVar[EventToExecute->Par1-1]=PulseCount;
         TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
-        TempEvent.Command=CMD_VARIABLE_EVENT;
+        TempEvent.Command=EVENT_VARIABLE;
         TempEvent.Port=VALUE_SOURCE_VARIABLE;
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
         PulseCount=0;
@@ -160,7 +135,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         {
         UserVar[EventToExecute->Par1-1]=PulseTime;
         TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
-        TempEvent.Command=CMD_VARIABLE_EVENT;
+        TempEvent.Command=EVENT_VARIABLE;
         TempEvent.Port=VALUE_SOURCE_VARIABLE;
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
         ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
@@ -225,7 +200,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
     case CMD_SEND_USEREVENT:
       ClearEvent(&TempEvent);    
       TempEvent.Port                  = VALUE_ALL;
-      TempEvent.Command               = CMD_USEREVENT;
+      TempEvent.Command               = EVENT_USEREVENT;
       TempEvent.Par1                  = EventToExecute->Par1;
       TempEvent.Par2                  = EventToExecute->Par2;
       SendEvent(&TempEvent, false, true,true);
@@ -343,7 +318,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       ClearEvent(&TempEvent);
       TempEvent=LastReceived;
       TempEvent.Port=EventToExecute->Par1==0?VALUE_ALL:EventToExecute->Par1;
-      SendEvent(&TempEvent, TempEvent.Command==CMD_RAWSIGNAL,true, true);
+      SendEvent(&TempEvent, TempEvent.Command==EVENT_RAWSIGNAL,true, true);
       break;        
 
     case CMD_SOUND: 
@@ -517,7 +492,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         {
         ClearEvent(&TempEvent);
         TempEvent.Port=VALUE_ALL;
-        TempEvent.Command=CMD_RAWSIGNAL;
+        TempEvent.Command=EVENT_RAWSIGNAL;
         TempEvent.Par1=EventToExecute->Par1;
         TempEvent.Par2=EventToExecute->Par2;
         RawSignal.Repeats=5;

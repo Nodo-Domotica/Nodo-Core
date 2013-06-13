@@ -32,7 +32,7 @@ byte ProcessEvent1(struct NodoEventStruct *Event)
     ClearEvent(&TempEvent);    
     TempEvent.DestinationUnit       = Event->SourceUnit;
     TempEvent.Port                  = Event->Port;
-    TempEvent.Flags                 = TRANSMISSION_SYSTEM;    // Event is niet voor de gebruiker bedoeld
+    TempEvent.Type                  = EVENT_TYPE_SYSTEM;    // Event is niet voor de gebruiker bedoeld
     TempEvent.Command               = SYSTEM_COMMAND_CONFIRMED;
     TempEvent.Par1                  = RequestForConfirm;
     SendEvent(&TempEvent, false,false,false);
@@ -67,10 +67,10 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
         {
         // onderstaande mogen WEL worden doorgelaten als de lock aan staat
         case CMD_LOCK:                // om weer te kunnen unlocken
-        case CMD_USEREVENT:           // Noodzakelijk voor uitwisseling userevents tussen Nodo.
+        case EVENT_USEREVENT:           // Noodzakelijk voor uitwisseling userevents tussen Nodo.
         case CMD_STATUS:              // uitvragen status is onschuldig en kan handig zijn.
-        case CMD_MESSAGE:             // Voorkomt dat een message van een andere Nodo een error genereert
-        case CMD_BOOT_EVENT:          // Voorkomt dat een boot van een adere Nodo een error genereert
+        case EVENT_MESSAGE:             // Voorkomt dat een message van een andere Nodo een error genereert
+        case EVENT_BOOT:          // Voorkomt dat een boot van een adere Nodo een error genereert
           break;
 
         default:
@@ -80,13 +80,12 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
       }
     }
 
-  if(Continue && (Event->Flags & TRANSMISSION_SYSTEM))
+  if(Continue && (Event->Type == EVENT_TYPE_SYSTEM))
     {
     Continue=false;
     }
 
   if(Continue && (Event->Flags & TRANSMISSION_QUEUE))
-  
     {
     QueueAdd(Event);
     Continue=false;
@@ -95,7 +94,7 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
 
   #if NODO_MEGA
   if(bitRead(HW_Config,HW_SDCARD))
-    if(Event->Command==CMD_RAWSIGNAL && Settings.RawSignalSave==VALUE_ON)
+    if(Event->Command==EVENT_RAWSIGNAL && Settings.RawSignalSave==VALUE_ON)
       if(!RawSignalExist(Event->Par2))
         RawSignalSave(Event->Par2);
   #endif    
@@ -112,18 +111,22 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
   
     else
       {
+
       // ############# Verwerk event ################  
-      // Roep het device aan voor verwerking van de parameter DECIVE_COMMAND. Zorg voor aanroep dat een invalide commando
-      // niet wordt uitgevoerd, anders een vastloper.
-      if(Event->Command>=CMD_DEVICE_FIRST && Event->Command<=CMD_DEVICE_FIRST+DEVICE_MAX && (Device_ptr[Event->Command-CMD_DEVICE_FIRST]!=0))
-        Device_ptr[Event->Command-CMD_DEVICE_FIRST](DEVICE_COMMAND,Event,0); 
+
+      // Voer decice commando uit.
+      if(Event->Type & EVENT_TYPE_DEVICE)
+        {
+        for(x=0;Device_ptr[x]!=0 && x<DEVICE_MAX; x++)
+          if(Device_id[x]==Event->Command)
+            Device_ptr[x](DEVICE_COMMAND,Event,0); 
+        }
 
       // als het een Nodo event is en een geldig commando, dan deze uitvoeren
-      if(NodoType(Event)==NODO_TYPE_COMMAND)
-        { // Er is een geldig Commando voor deze Nodo binnengekomen                   
+      if(Event->Type == EVENT_TYPE_COMMAND)
         error=ExecuteCommand(Event);
-        }        
-      else
+        
+      else if(Event->Type == EVENT_TYPE_EVENT)
         {// Er is een Event binnengekomen  
         // loop de gehele eventlist langs om te kijken of er een treffer is.   
         struct NodoEventStruct EventlistEvent, EventlistAction;   
@@ -188,7 +191,7 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
     return false;  
 
   // ### WILDCARD:      
-  if(MacroEvent->Command == CMD_COMMAND_WILDCARD) // is regel uit de eventlist een WildCard?
+  if(MacroEvent->Command == EVENT_WILDCARD) // is regel uit de eventlist een WildCard?
     if( MacroEvent->Par1==VALUE_ALL        ||  MacroEvent->Par1==Event->Port)
       if((MacroEvent->Par2&0xff)==VALUE_ALL  || (MacroEvent->Par2&0xff)==Event->Command)
         if(((MacroEvent->Par2>>8)&0xff)==0       || ((MacroEvent->Par2>>8)&0xff)==Event->SourceUnit)
@@ -196,7 +199,7 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
           
   // USEREVENT:
   // beschouw bij een UserEvent een 0 voor Par1 of Par2 als een wildcard.
-  if(Event->Command==CMD_USEREVENT && MacroEvent->Command==CMD_USEREVENT)// Command
+  if(Event->Command==EVENT_USEREVENT && MacroEvent->Command==EVENT_USEREVENT)// Command
     {
     if( (Event->Par1==MacroEvent->Par1 || MacroEvent->Par1==0 || Event->Par1==0)  // Par1 deel een match
      && (Event->Par2==MacroEvent->Par2 || MacroEvent->Par2==0 || Event->Par2==0)) // Par2 deel een match
@@ -214,7 +217,7 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
        return true; 
 
   // ### TIME:
-  if(Event->Command==CMD_TIME) // het binnengekomen event is een clock event.
+  if(Event->Command==EVENT_TIME) // het binnengekomen event is een clock event.
     {
     // Structuur technisch hoort onderstaande regel hier thuis, maar qua performance niet optimaal!
     unsigned long Cmp=MacroEvent->Par2;
@@ -256,6 +259,7 @@ struct QueueStruct
   byte Flags;
   byte Port;
   byte Unit;
+  byte Type;
   byte Command;
   byte Par1;
   unsigned long Par2;
@@ -271,6 +275,7 @@ boolean QueueAdd(struct NodoEventStruct *Event)
     Queue[QueuePosition].Flags   = Event->Flags;
     Queue[QueuePosition].Port    = Event->Port;
     Queue[QueuePosition].Unit    = Event->SourceUnit;
+    Queue[QueuePosition].Type    = Event->Type;
     Queue[QueuePosition].Command = Event->Command;
     Queue[QueuePosition].Par1    = Event->Par1;
     Queue[QueuePosition].Par2    = Event->Par2;
@@ -366,10 +371,12 @@ byte QueueSend(void)
       ClearEvent(&Event);
       Event.SourceUnit          = Settings.Unit;
       Event.Port                = Port;
+      Event.Type                = EVENT_TYPE_EVENT | EVENT_TYPE_SYSTEM;      
       Event.Command             = CMD_SENDTO;      
       Event.Par1                = SendQueuePosition;
       Event.Par2                = ID;
-      Event.Flags               = TRANSMISSION_SENDTO | TRANSMISSION_NEXT | TRANSMISSION_LOCK | TRANSMISSION_SYSTEM; 
+      Event.Flags               = TRANSMISSION_SENDTO | TRANSMISSION_NEXT | TRANSMISSION_LOCK;
+      
       SendEvent(&Event,false,false,false);
             
       // Verzend alle events uit de queue. Alleen de bestemmings Nodo zal deze events in de queue plaatsen
@@ -383,6 +390,7 @@ byte QueueSend(void)
         if(x==SendQueuePosition-1)
           Event.Flags = TRANSMISSION_SENDTO;
         
+        Event.Type                = SendQueue[x].Type;
         Event.Command             = SendQueue[x].Command;
         Event.Par1                = SendQueue[x].Par1;
         Event.Par2                = SendQueue[x].Par2;
@@ -446,7 +454,7 @@ void QueueReceive(NodoEventStruct *Event)
   TempEvent.Command             = SYSTEM_COMMAND_CONFIRMED;      
   TempEvent.Par1                = count;
   TempEvent.Port                = Event->Port;
-  TempEvent.Flags               = TRANSMISSION_SYSTEM; 
+  TempEvent.Type                = EVENT_TYPE_SYSTEM; 
 
   SendEvent(&TempEvent,false, false, false);
   Transmission_NodoOnly=false;

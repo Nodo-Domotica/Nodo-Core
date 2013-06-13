@@ -184,5 +184,7 @@ Nog te doen:
 - Testen: Tellen pulsen
 - Testen: Lock mechanisme
 - Methode voor WaitFree is aangepast. Opnieuw testen en fijnafstelling in multi-nodo-omgeving
+- Status EventlistCount klopt niet.
+- Als er via I2C een event binnen komt van een oude versie dan onvoorspelbaare reactie ontvangende Nodo
 
 \*****************************************************************************************/

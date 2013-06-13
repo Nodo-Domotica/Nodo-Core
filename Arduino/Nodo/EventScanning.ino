@@ -76,8 +76,9 @@ boolean ScanEvent(struct NodoEventStruct *Event)// Deze routine maakt deel uit v
     // Als er een specifieke Nodo is geselecteerd, dan moeten andere Nodo's worden gelocked.
     // Hierdoor is het mogelijk dat een master en een slave Nodo tijdelijk exclusief gebruik kunnen maken van de bandbreedte
     // zodat de communicatie niet wordt verstoord.  
-    Transmission_SelectedUnit = Event->DestinationUnit;
-   
+    if(Event->DestinationUnit!=0)
+      Transmission_SelectedUnit = Event->DestinationUnit;
+
     // Als het Nodo event voor deze unit bestemd is, dan klaar. Zo niet, dan terugkeren met een false
     // zodat er geen verdere verwerking plaatsvindt.
     if(Event->DestinationUnit==0 || Event->DestinationUnit==Settings.Unit)
@@ -107,7 +108,7 @@ boolean ScanAlarm(struct NodoEventStruct *Event)
           {
           Mask=0xffffffff  ^ (0xFUL <<(y*4)); // Mask maken om de nibble positie y te wissen.
           Cmp&=Mask;                          // Maak nibble leeg
-          Cmp|=(0xFUL<<(y*4));                    // vul met wildcard waarde 0xf
+          Cmp|=(0xFUL<<(y*4));                // vul met wildcard waarde 0xf
           }
         }
       
@@ -120,7 +121,8 @@ boolean ScanAlarm(struct NodoEventStruct *Event)
          ClearEvent(Event);
          Event->Direction=VALUE_DIRECTION_INPUT;
          Event->Port=VALUE_SOURCE_CLOCK;
-         Event->Command=CMD_ALARM;
+         Event->Type=EVENT_TYPE_EVENT;
+         Event->Command=EVENT_ALARM;
          Event->Par1=x+1;
          return true;
          }

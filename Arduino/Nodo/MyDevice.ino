@@ -1,5 +1,5 @@
 //#######################################################################################################
-//#################################### Device-99: MyDevice   ############################################
+//#################################### Device-255: MyDevice   ############################################
 //#######################################################################################################
 
 
@@ -84,19 +84,18 @@
  * besparen en stroomlijn op performance.
  \*********************************************************************************************/
  
-// Compileer de code van dit device alleen als de gebruiker in het Nodo tabblad de definitie DEVICE_99 heeft
+// Compileer de code van dit device alleen als de gebruiker in het Nodo tabblad de definitie DEVICE_255 heeft
 // opgenomen. Is dit niet het geval, dan zal de code ook niet worden gecompileerd en geen geheugenruimte in beslag nemen.
-#ifdef DEVICE_99
+#ifdef DEVICE_255
 
 // Ieder device heeft een uniek ID. Deze worden onderhouden door het Nodo team. Als je een device hebt geprogrammeerd
 // die van waarde kan zijn voor andere gebruikers, meldt deze dan aan bij het Nodo team zodat deze kan worden meegenomen
-// in de Nodo-releases. Device 99 is een "knutsel" device voor de gebruiker.
-#define DEVICE_ID 99
+// in de Nodo-releases. Device 255 is een "knutsel" device voor de gebruiker.
 
 // Een device heeft naast een uniek ID ook een eigen MMI string die de gebruiker kan invoeren via Telnet, Serial, HTTP 
 // of een script. Geef hier de naam op. De afhandeling is niet hoofdletter gevoelig.
-#define DEVICE_NAME_99 "MyDevice"
-boolean Device_99(byte function, struct NodoEventStruct *event, char *string)
+#define DEVICE_NAME_255 "MyDevice"
+boolean Device_255(byte function, struct NodoEventStruct *event, char *string)
   {
   boolean success=false;
 
@@ -110,7 +109,7 @@ boolean Device_99(byte function, struct NodoEventStruct *event, char *string)
   // DEVIDE_ONCE_A_SECOND => ongeveer iedere seconde.
   // DEVICE_INIT          => Eenmalig, direct na opstarten van de Nodo
 
-  #ifdef DEVICE_CORE_99
+  #ifdef DEVICE_CORE_255
   switch(function)
     {    
     case DEVICE_ONCE_A_SECOND:
@@ -168,7 +167,7 @@ boolean Device_99(byte function, struct NodoEventStruct *event, char *string)
       if(GetArgv(string,TempStr,1))
         {
         // Als het door de gebruiker ingegeven ommando/event overeenkomt met de naam van dit device...
-        if(strcasecmp(TempStr,DEVICE_NAME_99)==0)
+        if(strcasecmp(TempStr,DEVICE_NAME_255)==0)
           {
           // Vervolgens tweede parameter gebruiken
           if(GetArgv(string,TempStr,2)) 
@@ -202,7 +201,7 @@ boolean Device_99(byte function, struct NodoEventStruct *event, char *string)
       // Dit deel van de code wordt alleen uitgevoerd door een Nodo Mega, omdat alleen deze over een MMI beschikt.
       Serial.println(F("*** debug: MyDevice: DEVICE_MMI_OUT")); //??? Debug
 
-      strcpy(string,DEVICE_NAME_99);            // Commando 
+      strcpy(string,DEVICE_NAME_255);            // Commando 
       strcat(string," ");
       strcat(string,int2str(event->Par1));      // Parameter-1 (8-bit)
       strcat(string,",");
@@ -215,5 +214,5 @@ boolean Device_99(byte function, struct NodoEventStruct *event, char *string)
   #endif // CORE
   return success;
   }
-#endif //DEVICE_99
+#endif //DEVICE_255
 

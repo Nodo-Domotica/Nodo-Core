@@ -27,14 +27,20 @@ boolean AnalyzeRawSignal(struct NodoEventStruct *E)
   if(Transmission_NodoOnly)
     return false;
 
-  // Loop de devices langs. Indien een device dit nodig heeft, zal deze het rawsignal gebruiken,
+  // Loop de devices langs. Indien een device dit nodig heeft, zal deze het rawsignal gebruiken en omzetten naar een
+  // geldig event.
   for(byte x=0;x<DEVICE_MAX && Device_ptr[x]!=0; x++)
     {
-    E->Command=CMD_DEVICE_FIRST+x;
     if(Device_ptr[x](DEVICE_RAWSIGNAL_IN,E,0))
+      {
+      E->Command=Device_id[x];
+      E->Type=EVENT_TYPE_EVENT | EVENT_TYPE_DEVICE;
       return true;
+      }
     }
 
+  // als er geen enkel geldig signaaltype uit de pulsenreeks kon worden gedestilleerd, dan resteert niets anders
+  // dan deze weer te geven als een RawSignal.
   if(Settings.RawSignalReceive==VALUE_ON)
     if(RawSignal_2_32bit(E))
       return true;
@@ -111,14 +117,14 @@ boolean RawSignal_2_32bit(struct NodoEventStruct *event)
   else
     event->Par2=CodeS^CodeP; // data zat in beide = bi-phase, maak er een leuke mix van.
 
-  event->Par2=(event->Par2&0x0fffffff)|((unsigned long)SIGNAL_TYPE_UNKNOWN<<28);
+  event->Par2&=0x0fffffff;
   
   // Indien ehet signaal via RF is binnengekomen, dan gebruik maken van het feit dat RF signalen herhaald worden verzonden.
   // Herhalingen vormen dan de checksum. Voor IR is dit niet nodig omdat de kans op ruis veel kleiner is
   RawSignal.Repeats=(RawSignal.Source==VALUE_SOURCE_RF);
   event->SourceUnit=0;  
   event->DestinationUnit=0;
-  event->Command=CMD_RAWSIGNAL;
+  event->Command=EVENT_RAWSIGNAL;
   event->Par1=0;
   return true;
   }
@@ -162,12 +168,10 @@ void RawSendRF(void)
 
   delay(5);// kleine pause om de zender de tijd te geven om stabiel te worden 
 
-  // ??? 
   // LET OP: In de Arduino versie 1.0.1 zit een bug in de funktie delayMicroSeconds(). Als deze wordt aangeroepen met een nul dan zal er
   // een pause optreden van 16 milliseconden. Omdat het laatste element van RawSignal af sluit met een nul (omdat de space van de stopbit 
   // feitelijk niet bestaat) zal deze bug optreden. Daarom wordt deze op 1 gezet om de bug te omzeilen. 
   RawSignal.Pulses[RawSignal.Number]=1;
-
   for(byte y=0; y<RawSignal.Repeats; y++) // herhaal verzenden RF code
     {
     x=1;
@@ -275,10 +279,11 @@ struct DataBlockStruct
   byte SourceUnit;
   byte DestinationUnit;
   byte Flags;
-  byte Checksum;
+  byte Type;
   byte Command;
   byte Par1;
   unsigned long Par2;
+  byte Checksum;
   };  
 
 void Nodo_2_RawSignal(struct NodoEventStruct *Event)
@@ -292,7 +297,7 @@ void Nodo_2_RawSignal(struct NodoEventStruct *Event)
   DataBlock.SourceUnit=Event->SourceUnit | (Settings.Home<<5);  
   DataBlock.DestinationUnit=Event->DestinationUnit;
   DataBlock.Flags=Event->Flags;
-  DataBlock.Checksum=Event->Checksum;
+  DataBlock.Type=Event->Type;
   DataBlock.Command=Event->Command;
   DataBlock.Par1=Event->Par1;
   DataBlock.Par2=Event->Par2;
@@ -439,10 +444,12 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   ES->DestinationUnit=Transmission_SendToUnit;
   byte Port=ES->Port;
 
-  // Als een andere Nodo actief is en excusief communiceert met een andere Nodo, c.q. de ruimte geclaimd is, dan mag deze Nodo niet zenden.
+  // Als een Nodo actief is en excusief communiceert met een andere Nodo, c.q. de ether heeft geclaimd is, dan mag deze Nodo niet zenden.
   // In dit geval resteert deze Nodo niets anders dan even te wachten tot de lijn weer vrijgegeven wordt of de wachttijd verlopen is.
   // Als er een timeout optreedt, dan de blokkade opheffen. Dit ter voorkoming dat Nodo's oneindig wachten op vrije lijn.
   // Uitzondering is als de Nodo zelf de master was, dan deze mag altijd zenden.
+
+
   if(Transmission_SelectedUnit!=0 && Transmission_SelectedUnit!=Settings.Unit && !Transmission_ThisUnitIsMaster)
     {
     #if NODO_MEGA
@@ -502,7 +509,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     }
   #endif 
 
-  // Verstuur event vaiI2C
+  // Verstuur event via I2C
   // LET OP:  Voor I2C geldt een uitzondering: Als een device een signaal verzendt, dan mag dit commando alleen er toe leiden dat het
   //          RawSignal wordt verzonden via RF/IR. Anders zal het commando worden verstuurd over I2C waarna de Nodo's op I2C het commando nogmaal
   //          zullen uitvoeren. Zo zal er een ongewenste loop ontstaan.
@@ -565,7 +572,7 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
     Event->SourceUnit=DataBlock.SourceUnit&0x1F;  // Maskeer de bits van het Home adres.
     Event->DestinationUnit=DataBlock.DestinationUnit;
     Event->Flags=DataBlock.Flags;
-    Event->Checksum=DataBlock.Checksum;
+    Event->Type=DataBlock.Type;
     Event->Command=DataBlock.Command;
     Event->Par1=DataBlock.Par1;
     Event->Par2=DataBlock.Par2;
@@ -619,16 +626,16 @@ void ReceiveI2C(int n)
  \*********************************************************************************************/
 boolean SendI2C(struct NodoEventStruct *EventBlock)
   {  
-  byte x;
+  byte Checksum, x;
 
   // bereken checksum: crc-8 uit alle bytes in de queue.
   byte b,*B=(byte*)EventBlock;
-  delay(10);
+  delay(10);//??? kan deze weg???
   for(int y=0;y<UNIT_MAX;y++)
     {            
     // verzend Event 
     Wire.beginTransmission(I2C_START_ADDRESS+y);
-    byte Checksum=0;
+    Checksum=0;
     for(x=0;x<sizeof(struct NodoEventStruct);x++)
       {
       b=*(B+x); 
@@ -1330,8 +1337,7 @@ boolean RawSignal_2_Nodo_OLD(struct NodoEventStruct *Event)
   Event->SourceUnit=(bitstream>>24)&0xf;
   Event->DestinationUnit=0;
   Event->Flags=0;
-  Event->Checksum=0;
-  Event->Command=CMD_USEREVENT;
+  Event->Command=EVENT_USEREVENT;
   Event->Par1=(bitstream>>8)&0xff;
   Event->Par2=bitstream&0xff;
 
@@ -1340,4 +1346,5 @@ boolean RawSignal_2_Nodo_OLD(struct NodoEventStruct *Event)
 
   return true;  
   }
+
 

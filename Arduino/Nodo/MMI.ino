@@ -16,7 +16,7 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
   int x;
 
   // Systeem events niet weergeven.
-  if(Event->Flags & TRANSMISSION_SYSTEM)
+  if(Event->Type == EVENT_TYPE_SYSTEM || Event->Type==EVENT_TYPE_UNKNOWN)
     return;
   
   char* StringToPrint=(char*)malloc(100);
@@ -229,19 +229,20 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
   // worden getoond.   
   byte ParameterToView[8]={0,0,0,0,0,0,0,0};
 
-  // Devices hebben een eigen MMI. 
-  // Roep het device aan voor verwerking van de parameter DEVICE_MMI_OUT. Zorg voor aanroep dat een invalide commando
-  // niet wordt uitgevoerd, anders een vastloper.
-  if(Event->Command>=CMD_DEVICE_FIRST && Event->Command<=CMD_DEVICE_FIRST+DEVICE_MAX && (Device_ptr[Event->Command-CMD_DEVICE_FIRST]!=0))
-    Device_ptr[Event->Command-CMD_DEVICE_FIRST](DEVICE_MMI_OUT,Event,EventString);
-    
+  // Devices hebben een eigen MMI, Roep het device aan voor verwerking van de parameter DEVICE_MMI_OUT.
+  // zoek het device op in de devices tabel en laat de string vullen.
+  if(Event->Type & EVENT_TYPE_DEVICE)
+    for(x=0;Device_ptr[x]!=0 && x<DEVICE_MAX; x++)
+      if(Device_id[x]==Event->Command)
+        Device_ptr[x](DEVICE_MMI_OUT,Event,EventString);
+
   if(EventString[0]==0)
     {
     strcat(EventString,cmd2str(Event->Command));
     strcat(EventString," ");      
     switch(Event->Command)
       {
-      case CMD_TIME:
+      case EVENT_TIME:
         ParameterToView[0]=PAR2_TIME;         // tijd
         ParameterToView[1]=PAR2_WDAY;         // dag van de week of een wildcard
         break;
@@ -271,7 +272,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_VARIABLE_SET:
       case CMD_VARIABLE_INC:
       case CMD_VARIABLE_DEC:
-      case CMD_VARIABLE_EVENT:
+      case EVENT_VARIABLE:
         ParameterToView[0]=PAR1_INT;
         ParameterToView[1]=PAR2_FLOAT;
         break;
@@ -279,7 +280,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       // Par2 als hex waarde
       case CMD_RAWSIGNAL_SEND:
       case CMD_RAWSIGNAL_ERASE:
-      case CMD_RAWSIGNAL:
+      case EVENT_RAWSIGNAL:
         ParameterToView[0]=PAR2_INT_HEX;
         break;
 
@@ -312,7 +313,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_DELAY:
       case CMD_WIRED_PULLUP:
       case CMD_WIRED_OUT:
-      case CMD_WIRED_IN_EVENT:
+      case EVENT_WIRED_IN:
       case CMD_UNIT_SET:
         ParameterToView[0]=PAR1_INT;
         ParameterToView[1]=PAR2_TEXT;
@@ -352,10 +353,10 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       // Par1 als waarde en par2 niet
       case CMD_EVENTLIST_SHOW:
       case CMD_EVENTLIST_ERASE:
-      case CMD_TIMER_EVENT:
-      case CMD_ALARM:
-      case CMD_BOOT_EVENT:
-      case CMD_NEWNODO:
+      case EVENT_TIMER:
+      case EVENT_ALARM:
+      case EVENT_BOOT:
+      case EVENT_NEWNODO:
       case CMD_HOME_SET:
       case CMD_VARIABLE_PULSE_TIME:
       case CMD_VARIABLE_PULSE_COUNT:
@@ -378,7 +379,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         break;
         
       // Twee getallen en een aanvullende tekst
-      case CMD_MESSAGE:
+      case EVENT_MESSAGE:
         ParameterToView[0]=PAR1_INT;
         ParameterToView[1]=PAR1_TEXT;
         break;
@@ -606,19 +607,24 @@ int ExecuteLine(char *Line, byte Port)
         switch(EventToExecute.Command)
           {
           //test; geen, altijd goed
+          case EVENT_MESSAGE:
+          case EVENT_CLOCK_DAYLIGHT:
+          case EVENT_USEREVENT:
+            EventToExecute.Type=EVENT_TYPE_EVENT;
+            break; 
+
+          //test; geen, altijd goed
           case CMD_EVENTLIST_ERASE:
           case CMD_STOP:
           case CMD_RESET:
-          case CMD_MESSAGE:
           case CMD_REBOOT:
           case CMD_SETTINGS_SAVE:
-          case CMD_CLOCK_EVENT_DAYLIGHT:
           case CMD_STATUS:
           case CMD_DELAY:
           case CMD_SOUND: 
-          case CMD_USEREVENT:
           case CMD_SEND_USEREVENT:
           case CMD_CLOCK_SYNC:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             break; 
       
           case CMD_LOG:
@@ -626,48 +632,62 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_RAWSIGNAL_SAVE:
           case CMD_DEBUG:
           case CMD_ECHO:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(EventToExecute.Par1!=VALUE_OFF && EventToExecute.Par1!=VALUE_ON)
               error=MESSAGE_02;
            break;
                         
           case CMD_TIMER_SET:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(EventToExecute.Par1>TIMER_MAX)
               error=MESSAGE_02;
             break;
                   
           case CMD_TIMER_SET_VARIABLE:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(EventToExecute.Par1>TIMER_MAX || EventToExecute.Par2<1 || EventToExecute.Par2>USER_VARIABLES_MAX)
               error=MESSAGE_02;
             break;
                   
           case CMD_WAIT_EVENT:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if((EventToExecute.Par1<1 || EventToExecute.Par1>UNIT_MAX) &&  EventToExecute.Par1!=VALUE_ALL)
               error=MESSAGE_02;
             break;
       
-          case CMD_ALARM:
+          case EVENT_ALARM:
+            EventToExecute.Type=EVENT_TYPE_EVENT;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>ALARM_MAX)
               error=MESSAGE_02;
 
+
+          case EVENT_NEWNODO:
+          case EVENT_BOOT:
+            EventToExecute.Type=EVENT_TYPE_EVENT;
+            if(EventToExecute.Par1<1 || EventToExecute.Par1>UNIT_MAX)
+              error=MESSAGE_02;
+            break;
+
           case CMD_UNIT_SET:
-          case CMD_NEWNODO:
-          case CMD_BOOT_EVENT:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>UNIT_MAX)
               error=MESSAGE_02;
             break;
       
           case CMD_HOME_SET:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>HOME_MAX)
               error=MESSAGE_02;
             break;
       
           case CMD_ANALYSE_SETTINGS:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>50)
               error=MESSAGE_02;
             break;
       
           case CMD_VARIABLE_PULSE_TIME:
-          case CMD_VARIABLE_PULSE_COUNT:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
               error=MESSAGE_02;
             break;
@@ -676,6 +696,7 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_BREAK_ON_VAR_MORE_VAR:
           case CMD_VARIABLE_VARIABLE:
           case CMD_VARIABLE_FROM_EVENT:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
               error=MESSAGE_02;
             if(EventToExecute.Par2<1 || EventToExecute.Par2>USER_VARIABLES_MAX)
@@ -683,6 +704,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
               
           case CMD_VARIABLE_SET_WIRED_ANALOG:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
               error=MESSAGE_02;
             if(EventToExecute.Par2<1 || EventToExecute.Par2>WIRED_PORTS)
@@ -690,8 +712,15 @@ int ExecuteLine(char *Line, byte Port)
             break;
               
           // test:EventToExecute.Par1 binnen bereik maximaal beschikbare timers
-          case CMD_TIMER_EVENT:
           case CMD_TIMER_RANDOM:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            if(EventToExecute.Par1<1 || EventToExecute.Par1>TIMER_MAX)
+              error=MESSAGE_02;
+            break;
+
+          // test:EventToExecute.Par1 binnen bereik maximaal beschikbare timers
+          case EVENT_TIMER:
+            EventToExecute.Type=EVENT_TYPE_EVENT;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>TIMER_MAX)
               error=MESSAGE_02;
             break;
@@ -700,6 +729,7 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_BREAK_ON_TIME_LATER:
           case CMD_BREAK_ON_TIME_EARLIER:
           case CMD_CLOCK_TIME:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             error=MESSAGE_02;
             if(GetArgv(Command,TmpStr1,2))
               {
@@ -712,6 +742,7 @@ int ExecuteLine(char *Line, byte Port)
     
           // geldige datum
           case CMD_CLOCK_DATE:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             // datum in Par2 volgens format DDMMYYYY. 
             EventToExecute.Par1=0;
             if((EventToExecute.Par2=str2uldate(Command))==0xffffffff)
@@ -719,7 +750,8 @@ int ExecuteLine(char *Line, byte Port)
             break;
             
           // test:EventToExecute.Par1 binnen bereik maximaal beschikbare wired poorten.
-          case CMD_WIRED_IN_EVENT:
+          case EVENT_WIRED_IN:
+            EventToExecute.Type=EVENT_TYPE_EVENT;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>WIRED_PORTS)
               error=MESSAGE_02;
             if(EventToExecute.Par2!=VALUE_ON && EventToExecute.Par2!=VALUE_OFF)
@@ -727,6 +759,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
       
           case CMD_WIRED_OUT:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(EventToExecute.Par1>WIRED_PORTS)
               error=MESSAGE_02;
             if(EventToExecute.Par2!=VALUE_ON && EventToExecute.Par2!=VALUE_OFF)
@@ -734,6 +767,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
       
           case CMD_WIRED_PULLUP:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>WIRED_PORTS)
               error=MESSAGE_02;
             if(EventToExecute.Par2!=VALUE_ON && EventToExecute.Par2!=VALUE_OFF)
@@ -742,6 +776,7 @@ int ExecuteLine(char *Line, byte Port)
 
           
           case CMD_SEND_EVENT:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             switch(EventToExecute.Par1)
               {
               case VALUE_ALL:
@@ -755,7 +790,8 @@ int ExecuteLine(char *Line, byte Port)
               }
             break;
       
-          case CMD_COMMAND_WILDCARD:
+          case CMD_COMMAND_WILDCARD://??? dit is een EVENT_ in plaats van een CMD_
+            EventToExecute.Type=EVENT_TYPE_EVENT;
             switch(EventToExecute.Par1)
               {
               case VALUE_ALL:
@@ -778,17 +814,17 @@ int ExecuteLine(char *Line, byte Port)
             switch(EventToExecute.Par2)
               {
               case VALUE_ALL:
-              case CMD_USEREVENT:
-              case CMD_CLOCK_EVENT_DAYLIGHT:
-              case CMD_TIME:
-              case CMD_RAWSIGNAL:
-              case CMD_TIMER_EVENT:
-              case CMD_WIRED_IN_EVENT:
-              case CMD_VARIABLE_EVENT:
-              case CMD_NEWNODO:
-              case CMD_MESSAGE:
-              case CMD_BOOT_EVENT:
-              case CMD_ALARM:
+              case EVENT_USEREVENT:
+              case EVENT_CLOCK_DAYLIGHT:
+              case EVENT_TIME:
+              case EVENT_RAWSIGNAL:
+              case EVENT_TIMER:
+              case EVENT_WIRED_IN:
+              case EVENT_VARIABLE:
+              case EVENT_NEWNODO:
+              case EVENT_MESSAGE:
+              case EVENT_BOOT:
+              case EVENT_ALARM:
                 break;
               default:
                 error=MESSAGE_02;
@@ -798,16 +834,18 @@ int ExecuteLine(char *Line, byte Port)
               EventToExecute.Par2|=(str2int(TmpStr1)<<8);
 
             break;
-      
+            
            // par1 alleen On of Off.
            // par2 mag alles zijn
           case CMD_BREAK_ON_DAYLIGHT:
           case CMD_WAITFREERF:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(EventToExecute.Par1!=VALUE_OFF && EventToExecute.Par1!=VALUE_ON)
               error=MESSAGE_02;
             break;
       
           case CMD_OUTPUT:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(EventToExecute.Par1!=VALUE_SOURCE_I2C && EventToExecute.Par1!=VALUE_SOURCE_IR && EventToExecute.Par1!=VALUE_SOURCE_RF && EventToExecute.Par1!=VALUE_SOURCE_HTTP)
               error=MESSAGE_02;
             if(EventToExecute.Par2!=VALUE_OFF && EventToExecute.Par2!=VALUE_ON)
@@ -815,6 +853,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
 
           case CMD_SENDTO:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             Transmission_SendToAll=EventToExecute.Par2;
             if(EventToExecute.Par1<=UNIT_MAX)
               {
@@ -827,6 +866,7 @@ int ExecuteLine(char *Line, byte Port)
             break;    
 
           case CMD_LOCK: // Hier wordt de lock code o.b.v. het wachtwoord ingesteld. Alleen van toepassing voor de Mega
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             EventToExecute.Par2=0L;
             for(x=0;x<strlen(Settings.Password);x++)
               {
@@ -835,7 +875,8 @@ int ExecuteLine(char *Line, byte Port)
               }
             break;
 
-          case CMD_VARIABLE_SET://?? Is
+          case CMD_VARIABLE_SET:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(EventToExecute.Par1>USER_VARIABLES_MAX)
               error=MESSAGE_02;
             else if(GetArgv(Command,TmpStr1,3))// waarde van de variabele
@@ -850,7 +891,17 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_BREAK_ON_VAR_NEQU:
           case CMD_VARIABLE_DEC:
           case CMD_VARIABLE_INC:
-          case CMD_VARIABLE_EVENT:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
+              error=MESSAGE_02;
+            else if(GetArgv(Command,TmpStr1,3))// waarde van de variabele
+              EventToExecute.Par2=float2ul(atof(TmpStr1));
+            else
+              error=MESSAGE_02;
+            break;
+
+          case EVENT_VARIABLE:
+            EventToExecute.Type=EVENT_TYPE_EVENT;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
               error=MESSAGE_02;
             else if(GetArgv(Command,TmpStr1,3))// waarde van de variabele
@@ -862,6 +913,7 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_WIRED_ANALOG:
           case CMD_WIRED_THRESHOLD:
           case CMD_WIRED_SMITTTRIGGER:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>WIRED_PORTS)
               error=MESSAGE_02;
             else if(GetArgv(Command,TmpStr1,3))
@@ -869,9 +921,10 @@ int ExecuteLine(char *Line, byte Port)
             break;
               
           case CMD_EVENTLIST_WRITE:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(Transmission_SendToUnit==Settings.Unit || Transmission_SendToUnit==0)
               {                          
-              if(EventToExecute.Par1<=EVENTLIST_MAX)
+              if(EventToExecute.Par1<=EventlistMax)
                 {
                 EventlistWriteLine=EventToExecute.Par1;
                 State_EventlistWrite=1;
@@ -884,6 +937,7 @@ int ExecuteLine(char *Line, byte Port)
 
           case CMD_PASSWORD:
             {
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             TmpStr1[0]=0;
             GetArgv(Command,TmpStr1,2);
             TmpStr1[25]=0; // voor geval de string te lang is.
@@ -907,6 +961,7 @@ int ExecuteLine(char *Line, byte Port)
 
           case CMD_ID:
             {
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             TmpStr1[0]=0;
             GetArgv(Command,TmpStr1,2);
             TmpStr1[9]=0; // voor geval de string te lang is.
@@ -917,6 +972,7 @@ int ExecuteLine(char *Line, byte Port)
 
           case CMD_TEMP:
             {
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             x=StringFind(Command,cmd2str(CMD_TEMP))+strlen(cmd2str(CMD_TEMP));
             while(Command[x]==' ')x++;             // eventuele spaties verwijderen
             strcpy(TmpStr1,Command+x);             // Alles na de "temp" hoort bij de variabele
@@ -926,7 +982,8 @@ int ExecuteLine(char *Line, byte Port)
             break;
             }  
           
-          case CMD_RAWSIGNAL:
+          case EVENT_RAWSIGNAL:
+            EventToExecute.Type=EVENT_TYPE_EVENT;
             if(GetArgv(Command,TmpStr1,2))
               {
               EventToExecute.Par1=0;
@@ -935,6 +992,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
 
           case CMD_ALARM_SET:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             // Commando format: [AlarmSet <AlarmNumber 1..4>, <Enabled On|Off>, <Time HHMM>, <Day 1..7>]
             //                  [Time <Time HHMM>, <Day 1..7>]
             // We moeten wat truucs uithalen om al deze info in een 32-bit variabele te krijgen.
@@ -1000,12 +1058,13 @@ int ExecuteLine(char *Line, byte Port)
 
             break;
           
-          case CMD_TIME:
+          case EVENT_TIME:
             // Event format: [Time <Time HHMM>, <Day 1..7>]
             // We moeten wat truucs uithalen om al deze info in een 32-bit variabele te krijgen.
             // Tijd wordt in Par2 opgeslagen volgens volgende format: MSB-0000WWWWAAAABBBBCCCCDDDD-LSB
             // WWWW=weekdag, AAAA=Uren tiental, BBBB=uren, CCCC=minuten tiental DDDD=minuten
             {              
+            EventToExecute.Type=EVENT_TYPE_EVENT;
             if(GetArgv(Command,TmpStr1,2)) // Minutes
               {
               EventToExecute.Par2=0L; 
@@ -1047,6 +1106,7 @@ int ExecuteLine(char *Line, byte Port)
             }
 
           case CMD_FILE_LOG:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(GetArgv(Command,TmpStr1,2))
               {
               strcat(TmpStr1,".dat");
@@ -1058,6 +1118,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
           
           case CMD_FILE_ERASE:      
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(GetArgv(Command,TmpStr1,2))
               {
               strcat(TmpStr1,".dat");
@@ -1071,6 +1132,7 @@ int ExecuteLine(char *Line, byte Port)
     
           case CMD_RAWSIGNAL_ERASE:      
           case CMD_RAWSIGNAL_SEND:      
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             // Haal Par1 uit het commando. let op Par1 gebruiker is een 32-bit hex-getal die wordt opgeslagen in struct Par2.
             if(GetArgv(Command,TmpStr1,2))
               {
@@ -1082,6 +1144,7 @@ int ExecuteLine(char *Line, byte Port)
     
           case CMD_FILE_GET_HTTP:
             {
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(GetArgv(Command,TmpStr1,2))
               {
               Led(BLUE);
@@ -1095,6 +1158,7 @@ int ExecuteLine(char *Line, byte Port)
             
           case CMD_FILE_SHOW:
             {
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             char FileName[13];
             TmpStr1[8]=0;// voor de zekerheid te lange filename afkappen
             if(GetArgv(Command,FileName,2))
@@ -1109,6 +1173,7 @@ int ExecuteLine(char *Line, byte Port)
     
           case CMD_FILE_EXECUTE:
             {
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(EventToExecute.Par2==VALUE_ON)
               EventToExecute.Par1=VALUE_ON;
             else
@@ -1128,7 +1193,8 @@ int ExecuteLine(char *Line, byte Port)
             }
     
           case CMD_EVENTLIST_SHOW:
-            if(EventToExecute.Par1<=EVENTLIST_MAX)
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            if(EventToExecute.Par1<=EventlistMax)
               {
               PrintString(ProgmemString(Text_22),Port);
               if(EventToExecute.Par1==0)
@@ -1152,6 +1218,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
               
           case CMD_NODO_IP:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(GetArgv(Command,TmpStr1,2))
               if(!str2ip(TmpStr1,Settings.Nodo_IP))
                 error=MESSAGE_02;
@@ -1159,6 +1226,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
             
           case CMD_CLIENT_IP:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(GetArgv(Command,TmpStr1,2))
               if(!str2ip(TmpStr1,Settings.Client_IP))
                 error=MESSAGE_02;
@@ -1166,12 +1234,14 @@ int ExecuteLine(char *Line, byte Port)
             break;
             
           case CMD_SUBNET:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(GetArgv(Command,TmpStr1,2))
               if(!str2ip(TmpStr1,Settings.Subnet))
                 error=MESSAGE_02;
             break;
             
           case CMD_DNS_SERVER:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(GetArgv(Command,TmpStr1,2))
               if(!str2ip(TmpStr1,Settings.DnsServer))
                 error=MESSAGE_02;
@@ -1179,6 +1249,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
             
           case CMD_GATEWAY:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(GetArgv(Command,TmpStr1,2))
               if(!str2ip(TmpStr1,Settings.Gateway))
                 error=MESSAGE_02;
@@ -1186,6 +1257,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
             
           case CMD_EVENTLIST_FILE:
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             Led(BLUE);
             if(GetArgv(Command,TmpStr1,2))
               {
@@ -1201,6 +1273,7 @@ int ExecuteLine(char *Line, byte Port)
 
           case CMD_IF:
             {
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             x=StringFind(Command," ") ;           // laat x wijzen direct NA het if commando.
             strcpy(TmpStr1,Command+x);            // Alles na de "if" hoort bij de voorwaarde
 
@@ -1271,6 +1344,7 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_PORT_SERVER:
           case CMD_PORT_CLIENT:
             {
+            EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(GetArgv(Command,TmpStr1,2))
               EventToExecute.Par2=str2int(TmpStr1);
             if(EventToExecute.Par2 > 0xffff)
@@ -1280,18 +1354,19 @@ int ExecuteLine(char *Line, byte Port)
 
           default:
             {              
-            // Loop de devices langs om te checken if er een hit is. Zo ja, dan heeft de Device_xx funktie de struct
-            // met de juiste waarden gevuld. Koppel eveneens het juiste Command aan het event omdat deze binnen de
-            // Device_nn funktie niet bekend is.
+            // Ingevoerde commando is niet gevonden. 
+            // Loop de devices langs om te checken if er een hit is. Zo ja, dan heeft de Device_x funktie de struct
+            // met de juiste waarden gevuld. 
             y=false;
             for(x=0; !y && x<DEVICE_MAX; x++)
               if(Device_ptr[x]!=0)
                 {
-                EventToExecute.Command=CMD_DEVICE_FIRST+x;
+                EventToExecute.Command=Device_id[x];
+                EventToExecute.Type |= EVENT_TYPE_DEVICE;
                 if(Device_ptr[x](DEVICE_MMI_IN,&EventToExecute,Command))
-                  y=true;
+                   y=true;
                 }
-      
+
             if(!y)
               {
               // Als het geen regulier commando was EN geen commando met afwijkende MMI en geen Device, dan kijken of file op SDCard staat)
@@ -1306,7 +1381,7 @@ int ExecuteLine(char *Line, byte Port)
           }// switch(command...@2
             
         if(EventToExecute.Command && error==0)
-          {
+          {            
           // Er kunnen zich twee situaties voordoen:
           //
           // A: Event is voor deze Nodo en moet gewoon worden uitgevoerd;
