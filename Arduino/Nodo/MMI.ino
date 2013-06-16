@@ -16,7 +16,7 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
   int x;
 
   // Systeem events niet weergeven.
-  if(Event->Type == EVENT_TYPE_SYSTEM || Event->Type==EVENT_TYPE_UNKNOWN)
+  if(Event->Type&EVENT_TYPE_SYSTEM || Event->Type==0)
     return;
   
   char* StringToPrint=(char*)malloc(100);
@@ -204,9 +204,10 @@ void PrintString(char* LineToPrint, byte Port)
 
 #define PAR1_INT           1
 #define PAR1_TEXT          2
-#define PAR2_INT           3
-#define PAR2_TEXT          4
-#define PAR2_FLOAT         5
+#define PAR1_MESSAGE       3
+#define PAR2_INT           4
+#define PAR2_TEXT          5
+#define PAR2_FLOAT         6
 #define PAR2_INT_HEX       7
 #define PAR2_DIM           8
 #define PAR2_WDAY          9
@@ -325,7 +326,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         ParameterToView[1]=PAR2_TEXT;
         break;
 
-      case CMD_COMMAND_WILDCARD:
+      case EVENT_WILDCARD:
         ParameterToView[0]=PAR1_TEXT;
         ParameterToView[1]=PAR2_TEXT;
         ParameterToView[2]=PAR3_INT;
@@ -380,8 +381,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         
       // Twee getallen en een aanvullende tekst
       case EVENT_MESSAGE:
-        ParameterToView[0]=PAR1_INT;
-        ParameterToView[1]=PAR1_TEXT;
+        ParameterToView[0]=PAR1_MESSAGE;
         break;
 
       // Par1 als waarde en par2 als waarde
@@ -402,6 +402,12 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
           strcat(EventString,cmd2str(Event->Par1));
           break;
         
+        case PAR1_MESSAGE:
+          strcat(EventString,int2str(Event->Par1-MESSAGE_01+1));
+          strcat(EventString, ": ");
+          strcat(EventString,cmd2str(Event->Par1));
+          break;
+
         case PAR2_INT:
           strcat(EventString,int2str(Event->Par2));
           break;
@@ -607,7 +613,6 @@ int ExecuteLine(char *Line, byte Port)
         switch(EventToExecute.Command)
           {
           //test; geen, altijd goed
-          case EVENT_MESSAGE:
           case EVENT_CLOCK_DAYLIGHT:
           case EVENT_USEREVENT:
             EventToExecute.Type=EVENT_TYPE_EVENT;
@@ -637,6 +642,14 @@ int ExecuteLine(char *Line, byte Port)
               error=MESSAGE_02;
            break;
                         
+          case EVENT_MESSAGE:
+            EventToExecute.Type=EVENT_TYPE_EVENT; 
+            if(EventToExecute.Par1 <1 || (EventToExecute.Par1+MESSAGE_01) > COMMAND_MAX)
+              error=MESSAGE_02;
+            else
+              EventToExecute.Par1 += (MESSAGE_01-1);
+            break;
+              
           case CMD_TIMER_SET:
             EventToExecute.Type=EVENT_TYPE_COMMAND;
             if(EventToExecute.Par1>TIMER_MAX)
@@ -659,7 +672,6 @@ int ExecuteLine(char *Line, byte Port)
             EventToExecute.Type=EVENT_TYPE_EVENT;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>ALARM_MAX)
               error=MESSAGE_02;
-
 
           case EVENT_NEWNODO:
           case EVENT_BOOT:
@@ -790,7 +802,7 @@ int ExecuteLine(char *Line, byte Port)
               }
             break;
       
-          case CMD_COMMAND_WILDCARD://??? dit is een EVENT_ in plaats van een CMD_
+          case EVENT_WILDCARD:
             EventToExecute.Type=EVENT_TYPE_EVENT;
             switch(EventToExecute.Par1)
               {
