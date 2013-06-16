@@ -124,6 +124,7 @@ boolean RawSignal_2_32bit(struct NodoEventStruct *event)
   RawSignal.Repeats=(RawSignal.Source==VALUE_SOURCE_RF);
   event->SourceUnit=0;  
   event->DestinationUnit=0;
+  event->Type=EVENT_TYPE_EVENT;
   event->Command=EVENT_RAWSIGNAL;
   event->Par1=0;
   return true;
@@ -288,24 +289,26 @@ struct DataBlockStruct
 
 void Nodo_2_RawSignal(struct NodoEventStruct *Event)
   {
-  byte BitCounter=1;
-  RawSignal.Repeats=1;
-  RawSignal.Delay=0;
-  RawSignal.Multiply=100;
-
   struct DataBlockStruct DataBlock;
-  DataBlock.SourceUnit=Event->SourceUnit | (Settings.Home<<5);  
-  DataBlock.DestinationUnit=Event->DestinationUnit;
-  DataBlock.Flags=Event->Flags;
-  DataBlock.Type=Event->Type;
-  DataBlock.Command=Event->Command;
-  DataBlock.Par1=Event->Par1;
-  DataBlock.Par2=Event->Par2;
+
+  byte BitCounter           = 1;
+  RawSignal.Repeats         = 1;
+  RawSignal.Delay           = 0;
+  RawSignal.Multiply        = 100;
+
+  DataBlock.SourceUnit      = Event->SourceUnit | (Settings.Home<<5);  
+  DataBlock.DestinationUnit = Event->DestinationUnit;
+  DataBlock.Flags           = Event->Flags;
+  DataBlock.Type            = Event->Type;
+  DataBlock.Command         = Event->Command;
+  DataBlock.Par1            = Event->Par1;
+  DataBlock.Par2            = Event->Par2;
 
   // bereken checksum: crc-8 uit alle bytes in de struct
   byte c=0,*B=(byte*)&DataBlock;
   for(byte x=0;x<sizeof(struct DataBlockStruct);x++)
-    c^=*(B+x); 
+    c^=*(B+x);
+  c^=(SETTINGS_VERSION & 0xff); // Verwerk build in checksum om communicatie ussen verschillende versies te voorkomen 
   DataBlock.Checksum=c;
 
   // begin met een lange startbit. Veilige timing gekozen zodat deze niet gemist kan worden
@@ -471,7 +474,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
 
   if(WaitForFree)
     if(Port==VALUE_SOURCE_RF || Port==VALUE_SOURCE_IR ||(Settings.TransmitRF==VALUE_ON && Port==VALUE_ALL))
-      if(Settings.WaitFree==VALUE_ON && UseRawSignal==false)
+      if(Settings.WaitFree==VALUE_ON)
         WaitFree(VALUE_ALL, WAITFREE_TIMEOUT);
 
   if(!UseRawSignal)
@@ -562,6 +565,7 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
   b=0;
   for(x=0;x<sizeof(struct DataBlockStruct);x++)
     b^=*(B+x); 
+  b^=(SETTINGS_VERSION & 0xff); // Verwerk build in checksum om communicatie ussen verschillende versies te voorkomen 
     
   if(b==0)
     {
@@ -603,6 +607,7 @@ void ReceiveI2C(int n)
       *(B+x)=b; 
       Checksum^=b; 
       }
+    Checksum^=(SETTINGS_VERSION & 0xff); // Verwerk build in checksum om communicatie ussen verschillende versies te voorkomen 
     x++;
     }
 
@@ -642,6 +647,7 @@ boolean SendI2C(struct NodoEventStruct *EventBlock)
       Wire.write(b);
       Checksum^=b; 
       }
+    Checksum^=(SETTINGS_VERSION & 0xff); // Verwerk build in checksum om communicatie ussen verschillende versies te voorkomen 
     Wire.write(Checksum); 
     Wire.endTransmission(false); // verzend de data, sluit af maar geef de bus NIET vrij
     }

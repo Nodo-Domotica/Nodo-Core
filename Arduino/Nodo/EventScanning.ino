@@ -35,7 +35,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)// Deze routine maakt deel uit v
         }
       // anders is het zeer waarschijnlijk een restant van een herhalend signaal. We wachten enige tijd totdat de lijn weer leeg is.
       else
-        WaitFree(VALUE_SOURCE_IR, 5000);
+        WaitFree(VALUE_SOURCE_IR, 5000);// is waarde 5000 niet erg hoog???
       }
     }
 
@@ -52,7 +52,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)// Deze routine maakt deel uit v
         }
       // anders is het zeer waarschijnlijk een restant van een herhalend signaal. We wachten enige tijd totdat de lijn weer leeg is.
       else
-        WaitFree(VALUE_SOURCE_RF, 5000);
+        WaitFree(VALUE_SOURCE_RF, 5000);// Is waarde 5000 niet erg hoog???
       }
     }
   
@@ -60,6 +60,8 @@ boolean ScanEvent(struct NodoEventStruct *Event)// Deze routine maakt deel uit v
     {
     Event->Port=Fetched;
     Event->Direction=VALUE_DIRECTION_INPUT;
+
+    // PrintNodoEvent("Fetched.",Event);//???
 
     // Een event kan een verzoek bevatten om bevestiging. Doe dit dan pas na verwerking.
     if(Event->Flags & TRANSMISSION_CONFIRM)

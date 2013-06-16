@@ -177,7 +177,17 @@ R536:
 - Device_23 toegevoegd: LED-Dimmer.
 
 R537:
--Issue 738: AlectoV1 device
+
+R539:
+- Backup naar SVN
+
+R540:
+- Issue 738: AlectoV1 device
+- Issue 741: BreakOnVarEqu werkt niet meer in R538
+- Issue 743: Device commando - interne structuur
+- Nummering messages is veranderd.
+- Niet compatible build nummers kunnen elkaar nu niet meer zien via IR, RF, I2C.
+
 
 Nog te doen:
 - Testen: [VariableEvent]
@@ -185,6 +195,4 @@ Nog te doen:
 - Testen: Lock mechanisme
 - Methode voor WaitFree is aangepast. Opnieuw testen en fijnafstelling in multi-nodo-omgeving
 - Status EventlistCount klopt niet.
-- Als er via I2C een event binnen komt van een oude versie dan onvoorspelbaare reactie ontvangende Nodo
-
 \*****************************************************************************************/

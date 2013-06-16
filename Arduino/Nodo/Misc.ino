@@ -97,6 +97,7 @@ void RaiseMessage(byte MessageCode)
 
   struct NodoEventStruct TempEvent;
   ClearEvent(&TempEvent);
+  TempEvent.Type      = EVENT_TYPE_EVENT;
   TempEvent.Command   = EVENT_MESSAGE;
   TempEvent.Par1      = MessageCode;
   TempEvent.Direction = VALUE_DIRECTION_INPUT;

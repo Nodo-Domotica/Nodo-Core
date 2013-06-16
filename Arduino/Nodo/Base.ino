@@ -1,7 +1,7 @@
 boolean ExecuteCommand(NodoEventStruct *EventToExecute);//protoype defnieren.
 
-#define NODO_BUILD          539  //??? ophogen bij iedere build
-#define SETTINGS_VERSION     36  
+#define NODO_BUILD          540  //??? ophogen bij iedere build
+#define SETTINGS_VERSION     36  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -33,7 +33,8 @@ prog_char PROGMEM Text_28[] = "RAW"; // Directory op de SDCard voor opslag RawSi
 prog_char PROGMEM Text_30[] = "Terminal connection closed.";
 #endif
 
-#define CMD_DUMMY                       1
+#define CMD_DUMMY                       0
+#define EVENT_USEREVENT                 1
 #define CMD_ALARM_SET                   2
 #define CMD_ANALYSE_SETTINGS            3
 #define CMD_BREAK_ON_DAYLIGHT           4
@@ -51,130 +52,131 @@ prog_char PROGMEM Text_30[] = "Terminal connection closed.";
 #define CMD_CLOCK_SYNC                  16
 #define CMD_DEBUG                       17
 #define CMD_DELAY                       18
-#define CMD_DNS_SERVER                  19
-#define CMD_EVENTLIST_ERASE             20
-#define CMD_EVENTLIST_FILE              21
-#define CMD_EVENTLIST_SHOW              22
-#define CMD_EVENTLIST_WRITE             23
-#define CMD_FILE_ERASE                  24
-#define CMD_FILE_EXECUTE                25
-#define CMD_FILE_GET_HTTP               26
-#define CMD_FILE_LIST                   27
-#define CMD_FILE_LOG                    28
-#define CMD_FILE_SHOW                   29
-#define CMD_FILE_WRITE                  30
-#define CMD_GATEWAY                     31
-#define CMD_HOME_SET                    32
-#define CMD_HTTP_REQUEST                33
-#define CMD_ID                          34
-#define CMD_IF                          35
-#define CMD_LOCK                        36
-#define CMD_LOG                         37
-#define CMD_NODO_IP                     38
-#define CMD_OUTPUT                      39
-#define CMD_PASSWORD                    40
-#define CMD_PORT_SERVER                 41
-#define CMD_PORT_CLIENT                 42
-#define CMD_RAWSIGNAL_ERASE             43
-#define CMD_RAWSIGNAL_LIST              44
-#define CMD_RAWSIGNAL_RECEIVE           45
-#define CMD_RAWSIGNAL_SAVE              46
-#define CMD_RAWSIGNAL_SEND              47
-#define CMD_REBOOT       48
-#define CMD_RECEIVE_SETTINGS            49
-#define CMD_RESET                       50
-#define CMD_SEND_EVENT                  51
-#define CMD_SENDTO                      52
-#define CMD_SEND_USEREVENT              53
-#define CMD_SETTINGS_SAVE               54
-#define CMD_SOUND                       55
-#define CMD_STATUS                      56
-#define CMD_STOP                        57
-#define CMD_SUBNET                      58
-#define CMD_TEMP                        59
-#define CMD_TIMER_RANDOM                60
-#define CMD_TIMER_SET                   61
-#define CMD_TIMER_SET_VARIABLE          62
-#define CMD_UNIT_SET                    63
-#define CMD_VARIABLE_DEC                64
-#define CMD_VARIABLE_FROM_EVENT         65
-#define CMD_VARIABLE_INC                66
-#define CMD_VARIABLE_PULSE_COUNT        67
-#define CMD_VARIABLE_PULSE_TIME         68
-#define CMD_VARIABLE_SET                69
-#define CMD_VARIABLE_VARIABLE           70
-#define CMD_VARIABLE_SET_WIRED_ANALOG   71
-#define CMD_WAIT_EVENT                  72
-#define CMD_WAITFREERF                  73
-#define CMD_WIRED_ANALOG                74
-#define CMD_WIRED_OUT                   75
-#define CMD_WIRED_PULLUP                76
-#define CMD_WIRED_SMITTTRIGGER          77
-#define CMD_WIRED_THRESHOLD             78
-#define EVENT_ALARM                     78
-#define EVENT_BOOT                      79
-#define EVENT_CLOCK_DAYLIGHT            80
-#define EVENT_MESSAGE                   81
-#define EVENT_NEWNODO                   82
-#define EVENT_RAWSIGNAL                 83
-#define EVENT_TIME                      84
-#define EVENT_TIMER                     85
-#define EVENT_USEREVENT                 86
-#define EVENT_VARIABLE                  87
-#define EVENT_WILDCARD                  88
-#define EVENT_WIRED_IN                  89
-#define VALUE_ALL                       90
-#define VALUE_BUILD                     91
-#define VALUE_SOURCE_CLOCK              92
-#define VALUE_DLS                       93
-#define VALUE_RECEIVED_EVENT            94
-#define VALUE_SOURCE_EVENTLIST          95
-#define VALUE_EVENTLIST_COUNT           96
-#define VALUE_SOURCE_FILE               97
-#define VALUE_FREEMEM                   98
-#define VALUE_SOURCE_HTTP               99
-#define VALUE_HWCONFIG                  100
-#define VALUE_SOURCE_I2C                101
-#define VALUE_DIRECTION_INPUT           102
-#define VALUE_SOURCE_IR                 103
-#define VALUE_OFF                       104
-#define VALUE_ON                        105
-#define VALUE_DIRECTION_OUTPUT          106
-#define VALUE_RECEIVED_PAR1             107
-#define VALUE_RECEIVED_PAR2             108
-#define VALUE_SOURCE_QUEUE              109
-#define VALUE_SOURCE_RF                 110
-#define VALUE_SOURCE_SERIAL             111
-#define VALUE_SOURCE_STATUS             112
-#define VALUE_SOURCE_SYSTEM             113
-#define VALUE_SOURCE_TELNET             114
-#define VALUE_THIS_UNIT                 115
-#define VALUE_SOURCE_TIMER              116
-#define VALUE_UNIT                      117
-#define VALUE_SOURCE_VARIABLE           118
-#define VALUE_SOURCE_WIRED              119
-#define MESSAGE_00                      120
-#define MESSAGE_01                      121
-#define MESSAGE_02                      122
-#define MESSAGE_03                      123
-#define MESSAGE_04                      124
-#define MESSAGE_05                      125
-#define MESSAGE_06                      126
-#define MESSAGE_07                      127
-#define MESSAGE_08                      128
-#define MESSAGE_09                      129
-#define MESSAGE_10                      130
-#define MESSAGE_11                      131
-#define MESSAGE_12                      132
-#define MESSAGE_13                      133
-#define MESSAGE_14                      134
-#define MESSAGE_15                      135
-#define MESSAGE_16                      136
+#define CMD_ECHO      19
+#define CMD_DNS_SERVER                  20
+#define CMD_EVENTLIST_ERASE             21
+#define CMD_EVENTLIST_FILE              22
+#define CMD_EVENTLIST_SHOW              23
+#define CMD_EVENTLIST_WRITE             24
+#define CMD_FILE_ERASE                  25
+#define CMD_FILE_EXECUTE                26
+#define CMD_FILE_GET_HTTP               27
+#define CMD_FILE_LIST                   28
+#define CMD_FILE_LOG                    29
+#define CMD_FILE_SHOW                   30
+#define CMD_FILE_WRITE                  31
+#define CMD_GATEWAY                     32
+#define CMD_HOME_SET                    33
+#define CMD_HTTP_REQUEST                34
+#define CMD_ID                          35
+#define CMD_IF                          36
+#define CMD_LOCK                        37
+#define CMD_LOG                         38
+#define CMD_NODO_IP                     39
+#define CMD_OUTPUT                      40
+#define CMD_PASSWORD                    41
+#define CMD_PORT_SERVER                 42
+#define CMD_PORT_CLIENT                 43
+#define CMD_RAWSIGNAL_ERASE             44
+#define CMD_RAWSIGNAL_LIST              45
+#define CMD_RAWSIGNAL_RECEIVE           46
+#define CMD_RAWSIGNAL_SAVE              47
+#define CMD_RAWSIGNAL_SEND              48
+#define CMD_REBOOT       49
+#define CMD_RECEIVE_SETTINGS            50
+#define CMD_RESET                       51
+#define CMD_SEND_EVENT                  52
+#define CMD_SENDTO                      53
+#define CMD_SEND_USEREVENT              54
+#define CMD_SETTINGS_SAVE               55
+#define CMD_SOUND                       56
+#define CMD_STATUS                      57
+#define CMD_STOP                        58
+#define CMD_SUBNET                      59
+#define CMD_TEMP                        60
+#define CMD_TIMER_RANDOM                61
+#define CMD_TIMER_SET                   62
+#define CMD_TIMER_SET_VARIABLE          63
+#define CMD_UNIT_SET                    64
+#define CMD_VARIABLE_DEC                65
+#define CMD_VARIABLE_FROM_EVENT         66
+#define CMD_VARIABLE_INC                67
+#define CMD_VARIABLE_PULSE_COUNT        68
+#define CMD_VARIABLE_PULSE_TIME         69
+#define CMD_VARIABLE_SET                70
+#define CMD_VARIABLE_VARIABLE           71
+#define CMD_VARIABLE_SET_WIRED_ANALOG   72
+#define CMD_WAIT_EVENT                  73
+#define CMD_WAITFREERF                  74
+#define CMD_WIRED_ANALOG                75
+#define CMD_WIRED_OUT                   76
+#define CMD_WIRED_PULLUP                77
+#define CMD_WIRED_SMITTTRIGGER          78
+#define CMD_WIRED_THRESHOLD             79
+#define EVENT_ALARM                     80
+#define EVENT_BOOT                      81
+#define EVENT_CLOCK_DAYLIGHT            82
+#define EVENT_MESSAGE                   83
+#define EVENT_NEWNODO                   84
+#define EVENT_RAWSIGNAL                 85
+#define EVENT_TIME                      86
+#define EVENT_TIMER                     87
+#define EVENT_VARIABLE                  88
+#define EVENT_WILDCARD                  89
+#define EVENT_WIRED_IN                  90
+#define VALUE_ALL                       91
+#define VALUE_BUILD                     92
+#define VALUE_SOURCE_CLOCK              93
+#define VALUE_DLS                       94
+#define VALUE_RECEIVED_EVENT            95
+#define VALUE_SOURCE_EVENTLIST          96
+#define VALUE_EVENTLIST_COUNT           97
+#define VALUE_SOURCE_FILE               98
+#define VALUE_FREEMEM                   99
+#define VALUE_SOURCE_HTTP               100
+#define VALUE_HWCONFIG                  101
+#define VALUE_SOURCE_I2C                102
+#define VALUE_DIRECTION_INPUT           103
+#define VALUE_SOURCE_IR                 104
+#define VALUE_OFF                       105
+#define VALUE_ON                        106
+#define VALUE_DIRECTION_OUTPUT          107
+#define VALUE_RECEIVED_PAR1             108
+#define VALUE_RECEIVED_PAR2             109
+#define VALUE_SOURCE_QUEUE              110
+#define VALUE_SOURCE_RF                 111
+#define VALUE_SOURCE_SERIAL             112
+#define VALUE_SOURCE_STATUS             113
+#define VALUE_SOURCE_SYSTEM             114
+#define VALUE_SOURCE_TELNET             115
+#define VALUE_THIS_UNIT                 116
+#define VALUE_SOURCE_TIMER              117
+#define VALUE_UNIT                      118
+#define VALUE_SOURCE_VARIABLE           119
+#define VALUE_SOURCE_WIRED              120
+#define MESSAGE_00                      121
+#define MESSAGE_01                      122
+#define MESSAGE_02                      123
+#define MESSAGE_03                      124
+#define MESSAGE_04                      125
+#define MESSAGE_05                      126
+#define MESSAGE_06                      127
+#define MESSAGE_07                      128
+#define MESSAGE_08                      129
+#define MESSAGE_09                      130
+#define MESSAGE_10                      131
+#define MESSAGE_11                      132
+#define MESSAGE_12                      133
+#define MESSAGE_13                      134
+#define MESSAGE_14                      135
+#define MESSAGE_15                      136
+#define MESSAGE_16                      137
 
-#define COMMAND_MAX                    136 // hoogste commando
+#define COMMAND_MAX                    137 // hoogste commando
 
 #if NODO_MEGA
-prog_char PROGMEM Cmd_1[]="Dummy";
+prog_char PROGMEM Cmd_0[]="-";
+prog_char PROGMEM Cmd_1[]="UserEvent"; // Vast op positie 1 !
 prog_char PROGMEM Cmd_2[]="AlarmSet";
 prog_char PROGMEM Cmd_3[]="AnalyseSettings";
 prog_char PROGMEM Cmd_4[]="BreakOnDaylight";
@@ -192,125 +194,126 @@ prog_char PROGMEM Cmd_15[]="ClockSetTime";
 prog_char PROGMEM Cmd_16[]="ClockSync";
 prog_char PROGMEM Cmd_17[]="Debug";
 prog_char PROGMEM Cmd_18[]="Delay";
-prog_char PROGMEM Cmd_19[]="DnsServer";
-prog_char PROGMEM Cmd_20[]="EventlistErase";
-prog_char PROGMEM Cmd_21[]="EventlistFile";
-prog_char PROGMEM Cmd_22[]="EventlistShow";
-prog_char PROGMEM Cmd_23[]="EventlistWrite";
-prog_char PROGMEM Cmd_24[]="FileErase";
-prog_char PROGMEM Cmd_25[]="FileExecute";
-prog_char PROGMEM Cmd_26[]="FileGetHTTP";
-prog_char PROGMEM Cmd_27[]="FileList";
-prog_char PROGMEM Cmd_28[]="FileLog";
-prog_char PROGMEM Cmd_29[]="FileShow";
-prog_char PROGMEM Cmd_30[]="FileWrite";
-prog_char PROGMEM Cmd_31[]="Gateway";
-prog_char PROGMEM Cmd_32[]="HomeSet";
-prog_char PROGMEM Cmd_33[]="HTTPHost";
-prog_char PROGMEM Cmd_34[]="ID";
-prog_char PROGMEM Cmd_35[]="if";
-prog_char PROGMEM Cmd_36[]="Lock";
-prog_char PROGMEM Cmd_37[]="Log";
-prog_char PROGMEM Cmd_38[]="NodoIP";
-prog_char PROGMEM Cmd_39[]="Output";
-prog_char PROGMEM Cmd_40[]="Password";
-prog_char PROGMEM Cmd_41[]="PortInput";
-prog_char PROGMEM Cmd_42[]="PortOutput";
-prog_char PROGMEM Cmd_43[]="RawSignalErase";
-prog_char PROGMEM Cmd_44[]="RawSignalList";
-prog_char PROGMEM Cmd_45[]="RawSignalReceive";
-prog_char PROGMEM Cmd_46[]="RawSignalSave";
-prog_char PROGMEM Cmd_47[]="RawSignalSend";
-prog_char PROGMEM Cmd_48[]="Reboot";
-prog_char PROGMEM Cmd_49[]="ReceiveSettings";
-prog_char PROGMEM Cmd_50[]="Reset";
-prog_char PROGMEM Cmd_51[]="SendEvent";
-prog_char PROGMEM Cmd_52[]="SendTo";
-prog_char PROGMEM Cmd_53[]="SendUserEvent";
-prog_char PROGMEM Cmd_54[]="SettingsSave";
-prog_char PROGMEM Cmd_55[]="Sound";
-prog_char PROGMEM Cmd_56[]="Status";
-prog_char PROGMEM Cmd_57[]="Stop";
-prog_char PROGMEM Cmd_58[]="Subnet";
-prog_char PROGMEM Cmd_59[]="Temp";
-prog_char PROGMEM Cmd_60[]="TimerRandom";
-prog_char PROGMEM Cmd_61[]="TimerSet";
-prog_char PROGMEM Cmd_62[]="TimerSetVariable";
-prog_char PROGMEM Cmd_63[]="UnitSet";
-prog_char PROGMEM Cmd_64[]="VariableDec";
-prog_char PROGMEM Cmd_65[]="VariableEvent";
-prog_char PROGMEM Cmd_66[]="VariableInc";
-prog_char PROGMEM Cmd_67[]="VariablePulseCount";
-prog_char PROGMEM Cmd_68[]="VariablePulseTime";
-prog_char PROGMEM Cmd_69[]="VariableSet";
-prog_char PROGMEM Cmd_70[]="VariableSetVariable";
-prog_char PROGMEM Cmd_71[]="VariableWiredAnalog";
-prog_char PROGMEM Cmd_72[]="WaitEvent";
-prog_char PROGMEM Cmd_73[]="WaitFreeRF";
-prog_char PROGMEM Cmd_74[]="WiredAnalog";
-prog_char PROGMEM Cmd_75[]="WiredOut";
-prog_char PROGMEM Cmd_76[]="WiredPullup";
-prog_char PROGMEM Cmd_77[]="WiredSmittTrigger";
-prog_char PROGMEM Cmd_78[]="WiredThreshold";
-prog_char PROGMEM Cmd_78[]="Alarm";
-prog_char PROGMEM Cmd_79[]="Boot";
-prog_char PROGMEM Cmd_80[]="ClockDaylight";
-prog_char PROGMEM Cmd_81[]="Message";
-prog_char PROGMEM Cmd_82[]="NewNodo";
-prog_char PROGMEM Cmd_83[]="RawSignal";
-prog_char PROGMEM Cmd_84[]="Time";
-prog_char PROGMEM Cmd_85[]="Timer";
-prog_char PROGMEM Cmd_86[]="UserEvent";
-prog_char PROGMEM Cmd_87[]="Variable";
-prog_char PROGMEM Cmd_88[]="WildCard";
-prog_char PROGMEM Cmd_89[]="WiredIn";
-prog_char PROGMEM Cmd_90[]="All";
-prog_char PROGMEM Cmd_91[]="Build";
-prog_char PROGMEM Cmd_92[]="Clock";
-prog_char PROGMEM Cmd_93[]="DaylightSaving";
-prog_char PROGMEM Cmd_94[]="Event";
-prog_char PROGMEM Cmd_95[]="EventList";
-prog_char PROGMEM Cmd_96[]="EventlistCount";
-prog_char PROGMEM Cmd_97[]="File";
-prog_char PROGMEM Cmd_98[]="FreeMem";
-prog_char PROGMEM Cmd_99[]="HTTP";
-prog_char PROGMEM Cmd_100[]="HWConfig";
-prog_char PROGMEM Cmd_101[]="I2C";
-prog_char PROGMEM Cmd_102[]="Input";
-prog_char PROGMEM Cmd_103[]="IR";
-prog_char PROGMEM Cmd_104[]="Off";
-prog_char PROGMEM Cmd_105[]="On";
-prog_char PROGMEM Cmd_106[]="Output";
-prog_char PROGMEM Cmd_107[]="Par1";
-prog_char PROGMEM Cmd_108[]="Par2";
-prog_char PROGMEM Cmd_109[]="Queue";
-prog_char PROGMEM Cmd_110[]="RF";
-prog_char PROGMEM Cmd_111[]="Serial";
-prog_char PROGMEM Cmd_112[]="Status";
-prog_char PROGMEM Cmd_113[]="System";
-prog_char PROGMEM Cmd_114[]="Terminal";
-prog_char PROGMEM Cmd_115[]="ThisUnit";
-prog_char PROGMEM Cmd_116[]="Timers";
-prog_char PROGMEM Cmd_117[]="Unit";
-prog_char PROGMEM Cmd_118[]="Variables";
-prog_char PROGMEM Cmd_119[]="Wired";
-prog_char PROGMEM Cmd_120[]="Ok.";
-prog_char PROGMEM Cmd_121[]="Unknown command.";
-prog_char PROGMEM Cmd_122[]="Invalid parameter in command.";
-prog_char PROGMEM Cmd_123[]="Unable to open file.";
-prog_char PROGMEM Cmd_124[]="Error during queing events.";
-prog_char PROGMEM Cmd_125[]="Eventlist nesting error.";
-prog_char PROGMEM Cmd_126[]="Reading/writing eventlist failed.";
-prog_char PROGMEM Cmd_127[]="Unable to establish TCP/IP connection.";
-prog_char PROGMEM Cmd_128[]="Incorrect password.";
-prog_char PROGMEM Cmd_129[]="Execution stopped.";
-prog_char PROGMEM Cmd_130[]="Access denied.";
-prog_char PROGMEM Cmd_131[]="SendTo timeout error.";
-prog_char PROGMEM Cmd_132[]="Unit not online or within range.";
-prog_char PROGMEM Cmd_133[]="Data lost during SendTo.";
-prog_char PROGMEM Cmd_134[]="SDCard error.";
-prog_char PROGMEM Cmd_135[]="Break.";
-prog_char PROGMEM Cmd_136[]="RawSignal saved.";
+prog_char PROGMEM Cmd_19[]="Echo";
+prog_char PROGMEM Cmd_20[]="DnsServer";
+prog_char PROGMEM Cmd_21[]="EventlistErase";
+prog_char PROGMEM Cmd_22[]="EventlistFile";
+prog_char PROGMEM Cmd_23[]="EventlistShow";
+prog_char PROGMEM Cmd_24[]="EventlistWrite";
+prog_char PROGMEM Cmd_25[]="FileErase";
+prog_char PROGMEM Cmd_26[]="FileExecute";
+prog_char PROGMEM Cmd_27[]="FileGetHTTP";
+prog_char PROGMEM Cmd_28[]="FileList";
+prog_char PROGMEM Cmd_29[]="FileLog";
+prog_char PROGMEM Cmd_30[]="FileShow";
+prog_char PROGMEM Cmd_31[]="FileWrite";
+prog_char PROGMEM Cmd_32[]="Gateway";
+prog_char PROGMEM Cmd_33[]="HomeSet";
+prog_char PROGMEM Cmd_34[]="HTTPHost";
+prog_char PROGMEM Cmd_35[]="ID";
+prog_char PROGMEM Cmd_36[]="if";
+prog_char PROGMEM Cmd_37[]="Lock";
+prog_char PROGMEM Cmd_38[]="Log";
+prog_char PROGMEM Cmd_39[]="NodoIP";
+prog_char PROGMEM Cmd_40[]="Output";
+prog_char PROGMEM Cmd_41[]="Password";
+prog_char PROGMEM Cmd_42[]="PortInput";
+prog_char PROGMEM Cmd_43[]="PortOutput";
+prog_char PROGMEM Cmd_44[]="RawSignalErase";
+prog_char PROGMEM Cmd_45[]="RawSignalList";
+prog_char PROGMEM Cmd_46[]="RawSignalReceive";
+prog_char PROGMEM Cmd_47[]="RawSignalSave";
+prog_char PROGMEM Cmd_48[]="RawSignalSend";
+prog_char PROGMEM Cmd_49[]="Reboot";
+prog_char PROGMEM Cmd_50[]="ReceiveSettings";
+prog_char PROGMEM Cmd_51[]="Reset";
+prog_char PROGMEM Cmd_52[]="SendEvent";
+prog_char PROGMEM Cmd_53[]="SendTo";
+prog_char PROGMEM Cmd_54[]="SendUserEvent";
+prog_char PROGMEM Cmd_55[]="SettingsSave";
+prog_char PROGMEM Cmd_56[]="Sound";
+prog_char PROGMEM Cmd_57[]="Status";
+prog_char PROGMEM Cmd_58[]="Stop";
+prog_char PROGMEM Cmd_59[]="Subnet";
+prog_char PROGMEM Cmd_60[]="Temp";
+prog_char PROGMEM Cmd_61[]="TimerRandom";
+prog_char PROGMEM Cmd_62[]="TimerSet";
+prog_char PROGMEM Cmd_63[]="TimerSetVariable";
+prog_char PROGMEM Cmd_64[]="UnitSet";
+prog_char PROGMEM Cmd_65[]="VariableDec";
+prog_char PROGMEM Cmd_66[]="VariableEvent";
+prog_char PROGMEM Cmd_67[]="VariableInc";
+prog_char PROGMEM Cmd_68[]="VariablePulseCount";
+prog_char PROGMEM Cmd_69[]="VariablePulseTime";
+prog_char PROGMEM Cmd_70[]="VariableSet";
+prog_char PROGMEM Cmd_71[]="VariableSetVariable";
+prog_char PROGMEM Cmd_72[]="VariableWiredAnalog";
+prog_char PROGMEM Cmd_73[]="WaitEvent";
+prog_char PROGMEM Cmd_74[]="WaitFreeRF";
+prog_char PROGMEM Cmd_75[]="WiredAnalog";
+prog_char PROGMEM Cmd_76[]="WiredOut";
+prog_char PROGMEM Cmd_77[]="WiredPullup";
+prog_char PROGMEM Cmd_78[]="WiredSmittTrigger";
+prog_char PROGMEM Cmd_79[]="WiredThreshold";
+prog_char PROGMEM Cmd_80[]="Alarm";
+prog_char PROGMEM Cmd_81[]="Boot";
+prog_char PROGMEM Cmd_82[]="ClockDaylight";
+prog_char PROGMEM Cmd_83[]="Message";
+prog_char PROGMEM Cmd_84[]="NewNodo";
+prog_char PROGMEM Cmd_85[]="RawSignal";
+prog_char PROGMEM Cmd_86[]="Time";
+prog_char PROGMEM Cmd_87[]="Timer";
+prog_char PROGMEM Cmd_88[]="Variable";
+prog_char PROGMEM Cmd_89[]="WildCard";
+prog_char PROGMEM Cmd_90[]="WiredIn";
+prog_char PROGMEM Cmd_91[]="All";
+prog_char PROGMEM Cmd_92[]="Build";
+prog_char PROGMEM Cmd_93[]="Clock";
+prog_char PROGMEM Cmd_94[]="DaylightSaving";
+prog_char PROGMEM Cmd_95[]="Event";
+prog_char PROGMEM Cmd_96[]="EventList";
+prog_char PROGMEM Cmd_97[]="EventlistCount";
+prog_char PROGMEM Cmd_98[]="File";
+prog_char PROGMEM Cmd_99[]="FreeMem";
+prog_char PROGMEM Cmd_100[]="HTTP";
+prog_char PROGMEM Cmd_101[]="HWConfig";
+prog_char PROGMEM Cmd_102[]="I2C";
+prog_char PROGMEM Cmd_103[]="Input";
+prog_char PROGMEM Cmd_104[]="IR";
+prog_char PROGMEM Cmd_105[]="Off";
+prog_char PROGMEM Cmd_106[]="On";
+prog_char PROGMEM Cmd_107[]="Output";
+prog_char PROGMEM Cmd_108[]="Par1";
+prog_char PROGMEM Cmd_109[]="Par2";
+prog_char PROGMEM Cmd_110[]="Queue";
+prog_char PROGMEM Cmd_111[]="RF";
+prog_char PROGMEM Cmd_112[]="Serial";
+prog_char PROGMEM Cmd_113[]="Status";
+prog_char PROGMEM Cmd_114[]="System";
+prog_char PROGMEM Cmd_115[]="Terminal";
+prog_char PROGMEM Cmd_116[]="ThisUnit";
+prog_char PROGMEM Cmd_117[]="Timers";
+prog_char PROGMEM Cmd_118[]="Unit";
+prog_char PROGMEM Cmd_119[]="Variables";
+prog_char PROGMEM Cmd_120[]="Wired";
+prog_char PROGMEM Cmd_121[]="Ok.";
+prog_char PROGMEM Cmd_122[]="Unknown command.";
+prog_char PROGMEM Cmd_123[]="Invalid parameter in command.";
+prog_char PROGMEM Cmd_124[]="Unable to open file.";
+prog_char PROGMEM Cmd_125[]="Error during queing events.";
+prog_char PROGMEM Cmd_126[]="Eventlist nesting error.";
+prog_char PROGMEM Cmd_127[]="Reading/writing eventlist failed.";
+prog_char PROGMEM Cmd_128[]="Unable to establish TCP/IP connection.";
+prog_char PROGMEM Cmd_129[]="Incorrect password.";
+prog_char PROGMEM Cmd_130[]="Execution stopped.";
+prog_char PROGMEM Cmd_131[]="Access denied.";
+prog_char PROGMEM Cmd_132[]="SendTo timeout error.";
+prog_char PROGMEM Cmd_133[]="Unit not online or within range.";
+prog_char PROGMEM Cmd_134[]="Data lost during SendTo.";
+prog_char PROGMEM Cmd_135[]="SDCard error.";
+prog_char PROGMEM Cmd_136[]="Break.";
+prog_char PROGMEM Cmd_137[]="RawSignal saved.";
+
 
 // tabel die refereert aan de commando strings
 PROGMEM const char *CommandText_tabel[]={
@@ -327,7 +330,7 @@ Cmd_90,Cmd_91,Cmd_92,Cmd_93,Cmd_94,Cmd_95,Cmd_96,Cmd_97,Cmd_98,Cmd_99,
 Cmd_100,Cmd_101,Cmd_102,Cmd_103,Cmd_104,Cmd_105,Cmd_106,Cmd_107,Cmd_108,Cmd_109,
 Cmd_110,Cmd_111,Cmd_112,Cmd_113,Cmd_114,Cmd_115,Cmd_116,Cmd_117,Cmd_118,Cmd_119,
 Cmd_120,Cmd_121,Cmd_122,Cmd_123,Cmd_124,Cmd_125,Cmd_126,Cmd_127,Cmd_128,Cmd_129,
-Cmd_130,Cmd_131,Cmd_132,Cmd_133,Cmd_134,Cmd_135,Cmd_136};
+Cmd_130,Cmd_131,Cmd_132,Cmd_133,Cmd_134,Cmd_135,Cmd_136,Cmd_137};
 
 // Tabel met zonsopgang en -ondergang momenten. afgeleid van KNMI gegevens midden Nederland.
 PROGMEM prog_uint16_t Sunrise[]={528,525,516,503,487,467,446,424,401,378,355,333,313,295,279,268,261,259,263,271,283,297,312,329,345,367,377,394,411,428,446,464,481,498,512,522,528,527};
@@ -535,11 +538,10 @@ struct SettingsStruct
 #define TRANSMISSION_CONFIRM     16  // Master => Slave : Verzoek aan master om bevestiging te sturen na ontvangst.
 #define TRANSMISSION_VIEW_ONLY   32  // Master => Slave : Uitsluitend het event weergeven, niet uitvoeren
 
-#define EVENT_TYPE_UNKNOWN        0
 #define EVENT_TYPE_EVENT          1
 #define EVENT_TYPE_COMMAND        2
-#define EVENT_TYPE_SYSTEM         3
-#define EVENT_TYPE_DEVICE         4
+#define EVENT_TYPE_SYSTEM         4
+#define EVENT_TYPE_DEVICE         8
 
 // De Nodo kent naast gebruikers commando's en events eveneens Nodo interne events
 #define SYSTEM_COMMAND_CONFIRMED  1
@@ -612,6 +614,7 @@ EthernetClient TerminalClient;                              // Client class voor
 byte ClientIPAddress[4];                                    // IP adres van de client die verbinding probeert te maken c.q. verbonden is.
 byte HTTPClientIP[4];                                       // IP adres van de Host
 #endif
+
 
 // RealTimeclock DS1307
 struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,DaylightSaving,DaylightSavingSetMonth,DaylightSavingSetDate; int Year;}Time; // Hier wordt datum & tijd in opgeslagen afkomstig van de RTC.
@@ -781,6 +784,8 @@ void setup()
   TempEvent.Par1      = Settings.Unit;
   SendEvent(&TempEvent,false,true,true);  
 
+  bitWrite(HW_Config,HW_I2C,false); // Zet I2C weer uit. Wordt weer geactiveerd als er een I2C event op de bus verschijnt.
+
   // Wacht even kort op reacties van andere Nodo's 
   Wait(3, false,0 , false);  
 
@@ -805,12 +810,11 @@ void setup()
   if(Settings.NewNodo)
     {
     TempEvent.Port     = VALUE_ALL;
-    TempEvent.Type      = EVENT_TYPE_EVENT;
-    TempEvent.Command=EVENT_NEWNODO;
-    TempEvent.Par1=Settings.Unit;
+    TempEvent.Type     = EVENT_TYPE_EVENT;
+    TempEvent.Command  = EVENT_NEWNODO;
+    TempEvent.Par1     = Settings.Unit;
     SendEvent(&TempEvent,false,true,true); 
     }
-  bitWrite(HW_Config,HW_I2C,false); // Zet I2C weer uit. Wordt weer geactiveerd als er een I2C event op de bus verschijnt.
   }
 
 void loop() 

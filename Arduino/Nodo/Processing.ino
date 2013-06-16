@@ -48,6 +48,9 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
   byte error=0;
   boolean Continue=true;
   
+
+  // PrintNodoEvent("ProcessEvent2();",Event);//???
+  
   if(Event->Command==0)
     return error;
 
@@ -111,22 +114,19 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
   
     else
       {
-
       // ############# Verwerk event ################  
 
       // Voer decice commando uit.
       if(Event->Type & EVENT_TYPE_DEVICE)
-        {
         for(x=0;Device_ptr[x]!=0 && x<DEVICE_MAX; x++)
           if(Device_id[x]==Event->Command)
             Device_ptr[x](DEVICE_COMMAND,Event,0); 
-        }
 
       // als het een Nodo event is en een geldig commando, dan deze uitvoeren
-      if(Event->Type == EVENT_TYPE_COMMAND)
+      if(Event->Type & EVENT_TYPE_COMMAND)
         error=ExecuteCommand(Event);
         
-      else if(Event->Type == EVENT_TYPE_EVENT)
+      if(Event->Type & EVENT_TYPE_EVENT)
         {// Er is een Event binnengekomen  
         // loop de gehele eventlist langs om te kijken of er een treffer is.   
         struct NodoEventStruct EventlistEvent, EventlistAction;   
@@ -135,25 +135,25 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
         LastReceived=*Event;
 
         x=0;
-        while(Eventlist_Read(++x,&EventlistEvent,&EventlistAction)) // Zolang er nog regels zijn in de eventlist...
+        while(Eventlist_Read(++x,&EventlistEvent,&EventlistAction) && error==0) // Zolang er nog regels zijn in de eventlist...
           {      
           if(CheckEvent(Event,&EventlistEvent)) // Als er een match is tussen het binnengekomen event en de regel uit de eventlist.
             {        
             EventlistAction.Port = VALUE_SOURCE_EVENTLIST;
             ExecutionLine=x;
-            if(error=ProcessEvent2(&EventlistAction))
-              break;
+            error=ProcessEvent2(&EventlistAction);
             }
+          }
+        // abort is geen fatale error/break. Deze niet verder behandelen als een error.
+        if(error==MESSAGE_15)
+          {
+          error=0;
           }
         }      
      // Als de SendTo niet permanent is ingeschakeld, dan deze weer uitzetten
       if(Transmission_SendToAll!=VALUE_ALL)Transmission_SendToUnit=0;
       }
     }
-
-  // abort is geen fatale error/break. Deze niet verder behandelen als een error.
-  if(error==MESSAGE_15)
-    error=0;
     
   ExecutionDepth--;
   return error;
@@ -308,11 +308,13 @@ void QueueProcess(void)
       if(Queue[x].Command==CMD_EVENTLIST_WRITE && x<(QueuePosition-2)) // cmd
         {
         struct NodoEventStruct E;
+        E.Type=Queue[x+1].Type;
         E.Command=Queue[x+1].Command;
         E.Par1=Queue[x+1].Par1;
         E.Par2=Queue[x+1].Par2;
 
         struct NodoEventStruct A;
+        A.Type=Queue[x+2].Type;
         A.Command=Queue[x+2].Command;
         A.Par1=Queue[x+2].Par1;
         A.Par2=Queue[x+2].Par2;
@@ -325,6 +327,7 @@ void QueueProcess(void)
       else
         {
         Event.SourceUnit=Queue[x].Unit;
+        Event.Type=Queue[x].Type;
         Event.Command=Queue[x].Command;
         Event.Par1=Queue[x].Par1;
         Event.Par2=Queue[x].Par2;
@@ -371,7 +374,7 @@ byte QueueSend(void)
       ClearEvent(&Event);
       Event.SourceUnit          = Settings.Unit;
       Event.Port                = Port;
-      Event.Type                = EVENT_TYPE_EVENT | EVENT_TYPE_SYSTEM;      
+      Event.Type                = EVENT_TYPE_SYSTEM;      
       Event.Command             = CMD_SENDTO;      
       Event.Par1                = SendQueuePosition;
       Event.Par2                = ID;
@@ -394,6 +397,7 @@ byte QueueSend(void)
         Event.Command             = SendQueue[x].Command;
         Event.Par1                = SendQueue[x].Par1;
         Event.Par2                = SendQueue[x].Par2;
+
         SendEvent(&Event,false,false,false);
         }
       
@@ -401,7 +405,8 @@ byte QueueSend(void)
       ClearEvent(&Event);
       Event.SourceUnit          = Transmission_SendToUnit;
       Event.Command             = SYSTEM_COMMAND_CONFIRMED;
-  
+      Event.Type                = EVENT_TYPE_SYSTEM;
+
       if(Wait(30,false,&Event,false))
         if(x==Event.Par1)
           error=false;
@@ -451,10 +456,10 @@ void QueueReceive(NodoEventStruct *Event)
   ClearEvent(&TempEvent);
   TempEvent.DestinationUnit     = Event->SourceUnit;
   TempEvent.SourceUnit          = Settings.Unit;
-  TempEvent.Command             = SYSTEM_COMMAND_CONFIRMED;      
-  TempEvent.Par1                = count;
   TempEvent.Port                = Event->Port;
   TempEvent.Type                = EVENT_TYPE_SYSTEM; 
+  TempEvent.Command             = SYSTEM_COMMAND_CONFIRMED;      
+  TempEvent.Par1                = count;
 
   SendEvent(&TempEvent,false, false, false);
   Transmission_NodoOnly=false;
