@@ -158,7 +158,7 @@ boolean Device_001(byte function, struct NodoEventStruct *event, char *string)
               }
             else
               event->Par2= Home | ((Address-1)<<4);        
-    
+   
             // Het door de gebruiker ingegeven tweede parameter bevat het on/off commando
             if(GetArgv(string,TempStr,3))
               {
@@ -864,7 +864,7 @@ boolean Device_005(byte function, struct NodoEventStruct *event, char *string)
           {
           // Par1 en Par2 hoeven niet te worden geparsed omdat deze default al door de MMI invoer van de Nodo 
           // worden gevuld indien het integer waarden zijn. Toetsen op bereikenmoet nog wel plaats vinden.
-          if(event->Par1>0 && event->Par1<WIRED_PORTS && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX)
+          if(event->Par1>0 && event->Par1<WIRED_PORTS && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX)            
             success=true;
           }
         }

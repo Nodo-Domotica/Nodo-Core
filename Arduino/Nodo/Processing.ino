@@ -32,7 +32,7 @@ byte ProcessEvent1(struct NodoEventStruct *Event)
     ClearEvent(&TempEvent);    
     TempEvent.DestinationUnit       = Event->SourceUnit;
     TempEvent.Port                  = Event->Port;
-    TempEvent.Type                  = EVENT_TYPE_SYSTEM;    // Event is niet voor de gebruiker bedoeld
+    TempEvent.Type                  = NODO_TYPE_SYSTEM;    // Event is niet voor de gebruiker bedoeld
     TempEvent.Command               = SYSTEM_COMMAND_CONFIRMED;
     TempEvent.Par1                  = RequestForConfirm;
     SendEvent(&TempEvent, false,false,false);
@@ -83,7 +83,7 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
       }
     }
 
-  if(Continue && (Event->Type == EVENT_TYPE_SYSTEM))
+  if(Continue && (Event->Type == NODO_TYPE_SYSTEM))
     {
     Continue=false;
     }
@@ -116,24 +116,25 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
       {
       // ############# Verwerk event ################  
 
-      // Voer decice commando uit.
-      if(Event->Type & EVENT_TYPE_DEVICE)
+      // Voer device opdracht uit als een commando.
+      if(Event->Type==NODO_TYPE_DEVICE)
         for(x=0;Device_ptr[x]!=0 && x<DEVICE_MAX; x++)
           if(Device_id[x]==Event->Command)
             Device_ptr[x](DEVICE_COMMAND,Event,0); 
-
+            
       // als het een Nodo event is en een geldig commando, dan deze uitvoeren
-      if(Event->Type & EVENT_TYPE_COMMAND)
+      if(Event->Type==NODO_TYPE_COMMAND)
+        {
         error=ExecuteCommand(Event);
-        
-      if(Event->Type & EVENT_TYPE_EVENT)
-        {// Er is een Event binnengekomen  
+        }
+      else
+        {
         // loop de gehele eventlist langs om te kijken of er een treffer is.   
         struct NodoEventStruct EventlistEvent, EventlistAction;   
-
+  
         // sla event op voor later gebruik in SendEvent en VariableEvent???plaats hier?
         LastReceived=*Event;
-
+  
         x=0;
         while(Eventlist_Read(++x,&EventlistEvent,&EventlistAction) && error==0) // Zolang er nog regels zijn in de eventlist...
           {      
@@ -170,13 +171,10 @@ byte CheckEventlist(struct NodoEventStruct *Event)
 
   int x=1;
   while(Eventlist_Read(x++,&MacroEvent,&MacroAction))
-    {
     if(MacroEvent.Command)
-      {
       if(CheckEvent(Event,&MacroEvent))
         return x; // match gevonden
-      }
-    }
+
   return false;
   }
 
@@ -190,31 +188,37 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
   if(MacroEvent->Command==0 || Event->Command==0)
     return false;  
 
-  // ### WILDCARD:      
-  if(MacroEvent->Command == EVENT_WILDCARD) // is regel uit de eventlist een WildCard?
-    if( MacroEvent->Par1==VALUE_ALL        ||  MacroEvent->Par1==Event->Port)
-      if((MacroEvent->Par2&0xff)==VALUE_ALL  || (MacroEvent->Par2&0xff)==Event->Command)
-        if(((MacroEvent->Par2>>8)&0xff)==0       || ((MacroEvent->Par2>>8)&0xff)==Event->SourceUnit)
-          return true;
-          
-  // USEREVENT:
-  // beschouw bij een UserEvent een 0 voor Par1 of Par2 als een wildcard.
-  if(Event->Command==EVENT_USEREVENT && MacroEvent->Command==EVENT_USEREVENT)// Command
-    {
-    if( (Event->Par1==MacroEvent->Par1 || MacroEvent->Par1==0 || Event->Par1==0)  // Par1 deel een match
-     && (Event->Par2==MacroEvent->Par2 || MacroEvent->Par2==0 || Event->Par2==0)) // Par2 deel een match
-        return true; 
-    }
 
-  // Herkomst van een andere Nodo, dan er niets meer mee doen TENZIJ het een UserEvent is.
+  if(Event->Type==NODO_TYPE_EVENT)
+    {
+    // ### WILDCARD:      
+    if(MacroEvent->Command == EVENT_WILDCARD) // is regel uit de eventlist een WildCard?
+      if( MacroEvent->Par1==VALUE_ALL        ||  MacroEvent->Par1==Event->Port)
+        if((MacroEvent->Par2&0xff)==VALUE_ALL  || (MacroEvent->Par2&0xff)==Event->Command)
+          if(((MacroEvent->Par2>>8)&0xff)==0       || ((MacroEvent->Par2>>8)&0xff)==Event->SourceUnit)
+            return true;
+          
+    // USEREVENT:
+    // beschouw bij een UserEvent een 0 voor Par1 of Par2 als een wildcard.
+    if(Event->Command==EVENT_USEREVENT && MacroEvent->Command==EVENT_USEREVENT)// Command
+      if( (Event->Par1==MacroEvent->Par1 || MacroEvent->Par1==0 || Event->Par1==0)  // Par1 deel een match
+       && (Event->Par2==MacroEvent->Par2 || MacroEvent->Par2==0 || Event->Par2==0)) // Par2 deel een match
+         return true; 
+    }
+    
+  // Herkomst van een andere Nodo, dan er niets meer mee doen TENZIJ het een UserEvent is. Die werd hierboven 
+  // al afgevangen.
   if(Event->SourceUnit!=0  && Event->SourceUnit!=Settings.Unit)
     return false;
 
+
   // #### EXACT: als huidige event exact overeenkomt met het event in de regel uit de Eventlist, dan een match
-  if(MacroEvent->Command == Event->Command &&
+  if(MacroEvent->Type    == Event->Type    &&
+     MacroEvent->Command == Event->Command &&
      MacroEvent->Par1    == Event->Par1    &&
      MacroEvent->Par2    == Event->Par2    )
        return true; 
+
 
   // ### TIME:
   if(Event->Command==EVENT_TIME) // het binnengekomen event is een clock event.
@@ -374,7 +378,7 @@ byte QueueSend(void)
       ClearEvent(&Event);
       Event.SourceUnit          = Settings.Unit;
       Event.Port                = Port;
-      Event.Type                = EVENT_TYPE_SYSTEM;      
+      Event.Type                = NODO_TYPE_SYSTEM;      
       Event.Command             = CMD_SENDTO;      
       Event.Par1                = SendQueuePosition;
       Event.Par2                = ID;
@@ -405,7 +409,7 @@ byte QueueSend(void)
       ClearEvent(&Event);
       Event.SourceUnit          = Transmission_SendToUnit;
       Event.Command             = SYSTEM_COMMAND_CONFIRMED;
-      Event.Type                = EVENT_TYPE_SYSTEM;
+      Event.Type                = NODO_TYPE_SYSTEM;
 
       if(Wait(30,false,&Event,false))
         if(x==Event.Par1)
@@ -457,7 +461,7 @@ void QueueReceive(NodoEventStruct *Event)
   TempEvent.DestinationUnit     = Event->SourceUnit;
   TempEvent.SourceUnit          = Settings.Unit;
   TempEvent.Port                = Event->Port;
-  TempEvent.Type                = EVENT_TYPE_SYSTEM; 
+  TempEvent.Type                = NODO_TYPE_SYSTEM; 
   TempEvent.Command             = SYSTEM_COMMAND_CONFIRMED;      
   TempEvent.Par1                = count;
 

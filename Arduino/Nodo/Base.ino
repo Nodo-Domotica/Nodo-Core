@@ -1,7 +1,7 @@
 boolean ExecuteCommand(NodoEventStruct *EventToExecute);//protoype defnieren.
 
 #define NODO_BUILD          540  //??? ophogen bij iedere build
-#define SETTINGS_VERSION     36  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
+#define SETTINGS_VERSION     37  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -538,10 +538,10 @@ struct SettingsStruct
 #define TRANSMISSION_CONFIRM     16  // Master => Slave : Verzoek aan master om bevestiging te sturen na ontvangst.
 #define TRANSMISSION_VIEW_ONLY   32  // Master => Slave : Uitsluitend het event weergeven, niet uitvoeren
 
-#define EVENT_TYPE_EVENT          1
-#define EVENT_TYPE_COMMAND        2
-#define EVENT_TYPE_SYSTEM         4
-#define EVENT_TYPE_DEVICE         8
+#define NODO_TYPE_EVENT          1
+#define NODO_TYPE_COMMAND        2
+#define NODO_TYPE_SYSTEM         3
+#define NODO_TYPE_DEVICE         4
 
 // De Nodo kent naast gebruikers commando's en events eveneens Nodo interne events
 #define SYSTEM_COMMAND_CONFIRMED  1
@@ -779,7 +779,7 @@ void setup()
   TempEvent.Direction = VALUE_DIRECTION_INPUT;
   TempEvent.Port      = VALUE_ALL;
   TempEvent.Flags     = TRANSMISSION_CONFIRM;
-  TempEvent.Type      = EVENT_TYPE_EVENT;
+  TempEvent.Type      = NODO_TYPE_EVENT;
   TempEvent.Command   = EVENT_BOOT;
   TempEvent.Par1      = Settings.Unit;
   SendEvent(&TempEvent,false,true,true);  
@@ -791,7 +791,7 @@ void setup()
 
   bitWrite(HW_Config,HW_SERIAL,1); // Serial inschakelen.
   PrintWelcome(); // geef de welkomsttekst weer
-  bitWrite(HW_Config,HW_SERIAL,Serial.available()?1:0); // Serial weer uitschakelen.
+//???  bitWrite(HW_Config,HW_SERIAL,Serial.available()?1:0); // Serial weer uitschakelen.
 
   QueueProcess();
   
@@ -800,7 +800,7 @@ void setup()
   TempEvent.Port      = VALUE_SOURCE_SYSTEM;
   TempEvent.Direction = VALUE_DIRECTION_INPUT;
   TempEvent.Flags     = TRANSMISSION_CONFIRM;
-  TempEvent.Type      = EVENT_TYPE_EVENT;
+  TempEvent.Type      = NODO_TYPE_EVENT;
   TempEvent.Command   = EVENT_BOOT;
   TempEvent.Par1      = Settings.Unit;
   TempEvent.Flags     = 0;
@@ -810,7 +810,7 @@ void setup()
   if(Settings.NewNodo)
     {
     TempEvent.Port     = VALUE_ALL;
-    TempEvent.Type     = EVENT_TYPE_EVENT;
+    TempEvent.Type     = NODO_TYPE_EVENT;
     TempEvent.Command  = EVENT_NEWNODO;
     TempEvent.Par1     = Settings.Unit;
     SendEvent(&TempEvent,false,true,true); 
@@ -1054,7 +1054,7 @@ void loop()
             {
             PreviousMinutes=Time.Minutes;
             ClearEvent(&ReceivedEvent);
-            ReceivedEvent.Type             = EVENT_TYPE_EVENT;
+            ReceivedEvent.Type             = NODO_TYPE_EVENT;
             ReceivedEvent.Command          = EVENT_TIME;
             ReceivedEvent.Par2             = Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12 | (unsigned long)Time.Day<<16;
             ReceivedEvent.Direction        = VALUE_DIRECTION_INPUT;
@@ -1084,7 +1084,7 @@ void loop()
             if(Time.Daylight!=DaylightPrevious)// er heeft een zonsondergang of zonsopkomst event voorgedaan
               {
               ClearEvent(&ReceivedEvent);
-              ReceivedEvent.Type             = EVENT_TYPE_EVENT;
+              ReceivedEvent.Type             = NODO_TYPE_EVENT;
               ReceivedEvent.Command          = EVENT_CLOCK_DAYLIGHT;
               ReceivedEvent.Par1             = Time.Daylight;
               ReceivedEvent.Direction        = VALUE_DIRECTION_INPUT;
@@ -1121,7 +1121,7 @@ void loop()
             if(z)
               {
               ClearEvent(&ReceivedEvent);
-              ReceivedEvent.Type             = EVENT_TYPE_EVENT;
+              ReceivedEvent.Type             = NODO_TYPE_EVENT;
               ReceivedEvent.Command          = EVENT_WIRED_IN;
               ReceivedEvent.Par1             = x+1;
               ReceivedEvent.Par2             = WiredInputStatus[x]?VALUE_ON:VALUE_OFF;
@@ -1145,7 +1145,7 @@ void loop()
                 UserTimer[x]=0L;// zet de timer op inactief.
 
                 ClearEvent(&ReceivedEvent);
-                ReceivedEvent.Type             = EVENT_TYPE_EVENT;
+                ReceivedEvent.Type             = NODO_TYPE_EVENT;
                 ReceivedEvent.Command          = EVENT_TIMER;
                 ReceivedEvent.Par1             = x+1;
                 ReceivedEvent.Direction        = VALUE_DIRECTION_INPUT;

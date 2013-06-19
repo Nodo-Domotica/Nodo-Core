@@ -210,7 +210,8 @@ boolean Device_255(byte function, struct NodoEventStruct *event, char *string)
       break;
       }
     #endif //NODO_MEGA
-    }      
+    }
+    
   #endif // CORE
   return success;
   }

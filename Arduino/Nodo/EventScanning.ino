@@ -123,7 +123,7 @@ boolean ScanAlarm(struct NodoEventStruct *Event)
          ClearEvent(Event);
          Event->Direction=VALUE_DIRECTION_INPUT;
          Event->Port=VALUE_SOURCE_CLOCK;
-         Event->Type=EVENT_TYPE_EVENT;
+         Event->Type=NODO_TYPE_EVENT;
          Event->Command=EVENT_ALARM;
          Event->Par1=x+1;
          return true;

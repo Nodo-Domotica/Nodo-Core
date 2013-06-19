@@ -34,7 +34,7 @@ boolean AnalyzeRawSignal(struct NodoEventStruct *E)
     if(Device_ptr[x](DEVICE_RAWSIGNAL_IN,E,0))
       {
       E->Command=Device_id[x];
-      E->Type=EVENT_TYPE_EVENT | EVENT_TYPE_DEVICE;
+      E->Type=NODO_TYPE_DEVICE;
       return true;
       }
     }
@@ -124,7 +124,7 @@ boolean RawSignal_2_32bit(struct NodoEventStruct *event)
   RawSignal.Repeats=(RawSignal.Source==VALUE_SOURCE_RF);
   event->SourceUnit=0;  
   event->DestinationUnit=0;
-  event->Type=EVENT_TYPE_EVENT;
+  event->Type=NODO_TYPE_EVENT;
   event->Command=EVENT_RAWSIGNAL;
   event->Par1=0;
   return true;
