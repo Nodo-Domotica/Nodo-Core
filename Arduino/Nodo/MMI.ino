@@ -16,7 +16,7 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
   int x;
 
   // Systeem events niet weergeven.
-  if(Event->Type&EVENT_TYPE_SYSTEM || Event->Type==0)
+  if(Event->Type==NODO_TYPE_SYSTEM || Event->Type==0)
     return;
   
   char* StringToPrint=(char*)malloc(100);
@@ -231,8 +231,9 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
   byte ParameterToView[8]={0,0,0,0,0,0,0,0};
 
   // Devices hebben een eigen MMI, Roep het device aan voor verwerking van de parameter DEVICE_MMI_OUT.
-  // zoek het device op in de devices tabel en laat de string vullen.
-  if(Event->Type & EVENT_TYPE_DEVICE)
+  // zoek het device op in de devices tabel en laat de string vullen. Als het niet gelukt is om de string te
+  // vullen dan behandelen als een regulier event/commando
+  if(Event->Type == NODO_TYPE_DEVICE)
     for(x=0;Device_ptr[x]!=0 && x<DEVICE_MAX; x++)
       if(Device_id[x]==Event->Command)
         Device_ptr[x](DEVICE_MMI_OUT,Event,EventString);
@@ -615,7 +616,7 @@ int ExecuteLine(char *Line, byte Port)
           //test; geen, altijd goed
           case EVENT_CLOCK_DAYLIGHT:
           case EVENT_USEREVENT:
-            EventToExecute.Type=EVENT_TYPE_EVENT;
+            EventToExecute.Type=NODO_TYPE_EVENT;
             break; 
 
           //test; geen, altijd goed
@@ -629,7 +630,7 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_SOUND: 
           case CMD_SEND_USEREVENT:
           case CMD_CLOCK_SYNC:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             break; 
       
           case CMD_LOG:
@@ -637,13 +638,13 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_RAWSIGNAL_SAVE:
           case CMD_DEBUG:
           case CMD_ECHO:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1!=VALUE_OFF && EventToExecute.Par1!=VALUE_ON)
               error=MESSAGE_02;
            break;
                         
           case EVENT_MESSAGE:
-            EventToExecute.Type=EVENT_TYPE_EVENT; 
+            EventToExecute.Type=NODO_TYPE_EVENT; 
             if(EventToExecute.Par1 <1 || (EventToExecute.Par1+MESSAGE_01) > COMMAND_MAX)
               error=MESSAGE_02;
             else
@@ -651,55 +652,55 @@ int ExecuteLine(char *Line, byte Port)
             break;
               
           case CMD_TIMER_SET:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1>TIMER_MAX)
               error=MESSAGE_02;
             break;
                   
           case CMD_TIMER_SET_VARIABLE:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1>TIMER_MAX || EventToExecute.Par2<1 || EventToExecute.Par2>USER_VARIABLES_MAX)
               error=MESSAGE_02;
             break;
                   
           case CMD_WAIT_EVENT:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if((EventToExecute.Par1<1 || EventToExecute.Par1>UNIT_MAX) &&  EventToExecute.Par1!=VALUE_ALL)
               error=MESSAGE_02;
             break;
       
           case EVENT_ALARM:
-            EventToExecute.Type=EVENT_TYPE_EVENT;
+            EventToExecute.Type=NODO_TYPE_EVENT;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>ALARM_MAX)
               error=MESSAGE_02;
 
           case EVENT_NEWNODO:
           case EVENT_BOOT:
-            EventToExecute.Type=EVENT_TYPE_EVENT;
+            EventToExecute.Type=NODO_TYPE_EVENT;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>UNIT_MAX)
               error=MESSAGE_02;
             break;
 
           case CMD_UNIT_SET:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>UNIT_MAX)
               error=MESSAGE_02;
             break;
       
           case CMD_HOME_SET:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>HOME_MAX)
               error=MESSAGE_02;
             break;
       
           case CMD_ANALYSE_SETTINGS:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>50)
               error=MESSAGE_02;
             break;
       
           case CMD_VARIABLE_PULSE_TIME:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
               error=MESSAGE_02;
             break;
@@ -708,7 +709,7 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_BREAK_ON_VAR_MORE_VAR:
           case CMD_VARIABLE_VARIABLE:
           case CMD_VARIABLE_FROM_EVENT:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
               error=MESSAGE_02;
             if(EventToExecute.Par2<1 || EventToExecute.Par2>USER_VARIABLES_MAX)
@@ -716,7 +717,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
               
           case CMD_VARIABLE_SET_WIRED_ANALOG:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
               error=MESSAGE_02;
             if(EventToExecute.Par2<1 || EventToExecute.Par2>WIRED_PORTS)
@@ -725,14 +726,14 @@ int ExecuteLine(char *Line, byte Port)
               
           // test:EventToExecute.Par1 binnen bereik maximaal beschikbare timers
           case CMD_TIMER_RANDOM:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>TIMER_MAX)
               error=MESSAGE_02;
             break;
 
           // test:EventToExecute.Par1 binnen bereik maximaal beschikbare timers
           case EVENT_TIMER:
-            EventToExecute.Type=EVENT_TYPE_EVENT;
+            EventToExecute.Type=NODO_TYPE_EVENT;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>TIMER_MAX)
               error=MESSAGE_02;
             break;
@@ -741,7 +742,7 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_BREAK_ON_TIME_LATER:
           case CMD_BREAK_ON_TIME_EARLIER:
           case CMD_CLOCK_TIME:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             error=MESSAGE_02;
             if(GetArgv(Command,TmpStr1,2))
               {
@@ -754,7 +755,7 @@ int ExecuteLine(char *Line, byte Port)
     
           // geldige datum
           case CMD_CLOCK_DATE:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             // datum in Par2 volgens format DDMMYYYY. 
             EventToExecute.Par1=0;
             if((EventToExecute.Par2=str2uldate(Command))==0xffffffff)
@@ -763,7 +764,7 @@ int ExecuteLine(char *Line, byte Port)
             
           // test:EventToExecute.Par1 binnen bereik maximaal beschikbare wired poorten.
           case EVENT_WIRED_IN:
-            EventToExecute.Type=EVENT_TYPE_EVENT;
+            EventToExecute.Type=NODO_TYPE_EVENT;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>WIRED_PORTS)
               error=MESSAGE_02;
             if(EventToExecute.Par2!=VALUE_ON && EventToExecute.Par2!=VALUE_OFF)
@@ -771,7 +772,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
       
           case CMD_WIRED_OUT:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1>WIRED_PORTS)
               error=MESSAGE_02;
             if(EventToExecute.Par2!=VALUE_ON && EventToExecute.Par2!=VALUE_OFF)
@@ -779,7 +780,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
       
           case CMD_WIRED_PULLUP:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>WIRED_PORTS)
               error=MESSAGE_02;
             if(EventToExecute.Par2!=VALUE_ON && EventToExecute.Par2!=VALUE_OFF)
@@ -788,7 +789,7 @@ int ExecuteLine(char *Line, byte Port)
 
           
           case CMD_SEND_EVENT:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             switch(EventToExecute.Par1)
               {
               case VALUE_ALL:
@@ -803,7 +804,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
       
           case EVENT_WILDCARD:
-            EventToExecute.Type=EVENT_TYPE_EVENT;
+            EventToExecute.Type=NODO_TYPE_EVENT;
             switch(EventToExecute.Par1)
               {
               case VALUE_ALL:
@@ -851,13 +852,13 @@ int ExecuteLine(char *Line, byte Port)
            // par2 mag alles zijn
           case CMD_BREAK_ON_DAYLIGHT:
           case CMD_WAITFREERF:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1!=VALUE_OFF && EventToExecute.Par1!=VALUE_ON)
               error=MESSAGE_02;
             break;
       
           case CMD_OUTPUT:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1!=VALUE_SOURCE_I2C && EventToExecute.Par1!=VALUE_SOURCE_IR && EventToExecute.Par1!=VALUE_SOURCE_RF && EventToExecute.Par1!=VALUE_SOURCE_HTTP)
               error=MESSAGE_02;
             if(EventToExecute.Par2!=VALUE_OFF && EventToExecute.Par2!=VALUE_ON)
@@ -865,7 +866,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
 
           case CMD_SENDTO:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             Transmission_SendToAll=EventToExecute.Par2;
             if(EventToExecute.Par1<=UNIT_MAX)
               {
@@ -878,7 +879,7 @@ int ExecuteLine(char *Line, byte Port)
             break;    
 
           case CMD_LOCK: // Hier wordt de lock code o.b.v. het wachtwoord ingesteld. Alleen van toepassing voor de Mega
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             EventToExecute.Par2=0L;
             for(x=0;x<strlen(Settings.Password);x++)
               {
@@ -888,7 +889,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
 
           case CMD_VARIABLE_SET:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1>USER_VARIABLES_MAX)
               error=MESSAGE_02;
             else if(GetArgv(Command,TmpStr1,3))// waarde van de variabele
@@ -903,7 +904,7 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_BREAK_ON_VAR_NEQU:
           case CMD_VARIABLE_DEC:
           case CMD_VARIABLE_INC:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
               error=MESSAGE_02;
             else if(GetArgv(Command,TmpStr1,3))// waarde van de variabele
@@ -913,7 +914,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
 
           case EVENT_VARIABLE:
-            EventToExecute.Type=EVENT_TYPE_EVENT;
+            EventToExecute.Type=NODO_TYPE_EVENT;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
               error=MESSAGE_02;
             else if(GetArgv(Command,TmpStr1,3))// waarde van de variabele
@@ -925,7 +926,7 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_WIRED_ANALOG:
           case CMD_WIRED_THRESHOLD:
           case CMD_WIRED_SMITTTRIGGER:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>WIRED_PORTS)
               error=MESSAGE_02;
             else if(GetArgv(Command,TmpStr1,3))
@@ -933,7 +934,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
               
           case CMD_EVENTLIST_WRITE:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(Transmission_SendToUnit==Settings.Unit || Transmission_SendToUnit==0)
               {                          
               if(EventToExecute.Par1<=EventlistMax)
@@ -949,7 +950,7 @@ int ExecuteLine(char *Line, byte Port)
 
           case CMD_PASSWORD:
             {
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             TmpStr1[0]=0;
             GetArgv(Command,TmpStr1,2);
             TmpStr1[25]=0; // voor geval de string te lang is.
@@ -973,7 +974,7 @@ int ExecuteLine(char *Line, byte Port)
 
           case CMD_ID:
             {
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             TmpStr1[0]=0;
             GetArgv(Command,TmpStr1,2);
             TmpStr1[9]=0; // voor geval de string te lang is.
@@ -984,7 +985,7 @@ int ExecuteLine(char *Line, byte Port)
 
           case CMD_TEMP:
             {
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             x=StringFind(Command,cmd2str(CMD_TEMP))+strlen(cmd2str(CMD_TEMP));
             while(Command[x]==' ')x++;             // eventuele spaties verwijderen
             strcpy(TmpStr1,Command+x);             // Alles na de "temp" hoort bij de variabele
@@ -995,7 +996,7 @@ int ExecuteLine(char *Line, byte Port)
             }  
           
           case EVENT_RAWSIGNAL:
-            EventToExecute.Type=EVENT_TYPE_EVENT;
+            EventToExecute.Type=NODO_TYPE_EVENT;
             if(GetArgv(Command,TmpStr1,2))
               {
               EventToExecute.Par1=0;
@@ -1004,7 +1005,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
 
           case CMD_ALARM_SET:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             // Commando format: [AlarmSet <AlarmNumber 1..4>, <Enabled On|Off>, <Time HHMM>, <Day 1..7>]
             //                  [Time <Time HHMM>, <Day 1..7>]
             // We moeten wat truucs uithalen om al deze info in een 32-bit variabele te krijgen.
@@ -1076,7 +1077,7 @@ int ExecuteLine(char *Line, byte Port)
             // Tijd wordt in Par2 opgeslagen volgens volgende format: MSB-0000WWWWAAAABBBBCCCCDDDD-LSB
             // WWWW=weekdag, AAAA=Uren tiental, BBBB=uren, CCCC=minuten tiental DDDD=minuten
             {              
-            EventToExecute.Type=EVENT_TYPE_EVENT;
+            EventToExecute.Type=NODO_TYPE_EVENT;
             if(GetArgv(Command,TmpStr1,2)) // Minutes
               {
               EventToExecute.Par2=0L; 
@@ -1118,7 +1119,7 @@ int ExecuteLine(char *Line, byte Port)
             }
 
           case CMD_FILE_LOG:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(GetArgv(Command,TmpStr1,2))
               {
               strcat(TmpStr1,".dat");
@@ -1130,7 +1131,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
           
           case CMD_FILE_ERASE:      
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(GetArgv(Command,TmpStr1,2))
               {
               strcat(TmpStr1,".dat");
@@ -1144,7 +1145,7 @@ int ExecuteLine(char *Line, byte Port)
     
           case CMD_RAWSIGNAL_ERASE:      
           case CMD_RAWSIGNAL_SEND:      
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             // Haal Par1 uit het commando. let op Par1 gebruiker is een 32-bit hex-getal die wordt opgeslagen in struct Par2.
             if(GetArgv(Command,TmpStr1,2))
               {
@@ -1156,7 +1157,7 @@ int ExecuteLine(char *Line, byte Port)
     
           case CMD_FILE_GET_HTTP:
             {
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(GetArgv(Command,TmpStr1,2))
               {
               Led(BLUE);
@@ -1170,7 +1171,7 @@ int ExecuteLine(char *Line, byte Port)
             
           case CMD_FILE_SHOW:
             {
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             char FileName[13];
             TmpStr1[8]=0;// voor de zekerheid te lange filename afkappen
             if(GetArgv(Command,FileName,2))
@@ -1185,7 +1186,7 @@ int ExecuteLine(char *Line, byte Port)
     
           case CMD_FILE_EXECUTE:
             {
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par2==VALUE_ON)
               EventToExecute.Par1=VALUE_ON;
             else
@@ -1205,7 +1206,7 @@ int ExecuteLine(char *Line, byte Port)
             }
     
           case CMD_EVENTLIST_SHOW:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1<=EventlistMax)
               {
               PrintString(ProgmemString(Text_22),Port);
@@ -1230,7 +1231,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
               
           case CMD_NODO_IP:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(GetArgv(Command,TmpStr1,2))
               if(!str2ip(TmpStr1,Settings.Nodo_IP))
                 error=MESSAGE_02;
@@ -1238,7 +1239,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
             
           case CMD_CLIENT_IP:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(GetArgv(Command,TmpStr1,2))
               if(!str2ip(TmpStr1,Settings.Client_IP))
                 error=MESSAGE_02;
@@ -1246,14 +1247,14 @@ int ExecuteLine(char *Line, byte Port)
             break;
             
           case CMD_SUBNET:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(GetArgv(Command,TmpStr1,2))
               if(!str2ip(TmpStr1,Settings.Subnet))
                 error=MESSAGE_02;
             break;
             
           case CMD_DNS_SERVER:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(GetArgv(Command,TmpStr1,2))
               if(!str2ip(TmpStr1,Settings.DnsServer))
                 error=MESSAGE_02;
@@ -1261,7 +1262,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
             
           case CMD_GATEWAY:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(GetArgv(Command,TmpStr1,2))
               if(!str2ip(TmpStr1,Settings.Gateway))
                 error=MESSAGE_02;
@@ -1269,7 +1270,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
             
           case CMD_EVENTLIST_FILE:
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             Led(BLUE);
             if(GetArgv(Command,TmpStr1,2))
               {
@@ -1285,7 +1286,7 @@ int ExecuteLine(char *Line, byte Port)
 
           case CMD_IF:
             {
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             x=StringFind(Command," ") ;           // laat x wijzen direct NA het if commando.
             strcpy(TmpStr1,Command+x);            // Alles na de "if" hoort bij de voorwaarde
 
@@ -1356,7 +1357,7 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_PORT_SERVER:
           case CMD_PORT_CLIENT:
             {
-            EventToExecute.Type=EVENT_TYPE_COMMAND;
+            EventToExecute.Type=NODO_TYPE_COMMAND;
             if(GetArgv(Command,TmpStr1,2))
               EventToExecute.Par2=str2int(TmpStr1);
             if(EventToExecute.Par2 > 0xffff)
@@ -1374,7 +1375,7 @@ int ExecuteLine(char *Line, byte Port)
               if(Device_ptr[x]!=0)
                 {
                 EventToExecute.Command=Device_id[x];
-                EventToExecute.Type |= EVENT_TYPE_DEVICE;
+                EventToExecute.Type = NODO_TYPE_DEVICE;
                 if(Device_ptr[x](DEVICE_MMI_IN,&EventToExecute,Command))
                    y=true;
                 }
