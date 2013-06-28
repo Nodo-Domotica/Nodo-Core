@@ -40,7 +40,7 @@
 // Stel hieronder in welk Nodo unit nummer u gaat compileren. Uitgangspunt is dat elke fysieke Nodo een uniek unit nummer krijgt toegekend.
 // Default heeft een Nodo Mega unit nummer 1. Een Nodo Small heeft defaut unit nummer 15. Geef bij onderstaande definitie het unitnummer op.
 // Deze kan naar behoefte naderhand met het commando [UnitSet <nummer>] worden gewijgigd.
-#define UNIT_NODO          10
+#define UNIT_NODO          1
 
 
 // Stap-4: Definitie welke devices worden gebruikt.
@@ -64,9 +64,9 @@
 // Definities voor Nodo unit nummer 1 
 // Hardware    : Nodo-Mega op basis van een Arduino Mega met een ATMega2560 chip.
 // Toepassing  : Master nodo in verbinding met de WebApp
-#if (UNIT_NODO == 10) //??? 1
+#if (UNIT_NODO == 1) //??? 1
   #define NODO_MEGA                    true  // true = Nodo Mega, false=Nodo-Small
-  #define ETHERNET                     false  // true = Deze Nodo beschikt over een ethernet kaart
+  #define ETHERNET                     true  // true = Deze Nodo beschikt over een ethernet kaart
 
   // Geef in onderstaande tabel aan welke devices DEZE nodo gebruikt.
   #define DEVICE_CORE_001  // Kaku            : Klik-Aan-Klik-Uit ontvangen  
@@ -91,7 +91,7 @@
   #define DEVICE_CORE_002  // SendKaku        : Klik-Aan-Klik-Uit verzenden 
   #define DEVICE_CORE_003  // NewKAKU         : Klik-Aan-Klik-Uit ontvangen, automatische codering.
   #define DEVICE_CORE_004  // SendNewKAKU     : Klik-Aan-Klik-Uit zenden, automatische codering.
-  #define DEVICE_CORE_005 // TempRead        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
+  #define DEVICE_CORE_005  // TempRead        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
 
 #endif 
 // ----------------------------------------------------------------------------------------------------------------------------------------

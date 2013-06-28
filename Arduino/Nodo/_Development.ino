@@ -188,6 +188,15 @@ R540:
 - Nummering messages is veranderd.
 - Niet compatible build nummers kunnen elkaar nu niet meer zien via IR, RF, I2C.
 
+R541:
+- Issue 748 in arduino-nodo: Nodo haalt alles door elkaar (r540)
+
+R542:
+- Issue 746: Script via Webapp naar Slave werkt niet (r538)
+- Commando [WaitFreeRF] gerenamed naar [WaitFreeRX] omdat deze nu ook IR checked.
+- Foutje in RF variabnt van SendTo opgelost.
+
+
 Nog te doen:
 - Testen: [VariableEvent]
 - Testen: Tellen pulsen
@@ -195,5 +204,6 @@ Nog te doen:
 - Methode voor WaitFree is aangepast. Opnieuw testen en fijnafstelling in multi-nodo-omgeving
 - Status EventlistCount klopt niet.
 - Na mislukte sendto vanuit een file kwam de melding Output=HTTP(141.138.136.245); Unit=7; Event=Message 4294967176: UserEvent
+- ClockSync commando alleen op Mega?
 
 \*****************************************************************************************/

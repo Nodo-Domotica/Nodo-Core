@@ -108,7 +108,7 @@ void RaiseMessage(byte MessageCode)
     return;
 
   TempEvent.Port      = VALUE_ALL;
-  SendEvent(&TempEvent,false,true,true);
+  SendEvent(&TempEvent,false,true,Settings.WaitFree==VALUE_ON);
   }
 
 
@@ -304,11 +304,11 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
         break;
       
       // break af als opgegeven event voorbij komt. Let op, alleen events met als bestemming 0 of dit unitnummer worden gedetecteerd!
-      // De check vindt alleen plaats Command en Unit, dus niet op Par1 en Par2.
+      // De check vindt alleen plaats Type, Command en Unit, dus niet op Par1 en Par2.
       // Als SourceUnit==0 dan wordt input van alle units geaccepteerd.
       if(WaitForEvent!=0)
         {
-        if(WaitForEvent->Command==Event.Command)
+        if(WaitForEvent->Command==Event.Command && WaitForEvent->Type==Event.Type)
           {
           if(WaitForEvent->SourceUnit==Event.SourceUnit || WaitForEvent->SourceUnit==0)
             {
@@ -323,6 +323,7 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
   // als timeout, dan error terug geven
   if(TimeoutTimer<=millis())
     return false;
+
   else
     return true;
   }
@@ -367,7 +368,6 @@ boolean GetStatus(struct NodoEventStruct *Event)
   byte xCommand=Event->Command;  
   ClearEvent(Event);
 
-  Event->Flags|=TRANSMISSION_VIEW_ONLY; // forceer dat deze wordt behandeld als een event
   Event->Command=xCommand;
   
   switch (xCommand)
@@ -881,7 +881,9 @@ void Status(struct NodoEventStruct *Request)
               Result.Port=VALUE_ALL;
             else
               Result.Port=Request->Port;
-            SendEvent(&Result,false,true,true); // verzend als event
+           //??? Event->Flags|=TRANSMISSION_VIEW_ONLY; // forceer dat deze wordt behandeld als een event
+           Result.Type = NODO_TYPE_EVENT;
+           SendEvent(&Result,false,true,Settings.WaitFree==VALUE_ON); // verzend als event            
             }
   
           #if NODO_MEGA

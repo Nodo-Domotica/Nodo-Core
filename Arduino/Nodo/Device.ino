@@ -289,7 +289,7 @@ boolean Device_002(byte function, struct NodoEventStruct *event, char *string)
             }          
           }
         }
-      SendEvent(event,true,true,true);
+      SendEvent(event,true,true,Settings.WaitFree==VALUE_ON);
       success=true;
       break;
       }
@@ -678,7 +678,7 @@ boolean Device_004(byte function, struct NodoEventStruct *event, char *string)
       RawSignal.Pulses[i++]=NewKAKU_1T/RawSignal.Multiply; //pulse van de stopbit
       RawSignal.Pulses[i]=0; //space van de stopbit
       RawSignal.Number=i; // aantal bits*2 die zich in het opgebouwde RawSignal bevinden
-      SendEvent(event,true,true,true);
+      SendEvent(event,true,true,Settings.WaitFree==VALUE_ON);
       success=true;
       break;
       }
@@ -2405,7 +2405,7 @@ boolean Device_016(byte function, struct NodoEventStruct *event, char *string)
     event->Port=VALUE_ALL; // Signaal mag naar alle door de gebruiker met [Output] ingestelde poorten worden verzonden.
     RawSignal.Repeats=5;   // vijf herhalingen.
     RawSignal.Delay=20; // Tussen iedere pulsenreeks enige tijd rust.
-    SendEvent(event,true,true,true);
+    SendEvent(event,true,true,Settings.WaitFree==VALUE_ON);
     success=true;
     break;
     }
