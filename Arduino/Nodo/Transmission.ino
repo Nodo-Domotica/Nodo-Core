@@ -1,13 +1,9 @@
-#define NODO_PULSE_0               500  // PWM: Tijdsduur van de puls bij verzenden van een '0' in uSec.
-#define NODO_PULSE_MID            1000  // PWM: Pulsen langer zijn '1'
-#define NODO_PULSE_1              1500  // PWM: Tijdsduur van de puls bij verzenden van een '1' in uSec. (3x NODO_PULSE_0)
-#define NODO_SPACE                 500  // PWM: Tijdsduur van de space tussen de bitspuls bij verzenden van een '1' in uSec.   
-#define SIGNAL_ANALYZE_SHARPNESS    50  // Scherpte c.q. foutmarge die gehanteerd wordt bij decoderen van RF/IR signaal.
-#define MIN_RAW_PULSES              16  // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
-#define SWITCH_TIME_RX_TX_IR       100  // Minimale tijd tussen omschakelen van ontvangen naar zenden. 
-#define SWITCH_TIME_RX_TX_RF       750  // Minimale tijd tussen omschakelen van ontvangen naar zenden. 
-#define SWITCH_TIME_RX_TX_I2C       25  // Minimale tijd tussen omschakelen van ontvangen naar zenden. 
-#define WAIT_FREE_RX_WINDOW        250  // minimale wachttijd wanneer wordt gewacht op een vrije RF of IR band.
+#define NODO_PULSE_0                 500  // PWM: Tijdsduur van de puls bij verzenden van een '0' in uSec.
+#define NODO_PULSE_MID              1000  // PWM: Pulsen langer zijn '1'
+#define NODO_PULSE_1                1500  // PWM: Tijdsduur van de puls bij verzenden van een '1' in uSec. (3x NODO_PULSE_0)
+#define NODO_SPACE                   500  // PWM: Tijdsduur van de space tussen de bitspuls bij verzenden van een '1' in uSec.   
+#define SIGNAL_ANALYZE_SHARPNESS      50  // Scherpte c.q. foutmarge die gehanteerd wordt bij decoderen van RF/IR signaal.
+#define MIN_RAW_PULSES                16  // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
 
 boolean AnalyzeRawSignal(struct NodoEventStruct *E)
   {
@@ -17,7 +13,13 @@ boolean AnalyzeRawSignal(struct NodoEventStruct *E)
     return false;     
   
   if(RawSignal_2_Nodo(E))           // Is het een Nodo signaal
+    {
+    // Als er een Nodo signaal is binnengekomen, dan weten we zeker dat er een Nodo in het landschap is die tijd nodig heeft om
+    // weer terug te schakelen naar de ontvangstmode. Dit kost (helaas) enige tijd. Zorg er voor dat er gedurende deze dtijd
+    // even geen Nodo event wordt verzonden anders wordt deze vrijwel zeker gemist.
+    HoldTransmission=millis()+NODO_TX_TO_RX_SWITCH_TIME;
     return true;
+    }
   
   #if NODO_30_COMPATIBLE
   if(RawSignal_2_Nodo_OLD(E))       // Is het een Nodo signaal: oude 32-bit format.
@@ -149,7 +151,6 @@ void WaitFree(byte Port, int TimeOut)
     // Luister of er pulsen zijn
     if( (( Port==VALUE_SOURCE_IR || Port==VALUE_ALL) && pulseIn(PIN_IR_RX_DATA,LOW  ,1000) > MIN_PULSE_LENGTH)   ||
         (( Port==VALUE_SOURCE_RF || Port==VALUE_ALL) && pulseIn(PIN_RF_RX_DATA,HIGH ,1000) > MIN_PULSE_LENGTH)   )
-
         WindowTimer=millis()+WAIT_FREE_RX_WINDOW;
     }
   Led(RED);
@@ -270,7 +271,7 @@ void RawSendIR(void)
 
 /*********************************************************************************************\
  * Deze routine berekend de RAW pulsen van een Nodo event en plaatst deze in de buffer RawSignal
- * RawSignal.Bits het aantal pulsen*2+startbit*2 ==> 130
+ * RawSignal.Bits het aantal pulsen*2+startbit*2
  \*********************************************************************************************/
 
 // Definieer een datablock die gebruikt wordt voor de gegevens die via de ether verzonden moeten worden.
@@ -303,12 +304,13 @@ void Nodo_2_RawSignal(struct NodoEventStruct *Event)
   DataBlock.Command         = Event->Command;
   DataBlock.Par1            = Event->Par1;
   DataBlock.Par2            = Event->Par2;
+  DataBlock.Checksum        = SETTINGS_VERSION;
 
   // bereken checksum: crc-8 uit alle bytes in de struct
-  byte c=0,*B=(byte*)&DataBlock;
+  byte c=0;
+  byte *B=(byte*)&DataBlock;
   for(byte x=0;x<sizeof(struct DataBlockStruct);x++)
     c^=*(B+x);
-  c^=(SETTINGS_VERSION & 0xff); // Verwerk build in checksum om communicatie ussen verschillende versies te voorkomen 
   DataBlock.Checksum=c;
 
   // begin met een lange startbit. Veilige timing gekozen zodat deze niet gemist kan worden
@@ -384,57 +386,6 @@ inline boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
   return false;
   }
 
-/**********************************************************************************************\
- * Bij uitwisseling van eventss tussen Nodo's moeten aan beide zijde rekening worden gehouden 
- * met processingtijd en setup-tijd van de RF ontvangers. eze funktie houdt timers bij en voorziet
- * in wachtloops die de setup-tijd en processing tijden rspecteren, maar niet voor onnodige
- * vertraging zorgen.
- *
- * Na zenden timers setten, voor verzenden een wachttijd inlassen.
- \*********************************************************************************************/
-void DelayTransmission(byte Port, boolean Set)
-  {
-  static unsigned long LastTransmitTime_RF=0L;
-  static unsigned long LastTransmitTime_IR=0L;
-  static unsigned long LastTransmitTime_I2C=0L;
-
-  // Als set, dan alleen tijdstip markeren
-  if(Set)
-    {
-    switch(Port)
-      {
-      case VALUE_SOURCE_RF:
-        LastTransmitTime_RF=millis();
-        break;
-  
-      case VALUE_SOURCE_IR:
-        LastTransmitTime_IR=millis();
-        break;
-  
-      case VALUE_SOURCE_I2C:
-        LastTransmitTime_I2C=millis();
-        break;
-      }
-    }
-  else    
-    {
-    switch(Port)
-      {
-      case VALUE_SOURCE_RF:
-        while((LastTransmitTime_RF+SWITCH_TIME_RX_TX_RF) > millis());
-        break;
-  
-      case VALUE_SOURCE_IR:
-        while((LastTransmitTime_IR+SWITCH_TIME_RX_TX_IR) > millis());
-        break;
-  
-      case VALUE_SOURCE_I2C:
-        while((LastTransmitTime_I2C+SWITCH_TIME_RX_TX_I2C) > millis());
-        break;
-      }
-    delay(MIN_TIME_BETWEEN_TX);// Korte wachttijd tussen alle zendacties.
-    }    
-  }
 
 /**********************************************************************************************\
  * verzendt een event en geeft dit tevens weer op SERIAL
@@ -443,15 +394,16 @@ void DelayTransmission(byte Port, boolean Set)
  \*********************************************************************************************/
 boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Display, boolean WaitForFree)
   {  
+  
   ES->Direction=VALUE_DIRECTION_OUTPUT;
   ES->DestinationUnit=Transmission_SendToUnit;
   byte Port=ES->Port;
+
 
   // Als een Nodo actief is en excusief communiceert met een andere Nodo, c.q. de ether heeft geclaimd is, dan mag deze Nodo niet zenden.
   // In dit geval resteert deze Nodo niets anders dan even te wachten tot de lijn weer vrijgegeven wordt of de wachttijd verlopen is.
   // Als er een timeout optreedt, dan de blokkade opheffen. Dit ter voorkoming dat Nodo's oneindig wachten op vrije lijn.
   // Uitzondering is als de Nodo zelf de master was, dan deze mag altijd zenden.
-
 
   if(Transmission_SelectedUnit!=0 && Transmission_SelectedUnit!=Settings.Unit && !Transmission_ThisUnitIsMaster)
     {
@@ -474,18 +426,20 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
 
   if(WaitForFree)
     if(Port==VALUE_SOURCE_RF || Port==VALUE_SOURCE_IR ||(Settings.TransmitRF==VALUE_ON && Port==VALUE_ALL))
-      if(Settings.WaitFree==VALUE_ON)
-        WaitFree(VALUE_ALL, WAITFREE_TIMEOUT);
+      WaitFree(VALUE_ALL, WAITFREE_TIMEOUT);
 
   if(!UseRawSignal)
     Nodo_2_RawSignal(ES);
 
+
+  // Respecteer een minimale tijd tussen verzenden van events. Wachten op dit tijdstip in millis() alvorens event te verzenden.
+  while(millis()<HoldTransmission);
+ 
   // Verstuur signaal als IR
   if(Settings.TransmitIR==VALUE_ON && (Port==VALUE_SOURCE_IR || Port==VALUE_ALL))
     { 
     ES->Port=VALUE_SOURCE_IR;
     if(Display)PrintEvent(ES,VALUE_ALL);
-    DelayTransmission(VALUE_SOURCE_IR,false);
     RawSendIR();
     }
 
@@ -494,7 +448,6 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     {
     ES->Port=VALUE_SOURCE_RF;
     if(Display)PrintEvent(ES,VALUE_ALL);
-    DelayTransmission(VALUE_SOURCE_RF,false);
     RawSendRF();
     }
 
@@ -523,10 +476,12 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
       {
       ES->Port=VALUE_SOURCE_I2C;
       if(Display)PrintEvent(ES,VALUE_ALL);
-      DelayTransmission(VALUE_SOURCE_I2C,false);
       SendI2C(ES);
       }
     }
+  
+  // Onthoud wanneer de verzending plaats heeft gevonden om opvolgend even niet te snel te verzenden.
+  HoldTransmission=millis()+DELAY_BETWEEN_TRANSMISSIONS;
   }
   
 #if NODO_MEGA
@@ -539,7 +494,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
  \*********************************************************************************************/
 boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
   {
-  byte b,x,y,z;
+  byte b,c,x,y,z;
 
   if(RawSignal.Number!=16*sizeof(struct DataBlockStruct)+2) // Per byte twee posities + startbit.
     return false;
@@ -548,26 +503,22 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
   byte *B=(byte*)&DataBlock; // B wijst naar de eerste byte van de struct
   z=3;  // RwaSignal pulse teller: 0=aantal, 1=startpuls, 2=space na startpuls, 3=1e pulslengte. Dus start loop met drie.
 
+  c=0; // checksum
   for(x=0;x<sizeof(struct DataBlockStruct);x++) // vul alle bytes van de struct 
     {
     b=0;
     for(y=0;y<=7;y++) // vul alle bits binnen een byte
       {
       if((RawSignal.Pulses[z]*RawSignal.Multiply)>NODO_PULSE_MID)      
-        b|=1<<y; //LSB in signaal wordt  als eerste verzonden
+        b|=1<<y; //LSB in signaal wordt als eerste verzonden
       z+=2;
       }
     *(B+x)=b;
+    c^=b;  // bereken checksum: crc-8 uit alle bytes. 
     }
 
-  // bereken checksum: crc-8 uit alle bytes in de queue.
-  // Een correcte Checksum met alle bytes levert een nul omdat de XOR van alle bytes in het datablok zit.
-  b=0;
-  for(x=0;x<sizeof(struct DataBlockStruct);x++)
-    b^=*(B+x); 
-  b^=(SETTINGS_VERSION & 0xff); // Verwerk build in checksum om communicatie ussen verschillende versies te voorkomen 
-    
-  if(b==0)
+  //Checksum is zo opgebouwd dat het versienummer altijd over blijft.     
+  if(c==SETTINGS_VERSION)
     {
     if(DataBlock.SourceUnit>>5!=Settings.Home)
       return false;
@@ -582,6 +533,7 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
     Event->Par2=DataBlock.Par2;
     return true;
     }
+
   return false; 
   }
 
@@ -589,6 +541,8 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
 //#######################################################################################################
 //##################################### Transmission: I2C  ##############################################
 //#######################################################################################################
+
+
 
 
 // Deze routine wordt vanuit de Wire library aangeroepen zodra er data op de I2C bus verschijnt die voor deze nodo bestemd is.

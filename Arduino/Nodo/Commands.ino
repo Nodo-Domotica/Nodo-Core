@@ -212,7 +212,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       TempEvent.Command               = EVENT_USEREVENT;
       TempEvent.Par1                  = EventToExecute->Par1;
       TempEvent.Par2                  = EventToExecute->Par2;
-      SendEvent(&TempEvent, false, true,true);
+      SendEvent(&TempEvent, false, true,Settings.WaitFree==VALUE_ON);
       break;
 
     case CMD_LOCK:
@@ -259,7 +259,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
           {
           ClockSyncHTTP=true;
           EventToExecute->Port=VALUE_SOURCE_HTTP;
-          SendEvent(EventToExecute, false, true, true);
+          SendEvent(EventToExecute, false, true, Settings.WaitFree==VALUE_ON);
           ClockSyncHTTP=false;
           }
   
@@ -275,7 +275,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         TempEvent.Par2= ((unsigned long)Time.Year  %10)      | ((unsigned long)Time.Year  /10)%10<<4  | ((unsigned long)Time.Year/100)%10<<8 | ((unsigned long)Time.Year/1000)%10<<12 | 
                         ((unsigned long)Time.Month %10) <<16 | ((unsigned long)Time.Month /10)%10<<20 | 
                         ((unsigned long)Time.Date  %10) <<24 | ((unsigned long)Time.Date  /10)%10<<28 ;
-        SendEvent(&TempEvent, false, true, true);
+        SendEvent(&TempEvent, false, true, Settings.WaitFree==VALUE_ON);
               
         // Verzend tijd
         ClearEvent(&TempEvent);    
@@ -286,8 +286,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         TempEvent.Command=CMD_CLOCK_TIME;
         TempEvent.Flags =0;
         TempEvent.Par2=Time.Minutes%10 | Time.Minutes/10<<4 | Time.Hour%10<<8 | Time.Hour/10<<12;
-        SendEvent(&TempEvent, false, true, true);
-        
+        SendEvent(&TempEvent, false, true, Settings.WaitFree==VALUE_ON);        
         }
       break;
     #endif
@@ -333,7 +332,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       ClearEvent(&TempEvent);
       TempEvent=LastReceived;
       TempEvent.Port=EventToExecute->Par1==0?VALUE_ALL:EventToExecute->Par1;
-      SendEvent(&TempEvent, TempEvent.Command==EVENT_RAWSIGNAL,true, true);
+      SendEvent(&TempEvent, TempEvent.Command==EVENT_RAWSIGNAL,true, Settings.WaitFree==VALUE_ON);
       break;        
 
     case CMD_SOUND: 
@@ -443,7 +442,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         {
         EventToExecute->SourceUnit=Settings.Unit;
         EventToExecute->Port=VALUE_ALL;
-        SendEvent(EventToExecute, false,true, true);
+        SendEvent(EventToExecute, false,true, Settings.WaitFree==VALUE_ON);
         }
       break;    
 
@@ -513,7 +512,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         TempEvent.Par2=EventToExecute->Par2;
         RawSignal.Repeats=5;
         RawSignal.Delay=50;
-        SendEvent(&TempEvent, true ,true, false);
+        SendEvent(&TempEvent, true ,true, Settings.WaitFree==VALUE_ON);
         }
       else
         error=MESSAGE_03;

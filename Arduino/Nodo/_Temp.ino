@@ -2,6 +2,8 @@
 
 /*
 
+sendto 7;sound 2;sound 3
+
 digitalWrite(PIN_WIRED_OUT_1,HIGH);digitalWrite(PIN_WIRED_OUT_1,LOW);//??? Debugging: Wired-Out 1
 
 Serial.print(F("*** debug: "));Serial.println(); //??? Debug

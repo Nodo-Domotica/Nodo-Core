@@ -35,8 +35,7 @@ byte ProcessEvent1(struct NodoEventStruct *Event)
     TempEvent.Type                  = NODO_TYPE_SYSTEM;    // Event is niet voor de gebruiker bedoeld
     TempEvent.Command               = SYSTEM_COMMAND_CONFIRMED;
     TempEvent.Par1                  = RequestForConfirm;
-    SendEvent(&TempEvent, false,false,false);
-
+    SendEvent(&TempEvent, false,false,Settings.WaitFree==VALUE_ON);
     RequestForConfirm=0;
     }
   return error;
@@ -47,21 +46,20 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
   int x,y;
   byte error=0;
   boolean Continue=true;
-  
-
-  // PrintNodoEvent("ProcessEvent2();",Event);//???
-  
+    
   if(Event->Command==0)
     return error;
 
   ExecutionDepth++;
-      
+  
+  // Komt er een SendTo event voorbij, dan deze en opvolgende separaat afhandelen
   if(Continue && (Event->Command==CMD_SENDTO)) // Is dit event de eerste uit een [SendTo] reeks?
     {
     QueueReceive(Event);
     Continue=false;
     }
 
+  // Als er een LOCK actief is, dan commando's blokkeren behalve...
   if(Settings.Lock && (Event->Port==VALUE_SOURCE_RF || Event->Port==VALUE_SOURCE_IR ))
     {
     if(millis()>60000) // de eerste minuut is de lock nog niet actief. Ontsnapping voor als abusievelijk ingesteld
@@ -83,14 +81,22 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
       }
     }
 
+  // systeem commando's niet uitvoeren
   if(Continue && (Event->Type == NODO_TYPE_SYSTEM))
     {
     Continue=false;
     }
 
+  // Als de queue vlag staat, dan direct in de queue stoppen en verder niets mee doen.
   if(Continue && (Event->Flags & TRANSMISSION_QUEUE))
     {
     QueueAdd(Event);
+    Continue=false;
+    }
+
+  // restanten van een niet correct verwekt SndTo niet uitvoeren
+  if(Continue && (Event->Flags & TRANSMISSION_SENDTO))
+    {
     Continue=false;
     }
 
@@ -147,9 +153,7 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
           }
         // abort is geen fatale error/break. Deze niet verder behandelen als een error.
         if(error==MESSAGE_15)
-          {
           error=0;
-          }
         }      
      // Als de SendTo niet permanent is ingeschakeld, dan deze weer uitzetten
       if(Transmission_SendToAll!=VALUE_ALL)Transmission_SendToUnit=0;
@@ -284,7 +288,6 @@ boolean QueueAdd(struct NodoEventStruct *Event)
     Queue[QueuePosition].Par1    = Event->Par1;
     Queue[QueuePosition].Par2    = Event->Par2;
     QueuePosition++;           
-
     return true;
     }
   return false;
@@ -356,11 +359,11 @@ byte QueueSend(void)
   unsigned long ID=millis();
   struct NodoEventStruct Event;
 
-
   // We maken tijdelijk gebruik van een SendQueue zodat de reguliere queue zijn werk kan blijven doen.
   struct QueueStruct SendQueue[EVENT_QUEUE_MAX];
   for(x=0;x<QueuePosition;x++)
     SendQueue[x]=Queue[x];
+
   byte SendQueuePosition=QueuePosition;
   QueuePosition=0;
   
@@ -380,27 +383,27 @@ byte QueueSend(void)
       Event.Port                = Port;
       Event.Type                = NODO_TYPE_SYSTEM;      
       Event.Command             = CMD_SENDTO;      
-      Event.Par1                = SendQueuePosition;
+      Event.Par1                = SendQueuePosition;   // Aantal te verzenden events in de queue. Wordt later gecheckt en teruggezonden in de confirm.
       Event.Par2                = ID;
       Event.Flags               = TRANSMISSION_SENDTO | TRANSMISSION_NEXT | TRANSMISSION_LOCK;
-      
-      SendEvent(&Event,false,false,false);
+      SendEvent(&Event,false,false,Settings.WaitFree==VALUE_ON);         // Alleen de eerste vooraf laten gaan door een WaitFree;
             
       // Verzend alle events uit de queue. Alleen de bestemmings Nodo zal deze events in de queue plaatsen
       for(x=0;x<SendQueuePosition;x++)
         {
-        // Alleen de eerste vooraf laten gaan door een WaitFree;
-        if(x>0)
-          Settings.WaitFree=VALUE_OFF;
-              
-        // laatste verzonden event markeren als laatste in de sequence.
-        if(x==SendQueuePosition-1)
-          Event.Flags = TRANSMISSION_SENDTO;
-        
+        ClearEvent(&Event);
+        Event.SourceUnit          = Settings.Unit;
+        Event.Port                = Port;
         Event.Type                = SendQueue[x].Type;
         Event.Command             = SendQueue[x].Command;
         Event.Par1                = SendQueue[x].Par1;
         Event.Par2                = SendQueue[x].Par2;
+
+        // laatste verzonden event markeren als laatste in de sequence.
+        if(x==SendQueuePosition-1)
+          Event.Flags = TRANSMISSION_SENDTO;
+        else        
+          Event.Flags = TRANSMISSION_SENDTO | TRANSMISSION_NEXT | TRANSMISSION_LOCK;
 
         SendEvent(&Event,false,false,false);
         }
@@ -411,14 +414,15 @@ byte QueueSend(void)
       Event.Command             = SYSTEM_COMMAND_CONFIRMED;
       Event.Type                = NODO_TYPE_SYSTEM;
 
+
       if(Wait(30,false,&Event,false))
         if(x==Event.Par1)
           error=false;
-  
+
       // Als er een timeout was of het aantel events is niet correct bevestigd, dan de gebruiker een waarschuwing tonen
       if(error)
         PrintString(ProgmemString(Text_08),VALUE_ALL);
-  
+
       }while((++Retry<5) && error);    
     }
   return error;
@@ -433,7 +437,7 @@ void QueueReceive(NodoEventStruct *Event)
   // Alle Nodo events die nu binnen komen op slaan in de queue.
   Transmission_NodoOnly=true;
   QueuePosition=0;
-  Wait(10, false,0 , true);  
+  Wait(10, false, 0, true);  
   byte count=QueuePosition;
   
   // Als aantal regels in de queue overeenkomt met wat in het SendTo verzoek is vermeldt
@@ -448,13 +452,17 @@ void QueueReceive(NodoEventStruct *Event)
 
       // Haal de SendTo vlag van de events af.
       for(byte x=0;x<QueuePosition;x++)
-        // bitClear(Queue[x].Flags,TRANSMISSION_SENDTO);//???
+        {
+        bitClear(Queue[x].Flags,TRANSMISSION_SENDTO);// Haal SENDTO bit er af, anders worden de events niet verwerkt n.a.v. onderdrukken incomplete SendTo reeksen.
         Queue[x].Flags=0;
-        
+        }
       QueueProcess();
       }
     }
+
   QueuePosition=0;
+
+delay(1000);//??? test
 
   struct NodoEventStruct TempEvent;
   ClearEvent(&TempEvent);
@@ -464,7 +472,7 @@ void QueueReceive(NodoEventStruct *Event)
   TempEvent.Type                = NODO_TYPE_SYSTEM; 
   TempEvent.Command             = SYSTEM_COMMAND_CONFIRMED;      
   TempEvent.Par1                = count;
-
   SendEvent(&TempEvent,false, false, false);
+
   Transmission_NodoOnly=false;
   }

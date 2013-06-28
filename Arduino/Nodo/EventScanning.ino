@@ -1,7 +1,7 @@
 #define MIN_PULSE_LENGTH           100  // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define SIGNAL_TIMEOUT_RF            5 // na deze tijd in mSec. wordt één RF signaal als beëindigd beschouwd.
 #define SIGNAL_TIMEOUT_IR           10 // na deze tijd in mSec. wordt één IR signaal als beëindigd beschouwd.
-#define SIGNAL_REPEAT_TIME        1000 // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
+#define SIGNAL_REPEAT_TIME        1000 // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF/IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
 
 boolean I2C_EventReceived=false;       // Als deze vlag staat, is er een I2C event binnengekomen.
 struct NodoEventStruct I2C_Event;
@@ -28,14 +28,14 @@ boolean ScanEvent(struct NodoEventStruct *Event)// Deze routine maakt deel uit v
     if(AnalyzeRawSignal(Event))
       {
       // Als er een signaal binnen komt, maar de vorige is al enige tijd geleden, dan hebben we een event
-      if((LastReceivedTime+SIGNAL_REPEAT_TIME)<millis())
+      if(RawSignal.Repeats==false || (LastReceivedTime+SIGNAL_REPEAT_TIME)<millis())
         {
         Fetched=VALUE_SOURCE_IR;
         LastReceivedTime=millis();
         }
       // anders is het zeer waarschijnlijk een restant van een herhalend signaal. We wachten enige tijd totdat de lijn weer leeg is.
       else
-        WaitFree(VALUE_SOURCE_IR, 5000);// is waarde 5000 niet erg hoog???
+        WaitFree(VALUE_SOURCE_IR, 2000);
       }
     }
 
@@ -45,14 +45,14 @@ boolean ScanEvent(struct NodoEventStruct *Event)// Deze routine maakt deel uit v
     if(AnalyzeRawSignal(Event))
       {
       // Als er een signaal binnen komt, maar de vorige is al enige tijd geleden, dan hebben we een event
-      if((LastReceivedTime+SIGNAL_REPEAT_TIME)<millis())
+      if(RawSignal.Repeats==false || (LastReceivedTime+SIGNAL_REPEAT_TIME)<millis())
         {
         Fetched=VALUE_SOURCE_RF;
         LastReceivedTime=millis();
         }
       // anders is het zeer waarschijnlijk een restant van een herhalend signaal. We wachten enige tijd totdat de lijn weer leeg is.
       else
-        WaitFree(VALUE_SOURCE_RF, 5000);// Is waarde 5000 niet erg hoog???
+        WaitFree(VALUE_SOURCE_RF, 2000);
       }
     }
   
@@ -60,8 +60,6 @@ boolean ScanEvent(struct NodoEventStruct *Event)// Deze routine maakt deel uit v
     {
     Event->Port=Fetched;
     Event->Direction=VALUE_DIRECTION_INPUT;
-
-    // PrintNodoEvent("Fetched.",Event);//???
 
     // Een event kan een verzoek bevatten om bevestiging. Doe dit dan pas na verwerking.
     if(Event->Flags & TRANSMISSION_CONFIRM)

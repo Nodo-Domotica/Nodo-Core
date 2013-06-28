@@ -1,6 +1,6 @@
 boolean ExecuteCommand(NodoEventStruct *EventToExecute);//protoype defnieren.
 
-#define NODO_BUILD          540  //??? ophogen bij iedere build
+#define NODO_BUILD          542  //??? ophogen bij iedere build
 #define SETTINGS_VERSION     37  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #include <EEPROM.h>
 #include <Wire.h>
@@ -249,7 +249,7 @@ prog_char PROGMEM Cmd_70[]="VariableSet";
 prog_char PROGMEM Cmd_71[]="VariableSetVariable";
 prog_char PROGMEM Cmd_72[]="VariableWiredAnalog";
 prog_char PROGMEM Cmd_73[]="WaitEvent";
-prog_char PROGMEM Cmd_74[]="WaitFreeRF";
+prog_char PROGMEM Cmd_74[]="WaitFreeRX";
 prog_char PROGMEM Cmd_75[]="WiredAnalog";
 prog_char PROGMEM Cmd_76[]="WiredOut";
 prog_char PROGMEM Cmd_77[]="WiredPullup";
@@ -348,20 +348,23 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define DEVICE_INIT                  5
 #define DEVICE_ONCE_A_SECOND         6
 
-#define RED                          1  // Led = Rood
-#define GREEN                        2  // Led = Groen
-#define BLUE                         3  // Led = Blauw
-#define UNIT_MAX                    31 // Hoogst mogelijke unit nummer van een Nodo
-#define HOME_MAX                     7 // Hoogst mogelijke unit nummer van een Nodo
-#define SERIAL_TERMINATOR_1       0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>
-#define SERIAL_TERMINATOR_2       0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
-#define Loop_INTERVAL_1             50 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
-#define Loop_INTERVAL_2            250 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
-#define Loop_INTERVAL_3           1000 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
-#define MIN_TIME_BETWEEN_TX         50
-#define PASSWORD_MAX_RETRY           5     // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
-#define PASSWORD_TIMEOUT           300     // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
-#define TERMINAL_TIMEOUT           600     // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
+#define RED                            1 // Led = Rood
+#define GREEN                          2 // Led = Groen
+#define BLUE                           3 // Led = Blauw
+#define UNIT_MAX                      31 // Hoogst mogelijke unit nummer van een Nodo
+#define HOME_MAX                       7 // Hoogst mogelijke unit nummer van een Nodo
+#define SERIAL_TERMINATOR_1         0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>
+#define SERIAL_TERMINATOR_2         0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
+#define Loop_INTERVAL_1               50 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
+#define Loop_INTERVAL_2              250 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
+#define Loop_INTERVAL_3             1000 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
+#define PASSWORD_MAX_RETRY             5 // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
+#define PASSWORD_TIMEOUT             300 // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
+#define TERMINAL_TIMEOUT             600 // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
+#define DELAY_BETWEEN_TRANSMISSIONS  250 // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
+#define NODO_TX_TO_RX_SWITCH_TIME    500 // Tijd die andere Nodo's nodig hebben om na zenden weer gereed voor ontvangst te staan. (Opstarttijd 433RX modules)
+#define WAIT_FREE_RX_WINDOW           50 // minimale wachttijd wanneer wordt gewacht op een vrije RF of IR band.
+#define WAITFREE_TIMEOUT           30000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
 
 // Hardware in gebruik: Bits worden geset in de variabele HW_Config, uit te lezen met [Status HWConfig]
 #define HW_BIC_0        0
@@ -386,7 +389,6 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define BIC_HWMESH_NES_V1X     1  // Nodo Ethernet Shield V1.x met Aurel tranceiver. Vereist speciale pulse op PIN_BSF_0 voor omschakelen tussen Rx en Tx.
 
 #define DEVICE_MAX                  32 // Maximaal aantal devices 
-#define WAITFREE_TIMEOUT         30000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
 
 #if NODO_MEGA // Definities voor de Nodo-Mega variant.
 #define EVENT_QUEUE_MAX             16 // maximaal aantal plaatsen in de queue.
@@ -566,6 +568,7 @@ struct NodoEventStruct
 volatile unsigned long PulseCount=0L;                       // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
 volatile unsigned long PulseTime=0L;                        // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
 boolean RebootNodo=false;                                   // Als deze vlag staat, dan reboot de Nodo (cold-start)
+unsigned long HoldTransmission=0L;                          // wachten op dit tijdstip in millis() alvorens event te verzenden.
 byte Transmission_SelectedUnit=0;                           // 
 byte  Transmission_SendToUnit=0;                            // Unitnummer waar de events naar toe gestuurd worden. 0=alle.
 byte  Transmission_SendToAll=0;                             // Vlag die aangeeft of de SendTo permanent staat ingesteld of eenmalig (VALUE_ALL)
@@ -620,7 +623,7 @@ byte HTTPClientIP[4];                                       // IP adres van de H
 struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,DaylightSaving,DaylightSavingSetMonth,DaylightSavingSetDate; int Year;}Time; // Hier wordt datum & tijd in opgeslagen afkomstig van de RTC.
 
 
-#define RAW_BUFFER_SIZE            256                      // Maximaal aantal te ontvangen 128 bits is voldoende voor capture signalen.
+#define RAW_BUFFER_SIZE            256                      // Maximaal aantal te ontvangen 128 bits is voldoende voor capture meeste signalen.
 struct RawSignalStruct                                      // Variabelen geplaatst in struct zodat deze later eenvoudig kunnen worden weggeschreven naar SDCard
   {
   byte Source;                                              // Bron waar het signaal op is binnengekomen.
@@ -782,7 +785,7 @@ void setup()
   TempEvent.Type      = NODO_TYPE_EVENT;
   TempEvent.Command   = EVENT_BOOT;
   TempEvent.Par1      = Settings.Unit;
-  SendEvent(&TempEvent,false,true,true);  
+  SendEvent(&TempEvent,false,true,Settings.WaitFree==VALUE_ON);  
 
   bitWrite(HW_Config,HW_I2C,false); // Zet I2C weer uit. Wordt weer geactiveerd als er een I2C event op de bus verschijnt.
 
@@ -813,7 +816,7 @@ void setup()
     TempEvent.Type     = NODO_TYPE_EVENT;
     TempEvent.Command  = EVENT_NEWNODO;
     TempEvent.Par1     = Settings.Unit;
-    SendEvent(&TempEvent,false,true,true); 
+    SendEvent(&TempEvent,false,true,false); 
     }
   }
 
