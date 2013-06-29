@@ -138,7 +138,7 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
         // loop de gehele eventlist langs om te kijken of er een treffer is.   
         struct NodoEventStruct EventlistEvent, EventlistAction;   
   
-        // sla event op voor later gebruik in SendEvent en VariableEvent???plaats hier?
+        // sla event op voor later gebruik in SendEvent en VariableEvent.
         LastReceived=*Event;
   
         x=0;
@@ -193,22 +193,19 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
     return false;  
 
 
-  if(Event->Type==NODO_TYPE_EVENT)
-    {
-    // ### WILDCARD:      
-    if(MacroEvent->Command == EVENT_WILDCARD) // is regel uit de eventlist een WildCard?
-      if( MacroEvent->Par1==VALUE_ALL        ||  MacroEvent->Par1==Event->Port)
-        if((MacroEvent->Par2&0xff)==VALUE_ALL  || (MacroEvent->Par2&0xff)==Event->Command)
-          if(((MacroEvent->Par2>>8)&0xff)==0       || ((MacroEvent->Par2>>8)&0xff)==Event->SourceUnit)
-            return true;
+  // ### WILDCARD:      
+  if(MacroEvent->Command == EVENT_WILDCARD)                                                                                 // is regel uit de eventlist een WildCard?
+    if( MacroEvent->Par1==VALUE_ALL          ||   MacroEvent->Par1==Event->Port)                                            // Correspondeert de poort of mogen alle poorten?
+      if((MacroEvent->Par2&0xff)==VALUE_ALL  ||  (MacroEvent->Par2&0xff)==Event->Command && Event->Type==NODO_TYPE_EVENT)   // Correspondeert het commando deel alss het een commando is, of mogen alle
+        if(((MacroEvent->Par2>>8)&0xff)==0   || ((MacroEvent->Par2>>8)&0xff)==Event->SourceUnit)                            // Correspondeert het unitnummer of is deze niet opgegeven
+          return true;
           
-    // USEREVENT:
-    // beschouw bij een UserEvent een 0 voor Par1 of Par2 als een wildcard.
-    if(Event->Command==EVENT_USEREVENT && MacroEvent->Command==EVENT_USEREVENT)// Command
-      if( (Event->Par1==MacroEvent->Par1 || MacroEvent->Par1==0 || Event->Par1==0)  // Par1 deel een match
-       && (Event->Par2==MacroEvent->Par2 || MacroEvent->Par2==0 || Event->Par2==0)) // Par2 deel een match
+  // ### USEREVENT: beschouw bij een UserEvent een 0 voor Par1 of Par2 als een wildcard.
+  if(Event->Type==NODO_TYPE_EVENT)
+    if(Event->Command==EVENT_USEREVENT && MacroEvent->Command==EVENT_USEREVENT)                             // Is het een UserCommand
+      if( (Event->Par1==MacroEvent->Par1 || MacroEvent->Par1==0 || Event->Par1==0)                          // Par1 deel een match?
+       && (Event->Par2==MacroEvent->Par2 || MacroEvent->Par2==0 || Event->Par2==0))                         // Par2 deel een match?
          return true; 
-    }
     
   // Herkomst van een andere Nodo, dan er niets meer mee doen TENZIJ het een UserEvent is. Die werd hierboven 
   // al afgevangen.
