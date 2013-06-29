@@ -64,7 +64,7 @@
 // Definities voor Nodo unit nummer 1 
 // Hardware    : Nodo-Mega op basis van een Arduino Mega met een ATMega2560 chip.
 // Toepassing  : Master nodo in verbinding met de WebApp
-#if (UNIT_NODO == 1) //??? 1
+#if (UNIT_NODO == 1) 
   #define NODO_MEGA                    true  // true = Nodo Mega, false=Nodo-Small
   #define ETHERNET                     true  // true = Deze Nodo beschikt over een ethernet kaart
 

@@ -1,6 +1,6 @@
 boolean ExecuteCommand(NodoEventStruct *EventToExecute);//protoype defnieren.
 
-#define NODO_BUILD          542  //??? ophogen bij iedere build
+#define NODO_BUILD          543  //??? ophogen bij iedere build
 #define SETTINGS_VERSION     37  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #include <EEPROM.h>
 #include <Wire.h>
