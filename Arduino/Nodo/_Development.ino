@@ -191,6 +191,25 @@ R540:
 R541:
 - Issue 748 in arduino-nodo: Nodo haalt alles door elkaar (r540)
 
+R542:
+- Issue 746: Script via Webapp naar Slave werkt niet (r538)
+- Commando [WaitFreeRF] gerenamed naar [WaitFreeRX] omdat deze nu ook IR checked.
+- Foutje in RF variabnt van SendTo opgelost.
+
+R543:
+- Aanroep ongeldig device op Nodo geeft nu een melding aan de gebruiker.
+
+R544:
+- LET OP: Wildcard opties zijn gewijzigd. Alle intern ontstane events hebben als bron [ThisUnit] of [Eventlist] als ze uit de eventlist verwerking voortkomen
+- LET OP: Op de Small wordt de datum/tijd niet meer getoond. Dit zegt niets over de aanwezigheid van de klok. T.b.v. besparing ram/progmem geheugen!
+- Versienummer beperkt tot Major.Minor,Build. Alleen als Major en Minor versie gelijk zijn is event-uitwisseling mogelijk.
 
 
+Nog te doen:
+- Testen: [VariableEvent]
+- Testen: Tellen pulsen
+- Testen: Lock mechanisme
+- Methode voor WaitFree is aangepast. Opnieuw testen en fijnafstelling in multi-nodo-omgeving
+- Status EventlistCount klopt niet.
+- [SendTo x; UnitSet y] geeft vastloper op unit x.
 \*****************************************************************************************/

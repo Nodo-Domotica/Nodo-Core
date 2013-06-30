@@ -304,7 +304,7 @@ void Nodo_2_RawSignal(struct NodoEventStruct *Event)
   DataBlock.Command         = Event->Command;
   DataBlock.Par1            = Event->Par1;
   DataBlock.Par2            = Event->Par2;
-  DataBlock.Checksum        = SETTINGS_VERSION;
+  DataBlock.Checksum        = NODO_VERSION;
 
   // bereken checksum: crc-8 uit alle bytes in de struct
   byte c=0;
@@ -439,7 +439,9 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   if(Settings.TransmitIR==VALUE_ON && (Port==VALUE_SOURCE_IR || Port==VALUE_ALL))
     { 
     ES->Port=VALUE_SOURCE_IR;
+    #if NODO_MEGA
     if(Display)PrintEvent(ES,VALUE_ALL);
+    #endif
     RawSendIR();
     }
 
@@ -447,7 +449,9 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   if(Settings.TransmitRF==VALUE_ON && (Port==VALUE_SOURCE_RF || Port==VALUE_ALL))
     {
     ES->Port=VALUE_SOURCE_RF;
+    #if NODO_MEGA
     if(Display)PrintEvent(ES,VALUE_ALL);
+    #endif
     RawSendRF();
     }
 
@@ -475,7 +479,9 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     if((Port==VALUE_SOURCE_I2C || Port==VALUE_ALL) && bitRead(HW_Config,HW_I2C))
       {
       ES->Port=VALUE_SOURCE_I2C;
+      #if NODO_MEGA
       if(Display)PrintEvent(ES,VALUE_ALL);
+      #endif
       SendI2C(ES);
       }
     }
@@ -518,7 +524,7 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
     }
 
   //Checksum is zo opgebouwd dat het versienummer altijd over blijft.     
-  if(c==SETTINGS_VERSION)
+  if(c==NODO_VERSION)
     {
     if(DataBlock.SourceUnit>>5!=Settings.Home)
       return false;
@@ -561,7 +567,7 @@ void ReceiveI2C(int n)
       *(B+x)=b; 
       Checksum^=b; 
       }
-    Checksum^=(SETTINGS_VERSION & 0xff); // Verwerk build in checksum om communicatie ussen verschillende versies te voorkomen 
+    Checksum^=(NODO_VERSION & 0xff); // Verwerk build in checksum om communicatie ussen verschillende versies te voorkomen 
     x++;
     }
 
@@ -601,7 +607,7 @@ boolean SendI2C(struct NodoEventStruct *EventBlock)
       Wire.write(b);
       Checksum^=b; 
       }
-    Checksum^=(SETTINGS_VERSION & 0xff); // Verwerk build in checksum om communicatie ussen verschillende versies te voorkomen 
+    Checksum^=(NODO_VERSION & 0xff); // Verwerk build in checksum om communicatie ussen verschillende versies te voorkomen 
     Wire.write(Checksum); 
     Wire.endTransmission(false); // verzend de data, sluit af maar geef de bus NIET vrij
     }

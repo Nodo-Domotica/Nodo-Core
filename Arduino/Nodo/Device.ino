@@ -843,6 +843,7 @@ boolean Device_005(byte function, struct NodoEventStruct *event, char *string)
       
         DSTemp = (ScratchPad[1] << 8) + ScratchPad[0];  
     
+        event->Type         = NODO_TYPE_COMMAND;
         event->Command      = CMD_VARIABLE_SET;                 // Commando "VariableSet"
         event->Par1         = var;                              // Variabele die gevuld moet worden.
         event->Par2         = float2ul(float(DSTemp)*0.0625);   // DS18B20 variant. Waarde terugstoppen in de variabele
