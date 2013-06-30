@@ -49,16 +49,16 @@ Idee:
 
 void PrintNodoEvent(char* str, struct NodoEventStruct *Event)
   {    
-  Serial.println(str);
-  Serial.print(F("*** debug: Event->Port=             = "));Serial.println(Event->Port); //??? Debug
-  Serial.print(F("*** debug: Event->Direction         = "));Serial.println(Event->Direction); //??? Debug
-  Serial.print(F("*** debug: Event->Flags             = "));Serial.println(Event->Flags); //??? Debug
-  Serial.print(F("*** debug: Event->DestinationUnit   = "));Serial.println(Event->DestinationUnit); //??? Debug
-  Serial.print(F("*** debug: Event->SourceUnit        = "));Serial.println(Event->SourceUnit); //??? Debug
-  Serial.print(F("*** debug: Event->Type              = "));Serial.println(Event->Type); //??? Debug
-  Serial.print(F("*** debug: Event->Command           = "));Serial.println(Event->Command); //??? Debug
-  Serial.print(F("*** debug: Event->Par1              = "));Serial.println(Event->Par1); //??? Debug
-  Serial.print(F("*** debug: Event->Par2              = "));Serial.print(Event->Par2);Serial.print(", 0x");Serial.println(Event->Par2,HEX); //??? Debug
+  Serial.print(F("*** Debug: "));Serial.print(str); //??? Debug
+  Serial.print(F(" => Port="));Serial.print(Event->Port); //??? Debug
+  Serial.print(F(", Direction="));Serial.print(Event->Direction); //??? Debug
+  Serial.print(F(", Flags="));Serial.print(Event->Flags); //??? Debug
+  Serial.print(F(", DestinationUnit= "));Serial.print(Event->DestinationUnit); //??? Debug
+  Serial.print(F(", SourceUnit="));Serial.print(Event->SourceUnit); //??? Debug
+  Serial.print(F(", Type="));Serial.print(Event->Type); //??? Debug
+  Serial.print(F(", Command="));Serial.print(Event->Command); //??? Debug
+  Serial.print(F(", Par1="));Serial.print(Event->Par1); //??? Debug
+  Serial.print(F(", Par2=0x"));Serial.print(Event->Par2);Serial.println(Event->Par2,HEX); //??? Debug
   }
 
 void PrintRawSignal(void)

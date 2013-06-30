@@ -1,37 +1,9 @@
 boolean ExecuteCommand(NodoEventStruct *EventToExecute);//protoype defnieren.
 
-#define NODO_BUILD          543  //??? ophogen bij iedere build
-#define SETTINGS_VERSION     37  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
+#define NODO_VERSION         35  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
+#define NODO_BUILD          544  //??? ophogen bij iedere build
 #include <EEPROM.h>
 #include <Wire.h>
-
-// strings met vaste tekst naar PROGMEM om hiermee RAM-geheugen te sparen.
-prog_char PROGMEM Text_01[] = "Nodo Domotica controller (c) Copyright 2013 P.K.Tonkes.";
-prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
-prog_char PROGMEM Text_03[] = "Enter your password: ";
-prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSat";
-prog_char PROGMEM Text_22[] = "!******************************************************************************!";
-
-#if NODO_MEGA
-prog_char PROGMEM Text_15[] = "Nodo Beta V3.5.1 Mega, Product=SWACNC-MEGA-R%03d, Home=%d, ThisUnit=%d";
-#else
-prog_char PROGMEM Text_15[] = "Nodo Beta V3.5.1 Small, Product=SWACNC-SMALL-R%03d, Home=%d, ThisUnit=%d";
-#endif
-
-
-
-#if NODO_MEGA
-prog_char PROGMEM Text_05[] = "0123456789abcdef";
-prog_char PROGMEM Text_07[] = "Waiting...";
-prog_char PROGMEM Text_08[] = "SendTo: Transmission error. Retry...";
-prog_char PROGMEM Text_09[] = "(Last 10KByte)";
-prog_char PROGMEM Text_10[] = "RF/IR claimed by unit %d. Waiting...";
-prog_char PROGMEM Text_13[] = "RawSignal saved.";
-prog_char PROGMEM Text_14[] = "Event=";
-prog_char PROGMEM Text_23[] = "LOG.DAT";
-prog_char PROGMEM Text_28[] = "RAW"; // Directory op de SDCard voor opslag RawSignal
-prog_char PROGMEM Text_30[] = "Terminal connection closed.";
-#endif
 
 #define CMD_DUMMY                       0
 #define EVENT_USEREVENT                 1
@@ -126,11 +98,11 @@ prog_char PROGMEM Text_30[] = "Terminal connection closed.";
 #define EVENT_WIRED_IN                  90
 #define VALUE_ALL                       91
 #define VALUE_BUILD                     92
-#define VALUE_SOURCE_CLOCK              93
-#define VALUE_DLS                       94
-#define VALUE_RECEIVED_EVENT            95
-#define VALUE_SOURCE_EVENTLIST          96
-#define VALUE_EVENTLIST_COUNT           97
+#define VALUE_DLS                       93
+#define VALUE_RECEIVED_EVENT            94
+#define VALUE_EVENTLIST          95
+#define VALUE_EVENTLIST_COUNT           96
+#define VALUE_SOURCE_EVENTLIST               97
 #define VALUE_SOURCE_FILE               98
 #define VALUE_FREEMEM                   99
 #define VALUE_SOURCE_HTTP               100
@@ -143,36 +115,32 @@ prog_char PROGMEM Text_30[] = "Terminal connection closed.";
 #define VALUE_DIRECTION_OUTPUT          107
 #define VALUE_RECEIVED_PAR1             108
 #define VALUE_RECEIVED_PAR2             109
-#define VALUE_SOURCE_QUEUE              110
-#define VALUE_SOURCE_RF                 111
-#define VALUE_SOURCE_SERIAL             112
-#define VALUE_SOURCE_STATUS             113
-#define VALUE_SOURCE_SYSTEM             114
-#define VALUE_SOURCE_TELNET             115
-#define VALUE_THIS_UNIT                 116
-#define VALUE_SOURCE_TIMER              117
-#define VALUE_UNIT                      118
-#define VALUE_SOURCE_VARIABLE           119
-#define VALUE_SOURCE_WIRED              120
-#define MESSAGE_00                      121
-#define MESSAGE_01                      122
-#define MESSAGE_02                      123
-#define MESSAGE_03                      124
-#define MESSAGE_04                      125
-#define MESSAGE_05                      126
-#define MESSAGE_06                      127
-#define MESSAGE_07                      128
-#define MESSAGE_08                      129
-#define MESSAGE_09                      130
-#define MESSAGE_10                      131
-#define MESSAGE_11                      132
-#define MESSAGE_12                      133
-#define MESSAGE_13                      134
-#define MESSAGE_14                      135
-#define MESSAGE_15                      136
-#define MESSAGE_16                      137
+#define VALUE_SOURCE_RF                 110
+#define VALUE_SOURCE_SERIAL             111
+#define VALUE_SOURCE_TELNET             112
+#define VALUE_SOURCE_WIRED             113
+#define VALUE_SOURCE_THISUNIT                 114
+#define VALUE_UNIT                      115
+#define MESSAGE_00                      116
+#define MESSAGE_01                      117
+#define MESSAGE_02                      118
+#define MESSAGE_03                      119
+#define MESSAGE_04                      120
+#define MESSAGE_05                      121
+#define MESSAGE_06                      122
+#define MESSAGE_07                      123
+#define MESSAGE_08                      124
+#define MESSAGE_09                      125
+#define MESSAGE_10                      126
+#define MESSAGE_11                      127
+#define MESSAGE_12                      128
+#define MESSAGE_13                      129
+#define MESSAGE_14                      130
+#define MESSAGE_15                      131
+#define MESSAGE_16                      132
+#define MESSAGE_17                      133
 
-#define COMMAND_MAX                    137 // hoogste commando
+#define COMMAND_MAX                     133 // hoogste commando
 
 #if NODO_MEGA
 prog_char PROGMEM Cmd_0[]="-";
@@ -268,11 +236,11 @@ prog_char PROGMEM Cmd_89[]="WildCard";
 prog_char PROGMEM Cmd_90[]="WiredIn";
 prog_char PROGMEM Cmd_91[]="All";
 prog_char PROGMEM Cmd_92[]="Build";
-prog_char PROGMEM Cmd_93[]="Clock";
-prog_char PROGMEM Cmd_94[]="DaylightSaving";
-prog_char PROGMEM Cmd_95[]="Event";
-prog_char PROGMEM Cmd_96[]="EventList";
-prog_char PROGMEM Cmd_97[]="EventlistCount";
+prog_char PROGMEM Cmd_93[]="DaylightSaving";
+prog_char PROGMEM Cmd_94[]="Event";
+prog_char PROGMEM Cmd_95[]="EventList";
+prog_char PROGMEM Cmd_96[]="EventlistCount";
+prog_char PROGMEM Cmd_97[]="Eventlist";
 prog_char PROGMEM Cmd_98[]="File";
 prog_char PROGMEM Cmd_99[]="FreeMem";
 prog_char PROGMEM Cmd_100[]="HTTP";
@@ -285,34 +253,30 @@ prog_char PROGMEM Cmd_106[]="On";
 prog_char PROGMEM Cmd_107[]="Output";
 prog_char PROGMEM Cmd_108[]="Par1";
 prog_char PROGMEM Cmd_109[]="Par2";
-prog_char PROGMEM Cmd_110[]="Queue";
-prog_char PROGMEM Cmd_111[]="RF";
-prog_char PROGMEM Cmd_112[]="Serial";
-prog_char PROGMEM Cmd_113[]="Status";
-prog_char PROGMEM Cmd_114[]="System";
-prog_char PROGMEM Cmd_115[]="Terminal";
-prog_char PROGMEM Cmd_116[]="ThisUnit";
-prog_char PROGMEM Cmd_117[]="Timers";
-prog_char PROGMEM Cmd_118[]="Unit";
-prog_char PROGMEM Cmd_119[]="Variables";
-prog_char PROGMEM Cmd_120[]="Wired";
-prog_char PROGMEM Cmd_121[]="Ok.";
-prog_char PROGMEM Cmd_122[]="Unknown command.";
-prog_char PROGMEM Cmd_123[]="Invalid parameter in command.";
-prog_char PROGMEM Cmd_124[]="Unable to open file.";
-prog_char PROGMEM Cmd_125[]="Error during queing events.";
-prog_char PROGMEM Cmd_126[]="Eventlist nesting error.";
-prog_char PROGMEM Cmd_127[]="Reading/writing eventlist failed.";
-prog_char PROGMEM Cmd_128[]="Unable to establish TCP/IP connection.";
-prog_char PROGMEM Cmd_129[]="Incorrect password.";
-prog_char PROGMEM Cmd_130[]="Execution stopped.";
-prog_char PROGMEM Cmd_131[]="Access denied.";
-prog_char PROGMEM Cmd_132[]="SendTo timeout error.";
-prog_char PROGMEM Cmd_133[]="Unit not online or within range.";
-prog_char PROGMEM Cmd_134[]="Data lost during SendTo.";
-prog_char PROGMEM Cmd_135[]="SDCard error.";
-prog_char PROGMEM Cmd_136[]="Break.";
-prog_char PROGMEM Cmd_137[]="RawSignal saved.";
+prog_char PROGMEM Cmd_110[]="RF";
+prog_char PROGMEM Cmd_111[]="Serial";
+prog_char PROGMEM Cmd_112[]="Terminal";
+prog_char PROGMEM Cmd_113[]="Wired";
+prog_char PROGMEM Cmd_114[]="ThisUnit";
+prog_char PROGMEM Cmd_115[]="Unit";
+prog_char PROGMEM Cmd_116[]="Ok.";
+prog_char PROGMEM Cmd_117[]="Unknown command.";
+prog_char PROGMEM Cmd_118[]="Invalid parameter in command.";
+prog_char PROGMEM Cmd_119[]="Unable to open file.";
+prog_char PROGMEM Cmd_120[]="Error during queing events.";
+prog_char PROGMEM Cmd_121[]="Eventlist nesting error.";
+prog_char PROGMEM Cmd_122[]="Reading/writing eventlist failed.";
+prog_char PROGMEM Cmd_123[]="Unable to establish TCP/IP connection.";
+prog_char PROGMEM Cmd_124[]="Incorrect password.";
+prog_char PROGMEM Cmd_125[]="Execution stopped.";
+prog_char PROGMEM Cmd_126[]="Access denied.";
+prog_char PROGMEM Cmd_127[]="SendTo not completed.";
+prog_char PROGMEM Cmd_128[]="Unit not online or within range.";
+prog_char PROGMEM Cmd_129[]="Data lost during SendTo.";
+prog_char PROGMEM Cmd_130[]="SDCard error.";
+prog_char PROGMEM Cmd_131[]="Break.";
+prog_char PROGMEM Cmd_132[]="RawSignal saved.";
+prog_char PROGMEM Cmd_133[]="Unknown device";
 
 
 // tabel die refereert aan de commando strings
@@ -330,11 +294,29 @@ Cmd_90,Cmd_91,Cmd_92,Cmd_93,Cmd_94,Cmd_95,Cmd_96,Cmd_97,Cmd_98,Cmd_99,
 Cmd_100,Cmd_101,Cmd_102,Cmd_103,Cmd_104,Cmd_105,Cmd_106,Cmd_107,Cmd_108,Cmd_109,
 Cmd_110,Cmd_111,Cmd_112,Cmd_113,Cmd_114,Cmd_115,Cmd_116,Cmd_117,Cmd_118,Cmd_119,
 Cmd_120,Cmd_121,Cmd_122,Cmd_123,Cmd_124,Cmd_125,Cmd_126,Cmd_127,Cmd_128,Cmd_129,
-Cmd_130,Cmd_131,Cmd_132,Cmd_133,Cmd_134,Cmd_135,Cmd_136,Cmd_137};
+Cmd_130,Cmd_131,Cmd_132,Cmd_133};
 
 // Tabel met zonsopgang en -ondergang momenten. afgeleid van KNMI gegevens midden Nederland.
 PROGMEM prog_uint16_t Sunrise[]={528,525,516,503,487,467,446,424,401,378,355,333,313,295,279,268,261,259,263,271,283,297,312,329,345,367,377,394,411,428,446,464,481,498,512,522,528,527};
 PROGMEM prog_uint16_t Sunset[]={999,1010,1026,1044,1062,1081,1099,1117,1135,1152,1169,1186,1203,1219,1235,1248,1258,1263,1264,1259,1249,1235,1218,1198,1177,1154,1131,1107,1084,1062,1041,1023,1008,996,990,989,993,1004};
+
+// strings met vaste tekst naar PROGMEM om hiermee RAM-geheugen te sparen.
+prog_char PROGMEM Text_01[] = "Nodo Domotica controller (c) Copyright 2013 P.K.Tonkes.";
+prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
+prog_char PROGMEM Text_03[] = "Enter your password: ";
+prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSat";
+prog_char PROGMEM Text_05[] = "0123456789abcdef";
+prog_char PROGMEM Text_07[] = "Waiting...";
+prog_char PROGMEM Text_08[] = "SendTo: Transmission error. Retry...";
+prog_char PROGMEM Text_09[] = "(Last 10KByte)";
+prog_char PROGMEM Text_10[] = "RF/IR claimed by unit %d. Waiting...";
+prog_char PROGMEM Text_13[] = "RawSignal saved.";
+prog_char PROGMEM Text_14[] = "Event=";
+prog_char PROGMEM Text_22[] = "!******************************************************************************!";
+prog_char PROGMEM Text_23[] = "LOG.DAT";
+prog_char PROGMEM Text_28[] = "RAW"; // Directory op de SDCard voor opslag RawSignal
+prog_char PROGMEM Text_30[] = "Terminal connection closed.";
+
 #endif
 
 // omschakeling zomertijd / wintertijd voor komende 10 jaar. één int bevat de omschakeldatum van maart en oktober.
@@ -361,7 +343,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define PASSWORD_MAX_RETRY             5 // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
 #define PASSWORD_TIMEOUT             300 // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
 #define TERMINAL_TIMEOUT             600 // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
-#define DELAY_BETWEEN_TRANSMISSIONS  250 // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
+#define DELAY_BETWEEN_TRANSMISSIONS  500 // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
 #define NODO_TX_TO_RX_SWITCH_TIME    500 // Tijd die andere Nodo's nodig hebben om na zenden weer gereed voor ontvangst te staan. (Opstarttijd 433RX modules)
 #define WAIT_FREE_RX_WINDOW           50 // minimale wachttijd wanneer wordt gewacht op een vrije RF of IR band.
 #define WAITFREE_TIMEOUT           30000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
@@ -385,14 +367,14 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define HW_WEBAPP      15
 
 // Definitie van de speciale hardware uitvoeringen van de Nodo.
-#define BIC_DEFAULT            0  // Standaard Nodo zonder specifike hardware aansturing
-#define BIC_HWMESH_NES_V1X     1  // Nodo Ethernet Shield V1.x met Aurel tranceiver. Vereist speciale pulse op PIN_BSF_0 voor omschakelen tussen Rx en Tx.
+#define BIC_DEFAULT                  0  // Standaard Nodo zonder specifike hardware aansturing
+#define BIC_HWMESH_NES_V1X           1  // Nodo Ethernet Shield V1.x met Aurel tranceiver. Vereist speciale pulse op PIN_BSF_0 voor omschakelen tussen Rx en Tx.
 
 #define DEVICE_MAX                  32 // Maximaal aantal devices 
+#define MACRO_EXECUTION_DEPTH       10 // maximale nesting van macro's.
 
 #if NODO_MEGA // Definities voor de Nodo-Mega variant.
 #define EVENT_QUEUE_MAX             16 // maximaal aantal plaatsen in de queue.
-#define MACRO_EXECUTION_DEPTH       10 // maximale nesting van macro's.
 #define INPUT_BUFFER_SIZE          128  // Buffer waar de karakters van de seriele/IP poort in worden opgeslagen.
 #define TIMER_MAX                   15  // aantal beschikbare timers voor de user, gerekend vanaf 1
 #define ALARM_MAX                    8 // aantal alarmen voor de user
@@ -450,7 +432,6 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 
 #else // als het voor de Nodo-Small variant is
 #define EVENT_QUEUE_MAX              8 // maximaal aantal plaatsen in de queue
-#define MACRO_EXECUTION_DEPTH        4 // maximale nesting van macro's.
 #define TIMER_MAX                    8 // aantal beschikbare timers voor de user, gerekend vanaf 1
 #define USER_VARIABLES_MAX           8 // aantal beschikbare gebruikersvariabelen voor de user.
 #define PULSE_IRQ                    1 // IRQ-1 verbonden aan de IR_RX_DATA pen 3 van de ATMega328 (Uno/Nano/Duemillanove)
@@ -713,7 +694,7 @@ void setup()
   #endif
 
   LoadSettings();      // laad alle settings zoals deze in de EEPROM zijn opgeslagen
-  if(Settings.Version!=SETTINGS_VERSION)ResetFactory(); // Als versienummer in EEPROM niet correct is, dan een ResetFactory.
+  if(Settings.Version!=NODO_VERSION)ResetFactory(); // Als versienummer in EEPROM niet correct is, dan een ResetFactory.
 
   // initialiseer de Wired ingangen.
   for(x=0;x<WIRED_PORTS;x++)
@@ -800,7 +781,7 @@ void setup()
   
   // Voer boot-event uit.
   ClearEvent(&TempEvent);
-  TempEvent.Port      = VALUE_SOURCE_SYSTEM;
+  TempEvent.Port      = VALUE_SOURCE_THISUNIT;
   TempEvent.Direction = VALUE_DIRECTION_INPUT;
   TempEvent.Flags     = TRANSMISSION_CONFIRM;
   TempEvent.Type      = NODO_TYPE_EVENT;
@@ -1061,7 +1042,7 @@ void loop()
             ReceivedEvent.Command          = EVENT_TIME;
             ReceivedEvent.Par2             = Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12 | (unsigned long)Time.Day<<16;
             ReceivedEvent.Direction        = VALUE_DIRECTION_INPUT;
-            ReceivedEvent.Port             = VALUE_SOURCE_CLOCK;
+            ReceivedEvent.Port             = VALUE_SOURCE_THISUNIT;
             
             if(CheckEventlist(&ReceivedEvent))
               {
@@ -1091,7 +1072,7 @@ void loop()
               ReceivedEvent.Command          = EVENT_CLOCK_DAYLIGHT;
               ReceivedEvent.Par1             = Time.Daylight;
               ReceivedEvent.Direction        = VALUE_DIRECTION_INPUT;
-              ReceivedEvent.Port             = VALUE_SOURCE_CLOCK;
+              ReceivedEvent.Port             = VALUE_SOURCE_THISUNIT;
               ProcessEvent1(&ReceivedEvent); // verwerk binnengekomen event.
               DaylightPrevious=Time.Daylight;
               }
@@ -1152,7 +1133,7 @@ void loop()
                 ReceivedEvent.Command          = EVENT_TIMER;
                 ReceivedEvent.Par1             = x+1;
                 ReceivedEvent.Direction        = VALUE_DIRECTION_INPUT;
-                ReceivedEvent.Port             = VALUE_SOURCE_TIMER;
+                ReceivedEvent.Port             = VALUE_SOURCE_THISUNIT;
                 ProcessEvent1(&ReceivedEvent); // verwerk binnengekomen event.
                 }
               }

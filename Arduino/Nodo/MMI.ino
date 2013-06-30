@@ -109,6 +109,7 @@ char* DateTimeString(void)
 /**********************************************************************************************\
  * Print de welkomsttekst van de Nodo.
  \*********************************************************************************************/
+prog_char PROGMEM Text_welcome[] = "Nodo-Mega V%d.%d (beta), Product=SWACNC-MEGA-R%03d, Home=%d, ThisUnit=%d";
 void PrintWelcome(void)
   {
   char *TempString=(char*)malloc(80);
@@ -120,7 +121,7 @@ void PrintWelcome(void)
   PrintString(ProgmemString(Text_02),VALUE_ALL);
 
   // print versienummer, unit en indien gevuld het ID
-  sprintf(TempString,ProgmemString(Text_15), NODO_BUILD, Settings.Home, Settings.Unit);
+  sprintf(TempString,ProgmemString(Text_welcome),NODO_VERSION/10,NODO_VERSION%10, NODO_BUILD, Settings.Home, Settings.Unit);
   if(Settings.ID[0])
     {
     strcat(TempString,", ID=");
@@ -808,17 +809,15 @@ int ExecuteLine(char *Line, byte Port)
             switch(EventToExecute.Par1)
               {
               case VALUE_ALL:
+              case VALUE_SOURCE_THISUNIT:
+              case VALUE_SOURCE_EVENTLIST:
+              case VALUE_SOURCE_WIRED:
               case VALUE_SOURCE_I2C:
               case VALUE_SOURCE_IR:
               case VALUE_SOURCE_RF:
               case VALUE_SOURCE_SERIAL:
-              case VALUE_SOURCE_WIRED:
-              case VALUE_SOURCE_EVENTLIST:
-              case VALUE_SOURCE_SYSTEM:
-              case VALUE_SOURCE_TIMER:
-              case VALUE_SOURCE_VARIABLE:
-              case VALUE_SOURCE_CLOCK:
               case VALUE_SOURCE_HTTP:
+              case VALUE_SOURCE_TELNET:
                 break;
               default:
                 error=MESSAGE_02;
@@ -1469,55 +1468,25 @@ int ExecuteLine(char *Line, byte Port)
 /**********************************************************************************************\
  * Print de welkomsttekst van de Nodo. ATMega328 variant
  \*********************************************************************************************/
+
 void PrintWelcome(void)
-{
-  byte x;
-  char* str=(char*)malloc(80);
-
-  // Print Welkomsttekst
-  Serial.println();
-  Serial.println(ProgmemString(Text_22));
-  Serial.println(ProgmemString(Text_01));
-  Serial.println(ProgmemString(Text_02));
-
-  // print versienummer, unit en indien gevuld het ID
-  sprintf(str,ProgmemString(Text_15), NODO_BUILD, Settings.Home, Settings.Unit);
-  Serial.println(str);
-
-  // Geef datum en tijd weer.
-  if(bitRead(HW_Config,HW_CLOCK))
-    {
-    // Print de dag. 1=zondag, 0=geen RTC aanwezig
-    char s[5];
-    for(x=0;x<=2;x++)
-      s[x]=(*(ProgmemString(Text_04)+(Time.Day-1)*3+x));
-    s[x]=0;
-
-    sprintf(str,"Date=%02d-%02d-%2d (%s), Time=%02d:%02d, DaylightSaving=%d", Time.Date, Time.Month, Time.Year, s, Time.Hour, Time.Minutes,Time.DaylightSaving);
-    Serial.println(str);
-    }
-  Serial.println(ProgmemString(Text_22));
-  free(str);
-  }
-
-/*********************************************************************************************\
- * Print een event: debug mode Nodo-Small
- \*********************************************************************************************/
-void PrintEvent(struct NodoEventStruct *Event, byte Port)
   {
-  #if (SMALL_DEBUG_INFO ==true)
-  Serial.print(Event->Direction);
-  Serial.print(",");
-  Serial.print(Event->Port);
-  Serial.print(",");
-  Serial.print(Event->Command);
-  Serial.print(",");
-  Serial.print(Event->Par1);
-  Serial.print(",");
-  Serial.println(Event->Par2,HEX);
-  #endif //SMALL_DEBUG_INFO
-  } 
+  // Print Welkomsttekst
+  Serial.println(F("!******************************************************************************!"));
+  Serial.println(F("Nodo Domotica controller (c) Copyright 2013 P.K.Tonkes."));
+  Serial.println(F("Licensed under GNU General Public License."));
+  Serial.print(F("Nodo-Small V"));
+  Serial.print(NODO_VERSION/10);
+  Serial.print(".");
+  Serial.print(NODO_VERSION%10);
+  Serial.print(F(" (beta), Product=SWACNC-SMALL-R"));
+  Serial.print(NODO_BUILD);
+  Serial.print(F(", Home="));
+  Serial.print(Settings.Home);
+  Serial.print(F(", ThisUnit="));
+  Serial.println(Settings.Unit);
+  Serial.println(F("!******************************************************************************!"));
+  }
 
 #endif
   
-

@@ -27,7 +27,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         TempEvent.Command      = EVENT_VARIABLE;
         TempEvent.Par2         = float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Direction    = VALUE_DIRECTION_INPUT;
-        TempEvent.Port         = VALUE_SOURCE_VARIABLE;
+        TempEvent.Port         = VALUE_SOURCE_THISUNIT;
         ProcessEvent2(&TempEvent);
         }
       break;        
@@ -40,7 +40,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         TempEvent.Command      = EVENT_VARIABLE;
         TempEvent.Par2         = float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Direction    = VALUE_DIRECTION_INPUT;
-        TempEvent.Port         = VALUE_SOURCE_VARIABLE;
+        TempEvent.Port         = VALUE_SOURCE_THISUNIT;
         ProcessEvent2(&TempEvent);
         }
       break;        
@@ -51,7 +51,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         UserVar[EventToExecute->Par1-1]=ul2float(EventToExecute->Par2);
         TempEvent.Type         = NODO_TYPE_EVENT;
         TempEvent.Command=EVENT_VARIABLE;
-        TempEvent.Port=VALUE_SOURCE_VARIABLE;
+        TempEvent.Port=VALUE_SOURCE_THISUNIT;
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
         ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
         }
@@ -64,7 +64,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Type         = NODO_TYPE_EVENT;
         TempEvent.Command=EVENT_VARIABLE;
-        TempEvent.Port=VALUE_SOURCE_VARIABLE;
+        TempEvent.Port=VALUE_SOURCE_THISUNIT;
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
         ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
         }
@@ -76,7 +76,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         UserVar[EventToExecute->Par1-1]=UserVar[EventToExecute->Par2-1];
         TempEvent.Type         = NODO_TYPE_EVENT;
         TempEvent.Command=EVENT_VARIABLE;
-        TempEvent.Port=VALUE_SOURCE_VARIABLE;
+        TempEvent.Port=VALUE_SOURCE_THISUNIT;
         TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
         ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
@@ -105,7 +105,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
             
           TempEvent.Type         = NODO_TYPE_EVENT;
           TempEvent.Command=EVENT_VARIABLE;
-          TempEvent.Port=VALUE_SOURCE_VARIABLE;
+          TempEvent.Port=VALUE_SOURCE_THISUNIT;
           TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
           TempEvent.Direction=VALUE_DIRECTION_INPUT;
           ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
@@ -125,7 +125,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Command=EVENT_VARIABLE;
         TempEvent.Type         = NODO_TYPE_EVENT;
-        TempEvent.Port=VALUE_SOURCE_VARIABLE;
+        TempEvent.Port=VALUE_SOURCE_THISUNIT;
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
         PulseCount=0;
         ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
@@ -144,7 +144,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Type= NODO_TYPE_EVENT;
         TempEvent.Command=EVENT_VARIABLE;
-        TempEvent.Port=VALUE_SOURCE_VARIABLE;
+        TempEvent.Port=VALUE_SOURCE_THISUNIT;
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
         ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
         }
@@ -361,11 +361,13 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       for(x;x<=y;x++)
         {
         digitalWrite(PIN_WIRED_OUT_1+x-1,(EventToExecute->Par2==VALUE_ON));
+        #if NODO_MEGA
         WiredOutputStatus[x-1]=(EventToExecute->Par2==VALUE_ON);
         TempEvent.Par1=x;
-        TempEvent.Port=VALUE_SOURCE_WIRED;
+        TempEvent.Port=VALUE_SOURCE_THISUNIT;
         TempEvent.Direction=VALUE_DIRECTION_OUTPUT;
         PrintEvent(&TempEvent,VALUE_ALL);
+        #endif
         }
       break;
                          

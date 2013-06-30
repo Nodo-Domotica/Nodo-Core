@@ -84,13 +84,9 @@
 // Definities voor Nodo unit nummer 15
 // Hardware    : Nodo-Small op basis van een Arduino Uno of Duemillanove met een ATMega328 chip.
 // Toepassing  : Slave Nodo t.b.v. metingen. wordt aangestuurd door een Nodo-Mega.
-#if (UNIT_NODO == 15)
+#if (UNIT_NODO == 2)
 
   // Geef in onderstaande tabel aan welke devices DEZE nodo gebruikt.
-  #define DEVICE_CORE_001  // Kaku            : Klik-Aan-Klik-Uit ontvangen  
-  #define DEVICE_CORE_002  // SendKaku        : Klik-Aan-Klik-Uit verzenden 
-  #define DEVICE_CORE_003  // NewKAKU         : Klik-Aan-Klik-Uit ontvangen, automatische codering.
-  #define DEVICE_CORE_004  // SendNewKAKU     : Klik-Aan-Klik-Uit zenden, automatische codering.
   #define DEVICE_CORE_005  // TempRead        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
 
 #endif 
@@ -104,13 +100,13 @@
 
 // hieronder volgen nog enkele instellingen voor alle Nodo unit nummers
 #define HOME_NODO                    1     // Home adres van Nodo's die tot één groep behoren (1..7)
-#define PULSE_DEBOUNCE_TIME         10     // pulsen kleiner dan deze waarde worden niet geteld. Bedoeld on verstoringen a.g.v. ruis of dender te voorkomen
+#define PULSE_DEBOUNCE_TIME         10     // pulsen kleiner dan deze waarde in milliseconden worden niet geteld. Bedoeld om verstoringen a.g.v. ruis of dender te voorkomen
 #define PULSE_TRANSITION       FALLING     // FALLING of RISING: Geeft aan op welke flank de PulseCounter start start met tellen. Default FALLING
-#define I2C_START_ADDRESS            1     // Alle Nodo's op de I2C bus hebben een uniek adres dat start vanaf dit nummer. Er zijn max. 32 Nodo's. Let op verlap met andere devices. RTC zit op adres 104.
+#define I2C_START_ADDRESS            1     // Alle Nodo's op de I2C bus hebben een uniek adres dat start vanaf dit nummer. Er zijn max. 32 Nodo's. Let op overlap met andere devices. RTC zit op adres 104.
 #define NODO_30_COMPATIBLE        true     // t.b.v. compatibiliteit met vorige Nodo versie: NewKAKU HEX waarden en UserEvents
 #define BAUD                     19200     // Baudrate voor seriële communicatie.
 #define SMALL_DEBUG_INFO         false     // Laat op serial van een Small debug info zien als er events worden verzonden of ontvangen.
-#define WAIT_FREE_RX             false     // true: wacht default op verzenden van een event tot de IR/RF lijn onbezet is. Wordt overruled door commando [WaitFree]
+#define WAIT_FREE_RX             false     // true: wacht default op verzenden van een event tot de IR/RF lijn onbezet is. Wordt overruled door commando [WaitFreeRX]
 //****************************** Einde gedeelte door gebruiker in te stellen ************************************************
 
 

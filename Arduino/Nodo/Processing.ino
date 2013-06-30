@@ -50,7 +50,14 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
   if(Event->Command==0)
     return error;
 
-  ExecutionDepth++;
+  if(++ExecutionDepth>=MACRO_EXECUTION_DEPTH)
+    {
+    QueuePosition=0;
+    Continue=false;
+    error=MESSAGE_05; // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
+    }
+
+  //  PrintNodoEvent("ProcessEvent2();",Event);//???
   
   // Komt er een SendTo event voorbij, dan deze en opvolgende separaat afhandelen
   if(Continue && (Event->Command==CMD_SENDTO)) // Is dit event de eerste uit een [SendTo] reeks?
@@ -102,7 +109,7 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
 
 
   #if NODO_MEGA
-  if(bitRead(HW_Config,HW_SDCARD))
+  if(Continue && bitRead(HW_Config,HW_SDCARD))
     if(Event->Command==EVENT_RAWSIGNAL && Settings.RawSignalSave==VALUE_ON)
       if(!RawSignalExist(Event->Par2))
         RawSignalSave(Event->Par2);
@@ -110,25 +117,29 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
   
   if(Continue && error==0)
     {
+    #if NODO_MEGA
     PrintEvent(Event, VALUE_ALL);
-  
-    if(ExecutionDepth>=MACRO_EXECUTION_DEPTH)
-      {
-      QueuePosition=0;
-      error=MESSAGE_05; // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
-      }
-  
-    else
-      {
-      // ############# Verwerk event ################  
+    #endif
+    
+    // ############# Verwerk event ################  
 
-      // Voer device opdracht uit als een commando.
-      if(Event->Type==NODO_TYPE_DEVICE)
-        for(x=0;Device_ptr[x]!=0 && x<DEVICE_MAX; x++)
-          if(Device_id[x]==Event->Command)
-            Device_ptr[x](DEVICE_COMMAND,Event,0); 
-            
-      // als het een Nodo event is en een geldig commando, dan deze uitvoeren
+    // Check of het een binnengekomen device event is. Deze kan een commando zijn of een event. Voer device opdracht uit als een commando.
+    if(Event->Type==NODO_TYPE_DEVICE)
+      {
+      error=MESSAGE_17;
+      for(x=0;Device_ptr[x]!=0 && x<DEVICE_MAX; x++)
+        {
+        if(Device_id[x]==Event->Command)
+          {
+          error=0;
+          Device_ptr[x](DEVICE_COMMAND,Event,0);          
+          }
+        }
+      }
+   
+    // als het een Nodo event is en een geldig commando, dan deze uitvoeren
+    if(error==0)
+      {
       if(Event->Type==NODO_TYPE_COMMAND)
         {
         error=ExecuteCommand(Event);
@@ -146,7 +157,6 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
           {      
           if(CheckEvent(Event,&EventlistEvent)) // Als er een match is tussen het binnengekomen event en de regel uit de eventlist.
             {        
-            EventlistAction.Port = VALUE_SOURCE_EVENTLIST;
             ExecutionLine=x;
             error=ProcessEvent2(&EventlistAction);
             }
@@ -155,7 +165,7 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
         if(error==MESSAGE_15)
           error=0;
         }      
-     // Als de SendTo niet permanent is ingeschakeld, dan deze weer uitzetten
+      // Als de SendTo niet permanent is ingeschakeld, dan deze weer uitzetten
       if(Transmission_SendToAll!=VALUE_ALL)Transmission_SendToUnit=0;
       }
     }
@@ -163,7 +173,6 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
   ExecutionDepth--;
   return error;
   }
-
 
  /**********************************************************************************************\
  * Toetst of Event ergens als entry voorkomt in de Eventlist. Geeft False als de opgegeven code niet bestaat.
@@ -192,17 +201,16 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
   if(MacroEvent->Command==0 || Event->Command==0)
     return false;  
 
-
   // ### WILDCARD:      
   if(MacroEvent->Command == EVENT_WILDCARD)                                                                                 // is regel uit de eventlist een WildCard?
     if( MacroEvent->Par1==VALUE_ALL          ||   MacroEvent->Par1==Event->Port)                                            // Correspondeert de poort of mogen alle poorten?
-      if((MacroEvent->Par2&0xff)==VALUE_ALL  ||  (MacroEvent->Par2&0xff)==Event->Command && Event->Type==NODO_TYPE_EVENT)   // Correspondeert het commando deel alss het een commando is, of mogen alle
+      if((MacroEvent->Par2&0xff)==VALUE_ALL  ||  (MacroEvent->Par2&0xff)==Event->Command && Event->Type==NODO_TYPE_EVENT)   // Correspondeert het commando deel als het een commando is, of mogen alle
         if(((MacroEvent->Par2>>8)&0xff)==0   || ((MacroEvent->Par2>>8)&0xff)==Event->SourceUnit)                            // Correspondeert het unitnummer of is deze niet opgegeven
           return true;
           
   // ### USEREVENT: beschouw bij een UserEvent een 0 voor Par1 of Par2 als een wildcard.
   if(Event->Type==NODO_TYPE_EVENT)
-    if(Event->Command==EVENT_USEREVENT && MacroEvent->Command==EVENT_USEREVENT)                             // Is het een UserCommand
+    if(Event->Command==EVENT_USEREVENT && MacroEvent->Command==EVENT_USEREVENT)                             // Is het een UserCommand?
       if( (Event->Par1==MacroEvent->Par1 || MacroEvent->Par1==0 || Event->Par1==0)                          // Par1 deel een match?
        && (Event->Par2==MacroEvent->Par2 || MacroEvent->Par2==0 || Event->Par2==0))                         // Par2 deel een match?
          return true; 
@@ -339,7 +347,7 @@ void QueueProcess(void)
         Event.Port=Queue[x].Port;
         Event.Flags=Queue[x].Flags;
         
-        ProcessEvent2(&Event);      // verwerk binnengekomen event.
+        RaiseMessage(ProcessEvent2(&Event));      // verwerk binnengekomen event.
         }
       }
     }
@@ -352,7 +360,7 @@ void QueueProcess(void)
  \*********************************************************************************************/
 byte QueueSend(void)
   {
-  byte x,Port,error=true,Retry=0;
+  byte x,Port,error=MESSAGE_11, Retry=0;
   unsigned long ID=millis();
   struct NodoEventStruct Event;
 
@@ -414,7 +422,7 @@ byte QueueSend(void)
 
       if(Wait(30,false,&Event,false))
         if(x==Event.Par1)
-          error=false;
+          error=0;
 
       // Als er een timeout was of het aantel events is niet correct bevestigd, dan de gebruiker een waarschuwing tonen
       if(error)
@@ -459,7 +467,7 @@ void QueueReceive(NodoEventStruct *Event)
 
   QueuePosition=0;
 
-delay(1000);//??? test
+// delay(1000);//??? test
 
   struct NodoEventStruct TempEvent;
   ClearEvent(&TempEvent);

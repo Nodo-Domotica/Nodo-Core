@@ -92,23 +92,24 @@ boolean Eventlist_Read(int address, struct NodoEventStruct *Event, struct NodoEv
 
 void RaiseMessage(byte MessageCode)
   {
-  if(MessageCode==0)
-    return;
-
-  struct NodoEventStruct TempEvent;
-  ClearEvent(&TempEvent);
-  TempEvent.Type      = NODO_TYPE_EVENT;
-  TempEvent.Command   = EVENT_MESSAGE;
-  TempEvent.Par1      = MessageCode;
-  TempEvent.Direction = VALUE_DIRECTION_INPUT;
-  TempEvent.Port      = VALUE_SOURCE_SYSTEM;
-  PrintEvent(&TempEvent, VALUE_ALL);
-
-  if(MessageCode==MESSAGE_09)// Stop
-    return;
-
-  TempEvent.Port      = VALUE_ALL;
-  SendEvent(&TempEvent,false,true,Settings.WaitFree==VALUE_ON);
+  if(MessageCode)
+    {
+    struct NodoEventStruct TempEvent;
+    ClearEvent(&TempEvent);
+    TempEvent.Type      = NODO_TYPE_EVENT;
+    TempEvent.Command   = EVENT_MESSAGE;
+    TempEvent.Par1      = MessageCode;
+    TempEvent.Direction = VALUE_DIRECTION_INPUT;
+    TempEvent.Port      = VALUE_SOURCE_THISUNIT;
+    #if NODO_MEGA
+    PrintEvent(&TempEvent, VALUE_ALL);
+    #endif  
+    if(MessageCode==MESSAGE_09)// Stop
+      return;
+  
+    TempEvent.Port      = VALUE_ALL;
+    SendEvent(&TempEvent,false,true,Settings.WaitFree==VALUE_ON);
+    }
   }
 
 
@@ -541,22 +542,6 @@ boolean GetStatus(struct NodoEventStruct *Event)
 }
 
 
-/**********************************************************************************************\
- * Deze functie haalt een tekst op uit PROGMEM en geeft als string terug
- \*********************************************************************************************/
-char* ProgmemString(prog_char* text)
-{
-  byte x=0;
-  static char buffer[90];
-
-  do
-  {
-    buffer[x]=pgm_read_byte_near(text+x);
-  }
-  while(buffer[x++]!=0);
-  return buffer;
-}
-
 
 /*********************************************************************************************\
  * Sla alle settings op in het EEPROM geheugen.
@@ -606,7 +591,7 @@ void ResetFactory(void)
   while(Eventlist_Write(x++,&dummy,&dummy));
 
   // Herstel alle settings naar defaults
-  Settings.Version                    = SETTINGS_VERSION;
+  Settings.Version                    = NODO_VERSION;
   Settings.NewNodo                    = true;
   Settings.Lock                       = 0;
   Settings.TransmitIR                 = VALUE_OFF;
@@ -877,7 +862,7 @@ void Status(struct NodoEventStruct *Request)
           {
           if(!Display)
             {
-            if(Request->Port==VALUE_SOURCE_EVENTLIST)            
+            if(Request->Port==VALUE_SOURCE_THISUNIT)            
               Result.Port=VALUE_ALL;
             else
               Result.Port=Request->Port;
@@ -908,6 +893,22 @@ void Status(struct NodoEventStruct *Request)
 
 
 #if NODO_MEGA
+/**********************************************************************************************\
+ * Deze functie haalt een tekst op uit PROGMEM en geeft als string terug
+ \*********************************************************************************************/
+char* ProgmemString(prog_char* text)
+{
+  byte x=0;
+  static char buffer[90];
+
+  do
+  {
+    buffer[x]=pgm_read_byte_near(text+x);
+  }
+  while(buffer[x++]!=0);
+  return buffer;
+}
+
 /*********************************************************************************************\
  * Deze routine parsed string en geeft het opgegeven argument nummer Argc terug in Argv
  * argumenten worden van elkaar gescheiden door een komma of een spatie.
@@ -1556,7 +1557,7 @@ boolean Substitute(char* Input)
             strcpy(TmpStr2,Settings.Temp);
             break;    
 
-          case VALUE_THIS_UNIT:
+          case VALUE_SOURCE_THISUNIT:
             strcpy(TmpStr2,int2str(Settings.Unit));
             break;    
 
@@ -2333,7 +2334,7 @@ byte NodoOnline(byte Unit, byte Port)
     FirstTime=false;
     for(x=0;x<=UNIT_MAX;x++)
       NodoOnlinePort[x]=0;
-    NodoOnlinePort[Settings.Unit]=VALUE_SOURCE_SYSTEM;//Dit is deze unit.
+    NodoOnlinePort[Settings.Unit]=VALUE_SOURCE_THISUNIT;//Dit is deze unit.
     }
     
   if(Port!=NodoOnlinePort[Unit])
