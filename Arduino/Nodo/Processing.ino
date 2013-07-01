@@ -420,7 +420,7 @@ byte QueueSend(void)
       Event.Type                = NODO_TYPE_SYSTEM;
 
 
-      if(Wait(30,false,&Event,false))
+      if(Wait(10,false,&Event,false))
         if(x==Event.Par1)
           error=0;
 

@@ -83,33 +83,25 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         }
       break;        
 
-    case CMD_VARIABLE_FROM_EVENT:
-      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
+    case CMD_VARIABLE_RECEIVE: // VariableReceive <Variabelenummer_Bestemming>, <Variabelenummer_Bron_Andere_Nodo>
+      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afgevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         // Als het vorige event betrekking had op variabele/poort die de gebruiker heeft opgegeven in Par2
         // dan de waarde uit het vorige event overnemen.
-        if(EventToExecute->Par2==LastReceived.Par1)
+        if(LastReceived.Command==EVENT_VARIABLE)
           {
-          x=EventToExecute->Par1-1;
-          
-          switch(LastReceived.Command)
+          if(EventToExecute->Par2==LastReceived.Par1)
             {
-            case EVENT_VARIABLE:
-              UserVar[x]=ul2float(LastReceived.Par2);
-              break;
-            case CMD_WIRED_ANALOG:
-              UserVar[x]=LastReceived.Par2;
-            default:
-              UserVar[x]=0;
-            }          
-            
-          TempEvent.Type         = NODO_TYPE_EVENT;
-          TempEvent.Command=EVENT_VARIABLE;
-          TempEvent.Port=VALUE_SOURCE_THISUNIT;
-          TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
-          TempEvent.Direction=VALUE_DIRECTION_INPUT;
-          ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
+            x=EventToExecute->Par1-1;
+            UserVar[x]=ul2float(LastReceived.Par2);
+            }
           }
+        TempEvent.Type=NODO_TYPE_EVENT;
+        TempEvent.Command=EVENT_VARIABLE;
+        TempEvent.Port=VALUE_SOURCE_THISUNIT;
+        TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
+        TempEvent.Direction=VALUE_DIRECTION_INPUT;
+        ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
         }
       break;        
 
@@ -124,7 +116,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         UserVar[EventToExecute->Par1-1]=PulseCount;
         TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Command=EVENT_VARIABLE;
-        TempEvent.Type         = NODO_TYPE_EVENT;
+        TempEvent.Type=NODO_TYPE_EVENT;
         TempEvent.Port=VALUE_SOURCE_THISUNIT;
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
         PulseCount=0;

@@ -207,9 +207,9 @@ R544:
 R545:
 - Compatibiliteit met oude userevents t/m Nodo 3.0 hersteld.
 - Toegevoegd commando [VariableSend <variabele>, <poort>]
+- Commando [VariableEvent] gerenamed naar [VariableReceive]
 
 Nog te doen:
-- Testen: [VariableEvent]
 - Testen: Tellen pulsen
 - Testen: Lock mechanisme
 - Methode voor WaitFree is aangepast. Opnieuw testen en fijnafstelling in multi-nodo-omgeving

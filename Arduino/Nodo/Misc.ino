@@ -426,6 +426,8 @@ boolean GetStatus(struct NodoEventStruct *Event)
         Event->Par2=Settings.TransmitIP;
         break;
   #endif 
+      default:
+        Event->Command=0;// Geen geldige optie. Als 0 wordt teruggegeven in command dan wordt niets weergegeven met de status.
       }
     break;
 
@@ -801,12 +803,8 @@ void Status(struct NodoEventStruct *Request)
         switch(x)
           {
           case CMD_OUTPUT:
-            Par1_Start=VALUE_SOURCE_IR;
-            #if NODO_MEGA
-            Par1_End=VALUE_SOURCE_HTTP;
-            #else
-            Par1_End=VALUE_SOURCE_RF;
-            #endif
+            Par1_Start=0;
+            Par1_End=COMMAND_MAX;
             break;
   
           case CMD_WIRED_ANALOG:

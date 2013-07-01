@@ -1,7 +1,7 @@
 boolean ExecuteCommand(NodoEventStruct *EventToExecute);//protoype defnieren.
 
-#define NODO_VERSION         35  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
-#define NODO_BUILD          545  //??? ophogen bij iedere build
+#define NODO_VERSION         36  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
+#define NODO_BUILD          546  //??? ophogen bij iedere build
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -71,7 +71,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute);//protoype defnieren.
 #define CMD_TIMER_SET_VARIABLE          63
 #define CMD_UNIT_SET                    64
 #define CMD_VARIABLE_DEC                65
-#define CMD_VARIABLE_FROM_EVENT         66
+#define CMD_VARIABLE_RECEIVE            66
 #define CMD_VARIABLE_INC                67
 #define CMD_VARIABLE_PULSE_COUNT        68
 #define CMD_VARIABLE_PULSE_TIME         69
@@ -210,7 +210,7 @@ prog_char PROGMEM Cmd_62[]="TimerSet";
 prog_char PROGMEM Cmd_63[]="TimerSetVariable";
 prog_char PROGMEM Cmd_64[]="UnitSet";
 prog_char PROGMEM Cmd_65[]="VariableDec";
-prog_char PROGMEM Cmd_66[]="VariableEvent";
+prog_char PROGMEM Cmd_66[]="VariableReceive";
 prog_char PROGMEM Cmd_67[]="VariableInc";
 prog_char PROGMEM Cmd_68[]="VariablePulseCount";
 prog_char PROGMEM Cmd_69[]="VariablePulseTime";
@@ -309,7 +309,7 @@ prog_char PROGMEM Text_03[] = "Enter your password: ";
 prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSat";
 prog_char PROGMEM Text_05[] = "0123456789abcdef";
 prog_char PROGMEM Text_07[] = "Waiting...";
-prog_char PROGMEM Text_08[] = "SendTo: Transmission error. Retry...";
+prog_char PROGMEM Text_08[] = "SendTo: Busy Nodo or transmission error. Retry...";
 prog_char PROGMEM Text_09[] = "(Last 10KByte)";
 prog_char PROGMEM Text_10[] = "RF/IR claimed by unit %d. Waiting...";
 prog_char PROGMEM Text_13[] = "RawSignal saved.";
