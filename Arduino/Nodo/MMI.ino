@@ -290,7 +290,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_WIRED_SMITTTRIGGER:
       case CMD_WIRED_THRESHOLD:
       case CMD_WIRED_ANALOG:
-      case CMD_VARIABLE_FROM_EVENT:
+      case CMD_VARIABLE_RECEIVE:
         ParameterToView[0]=PAR1_INT;
         ParameterToView[1]=PAR2_INT;
         break;
@@ -318,7 +318,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_WIRED_PULLUP:
       case CMD_WIRED_OUT:
       case EVENT_WIRED_IN:
-      case CMD_UNIT_SET:
         ParameterToView[0]=PAR1_INT;
         ParameterToView[1]=PAR2_TEXT;
         break;
@@ -361,6 +360,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case EVENT_ALARM:
       case EVENT_BOOT:
       case EVENT_NEWNODO:
+      case CMD_UNIT_SET:
       case CMD_HOME_SET:
       case CMD_VARIABLE_PULSE_TIME:
       case CMD_VARIABLE_PULSE_COUNT:
@@ -702,6 +702,7 @@ int ExecuteLine(char *Line, byte Port)
             break;
       
           case CMD_VARIABLE_PULSE_TIME:
+          case CMD_VARIABLE_PULSE_COUNT:
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
               error=MESSAGE_02;
@@ -710,7 +711,7 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_BREAK_ON_VAR_LESS_VAR:
           case CMD_BREAK_ON_VAR_MORE_VAR:
           case CMD_VARIABLE_VARIABLE:
-          case CMD_VARIABLE_FROM_EVENT:
+          case CMD_VARIABLE_RECEIVE:
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
               error=MESSAGE_02;
@@ -792,6 +793,10 @@ int ExecuteLine(char *Line, byte Port)
           
           case CMD_SEND_EVENT:
             EventToExecute.Type=NODO_TYPE_COMMAND;
+
+            if(EventToExecute.Par2==0);
+              EventToExecute.Par2=VALUE_ALL;
+
             switch(EventToExecute.Par1)
               {
               case VALUE_ALL:
@@ -810,9 +815,11 @@ int ExecuteLine(char *Line, byte Port)
             if(EventToExecute.Par1>USER_VARIABLES_MAX)
               error=MESSAGE_02;
 
+            if(EventToExecute.Par2==0);
+              EventToExecute.Par2=VALUE_ALL;
+              
             switch(EventToExecute.Par2)
               {
-              case 0:
               case VALUE_ALL:
               case VALUE_SOURCE_I2C:
               case VALUE_SOURCE_IR:
