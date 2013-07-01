@@ -314,6 +314,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
 
       // Par1 als waarde en par2 als tekst
       case CMD_DELAY:
+      case CMD_VARIABLE_SEND:
       case CMD_WIRED_PULLUP:
       case CMD_WIRED_OUT:
       case EVENT_WIRED_IN:
@@ -793,6 +794,25 @@ int ExecuteLine(char *Line, byte Port)
             EventToExecute.Type=NODO_TYPE_COMMAND;
             switch(EventToExecute.Par1)
               {
+              case VALUE_ALL:
+              case VALUE_SOURCE_I2C:
+              case VALUE_SOURCE_IR:
+              case VALUE_SOURCE_RF:
+              case VALUE_SOURCE_HTTP:
+                break;
+              default:
+                error=MESSAGE_02;
+              }
+            break;
+      
+          case CMD_VARIABLE_SEND:
+            EventToExecute.Type=NODO_TYPE_COMMAND;
+            if(EventToExecute.Par1>USER_VARIABLES_MAX)
+              error=MESSAGE_02;
+
+            switch(EventToExecute.Par2)
+              {
+              case 0:
               case VALUE_ALL:
               case VALUE_SOURCE_I2C:
               case VALUE_SOURCE_IR:

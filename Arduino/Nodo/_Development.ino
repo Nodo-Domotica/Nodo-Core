@@ -204,12 +204,14 @@ R544:
 - LET OP: Op de Small wordt de datum/tijd niet meer getoond. Dit zegt niets over de aanwezigheid van de klok. T.b.v. besparing ram/progmem geheugen!
 - Versienummer beperkt tot Major.Minor,Build. Alleen als Major en Minor versie gelijk zijn is event-uitwisseling mogelijk.
 
+R545:
+- Compatibiliteit met oude userevents t/m Nodo 3.0 hersteld.
+- Toegevoegd commando [VariableSend <variabele>, <poort>]
 
 Nog te doen:
 - Testen: [VariableEvent]
 - Testen: Tellen pulsen
 - Testen: Lock mechanisme
 - Methode voor WaitFree is aangepast. Opnieuw testen en fijnafstelling in multi-nodo-omgeving
-- Status EventlistCount klopt niet.
 - [SendTo x; UnitSet y] geeft vastloper op unit x.
 \*****************************************************************************************/

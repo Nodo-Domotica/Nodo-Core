@@ -215,6 +215,17 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       SendEvent(&TempEvent, false, true,Settings.WaitFree==VALUE_ON);
       break;
 
+    case CMD_VARIABLE_SEND:
+      ClearEvent(&TempEvent);    
+      TempEvent.Type=NODO_TYPE_EVENT;
+      TempEvent.Command=EVENT_VARIABLE;
+      TempEvent.Port=EventToExecute->Par2==0?VALUE_ALL:EventToExecute->Par2;
+      TempEvent.Direction=VALUE_DIRECTION_OUTPUT;
+      TempEvent.Par1=EventToExecute->Par1;
+      TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
+      SendEvent(&TempEvent, false, true,Settings.WaitFree==VALUE_ON);
+      break;         
+
     case CMD_LOCK:
       if(EventToExecute->Par1==VALUE_ON)
         {// Als verzoek om inschakelen dan Lock waarde vullen
