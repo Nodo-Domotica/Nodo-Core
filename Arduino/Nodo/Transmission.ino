@@ -11,7 +11,7 @@ boolean AnalyzeRawSignal(struct NodoEventStruct *E)
 
   if(RawSignal.Number==RAW_BUFFER_SIZE)// Als het signaal een volle buffer beslaat is het zeer waarschijnlijk ruis of ongeldig signaal
     return false;     
-  
+
   if(RawSignal_2_Nodo(E))           // Is het een Nodo signaal
     {
     // Als er een Nodo signaal is binnengekomen, dan weten we zeker dat er een Nodo in het landschap is die tijd nodig heeft om
@@ -1303,6 +1303,7 @@ boolean RawSignal_2_Nodo_OLD(struct NodoEventStruct *Event)
   Event->SourceUnit=(bitstream>>24)&0xf;
   Event->DestinationUnit=0;
   Event->Flags=0;
+  Event->Type=NODO_TYPE_EVENT;
   Event->Command=EVENT_USEREVENT;
   Event->Par1=(bitstream>>8)&0xff;
   Event->Par2=bitstream&0xff;
