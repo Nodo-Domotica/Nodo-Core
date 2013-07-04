@@ -7,7 +7,7 @@
 #endif
 
 #define NODO_VERSION         36  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
-#define NODO_BUILD          546  //??? ophogen bij iedere build
+#define NODO_BUILD          549  //??? ophogen bij iedere build
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -969,17 +969,17 @@ void loop()
                       }
                     }
                   }
-//                else 
-//                  {// bij een niet printbaar teken wordt de verbinding direct verbroken. Uit veiligheidsoverweging om te voorkomen dat bulk rommel naar de Nodo gestuurd wordt.
-//                  // TerminalSessie timeout, dan de verbinding netjes afsluiten
-//                  InputBuffer_Terminal[0]=0;
+                else 
+                  {// bij een niet printbaar teken wordt de verbinding direct verbroken. Uit veiligheidsoverweging om te voorkomen dat bulk rommel naar de Nodo gestuurd wordt.
+                  // TerminalSessie timeout, dan de verbinding netjes afsluiten
+                  InputBuffer_Terminal[0]=0;
 //                  TerminalClient.println(ProgmemString(Text_30));
 //                  delay(100); // geef de client even de gelegenheid de tekst te ontvangen
-//                  TerminalClient.flush();// eventuele rommel weggooien.
+                  TerminalClient.flush();// eventuele rommel weggooien.
 //                  TerminalClient.stop();
 //                  TerminalConnected=0;
-//                  break;
-//                  }//??? test
+                  break;
+                  }//??? test
                 }
               }
             }

@@ -204,7 +204,7 @@ R544:
 - LET OP: Op de Small wordt de datum/tijd niet meer getoond. Dit zegt niets over de aanwezigheid van de klok. T.b.v. besparing ram/progmem geheugen!
 - Versienummer beperkt tot Major.Minor,Build. Alleen als Major en Minor versie gelijk zijn is event-uitwisseling mogelijk.
 
-R545:
+R549:
 - Compatibiliteit met oude userevents t/m Nodo 3.0 hersteld.
 - Toegevoegd commando [VariableSend <variabele>, <poort>]
 - Commando [VariableEvent] gerenamed naar [VariableReceive]
@@ -212,23 +212,20 @@ R545:
 - Issue 750:	DEVICE_006 (DHT11Read) werkt niet meer vanaf r540
 
 Nog te doen:
-- KAKU signaal levert RawSignals op als deze niet worden afgevangen in de eventlist.
-- Testen: Lock mechanisme
+- Aanpassen en testen: Lock mechanisme
 - Methode voor WaitFree is aangepast. Opnieuw testen en fijnafstelling in multi-nodo-omgeving
 - [SendTo x; UnitSet y] geeft vastloper op unit x.
-- DEVICE_000 (Klok) maken
-
-DEVICES AANPASSEN:
-// Device_008 => AlectoV1          : Dit protocol zorgt voor ontvangst van Alecto weerstation buitensensoren met protocol V1
-// Device_009 => AlectoV2          : Dit protocol zorgt voor ontvangst van Alecto weerstation buitensensoren met protocol V2
-// Device_010 => AlectoV3          : Dit protocol zorgt voor ontvangst van Alecto weerstation buitensensoren met protocol V3
-// Device_012 => OregonV2          : Dit protocol zorgt voor ontvangst van Oregon buitensensoren met protocol versie V2
-// Device_013 => FA20RF            : Dit protocol zorgt voor ontvangst van Flamingo FA20RF rookmelder signalen
-// Device_014 => FA20RFSend        : Dit protocol zorgt voor aansturen van Flamingo FA20RF rookmelder
-// Device_015 => HomeEasy          : Dit protocol zorgt voor ontvangst HomeEasy EU zenders die werken volgens de automatische codering (Ontvangers met leer-knop)
-// Device_016 => HomeEasySend      : Dit protocol stuurt HomeEasy EU ontvangers aan die werken volgens de automatische codering (Ontvangers met leer-knop)
-// Device_019 => RFID              : Innovations ID-12 RFID Tag reader (SWACDE-19-V10) 
-// Device_021 => LCDI2CWrite       : DFRobot LCD I2C/TWI 1602 display
+- DEVICES AANPASSEN & TESTEN:
+  * Device_008 => AlectoV1
+  * Device_009 => AlectoV2
+  * Device_010 => AlectoV3
+  * Device_012 => OregonV2
+  * Device_013 => FA20RF
+  * Device_014 => FA20RFSend
+  * Device_015 => HomeEasy
+  * Device_016 => HomeEasySend
+  * Device_019 => RFID
+  * Device_021 => LCDI2CWrite
 
 
 

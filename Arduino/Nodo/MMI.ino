@@ -1402,13 +1402,7 @@ int ExecuteLine(char *Line, byte Port)
                 {
                 EventToExecute.Command=Device_id[x];
                 if(Device_ptr[x](DEVICE_MMI_IN,&EventToExecute,Command))
-                   {
                    y=true;
-                    if(EventToExecute.Type!=NODO_TYPE_DEVICE_EVENT && EventToExecute.Type!=NODO_TYPE_DEVICE_COMMAND)// tijdelijk t.b.v. debugging.
-                      {
-                      Serial.print(F("*** debug: ERROR: device MMI_IN geeft geen correcte Event->Type waarde terug"));Serial.println(); //??? Debug
-                      }
-                   }
                 }
 
             if(!y)

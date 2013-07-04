@@ -43,7 +43,7 @@
 #include <SD.h>
 #include <NodoEthernet.h>
 #define NODO_MEGA                    true  // true = Nodo Mega, false=Nodo-Small
-#define ETHERNET                     false//???  // true = Deze Nodo beschikt over een ethernet kaart
+#define ETHERNET                     true  // true = Deze Nodo beschikt over een ethernet kaart
 
 
 
@@ -89,31 +89,31 @@
 // Device_001 => Kaku              : Klik-Aan-Klik-Uit / HomeEasy protocol ontvangst
 #define DEVICE_001_MMI 
 #define DEVICE_001_CORE
-#define DEVICE_001_FILE "C:\Users\tonkes\Desktop\SVN\SVN\Nodo\Devices\Device_001.c"
+#define DEVICE_001_FILE "C:\Users\tonkes\Google Drive\Paul\Nodo\SVN\Arduino\Nodo\Devices\Device_001.c"
 
 // Device_002 => SendKaku          : Klik-Aan-Klik-Uit / HomeEasy protocol verzenden
 #define DEVICE_002_MMI 
 #define DEVICE_002_CORE
-#define DEVICE_002_FILE "C:\Users\tonkes\Desktop\SVN\SVN\Nodo\Devices\Device_002.c"
+#define DEVICE_002_FILE "C:\Users\tonkes\Google Drive\Paul\Nodo\SVN\Arduino\Nodo\Devices\Device_002.c"
 
 // Device_003 => NewKAKU           : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno.
 #define DEVICE_003_MMI 
 #define DEVICE_003_CORE
-#define DEVICE_003_FILE "C:\Users\tonkes\Desktop\SVN\SVN\Nodo\Devices\Device_003.c"
+#define DEVICE_003_FILE "C:\Users\tonkes\Google Drive\Paul\Nodo\SVN\Arduino\Nodo\Devices\Device_003.c"
 
 // Device_004 => SendNewKAKU       : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno. 
 #define DEVICE_004_MMI 
 #define DEVICE_004_CORE
-#define DEVICE_004_FILE "C:\Users\tonkes\Desktop\SVN\SVN\Nodo\Devices\Device_004.c"
+#define DEVICE_004_FILE "C:\Users\tonkes\Google Drive\Paul\Nodo\SVN\Arduino\Nodo\Devices\Device_004.c"
 
 // Device_005 => TempRead          : Uitlezen Dallas DS18B20 temperatuur sensor volgens OneWire verbinding.
 #define DEVICE_005_MMI 
 #define DEVICE_005_CORE
-#define DEVICE_005_FILE "C:\Users\tonkes\Desktop\SVN\SVN\Nodo\Devices\Device_005.c"
+#define DEVICE_005_FILE "C:\Users\tonkes\Google Drive\Paul\Nodo\SVN\Arduino\Nodo\Devices\Device_005.c"
 
 #define DEVICE_020_MMI 
 #define DEVICE_020_CORE
-#define DEVICE_020_FILE "C:\Users\tonkes\Desktop\SVN\SVN\Nodo\Devices\Device_020.c"
+#define DEVICE_020_FILE "C:\Users\tonkes\Google Drive\Paul\Nodo\SVN\Arduino\Nodo\Devices\Device_020.c"
 
 
 
