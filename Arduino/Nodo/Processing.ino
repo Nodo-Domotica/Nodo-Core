@@ -57,8 +57,6 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
     error=MESSAGE_05; // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
     }
 
-  //  PrintNodoEvent("ProcessEvent2();",Event);//???
-  
   // Komt er een SendTo event voorbij, dan deze en opvolgende separaat afhandelen
   if(Continue && (Event->Command==CMD_SENDTO)) // Is dit event de eerste uit een [SendTo] reeks?
     {
@@ -133,13 +131,7 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
           {
           error=0;// Device een error terug laten geven?
           if(Device_ptr[x](DEVICE_COMMAND,Event,0)!=true)
-            {
-            Serial.print(F("*** debug: Na DEVICE_COMMAND foutcode retour van device "));Serial.println(x); //??? Debug
-            }
-          else
-            {
-            Serial.print(F("*** debug: DEVICE_COMMAND met success uitgevoerd voor device "));Serial.println(x); //??? Debug
-            }
+            RaiseMessage(MESSAGE_17);
           }
         }
       }
