@@ -41,7 +41,7 @@
 #define DEVICE_ID 23
 #define DEVICE_NAME_23 "LED"
 
-#ifdef NODO_MEGA
+#if NODO_MEGA
 #define PWM_R     5
 #define PWM_G     6
 #define PWM_B     7
@@ -142,7 +142,7 @@ boolean Device_023(byte function, struct NodoEventStruct *event, char *string)
 
     case DEVICE_MMI_OUT:
       {
-      strcpy(string,DEVICE_NAME_23);            // Commando 
+      strcpy(string,DEVICE_NAME_23);                        // Commando 
       strcat(string," ");
       strcat(string,int2str((event->Par2 >>16)&0xff));      // Parameter-1 = R (8-bit)
       strcat(string,",");

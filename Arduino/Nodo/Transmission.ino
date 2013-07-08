@@ -34,15 +34,7 @@ boolean AnalyzeRawSignal(struct NodoEventStruct *E)
     if(Device_ptr[x](DEVICE_RAWSIGNAL_IN,E,0))
       {
       E->Command=Device_id[x];
-      if(E->Type!=NODO_TYPE_DEVICE_EVENT && E->Type!=NODO_TYPE_DEVICE_COMMAND)// tijdelijk t.b.v. debugging.
-        {
-        Serial.print(F("*** debug: ERROR: device RAWSIGNAL_IN geeft geen correcte Event->Type waarde terug"));Serial.println(); //??? Debug
-        }
       return true;
-      }
-    else// debugging
-      {
-      Serial.print(F("*** debug: Signaal niet herkend door device "));Serial.println(x); //??? Debug
       }
     }
 

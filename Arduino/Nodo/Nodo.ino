@@ -1,3 +1,4 @@
+
 /****************************************************************************************************************************\
 * Arduino project "Nodo" © Copyright 2013 Paul Tonkes 
 * 
@@ -38,12 +39,12 @@
 // onderstaande 7 regels. Gebruik je een Arduino / Uno op basis van een ATMega2560 chip, dan hoef je in deze stap niets te doen.
 // ============================================================================================================================
 
-#include <SPI.h>
-#include <Arduino.h>
-#include <SD.h>
-#include <NodoEthernet.h>
-#define NODO_MEGA                    true  // true = Nodo Mega, false=Nodo-Small
-#define ETHERNET                     true  // true = Deze Nodo beschikt over een ethernet kaart
+//#include <SPI.h>
+//#include <Arduino.h>
+//#include <SD.h>
+//#include <NodoEthernet.h>
+#define NODO_MEGA                    false  // true = Nodo Mega, false=Nodo-Small
+#define ETHERNET                     false  // true = Deze Nodo beschikt over een ethernet kaart
 
 
 
@@ -52,7 +53,7 @@
 // toegevoegd aan de Nodo code. Deze is meegeleverd met de Nodo code en bevindt zich in de map "Devices". Druk nu op ctrl-k om deze map
 // weer te geven. Niet alle devices worden aangebden namens het Nodo team. kijk voor meer informatie op http://www.nodo-domotica.nl/wiki
 // Neem voor ieder device dat je gebruikt de volgende drie regels op, waarbij xxx verwijst naar het device nummer:
-// a) #define DEVICE_xxx_MMI   => Opnemen als je invoer/uitvoer van het device op je Mega wilt weergeven.
+// a) #define DEVICE_xxx_MMI   => Opnemen als je invoer/uitvoer van het device op je Mega wilt weergeven. LET OP: ALLEEN VOOR EEN MEGA!
 // b) #define DEVICE_xxx_CORE  => Alleen opnemen als je Nodo gegevens van het device moet uitlezen, verwerken, versturen.
 // c) #define DEVICE_xxx_FILE  => Verwijzing naar de bestandsnaam met de code van het device (Let op volledige pad en filenaam!).
 //
@@ -87,33 +88,39 @@
 
 
 // Device_001 => Kaku              : Klik-Aan-Klik-Uit / HomeEasy protocol ontvangst
-#define DEVICE_001_MMI 
+// #define DEVICE_001_MMI 
 #define DEVICE_001_CORE
 #define DEVICE_001_FILE "C:\Users\tonkes\Google Drive\Paul\Nodo\SVN\Arduino\Nodo\Devices\Device_001.c"
 
 // Device_002 => SendKaku          : Klik-Aan-Klik-Uit / HomeEasy protocol verzenden
-#define DEVICE_002_MMI 
+//#define DEVICE_002_MMI 
 #define DEVICE_002_CORE
 #define DEVICE_002_FILE "C:\Users\tonkes\Google Drive\Paul\Nodo\SVN\Arduino\Nodo\Devices\Device_002.c"
 
-// Device_003 => NewKAKU           : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno.
-#define DEVICE_003_MMI 
+// Device_003 => NewKAKU           : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno.//
+//#define DEVICE_003_MMI 
 #define DEVICE_003_CORE
 #define DEVICE_003_FILE "C:\Users\tonkes\Google Drive\Paul\Nodo\SVN\Arduino\Nodo\Devices\Device_003.c"
 
 // Device_004 => SendNewKAKU       : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno. 
-#define DEVICE_004_MMI 
+//#define DEVICE_004_MMI 
 #define DEVICE_004_CORE
 #define DEVICE_004_FILE "C:\Users\tonkes\Google Drive\Paul\Nodo\SVN\Arduino\Nodo\Devices\Device_004.c"
 
 // Device_005 => TempRead          : Uitlezen Dallas DS18B20 temperatuur sensor volgens OneWire verbinding.
-#define DEVICE_005_MMI 
-#define DEVICE_005_CORE
-#define DEVICE_005_FILE "C:\Users\tonkes\Google Drive\Paul\Nodo\SVN\Arduino\Nodo\Devices\Device_005.c"
+//#define DEVICE_005_MMI 
+//#define DEVICE_005_CORE
+//#define DEVICE_005_FILE "C:\Users\tonkes\Google Drive\Paul\Nodo\SVN\Arduino\Nodo\Devices\Device_005.c"
 
-#define DEVICE_020_MMI 
-#define DEVICE_020_CORE
-#define DEVICE_020_FILE "C:\Users\tonkes\Google Drive\Paul\Nodo\SVN\Arduino\Nodo\Devices\Device_020.c"
+// Device_022 => reboo
+//#define DEVICE_022_MMI 
+#define DEVICE_022_CORE
+#define DEVICE_022_FILE "C:\Users\tonkes\Google Drive\Paul\Nodo\SVN\Arduino\Nodo\Devices\Device_022.c"
+
+// Device_023 => PWM Led dimmer
+//#define DEVICE_023_MMI 
+#define DEVICE_023_CORE
+#define DEVICE_023_FILE "C:\Users\tonkes\Google Drive\Paul\Nodo\SVN\Arduino\Nodo\Devices\Device_023.c"
 
 
 
@@ -137,7 +144,7 @@
 // "Nodo.ino" 
 // ============================================================================================================================
 
-#ifdef NODO_MEGA
+#if NODO_MEGA
 #define UNIT_NODO                      1  // Nadat de Nodo wordt gereset, is dit het default unitnummer
 #else
 #define UNIT_NODO                     15  // Nadat de Nodo wordt gereset, is dit het default unitnummer
@@ -157,4 +164,5 @@
 #define TERMINAL_TIMEOUT             600 // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
 #define DELAY_BETWEEN_TRANSMISSIONS  500 // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
 #define NODO_TX_TO_RX_SWITCH_TIME    500 // Tijd die andere Nodo's nodig hebben om na zenden weer gereed voor ontvangst te staan. (Opstarttijd 433RX modules)
+byte dummy=1;
 
