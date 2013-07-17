@@ -1,6 +1,4 @@
 
-
-
 //#######################################################################################################
 //##################################### Misc: EEPROM / Eventlist  #######################################
 //#######################################################################################################
@@ -434,6 +432,14 @@ boolean GetStatus(struct NodoEventStruct *Event)
       }
     break;
 
+  case VALUE_DEVICE:
+    x=Device_id[xPar1];
+    if(x)
+      Event->Par1=x;
+    else
+        Event->Command=0;// Geen device op deze positie
+    break;
+
   case CMD_VARIABLE_SET:
     Event->Par1=xPar1;
     Event->Par2=float2ul(UserVar[xPar1-1]);
@@ -688,7 +694,7 @@ void Status(struct NodoEventStruct *Request)
     Request->Par2==0;
 
   #if NODO_MEGA          
-  if(Request->Par1==EVENT_BOOT || Request->Par1==0)
+  if(Request->Par1==0)
     {
     PrintWelcome();
     return;
@@ -805,6 +811,11 @@ void Status(struct NodoEventStruct *Request)
         {
         switch(x)
           {
+          case VALUE_DEVICE:
+            Par1_Start=0;
+            Par1_End=DEVICE_MAX-1;
+            break;
+
           case CMD_OUTPUT:
             Par1_Start=0;
             Par1_End=COMMAND_MAX;
@@ -2298,7 +2309,7 @@ int str2weekday(char *Input)
 
 /*******************************************************************************************************\
  * Houdt bij welke Nodo's binnen bereik zijn en via welke Poort.
- * Als Port ongelijk aan nul, dan wordt de lijst geactualiseerd.
+ * Als Port ongelijk aan reeds bekende poort, dan wordt de lijst geactualiseerd.
  \*******************************************************************************************************/
 byte NodoOnline(byte Unit, byte Port)
   {

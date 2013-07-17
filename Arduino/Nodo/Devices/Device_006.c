@@ -110,7 +110,7 @@ boolean Device_006(byte function, struct NodoEventStruct *event, char *string)
       }
     #endif // CORE
     
-    #ifdef DEVICE_006_MMI
+    #if NODO_MEGA
     case DEVICE_MMI_IN:
       {
       char *TempStr=(char*)malloc(26);

@@ -235,10 +235,13 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
   // zoek het device op in de devices tabel en laat de string vullen. Als het niet gelukt is om de string te
   // vullen dan behandelen als een regulier event/commando
   if(Event->Type == NODO_TYPE_DEVICE_COMMAND || Event->Type == NODO_TYPE_DEVICE_EVENT)
+    {
+    strcpy(EventString,"???");//???
     for(x=0;Device_ptr[x]!=0 && x<DEVICE_MAX; x++)
       if(Device_id[x]==Event->Command)
         Device_ptr[x](DEVICE_MMI_OUT,Event,EventString);
-
+    }
+    
   if(EventString[0]==0)
     {
     strcat(EventString,cmd2str(Event->Command));
@@ -359,6 +362,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case EVENT_TIMER:
       case EVENT_ALARM:
       case EVENT_BOOT:
+      case VALUE_DEVICE:
       case EVENT_NEWNODO:
       case CMD_UNIT_SET:
       case CMD_HOME_SET:

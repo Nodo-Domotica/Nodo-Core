@@ -129,9 +129,9 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
         {
         if(Device_id[x]==Event->Command)
           {
-          error=0;// Device een error terug laten geven?
+          error=0;
           if(Device_ptr[x](DEVICE_COMMAND,Event,0)!=true)
-            RaiseMessage(MESSAGE_17);
+            RaiseMessage(MESSAGE_18);
           }
         }
       }
@@ -379,59 +379,58 @@ byte QueueSend(void)
 
   // als de Nodo nog niet bekend is, dan nemen we aan dat deze via RF benaderbaar is.
   if(Port==0)
-    error=MESSAGE_12;
-  else
-    { 
-    // Eerste fase: Zorg dat de inhoud van de queue correct aan komt op de slave.
-    do
+    Port=VALUE_SOURCE_RF;
+
+  // Eerste fase: Zorg dat de inhoud van de queue correct aan komt op de slave.
+  do
+    {
+    ClearEvent(&Event);
+    Event.SourceUnit          = Settings.Unit;
+    Event.Port                = Port;
+    Event.Type                = NODO_TYPE_SYSTEM;      
+    Event.Command             = CMD_SENDTO;      
+    Event.Par1                = SendQueuePosition;   // Aantal te verzenden events in de queue. Wordt later gecheckt en teruggezonden in de confirm.
+    Event.Par2                = ID;
+    Event.Flags               = TRANSMISSION_SENDTO | TRANSMISSION_NEXT | TRANSMISSION_LOCK;
+    SendEvent(&Event,false,false,Settings.WaitFree==VALUE_ON);         // Alleen de eerste vooraf laten gaan door een WaitFree;
+          
+    // Verzend alle events uit de queue. Alleen de bestemmings Nodo zal deze events in de queue plaatsen
+    for(x=0;x<SendQueuePosition;x++)
       {
       ClearEvent(&Event);
       Event.SourceUnit          = Settings.Unit;
       Event.Port                = Port;
-      Event.Type                = NODO_TYPE_SYSTEM;      
-      Event.Command             = CMD_SENDTO;      
-      Event.Par1                = SendQueuePosition;   // Aantal te verzenden events in de queue. Wordt later gecheckt en teruggezonden in de confirm.
-      Event.Par2                = ID;
-      Event.Flags               = TRANSMISSION_SENDTO | TRANSMISSION_NEXT | TRANSMISSION_LOCK;
-      SendEvent(&Event,false,false,Settings.WaitFree==VALUE_ON);         // Alleen de eerste vooraf laten gaan door een WaitFree;
-            
-      // Verzend alle events uit de queue. Alleen de bestemmings Nodo zal deze events in de queue plaatsen
-      for(x=0;x<SendQueuePosition;x++)
-        {
-        ClearEvent(&Event);
-        Event.SourceUnit          = Settings.Unit;
-        Event.Port                = Port;
-        Event.Type                = SendQueue[x].Type;
-        Event.Command             = SendQueue[x].Command;
-        Event.Par1                = SendQueue[x].Par1;
-        Event.Par2                = SendQueue[x].Par2;
+      Event.Type                = SendQueue[x].Type;
+      Event.Command             = SendQueue[x].Command;
+      Event.Par1                = SendQueue[x].Par1;
+      Event.Par2                = SendQueue[x].Par2;
 
-        // laatste verzonden event markeren als laatste in de sequence.
-        if(x==SendQueuePosition-1)
-          Event.Flags = TRANSMISSION_SENDTO;
-        else        
-          Event.Flags = TRANSMISSION_SENDTO | TRANSMISSION_NEXT | TRANSMISSION_LOCK;
+      // laatste verzonden event markeren als laatste in de sequence.
+      if(x==SendQueuePosition-1)
+        Event.Flags = TRANSMISSION_SENDTO;
+      else        
+        Event.Flags = TRANSMISSION_SENDTO | TRANSMISSION_NEXT | TRANSMISSION_LOCK;
 
-        SendEvent(&Event,false,false,false);
-        }
-      
-      // De ontvangende Nodo verzendt als het goed is een bevestiging dat het is ontvangen en het aantal commando's
-      ClearEvent(&Event);
-      Event.SourceUnit          = Transmission_SendToUnit;
-      Event.Command             = SYSTEM_COMMAND_CONFIRMED;
-      Event.Type                = NODO_TYPE_SYSTEM;
+      HoldTransmission=millis()+50; // SendTo mag events direct achter elkaar zenden.
+      SendEvent(&Event,false,false,false);
+      }
+    
+    // De ontvangende Nodo verzendt als het goed is een bevestiging dat het is ontvangen en het aantal commando's
+    ClearEvent(&Event);
+    Event.SourceUnit          = Transmission_SendToUnit;
+    Event.Command             = SYSTEM_COMMAND_CONFIRMED;
+    Event.Type                = NODO_TYPE_SYSTEM;
 
+    if(Wait(10,false,&Event,false))
+      if(x==Event.Par1)
+        error=0;
 
-      if(Wait(10,false,&Event,false))
-        if(x==Event.Par1)
-          error=0;
+    // Als er een timeout was of het aantal events is niet correct bevestigd, dan de gebruiker een waarschuwing tonen
+    if(error)
+      delay(1000); // kleine pauze om zeker te weten dat de ontvanger van de ontvangende Nodo weer gereed staat voor ontvangst (starttijd RF module)
 
-      // Als er een timeout was of het aantel events is niet correct bevestigd, dan de gebruiker een waarschuwing tonen
-      if(error)
-        PrintString(ProgmemString(Text_08),VALUE_ALL);
+    }while((++Retry<5) && error);    
 
-      }while((++Retry<5) && error);    
-    }
   return error;
   }
 #endif
@@ -444,12 +443,13 @@ void QueueReceive(NodoEventStruct *Event)
   // Alle Nodo events die nu binnen komen op slaan in de queue.
   Transmission_NodoOnly=true;
   QueuePosition=0;
-  Wait(10, false, 0, true);  
+  Wait(5, false, 0, true);  
   byte count=QueuePosition;
   
   // Als aantal regels in de queue overeenkomt met wat in het SendTo verzoek is vermeldt
   // EN de queue is nog niet eerder binnen gekomen (ID) dan uitvoeren.
   // Stuur vervolgens de master ter bevestiging het aantal ontvangen events die zich nu in de queue bevinden.
+
 
   if(PreviousID!=Event->Par2)
     {
@@ -468,8 +468,6 @@ void QueueReceive(NodoEventStruct *Event)
     }
 
   QueuePosition=0;
-
-// delay(1000);//??? test
 
   struct NodoEventStruct TempEvent;
   ClearEvent(&TempEvent);
