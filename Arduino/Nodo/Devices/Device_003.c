@@ -123,7 +123,7 @@ boolean Device_003(byte function, struct NodoEventStruct *event, char *string)
       break;
     #endif // CORE
       
-    #ifdef DEVICE_003_MMI
+    #if NODO_MEGA
     case DEVICE_MMI_IN:
       {
       char* str=(char*)malloc(40);

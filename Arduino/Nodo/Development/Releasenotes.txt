@@ -211,6 +211,10 @@ R549:
 - Issue 751:	DEVICE_020 (BMP085Read) werkt niet meer vanaf r540
 - Issue 750:	DEVICE_006 (DHT11Read) werkt niet meer vanaf r540
 
+R550:
+- Issue 753:	status supported devices
+
+
 Nog te doen:
 - Aanpassen en testen: Lock mechanisme
 - Methode voor WaitFree is aangepast. Opnieuw testen en fijnafstelling in multi-nodo-omgeving

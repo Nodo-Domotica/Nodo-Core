@@ -81,7 +81,7 @@ boolean Device_001(byte function, struct NodoEventStruct *event, char *string)
       
     #endif //DEVICE_CORE_001
       
-    #ifdef DEVICE_001_MMI
+    #if NODO_MEGA
     case DEVICE_MMI_IN:
       {
       // Reserveer een kleine string en kap voor de zekerheid de inputstring af om te voorkomen dat er

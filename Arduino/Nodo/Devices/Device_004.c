@@ -118,7 +118,7 @@ boolean Device_004(byte function, struct NodoEventStruct *event, char *string)
       }
     #endif // CORE
       
-    #ifdef DEVICE_004_MMI
+    #if NODO_MEGA
     case DEVICE_MMI_IN:
       {
       char* str=(char*)malloc(40);

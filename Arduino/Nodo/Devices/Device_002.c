@@ -91,7 +91,7 @@ boolean Device_002(byte function, struct NodoEventStruct *event, char *string)
       }
     #endif // DEVICE_CORE_002
       
-    #ifdef DEVICE_002_MMI
+    #if NODO_MEGA
     case DEVICE_MMI_IN:
       {
       // Reserveer een kleine string en kap voor de zekerheid de inputstring af om te voorkomen dat er
@@ -164,7 +164,7 @@ boolean Device_002(byte function, struct NodoEventStruct *event, char *string)
 
       break;
       }
-    #endif //DEVICE_002_MMI
+    #endif
     }      
   return success;
   }

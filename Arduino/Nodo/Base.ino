@@ -1,10 +1,26 @@
+#define PULSE_DEBOUNCE_TIME           10 // pulsen kleiner dan deze waarde in milliseconden worden niet geteld. Bedoeld om verstoringen a.g.v. ruis of dender te voorkomen
+#define PULSE_TRANSITION         FALLING // FALLING of RISING: Geeft aan op welke flank de PulseCounter start start met tellen. Default FALLING
+#define I2C_START_ADDRESS              1 // Alle Nodo's op de I2C bus hebben een uniek adres dat start vanaf dit nummer. Er zijn max. 32 Nodo's. Let op overlap met andere devices. RTC zit op adres 104.
+#define NODO_30_COMPATIBLE          true // t.b.v. compatibiliteit met vorige Nodo versie: NewKAKU HEX waarden en UserEvents
+#define BAUD                       19200 // Baudrate voor seriële communicatie.
+#define WAIT_FREE_RX               false // true: wacht default op verzenden van een event tot de IR/RF lijn onbezet is. Wordt overruled door commando [WaitFreeRX]
+#define WAIT_FREE_RX_WINDOW          500 // minimale wachttijd wanneer wordt gewacht op een vrije RF of IR band. Is deze waarde te klein, dan kunnen er restanten van signalen binnenkomen als RawSignal. Te groot maakt de Nodo sloom.
+#define WAITFREE_TIMEOUT           30000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
+#define PASSWORD_MAX_RETRY             5 // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
+#define PASSWORD_TIMEOUT             300 // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
+#define TERMINAL_TIMEOUT             600 // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
+#define DELAY_BETWEEN_TRANSMISSIONS  500 // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
+#define NODO_TX_TO_RX_SWITCH_TIME    500 // Tijd die andere Nodo's nodig hebben om na zenden weer gereed voor ontvangst te staan. (Opstarttijd 433RX modules)
 #define SIGNAL_ANALYZE_SHARPNESS      50 // Scherpte c.q. foutmarge die gehanteerd wordt bij decoderen van RF/IR signaal.
 #define MIN_RAW_PULSES                16 // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
 
+#include <SPI.h>
+#include <Arduino.h>
 
-#ifdef USER_SETTINGS
-#include USER_SETTINGS
-#endif
+#define stringify(x) #x
+#define CONFIGFILE2(a, b) stringify(a/Config/b)
+#define CONFIGFILE(a, b) CONFIGFILE2(a, b)
+#include CONFIGFILE(SKETCH_PATH,CONFIG_FILE)
 
 #define NODO_VERSION         36  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_BUILD          549  //??? ophogen bij iedere build
@@ -77,7 +93,7 @@
 #define CMD_TIMER_SET_VARIABLE          63
 #define CMD_UNIT_SET                    64
 #define CMD_VARIABLE_DEC                65
-#define CMD_VARIABLE_RECEIVE            66
+#define CMD_VARIABLE_RECEIVE    66
 #define CMD_VARIABLE_INC                67
 #define CMD_VARIABLE_PULSE_COUNT        68
 #define CMD_VARIABLE_PULSE_TIME         69
@@ -106,49 +122,51 @@
 #define VALUE_ALL                       92
 #define VALUE_BUILD                     93
 #define VALUE_DLS                       94
-#define VALUE_RECEIVED_EVENT            95
-#define VALUE_EVENTLIST          96
-#define VALUE_EVENTLIST_COUNT           97
-#define VALUE_SOURCE_EVENTLIST               98
-#define VALUE_SOURCE_FILE               99
-#define VALUE_FREEMEM                   100
-#define VALUE_SOURCE_HTTP               101
-#define VALUE_HWCONFIG                  102
-#define VALUE_SOURCE_I2C                103
-#define VALUE_DIRECTION_INPUT           104
-#define VALUE_SOURCE_IR                 105
-#define VALUE_OFF                       106
-#define VALUE_ON                        107
-#define VALUE_DIRECTION_OUTPUT          108
-#define VALUE_RECEIVED_PAR1             109
-#define VALUE_RECEIVED_PAR2             110
-#define VALUE_SOURCE_RF                 111
-#define VALUE_SOURCE_SERIAL             112
-#define VALUE_SOURCE_TELNET             113
-#define VALUE_SOURCE_WIRED             114
-#define VALUE_SOURCE_THISUNIT                 115
-#define VALUE_UNIT                      116
-#define MESSAGE_00                      117
-#define MESSAGE_01                      118
-#define MESSAGE_02                      119
-#define MESSAGE_03                      120
-#define MESSAGE_04                      121
-#define MESSAGE_05                      122
-#define MESSAGE_06                      123
-#define MESSAGE_07                      124
-#define MESSAGE_08                      125
-#define MESSAGE_09                      126
-#define MESSAGE_10                      127
-#define MESSAGE_11                      128
-#define MESSAGE_12                      129
-#define MESSAGE_13                      130
-#define MESSAGE_14                      131
-#define MESSAGE_15                      132
-#define MESSAGE_16                      133
-#define MESSAGE_17                      134
-#define MESSAGE_18                      135
+#define VALUE_DEVICE 95
+#define VALUE_RECEIVED_EVENT            96
+#define VALUE_EVENTLIST          97
+#define VALUE_EVENTLIST_COUNT           98
+#define VALUE_SOURCE_EVENTLIST               99
+#define VALUE_SOURCE_FILE               100
+#define VALUE_FREEMEM                   101
+#define VALUE_SOURCE_HTTP               102
+#define VALUE_HWCONFIG                  103
+#define VALUE_SOURCE_I2C                104
+#define VALUE_DIRECTION_INPUT           105
+#define VALUE_SOURCE_IR                 106
+#define VALUE_OFF                       107
+#define VALUE_ON                        108
+#define VALUE_DIRECTION_OUTPUT          109
+#define VALUE_RECEIVED_PAR1             110
+#define VALUE_RECEIVED_PAR2             111
+#define VALUE_SOURCE_RF                 112
+#define VALUE_SOURCE_SERIAL             113
+#define VALUE_SOURCE_TELNET             114
+#define VALUE_SOURCE_WIRED             115
+#define VALUE_SOURCE_THISUNIT                 116
+#define VALUE_UNIT                      117
+#define MESSAGE_00                      118
+#define MESSAGE_01                      119
+#define MESSAGE_02                      120
+#define MESSAGE_03                      121
+#define MESSAGE_04                      122
+#define MESSAGE_05                      123
+#define MESSAGE_06                      124
+#define MESSAGE_07                      125
+#define MESSAGE_08                      126
+#define MESSAGE_09                      127
+#define MESSAGE_10                      128
+#define MESSAGE_11                      129
+#define MESSAGE_12                      130
+#define MESSAGE_13                      131
+#define MESSAGE_14                      132
+#define MESSAGE_15                      133
+#define MESSAGE_16                      134
+#define MESSAGE_17                      135
+#define MESSAGE_18                      136
 
-#define COMMAND_MAX                     135 // hoogste commando
+
+#define COMMAND_MAX                     136 // hoogste commando
 
 #if NODO_MEGA
 prog_char PROGMEM Cmd_0[]="-";
@@ -246,47 +264,48 @@ prog_char PROGMEM Cmd_91[]="WiredIn";
 prog_char PROGMEM Cmd_92[]="All";
 prog_char PROGMEM Cmd_93[]="Build";
 prog_char PROGMEM Cmd_94[]="DaylightSaving";
-prog_char PROGMEM Cmd_95[]="Event";
-prog_char PROGMEM Cmd_96[]="EventList";
-prog_char PROGMEM Cmd_97[]="EventlistCount";
-prog_char PROGMEM Cmd_98[]="Eventlist";
-prog_char PROGMEM Cmd_99[]="File";
-prog_char PROGMEM Cmd_100[]="FreeMem";
-prog_char PROGMEM Cmd_101[]="HTTP";
-prog_char PROGMEM Cmd_102[]="HWConfig";
-prog_char PROGMEM Cmd_103[]="I2C";
-prog_char PROGMEM Cmd_104[]="Input";
-prog_char PROGMEM Cmd_105[]="IR";
-prog_char PROGMEM Cmd_106[]="Off";
-prog_char PROGMEM Cmd_107[]="On";
-prog_char PROGMEM Cmd_108[]="Output";
-prog_char PROGMEM Cmd_109[]="Par1";
-prog_char PROGMEM Cmd_110[]="Par2";
-prog_char PROGMEM Cmd_111[]="RF";
-prog_char PROGMEM Cmd_112[]="Serial";
-prog_char PROGMEM Cmd_113[]="Terminal";
-prog_char PROGMEM Cmd_114[]="Wired";
-prog_char PROGMEM Cmd_115[]="ThisUnit";
-prog_char PROGMEM Cmd_116[]="Unit";
-prog_char PROGMEM Cmd_117[]="Ok.";
-prog_char PROGMEM Cmd_118[]="Unknown command.";
-prog_char PROGMEM Cmd_119[]="Invalid parameter in command.";
-prog_char PROGMEM Cmd_120[]="Unable to open file.";
-prog_char PROGMEM Cmd_121[]="Error during queing events.";
-prog_char PROGMEM Cmd_122[]="Eventlist nesting error.";
-prog_char PROGMEM Cmd_123[]="Reading/writing eventlist failed.";
-prog_char PROGMEM Cmd_124[]="Unable to establish TCP/IP connection.";
-prog_char PROGMEM Cmd_125[]="Incorrect password.";
-prog_char PROGMEM Cmd_126[]="Execution stopped.";
-prog_char PROGMEM Cmd_127[]="Access denied.";
-prog_char PROGMEM Cmd_128[]="SendTo not completed.";
-prog_char PROGMEM Cmd_129[]="Unit not online or within range.";
-prog_char PROGMEM Cmd_130[]="Data lost during SendTo.";
-prog_char PROGMEM Cmd_131[]="SDCard error.";
-prog_char PROGMEM Cmd_132[]="Break.";
-prog_char PROGMEM Cmd_133[]="RawSignal saved.";
-prog_char PROGMEM Cmd_134[]="Unknown device.";
-prog_char PROGMEM Cmd_135[]="Device returned an error.";
+prog_char PROGMEM Cmd_95[]="Device";
+prog_char PROGMEM Cmd_96[]="Event";
+prog_char PROGMEM Cmd_97[]="EventList";
+prog_char PROGMEM Cmd_98[]="EventlistCount";
+prog_char PROGMEM Cmd_99[]="Eventlist";
+prog_char PROGMEM Cmd_100[]="File";
+prog_char PROGMEM Cmd_101[]="FreeMem";
+prog_char PROGMEM Cmd_102[]="HTTP";
+prog_char PROGMEM Cmd_103[]="HWConfig";
+prog_char PROGMEM Cmd_104[]="I2C";
+prog_char PROGMEM Cmd_105[]="Input";
+prog_char PROGMEM Cmd_106[]="IR";
+prog_char PROGMEM Cmd_107[]="Off";
+prog_char PROGMEM Cmd_108[]="On";
+prog_char PROGMEM Cmd_109[]="Output";
+prog_char PROGMEM Cmd_110[]="Par1";
+prog_char PROGMEM Cmd_111[]="Par2";
+prog_char PROGMEM Cmd_112[]="RF";
+prog_char PROGMEM Cmd_113[]="Serial";
+prog_char PROGMEM Cmd_114[]="Terminal";
+prog_char PROGMEM Cmd_115[]="Wired";
+prog_char PROGMEM Cmd_116[]="ThisUnit";
+prog_char PROGMEM Cmd_117[]="Unit";
+prog_char PROGMEM Cmd_118[]="Ok.";
+prog_char PROGMEM Cmd_119[]="Unknown command.";
+prog_char PROGMEM Cmd_120[]="Invalid parameter in command.";
+prog_char PROGMEM Cmd_121[]="Unable to open file.";
+prog_char PROGMEM Cmd_122[]="Error during queing events.";
+prog_char PROGMEM Cmd_123[]="Eventlist nesting error.";
+prog_char PROGMEM Cmd_124[]="Reading/writing eventlist failed.";
+prog_char PROGMEM Cmd_125[]="Unable to establish TCP/IP connection.";
+prog_char PROGMEM Cmd_126[]="Incorrect password.";
+prog_char PROGMEM Cmd_127[]="Execution stopped.";
+prog_char PROGMEM Cmd_128[]="Access denied.";
+prog_char PROGMEM Cmd_129[]="SendTo not completed.";
+prog_char PROGMEM Cmd_130[]="Unit not online or within range.";
+prog_char PROGMEM Cmd_131[]="Data lost during SendTo.";
+prog_char PROGMEM Cmd_132[]="SDCard error.";
+prog_char PROGMEM Cmd_133[]="Break.";
+prog_char PROGMEM Cmd_134[]="RawSignal saved.";
+prog_char PROGMEM Cmd_135[]="Unknown device.";
+prog_char PROGMEM Cmd_136[]="Device returned an error.";
 
 
 // tabel die refereert aan de commando strings
@@ -304,7 +323,7 @@ Cmd_90,Cmd_91,Cmd_92,Cmd_93,Cmd_94,Cmd_95,Cmd_96,Cmd_97,Cmd_98,Cmd_99,
 Cmd_100,Cmd_101,Cmd_102,Cmd_103,Cmd_104,Cmd_105,Cmd_106,Cmd_107,Cmd_108,Cmd_109,
 Cmd_110,Cmd_111,Cmd_112,Cmd_113,Cmd_114,Cmd_115,Cmd_116,Cmd_117,Cmd_118,Cmd_119,
 Cmd_120,Cmd_121,Cmd_122,Cmd_123,Cmd_124,Cmd_125,Cmd_126,Cmd_127,Cmd_128,Cmd_129,
-Cmd_130,Cmd_131,Cmd_132,Cmd_133,Cmd_134,Cmd_135};
+Cmd_130,Cmd_131,Cmd_132,Cmd_133,Cmd_134,Cmd_135,Cmd_136};
 
 // Tabel met zonsopgang en -ondergang momenten. afgeleid van KNMI gegevens midden Nederland.
 PROGMEM prog_uint16_t Sunrise[]={528,525,516,503,487,467,446,424,401,378,355,333,313,295,279,268,261,259,263,271,283,297,312,329,345,367,377,394,411,428,446,464,481,498,512,522,528,527};
@@ -454,10 +473,10 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define PIN_RF_TX_DATA               5 // data naar de zender
 #define PIN_RF_RX_DATA               2 // Op deze input komt het 433Mhz-RF signaal binnen. LOW bij geen signaal.
 #define PIN_RF_RX_VCC               12 // Spanning naar de ontvanger via deze pin.
-#define PIN_WIRED_OUT_1              7 // 7 digitale outputs D07 t/m D10 worden gebruikt voor WiredIn 1 tot en met 4
-#define PIN_WIRED_OUT_2              8 // 7 digitale outputs D07 t/m D10 worden gebruikt voor WiredIn 1 tot en met 4
-#define PIN_WIRED_OUT_3              9 // (pwm) 7 digitale outputs D07 t/m D10 worden gebruikt voor WiredIn 1 tot en met 4
-#define PIN_WIRED_OUT_4             10 // (pwm) 7 digitale outputs D07 t/m D10 worden gebruikt voor WiredIn 1 tot en met 4
+#define PIN_WIRED_OUT_1              7 // 4 digitale outputs D07 t/m D10 worden gebruikt voor WiredIn 1 tot en met 4
+#define PIN_WIRED_OUT_2              8 // 4 digitale outputs D07 t/m D10 worden gebruikt voor WiredIn 1 tot en met 4
+#define PIN_WIRED_OUT_3              9 // (pwm) 4 digitale outputs D07 t/m D10 worden gebruikt voor WiredIn 1 tot en met 4
+#define PIN_WIRED_OUT_4             10 // (pwm) 4 digitale outputs D07 t/m D10 worden gebruikt voor WiredIn 1 tot en met 4
 #endif
 //****************************************************************************************************************************************
 

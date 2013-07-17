@@ -154,7 +154,7 @@ boolean Device_255(byte function, struct NodoEventStruct *event, char *string)
       }
     #endif // CORE
     
-    #ifdef DEVICE_255_MMI // alleen relevant voor een Nodo Mega want de Small heeft geen MMI!
+    #if NODO_MEGA // alleen relevant voor een Nodo Mega want de Small heeft geen MMI!
     case DEVICE_MMI_IN:
       {
       // Zodra er via een script, HTTP, Telnet of Serial een commando wordt ingevoerd, wordt dit deel van de code langs gelopen.
