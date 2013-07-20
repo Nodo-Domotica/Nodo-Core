@@ -23,7 +23,7 @@
 #include CONFIGFILE(SKETCH_PATH,CONFIG_FILE)
 
 #define NODO_VERSION         36  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
-#define NODO_BUILD          549  //??? ophogen bij iedere build
+#define NODO_BUILD          551  //??? ophogen bij iedere build
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -208,7 +208,7 @@ prog_char PROGMEM Cmd_35[]="ID";
 prog_char PROGMEM Cmd_36[]="if";
 prog_char PROGMEM Cmd_37[]="Lock";
 prog_char PROGMEM Cmd_38[]="Log";
-prog_char PROGMEM Cmd_39[]="NodoIP";
+prog_char PROGMEM Cmd_39[]="IP";
 prog_char PROGMEM Cmd_40[]="Output";
 prog_char PROGMEM Cmd_41[]="Password";
 prog_char PROGMEM Cmd_42[]="PortInput";
