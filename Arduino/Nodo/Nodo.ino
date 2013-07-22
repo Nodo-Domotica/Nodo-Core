@@ -48,12 +48,3 @@
 
 
 
-
-
-
-byte HOME_NODO=1; // Home adres van Nodo's die tot één groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
-
-
-
-
-

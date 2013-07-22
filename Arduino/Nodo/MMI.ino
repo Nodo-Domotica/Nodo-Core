@@ -140,7 +140,7 @@ void PrintWelcome(void)
   // print IP adres van de Nodo
   if(bitRead(HW_Config,HW_ETHERNET))
     {
-    sprintf(TempString,"NodoIP=%u.%u.%u.%u, ", Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
+    sprintf(TempString,"IP=%u.%u.%u.%u, ", Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
 
     strcat(TempString,cmd2str(CMD_PORT_CLIENT));
     strcat(TempString,"=");        
