@@ -1,3 +1,5 @@
+#define UNIT_NODO                      1 // Unit nummer van deze Nodo
+#define NODO_HOME                      1 // Home adres van Nodo's die tot één groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
 #define PULSE_DEBOUNCE_TIME           10 // pulsen kleiner dan deze waarde in milliseconden worden niet geteld. Bedoeld om verstoringen a.g.v. ruis of dender te voorkomen
 #define PULSE_TRANSITION         FALLING // FALLING of RISING: Geeft aan op welke flank de PulseCounter start start met tellen. Default FALLING
 #define I2C_START_ADDRESS              1 // Alle Nodo's op de I2C bus hebben een uniek adres dat start vanaf dit nummer. Er zijn max. 32 Nodo's. Let op overlap met andere devices. RTC zit op adres 104.
@@ -26,6 +28,8 @@
 #define NODO_BUILD          551  //??? ophogen bij iedere build
 #include <EEPROM.h>
 #include <Wire.h>
+
+byte HOME_NODO=NODO_HOME; // Home adres van Nodo's die tot één groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
 
 #define CMD_DUMMY                       0
 #define EVENT_USEREVENT                 1
@@ -1240,5 +1244,6 @@ void loop()
       }
     }// while 
   }
+
 
 
