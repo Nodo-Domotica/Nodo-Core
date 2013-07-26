@@ -25,7 +25,7 @@
 #include CONFIGFILE(SKETCH_PATH,CONFIG_FILE)
 
 #define NODO_VERSION         36  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
-#define NODO_BUILD          551  //??? ophogen bij iedere build
+#define NODO_BUILD          554  //??? ophogen bij iedere build
 #include <EEPROM.h>
 #include <Wire.h>
 

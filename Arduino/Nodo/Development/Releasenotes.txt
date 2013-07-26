@@ -217,8 +217,6 @@ R550:
 
 Nog te doen:
 - Aanpassen en testen: Lock mechanisme
-- Methode voor WaitFree is aangepast. Opnieuw testen en fijnafstelling in multi-nodo-omgeving
-- [SendTo x; UnitSet y] geeft vastloper op unit x.
 - DEVICES AANPASSEN & TESTEN:
   * Device_008 => AlectoV1
   * Device_009 => AlectoV2
