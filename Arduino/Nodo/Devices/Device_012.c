@@ -1,4 +1,4 @@
-
+                                  
 //#######################################################################################################
 //##################################### Device-12 OregonV2  #############################################
 //#######################################################################################################
@@ -10,8 +10,8 @@
  *                      Support THGN132N en code optimalisatie door forumlid: Arendst
  * Support            : www.nodo-domotica.nl
  * Datum              : Mrt.2013
- * Versie             : 1.0
- * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
+ * Versie             : 1.2
+ * Nodo productnummer : 
  * Compatibiliteit    : Vanaf Nodo build nummer 508
  * Syntax             : "OregonV2 <Par1:Sensor ID>, <Par2:Basis Variabele>"
  *********************************************************************************************
@@ -34,7 +34,6 @@
  *   K = Checksum, sum of nibbles C,D,E,F,G,H,I,J
  **********************************************************************************************/
  
-#ifdef DEVICE_012
 #define DEVICE_ID 12
 #define DEVICE_NAME   "OregonV2"
 
@@ -48,16 +47,18 @@
 
 byte ProtocolOregonValidID[5];
 byte ProtocolOregonVar[5];
+byte ProtocolOregonCheckID(byte checkID);
+
 
 boolean Device_012(byte function, struct NodoEventStruct *event, char *string)
-{
+  {
   boolean success=false;
-
   switch(function)
   {
-#ifdef DEVICE_CORE_012
+#ifdef DEVICE_012_CORE
   case DEVICE_RAWSIGNAL_IN:
     {
+      Serial.println("Oregon RAWSIGNAL_IN");
       RawSignal.Multiply=50;
       byte nibble[17]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
       byte y = 1;
@@ -71,7 +72,7 @@ boolean Device_012(byte function, struct NodoEventStruct *event, char *string)
       byte basevar=0;
 
       if (!((RawSignal.Number >= THN132N_MIN_PULSECOUNT && RawSignal.Number <= THN132N_MAX_PULSECOUNT) || (RawSignal.Number >= THGN123N_MIN_PULSECOUNT && RawSignal.Number <= THGN123N_MAX_PULSECOUNT))) return false;
-
+  
       for(byte x=1;x<=RawSignal.Number;x++)
       {
         if(RawSignal.Pulses[x]*RawSignal.Multiply < 600)
@@ -110,37 +111,40 @@ boolean Device_012(byte function, struct NodoEventStruct *event, char *string)
       // calculate and verify checksum
       for(byte x=0; x<12;x++) checksumcalc += nibble[x];
       checksum = (nibble[13] << 4) | nibble[12];
+
       if ((id == THGN123N_ID) || (id == THGR810_ID))                           // Units with humidity sensor have extra data
         {
           checksum = (nibble[16] << 4) | nibble[15];
           for(byte x=13; x<16;x++) checksumcalc += nibble[x];
         }
+
       if (checksum != checksumcalc) return false;
-
+  
       basevar = ProtocolOregonCheckID((nibble[6] << 4) | nibble[5]);
+      if (basevar == 0) return false;
 
-      event->Par1=(nibble[6] << 4) | nibble[5];
-      event->Par2=basevar;
+      event->Par1          = (nibble[6] << 4) | nibble[5];
+      event->Par2          = basevar;
       event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
       event->Port          = VALUE_SOURCE_RF;
-
-      if (basevar == 0) return true;
-
+      event->Type          = NODO_TYPE_DEVICE_EVENT;
+  
       // if valid sensor type, update user variable and process event
       if ((id == THGN123N_ID) || (id == THGR810_ID) || (id == THN132N_ID))
-      {
+        {
         datavalue = ((1000 * nibble[10]) + (100 * nibble[9]) + (10 * nibble[8]));
         if ((nibble[11] & 0x8) == 8) datavalue = -1 * datavalue;
         UserVar[basevar -1] = (float)datavalue/100;
         if ((id == THGN123N_ID) || (id == THGR810_ID))
-        {
+          {
           datavalue = ((1000 * nibble[13]) + (100 * nibble[12]));
-          UserVar[basevar + 1 -1] = (float)datavalue/100;
+          UserVar[basevar] = (float)datavalue/100;
+          }
         }
-      }
       success = true;
       break;
     }
+ 
   case DEVICE_COMMAND:
     {
     if ((event->Par2 > 0) && (ProtocolOregonCheckID(event->Par1) == 0))
@@ -154,6 +158,7 @@ boolean Device_012(byte function, struct NodoEventStruct *event, char *string)
           break;
           }
         }
+      success=true;
       }
     break;
     }
@@ -170,11 +175,14 @@ boolean Device_012(byte function, struct NodoEventStruct *event, char *string)
       if(strcasecmp(TempStr,DEVICE_NAME)==0)
         {
         if(event->Par1>0 && event->Par1<255 && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX)
+          {
+          event->Type = NODO_TYPE_DEVICE_COMMAND;
           success=true;
+          }
         }
       }
-      free(TempStr);
-      break;
+    free(TempStr);
+    break;
     }
 
   case DEVICE_MMI_OUT:
@@ -186,12 +194,13 @@ boolean Device_012(byte function, struct NodoEventStruct *event, char *string)
     strcat(string,int2str(event->Par2));
     break;
     }
-#endif //NODO_MEGA
+
+  #endif //NODO_MEGA
   }      
   return success;
 }
 
-#ifdef DEVICE_CORE_012
+#ifdef DEVICE_012_CORE
 /*********************************************************************************************\
  * Check for valid sensor ID
  \*********************************************************************************************/
@@ -200,7 +209,6 @@ byte ProtocolOregonCheckID(byte checkID)
   for (byte x=0; x<5; x++) if (ProtocolOregonValidID[x] == checkID) return ProtocolOregonVar[x];
   return 0;
 }
-#endif //DEVICE_CORE_012
-#endif //DEVICE_12
+#endif //CORE
 
 
