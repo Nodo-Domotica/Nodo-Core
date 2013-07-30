@@ -1,3 +1,6 @@
+#define NODO_VERSION         36  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
+#define NODO_BUILD          555  //??? ophogen bij iedere build
+
 #define UNIT_NODO                      1 // Unit nummer van deze Nodo
 #define NODO_HOME                      1 // Home adres van Nodo's die tot één groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
 #define PULSE_DEBOUNCE_TIME           10 // pulsen kleiner dan deze waarde in milliseconden worden niet geteld. Bedoeld om verstoringen a.g.v. ruis of dender te voorkomen
@@ -24,8 +27,6 @@
 #define CONFIGFILE(a, b) CONFIGFILE2(a, b)
 #include CONFIGFILE(SKETCH_PATH,CONFIG_FILE)
 
-#define NODO_VERSION         36  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
-#define NODO_BUILD          554  //??? ophogen bij iedere build
 #include <EEPROM.h>
 #include <Wire.h>
 
@@ -73,8 +74,8 @@ byte HOME_NODO=NODO_HOME; // Home adres van Nodo's die tot één groep behoren (
 #define CMD_NODO_IP                     39
 #define CMD_OUTPUT                      40
 #define CMD_PASSWORD                    41
-#define CMD_PORT_SERVER                 42
-#define CMD_PORT_CLIENT                 43
+#define CMD_PORT_INPUT                  42
+#define CMD_PORT_OUTPUT                 43
 #define CMD_RAWSIGNAL_ERASE             44
 #define CMD_RAWSIGNAL_LIST              45
 #define CMD_RAWSIGNAL_RECEIVE           46
@@ -511,8 +512,8 @@ struct SettingsStruct
   byte    Subnet[4];                                        // Submask
   byte    Gateway[4];                                       // Gateway
   byte    DnsServer[4];                                     // DNS Server IP adres
-  unsigned int  OutputPort;                                 // Poort van de inkomende IP communnicatie
-  unsigned int  PortClient;                                 // Poort van de uitgaande IP communnicatie
+  unsigned int  PortInput;                                 // Poort van de inkomende IP communnicatie
+  unsigned int  PortOutput;                                 // Poort van de uitgaande IP communnicatie
   byte    EchoSerial;
   byte    EchoTelnet;
   byte    Log;

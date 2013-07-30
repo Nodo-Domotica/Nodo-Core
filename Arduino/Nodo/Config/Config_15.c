@@ -9,49 +9,27 @@
 //
 // Allereerst de KAKU devices. Die worden gespecificeerd voor ALLE Nodo's. Alle andere devices worden Nodo-specifiek opgegeven
 // ****************************************************************************************************************************************
-   int dummy=123;
 
 #define UNIT_NODO 15
-#define NODO_MEGA                    false // true = Nodo Mega, false=Nodo-Small
 
 
-
-// KAKU devices
-#define DEVICE_001 blabla
-#define DEVICE_002
-#define DEVICE_003
-#define DEVICE_004
-
+// Kaku              : Klik-Aan-Klik-Uit / HomeEasy protocol ontvangst
+#define DEVICE_001
 #define DEVICE_001_CORE
+
+// SendKaku          : Klik-Aan-Klik-Uit / HomeEasy protocol verzenden 
+#define DEVICE_002
 #define DEVICE_002_CORE
+
+// NewKAKU           : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno.
+#define DEVICE_003
 #define DEVICE_003_CORE
+
+// SendNewKAKU       : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno. 
+#define DEVICE_004
 #define DEVICE_004_CORE
 
-// ****************************************************************************************************************************************
-// Deel 2: Nodo specifieke zaken. 
-// Allereerst unitnummer en home adres
-// daarnaast ook per device de CORE, als dat device tenminste fysiek aan deze Nodo is gekoppeld
-// ****************************************************************************************************************************************
+// TempSensor        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
+#define DEVICE_005 
+#define DEVICE_005_CORE
 
-// ----------------------------------------------------------------------------------------------------------------------------------------
-// Definities voor Nodo unit nummer 1 
-#if (NODO_SELECTOR == 1)
-  // Specificatie van deze Nodo:
-  #define UNIT_NODO 1 
-  // Devices in gebruik op deze Nodo:
-  // Dallas sensor
-  #define DEVICE_005 
-#endif 
-// ----------------------------------------------------------------------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------------------------------------------------------------------
-// Definities voor Nodo unit nummer 15 
-#if (NODO_SELECTOR == 15)
-  // Specificatie van deze Nodo:
-  #define UNIT_NODO 15 
-  // Devices in gebruik op deze Nodo:
-  // Dallas sensor
-  #define DEVICE_005
-  #define DEVICE_005_CORE
-#endif 
-// ----------------------------------------------------------------------------------------------------------------------------------------
