@@ -213,7 +213,9 @@ R549:
 
 R550:
 - Issue 753:	status supported devices
-
+- Issue 731:	behandelen als een device met een #define
+- Issue 742:	PortInput / PortOutput omgewisseld                                                                                           
+- Issue 759:	Variabele verzonden door andere Nodo geeft hit in Eventlist
 
 Nog te doen:
 - Aanpassen en testen: Lock mechanisme

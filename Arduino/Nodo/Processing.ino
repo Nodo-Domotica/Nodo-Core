@@ -200,23 +200,16 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
   if(MacroEvent->Command==0 || Event->Command==0)
     return false;  
     
-  // #### EXACT: als huidige event exact overeenkomt met het event in de regel uit de Eventlist, dan een match
-  if(MacroEvent->Type    == Event->Type    &&
-     MacroEvent->Command == Event->Command &&
-     MacroEvent->Par1    == Event->Par1    &&
-     MacroEvent->Par2    == Event->Par2    )
-       return true; 
+  // Als de typen events niet corresponderen, dan gelijk terug
+  if(MacroEvent->Type != Event->Type)
+    return false;
 
   // ### WILDCARD:      
   if(MacroEvent->Command == EVENT_WILDCARD)                                                                                 // is regel uit de eventlist een WildCard?
     if( MacroEvent->Par1==VALUE_ALL          ||   MacroEvent->Par1==Event->Port)                                            // Correspondeert de poort of mogen alle poorten?
       if((MacroEvent->Par2&0xff)==VALUE_ALL  ||  (MacroEvent->Par2&0xff)==Event->Command && Event->Type==NODO_TYPE_EVENT)   // Correspondeert het commando deel als het een commando is, of mogen alle
         if(((MacroEvent->Par2>>8)&0xff)==0   || ((MacroEvent->Par2>>8)&0xff)==Event->SourceUnit)                            // Correspondeert het unitnummer of is deze niet opgegeven
-          return true;
-          
-  // Als de typen events niet corresponderen, dan gelijk terug
-  if(MacroEvent->Type != Event->Type)
-    return false;
+          return true;          
 
   // ### USEREVENT: beschouw bij een UserEvent een 0 voor Par1 of Par2 als een wildcard.
   if(Event->Type==NODO_TYPE_EVENT)
@@ -225,11 +218,16 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
        && (Event->Par2==MacroEvent->Par2 || MacroEvent->Par2==0 || Event->Par2==0))                         // Par2 deel een match?
          return true; 
     
-  // Herkomst van een andere Nodo, dan er niets meer mee doen TENZIJ het een UserEvent is. Die werd hierboven 
+  // Herkomst van een andere Nodo, dan er niets meer mee doen TENZIJ het een UserEvent is of behandeling door Wildcard. Die werden hierboven 
   // al afgevangen.
   if(Event->SourceUnit!=0  && Event->SourceUnit!=Settings.Unit)
     return false;
 
+  // #### EXACT: als huidige event exact overeenkomt met het event in de regel uit de Eventlist, dan een match. Type en Source werden eerder al afgevangen.
+  if(MacroEvent->Command == Event->Command &&
+     MacroEvent->Par1    == Event->Par1    &&
+     MacroEvent->Par2    == Event->Par2    )
+       return true; 
 
   // ### TIME:
   if(Event->Command==EVENT_TIME) // het binnengekomen event is een clock event.

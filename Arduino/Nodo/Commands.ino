@@ -469,12 +469,12 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         
 #if NODO_MEGA
 
-    case CMD_PORT_SERVER:
-      Settings.OutputPort=EventToExecute->Par2;
+    case CMD_PORT_INPUT:
+      Settings.PortInput=EventToExecute->Par2;
       break;
 
-    case CMD_PORT_CLIENT:
-      Settings.PortClient=EventToExecute->Par2;
+    case CMD_PORT_OUTPUT:
+      Settings.PortOutput=EventToExecute->Par2;
       break;
 
     case CMD_ECHO:

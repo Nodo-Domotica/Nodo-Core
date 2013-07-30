@@ -520,12 +520,12 @@ boolean GetStatus(struct NodoEventStruct *Event)
     Event->Par2=Settings.Alarm[xPar1-1];
     break;
 
-  case CMD_PORT_SERVER:
-    Event->Par2=Settings.OutputPort;
+  case CMD_PORT_INPUT:
+    Event->Par2=Settings.PortInput;
     break;
 
-  case CMD_PORT_CLIENT:
-    Event->Par2=Settings.PortClient;
+  case CMD_PORT_OUTPUT:
+    Event->Par2=Settings.PortOutput;
     break;
 
   case CMD_LOG:
@@ -641,8 +641,8 @@ void ResetFactory(void)
   Settings.DnsServer[1]               = 0;
   Settings.DnsServer[2]               = 0;
   Settings.DnsServer[3]               = 0;
-  Settings.OutputPort                 = 6636;
-  Settings.PortClient                 = 80;
+  Settings.PortInput                  = 6636;
+  Settings.PortOutput                 = 80;
   Settings.ID[0]                      = 0; // string leegmaken
   Settings.Temp[0]                    = 0; // string leegmaken
   Settings.EchoSerial                 = VALUE_ON;
@@ -769,13 +769,13 @@ void Status(struct NodoEventStruct *Request)
             }
           break;
   
-        case CMD_PORT_SERVER:
-          sprintf(TempString,"%s %d",cmd2str(CMD_PORT_SERVER), Settings.OutputPort);
+        case CMD_PORT_INPUT:
+          sprintf(TempString,"%s %d",cmd2str(CMD_PORT_INPUT), Settings.PortInput);
           PrintString(TempString,Request->Port);
           break;
   
-        case CMD_PORT_CLIENT:
-          sprintf(TempString,"%s %d",cmd2str(CMD_PORT_CLIENT), Settings.PortClient);
+        case CMD_PORT_OUTPUT:
+          sprintf(TempString,"%s %d",cmd2str(CMD_PORT_OUTPUT), Settings.PortOutput);
           PrintString(TempString,Request->Port);
           break;
   

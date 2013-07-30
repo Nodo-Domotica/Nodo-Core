@@ -30,20 +30,21 @@
  *
  * De sensor heeft vier aansluitingen:
  * VCC  => +5
- * TRIG => Aansluiten op WiredOut-1
- * ECHO => Aansluiten op WiredOut-2 (sluit uit veiligheid aan via een weerstand van 1K Ohm)
+ * TRIG => Aansluiten op WiredOut-1  (ATMega2560=D30, ATMega328=D7)
+ * ECHO => Aansluiten op WiredOut-2  (ATMega2560=D31, ATMega328=D8)
  * GND  => Massa
  *
+ * (sluit uit veiligheid TRIG en ECHO aan via een weerstand van 1K Ohm)
  \*********************************************************************************************/
  
 #define DEVICE_NAME_22 "HCSR04_Read"
 
 boolean Device_022(byte function, struct NodoEventStruct *event, char *string)
   {
-  #ifdef DEVICE_022_CORE
   boolean success=false;
   switch(function)
     {        
+    #ifdef DEVICE_022_CORE
     case DEVICE_COMMAND:
       {
       // start de meting en zend een trigger puls van 10mSec.

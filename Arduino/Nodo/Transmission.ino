@@ -442,17 +442,6 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     RawSendIR();
     }
 
-  // Verstuur signaal als RF
-  if(Settings.TransmitRF==VALUE_ON && (Port==VALUE_SOURCE_RF || Port==VALUE_ALL))
-    {
-    ES->Port=VALUE_SOURCE_RF;
-    #if NODO_MEGA
-    if(Display)PrintEvent(ES,VALUE_ALL);
-    #endif
-    RawSendRF();
-    }
-
-
   #if NODO_MEGA
   // Verstuur signaal als HTTP-event.
   if(bitRead(HW_Config,HW_ETHERNET))// Als Ethernet shield aanwezig.
@@ -481,6 +470,16 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
       #endif
       SendI2C(ES);
       }
+    }
+
+  // Verstuur signaal als RF
+  if(Settings.TransmitRF==VALUE_ON && (Port==VALUE_SOURCE_RF || Port==VALUE_ALL))
+    {
+    ES->Port=VALUE_SOURCE_RF;
+    #if NODO_MEGA
+    if(Display)PrintEvent(ES,VALUE_ALL);
+    #endif
+    RawSendRF();
     }
   
   // Onthoud wanneer de verzending plaats heeft gevonden om opvolgend even niet te snel te verzenden.
@@ -653,7 +652,7 @@ boolean EthernetInit(void)
     TerminalServer.begin(); 
 
     // Start Server voor ontvangst van HTTP-Events
-    HTTPServer=EthernetServer(Settings.OutputPort);
+    HTTPServer=EthernetServer(Settings.PortInput);
     HTTPServer.begin(); 
 
     if(Settings.TransmitIP==VALUE_ON && Settings.HTTPRequest[0]!=0)
@@ -665,7 +664,7 @@ boolean EthernetInit(void)
       strcpy(TempString,Settings.HTTPRequest);
       TempString[x]=0;
       EthernetClient HTTPClient;
-      if(HTTPClient.connect(TempString,Settings.PortClient))   
+      if(HTTPClient.connect(TempString,Settings.PortOutput))   
         {
         HTTPClient.getRemoteIP(HTTPClientIP);
         Ok=true;
@@ -876,7 +875,7 @@ boolean SendHTTPRequest(char* Request)
 
   do
     {
-    if(HTTPClient.connect(HTTPClientIP,Settings.PortClient))
+    if(HTTPClient.connect(HTTPClientIP,Settings.PortOutput))
       {
       ClientIPAddress[0]=HTTPClientIP[0];
       ClientIPAddress[1]=HTTPClientIP[1];

@@ -142,15 +142,15 @@ void PrintWelcome(void)
     {
     sprintf(TempString,"IP=%u.%u.%u.%u, ", Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
 
-    strcat(TempString,cmd2str(CMD_PORT_CLIENT));
+    strcat(TempString,cmd2str(CMD_PORT_OUTPUT));
     strcat(TempString,"=");        
-    strcat(TempString,int2str(Settings.OutputPort));
+    strcat(TempString,int2str(Settings.PortOutput));
 
     strcat(TempString,", ");        
 
-    strcat(TempString,cmd2str(CMD_PORT_SERVER));
+    strcat(TempString,cmd2str(CMD_PORT_INPUT));
     strcat(TempString,"=");        
-    strcat(TempString,int2str(Settings.PortClient));
+    strcat(TempString,int2str(Settings.PortInput));
 
     PrintString(TempString,VALUE_ALL);
     
@@ -301,8 +301,8 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case VALUE_BUILD:
       case VALUE_HWCONFIG:
       case VALUE_FREEMEM:
-      case CMD_PORT_SERVER:
-      case CMD_PORT_CLIENT:
+      case CMD_PORT_INPUT:
+      case CMD_PORT_OUTPUT:
         ParameterToView[0]=PAR2_INT;
         break;
         
@@ -1384,8 +1384,8 @@ int ExecuteLine(char *Line, byte Port)
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
 
-          case CMD_PORT_SERVER:
-          case CMD_PORT_CLIENT:
+          case CMD_PORT_INPUT:
+          case CMD_PORT_OUTPUT:
             {
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(GetArgv(Command,TmpStr1,2))
