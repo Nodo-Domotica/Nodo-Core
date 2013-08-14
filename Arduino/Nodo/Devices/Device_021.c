@@ -1,4 +1,3 @@
-
 //#######################################################################################################
 //#################################### Device-21: LCD I2C 1602 ##########################################
 //#######################################################################################################
@@ -8,10 +7,10 @@
  * 
  * Auteur             : Martinus van den Broek
  * Support            : www.nodo-domotica.nl
- * Datum              : Mrt.2013
- * Versie             : 1.0
+ * Datum              : 12 Aug 2013
+ * Versie             : 1.1
  * Nodo productnummer : 
- * Compatibiliteit    : Vanaf Nodo build nummer 508
+ * Compatibiliteit    : Vanaf Nodo build nummer 550
  * Syntax             : "LCDI2CWrite <row>,<message id>
  ***********************************************************************************************
  * Technische beschrijving:
@@ -22,7 +21,6 @@
  * Er kan dus maar 1 display per I2C bus worden aangesloten.
  \*********************************************************************************************/
 
-#ifdef DEVICE_021
 #define DEVICE_ID 21
 #define DEVICE_NAME "LCDI2CWrite"
 
@@ -87,7 +85,19 @@ PROGMEM const char *LCDText_tabel[]={LCD_01,LCD_02,LCD_03,LCD_04,LCD_05,LCD_06,L
 #define Rw B00000010  // Read/Write bit
 #define Rs B00000001  // Register select bit
 
-#ifdef DEVICE_CORE_021
+void LCD_I2C_printline(byte row, char* message);
+inline size_t LCD_I2C_write(uint8_t value);
+void LCD_I2C_display();
+void LCD_I2C_clear();
+void LCD_I2C_home();
+void LCD_I2C_setCursor(uint8_t col, uint8_t row);
+inline void LCD_I2C_command(uint8_t value);
+void LCD_I2C_send(uint8_t value, uint8_t mode);
+void LCD_I2C_write4bits(uint8_t value);
+void LCD_I2C_expanderWrite(uint8_t _data);                                        
+void LCD_I2C_pulseEnable(uint8_t _data);
+
+#ifdef DEVICE_021_CORE
 uint8_t _displayfunction;
 uint8_t _displaycontrol;
 uint8_t _displaymode;
@@ -101,7 +111,7 @@ boolean Device_021(byte function, struct NodoEventStruct *event, char *string)
 
   switch(function)
   {
-#ifdef DEVICE_CORE_021
+#ifdef DEVICE_021_CORE
     case DEVICE_INIT:
       {
         _displayfunction = LCD_2LINE;
@@ -151,7 +161,7 @@ boolean Device_021(byte function, struct NodoEventStruct *event, char *string)
         }
       break;
       }
-#endif // DEVICE_CORE_021
+#endif // DEVICE_021_CORE
 
     #if NODO_MEGA
     case DEVICE_MMI_IN:
@@ -164,7 +174,10 @@ boolean Device_021(byte function, struct NodoEventStruct *event, char *string)
         if(strcasecmp(TempStr,DEVICE_NAME)==0)
           {
           if(event->Par1>0 && event->Par1<=2 && event->Par2>0 && event->Par2<=LCDI2C_MSG_MAX)
-            success=true;
+            {
+              event->Type = NODO_TYPE_DEVICE_COMMAND;
+              success=true;
+            }
           }
         }
       free(TempStr);
@@ -185,7 +198,7 @@ boolean Device_021(byte function, struct NodoEventStruct *event, char *string)
   return success;
 }
 
-#ifdef DEVICE_CORE_021
+#ifdef DEVICE_021_CORE
 /*********************************************************************/
 void LCD_I2C_printline(byte row, char* message)
 /*********************************************************************/
@@ -278,7 +291,26 @@ void LCD_I2C_pulseEnable(uint8_t _data){
   LCD_I2C_expanderWrite(_data & ~En);	// En low
   delayMicroseconds(50);		// commands need > 37us to settle
 } 
-#endif //DEVICE_CORE_021
-#endif //DEVICE_21
 
-          
+// fix as of R555 (?)
+#if NODO_MEGA
+#else
+/**********************************************************************************************\
+ * Deze functie haalt een tekst op uit PROGMEM en geeft als string terug
+ \*********************************************************************************************/
+char* ProgmemString(prog_char* text)
+{
+  byte x=0;
+  static char buffer[90];
+
+  do
+  {
+    buffer[x]=pgm_read_byte_near(text+x);
+  }
+  while(buffer[x++]!=0);
+  return buffer;
+}
+#endif
+
+
+#endif //DEVICE_021_CORE
