@@ -3,14 +3,14 @@
 //#######################################################################################################
 
 /*********************************************************************************************\
- * Deze funktie leest een DHT11 temperatuur en luchtvochtigheidssensor uit.
- * Deze funktie kan worden gebruikt voor alle digitale poorten van de Arduino.
- * De uitgelezen temperatuur waarde wordt in de opgegeven variabele opgeslagen.
- * De uitgelezen luchtvochtigheidsgraad wordt in de opgegeven variabele +1 opgeslagen.
+ * Dit protocol zorgt voor ontvangst van Alecto weerstation buitensensoren met protocol V1
  * 
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
- * Datum              : Mrt.2013
- * Compatibiliteit    : Vanaf Nodo build nummer 508
+ * Support            : www.nodo-domotica.nl
+ * Datum              : 12 Aug 2013
+ * Versie             : 1.1
+ * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
+ * Compatibiliteit    : Vanaf Nodo build nummer 555
  * Syntax             : "DHT11 <Par1:Poortnummer>, <Par2:Basis Variabele>"
  *********************************************************************************************
  * Technische informatie:
