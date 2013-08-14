@@ -1,4 +1,3 @@
-
 //#######################################################################################################
 //##################################### Device-13 Flamingo FA20RF Rookmelder ############################
 //#######################################################################################################
@@ -8,10 +7,10 @@
  * 
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  * Support            : www.nodo-domotica.nl
- * Datum              : Mrt.2013
- * Versie             : 1.0
+ * Datum              : 12 Aug 2013
+ * Versie             : 1.1
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
- * Compatibiliteit    : Vanaf Nodo build nummer 508
+ * Compatibiliteit    : Vanaf Nodo build nummer 555
  * Syntax             : "SmokeAlert 0, <Par2: rookmelder ID>"
  *********************************************************************************************
  * Technische informatie:
@@ -26,7 +25,6 @@
 #define FA20RFLOW                   1300
 #define FA20RFHIGH                  2600
 
-#ifdef DEVICE_013
 #define DEVICE_ID 13
 #define DEVICE_NAME "SmokeAlert"
 
@@ -36,7 +34,7 @@ boolean Device_013(byte function, struct NodoEventStruct *event, char *string)
 
   switch(function)
   {
-#ifdef DEVICE_CORE_013
+#ifdef DEVICE_013_CORE
   case DEVICE_RAWSIGNAL_IN:
     {
       RawSignal.Multiply=50;
@@ -53,6 +51,7 @@ boolean Device_013(byte function, struct NodoEventStruct *event, char *string)
       event->Par2=bitstream;
       event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
       event->Port          = VALUE_SOURCE_RF;
+      event->Type          = NODO_TYPE_DEVICE_EVENT;
 
       return true;
       break;
@@ -61,7 +60,7 @@ boolean Device_013(byte function, struct NodoEventStruct *event, char *string)
     {
       break;
     }
-#endif // DEVICE_CORE_013
+#endif // DEVICE_013_CORE
 
 #if NODO_MEGA
   case DEVICE_MMI_IN:
@@ -82,6 +81,3 @@ boolean Device_013(byte function, struct NodoEventStruct *event, char *string)
   }      
   return success;
 }
-#endif //DEVICE_13
-
-
