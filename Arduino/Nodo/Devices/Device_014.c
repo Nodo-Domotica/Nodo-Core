@@ -1,4 +1,3 @@
-
 //#######################################################################################################
 //##################################### Device-14 Flamingo FA20RF Rookmelder ############################
 //#######################################################################################################
@@ -8,10 +7,10 @@
  * 
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  * Support            : www.nodo-domotica.nl
- * Datum              : Mrt.2013
- * Versie             : 1.0
+ * Datum              : 12 Aug 2013
+ * Versie             : 1.1
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
- * Compatibiliteit    : Vanaf Nodo build nummer 508
+ * Compatibiliteit    : Vanaf Nodo build nummer 555
  * Syntax             : "SmokeAlertSend 0, <Par2: rookmelder ID>"
  *********************************************************************************************
  * Technische informatie:
@@ -24,7 +23,6 @@
  * Let op: De rookmelder geeft alarm zolang dit bericht wordt verzonden en stopt daarna automatisch
  \*********************************************************************************************/
 
-#ifdef DEVICE_014
 #define DEVICE_ID 14
 #define DEVICE_NAME "SmokeAlertSend"
 
@@ -34,7 +32,7 @@ boolean Device_014(byte function, struct NodoEventStruct *event, char *string)
 
   switch(function)
   {
-#ifdef DEVICE_CORE_014
+#ifdef DEVICE_014_CORE
   case DEVICE_RAWSIGNAL_IN:
     {
       break;
@@ -62,9 +60,10 @@ boolean Device_014(byte function, struct NodoEventStruct *event, char *string)
     RawSignal.Number=52;
 
     for (byte x =0; x<50; x++) RawSendRF();
+    success=true;
     break;
     } 
-#endif // DEVICE_CORE_014
+#endif // DEVICE_014_CORE
 
 #if NODO_MEGA
   case DEVICE_MMI_IN:
@@ -75,7 +74,10 @@ boolean Device_014(byte function, struct NodoEventStruct *event, char *string)
     if(GetArgv(string,TempStr,1))
       {
       if(strcasecmp(TempStr,DEVICE_NAME)==0)
-        success=true;
+        {
+          event->Type = NODO_TYPE_DEVICE_COMMAND;
+          success=true;
+        }
       }
       free(TempStr);
       break;
@@ -94,6 +96,4 @@ boolean Device_014(byte function, struct NodoEventStruct *event, char *string)
   }      
   return success;
 }
-#endif //DEVICE_14
-
 
