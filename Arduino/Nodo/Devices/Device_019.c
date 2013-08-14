@@ -1,4 +1,3 @@
-
 //#######################################################################################################
 //#################################### Device-19: ID-12 RFID Tag Reader #################################
 //#######################################################################################################
@@ -8,10 +7,10 @@
  * 
  * Auteur             : Martinus van den Broek
  * Support            : www.nodo-domotica.nl
- * Datum              : Mrt.2013
- * Versie             : 1.0
+ * Datum              : 12 Aug 2013
+ * Versie             : 1.1
  * Nodo productnummer : 
- * Compatibiliteit    : Vanaf Nodo build nummer 508
+ * Compatibiliteit    : Vanaf Nodo build nummer 555
  * Syntax             : "RFID <customer ID>,<tag ID>
  ***********************************************************************************************
  * Technische beschrijving:
@@ -26,7 +25,6 @@
  * Par2 bevat het 32 bits serienummer
  * Dit device genereert een event, zodat actie kan worden ondernomen via de Nodo eventlist indien een bekende tag wordt gebruikt
  \*********************************************************************************************/
-#ifdef DEVICE_019
 #define DEVICE_ID       19
 #define DEVICE_NAME "RFID"
 
@@ -42,7 +40,15 @@
 #define RX_DELAY_INTRABIT    236
 #define RX_DELAY_STOPBIT     236
 
-#ifdef DEVICE_CORE_019
+//prototypes
+inline void rfidDelay(uint16_t delay);
+void rfid_recv();
+uint8_t rfid_rx_pin_read();
+int rfid_available();
+int rfid_read();
+inline void rfid_handle_interrupt();
+
+#ifdef DEVICE_019_CORE
 uint16_t _buffer_overflow;
 uint8_t _receivePin=RFID_PIN;
 uint8_t _receiveBitMask;
@@ -58,7 +64,7 @@ boolean Device_019(byte function, struct NodoEventStruct *event, char *string)
 
   switch(function)
   {
-#ifdef DEVICE_CORE_019
+#ifdef DEVICE_019_CORE
   case DEVICE_INIT:
     {
       // Init IO pin
@@ -133,10 +139,11 @@ boolean Device_019(byte function, struct NodoEventStruct *event, char *string)
               ClearEvent(&TempEvent);
               TempEvent.SourceUnit = 0;
               TempEvent.Direction  = VALUE_DIRECTION_OUTPUT;
-              TempEvent.Command    = CMD_DEVICE_FIRST+DEVICE_ID;
+              TempEvent.Command    = DEVICE_ID;
               TempEvent.Port       = VALUE_ALL;
               TempEvent.Par1       = code[0];
               TempEvent.Par2       = 0;
+              TempEvent.Type       = NODO_TYPE_DEVICE_EVENT;
               for (byte i=1; i<5; i++) TempEvent.Par2 = TempEvent.Par2 | (((unsigned long) code[i] << ((4-i)*8)));
               ProcessEvent2(&TempEvent);
             }
@@ -155,7 +162,7 @@ boolean Device_019(byte function, struct NodoEventStruct *event, char *string)
     {
       break;
     }
-#endif // DEVICE_CORE_019
+#endif // DEVICE_019_CORE
 
 #if NODO_MEGA
   case DEVICE_MMI_IN:
@@ -172,8 +179,9 @@ boolean Device_019(byte function, struct NodoEventStruct *event, char *string)
           event->Par1=str2int(str);    
           if(GetArgv(string,str,3))
             {
-            event->Par2=str2int(str);    
-            success=true;
+              event->Par2=str2int(str);
+              event->Type = NODO_TYPE_DEVICE_COMMAND;
+              success=true;
             }
           }
         }
@@ -196,7 +204,7 @@ boolean Device_019(byte function, struct NodoEventStruct *event, char *string)
   }      
   return success;
 }
-#ifdef DEVICE_CORE_019
+#ifdef DEVICE_019_CORE
 /*********************************************************************/
 inline void rfidDelay(uint16_t delay) { 
 /*********************************************************************/
@@ -303,7 +311,4 @@ ISR(PCINT2_vect) { rfid_handle_interrupt(); }
 ISR(PCINT3_vect) { rfid_handle_interrupt(); }
 #endif
 
-#endif //DEVICE_CORE_019
-#endif //DEVICE_19
-
-
+#endif //DEVICE_019_CORE
