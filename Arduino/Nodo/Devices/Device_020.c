@@ -3,16 +3,14 @@
 //#######################################################################################################
 
 /*********************************************************************************************\
- * Deze funktie leest een BMP085 Luchtdruk sensor uit.
- * Deze funktie moet worden gebruikt via de I2C bus van de Nodo.
- * De uitgelezen temperatuur waarde wordt in de opgegeven variabele opgeslagen.
- * De uitgelezen luchtdruk wordt in de opgegeven variabele +1 opgeslagen.
+* Dit protocol zorgt voor het uitlezen van een BMP085 Luchtdruk sensor
  * 
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  * Support            : www.nodo-domotica.nl
- * Versie             : 1.1 (Issue 751 verwerkt)
- * Datum              : Juni.2013
- * Compatibiliteit    : Vanaf Nodo build nummer 546
+ * Datum              : 12 Aug 2013
+ * Versie             : 1.2
+ * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
+ * Compatibiliteit    : Vanaf Nodo build nummer 555
  * Syntax             : "BMP085Read <Par2:Basis Variabele>"
  *********************************************************************************************
  * Technische informatie:
@@ -74,18 +72,9 @@ boolean Device_020(byte function, struct NodoEventStruct *event, char *string)
 
   case DEVICE_COMMAND:
     {
-    byte VarNr = event->Par1; // De originele Par1 tijdelijk opslaan want hier zit de variabelenummer in waar de gebruiker de uitgelezen waarde in wil hebben
-    
-    ClearEvent(event);                                      // Ga uit van een default schone event. Oude eventgegevens wissen.
-    event->Command      = CMD_VARIABLE_SET;                 // Commando "VariableSet"
-    event->Type         = NODO_TYPE_COMMAND;
-    event->Par1         = VarNr;                            // Par1 is de variabele die we willen vullen.
-    event->Par2         = float2ul(float(bmp085_readTemperature()));
-    QueueAdd(event);                                        // Event opslaan in de event queue, hierna komt de volgende meetwaarde
-    event->Par1         = VarNr+1;                          // Par1+1 is de variabele die we willen vullen voor luchtdruk.
-    event->Par2         = float2ul(float(bmp085_readPressure())/100);
-    QueueAdd(event);
-    success=true;
+      UserVar[event->Par1 -1] = bmp085_readTemperature();
+      UserVar[event->Par1   ] = ((float)bmp085_readPressure())/100;
+      success=true;
     }
   #endif // CORE
 
