@@ -1,4 +1,3 @@
-
 //#######################################################################################################
 //#################################### Device-16: SendHome Easy EU ######################################
 //#######################################################################################################
@@ -11,14 +10,13 @@
  * 
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotca.nl
  * Support            : www.nodo-domotica.nl
- * Datum              : Mrt.2013
- * Versie             : 1.0
+ * Datum              : 12 Aug 2013
+ * Versie             : 1.1
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
- * Compatibiliteit    : Vanaf Nodo build nummer 508
+ * Compatibiliteit    : Vanaf Nodo build nummer 555
  * Syntax             : "HomeEasySend <Adres>,<On|Off|>
  \*********************************************************************************************/
 
-#ifdef DEVICE_016
 #define DEVICE_ID 16
 #define DEVICE_NAME "HomeEasySend"
 
@@ -28,7 +26,7 @@ boolean Device_016(byte function, struct NodoEventStruct *event, char *string)
 
   switch(function)
   {
-#ifdef DEVICE_CORE_016
+#ifdef DEVICE_016_CORE
   case DEVICE_RAWSIGNAL_IN:
     break;
 
@@ -136,8 +134,11 @@ boolean Device_016(byte function, struct NodoEventStruct *event, char *string)
               // Vul Par1 met het HomeEasy commando. Dit kan zijn: VALUE_ON, VALUE_OFF, Andere waarden zijn ongeldig.
               // haal uit de tweede parameter een 'On' of een 'Off'.
               if(event->Par1=str2cmd(str))
-                success=true;
-            }
+                {
+                  event->Type  = NODO_TYPE_DEVICE_COMMAND;
+                  success=true;
+                } 
+             }
           }
         }
       }
@@ -171,7 +172,3 @@ boolean Device_016(byte function, struct NodoEventStruct *event, char *string)
   }      
   return success;
 }
-#endif //DEVICE_16
-
-
-
