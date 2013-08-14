@@ -1,4 +1,3 @@
-
 //#######################################################################################################
 //##################################### Device-09 AlectoV2  #############################################
 //#######################################################################################################
@@ -9,10 +8,10 @@
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  *                      Support ACH2010 en code optimalisatie door forumlid: Arendst
  * Support            : www.nodo-domotica.nl
- * Datum              : Mrt.2013
- * Versie             : 1.0
+ * Datum              : 12 Aug 2013
+ * Versie             : 1.1
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
- * Compatibiliteit    : Vanaf Nodo build nummer 508
+ * Compatibiliteit    : Vanaf Nodo build nummer 555
  * Syntax             : "AlectoV2 <Par1:Sensor ID>, <Par2:Basis Variabele>"
  *********************************************************************************************
  * Technische informatie:
@@ -51,7 +50,6 @@
  * M = Checksum
  \*********************************************************************************************/
 
-#ifdef DEVICE_009
 #define DEVICE_ID 9
 #define DEVICE_NAME "AlectoV2"
 
@@ -59,13 +57,20 @@
 #define ACH2010_MIN_PULSECOUNT 160 // reduce this value (144?) in case of bad reception
 #define ACH2010_MAX_PULSECOUNT 160
 
+byte ProtocolAlectoCheckID(byte checkID);
+uint8_t ProtocolAlectoCRC8( uint8_t *addr, uint8_t len);
+
+byte ProtocolAlectoValidID[5];
+byte ProtocolAlectoVar[5];
+unsigned int ProtocolAlectoRainBase=0;
+
 boolean Device_009(byte function, struct NodoEventStruct *event, char *string)
 {
   boolean success=false;
 
   switch(function)
   {
-#ifdef DEVICE_CORE_009
+#ifdef DEVICE_009_CORE
   case DEVICE_RAWSIGNAL_IN:
     {
       if (!(((RawSignal.Number >= ACH2010_MIN_PULSECOUNT) && (RawSignal.Number <= ACH2010_MAX_PULSECOUNT)) || (RawSignal.Number == DKW2012_PULSECOUNT))) return false;
@@ -112,6 +117,7 @@ boolean Device_009(byte function, struct NodoEventStruct *event, char *string)
       event->Par2=basevar;
       event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
       event->Port          = VALUE_SOURCE_RF;
+      event->Type          = NODO_TYPE_DEVICE_EVENT;
 
       if (basevar == 0) return true;
       if ((msgtype != 10) && (msgtype != 5)) return true;
@@ -132,6 +138,7 @@ boolean Device_009(byte function, struct NodoEventStruct *event, char *string)
       UserVar[basevar +4 -1] = (float)data[5] * 1.08;
       if (RawSignal.Number == DKW2012_PULSECOUNT) UserVar[basevar +5 -1] = (float)(data[8] & 0xf);
 
+      RawSignal.Number=0;
       success = true;
       break;
     }
@@ -145,13 +152,14 @@ boolean Device_009(byte function, struct NodoEventStruct *event, char *string)
           {
             ProtocolAlectoValidID[x] = event->Par1;
             ProtocolAlectoVar[x] = event->Par2;
+            success = true;
             break;
           }
         }
       }
     break;
     }
-#endif // DEVICE_CORE_009
+#endif // DEVICE_009_CORE
 
 #if NODO_MEGA
   case DEVICE_MMI_IN:
@@ -164,7 +172,10 @@ boolean Device_009(byte function, struct NodoEventStruct *event, char *string)
       if(strcasecmp(TempStr,DEVICE_NAME)==0)
         {
         if(event->Par1>0 && event->Par1<255 && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX)
+          {
+          event->Type = NODO_TYPE_DEVICE_COMMAND;
           success=true;
+          }
         }
       }
       free(TempStr);
@@ -184,10 +195,6 @@ boolean Device_009(byte function, struct NodoEventStruct *event, char *string)
   }      
   return success;
 }
-
-byte ProtocolAlectoValidID[5];
-byte ProtocolAlectoVar[5];
-unsigned int ProtocolAlectoRainBase=0;
 
 /*********************************************************************************************\
  * Calculates CRC-8 checksum
@@ -219,7 +226,3 @@ byte ProtocolAlectoCheckID(byte checkID)
   for (byte x=0; x<5; x++) if (ProtocolAlectoValidID[x] == checkID) return ProtocolAlectoVar[x];
   return 0;
 }
-
-#endif //DEVICE_09
-
-
