@@ -1,4 +1,3 @@
-
 //#######################################################################################################
 //#################################### Device-15: HomeEasy EU ###########################################
 //#######################################################################################################
@@ -11,10 +10,10 @@
  *
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotca.nl
  * Support            : www.nodo-domotica.nl
- * Datum              : Mrt.2013
- * Versie             : 1.0
+ * Datum              : 12 Aug 2013
+ * Versie             : 1.1
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
- * Compatibiliteit    : Vanaf Nodo build nummer 508
+ * Compatibiliteit    : Vanaf Nodo build nummer 555
  * Syntax             : "HomeEasy <Adres>,<On|Off|>
  *********************************************************************************************
  * Technische informatie:
@@ -31,7 +30,6 @@
 #define HomeEasy_ShortHigh  200      // us
 #define HomeEasy_ShortLow   150      // us
 
-#ifdef DEVICE_015
 #define DEVICE_ID 15
 #define DEVICE_NAME "HomeEasy"
 
@@ -41,7 +39,7 @@ boolean Device_015(byte function, struct NodoEventStruct *event, char *string)
 
   switch(function)
   {
-#ifdef DEVICE_CORE_015
+#ifdef DEVICE_015_CORE
   case DEVICE_RAWSIGNAL_IN:
     {
       unsigned long address = 0;
@@ -77,18 +75,18 @@ boolean Device_015(byte function, struct NodoEventStruct *event, char *string)
       if (state == 1) address = address & 0xFFFFFEF;
       else address = address | 0x00000010;
 
+      RawSignal.Repeats    = true; // het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
       event->Par1=((address>>4)&0x01)?VALUE_ON:VALUE_OFF; // On/Off bit omzetten naar een Nodo waarde. 
       event->Par2=address &0x0FFFFFCF;         // Op hoogste nibble zat vroeger het signaaltype. 
       event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
-      RawSignal.Repeats    = true; // het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
-      
-      return true;      
+      event->Type          = NODO_TYPE_DEVICE_EVENT;
+      success=true;
       break;
     }
 
   case DEVICE_COMMAND:
     break;
-#endif // DEVICE_CORE_015
+#endif // DEVICE_015_CORE
 
 #if NODO_MEGA
   case DEVICE_MMI_IN:
@@ -109,7 +107,10 @@ boolean Device_015(byte function, struct NodoEventStruct *event, char *string)
 
             // haal uit de tweede parameter een 'On' of een 'Off'.
             if(event->Par1=str2cmd(str))
-              success=true;
+              {
+                event->Type  = NODO_TYPE_DEVICE_EVENT;
+                success=true;
+              }
             }
           }
         }
@@ -144,6 +145,3 @@ boolean Device_015(byte function, struct NodoEventStruct *event, char *string)
   }      
   return success;
 }
-#endif //DEVICE_15
-
-
