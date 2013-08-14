@@ -1,4 +1,3 @@
-                                  
 //#######################################################################################################
 //##################################### Device-12 OregonV2  #############################################
 //#######################################################################################################
@@ -9,10 +8,10 @@
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  *                      Support THGN132N en code optimalisatie door forumlid: Arendst
  * Support            : www.nodo-domotica.nl
- * Datum              : Mrt.2013
- * Versie             : 1.2
+ * Datum              : 12 Aug 2013
+ * Versie             : 1.3
  * Nodo productnummer : 
- * Compatibiliteit    : Vanaf Nodo build nummer 508
+ * Compatibiliteit    : Vanaf Nodo build nummer 555
  * Syntax             : "OregonV2 <Par1:Sensor ID>, <Par2:Basis Variabele>"
  *********************************************************************************************
  * Technische informatie:
@@ -45,10 +44,10 @@
 #define THGN123N_MIN_PULSECOUNT  228
 #define THGN123N_MAX_PULSECOUNT  238
 
-byte ProtocolOregonValidID[5];
-byte ProtocolOregonVar[5];
 byte ProtocolOregonCheckID(byte checkID);
 
+byte ProtocolOregonValidID[5];
+byte ProtocolOregonVar[5];
 
 boolean Device_012(byte function, struct NodoEventStruct *event, char *string)
   {
@@ -58,7 +57,6 @@ boolean Device_012(byte function, struct NodoEventStruct *event, char *string)
 #ifdef DEVICE_012_CORE
   case DEVICE_RAWSIGNAL_IN:
     {
-      Serial.println("Oregon RAWSIGNAL_IN");
       RawSignal.Multiply=50;
       byte nibble[17]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
       byte y = 1;
@@ -121,13 +119,14 @@ boolean Device_012(byte function, struct NodoEventStruct *event, char *string)
       if (checksum != checksumcalc) return false;
   
       basevar = ProtocolOregonCheckID((nibble[6] << 4) | nibble[5]);
-      if (basevar == 0) return false;
 
       event->Par1          = (nibble[6] << 4) | nibble[5];
       event->Par2          = basevar;
       event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
       event->Port          = VALUE_SOURCE_RF;
       event->Type          = NODO_TYPE_DEVICE_EVENT;
+
+      if (basevar == 0) return true;
   
       // if valid sensor type, update user variable and process event
       if ((id == THGN123N_ID) || (id == THGR810_ID) || (id == THN132N_ID))
@@ -155,6 +154,7 @@ boolean Device_012(byte function, struct NodoEventStruct *event, char *string)
           {
           ProtocolOregonValidID[x] = event->Par1;
           ProtocolOregonVar[x] = event->Par2;
+          success=true;
           break;
           }
         }
@@ -210,5 +210,3 @@ byte ProtocolOregonCheckID(byte checkID)
   return 0;
 }
 #endif //CORE
-
-
