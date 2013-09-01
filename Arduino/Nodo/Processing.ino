@@ -136,16 +136,16 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
         }
       }
    
-    // als het een Nodo event is en een geldig commando, dan deze uitvoeren
     if(error==0)
       {
+      // als het een Nodo event is en een geldig commando, dan deze uitvoeren
       if(Event->Type==NODO_TYPE_COMMAND)
         {
         error=ExecuteCommand(Event);
         }
       else
         {
-        // loop de gehele eventlist langs om te kijken of er een treffer is.   
+        // het is een ander soort event. Loop de gehele eventlist langs om te kijken of er een treffer is.   
         struct NodoEventStruct EventlistEvent, EventlistAction;   
   
         // sla event op voor later gebruik in SendEvent en VariableEvent.
@@ -200,14 +200,10 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
   if(MacroEvent->Command==0 || Event->Command==0)
     return false;  
     
-  // Als de typen events niet corresponderen, dan gelijk terug
-  if(MacroEvent->Type != Event->Type)
-    return false;
-
   // ### WILDCARD:      
   if(MacroEvent->Command == EVENT_WILDCARD)                                                                                 // is regel uit de eventlist een WildCard?
     if( MacroEvent->Par1==VALUE_ALL          ||   MacroEvent->Par1==Event->Port)                                            // Correspondeert de poort of mogen alle poorten?
-      if((MacroEvent->Par2&0xff)==VALUE_ALL  ||  (MacroEvent->Par2&0xff)==Event->Command && Event->Type==NODO_TYPE_EVENT)   // Correspondeert het commando deel als het een commando is, of mogen alle
+      if((MacroEvent->Par2&0xff)==VALUE_ALL  ||  (MacroEvent->Par2&0xff)==Event->Command && Event->Type==NODO_TYPE_EVENT)   // Correspondeert het commando deel
         if(((MacroEvent->Par2>>8)&0xff)==0   || ((MacroEvent->Par2>>8)&0xff)==Event->SourceUnit)                            // Correspondeert het unitnummer of is deze niet opgegeven
           return true;          
 
@@ -237,7 +233,7 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
     unsigned long Inp=Event->Par2;
 
     // In het event in de eventlist kunnen zich wildcards bevinden. Maskeer de posities met 0xF wildcard nibble 
-    // doe dit kruislinks omdat zowel het invoer event als het event in de eventlist wildcards kunnen bevatten.
+    // doe dit kruislings omdat zowel het invoer event als het event in de eventlist wildcards kunnen bevatten.
     for(byte y=0;y<8;y++)// loop de acht nibbles van de 32-bit Par2 langs
       {          
       unsigned long Mask=0xffffffff  ^ (0xFUL <<(y*4)); // Masker maken om de nibble positie y te wissen.
