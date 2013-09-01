@@ -217,19 +217,11 @@ R550:
 - Issue 742:	PortInput / PortOutput omgewisseld                                                                                           
 - Issue 759:	Variabele verzonden door andere Nodo geeft hit in Eventlist
 
+R568:
+- Issue 767:	Inkomende RF Events komen niet in de webapp
+
 Nog te doen:
 - Aanpassen en testen: Lock mechanisme
-- DEVICES AANPASSEN & TESTEN:
-  * Device_008 => AlectoV1
-  * Device_009 => AlectoV2
-  * Device_010 => AlectoV3
-  * Device_012 => OregonV2
-  * Device_013 => FA20RF
-  * Device_014 => FA20RFSend
-  * Device_015 => HomeEasy
-  * Device_016 => HomeEasySend
-  * Device_019 => RFID
-  * Device_021 => LCDI2CWrite
 
 
 
