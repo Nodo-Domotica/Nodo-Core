@@ -116,7 +116,6 @@ boolean Device_255(byte function, struct NodoEventStruct *event, char *string)
       // of om de status van een poort/variabele te checken. Zolang de verwerking zich hier plaats vindt zal de
       // Nodo géén IR of RF events kunnen ontvangen.
       // Heb je geen taken die periodiek uitgevoerd moten worden, dan mag je deze case weglaten om geheugen te besparen.
-      Serial.println(F("*** debug: MyDevice: DEVICE_ONCE_A_SECOND")); //??? Debug
       success=true;
       break;
       }
@@ -128,7 +127,47 @@ boolean Device_255(byte function, struct NodoEventStruct *event, char *string)
       // Als decoderen is gelukt, dan de variabele [success] vullen met een true. De Nodo zal het 
       // event vervolgens als een regulier event afhandelen.
       // Heb je geen signalen te verwerken, dan mag je deze case weglaten om geheugen te besparen.
-      Serial.println(F("*** debug: MyDevice: DEVICE_RAWSIGNAL_IN")); //??? Debug
+      // Als je het ontvangen signaal hebt gedecodeerd dan moet je vervolgens het Nodo event/commando
+      // vullen zodat deze door de Nodo verder verwerkt kan worden. Kijk bij Device_001 als voorbeeld.
+
+      success=false; // in dit voorbeeld even op false.
+      break;
+      }
+
+    case DEVICE_DATA:
+      {
+      // Het is mogelijk om gegevens uit te wisselen met andere apparaten die door een gebruiker zijn ontwikkeld.
+      // In principe is het mogelijk om hiermee verbinding te leggen tussen de Nodo en Arduino's, Raspberry Pi's
+      // PIC's of andere apparaten. Er is een speciaal type event waarmee de ontwikkelaar gegevens kan uitwisselen.
+      // Hiervoor wordt een standaard Nodo event gebruikt, met dit verschil dat de ontwikkelaar vrij is om te bepalen
+      // waar de gegevens voor worden gebruikt. Gegevens kunnen dan worden uitgewisseld via IR, RF, I2C.
+      // Het Nodo event struct wordt dan als volgt gebruikt:
+      //
+      //      struct NodoEventStruct
+      //        {
+      //        // Event deel
+      //        byte Type;                         ==> Altijd vullen met de waarde DEVICE_DATA.
+      //        byte Command;                      ==> Geef hier het device nummer op waar de data wordt verwerkt.
+      //        byte Par1;                         ==> 8 bits waarde vrij voor gebruiker.
+      //        unsigned long Par2;                ==> 32 bits waarde vrij voor gebruiker.
+      //      
+      //        // Transmissie deel
+      //        byte SourceUnit;
+      //        byte DestinationUnit;              ==> Unit van de Nodo waar de data naar toe moet.
+      //        byte Flags;                        ==> Geen gebruikersfunctie, vullen met nul.
+      //        byte Port;                         ==> Geen gebruikersfunctie, vullen met nul.
+      //        byte Direction;                    ==> Geen gebruikersfunctie, vullen met nul.
+      //        };
+      
+      Serial.print(F("*** debug: MyDevice: DEVICE_DATA: Command="));Serial.print(event->Command);
+      Serial.print(", Par1=");  Serial.print(event->Par1);
+      Serial.print(", Par2=0x");Serial.print(event->Par2);
+      Serial.println();
+      
+      // De gebruiker moet hier zelf zorgen voor verdere verwerking. Eventueel mag de struct event
+      // worden gevuld met een nieuw Nodo commando of event die dan verder wordt uitgevoerd door
+      // de Nodo als wordt teruggekeerd met success=true. 
+
       success=false; // in dit voorbeeld even op false.
       break;
       }
@@ -140,7 +179,8 @@ boolean Device_255(byte function, struct NodoEventStruct *event, char *string)
       // Als voor verlaten de struct [event] is gevuld met een ander event, dan wordt deze uitgevoerd als een nieuw
       // event. Dit kan bijvoorbeeld worden benut als een variabele wordt uitgelezen en de waarde verder verwerkt
       // moet worden.
-      Serial.println(F("*** debug: MyDevice: DEVICE_COMMAND =Hello World!=")); //??? Debug
+
+      Serial.println(F("*** debug: MyDevice: DEVICE_COMMAND: Hello World!")); //??? Debug
       success=true;
       break;
       }
@@ -149,6 +189,7 @@ boolean Device_255(byte function, struct NodoEventStruct *event, char *string)
       {
       // Code hier wordt eenmalig aangeroepen na een reboot van de Nodo.
       // Heb je initialisatie taken, dan mag je deze case weglaten om geheugen te besparen.
+
       Serial.println(F("*** debug: MyDevice: DEVICE_INIT")); //??? Debug
       break;
       }
@@ -188,7 +229,8 @@ boolean Device_255(byte function, struct NodoEventStruct *event, char *string)
 
               // Een device kan worden verwerkt als een commando of een event. Geef dit aan want 
               // op moment van invoer moet de Nodo t.b.v. latere verwerking weten hoe de zaken afgehandeld moeten worden
-              event->Type = NODO_TYPE_DEVICE_COMMAND;
+              event->Type    = NODO_TYPE_DEVICE_COMMAND;
+              event->Command = 255; // nummer van dit device
               
               // Als success wordt gevuld met true, dan wordt het commando/event
               // geaccepteerd als geldig.

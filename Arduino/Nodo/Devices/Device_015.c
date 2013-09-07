@@ -80,6 +80,7 @@ boolean Device_015(byte function, struct NodoEventStruct *event, char *string)
       event->Par2=address &0x0FFFFFCF;         // Op hoogste nibble zat vroeger het signaaltype. 
       event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
       event->Type          = NODO_TYPE_DEVICE_EVENT;
+      event->Command       = 15; // Nummer van dit device
       success=true;
       break;
     }
@@ -108,15 +109,16 @@ boolean Device_015(byte function, struct NodoEventStruct *event, char *string)
             // haal uit de tweede parameter een 'On' of een 'Off'.
             if(event->Par1=str2cmd(str))
               {
-                event->Type  = NODO_TYPE_DEVICE_EVENT;
-                success=true;
+              event->Type  = NODO_TYPE_DEVICE_EVENT;
+              event->Command = 15; // Device nummer                
+              success=true;
               }
             }
           }
         }
       }
-      free(str);
-      break;
+    free(str);
+    break;
     }
 
   case DEVICE_MMI_OUT:

@@ -142,6 +142,7 @@ boolean Device_008(byte function, struct NodoEventStruct *event, char *string)
       event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
       event->Port          = VALUE_SOURCE_RF;
       event->Type          = NODO_TYPE_DEVICE_EVENT;
+      event->Command       = 8; // Nummer van dit device
 
       if (basevar == 0) return true;
 
@@ -226,8 +227,9 @@ boolean Device_008(byte function, struct NodoEventStruct *event, char *string)
         {
         if(event->Par1>0 && event->Par1<255 && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX)
           {
-            event->Type = NODO_TYPE_DEVICE_COMMAND;
-            success=true;
+          event->Command = 8; // Device nummer  
+          event->Type = NODO_TYPE_DEVICE_COMMAND;
+          success=true;
           }
         }
       }

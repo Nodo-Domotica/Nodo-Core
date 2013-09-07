@@ -29,15 +29,9 @@ boolean AnalyzeRawSignal(struct NodoEventStruct *E)
 
   // Loop de devices langs. Indien een device dit nodig heeft, zal deze het rawsignal gebruiken en omzetten naar een
   // geldig event.
-  for(byte x=0;x<DEVICE_MAX && Device_ptr[x]!=0; x++)
-    {
-    if(Device_ptr[x](DEVICE_RAWSIGNAL_IN,E,0))
-      {
-      E->Command=Device_id[x];
-      return true;
-      }
-    }
-
+  if(DeviceCall(DEVICE_RAWSIGNAL_IN,E,0))
+    return true;
+    
   // als er geen enkel geldig signaaltype uit de pulsenreeks kon worden gedestilleerd, dan resteert niets anders
   // dan deze weer te geven als een RawSignal.
   if(Settings.RawSignalReceive==VALUE_ON)
@@ -171,6 +165,7 @@ void RawSendRF(void)
   // een pause optreden van 16 milliseconden. Omdat het laatste element van RawSignal af sluit met een nul (omdat de space van de stopbit 
   // feitelijk niet bestaat) zal deze bug optreden. Daarom wordt deze op 1 gezet om de bug te omzeilen. 
   RawSignal.Pulses[RawSignal.Number]=1;
+
   for(byte y=0; y<RawSignal.Repeats; y++) // herhaal verzenden RF code
     {
     x=1;
@@ -179,8 +174,8 @@ void RawSendRF(void)
       {
       digitalWrite(PIN_RF_TX_DATA,HIGH); // 1
       delayMicroseconds(RawSignal.Pulses[x++]*RawSignal.Multiply); 
-      digitalWrite(PIN_RF_TX_DATA,LOW); // 0
-      delayMicroseconds(RawSignal.Pulses[x++]*RawSignal.Multiply); 
+      digitalWrite(PIN_RF_TX_DATA,LOW);  // 0
+      delayMicroseconds(RawSignal.Pulses[x++]*RawSignal.Multiply);
       }
     interrupts();
     delay(RawSignal.Delay);// Delay buiten het gebied waar de interrupts zijn uitgeschakeld! Anders werkt deze funktie niet
@@ -224,7 +219,6 @@ void RawSendIR(void)
   // een pause optreden van 16 milliseconden. Omdat het laatste element van RawSignal af sluit met een nul (omdat de space van de stopbit 
   // feitelijk niet bestaat) zal deze bug optreden. Daarom wordt deze op 1 gezet om de bug te omzeilen. 
   RawSignal.Pulses[RawSignal.Number]=1;
-  
   
   for(int repeat=0; repeat<RawSignal.Repeats; repeat++) // herhaal verzenden IR code
     {
@@ -301,7 +295,7 @@ void Nodo_2_RawSignal(struct NodoEventStruct *Event)
   DataBlock.Command         = Event->Command;
   DataBlock.Par1            = Event->Par1;
   DataBlock.Par2            = Event->Par2;
-  DataBlock.Checksum        = NODO_VERSION;
+  DataBlock.Checksum        = NODO_COMPATIBILITY;
 
   // bereken checksum: crc-8 uit alle bytes in de struct
   byte c=0;
@@ -520,7 +514,7 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
     }
 
   //Checksum is zo opgebouwd dat het versienummer altijd over blijft.     
-  if(c==NODO_VERSION)
+  if(c==NODO_COMPATIBILITY)
     {
     if(DataBlock.SourceUnit>>5!=Settings.Home)
       return false;
@@ -563,7 +557,7 @@ void ReceiveI2C(int n)
       *(B+x)=b; 
       Checksum^=b; 
       }
-    Checksum^=(NODO_VERSION & 0xff); // Verwerk build in checksum om communicatie ussen verschillende versies te voorkomen 
+    Checksum^=(NODO_COMPATIBILITY & 0xff); // Verwerk build in checksum om communicatie tussen verschillende versies te voorkomen 
     x++;
     }
 
@@ -578,34 +572,35 @@ void ReceiveI2C(int n)
 }
 
 /**********************************************************************************************\
- * Verstuur een Event naar de I2C bus. Omdat I2C geen generiek adres kent voor alle devices
- * ontkomen we er niet aan om een event te distribueren naar alle Nodo adressen. 
- * Hoewel dit wel realiseerbaar is, is hier niet voor gekozen omdat dit tegen de i2C-specifices
- * in druist. Daarom wordt een event altijd naar alle I2C adressen van alle Nodo's gestuurd.
- * Voor 32 unit nummers neemt deze actie 18 milliseconden in beslag. Nog steeds zeer snel ten 
- * opzichte van RF, HTTP en IR.
+ * Verstuur een Event naar de I2C bus. 
  \*********************************************************************************************/
 boolean SendI2C(struct NodoEventStruct *EventBlock)
   {  
   byte Checksum, x;
 
-  // bereken checksum: crc-8 uit alle bytes in de queue.
+  // bereken checksum: crc-8 uit alle bytes in de struct.
   byte b,*B=(byte*)EventBlock;
-  delay(10);//??? kan deze weg???
-  for(int y=0;y<UNIT_MAX;y++)
+
+  for(int y=1;y<=UNIT_MAX;y++)
     {            
-    // verzend Event 
-    Wire.beginTransmission(I2C_START_ADDRESS+y);
-    Checksum=0;
-    for(x=0;x<sizeof(struct NodoEventStruct);x++)
+    // We sturen de events naar bekende Nodo's die zich op de I2C bus bevinden. Als deze Nodo later op de bus wordt aangesloten,
+    // dan zal Boot event van deze Nodo de andere uitnodigen om een bekendmaking te sturen zodat de lijst compleet is.
+    // Daarom wordt het Boot event naar alle I2C adressen gestuurd waar zich een Nodo op kan bevinden.
+    if(EventBlock->Command==EVENT_BOOT || NodoOnline(y,0)==VALUE_SOURCE_I2C)
       {
-      b=*(B+x); 
-      Wire.write(b);
-      Checksum^=b; 
+      // verzend Event 
+      Wire.beginTransmission(I2C_START_ADDRESS+y-1);
+      Checksum=0;
+      for(x=0;x<sizeof(struct NodoEventStruct);x++)
+        {
+        b=*(B+x); 
+        Wire.write(b);
+        Checksum^=b; 
+        }
+      Checksum^=(NODO_COMPATIBILITY & 0xff); // Verwerk build in checksum om communicatie tussen verschillende versies te voorkomen 
+      Wire.write(Checksum); 
+      Wire.endTransmission(false); // verzend de data, sluit af maar geef de bus NIET vrij
       }
-    Checksum^=(NODO_VERSION & 0xff); // Verwerk build in checksum om communicatie ussen verschillende versies te voorkomen 
-    Wire.write(Checksum); 
-    Wire.endTransmission(false); // verzend de data, sluit af maar geef de bus NIET vrij
     }
   Wire.endTransmission(true); // Geef de bus vrij
   }
@@ -663,6 +658,7 @@ boolean EthernetInit(void)
       x=StringFind(Settings.HTTPRequest,"/");
       strcpy(TempString,Settings.HTTPRequest);
       TempString[x]=0;
+
       EthernetClient HTTPClient;
       if(HTTPClient.connect(TempString,Settings.PortOutput))   
         {
@@ -719,7 +715,7 @@ byte GetHTTPFile(char* filename)
 
   if(Settings.Password[0]!=0)
     {
-    // pin-code genereren en meesturen in het http-request
+    // sleutel genereren en meesturen in het http-request
     strcpy(TempString,HTTPCookie);
     strcat(TempString,":");
     strcat(TempString,Settings.Password);  
@@ -757,7 +753,7 @@ byte SendHTTPEvent(struct NodoEventStruct *Event)
 
   if(Settings.Password[0]!=0)
     {
-    // pin-code genereren en meesturen in het http-request
+    // sleutel genereren en meesturen in het http-request
     strcpy(TempString,HTTPCookie);
     strcat(TempString,":");
     strcat(TempString,Settings.Password);
@@ -1010,7 +1006,7 @@ boolean SendHTTPRequest(char* Request)
     {
     x=Settings.TransmitIP; // HTTP tijdelijk uitzetten want die deed het immers niet.
     Settings.TransmitIP=VALUE_OFF; // HTTP tijdelijk uitzetten want die deed het immers niet.
-    RaiseMessage(MESSAGE_07);
+    RaiseMessage(MESSAGE_TCPIP_FAILED);
     Settings.TransmitIP=x; // HTTP weer terugzetten naar oorspronkelijke waarde.
     }
 
@@ -1108,7 +1104,7 @@ void ExecuteIP(void)
       (Settings.Client_IP[2]!=0 && ClientIPAddress[2]!=Settings.Client_IP[2]) ||
       (Settings.Client_IP[3]!=0 && ClientIPAddress[3]!=Settings.Client_IP[3]))
       {
-      RaiseMessage(MESSAGE_10);
+      RaiseMessage(MESSAGE_ACCESS_DENIED);
       }
     else
       {

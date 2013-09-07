@@ -220,9 +220,18 @@ R550:
 R568:
 - Issue 767:	Inkomende RF Events komen niet in de webapp
 
-Nog te doen:
+R569:
+- Issue 769:	Telnet sessie laat wachtwoord zien. Nu worden sterretjes weergegeven.
+- Cosmetic: [Status UnitSet] is nu [Status Unit] geworden. Tevens wordt poort (weer) weergegeven.
+- Cosmetic: Events afkomstig van klok hebben nu als bron [Clock]. Tevens toegevoegd aan Wildcard opties.
+- Cosmetic: [Thisunit] gerenamed naar [System].
+- Cosmetic: [Delay] gaf onterecht als 2e parameter een '-'. Verwijderd.
+- Technisch: Aanpassing aanroep devices
+- Technisch: Optimalisatie verzenden events naar I2C. Alleen verzenden events naar bekende Nodo's.
+- Technisch: Kleine aanpassingen in opstartprocedure.
+- Funktioneel: Nieuw type event: DEVICE_DATA T.b.v. uitwisselen gegevens andere (zelfbouw) apparaten met Nodo.
+
+Nog te doen:                                                                       ]
 - Aanpassen en testen: Lock mechanisme
-
-
 
 \*****************************************************************************************/

@@ -839,8 +839,32 @@ void DeviceInit(void)
     Device_ptr[x](DEVICE_INIT,0,0);
   }
 
+ /*********************************************************************************************\
+ * Met deze functie worden de devices aangeroepen. In Event->Command zit het nummer van het device dat moet
+ * worden aangeroepen. Deze functie doorzoekt de ID en pointertabel en roept van hieruit het
+ * juiste device aan. Als resultaat komt er een foutcode of 0 bij succes.
+ * Als Event->Command=0 wordt opgegeven worden alle devices met de betreffende funktie call aangeroepen.
+ * Als er een verzoek wordt gedaan om alle devices het Rawsignal te onderzoeken, dan wordt teruggekeerd
+ * met een true als het eerste device een true geretourneerd heeft.
+ \*********************************************************************************************/
+byte DeviceCall(byte Function, struct NodoEventStruct *Event, char *str)
+  {
+  byte error=MESSAGE_DEVICE_UNKNOWN;
 
-
+  for(byte x=0; x<DEVICE_MAX; x++)
+    {
+    // Zoek het device in de tabel en voer de device code uit.
+    if(Device_ptr[x]!=0 && (Event->Command==0 || Device_id[x]==Event->Command) )    // Als device bestaat of alle devices moeten worden langsgelopen
+      {
+      error=0;
+      if(!Device_ptr[x](Function,Event,str))
+        error=MESSAGE_DEVICE_ERROR;
+      else if(Function==DEVICE_RAWSIGNAL_IN)      // Als gechecked moet worden op een bruikbaar rawsignal, dan bij de eerste hit terugkeren
+        return true;
+      }
+    }
+  return error;
+  }
 
 
 

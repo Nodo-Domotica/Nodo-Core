@@ -123,6 +123,7 @@ boolean Device_006(byte function, struct NodoEventStruct *event, char *string)
           if(event->Par1>0 && event->Par1<WIRED_PORTS && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX-1)
             {
             event->Type = NODO_TYPE_DEVICE_COMMAND;
+            event->Command = 6; // Device nummer  
             success=true;
             }
           }

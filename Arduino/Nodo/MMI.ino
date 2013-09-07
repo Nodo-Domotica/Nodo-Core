@@ -73,7 +73,7 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
     {
     TmpStr[0]=0;
     // datum en tijd weergeven
-    if(bitRead(HW_Config,HW_CLOCK)) // alleen als bitRead(HW_Config,HW_CLOCK)=true want dan is er een RTC aanwezig.
+    if(bitRead(HW_Config,HW_CLOCK)) // alleen als er een RTC aanwezig is.
       {   
       strcat(TmpStr,DateTimeString());
       strcat(TmpStr,"; ");
@@ -225,6 +225,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
   {
   int x;
   EventString[0]=0;
+  char* str=(char*)malloc(42);
 
   // Er kunnen een aantal parameters worden weergegeven. In een kleine tabel wordt aangegeven op welke wijze de parameters aan de gebruiker
   // moeten worden getoond. Het is niet per defiitie zo dat de interne Par1, Par2 en Par3 ook dezelfe parameters zijn die aan de gebruiker
@@ -236,10 +237,8 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
   // vullen dan behandelen als een regulier event/commando
   if(Event->Type == NODO_TYPE_DEVICE_COMMAND || Event->Type == NODO_TYPE_DEVICE_EVENT)
     {
-    strcpy(EventString,"???");//???
-    for(x=0;Device_ptr[x]!=0 && x<DEVICE_MAX; x++)
-      if(Device_id[x]==Event->Command)
-        Device_ptr[x](DEVICE_MMI_OUT,Event,EventString);
+    strcpy(EventString,"???");
+    DeviceCall(DEVICE_MMI_OUT, Event,EventString);
     }
     
   if(EventString[0]==0)
@@ -292,7 +291,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
 
       case CMD_WIRED_SMITTTRIGGER:
       case CMD_WIRED_THRESHOLD:
-      case CMD_WIRED_ANALOG:
+      case VALUE_WIRED_ANALOG:
       case CMD_VARIABLE_RECEIVE:
         ParameterToView[0]=PAR1_INT;
         ParameterToView[1]=PAR2_INT;
@@ -320,6 +319,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_VARIABLE_SEND:
       case CMD_WIRED_PULLUP:
       case CMD_WIRED_OUT:
+      case VALUE_UNIT:
       case EVENT_WIRED_IN:
         ParameterToView[0]=PAR1_INT;
         ParameterToView[1]=PAR2_TEXT;
@@ -410,9 +410,13 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
           break;
         
         case PAR1_MESSAGE:
-          strcat(EventString,int2str(Event->Par1-MESSAGE_01+1));
+          if(Event->Par1<=MESSAGE_MAX)
+            strcpy_P(str,(char*)pgm_read_word(&(MessageText_tabel[Event->Par1])));
+          else
+            str[0]=0;// als er geen gevonden wordt, dan is de string leeg
+          strcat(EventString,int2str(Event->Par1));
           strcat(EventString, ": ");
-          strcat(EventString,cmd2str(Event->Par1));
+          strcat(EventString,str);
           break;
 
         case PAR2_INT:
@@ -535,6 +539,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         strcat(EventString,",");      
       }
     }          
+  free(str);
   }
 
    
@@ -577,7 +582,7 @@ int ExecuteLine(char *Line, byte Port)
   else
     {
     if(Substitute(Line)!=0)
-      error=MESSAGE_02;
+      error=MESSAGE_INVALID_PARAMETER;
 
     CommandPos=0;
     LinePos=0;    
@@ -646,70 +651,70 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_ECHO:
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1!=VALUE_OFF && EventToExecute.Par1!=VALUE_ON)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
            break;
                         
-          case EVENT_MESSAGE:
-            EventToExecute.Type=NODO_TYPE_EVENT; 
-            if(EventToExecute.Par1 <1 || (EventToExecute.Par1+MESSAGE_01) > COMMAND_MAX)
-              error=MESSAGE_02;
-            else
-              EventToExecute.Par1 += (MESSAGE_01-1);
-            break;
+//          case EVENT_MESSAGE:
+//            EventToExecute.Type=NODO_TYPE_EVENT; 
+//            if(EventToExecute.Par1 <1 || (EventToExecute.Par1+MESSAGE_UNKNOWN_COMMAND) > COMMAND_MAX)
+//              error=MESSAGE_INVALID_PARAMETER;
+//            else
+//              EventToExecute.Par1 += (MESSAGE_UNKNOWN_COMMAND-1);
+//            break;???
               
           case CMD_TIMER_SET:
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1>TIMER_MAX)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
                   
           case CMD_TIMER_SET_VARIABLE:
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1>TIMER_MAX || EventToExecute.Par2<1 || EventToExecute.Par2>USER_VARIABLES_MAX)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
                   
           case CMD_WAIT_EVENT:
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if((EventToExecute.Par1<1 || EventToExecute.Par1>UNIT_MAX) &&  EventToExecute.Par1!=VALUE_ALL)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
       
           case EVENT_ALARM:
             EventToExecute.Type=NODO_TYPE_EVENT;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>ALARM_MAX)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
 
           case EVENT_NEWNODO:
           case EVENT_BOOT:
             EventToExecute.Type=NODO_TYPE_EVENT;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>UNIT_MAX)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
 
           case CMD_UNIT_SET:
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>UNIT_MAX)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
       
           case CMD_HOME_SET:
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>HOME_MAX)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
       
           case CMD_ANALYSE_SETTINGS:
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>50)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
       
           case CMD_VARIABLE_PULSE_TIME:
           case CMD_VARIABLE_PULSE_COUNT:
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
 
           case CMD_BREAK_ON_VAR_LESS_VAR:
@@ -718,31 +723,31 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_VARIABLE_RECEIVE:
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             if(EventToExecute.Par2<1 || EventToExecute.Par2>USER_VARIABLES_MAX)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
               
           case CMD_VARIABLE_SET_WIRED_ANALOG:
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             if(EventToExecute.Par2<1 || EventToExecute.Par2>WIRED_PORTS)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
               
           // test:EventToExecute.Par1 binnen bereik maximaal beschikbare timers
           case CMD_TIMER_RANDOM:
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>TIMER_MAX)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
 
           // test:EventToExecute.Par1 binnen bereik maximaal beschikbare timers
           case EVENT_TIMER:
             EventToExecute.Type=NODO_TYPE_EVENT;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>TIMER_MAX)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
                       
           // geldige tijd    
@@ -750,7 +755,7 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_BREAK_ON_TIME_EARLIER:
           case CMD_CLOCK_TIME:
             EventToExecute.Type=NODO_TYPE_COMMAND;
-            error=MESSAGE_02;
+            error=MESSAGE_INVALID_PARAMETER;
             if(GetArgv(Command,TmpStr1,2))
               {
               EventToExecute.Par1=0;
@@ -766,32 +771,32 @@ int ExecuteLine(char *Line, byte Port)
             // datum in Par2 volgens format DDMMYYYY. 
             EventToExecute.Par1=0;
             if((EventToExecute.Par2=str2uldate(Command))==0xffffffff)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
             
           // test:EventToExecute.Par1 binnen bereik maximaal beschikbare wired poorten.
           case EVENT_WIRED_IN:
             EventToExecute.Type=NODO_TYPE_EVENT;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>WIRED_PORTS)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             if(EventToExecute.Par2!=VALUE_ON && EventToExecute.Par2!=VALUE_OFF)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
       
           case CMD_WIRED_OUT:
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1>WIRED_PORTS)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             if(EventToExecute.Par2!=VALUE_ON && EventToExecute.Par2!=VALUE_OFF)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
       
           case CMD_WIRED_PULLUP:
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>WIRED_PORTS)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             if(EventToExecute.Par2!=VALUE_ON && EventToExecute.Par2!=VALUE_OFF)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
 
           
@@ -810,14 +815,14 @@ int ExecuteLine(char *Line, byte Port)
               case VALUE_SOURCE_HTTP:
                 break;
               default:
-                error=MESSAGE_02;
+                error=MESSAGE_INVALID_PARAMETER;
               }
             break;
       
           case CMD_VARIABLE_SEND:
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1>USER_VARIABLES_MAX)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
 
             if(EventToExecute.Par2==0);
               EventToExecute.Par2=VALUE_ALL;
@@ -831,7 +836,7 @@ int ExecuteLine(char *Line, byte Port)
               case VALUE_SOURCE_HTTP:
                 break;
               default:
-                error=MESSAGE_02;
+                error=MESSAGE_INVALID_PARAMETER;
               }
             break;
       
@@ -840,7 +845,8 @@ int ExecuteLine(char *Line, byte Port)
             switch(EventToExecute.Par1)
               {
               case VALUE_ALL:
-              case VALUE_SOURCE_THISUNIT:
+              case VALUE_SOURCE_CLOCK:
+              case VALUE_SOURCE_SYSTEM:
               case VALUE_SOURCE_EVENTLIST:
               case VALUE_SOURCE_WIRED:
               case VALUE_SOURCE_I2C:
@@ -851,7 +857,7 @@ int ExecuteLine(char *Line, byte Port)
               case VALUE_SOURCE_TELNET:
                 break;
               default:
-                error=MESSAGE_02;
+                error=MESSAGE_INVALID_PARAMETER;
               }
               
             switch(EventToExecute.Par2)
@@ -870,7 +876,7 @@ int ExecuteLine(char *Line, byte Port)
               case EVENT_ALARM:
                 break;
               default:
-                error=MESSAGE_02;
+                error=MESSAGE_INVALID_PARAMETER;
               }
               
             if(GetArgv(Command,TmpStr1,4))
@@ -884,15 +890,15 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_WAITFREERF:
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1!=VALUE_OFF && EventToExecute.Par1!=VALUE_ON)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
       
           case CMD_OUTPUT:
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1!=VALUE_SOURCE_I2C && EventToExecute.Par1!=VALUE_SOURCE_IR && EventToExecute.Par1!=VALUE_SOURCE_RF && EventToExecute.Par1!=VALUE_SOURCE_HTTP)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             if(EventToExecute.Par2!=VALUE_OFF && EventToExecute.Par2!=VALUE_ON)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
 
           case CMD_SENDTO:
@@ -921,11 +927,11 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_VARIABLE_SET:
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1>USER_VARIABLES_MAX)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             else if(GetArgv(Command,TmpStr1,3))// waarde van de variabele
               EventToExecute.Par2=float2ul(atof(TmpStr1));
             else
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
 
           case CMD_BREAK_ON_VAR_EQU:
@@ -936,29 +942,29 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_VARIABLE_INC:
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             else if(GetArgv(Command,TmpStr1,3))// waarde van de variabele
               EventToExecute.Par2=float2ul(atof(TmpStr1));
             else
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
 
           case EVENT_VARIABLE:
             EventToExecute.Type=NODO_TYPE_EVENT;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>USER_VARIABLES_MAX)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             else if(GetArgv(Command,TmpStr1,3))// waarde van de variabele
               EventToExecute.Par2=float2ul(atof(TmpStr1));
             else
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
 
-          case CMD_WIRED_ANALOG:
+          case VALUE_WIRED_ANALOG:
           case CMD_WIRED_THRESHOLD:
           case CMD_WIRED_SMITTTRIGGER:
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(EventToExecute.Par1<1 || EventToExecute.Par1>WIRED_PORTS)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             else if(GetArgv(Command,TmpStr1,3))
               EventToExecute.Par2=str2int(TmpStr1);
             break;
@@ -974,7 +980,7 @@ int ExecuteLine(char *Line, byte Port)
                 EventToExecute.Command=0;// geen verdere verwerking
                 }
               else
-                error=MESSAGE_02;
+                error=MESSAGE_INVALID_PARAMETER;
               }
             break;
 
@@ -1045,7 +1051,7 @@ int ExecuteLine(char *Line, byte Port)
             // Als gevuld met 0xF, dan wildcard.             
             if(GetArgv(Command,TmpStr1,2)) // Alarm number
               {
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
               EventToExecute.Par1=str2int(TmpStr1);
               EventToExecute.Par2=0xEEEEEEEE; 
               
@@ -1077,7 +1083,7 @@ int ExecuteLine(char *Line, byte Port)
                         else if(w==':');
                         else
                           {
-                          error=MESSAGE_02;
+                          error=MESSAGE_INVALID_PARAMETER;
                           break;
                           }
                         }
@@ -1090,14 +1096,14 @@ int ExecuteLine(char *Line, byte Port)
                       if(y!=-1)
                         EventToExecute.Par2|=(unsigned long)y<<16;
                       else
-                        error=MESSAGE_02;
+                        error=MESSAGE_INVALID_PARAMETER;
                       }
                     }
                   }
                 }
               }
             else 
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
 
             break;
           
@@ -1128,7 +1134,7 @@ int ExecuteLine(char *Line, byte Port)
                 else if(w==':');
                 else
                   {
-                  error=MESSAGE_02;
+                  error=MESSAGE_INVALID_PARAMETER;
                   break;
                   }
                 }
@@ -1141,10 +1147,10 @@ int ExecuteLine(char *Line, byte Port)
               if(y!=-1)
                 EventToExecute.Par2|=(unsigned long)y<<16;
               else
-                error=MESSAGE_02;
+                error=MESSAGE_INVALID_PARAMETER;
               }
             else 
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
             }
 
@@ -1194,7 +1200,7 @@ int ExecuteLine(char *Line, byte Port)
               GetHTTPFile(TmpStr1);
               }
             else
-              error=MESSAGE_02;            
+              error=MESSAGE_INVALID_PARAMETER;            
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break; 
             }
@@ -1257,14 +1263,14 @@ int ExecuteLine(char *Line, byte Port)
               EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
               }
             else
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
               
           case CMD_NODO_IP:
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(GetArgv(Command,TmpStr1,2))
               if(!str2ip(TmpStr1,Settings.Nodo_IP))
-                error=MESSAGE_02;
+                error=MESSAGE_INVALID_PARAMETER;
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
             
@@ -1272,7 +1278,7 @@ int ExecuteLine(char *Line, byte Port)
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(GetArgv(Command,TmpStr1,2))
               if(!str2ip(TmpStr1,Settings.Client_IP))
-                error=MESSAGE_02;
+                error=MESSAGE_INVALID_PARAMETER;
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
             
@@ -1280,14 +1286,14 @@ int ExecuteLine(char *Line, byte Port)
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(GetArgv(Command,TmpStr1,2))
               if(!str2ip(TmpStr1,Settings.Subnet))
-                error=MESSAGE_02;
+                error=MESSAGE_INVALID_PARAMETER;
             break;
             
           case CMD_DNS_SERVER:
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(GetArgv(Command,TmpStr1,2))
               if(!str2ip(TmpStr1,Settings.DnsServer))
-                error=MESSAGE_02;
+                error=MESSAGE_INVALID_PARAMETER;
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
             
@@ -1295,7 +1301,7 @@ int ExecuteLine(char *Line, byte Port)
             EventToExecute.Type=NODO_TYPE_COMMAND;
             if(GetArgv(Command,TmpStr1,2))
               if(!str2ip(TmpStr1,Settings.Gateway))
-                error=MESSAGE_02;
+                error=MESSAGE_INVALID_PARAMETER;
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
             
@@ -1307,7 +1313,7 @@ int ExecuteLine(char *Line, byte Port)
               strcat(TmpStr1,".dat");
               if(!SaveEventlistSDCard(TmpStr1))
                 {
-                error=MESSAGE_14;
+                error=MESSAGE_SDCARD_ERROR;
                 break;
                 }
               }
@@ -1349,7 +1355,7 @@ int ExecuteLine(char *Line, byte Port)
               }
               
             else
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
             }            
@@ -1373,7 +1379,7 @@ int ExecuteLine(char *Line, byte Port)
               EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
               }
             else
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
 
           case CMD_HTTP_REQUEST:
@@ -1391,7 +1397,7 @@ int ExecuteLine(char *Line, byte Port)
             if(GetArgv(Command,TmpStr1,2))
               EventToExecute.Par2=str2int(TmpStr1);
             if(EventToExecute.Par2 > 0xffff)
-              error=MESSAGE_02;
+              error=MESSAGE_INVALID_PARAMETER;
             break;
             }  
 
@@ -1416,8 +1422,8 @@ int ExecuteLine(char *Line, byte Port)
               EventToExecute.Command=0;
       
               // als script niet te openen, dan is het ingevoerde commando ongeldig.
-              if(error==MESSAGE_03)
-                error=MESSAGE_01;
+              if(error==MESSAGE_UNABLE_OPEN_FILE)
+                error=MESSAGE_UNKNOWN_COMMAND;
               }
             }
           }// switch(command...@2
@@ -1449,7 +1455,7 @@ int ExecuteLine(char *Line, byte Port)
             UndoNewNodo();// Status NewNodo verwijderen indien van toepassing
             if(!Eventlist_Write(EventlistWriteLine,&TempEvent,&EventToExecute))
               {
-              RaiseMessage(MESSAGE_06);
+              RaiseMessage(MESSAGE_EVENTLIST_FAILED);
               break;
               }
             State_EventlistWrite=0;

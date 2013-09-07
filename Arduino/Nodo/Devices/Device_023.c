@@ -127,6 +127,7 @@ boolean Device_023(byte function, struct NodoEventStruct *event, char *string)
                 {
                 event->Par2|=str2int(TempStr);
                 success=true;
+                event->Command = 23; // Device nummer  
                 event->Type = NODO_TYPE_DEVICE_COMMAND;
                 }
               if(GetArgv(string,TempStr,5))

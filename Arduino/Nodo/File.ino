@@ -155,7 +155,7 @@ boolean FileList(char *rootdir, boolean Erase, byte Port)
       PrintString(ProgmemString(Text_22),Port);
     }
   else
-    error=MESSAGE_14;
+    error=MESSAGE_SDCARD_ERROR;
     
   free(TempString);  
   return error;
@@ -201,7 +201,7 @@ byte FileExecute(char* FileName, boolean ContinueOnError)
     dataFile.close();
     }  
   else
-    error=MESSAGE_03;
+    error=MESSAGE_UNABLE_OPEN_FILE;
 
   free(TmpStr);
   SelectSDCard(false);
@@ -256,7 +256,7 @@ byte FileShow(char *FileName, byte Port)
     PrintString(ProgmemString(Text_22),Port);
     }  
   else
-    error=MESSAGE_03;
+    error=MESSAGE_UNABLE_OPEN_FILE;
 
 
   SelectSDCard(false);
@@ -330,7 +330,7 @@ byte RawSignalSave(unsigned long Key)
     }
 
   if(error)
-    RaiseMessage(MESSAGE_14);
+    RaiseMessage(MESSAGE_SDCARD_ERROR);
 
   return !error;
   }

@@ -153,15 +153,6 @@ boolean Device_019(byte function, struct NodoEventStruct *event, char *string)
       break;
     }
     
-  case DEVICE_RAWSIGNAL_IN:
-    {
-      break;
-    }
-
-  case DEVICE_COMMAND:
-    {
-      break;
-    }
 #endif // DEVICE_019_CORE
 
 #if NODO_MEGA
@@ -181,6 +172,7 @@ boolean Device_019(byte function, struct NodoEventStruct *event, char *string)
             {
               event->Par2=str2int(str);
               event->Type = NODO_TYPE_DEVICE_COMMAND;
+              event->Command = 19; // Device nummer  
               success=true;
             }
           }

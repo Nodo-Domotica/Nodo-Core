@@ -147,6 +147,7 @@ boolean Device_004(byte function, struct NodoEventStruct *event, char *string)
                    success=true;
                 }
               event->Type = NODO_TYPE_DEVICE_COMMAND; 
+              event->Command = 4; // Device nummer  
               }
             }
           }
