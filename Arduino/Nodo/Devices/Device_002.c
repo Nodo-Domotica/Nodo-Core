@@ -131,8 +131,10 @@ boolean Device_002(byte function, struct NodoEventStruct *event, char *string)
             // Het door de gebruiker ingegeven tweede parameter bevat het on/off commando
             if(GetArgv(string,TempStr,3))
               {
+              // Alles is compleet. Keer terug met compleet gevulde event.
               event->Par1 |= str2cmd(TempStr)==VALUE_ON;
               event->Type = NODO_TYPE_DEVICE_COMMAND; 
+              event->Command = 2; // Device nummer  
               success=true;
               }
             }

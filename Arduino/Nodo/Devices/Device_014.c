@@ -75,12 +75,13 @@ boolean Device_014(byte function, struct NodoEventStruct *event, char *string)
       {
       if(strcasecmp(TempStr,DEVICE_NAME)==0)
         {
-          event->Type = NODO_TYPE_DEVICE_COMMAND;
-          success=true;
+        event->Type = NODO_TYPE_DEVICE_COMMAND;
+        event->Command = 14; // Device nummer  
+        success=true;
         }
       }
-      free(TempStr);
-      break;
+    free(TempStr);
+    break;
     }
 
   case DEVICE_MMI_OUT:

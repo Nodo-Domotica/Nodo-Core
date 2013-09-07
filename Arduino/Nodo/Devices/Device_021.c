@@ -175,8 +175,9 @@ boolean Device_021(byte function, struct NodoEventStruct *event, char *string)
           {
           if(event->Par1>0 && event->Par1<=2 && event->Par2>0 && event->Par2<=LCDI2C_MSG_MAX)
             {
-              event->Type = NODO_TYPE_DEVICE_COMMAND;
-              success=true;
+            event->Type = NODO_TYPE_DEVICE_COMMAND;
+            event->Command = 21; // Device nummer  
+            success=true;
             }
           }
         }

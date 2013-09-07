@@ -74,6 +74,7 @@ boolean Device_001(byte function, struct NodoEventStruct *event, char *string)
         event->Par1         |= (bitstream >> 11) & 0x01;
         event->SourceUnit    = 0; // Komt niet van een Nodo unit af.
         event->Type          = NODO_TYPE_DEVICE_EVENT;
+        event->Command       = 1; // nummer van dit device
         success=true;
         }
       break;
@@ -123,6 +124,7 @@ boolean Device_001(byte function, struct NodoEventStruct *event, char *string)
               {
               event->Par1 |= str2cmd(TempStr)==VALUE_ON; 
               event->Type  = NODO_TYPE_DEVICE_EVENT;
+              event->Command = 1; // Device nummer  
               success=true;
               }
             }

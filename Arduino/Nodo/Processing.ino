@@ -54,7 +54,7 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
     {
     QueuePosition=0;
     Continue=false;
-    error=MESSAGE_05; // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
+    error=MESSAGE_NESTING_ERROR; // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
     }
 
   // Komt er een SendTo event voorbij, dan deze en opvolgende separaat afhandelen
@@ -81,7 +81,7 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
 
         default:
           Continue=false;
-          RaiseMessage(MESSAGE_10);
+          RaiseMessage(MESSAGE_ACCESS_DENIED);
         }
       }
     }
@@ -105,6 +105,13 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
     Continue=false;
     }
 
+  // Check of het een binnengekomen device data  is en verwerk deze binnen het device.
+  if(Event->Type==NODO_TYPE_DEVICE_DATA)
+    {
+    error=DeviceCall(DEVICE_DATA,Event,0);
+    Continue=false;
+    }
+
 
   #if NODO_MEGA
   if(Continue && bitRead(HW_Config,HW_SDCARD))
@@ -121,19 +128,10 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
     
     // ############# Verwerk event ################  
 
-    // Check of het een binnengekomen device event is. Deze kan een commando zijn of een event. Voer device opdracht uit als een commando.
     if(Event->Type==NODO_TYPE_DEVICE_COMMAND)
       {
-      error=MESSAGE_17;
-      for(x=0;Device_ptr[x]!=0 && x<DEVICE_MAX; x++)
-        {
-        if(Device_id[x]==Event->Command)
-          {
-          error=0;
-          if(Device_ptr[x](DEVICE_COMMAND,Event,0)!=true)
-            RaiseMessage(MESSAGE_18);
-          }
-        }
+      error=DeviceCall(DEVICE_COMMAND,Event,0);
+      RaiseMessage(error);
       }
    
     if(error==0)
@@ -161,7 +159,7 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
             }
           }
         // abort is geen fatale error/break. Deze niet verder behandelen als een error.
-        if(error==MESSAGE_15)
+        if(error==MESSAGE_BREAK)
           error=0;
         }      
       // Als de SendTo niet permanent is ingeschakeld, dan deze weer uitzetten
@@ -330,7 +328,7 @@ void QueueProcess(void)
         if(Eventlist_Write(Queue[x].Par1, &E, &A))
           x+=2;
         else
-          RaiseMessage(MESSAGE_06);    
+          RaiseMessage(MESSAGE_EVENTLIST_FAILED);    
         }
       else
         {
@@ -356,7 +354,7 @@ void QueueProcess(void)
  \*********************************************************************************************/
 byte QueueSend(void)
   {
-  byte x,Port,error=MESSAGE_11, Retry=0;
+  byte x,Port,error=MESSAGE_SENDTO_ERROR, Retry=0;
   unsigned long ID=millis();
   struct NodoEventStruct Event;
 

@@ -90,6 +90,7 @@ boolean Device_022(byte function, struct NodoEventStruct *event, char *string)
             {
             success=true;
             event->Type = NODO_TYPE_DEVICE_COMMAND;
+            event->Command = 22; // Device nummer  
             }
           }
         }

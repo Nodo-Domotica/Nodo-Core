@@ -27,7 +27,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         TempEvent.Command      = EVENT_VARIABLE;
         TempEvent.Par2         = float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Direction    = VALUE_DIRECTION_INPUT;
-        TempEvent.Port         = VALUE_SOURCE_THISUNIT;
+        TempEvent.Port         = VALUE_SOURCE_SYSTEM;
         ProcessEvent2(&TempEvent);
         }
       break;        
@@ -40,7 +40,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         TempEvent.Command      = EVENT_VARIABLE;
         TempEvent.Par2         = float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Direction    = VALUE_DIRECTION_INPUT;
-        TempEvent.Port         = VALUE_SOURCE_THISUNIT;
+        TempEvent.Port         = VALUE_SOURCE_SYSTEM;
         ProcessEvent2(&TempEvent);
         }
       break;        
@@ -51,20 +51,20 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         UserVar[EventToExecute->Par1-1]=ul2float(EventToExecute->Par2);
         TempEvent.Type         = NODO_TYPE_EVENT;
         TempEvent.Command=EVENT_VARIABLE;
-        TempEvent.Port=VALUE_SOURCE_THISUNIT;
+        TempEvent.Port=VALUE_SOURCE_SYSTEM;
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
         ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
         }
       break;         
 
     case CMD_VARIABLE_SET_WIRED_ANALOG:
-      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
+      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afgevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         UserVar[EventToExecute->Par1-1]=analogRead(PIN_WIRED_IN_1+EventToExecute->Par2-1);
         TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Type         = NODO_TYPE_EVENT;
         TempEvent.Command=EVENT_VARIABLE;
-        TempEvent.Port=VALUE_SOURCE_THISUNIT;
+        TempEvent.Port=VALUE_SOURCE_SYSTEM;
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
         ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
         }
@@ -76,7 +76,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         UserVar[EventToExecute->Par1-1]=UserVar[EventToExecute->Par2-1];
         TempEvent.Type         = NODO_TYPE_EVENT;
         TempEvent.Command=EVENT_VARIABLE;
-        TempEvent.Port=VALUE_SOURCE_THISUNIT;
+        TempEvent.Port=VALUE_SOURCE_SYSTEM;
         TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
         ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
@@ -98,7 +98,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
           }
         TempEvent.Type=NODO_TYPE_EVENT;
         TempEvent.Command=EVENT_VARIABLE;
-        TempEvent.Port=VALUE_SOURCE_THISUNIT;
+        TempEvent.Port=VALUE_SOURCE_SYSTEM;
         TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
         ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
@@ -117,7 +117,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Command=EVENT_VARIABLE;
         TempEvent.Type=NODO_TYPE_EVENT;
-        TempEvent.Port=VALUE_SOURCE_THISUNIT;
+        TempEvent.Port=VALUE_SOURCE_SYSTEM;
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
         PulseCount=0;
         ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
@@ -136,65 +136,65 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Type= NODO_TYPE_EVENT;
         TempEvent.Command=EVENT_VARIABLE;
-        TempEvent.Port=VALUE_SOURCE_THISUNIT;
+        TempEvent.Port=VALUE_SOURCE_SYSTEM;
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
         ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
         }
       break;         
 
     case CMD_STOP:
-      error=MESSAGE_09;
+      error=MESSAGE_EXECUTION_STOPPED;
       break;
 
     case CMD_BREAK_ON_VAR_EQU:
       {
       if((int)UserVar[EventToExecute->Par1-1]==(int)ul2float(EventToExecute->Par2))
-        error=MESSAGE_15;
+        error=MESSAGE_BREAK;
       break;
       }
       
     case CMD_BREAK_ON_VAR_NEQU:
       if((int)UserVar[EventToExecute->Par1-1]!=(int)ul2float(EventToExecute->Par2))
-        error=MESSAGE_15;
+        error=MESSAGE_BREAK;
       break;
 
     case CMD_BREAK_ON_VAR_MORE:
       if(UserVar[EventToExecute->Par1-1] > ul2float(EventToExecute->Par2))
-        error=MESSAGE_15;
+        error=MESSAGE_BREAK;
       break;
 
     case CMD_BREAK_ON_VAR_LESS:
       if(UserVar[EventToExecute->Par1-1] < ul2float(EventToExecute->Par2))
-        error=MESSAGE_15;
+        error=MESSAGE_BREAK;
       break;
 
     case CMD_BREAK_ON_VAR_LESS_VAR:
       if(UserVar[EventToExecute->Par1-1] < UserVar[EventToExecute->Par2-1])
-        error=MESSAGE_15;
+        error=MESSAGE_BREAK;
       break;
 
     case CMD_BREAK_ON_VAR_MORE_VAR:
       if(UserVar[EventToExecute->Par1-1] > UserVar[EventToExecute->Par2-1])
-        error=MESSAGE_15;
+        error=MESSAGE_BREAK;
       break;
 
 
     case CMD_BREAK_ON_DAYLIGHT:
       if(EventToExecute->Par1==VALUE_ON && (Time.Daylight==2 || Time.Daylight==3))
-        error=MESSAGE_15;
+        error=MESSAGE_BREAK;
 
       if(EventToExecute->Par1==VALUE_OFF && (Time.Daylight==0 || Time.Daylight==1 || Time.Daylight==4))
-        error=MESSAGE_15;
+        error=MESSAGE_BREAK;
       break;
 
     case CMD_BREAK_ON_TIME_LATER:
       if(EventToExecute->Par2<(Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12))
-        error=MESSAGE_15;
+        error=MESSAGE_BREAK;
       break;
 
     case CMD_BREAK_ON_TIME_EARLIER:
       if(EventToExecute->Par2>(Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12))
-        error=MESSAGE_15;
+        error=MESSAGE_BREAK;
       break;
 
     case CMD_SEND_USEREVENT:
@@ -224,14 +224,14 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         if(Settings.Lock==0)// mits niet al gelocked.
           Settings.Lock=EventToExecute->Par2; 
         else
-          error=MESSAGE_10;
+          error=MESSAGE_ACCESS_DENIED;
         }
       else
         {// Verzoek om uitschakelen
         if(Settings.Lock==EventToExecute->Par2 || Settings.Lock==0)// als lock code overeen komt of nog niet gevuld
           Settings.Lock=0;
         else
-          error=MESSAGE_10;
+          error=MESSAGE_ACCESS_DENIED;
         }              
       Save_Settings();
       break;
@@ -367,7 +367,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         #if NODO_MEGA
         WiredOutputStatus[x-1]=(EventToExecute->Par2==VALUE_ON);
         TempEvent.Par1=x;
-        TempEvent.Port=VALUE_SOURCE_THISUNIT;
+        TempEvent.Port=VALUE_SOURCE_SYSTEM;
         TempEvent.Direction=VALUE_DIRECTION_OUTPUT;
         PrintEvent(&TempEvent,VALUE_ALL);
         #endif
@@ -520,7 +520,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         SendEvent(&TempEvent, true ,true, Settings.WaitFree==VALUE_ON);
         }
       else
-        error=MESSAGE_03;
+        error=MESSAGE_UNABLE_OPEN_FILE;
 
       break;
 

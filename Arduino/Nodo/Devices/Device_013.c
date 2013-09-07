@@ -52,6 +52,7 @@ boolean Device_013(byte function, struct NodoEventStruct *event, char *string)
       event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
       event->Port          = VALUE_SOURCE_RF;
       event->Type          = NODO_TYPE_DEVICE_EVENT;
+      event->Command       = 13; // Nummer van dit device
 
       return true;
       break;
@@ -65,7 +66,8 @@ boolean Device_013(byte function, struct NodoEventStruct *event, char *string)
 #if NODO_MEGA
   case DEVICE_MMI_IN:
     {
-      break;
+    event->Command = 13; // Device nummer  
+    break;
     }
 
   case DEVICE_MMI_OUT:

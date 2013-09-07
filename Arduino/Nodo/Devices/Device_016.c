@@ -135,15 +135,16 @@ boolean Device_016(byte function, struct NodoEventStruct *event, char *string)
               // haal uit de tweede parameter een 'On' of een 'Off'.
               if(event->Par1=str2cmd(str))
                 {
-                  event->Type  = NODO_TYPE_DEVICE_COMMAND;
-                  success=true;
+                event->Type  = NODO_TYPE_DEVICE_COMMAND;
+                event->Command = 16; // Device nummer  
+                success=true;
                 } 
              }
           }
         }
       }
-      free(str);
-      break;
+    free(str);
+    break;
     }
 
   case DEVICE_MMI_OUT:

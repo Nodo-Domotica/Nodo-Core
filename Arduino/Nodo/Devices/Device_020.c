@@ -90,6 +90,7 @@ boolean Device_020(byte function, struct NodoEventStruct *event, char *string)
         {
         if(event->Par1 >0 && event->Par1<=USER_VARIABLES_MAX-1)
           {
+          event->Command = 20; // Device nummer  
           event->Type = NODO_TYPE_DEVICE_COMMAND;
           success=true;
           }

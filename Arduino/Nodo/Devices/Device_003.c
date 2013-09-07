@@ -113,7 +113,8 @@ boolean Device_003(byte function, struct NodoEventStruct *event, char *string)
           event->Par1=((bitstream>>4)&0x01)?VALUE_ON:VALUE_OFF; // On/Off bit omzetten naar een Nodo waarde. 
         event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
         RawSignal.Repeats    = true;                  // het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
-        event->Type=NODO_TYPE_DEVICE_EVENT;
+        event->Type          = NODO_TYPE_DEVICE_EVENT;
+        event->Command       = 3; // nummer van dit device
         success=true;
         }   
       break;
@@ -152,6 +153,7 @@ boolean Device_003(byte function, struct NodoEventStruct *event, char *string)
                 if(event->Par1>=1 && event->Par1<=16) // geldig dim bereik 1..16 ?
                    success=true;
                 }
+              event->Command = 3; // Device nummer  
               }
             }
           }

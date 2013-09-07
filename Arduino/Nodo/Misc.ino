@@ -101,11 +101,11 @@ void RaiseMessage(byte MessageCode)
     TempEvent.Command   = EVENT_MESSAGE;
     TempEvent.Par1      = MessageCode;
     TempEvent.Direction = VALUE_DIRECTION_INPUT;
-    TempEvent.Port      = VALUE_SOURCE_THISUNIT;
+    TempEvent.Port      = VALUE_SOURCE_SYSTEM;
     #if NODO_MEGA
     PrintEvent(&TempEvent, VALUE_ALL);
     #endif  
-    if(MessageCode==MESSAGE_09)// Stop
+    if(MessageCode==MESSAGE_EXECUTION_STOPPED)// Stop
       return;
   
     TempEvent.Port      = VALUE_ALL;
@@ -468,7 +468,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
     Event->Par2=Settings.WiredInputPullUp[xPar1-1];
     break;
 
-  case CMD_WIRED_ANALOG:
+  case VALUE_WIRED_ANALOG:
     Event->Par1=xPar1;
     Event->Par2=analogRead(PIN_WIRED_IN_1+xPar1-1);
     break;
@@ -503,7 +503,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
 
 #if NODO_MEGA
 
-  case CMD_UNIT_SET:
+  case VALUE_UNIT:
     x=NodoOnline(xPar1,0);
     if(x!=0)
       {
@@ -602,7 +602,7 @@ void ResetFactory(void)
   while(Eventlist_Write(x++,&dummy,&dummy));
 
   // Herstel alle settings naar defaults
-  Settings.Version                    = NODO_VERSION;
+  Settings.Version                    = NODO_COMPATIBILITY;
   Settings.NewNodo                    = true;
   Settings.Lock                       = 0;
   Settings.TransmitIR                 = VALUE_OFF;
@@ -821,7 +821,7 @@ void Status(struct NodoEventStruct *Request)
             Par1_End=COMMAND_MAX;
             break;
   
-          case CMD_WIRED_ANALOG:
+          case VALUE_WIRED_ANALOG:
           case CMD_WIRED_OUT:
           case CMD_WIRED_PULLUP:
           case CMD_WIRED_SMITTTRIGGER:
@@ -847,7 +847,7 @@ void Status(struct NodoEventStruct *Request)
             Par1_End=ALARM_MAX;
             break;
 
-          case CMD_UNIT_SET:
+          case VALUE_UNIT:
             Par1_Start=1;
             Par1_End=UNIT_MAX;
             break;
@@ -874,7 +874,7 @@ void Status(struct NodoEventStruct *Request)
           {
           if(!Display)
             {
-            if(Request->Port==VALUE_SOURCE_THISUNIT)            
+            if(Request->Port==VALUE_SOURCE_SYSTEM)            
               Result.Port=VALUE_ALL;
             else
               Result.Port=Request->Port;
@@ -1547,7 +1547,7 @@ boolean Substitute(char* Input)
             strcpy(TmpStr2,Settings.Temp);
             break;    
 
-          case VALUE_SOURCE_THISUNIT:
+          case VALUE_SOURCE_SYSTEM:
             strcpy(TmpStr2,int2str(Settings.Unit));
             break;    
 
@@ -2005,6 +2005,7 @@ unsigned long str2uldate(char* str)
  \*********************************************************************************************/
 int str2cmd(char *command)
   {
+  // ??? Hier rename inbouwen voor oude naamgeving commando's
   for(int x=0;x<=COMMAND_MAX;x++)
     if(strcasecmp(command,cmd2str(x))==0)
       return x;      
@@ -2310,6 +2311,7 @@ int str2weekday(char *Input)
 /*******************************************************************************************************\
  * Houdt bij welke Nodo's binnen bereik zijn en via welke Poort.
  * Als Port ongelijk aan reeds bekende poort, dan wordt de lijst geactualiseerd.
+ * Als Port=0 dan wordt alleen de poort teruggegeven als de Nodo bekend is.
  \*******************************************************************************************************/
 byte NodoOnline(byte Unit, byte Port)
   {
@@ -2324,10 +2326,10 @@ byte NodoOnline(byte Unit, byte Port)
     FirstTime=false;
     for(x=0;x<=UNIT_MAX;x++)
       NodoOnlinePort[x]=0;
-    NodoOnlinePort[Settings.Unit]=VALUE_SOURCE_THISUNIT;//Dit is deze unit.
+    NodoOnlinePort[Settings.Unit]=VALUE_SOURCE_SYSTEM;//Dit is deze unit.
     }
     
-  if(Port!=NodoOnlinePort[Unit])
+  if(Port && Port!=NodoOnlinePort[Unit])
     {
     // Werk tabel bij. Voorkeurspoort voor communicatie.
 
