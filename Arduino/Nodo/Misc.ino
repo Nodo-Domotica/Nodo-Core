@@ -1268,7 +1268,7 @@ float pop()
 }
 
 float apply_operator(char op, float first, float second)
-{
+  {
   switch(op)
   {
   case '+': 
@@ -2380,7 +2380,7 @@ void PrintNodoEvent(char* str, struct NodoEventStruct *Event)
 
 void PrintRawSignal(void)
   {    
-  int x,y;
+  int x;
   
   Serial.println(F("==================================== RawSignal ==================================="));
 

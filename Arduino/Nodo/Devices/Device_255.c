@@ -4,85 +4,84 @@
 
 
 /*********************************************************************************************\
- * Funktionele beschrijving: Dit is een leeg device dat als voorbeeld is opgenomen. Aan de hand
- *                           van dit voorbeeld kan een gebruiker zelf een egen device ontwikkelen.
- *                           Als je device hebt ontwikkeld die voor anderen ook van nut kan zijn,
- *                           meld deze dan aan bij het Nodo-team om deze te delen met andere gebruikers
- *                           en om een Device-ID aan te vragen.
- * 
- * <Geef hier een beschrijving van de funktionele werking van het device en hoe deze door de gebruiker
- * moet worden aangeroepen.>
- *
- * Auteur             : <naam en EMail adres van de ontwikkelaar>
- * Support            : <website>
- * Datum              : <datum>
- * Versie             : <versie>
- * Nodo productnummer : <Nodo productnummer. Toegekend door Nodo team>
- * Compatibiliteit    : Vanaf Nodo build nummer <build nummer>
- * Syntax             : "MijnDevice <Par1>, <Par2>"
- *
- ***********************************************************************************************
- * Technische beschrijving:
- *
- * Compiled size      : <grootte> bytes voor een Mega en <grootte> voor een Small.
- * Externe funkties   : <geef hier aan welke funkties worden gebruikt. 
- *
- * <Geef hier een technische toelichting op de werking van het device en eventueel gebruikte protocol>
- * 
- * Tips en aandachtspunten voor programmeren van een device:
- * 
- * -  Geheugen is beperkt. Programmeer compact en benut iedere byte RAM en PROGMEM. De Arduino heeft niet de luxe van een PC!
- *    Het is verantwoordelijkheid van de programmeur om te bewaken. Vrij geheugen is opvraagbaar met [Status FreeMem].
- * -  Bouw geen lange wachtlussen in de code. Dit kan leiden tot timings-promlemen waaronder missen van events.
- *    Deze funktie bevindt zich ik een tijdkritische loop. Detecteer zo snel mogelijk of het ontvangen signaal
- *    ook bij dit protocol hoort. 
- * -  De array RawSignal.Pulses[] bevat alle Mark en Space tijden in microseconden. Te beginnen vanaf element [1].
- *    Deze array is reeds gevuld bij aankomst. Element [0] bevat een vermenigvuldigingsfactor voor omrekenen naar
- *    echte microseconden.
- * -  RawSignal.Pulses bevat het aantal posities die een mark/space bevatten. Let op dat de waarde RAW_BUFFER_SIZE
- *    nooit overschreden wordt. Anders gegarandeerd vastlopers! Positie [1] bevat de 'mark' van de startbit. 
- * -  De struct NodoEventStruct bevat alle informatie die nodig is voor verwerking en weergave van het event
- *    dat is ontvangen of moet worden weergegeven. 
- *    of er voldoende geheugen over blijft voor stabiele werking van de Nodo.
- * -  Om uitwisselbaar te blijven met andere Nodo versies en Nodo gebruikers, geen aanpassingen aan de Code maken.
- *    Let op dat je bij gebruik van functies uit de Nodo code je je eigen code gevoelig makt voor onderhoud
- *    bij uitbrengen van nieuwe releases.
- * -  Maak geen gebruik van interrupt driven routines, dit verstoort (mogelijk) de werking van de I2C, Serial en ethernet
- *    communicatie.
- * -  Maak slecht in uitzonderlijke gevallen gebruik van Globals en pas geen waarden van globals uit de Nodo code aan.
- * -  Besteed uitgebreid aandacht aan de documentatie van het protocol. Indien mogelijk verwijzen naar originele
- *    specificatie.
- *
- * Voorbeelden van devices:
- * - Digitale temperatuur sensoren (Zoals Dallas DS18B20)
- * - Digitale vochtigheidssensoren (Zoals DTH-11)
- * - Vergroten van aantal digitale wired met een multiplexer. Tot 8-ingangen per Wired poort met bv. een 74151.
- * - Acht verschillende analoge ingangen meten met eén WiredIn met een LTC1380.
- * - WiredOut uitgangen uitbreiden tot 8, 16, 32, 64 verschillende digitale uitgangen met behulp van 74HCT595
- * - I2C devices aansturen via de SLC en SDA lijnen van de arduino.
- * - etcetera.
- *
- * De Wired poorten en de additionele IO poorten op de Mega in uw eigen code gebruiken aan de hand van de naam zoals deze zijn gedefinieerd
- * in de code:
- *
- * PIN_WIRED_OUT_n staat voor WiredOut poort, waarbij n overeen komt met het nummer van de WiredOut poort te beginnen met 1.
- * PIN_WIRED_IN_n staat voor WiredOut poort, waarbij n overeen komt met het nummer van de WiredOut poort te beginnen met 1.
- * PIN_IO_n staat voor additionele IO-poort, waarbij n overeen komt met het nummer van deze poort, te beginnen met 1 (Alleen beschikbaar op de Mega).
- * 
- * Voor de verwijzing naar de Arduino pinnummers: zie schema of declaraties in tabblad "Base"
- * ANDERE POORTEN NIET GEBRUIKEN OMDAT DEZE (IN DE TOEKOMST) EEN SPECIFIEKE FUNKTIE HEBBEN.
- * Let bij het ontwerp van de Hardware en de software op dat geen gebruik wordt gemaakt van de Arduino pinnen die al een voorgedefinieerde
- * Nodo funktie hebben, De WiredIn en WiredOut kunnen wel vrij worden gebruikt met die kanttekening dat Nodo commando's de lijnen eveneens 
- * Besturen wat kan leiden tot beschadiging van hardware. Let hier in het bijzonder op als een Arduino pin wordt gedefinieerd als een output.
- * Op de Nodo Mega zijn nog vier extra communicatielijnen die gebruikt kunnen worden voor User input/output: PIN_IO_1 t/m PIN_IO_4 (Arduino pin 38 t/m 41)
- * Besef dat niet alle pennen van de Arduino gebruikt kunnen worden daar vele Arduino pinnen al een voorgedefinieerde
- * Nodo funktie hebben, De WiredIn en WiredOut kunnen wel vrij worden gebruikt met die kanttekening dat Nodo commando's de lijnen eveneens 
- * Besturen wat kan leiden tot beschadiging van hardware. Let hier in het bijzonder op als een Arduino pin wordt gedefinieerd als een output.
- * Op de Nodo Mega zijn nog vier extra communicatielijnen die gebruikt kunnen worden voor User input/output: PIN_IO_1 t/m PIN_IO_4 (Arduino pin 38 t/m 41)
- *
- * Ben je klaar met het schrijven van je code, kleed dan de code zoveel mogelijk uit om geheugenruimte te
- * besparen en stroomlijn op performance.
- \*********************************************************************************************/
+* Funktionele beschrijving: Dit is een leeg device dat als voorbeeld is opgenomen. Aan de hand
+*                           van dit voorbeeld kan een gebruiker zelf een egen device ontwikkelen.
+*                           Als je device hebt ontwikkeld die voor anderen ook van nut kan zijn,
+*                           meld deze dan aan bij het Nodo-team om deze te delen met andere gebruikers
+*                           en om een Device-ID aan te vragen.
+* 
+* <Geef hier een beschrijving van de funktionele werking van het device en hoe deze door de gebruiker
+* moet worden aangeroepen.>
+*
+* Auteur             : <naam en EMail adres van de ontwikkelaar>
+* Support            : <website>
+* Datum              : <datum>
+* Versie             : <versie>
+* Nodo productnummer : <Nodo productnummer. Toegekend door Nodo team>
+* Compatibiliteit    : Vanaf Nodo build nummer <build nummer>
+* Syntax             : "MijnDevice <Par1>, <Par2>"
+*
+***********************************************************************************************
+* Technische beschrijving:
+*
+* Compiled size      : <grootte> bytes voor een Mega en <grootte> voor een Small.
+* Externe funkties   : <geef hier aan welke funkties worden gebruikt. 
+*
+* <Geef hier een technische toelichting op de werking van het device en eventueel gebruikte protocol>
+* 
+* Tips en aandachtspunten voor programmeren van een device:
+* 
+* -  Geheugen is beperkt. Programmeer compact en benut iedere byte RAM en PROGMEM. De Arduino heeft niet de luxe van een PC!
+*    Het is verantwoordelijkheid van de programmeur om te bewaken. Vrij geheugen is opvraagbaar met [Status FreeMem].
+* -  Bouw geen lange wachtlussen in de code. Dit kan leiden tot timings-promlemen waaronder missen van events.
+*    Deze funktie bevindt zich ik een tijdkritische loop. Detecteer zo snel mogelijk of het ontvangen signaal
+*    ook bij dit protocol hoort. 
+* -  De array RawSignal.Pulses[] bevat alle Mark en Space tijden in microseconden. Te beginnen vanaf element [1].
+*    Deze array is reeds gevuld bij aankomst. Element [0] bevat een vermenigvuldigingsfactor voor omrekenen naar
+*    echte microseconden.
+* -  RawSignal.Pulses bevat het aantal posities die een mark/space bevatten. Let op dat de waarde RAW_BUFFER_SIZE
+*    nooit overschreden wordt. Anders gegarandeerd vastlopers! Positie [1] bevat de 'mark' van de startbit.  * -  De struct NodoEventStruct bevat alle informatie die nodig is voor verwerking en weergave van het event
+*    dat is ontvangen of moet worden weergegeven. 
+*    of er voldoende geheugen over blijft voor stabiele werking van de Nodo.
+* -  Om uitwisselbaar te blijven met andere Nodo versies en Nodo gebruikers, geen aanpassingen aan de Code maken.
+*    Let op dat je bij gebruik van functies uit de Nodo code je je eigen code gevoelig makt voor onderhoud
+*    bij uitbrengen van nieuwe releases.
+* -  Maak geen gebruik van interrupt driven routines, dit verstoort (mogelijk) de werking van de I2C, Serial en ethernet
+*    communicatie.
+* -  Maak slecht in uitzonderlijke gevallen gebruik van Globals en pas geen waarden van globals uit de Nodo code aan.
+* -  Besteed uitgebreid aandacht aan de documentatie van het protocol. Indien mogelijk verwijzen naar originele
+*    specificatie.
+*
+* Voorbeelden van devices:
+* - Digitale temperatuur sensoren (Zoals Dallas DS18B20)
+* - Digitale vochtigheidssensoren (Zoals DTH-11)
+* - Vergroten van aantal digitale wired met een multiplexer. Tot 8-ingangen per Wired poort met bv. een 74151.
+* - Acht verschillende analoge ingangen meten met eén WiredIn met een LTC1380.
+* - WiredOut uitgangen uitbreiden tot 8, 16, 32, 64 verschillende digitale uitgangen met behulp van 74HCT595
+* - I2C devices aansturen via de SLC en SDA lijnen van de arduino.
+* - etcetera.
+*
+* De Wired poorten en de additionele IO poorten op de Mega in uw eigen code gebruiken aan de hand van de naam zoals deze zijn gedefinieerd
+* in de code:
+*
+* PIN_WIRED_OUT_n staat voor WiredOut poort, waarbij n overeen komt met het nummer van de WiredOut poort te beginnen met 1.
+* PIN_WIRED_IN_n staat voor WiredOut poort, waarbij n overeen komt met het nummer van de WiredOut poort te beginnen met 1.
+* PIN_IO_n staat voor additionele IO-poort, waarbij n overeen komt met het nummer van deze poort, te beginnen met 1 (Alleen beschikbaar op de Mega).
+* 
+* Voor de verwijzing naar de Arduino pinnummers: zie schema of declaraties in tabblad "Base"
+* ANDERE POORTEN NIET GEBRUIKEN OMDAT DEZE (IN DE TOEKOMST) EEN SPECIFIEKE FUNKTIE HEBBEN.
+* Let bij het ontwerp van de Hardware en de software op dat geen gebruik wordt gemaakt van de Arduino pinnen die al een voorgedefinieerde
+* Nodo funktie hebben, De WiredIn en WiredOut kunnen wel vrij worden gebruikt met die kanttekening dat Nodo commando's de lijnen eveneens 
+* Besturen wat kan leiden tot beschadiging van hardware. Let hier in het bijzonder op als een Arduino pin wordt gedefinieerd als een output.
+* Op de Nodo Mega zijn nog vier extra communicatielijnen die gebruikt kunnen worden voor User input/output: PIN_IO_1 t/m PIN_IO_4 (Arduino pin 38 t/m 41)
+* Besef dat niet alle pennen van de Arduino gebruikt kunnen worden daar vele Arduino pinnen al een voorgedefinieerde
+* Nodo funktie hebben, De WiredIn en WiredOut kunnen wel vrij worden gebruikt met die kanttekening dat Nodo commando's de lijnen eveneens 
+* Besturen wat kan leiden tot beschadiging van hardware. Let hier in het bijzonder op als een Arduino pin wordt gedefinieerd als een output.
+* Op de Nodo Mega zijn nog vier extra communicatielijnen die gebruikt kunnen worden voor User input/output: PIN_IO_1 t/m PIN_IO_4 (Arduino pin 38 t/m 41)
+*
+* Ben je klaar met het schrijven van je code, kleed dan de code zoveel mogelijk uit om geheugenruimte te
+* besparen en stroomlijn op performance.
+\*********************************************************************************************/
  
 
 // Ieder device heeft een uniek ID. Deze ID's worden onderhouden door het Nodo team. Als je een device hebt geprogrammeerd
@@ -105,6 +104,7 @@ boolean Device_255(byte function, struct NodoEventStruct *event, char *string)
   // DEVICE_MMI_OUT       => Omzetten van een event naar een voor de gebruiker leesbare tekst (Alleen voor Mega)
   // DEVIDE_ONCE_A_SECOND => ongeveer iedere seconde.
   // DEVICE_INIT          => Eenmalig, direct na opstarten van de Nodo
+  // DEVICE_DATA          => T.b.v. uitwisselen gegevens andere (zelfbouw) apparaten met Nodo.
 
   #ifdef DEVICE_255_CORE
   switch(function)
@@ -152,21 +152,24 @@ boolean Device_255(byte function, struct NodoEventStruct *event, char *string)
       //        unsigned long Par2;                ==> 32 bits waarde vrij voor gebruiker.
       //      
       //        // Transmissie deel
-      //        byte SourceUnit;
-      //        byte DestinationUnit;              ==> Unit van de Nodo waar de data naar toe moet.
+      //        byte SourceUnit;                   ==> UserDevices hebben eveneens een unitnummer
+      //        byte DestinationUnit;              ==> Unit van de Nodo/Device waar de data naar toe moet.
       //        byte Flags;                        ==> Geen gebruikersfunctie, vullen met nul.
       //        byte Port;                         ==> Geen gebruikersfunctie, vullen met nul.
       //        byte Direction;                    ==> Geen gebruikersfunctie, vullen met nul.
       //        };
       
-      Serial.print(F("*** debug: MyDevice: DEVICE_DATA: Command="));Serial.print(event->Command);
+      Serial.print(F("*** debug: MyDevice: DEVICE_DATA: Unit="));Serial.print(event->SourceUnit);
+      Serial.print(", Device=");  Serial.print(event->Command);
       Serial.print(", Par1=");  Serial.print(event->Par1);
-      Serial.print(", Par2=0x");Serial.print(event->Par2);
+      Serial.print(", Par2=0x");Serial.print(event->Par2,HEX);
       Serial.println();
       
       // De gebruiker moet hier zelf zorgen voor verdere verwerking. Eventueel mag de struct event
       // worden gevuld met een nieuw Nodo commando of event die dan verder wordt uitgevoerd door
       // de Nodo als wordt teruggekeerd met success=true. 
+      //
+      // Maak je geen gebruik van DEVICE_DATA, dan mag je deze case verwijderen.
 
       success=false; // in dit voorbeeld even op false.
       break;
@@ -180,7 +183,11 @@ boolean Device_255(byte function, struct NodoEventStruct *event, char *string)
       // event. Dit kan bijvoorbeeld worden benut als een variabele wordt uitgelezen en de waarde verder verwerkt
       // moet worden.
 
-      Serial.println(F("*** debug: MyDevice: DEVICE_COMMAND: Hello World!")); //??? Debug
+      Serial.print(F("*** debug: MyDevice: DEVICE_COMMAND: Hello World!")); //??? Debug
+      Serial.print(", Par1=");  Serial.print(event->Par1);
+      Serial.print(", Par2=0x");Serial.print(event->Par2,HEX);
+      Serial.println();
+
       success=true;
       break;
       }
@@ -234,6 +241,7 @@ boolean Device_255(byte function, struct NodoEventStruct *event, char *string)
               
               // Als success wordt gevuld met true, dan wordt het commando/event
               // geaccepteerd als geldig.
+              
               success=true;
               }
             }

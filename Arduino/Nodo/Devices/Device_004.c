@@ -59,7 +59,7 @@ boolean Device_004(byte function, struct NodoEventStruct *event, char *string)
     case DEVICE_COMMAND:
       {
       unsigned long bitstream=0L;
-      byte Bit, i=1;
+      byte i=1;
       byte x; /// aantal posities voor pulsen/spaces in RawSignal
         
       // bouw het KAKU adres op. Er zijn twee mogelijkheden: Een adres door de gebruiker opgegeven binnen het bereik van 0..255 of een lange hex-waarde

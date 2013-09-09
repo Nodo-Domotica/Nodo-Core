@@ -229,7 +229,11 @@ R569:
 - Technisch: Aanpassing aanroep devices
 - Technisch: Optimalisatie verzenden events naar I2C. Alleen verzenden events naar bekende Nodo's.
 - Technisch: Kleine aanpassingen in opstartprocedure.
+- Technisch: Aanpassing devices: Event->Command vulling in MMI en RAWSIGNAL call.
 - Funktioneel: Nieuw type event: DEVICE_DATA T.b.v. uitwisselen gegevens andere (zelfbouw) apparaten met Nodo.
+
+R570:
+-  Issue 760:	WiredOut poorten in Small werken niet goed.
 
 Nog te doen:                                                                       ]
 - Aanpassen en testen: Lock mechanisme

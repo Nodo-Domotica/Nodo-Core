@@ -13,7 +13,6 @@
  \*********************************************************************************************/
 void PrintEvent(struct NodoEventStruct *Event, byte Port)
   {
-  int x;
 
   // Systeem events niet weergeven.
   if(Event->Type==NODO_TYPE_SYSTEM || Event->Type==0)
@@ -315,7 +314,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         break;
 
       // Par1 als waarde en par2 als tekst
-      case CMD_DELAY:
       case CMD_VARIABLE_SEND:
       case CMD_WIRED_PULLUP:
       case CMD_WIRED_OUT:
@@ -362,6 +360,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case EVENT_TIMER:
       case EVENT_ALARM:
       case EVENT_BOOT:
+      case CMD_DELAY:
       case VALUE_DEVICE:
       case EVENT_NEWNODO:
       case CMD_UNIT_SET:

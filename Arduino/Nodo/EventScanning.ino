@@ -10,7 +10,6 @@ boolean ScanEvent(struct NodoEventStruct *Event)// Deze routine maakt deel uit v
   {
   byte Fetched=0;
   static unsigned long BlockReceivingTimer=0;
-  const unsigned long EndSignalTime=500;
   
   // I2C: *************** kijk of er data is binnengekomen op de I2Cbus **********************
   if(I2C_EventReceived)

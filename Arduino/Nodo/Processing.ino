@@ -43,7 +43,7 @@ byte ProcessEvent1(struct NodoEventStruct *Event)
   
 byte ProcessEvent2(struct NodoEventStruct *Event)
   {
-  int x,y;
+  int x;
   byte error=0;
   boolean Continue=true;
     
