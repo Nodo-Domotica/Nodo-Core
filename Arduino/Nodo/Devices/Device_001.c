@@ -96,11 +96,10 @@ boolean Device_001(byte function, struct NodoEventStruct *event, char *string)
         {
         if(strcasecmp(TempStr,"Kaku")==0)
           {
-          byte grp=0,c;
+          byte c;
           byte x=0;       // teller die wijst naar het het te behandelen teken
           byte Home=0;    // KAKU home A..P
           byte Address=0; // KAKU Address 1..16
-          byte y=false;   // Notatiewijze
         
           // eerste parameter bevat adres volgens codering A0..P16
           if(GetArgv(string,TempStr,2)) 

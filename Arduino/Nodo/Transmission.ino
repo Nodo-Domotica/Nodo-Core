@@ -51,7 +51,7 @@ boolean AnalyzeRawSignal(struct NodoEventStruct *E)
  \*********************************************************************************************/
 boolean RawSignal_2_32bit(struct NodoEventStruct *event)
   {
-  int x,y,z;
+  int x,z;
   int Counter_pulse=0,Counter_space=0;
   byte MinPulse=0xff;
   byte MinSpace=0xff;
@@ -574,7 +574,7 @@ void ReceiveI2C(int n)
 /**********************************************************************************************\
  * Verstuur een Event naar de I2C bus. 
  \*********************************************************************************************/
-boolean SendI2C(struct NodoEventStruct *EventBlock)
+void SendI2C(struct NodoEventStruct *EventBlock)
   {  
   byte Checksum, x;
 
@@ -737,7 +737,7 @@ byte GetHTTPFile(char* filename)
  \*******************************************************************************************************/
 byte SendHTTPEvent(struct NodoEventStruct *Event)
   {
-  byte Unit,x;
+  byte x;
 
   if(Settings.TransmitIP!=VALUE_ON || Settings.HTTPRequest[0]==0)
     return false;
@@ -1082,7 +1082,7 @@ void ExecuteIP(void)
   int InByteCounter;
   boolean RequestEvent=false;
   boolean ExecuteEvent=false;
-  int x,y;
+  int x;
   unsigned long TimeoutTimer=millis() + 60000; //
  
   char *InputBuffer_IP = (char*) malloc(IP_BUFFER_SIZE+1);
@@ -1258,7 +1258,7 @@ void SerialHold(boolean x)
 boolean RawSignal_2_Nodo_OLD(struct NodoEventStruct *Event)
   {
   unsigned long bitstream=0L;
-  int x,y,z;
+  int x,z;
 
   static unsigned long PreviousTime=0;
   static unsigned long PreviousBitstream=0;

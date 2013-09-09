@@ -344,7 +344,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
   
     case CMD_WIRED_PULLUP:
       Settings.WiredInputPullUp[EventToExecute->Par1-1]=EventToExecute->Par2; // EventToExecute->Par1 is de poort[1..]
-      if(Settings.WiredInputPullUp[x]==VALUE_ON)
+      if(Settings.WiredInputPullUp[x]==VALUE_ON)//??? waar wordt deze x geinitialiseerd?
         pinMode(A0+PIN_WIRED_IN_1+EventToExecute->Par1-1,INPUT_PULLUP);
       else
         pinMode(A0+PIN_WIRED_IN_1+EventToExecute->Par1-1,INPUT);
@@ -361,11 +361,13 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         x=EventToExecute->Par1;
         y=EventToExecute->Par1;
         }
+
       for(x;x<=y;x++)
         {
         digitalWrite(PIN_WIRED_OUT_1+x-1,(EventToExecute->Par2==VALUE_ON));
-        #if NODO_MEGA
         WiredOutputStatus[x-1]=(EventToExecute->Par2==VALUE_ON);
+
+        #if NODO_MEGA
         TempEvent.Par1=x;
         TempEvent.Port=VALUE_SOURCE_SYSTEM;
         TempEvent.Direction=VALUE_DIRECTION_OUTPUT;
