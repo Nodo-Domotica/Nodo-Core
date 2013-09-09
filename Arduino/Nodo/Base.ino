@@ -1,4 +1,4 @@
-#define NODO_COMPATIBILITY   02  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
+#define NODO_COMPATIBILITY    2  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION         36  // Administratieve versienummer.
 #define NODO_BUILD          570  // Administratieve versie minor. 
 

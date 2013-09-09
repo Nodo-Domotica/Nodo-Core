@@ -116,6 +116,7 @@ boolean Device_255(byte function, struct NodoEventStruct *event, char *string)
       // of om de status van een poort/variabele te checken. Zolang de verwerking zich hier plaats vindt zal de
       // Nodo géén IR of RF events kunnen ontvangen.
       // Heb je geen taken die periodiek uitgevoerd moten worden, dan mag je deze case weglaten om geheugen te besparen.
+
       success=true;
       break;
       }
@@ -146,7 +147,7 @@ boolean Device_255(byte function, struct NodoEventStruct *event, char *string)
       //      struct NodoEventStruct
       //        {
       //        // Event deel
-      //        byte Type;                         ==> Altijd vullen met de waarde DEVICE_DATA.
+      //        byte Type;                         ==> Altijd vullen met de waarde NODO_TYPE_DEVICE_DATA.
       //        byte Command;                      ==> Geef hier het device nummer op waar de data wordt verwerkt.
       //        byte Par1;                         ==> 8 bits waarde vrij voor gebruiker.
       //        unsigned long Par2;                ==> 32 bits waarde vrij voor gebruiker.
@@ -159,10 +160,10 @@ boolean Device_255(byte function, struct NodoEventStruct *event, char *string)
       //        byte Direction;                    ==> Geen gebruikersfunctie, vullen met nul.
       //        };
       
-      Serial.print(F("*** debug: MyDevice: DEVICE_DATA: Unit="));Serial.print(event->SourceUnit);
-      Serial.print(", Device=");  Serial.print(event->Command);
-      Serial.print(", Par1=");  Serial.print(event->Par1);
-      Serial.print(", Par2=0x");Serial.print(event->Par2,HEX);
+      Serial.print(F("*** debug: MyDevice: Received I2C : Unit="));Serial.print(event->SourceUnit);
+      Serial.print(", Device="); Serial.print(event->Command);
+      Serial.print(", Par1=");   Serial.print(event->Par1);
+      Serial.print(", Par2=");   Serial.print(event->Par2);
       Serial.println();
       
       // De gebruiker moet hier zelf zorgen voor verdere verwerking. Eventueel mag de struct event
@@ -183,9 +184,23 @@ boolean Device_255(byte function, struct NodoEventStruct *event, char *string)
       // event. Dit kan bijvoorbeeld worden benut als een variabele wordt uitgelezen en de waarde verder verwerkt
       // moet worden.
 
-      Serial.print(F("*** debug: MyDevice: DEVICE_COMMAND: Hello World!")); //??? Debug
-      Serial.print(", Par1=");  Serial.print(event->Par1);
-      Serial.print(", Par2=0x");Serial.print(event->Par2,HEX);
+      Serial.println(F("*** debug: MyDevice: DEVICE_COMMAND: Hello World!")); //??? Debug
+
+      // In dit voorbeeld versturen we Data naar een UserDevice via de I2C-bus.
+      struct NodoEventStruct UserDeviceEvent;
+      ClearEvent(&UserDeviceEvent);
+
+      UserDeviceEvent.Command           = 255; // Verwijzing naar dit device nummer.
+      UserDeviceEvent.Type              = NODO_TYPE_DEVICE_DATA;
+      UserDeviceEvent.DestinationUnit   = 0; // 0=alle units
+      UserDeviceEvent.Par1              = event->Par1;
+      UserDeviceEvent.Par2              = event->Par2;
+      SendI2C(&UserDeviceEvent);
+
+      Serial.print(F("*** debug: MyDevice: Send I2C : Unit="));Serial.print(UserDeviceEvent.SourceUnit);
+      Serial.print(", Device=");  Serial.print(UserDeviceEvent.Command);
+      Serial.print(", Par1=");    Serial.print(UserDeviceEvent.Par1);
+      Serial.print(", Par2=");    Serial.print(UserDeviceEvent.Par2);
       Serial.println();
 
       success=true;
