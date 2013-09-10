@@ -217,14 +217,16 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
   if(Event->SourceUnit!=0  && Event->SourceUnit!=Settings.Unit)
     return false;
 
-  // #### EXACT: als huidige event exact overeenkomt met het event in de regel uit de Eventlist, dan een match. Type en Source werden eerder al afgevangen.
+
+  // #### EXACT: als huidige event exact overeenkomt met het event in de regel uit de Eventlist, dan een match. 
   if(MacroEvent->Command == Event->Command &&
+     MacroEvent->Type    == Event->Type    &&
      MacroEvent->Par1    == Event->Par1    &&
      MacroEvent->Par2    == Event->Par2    )
        return true; 
 
   // ### TIME:
-  if(Event->Command==EVENT_TIME) // het binnengekomen event is een clock event.
+  if(Event->Type==NODO_TYPE_EVENT && Event->Command==EVENT_TIME) // het binnengekomen event is een clock event.
     {
     // Structuur technisch hoort onderstaande regel hier thuis, maar qua performance niet optimaal!
     unsigned long Cmp=MacroEvent->Par2;

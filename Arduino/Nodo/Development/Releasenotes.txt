@@ -234,10 +234,13 @@ R569:
 
 R570:
 - Issue 760:	WiredOut poorten in Small werken niet goed.
-
-R572:
+                                                          
+R575:
 - Issue 773:	I2C vanaf Small werkt niet meer
-
+- Issue 774:	oude UserEvents worden niet herkend ==> nog niet getest !!!
+- Issue 766:	standaardisering syntax devices
+- Issue 760:	WiredOut poorten in Small werken niet goed ==> nog niet getest!!!
+- Issue 771:	KAKU A1,on komt binnen als Boot 1!!!
 
 Nog te doen:                                                                       ]
 - Aanpassen en testen: Lock mechanisme

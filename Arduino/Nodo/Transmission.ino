@@ -19,11 +19,6 @@ boolean AnalyzeRawSignal(struct NodoEventStruct *E)
     return true;
     }
   
-  #if NODO_30_COMPATIBLE
-  if(RawSignal_2_Nodo_OLD(E))       // Is het een Nodo signaal: oude 32-bit format.
-    return true;
-  #endif
-
   if(Transmission_NodoOnly)
     return false;
 
@@ -1244,66 +1239,5 @@ void SerialHold(boolean x)
   }
 }
 
-
-//#######################################################################################################
-//##################################### Transmission: Legacy!  ###########################################
-//#######################################################################################################
-
-/*********************************************************************************************\
-* Deze routine berekent de uit een RawSignal een NODO code van het type UserEvent
-* Geeft een false retour als geen geldig NODO signaal.
-* Deze funktie is opgenomen om compatibibel te zijn met universele afstandsbedieningen
-* die de gebruiker met de oude Nodo versies heeft geprogrammeerd.
-\*********************************************************************************************/
-boolean RawSignal_2_Nodo_OLD(struct NodoEventStruct *Event)
-  {
-  unsigned long bitstream=0L;
-  int x,z;
-
-  static unsigned long PreviousTime=0;
-  static unsigned long PreviousBitstream=0;
-
-  // NODO signaal bestaat uit start bit + 32 bits. Als ongelijk aan 66, dan geen Nodo signaal
-  if(RawSignal.Number!=66)return 0L;
-
-  // 0=aantal, 1=startpuls, 2=space na startpuls, 3=1e pulslengte. Dus start loop met drie.
-  z=0;
-  for(x=3;x<=RawSignal.Number;x+=2)
-    {
-    if((RawSignal.Pulses[x]*RawSignal.Multiply)>NODO_PULSE_MID)      
-      bitstream|=(long)(1L<<z); //LSB in signaal wordt  als eerste verzonden
-    z++;
-    }
-  
-  // We hoeven alleen maar compatible te zijn met de userevents van de oude Nodo.
-  // in code 100 heeft in de vorige versies altijd het userevent gezeten.
-  if(((bitstream>>16)&0xff)!=100) 
-    return false;
-
-  // Indien het een RawSignal was, dan kunnen we niet achterhalen of het een zinvol en netjes afgerond signaal was
-  // we gebruiken daarom de herhalingen die de zender uitzendt als checksum. Komt het event een tweede maal binnen
-  // dan kan worden aangenomen dat het een goed signaal was.
-  if(bitstream!=PreviousBitstream || PreviousTime>millis())
-    {
-    PreviousBitstream=bitstream;
-    return false;
-    }    
-  PreviousTime=millis()+SIGNAL_REPEAT_TIME;
-  PreviousBitstream=0L;
-
-  ClearEvent(Event);
-  Event->SourceUnit=(bitstream>>24)&0xf;
-  Event->DestinationUnit=0;
-  Event->Flags=0;
-  Event->Type=NODO_TYPE_EVENT;
-  Event->Command=EVENT_USEREVENT;
-  Event->Par1=(bitstream>>8)&0xff;
-  Event->Par2=bitstream&0xff;
-
-  // Het oude Nodo signaal herhaald zich enkele malen. Deze herhalingen zijn nodig om een valide checksum op te leveren maar
-  // kunnen onterecht ook nieuwe events opleveren. Om deze reden moet er voor dit type event wachttijd worden toegepast
-
-  return true;  
-  }
 
 

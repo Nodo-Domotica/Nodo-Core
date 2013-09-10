@@ -2005,13 +2005,12 @@ unsigned long str2uldate(char* str)
  \*********************************************************************************************/
 int str2cmd(char *command)
   {
-  // ??? Hier rename inbouwen voor oude naamgeving commando's
   for(int x=0;x<=COMMAND_MAX;x++)
     if(strcasecmp(command,cmd2str(x))==0)
       return x;      
 
   return false;
-}
+  }
 
 
 /*********************************************************************************************\
