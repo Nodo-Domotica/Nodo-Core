@@ -233,7 +233,11 @@ R569:
 - Funktioneel: Nieuw type event: DEVICE_DATA T.b.v. uitwisselen gegevens andere (zelfbouw) apparaten met Nodo.
 
 R570:
--  Issue 760:	WiredOut poorten in Small werken niet goed.
+- Issue 760:	WiredOut poorten in Small werken niet goed.
+
+R572:
+- Issue 773:	I2C vanaf Small werkt niet meer
+
 
 Nog te doen:                                                                       ]
 - Aanpassen en testen: Lock mechanisme
