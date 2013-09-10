@@ -68,13 +68,11 @@ boolean ScanEvent(struct NodoEventStruct *Event)// Deze routine maakt deel uit v
     if(Event->Flags & TRANSMISSION_CONFIRM)
       RequestForConfirm=true;
 
-    #if NODO_MEGA
     // registreer welke Nodo's op welke poort zitten en actualiseer tabel.
     // Wordt gebruikt voor SendTo en I2C communicatie op de Mega.
     // Hiermee kan later automatisch de juiste poort worden geselecteerd met de SendTo en kan in
     // geval van I2C communicatie uitsluitend naar de I2C verbonden Nodo's worden gecommuniceerd.
     NodoOnline(Event->SourceUnit,Event->Port);
-    #endif
 
     // Als er een specifieke Nodo is geselecteerd, dan moeten andere Nodo's worden gelocked.
     // Hierdoor is het mogelijk dat een master en een slave Nodo tijdelijk exclusief gebruik kunnen maken van de bandbreedte
