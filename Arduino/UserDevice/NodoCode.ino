@@ -1,3 +1,7 @@
+
+//                !!! UNDER CONSTRUCTION !!!
+
+
 /*************************** N O D O - D E V I C E ***********************************************************************\
 * 
 * Arduino project "Nodo" © Copyright 2013 Paul Tonkes 

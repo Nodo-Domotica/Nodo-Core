@@ -2,7 +2,7 @@
 //
 //                            ***** MY - D E V I C E ***** 
 //
-//                 ==>>> Zie tabblad NodoCommunication voor toelichting
+//                 ==>>> Zie tabblad NodoCode voor toelichting  <<<==
 //
 //
 
@@ -35,7 +35,7 @@ void loop()
 
     Par1 = 123;                                  // Vul als voorbeeld Par1 met een (willekeurige) waarde.
     Par2 = millis()/1000;                        // Vul als voorbeeld Par2 met een waarde. In dit geval aantal seconden na een reset.
-    Unit = 10;                                    // Nodo unit waar de data naar toe moet. nul waarde = De data wordt verzonden naar alle bekende Nodo's.
+    Unit = 10;                                   // Nodo unit waar de data naar toe moet. nul waarde = De data wordt verzonden naar alle bekende Nodo's.
     
     NodoDataSend(Unit, Par1, Par2);               // Verzend de data via I2C.
   
