@@ -1,6 +1,34 @@
 #if NODO_MEGA
 
 
+void LegacyMMI(char *command)
+  {
+  // ??? Historisch is het zo gegroeid dat een aantal commando's niet meer goed zijn gedefinieerd.
+  // Tijdelijk worden deze commando's hier gerenamed naar de nieuwe, gewenste benaming. Op termijn
+  // kan deze conversie komen te vervallen.
+  boolean converted=true;
+  char* msg=(char*)malloc(80);
+
+  strcpy(msg,"Attention: Keyword [");
+  strcat(msg,command);  
+  strcat(msg,"] is outdated. Replaced by [");  
+
+  if      (strcasecmp(command,"SendUserEvent")==0)   {strcpy(command,"UserEventSend");}
+  else if (strcasecmp(command,"ThisUnit")==0)        {strcpy(command,"System");}
+  else if(strcasecmp(command,"SendEvent")==0)        {strcpy(command,"EventSend");}
+  else if(strcasecmp(command,"SendNewKaku")==0)      {strcpy(command,"NewKakuSend");}
+  else if(strcasecmp(command,"SendKaku")==0)         {strcpy(command,"KakuSend");}
+  else converted=false;
+  
+  if(converted)
+    {
+    strcat(msg,command);
+    strcat(msg,"].");
+    PrintString(msg,VALUE_ALL);
+    }
+  free(msg);
+  }
+
 /*********************************************************************************************\
  * Print een event naar de opgegeven poort. Dit kan zijn:
  * 
@@ -603,6 +631,7 @@ int ExecuteLine(char *Line, byte Port)
         EventToExecute.Port=Port;
         
         GetArgv(Command,TmpStr1,1);
+        LegacyMMI(TmpStr1);
         EventToExecute.Command=str2cmd(TmpStr1); 
 
         // Haal Par1 uit het commando.

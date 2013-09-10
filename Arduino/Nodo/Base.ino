@@ -1,13 +1,12 @@
 #define NODO_COMPATIBILITY    2  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION         36  // Administratieve versienummer.
-#define NODO_BUILD          573  // Administratieve versie minor. 
+#define NODO_BUILD          575  // Administratieve versie minor. 
 
 #define UNIT_NODO                      1 // Unit nummer van deze Nodo
 #define NODO_HOME                      1 // Home adres van Nodo's die tot één groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
 #define PULSE_DEBOUNCE_TIME           10 // pulsen kleiner dan deze waarde in milliseconden worden niet geteld. Bedoeld om verstoringen a.g.v. ruis of dender te voorkomen
 #define PULSE_TRANSITION         FALLING // FALLING of RISING: Geeft aan op welke flank de PulseCounter start start met tellen. Default FALLING
 #define I2C_START_ADDRESS              1 // Alle Nodo's op de I2C bus hebben een uniek adres dat start vanaf dit nummer. Er zijn max. 32 Nodo's. Let op overlap met andere devices. RTC zit op adres 104.
-#define NODO_30_COMPATIBLE          true // t.b.v. compatibiliteit met vorige Nodo versie: NewKAKU HEX waarden en UserEvents
 #define BAUD                       19200 // Baudrate voor seriële communicatie.
 #define WAIT_FREE_RX               false // true: wacht default op verzenden van een event tot de IR/RF lijn onbezet is. Wordt overruled door commando [WaitFreeRX]
 #define WAIT_FREE_RX_WINDOW          500 // minimale wachttijd wanneer wordt gewacht op een vrije RF of IR band. Is deze waarde te klein, dan kunnen er restanten van signalen binnenkomen als RawSignal. Te groot maakt de Nodo sloom.
@@ -307,9 +306,9 @@ prog_char PROGMEM Cmd_89[]="Reboot";
 prog_char PROGMEM Cmd_90[]="ReceiveSettings";
 prog_char PROGMEM Cmd_91[]="Reset";
 prog_char PROGMEM Cmd_92[]="RF";
-prog_char PROGMEM Cmd_93[]="SendEvent";
+prog_char PROGMEM Cmd_93[]="EventSend";
 prog_char PROGMEM Cmd_94[]="SendTo";
-prog_char PROGMEM Cmd_95[]="SendUserEvent";
+prog_char PROGMEM Cmd_95[]="UserEventSend";
 prog_char PROGMEM Cmd_96[]="Serial";
 prog_char PROGMEM Cmd_97[]="SettingsSave";
 prog_char PROGMEM Cmd_98[]="Status";

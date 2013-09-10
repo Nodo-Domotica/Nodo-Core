@@ -89,8 +89,16 @@
 // in de Nodo-releases. Device 255 is een "knutsel" device voor de gebruiker.
 
 // Een device heeft naast een uniek ID ook een eigen MMI string die de gebruiker kan invoeren via Telnet, Serial, HTTP 
-// of een script. Geef hier de naam op. De afhandeling is niet hoofdletter gevoelig.
-#define DEVICE_NAME_255 "MyDevice"
+// of een script. Geef hier de naam op. De afhandeling is niet hoofdletter gevoelig. Voor devicenamen geld de volgende conventie:
+// voor een commando: ObjectActieOptie (ApparaatSend, ApparaatSendSnel)
+// voor een event   : Object           (Apparaat)
+#define DEVICE_NAME "MyDevice"
+
+// Ieder device heeft een uniek ID. De reeks 250..255 zijn vrij te gebruiken. Alle andere ID's worden toegekend door
+// het Nodo team. Zelf een nuttig device gemaakt, laat het ons weten!
+#define DEVICE_ID   255
+
+// In de funktienaam zit het devicenummer verwerkt zodat deze eenduidig kan worden geidentificeerd en aangeroepen. De Nodo
 boolean Device_255(byte function, struct NodoEventStruct *event, char *string)
   {
   boolean success=false;
@@ -223,7 +231,6 @@ boolean Device_255(byte function, struct NodoEventStruct *event, char *string)
       // Zodra er via een script, HTTP, Telnet of Serial een commando wordt ingevoerd, wordt dit deel van de code langs gelopen.
       // Op deze plek kan de invoer [string] worden geparsed en omgezet naar een struct [event]. Als parsen van de invoerstring [string]
       // is gelukt en de struct is gevuld, dan de variabele [success] vullen met true zodat de Nodo zorg kan dragen voor verdere verwerking van het event.
-      Serial.print(F("*** debug: MyDevice: DEVICE_MMI_IN, string="));Serial.println(string); //??? Debug
 
       char *TempStr=(char*)malloc(26);
       string[25]=0;
@@ -234,8 +241,12 @@ boolean Device_255(byte function, struct NodoEventStruct *event, char *string)
       if(GetArgv(string,TempStr,1))
         {
         // Als het door de gebruiker ingegeven ommando/event overeenkomt met de naam van dit device...
-        if(strcasecmp(TempStr,DEVICE_NAME_255)==0)
+        if(strcasecmp(TempStr,DEVICE_NAME)==0)
           {
+          // in dit voorbeeld even laten weten dat de code wordt geraakt. Directe output naar
+          // Serial is normaal gesproken NIET wenselijk in een device. 
+          Serial.print(F("*** debug: MyDevice: DEVICE_MMI_IN, string="));Serial.println(string); //??? Debug
+
           // Vervolgens tweede parameter gebruiken
           if(GetArgv(string,TempStr,2)) 
             {
@@ -274,7 +285,7 @@ boolean Device_255(byte function, struct NodoEventStruct *event, char *string)
       // Dit deel van de code wordt alleen uitgevoerd door een Nodo Mega, omdat alleen deze over een MMI beschikt.
       Serial.println(F("*** debug: MyDevice: DEVICE_MMI_OUT")); //??? Debug
 
-      strcpy(string,DEVICE_NAME_255);            // Commando 
+      strcpy(string,DEVICE_NAME);               // Commando 
       strcat(string," ");
       strcat(string,int2str(event->Par1));      // Parameter-1 (8-bit)
       strcat(string,",");

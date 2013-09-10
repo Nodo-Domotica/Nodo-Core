@@ -40,7 +40,7 @@
  \*********************************************************************************************/
  
 #define DEVICE_ID 23
-#define DEVICE_NAME_23 "LED"
+#define DEVICE_NAME_23 "LedOut"
 
 #if NODO_MEGA
 #define PWM_R     5

@@ -1,6 +1,6 @@
 
 //#######################################################################################################
-//#################################### Device-02: SendKaku   ############################################
+//#################################### Device-02: KakuSend   ############################################
 //#######################################################################################################
 
 
@@ -103,7 +103,8 @@ boolean Device_002(byte function, struct NodoEventStruct *event, char *string)
       // Dit is het eerste argument in het commando.
       if(GetArgv(string,TempStr,1))
         {
-        if(strcasecmp(TempStr,"SendKaku")==0)
+        LegacyMMI(TempStr);
+        if(strcasecmp(TempStr,"KakuSend")==0)
           {
           byte c;
           byte x=0;       // teller die wijst naar het het te behandelen teken
@@ -145,7 +146,7 @@ boolean Device_002(byte function, struct NodoEventStruct *event, char *string)
 
     case DEVICE_MMI_OUT:
       {
-      strcpy(string,"SendKaku");            // Commando / event 
+      strcpy(string,"KakuSend");            // Commando / event 
       strcat(string," ");                
     
       char t[3];                                               // Mini string

@@ -1,5 +1,5 @@
 //#######################################################################################################
-//#################################### Device-04: SendNewKAKU ###########################################
+//#################################### Device-04: NewKAKUSend ###########################################
 //#######################################################################################################
 
 /*********************************************************************************************\
@@ -38,7 +38,7 @@
  \*********************************************************************************************/
 
 #define DEVICE_ID 04
-#define DEVICE_NAME "SendNewKAKU"
+#define DEVICE_NAME "NewKAKUSend"
 #define NewKAKU_RawSignalLength      132
 #define NewKAKUdim_RawSignalLength   148
 #define NewKAKU_1T                   275        // us
@@ -126,6 +126,7 @@ boolean Device_004(byte function, struct NodoEventStruct *event, char *string)
     
       if(GetArgv(string,str,1))
         {
+        LegacyMMI(str);
         if(strcasecmp(str,DEVICE_NAME)==0)
           {
           if(GetArgv(string,str,2))
