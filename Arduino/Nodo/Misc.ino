@@ -104,9 +104,15 @@ void RaiseMessage(byte MessageCode)
     TempEvent.Port      = VALUE_SOURCE_SYSTEM;
     #if NODO_MEGA
     PrintEvent(&TempEvent, VALUE_ALL);
-    #endif  
-    if(MessageCode==MESSAGE_EXECUTION_STOPPED)// Stop
-      return;
+    #endif
+  
+    // sommige meldingen mogen niet worden verzonden.
+    switch(MessageCode)
+      {
+      case MESSAGE_VERSION_ERROR:      // gaat rondzingen van events tussen Nodo's opleveren.
+      case MESSAGE_EXECUTION_STOPPED:  // Slechts een boodschap voor gebruiker. Onnodig om te versturen.
+        return;
+      }
   
     TempEvent.Port      = VALUE_ALL;
     SendEvent(&TempEvent,false,true,Settings.WaitFree==VALUE_ON);
@@ -602,7 +608,7 @@ void ResetFactory(void)
   while(Eventlist_Write(x++,&dummy,&dummy));
 
   // Herstel alle settings naar defaults
-  Settings.Version                    = NODO_COMPATIBILITY;
+  Settings.Version                    = NODO_VERSION_MINOR;
   Settings.NewNodo                    = true;
   Settings.Lock                       = 0;
   Settings.TransmitIR                 = VALUE_OFF;
@@ -1715,6 +1721,8 @@ void ClearEvent(struct NodoEventStruct *Event)
   Event->Direction          = 0;
   Event->DestinationUnit    = 0;
   Event->SourceUnit         = Settings.Unit;
+  Event->Version            = NODO_VERSION_MINOR;
+  Event->Checksum           = 0;
 }
 
 
@@ -2365,48 +2373,36 @@ float ul2float(unsigned long ul)
 //#######################################################################################################
 void PrintNodoEvent(char* str, struct NodoEventStruct *Event)
   {    
-  Serial.print(F("*** Debug: "));Serial.print(str); //??? Debug
-  Serial.print(F(" => Port="));Serial.print(Event->Port); //??? Debug
-  Serial.print(F(", Direction="));Serial.print(Event->Direction); //??? Debug
-  Serial.print(F(", Flags="));Serial.print(Event->Flags); //??? Debug
-  Serial.print(F(", DestinationUnit= "));Serial.print(Event->DestinationUnit); //??? Debug
-  Serial.print(F(", SourceUnit="));Serial.print(Event->SourceUnit); //??? Debug
-  Serial.print(F(", Type="));Serial.print(Event->Type); //??? Debug
-  Serial.print(F(", Command="));Serial.print(Event->Command); //??? Debug
-  Serial.print(F(", Par1="));Serial.print(Event->Par1); //??? Debug
-  Serial.print(F(", Par2=0x"));Serial.print(Event->Par2);Serial.println(Event->Par2,HEX); //??? Debug
+  Serial.print(F("*** Debug: "));Serial.print(str);
+  Serial.print(F(" => Port="));Serial.print(Event->Port);
+  Serial.print(F(", Direction="));Serial.print(Event->Direction);
+  Serial.print(F(", Flags="));Serial.print(Event->Flags);
+  Serial.print(F(", DestinationUnit= "));Serial.print(Event->DestinationUnit);
+  Serial.print(F(", SourceUnit="));Serial.print(Event->SourceUnit);
+  Serial.print(F(", Type="));Serial.print(Event->Type);
+  Serial.print(F(", Command="));Serial.print(Event->Command);
+  Serial.print(F(", Par1="));Serial.print(Event->Par1);
+  Serial.print(F(", Par2=0x"));Serial.print(Event->Par2);
+  Serial.print(F(", Version=0x"));Serial.println(Event->Version);
   }
 
 void PrintRawSignal(void)
   {    
   int x;
   
-  Serial.println(F("==================================== RawSignal ==================================="));
-
-  Serial.print(F("Repeats="));
-  Serial.println(RawSignal.Repeats);
-
-  Serial.print(F("Delay="));
-  Serial.println(RawSignal.Delay);
-
-  Serial.print(F("Source="));
-  Serial.println(cmd2str(RawSignal.Source));
-
-  Serial.print(F("Multiply="));
-  Serial.println(RawSignal.Multiply);
-
-  Serial.print(F("Number="));
-  Serial.println(RawSignal.Number);
-
-  Serial.print(F("Pulses (uSec): "));
+  Serial.print(F("*** Debug: RawSignal: Repeats="));Serial.print(RawSignal.Repeats);
+  Serial.print(F(", Delay="));Serial.print(RawSignal.Delay);
+  Serial.print(F(", Source="));Serial.print(cmd2str(RawSignal.Source));
+  Serial.print(F(", Multiply="));Serial.print(RawSignal.Multiply);
+  Serial.print(F(", Number="));Serial.print(RawSignal.Number);
+  Serial.print(F(", Pulses (uSec): "));
+  
   for(x=1;x<=RawSignal.Number;x++)
     {
     Serial.print(RawSignal.Pulses[x]*RawSignal.Multiply); 
     Serial.write(',');       
     }
-    
   Serial.println();
-  Serial.println(F("=================================================================================="));
   }
 
 

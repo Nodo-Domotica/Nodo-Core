@@ -39,10 +39,9 @@ boolean Device_007(byte function, struct NodoEventStruct *event, char *string)
   unsigned long bitstream=0L;
   int x,z;
 
-  #ifdef DEVICE_007_CORE
   switch(function)
     {    
-
+    #ifdef DEVICE_007_CORE
     case DEVICE_RAWSIGNAL_IN:
       {
       // NODO signaal bestaat uit start bit + 32 bits. Als ongelijk aan 66, dan geen Nodo signaal
@@ -65,7 +64,6 @@ boolean Device_007(byte function, struct NodoEventStruct *event, char *string)
           ClearEvent(event);
           event->SourceUnit=(bitstream>>24)&0xf;
           event->DestinationUnit=0;
-          event->Flags=0;
           event->Type=NODO_TYPE_EVENT;
           event->Command=EVENT_USEREVENT;
           event->Par1=(bitstream>>8)&0xff;
@@ -74,7 +72,6 @@ boolean Device_007(byte function, struct NodoEventStruct *event, char *string)
           }
         }
       }
-
     #endif // CORE
     
     #if NODO_MEGA // alleen relevant voor een Nodo Mega want de Small heeft geen MMI!
@@ -106,8 +103,7 @@ boolean Device_007(byte function, struct NodoEventStruct *event, char *string)
       break;
       }
     #endif //MMI
-    }
-    
+    }    
   return success;
   }
 

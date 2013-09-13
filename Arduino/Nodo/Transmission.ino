@@ -167,9 +167,9 @@ void RawSendRF(void)
     noInterrupts();
     while(x<RawSignal.Number)
       {
-      digitalWrite(PIN_RF_TX_DATA,HIGH); // 1
+      digitalWrite(PIN_RF_TX_DATA,HIGH);
       delayMicroseconds(RawSignal.Pulses[x++]*RawSignal.Multiply); 
-      digitalWrite(PIN_RF_TX_DATA,LOW);  // 0
+      digitalWrite(PIN_RF_TX_DATA,LOW);
       delayMicroseconds(RawSignal.Pulses[x++]*RawSignal.Multiply);
       }
     interrupts();
@@ -261,9 +261,9 @@ void RawSendIR(void)
  \*********************************************************************************************/
 
 // Definieer een datablock die gebruikt wordt voor de gegevens die via de ether verzonden moeten worden.
-// Zo kunnen exact die gegevens worden verzonden die nodig zijn en niets teveel.  
 struct DataBlockStruct
   {
+  byte Version;
   byte SourceUnit;
   byte DestinationUnit;
   byte Flags;
@@ -283,6 +283,8 @@ void Nodo_2_RawSignal(struct NodoEventStruct *Event)
   RawSignal.Delay           = 0;
   RawSignal.Multiply        = 100;
 
+  Checksum(Event);
+
   DataBlock.SourceUnit      = Event->SourceUnit | (Settings.Home<<5);  
   DataBlock.DestinationUnit = Event->DestinationUnit;
   DataBlock.Flags           = Event->Flags;
@@ -290,14 +292,10 @@ void Nodo_2_RawSignal(struct NodoEventStruct *Event)
   DataBlock.Command         = Event->Command;
   DataBlock.Par1            = Event->Par1;
   DataBlock.Par2            = Event->Par2;
-  DataBlock.Checksum        = NODO_COMPATIBILITY;
-
-  // bereken checksum: crc-8 uit alle bytes in de struct
-  byte c=0;
+  DataBlock.Checksum        = Event->Checksum;;
+  DataBlock.Version         = NODO_VERSION_MINOR;
+  
   byte *B=(byte*)&DataBlock;
-  for(byte x=0;x<sizeof(struct DataBlockStruct);x++)
-    c^=*(B+x);
-  DataBlock.Checksum=c;
 
   // begin met een lange startbit. Veilige timing gekozen zodat deze niet gemist kan worden
   RawSignal.Pulses[BitCounter++]=(NODO_PULSE_1*4)/RawSignal.Multiply; 
@@ -344,6 +342,7 @@ inline boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
   boolean toggle=false;
   RawSignal.Multiply=50;
 
+  noInterrupts();//???
   do{// lees de pulsen in microseconden en plaats deze in de tijdelijke buffer RawSignal
     numloops = 0;
     while(((*portInputRegister(port) & bit) == stateMask) ^ toggle) // while() loop *A*
@@ -354,8 +353,10 @@ inline boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
 
     // bij kleine stoorpulsen die geen betekenis hebben zo snel mogelijk weer terug
     if(PulseLength<MIN_PULSE_LENGTH)
+      {
+      interrupts();//???
       return false;
-
+      }
     toggle=!toggle;    
 
     // sla op in de tabel RawSignal
@@ -363,6 +364,7 @@ inline boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
     }
   while(RawCodeLength<RAW_BUFFER_SIZE && numloops<=maxloops);// loop *B* Zolang nog ruimte in de buffer
 
+  interrupts();//???
   if(RawCodeLength>=MIN_RAW_PULSES)
     {
     RawSignal.Number=RawCodeLength-1;
@@ -380,11 +382,9 @@ inline boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
  \*********************************************************************************************/
 boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Display, boolean WaitForFree)
   {  
-  
   ES->Direction=VALUE_DIRECTION_OUTPUT;
   ES->DestinationUnit=Transmission_SendToUnit;
   byte Port=ES->Port;
-
 
   // Als een Nodo actief is en excusief communiceert met een andere Nodo, c.q. de ether heeft geclaimd is, dan mag deze Nodo niet zenden.
   // In dit geval resteert deze Nodo niets anders dan even te wachten tot de lijn weer vrijgegeven wordt of de wachttijd verlopen is.
@@ -485,7 +485,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
  \*********************************************************************************************/
 boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
   {
-  byte b,c,x,y,z;
+  byte b,x,y,z;
 
   if(RawSignal.Number!=16*sizeof(struct DataBlockStruct)+2) // Per byte twee posities + startbit.
     return false;
@@ -494,7 +494,6 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
   byte *B=(byte*)&DataBlock; // B wijst naar de eerste byte van de struct
   z=3;  // RwaSignal pulse teller: 0=aantal, 1=startpuls, 2=space na startpuls, 3=1e pulslengte. Dus start loop met drie.
 
-  c=0; // checksum
   for(x=0;x<sizeof(struct DataBlockStruct);x++) // vul alle bytes van de struct 
     {
     b=0;
@@ -505,25 +504,24 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
       z+=2;
       }
     *(B+x)=b;
-    c^=b;  // bereken checksum: crc-8 uit alle bytes. 
     }
 
-  //Checksum is zo opgebouwd dat het versienummer altijd over blijft.     
-  if(c==NODO_COMPATIBILITY)
-    {
-    if(DataBlock.SourceUnit>>5!=Settings.Home)
-      return false;
+  if(DataBlock.SourceUnit>>5!=Settings.Home)
+    return false;
 
-    RawSignal.Repeats    = false; // het is geen herhalend signaal. Bij ontvangst hoeven herhalingen dus niet onderdrukt te worden.
-    Event->SourceUnit=DataBlock.SourceUnit&0x1F;  // Maskeer de bits van het Home adres.
-    Event->DestinationUnit=DataBlock.DestinationUnit;
-    Event->Flags=DataBlock.Flags;
-    Event->Type=DataBlock.Type;
-    Event->Command=DataBlock.Command;
-    Event->Par1=DataBlock.Par1;
-    Event->Par2=DataBlock.Par2;
+  RawSignal.Repeats    = false; // het is geen herhalend signaal. Bij ontvangst hoeven herhalingen dus niet onderdrukt te worden.
+  Event->SourceUnit=DataBlock.SourceUnit&0x1F;  // Maskeer de bits van het Home adres.
+  Event->DestinationUnit=DataBlock.DestinationUnit;
+  Event->Flags=DataBlock.Flags;
+  Event->Type=DataBlock.Type;
+  Event->Command=DataBlock.Command;
+  Event->Par1=DataBlock.Par1;
+  Event->Par2=DataBlock.Par2;
+  Event->Version=DataBlock.Version;
+  Event->Checksum=DataBlock.Checksum;
+
+  if(Checksum(Event))
     return true;
-    }
 
   return false; 
   }
@@ -540,24 +538,18 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
 // er vindt geen verdere verwerking plaats, slechts opslaan van het event. 
 void ReceiveI2C(int n)
   {
-  byte b,*B=(byte*)&I2C_Event;
-  byte Checksum=0;
+  byte *B=(byte*)&I2C_Event;
   int x=0;
 
   while(Wire.available()) // Haal de bytes op
     {
-    b=Wire.read(); 
     if(x<sizeof(struct NodoEventStruct))
-      {
-      *(B+x)=b; 
-      Checksum^=b; 
-      }
-    Checksum^=(NODO_COMPATIBILITY & 0xff); // Verwerk build in checksum om communicatie tussen verschillende versies te voorkomen 
+      *(B+x)=Wire.read(); 
     x++;
     }
 
   // laatste ontvangen byte bevat de checksum. Als deze gelijk is aan de berekende checksum, dan event uitvoeren
-  if(b==Checksum)    
+  if(Checksum(&I2C_Event))
     {   
     bitWrite(HW_Config,HW_I2C,true);
     I2C_EventReceived=true;    
@@ -571,29 +563,21 @@ void ReceiveI2C(int n)
  \*********************************************************************************************/
 void SendI2C(struct NodoEventStruct *EventBlock)
   {  
-  byte Checksum, x;
+  byte x;
+  byte *B=(byte*)EventBlock;  // bereken checksum: crc-8 uit alle bytes in de struct.
 
-  // bereken checksum: crc-8 uit alle bytes in de struct.
-  byte b,*B=(byte*)EventBlock;
+  Checksum(EventBlock);
 
   for(int y=1;y<=UNIT_MAX;y++)
     {            
     // We sturen de events naar bekende Nodo's die zich op de I2C bus bevinden. Als deze Nodo later op de bus wordt aangesloten,
     // dan zal Boot event van deze Nodo de andere uitnodigen om een bekendmaking te sturen zodat de lijst compleet is.
     // Daarom wordt het Boot event naar alle I2C adressen gestuurd waar zich een Nodo op kan bevinden.
-    if(EventBlock->Command==EVENT_BOOT || NodoOnline(y,0)==VALUE_SOURCE_I2C)
+    if(EventBlock->Command==EVENT_BOOT || EventBlock->Command==EVENT_NEWNODO || NodoOnline(y,0)==VALUE_SOURCE_I2C)// Type moet hier nog mee als voorwaarde ???
       {
-      // verzend Event 
       Wire.beginTransmission(I2C_START_ADDRESS+y-1);
-      Checksum=0;
       for(x=0;x<sizeof(struct NodoEventStruct);x++)
-        {
-        b=*(B+x); 
-        Wire.write(b);
-        Checksum^=b; 
-        }
-      Checksum^=(NODO_COMPATIBILITY & 0xff); // Verwerk build in checksum om communicatie tussen verschillende versies te voorkomen 
-      Wire.write(Checksum); 
+        Wire.write(*(B+x));
       Wire.endTransmission(false); // verzend de data, sluit af maar geef de bus NIET vrij
       }
     }
@@ -1239,5 +1223,22 @@ void SerialHold(boolean x)
   }
 }
 
+/*********************************************************************************************\
+ * Deze funktie berekend de CRC-8 checksum uit van een NodoEventStruct. 
+ * Als de Checksum al correct gevuld was wordt er een true teruggegeven. Was dit niet het geval
+ * dan wordt NodoEventStruct.Checksum gevuld met de juiste waarde en een false teruggegeven.
+ \*********************************************************************************************/
 
+boolean Checksum(NodoEventStruct *event)
+  {
+  byte OldChecksum=event->Checksum;
+  byte NewChecksum=NODO_VERSION_MAJOR;  // Verwerk versie in checksum om communicatie tussen verschillende versies te voorkomen
 
+  event->Checksum=0; // anders levert de beginsituatie een andere checksum op
+
+  for(int x=0;x<sizeof(struct NodoEventStruct);x++)
+    NewChecksum^(*((byte*)event+x)); 
+
+  event->Checksum=NewChecksum;
+  return(OldChecksum==NewChecksum);
+  }

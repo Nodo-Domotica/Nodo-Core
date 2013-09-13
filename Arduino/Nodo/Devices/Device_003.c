@@ -97,11 +97,9 @@ boolean Device_003(byte function, struct NodoEventStruct *event, char *string)
             
         // Adres deel:
         if(bitstream>0xffff)                         // Is het signaal van een originele KAKU zender afkomstig, of van een Nodo ingegeven door de gebruiker ?
-        #if NODO_30_COMPATIBLE
+          // Oude Nodo compatibel
           event->Par2=bitstream &0x0FFFFFCF;         // Op hoogste nibble zat vroeger het signaaltype. 
-        #else
-          event->Par2=bitstream &0xFFFFFFCF;         // dan hele adres incl. unitnummer overnemen. Alleen de twee commando-bits worden er uit gefilterd
-        #endif
+          // event->Par2=bitstream &0xFFFFFFCF;         // dan hele adres incl. unitnummer overnemen. Alleen de twee commando-bits worden er uit gefilterd
         
         else                                         // Het is van een andere Nodo afkomstig. 
           event->Par2=(bitstream>>6)&0xff;           // Neem dan alleen 8bit v/h adresdeel van KAKU signaal over

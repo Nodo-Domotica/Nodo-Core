@@ -1,4 +1,4 @@
-#define MIN_PULSE_LENGTH           100  // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
+#define MIN_PULSE_LENGTH            50  // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define SIGNAL_TIMEOUT_RF            5 // na deze tijd in mSec. wordt één RF signaal als beëindigd beschouwd.
 #define SIGNAL_TIMEOUT_IR           10 // na deze tijd in mSec. wordt één IR signaal als beëindigd beschouwd.
 #define SIGNAL_REPEAT_TIME        1000 // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF/IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
@@ -63,6 +63,21 @@ boolean ScanEvent(struct NodoEventStruct *Event)// Deze routine maakt deel uit v
     {
     Event->Port=Fetched;
     Event->Direction=VALUE_DIRECTION_INPUT;
+
+    // Toets of de versienummers corresponderen. Is dit niet het geval, dan zullen er verwerkingsfouten optreden! Dan een waarschuwing tonen en geen verdere verwerking.
+    // Er is een uitzondering: De eerste commando/eventnummers zijn stabiel en mogen van oudere versienummers zijn.
+    if(Event->Version!=NODO_VERSION_MINOR && Event->Command>COMMAND_MAX_FIXED)
+      {
+      #if NODO_MEGA
+      Event->Command=CMD_DUMMY;
+      Event->Type=NODO_TYPE_EVENT;
+      Event->Par1=0;
+      Event->Par2=0;
+      PrintEvent(Event,VALUE_ALL);
+      RaiseMessage(MESSAGE_VERSION_ERROR);
+      #endif
+      return false;
+      }     
 
     // Een event kan een verzoek bevatten om bevestiging. Doe dit dan pas na verwerking.
     if(Event->Flags & TRANSMISSION_CONFIRM)
