@@ -1,6 +1,6 @@
-#define NODO_COMPATIBILITY    2  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
-#define NODO_VERSION         36  // Administratieve versienummer.
-#define NODO_BUILD          575  // Administratieve versie minor. 
+#define NODO_VERSION_MAJOR             3  // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
+#define NODO_VERSION_MINOR             1  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
+#define NODO_BUILD                   577  // Ophogen bij iedere Build / versiebeheer.
 
 #define UNIT_NODO                      1 // Unit nummer van deze Nodo
 #define NODO_HOME                      1 // Home adres van Nodo's die tot één groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
@@ -70,6 +70,7 @@ byte HOME_NODO=1; // Home adres van Nodo's die tot één groep behoren (1..7). H
 #define RESERVED_13                     13
 #define RESERVED_14                     14
 #define RESERVED_15                     15
+#define COMMAND_MAX_FIXED               15
 
 // Onderstaande commando codes kunnen bij vervolgreleases worden aangepast. Deze codes dus niet buiten de Nodo
 // code gebruiken.
@@ -205,7 +206,8 @@ byte HOME_NODO=1; // Home adres van Nodo's die tot één groep behoren (1..7). H
 #define MESSAGE_RAWSIGNAL_SAVED         12 //??? wordt niet gebruikt
 #define MESSAGE_DEVICE_UNKNOWN          13
 #define MESSAGE_DEVICE_ERROR            14
-#define MESSAGE_MAX                     14 // laatste bericht tekst
+#define MESSAGE_VERSION_ERROR           15
+#define MESSAGE_MAX                     15 // laatste bericht tekst
 
 
 #if NODO_MEGA
@@ -377,9 +379,10 @@ prog_char PROGMEM Msg_11[]="Break.";
 prog_char PROGMEM Msg_12[]="RawSignal saved.";
 prog_char PROGMEM Msg_13[]="Unknown device.";
 prog_char PROGMEM Msg_14[]="Device returned an error.";
+prog_char PROGMEM Msg_15[]="Incompatibel event received.";
 
 // tabel die refereert aan de message strings
-PROGMEM const char *MessageText_tabel[]={Msg_0,Msg_1,Msg_2,Msg_3,Msg_4,Msg_5,Msg_6,Msg_7,Msg_8,Msg_9,Msg_10,Msg_11,Msg_12,Msg_13,Msg_14};
+PROGMEM const char *MessageText_tabel[]={Msg_0,Msg_1,Msg_2,Msg_3,Msg_4,Msg_5,Msg_6,Msg_7,Msg_8,Msg_9,Msg_10,Msg_11,Msg_12,Msg_13,Msg_14,Msg_15};
 
 // Tabel met zonsopgang en -ondergang momenten. afgeleid van KNMI gegevens midden Nederland.
 PROGMEM prog_uint16_t Sunrise[]={528,525,516,503,487,467,446,424,401,378,355,333,313,295,279,268,261,259,263,271,283,297,312,329,345,367,377,394,411,428,446,464,481,498,512,522,528,527};
@@ -627,6 +630,8 @@ struct NodoEventStruct
   byte Flags;
   byte Port;
   byte Direction;
+  byte Version;
+  byte Checksum;
   };
 
 volatile unsigned long PulseCount=0L;                       // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
@@ -781,7 +786,7 @@ void setup()
   #endif
 
   LoadSettings();      // laad alle settings zoals deze in de EEPROM zijn opgeslagen
-  if(Settings.Version!=NODO_COMPATIBILITY)ResetFactory(); // Als versienummer in EEPROM niet correct is, dan een ResetFactory.
+  if(Settings.Version!=NODO_VERSION_MINOR)ResetFactory(); // Als versienummer in EEPROM niet correct is, dan een ResetFactory.
 
   // initialiseer de Wired ingangen.
   for(x=0;x<WIRED_PORTS;x++)
@@ -849,21 +854,20 @@ void setup()
   
   PrintWelcome(); // geef de welkomsttekst weer
 
-  #if NODO_MEGA
-  Serial.println(F("Serial output activated after receiving input..."));
-  bitWrite(HW_Config,HW_SERIAL,Serial.available()?1:0); // Serial weer uitschakelen.
-  #endif
-  
   // Zend boot event naar alle Nodo's en vraag om een bevestiging. Tevens heeft de gebruiker de gelegenheid om direct na een boot
   // een eventlisterase/reset te verzenden als een small in de problemen.
   // Alle Nodo's die online zenden zullen een Confirm event verzenden.
   ClearEvent(&TempEvent);
-  TempEvent.Direction = VALUE_DIRECTION_INPUT;
   TempEvent.Port      = VALUE_ALL;
-  TempEvent.Flags     = TRANSMISSION_CONFIRM;
   TempEvent.Type      = NODO_TYPE_EVENT;
-  TempEvent.Command   = EVENT_BOOT;
+  TempEvent.Flags     = TRANSMISSION_CONFIRM;
+  TempEvent.Direction = VALUE_DIRECTION_OUTPUT;
   TempEvent.Par1      = Settings.Unit;
+
+  if(Settings.NewNodo)
+    TempEvent.Command  = EVENT_NEWNODO;
+  else
+    TempEvent.Command   = EVENT_BOOT;
   SendEvent(&TempEvent,false,true,Settings.WaitFree==VALUE_ON);  
 
   bitWrite(HW_Config,HW_I2C,false); // Zet I2C weer uit. Wordt weer geactiveerd als er een I2C event op de bus verschijnt.
@@ -880,17 +884,12 @@ void setup()
   TempEvent.Par1      = Settings.Unit;
   ProcessEvent2(&TempEvent);
   
-  // Als er nog geen settings aangepast, dan een NewNodo-event sturen.
-  if(Settings.NewNodo)
-    {
-    TempEvent.Port     = VALUE_ALL;
-    TempEvent.Type     = NODO_TYPE_EVENT;
-    TempEvent.Command  = EVENT_NEWNODO;
-    TempEvent.Par1     = Settings.Unit;
-    SendEvent(&TempEvent,false,true,false); 
-    }
-
   QueueProcess();
+
+  #if NODO_MEGA
+  Serial.println(F("\nReady.\n"));
+  bitWrite(HW_Config,HW_SERIAL,Serial.available()?1:0); // Serial weer uitschakelen.
+  #endif
   }
 
 void loop() 
@@ -926,6 +925,15 @@ void loop()
     if(ScanEvent(&ReceivedEvent)) 
       ProcessEvent1(&ReceivedEvent); // verwerk binnengekomen event.
       
+//    //??? test
+//    unsigned long pkt=0;
+//    if(millis()-pkt>10)
+//      {
+//      Serial.print("Onderbreking hoofdloop (ms): ");
+//      Serial.println(millis()-pkt);
+//      }
+//    pkt=millis();
+    
     // 1: niet tijdkritische processen die periodiek uitgevoerd moeten worden
     if(LoopIntervalTimer_1<millis())// korte interval
       {
@@ -946,7 +954,6 @@ void loop()
             // IP Event: *************** kijk of er een Event van IP  **********************    
             if(HTTPServer.available())
               ExecuteIP();
-
           break;
           }
     
@@ -1058,16 +1065,12 @@ void loop()
                     }
                   }
                 else 
-                  {// bij een niet printbaar teken wordt de verbinding direct verbroken. Uit veiligheidsoverweging om te voorkomen dat bulk rommel naar de Nodo gestuurd wordt.
-                  // TerminalSessie timeout, dan de verbinding netjes afsluiten
+                  {
+                    // bij een niet printbaar teken 
                   InputBuffer_Terminal[0]=0;
-//                  TerminalClient.println(ProgmemString(Text_30));
-//                  delay(100); // geef de client even de gelegenheid de tekst te ontvangen
                   TerminalClient.flush();// eventuele rommel weggooien.
-//                  TerminalClient.stop();
-//                  TerminalConnected=0;
                   break;
-                  }//??? test
+                  }
                 }
               }
             }

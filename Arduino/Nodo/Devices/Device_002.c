@@ -51,14 +51,15 @@ boolean Device_002(byte function, struct NodoEventStruct *event, char *string)
     
     case DEVICE_COMMAND:
       {
-      unsigned long Bitstream;
       RawSignal.Multiply=50;
       RawSignal.Repeats=7;                   // KAKU heeft minimaal vijf herhalingen nodig om te schakelen.
       RawSignal.Delay=20;                    // Tussen iedere pulsenreeks enige tijd rust.
       RawSignal.Number=KAKU_CodeLength*4+2;
       event->Port=VALUE_ALL;                 // Signaal mag naar alle door de gebruiker met [Output] ingestelde poorten worden verzonden.
      
-      Bitstream = event->Par2 | (0x600 | ((event->Par1&1/*Commando*/) << 11)); // Stel een bitstream samen
+      PrintNodoEvent("KakuSend",event);
+
+      unsigned long Bitstream = event->Par2 | (0x600 | ((event->Par1&1 /*Commando*/) << 11)); // Stel een bitstream samen
       
       // loop de 12-bits langs en vertaal naar pulse/space signalen.  
       for (byte i=0; i<KAKU_CodeLength; i++)
@@ -85,6 +86,7 @@ boolean Device_002(byte function, struct NodoEventStruct *event, char *string)
             }          
           }
         }
+      PrintRawSignal();//??? debugging
       SendEvent(event,true,true,Settings.WaitFree==VALUE_ON);
       success=true;
       break;

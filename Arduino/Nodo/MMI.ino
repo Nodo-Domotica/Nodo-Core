@@ -136,7 +136,7 @@ char* DateTimeString(void)
 /**********************************************************************************************\
  * Print de welkomsttekst van de Nodo.
  \*********************************************************************************************/
-prog_char PROGMEM Text_welcome[] = "Nodo-Mega V%d.%d (beta), Product=SWACNC-MEGA-R%03d, Home=%d, ThisUnit=%d";
+prog_char PROGMEM Text_welcome[] = "Nodo-Mega V3.6 (beta), Product=SWACNC-MEGA-R%03d, Home=%d, ThisUnit=%d";
 void PrintWelcome(void)
   {
   char *TempString=(char*)malloc(80);
@@ -148,7 +148,7 @@ void PrintWelcome(void)
   PrintString(ProgmemString(Text_02),VALUE_ALL);
 
   // print versienummer, unit en indien gevuld het ID
-  sprintf(TempString,ProgmemString(Text_welcome),NODO_VERSION/10,NODO_VERSION%10, NODO_BUILD, Settings.Home, Settings.Unit);
+  sprintf(TempString,ProgmemString(Text_welcome), NODO_BUILD, Settings.Home, Settings.Unit);
   if(Settings.ID[0])
     {
     strcat(TempString,", ID=");
@@ -1508,7 +1508,7 @@ int ExecuteLine(char *Line, byte Port)
     // Verzend de inhoud van de queue naar de slave Nodo
     if(Transmission_SendToUnit!=Settings.Unit && Transmission_SendToUnit!=0 && error==0 && QueuePosition>0)
       {
-      error=QueueSend();
+      error=QueueSend(false);
       if(error)
         {
         CommandPos=0;
@@ -1539,11 +1539,7 @@ void PrintWelcome(void)
   Serial.println(F("!******************************************************************************!"));
   Serial.println(F("Nodo Domotica controller (c) Copyright 2013 P.K.Tonkes."));
   Serial.println(F("Licensed under GNU General Public License."));
-  Serial.print(F("Nodo-Small V"));
-  Serial.print(NODO_VERSION/10);
-  Serial.print(".");
-  Serial.print(NODO_VERSION%10);
-  Serial.print(F(" (beta), Product=SWACNC-SMALL-R"));
+  Serial.print(F("Nodo-Small V3.6 (Beta), Product=SWACNC-SMALL-R"));
   Serial.print(NODO_BUILD);
   Serial.print(F(", Home="));
   Serial.print(Settings.Home);

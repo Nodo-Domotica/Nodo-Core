@@ -17,7 +17,7 @@
 #define DEVICE_001
 #define DEVICE_001_CORE
 
-// SendKaku          : Klik-Aan-Klik-Uit / HomeEasy protocol verzenden 
+// KakuSend          : Klik-Aan-Klik-Uit / HomeEasy protocol verzenden 
 #define DEVICE_002
 #define DEVICE_002_CORE
 
@@ -25,11 +25,8 @@
 #define DEVICE_003
 #define DEVICE_003_CORE
 
-// SendNewKAKU       : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno. 
+// NewKAKUSend       : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno. 
 #define DEVICE_004
 #define DEVICE_004_CORE
 
-// TempSensor        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
-#define DEVICE_005 
-#define DEVICE_005_CORE
 

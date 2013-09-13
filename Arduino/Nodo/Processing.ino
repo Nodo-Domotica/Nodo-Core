@@ -354,7 +354,7 @@ void QueueProcess(void)
 /*********************************************************************************************\
  * Deze routine verzendt de inhoud van de queue naar een andere Nodo.
  \*********************************************************************************************/
-byte QueueSend(void)
+byte QueueSend(boolean fast)
   {
   byte x,Port,error=MESSAGE_SENDTO_ERROR, Retry=0;
   unsigned long ID=millis();
@@ -409,20 +409,26 @@ byte QueueSend(void)
       SendEvent(&Event,false,false,false);
       }
     
-    // De ontvangende Nodo verzendt als het goed is een bevestiging dat het is ontvangen en het aantal commando's
-    ClearEvent(&Event);
-    Event.SourceUnit          = Transmission_SendToUnit;
-    Event.Command             = SYSTEM_COMMAND_CONFIRMED;
-    Event.Type                = NODO_TYPE_SYSTEM;
-
-    if(Wait(10,false,&Event,false))
-      if(x==Event.Par1)
-        error=0;
-
-    // Als er een timeout was of het aantal events is niet correct bevestigd, dan de gebruiker een waarschuwing tonen
-    if(error)
-      delay(1000); // kleine pauze om zeker te weten dat de ontvanger van de ontvangende Nodo weer gereed staat voor ontvangst (starttijd RF module)
-
+    if(fast)
+      {
+      error=0;
+      }
+    else
+      {
+      // De ontvangende Nodo verzendt als het goed is een bevestiging dat het is ontvangen en het aantal commando's
+      ClearEvent(&Event);
+      Event.SourceUnit          = Transmission_SendToUnit;
+      Event.Command             = SYSTEM_COMMAND_CONFIRMED;
+      Event.Type                = NODO_TYPE_SYSTEM;
+  
+      if(Wait(10,false,&Event,false))
+        if(x==Event.Par1)
+          error=0;
+  
+      // Als er een timeout was of het aantal events is niet correct bevestigd, dan de gebruiker een waarschuwing tonen
+      if(error)
+        delay(1000); // kleine pauze om zeker te weten dat de ontvanger van de ontvangende Nodo weer gereed staat voor ontvangst (starttijd RF module)
+      }
     }while((++Retry<5) && error);    
 
   return error;

@@ -144,8 +144,12 @@ boolean Device_004(byte function, struct NodoEventStruct *event, char *string)
               else
                 {
                 event->Par1=str2int(str);             // zet string om in integer waarde
-                if(event->Par1>=1 && event->Par1<=16) // geldig dim bereik 1..16 ?
-                   success=true;
+                if(event->Par1<=16) // geldig dim bereik 1..16 ?
+                  {
+                  success=true;
+                  if(event->Par1==0)
+                    event->Par1=VALUE_OFF;
+                  }
                 }
               event->Type = NODO_TYPE_DEVICE_COMMAND; 
               event->Command = 4; // Device nummer  
