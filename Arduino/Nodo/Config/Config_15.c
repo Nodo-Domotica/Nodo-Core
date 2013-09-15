@@ -29,4 +29,7 @@
 #define PLUGIN_004
 #define PLUGIN_004_CORE
 
+// DS18B20 Temperatuursensor
+#define PLUGIN_005
+#define PLUGIN_005_CORE
 
