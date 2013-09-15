@@ -19,7 +19,7 @@
 #define PLUGIN_001
 #define PLUGIN_001_CORE
 
-// SendKaku          : Klik-Aan-Klik-Uit / HomeEasy protocol verzenden 
+// KakuSend          : Klik-Aan-Klik-Uit / HomeEasy protocol verzenden 
 #define PLUGIN_002
 #define PLUGIN_002_CORE
 
@@ -27,11 +27,17 @@
 #define PLUGIN_003
 #define PLUGIN_003_CORE
 
-// SendNewKAKU       : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno. 
+// NewKAKUSend       : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno. 
 #define PLUGIN_004
 #define PLUGIN_004_CORE
 
 // TempSensor        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
 #define PLUGIN_005 
 #define PLUGIN_005_CORE
+
+// UserEvent receiver voor oude Nodo codering
+#define PLUGIN_007 
+#define PLUGIN_007_CORE
+
+
 
