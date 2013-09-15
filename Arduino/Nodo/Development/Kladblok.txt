@@ -1,0 +1,9 @@
+digitalWrite(PIN_WIRED_OUT_1,HIGH);digitalWrite(PIN_WIRED_OUT_1,LOW);//??? Debugging: Wired-Out 1
+
+Serial.print(F("*** debug: "));Serial.println(); //??? Debug
+
+
+
+
+
+
