@@ -164,7 +164,7 @@ void RawSendRF(void)
   for(byte y=0; y<RawSignal.Repeats; y++) // herhaal verzenden RF code
     {
     x=1;
-    noInterrupts();
+    noInterrupts();//???
     while(x<RawSignal.Number)
       {
       digitalWrite(PIN_RF_TX_DATA,HIGH);
@@ -342,7 +342,7 @@ inline boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
   boolean toggle=false;
   RawSignal.Multiply=50;
 
-  noInterrupts();//???
+  //???noInterrupts();//???
   do{// lees de pulsen in microseconden en plaats deze in de tijdelijke buffer RawSignal
     numloops = 0;
     while(((*portInputRegister(port) & bit) == stateMask) ^ toggle) // while() loop *A*
@@ -354,7 +354,7 @@ inline boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
     // bij kleine stoorpulsen die geen betekenis hebben zo snel mogelijk weer terug
     if(PulseLength<MIN_PULSE_LENGTH)
       {
-      interrupts();//???
+      // interrupts();//???
       return false;
       }
     toggle=!toggle;    
@@ -364,7 +364,7 @@ inline boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
     }
   while(RawCodeLength<RAW_BUFFER_SIZE && numloops<=maxloops);// loop *B* Zolang nog ruimte in de buffer
 
-  interrupts();//???
+  //interrupts();//???
   if(RawCodeLength>=MIN_RAW_PULSES)
     {
     RawSignal.Number=RawCodeLength-1;

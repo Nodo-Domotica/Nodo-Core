@@ -36,7 +36,7 @@
 // Config_01.c => Deze is default bestemd voor een Nodo Mega met unitnummer 1.
 // Config_15.c => Deze is default bestemd voor een Nodo Small met unitnummer 15.
 // ============================================================================================================================
-#define CONFIG_FILE Config_15.c//???
+#define CONFIG_FILE Config_01.c
 
 
 // ============================================================================================================================
@@ -44,7 +44,7 @@
 // onderstaande twee regels. Gebruik je een Arduino-Mega op basis van een ATMega2560 chip, dan hoef je in deze stap niets te doen.
 // Dit omdat een 'onhebbelijkheid' in de Arduino compiler anders de library altijd meecompileerd waardoor deze niet meer in een ATMeg328 past.
 // ============================================================================================================================
-//#include <SD.h>
-//#include <NodoEthernet.h>
+#include <SD.h>
+#include <NodoEthernet.h>
 
 
