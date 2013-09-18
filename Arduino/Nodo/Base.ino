@@ -1,6 +1,6 @@
 #define NODO_VERSION_MAJOR             3  // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define NODO_VERSION_MINOR             1  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
-#define NODO_BUILD                   586  // Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                   587  // Ophogen bij iedere Build / versiebeheer.
 
 #define UNIT_NODO                      1 // Unit nummer van deze Nodo
 #define NODO_HOME                      1 // Home adres van Nodo's die tot één groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
@@ -37,21 +37,6 @@ byte HOME_NODO=1; // Home adres van Nodo's die tot één groep behoren (1..7). H
 // Onderstaande commando codes mogen worden gebruikt door andere devices dan een Nodo.
 // Uit compatibility overwegingen zullen deze commando codes niet worden aangepast bij 
 // vervolgreleases. 
-
-#define EVENT_BOOT                      1
-#define CMD_REBOOT                      4
-#define CMD_SOUND                       5
-#define EVENT_USEREVENT                 6
-#define EVENT_VARIABLE                  7
-#define CMD_VARIABLE_SET                8
-#define RESERVED_9                      9
-#define RESERVED_10                     10
-#define RESERVED_11                     11
-#define RESERVED_12                     12
-#define RESERVED_13                     13
-#define RESERVED_14                     14
-#define RESERVED_15                     15
-#define RESERVED_16                     16
 
 #define CMD_DUMMY                       0
 #define EVENT_BOOT                      1
@@ -419,6 +404,8 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define PLUGIN_ONCE_A_SECOND         6
 #define PLUGIN_DATA                  7
 #define PLUGIN_EVENT_IN              8
+#define PLUGIN_SERIAL_IN             9
+#define PLUGIN_ETHERNET_IN          10
 
 #define RED                            1 // Led = Rood
 #define GREEN                          2 // Led = Groen
@@ -952,9 +939,12 @@ void loop()
         case 1: // binnen Slice_1
           {
           if(bitRead(HW_Config,HW_ETHERNET))
-            // IP Event: *************** kijk of er een Event van IP  **********************    
+            // IP Event: *************** kijk of er een Event van IP komt **********************    
             if(HTTPServer.available())
+              {
+              PluginCall(PLUGIN_ETHERNET_IN,0,0);
               ExecuteIP();
+              }
           break;
           }
     
@@ -1078,11 +1068,17 @@ void loop()
           break;
           }
           
+
+        #endif
+        
         case 3: // binnen Slice_1
           {
           // SERIAL: *************** kijk of er data klaar staat op de seriële poort **********************
           if(Serial.available())
             {
+            if(Serial.available())
+              PluginCall(PLUGIN_SERIAL_IN,0,0);
+         #if NODO_MEGA     
             bitWrite(HW_Config,HW_SERIAL,1);// Input op seriele poort ontvangen. Vanaf nu ook output naar Seriele poort want er is klaarblijkelijk een actieve verbinding
             StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;
 
@@ -1116,10 +1112,10 @@ void loop()
                   }
                 }
               }
+          #endif
             }
           break;
           }
-        #endif
 
         default:  // binnen Slice_1
           Slice_1=0;
@@ -1257,10 +1253,7 @@ void loop()
       ClockRead(); // Lees de Real Time Clock waarden in de struct Time
 
       // Loopt voor de devices de periodieke aanroep langs.
-      for(x=0;x<PLUGIN_MAX; x++)
-        if(Plugin_ptr[x]!=0)
-          if(Plugin_ptr[x](PLUGIN_ONCE_A_SECOND,&ReceivedEvent,0))
-            ProcessEvent1(&ReceivedEvent); // verwerk binnengekomen event.
+      PluginCall(PLUGIN_ONCE_A_SECOND,&ReceivedEvent,0);
 
       // rebooten van de Nodo is buiten de processing routines geplaatst om zo te voorkomen dat er een reboot van de Arduino
       // plaats vindt terwijl er nog open bestanden of communicatie is. Dit kan mogelijk leiden tot problemen.
@@ -1300,7 +1293,7 @@ void loop()
           TempLogFile[0]=0;
         }
         
-      // Timer voor verzenden van Cookie naar de WebApp
+      // Timer voor verzenden van Cookie naar de WebApp/Server
       if(Settings.Password[0]!=0 && Settings.TransmitIP==VALUE_ON)
         {
         if(CookieTimer>0)

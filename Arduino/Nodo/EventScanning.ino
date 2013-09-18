@@ -66,7 +66,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)// Deze routine maakt deel uit v
 
     // Toets of de versienummers corresponderen. Is dit niet het geval, dan zullen er verwerkingsfouten optreden! Dan een waarschuwing tonen en geen verdere verwerking.
     // Er is een uitzondering: De eerste commando/eventnummers zijn stabiel en mogen van oudere versienummers zijn.
-    if(Event->Version!=NODO_VERSION_MINOR && Event->Command>COMMAND_MAX_FIXED)
+    if(Event->Version!=0 && Event->Version!=NODO_VERSION_MINOR && Event->Command>COMMAND_MAX_FIXED)
       {
       #if NODO_MEGA
       Event->Command=CMD_DUMMY;

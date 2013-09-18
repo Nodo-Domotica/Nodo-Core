@@ -562,9 +562,9 @@ void ReceiveI2C(int n)
 void SendI2C(struct NodoEventStruct *EventBlock)
   {  
   byte x;
-  byte *B=(byte*)EventBlock;  // bereken checksum: crc-8 uit alle bytes in de struct.
+  byte *B=(byte*)EventBlock;  
 
-  Checksum(EventBlock);
+  Checksum(EventBlock);// bereken checksum: crc-8 uit alle bytes in de struct.
 
   for(int y=1;y<=UNIT_MAX;y++)
     {            

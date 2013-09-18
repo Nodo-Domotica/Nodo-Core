@@ -18,7 +18,8 @@ byte ProcessEvent1(struct NodoEventStruct *Event)
     return 0;
   #endif
 
-  PluginCall(PLUGIN_EVENT_IN,Event,0);      
+  // loop de plugins langs voor eventuele afhandeling van dit event.
+  PluginCall(PLUGIN_EVENT_IN, Event,0);
 
   // Verwerk het binnengekomen event
   error=ProcessEvent2(Event);
@@ -109,7 +110,7 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
   // Check of het een binnengekomen device data  is en verwerk deze binnen het device.
   if(Event->Type==NODO_TYPE_PLUGIN_DATA)
     {
-    error=PluginCall(PLUGIN_DATA,Event,0);
+    PluginCall(PLUGIN_DATA,Event,0);
     Continue=false;
     }
 
@@ -130,10 +131,8 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
     // ############# Verwerk event ################  
 
     if(Event->Type==NODO_TYPE_PLUGIN_COMMAND)
-      {
-      error=PluginCall(PLUGIN_COMMAND,Event,0);
-      RaiseMessage(error);
-      }
+      if(error=PluginCall(PLUGIN_COMMAND,Event,0))
+        RaiseMessage(error);
    
     if(error==0)
       {

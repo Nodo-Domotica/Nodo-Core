@@ -1,11 +1,11 @@
 /****************************************************************************************************************************\
-* In dit tabblad staan voorzieningen die nodig zijn om de devices te integreren in de Nodo code op een zodanige manier dat
-* uitsluitend DIE devices worden meegecompileerd die ook daadwerklijk door de gebruiker zijn opgegeven. Niet opgegeven
-* devices worden dus niet meegecompileerd om geheugen te besparen. Dit tabblad bevat geen code die door de gebruiker 
+* In dit tabblad staan voorzieningen die nodig zijn om de plugins te integreren in de Nodo code op een zodanige manier dat
+* uitsluitend DIE plugins worden meegecompileerd die ook daadwerklijk door de gebruiker zijn opgegeven. Niet opgegeven
+* plugins worden dus niet meegecompileerd om geheugen te besparen. Dit tabblad bevat geen code die door de gebruiker 
 * aangepast hoeft te worden.
 *
 * Devics worden uniek genummerd. Deze nummers worden uitgegeven door het Nodo team. Plugin_255 is een template voor 
-* een device dat kan worden gebruikt als je zelf een device wilt toevoegen aan de Nodo. 
+* een plugin dat kan worden gebruikt als je zelf een plugin wilt toevoegen aan de Nodo. 
 \*************************************************************************************************************************/
 
 #define PLUGINFILE2(a, b) stringify(a/Plugins/b)
@@ -411,6 +411,26 @@
 #include PLUGINFILE(SKETCH_PATH,Plugin_100.c)
 #endif
 
+#ifdef PLUGIN_250
+#include PLUGINFILE(SKETCH_PATH,Plugin_250.c)
+#endif
+
+#ifdef PLUGIN_251
+#include PLUGINFILE(SKETCH_PATH,Plugin_251.c)
+#endif
+
+#ifdef PLUGIN_252
+#include PLUGINFILE(SKETCH_PATH,Plugin_252.c)
+#endif
+
+#ifdef PLUGIN_253
+#include PLUGINFILE(SKETCH_PATH,Plugin_253.c)
+#endif
+
+#ifdef PLUGIN_254
+#include PLUGINFILE(SKETCH_PATH,Plugin_254.c)
+#endif
+
 #ifdef PLUGIN_255
 #include PLUGINFILE(SKETCH_PATH,Plugin_255.c)
 #endif
@@ -419,7 +439,7 @@ void PluginInit(void)
   {
   byte x;
 
-  // Wis te pointertabel voor de devices.
+  // Wis te pointertabel voor de plugins.
   for(x=0;x<PLUGIN_MAX;x++)
     {
     Plugin_ptr[x]=0;
@@ -428,8 +448,6 @@ void PluginInit(void)
     
   x=0;
         
-  
-  
   #ifdef PLUGIN_001
   Plugin_id[x]=1;Plugin_ptr[x++]=&Plugin_001;
   #endif
@@ -830,41 +848,97 @@ void PluginInit(void)
   Plugin_id[x]=100;Plugin_ptr[x++]=&Plugin_100;
   #endif
   
+  #ifdef PLUGIN_250
+  Plugin_id[x]=250;Plugin_ptr[x++]=&Plugin_250;
+  #endif
+
+  #ifdef PLUGIN_251
+  Plugin_id[x]=251;Plugin_ptr[x++]=&Plugin_251;
+  #endif
+
+  #ifdef PLUGIN_252
+  Plugin_id[x]=252;Plugin_ptr[x++]=&Plugin_252;
+  #endif
+
+  #ifdef PLUGIN_253
+  Plugin_id[x]=253;Plugin_ptr[x++]=&Plugin_253;
+  #endif
+
+  #ifdef PLUGIN_254
+  Plugin_id[x]=254;Plugin_ptr[x++]=&Plugin_254;
+  #endif
+
   #ifdef PLUGIN_255
   Plugin_id[x]=255;Plugin_ptr[x++]=&Plugin_255;
   #endif
 
-  // Initialiseer alle devices door aanroep met verwerkingsparameter PLUGIN_INIT
-  for(byte x=0;Plugin_ptr[x]!=0 && x<PLUGIN_MAX; x++)
-    Plugin_ptr[x](PLUGIN_INIT,0,0);
+  // Initialiseer alle plugins door aanroep met verwerkingsparameter PLUGIN_INIT
+  PluginCall(PLUGIN_INIT,0,0);
   }
 
  /*********************************************************************************************\
- * Met deze functie worden de devices aangeroepen. In Event->Command zit het nummer van het device dat moet
+ * Met deze functie worden de plugins aangeroepen. In Event->Command zit het nummer van het plugin dat moet
  * worden aangeroepen. Deze functie doorzoekt de ID en pointertabel en roept van hieruit het
- * juiste device aan. Als resultaat komt er een foutcode of 0 bij succes.
- * Als Event->Command=0 wordt opgegeven worden alle devices met de betreffende funktie call aangeroepen.
- * Als er een verzoek wordt gedaan om alle devices het Rawsignal te onderzoeken, dan wordt teruggekeerd
- * met een true als het eerste device een true geretourneerd heeft.
+ * juiste plugin aan. Als resultaat komt er een foutcode of 0 bij succes.
+ * Als er een verzoek wordt gedaan om alle plugins het Rawsignal te onderzoeken, dan wordt teruggekeerd
+ * met een true als het eerste plugin een true geretourneerd heeft.
  \*********************************************************************************************/
+
 byte PluginCall(byte Function, struct NodoEventStruct *Event, char *str)
   {
-  byte error=MESSAGE_PLUGIN_UNKNOWN;
+  byte success=false;
+  boolean AllPlugins=false;
+  boolean FirstHitReturn=false;
+  boolean CallSpecificPlugin=false;
+  
+  switch(Function)
+    {
+    // Alle plugins langslopen
+    case PLUGIN_ONCE_A_SECOND:
+    case PLUGIN_EVENT_IN:
+    case PLUGIN_INIT:
+      AllPlugins=true;
+      break;
+    
+    // Alle plugins langslopen. Na de eerste hit direct terugkeren met returnwaarde true
+    case PLUGIN_MMI_IN:
+    case PLUGIN_RAWSIGNAL_IN:
+    case PLUGIN_SERIAL_IN:
+    case PLUGIN_ETHERNET_IN:
+      AllPlugins=true;
+      FirstHitReturn=true;
+      break;
 
+    // alleen plugin aanroepen zoals opgegeven in Event->Command. Keer terug met error
+    case PLUGIN_DATA:
+    case PLUGIN_MMI_OUT:
+    case PLUGIN_COMMAND:
+      CallSpecificPlugin=true;
+      break;
+    }
+    
   for(byte x=0; x<PLUGIN_MAX; x++)
     {
-    // Zoek het device in de tabel en voer de device code uit.
-    if(Plugin_ptr[x]!=0 && (Event==0 || Event->Command==0 || Plugin_id[x]==Event->Command) )    // Als device bestaat of alle devices moeten worden langsgelopen
+    // Zoek het plugin in de tabel en voer de plugin code uit.
+    if(Plugin_ptr[x]!=0 && (AllPlugins || Plugin_id[x]==Event->Command))    // Als plugin bestaat of alle plugins moeten worden langsgelopen
       {
-      error=0;
-      if(!Plugin_ptr[x](Function,Event,str))
-        error=MESSAGE_PLUGIN_ERROR;
-      else if(Function==PLUGIN_RAWSIGNAL_IN)      // Als gechecked moet worden op een bruikbaar rawsignal, dan bij de eerste hit terugkeren
+      success=Plugin_ptr[x](Function,Event,str);
+      if(success && FirstHitReturn)
         return true;
+        
+      if(CallSpecificPlugin)
+        {
+        if(success)
+          return 0;
+        else
+          return MESSAGE_PLUGIN_ERROR;
+        }
       }
     }
-  return error;
-  }
+  if(CallSpecificPlugin)
+    return MESSAGE_PLUGIN_UNKNOWN;
 
+  return success;
+  }
 
 
