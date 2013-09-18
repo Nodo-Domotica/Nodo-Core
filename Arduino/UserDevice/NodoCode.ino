@@ -33,7 +33,7 @@
 * |                     |                                     |                      |
 * |                     |                                     |                      |
 * |    +----------------+                                     +--------------+       |
-* |    | NodoSend();    |                                     |  MyDevice    |       |
+* |    | Nodo_DataSend()|                                     |  MyPlugin    |       |
 * |    | NodoReceive(); |                                     |  Nodo-code   |       |
 * |    | NodoInit();    |                                     |              |       |
 * +----+----------------+                                     +--------------+       |
@@ -44,39 +44,36 @@
 *    MyDevice hardware                                              Nodo hardware
 * 
 * 
-* Ontwikkel in het tabblad MyDevice je eigen oplossing. Met de funkties in tabblad NodoCommunication 
+* Ontwikkel in het tabblad MyDevice je eigen oplossing. Met de funkties in tabblad NodoCode 
 * is het mogelijk om gegevens via I2C uit te wisselen met een Nodo. Ontwikkel aan de Nodo-zijde een
-* bijbehorend stukje Nodo-code (software device) die zorg draagt voor verwerking van de uitgewisselde
-* gegevens.
+* bijbehorende plugin die zorg draagt voor verwerking van de uitgewisselde gegevens.
 *
-* Gegevensuitwisseling vindt plaats m.b.v. de onderstaande struct:
+* Naast het uitwisselen van gegevens tussen MyDevice en de Nodo plugin, is het mogelijk
+* om een UserEvent en een Variable te versturen die direct door een Nodo kunnen worden
+* verwerkt.
 *
-* struct NodoDataStruct                            // De data die wordt uitgewisseld met de Nodo wordt opgeslagen in een struct. Deze struct wordt opgenomen in een Nodo event.
-*   {
-*   byte           Par1;                           // Vrij te gebruiken: byte ter grootte van 8-bits.
-*   unsigned long  Par2;                           // Vrij te gebruikern: unsigned long van 32-bits.
-*   byte           Unit;                           // Nodo unitnummer waar de data naar toegezonden mmoet worden of vandaan komt.
-*   }MyData;
-*
-* Kijk in het voorbeeldcode MyDevice en Nodo-device 'Device_255' voor verdere toelichting.
+* Kijk in het voorbeeldcode MyDevice en Nodo-Plugin 'Plugin_255' voor verdere toelichting.
 *
 \*********************************************************************************************/
 
 #define I2C_START_ADDRESS               1 // Alle Nodo's op de I2C bus hebben een uniek adres dat start vanaf dit nummer. Er zijn max. 32 Nodo's. Let op overlap met andere devices. RTC zit op adres 104.
 
 // Definites vanuit de Nodo code
-#define NODO_COMPATIBILITY              2
-#define NODO_TYPE_DEVICE_DATA           6
+#define NODO_VERSION_MAJOR              3 
+#define NODO_TYPE_EVENT                 1
+#define NODO_TYPE_PLUGIN_DATA           6
+#define NODO_TYPE_COMMAND               2
 #define UNIT_MAX                       32
+
+// Commando's en events
 #define EVENT_BOOT                      1
-#define CMD_REBOOT                      4
-#define CMD_SOUND                       5
-#define EVENT_USEREVENT                 6
-#define EVENT_VARIABLE                  7
-#define CMD_VARIABLE_SET                8
+#define EVENT_USEREVENT                 3
+#define EVENT_VARIABLE                  4
 
 #include <Wire.h>
 
+
+// Deze struct definieert een Nodo even
 struct NodoEventStruct
   {
   // Event deel
@@ -91,18 +88,25 @@ struct NodoEventStruct
   byte Flags;
   byte Port;
   byte Direction;
+  byte Version;
+  byte Checksum;
   }NodoEventIncomming;
 
 boolean NodoEventReceived=false;       // Als deze vlag staat, is er een I2C event binnengekomen.
-byte NodoDeviceUnit=0;
-byte NodoDeviceID=0;
+byte NodoPluginID=0;
+byte UserDeviceUnit=0;
 boolean NodoOnline[UNIT_MAX+1];
 boolean FirstTime=true;
+unsigned long DelayBetweenSend=0;
 
-void NodoInit(byte Unit, byte Device)
+/*********************************************************************************************\
+*
+*
+\*********************************************************************************************/
+void NodoInit(byte Unit, byte Plugin)
   {
-  NodoDeviceUnit    = Unit;
-  NodoDeviceID      = Device;
+  UserDeviceUnit    = Unit;
+  NodoPluginID      = PLUGIN_ID;
   
   Wire.begin(I2C_START_ADDRESS + Unit-1);
   Wire.onReceive(ReceiveI2C);   // verwijs naar ontvangstroutine
@@ -111,84 +115,133 @@ void NodoInit(byte Unit, byte Device)
   }
 
 
-void NodoDataSend(byte Unit, byte Par1, unsigned long Par2)
+/*********************************************************************************************\
+* Verzend de Par1 en Par2 data naar de plugin met ID <Plugin> die draait in Nodo <Unit>
+* Als <Unit> nul is, dan verzenden naar alle Nodo's.
+\*********************************************************************************************/
+void Nodo_DataSend(byte Unit, byte Par1, unsigned long Par2)
   {
   struct NodoEventStruct NodoEvent;
-  NodoEvent.Type            = NODO_TYPE_DEVICE_DATA;
-  NodoEvent.Command         = NodoDeviceID;
+  NodoEvent.Type            = NODO_TYPE_PLUGIN_DATA;
+  NodoEvent.Command         = NodoPluginID;
   NodoEvent.Par1            = Par1; 
   NodoEvent.Par2            = Par2;
-  NodoEvent.SourceUnit      = NodoDeviceUnit;
   NodoEvent.DestinationUnit = Unit;
-  NodoEvent.Flags           = 0;
-  NodoEvent.Port            = 0;
-  NodoEvent.Direction       = 0;
   
   NodoEventSend(&NodoEvent);
   }
 
+/*********************************************************************************************\
+* Verzend een UserEvent.
+\*********************************************************************************************/
+void Nodo_UserEventSend(byte Par1, unsigned long Par2)
+  {
+  struct NodoEventStruct NodoEvent;
+  NodoEvent.Type            = NODO_TYPE_EVENT;
+  NodoEvent.Command         = EVENT_USEREVENT;
+  NodoEvent.Par1            = Par1; 
+  NodoEvent.Par2            = Par2;
+  NodoEvent.DestinationUnit = 0;
+  
+  NodoEventSend(&NodoEvent);
+  }
+
+
+/*********************************************************************************************\
+* Verzend een Variabele. 
+\*********************************************************************************************/
+void Nodo_VariableSend(byte Par1, float f)
+  {
+  unsigned long ul;
+  memcpy(&ul, &f,4);
+  
+  struct NodoEventStruct NodoEvent;
+  NodoEvent.Type            = NODO_TYPE_EVENT;
+  NodoEvent.Command         = EVENT_VARIABLE;
+  NodoEvent.Par1            = Par1; 
+  NodoEvent.Par2            = ul;
+  NodoEvent.DestinationUnit = 0;
+  
+  NodoEventSend(&NodoEvent);
+  }
+
+/*********************************************************************************************\
+*
+*
+\*********************************************************************************************/
+#define DELAY_SEND                    100 // Minimale tijd tussen twee zend acties.
+
 void NodoEventSend(struct NodoEventStruct *NodoEventOutgoing)
   {
-  byte b,*B=(byte*)NodoEventOutgoing;
-  byte Checksum;
+  byte *B=(byte*)NodoEventOutgoing;
+
+  NodoEventOutgoing->SourceUnit      = UserDeviceUnit;
+  NodoEventOutgoing->Flags           = 0;
+  NodoEventOutgoing->Port            = 0;
+  NodoEventOutgoing->Direction       = 0;
+  NodoEventOutgoing->Version         = 0;
+
+  Checksum(NodoEventOutgoing);// bereken checksum: crc-8 uit alle bytes in de struct.
+
+  while(DelayBetweenSend > millis() );
+  DelayBetweenSend=millis()+DELAY_SEND;
 
   for(int y=1;y<=UNIT_MAX;y++)
     {            
     // We sturen de events naar bekende Nodo's die zich op de I2C bus bevinden. Tenzij een specifiek unitnummer is opgegeven.
     if(y==NodoEventOutgoing->DestinationUnit || ( NodoEventOutgoing->DestinationUnit==0 && NodoOnline[y]) || FirstTime )
       {
-      Checksum=0;
-
       // verzend Event 
       Wire.beginTransmission(I2C_START_ADDRESS+y-1);
       for(int x=0;x<sizeof(struct NodoEventStruct);x++)
-        {
-        b=*(B+x); 
-        Wire.write(b);
-        Checksum^=b; 
-        }
-      Checksum^=(NODO_COMPATIBILITY & 0xff); // Verwerk build in checksum om communicatie tussen verschillende versies te voorkomen 
-      Wire.write(Checksum); 
+        Wire.write(*(B+x));
+
       Wire.endTransmission(false); // verzend de data, sluit af en geef de bus NOG NIET vrij.
       }
     }
   Wire.endTransmission(true); // verzend de data, sluit af en geef de bus vrij.
   }
 
-  
-boolean NodoReceive(byte *Unit, byte *Par1, unsigned long *Par2)
+
+/*********************************************************************************************\
+* Als er een event binnen is gekomen dan worden de waarden voor Par1 en Par2 gevuld.
+* De routine geeft een nul terug als er geen data gereed staat. Is er een event ontvangen
+* dan wordt het nummer geretourneerd van de Nodo die het event verzonden heeft.
+*
+* LET OP: Par1 en Par2 => call by reference !!!
+\*********************************************************************************************/  
+byte NodoReceive(byte *Par1, unsigned long *Par2)
   {
   if(NodoEventReceived)
     {
     NodoEventReceived     = false;
     *Par1    = NodoEventIncomming.Par1;
     *Par2    = NodoEventIncomming.Par2;
-    *Unit    = NodoEventIncomming.SourceUnit;
-    return true;
+    return NodoEventIncomming.SourceUnit;
     }
-  return false;
+  return 0;
   }
-  
+
+
+/*********************************************************************************************\
+*
+*
+\*********************************************************************************************/  
 void ReceiveI2C(int n)
   {
-  byte b,*B=(byte*)&NodoEventIncomming;
-  byte Checksum=0;
+  byte *B=(byte*)&NodoEventIncomming;
   int x=0;
 
   while(Wire.available()) // Haal de bytes op
     {
-    b=Wire.read(); 
     if(x<sizeof(struct NodoEventStruct))
-      {
-      *(B+x)=b; 
-      Checksum^=b; 
-      }
-    Checksum^=(NODO_COMPATIBILITY & 0xff); // Verwerk build in checksum om communicatie tussen verschillende versies te voorkomen 
+      *(B+x)=Wire.read(); 
     x++;
     }
 
+
   // laatste ontvangen byte bevat de checksum. Als deze gelijk is aan de berekende checksum, dan event uitvoeren
-  if(b==Checksum)    
+  if(Checksum(&NodoEventIncomming))    
     {
     // Maak eerste keer de tabel leeg.
     if(FirstTime)
@@ -200,12 +253,30 @@ void ReceiveI2C(int n)
 
     NodoOnline[NodoEventIncomming.SourceUnit]=true;
 
-    if(   NodoEventIncomming.Type     == NODO_TYPE_DEVICE_DATA                                         // Juiste type event
-       && NodoEventIncomming.Command  == NodoDeviceID                                                  // Device ID 
-       && (NodoEventIncomming.DestinationUnit==NodoDeviceID || NodoEventIncomming.DestinationUnit==0)) // Unit nummer komt overeen of wildcard
+    if(   NodoEventIncomming.Type     == NODO_TYPE_PLUGIN_DATA                                         // Juiste type event
+       && NodoEventIncomming.Command  == NodoPluginID                                                  // Plugin ID 
+       && (NodoEventIncomming.DestinationUnit==NodoPluginID || NodoEventIncomming.DestinationUnit==0)) // Unit nummer komt overeen of wildcard
       NodoEventReceived=true;    
     }
   else
     NodoEventReceived=false;
   }
 
+/*********************************************************************************************\
+ * Deze funktie berekend de CRC-8 checksum uit van een NodoEventStruct. 
+ * Als de Checksum al correct gevuld was wordt er een true teruggegeven. Was dit niet het geval
+ * dan wordt NodoEventStruct.Checksum gevuld met de juiste waarde en een false teruggegeven.
+ \*********************************************************************************************/
+boolean Checksum(NodoEventStruct *event)
+  {
+  byte OldChecksum=event->Checksum;
+  byte NewChecksum=NODO_VERSION_MAJOR;  // Verwerk versie in checksum om communicatie tussen verschillende versies te voorkomen
+
+  event->Checksum=0; // anders levert de beginsituatie een andere checksum op
+
+  for(int x=0;x<sizeof(struct NodoEventStruct);x++)
+    NewChecksum^(*((byte*)event+x)); 
+
+  event->Checksum=NewChecksum;
+  return(OldChecksum==NewChecksum);
+  }
