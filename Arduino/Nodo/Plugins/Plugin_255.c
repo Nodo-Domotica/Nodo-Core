@@ -3,13 +3,13 @@
 //#######################################################################################################
 
 /*********************************************************************************************\
-* Funktionele beschrijving: Dit is een leeg device dat als voorbeeld is opgenomen. Aan de hand
-*                           van dit voorbeeld kan een gebruiker zelf een egen device ontwikkelen.
-*                           Als je device hebt ontwikkeld die voor anderen ook van nut kan zijn,
+* Funktionele beschrijving: Dit is een leeg plugin dat als voorbeeld is opgenomen. Aan de hand
+*                           van dit voorbeeld kan een gebruiker zelf een eigen plugin ontwikkelen.
+*                           Als je plugin hebt ontwikkeld die voor anderen ook van nut kan zijn,
 *                           meld deze dan aan bij het Nodo-team om deze te delen met andere gebruikers
 *                           en om een Plugin-ID aan te vragen.
 * 
-* <Geef hier een beschrijving van de funktionele werking van het device en hoe deze door de gebruiker
+* <Geef hier een beschrijving van de funktionele werking van het plugin en hoe deze door de gebruiker
 * moet worden aangeroepen.>
 *
 * Auteur             : <naam en EMail adres van de ontwikkelaar>
@@ -26,38 +26,31 @@
 * Compiled size      : <grootte> bytes voor een Mega en <grootte> voor een Small.
 * Externe funkties   : <geef hier aan welke funkties worden gebruikt. 
 *
-* <Geef hier een technische toelichting op de werking van het device en eventueel gebruikte protocol>
+* <Geef hier een technische toelichting op de werking van het plugin en eventueel gebruikte protocol>
 * 
-* Tips en aandachtspunten voor programmeren van een device:
+* Tips en aandachtspunten voor programmeren van een plugin:
 * 
 * -  Geheugen is beperkt. Programmeer compact en benut iedere byte RAM en PROGMEM. De Arduino heeft niet de luxe van een PC!
 *    Het is verantwoordelijkheid van de programmeur om te bewaken. Vrij geheugen is opvraagbaar met [Status FreeMem].
 * -  Bouw geen lange wachtlussen in de code. Dit kan leiden tot timings-promlemen waaronder missen van events.
 *    Deze funktie bevindt zich ik een tijdkritische loop. Detecteer zo snel mogelijk of het ontvangen signaal
 *    ook bij dit protocol hoort. 
-* -  De array RawSignal.Pulses[] bevat alle Mark en Space tijden in microseconden. Te beginnen vanaf element [1].
-*    Deze array is reeds gevuld bij aankomst. Element [0] bevat een vermenigvuldigingsfactor voor omrekenen naar
-*    echte microseconden.
-* -  RawSignal.Pulses bevat het aantal posities die een mark/space bevatten. Let op dat de waarde RAW_BUFFER_SIZE
-*    nooit overschreden wordt. Anders gegarandeerd vastlopers! Positie [1] bevat de 'mark' van de startbit.  * -  De struct NodoEventStruct bevat alle informatie die nodig is voor verwerking en weergave van het event
-*    dat is ontvangen of moet worden weergegeven. 
-*    of er voldoende geheugen over blijft voor stabiele werking van de Nodo.
-* -  Om uitwisselbaar te blijven met andere Nodo versies en Nodo gebruikers, geen aanpassingen aan de Code maken.
+* -  Om uitwisselbaar te blijven met andere Nodo versies en Nodo gebruikers, geen aanpassingen aan de Nodo code maken.
 *    Let op dat je bij gebruik van functies uit de Nodo code je je eigen code gevoelig makt voor onderhoud
 *    bij uitbrengen van nieuwe releases.
 * -  Maak geen gebruik van interrupt driven routines, dit verstoort (mogelijk) de werking van de I2C, Serial en ethernet
 *    communicatie.
-* -  Maak slecht in uitzonderlijke gevallen gebruik van Globals en pas geen waarden van globals uit de Nodo code aan.
+* -  Maak slechts in uitzonderlijke gevallen gebruik van Globals en pas geen waarden van globals uit de Nodo code aan.
 * -  Besteed uitgebreid aandacht aan de documentatie van het protocol. Indien mogelijk verwijzen naar originele
 *    specificatie.
 *
-* Voorbeelden van devices:
+* Voorbeelden van plugins:
 * - Digitale temperatuur sensoren (Zoals Dallas DS18B20)
 * - Digitale vochtigheidssensoren (Zoals DTH-11)
 * - Vergroten van aantal digitale wired met een multiplexer. Tot 8-ingangen per Wired poort met bv. een 74151.
 * - Acht verschillende analoge ingangen meten met eén WiredIn met een LTC1380.
 * - WiredOut uitgangen uitbreiden tot 8, 16, 32, 64 verschillende digitale uitgangen met behulp van 74HCT595
-* - I2C devices aansturen via de SLC en SDA lijnen van de arduino.
+* - I2C plugins aansturen via de SLC en SDA lijnen van de arduino.
 * - etcetera.
 *
 * De Wired poorten en de additionele IO poorten op de Mega in uw eigen code gebruiken aan de hand van de naam zoals deze zijn gedefinieerd
@@ -83,29 +76,29 @@
 \*********************************************************************************************/
  
 
-// Ieder device heeft een uniek ID. Deze ID's worden onderhouden door het Nodo team. Als je een device hebt geprogrammeerd
+// Ieder plugin heeft een uniek ID. Deze ID's worden onderhouden door het Nodo team. Als je een plugin hebt geprogrammeerd
 // die van waarde kan zijn voor andere gebruikers, meldt deze dan aan bij het Nodo team zodat deze kan worden meegenomen
-// in de Nodo-releases. Plugin 255 is een "knutsel" device voor de gebruiker.
+// in de Nodo-releases. Plugin 255 is een "knutsel" plugin voor de gebruiker.
 
-// Een device heeft naast een uniek ID ook een eigen MMI string die de gebruiker kan invoeren via Telnet, Serial, HTTP 
-// of een script. Geef hier de naam op. De afhandeling is niet hoofdletter gevoelig. Voor devicenamen geld de volgende conventie:
+// Een plugin heeft naast een uniek ID ook een eigen MMI string die de gebruiker kan invoeren via Telnet, Serial, HTTP 
+// of een script. Geef hier de naam op. De afhandeling is niet hoofdletter gevoelig. Voor pluginnamen geld de volgende conventie:
 // voor een commando: ObjectActieOptie (ApparaatZend, ApparaatZendSnel)
 // voor een event   : Object           (Apparaat)
 
 #define PLUGIN_NAME "MyPlugin"
 
-// Ieder device heeft een uniek ID. De reeks 250..255 zijn vrij te gebruiken. Alle andere ID's worden toegekend door
-// het Nodo team. Zelf een nuttig device gemaakt, laat het ons weten!
+// Ieder plugin heeft een uniek ID. De reeks 250..255 zijn vrij te gebruiken. Alle andere ID's worden toegekend door
+// het Nodo team. Zelf een nuttig plugin gemaakt, laat het ons weten!
 
 #define PLUGIN_ID   255
 
-// In de funktienaam zit het devicenummer verwerkt zodat deze eenduidig kan worden geidentificeerd en aangeroepen. De Nodo
+// In de funktienaam zit het pluginnummer verwerkt zodat deze eenduidig kan worden geidentificeerd en aangeroepen. De Nodo
 boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
   {
   boolean success=false;
 
-  // Deze device code wordt vanuit meerdere plaatsen in de Nodo code aangeroepen, steeds met een doel. Dit doel bevindt zich
-  // in de variabele [function]. De volgende doelen zijn gedefinieerd:
+  // Deze plugin code wordt vanuit meerdere plaatsen in de Nodo code aangeroepen, steeds met een doel. Dit doel bevindt zich
+  // in de variabele [function]. De volgende zijn gedefinieerd:
   //
   // PLUGIN_RAWSIGNAL_IN  => Afhandeling van een via RF/IR ontvangen event
   // PLUGIN_COMMAND       => Commando voor afhandelen/uitsturen van een event.
@@ -115,21 +108,36 @@ boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
   // PLUGIN_INIT          => Eenmalig, direct na opstarten van de Nodo
   // PLUGIN_DATA          => T.b.v. uitwisselen gegevens andere (zelfbouw) apparaten met Nodo.
   // PLUGIN_EVENT_IN      => Vlak voor verwerking van een binnengekomen event.
-
-  #ifdef PLUGIN_255_CORE
+  // PLUGIN_SERIAL_IN     => Zodra er bytes via de seriele poort zijn ontvangen
+  // PLUGIN_ETHERNET_IN   => Zodra er bytes via de seriele poort zijn ontvangen
+  
+  
   switch(function)
     {    
+    #ifdef PLUGIN_255_CORE
+
+    case PLUGIN_INIT:
+      {
+      // Code hier wordt eenmalig aangeroepen direct na een reboot van de Nodo en voordat
+      // er enige event is verwerkt.
+      // Heb je geen initialisatie taken, dan mag je deze case weglaten om geheugen te besparen.
+
+      Serial.println(F("*** debug: MyPlugin: PLUGIN_INIT")); //??? Debug
+      break;
+      }
+
     case PLUGIN_EVENT_IN:
       {
       // Zodra er een event is binnengekomen wordt dit stuk code aangeroepen. Het mogelijk om zo 
-      // een event te 'onderscheppen' en er een alternatieve verwerking of gegevens manipulatie 
-      // plaats te laten vinden. Events kunnen afkomstig zijn van RF, IR, Serial, Wired, TelNet, HTTP, CLOCK, WIRED 
-      // Er komen uitsluitend events langs deze code die van buiten de Nodo komen. Dus geen events die voort   
+      // een event te 'onderscheppen' en er een alternatieve verwerking plaats te laten vinden. 
+      // Events kunnen afkomstig zijn van RF, IR, Serial, Wired, TelNet, HTTP, CLOCK, WIRED 
+      // Er komen uitsluitend events langs deze code die van buiten de Nodo komen. Dus geen events die voortkomen   
       // uit verwerking van de eventlist.
       // Maak je geen gebruik van deze functie, dan bij voorkeur deze case geheel verwijderen.
       // Event bevat de gegevens die door de Nodo verwerkt zullen gaan worden. Deze gegevens kunnen worden
       // gebruikt en eventueel naar wens veranderd. De gewijzigde gegevens worden verwerkt als een regulier event.
       // Als event->Command wordt gevuld met 0, dan stopt de verwerking van het binnengekomen event.  
+      Serial.println(F("*** debug: MyPlugin: PLUGIN_EVENT_IN"));
       break;      
       }
 
@@ -142,6 +150,8 @@ boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
       // Heb je geen taken die periodiek uitgevoerd moeten worden, dan mag je deze case weglaten om geheugen te besparen.
       // Event bevat bij binnenkomst geen geldige gegevens. Deze gegevens kunnen wel worden gevuld. Als wordt 
       // teruggekeerd met success=true dan worden de gewijzigde gegevens verwerkt als een regulier event.
+
+      // Serial.println(F("*** debug: MyPlugin: PLUGIN_ONCE_A_SECOND"));
       break;
       }
 
@@ -149,12 +159,18 @@ boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
       {
       // Code op deze plaats wordt uitgevoerd zodra er een event via RF of IR is binnengekomen
       // De RawSignal buffer is gevuld met pulsen. de struct [event] moet hier worden samengesteld.      
+      // -  De array RawSignal.Pulses[] bevat alle Mark en Space tijden in microseconden. Te beginnen vanaf element [1].
+      //    Deze array is reeds gevuld bij aankomst. Element [0] bevat een vermenigvuldigingsfactor voor omrekenen naar
+      //    echte microseconden.
+      // -  RawSignal.Pulses bevat het aantal posities die een mark/space bevatten. Let op dat de waarde RAW_BUFFER_SIZE
+      //    nooit overschreden wordt. Anders gegarandeerd vastlopers! Positie [1] bevat de 'mark' van de startbit.  * -  De struct NodoEventStruct bevat alle informatie die nodig is voor verwerking en weergave van het event
+      //    dat is ontvangen of moet worden weergegeven. 
       // Als decoderen is gelukt, dan de variabele [success] vullen met een true. De Nodo zal het 
       // event vervolgens als een regulier event afhandelen.
-      // Heb je geen signalen te verwerken, dan mag je deze case weglaten om geheugen te besparen.
       // Als je het ontvangen signaal hebt gedecodeerd dan moet je vervolgens het Nodo event/commando
       // vullen zodat deze door de Nodo verder verwerkt kan worden. Kijk bij Plugin_001 als voorbeeld.
       // Maak je geen gebruik van deze functie, dan bij voorkeur deze case geheel verwijderen.
+      Serial.println(F("*** debug: MyPlugin: PLUGIN_RAWSIGNAL_IN"));
       break;
       }
 
@@ -171,7 +187,7 @@ boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
       //        {
       //        // Event deel
       //        byte Type;                         ==> Altijd vullen met de waarde NODO_TYPE_PLUGIN_DATA.
-      //        byte Command;                      ==> Geef hier het device nummer op waar de data wordt verwerkt.
+      //        byte Command;                      ==> Geef hier het plugin nummer op waar de data wordt verwerkt.
       //        byte Par1;                         ==> 8 bits waarde vrij voor gebruiker.
       //        unsigned long Par2;                ==> 32 bits waarde vrij voor gebruiker.
       //      
@@ -184,7 +200,8 @@ boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
       //        byte Version;                      ==> Geen gebruikersfunctie.
       //        };
       
-      Serial.print(F("*** debug: MyPlugin: Received I2C : Unit="));Serial.print(event->SourceUnit);
+      Serial.println(F("*** debug: MyPlugin: PLUGIN_DATA"));
+      Serial.print(F("Received I2C : Unit="));Serial.print(event->SourceUnit);
       Serial.print(", Plugin="); Serial.print(event->Command);
       Serial.print(", Par1=");   Serial.print(event->Par1);
       Serial.print(", Par2=");   Serial.print(event->Par2);
@@ -200,20 +217,20 @@ boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
       
     case PLUGIN_COMMAND:
       {
-      // Als er vanuit de gebruiker, script of eventlist dit device een event moet uitsturen, dan is op het
+      // Als er vanuit de gebruiker, script of eventlist dit plugin een event moet uitsturen, dan is op het
       // moment dat de code hier wordt aangeroepen, de struct [event] gevuld en gereed voor verwerking.
       // Als voor verlaten de struct [event] is gevuld met een ander event, dan wordt deze uitgevoerd als een nieuw
       // event. Dit kan bijvoorbeeld worden benut als een variabele wordt uitgelezen en de waarde verder verwerkt
       // moet worden.
       // Maak je geen gebruik van deze functie, dan bij voorkeur deze case geheel verwijderen.
 
-      Serial.println(F("*** debug: MyPlugin: PLUGIN_COMMAND: Hello World!")); //??? Debug
-
+      Serial.println(F("*** debug: MyPlugin: PLUGIN_COMMAND"));
+      
       // In dit voorbeeld versturen we Data naar een UserPlugin via de I2C-bus.
       struct NodoEventStruct UserPluginEvent;
       ClearEvent(&UserPluginEvent);
 
-      UserPluginEvent.Command           = 255; // Verwijzing naar dit device nummer.
+      UserPluginEvent.Command           = 255; // Verwijzing naar dit plugin nummer.
       UserPluginEvent.Type              = NODO_TYPE_PLUGIN_DATA;
       UserPluginEvent.DestinationUnit   = 0; // 0=alle units
       UserPluginEvent.Par1              = event->Par1;
@@ -228,21 +245,71 @@ boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
 
       success=true;
       break;
-      }
-      
-    case PLUGIN_INIT:
-      {
-      // Code hier wordt eenmalig aangeroepen na een reboot van de Nodo.
-      // Heb je geen initialisatie taken, dan mag je deze case weglaten om geheugen te besparen.
+      }      
 
-      Serial.println(F("*** debug: MyPlugin: PLUGIN_INIT")); //??? Debug
-      break;
+
+    case PLUGIN_SERIAL_IN:
+      {
+      // Zodra er een teken op de Serial poort binnenkomt wordt dit deel van de plugin aangeroepen.
+      // Deze funktie kan worden gebruikt voor speciale afhandeling van seriele informatie.
+      // Let hierbij wel op dat de tekens slechts beschikbaar zijn en nog niet uitgelezen.
+      // Bij aankomst hebben zowel Event als string een ongeldige waarde en mogen dus niet worden gebruikt.  
+      // Zorg zelf voor binnenhalen van de tekens en verwerking van de gegevens. De binnengekomen input
+      // wordt niet meer door de Nodo verwerkt zodra deze hier binnen de plugin is opgehaald.
+      // Deze funktie werkt zowel op een Small als een Mega, let echter op dat de MMI voor een Mega 
+      // via Serial niet meer werkt omdat alle input hier wordt afgevangen.
+      // Maak je geen gebruik van deze functie, dan bij voorkeur deze case geheel verwijderen.
+      // Vanuit PLUGIN_INIT kan eventueeel de baudrate (opnieuw) worden ingesteld. (Default 19200)
+      // Er kan maar -1- plugin gelijktijdig gebruik van deze plugin-case gebruik maken.
+
+      Serial.println(F("*** debug: MyPlugin: PLUGIN_SERIAL_IN"));
+
+      // Met onderstaande regels kan de input worden opgehaald. In dit voorbeeld weggelaten omdat
+      // zoals boven beschreven de MMI van de mega anders niet meer werkt. 
+      // 
+      // while(Serial.available())
+      //   {
+      //   Serial.print(F("Received="));
+      //   Serial.println(Serial.read());
+      //   }                
+
+      break;      
+
+      }
+
+    case PLUGIN_ETHERNET_IN:
+      {
+      // Zodra er een teken via ethernet binnenkomt wordt dit deel van de plugin aangeroepen.
+      // Deze funktie kan worden gebruikt voor speciale afhandeling van binnenkomende informatie.
+      // Let hierbij wel op dat de tekens slechts beschikbaar zijn en nog niet uitgelezen.
+      // Bij aankomst hebben zowel Event als string een ongeldige waarde en mogen dus niet worden gebruikt.  
+      // Zorg zelf voor binnenhalen van de tekens en verwerking van de gegevens. De binnengekomen input
+      // wordt niet meer door de Nodo verwerkt zodra deze hier binnen de plugin is opgehaald.
+      // Deze funktie werkt uitsluitend op een als een Mega. Er wordt gebruik gemaakt van de settings zoals
+      // ingesteld met IP, PortInput, etcetera.
+      // Er kan maar -1- plugin gelijktijdig gebruik van deze plugin-case gebruik maken.
+      //
+      // LET OP: Het verdient de aanbeveling om gebruik te maken van standaard HTTP-request. Gebruik deze
+      //         plugin call dus uitsluitend daar waar andere communcatietussen Nodo en de omgeving
+      //         nodig is. Ook moet er rekening mee worden gehouden dat, zodra een Ethernet plugin wordt
+      //         gebruikt, de Nodo niet meer kan communiceren via reguliere HTTP-requests.
+      //
+      //         Als conventie behouden we de Telnet voorziening voor low-level toegang tot de Nodo.
+      //
+      // Maak je geen gebruik van deze functie, dan bij voorkeur deze case geheel verwijderen.
+    
+          
+      Serial.println(F("*** debug: MyPlugin: PLUGIN_ETHERNET_IN"));
+
+      break;      
+
       }
     #endif // CORE
     
     #if NODO_MEGA // alleen relevant voor een Nodo Mega want de Small heeft geen MMI!
     case PLUGIN_MMI_IN:
       {
+      Serial.print(F("*** debug: MyPlugin: PLUGIN_MMI_IN, string="));Serial.println(string); //??? Debug
       // Zodra er via een script, HTTP, Telnet of Serial een commando wordt ingevoerd, wordt dit deel van de code langs gelopen.
       // Op deze plek kan de invoer [string] worden geparsed en omgezet naar een struct [event]. Als parsen van de invoerstring [string]
       // is gelukt en de struct is gevuld, dan de variabele [success] vullen met true zodat de Nodo zorg kan dragen voor verdere verwerking van het event.
@@ -255,12 +322,11 @@ boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
       // Dit is het eerste argument in het commando. 
       if(GetArgv(string,TempStr,1))
         {
-        // Als het door de gebruiker ingegeven ommando/event overeenkomt met de naam van dit device...
+        // Als het door de gebruiker ingegeven ommando/event overeenkomt met de naam van dit plugin...
         if(strcasecmp(TempStr,PLUGIN_NAME)==0)
           {
           // in dit voorbeeld even laten weten dat de code wordt geraakt. Directe output naar
-          // Serial is normaal gesproken NIET wenselijk in een device. 
-          Serial.print(F("*** debug: MyPlugin: PLUGIN_MMI_IN, string="));Serial.println(string); //??? Debug
+          // Serial is normaal gesproken NIET wenselijk in een plugin. 
 
           // Vervolgens tweede parameter gebruiken
           if(GetArgv(string,TempStr,2)) 
@@ -275,10 +341,10 @@ boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
               // heb je het laatste parameter geparsen, dan de variabele [success] vullen 
               // met een true zodat verdere verwerking van het event plaats kan vinden.
 
-              // Een device kan worden verwerkt als een commando of een event. Geef dit aan want 
+              // Een plugin kan worden verwerkt als een commando of een event. Geef dit aan want 
               // op moment van invoer moet de Nodo t.b.v. latere verwerking weten hoe de zaken afgehandeld moeten worden
               event->Type    = NODO_TYPE_PLUGIN_COMMAND;
-              event->Command = 255; // nummer van dit device
+              event->Command = 255; // nummer van dit plugin
               
               // Als success wordt gevuld met true, dan wordt het commando/event
               // geaccepteerd als geldig.
