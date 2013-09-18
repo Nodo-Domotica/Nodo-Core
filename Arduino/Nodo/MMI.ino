@@ -1432,18 +1432,10 @@ int ExecuteLine(char *Line, byte Port)
           default:
             {              
             // Ingevoerde commando is niet gevonden. 
-            // Loop de devices langs om te checken if er een hit is. Zo ja, dan heeft de Plugin_x funktie de struct
-            // met de juiste waarden gevuld. 
-            y=false;
-            for(x=0; !y && x<PLUGIN_MAX; x++)
-              if(Plugin_ptr[x]!=0)
-                {
-                EventToExecute.Command=Plugin_id[x];
-                if(Plugin_ptr[x](PLUGIN_MMI_IN,&EventToExecute,Command))
-                   y=true;
-                }
-
-            if(!y)
+            // Loop de devices langs om te checken if er een hit is. Zo ja, dan de struct
+            // met de juiste waarden gevuld. Is er geen hit, dan keetr PluginCall() terug met een false.
+            // in dat geval kijken of er een commando op SDCard staat
+            if(!PluginCall(PLUGIN_MMI_IN,&EventToExecute,Command))
               {
               // Als het geen regulier commando was EN geen commando met afwijkende MMI en geen Plugin, dan kijken of file op SDCard staat)
               error=FileExecute(Command, EventToExecute.Par2==VALUE_ON);

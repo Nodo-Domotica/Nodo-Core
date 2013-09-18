@@ -242,7 +242,15 @@ R575:
 - Issue 760:	WiredOut poorten in Small werken niet goed ==> nog niet getest!!!
 - Issue 771:	KAKU A1,on komt binnen als Boot 1!!!
 
+R588
+- Issue 778:	PLUGIN_EVENT_IN lijkt niet te werken zoals m.i. bedoeld
+- PLUGIN_SERIAL_IN toegevoegd als case in de plugin. Zie Plugin_255 voor toelichting.
+- PLUGIN_ETHERNET_IN toegevoegd als case in de plugin. Zie Plugin_255 voor toelichting.
+
 Nog te doen:                                                                       ]
+
+testen:
+- PLUGIN_DATA behandeling in Plugins
 - Aanpassen en testen: Lock mechanisme
 
 \*****************************************************************************************/
