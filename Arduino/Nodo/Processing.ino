@@ -75,6 +75,7 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
         {
         // onderstaande mogen WEL worden doorgelaten als de lock aan staat
         case CMD_LOCK:                // om weer te kunnen unlocken
+        case EVENT_VARIABLE:           // Maakt ontvangst van variabelen mogelijk
         case EVENT_USEREVENT:           // Noodzakelijk voor uitwisseling userevents tussen Nodo.
         case CMD_STATUS:              // uitvragen status is onschuldig en kan handig zijn.
         case EVENT_MESSAGE:             // Voorkomt dat een message van een andere Nodo een error genereert

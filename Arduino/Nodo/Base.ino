@@ -172,8 +172,9 @@ byte HOME_NODO=1; // Home adres van Nodo's die tot één groep behoren (1..7). H
 #define CMD_WIRED_PULLUP                126
 #define CMD_WIRED_SMITTTRIGGER          127
 #define CMD_WIRED_THRESHOLD             128
+#define CMD_FILE_WRITE_LINE             129
 
-#define COMMAND_MAX                     128 // hoogste commando
+#define COMMAND_MAX                     129 // hoogste commando
 
 #define MESSAGE_OK                      0
 #define MESSAGE_UNKNOWN_COMMAND         1
@@ -187,7 +188,7 @@ byte HOME_NODO=1; // Home adres van Nodo's die tot één groep behoren (1..7). H
 #define MESSAGE_SENDTO_ERROR            9
 #define MESSAGE_SDCARD_ERROR            10
 #define MESSAGE_BREAK                   11
-#define MESSAGE_RAWSIGNAL_SAVED         12 //??? wordt niet gebruikt
+#define MESSAGE_RAWSIGNAL_SAVED         12 
 #define MESSAGE_PLUGIN_UNKNOWN          13
 #define MESSAGE_PLUGIN_ERROR            14
 #define MESSAGE_VERSION_ERROR           15
@@ -329,6 +330,7 @@ prog_char PROGMEM Cmd_125[]="WiredOut";
 prog_char PROGMEM Cmd_126[]="WiredPullup";
 prog_char PROGMEM Cmd_127[]="WiredSmittTrigger";
 prog_char PROGMEM Cmd_128[]="WiredThreshold";
+prog_char PROGMEM Cmd_129[]="FileWriteLine";
 
 
 // tabel die refereert aan de commando strings
@@ -345,7 +347,7 @@ Cmd_80,Cmd_81,Cmd_82,Cmd_83,Cmd_84,Cmd_85,Cmd_86,Cmd_87,Cmd_88,Cmd_89,
 Cmd_90,Cmd_91,Cmd_92,Cmd_93,Cmd_94,Cmd_95,Cmd_96,Cmd_97,Cmd_98,Cmd_99,
 Cmd_100,Cmd_101,Cmd_102,Cmd_103,Cmd_104,Cmd_105,Cmd_106,Cmd_107,Cmd_108,Cmd_109,
 Cmd_110,Cmd_111,Cmd_112,Cmd_113,Cmd_114,Cmd_115,Cmd_116,Cmd_117,Cmd_118,Cmd_119,
-Cmd_120,Cmd_121,Cmd_122,Cmd_123,Cmd_124,Cmd_125,Cmd_126,Cmd_127,Cmd_128};
+Cmd_120,Cmd_121,Cmd_122,Cmd_123,Cmd_124,Cmd_125,Cmd_126,Cmd_127,Cmd_128,Cmd_129};
 
 
 // Message max. 40 pos    "1234567890123456789012345678901234567890"
@@ -682,7 +684,6 @@ byte HTTPClientIP[4];                                       // IP adres van de H
 // RealTimeclock DS1307
 struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,DaylightSaving,DaylightSavingSetMonth,DaylightSavingSetDate; int Year;}Time; // Hier wordt datum & tijd in opgeslagen afkomstig van de RTC.
 
-
 #define RAW_BUFFER_SIZE            256                      // Maximaal aantal te ontvangen 128 bits is voldoende voor capture meeste signalen.
 struct RawSignalStruct                                      // Variabelen geplaatst in struct zodat deze later eenvoudig kunnen worden weggeschreven naar SDCard
   {
@@ -724,7 +725,6 @@ void setup()
   for(x=0;x<ALARM_MAX;x++)
     AlarmPrevious[x]=0xff; // Deze waarde kan niet bestaan en voldoet dus.
   #endif
-
 
   // Initialiseer in/output poorten.
   pinMode(PIN_IR_RX_DATA, INPUT);
@@ -876,6 +876,10 @@ void setup()
 
   #if NODO_MEGA
   Serial.println(F("\nReady.\n"));
+
+  // Voer bestand AutoExec uit als deze bestaat. die goeie oude MD-DOS tijd ;-)
+  FileExecute("autoexec",false);
+
   bitWrite(HW_Config,HW_SERIAL,Serial.available()?1:0); // Serial weer uitschakelen.
   #endif
   }
@@ -912,31 +916,68 @@ void loop()
     // Check voor IR, I2C of RF events
     if(ScanEvent(&ReceivedEvent)) 
       ProcessEvent1(&ReceivedEvent); // verwerk binnengekomen event.
-      
-//    //??? test
-//    unsigned long pkt=0;
-//    if(millis()-pkt>10)
-//      {
-//      Serial.print("Onderbreking hoofdloop (ms): ");
-//      Serial.println(millis()-pkt);
-//      }
-//    pkt=millis();
     
-    // 1: niet tijdkritische processen die periodiek uitgevoerd moeten worden
-    if(LoopIntervalTimer_1<millis())// korte interval
+    // 1: minder tijdkritische processen die periodiek uitgevoerd moeten worden
+    if(LoopIntervalTimer_1<millis()) // korte interval
       {
       LoopIntervalTimer_1=millis()+Loop_INTERVAL_1; // reset de timer  
 
       switch(Slice_1++)
         {
-        case 0:  // binnen Slice_1
+        case 0: // binnen Slice_1
+          {
+          // SERIAL: *************** kijk of er data klaar staat op de seriële poort **********************
+          if(Serial.available())
+            {
+            PluginCall(PLUGIN_SERIAL_IN,0,0);
+
+            #if NODO_MEGA     
+            bitWrite(HW_Config,HW_SERIAL,1);// Input op seriele poort ontvangen. Vanaf nu ook output naar Seriele poort want er is klaarblijkelijk een actieve verbinding
+            StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;
+
+            while(StaySharpTimer>millis()) // blijf even paraat voor luisteren naar deze poort en voorkom dat andere input deze communicatie onderbreekt
+              {          
+              while(Serial.available())
+                {                        
+                SerialInByte=Serial.read();                
+                if(Settings.EchoSerial==VALUE_ON)
+                  Serial.write(SerialInByte);// echo ontvangen teken
+
+                StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
+                
+                if(isprint(SerialInByte))
+                  {
+                  if(SerialInByteCounter<INPUT_BUFFER_SIZE) // alleen tekens aan de string toevoegen als deze nog in de buffer past.
+                    InputBuffer_Serial[SerialInByteCounter++]=SerialInByte;
+                  }
+                  
+                if(SerialInByte=='\n')
+                  {
+                  SerialHold(true);
+                  InputBuffer_Serial[SerialInByteCounter]=0; // serieel ontvangen regel is compleet
+                  ExecutionDepth=0;
+                  RaiseMessage(ExecuteLine(InputBuffer_Serial,VALUE_SOURCE_SERIAL));
+                  Serial.write('>'); // Prompt
+                  SerialInByteCounter=0;  
+                  InputBuffer_Serial[0]=0; // serieel ontvangen regel is verwerkt. String leegmaken
+                  SerialHold(false);
+                  StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
+                  }
+                }
+              }
+            #endif
+            }// if(Serial.available())
+          break;
+          }
+
+        case 1:  // binnen Slice_1
           {
           Led(GREEN);
           break;
           }
         
         #if NODO_MEGA
-        case 1: // binnen Slice_1
+        case 2: // binnen Slice_1
           {
           if(bitRead(HW_Config,HW_ETHERNET))
             // IP Event: *************** kijk of er een Event van IP komt **********************    
@@ -947,8 +988,8 @@ void loop()
               }
           break;
           }
-    
-        case 2: // binnen Slice_1 
+   
+        case 3: // binnen Slice_1 
           {
           // IP Telnet verbinding : *************** kijk of er verzoek tot verbinding vanuit een terminal is **********************    
           if(bitRead(HW_Config,HW_ETHERNET))
@@ -1067,61 +1108,13 @@ void loop()
             }
           break;
           }
-          
-
         #endif
         
-        case 3: // binnen Slice_1
-          {
-          // SERIAL: *************** kijk of er data klaar staat op de seriële poort **********************
-          if(Serial.available())
-            {
-            if(Serial.available())
-              PluginCall(PLUGIN_SERIAL_IN,0,0);
-         #if NODO_MEGA     
-            bitWrite(HW_Config,HW_SERIAL,1);// Input op seriele poort ontvangen. Vanaf nu ook output naar Seriele poort want er is klaarblijkelijk een actieve verbinding
-            StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;
-
-            while(StaySharpTimer>millis()) // blijf even paraat voor luisteren naar deze poort en voorkom dat andere input deze communicatie onderbreekt
-              {          
-              while(Serial.available())
-                {                        
-                SerialInByte=Serial.read();                
-                if(Settings.EchoSerial==VALUE_ON)
-                  Serial.write(SerialInByte);// echo ontvangen teken
-
-                StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
-                
-                if(isprint(SerialInByte))
-                  {
-                  if(SerialInByteCounter<INPUT_BUFFER_SIZE) // alleen tekens aan de string toevoegen als deze nog in de buffer past.
-                    InputBuffer_Serial[SerialInByteCounter++]=SerialInByte;
-                  }
-                  
-                if(SerialInByte=='\n')
-                  {
-                  SerialHold(true);
-                  InputBuffer_Serial[SerialInByteCounter]=0; // serieel ontvangen regel is compleet
-                  ExecutionDepth=0;
-                  RaiseMessage(ExecuteLine(InputBuffer_Serial,VALUE_SOURCE_SERIAL));
-                  Serial.write('>'); // Prompt
-                  SerialInByteCounter=0;  
-                  InputBuffer_Serial[0]=0; // serieel ontvangen regel is verwerkt. String leegmaken
-                  SerialHold(false);
-                  StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
-                  }
-                }
-              }
-          #endif
-            }
-          break;
-          }
-
         default:  // binnen Slice_1
           Slice_1=0;
           break;
-        }
-      }// switch(Slice_1)
+        }// switch
+      }//LoopTinterval 1
 
     // 2: niet tijdkritische processen die periodiek uitgevoerd moeten worden
     if(LoopIntervalTimer_2<millis())// lange interval

@@ -247,10 +247,14 @@ R588
 - PLUGIN_SERIAL_IN toegevoegd als case in de plugin. Zie Plugin_255 voor toelichting.
 - PLUGIN_ETHERNET_IN toegevoegd als case in de plugin. Zie Plugin_255 voor toelichting.
 
+R5xx
+- Issue 780:	PLUGIN_SERIAL_IN werkt niet op een Small
+- Bug opgelost bij inschakelen PullUP voor WiredIn poorten.
+- [FileWriteLine <bestandnaam>] toegevoegd. Alle vervolgtekens na de ';' worden naar <bestandsnaam> geschreven.
+- Bij opstarten Mega wordt het script "autoexec" uitgevoerd.         
 Nog te doen:                                                                       ]
 
 testen:
-- PLUGIN_DATA behandeling in Plugins
 - Aanpassen en testen: Lock mechanisme
 
 \*****************************************************************************************/
