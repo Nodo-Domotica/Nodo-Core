@@ -344,7 +344,8 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
   
     case CMD_WIRED_PULLUP:
       Settings.WiredInputPullUp[EventToExecute->Par1-1]=EventToExecute->Par2; // EventToExecute->Par1 is de poort[1..]
-      if(Settings.WiredInputPullUp[x]==VALUE_ON)//??? waar wordt deze x geinitialiseerd?
+      
+      if(EventToExecute->Par2==VALUE_ON)
         pinMode(A0+PIN_WIRED_IN_1+EventToExecute->Par1-1,INPUT_PULLUP);
       else
         pinMode(A0+PIN_WIRED_IN_1+EventToExecute->Par1-1,INPUT);

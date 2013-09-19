@@ -230,7 +230,7 @@ boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
       struct NodoEventStruct UserPluginEvent;
       ClearEvent(&UserPluginEvent);
 
-      UserPluginEvent.Command           = 255; // Verwijzing naar dit plugin nummer.
+      UserPluginEvent.Command           = PLUGIN_ID; // Verwijzing naar dit plugin nummer.
       UserPluginEvent.Type              = NODO_TYPE_PLUGIN_DATA;
       UserPluginEvent.DestinationUnit   = 0; // 0=alle units
       UserPluginEvent.Par1              = event->Par1;

@@ -22,39 +22,47 @@ boolean ScanEvent(struct NodoEventStruct *Event)// Deze routine maakt deel uit v
    }
 
   // IR: *************** kijk of er data start **********************
-  else if(FetchSignal(PIN_IR_RX_DATA,LOW,SIGNAL_TIMEOUT_IR))
+  else if((*portInputRegister(IRport)&IRbit)==0)
     {
-    if(AnalyzeRawSignal(Event))
+    if(FetchSignal(PIN_IR_RX_DATA,LOW,SIGNAL_TIMEOUT_IR))
       {
-      // Als geen repeterend signaal OF Vorige is al enige tijd geleden, dan hebben we een event
-      if(BlockReceivingTimer>millis())
+       if(AnalyzeRawSignal(Event))
         {
-        WaitFree(VALUE_SOURCE_IR, 2000);
-        }
-      else
-        {
-        Fetched=VALUE_SOURCE_IR;
-        if(RawSignal.Repeats)
-          BlockReceivingTimer=millis()+SIGNAL_REPEAT_TIME;
+        // Als geen repeterend signaal OF Vorige is al enige tijd geleden, dan hebben we een event
+        bitWrite(HW_Config,HW_IR_RX,true);
+        if(BlockReceivingTimer>millis())
+          {
+          WaitFree(VALUE_SOURCE_IR, 2000);
+          }
+        else
+          {
+          Fetched=VALUE_SOURCE_IR;
+          if(RawSignal.Repeats)
+            BlockReceivingTimer=millis()+SIGNAL_REPEAT_TIME;
+          }
         }
       }
     }
 
   // RF: *************** kijk of er data start **********************
-  else if(FetchSignal(PIN_RF_RX_DATA,HIGH,SIGNAL_TIMEOUT_RF))
+  else if((*portInputRegister(RFport)&RFbit)==RFbit)
     {
-    if(AnalyzeRawSignal(Event))
+    if(FetchSignal(PIN_RF_RX_DATA,HIGH,SIGNAL_TIMEOUT_RF))
       {
-      // Als geen repeterend signaal OF Vorige is al enige tijd geleden, dan hebben we een event
-      if(BlockReceivingTimer>millis())
+      if(AnalyzeRawSignal(Event))
         {
-        WaitFree(VALUE_SOURCE_RF, 2000);
-        }
-      else
-        {
-        Fetched=VALUE_SOURCE_RF;
-        if(RawSignal.Repeats)
-          BlockReceivingTimer=millis()+SIGNAL_REPEAT_TIME;
+        bitWrite(HW_Config,HW_RF_RX,true);
+        // Als geen repeterend signaal OF Vorige is al enige tijd geleden, dan hebben we een event
+        if(BlockReceivingTimer>millis())
+          {
+          WaitFree(VALUE_SOURCE_RF, 2000);
+          }
+        else
+          {
+          Fetched=VALUE_SOURCE_RF;
+          if(RawSignal.Repeats)
+            BlockReceivingTimer=millis()+SIGNAL_REPEAT_TIME;
+          }
         }
       }
     }
@@ -100,7 +108,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)// Deze routine maakt deel uit v
     if(Event->DestinationUnit==0 || Event->DestinationUnit==Settings.Unit)
       return true;
 
-    }
+    }// fetched
   return false;
   }
 

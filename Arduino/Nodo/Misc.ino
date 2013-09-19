@@ -1554,17 +1554,19 @@ boolean Substitute(char* Input)
             break;    
 
           case VALUE_RECEIVED_EVENT:
-            Event2str(&LastReceived,TmpStr2);
+            Event2str(&LastReceived,TmpStr);
+            GetArgv(TmpStr,TmpStr2,1);
             break;    
 
-//          case VALUE_RECEIVED_PAR1:
-//            strcpy(TmpStr2,cmd2str(LastReceived.Par1));
-//            break;    
-//
-//          case VALUE_RECEIVED_PAR2:
-//            strcpy(TmpStr2,cmd2str(LastReceived.Par2));
-//            break;    
-// ??? toekomstig.
+          case VALUE_RECEIVED_PAR1:
+            Event2str(&LastReceived,TmpStr);
+            GetArgv(TmpStr,TmpStr2,2);
+            break;    
+
+          case VALUE_RECEIVED_PAR2:
+            Event2str(&LastReceived,TmpStr);
+            GetArgv(TmpStr,TmpStr2,3);
+            break;    
 
           default:
             {

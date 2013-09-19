@@ -342,7 +342,6 @@ inline boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
   boolean toggle=false;
   RawSignal.Multiply=50;
 
-  //???noInterrupts();//???
   do{// lees de pulsen in microseconden en plaats deze in de tijdelijke buffer RawSignal
     numloops = 0;
     while(((*portInputRegister(port) & bit) == stateMask) ^ toggle) // while() loop *A*
@@ -353,10 +352,8 @@ inline boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
 
     // bij kleine stoorpulsen die geen betekenis hebben zo snel mogelijk weer terug
     if(PulseLength<MIN_PULSE_LENGTH)
-      {
-      // interrupts();//???
       return false;
-      }
+
     toggle=!toggle;    
 
     // sla op in de tabel RawSignal
@@ -364,7 +361,6 @@ inline boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
     }
   while(RawCodeLength<RAW_BUFFER_SIZE && numloops<=maxloops);// loop *B* Zolang nog ruimte in de buffer
 
-  //interrupts();//???
   if(RawCodeLength>=MIN_RAW_PULSES)
     {
     RawSignal.Number=RawCodeLength-1;

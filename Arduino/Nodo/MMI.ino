@@ -622,6 +622,16 @@ int ExecuteLine(char *Line, byte Port)
       if(LineChar=='!') 
         LinePos=LineLength+1; // ga direct naar einde van de regel.
 
+      // Chat teken. 
+      if(LineChar=='$')
+        {
+        y=bitRead(HW_Config,HW_SERIAL);
+        bitWrite(HW_Config,HW_SERIAL,1);
+        PrintString(Line+LinePos, VALUE_ALL);
+        bitWrite(HW_Config,HW_SERIAL,y);
+        LinePos=LineLength+1; // ga direct naar einde van de regel.
+        }
+
       // als puntkomma (scheidt opdrachten) of einde string
       if((LineChar=='$' || LineChar=='!' || LineChar==';' || LineChar==0) && CommandPos>0)
         {
@@ -682,13 +692,11 @@ int ExecuteLine(char *Line, byte Port)
               error=MESSAGE_INVALID_PARAMETER;
            break;
                         
-//          case EVENT_MESSAGE:
-//            EventToExecute.Type=NODO_TYPE_EVENT; 
-//            if(EventToExecute.Par1 <1 || (EventToExecute.Par1+MESSAGE_UNKNOWN_COMMAND) > COMMAND_MAX)
-//              error=MESSAGE_INVALID_PARAMETER;
-//            else
-//              EventToExecute.Par1 += (MESSAGE_UNKNOWN_COMMAND-1);
-//            break;???
+          case EVENT_MESSAGE:
+            EventToExecute.Type=NODO_TYPE_EVENT; 
+            if(EventToExecute.Par1 <1 || EventToExecute.Par1>MESSAGE_MAX)
+              error=MESSAGE_INVALID_PARAMETER;
+            break;
               
           case CMD_TIMER_SET:
             EventToExecute.Type=NODO_TYPE_COMMAND;
@@ -946,7 +954,7 @@ int ExecuteLine(char *Line, byte Port)
             EventToExecute.Type=NODO_TYPE_COMMAND;
             EventToExecute.Par2=0L;
             for(x=0;x<strlen(Settings.Password);x++)
-              {
+              {// beetje hutselen met bitjes ;-)
               EventToExecute.Par2=EventToExecute.Par2<<5;
               EventToExecute.Par2^=Settings.Password[x];
               }
@@ -1020,17 +1028,16 @@ int ExecuteLine(char *Line, byte Port)
             TmpStr1[25]=0; // voor geval de string te lang is.
             strcpy(Settings.Password,TmpStr1);
 
-//            // Als een lock actief, dan lock op basis van nieuwe password instellen
-//            if(Settings.Lock)
-//              {
-//              a=0L;
-//              for(x=0;x<strlen(Settings.Password);x++)
-//                {
-//                a=a<<5;
-//                a^=Settings.Password[x];
-//                }
-//              Settings.Lock=a&0x7fff;
-//              }//??? lock nog aanpassen.
+            // Als een lock actief, dan lock op basis van nieuwe password instellen
+            if(Settings.Lock)
+              {
+              Settings.Lock=0L;
+              for(x=0;x<strlen(Settings.Password);x++)
+                {
+                Settings.Lock=Settings.Lock<<5;
+                Settings.Lock^=Settings.Password[x];
+                }
+              }
 
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
@@ -1404,6 +1411,18 @@ int ExecuteLine(char *Line, byte Port)
               strcat(TmpStr1,".dat");
               strcpy(TempLogFile,TmpStr1);
               FileWriteMode=60;
+              EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+              }
+            else
+              error=MESSAGE_INVALID_PARAMETER;
+            break;
+
+          case CMD_FILE_WRITE_LINE:
+            if(GetArgv(Command,TmpStr1,2) && strlen(TmpStr1)<=8)
+              {
+              strcat(TmpStr1,".dat");
+              AddFileSDCard(TmpStr1,Line+LinePos+1);
+              LinePos=LineLength+1; // ga direct naar einde van de regel.
               EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
               }
             else
