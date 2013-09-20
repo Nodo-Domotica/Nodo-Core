@@ -1,6 +1,6 @@
 #define NODO_VERSION_MAJOR             3  // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define NODO_VERSION_MINOR             1  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
-#define NODO_BUILD                   587  // Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                   591  // Ophogen bij iedere Build / versiebeheer.
 
 #define UNIT_NODO                      1 // Unit nummer van deze Nodo
 #define NODO_HOME                      1 // Home adres van Nodo's die tot één groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
@@ -438,6 +438,8 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define HW_PLUGIN      13
 #define HW_I2C         14
 #define HW_WEBAPP      15
+#define HW_WIRED_IN    16
+#define HW_WIRED_OUT   17
 
 // Definitie van de speciale hardware uitvoeringen van de Nodo.
 #define BIC_DEFAULT                  0  // Standaard Nodo zonder specifike hardware aansturing
@@ -1195,6 +1197,7 @@ void loop()
               }
             if(z)
               {
+              bitWrite(HW_Config,HW_WIRED_IN,true);
               ClearEvent(&ReceivedEvent);
               ReceivedEvent.Type             = NODO_TYPE_EVENT;
               ReceivedEvent.Command          = EVENT_WIRED_IN;

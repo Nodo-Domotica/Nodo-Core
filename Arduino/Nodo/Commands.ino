@@ -352,29 +352,15 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
       break;
                  
     case CMD_WIRED_OUT:
-      if(EventToExecute->Par1==0)
-        {
-        x=1;
-        y=WIRED_PORTS;
-        }
-      else
-        {
-        x=EventToExecute->Par1;
-        y=EventToExecute->Par1;
-        }
-
-      for(x;x<=y;x++)
-        {
-        digitalWrite(PIN_WIRED_OUT_1+x-1,(EventToExecute->Par2==VALUE_ON));
-        WiredOutputStatus[x-1]=(EventToExecute->Par2==VALUE_ON);
-
-        #if NODO_MEGA
-        TempEvent.Par1=x;
-        TempEvent.Port=VALUE_SOURCE_SYSTEM;
-        TempEvent.Direction=VALUE_DIRECTION_OUTPUT;
-        PrintEvent(&TempEvent,VALUE_ALL);
-        #endif
-        }
+      digitalWrite(PIN_WIRED_OUT_1+EventToExecute->Par1-1,(EventToExecute->Par2==VALUE_ON));
+      WiredOutputStatus[EventToExecute->Par1-1]=(EventToExecute->Par2==VALUE_ON);
+      bitWrite(HW_Config,HW_WIRED_OUT,true);
+      #if NODO_MEGA
+      TempEvent.Par1=EventToExecute->Par1;
+      TempEvent.Port=VALUE_SOURCE_SYSTEM;
+      TempEvent.Direction=VALUE_DIRECTION_OUTPUT;
+      PrintEvent(&TempEvent,VALUE_ALL);
+      #endif
       break;
                          
     case CMD_SETTINGS_SAVE:
