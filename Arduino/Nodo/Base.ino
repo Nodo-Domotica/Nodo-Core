@@ -434,12 +434,14 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define HW_CLOCK        9
 #define HW_RF_RX       10
 #define HW_IR_RX       11
-#define HW_PULSE       12
-#define HW_PLUGIN      13
-#define HW_I2C         14
-#define HW_WEBAPP      15
-#define HW_WIRED_IN    16
-#define HW_WIRED_OUT   17
+#define HW_I2C         12
+#define HW_WIRED_IN    13
+#define HW_WIRED_OUT   14
+#define HW_RF_TX       15
+#define HW_IR_TX       16
+#define HW_WEBAPP      17
+#define HW_PULSE       18
+#define HW_PLUGIN      19
 
 // Definitie van de speciale hardware uitvoeringen van de Nodo.
 #define BIC_DEFAULT                  0  // Standaard Nodo zonder specifike hardware aansturing

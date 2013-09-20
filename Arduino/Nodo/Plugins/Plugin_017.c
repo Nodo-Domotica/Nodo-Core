@@ -1,5 +1,5 @@
 //#######################################################################################################
-//#################################### Plugin-011: NodoTest    ############################################
+//#################################### Plugin-017: NodoTest    ############################################
 //#######################################################################################################
 
 /*********************************************************************************************\
@@ -31,12 +31,13 @@ void HWSendTestEvent(byte port)
   // stellen dat de zend/ontvang delen van de poorten goed funktioneren.        
   struct NodoEventStruct TempEvent;
   ClearEvent(&TempEvent);    
-  TempEvent.Type                  = NODO_TYPE_EVENT;
-  TempEvent.Command               = EVENT_BOOT;  
-  TempEvent.Par1                  = Settings.Unit;
+  TempEvent.Type                  = NODO_TYPE_COMMAND;
+  TempEvent.Command               = CMD_SEND_USEREVENT;  
+  TempEvent.Par1                  = 255;
+  TempEvent.Par2                  = 255;
   TempEvent.DestinationUnit       = 0;
-  TempEvent.Flags                |= TRANSMISSION_CONFIRM;
   TempEvent.Port                  = port;
+  TempEvent.Flags                 = TRANSMISSION_CONFIRM;
   SendEvent(&TempEvent, false, true,Settings.WaitFree==VALUE_ON);
   }
 
@@ -115,7 +116,9 @@ void ShowTestResults(void)
   Serial.print(F("Serial        = "));if(bitRead(HW_Config,HW_SERIAL)){Serial.println("Ok");}else{Serial.println("-");}
   Serial.print(F("Clock         = "));if(bitRead(HW_Config,HW_CLOCK)){Serial.println("Ok");}else{Serial.println("-");}
   Serial.print(F("RF_RX         = "));if(bitRead(HW_Config,HW_RF_RX)){Serial.println("Ok");}else{Serial.println("-");}
+  Serial.print(F("RF_TX         = "));if(bitRead(HW_Config,HW_RF_TX)){Serial.println("Ok");}else{Serial.println("-");}
   Serial.print(F("IR_RX         = "));if(bitRead(HW_Config,HW_IR_RX)){Serial.println("Ok");}else{Serial.println("-");}
+  Serial.print(F("IR_TX         = "));if(bitRead(HW_Config,HW_IR_TX)){Serial.println("Ok");}else{Serial.println("-");}
   Serial.print(F("I2C           = "));if(bitRead(HW_Config,HW_I2C)){Serial.println("Ok");}else{Serial.println("-");}
   Serial.print(F("Pulsecount    = "));if(bitRead(HW_Config,HW_PULSE)){Serial.println("Ok");}else{Serial.println("-");}
   Serial.print(F("WebApp        = "));if(bitRead(HW_Config,HW_WEBAPP)){Serial.println("Ok");}else{Serial.println("-");}
@@ -156,13 +159,13 @@ void ShowTestResults(void)
 
 
 #define PLUGIN_NAME "NodoTest"
-#define PLUGIN_ID   11
+#define PLUGIN_ID   17
 
 boolean Active=false;
 unsigned long HW_ConfigCheck=0L;
 int HWSecCounter;
   
-boolean Plugin_011(byte function, struct NodoEventStruct *event, char *string)
+boolean Plugin_017(byte function, struct NodoEventStruct *event, char *string)
   {
   boolean success=false;
   
@@ -176,6 +179,24 @@ boolean Plugin_011(byte function, struct NodoEventStruct *event, char *string)
         pinMode(PIN_WIRED_OUT_1+x,INPUT); // definieer Arduino pin's voor Wired-Out
       }
 
+    case PLUGIN_EVENT_IN:
+      {
+      if(event->Type     == NODO_TYPE_EVENT && 
+         event->Command  == EVENT_USEREVENT &&
+         event->Par1     == 255 &&
+         event->Par2     == 255)
+        {
+        switch(event->Port)
+          {
+          case VALUE_SOURCE_IR:
+            bitWrite(HW_Config,HW_IR_TX,true);
+            break;
+          case VALUE_SOURCE_RF:
+            bitWrite(HW_Config,HW_RF_TX,true);
+            break;
+          }
+        }          
+      }
 
     case PLUGIN_ONCE_A_SECOND:
       {
@@ -187,7 +208,7 @@ boolean Plugin_011(byte function, struct NodoEventStruct *event, char *string)
             HWSendTestEvent(VALUE_SOURCE_RF);
             break;
 
-          case 4:
+          case 5:
             HWSendTestEvent(VALUE_SOURCE_IR);
             break;
 
@@ -257,7 +278,7 @@ boolean Plugin_011(byte function, struct NodoEventStruct *event, char *string)
         if(strcasecmp(TempStr,PLUGIN_NAME)==0)
           {
           event->Type    = NODO_TYPE_PLUGIN_COMMAND;
-          event->Command = 11; // nummer van dit plugin
+          event->Command = PLUGIN_ID; // nummer van dit plugin
           if(GetArgv(string,TempStr,2))
             event->Par2    = str2int(TempStr);
           success=true;
