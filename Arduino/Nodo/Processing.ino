@@ -406,7 +406,7 @@ byte QueueSend(boolean fast)
       else        
         Event.Flags = TRANSMISSION_SENDTO | TRANSMISSION_NEXT | TRANSMISSION_LOCK;
 
-      HoldTransmission=millis()+50; // SendTo mag events direct achter elkaar zenden.
+      HoldTransmission=millis()+100; // SendTo mag events direct achter elkaar zenden.
       SendEvent(&Event,false,false,false);
       }
     
