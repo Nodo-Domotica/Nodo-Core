@@ -608,8 +608,8 @@ int ExecuteLine(char *Line, byte Port)
     }
   else
     {
-    if(Substitute(Line)!=0)
-      error=MESSAGE_INVALID_PARAMETER;
+//    if(Substitute(Line)!=0)
+//      error=MESSAGE_INVALID_PARAMETER;
 
     CommandPos=0;
     LinePos=0;    
@@ -620,7 +620,9 @@ int ExecuteLine(char *Line, byte Port)
   
       // Comment teken. hierna verder niets meer doen.
       if(LineChar=='!') 
+        {
         LinePos=LineLength+1; // ga direct naar einde van de regel.
+        }
 
       // Chat teken. 
       if(LineChar=='$')
@@ -633,10 +635,14 @@ int ExecuteLine(char *Line, byte Port)
         }
 
       // als puntkomma (scheidt opdrachten) of einde string
-      if((LineChar=='$' || LineChar=='!' || LineChar==';' || LineChar==0) && CommandPos>0)
+      if((LineChar==';' || LineChar==0) && CommandPos>0)
         {
         Command[CommandPos]=0;
         CommandPos=0;
+
+        if(Substitute(Command)!=0)
+          error=MESSAGE_INVALID_PARAMETER;
+
         ClearEvent(&EventToExecute);
         EventToExecute.Port=Port;
         
@@ -1463,6 +1469,12 @@ int ExecuteLine(char *Line, byte Port)
               // als script niet te openen, dan is het ingevoerde commando ongeldig.
               if(error==MESSAGE_UNABLE_OPEN_FILE)
                 error=MESSAGE_UNKNOWN_COMMAND;
+              }
+            if(error)
+              {
+              strcpy(TmpStr1,Command);
+              strcat(TmpStr1,"???");
+              PrintString(TmpStr1,VALUE_ALL);
               }
             }
           }// switch(command...@2
