@@ -46,7 +46,9 @@ boolean AddFileSDCard(char *FileName, char *Line)
   if(LogFile)
     {
     r=true;
-    LogFile.write((uint8_t*)Line,strlen(Line));
+    for(int x=0;x<strlen(Line);x++)
+      if(isprint(Line[x]))
+        LogFile.write(Line[x]);
     LogFile.write('\n'); // nieuwe regel
     LogFile.close();
     }

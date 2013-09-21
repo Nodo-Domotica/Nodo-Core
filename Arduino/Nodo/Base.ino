@@ -1,6 +1,6 @@
 #define NODO_VERSION_MAJOR             3  // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define NODO_VERSION_MINOR             1  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
-#define NODO_BUILD                   591  // Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                   593  // Ophogen bij iedere Build / versiebeheer.
 
 #define UNIT_NODO                      1 // Unit nummer van deze Nodo
 #define NODO_HOME                      1 // Home adres van Nodo's die tot één groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
@@ -18,6 +18,10 @@
 #define NODO_TX_TO_RX_SWITCH_TIME    500 // Tijd die andere Nodo's nodig hebben om na zenden weer gereed voor ontvangst te staan. (Opstarttijd 433RX modules)
 #define SIGNAL_ANALYZE_SHARPNESS      50 // Scherpte c.q. foutmarge die gehanteerd wordt bij decoderen van RF/IR signaal.
 #define MIN_RAW_PULSES                16 // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
+#define ETHERNET_MAC_0              0xCC // Dit is byte 0 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
+#define ETHERNET_MAC_1              0xBB // Dit is byte 1 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
+#define ETHERNET_MAC_2              0xAA // Dit is byte 2 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
+
 
 #include <SPI.h>
 #include <Arduino.h>
@@ -407,7 +411,6 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define PLUGIN_DATA                  7
 #define PLUGIN_EVENT_IN              8
 #define PLUGIN_SERIAL_IN             9
-#define PLUGIN_ETHERNET_IN          10
 
 #define RED                            1 // Led = Rood
 #define GREEN                          2 // Led = Groen
@@ -986,10 +989,7 @@ void loop()
           if(bitRead(HW_Config,HW_ETHERNET))
             // IP Event: *************** kijk of er een Event van IP komt **********************    
             if(HTTPServer.available())
-              {
-              PluginCall(PLUGIN_ETHERNET_IN,0,0);
               ExecuteIP();
-              }
           break;
           }
    
@@ -1053,8 +1053,8 @@ void loop()
                      TerminalClient.write('?');// geen ruimte meer.
                   }
 
-                else if(TerminalInByte==0x0a || TerminalInByte==0x0d)
-                  {
+                else if(TerminalInByte==0x0a /*LF*/ || TerminalInByte==0x0d /*CR*/)
+                  {                    
                   if(Settings.EchoTelnet==VALUE_ON)
                     TerminalClient.println("");// Echo de nieuwe regel.
                   TerminalConnected=TERMINAL_TIMEOUT;

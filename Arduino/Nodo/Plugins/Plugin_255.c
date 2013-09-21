@@ -274,35 +274,6 @@ boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
       //   }                
 
       break;      
-
-      }
-
-    case PLUGIN_ETHERNET_IN:
-      {
-      // Zodra er een teken via ethernet binnenkomt wordt dit deel van de plugin aangeroepen.
-      // Deze funktie kan worden gebruikt voor speciale afhandeling van binnenkomende informatie.
-      // Let hierbij wel op dat de tekens slechts beschikbaar zijn en nog niet uitgelezen.
-      // Bij aankomst hebben zowel Event als string een ongeldige waarde en mogen dus niet worden gebruikt.  
-      // Zorg zelf voor binnenhalen van de tekens en verwerking van de gegevens. De binnengekomen input
-      // wordt niet meer door de Nodo verwerkt zodra deze hier binnen de plugin is opgehaald.
-      // Deze funktie werkt uitsluitend op een als een Mega. Er wordt gebruik gemaakt van de settings zoals
-      // ingesteld met IP, PortInput, etcetera.
-      // Er kan maar -1- plugin gelijktijdig gebruik van deze plugin-case gebruik maken.
-      //
-      // LET OP: Het verdient de aanbeveling om gebruik te maken van standaard HTTP-request. Gebruik deze
-      //         plugin call dus uitsluitend daar waar andere communcatietussen Nodo en de omgeving
-      //         nodig is. Ook moet er rekening mee worden gehouden dat, zodra een Ethernet plugin wordt
-      //         gebruikt, de Nodo niet meer kan communiceren via reguliere HTTP-requests.
-      //
-      //         Als conventie behouden we de Telnet voorziening voor low-level toegang tot de Nodo.
-      //
-      // Maak je geen gebruik van deze functie, dan bij voorkeur deze case geheel verwijderen.
-    
-          
-      Serial.println(F("*** debug: MyPlugin: PLUGIN_ETHERNET_IN"));
-
-      break;      
-
       }
     #endif // CORE
     
