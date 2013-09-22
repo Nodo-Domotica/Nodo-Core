@@ -377,7 +377,8 @@ boolean GetStatus(struct NodoEventStruct *Event)
   ClearEvent(Event);
 
   Event->Command=xCommand;
-  
+  Event->Type=NODO_TYPE_EVENT;
+
   switch (xCommand)
     {
     case VALUE_EVENTLIST_COUNT:
@@ -676,6 +677,7 @@ void ResetFactory(void)
   RebootNodo=true;
   }
 
+
 /**********************************************************************************************\
  * Geeft de status weer of genereert een event.
  * Par1 = Command
@@ -684,33 +686,59 @@ void Status(struct NodoEventStruct *Request)
   {
   byte CMD_Start,CMD_End;
   byte Par1_Start,Par1_End;
-  byte x;
+  byte Port=0,x;
   boolean s;
-  boolean Display=Request->Port==VALUE_SOURCE_SERIAL || Request->Port==VALUE_SOURCE_TELNET || Request->Port==VALUE_SOURCE_FILE || Request->Port==VALUE_SOURCE_HTTP;
-  
+  boolean Display=false;
   struct NodoEventStruct Result;
-  ClearEvent(&Result);
-  Result.Command=Request->Par1;
-  
+
+
   #if NODO_MEGA          
   char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  boolean dhcp=(Settings.Nodo_IP[0] + Settings.Nodo_IP[1] + Settings.Nodo_IP[2] + Settings.Nodo_IP[3])==0;
   #endif
 
+  // bepaal waar het resultaat naar toe moet.
+  switch(Request->Port)
+    {
+    // bronnen waar het resultaat aan teruggestuurd kan worden:
+    case VALUE_SOURCE_IR:
+    case VALUE_SOURCE_RF:
+    case VALUE_SOURCE_I2C:
+      Port=Request->Port;
+      break;
+
+    #if NODO_MEGA
+    // bronnen waar de output geprint moet wordenaals tekst
+    case VALUE_SOURCE_SERIAL:
+    case VALUE_SOURCE_TELNET:
+    case VALUE_SOURCE_HTTP:
+      Port=Request->Port;
+      Display=true;
+      break;
+    #endif
+  
+    // bronnen waar niet teruggestuurd kan worden en dus naar alle poorten:
+    case VALUE_SOURCE_SYSTEM:
+    case VALUE_SOURCE_WIRED:
+    case VALUE_SOURCE_FILE:
+    case VALUE_SOURCE_EVENTLIST:              
+      Port=VALUE_ALL;
+      break;      
+    }
+
+  Result.Command=Request->Par1;
+  
   if(Request->Par2==VALUE_ALL)
     Request->Par2==0;
 
   #if NODO_MEGA          
-  if(Request->Par1==0)
-    {
+  if(Display && (Request->Par1==0 || Request->Par1==VALUE_ALL))
     PrintWelcome();
-    return;
-    }
   #endif
-  
-  if(Display && Request->Par1==VALUE_ALL)
+
+  if(Request->Par1==VALUE_ALL)
     {
     Request->Par2=0;
-    PrintWelcome();
     CMD_Start=0;
     CMD_End=COMMAND_MAX;
     }
@@ -723,10 +751,6 @@ void Status(struct NodoEventStruct *Request)
     CMD_End=Request->Par1;
     }
 
-#if NODO_MEGA          
-  boolean dhcp=(Settings.Nodo_IP[0] + Settings.Nodo_IP[1] + Settings.Nodo_IP[2] + Settings.Nodo_IP[3])==0;
-#endif
-
   for(x=CMD_Start; x<=CMD_End; x++)
     {
     s=false;
@@ -738,14 +762,14 @@ void Status(struct NodoEventStruct *Request)
         #if NODO_MEGA          
         case CMD_CLIENT_IP:
           sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_CLIENT_IP),Settings.Client_IP[0],Settings.Client_IP[1],Settings.Client_IP[2],Settings.Client_IP[3]);
-          PrintString(TempString, Request->Port);
+          PrintString(TempString, Port);
           break;
 
         case CMD_NODO_IP:
           sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_NODO_IP), Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
           if(dhcp)
             strcat(TempString,"(DHCP)");
-          PrintString(TempString,Request->Port);
+          PrintString(TempString, Port);
           break;
   
         case CMD_GATEWAY:
@@ -753,7 +777,7 @@ void Status(struct NodoEventStruct *Request)
           if(!dhcp)
             {
             sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_GATEWAY),Settings.Gateway[0],Settings.Gateway[1],Settings.Gateway[2],Settings.Gateway[3]);
-            PrintString(TempString,Request->Port);
+            PrintString(TempString, Port);
             }
           break;
   
@@ -762,7 +786,7 @@ void Status(struct NodoEventStruct *Request)
           if(!dhcp)
             {
             sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_SUBNET),Settings.Subnet[0],Settings.Subnet[1],Settings.Subnet[2],Settings.Subnet[3]);
-            PrintString(TempString,Request->Port);
+            PrintString(TempString, Port);
             }
           break;
   
@@ -771,33 +795,33 @@ void Status(struct NodoEventStruct *Request)
             {
             // DnsServer
             sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_DNS_SERVER),Settings.DnsServer[0],Settings.DnsServer[1],Settings.DnsServer[2],Settings.DnsServer[3]);
-            PrintString(TempString, Request->Port);
+            PrintString(TempString, Port);
             }
           break;
   
         case CMD_PORT_INPUT:
           sprintf(TempString,"%s %d",cmd2str(CMD_PORT_INPUT), Settings.PortInput);
-          PrintString(TempString,Request->Port);
+          PrintString(TempString, Port);
           break;
   
         case CMD_PORT_OUTPUT:
           sprintf(TempString,"%s %d",cmd2str(CMD_PORT_OUTPUT), Settings.PortOutput);
-          PrintString(TempString,Request->Port);
+          PrintString(TempString, Port);
           break;
   
         case CMD_HTTP_REQUEST:
           sprintf(TempString,"%s %s",cmd2str(CMD_HTTP_REQUEST),Settings.HTTPRequest);
-          PrintString(TempString,Request->Port);
+          PrintString(TempString, Port);
           break;
   
         case CMD_ID:
           sprintf(TempString,"%s %s",cmd2str(CMD_ID), Settings.ID);
-          PrintString(TempString,Request->Port);
+          PrintString(TempString, Port);
           break;
   
         case CMD_TEMP:
           sprintf(TempString,"%s %s",cmd2str(CMD_TEMP), Settings.Temp);
-          PrintString(TempString, Request->Port);
+          PrintString(TempString, Port);
           break;
   
   #endif
@@ -875,19 +899,12 @@ void Status(struct NodoEventStruct *Request)
         Result.Command=x;
         Result.Par1=y;
         GetStatus(&Result); 
+        Result.Port=Port;
         
         if(Result.Command!=0)
           {
           if(!Display)
-            {
-            if(Request->Port==VALUE_SOURCE_SYSTEM)            
-              Result.Port=VALUE_ALL;
-            else
-              Result.Port=Request->Port;
-           //??? Event->Flags|=TRANSMISSION_VIEW_ONLY; // forceer dat deze wordt behandeld als een event
-           Result.Type = NODO_TYPE_EVENT;
-           SendEvent(&Result,false,true,Settings.WaitFree==VALUE_ON); // verzend als event            
-            }
+            SendEvent(&Result,false,true,Settings.WaitFree==VALUE_ON); // verzend als event            
   
           #if NODO_MEGA
           else
@@ -908,6 +925,7 @@ void Status(struct NodoEventStruct *Request)
   free(TempString);
   #endif
   }
+
 
 
 #if NODO_MEGA
@@ -1516,7 +1534,7 @@ boolean Substitute(char* Input)
 
   Res=0;
   while(*(InputPos)!=0)// zolang einde van de string Input nog niet bereikt
-  {
+   {
     if(*InputPos=='%') 
     {
       if(!Grab)

@@ -429,15 +429,18 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
 
     case CMD_SENDTO:
       Transmission_SendToUnit=EventToExecute->Par1;
-       Transmission_SendToAll=EventToExecute->Par2;
-      // als de SendTo wordt opgeheven vanuit de master, geef dit dan aan alle Nodo's te kennen
-      // anders blijven deze in de wachtstand staan.
-      if(Transmission_SendToUnit==0)
-        {
-        EventToExecute->SourceUnit=Settings.Unit;
-        EventToExecute->Port=VALUE_ALL;
-        SendEvent(EventToExecute, false,true, Settings.WaitFree==VALUE_ON);
-        }
+      Transmission_SendToAll=EventToExecute->Par2&0xff;
+      Transmission_SendToFast=(EventToExecute->Par2>>8)&0xff;
+      
+//      // als de SendTo wordt opgeheven vanuit de master, geef dit dan aan alle Nodo's te kennen
+//      // anders blijven deze in de wachtstand staan.
+//      if(Transmission_SendToUnit==0)
+//        {
+//        EventToExecute->SourceUnit=Settings.Unit;
+//        EventToExecute->Port=VALUE_ALL;
+//        SendEvent(EventToExecute, false,true, Settings.WaitFree==VALUE_ON);
+//        }
+//???
       break;    
 
     case CMD_EVENTLIST_ERASE:
@@ -495,11 +498,11 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         FileList("/RAW",true,0);
       break;
 
-    case CMD_RAWSIGNAL_SEND: 
+    case CMD_RAWSIGNAL_SEND:
       if(RawSignalLoad(EventToExecute->Par2))
         {
         ClearEvent(&TempEvent);
-        TempEvent.Port=VALUE_ALL;
+        TempEvent.Port=EventToExecute->Par1;
         TempEvent.Type= NODO_TYPE_EVENT;
         TempEvent.Command=EVENT_RAWSIGNAL;
         TempEvent.Par1=EventToExecute->Par1;
@@ -510,7 +513,6 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute)
         }
       else
         error=MESSAGE_UNABLE_OPEN_FILE;
-
       break;
 
     case CMD_LOG: 
