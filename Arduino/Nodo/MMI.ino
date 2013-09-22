@@ -246,6 +246,7 @@ void PrintString(char* LineToPrint, byte Port)
 #define PAR3_INT          14
 #define PAR4_INT          15
 #define PAR5_INT          16
+#define PAR3_TEXT         17
 
 
 void Event2str(struct NodoEventStruct *Event, char* EventString)
@@ -310,8 +311,8 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         break;
 
       // Par2 als hex waarde
-      case CMD_RAWSIGNAL_SEND:
       case CMD_RAWSIGNAL_ERASE:
+      case CMD_RAWSIGNAL_SEND:
       case EVENT_RAWSIGNAL:
         ParameterToView[0]=PAR2_INT_HEX;
         break;
@@ -399,10 +400,24 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         break;
 
       // Par2 int en par1 als tekst
-      case CMD_SENDTO:
       case CMD_FILE_EXECUTE:
         ParameterToView[0]=PAR2_INT;
         ParameterToView[1]=PAR1_TEXT;
+        break;
+        
+      // Par1 ls int, Par2 als tekst, Par3(uit Par2) als tekst.
+      case CMD_SENDTO:
+        if(Event->Par1==0)
+          {
+          Event->Par1=VALUE_OFF;
+          ParameterToView[0]=PAR1_TEXT;
+          }
+        else
+          {
+          ParameterToView[0]=PAR1_INT;
+          ParameterToView[1]=PAR2_TEXT;
+          ParameterToView[3]=PAR3_TEXT;
+          }
         break;
         
       // geen parameters.
@@ -468,6 +483,10 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
 
         case PAR2_TEXT:
           strcat(EventString,cmd2str(Event->Par2 & 0xff));
+          break;
+
+        case PAR3_TEXT:
+          strcat(EventString,cmd2str((Event->Par2>>8) & 0xff));
           break;
 
         case PAR2_DIM:
@@ -944,14 +963,28 @@ int ExecuteLine(char *Line, byte Port)
             break;
 
           case CMD_SENDTO:
+            EventToExecute.Par2=0UL;
             EventToExecute.Type=NODO_TYPE_COMMAND;
-            Transmission_SendToAll=EventToExecute.Par2;
-            if(EventToExecute.Par1<=UNIT_MAX)
+            
+            if(StringFind(Command, cmd2str(VALUE_OFF))!=-1)
               {
-              Transmission_SendToUnit=EventToExecute.Par1;
+              EventToExecute.Par1=0;
               }
             else
-              Transmission_SendToUnit=0;
+              {
+              if(EventToExecute.Par1>UNIT_MAX)
+                error=MESSAGE_INVALID_PARAMETER;
+              else
+                {
+                // Zoek of in een van de parameters All staat
+                if(StringFind(Command, cmd2str(VALUE_ALL))!=-1)
+                  EventToExecute.Par2|=(unsigned long)VALUE_ALL;  
+                  
+                // Zoek of in een van de parameters Fast staat
+                if(StringFind(Command, cmd2str(VALUE_FAST))!=-1)
+                  EventToExecute.Par2|=(((unsigned long)VALUE_FAST)<<8);
+                }
+              }
             ExecuteCommand(&EventToExecute);            
             EventToExecute.Command=0;
             break;    
@@ -1225,11 +1258,9 @@ int ExecuteLine(char *Line, byte Port)
             EventToExecute.Type=NODO_TYPE_COMMAND;
             // Haal Par1 uit het commando. let op Par1 gebruiker is een 32-bit hex-getal die wordt opgeslagen in struct Par2.
             if(GetArgv(Command,TmpStr1,2))
-              {
               EventToExecute.Par2=str2int(TmpStr1);
-              if(GetArgv(Command,TmpStr1,3))
-                EventToExecute.Par1=str2cmd(TmpStr1);
-              }
+            else
+              error=MESSAGE_INVALID_PARAMETER;                        
             break;
     
           case CMD_FILE_GET_HTTP:
@@ -1531,7 +1562,7 @@ int ExecuteLine(char *Line, byte Port)
     // Verzend de inhoud van de queue naar de slave Nodo
     if(Transmission_SendToUnit!=Settings.Unit && Transmission_SendToUnit!=0 && error==0 && QueuePosition>0)
       {
-      error=QueueSend(false);
+      error=QueueSend(Transmission_SendToFast==VALUE_FAST);
       if(error)
         {
         CommandPos=0;

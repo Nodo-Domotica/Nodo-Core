@@ -1,6 +1,6 @@
 #define NODO_VERSION_MAJOR             3  // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
-#define NODO_VERSION_MINOR             1  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
-#define NODO_BUILD                   593  // Ophogen bij iedere Build / versiebeheer.
+#define NODO_VERSION_MINOR             2  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
+#define NODO_BUILD                   594  // Ophogen bij iedere Build / versiebeheer.
 
 #define UNIT_NODO                      1 // Unit nummer van deze Nodo
 #define NODO_HOME                      1 // Home adres van Nodo's die tot één groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
@@ -177,8 +177,8 @@ byte HOME_NODO=1; // Home adres van Nodo's die tot één groep behoren (1..7). H
 #define CMD_WIRED_SMITTTRIGGER          127
 #define CMD_WIRED_THRESHOLD             128
 #define CMD_FILE_WRITE_LINE             129
-
-#define COMMAND_MAX                     129 // hoogste commando
+#define VALUE_FAST                      130
+#define COMMAND_MAX                     130 // hoogste commando
 
 #define MESSAGE_OK                      0
 #define MESSAGE_UNKNOWN_COMMAND         1
@@ -202,7 +202,7 @@ byte HOME_NODO=1; // Home adres van Nodo's die tot één groep behoren (1..7). H
 #if NODO_MEGA
 
 // Vaste positie
-prog_char PROGMEM Cmd_0[]="???";
+prog_char PROGMEM Cmd_0[]="-";
 prog_char PROGMEM Cmd_1[]="Boot";
 prog_char PROGMEM Cmd_2[]="Sound";
 prog_char PROGMEM Cmd_3[]="UserEvent";
@@ -335,6 +335,7 @@ prog_char PROGMEM Cmd_126[]="WiredPullup";
 prog_char PROGMEM Cmd_127[]="WiredSmittTrigger";
 prog_char PROGMEM Cmd_128[]="WiredThreshold";
 prog_char PROGMEM Cmd_129[]="FileWriteLine";
+prog_char PROGMEM Cmd_130[]="Fast";
 
 
 // tabel die refereert aan de commando strings
@@ -351,8 +352,8 @@ Cmd_80,Cmd_81,Cmd_82,Cmd_83,Cmd_84,Cmd_85,Cmd_86,Cmd_87,Cmd_88,Cmd_89,
 Cmd_90,Cmd_91,Cmd_92,Cmd_93,Cmd_94,Cmd_95,Cmd_96,Cmd_97,Cmd_98,Cmd_99,
 Cmd_100,Cmd_101,Cmd_102,Cmd_103,Cmd_104,Cmd_105,Cmd_106,Cmd_107,Cmd_108,Cmd_109,
 Cmd_110,Cmd_111,Cmd_112,Cmd_113,Cmd_114,Cmd_115,Cmd_116,Cmd_117,Cmd_118,Cmd_119,
-Cmd_120,Cmd_121,Cmd_122,Cmd_123,Cmd_124,Cmd_125,Cmd_126,Cmd_127,Cmd_128,Cmd_129};
-
+Cmd_120,Cmd_121,Cmd_122,Cmd_123,Cmd_124,Cmd_125,Cmd_126,Cmd_127,Cmd_128,Cmd_129,
+Cmd_130};
 
 // Message max. 40 pos    "1234567890123456789012345678901234567890"
 prog_char PROGMEM Msg_0[]="Ok.";
@@ -638,6 +639,7 @@ unsigned long HoldTransmission=0L;                          // wachten op dit ti
 byte Transmission_SelectedUnit=0;                           // 
 byte  Transmission_SendToUnit=0;                            // Unitnummer waar de events naar toe gestuurd worden. 0=alle.
 byte  Transmission_SendToAll=0;                             // Vlag die aangeeft of de SendTo permanent staat ingesteld of eenmalig (VALUE_ALL)
+byte  Transmission_SendToFast=0;                             // Vlag die aangeeft of de SendTo permanent staat ingesteld of eenmalig (VALUE_FAST)
 boolean Transmission_ThisUnitIsMaster=false;
 boolean Transmission_NodoOnly=false;                        // Als deze vlag staat, dan worden er uitsluitend Nodo-eigen signalen ontvangen.  
 byte QueuePosition=0;

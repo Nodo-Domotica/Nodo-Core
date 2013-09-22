@@ -377,7 +377,7 @@ inline boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
  * RawSignal buffer gebruikt. In dit geval werkt de WaitFree niet.
  \*********************************************************************************************/
 boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Display, boolean WaitForFree)
-  {  
+  {    
   ES->Direction=VALUE_DIRECTION_OUTPUT;
   ES->DestinationUnit=Transmission_SendToUnit;
   byte Port=ES->Port;
@@ -567,7 +567,7 @@ void SendI2C(struct NodoEventStruct *EventBlock)
     // We sturen de events naar bekende Nodo's die zich op de I2C bus bevinden. Als deze Nodo later op de bus wordt aangesloten,
     // dan zal Boot event van deze Nodo de andere uitnodigen om een bekendmaking te sturen zodat de lijst compleet is.
     // Daarom wordt het Boot event naar alle I2C adressen gestuurd waar zich een Nodo op kan bevinden.
-    if(EventBlock->Command==EVENT_BOOT || EventBlock->Command==EVENT_NEWNODO || NodoOnline(y,0)==VALUE_SOURCE_I2C)// Type moet hier nog mee als voorwaarde ???
+    if(EventBlock->Command==EVENT_BOOT || EventBlock->Command==EVENT_NEWNODO || (NodoOnline(y,0)==VALUE_SOURCE_I2C))// Type moet hier nog mee als voorwaarde ???
       {
       Wire.beginTransmission(I2C_START_ADDRESS+y-1);
       for(x=0;x<sizeof(struct NodoEventStruct);x++)

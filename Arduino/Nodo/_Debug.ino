@@ -35,7 +35,7 @@ void PrintNodoEvent(char* str, struct NodoEventStruct *Event)
   Serial.print(F(", Type="));Serial.print(Event->Type);
   Serial.print(F(", Command="));Serial.print(Event->Command);
   Serial.print(F(", Par1="));Serial.print(Event->Par1);
-  Serial.print(F(", Par2=0x"));Serial.print(Event->Par2);
+  Serial.print(F(", Par2=0x"));Serial.print(Event->Par2,HEX);
   Serial.print(F(", Version=0x"));Serial.println(Event->Version);
   }
 

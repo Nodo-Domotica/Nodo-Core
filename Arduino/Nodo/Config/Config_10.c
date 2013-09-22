@@ -30,7 +30,3 @@
 // SendNewKAKU       : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno. 
 #define PLUGIN_004
 #define PLUGIN_004_CORE
-
-#define PLUGIN_017
-#define PLUGIN_017_CORE
-
