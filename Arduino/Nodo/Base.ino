@@ -1,6 +1,7 @@
+
 #define NODO_VERSION_MAJOR             3  // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define NODO_VERSION_MINOR             2  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
-#define NODO_BUILD                   595  // Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                   596  // Ophogen bij iedere Build / versiebeheer.
 
 #define UNIT_NODO                      1 // Unit nummer van deze Nodo
 #define NODO_HOME                      1 // Home adres van Nodo's die tot één groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
@@ -21,7 +22,6 @@
 #define ETHERNET_MAC_0              0xCC // Dit is byte 0 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
 #define ETHERNET_MAC_1              0xBB // Dit is byte 1 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
 #define ETHERNET_MAC_2              0xAA // Dit is byte 2 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
-
 
 #include <SPI.h>
 #include <Arduino.h>
@@ -409,9 +409,10 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define PLUGIN_COMMAND               4 
 #define PLUGIN_INIT                  5
 #define PLUGIN_ONCE_A_SECOND         6
-#define PLUGIN_DATA                  7
-#define PLUGIN_EVENT_IN              8
-#define PLUGIN_SERIAL_IN             9
+#define PLUGIN_EVENT_IN              7
+#define PLUGIN_SERIAL_IN             8
+#define PLUGIN_I2C_IN                9
+#define PLUGIN_ETHERNET_IN          10
 
 #define RED                            1 // Led = Rood
 #define GREEN                          2 // Led = Groen
@@ -456,11 +457,11 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 
 #if NODO_MEGA // Definities voor de Nodo-Mega variant.
 #define EVENT_QUEUE_MAX             16 // maximaal aantal plaatsen in de queue.
-#define INPUT_BUFFER_SIZE          128  // Buffer waar de karakters van de seriele/IP poort in worden opgeslagen.
-#define TIMER_MAX                   15  // aantal beschikbare timers voor de user, gerekend vanaf 1
+#define INPUT_BUFFER_SIZE          128 // Buffer waar de karakters van de seriele/IP poort in worden opgeslagen.
+#define TIMER_MAX                   15 // aantal beschikbare timers voor de user, gerekend vanaf 1
 #define ALARM_MAX                    8 // aantal alarmen voor de user
-#define USER_VARIABLES_MAX          15  // aantal beschikbare gebruikersvariabelen voor de user.
-#define PULSE_IRQ                    5  // IRQ verbonden aan de IR_RX_DATA pen 18 van de Mega
+#define USER_VARIABLES_MAX          15 // aantal beschikbare gebruikersvariabelen voor de user.
+#define PULSE_IRQ                    5 // IRQ verbonden aan de IR_RX_DATA pen 18 van de Mega
 #define PIN_BIC_0                   26 // Board Identification Code: bit-0
 #define PIN_BIC_1                   27 // Board Identification Code: bit-1
 #define PIN_BIC_2                   28 // Board Identification Code: bit-2
@@ -607,8 +608,6 @@ struct SettingsStruct
 #define NODO_TYPE_SYSTEM            3
 #define NODO_TYPE_PLUGIN_EVENT      4
 #define NODO_TYPE_PLUGIN_COMMAND    5
-#define NODO_TYPE_PLUGIN_DATA       6
-
 
 // De Nodo kent naast gebruikers commando's en events eveneens Nodo interne events
 #define SYSTEM_COMMAND_CONFIRMED  1
@@ -988,10 +987,12 @@ void loop()
         #if NODO_MEGA
         case 2: // binnen Slice_1
           {
+          // IP Event: *************** kijk of er een Event van IP komt **********************    
           if(bitRead(HW_Config,HW_ETHERNET))
-            // IP Event: *************** kijk of er een Event van IP komt **********************    
             if(HTTPServer.available())
-              ExecuteIP();
+              if(!PluginCall(PLUGIN_ETHERNET_IN,0,0))
+                ExecuteIP();
+
           break;
           }
    

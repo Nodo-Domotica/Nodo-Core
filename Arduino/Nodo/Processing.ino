@@ -108,14 +108,6 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
     Continue=false;
     }
 
-  // Check of het een binnengekomen device data  is en verwerk deze binnen het device.
-  if(Event->Type==NODO_TYPE_PLUGIN_DATA)
-    {
-    PluginCall(PLUGIN_DATA,Event,0);
-    Continue=false;
-    }
-
-
   #if NODO_MEGA
   if(Continue && bitRead(HW_Config,HW_SDCARD))
     if(Event->Command==EVENT_RAWSIGNAL && Settings.RawSignalSave==VALUE_ON)

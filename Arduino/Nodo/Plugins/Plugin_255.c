@@ -106,7 +106,6 @@ boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
   // PLUGIN_MMI_OUT       => Omzetten van een event naar een voor de gebruiker leesbare tekst (Alleen voor Mega)
   // DEVIDE_ONCE_A_SECOND => ongeveer iedere seconde.
   // PLUGIN_INIT          => Eenmalig, direct na opstarten van de Nodo
-  // PLUGIN_DATA          => T.b.v. uitwisselen gegevens andere (zelfbouw) apparaten met Nodo.
   // PLUGIN_EVENT_IN      => Vlak voor verwerking van een binnengekomen event.
   // PLUGIN_SERIAL_IN     => Zodra er bytes via de seriele poort zijn ontvangen
   // PLUGIN_ETHERNET_IN   => Zodra er bytes via de seriele poort zijn ontvangen
@@ -173,47 +172,6 @@ boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
       Serial.println(F("*** debug: MyPlugin: PLUGIN_RAWSIGNAL_IN"));
       break;
       }
-
-    case PLUGIN_DATA:
-      {
-      // Het is mogelijk om gegevens uit te wisselen met andere apparaten die door een gebruiker zijn ontwikkeld.
-      // In principe is het mogelijk om hiermee verbinding te leggen tussen de Nodo en Arduino's, Raspberry Pi's
-      // PIC's of andere apparaten. Er is een speciaal type event waarmee de ontwikkelaar gegevens kan uitwisselen.
-      // Hiervoor wordt een standaard Nodo event gebruikt, met dit verschil dat de ontwikkelaar vrij is om te bepalen
-      // waar de gegevens voor worden gebruikt. Gegevens kunnen dan worden uitgewisseld via IR, RF, I2C.
-      // Het Nodo event struct wordt dan als volgt gebruikt:
-      //
-      //      struct NodoEventStruct
-      //        {
-      //        // Event deel
-      //        byte Type;                         ==> Altijd vullen met de waarde NODO_TYPE_PLUGIN_DATA.
-      //        byte Command;                      ==> Geef hier het plugin nummer op waar de data wordt verwerkt.
-      //        byte Par1;                         ==> 8 bits waarde vrij voor gebruiker.
-      //        unsigned long Par2;                ==> 32 bits waarde vrij voor gebruiker.
-      //      
-      //        // Transmissie deel
-      //        byte SourceUnit;                   ==> UserPlugins hebben eveneens een unitnummer
-      //        byte DestinationUnit;              ==> Unit van de Nodo/Plugin waar de data naar toe moet.
-      //        byte Flags;                        ==> Geen gebruikersfunctie, vullen met nul.
-      //        byte Port;                         ==> Geen gebruikersfunctie, vullen met nul.
-      //        byte Direction;                    ==> Geen gebruikersfunctie, vullen met nul.
-      //        byte Version;                      ==> Geen gebruikersfunctie.
-      //        };
-      
-      Serial.println(F("*** debug: MyPlugin: PLUGIN_DATA"));
-      Serial.print(F("Received I2C : Unit="));Serial.print(event->SourceUnit);
-      Serial.print(", Plugin="); Serial.print(event->Command);
-      Serial.print(", Par1=");   Serial.print(event->Par1);
-      Serial.print(", Par2=");   Serial.print(event->Par2);
-      Serial.println();
-      
-      // De gebruiker moet hier zelf zorgen voor verdere verwerking. Eventueel mag de struct event
-      // worden gevuld met een nieuw Nodo commando of event die dan verder wordt uitgevoerd door
-      // de Nodo als wordt teruggekeerd met success=true. 
-      //
-      // Maak je geen gebruik van PLUGIN_DATA, dan mag je deze case verwijderen.
-      break;
-      }
       
     case PLUGIN_COMMAND:
       {
@@ -225,28 +183,13 @@ boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
       // Maak je geen gebruik van deze functie, dan bij voorkeur deze case geheel verwijderen.
 
       Serial.println(F("*** debug: MyPlugin: PLUGIN_COMMAND"));
-      
-      // In dit voorbeeld versturen we Data naar een UserPlugin via de I2C-bus.
-      struct NodoEventStruct UserPluginEvent;
-      ClearEvent(&UserPluginEvent);
-
-      UserPluginEvent.Command           = PLUGIN_ID; // Verwijzing naar dit plugin nummer.
-      UserPluginEvent.Type              = NODO_TYPE_PLUGIN_DATA;
-      UserPluginEvent.DestinationUnit   = 0; // 0=alle units
-      UserPluginEvent.Par1              = event->Par1;
-      UserPluginEvent.Par2              = event->Par2;
-      SendI2C(&UserPluginEvent);
-
-      Serial.print(F("*** debug: MyPlugin: Send I2C : Unit="));Serial.print(UserPluginEvent.SourceUnit);
-      Serial.print(", Plugin=");  Serial.print(UserPluginEvent.Command);
-      Serial.print(", Par1=");    Serial.print(UserPluginEvent.Par1);
-      Serial.print(", Par2=");    Serial.print(UserPluginEvent.Par2);
+      Serial.print(", Par1=");    Serial.print(event->Par1);
+      Serial.print(", Par2=");    Serial.print(event->Par2);
       Serial.println();
 
       success=true;
       break;
       }      
-
 
     case PLUGIN_SERIAL_IN:
       {
