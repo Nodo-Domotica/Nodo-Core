@@ -253,6 +253,7 @@ R590
 - [FileWriteLine <bestandnaam>] toegevoegd. Alle vervolgtekens na de ';' worden naar <bestandsnaam> geschreven.
 - Bij opstarten Mega wordt het script "autoexec" uitgevoerd.         
 
+
 Nog te doen:                                                                       ]
 
 testen:
