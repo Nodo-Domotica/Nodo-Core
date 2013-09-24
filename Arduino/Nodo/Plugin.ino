@@ -896,6 +896,7 @@ byte PluginCall(byte Function, struct NodoEventStruct *Event, char *str)
     // Alle plugins langslopen
     case PLUGIN_ONCE_A_SECOND:
     case PLUGIN_EVENT_IN:
+    case PLUGIN_I2C_IN:
     case PLUGIN_INIT:
       AllPlugins=true;
       break;
@@ -904,12 +905,12 @@ byte PluginCall(byte Function, struct NodoEventStruct *Event, char *str)
     case PLUGIN_MMI_IN:
     case PLUGIN_RAWSIGNAL_IN:
     case PLUGIN_SERIAL_IN:
+    case PLUGIN_ETHERNET_IN:
       AllPlugins=true;
       FirstHitReturn=true;
       break;
 
     // alleen plugin aanroepen zoals opgegeven in Event->Command. Keer terug met error
-    case PLUGIN_DATA:
     case PLUGIN_MMI_OUT:
     case PLUGIN_COMMAND:
       CallSpecificPlugin=true;

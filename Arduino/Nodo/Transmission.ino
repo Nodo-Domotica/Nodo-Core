@@ -529,28 +529,19 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
 
 
 // Deze routine wordt vanuit de Wire library aangeroepen zodra er data op de I2C bus verschijnt die voor deze nodo bestemd is.
-// er vindt geen verdere verwerking plaats, slechts opslaan van het event. 
+// er vindt geen verdere verwerking plaats, slechts opslaan van het data. 
 void ReceiveI2C(int n)
   {
-  byte *B=(byte*)&I2C_Event;
-  int x=0;
-
+  I2C_Received=0;
+  byte b;
+  
   while(Wire.available()) // Haal de bytes op
     {
-    if(x<sizeof(struct NodoEventStruct))
-      *(B+x)=Wire.read(); 
-    x++;
+    b=Wire.read();
+    if(I2C_Received<I2C_BUFFERSIZE)
+      I2C_ReceiveBuffer[I2C_Received++]=b; 
     }
-
-  // laatste ontvangen byte bevat de checksum. Als deze gelijk is aan de berekende checksum, dan event uitvoeren
-  if(Checksum(&I2C_Event))
-    {   
-    bitWrite(HW_Config,HW_I2C,true);
-    I2C_EventReceived=true;    
-    }
-  else
-    I2C_EventReceived=false;
-}
+  }
 
 /**********************************************************************************************\
  * Verstuur een Event naar de I2C bus. 

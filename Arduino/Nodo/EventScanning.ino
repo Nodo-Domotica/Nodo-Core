@@ -2,9 +2,10 @@
 #define SIGNAL_TIMEOUT_RF            5 // na deze tijd in mSec. wordt één RF signaal als beëindigd beschouwd.
 #define SIGNAL_TIMEOUT_IR           10 // na deze tijd in mSec. wordt één IR signaal als beëindigd beschouwd.
 #define SIGNAL_REPEAT_TIME        1000 // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF/IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
+#define I2C_BUFFERSIZE              80 // Moet altijd groter zijn dan de struct NodoEventStruct
 
-boolean I2C_EventReceived=false;       // Als deze vlag staat, is er een I2C event binnengekomen.
-struct NodoEventStruct I2C_Event;
+int  I2C_Received=0;       // Bevat aantal binnengomen bytes op I2C;
+byte I2C_ReceiveBuffer[I2C_BUFFERSIZE+1];
 
 boolean ScanEvent(struct NodoEventStruct *Event)// Deze routine maakt deel uit van de hoofdloop en wordt iedere 125uSec. doorlopen
   {
@@ -12,14 +13,42 @@ boolean ScanEvent(struct NodoEventStruct *Event)// Deze routine maakt deel uit v
   static unsigned long BlockReceivingTimer=0;
   
   // I2C: *************** kijk of er data is binnengekomen op de I2Cbus **********************
-  if(I2C_EventReceived)
+  if(I2C_Received)
    {
-   // Er is een I2C event binnen gekomen. De gegevens kunnen dan eenvoudig uit de binnengekomen struct worden gekopieerd. 
-   *Event=I2C_Event;
-   bitWrite(HW_Config,HW_I2C,true);
-   I2C_EventReceived    = false;
-   Fetched=VALUE_SOURCE_I2C;
-   }
+   // Er is I2C data binnengekomen maar weten nog niet of het een NodoEventStruct betreft.
+   if(I2C_Received==sizeof(struct NodoEventStruct))
+     {// Het is een NodoEventStruct
+     memcpy(Event, &I2C_ReceiveBuffer, sizeof(struct NodoEventStruct));
+
+     if(Checksum(Event))
+       {   
+       bitWrite(HW_Config,HW_I2C,true);
+       I2C_Received=0;
+       Fetched=VALUE_SOURCE_I2C;
+       }
+     }
+   else
+    {// Het is geen NodoEventStruct. In dit geval verwerken als reguliere commandline string.
+    PluginCall(PLUGIN_I2C_IN,0,0);
+
+    #if NODO_MEGA
+    I2C_ReceiveBuffer[I2C_Received]=0; // Sluit buffer af als een string.
+
+    // In een commando bevinden zich geen bijzondere tekens. Is dit wel het geval, dan string leeg maken.
+    for(int q=0;q<I2C_Received;q++)
+      if(!isprint(I2C_ReceiveBuffer[q]))
+        I2C_ReceiveBuffer[0]=0;
+        
+    // Is er een geldige string binnen, dan verwerken als commandline.
+    if(I2C_ReceiveBuffer[0]!=0)
+      ExecuteLine((char*)&I2C_ReceiveBuffer[0],VALUE_SOURCE_I2C);
+
+    #endif
+
+    Fetched=0;
+    I2C_Received=0;
+    }
+  }
 
   // IR: *************** kijk of er data start **********************
   else if((*portInputRegister(IRport)&IRbit)==0)
