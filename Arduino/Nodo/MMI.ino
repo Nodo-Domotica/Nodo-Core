@@ -654,7 +654,7 @@ int ExecuteLine(char *Line, byte Port)
         }
 
       // als puntkomma (scheidt opdrachten) of einde string
-      if((LineChar==';' || LineChar==0) && CommandPos>0)
+      if((LineChar=='!' || LineChar=='$' ||LineChar==';' || LineChar==0) && CommandPos>0)
         {
         Command[CommandPos]=0;
         CommandPos=0;
