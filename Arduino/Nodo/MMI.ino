@@ -136,7 +136,7 @@ char* DateTimeString(void)
 /**********************************************************************************************\
  * Print de welkomsttekst van de Nodo.
  \*********************************************************************************************/
-prog_char PROGMEM Text_welcome[] = "Nodo-Mega V3.6 (beta), Product=SWACNC-MEGA-R%03d, Home=%d, ThisUnit=%d";
+prog_char PROGMEM Text_welcome[] = "Nodo-Mega V3.6, Product=SWACNC-MEGA-R%03d, Home=%d, ThisUnit=%d";
 void PrintWelcome(void)
   {
   char *TempString=(char*)malloc(80);
@@ -1593,7 +1593,7 @@ void PrintWelcome(void)
   Serial.println(F("!******************************************************************************!"));
   Serial.println(F("Nodo Domotica controller (c) Copyright 2013 P.K.Tonkes."));
   Serial.println(F("Licensed under GNU General Public License."));
-  Serial.print(F("Nodo-Small V3.6 (Beta), Product=SWACNC-SMALL-R"));
+  Serial.print(F("Nodo-Small V3.6, Product=SWACNC-SMALL-R"));
   Serial.print(NODO_BUILD);
   Serial.print(F(", Home="));
   Serial.print(Settings.Home);

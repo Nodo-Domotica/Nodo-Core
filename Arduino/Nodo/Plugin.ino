@@ -896,6 +896,7 @@ byte PluginCall(byte Function, struct NodoEventStruct *Event, char *str)
     // Alle plugins langslopen
     case PLUGIN_ONCE_A_SECOND:
     case PLUGIN_EVENT_IN:
+    case PLUGIN_EVENT_OUT:
     case PLUGIN_I2C_IN:
     case PLUGIN_INIT:
       AllPlugins=true;
