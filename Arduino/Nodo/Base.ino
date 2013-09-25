@@ -410,9 +410,10 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define PLUGIN_INIT                  5
 #define PLUGIN_ONCE_A_SECOND         6
 #define PLUGIN_EVENT_IN              7
-#define PLUGIN_SERIAL_IN             8
-#define PLUGIN_I2C_IN                9
-#define PLUGIN_ETHERNET_IN          10
+#define PLUGIN_EVENT_OUT             8
+#define PLUGIN_SERIAL_IN             9
+#define PLUGIN_I2C_IN               10
+#define PLUGIN_ETHERNET_IN          11
 
 #define RED                            1 // Led = Rood
 #define GREEN                          2 // Led = Groen

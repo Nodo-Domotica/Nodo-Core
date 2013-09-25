@@ -403,9 +403,11 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
       }
     }
 
+  // loop de plugins langs voor eventuele afhandeling van dit event.
+  PluginCall(PLUGIN_EVENT_OUT, ES,0);
+
   // Stuur afhankelijk van de instellingen het event door naar I2C, RF, IR. Eerst wordt het event geprint,daarna een korte wachttijd om
   // te zorgen dat er een minimale wachttijd tussen de signlen zit. Tot slot wordt het signaal verzonden.
-
   if(WaitForFree)
     if(Port==VALUE_SOURCE_RF || Port==VALUE_SOURCE_IR ||(Settings.TransmitRF==VALUE_ON && Port==VALUE_ALL))
       WaitFree(VALUE_ALL, WAITFREE_TIMEOUT);
