@@ -111,7 +111,7 @@ $sort_order = $RSActivities_rows + 1;
 	<div data-role="content">	
 
 	<div data-role="collapsible"  data-inset="false" data-collapsed-icon="plus" data-expanded-icon="minus" data-iconpos="right">
-			<h3>Add activitie:</h3>
+			<h3>Add activity:</h3>
 	<form action="activities.php" data-ajax="false" method="post"> 
 		
 		<label for="name">Name: </label>

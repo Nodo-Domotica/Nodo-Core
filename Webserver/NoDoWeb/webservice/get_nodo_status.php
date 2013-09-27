@@ -51,19 +51,26 @@ function HTTPRequest($Url){
 	
 	}
 
-
-
-		//Status uitlezen
-		$file="STATUS";
-		HTTPRequest("http://$nodo_ip/?event=FileErase%20$file;FileLog%20$file;Status%20All;FileLog&key=$key");
+		if ($build >= 517) {
 		
+			$script = explode("<br>", HTTPRequest("http://$nodo_ip/?event=Status%20All&key=$key"));
+			//Totaal aantal lijnen tellen in $script
+			$total_script_lines = count($script);
+		}
+		else {
+
+			//Status uitlezen
+			$file="STATUS";
+			HTTPRequest("http://$nodo_ip/?event=FileErase%20$file;FileLog%20$file;Status%20All;FileLog&key=$key");
+			//Status van Nodo in array plaatsen
+			$script = explode("\n", HTTPRequest("http://$nodo_ip/?file=$file&key=$key"));
+			//Totaal aantal lijnen tellen in $script
+			$total_script_lines = count($script);
+		}
 		
 			
 
-		//Status van Nodo in array plaatsen
-		$script = explode("\n", HTTPRequest("http://$nodo_ip/?file=$file&key=$key"));
-		//Totaal aantal lijnen tellen in $script
-		$total_script_lines = count($script);
+		
 		
 		
 		

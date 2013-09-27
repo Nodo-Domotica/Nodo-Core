@@ -45,7 +45,7 @@ $date = date("d-m-Y");
 $time = date("H:i");
 $dow= date("w")+1; // php zondag = 0 Nodo gaat uit van 1
 
-header("Nodo-Date: Day=".$dow.", Date=".$date.", Time=".$time.", DLS=".$DLS);
+header("Nodo-Date: Day=".$dow."; Date=".$date."; Time=".$time."; DLS=".$DLS);
 
 /*
 Login gegevens controleren
@@ -194,21 +194,9 @@ if($userId > 0 && $key_match == 1) {
 				}
 			break;
 			
-			//Busy on/off
-			case "busy" :
-				
-				switch ($par1) {
-
-					case "on" :
-						mysql_query("UPDATE nodo_tbl_users SET busy='1' WHERE id='$userId'") or die(mysql_error());
-					break;
-					
-					case "off" :
-						mysql_query("UPDATE nodo_tbl_users SET busy='0' WHERE id='$userId'") or die(mysql_error());
-					break;
-				}
-			
-			case "kaku" :
+			case "kaku" : // voor 517
+			case "sendkaku" : // na 517
+			case "kakusend" : // >=3.6
 			
 				switch ($par2) {
 
@@ -228,8 +216,9 @@ if($userId > 0 && $key_match == 1) {
 							
 			break;
 
-			case "newkaku" :
-												
+			case "newkaku" : // voor 517
+			case "sendnewkaku" : // na 517
+			case "newkakusend" : // >=3.6									
 				switch ($par2) {
 
 					case "on" :
@@ -302,27 +291,7 @@ if($userId > 0 && $key_match == 1) {
 								WHERE user_id='$userId'") or die(mysql_error()); 
 			break;
 				
-			case "clocksync" :
-					
-					
-					
-					//Indien de Nodo een clocksync event verstuurd zal de WebApp direct events sturen welke de clock op de nodo gelijk zet
-					$year_par1 = substr(date("Y"), 0, 2);
-					$year_par2 = substr(date("Y"), 2, 2);
-						
-					$date_par1 = date("j");
-					$date_par2 = date("n");
-						
-					$time_par1 = date("G");
-					$time_par2 = 1*date("i"); //*1 zorgt ervoor dat de voorloop nul wegvalt.
-										
-					$dow_par1 = date("w")+1; // php zondag = 0 Nodo gaat uit van 1
 			
-					
-					//!!!!!!!!!!!!  Nodo connectie word niet correct gesloten ... content-lenght connecion close headers Controleren met Paul!
-					HTTPRequest("http://$nodo_ip:$nodo_port/?event=ClockSetYear%20$year_par1,$year_par2;ClockSetDate%20$date_par1,$date_par2;ClockSetTime%20$time_par1,$time_par2;ClockSetDow%20$dow_par1&key=$key_webapp");
-		
-			break;
 			}
 	}
 }

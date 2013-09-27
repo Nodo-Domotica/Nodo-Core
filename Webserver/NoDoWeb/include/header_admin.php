@@ -45,6 +45,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			<li><a href="../webapp.html#devices_page" data-icon="devices" data-ajax="false">Devices</a></li>
 			<li><a href="../webapp.html#activities_page" data-icon="grid" data-ajax="false">Activities</a></li>
 			<li><a href="../webapp.html#values_page" data-icon="measurements" data-ajax="false">Values</a></li>
+			<li><a href="../webapp.html#alarms_page" data-icon="grid" data-ajax="false">Alarms</a></li>
+			
 		</ul>
 		</div>
 	</div><!-- /header -->

@@ -38,7 +38,7 @@ function evalmath($equation) {
 
 
 
-        while($row = mysql_fetch_array($recordset))
+        while($row = mysql_fetch_assoc($recordset))
         {
             
 			

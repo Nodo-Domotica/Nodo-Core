@@ -15,9 +15,9 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************************************************************/
 
-	
+var $nodohttpresponse;	
 		
-		function send_event(event,type)
+		function send_event(event,type,sync)
 		//stuur opdrachten door naar de nodo
 					{
 						var
@@ -35,9 +35,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 						}
 
 						if ($http) {
+						
+							$http.onreadystatechange = function()
+					{
+						if (/4|^complete$/.test($http.readyState)) {
+														
+							$nodohttpresponse = $http.responseText;
+							
+						}
+					};
 
 				 
-						$http.open('GET', '/webapp/webservice/forward_http.php' + '?event=' + event + '&unique=' + new Date().getTime(), true);
+						if (sync == 1) {
+							$http.open('GET', '/webapp/webservice/forward_http.php' + '?event=' + event + '&unique=' + new Date().getTime(), false); }
+						else {
+							$http.open('GET', '/webapp/webservice/forward_http.php' + '?event=' + event + '&unique=' + new Date().getTime(), true); }
 						
 						
 						$http.send(null);
@@ -51,8 +63,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 							//alert (type);
 							setTimeout(function(){getValueState()},1000);
 							}
+							
 						}
-
+					if (sync == 1) {
+						return $nodohttpresponse;
+					}
 					}
 
 

@@ -45,7 +45,7 @@ $filter=$_GET['filter']; //1 day totals, 2 line graph
 
 mysql_select_db($database, $db);
 $query_values = mysql_query("SELECT * FROM nodo_tbl_sensor WHERE id='$sensor_id'") or die(mysql_error()); 
-$row_values = mysql_fetch_array($query_values);
+$row_values = mysql_fetch_assoc($query_values);
 
 $formula1 = $row_values['formula'];
 

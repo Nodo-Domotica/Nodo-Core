@@ -74,9 +74,8 @@ if ($action != NULL) {
 	$newkaku_dim = $newkaku . $dim;
 	
 	$wired_out_1 = "WiredOut%20$address,";
-	$wired_out_2 = ";status%20WiredOut%20$address";
-	$wired_out_on = $wired_out_1 . "on" . $wired_out_2 ;
-	$wired_out_off = $wired_out_1 . "off" . $wired_out_2;
+	$wired_out_on = $wired_out_1 . "on";
+	$wired_out_off = $wired_out_1 . "off";
 	
 	$send_user_event = "SendUserEvent%20";
 	$send_user_event_on = $send_user_event . $row_RSdevices['user_event_on'];
@@ -264,5 +263,7 @@ if ($user_cmd != NULL) {
 	send_event($user_cmd);
 	
 }
+
+echo $data;
 
 ?>
