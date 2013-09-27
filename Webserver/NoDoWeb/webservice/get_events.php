@@ -24,7 +24,7 @@ require_once('../include/user_settings.php');
 		   
 mysql_select_db($database, $db);
 
-$RSevent_log = mysql_query("SELECT nodo_unit_nr,event,timestamp FROM (SELECT * FROM nodo_tbl_event_log WHERE user_id='$userId' ORDER BY id DESC LIMIT 25)x ORDER BY id") or die(mysql_error());
+$RSevent_log = mysql_query("SELECT nodo_unit_nr,event,timestamp FROM (SELECT * FROM nodo_tbl_event_log WHERE user_id='$userId' ORDER BY id DESC LIMIT 100)x ORDER BY id") or die(mysql_error());
 ?>
 
 <table>    

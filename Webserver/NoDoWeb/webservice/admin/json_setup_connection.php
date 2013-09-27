@@ -83,6 +83,17 @@ if (!function_exists('http_parse_headers')) {
 	}
 }
 
+function trim_br($string){
+//Deletes empty spaces and br tags on start and end of a string
+
+	 $string = preg_replace('/^\s*(?:<br\s*\/?>\s*)*/i', '', $string);
+	 $string = preg_replace('/\s*(?:<br\s*\/?>\s*)*$/i', '', $string);
+	 return	$string;
+
+}
+
+
+
 	
 function get_phrase_after_string($haystack,$needle)
 //  voorbeelden:
@@ -133,16 +144,37 @@ if (isset($_POST['save'])) {
 	}
 
 	else {
-		//Connectie controleren
-		 $key = md5($cookie.":".$nodo_password); //key opnieuw genereren omdat we het wachtwoord nog niet in de DB hebben opgeslagen
-		 HTTPRequest("http://$nodo_ip/?event=Filelog%20concheck;status%20HTTPHost;status%20Output%20HTTP;Filelog&key=$key");
-		 $httpresponse=HTTPRequest("http://$nodo_ip/?file=concheck&key=$key");
-		 HTTPRequest("http://$nodo_ip/?event=FileErase%20concheck&key=$key");
+		 //Connectie controleren
+		 global $build;
 		 
+		 //Connectie controleren van een standaard Nodo
+		 $httpresponse=HTTPRequest("http://$nodo_ip/?event=status%20NodoIp");
 		 $headers=http_parse_headers($httpresponse);
 		 
-		 $HTTPHost=get_phrase_after_string($httpresponse,'HTTPHost ');
-		 $OutputHTTP=get_phrase_after_string($httpresponse,'Output HTTP,');
+		 $build=trim(substr(strrchr($headers['Server'], "="), 1));
+		 $build=(int)$build;
+		
+		 $key = md5($cookie.":".$nodo_password); //key opnieuw genereren omdat we het wachtwoord nog niet in de DB hebben opgeslagen
+		 
+		 if ($build >= 517) {
+			 
+			 
+			  
+			 $HTTPHost=get_phrase_after_string(trim_br(HTTPRequest("http://$nodo_ip/?event=status%20HTTPHost&key=$key")),'HTTPHost ');
+			 $OutputHTTP=get_phrase_after_string(trim_br(HTTPRequest("http://$nodo_ip/?event=status%20Output%20HTTP&key=$key")),'Output HTTP,');
+			 $headers=http_parse_headers(HTTPRequest("http://$nodo_ip/?event=status%20NodoIp&key=$key"));
+		 }
+		 else {
+		 
+			 HTTPRequest("http://$nodo_ip/?event=Filelog%20concheck;status%20HTTPHost;status%20Output%20HTTP;Filelog&key=$key");
+			 $httpresponse=HTTPRequest("http://$nodo_ip/?file=concheck&key=$key");
+			 HTTPRequest("http://$nodo_ip/?event=FileErase%20concheck&key=$key");
+			 $headers=http_parse_headers($httpresponse);
+		 	 $HTTPHost=get_phrase_after_string($httpresponse,'HTTPHost ');
+			 $OutputHTTP=get_phrase_after_string($httpresponse,'Output HTTP,');
+		 }
+
+		
 		 
 	}   
      
@@ -153,7 +185,9 @@ if (isset($_POST['save'])) {
 		if ($HTTPHost == "www.nodo-domotica.nl/webapp/nodo.php" && $OutputHTTP== "On" ) { $response = "1"; } else { $response = "2"; }
 		
 		
-		if (isset($_POST['auto_config'])){	
+		if (isset($_POST['auto_config'])){
+		
+			global $build;
 		
 			//Configureer de Nodo
 			HTTPRequest("http://$nodo_ip/?event=eventlistwrite;WildCard%20RF,All;SendEvent%20HTTP");
@@ -162,55 +196,86 @@ if (isset($_POST['save'])) {
 			HTTPRequest("http://$nodo_ip/?event=eventlistwrite;WildCard%20Wired,All;SendEvent%20HTTP");
 			HTTPRequest("http://$nodo_ip/?event=eventlistwrite;EventListWrite;Wildcard%20ALL,UserEvent;SendEvent%20HTTP");
 			HTTPRequest("http://$nodo_ip/?event=HTTPHost%20$WEBAPP_HOST/nodo.php");
-			HTTPRequest("http://$nodo_ip/?event=Filewrite%20waconfig");
-			HTTPRequest("http://$nodo_ip/?event=ok");
-			HTTPRequest("http://$nodo_ip/?event=Filewrite");
 			
-			//Clock gelijk zetten
-			$year_par1 = substr(date("Y"), 0, 2);
-			$year_par2 = substr(date("Y"), 2, 2);
-				
-			$date_par1 = date("j");
-			$date_par2 = date("n");
-				
-			$time_par1 = date("G");
-			$time_par2 = 1*date("i"); //*1 zorgt ervoor dat de voorloop nul wegvalt.
-								
-			$dow_par1 = date("w")+1; // php zondag = 0 Nodo gaat uit van 1
+			if ($build < 517) {
 			
-			HTTPRequest("http://$nodo_ip/?event=FileLog%20$file");
-			HTTPRequest("http://$nodo_ip/?event=ClockSetYear%20$year_par1,$year_par2");
-			HTTPRequest("http://$nodo_ip/?event=ClockSetDate%20$date_par1,$date_par2");
-			HTTPRequest("http://$nodo_ip/?event=ClockSetTime%20$time_par1,$time_par2");
-			HTTPRequest("http://$nodo_ip/?event=ClockSetDow%20$dow_par1");
-						
-			if (strpos(HTTPRequest("http://$nodo_ip/?file=waconfig"), 'ok') !== false) {
-				
-				global $build;
-				
-								
-				if ($build >= 443 && $build < 455) { // vanaf build 443
-				
-					HTTPRequest("http://$nodo_ip/?event=id%20$nodo_id;password%20$nodo_password;fileerase%20waconfig;Output%20HTTP,on;reboot"); 
-				
-				}
-					
-				elseif 	($build >= 455) { //vanaf build 455
-					
-					HTTPRequest("http://$nodo_ip/?event=id%20$nodo_id;password%20$nodo_password;fileerase%20waconfig;Output%20HTTP,on;SettingsSave;reboot");
-					
-				}
-				
-				else {
-					
-					HTTPRequest("http://$nodo_ip/?event=id%20$nodo_id;password%20$nodo_password;fileerase%20waconfig;OutputIp%20HTTP,on;reboot"); //oude manier
-				}
-						
-				$response = "6";	
+				HTTPRequest("http://$nodo_ip/?event=Filewrite%20waconfig");
+				HTTPRequest("http://$nodo_ip/?event=ok");
+				HTTPRequest("http://$nodo_ip/?event=Filewrite");
 			
 			}
+			
+			//Clock gelijk zetten
+			//$year_par1 = substr(date("Y"), 0, 2);
+			//$year_par2 = substr(date("Y"), 2, 2);
+				
+			//$date_par1 = date("j");
+			//$date_par2 = date("n");
+				
+			//$time_par1 = date("G");
+			//$time_par2 = 1*date("i"); //*1 zorgt ervoor dat de voorloop nul wegvalt.
+								
+			//$dow_par1 = date("w")+1; // php zondag = 0 Nodo gaat uit van 1
+			
+			if ($build < 517) {
+				HTTPRequest("http://$nodo_ip/?event=FileLog%20$file");
+			}
+			
+			//HTTPRequest("http://$nodo_ip/?event=ClockSetYear%20$year_par1,$year_par2");
+			//HTTPRequest("http://$nodo_ip/?event=ClockSetDate%20$date_par1,$date_par2");
+			//HTTPRequest("http://$nodo_ip/?event=ClockSetTime%20$time_par1,$time_par2");
+			//HTTPRequest("http://$nodo_ip/?event=ClockSetDow%20$dow_par1");
+			
+			if ($build >= 517) {
+			
+				HTTPRequest("http://$nodo_ip/?event=output%20http,on");
+				
+				
+				$HTTPHost=get_phrase_after_string(trim_br(HTTPRequest("http://$nodo_ip/?event=status%20HTTPHost&key=$key")),'HTTPHost ');
+				$OutputHTTP=get_phrase_after_string(trim_br(HTTPRequest("http://$nodo_ip/?event=status%20Output%20HTTP&key=$key")),'Output HTTP,');
+				
+				//Controle of de configuratie van de Nodo correct is
+				if ($HTTPHost == "www.nodo-domotica.nl/webapp/nodo.php" && $OutputHTTP== "On" ) { 
+					$response = "6";
+					HTTPRequest("http://$nodo_ip/?event=id%20$nodo_id;password%20$nodo_password;SettingsSave;reboot");
+				}
+				else { 
+					$response = "7"; 
+				}
+				
+				
+				
+			}
 			else {
-				$response = "7";
+						
+				if (strpos(HTTPRequest("http://$nodo_ip/?file=waconfig"), 'ok') !== false) {
+					
+					global $build;
+					
+									
+					if ($build >= 443 && $build < 455) { // vanaf build 443
+					
+						HTTPRequest("http://$nodo_ip/?event=id%20$nodo_id;password%20$nodo_password;fileerase%20waconfig;Output%20HTTP,on;reboot"); 
+					
+					}
+						
+					elseif 	($build >= 455) { //vanaf build 455
+						
+						HTTPRequest("http://$nodo_ip/?event=id%20$nodo_id;password%20$nodo_password;fileerase%20waconfig;Output%20HTTP,on;SettingsSave;reboot");
+						
+					}
+					
+					else {
+						
+						HTTPRequest("http://$nodo_ip/?event=id%20$nodo_id;password%20$nodo_password;fileerase%20waconfig;OutputIp%20HTTP,on;reboot"); //oude manier
+					}
+							
+					$response = "6";	
+				
+				}
+				else {
+					$response = "7";
+				}	
 			}
 		}
 	}

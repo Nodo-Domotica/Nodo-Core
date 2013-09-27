@@ -56,9 +56,18 @@ Filelist
 if (isset($_GET['files'])) {
 	if ($heartbeat == "ok" && $busy == 0) {
 
-		HTTPRequest("http://$nodo_ip/?event=fileerase%20Filelst;Filelog%20Filelst;filelist;filelog&key=$key");
-		$files = explode("\n", trim(HTTPRequest("http://$nodo_ip/?file=filelst&key=$key")));
-		$total_files = count($files);
+		if ($build >= 517) {
+			
+			$files = explode("<br>", trim(HTTPRequest("http://$nodo_ip/?event=filelist&key=$key")));
+		
+		}
+		else {		
+		
+			HTTPRequest("http://$nodo_ip/?event=fileerase%20Filelst;Filelog%20Filelst;filelist;filelog&key=$key");
+			$files = explode("\n", trim(HTTPRequest("http://$nodo_ip/?file=filelst&key=$key")));
+			
+		}
+			$total_files = count($files);
 			
 		if (isset($files)){  
 
@@ -88,6 +97,7 @@ if (isset($_GET['files'])) {
 
 	echo '{"files":'. $json .'}'; 
 	
+	
 }
 
 /************************************************************************************************
@@ -103,39 +113,56 @@ if (isset($_POST['read']))
 
 		if ($_POST['scriptfile'] == "EVENTLST") {
 		
-			$file = "EVENTLST"; 
+				$file = "EVENTLST"; 
 
-			//Read eventlist on nodo
+				//Read eventlist on nodo
+				if ($build >= 517) {
+					
+				$script=str_replace("<br>","",(HTTPRequest("http://$nodo_ip/?event=EventListfile%20$file;Fileshow%20$file&key=$key")));
+				$script=trim(str_replace("!******************************************************************************!","",$script));
+				echo $script;
+				}
+				else {
+				HTTPRequest("http://$nodo_ip/?event=EventListfile%20$file&key=$key");
+				//Read file from Nodo to array
+				$script =  trim(HTTPRequest("http://$nodo_ip/?file=$file&key=$key"));
+				echo $script;
+				}
+			}
+			
+			else {
+			
+							
+				$file = $_POST['scriptfile'];
 				
-			HTTPRequest("http://$nodo_ip/?event=EventListfile%20$file&key=$key");
-			
+				if ($build >= 517) {
+				$script=str_replace("<br>","",(HTTPRequest("http://$nodo_ip/?event=Fileshow%20$file&key=$key")));
+				$script=trim(str_replace("!******************************************************************************!","",$script));
+				echo $script;
+				
+				}
+				else {
+					
+					//Read file from Nodo to array
+					$script =  trim(HTTPRequest("http://$nodo_ip/?file=$file&key=$key"));
+					echo $script;
+				
+				}
+				
+			}
 		}
-		else {
-		
-			
-			$file = $_POST['scriptfile'];
-
-		}
 		
 		
-
-		//Read file from Nodo to array
-		$script =  trim(HTTPRequest("http://$nodo_ip/?file=$file&key=$key"));
+		
 		
 					
 	}
 
 
-	 if (isset($script)){  
-
-						
-				echo $script;
 	 
-			
-		}
 		
 		
-	}
+	
 
 
 /************************************************************************************************

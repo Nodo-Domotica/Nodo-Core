@@ -36,6 +36,9 @@ $cookie = $row_RSsetup['cookie'];
 $cookie_update = $row_RSsetup['cookie_update'];
 $user_group = $row_RSsetup['user_group'];
 
+$build=trim(substr(strrchr($row_RSsetup['nodo_build'], "="), 1));
+$build=(int)$build;
+
 $key = md5($cookie.":".$nodo_password);
 
 //Controleren of de Nodo maximaal 3 minuten geleden een connectie met de Web App heeft gehad.

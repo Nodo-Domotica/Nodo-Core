@@ -83,30 +83,7 @@ END HTTPRequest function
 	
 	<form action="commands.php" id="command_form" data-ajax="false" method="post"> 
 	
-	 
-				
-	<br \>
-		<label for="select-choice-0" class="select">Predefined commands:</label>
-		<select name="def_command" id="def_command" data-native-menu="false">
-		    <option value="">Select command</option>
-			<option value="">Do nothing</option>
-		    <option value="1">Sync Nodo clock</option>
-			<option value="2">SimulateDay 1</option>
-			<option value="3">SimulateDay 7</option>
-			<option value="4">UserEvent 1,0</option>
-			<option value="5">UserEvent 2,0</option>
-			<option value="6">UserEvent 3,0</option>
-			<option value="7">UserEvent 4,0</option>
-			<option value="8">UserEvent 5,0</option>
-			<option value="9">UserEvent 6,0</option>
-			<option value="10">UserEvent 7,0</option>
-			<option value="11">UserEvent 8,0</option>
-			<option value="12">UserEvent 9,0</option>
-			<option value="13">UserEvent 10,0</option>
-			
-			
-		 </select>	
-		<br \>
+	 	<br \>
 		<label for="name">Nodo command: (Example: userevent 1;sendkaku a1,on)</label>
 		<input type="text" name="command" id="command" value=""  />
 	
@@ -134,9 +111,8 @@ $(document).ready(function() {
      $('#command_form').submit(function() {
       			
 	var command = $('#command').val();
-	var defcommand = $('#def_command').val();
-	
-	Get_Command_Result(command,defcommand);
+		
+	Get_Command_Result(command);
 		  
     return false;
 	});
