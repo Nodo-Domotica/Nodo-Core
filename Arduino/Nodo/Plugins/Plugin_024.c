@@ -1,5 +1,5 @@
 //#######################################################################################################
-//#################################### Plugin-42: P1 Slimme meter            ############################
+//#################################### Plugin-24: P1 Slimme meter  ######################################
 //#######################################################################################################
 
 /*********************************************************************************************\
@@ -19,7 +19,7 @@
  * Funktionele beschrijving:
  * 
  * Slimme meters zenden data via seriele communicatie. Deze data wordt door de meter verzonden zodra
- * de trigger lijn van de meter hoog (+5 volt) wordt. De data bestuit regels met daarin per regel een
+ * de trigger lijn van de meter hoog (+5 volt) wordt. De data bestaat regels met daarin per regel een
  * z.n. "OBIS" code die aangeeft om wat voor een soort gegeven het gaat en de inhoudelijke waarde.
  * Deze plugin vangt de data van de Slimme Meter op en haalt de waarden op om ze vervolgens in de 
  * opgegeven variabele te plaatsen. Zodra de variabele is gevuld kan deze naar eigen behoefte worden
@@ -55,7 +55,7 @@
  *         1. OBIS-code: Dit is een standaard codering die wordt gehanteerd door alle netbeheerders
  *            en dus ook (vrijwel) altijd wordt ondersteund door alle Slimme Meters. Door een OBIS-
  *            code op te nemen in de opvangtabel, kan een bijbehorende waarde worden opgevangen.   
- *            Wilt je andere waarden uitlezen nan nu voorgedefinieerd in de opvangtabel, zoek dan 
+ *            Wilt je andere waarden uitlezen dan nu voorgedefinieerd in de opvangtabel, zoek dan 
  *            de OBIS code op van de waarde die u wilt uitlezen en pas de tabel aan.
  *            
  *          2. Regelnummer: In sommige gevallen is de waarde die je wilt gebruiken niet aan een
@@ -68,7 +68,6 @@
  *          Niet nummerieke tekens tussen de haakjes, zoals 'Kwh' of 'm3' aanduidingen worden genegeerd.
  *          De variabelen worden gevuld met twee cijfers achter de komma, mits de meter deze ook zo 
  *          aanlevert.    
- *         waarden zal uitlezen en doorgeven aan een variabele.
  *  
  ***********************************************************************************************
  * Gebruik:  P1Read <Variable>, <Value 1..>
@@ -76,7 +75,7 @@
  *         Als de variabele is gevuld, kan deze op gebruikelijke wijze worden gebruikt in de Nodo
  *         of worden verzonden via RF, IR, I2C of HTTP naar bijvoorbeeld de WebApp.   
  *
- * LET OP: De Slimme meter zend een datablok. Gedurende verzenden van dit datablok, het  
+ * LET OP: De Slimme meter zendt een datablok. Gedurende verzenden van dit datablok, het  
  *         analyseren van het signaal en eventuele her-transmissies zal de Nodo geen events
  *         ontvangen of genereren. Het verdient daarom de aanbeveling om voor deze plugin 
  *         geen Nodo te gebruiken die tijdkritische taken moet verrichten of waar een 
@@ -108,7 +107,7 @@ char CatchTable[CATCH_TABLE_MAX][10]={   "1.8.1",     // Waarde 1, Electra: Tota
                                          "2.8.2",     // Waarde 4, Electra: Totaal geleverd tarief 2 (dag)
                                          "1.7.0",     // Waarde 5, Electra: Huidig verbruik
                                          "2.7.0",     // Waarde 6, Electra: Huidige teruglevering
-                                         "#18"  };    // Waarde 7, Gas: Huidige verbruik op regel 18
+                                         "#18"  };    // Waarde 7, Gas: Huidige verbruik op regel 18 (Verschilt per meter!)
 
 #define PLUGIN_ID 24
 #define PLUGIN_NAME "P1Read"
@@ -123,7 +122,6 @@ void P24Init(void)
   Serial.println(F("Plugin_024: Attention, Serial/USB/FTDI input captured by plugin!"));
   delay(1000);
   Serial.begin(P24_SERIAL_BAUD,P24_SERIAL_CONFIG);
-
   P24_Initialized=true;
   }
 
@@ -173,6 +171,7 @@ boolean Plugin_024(byte function, struct NodoEventStruct *event, char *string)
               
             if(ReceivedChar=='\n')
               {
+PrintString(P24_Str,VALUE_SOURCE_TELNET);//??? Debugging
               P24_Str[ReceivedCharCounter]=0;
               ReceivedCharCounter=0;
               Line++;   
