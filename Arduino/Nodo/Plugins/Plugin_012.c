@@ -8,8 +8,8 @@
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  *                      Support THGN132N en code optimalisatie door forumlid: Arendst
  * Support            : www.nodo-domotica.nl
- * Datum              : 12 Aug 2013
- * Versie             : 1.3
+ * Datum              : 05 Okt 2013
+ * Versie             : 1.4
  * Nodo productnummer : 
  * Compatibiliteit    : Vanaf Nodo build nummer 555
  * Syntax             : "OregonV2 <Par1:Sensor ID>, <Par2:Basis Variabele>"
@@ -41,8 +41,8 @@
 #define THGR810_ID             17039
 #define THN132N_MIN_PULSECOUNT   196
 #define THN132N_MAX_PULSECOUNT   205
-#define THGN123N_MIN_PULSECOUNT  228
-#define THGN123N_MAX_PULSECOUNT  238
+#define THGN123N_MIN_PULSECOUNT  225
+#define THGN123N_MAX_PULSECOUNT  240
 
 byte ProtocolOregonCheckID(byte checkID);
 
@@ -81,7 +81,7 @@ boolean Plugin_012(byte function, struct NodoEventStruct *event, char *string)
         }
         if (y%2 == 1)
         {
-          // Find sync pattern as THN132N and THGN132N have different preamble length
+          // Find sync pattern as THN132N and THGN123N have different preamble length
           if (c == 1)
           {
             sync = (sync >> 1) | (rfbit << 3);
@@ -112,8 +112,8 @@ boolean Plugin_012(byte function, struct NodoEventStruct *event, char *string)
 
       if ((id == THGN123N_ID) || (id == THGR810_ID))                           // Units with humidity sensor have extra data
         {
+          for(byte x=12; x<15;x++) checksumcalc += nibble[x];
           checksum = (nibble[16] << 4) | nibble[15];
-          for(byte x=13; x<16;x++) checksumcalc += nibble[x];
         }
 
       if (checksum != checksumcalc) return false;

@@ -7,8 +7,8 @@
  * 
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.Plugin
  * Support            : www.nodo-domotica.Plugin
- * Datum              : 10 Sep 2013
- * Versie             : 1.0
+ * Datum              : 8 okt 2013
+ * Versie             : V1.1
  * Nodo productnummer : 
  * Compatibiliteit    : Vanaf Nodo build nummer 555
  * Syntax             : "ExtWiredOut <Par1:Poort>, <Par2:On/Off>"
@@ -45,6 +45,7 @@ boolean Plugin_025(byte function, struct NodoEventStruct *event, char *string)
       byte unit = (event->Par1-1) / 8;
       byte port = event->Par1 - (unit * 8);
       uint8_t address = 0x20 + unit;
+      if (unit > 7) address = address + 0x10;
 
       // get the current pin status
       Wire.requestFrom(address, (uint8_t)0x1);
@@ -80,7 +81,7 @@ boolean Plugin_025(byte function, struct NodoEventStruct *event, char *string)
             {
             if(GetArgv(string,TempStr,3))
               {
-              if(event->Par1>0 && event->Par1<65 && (event->Par2==VALUE_ON || event->Par2==VALUE_OFF))            
+              if(event->Par1>0 && event->Par1<129 && (event->Par2==VALUE_ON || event->Par2==VALUE_OFF))            
                 {
                   event->Type = NODO_TYPE_PLUGIN_COMMAND;
                   event->Command = 25; // Plugin nummer  
