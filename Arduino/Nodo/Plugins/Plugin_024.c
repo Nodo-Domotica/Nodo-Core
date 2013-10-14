@@ -117,6 +117,12 @@ char* P24_Str;
 unsigned long EvenWachtenPizza=0;
 boolean P24_Initialized=false;
 
+void P24_ISR_Invert(void)
+  {
+  // Hulp voor de gebruiker: Inverteren zonder extra hardware. De IR_RX_DATA wordt geïnverteerd doorgegeven aan IR_TX_DATA
+  digitalWrite(PIN_IR_TX_DATA,digitalRead(PIN_IR_RX_DATA));
+  }
+
 void P24Init(void)
   {
   Serial.println(F("Plugin_024: Attention, Serial/USB/FTDI input captured by plugin!"));
@@ -143,6 +149,7 @@ boolean Plugin_024(byte function, struct NodoEventStruct *event, char *string)
     case PLUGIN_INIT:
       {
       P24_Str=(char*)malloc(P24_BUFFERSIZE);
+      attachInterrupt(PULSE_IRQ,P24_ISR_Invert,CHANGE); 
       break;
       }
       
