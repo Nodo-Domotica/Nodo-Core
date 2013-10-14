@@ -31,16 +31,28 @@
  *            P1:                                       Nodo:
  *            ========                                  ==========
  *            GND                     <-------------->  GND
- *            Trigger (Hoog = zenden) <---------------  WiredOut-1 
- *            Data (Laag=rust)        ---(inverter)-->  RX0  (Hoog = rust) 
+ *            Trigger (Hoog = zenden) <---------------  WiredOut-1 (D30 op Mega, D7 op Small) 
+ *            Data (Hoog=rust)        --------------->  RX0(Hoog = rust) 
  *
+ *         Als de datalijn van de P1 meter in rust nul is in plaats van +5, dan moet het signaal
+ *         worden geïnverteerd. Hiervoor biedt de plugin hulp: Alle data op IR_RX_DATA lijn kan 
+ *         geïnverteerd worden uitgestuurd naar de IR_TX_DATA. Je hebt dan geen extra Hardware nodig. 
+ *         Sluit dan de Meter als volgt aan:
+ *         
+ *            P1:                                       Nodo:
+ *            ========                                  ==========
+ *            GND                     <-------------->  GND
+ *            Trigger (Hoog = zenden) <---------------  WiredOut-1 (D30 op Mega, D7 op Small) 
+ *            Data (Laag=rust)        --------------->  IR_RX_DATA (D18 op Mega en D3 op Small)
+ *                                                      IR_TX_DATA (D17 op Mega en D11 op Small) ----> RX0(Hoog=rust)
+ *       
  * LET OP: Omdat deze plugin gebruik maakt van de Seriele communicatie is er geen mogelijkheid 
  *         meer om via seriele communicatie commando's naar de Nodo te sturen of events te bekijken.
  *         Voor een Nodo-small is dit geen probleem daar deze geen MMI heeft. Voor een Mega blijft 
  *         een TelNet verbinding wel gewoon mogelijk.
  *         van de Nodo. In geval van debugging kan, als de seriele settings op uw terminal programma
  *         overeenkomen met die van de Slimme Meter en deze plugin, wel worden gebruikt om de output
- *         van de Slimme meter te bekijken. In alle overige situaties een ventuele USB/FTDI aansluiting
+ *         van de Slimme meter te bekijken. In alle overige situaties een eventuele USB/FTDI aansluiting
  *         loskoppelen.        
  *   
  ***********************************************************************************************
@@ -120,7 +132,7 @@ boolean P24_Initialized=false;
 void P24_ISR_Invert(void)
   {
   // Hulp voor de gebruiker: Inverteren zonder extra hardware. De IR_RX_DATA wordt geïnverteerd doorgegeven aan IR_TX_DATA
-  digitalWrite(PIN_IR_TX_DATA,digitalRead(PIN_IR_RX_DATA));
+  digitalWrite(PIN_IR_TX_DATA,!digitalRead(PIN_IR_RX_DATA));
   }
 
 void P24Init(void)
@@ -128,6 +140,7 @@ void P24Init(void)
   Serial.println(F("Plugin_024: Attention, Serial/USB/FTDI input captured by plugin!"));
   delay(1000);
   Serial.begin(P24_SERIAL_BAUD,P24_SERIAL_CONFIG);
+  attachInterrupt(PULSE_IRQ,P24_ISR_Invert,CHANGE);
   P24_Initialized=true;
   }
 
@@ -149,7 +162,6 @@ boolean Plugin_024(byte function, struct NodoEventStruct *event, char *string)
     case PLUGIN_INIT:
       {
       P24_Str=(char*)malloc(P24_BUFFERSIZE);
-      attachInterrupt(PULSE_IRQ,P24_ISR_Invert,CHANGE); 
       break;
       }
       
