@@ -123,9 +123,9 @@ char CatchTable[CATCH_TABLE_MAX][10]={   "1.8.1",     // Waarde 1, Electra: Tota
 
 #define PLUGIN_ID 24
 #define PLUGIN_NAME "P1Read"
-#define P24_BUFFERSIZE 100
+#define P24_BUFFERSIZE 80
 boolean ParseString(char* Input, char* Result, char* Start, char* StopChrs, char* ValidChrs);
-char* P24_Str;
+char P24_Str[P24_BUFFERSIZE];
 unsigned long EvenWachtenPizza=0;
 boolean P24_Initialized=false;
 
@@ -158,13 +158,7 @@ boolean Plugin_024(byte function, struct NodoEventStruct *event, char *string)
   switch(function)
     {
     #ifdef PLUGIN_024_CORE
-                
-    case PLUGIN_INIT:
-      {
-      P24_Str=(char*)malloc(P24_BUFFERSIZE);
-      break;
-      }
-      
+                      
     case PLUGIN_COMMAND:
       {
       if(!P24_Initialized)P24Init();
