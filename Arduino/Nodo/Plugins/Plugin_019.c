@@ -1,4 +1,4 @@
-//#######################################################################################################
+                //#######################################################################################################
 //#################################### Plugin-19: ID-12 RFID Tag Reader #################################
 //#######################################################################################################
 
@@ -7,10 +7,10 @@
  * 
  * Auteur             : Martinus van den Broek
  * Support            : www.nodo-domotica.nl
- * Datum              : 12 Aug 2013
- * Versie             : 1.1
+ * Datum              : 22 Okt 2013
+ * Versie             : 1.2
  * Nodo productnummer : 
- * Compatibiliteit    : Vanaf Nodo build nummer 555
+ * Compatibiliteit    : Vanaf Nodo build nummer 596
  * Syntax             : "RFID <customer ID>,<tag ID>
  ***********************************************************************************************
  * Technische beschrijving:
@@ -171,7 +171,7 @@ boolean Plugin_019(byte function, struct NodoEventStruct *event, char *string)
           if(GetArgv(string,str,3))
             {
               event->Par2=str2int(str);
-              event->Type = NODO_TYPE_PLUGIN_COMMAND;
+              event->Type = NODO_TYPE_PLUGIN_EVENT;
               event->Command = 19; // Plugin nummer  
               success=true;
             }
