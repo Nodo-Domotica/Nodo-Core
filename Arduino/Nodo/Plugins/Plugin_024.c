@@ -34,17 +34,9 @@
  *            Trigger (Hoog = zenden) <---------------  WiredOut-1 (D30 op Mega, D7 op Small) 
  *            Data (Hoog=rust)        --------------->  RX0(Hoog = rust) 
  *
- *         Als de datalijn van de P1 meter in rust nul is in plaats van +5, dan moet het signaal
- *         worden geïnverteerd. Hiervoor biedt de plugin hulp: Alle data op IR_RX_DATA lijn kan 
- *         geïnverteerd worden uitgestuurd naar de IR_TX_DATA. Je hebt dan geen extra Hardware nodig. 
- *         Sluit dan de Meter als volgt aan:
- *         
- *            P1:                                       Nodo:
- *            ========                                  ==========
- *            GND                     <-------------->  GND
- *            Trigger (Hoog = zenden) <---------------  WiredOut-1 (D30 op Mega, D7 op Small) 
- *            Data (Laag=rust)        --------------->  IR_RX_DATA (D18 op Mega en D3 op Small)
- *                                                      IR_TX_DATA (D17 op Mega en D11 op Small) ----> RX0(Hoog=rust)
+ *         Als de datalijn van de P1 meter in rust nul is in plaats van hoog/+5, dan moet het signaal
+ *         worden geïnverteerd. Hiervoor kun je een 7404, 7414, 4069 of andere schakeling voor 
+ *         gebruiken. 
  *       
  * LET OP: Omdat deze plugin gebruik maakt van de Seriele communicatie is er geen mogelijkheid 
  *         meer om via seriele communicatie commando's naar de Nodo te sturen of events te bekijken.
@@ -124,26 +116,19 @@ char CatchTable[CATCH_TABLE_MAX][10]={   "1.8.1",     // Waarde 1, Electra: Tota
 #define PLUGIN_ID 24
 #define PLUGIN_NAME "P1Read"
 #define P24_BUFFERSIZE 80
-boolean ParseString(char* Input, char* Result, char* Start, char* StopChrs, char* ValidChrs);
+boolean ParseString_24(char* Input, char* Result, char* Start, char* StopChrs, char* ValidChrs);
 char P24_Str[P24_BUFFERSIZE];
 unsigned long EvenWachtenPizza=0;
 boolean P24_Initialized=false;
 
-void P24_ISR_Invert(void)
-  {
-  // Hulp voor de gebruiker: Inverteren zonder extra hardware. De IR_RX_DATA wordt geïnverteerd doorgegeven aan IR_TX_DATA
-  digitalWrite(PIN_IR_TX_DATA,!digitalRead(PIN_IR_RX_DATA));
-  }
 
 void P24Init(void)
   {
   Serial.println(F("Plugin_024: Attention, Serial/USB/FTDI input captured by plugin!"));
   delay(1000);
   Serial.begin(P24_SERIAL_BAUD,P24_SERIAL_CONFIG);
-  attachInterrupt(PULSE_IRQ,P24_ISR_Invert,CHANGE);
   P24_Initialized=true;
   }
-
 
 boolean Plugin_024(byte function, struct NodoEventStruct *event, char *string)
   {
@@ -192,7 +177,7 @@ boolean Plugin_024(byte function, struct NodoEventStruct *event, char *string)
                 {
                 if(Line==strtol(CatchTable[event->Par2-1]+1,NULL,0))
                   {
-                  if(ParseString(P24_Str,P24_Str,"(" , ")" , "1234567890."))
+                  if(ParseString_24(P24_Str,P24_Str,"(" , ")" , "1234567890."))
                     {
                     FetchedData=atof(P24_Str);
                     Fetched=true;
@@ -200,7 +185,7 @@ boolean Plugin_024(byte function, struct NodoEventStruct *event, char *string)
                   }
                 }
 
-              else if(ParseString(P24_Str,P24_Str,CatchTable[event->Par2-1] , ")" , "1234567890."))
+              else if(ParseString_24(P24_Str,P24_Str,CatchTable[event->Par2-1] , ")" , "1234567890."))
                 {
                 FetchedData=atof(P24_Str);
                 Fetched=true;
@@ -288,7 +273,7 @@ boolean Plugin_024(byte function, struct NodoEventStruct *event, char *string)
   * op een vastloper!
   \*********************************************************************************************/
 
-boolean ParseString(char* Input, char* Result, char* Start, char* StopChrs, char* ValidChrs)
+boolean ParseString_24(char* Input, char* Result, char* Start, char* StopChrs, char* ValidChrs)
   {
   int StartPos=0,StopPos=0;
   int x,y,z;
