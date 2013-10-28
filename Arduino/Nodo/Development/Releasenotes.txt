@@ -254,10 +254,19 @@ R590
 - Bij opstarten Mega wordt het script "autoexec" uitgevoerd.         
 
 R601
--  Issue 785:	Parameter 2 van VariableSend wordt altijd gevuld met ALL
+- Issue 785:	Parameter 2 van VariableSend wordt altijd gevuld met ALL
+- Issue 804:	SendTo vreet geen regels na compatibiliteitconversie	
 -  #define CLOCK voor wel/niet meecompileren realtime clock funktionaliteit
                                                                                            
-Nog te doen:                                                                       ]
+R610
+- Issue 805:	NewNodo melding komt ondanks wegschrijven eventlist
+- Issue 808:	Plugin error message is cryptisch
+- Poort "Plugin" toegevoegd.                               
+- Plugin_006: Dubbel setten van variabele verwijderd. Tevens toevoeging poort="Plugin" en retry bij error.
+- Plugin_006: Geschikt gemaakt voor DHT-22
+
+
+Nog te doen:
 
 testen:
 - Aanpassen en testen: Lock mechanisme

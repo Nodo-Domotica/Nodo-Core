@@ -27,6 +27,5 @@
 #define PLUGIN_004
 #define PLUGIN_004_CORE
 
-// P1 slimme meter 
-#define PLUGIN_024
-#define PLUGIN_024_CORE
+#define PLUGIN_006
+#define PLUGIN_006_CORE

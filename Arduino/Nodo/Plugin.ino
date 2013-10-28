@@ -879,21 +879,22 @@ void PluginInit(void)
  /*********************************************************************************************\
  * Met deze functie worden de plugins aangeroepen. In Event->Command zit het nummer van het plugin dat moet
  * worden aangeroepen. Deze functie doorzoekt de ID en pointertabel en roept van hieruit het
- * juiste plugin aan. Als resultaat komt er een foutcode of 0 bij succes.
+ * juiste plugin aan. Als resultaat komt er true bij succes.
  * Als er een verzoek wordt gedaan om alle plugins het Rawsignal te onderzoeken, dan wordt teruggekeerd
  * met een true als het eerste plugin een true geretourneerd heeft.
  \*********************************************************************************************/
 
-byte PluginCall(byte Function, struct NodoEventStruct *Event, char *str)
+boolean PluginCall(byte Function, struct NodoEventStruct *Event, char *str)
   {
-  byte success=false;
+  boolean Success=false;
   boolean AllPlugins=false;
   boolean FirstHitReturn=false;
   boolean CallSpecificPlugin=false;
+  boolean MessageOnError=false;
   
   switch(Function)
     {
-    // Alle plugins langslopen
+    // Alle plugins langslopen, geen messages genereren.
     case PLUGIN_ONCE_A_SECOND:
     case PLUGIN_EVENT_IN:
     case PLUGIN_EVENT_OUT:
@@ -902,7 +903,7 @@ byte PluginCall(byte Function, struct NodoEventStruct *Event, char *str)
       AllPlugins=true;
       break;
     
-    // Alle plugins langslopen. Na de eerste hit direct terugkeren met returnwaarde true
+    // Alle plugins langslopen. Na de eerste hit direct terugkeren met returnwaarde true, geen messages genereren.
     case PLUGIN_MMI_IN:
     case PLUGIN_RAWSIGNAL_IN:
     case PLUGIN_SERIAL_IN:
@@ -911,9 +912,14 @@ byte PluginCall(byte Function, struct NodoEventStruct *Event, char *str)
       FirstHitReturn=true;
       break;
 
+    // alleen specifieke plugin aanroepen zoals opgegeven in Event->Command. Bij terugkeer false, geef messsage en return met false;
+    case PLUGIN_COMMAND:
+      CallSpecificPlugin=true;
+      MessageOnError=true;
+      break;
+
     // alleen plugin aanroepen zoals opgegeven in Event->Command. Keer terug met error
     case PLUGIN_MMI_OUT:
-    case PLUGIN_COMMAND:
       CallSpecificPlugin=true;
       break;
     }
@@ -923,23 +929,28 @@ byte PluginCall(byte Function, struct NodoEventStruct *Event, char *str)
     // Zoek het plugin in de tabel en voer de plugin code uit.
     if(Plugin_ptr[x]!=0 && (AllPlugins || Plugin_id[x]==Event->Command))    // Als plugin bestaat of alle plugins moeten worden langsgelopen
       {
-      success=Plugin_ptr[x](Function,Event,str);
-      if(success && FirstHitReturn)
+      Success=Plugin_ptr[x](Function,Event,str);
+      if(Success && FirstHitReturn)
         return true;
         
       if(CallSpecificPlugin)
         {
-        if(success)
-          return 0;
-        else
-          return MESSAGE_PLUGIN_ERROR;
+        // Als een specifieke plugin is aangeroepen en deze gaf geen true terug, dan een message weergeven.
+        if(!Success && MessageOnError)
+          {
+          RaiseMessage(MESSAGE_PLUGIN_ERROR,Plugin_id[x]);
+          }
+        return Success;
         }
       }
     }
-  if(CallSpecificPlugin)
-    return MESSAGE_PLUGIN_UNKNOWN;
 
-  return success;
+  if(CallSpecificPlugin)
+    {
+    RaiseMessage(MESSAGE_PLUGIN_UNKNOWN,Event->Command);
+    }
+
+  return Success;
   }
 
 

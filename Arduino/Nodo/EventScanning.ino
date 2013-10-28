@@ -11,7 +11,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)// Deze routine maakt deel uit v
   {
   byte Fetched=0;
   static unsigned long BlockReceivingTimer=0;
-  
+
   // I2C: *************** kijk of er data is binnengekomen op de I2Cbus **********************
   if(I2C_Received)
    {
@@ -111,7 +111,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)// Deze routine maakt deel uit v
       Event->Par1=0;
       Event->Par2=0;
       PrintEvent(Event,VALUE_ALL);
-      RaiseMessage(MESSAGE_VERSION_ERROR);
+      RaiseMessage(MESSAGE_VERSION_ERROR,Event->Version);
       #endif
       return false;
       }     

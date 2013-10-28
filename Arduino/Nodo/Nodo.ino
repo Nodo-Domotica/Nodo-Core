@@ -8,7 +8,7 @@
 //??? Includes zonder remarks
 //??? Tabblad debug.ino verwijderen
 //??? Nieuwe libraries mee distribueren
-//??? Final compilatie voor een Mego
+//??? Final compilatie voor een Mega
 //??? Final compilatie voor een Small
 //??? 
 //??? Deze checklist verwijderen
@@ -58,7 +58,7 @@
 // ============================================================================================================================
 
 //???
-#define CONFIG_FILE Config_15.c
+#define CONFIG_FILE Config_10.c
 
 
 // ============================================================================================================================
@@ -68,8 +68,8 @@
 // ============================================================================================================================
 
 //???
-//#include <SD.h>
-//#include <EthernetNodo.h>
+#include <SD.h>
+#include <EthernetNodo.h>
 
 
 

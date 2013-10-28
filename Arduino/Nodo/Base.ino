@@ -3,7 +3,7 @@ byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
 #define NODO_VERSION_MAJOR             3  // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define NODO_VERSION_MINOR             2  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 //???
-#define NODO_BUILD                   604  // Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                   610  // Ophogen bij iedere Build / versiebeheer.
 
 #define UNIT_NODO                      1 // Unit nummer van deze Nodo
 #define HOME_NODO                      1 // Home adres van Nodo's die tot één groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
@@ -85,7 +85,7 @@ byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
 #define VALUE_DLS                       36
 #define CMD_DEBUG                       37
 #define CMD_DELAY                       38
-#define VALUE_PLUGIN                    39
+#define VALUE_SOURCE_PLUGIN             39
 #define CMD_DNS_SERVER                  40
 #define CMD_ECHO                        41
 #define VALUE_RECEIVED_EVENT            42
@@ -836,7 +836,7 @@ void setup()
       {
       // niet gelukt om ethernet verbinding op gang te krijgen
       bitWrite(HW_Config,HW_ETHERNET,0);
-      RaiseMessage(MESSAGE_TCPIP_FAILED);
+      RaiseMessage(MESSAGE_TCPIP_FAILED,0);
       }
     }
   #endif
@@ -932,6 +932,49 @@ void loop()
     if(ScanEvent(&ReceivedEvent)) 
       ProcessEvent1(&ReceivedEvent); // verwerk binnengekomen event.
     
+    // SERIAL: *************** kijk of er data klaar staat op de seriële poort **********************
+    if(Serial.available())
+      {
+      PluginCall(PLUGIN_SERIAL_IN,0,0);
+
+      #if NODO_MEGA     
+      bitWrite(HW_Config,HW_SERIAL,1);// Input op seriele poort ontvangen. Vanaf nu ook output naar Seriele poort want er is klaarblijkelijk een actieve verbinding
+      StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;
+
+      while(StaySharpTimer>millis()) // blijf even paraat voor luisteren naar deze poort en voorkom dat andere input deze communicatie onderbreekt
+        {          
+        while(Serial.available())
+          {                        
+          SerialInByte=Serial.read();                
+          if(Settings.EchoSerial==VALUE_ON)
+            Serial.write(SerialInByte);// echo ontvangen teken
+
+          StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
+          
+          if(isprint(SerialInByte))
+            {
+            if(SerialInByteCounter<INPUT_BUFFER_SIZE) // alleen tekens aan de string toevoegen als deze nog in de buffer past.
+              InputBuffer_Serial[SerialInByteCounter++]=SerialInByte;
+            }
+            
+          if(SerialInByte=='\n')
+            {
+            SerialHold(true);
+            InputBuffer_Serial[SerialInByteCounter]=0; // serieel ontvangen regel is compleet
+            ExecutionDepth=0;
+            RaiseMessage(ExecuteLine(InputBuffer_Serial,VALUE_SOURCE_SERIAL),0);
+            Serial.write('>'); // Prompt
+            SerialInByteCounter=0;  
+            InputBuffer_Serial[0]=0; // serieel ontvangen regel is verwerkt. String leegmaken
+            SerialHold(false);
+            StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
+            }
+          }
+        }
+      #endif
+      }// if(Serial.available())
+
+
     // 1: minder tijdkritische processen die periodiek uitgevoerd moeten worden
     if(LoopIntervalTimer_1<millis()) // korte interval
       {
@@ -939,60 +982,14 @@ void loop()
 
       switch(Slice_1++)
         {
-        case 0: // binnen Slice_1
-          {
-          // SERIAL: *************** kijk of er data klaar staat op de seriële poort **********************
-          if(Serial.available())
-            {
-            PluginCall(PLUGIN_SERIAL_IN,0,0);
-
-            #if NODO_MEGA     
-            bitWrite(HW_Config,HW_SERIAL,1);// Input op seriele poort ontvangen. Vanaf nu ook output naar Seriele poort want er is klaarblijkelijk een actieve verbinding
-            StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;
-
-            while(StaySharpTimer>millis()) // blijf even paraat voor luisteren naar deze poort en voorkom dat andere input deze communicatie onderbreekt
-              {          
-              while(Serial.available())
-                {                        
-                SerialInByte=Serial.read();                
-                if(Settings.EchoSerial==VALUE_ON)
-                  Serial.write(SerialInByte);// echo ontvangen teken
-
-                StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
-                
-                if(isprint(SerialInByte))
-                  {
-                  if(SerialInByteCounter<INPUT_BUFFER_SIZE) // alleen tekens aan de string toevoegen als deze nog in de buffer past.
-                    InputBuffer_Serial[SerialInByteCounter++]=SerialInByte;
-                  }
-                  
-                if(SerialInByte=='\n')
-                  {
-                  SerialHold(true);
-                  InputBuffer_Serial[SerialInByteCounter]=0; // serieel ontvangen regel is compleet
-                  ExecutionDepth=0;
-                  RaiseMessage(ExecuteLine(InputBuffer_Serial,VALUE_SOURCE_SERIAL));
-                  Serial.write('>'); // Prompt
-                  SerialInByteCounter=0;  
-                  InputBuffer_Serial[0]=0; // serieel ontvangen regel is verwerkt. String leegmaken
-                  SerialHold(false);
-                  StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
-                  }
-                }
-              }
-            #endif
-            }// if(Serial.available())
-          break;
-          }
-
-        case 1:  // binnen Slice_1
+        case 0:  // binnen Slice_1
           {
           Led(GREEN);
           break;
           }
         
         #if NODO_MEGA
-        case 2: // binnen Slice_1
+        case 1: // binnen Slice_1
           {
           // IP Event: *************** kijk of er een Event van IP komt **********************    
           if(bitRead(HW_Config,HW_ETHERNET))
@@ -1029,7 +1026,7 @@ void loop()
                   else
                     {
                     TerminalClient.print(cmd2str(MESSAGE_ACCESS_DENIED));
-                    RaiseMessage(MESSAGE_ACCESS_DENIED);
+                    RaiseMessage(MESSAGE_ACCESS_DENIED,0);
                     }
                   }
                 else
@@ -1075,7 +1072,7 @@ void loop()
                     {
                     TerminalClient.getRemoteIP(ClientIPAddress);
                     ExecutionDepth=0;
-                    RaiseMessage(ExecuteLine(InputBuffer_Terminal,VALUE_SOURCE_TELNET));
+                    RaiseMessage(ExecuteLine(InputBuffer_Terminal,VALUE_SOURCE_TELNET),0);
                     TerminalClient.write('>');// prompt
                     }
                   else
@@ -1098,7 +1095,7 @@ void loop()
                           {
                           TerminalLocked=PASSWORD_TIMEOUT; // blokkeer tijd terminal
                           TerminalClient.print(cmd2str(MESSAGE_ACCESS_DENIED));
-                          RaiseMessage(MESSAGE_ACCESS_DENIED);
+                          RaiseMessage(MESSAGE_ACCESS_DENIED,0);
                           }
                         else
                           TerminalClient.print(ProgmemString(Text_03));

@@ -84,7 +84,7 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
 
         default:
           Continue=false;
-          RaiseMessage(MESSAGE_ACCESS_DENIED);
+          RaiseMessage(MESSAGE_ACCESS_DENIED,0);
         }
       }
     }
@@ -122,10 +122,10 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
     #endif
     
     // ############# Verwerk event ################  
-
     if(Event->Type==NODO_TYPE_PLUGIN_COMMAND)
-      if(error=PluginCall(PLUGIN_COMMAND,Event,0))
-        RaiseMessage(error);
+      {
+      PluginCall(PLUGIN_COMMAND,Event,0);
+      }
    
     if(error==0)
       {
@@ -321,9 +321,10 @@ void QueueProcess(void)
         A.Par2=Queue[x+2].Par2;
        
         if(Eventlist_Write(Queue[x].Par1, &E, &A))
+          {
           x+=2;
-        else
-          RaiseMessage(MESSAGE_EVENTLIST_FAILED);    
+          UndoNewNodo();
+          }
         }
       else
         {
@@ -336,7 +337,7 @@ void QueueProcess(void)
         Event.Port=Queue[x].Port;
         Event.Flags=Queue[x].Flags;
         
-        RaiseMessage(ProcessEvent2(&Event));      // verwerk binnengekomen event.
+        ProcessEvent2(&Event);      // verwerk binnengekomen event.
         }
       }
     }

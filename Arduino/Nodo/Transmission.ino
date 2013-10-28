@@ -973,7 +973,7 @@ boolean SendHTTPRequest(char* Request)
     {
     x=Settings.TransmitIP; // HTTP tijdelijk uitzetten want die deed het immers niet.
     Settings.TransmitIP=VALUE_OFF; // HTTP tijdelijk uitzetten want die deed het immers niet.
-    RaiseMessage(MESSAGE_TCPIP_FAILED);
+    RaiseMessage(MESSAGE_TCPIP_FAILED,0);
     Settings.TransmitIP=x; // HTTP weer terugzetten naar oorspronkelijke waarde.
     }
 
@@ -1072,7 +1072,7 @@ void ExecuteIP(void)
       (Settings.Client_IP[2]!=0 && ClientIPAddress[2]!=Settings.Client_IP[2]) ||
       (Settings.Client_IP[3]!=0 && ClientIPAddress[3]!=Settings.Client_IP[3]))
       {
-      RaiseMessage(MESSAGE_ACCESS_DENIED);
+      RaiseMessage(MESSAGE_ACCESS_DENIED,0);
       }
     else
       {
@@ -1162,7 +1162,7 @@ void ExecuteIP(void)
               if(ExecuteEvent)
                 {              
                 // Voer binnengekomen event uit
-                RaiseMessage(ExecuteLine(Event, Protocol));
+                ExecuteLine(Event, Protocol);
                 }
               } // einde HTTP-request
             }

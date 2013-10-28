@@ -90,8 +90,13 @@ boolean Eventlist_Read(int address, struct NodoEventStruct *Event, struct NodoEv
   return true;
   }
 
-
-void RaiseMessage(byte MessageCode)
+/*********************************************************************************************\
+ * Deze funktie verstuurt een message. Aanroep van deze funktie in de code daar waar de foutmelding 
+ * is opgetreden, dodat er geen foutcodes door de code heen getransporteerd hoeven te worden.
+ * 
+ * 
+ \*********************************************************************************************/
+void RaiseMessage(byte MessageCode, unsigned long Option)
   {
   if(MessageCode)
     {
@@ -100,6 +105,7 @@ void RaiseMessage(byte MessageCode)
     TempEvent.Type      = NODO_TYPE_EVENT;
     TempEvent.Command   = EVENT_MESSAGE;
     TempEvent.Par1      = MessageCode;
+    TempEvent.Par2      = Option;
     TempEvent.Direction = VALUE_DIRECTION_INPUT;
     TempEvent.Port      = VALUE_SOURCE_SYSTEM;
     #if NODO_MEGA
@@ -441,7 +447,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
       }
     break;
 
-  case VALUE_PLUGIN:
+  case VALUE_SOURCE_PLUGIN:
     x=Plugin_id[xPar1];
     if(x)
       Event->Par1=x;
@@ -845,7 +851,7 @@ void Status(struct NodoEventStruct *Request)
         {
         switch(x)
           {
-          case VALUE_PLUGIN:
+          case VALUE_SOURCE_PLUGIN:
             Par1_Start=0;
             Par1_End=PLUGIN_MAX-1;
             break;
@@ -1862,12 +1868,13 @@ void ClockRead(void)
   boolean DLS = (y>=((x/100L)*100L+30002L) && y<((x%100L)*100L+100003L));  
   x=Time.Month*100                  + Time.Date;  
   y=Time.DaylightSavingSetMonth*100 + Time.DaylightSavingSetDate;
+
   if(Time.DaylightSaving!=DLS  && x!=y)  // Als DaylightSaving status volgens de RTC niet overeenkomt met de DaylightSaving zoals berekend uit de datum EN de RTC is vandaag nog niet verzet...
     {  
     if(DLS)// als het zomertijd is en wintertijd wordt
       Time.Hour=Time.Hour==0?23:Time.Hour-1;// ...dan de klok een uur terug.
     else // als het wintertijd is en zomertijd wordt
-    Time.Hour=Time.Hour<23?Time.Hour+1:0; //... dan klok uur vooruit.
+      Time.Hour=Time.Hour<23?Time.Hour+1:0; //... dan klok uur vooruit.
 
     Time.DaylightSavingSetMonth=Time.Month;
     Time.DaylightSavingSetDate=Time.Date;
