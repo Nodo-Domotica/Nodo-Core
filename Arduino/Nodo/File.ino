@@ -332,7 +332,7 @@ byte RawSignalSave(unsigned long Key)
     }
 
   if(error)
-    RaiseMessage(MESSAGE_SDCARD_ERROR);
+    RaiseMessage(MESSAGE_SDCARD_ERROR,0);
 
   return !error;
   }

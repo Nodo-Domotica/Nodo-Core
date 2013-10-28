@@ -1,44 +1,57 @@
+
 //#######################################################################################################
-//######################## PLUGIN-06 Temperatuur en Luchtvochtigheid sensor DHT 11 ######################
+//######################## PLUGIN-06 Temperatuur en Luchtvochtigheid sensor DHT 11/22 ###################
 //#######################################################################################################
 
 /*********************************************************************************************\
- * Dit protocol zorgt voor ontvangst van Alecto weerstation buitensensoren met protocol V1
  * 
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  * Support            : www.nodo-domotica.nl
  * Datum              : 12 Aug 2013
- * Versie             : 1.1
+ * Versie             : 1.2
+ *                      
+ *                      Modificaties: 
+ *                      2013-11, V1.2, Paul Tonkes: Retry bij fout tijdens uitlezen en DHT-22 compatibel
+ *                         
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
  * Compatibiliteit    : Vanaf Nodo build nummer 555
- * Syntax             : "DHT11 <Par1:Poortnummer>, <Par2:Basis Variabele>"
+ * Syntax             : "DHTRead <Par1:Poortnummer>, <Par2:Basis Variabele>"
  *********************************************************************************************
+ * Configuratie:
+ * 
+ * Deze plugin is zowel geschikt voor een DHT-11 sensor alsmede de DHT-22 die een veel hogere
+ * resolutie heeft. Deze laatste heeft dan ook de voorkeur. Geef in DHT_TYPE op welke sensor 
+ * je gebruikt. Verkeerde definitie zal leiden tot foutieve uitlezing.
+ *    
  * Technische informatie:
- * De DHT11 sensor is een 3 pin sensor met een bidirectionele datapin
+ *  
+ * De DHT sensor is een 3 pin sensor met een bidirectionele datapin. Deze verbind je met een WiredOut poort. 
  * Het principe is "onewire" maar dit protocol is NIET compatible met het bekende Dallas onewire protocol
  * Dit protocol gebruikt twee variabelen, 1 voor temperatuur en 1 voor luchtvochtigheid
  \*********************************************************************************************/
 
+#define DHT_TYPE 22 // Kies hier 11 voor een DHT-11 sensor of 22 voor een DHT-22
+
 #define PLUGIN_ID 06
-#define PLUGIN_NAME "DHT11Read"
-uint8_t DHT11_Pin;
+#define PLUGIN_NAME "DHTRead"
+uint8_t DHT_Pin;
 
 #ifdef PLUGIN_006_CORE
 /*********************************************************************************************\
- * DHT11 sub to get an 8 bit value from the receiving bitstream
+ * DHT sub to get an 8 bit value from the receiving bitstream
  \*********************************************************************************************/
-byte read_dht11_dat(void)
+byte read_dht_dat(void)
   {
   byte i = 0;
   byte result=0;
   noInterrupts();
   for(i=0; i< 8; i++)
     {
-    while(!digitalRead(DHT11_Pin));  // wait for 50us
+    while(!digitalRead(DHT_Pin));  // wait for 50us
     delayMicroseconds(30);
-    if(digitalRead(DHT11_Pin)) 
+    if(digitalRead(DHT_Pin)) 
       result |=(1<<(7-i));
-    while(digitalRead(DHT11_Pin));  // wait '1' finish
+    while(digitalRead(DHT_Pin));  // wait '1' finish
     }
   interrupts();
   return result;
@@ -49,63 +62,98 @@ byte read_dht11_dat(void)
 boolean Plugin_006(byte function, struct NodoEventStruct *event, char *string)
   {
   boolean success=false;
-
+  
   switch(function)
     {
     #ifdef PLUGIN_006_CORE
   
     case PLUGIN_COMMAND:
       {
-      DHT11_Pin=PIN_WIRED_OUT_1+event->Par1-1;
-      byte dht11_dat[5];
-      byte dht11_in;
+      DHT_Pin=PIN_WIRED_OUT_1+event->Par1-1;
+      byte dht_dat[5];
+      byte dht_in;
       byte i;
-      byte temperature=0;
-      byte humidity=0;
-  
-      pinMode(DHT11_Pin,OUTPUT);
-  
-      // DHT11 start condition, pull-down i/o pin for 18ms
-      digitalWrite(DHT11_Pin,LOW);               // Pull low
-      delay(18);
-      digitalWrite(DHT11_Pin,HIGH);              // Pull high
-      delayMicroseconds(40);
-      pinMode(DHT11_Pin,INPUT);                  // change pin to input
-      delayMicroseconds(40);
-  
-      dht11_in = digitalRead(DHT11_Pin);
-      if(dht11_in) return false;
-  
-      delayMicroseconds(80);
-      dht11_in = digitalRead(DHT11_Pin);
-      if(!dht11_in) return false;
-  
-      delayMicroseconds(40);                     // now ready for data reception
-      for (i=0; i<5; i++)
-        dht11_dat[i] = read_dht11_dat();
-        
-      // Checksum calculation is a Rollover Checksum by design!
-      byte dht11_check_sum = dht11_dat[0]+dht11_dat[1]+dht11_dat[2]+dht11_dat[3];// check check_sum
-      if(dht11_dat[4]!= dht11_check_sum)
-        return false;
-  
-      temperature = dht11_dat[2];
-      humidity = dht11_dat[0];
-  
-      byte VarNr = event->Par2; // De originele Par1 tijdelijk opslaan want hier zit de variabelenummer in waar de gebruiker de uitgelezen waarde in wil hebben
+      byte Retry=0;
 
-      ClearEvent(event);                                      // Ga uit van een default schone event. Oude eventgegevens wissen.
-      
-      event->Type         = NODO_TYPE_COMMAND;
-      event->Command      = CMD_VARIABLE_SET;                 // Commando "VariableSet"
-      event->Par1         = VarNr;                            // Par1 is de variabele die we willen vullen.
-      event->Par2         = float2ul(float(temperature));
-      QueueAdd(event);                                        // Event opslaan in de event queue, hierna komt de volgende meetwaarde
-      event->Par1         = VarNr+1;                          // Par1+1 is de variabele die we willen vullen voor luchtvochtigheid
-      event->Par2         = float2ul(float(humidity));
-      QueueAdd(event);
-      success=true;
+      do
+        {  
+        pinMode(DHT_Pin,OUTPUT);
+        // DHT start condition, pull-down i/o pin for 18ms
+        digitalWrite(DHT_Pin,LOW);               // Pull low
+        delay(18);
+        digitalWrite(DHT_Pin,HIGH);              // Pull high
+        delayMicroseconds(40);
+        pinMode(DHT_Pin,INPUT);                  // change pin to input
+        delayMicroseconds(40);
+    
+        dht_in = digitalRead(DHT_Pin);
+        if(!dht_in)
+          {
+          delayMicroseconds(80);
+          dht_in = digitalRead(DHT_Pin);
+          if(dht_in)
+            {
+            delayMicroseconds(40);                     // now ready for data reception
+            for (i=0; i<5; i++)
+              dht_dat[i] = read_dht_dat();
+              
+            // Checksum calculation is a Rollover Checksum by design!
+            byte dht_check_sum = dht_dat[0]+dht_dat[1]+dht_dat[2]+dht_dat[3];// check check_sum
+
+            if(dht_dat[4]== dht_check_sum)
+              {
+              byte VarNr = event->Par2; // De originele Par1 tijdelijk opslaan want hier zit de variabelenummer in waar de gebruiker de uitgelezen waarde in wil hebben
+
+              #if DHT_TYPE==11
+              byte temperature = dht_dat[2];
+              byte humidity = dht_dat[0];
+
+              ClearEvent(event);                                      // Ga uit van een default schone event. Oude eventgegevens wissen.      
+              event->Type         = NODO_TYPE_COMMAND;
+              event->Direction    = VALUE_DIRECTION_INPUT;
+              event->Port         = VALUE_SOURCE_PLUGIN;
+              event->Command      = CMD_VARIABLE_SET;                 // Commando "VariableSet"
+              event->Par1         = VarNr;                            // Par1 is de variabele die we willen vullen.
+              event->Par2         = float2ul(float(temperature));
+              ProcessEvent2(event);
+              event->Par1         = VarNr+1;                          // Par1+1 is de variabele die we willen vullen voor luchtvochtigheid
+              event->Par2         = float2ul(float(humidity));
+              ProcessEvent2(event);
+              #endif
+              
+              #if DHT_TYPE==22
+              float temperature;
+              if (dht_dat[2] & 0x80) // negative temperature
+                temperature = -0.1 * word(dht_dat[2] & 0x7F, dht_dat[3]);
+              else
+                temperature = 0.1 * word(dht_dat[2], dht_dat[3]);
+
+              float humidity = word(dht_dat[0], dht_dat[1]) * 0.1;
+
+              ClearEvent(event);                                      // Ga uit van een default schone event. Oude eventgegevens wissen.      
+              event->Type         = NODO_TYPE_COMMAND;
+              event->Direction    = VALUE_DIRECTION_INPUT;
+              event->Port         = VALUE_SOURCE_PLUGIN;
+              event->Command      = CMD_VARIABLE_SET;                 // Commando "VariableSet"
+              event->Par1         = VarNr;                            // Par1 is de variabele die we willen vullen.
+              event->Par2         = float2ul(temperature);
+              ProcessEvent2(event);
+              event->Par1         = VarNr+1;                          // Par1+1 is de variabele die we willen vullen voor luchtvochtigheid
+              event->Par2         = float2ul(humidity);
+              ProcessEvent2(event);
   
+              #endif
+        
+              ClearEvent(event);                                      // Ga uit van een default schone event. Oude eventgegevens wissen.
+              success=true;
+              }
+            }
+          }
+        if(!success)
+          {
+          delay(2000);
+          }
+        }while(!success && ++Retry<3);        
       break;
       }
     #endif // CORE

@@ -1,6 +1,5 @@
 #if NODO_MEGA
 
-
 void LegacyMMI(char *command)
   {
   // ??? Historisch is het zo gegroeid dat een aantal commando's geen goede naamsopbouw hebben.
@@ -15,9 +14,9 @@ void LegacyMMI(char *command)
 
   if      (strcasecmp(command,"SendUserEvent")==0)   {strcpy(command,"UserEventSend");}
   else if (strcasecmp(command,"ThisUnit")==0)        {strcpy(command,"System");}
-  else if(strcasecmp(command,"SendEvent")==0)        {strcpy(command,"EventSend");}
-  else if(strcasecmp(command,"SendNewKaku")==0)      {strcpy(command,"NewKakuSend");}
-  else if(strcasecmp(command,"SendKaku")==0)         {strcpy(command,"KakuSend");}
+  else if (strcasecmp(command,"SendEvent")==0)       {strcpy(command,"EventSend");}
+  else if (strcasecmp(command,"SendNewKaku")==0)     {strcpy(command,"NewKakuSend");}
+  else if (strcasecmp(command,"SendKaku")==0)        {strcpy(command,"KakuSend");}
   else converted=false;
   
   if(converted)
@@ -254,6 +253,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
   int x;
   EventString[0]=0;
   char* str=(char*)malloc(42);
+  str[0]=0;// als er geen gevonden wordt, dan is de string leeg
 
   // Er kunnen een aantal parameters worden weergegeven. In een kleine tabel wordt aangegeven op welke wijze de parameters aan de gebruiker
   // moeten worden getoond. Het is niet per defiitie zo dat de interne Par1, Par2 en Par3 ook dezelfe parameters zijn die aan de gebruiker
@@ -390,7 +390,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case EVENT_ALARM:
       case EVENT_BOOT:
       case CMD_DELAY:
-      case VALUE_PLUGIN:
+      case VALUE_SOURCE_PLUGIN:
       case EVENT_NEWNODO:
       case CMD_UNIT_SET:
       case CMD_HOME_SET:
@@ -452,13 +452,16 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
           break;
         
         case PAR1_MESSAGE:
-          if(Event->Par1<=MESSAGE_MAX)
-            strcpy_P(str,(char*)pgm_read_word(&(MessageText_tabel[Event->Par1])));
-          else
-            str[0]=0;// als er geen gevonden wordt, dan is de string leeg
           strcat(EventString,int2str(Event->Par1));
-          strcat(EventString, ": ");
-          strcat(EventString,str);
+          strcat(EventString, ",");
+          strcat(EventString,int2str(Event->Par2));
+
+          if(Event->Par1<=MESSAGE_MAX)
+            {
+            strcat(EventString, ": ");
+            strcpy_P(str,(char*)pgm_read_word(&(MessageText_tabel[Event->Par1])));
+            strcat(EventString,str);
+            }
           break;
 
         case PAR2_INT:
@@ -627,6 +630,7 @@ int ExecuteLine(char *Line, byte Port)
     }
   else
     {
+//??? Wat hiermee?
 //    if(Substitute(Line)!=0)
 //      error=MESSAGE_INVALID_PARAMETER;
 
@@ -1539,7 +1543,7 @@ int ExecuteLine(char *Line, byte Port)
             UndoNewNodo();// Status NewNodo verwijderen indien van toepassing
             if(!Eventlist_Write(EventlistWriteLine,&TempEvent,&EventToExecute))
               {
-              RaiseMessage(MESSAGE_EVENTLIST_FAILED);
+              RaiseMessage(MESSAGE_EVENTLIST_FAILED,EventlistWriteLine);
               break;
               }
             State_EventlistWrite=0;
