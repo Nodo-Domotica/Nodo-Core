@@ -1,3 +1,5 @@
+//??? Onderstaande regel is tijdelijk totdat de Nodo release 3.6.1 is uitgerold.
+#define VALUE_SOURCE_PLUGIN VALUE_SOURCE_SYSTEM
 
 //#######################################################################################################
 //######################## PLUGIN-06 Temperatuur en Luchtvochtigheid sensor DHT 11/22 ###################
