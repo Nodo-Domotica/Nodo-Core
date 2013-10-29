@@ -786,8 +786,17 @@ void setup()
   #endif
 
   LoadSettings();      // laad alle settings zoals deze in de EEPROM zijn opgeslagen
-  if(Settings.Version!=NODO_VERSION_MINOR)ResetFactory(); // Als versienummer in EEPROM niet correct is, dan een ResetFactory.
 
+  if(Settings.Version!=NODO_VERSION_MINOR)ResetFactory(); // Als versienummer in EEPROM niet correct is, dan een ResetFactory.
+  
+
+  #if NODO_MEGA
+  SDCardInit();  // SDCard detecteren en evt. gereed maken voor gebruik in de Nodo
+
+  // Voer bestand config uit als deze bestaat. die goeie oude MD-DOS tijd ;-)
+  FileExecute("config",true);
+  #endif
+  
   // initialiseer de Wired ingangen.
   for(x=0;x<WIRED_PORTS;x++)
     {
@@ -813,9 +822,6 @@ void setup()
   SetDaylight();
   DaylightPrevious=Time.Daylight;
   #endif CLOCK 
-
-  // SDCard detecteren en evt. gereed maken voor gebruik in de Nodo
-  SDCardInit();
 
   // Start Ethernet kaart en start de HTTP-Server en de Telnet-server
   #if ETHERNET
@@ -876,7 +882,7 @@ void setup()
   bitWrite(HW_Config,HW_I2C,false); // Zet I2C weer uit. Wordt weer geactiveerd als er een I2C event op de bus verschijnt.
 
   // Wacht even kort op reacties van andere Nodo's en stop deze in de queue.
-  Wait(3, false,0 , false);  
+  Wait(2, false,0 , false);  
   
   // Voer het boot event zelf ook uit.
   ClearEvent(&TempEvent);
@@ -893,7 +899,7 @@ void setup()
   Serial.println(F("\nReady.\n"));
 
   // Voer bestand AutoExec uit als deze bestaat. die goeie oude MD-DOS tijd ;-)
-  FileExecute("autoexec",false);
+  FileExecute("autoexec",true);
 
   bitWrite(HW_Config,HW_SERIAL,Serial.available()?1:0); // Serial weer uitschakelen.
   #endif
