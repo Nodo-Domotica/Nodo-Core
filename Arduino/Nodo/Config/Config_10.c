@@ -28,4 +28,4 @@
 #define PLUGIN_004_CORE
 
 #define PLUGIN_006
-#define PLUGIN_006_CORE
+#define PLUGIN_006_CORE 22
