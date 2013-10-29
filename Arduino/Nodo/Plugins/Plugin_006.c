@@ -20,8 +20,13 @@
  * Configuratie:
  * 
  * Deze plugin is zowel geschikt voor een DHT-11 sensor alsmede de DHT-22 die een veel hogere
- * resolutie heeft. Deze laatste heeft dan ook de voorkeur. Geef in DHT_TYPE op welke sensor 
- * je gebruikt. Verkeerde definitie zal leiden tot foutieve uitlezing.
+ * resolutie heeft. Deze laatste heeft dan ook de voorkeur. Geef in je config_nn.c file op welke sensor 
+ * je gebruikt met:
+ * 
+ * #define PLUGIN_006_CORE <DHT-type>
+ * 
+ * Kies voor <DHT-type> 11 voor een DHT-11 sensor of 22 voor een DHT-22. Verkeerde definitie zal leiden 
+ * tot geen of foutieve uitlezing.
  *    
  * Technische informatie:
  *  
@@ -29,8 +34,6 @@
  * Het principe is "onewire" maar dit protocol is NIET compatible met het bekende Dallas onewire protocol
  * Dit protocol gebruikt twee variabelen, 1 voor temperatuur en 1 voor luchtvochtigheid
  \*********************************************************************************************/
-
-#define DHT_TYPE 22 // Kies hier 11 voor een DHT-11 sensor of 22 voor een DHT-22
 
 #define PLUGIN_ID 06
 #define PLUGIN_NAME "DHTRead"
@@ -104,7 +107,7 @@ boolean Plugin_006(byte function, struct NodoEventStruct *event, char *string)
               {
               byte VarNr = event->Par2; // De originele Par1 tijdelijk opslaan want hier zit de variabelenummer in waar de gebruiker de uitgelezen waarde in wil hebben
 
-              #if DHT_TYPE==11
+              #if PLUGIN_006_CORE==11
               byte temperature = dht_dat[2];
               byte humidity = dht_dat[0];
 
@@ -121,7 +124,7 @@ boolean Plugin_006(byte function, struct NodoEventStruct *event, char *string)
               ProcessEvent2(event);
               #endif
               
-              #if DHT_TYPE==22
+              #if PLUGIN_006_CORE==22
               float temperature;
               if (dht_dat[2] & 0x80) // negative temperature
                 temperature = -0.1 * word(dht_dat[2] & 0x7F, dht_dat[3]);
