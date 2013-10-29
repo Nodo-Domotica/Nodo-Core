@@ -7,10 +7,10 @@
  * 
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  * Support            : www.nodo-domotica.nl
- * Datum              : 12 Aug 2013
- * Versie             : 1.1
+ * Datum              : 28 Okt 2013
+ * Versie             : 1.2
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
- * Compatibiliteit    : Vanaf Nodo build nummer 555
+ * Compatibiliteit    : Vanaf Nodo build nummer 596
  * Syntax             : "SmokeAlert 0, <Par2: rookmelder ID>"
  *********************************************************************************************
  * Technische informatie:
@@ -43,9 +43,12 @@ boolean Plugin_013(byte function, struct NodoEventStruct *event, char *string)
       unsigned long bitstream=0L;
       for(byte x=4;x<=50;x=x+2)
       {
+        if (RawSignal.Pulses[x-1]*RawSignal.Multiply > 1000) return false; // every preceding puls must be < 1000!
         if (RawSignal.Pulses[x]*RawSignal.Multiply > 1800) bitstream = (bitstream << 1) | 0x1; 
         else bitstream = bitstream << 1;
       }
+
+      if (bitstream == 0) return false;
 
       event->Par1=0;
       event->Par2=bitstream;
@@ -66,7 +69,27 @@ boolean Plugin_013(byte function, struct NodoEventStruct *event, char *string)
 #if NODO_MEGA
   case PLUGIN_MMI_IN:
     {
-    event->Command = 13; // Plugin nummer  
+    char* str=(char*)malloc(40);
+    string[25]=0; // kap voor de zekerheid de string af.
+  
+    if(GetArgv(string,str,1))
+      {
+      if(strcasecmp(str,PLUGIN_NAME)==0)
+        {
+        if(GetArgv(string,str,2))
+          {
+          event->Par1=str2int(str);    
+          if(GetArgv(string,str,3))
+            {
+              event->Par2=str2int(str);
+              event->Type = NODO_TYPE_PLUGIN_EVENT;
+              event->Command = 13; // Plugin nummer  
+              success=true;
+            }
+          }
+        }
+      }
+    free(str);
     break;
     }
 
