@@ -1006,7 +1006,7 @@ void loop()
           break;
           }
    
-        case 3: // binnen Slice_1 
+        case 2: // binnen Slice_1 
           {
           // IP Telnet verbinding : *************** kijk of er verzoek tot verbinding vanuit een terminal is **********************    
           if(bitRead(HW_Config,HW_ETHERNET))
