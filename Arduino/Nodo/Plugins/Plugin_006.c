@@ -1,6 +1,3 @@
-//??? Onderstaande regel is tijdelijk totdat de Nodo release 3.6.1 is uitgerold.
-#define VALUE_SOURCE_PLUGIN VALUE_SOURCE_SYSTEM
-
 //#######################################################################################################
 //######################## PLUGIN-06 Temperatuur en Luchtvochtigheid sensor DHT 11/22 ###################
 //#######################################################################################################
@@ -36,6 +33,11 @@
  * Het principe is "onewire" maar dit protocol is NIET compatible met het bekende Dallas onewire protocol
  * Dit protocol gebruikt twee variabelen, 1 voor temperatuur en 1 voor luchtvochtigheid
  \*********************************************************************************************/
+
+//Onderstaande regel is voor Nodo releases eerder dan 3.6.1.
+#ifndef VALUE_SOURCE_PLUGIN
+#define VALUE_SOURCE_PLUGIN VALUE_SOURCE_SYSTEM
+#endif
 
 #define PLUGIN_ID 06
 #define PLUGIN_NAME "DHTRead"

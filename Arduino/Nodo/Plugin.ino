@@ -891,6 +891,7 @@ boolean PluginCall(byte Function, struct NodoEventStruct *Event, char *str)
   boolean FirstHitReturn=false;
   boolean CallSpecificPlugin=false;
   boolean MessageOnError=false;
+  int x;
   
   switch(Function)
     {
@@ -924,7 +925,7 @@ boolean PluginCall(byte Function, struct NodoEventStruct *Event, char *str)
       break;
     }
     
-  for(byte x=0; x<PLUGIN_MAX; x++)
+  for(x=0; x<PLUGIN_MAX; x++)
     {
     // Zoek het plugin in de tabel en voer de plugin code uit.
     if(Plugin_ptr[x]!=0 && (AllPlugins || Plugin_id[x]==Event->Command))    // Als plugin bestaat of alle plugins moeten worden langsgelopen

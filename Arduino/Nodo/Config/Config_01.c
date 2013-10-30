@@ -35,5 +35,8 @@
 #define PLUGIN_007 
 #define PLUGIN_007_CORE
 
+// DTH-22 Vocht/Temperatuursensor
+#define PLUGIN_006
+#define PLUGIN_006_CORE 22
 
 
