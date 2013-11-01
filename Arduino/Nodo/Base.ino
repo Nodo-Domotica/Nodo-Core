@@ -359,7 +359,7 @@ prog_char PROGMEM Msg_0[]="Ok.";
 prog_char PROGMEM Msg_1[]="Unknown command.";
 prog_char PROGMEM Msg_2[]="Invalid parameter in command.";
 prog_char PROGMEM Msg_3[]="Unable to open file.";
-prog_char PROGMEM Msg_4[]="Eventlist nesting error.";
+prog_char PROGMEM Msg_4[]="Nesting error in file or eventlist.";
 prog_char PROGMEM Msg_5[]="Reading/writing eventlist failed.";
 prog_char PROGMEM Msg_6[]="Unable to establish TCP/IP connection.";
 prog_char PROGMEM Msg_7[]="Execution stopped.";
@@ -891,7 +891,7 @@ void setup()
   TempEvent.Type      = NODO_TYPE_EVENT;
   TempEvent.Command   = EVENT_BOOT;
   TempEvent.Par1      = Settings.Unit;
-  ProcessEvent2(&TempEvent);
+  ProcessEvent(&TempEvent);
   
   QueueProcess();
 
@@ -936,7 +936,7 @@ void loop()
     {
     // Check voor IR, I2C of RF events
     if(ScanEvent(&ReceivedEvent)) 
-      ProcessEvent1(&ReceivedEvent); // verwerk binnengekomen event.
+      ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
     
     // SERIAL: *************** kijk of er data klaar staat op de seriële poort **********************
     if(Serial.available())
@@ -1157,7 +1157,7 @@ void loop()
               {
               if(PreviousTimeEvent!=ReceivedEvent.Par2)
                 {
-                ProcessEvent1(&ReceivedEvent); // verwerk binnengekomen event.
+                ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
                 PreviousTimeEvent=ReceivedEvent.Par2; 
                 }
               }
@@ -1185,7 +1185,7 @@ void loop()
               ReceivedEvent.Par1             = Time.Daylight;
               ReceivedEvent.Direction        = VALUE_DIRECTION_INPUT;
               ReceivedEvent.Port             = VALUE_SOURCE_CLOCK;
-              ProcessEvent1(&ReceivedEvent); // verwerk binnengekomen event.
+              ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
               DaylightPrevious=Time.Daylight;
               }
             }
@@ -1225,7 +1225,7 @@ void loop()
               ReceivedEvent.Par2             = WiredInputStatus[x]?VALUE_ON:VALUE_OFF;
               ReceivedEvent.Direction        = VALUE_DIRECTION_INPUT;
               ReceivedEvent.Port             = VALUE_SOURCE_WIRED;
-              ProcessEvent1(&ReceivedEvent); // verwerk binnengekomen event.
+              ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
               }
             }
           break;
@@ -1248,7 +1248,7 @@ void loop()
                 ReceivedEvent.Par1             = x+1;
                 ReceivedEvent.Direction        = VALUE_DIRECTION_INPUT;
                 ReceivedEvent.Port             = VALUE_SOURCE_CLOCK;
-                ProcessEvent1(&ReceivedEvent); // verwerk binnengekomen event.
+                ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
                 }
               }
             }
@@ -1284,7 +1284,7 @@ void loop()
       // ALARM: **************** Genereer event als één van de alarmen afgelopen is ***********************    
       if(bitRead(HW_Config,HW_CLOCK))//check of de klok aanwzig is
         if(ScanAlarm(&ReceivedEvent)) 
-          ProcessEvent1(&ReceivedEvent); // verwerk binnengekomen event.
+          ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
 
       // Terminal onderhoudstaken
       // tel seconden terug nadat de gebruiker gedefinieerd maal foutief wachtwoord ingegeven

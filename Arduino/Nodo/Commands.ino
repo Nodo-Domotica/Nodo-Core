@@ -28,7 +28,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.Par2         = float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Direction    = VALUE_DIRECTION_INPUT;
         TempEvent.Port         = VALUE_SOURCE_SYSTEM;
-        ProcessEvent2(&TempEvent);
+        ProcessEvent(&TempEvent);
         }
       break;        
 
@@ -41,7 +41,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.Par2         = float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Direction    = VALUE_DIRECTION_INPUT;
         TempEvent.Port         = VALUE_SOURCE_SYSTEM;
-        ProcessEvent2(&TempEvent);
+        ProcessEvent(&TempEvent);
         }
       break;        
 
@@ -53,7 +53,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.Command=EVENT_VARIABLE;
         TempEvent.Port=VALUE_SOURCE_SYSTEM;
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
-        ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
+        ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
         }
       break;         
 
@@ -66,7 +66,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.Command=EVENT_VARIABLE;
         TempEvent.Port=VALUE_SOURCE_SYSTEM;
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
-        ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
+        ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
         }
       break;         
   
@@ -79,7 +79,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.Port=VALUE_SOURCE_SYSTEM;
         TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
-        ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
+        ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
         }
       break;        
 
@@ -101,7 +101,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.Port=VALUE_SOURCE_SYSTEM;
         TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
-        ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
+        ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
         }
       break;        
 
@@ -120,7 +120,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.Port=VALUE_SOURCE_SYSTEM;
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
         PulseCount=0;
-        ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
+        ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
         }
       break;         
 
@@ -138,7 +138,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.Command=EVENT_VARIABLE;
         TempEvent.Port=VALUE_SOURCE_SYSTEM;
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
-        ProcessEvent2(&TempEvent);      // verwerk binnengekomen event.
+        ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
         }
       break;         
 

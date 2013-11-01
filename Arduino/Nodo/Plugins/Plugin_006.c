@@ -122,10 +122,10 @@ boolean Plugin_006(byte function, struct NodoEventStruct *event, char *string)
               event->Command      = CMD_VARIABLE_SET;                 // Commando "VariableSet"
               event->Par1         = VarNr;                            // Par1 is de variabele die we willen vullen.
               event->Par2         = float2ul(float(temperature));
-              ProcessEvent2(event);
+              ProcessEvent(event);
               event->Par1         = VarNr+1;                          // Par1+1 is de variabele die we willen vullen voor luchtvochtigheid
               event->Par2         = float2ul(float(humidity));
-              ProcessEvent2(event);
+              ProcessEvent(event);
               #endif
               
               #if PLUGIN_006_CORE==22
@@ -144,10 +144,10 @@ boolean Plugin_006(byte function, struct NodoEventStruct *event, char *string)
               event->Command      = CMD_VARIABLE_SET;                 // Commando "VariableSet"
               event->Par1         = VarNr;                            // Par1 is de variabele die we willen vullen.
               event->Par2         = float2ul(temperature);
-              ProcessEvent2(event);
+              ProcessEvent(event);
               event->Par1         = VarNr+1;                          // Par1+1 is de variabele die we willen vullen voor luchtvochtigheid
               event->Par2         = float2ul(humidity);
-              ProcessEvent2(event);
+              ProcessEvent(event);
   
               #endif
         

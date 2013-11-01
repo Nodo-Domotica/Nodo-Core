@@ -69,7 +69,7 @@ boolean Plugin_026(byte function, struct NodoEventStruct *event, char *string)
                     tmpEvent.Par1         = x+1;
                     tmpEvent.Par2         = VALUE_ON;
                     if (tmpPortValue & (1 << x)) tmpEvent.Par2 = VALUE_OFF;
-                    ProcessEvent2(&tmpEvent);
+                    ProcessEvent(&tmpEvent);
                     //QueueAdd(&tmpEvent);
                   }
               }

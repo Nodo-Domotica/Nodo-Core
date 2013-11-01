@@ -922,6 +922,7 @@ int ExecuteLine(char *Line, byte Port)
               case VALUE_SOURCE_SERIAL:
               case VALUE_SOURCE_HTTP:
               case VALUE_SOURCE_TELNET:
+              case VALUE_SOURCE_PLUGIN:
                 break;
               default:
                 error=MESSAGE_INVALID_PARAMETER;
@@ -1528,7 +1529,7 @@ int ExecuteLine(char *Line, byte Port)
             if(Transmission_SendToUnit==Settings.Unit || Transmission_SendToUnit==0)
               {
               EventToExecute.Direction=VALUE_DIRECTION_INPUT;
-              error=ProcessEvent1(&EventToExecute);
+              error=ProcessEventExt(&EventToExecute);
               }
             else
               {
