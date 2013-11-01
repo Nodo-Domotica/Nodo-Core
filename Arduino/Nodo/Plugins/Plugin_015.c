@@ -14,10 +14,10 @@
  * Versie             : 1.1
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
  * Compatibiliteit    : Vanaf Nodo build nummer 555
- * Syntax             : "HomeEasy <Adres>,<On|Off|>
+ * Syntax             : "HomeEasy <Adres>,<On|Off>
  *********************************************************************************************
  * Technische informatie:
- * Analyses Home Easy Messages and convert these into NewKaku compatible eventcode
+ * Analyses Home Easy Messages and convert these into an eventcode
  * Only new EU devices with automatic code system are supported
  * Only  On / Off status is decoded, no DIM values
  * Only tested with Home Easy HE300WEU transmitter, doorsensor and PIR sensor
@@ -39,7 +39,7 @@ boolean Plugin_015(byte function, struct NodoEventStruct *event, char *string)
 
   switch(function)
   {
-#ifdef PLUGIN_015_CORE
+  #ifdef PLUGIN_015_CORE
   case PLUGIN_RAWSIGNAL_IN:
     {
       unsigned long address = 0;
@@ -54,7 +54,7 @@ boolean Plugin_015(byte function, struct NodoEventStruct *event, char *string)
       if (RawSignal.Number != 116) return false;
 
       for(byte x=1;x<=RawSignal.Number;x=x+2)
-      {
+        {
         if ((RawSignal.Pulses[x]*RawSignal.Multiply < 500) & (RawSignal.Pulses[x+1]*RawSignal.Multiply > 500)) 
           rfbit = 1;
         else
@@ -77,7 +77,7 @@ boolean Plugin_015(byte function, struct NodoEventStruct *event, char *string)
 
       RawSignal.Repeats    = true; // het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
       event->Par1=((address>>4)&0x01)?VALUE_ON:VALUE_OFF; // On/Off bit omzetten naar een Nodo waarde. 
-      event->Par2=address &0x0FFFFFCF;         // Op hoogste nibble zat vroeger het signaaltype. 
+      event->Par2=address &0xFFFFFFCF; 
       event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
       event->Type          = NODO_TYPE_PLUGIN_EVENT;
       event->Command       = 15; // Nummer van dit device
@@ -85,8 +85,6 @@ boolean Plugin_015(byte function, struct NodoEventStruct *event, char *string)
       break;
     }
 
-  case PLUGIN_COMMAND:
-    break;
 #endif // PLUGIN_015_CORE
 
 #if NODO_MEGA

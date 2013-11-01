@@ -4,7 +4,7 @@
  * Doorlopen van een volledig gevulde eventlist duurt ongeveer 15ms inclusief printen naar serial
  * maar exclusief verwerking n.a.v. een 'hit' in de eventlist
  \*********************************************************************************************/
-byte ProcessEvent1(struct NodoEventStruct *Event)
+byte ProcessEventExt(struct NodoEventStruct *Event)
   {
   struct NodoEventStruct TempEvent;
   ExecutionDepth=0;               // nesting nog niet aan de orde. Dit is het eerste begin.
@@ -22,7 +22,7 @@ byte ProcessEvent1(struct NodoEventStruct *Event)
   PluginCall(PLUGIN_EVENT_IN, Event,0);
 
   // Verwerk het binnengekomen event
-  error=ProcessEvent2(Event);
+  error=ProcessEvent(Event);
     
   // Verwerk eventuele events die in de queue zijn geplaatst.
   QueueProcess();    
@@ -43,7 +43,7 @@ byte ProcessEvent1(struct NodoEventStruct *Event)
   return error;
   }
   
-byte ProcessEvent2(struct NodoEventStruct *Event)
+byte ProcessEvent(struct NodoEventStruct *Event)
   {
   int x;
   byte error=0;
@@ -89,12 +89,6 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
       }
     }
 
-  // systeem commando's niet uitvoeren
-  if(Continue && (Event->Type == NODO_TYPE_SYSTEM))
-    {
-    Continue=false;
-    }
-
   // Als de queue vlag staat, dan direct in de queue stoppen en verder niets mee doen.
   if(Continue && (Event->Flags & TRANSMISSION_QUEUE))
     {
@@ -122,42 +116,44 @@ byte ProcessEvent2(struct NodoEventStruct *Event)
     #endif
     
     // ############# Verwerk event ################  
-    if(Event->Type==NODO_TYPE_PLUGIN_COMMAND)
+    if(Event->Type == NODO_TYPE_SYSTEM)
       {
-      PluginCall(PLUGIN_COMMAND,Event,0);
+      Continue=false;  // systeem commando's niet uitvoeren
       }
-   
-    if(error==0)
+
+    else if(Event->Type==NODO_TYPE_COMMAND)
       {
-      // als het een Nodo event is en een geldig commando, dan deze uitvoeren
-      if(Event->Type==NODO_TYPE_COMMAND)
-        {
-        error=ExecuteCommand(Event);
-        }
-      else
-        {
-        // het is een ander soort event. Loop de gehele eventlist langs om te kijken of er een treffer is.   
-        struct NodoEventStruct EventlistEvent, EventlistAction;   
-  
-        // sla event op voor later gebruik in SendEvent en VariableEvent.
-        LastReceived=*Event;
-  
-        x=0;
-        while(Eventlist_Read(++x,&EventlistEvent,&EventlistAction) && error==0) // Zolang er nog regels zijn in de eventlist...
-          {      
-          if(CheckEvent(Event,&EventlistEvent)) // Als er een match is tussen het binnengekomen event en de regel uit de eventlist.
-            {        
-            ExecutionLine=x;
-            error=ProcessEvent2(&EventlistAction);
-            }
+      error=ExecuteCommand(Event);
+      }
+
+    else if(Event->Type==NODO_TYPE_PLUGIN_COMMAND)
+      {
+      error=PluginCall(PLUGIN_COMMAND,Event,0);
+      }
+      
+    else
+      {
+      // het is een ander soort event. Loop de gehele eventlist langs om te kijken of er een treffer is.   
+      struct NodoEventStruct EventlistEvent, EventlistAction;   
+
+      // sla event op voor later gebruik in SendEvent en VariableEvent.
+      LastReceived=*Event;
+
+      x=0;
+      while(Eventlist_Read(++x,&EventlistEvent,&EventlistAction) && error==0) // Zolang er nog regels zijn in de eventlist...
+        {      
+        if(CheckEvent(Event,&EventlistEvent)) // Als er een match is tussen het binnengekomen event en de regel uit de eventlist.
+          {        
+          ExecutionLine=x;
+          error=ProcessEvent(&EventlistAction);
           }
-        // abort is geen fatale error/break. Deze niet verder behandelen als een error.
-        if(error==MESSAGE_BREAK)
-          error=0;
-        }      
-      // Als de SendTo niet permanent is ingeschakeld, dan deze weer uitzetten
-      if(Transmission_SendToAll!=VALUE_ALL)Transmission_SendToUnit=0;
-      }
+        }
+      // abort is geen fatale error/break. Deze niet verder behandelen als een error.
+      if(error==MESSAGE_BREAK)
+        error=0;
+      }      
+    // Als de SendTo niet permanent is ingeschakeld, dan deze weer uitzetten
+    if(Transmission_SendToAll!=VALUE_ALL)Transmission_SendToUnit=0;
     }
     
   ExecutionDepth--;
@@ -337,7 +333,7 @@ void QueueProcess(void)
         Event.Port=Queue[x].Port;
         Event.Flags=Queue[x].Flags;
         
-        ProcessEvent2(&Event);      // verwerk binnengekomen event.
+        ProcessEvent(&Event);      // verwerk binnengekomen event.
         }
       }
     }

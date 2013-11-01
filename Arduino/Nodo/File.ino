@@ -167,46 +167,59 @@ boolean FileList(char *rootdir, boolean Erase, byte Port)
 byte FileExecute(char* FileName, boolean ContinueOnError)
   {
   int x,y;
-  char *TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
   byte error=0;
+  static boolean FileExecuteActive=false;// voorkom netsting van fileexecute
 
-  Led(RED);
-
-  strcpy(TmpStr,FileName);
-  strcat(TmpStr,".dat");
-  SelectSDCard(true);
-  File dataFile=SD.open(TmpStr);
-  if(dataFile) 
+  if(FileExecuteActive)
     {
-    y=0;       
-    while(dataFile.available() && !error)
-      {
-      x=dataFile.read();
-      if(isprint(x) && y<INPUT_BUFFER_SIZE)
-        TmpStr[y++]=x;
-      else
-        {
-        TmpStr[y]=0;
-        y=0;
-        SelectSDCard(false);
-        PrintString(TmpStr, VALUE_ALL);
-        error=ExecuteLine(TmpStr,VALUE_SOURCE_FILE);
-        SelectSDCard(true);
-
-        if(ContinueOnError)
-          error=0;
-
-        if(error)
-          break;
-        }
-      }
-    dataFile.close();
-    }  
+    RaiseMessage(MESSAGE_NESTING_ERROR,0);
+    }
   else
-    error=MESSAGE_UNABLE_OPEN_FILE;
+    {
+    Led(RED);
+  
+    char *TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
+    FileExecuteActive=true;
+    
+    strcpy(TmpStr,FileName);
+    strcat(TmpStr,".dat");
+    SelectSDCard(true);
+    File dataFile=SD.open(TmpStr);
+    
+    if(dataFile) 
+      {
+      y=0;       
+      while(dataFile.available() && !error)
+        {
+        x=dataFile.read();
+        if(isprint(x) && y<INPUT_BUFFER_SIZE)
+          TmpStr[y++]=x;
+        else
+          {
+          TmpStr[y]=0;
+          y=0;
+          SelectSDCard(false);
+          PrintString(TmpStr, VALUE_ALL);
+          error=ExecuteLine(TmpStr,VALUE_SOURCE_FILE);
+          SelectSDCard(true);
+  
+          if(ContinueOnError)
+            error=0;
+  
+          if(error)
+            break;
+          }
+        }
+      dataFile.close();
+      }  
+    else
+      error=MESSAGE_UNABLE_OPEN_FILE;
 
-  free(TmpStr);
-  SelectSDCard(false);
+    FileExecuteActive=false;
+    free(TmpStr);
+    SelectSDCard(false);
+    }
+    
   return error;
   }    
 

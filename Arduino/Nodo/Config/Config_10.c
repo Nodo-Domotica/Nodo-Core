@@ -9,7 +9,7 @@
 #define UNIT_NODO       10 // Na een reset wordt dit het unitnummer van de Nodo
 #define CLOCK         true // true=code voor Real Time Clock mee compileren.
 #define NODO_MEGA     true // true = Nodo Mega, false=Nodo-Small
-#define ETHERNET      true // true = Deze Nodo beschikt over een ethernet kaart
+#define ETHERNET      false // true = Deze Nodo beschikt over een ethernet kaart
 
 // Kaku              : Klik-Aan-Klik-Uit / HomeEasy protocol ontvangst
 #define PLUGIN_001
@@ -27,6 +27,13 @@
 #define PLUGIN_004
 #define PLUGIN_004_CORE
 
-// DTH-22 Vocht/Temperatuursensor
-#define PLUGIN_006
-#define PLUGIN_006_CORE 22
+// HomeEasy
+//#define PLUGIN_015
+//#define PLUGIN_015_CORE
+
+// HomeEasySend
+//#define PLUGIN_016
+//#define PLUGIN_016_CORE
+
+#define PLUGIN_099
+#define PLUGIN_099_CORE

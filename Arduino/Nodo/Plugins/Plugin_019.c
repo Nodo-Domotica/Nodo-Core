@@ -145,7 +145,7 @@ boolean Plugin_019(byte function, struct NodoEventStruct *event, char *string)
               TempEvent.Par2       = 0;
               TempEvent.Type       = NODO_TYPE_PLUGIN_EVENT;
               for (byte i=1; i<5; i++) TempEvent.Par2 = TempEvent.Par2 | (((unsigned long) code[i] << ((4-i)*8)));
-              ProcessEvent2(&TempEvent);
+              ProcessEvent(&TempEvent);
             }
         }
 

@@ -88,7 +88,7 @@
 #define PLUGIN_NAME "MyPlugin"
 
 // Ieder plugin heeft een uniek ID. De reeks 250..255 zijn vrij te gebruiken. Alle andere ID's worden toegekend door
-// het Nodo team. Zelf een nuttig plugin gemaakt, laat het ons weten!
+// het Nodo team. Zelf een nuttige plugin gemaakt, laat het ons weten!
 
 #define PLUGIN_ID   255
 
@@ -182,12 +182,25 @@ boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
       // moet worden.
       // Maak je geen gebruik van deze functie, dan bij voorkeur deze case geheel verwijderen.
 
-      Serial.println(F("*** debug: MyPlugin: PLUGIN_COMMAND"));
+      Serial.print(F("*** debug: MyPlugin: PLUGIN_COMMAND"));
       Serial.print(", Par1=");    Serial.print(event->Par1);
-      Serial.print(", Par2=");    Serial.print(event->Par2);
-      Serial.println();
+      Serial.print(", Par2=");    Serial.println(event->Par2);
+      
+      // Als voorbeeld wordt hier variabele 5 gevuld met 123.45
+      byte Variable = 5;
+      float Value   = 123.45;
 
-      success=true;
+      ClearEvent(event);                                      // Ga uit van een default schone event. Oude eventgegevens wissen.      
+      event->Type         = NODO_TYPE_COMMAND;                // Het event is een uit te voeren commando
+      event->Command      = CMD_VARIABLE_SET;                 // Commando "VariableSet"
+      event->Par1         = Variable;                         // Par1 draagt het variabelenummer
+      event->Par2         = float2ul(Value);                  // Par2 de waarde. float2ul() zet de waarde m naar een geschikt format.
+      
+      success=true;                                           // Als verlaten wordt met een true, en er is een nieuw event in de struct geplaatst
+                                                              // dan wordt deze automatisch uitgevoerd.
+                                                              // Een plugin kan geen andere plugin aanroepen.
+                                                              // verder is er geen beperking en kunnen alle events/commando's worden
+                                                              // opgegeven voor verdere verwerking.
       break;
       }      
 
@@ -203,7 +216,7 @@ boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
       // via Serial niet meer werkt omdat alle input hier wordt afgevangen.
       // Maak je geen gebruik van deze functie, dan bij voorkeur deze case geheel verwijderen.
       // Vanuit PLUGIN_INIT kan eventueeel de baudrate (opnieuw) worden ingesteld. (Default 19200)
-      // Er kan maar -1- plugin gelijktijdig gebruik van deze plugin-case gebruik maken.
+      // Er kan maar -1- plugin gelijktijdig gebruik van deze plugin-case gebruik maken!
 
       Serial.println(F("*** debug: MyPlugin: PLUGIN_SERIAL_IN"));
 
