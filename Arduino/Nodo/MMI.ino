@@ -311,6 +311,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         break;
 
       // Par2 als hex waarde
+      case CMD_RAWSIGNAL_SHOW:
       case CMD_RAWSIGNAL_ERASE:
       case CMD_RAWSIGNAL_SEND:
       case EVENT_RAWSIGNAL:
@@ -1260,14 +1261,14 @@ int ExecuteLine(char *Line, byte Port)
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
     
+          case CMD_RAWSIGNAL_SHOW:      
           case CMD_RAWSIGNAL_ERASE:      
           case CMD_RAWSIGNAL_SEND:      
             EventToExecute.Type=NODO_TYPE_COMMAND;
             // Haal Par1 uit het commando. let op Par1 gebruiker is een 32-bit hex-getal die wordt opgeslagen in struct Par2.
             if(GetArgv(Command,TmpStr1,2))
               EventToExecute.Par2=str2int(TmpStr1);
-            else
-              error=MESSAGE_INVALID_PARAMETER;                        
+            EventToExecute.Par1=VALUE_ALL;
             break;
     
           case CMD_FILE_GET_HTTP:

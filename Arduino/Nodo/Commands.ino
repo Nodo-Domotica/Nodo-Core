@@ -140,6 +140,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
         ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
         }
+        
       break;         
 
     case CMD_STOP:
@@ -496,6 +497,10 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       Settings.RawSignalSave=EventToExecute->Par1;
       break;
 
+    case CMD_RAWSIGNAL_SHOW: 
+      RawSignalShow(EventToExecute->Par2);
+      break;
+
     case CMD_RAWSIGNAL_ERASE: 
       if(EventToExecute->Par2)
         {
@@ -507,20 +512,25 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
 
     case CMD_RAWSIGNAL_SEND:
-      if(RawSignalLoad(EventToExecute->Par2))
-        {
+      if(EventToExecute->Par2!=0)
+        if(!RawSignalLoad(EventToExecute->Par2))
+          error=MESSAGE_UNABLE_OPEN_FILE;
+      
+      if(!error)
+        {        
         ClearEvent(&TempEvent);
+
         TempEvent.Port=EventToExecute->Par1;
         TempEvent.Type= NODO_TYPE_EVENT;
         TempEvent.Command=EVENT_RAWSIGNAL;
         TempEvent.Par1=EventToExecute->Par1;
         TempEvent.Par2=EventToExecute->Par2;
-        RawSignal.Repeats=5;
-        RawSignal.Delay=50;
+        RawSignal.Repeats=7;
+        RawSignal.Delay=25;
+        
         SendEvent(&TempEvent, true ,true, Settings.WaitFree==VALUE_ON);
         }
-      else
-        error=MESSAGE_UNABLE_OPEN_FILE;
+        
       break;
 
     case CMD_LOG: 
