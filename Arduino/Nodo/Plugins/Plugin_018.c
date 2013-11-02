@@ -127,7 +127,7 @@ boolean Plugin_018(byte function, struct NodoEventStruct *event, char *string)
         }
       if(y==2)
         {
-        for(x=2;x<RawSignal.Number;x+=2)
+        for(x=2;x<=RawSignal.Number;x+=2)
           {
           y=RawSignal.Pulses[x]*RawSignal.Multiply;
           if(y>SpaceMid)
@@ -135,7 +135,6 @@ boolean Plugin_018(byte function, struct NodoEventStruct *event, char *string)
           else
             Serial.write('0');
           }
-        Serial.print(F(", Type=PDM"));
         }
       if(y==3)
         {
@@ -153,7 +152,6 @@ boolean Plugin_018(byte function, struct NodoEventStruct *event, char *string)
           else
             Serial.write('0');
           }
-        Serial.print(F( ", Type=Manchester"));
         }
 
       Serial.print(F(", Pulses="));
@@ -180,6 +178,6 @@ boolean Plugin_018(byte function, struct NodoEventStruct *event, char *string)
       break;
       }      
     }      
-  return success;
+  return false;
   }
 

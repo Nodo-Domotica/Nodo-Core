@@ -9,9 +9,13 @@ byte ProcessEventExt(struct NodoEventStruct *Event)
   struct NodoEventStruct TempEvent;
   ExecutionDepth=0;               // nesting nog niet aan de orde. Dit is het eerste begin.
   byte error=0;
-  
+
   SerialHold(true);  // als er een regel ontvangen is, dan binnenkomst van signalen stopzetten met een seriele XOFF
   Led(RED); // LED aan als er iets verwerkt wordt      
+
+  #ifdef DEBUG_PROCESSING_TIME
+  unsigned long ProcessingTime=millis();
+  #endif
 
   #if NODO_MEGA
   if(FileWriteMode!=0)
@@ -40,9 +44,15 @@ byte ProcessEventExt(struct NodoEventStruct *Event)
     SendEvent(&TempEvent, false,false,Settings.WaitFree==VALUE_ON);
     RequestForConfirm=0;
     }
+
+  #ifdef DEBUG_PROCESSING_TIME
+  Serial.print(F("DEBUG: Processing time (mSec)="));
+  Serial.println(millis()-ProcessingTime);
+  #endif
+  
   return error;
   }
-  
+    
 byte ProcessEvent(struct NodoEventStruct *Event)
   {
   int x;
@@ -58,6 +68,10 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     Continue=false;
     error=MESSAGE_NESTING_ERROR; // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
     }
+
+  #ifdef DEBUG_EVENT
+  PrintNodoEvent("Debug: ", Event);
+  #endif
 
   // Komt er een SendTo event voorbij, dan deze en opvolgende separaat afhandelen
   if(Continue && (Event->Command==CMD_SENDTO)) // Is dit event de eerste uit een [SendTo] reeks?
@@ -128,7 +142,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
 
     else if(Event->Type==NODO_TYPE_PLUGIN_COMMAND)
       {
-      error=PluginCall(PLUGIN_COMMAND,Event,0);
+      PluginCall(PLUGIN_COMMAND,Event,0);
       }
       
     else

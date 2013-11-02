@@ -9,7 +9,11 @@
 #define UNIT_NODO       10 // Na een reset wordt dit het unitnummer van de Nodo
 #define CLOCK         true // true=code voor Real Time Clock mee compileren.
 #define NODO_MEGA     true // true = Nodo Mega, false=Nodo-Small
-#define ETHERNET      false // true = Deze Nodo beschikt over een ethernet kaart
+#define ETHERNET      true // true = Deze Nodo beschikt over een ethernet kaart
+
+
+// #define DEBUG_EVENT
+// #define DEBUG_PROCESSING_TIME
 
 // Kaku              : Klik-Aan-Klik-Uit / HomeEasy protocol ontvangst
 #define PLUGIN_001
@@ -35,5 +39,5 @@
 //#define PLUGIN_016
 //#define PLUGIN_016_CORE
 
-#define PLUGIN_099
-#define PLUGIN_099_CORE
+// #define PLUGIN_099
+// #define PLUGIN_099_CORE

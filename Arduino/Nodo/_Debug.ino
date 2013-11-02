@@ -26,7 +26,7 @@ void Trace(char *Func, unsigned long Value)
 //#######################################################################################################
 void PrintNodoEvent(char* str, struct NodoEventStruct *Event)
   {    
-  Serial.print(F("*** Debug: "));Serial.print(str);
+  Serial.print(str);
   Serial.print(F(" => Port="));Serial.print(Event->Port);
   Serial.print(F(", Direction="));Serial.print(Event->Direction);
   Serial.print(F(", Flags="));Serial.print(Event->Flags);

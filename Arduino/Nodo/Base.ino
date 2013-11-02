@@ -19,7 +19,7 @@ byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
 #define TERMINAL_TIMEOUT             600 // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
 #define DELAY_BETWEEN_TRANSMISSIONS  500 // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
 #define NODO_TX_TO_RX_SWITCH_TIME    500 // Tijd die andere Nodo's nodig hebben om na zenden weer gereed voor ontvangst te staan. (Opstarttijd 433RX modules)
-#define SIGNAL_ANALYZE_SHARPNESS      50 // Scherpte c.q. foutmarge die gehanteerd wordt bij decoderen van RF/IR signaal.
+#define SIGNAL_ANALYZE_SHARPNESS     100 // ??? was 50. Scherpte c.q. foutmarge die gehanteerd wordt bij decoderen van RF/IR signaal.
 #define MIN_RAW_PULSES                16 // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
 #define ETHERNET_MAC_0              0xCC // Dit is byte 0 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
 #define ETHERNET_MAC_1              0xBB // Dit is byte 1 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
@@ -177,7 +177,8 @@ byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
 #define CMD_WIRED_THRESHOLD             128
 #define CMD_FILE_WRITE_LINE             129
 #define VALUE_FAST                      130
-#define COMMAND_MAX                     130 // hoogste commando
+#define CMD_RAWSIGNAL_SHOW              131
+#define COMMAND_MAX                     131 // hoogste commando
 
 #define MESSAGE_OK                      0
 #define MESSAGE_UNKNOWN_COMMAND         1
@@ -335,6 +336,7 @@ prog_char PROGMEM Cmd_127[]="WiredSmittTrigger";
 prog_char PROGMEM Cmd_128[]="WiredThreshold";
 prog_char PROGMEM Cmd_129[]="FileWriteLine";
 prog_char PROGMEM Cmd_130[]="Fast";
+prog_char PROGMEM Cmd_131[]="RawSignalShow";
 
 
 // tabel die refereert aan de commando strings
@@ -352,7 +354,7 @@ Cmd_90,Cmd_91,Cmd_92,Cmd_93,Cmd_94,Cmd_95,Cmd_96,Cmd_97,Cmd_98,Cmd_99,
 Cmd_100,Cmd_101,Cmd_102,Cmd_103,Cmd_104,Cmd_105,Cmd_106,Cmd_107,Cmd_108,Cmd_109,
 Cmd_110,Cmd_111,Cmd_112,Cmd_113,Cmd_114,Cmd_115,Cmd_116,Cmd_117,Cmd_118,Cmd_119,
 Cmd_120,Cmd_121,Cmd_122,Cmd_123,Cmd_124,Cmd_125,Cmd_126,Cmd_127,Cmd_128,Cmd_129,
-Cmd_130};
+Cmd_130, Cmd_131};
 
 // Message max. 40 pos    "1234567890123456789012345678901234567890"
 prog_char PROGMEM Msg_0[]="Ok.";
