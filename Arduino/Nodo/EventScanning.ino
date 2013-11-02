@@ -1,8 +1,4 @@
-#define MIN_PULSE_LENGTH            50  // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
-#define SIGNAL_TIMEOUT_RF            5 // na deze tijd in mSec. wordt één RF signaal als beëindigd beschouwd.
-#define SIGNAL_TIMEOUT_IR           10 // na deze tijd in mSec. wordt één IR signaal als beëindigd beschouwd.
-#define SIGNAL_REPEAT_TIME        1000 // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF/IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
-#define I2C_BUFFERSIZE              80 // Moet altijd groter zijn dan de struct NodoEventStruct
+#define I2C_BUFFERSIZE                80 // Moet altijd groter zijn dan de struct NodoEventStruct
 
 int  I2C_Received=0;       // Bevat aantal binnengomen bytes op I2C;
 byte I2C_ReceiveBuffer[I2C_BUFFERSIZE+1];

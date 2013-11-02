@@ -525,8 +525,8 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.Command=EVENT_RAWSIGNAL;
         TempEvent.Par1=EventToExecute->Par1;
         TempEvent.Par2=EventToExecute->Par2;
-        RawSignal.Repeats=7;
-        RawSignal.Delay=25;
+        RawSignal.Repeats=RAWSIGNAL_TX_REPEATS;
+        RawSignal.Delay=RAWSIGNAL_TX_DELAY;
         
         SendEvent(&TempEvent, true ,true, Settings.WaitFree==VALUE_ON);
         }

@@ -1,26 +1,30 @@
 byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
 
-#define NODO_VERSION_MAJOR             3  // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
-#define NODO_VERSION_MINOR             2  // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
-//???
-#define NODO_BUILD                   610  // Ophogen bij iedere Build / versiebeheer.
-
+#define NODO_BUILD                   619 // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_VERSION_MINOR             2 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
+#define NODO_VERSION_MAJOR             3 // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                      1 // Unit nummer van deze Nodo
 #define HOME_NODO                      1 // Home adres van Nodo's die tot één groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
+#define MIN_RAW_PULSES                16 // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
+#define RAWSIGNAL_TX_REPEATS          10 // Aantal keer dat een frame met pulsen herhaald wordt verzonden (RawSignalSend)
+#define RAWSIGNAL_TX_DELAY            10 // Tijd in mSec. tussen herhalingen frames bij zenden. (RawSignalSend)
+#define RAWSIGNAL_TOLERANCE          100 // Tolerantie die gehanteerd wordt bij decoderen van RF/IR signaal.
+#define WAIT_FREE_RX               false // true: wacht default op verzenden van een event tot de IR/RF lijn onbezet is. Wordt overruled door commando [WaitFreeRX]
+#define WAIT_FREE_RX_WINDOW          500 // minimale wachttijd wanneer wordt gewacht op een vrije RF of IR band. Is deze waarde te klein, dan kunnen er restanten van signalen binnenkomen als RawSignal. Te groot maakt de Nodo sloom.
+#define WAITFREE_TIMEOUT           30000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
+#define MIN_PULSE_LENGTH              25 // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
+#define SIGNAL_TIMEOUT_RF              4 // na deze tijd in mSec. wordt één RF signaal als beëindigd beschouwd.
+#define SIGNAL_TIMEOUT_IR             10 // na deze tijd in mSec. wordt één IR signaal als beëindigd beschouwd.
+#define SIGNAL_REPEAT_TIME          1000 // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF/IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
 #define PULSE_DEBOUNCE_TIME           10 // pulsen kleiner dan deze waarde in milliseconden worden niet geteld. Bedoeld om verstoringen a.g.v. ruis of dender te voorkomen
 #define PULSE_TRANSITION         FALLING // FALLING of RISING: Geeft aan op welke flank de PulseCounter start start met tellen. Default FALLING
 #define I2C_START_ADDRESS              1 // Alle Nodo's op de I2C bus hebben een uniek adres dat start vanaf dit nummer. Er zijn max. 32 Nodo's. Let op overlap met andere devices. RTC zit op adres 104.
 #define BAUD                       19200 // Baudrate voor seriële communicatie.
-#define WAIT_FREE_RX               false // true: wacht default op verzenden van een event tot de IR/RF lijn onbezet is. Wordt overruled door commando [WaitFreeRX]
-#define WAIT_FREE_RX_WINDOW          500 // minimale wachttijd wanneer wordt gewacht op een vrije RF of IR band. Is deze waarde te klein, dan kunnen er restanten van signalen binnenkomen als RawSignal. Te groot maakt de Nodo sloom.
-#define WAITFREE_TIMEOUT           30000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
 #define PASSWORD_MAX_RETRY             5 // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
 #define PASSWORD_TIMEOUT             300 // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
 #define TERMINAL_TIMEOUT             600 // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
 #define DELAY_BETWEEN_TRANSMISSIONS  500 // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
 #define NODO_TX_TO_RX_SWITCH_TIME    500 // Tijd die andere Nodo's nodig hebben om na zenden weer gereed voor ontvangst te staan. (Opstarttijd 433RX modules)
-#define SIGNAL_ANALYZE_SHARPNESS     100 // ??? was 50. Scherpte c.q. foutmarge die gehanteerd wordt bij decoderen van RF/IR signaal.
-#define MIN_RAW_PULSES                16 // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
 #define ETHERNET_MAC_0              0xCC // Dit is byte 0 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
 #define ETHERNET_MAC_1              0xBB // Dit is byte 1 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
 #define ETHERNET_MAC_2              0xAA // Dit is byte 2 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
@@ -292,7 +296,7 @@ prog_char PROGMEM Cmd_83[]="RawSignal";
 prog_char PROGMEM Cmd_84[]="RawSignalErase";
 prog_char PROGMEM Cmd_85[]="RawSignalList";
 prog_char PROGMEM Cmd_86[]="RawSignalReceive";
-prog_char PROGMEM Cmd_87[]="RawSignalSave";
+prog_char PROGMEM Cmd_87[]="RawSignalWrite";
 prog_char PROGMEM Cmd_88[]="RawSignalSend";
 prog_char PROGMEM Cmd_89[]="Reboot";
 prog_char PROGMEM Cmd_90[]="ReceiveSettings";

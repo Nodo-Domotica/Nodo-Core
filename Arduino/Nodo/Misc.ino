@@ -2049,12 +2049,10 @@ int str2cmd(char *command)
 /*********************************************************************************************\
  * String mag HEX, DEC
  * Deze routine converteert uit een string een unsigned long waarde.
- * De string moet beginnen met het eerste teken(dus geen voorloop spaties).
- * bij ongeldige tekens in de string wordt een false terug gegeven.
  \*********************************************************************************************/
 unsigned long str2int(char *string)
 {
-  return(strtol(string,NULL,0));  
+  return(strtoul(string,NULL,0));  
 }
 
 /**********************************************************************************************\
@@ -2151,7 +2149,7 @@ char* int2str(unsigned long x)
  * Converteert een unsigned long naar een hexadecimale string.
  \*********************************************************************************************/
 char* int2strhex(unsigned long x)
-{
+  {
   static char OutputLine[12];
   char* OutputLinePosPtr=&OutputLine[10];
   int y;
@@ -2159,13 +2157,13 @@ char* int2strhex(unsigned long x)
   *OutputLinePosPtr=0;
 
   if(x==0)
-  {
-    *--OutputLinePosPtr='0';
-  }
-  else
-  {  
-    while(x>0)
     {
+    *--OutputLinePosPtr='0';
+    }
+  else
+    {  
+    while(x>0)
+      {
       y=x&0xf;
 
       if(y<10)
