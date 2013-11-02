@@ -12,19 +12,27 @@ R610
 - Plugin_006: Dubbel setten van variabele verwijderd. Tevens toevoeging poort="Plugin" en retry bij error.
 - Plugin_006: Geschikt gemaakt voor DHT-22
 
-Rxxx
+R619
 - Issue 789:	Nesting van file executes afvangen
 - Issue 796:	Plugin_006 Genereert 2x Event=Variable voor par2+1
 - Issue 721:	DHT11 geeft bij eerste uitlezing een nul waarde terug
 - Issue 799:	P1Read bug
 - Issue 755:	DHT11Read: unknown device
+- Diverse aanpassingen RawSignal:
 
+  * Nieuwe analyse RawSinal: LET OP: RawSignal levert andere HEX-Codes !!!
+  * Nieuw commando [RawSignalShow] laat de opbouw van het signaal zien. Deze
+    mag eveneens worden opgenomen in de eventlist. Dan zonder opties.
+  * Analyse tolerantie aangepast. Levert stabieler dezelfde HEX waarden.
+  * Oude op SDCard opgeslagen RawSignals kunnen nog worden verzonden, maar nieuwe binnen
+    gekomen events leveren een andere HEX-waarde.
+  * Commando [RawSignalSave] gerenamed naar [RawSignalWrite]. Oude wordt omgezet naar nieuwe syntax. 
+    
+- Bug opgelost in invoer grote HEX getallen. 
 
 Nog te doen:
 
 testen:
 - Aanpassen en testen: Lock mechanisme
-- geen nesting error meer vanuit de eventlist?
-- niet bestaand commando vanaf prompt geeft geen error.
 
 \*****************************************************************************************/

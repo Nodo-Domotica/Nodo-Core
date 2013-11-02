@@ -35,6 +35,8 @@ byte ProcessEventExt(struct NodoEventStruct *Event)
   if(RequestForConfirm)
     {  
     // Initialiseer een Event en Transmissie
+Serial.println("Send Confirm.");//???
+
     ClearEvent(&TempEvent);    
     TempEvent.DestinationUnit       = Event->SourceUnit;
     TempEvent.Port                  = Event->Port;
@@ -120,7 +122,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
   if(Continue && bitRead(HW_Config,HW_SDCARD))
     if(Event->Command==EVENT_RAWSIGNAL && Settings.RawSignalSave==VALUE_ON)
       if(!RawSignalExist(Event->Par2))
-        RawSignalSave(Event->Par2);
+        RawSignalWrite(Event->Par2);
   #endif    
   
   if(Continue && error==0)

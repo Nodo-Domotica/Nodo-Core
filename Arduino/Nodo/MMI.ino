@@ -17,6 +17,7 @@ void LegacyMMI(char *command)
   else if (strcasecmp(command,"SendEvent")==0)       {strcpy(command,"EventSend");}
   else if (strcasecmp(command,"SendNewKaku")==0)     {strcpy(command,"NewKakuSend");}
   else if (strcasecmp(command,"SendKaku")==0)        {strcpy(command,"KakuSend");}
+  else if (strcasecmp(command,"RawSignalSave")==0)   {strcpy(command,"RawSignalWrite");}
   else converted=false;
   
   if(converted)

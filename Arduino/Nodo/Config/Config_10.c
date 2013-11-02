@@ -9,7 +9,7 @@
 #define UNIT_NODO       10 // Na een reset wordt dit het unitnummer van de Nodo
 #define CLOCK         true // true=code voor Real Time Clock mee compileren.
 #define NODO_MEGA     true // true = Nodo Mega, false=Nodo-Small
-#define ETHERNET      true // true = Deze Nodo beschikt over een ethernet kaart
+#define ETHERNET     false // true = Deze Nodo beschikt over een ethernet kaart
 
 
 // #define DEBUG_EVENT
