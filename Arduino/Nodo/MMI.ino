@@ -68,7 +68,7 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
       
     if(Event->Port==VALUE_SOURCE_EVENTLIST)
       {
-      // print de nessting diepte van de eventlist en de regel uit de eventlist.
+      // print de nesting diepte van de eventlist en de regel uit de eventlist.
       strcat(StringToPrint, "(");
       strcat(StringToPrint, int2str(ExecutionDepth-1));
       strcat(StringToPrint, ".");
@@ -386,6 +386,8 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         break;
 
       // Par1 als waarde en par2 niet
+      case CMD_RAWSIGNAL_DELAY:
+      case CMD_RAWSIGNAL_REPEATS:
       case CMD_EVENTLIST_SHOW:
       case CMD_EVENTLIST_ERASE:
       case EVENT_TIMER:
@@ -623,7 +625,7 @@ int ExecuteLine(char *Line, byte Port)
     {
     if(StringFind(Line,cmd2str(CMD_FILE_WRITE))!=-1)// string gevonden!
       {
-      // beëindig de FileWrite modus
+      // Stop de FileWrite modus
       FileWriteMode=0;
       TempLogFile[0]=0;
       }
@@ -828,8 +830,7 @@ int ExecuteLine(char *Line, byte Port)
               EventToExecute.Par1=0;
               if((EventToExecute.Par2=str2ultime(TmpStr1))!=0xffffffff)
                 error=0;
-              }
-              
+              }              
             break;
     
           // geldige datum
@@ -1261,14 +1262,30 @@ int ExecuteLine(char *Line, byte Port)
 
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
+
+          case CMD_RAWSIGNAL_DELAY:
+            RawSignal.Delay=EventToExecute.Par1;
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+            break;
+      
+          case CMD_RAWSIGNAL_REPEATS:
+            RawSignal.Repeats=EventToExecute.Par1;
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+            break;
+          
+          case CMD_RAWSIGNAL_PULSES:
+            x=StringFind(Line,cmd2str(CMD_RAWSIGNAL_PULSES))+strlen(cmd2str(CMD_RAWSIGNAL_PULSES));
+            while(Command[x]==' ')x++;             // eventuele spaties verwijderen
+            error=RawSignalPulses(Line+x);
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+            break;
     
           case CMD_RAWSIGNAL_SHOW:      
           case CMD_RAWSIGNAL_ERASE:      
           case CMD_RAWSIGNAL_SEND:      
             EventToExecute.Type=NODO_TYPE_COMMAND;
-            // Haal Par1 uit het commando. let op Par1 gebruiker is een 32-bit hex-getal die wordt opgeslagen in struct Par2.
             if(GetArgv(Command,TmpStr1,2))
-              EventToExecute.Par2=str2int(TmpStr1);
+              EventToExecute.Par2=str2int(TmpStr1);            // Haal Par1 uit het commando. let op Par1 gebruiker is een 32-bit hex-getal die wordt opgeslagen in struct Par2.
             EventToExecute.Par1=VALUE_ALL;
             break;
     
@@ -1315,7 +1332,8 @@ int ExecuteLine(char *Line, byte Port)
               if(State_EventlistWrite==0)
                 {
                 // Commando uitvoeren heeft alleen zin er geen eventlistwrite commando actief is
-                error=FileExecute(TmpStr1, EventToExecute.Par1==VALUE_ON);
+                strcat(TmpStr1,".dat");
+                error=FileExecute(TmpStr1, EventToExecute.Par1==VALUE_ON, VALUE_ALL);
                 EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
                 }
               }
@@ -1456,7 +1474,7 @@ int ExecuteLine(char *Line, byte Port)
               {
               strcat(TmpStr1,".dat");
               strcpy(TempLogFile,TmpStr1);
-              FileWriteMode=60;
+              FileWriteMode=120;
               EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
               }
             else
@@ -1500,16 +1518,16 @@ int ExecuteLine(char *Line, byte Port)
             // Loop de devices langs om te checken if er een hit is. Zo ja, dan de struct
             // met de juiste waarden gevuld. Is er geen hit, dan keetr PluginCall() terug met een false.
             // in dat geval kijken of er een commando op SDCard staat
-            if(!PluginCall(PLUGIN_MMI_IN,&EventToExecute,Command))
-              {
-              // Als het geen regulier commando was EN geen commando met afwijkende MMI en geen Plugin, dan kijken of file op SDCard staat)
-              error=FileExecute(Command, EventToExecute.Par2==VALUE_ON);
-              EventToExecute.Command=0;
-      
-              // als script niet te openen, dan is het ingevoerde commando ongeldig.
-              if(error==MESSAGE_UNABLE_OPEN_FILE)
-                error=MESSAGE_UNKNOWN_COMMAND;
-              }
+//            if(!PluginCall(PLUGIN_MMI_IN,&EventToExecute,Command))
+//              {
+//              // Als het geen regulier commando was EN geen commando met afwijkende MMI en geen Plugin, dan kijken of file op SDCard staat)
+//              error=FileExecute(Command, EventToExecute.Par2==VALUE_ON, VALUE_ALL);
+//              EventToExecute.Command=0;
+//      
+//              // als script niet te openen, dan is het ingevoerde commando ongeldig.
+//              if(error==MESSAGE_UNABLE_OPEN_FILE)
+//                error=MESSAGE_UNKNOWN_COMMAND;
+//              }
             if(error)
               {
               strcpy(TmpStr1,Command);

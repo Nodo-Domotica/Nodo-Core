@@ -7,8 +7,9 @@ byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
 #define HOME_NODO                      1 // Home adres van Nodo's die tot één groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
 #define MIN_RAW_PULSES                16 // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
 #define RAWSIGNAL_TX_REPEATS          10 // Aantal keer dat een frame met pulsen herhaald wordt verzonden (RawSignalSend)
-#define RAWSIGNAL_TX_DELAY            10 // Tijd in mSec. tussen herhalingen frames bij zenden. (RawSignalSend)
-#define RAWSIGNAL_TOLERANCE          100 // Tolerantie die gehanteerd wordt bij decoderen van RF/IR signaal.
+#define RAWSIGNAL_TX_DELAY             5 // Tijd in mSec. tussen herhalingen frames bij zenden. (RawSignalSend)
+#define RAWSIGNAL_TOLERANCE          100 // Tolerantie die gehanteerd wordt bij decoderen van RF/IR signaal. T.b.v. uitrekenen HEX-code.
+#define RAWSIGNAL_SAMPLE              20 // Sample grootte / Resolutie in uSec waarmee ontvangen Rawsignalen pulsen worden opgeslagen
 #define WAIT_FREE_RX               false // true: wacht default op verzenden van een event tot de IR/RF lijn onbezet is. Wordt overruled door commando [WaitFreeRX]
 #define WAIT_FREE_RX_WINDOW          500 // minimale wachttijd wanneer wordt gewacht op een vrije RF of IR band. Is deze waarde te klein, dan kunnen er restanten van signalen binnenkomen als RawSignal. Te groot maakt de Nodo sloom.
 #define WAITFREE_TIMEOUT           30000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
@@ -182,7 +183,11 @@ byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
 #define CMD_FILE_WRITE_LINE             129
 #define VALUE_FAST                      130
 #define CMD_RAWSIGNAL_SHOW              131
-#define COMMAND_MAX                     131 // hoogste commando
+#define CMD_RAWSIGNAL_REPEATS           132
+#define CMD_RAWSIGNAL_DELAY             133
+#define CMD_RAWSIGNAL_PULSES            134
+#define CMD_ALIAS_SET                   135
+#define COMMAND_MAX                     136 // hoogste commando
 
 #define MESSAGE_OK                      0
 #define MESSAGE_UNKNOWN_COMMAND         1
@@ -205,7 +210,7 @@ byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
 
 #if NODO_MEGA
 
-// Vaste positie
+// Commando's die in de lijst een vaste positie hebben en houden
 prog_char PROGMEM Cmd_0[]="-";
 prog_char PROGMEM Cmd_1[]="Boot";
 prog_char PROGMEM Cmd_2[]="Sound";
@@ -341,6 +346,10 @@ prog_char PROGMEM Cmd_128[]="WiredThreshold";
 prog_char PROGMEM Cmd_129[]="FileWriteLine";
 prog_char PROGMEM Cmd_130[]="Fast";
 prog_char PROGMEM Cmd_131[]="RawSignalShow";
+prog_char PROGMEM Cmd_132[]="RawSignalRepeats";
+prog_char PROGMEM Cmd_133[]="RawSignalDelay";
+prog_char PROGMEM Cmd_134[]="RawSignalPulses";
+prog_char PROGMEM Cmd_135[]="AliasSet";
 
 
 // tabel die refereert aan de commando strings
@@ -358,7 +367,7 @@ Cmd_90,Cmd_91,Cmd_92,Cmd_93,Cmd_94,Cmd_95,Cmd_96,Cmd_97,Cmd_98,Cmd_99,
 Cmd_100,Cmd_101,Cmd_102,Cmd_103,Cmd_104,Cmd_105,Cmd_106,Cmd_107,Cmd_108,Cmd_109,
 Cmd_110,Cmd_111,Cmd_112,Cmd_113,Cmd_114,Cmd_115,Cmd_116,Cmd_117,Cmd_118,Cmd_119,
 Cmd_120,Cmd_121,Cmd_122,Cmd_123,Cmd_124,Cmd_125,Cmd_126,Cmd_127,Cmd_128,Cmd_129,
-Cmd_130, Cmd_131};
+Cmd_130,Cmd_131,Cmd_132,Cmd_133,Cmd_134,Cmd_135};
 
 // Message max. 40 pos    "1234567890123456789012345678901234567890"
 prog_char PROGMEM Msg_0[]="Ok.";
@@ -392,9 +401,8 @@ prog_char PROGMEM Text_03[] = "Enter your password: ";
 prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSat";
 prog_char PROGMEM Text_05[] = "0123456789abcdef";
 prog_char PROGMEM Text_07[] = "Waiting...";
-prog_char PROGMEM Text_08[] = "SendTo: Busy Nodo or transmission error. Retry...";
 prog_char PROGMEM Text_09[] = "(Last 100 KByte)";
-prog_char PROGMEM Text_10[] = "RF/IR claimed by unit %d. Waiting...";
+prog_char PROGMEM Text_10[] = "Tranmission claimed by unit %d. Waiting...";
 prog_char PROGMEM Text_13[] = "RawSignal saved.";
 prog_char PROGMEM Text_14[] = "Event=";
 prog_char PROGMEM Text_22[] = "!******************************************************************************!";
@@ -574,7 +582,7 @@ struct SettingsStruct
   byte    Subnet[4];                                        // Submask
   byte    Gateway[4];                                       // Gateway
   byte    DnsServer[4];                                     // DNS Server IP adres
-  unsigned int  PortInput;                                 // Poort van de inkomende IP communnicatie
+  unsigned int  PortInput;                                  // Poort van de inkomende IP communnicatie
   unsigned int  PortOutput;                                 // Poort van de uitgaande IP communnicatie
   byte    EchoSerial;
   byte    EchoTelnet;
@@ -800,7 +808,7 @@ void setup()
   SDCardInit();  // SDCard detecteren en evt. gereed maken voor gebruik in de Nodo
 
   // Voer bestand config uit als deze bestaat. die goeie oude MD-DOS tijd ;-)
-  FileExecute("config",true);
+  //??? FileExecute("config.dat",true,VALUE_ALL);
   #endif
   
   // initialiseer de Wired ingangen.
@@ -905,7 +913,7 @@ void setup()
   Serial.println(F("\nReady.\n"));
 
   // Voer bestand AutoExec uit als deze bestaat. die goeie oude MD-DOS tijd ;-)
-  FileExecute("autoexec",true);
+  FileExecute("autoexec.dat",true,VALUE_ALL);
 
   bitWrite(HW_Config,HW_SERIAL,Serial.available()?1:0); // Serial weer uitschakelen.
   #endif

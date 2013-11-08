@@ -488,7 +488,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
     case CMD_DEBUG: 
       Settings.Debug=EventToExecute->Par1;
       break;
-      
+
     case CMD_RAWSIGNAL_RECEIVE:
       Settings.RawSignalReceive=EventToExecute->Par1;
       break;
@@ -498,7 +498,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
 
     case CMD_RAWSIGNAL_SHOW: 
-      RawSignalShow(EventToExecute->Par2);
+      error=RawSignalShow(EventToExecute->Par2);
       break;
 
     case CMD_RAWSIGNAL_ERASE: 
@@ -512,25 +512,25 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
 
     case CMD_RAWSIGNAL_SEND:
+      RawSignal.Repeats=RAWSIGNAL_TX_REPEATS;
+      RawSignal.Delay=RAWSIGNAL_TX_DELAY;
+      RawSignal.Source=EventToExecute->Par1;
+
       if(EventToExecute->Par2!=0)
-        if(!RawSignalLoad(EventToExecute->Par2))
+        if(RawSignalLoad(EventToExecute->Par2))
           error=MESSAGE_UNABLE_OPEN_FILE;
       
       if(!error)
         {        
         ClearEvent(&TempEvent);
-
         TempEvent.Port=EventToExecute->Par1;
         TempEvent.Type= NODO_TYPE_EVENT;
         TempEvent.Command=EVENT_RAWSIGNAL;
         TempEvent.Par1=EventToExecute->Par1;
         TempEvent.Par2=EventToExecute->Par2;
-        RawSignal.Repeats=RAWSIGNAL_TX_REPEATS;
-        RawSignal.Delay=RAWSIGNAL_TX_DELAY;
-        
+        PrintRawSignal();//???
         SendEvent(&TempEvent, true ,true, Settings.WaitFree==VALUE_ON);
         }
-        
       break;
 
     case CMD_LOG: 
