@@ -26,7 +26,7 @@ void SDCardInit(void)
   SelectSDCard(false);
   }
 
-/**********************************************************************************************\
+ /*********************************************************************************************\
  * Wis een file
  \*********************************************************************************************/
 void FileErase(char *FileName)
@@ -36,7 +36,9 @@ void FileErase(char *FileName)
   SelectSDCard(false);
   }
 
-
+ /*********************************************************************************************\
+ * 
+ \*********************************************************************************************/
 boolean AddFileSDCard(char *FileName, char *Line)
   {
   boolean r;
@@ -46,9 +48,12 @@ boolean AddFileSDCard(char *FileName, char *Line)
   if(LogFile)
     {
     r=true;
+    //??? vervangen of heeft het cons. voor binnenhalen BodyTexk etc. ? ==> LogFile.write((uint8_t*)Line,strlen(Line));
+    
     for(int x=0;x<strlen(Line);x++)
       if(isprint(Line[x]))
         LogFile.write(Line[x]);
+        
     LogFile.write('\n'); // nieuwe regel
     LogFile.close();
     }
@@ -126,7 +131,6 @@ boolean FileList(char *rootdir, boolean Erase, byte Port)
       {
       if(!entry.isDirectory())
         {
-        
         if(Erase)
           {
           strcpy(TempString,rootdir);
@@ -138,7 +142,7 @@ boolean FileList(char *rootdir, boolean Erase, byte Port)
           {
           TempString[0]=0;
           // Als de funktie is aangeroepen vanuit RawSignalList, dan voor de bestandnamen 0x plakken omdat de bestandsnamen een 
-          // hexadecimale warde representeren. Niet nietjes op deze wijze maar bespaart code. 
+          // hexadecimale waarde representeren. Niet netjes op deze wijze maar bespaart code. 
           if(strcasecmp(rootdir,"/RAW")==0)
             strcat(TempString,"0x");
           strcat(TempString,entry.name());
@@ -164,11 +168,16 @@ boolean FileList(char *rootdir, boolean Erase, byte Port)
   }
 
 
-byte FileExecute(char* FileName, boolean ContinueOnError)
+byte FileExecute(char* FileName, boolean ContinueOnError, byte PrintPort)
   {
   int x,y;
   byte error=0;
-  static boolean FileExecuteActive=false;// voorkom netsting van fileexecute
+  static boolean FileExecuteActive=false;// voorkom nesting van fileexecute
+      
+  char *TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  
+Serial.print("*** FileExecute() File=");Serial.println(FileName);//???
+Serial.print("*** FileExecute() FileExecuteActive=");Serial.println(FileExecuteActive);//???
 
   if(FileExecuteActive)
     {
@@ -177,14 +186,10 @@ byte FileExecute(char* FileName, boolean ContinueOnError)
   else
     {
     Led(RED);
-  
-    char *TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
     FileExecuteActive=true;
     
-    strcpy(TmpStr,FileName);
-    strcat(TmpStr,".dat");
     SelectSDCard(true);
-    File dataFile=SD.open(TmpStr);
+    File dataFile=SD.open(FileName);
     
     if(dataFile) 
       {
@@ -199,7 +204,10 @@ byte FileExecute(char* FileName, boolean ContinueOnError)
           TmpStr[y]=0;
           y=0;
           SelectSDCard(false);
-          PrintString(TmpStr, VALUE_ALL);
+          if(PrintPort)
+            PrintString(TmpStr, PrintPort);
+Serial.print("*** FileExecute() Voer regel uit =");Serial.println(TmpStr);//???
+
           error=ExecuteLine(TmpStr,VALUE_SOURCE_FILE);
           SelectSDCard(true);
   
@@ -214,22 +222,26 @@ byte FileExecute(char* FileName, boolean ContinueOnError)
       }  
     else
       error=MESSAGE_UNABLE_OPEN_FILE;
-
-    FileExecuteActive=false;
-    free(TmpStr);
-    SelectSDCard(false);
     }
-    
+
+  FileExecuteActive=false;
+  free(TmpStr);    
+  SelectSDCard(false);
+
   return error;
   }    
 
 
 byte FileShow(char *FileName, byte Port)
   {
-  SelectSDCard(true);
   char *TmpStr2=(char*)malloc(INPUT_BUFFER_SIZE+2);
   byte error=0;
   
+
+Serial.print("*** FileShow() File=");Serial.println(FileName);//???
+
+  SelectSDCard(true);
+
   File dataFile=SD.open(FileName);
   if(dataFile) 
     {

@@ -9,7 +9,7 @@ void WaitFree(byte Port, int TimeOut)
 
   Led(BLUE);
 
-  // luister een tijdwindow of er pulsen wijn
+  // luister een tijdwindow of er pulsen zijn
   WindowTimer=millis()+WAIT_FREE_RX_WINDOW;
 
   while(WindowTimer>millis() && TimeOutTimer>millis())

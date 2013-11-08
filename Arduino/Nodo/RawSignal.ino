@@ -197,10 +197,10 @@ inline boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
   int RawCodeLength=1;
   unsigned long PulseLength=0;
   unsigned long numloops = 0;
-  const unsigned long LoopsPerMilli=400; // Aantal while() *A* loops binnen een milliseconde inc. compensatie overige overhead binnen de while() *B* loop. Uitgeklokt met een analyser 16Mhz ATMega.
+  const unsigned long LoopsPerMilli=375; // Aantal while() *A* loops binnen een milliseconde inc. compensatie overige overhead binnen de while() *B* loop. Uitgeklokt met een analyser 25Mhz ATMega.
   unsigned long maxloops = (unsigned long)TimeOut * LoopsPerMilli;
   boolean toggle=false;
-  RawSignal.Multiply=50;
+  RawSignal.Multiply=RAWSIGNAL_SAMPLE;
 
   do{// lees de pulsen in microseconden en plaats deze in de tijdelijke buffer RawSignal
     numloops = 0;
@@ -224,6 +224,7 @@ inline boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
   if(RawCodeLength>=MIN_RAW_PULSES)
     {
     RawSignal.Number=RawCodeLength-1;
+    RawSignal.Pulses[RawSignal.Number]=0;// Laatste element bevat de timeout. Niet relevant.
     return true;
     }
   RawSignal.Number=0;
@@ -251,8 +252,8 @@ boolean AnalyzeRawSignal(struct NodoEventStruct *E)
 
   // Loop de devices langs. Indien een device dit nodig heeft, zal deze het rawsignal gebruiken en omzetten naar een
   // geldig event.
-  if(PluginCall(PLUGIN_RAWSIGNAL_IN,E,0))
-    return true;
+//???  if(PluginCall(PLUGIN_RAWSIGNAL_IN,E,0))
+//???    return true;
     
   // als er geen enkel geldig signaaltype uit de pulsenreeks kon worden gedestilleerd, dan resteert niets anders
   // dan deze weer te geven als een RawSignal.
@@ -283,8 +284,9 @@ boolean RawSignal_2_32bit(struct NodoEventStruct *event)
   if(RawSignal.Number < MIN_RAW_PULSES) return false;  
   
   // zoek de kortste tijd (PULSE en SPACE). Start niet direct vanaf de eerste puls omdat we anders kans 
-  // lopen een onvolledige startbit te pakken.
-  for(x=5;x<RawSignal.Number;x+=2)
+  // lopen een onvolledige startbit te pakken. Ook niet de laatste, want daar zit de niet bestaande
+  // space van de stopbit in.
+  for(x=5;x<RawSignal.Number-2;x+=2)
     {
     if(RawSignal.Pulses[x]  < MinPulse)MinPulse=RawSignal.Pulses[x]; // Zoek naar de kortste pulstijd.
     if(RawSignal.Pulses[x+1]< MinSpace)MinSpace=RawSignal.Pulses[x+1]; // Zoek naar de kortste spacetijd.
@@ -296,7 +298,7 @@ boolean RawSignal_2_32bit(struct NodoEventStruct *event)
   MinSpace+=(MinSpace*RAWSIGNAL_TOLERANCE)/100;
 
   // Data kan zowel in de mark als de space zitten. Daarom pakken we beide voor data opbouw.
-  for(x=3;x<RawSignal.Number;x+=2)
+  for(x=3;x<=RawSignal.Number;x+=2)
     {
     CodeM = (CodeM<<1) | (RawSignal.Pulses[x]   > MinPulse);
     CodeS = (CodeS<<1) | (RawSignal.Pulses[x+1] > MinSpace);    
@@ -332,7 +334,7 @@ boolean RawSignal_2_Nodo(struct NodoEventStruct *Event)
     
   struct DataBlockStruct DataBlock;
   byte *B=(byte*)&DataBlock; // B wijst naar de eerste byte van de struct
-  z=3;  // RwaSignal pulse teller: 0=aantal, 1=startpuls, 2=space na startpuls, 3=1e pulslengte. Dus start loop met drie.
+  z=3;  // RawSignal pulse teller: 0=niet gebruiktaantal, 1=startpuls, 2=space na startpuls, 3=1e pulslengte. Dus start loop met drie.
 
   for(x=0;x<sizeof(struct DataBlockStruct);x++) // vul alle bytes van de struct 
     {
@@ -378,7 +380,7 @@ boolean RawSignalExist(unsigned long Code)
   char *TempString=(char*)malloc(25);
 
   SelectSDCard(true);
-  sprintf(TempString,"%s/%s.raw",ProgmemString(Text_28),int2strhex(Code)+2); // +2 omdat dan de tekens '0x' niet worden meegenomen. anders groter dan acht posities in filenaam.
+  sprintf(TempString,"%s/%s.DAT",ProgmemString(Text_28),int2strhex(Code)+2); // +2 omdat dan de tekens '0x' niet worden meegenomen. anders groter dan acht posities in filenaam.
 
   File dataFile=SD.open(TempString);
   if(dataFile) 
@@ -393,15 +395,15 @@ boolean RawSignalExist(unsigned long Code)
   return exist;
   }
 
-/*********************************************************************************************\
+
+  /*********************************************************************************************\
  * Sla de pulsen in de buffer Rawsignal op op de SDCard
  \*********************************************************************************************/
 byte RawSignalWrite(unsigned long Key)
   {
   boolean error=false;
-  char *TempString=(char*)malloc(25);
-
   int x;
+  char *TempString=(char*)malloc(80);
 
   if(Key!=0)
     {
@@ -409,19 +411,29 @@ byte RawSignalWrite(unsigned long Key)
     SelectSDCard(true);
   
     // Sla Raw-pulsenreeks op in bestand met door gebruiker gekozen nummer als filenaam
-  
-    sprintf(TempString,"%s/%s.raw",ProgmemString(Text_28),int2strhex(Key)+2);
+    sprintf(TempString,"%s/%s.DAT",ProgmemString(Text_28),int2strhex(Key)+2);
     SD.remove(TempString); // eventueel bestaande file wissen, anders wordt de data toegevoegd.    
     File KeyFile = SD.open(TempString, FILE_WRITE);
+    
     if(KeyFile) 
       {
-      byte b,*B=(byte*)&RawSignal;
-      for(x=0;x<sizeof(struct RawSignalStruct);x++)
+      // Geef de pulstijden weer
+      for(x=1;x<=RawSignal.Number;x++)
         {
-        b=*(B+x); 
-        KeyFile.write(b);
+        if(x%10==1)
+          sprintf(TempString,"%s %d:",cmd2str(CMD_RAWSIGNAL_PULSES), x-1);    
+        else
+          strcat(TempString,",");
+          
+        strcat(TempString,int2str(RawSignal.Pulses[x]*RawSignal.Multiply));
+         
+        if(x%10==0 || x==RawSignal.Number)
+          {
+          KeyFile.write((uint8_t*)TempString,strlen(TempString));
+          KeyFile.write('\n');
+          }      
         }
-      KeyFile.close();
+      KeyFile.close();    
       }
     else 
       error=true;
@@ -439,211 +451,98 @@ byte RawSignalWrite(unsigned long Key)
   }
 
 
+
 /*********************************************************************************************\
- * Haal de RawSignal pulsen op uit het bestand <key>.raw en sla de reeks op in de 
+ * Haal de RawSignal pulsen op uit het bestand <key>.dat en sla de reeks op in de 
  * RawSignal buffer, zodat deze vervolgens weer kan worden gebruikt om te verzenden.
  \*********************************************************************************************/
-boolean RawSignalLoad(unsigned long Key)
+byte RawSignalLoad(unsigned long Key)
   {
-  boolean Ok;
+  byte error;
   char *TempString=(char*)malloc(25);
 
-  SelectSDCard(true);
-  sprintf(TempString,"%s/%s.raw",ProgmemString(Text_28),int2strhex(Key)+2);
-
-  File dataFile=SD.open(TempString);
-  if(dataFile) 
-    {
-    byte b,*B=(byte*)&RawSignal;
-    int x=0;
-    
-    while(dataFile.available() && x<sizeof(struct RawSignalStruct))
-      {
-      b=dataFile.read();
-      *(B+x)=b; 
-      x++;
-      }
-    dataFile.close();
-    Ok=true;
-    }
-  else
-    Ok=false;
-
-  // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer W5100 chip
-  SelectSDCard(false);
+  sprintf(TempString,"%s/%s..DAT",ProgmemString(Text_28),int2strhex(Key)+2);
+  error=FileExecute(TempString, false, 0);
 
   free(TempString);
-  return Ok;
+  return error;
+  }
+
+/*********************************************************************************************\
+ * Haal de RawSignal pulsen op uit het bestand <key>.dat en sla de reeks op in de 
+ * RawSignal buffer, zodat deze vervolgens weer kan worden gebruikt om te verzenden.
+ \*********************************************************************************************/
+boolean RawSignalShow(unsigned long Key)
+  {
+  byte error;
+  char *TempString=(char*)malloc(25);
+
+  sprintf(TempString,"%s/%s.DAT",ProgmemString(Text_28),int2strhex(Key)+2);
+  error=FileShow(TempString, VALUE_ALL);
+
+  free(TempString);
+  return error;
   }
 
 
-/*********************************************************************************************\
- * Laat de inhoud van de RawSignalBuffer zien. Als er een hexcode is opgegeven, dan wordt  
- * een poging gedaan om deze op te halen vanaf de SDCard. Als deze daar niet wordt gevonden
- * wordt er een foutmelding gegeven.   
- \*********************************************************************************************/
-boolean RawSignalShow(unsigned long Code)
-  {
 
-  // Als een hex-code opgegeven, dan deze van SDCard halen. anders de huidige inhoud van de RawSignal buffer gebruiken
-  if(Code!=0)
+/*********************************************************************************************\
+ * Deze funktie vult de struct RawSignal met de opgegeven pulstijden. De string dient het volgende
+ * format te hebben: <Startadres>:<Pulstijd>,<Pulstijd>,<Pulstijd>,<Pulstijd>,...
+ * Startadres en Pulstijd mogen zowel decimaal als hexadecimaal zijn. Zodra er niet wordt
+ * voldaan aan het string format wordt teruggekeerd met een error.   
+ \*********************************************************************************************/
+byte RawSignalPulses(char* Line)
+  {
+  // Zoek naar eerste getal tot aan ':' teken. Dat is de index waar de rawsignal begint.
+  RawSignal.Multiply=25;
+  
+  byte error=0;
+  int a,w,x=0,y=0;
+  char *TmpStr2=(char*)malloc(INPUT_BUFFER_SIZE);
+  
+  // Zoek naar eerste getal tot aan ':' teken. Dat is de index waar de rawsignal begint.
+  y=0;
+  do
     {
-    if(!RawSignalLoad(Code))
+    w=Line[x];
+    if(isxdigit(w) && y<INPUT_BUFFER_SIZE) // zowel decimaal als hex mogen
+      TmpStr2[y++]=w;
+    x++;
+    }while(w!=0 && w!=':');
+
+
+  if(w==':')
+    {              
+    TmpStr2[y]=0;
+    RawSignal.Number=str2int(TmpStr2);
+
+    y=0;
+    while(w!=0 && !error)
       {
-      RaiseMessage(MESSAGE_UNABLE_OPEN_FILE,0);
-      return false;
+      w=Line[x++];
+      if(isxdigit(w) && y<INPUT_BUFFER_SIZE) // zowel decimaal als hex mogen.
+        TmpStr2[y++]=w;
+      else if(w==' ');
+      else if(w==',' || w==0)
+        {
+        TmpStr2[y]=0;
+        y=0;
+        a=str2int(TmpStr2);
+        if(++RawSignal.Number<RAW_BUFFER_SIZE && a<=(255 * RawSignal.Multiply))
+          RawSignal.Pulses[RawSignal.Number]=a/RawSignal.Multiply;
+        else
+          error=MESSAGE_INVALID_PARAMETER;            
+        }
+      else
+        error=MESSAGE_INVALID_PARAMETER;                            
       }
     }
   else
-    {
-    struct NodoEventStruct TempEvent;
-    ClearEvent(&TempEvent);
-    RawSignal_2_32bit(&TempEvent);
-    Code=TempEvent.Par2;
-    }
-  
-  if(Code!=0)
-    {
-    Serial.print(F("HEX-Code=0x"));
-    Serial.print(Code,HEX);
-  
-    int x;
-    unsigned int y,z;
-  
-    // zoek naar de langste korte puls en de kortste lange puls
-    unsigned int MarkShort=50000;
-    unsigned int MarkLong=0;
-    for(x=5;x<RawSignal.Number;x+=2)
-      {
-      y=RawSignal.Pulses[x]*RawSignal.Multiply;
-      if(y<MarkShort)
-        MarkShort=y;
-      if(y>MarkLong)
-        MarkLong=y;
-      }
-    z=true;
-    while(z)
-      {
-      z=false;
-      for(x=5;x<RawSignal.Number;x+=2)
-        {
-        y=RawSignal.Pulses[x]*RawSignal.Multiply;
-        if(y>MarkShort && y<(MarkShort+MarkShort/2))
-          {
-          MarkShort=y;
-          z=true;
-          }
-        if(y<MarkLong && y>(MarkLong-MarkLong/2))
-          {
-          MarkLong=y;
-          z=true;
-          }
-        }
-      }
-    unsigned int MarkMid=((MarkLong-MarkShort)/2)+MarkShort;
-  
-    // zoek naar de langste korte puls en de kortste lange puls
-    unsigned int SpaceShort=50000;
-    unsigned int SpaceLong=0;
-    for(x=4;x<RawSignal.Number;x+=2)
-      {
-      y=RawSignal.Pulses[x]*RawSignal.Multiply;
-      if(y<SpaceShort)
-        SpaceShort=y;
-      if(y>SpaceLong)
-        SpaceLong=y;
-      }
-    z=true;
-    while(z)
-      {
-      z=false;
-      for(x=4;x<RawSignal.Number;x+=2)
-        {
-        y=RawSignal.Pulses[x]*RawSignal.Multiply;
-        if(y>SpaceShort && y<(SpaceShort+SpaceShort/2))
-          {
-          SpaceShort=y;
-          z=true;
-          }
-        if(y<SpaceLong && y>(SpaceLong-SpaceLong/2))
-          {
-          SpaceLong=y;
-          z=true;
-          }
-        }
-      }
-    int SpaceMid=((SpaceLong-SpaceShort)/2)+SpaceShort;
-  
-    // Bepaal soort signaal
-    y=0;
-    if(MarkLong  > (2*MarkShort  ))y=1; // PWM
-    if(SpaceLong > (2*SpaceShort ))y+=2;// PDM
-  
-    Serial.print(F( ", Bits="));
-  
-    if(y==0)Serial.println(F("?"));
-    if(y==1)
-      {
-      for(x=1;x<RawSignal.Number;x+=2)
-        {
-        y=RawSignal.Pulses[x]*RawSignal.Multiply;
-        if(y>MarkMid)
-          Serial.write('1');
-        else
-          Serial.write('0');
-        }
-      }
-    if(y==2)
-      {
-      for(x=2;x<=RawSignal.Number;x+=2)
-        {
-        y=RawSignal.Pulses[x]*RawSignal.Multiply;
-        if(y>SpaceMid)
-          Serial.write('1');
-        else
-          Serial.write('0');
-        }
-      }
-    if(y==3)
-      {
-      for(x=1;x<RawSignal.Number;x+=2)
-        {
-        y=RawSignal.Pulses[x]*RawSignal.Multiply;
-        if(y>MarkMid)
-          Serial.write('1');
-        else
-          Serial.write('0');
-        
-        y=RawSignal.Pulses[x+1]*RawSignal.Multiply;
-        if(y>SpaceMid)
-          Serial.write('1');
-        else
-          Serial.write('0');
-        }
-      }
-  
-    Serial.print(F(", Pulses="));
-    Serial.print(RawSignal.Number/2);
-  
-    Serial.print(F(", Pulses(uSec)="));      
-    for(x=1;x<RawSignal.Number;x++)
-      {
-      Serial.print(RawSignal.Pulses[x]*RawSignal.Multiply); 
-      Serial.write(',');       
-      }
-    Serial.println();
-    
-    //      int dev=250;  
-    //      for(x=1;x<=RawSignal.Number;x+=2)
-    //        {
-    //        for(y=1+int(RawSignal.Pulses[x])*RawSignal.Multiply/dev; y;y--)
-    //          Serial.write('M');  // Mark  
-    //        for(y=1+int(RawSignal.Pulses[x+1])*RawSignal.Multiply/dev; y;y--)
-    //          Serial.write('_');  // Space  
-    //        }    
-    //      Serial.println();
-    return true;
-    }
-  }      
+    error=MESSAGE_INVALID_PARAMETER;            
+
+  free(TmpStr2);
+  return error;
+  }
 
 #endif
