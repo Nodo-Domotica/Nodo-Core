@@ -102,7 +102,6 @@ boolean Plugin_002(byte function, struct NodoEventStruct *event, char *string)
       // Dit is het eerste argument in het commando.
       if(GetArgv(string,TempStr,1))
         {
-        LegacyMMI(TempStr);
         if(strcasecmp(TempStr,"KakuSend")==0)
           {
           byte c;

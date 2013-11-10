@@ -520,6 +520,10 @@ boolean GetStatus(struct NodoEventStruct *Event)
 
 #if NODO_MEGA
 
+  case CMD_ALIAS_SHOW:
+    Event->Par1=Settings.Alias;
+    break;
+    
   case VALUE_UNIT:
     x=NodoOnline(xPar1,0);
     if(x!=0)
@@ -666,6 +670,7 @@ void ResetFactory(void)
   Settings.EchoTelnet                 = VALUE_OFF;  
   Settings.Log                        = VALUE_OFF;  
   Settings.RawSignalSave              = VALUE_OFF;  
+  Settings.Alias                      = VALUE_ON;  
   Settings.Password[0]                = 0;
 
   // Maak de alarmen leeg
@@ -2372,10 +2377,11 @@ byte NodoOnline(byte Unit, byte Port)
     }    
   return NodoOnlinePort[Unit];
   }
-/*********************************************************************************************\
- * Een float en een unsigned long zijn beide 4bytes groot. We gebruiken ruimte van Par3 om 
- * een float in op te slaan. Onderstaande twee funkties converteren de unsigned long
- * en de float naar het andere format.
+  
+ /********************************************************************************************\
+ * Een float en een unsigned long zijn beide 4bytes groot. Deze zijn niet te casten naar 
+ * elkaar. Onderstaande twee funkties converteren de unsigned long
+ * en de float.
  \*********************************************************************************************/
 unsigned long float2ul(float f)
   {
@@ -2390,6 +2396,146 @@ float ul2float(unsigned long ul)
   memcpy(&f, &ul,4);
   return f;
   }
-    
+  
+#if NODO_MEGA    
+ /********************************************************************************************\
+ *
+ *
+ *  
+ \*********************************************************************************************/
+boolean Alias(char* Command, boolean IsInput)
+  {
+  boolean Success=false;
+  
+  int c,y=0;
 
+  SelectSDCard(true);
+  File dataFile=SD.open(PathFile(IsInput?ProgmemString(Text_11):ProgmemString(Text_12),int2strhex(AliasHash(Command))+2,"DAT"));
+  
+  if(dataFile) 
+    {
+    while(dataFile.available())
+      {
+      c=dataFile.read();
+      if(isprint(c) && y<INPUT_COMMAND_SIZE && c!='=')
+        Command[y++]=c;
+      else
+        {
+        Command[y]=0;
+        break;
+        }
+      }
+    dataFile.close();
+    }  
+  SelectSDCard(false);
+
+  return y>0;
+  } 
+
+ /********************************************************************************************\
+ *
+ *
+ *  
+ \*********************************************************************************************/
+byte AliasWrite(char* Line)
+  {
+  byte x=0,y=0,w,error=0;
+  unsigned long Hash;
     
+  char *Keyword=(char*)malloc(INPUT_COMMAND_SIZE+1);
+  char *Alias=(char*)malloc(INPUT_COMMAND_SIZE+1);
+  char *String=(char*)malloc(INPUT_BUFFER_SIZE);
+
+
+  // Zowel het door de gebruiker opgegeven keyword als de route terug moeten worden opgeslagen.
+  // Beide worden in een aparte file in een aparte directory opgeslagen zodat beide richtingen uit
+  // weer snel gevonden kunnen worden.
+  
+  do{
+    w=Line[x];
+    Keyword[x++]=w;              
+    }while(w!='=' && w!=0 && x<INPUT_COMMAND_SIZE);
+  Keyword[x-1]=0;
+  
+    do{
+    w=Line[x++];
+    Alias[y++]=w;              
+    }while(w!=0  && y<INPUT_COMMAND_SIZE);
+
+  // een Nodo events is het niet toegestaan om een alias voor aan te maken. Dit omdat anders
+  // een situatie kan ontstaan waarbij de Nodo op slot gezet kan worden doordat commando's niet 
+  // meer benaderbaar zijn.
+  if(str2cmd(Keyword))
+    error=MESSAGE_INVALID_PARAMETER;
+    
+  else
+    {
+    // Omdat de Nodo keywords ook weer terugvertaald moeten worden naar de Alias, is het wij om het opgegeven keyword
+    // op te bouwen zoals deze ook door de Nodo weergegeven wordt. Hoe dit op te lossen ??? 
+    // struct NodoEvent TempEvent;
+    // Str2Event() => bestaat niet !
+    // Event2str(Event,Keyword);
+    
+    Hash=AliasHash(Keyword);
+    strcpy(String, Alias);
+    strcat(String, "=");
+    strcat(String, Keyword); 
+    FileWriteLine(ProgmemString(Text_11),int2strhex(Hash)+2,"DAT",String,true);
+  
+    Hash=AliasHash(Alias);
+    strcpy(String, Keyword);
+    strcat(String, "=");
+    strcat(String, Alias); 
+    error=FileWriteLine(ProgmemString(Text_12),int2strhex(Hash)+2,"DAT",String,true);
+    }
+    
+  free(Keyword);
+  free(Alias);
+  free(String);
+  return error;
+  }  
+
+/********************************************************************************************\
+ *
+ *
+ *  
+ \*********************************************************************************************/
+byte AliasErase(char* Keyword)
+  {
+  unsigned long Hash=AliasHash(Keyword);
+      
+  if(Hash==42)// Keyword = "*"
+    {
+    FileErase(ProgmemString(Text_11),"*","DAT");
+    FileErase(ProgmemString(Text_12),"*","DAT");
+    }
+  else
+    {
+    FileErase(ProgmemString(Text_11),int2strhex(Hash)+2,"DAT");
+    FileErase(ProgmemString(Text_12),int2strhex(Hash)+2,"DAT");
+    }
+  return 0;
+  }  
+
+ /********************************************************************************************\
+ * Deze routine berekent uit een string (Commando) een hashwaarde volgens de Danel Bernstein 
+ * methode. In het commando worden parameters van elkaar gescheiden door komma's of spaties.
+ * De string wordt eerst 'opgeschoond' zodat spaties en komma's niet meer van invloed zijn
+ * op de berekende hashwaarde. Ook hoofdletters zijn niet van invloed.   
+ \*********************************************************************************************/
+unsigned long AliasHash(char* Input)
+  {
+  char *TmpStr=(char*)malloc(INPUT_COMMAND_SIZE+1);
+  char *c;
+  unsigned long Hash=0UL;
+    
+  byte x=1;
+  while(GetArgv(Input,TmpStr,x++))
+    {
+    c=TmpStr;
+    while(*c) Hash=Hash * 33 + tolower(*c++);
+    }  
+  free(TmpStr);
+  return Hash;
+  }  
+#endif

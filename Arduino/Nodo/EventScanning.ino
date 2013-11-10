@@ -8,7 +8,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)// Deze routine maakt deel uit v
   byte Fetched=0;
   static unsigned long BlockReceivingTimer=0;
 
-  // I2C: *************** kijk of er data is binnengekomen op de I2Cbus **********************
+  // I2C: *************** kijk of er data is binnengekomen op de I2C-bus **********************
   if(I2C_Received)
    {
    // Er is I2C data binnengekomen maar weten nog niet of het een NodoEventStruct betreft.
@@ -96,6 +96,21 @@ boolean ScanEvent(struct NodoEventStruct *Event)// Deze routine maakt deel uit v
     {
     Event->Port=Fetched;
     Event->Direction=VALUE_DIRECTION_INPUT;
+
+    // Signaal wordt echter alleen als event weergegeven als de setting
+    // RawSignalReceive op On staat of het een bekend RawSignal is die is opgeslagen op SDCard.
+    if(Event->Command==EVENT_RAWSIGNAL)
+      {
+      if(Settings.RawSignalReceive==VALUE_ON)
+        return true;
+        
+      #if NODO_MEGA
+      if(RawSignalExist(Event->Par2))
+        return true;
+      #endif
+      
+      return false;
+      }
 
     // Toets of de versienummers corresponderen. Is dit niet het geval, dan zullen er verwerkingsfouten optreden! Dan een waarschuwing tonen en geen verdere verwerking.
     // Er is een uitzondering: De eerste commando/eventnummers zijn stabiel en mogen van oudere versienummers zijn.

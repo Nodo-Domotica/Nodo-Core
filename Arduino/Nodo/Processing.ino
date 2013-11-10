@@ -13,10 +13,6 @@ byte ProcessEventExt(struct NodoEventStruct *Event)
   SerialHold(true);  // als er een regel ontvangen is, dan binnenkomst van signalen stopzetten met een seriele XOFF
   Led(RED); // LED aan als er iets verwerkt wordt      
 
-  #ifdef DEBUG_PROCESSING_TIME
-  unsigned long ProcessingTime=millis();
-  #endif
-
   #if NODO_MEGA
   if(FileWriteMode!=0)
     return 0;
@@ -35,7 +31,7 @@ byte ProcessEventExt(struct NodoEventStruct *Event)
   if(RequestForConfirm)
     {  
     // Initialiseer een Event en Transmissie
-Serial.println("Send Confirm.");//???
+    // Serial.println("Send Confirm.");//???
 
     ClearEvent(&TempEvent);    
     TempEvent.DestinationUnit       = Event->SourceUnit;
@@ -45,13 +41,7 @@ Serial.println("Send Confirm.");//???
     TempEvent.Par1                  = RequestForConfirm;
     SendEvent(&TempEvent, false,false,Settings.WaitFree==VALUE_ON);
     RequestForConfirm=0;
-    }
-
-  #ifdef DEBUG_PROCESSING_TIME
-  Serial.print(F("DEBUG: Processing time (mSec)="));
-  Serial.println(millis()-ProcessingTime);
-  #endif
-  
+    }  
   return error;
   }
     
@@ -70,10 +60,6 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     Continue=false;
     error=MESSAGE_NESTING_ERROR; // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
     }
-
-  #ifdef DEBUG_EVENT
-  PrintNodoEvent("Debug: ", Event);
-  #endif
 
   // Komt er een SendTo event voorbij, dan deze en opvolgende separaat afhandelen
   if(Continue && (Event->Command==CMD_SENDTO)) // Is dit event de eerste uit een [SendTo] reeks?
@@ -120,7 +106,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
 
   #if NODO_MEGA
   if(Continue && bitRead(HW_Config,HW_SDCARD))
-    if(Event->Command==EVENT_RAWSIGNAL && Settings.RawSignalSave==VALUE_ON)
+    if(Event->Command==EVENT_RAWSIGNAL && Settings.RawSignalSave==VALUE_ALL)
       if(!RawSignalExist(Event->Par2))
         RawSignalWrite(Event->Par2);
   #endif    

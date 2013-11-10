@@ -1,42 +1,9 @@
 #if NODO_MEGA
 
-void LegacyMMI(char *command)
-  {
-  // ??? Historisch is het zo gegroeid dat een aantal commando's geen goede naamsopbouw hebben.
-  // Tijdelijk worden deze commando's hier gerenamed naar de nieuwe, gewenste benaming. Op termijn
-  // kan deze conversie komen te vervallen.
-  boolean converted=true;
-  char* msg=(char*)malloc(80);
-
-  strcpy(msg,"Attention: Keyword [");
-  strcat(msg,command);  
-  strcat(msg,"] is outdated. Replaced by [");  
-
-  if      (strcasecmp(command,"SendUserEvent")==0)   {strcpy(command,"UserEventSend");}
-  else if (strcasecmp(command,"ThisUnit")==0)        {strcpy(command,"System");}
-  else if (strcasecmp(command,"SendEvent")==0)       {strcpy(command,"EventSend");}
-  else if (strcasecmp(command,"SendNewKaku")==0)     {strcpy(command,"NewKakuSend");}
-  else if (strcasecmp(command,"SendKaku")==0)        {strcpy(command,"KakuSend");}
-  else if (strcasecmp(command,"RawSignalSave")==0)   {strcpy(command,"RawSignalWrite");}
-  else converted=false;
-  
-  if(converted)
-    {
-    strcat(msg,command);
-    strcat(msg,"].");
-    PrintString(msg,VALUE_ALL);
-    }
-  free(msg);
-  }
-
 /*********************************************************************************************\
  * Print een event naar de opgegeven poort. Dit kan zijn:
  * 
  * VALUE_ALL, VALUE_SOURCE_SERIAL, VALUE_SOURCE_TELNET, VALUE_SOURCE_FILE
- * 
- * 
- * 
- * 
  * 
  \*********************************************************************************************/
 void PrintEvent(struct NodoEventStruct *Event, byte Port)
@@ -46,7 +13,7 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
   if(Event->Type==NODO_TYPE_SYSTEM || Event->Type==0)
     return;
   
-  char* StringToPrint=(char*)malloc(100);
+  char* StringToPrint=(char*)malloc(80);
   char* TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
 
   StringToPrint[0]=0; // als start een lege string
@@ -106,7 +73,7 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
       strcat(TmpStr,"; ");
       }
     strcat(TmpStr,StringToPrint);
-    AddFileSDCard(ProgmemString(Text_23),TmpStr);
+    FileWriteLine(ProgmemString(Text_15),ProgmemString(Text_23),"DAT", TmpStr, false);
     }
 
   free(TmpStr);
@@ -226,7 +193,7 @@ void PrintString(char* LineToPrint, byte Port)
   // FileLog wordt hier uitgevoerd.
   if(TempLogFile[0]!=0)
     if(bitRead(HW_Config,HW_SDCARD))
-      AddFileSDCard(TempLogFile,LineToPrint); // Extra logfile op verzoek van gebruiker: CMD_FILE_LOG
+      FileWriteLine(ProgmemString(Text_15),TempLogFile,"DAT",LineToPrint, false); // Extra logfile op verzoek van gebruiker: CMD_FILE_LOG
   }
   
 
@@ -253,7 +220,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
   {
   int x;
   EventString[0]=0;
-  char* str=(char*)malloc(42);
+  char* str=(char*)malloc(INPUT_COMMAND_SIZE);
   str[0]=0;// als er geen gevonden wordt, dan is de string leeg
 
   // Er kunnen een aantal parameters worden weergegeven. In een kleine tabel wordt aangegeven op welke wijze de parameters aan de gebruiker
@@ -313,7 +280,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
 
       // Par2 als hex waarde
       case CMD_RAWSIGNAL_SHOW:
-      case CMD_RAWSIGNAL_ERASE:
       case CMD_RAWSIGNAL_SEND:
       case EVENT_RAWSIGNAL:
         ParameterToView[0]=PAR2_INT_HEX;
@@ -381,6 +347,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_LOG:
       case CMD_ECHO:
       case CMD_WAITFREERF:
+      case CMD_ALIAS_SHOW:
       case CMD_BREAK_ON_DAYLIGHT:
         ParameterToView[0]=PAR1_TEXT;
         break;
@@ -592,6 +559,8 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         strcat(EventString,",");      
       }
     }          
+  if(Settings.Alias==VALUE_ON)
+    Alias(EventString,false);//???
   free(str);
   }
 
@@ -603,10 +572,9 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
  \*******************************************************************************************************/
 int ExecuteLine(char *Line, byte Port)
   {
-  const int MaxCommandLength=40; // maximaal aantal tekens van een commando
-  char Command[MaxCommandLength+1]; 
-  char *TmpStr1=(char*)malloc(MaxCommandLength+1);
-  char *TmpStr2=(char*)malloc(INPUT_BUFFER_SIZE+2);
+  char *Command=(char*)malloc(INPUT_COMMAND_SIZE+1);
+  char *TmpStr1=(char*)malloc(INPUT_COMMAND_SIZE+1);
+  char *TmpStr2=(char*)malloc(INPUT_BUFFER_SIZE+1);
   int CommandPos;
   int LinePos;
   int w,x,y;
@@ -626,11 +594,12 @@ int ExecuteLine(char *Line, byte Port)
     if(StringFind(Line,cmd2str(CMD_FILE_WRITE))!=-1)// string gevonden!
       {
       // Stop de FileWrite modus
+      PrintString(ProgmemString(Text_22),Port);
       FileWriteMode=0;
       TempLogFile[0]=0;
       }
     if(TempLogFile[0]!=0)
-      AddFileSDCard(TempLogFile,Line); // Extra logfile op verzoek van gebruiker
+      FileWriteLine(ProgmemString(Text_15),TempLogFile,"DAT",Line, false); // Extra logfile op verzoek van gebruiker
     }
   else
     {
@@ -661,21 +630,28 @@ int ExecuteLine(char *Line, byte Port)
         LinePos=LineLength+1; // ga direct naar einde van de regel.
         }
 
-      // als puntkomma (scheidt opdrachten) of einde string
+      // Commandoo compleet als puntkomma (scheidt opdrachten) of einde string.
       if((LineChar=='!' || LineChar=='$' ||LineChar==';' || LineChar==0) && CommandPos>0)
         {
         Command[CommandPos]=0;
         CommandPos=0;
 
+        // De Nodo kan berekeningen maken en variabelen vullen. Voer deze taak uit.
         if(Substitute(Command)!=0)
           error=MESSAGE_INVALID_PARAMETER;
 
+        // Bouw een nieuw event op.
         ClearEvent(&EventToExecute);
         EventToExecute.Port=Port;
-        
         GetArgv(Command,TmpStr1,1);
-        LegacyMMI(TmpStr1);
         EventToExecute.Command=str2cmd(TmpStr1); 
+
+        // Als het geen regulier Nodo commando of event is, dan kijken of het commando bekend
+        // is als een door de gebruiker opgegeven alias.
+        if(EventToExecute.Command==0)
+          if(Alias(Command,true))
+            if(GetArgv(Command,TmpStr1,1))
+              EventToExecute.Command=str2cmd(TmpStr1); 
 
         // Haal Par1 uit het commando.
         if(GetArgv(Command,TmpStr1,2))
@@ -717,7 +693,6 @@ int ExecuteLine(char *Line, byte Port)
       
           case CMD_LOG:
           case CMD_RAWSIGNAL_RECEIVE:
-          case CMD_RAWSIGNAL_SAVE:
           case CMD_DEBUG:
           case CMD_ECHO:
             EventToExecute.Type=NODO_TYPE_COMMAND;
@@ -957,6 +932,7 @@ int ExecuteLine(char *Line, byte Port)
             
            // par1 alleen On of Off.
            // par2 mag alles zijn
+          case CMD_ALIAS_SHOW:
           case CMD_BREAK_ON_DAYLIGHT:
           case CMD_WAITFREERF:
             EventToExecute.Type=NODO_TYPE_COMMAND;
@@ -1240,26 +1216,15 @@ int ExecuteLine(char *Line, byte Port)
 
           case CMD_FILE_LOG:
             EventToExecute.Type=NODO_TYPE_COMMAND;
-            if(GetArgv(Command,TmpStr1,2))
-              {
-              strcat(TmpStr1,".dat");
-              strcpy(TempLogFile,TmpStr1);
-              }
-            else
+            Command[9]=0; // voor de zekerheid string afkappen.
+            if(!GetArgv(Command,TempLogFile,2));
               TempLogFile[0]=0;
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
           
           case CMD_FILE_ERASE:      
-            EventToExecute.Type=NODO_TYPE_COMMAND;
-            if(GetArgv(Command,TmpStr1,2))
-              {
-              strcat(TmpStr1,".dat");
-              FileErase(TmpStr1);
-              }
-            else
-              FileList("",true,Port);
-
+            if(GetArgv(Command,TmpStr1,2))// ??? alles wissen nog inbouwen
+              FileErase(ProgmemString(Text_15),TmpStr1,"DAT");
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
 
@@ -1280,13 +1245,26 @@ int ExecuteLine(char *Line, byte Port)
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
     
-          case CMD_RAWSIGNAL_SHOW:      
+          case CMD_RAWSIGNAL_SAVE:
+            EventToExecute.Type=NODO_TYPE_COMMAND;
+            if(EventToExecute.Par1!=VALUE_ALL && EventToExecute.Par1!=VALUE_OFF && EventToExecute.Par1!=0)
+              error=MESSAGE_INVALID_PARAMETER;
+
+            break;
+
           case CMD_RAWSIGNAL_ERASE:      
+            if(GetArgv(Command,TmpStr1,2))// ??? alles wissen nog inbouwen
+              FileErase(ProgmemString(Text_08),TmpStr1+2,"RAW");// +2 om zo de "0x" van de string te strippen.
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+            break;
+            
+          case CMD_RAWSIGNAL_SHOW:      
           case CMD_RAWSIGNAL_SEND:      
             EventToExecute.Type=NODO_TYPE_COMMAND;
+            if(GetArgv(Command,TmpStr1,1))
+              EventToExecute.Par1=str2int(TmpStr1);            // Haal Par2 uit het commando. let op Par2 gebruiker wordt opgeslagen in struct Par1.
             if(GetArgv(Command,TmpStr1,2))
               EventToExecute.Par2=str2int(TmpStr1);            // Haal Par1 uit het commando. let op Par1 gebruiker is een 32-bit hex-getal die wordt opgeslagen in struct Par2.
-            EventToExecute.Par1=VALUE_ALL;
             break;
     
           case CMD_FILE_GET_HTTP:
@@ -1306,14 +1284,8 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_FILE_SHOW:
             {
             EventToExecute.Type=NODO_TYPE_COMMAND;
-            char FileName[13];
-            TmpStr1[8]=0;// voor de zekerheid te lange filename afkappen
-            if(GetArgv(Command,FileName,2))
-              {
-              Led(BLUE);
-              strcat(FileName,".dat");
-              error=FileShow(FileName,Port);
-              }
+            if(GetArgv(Command,TmpStr1,2))
+              error=FileShow(ProgmemString(Text_15),TmpStr1,"DAT",Port);
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
             }
@@ -1332,8 +1304,7 @@ int ExecuteLine(char *Line, byte Port)
               if(State_EventlistWrite==0)
                 {
                 // Commando uitvoeren heeft alleen zin er geen eventlistwrite commando actief is
-                strcat(TmpStr1,".dat");
-                error=FileExecute(TmpStr1, EventToExecute.Par1==VALUE_ON, VALUE_ALL);
+                error=FileExecute(ProgmemString(Text_15),TmpStr1,"DAT", EventToExecute.Par1==VALUE_ON, VALUE_ALL, false);
                 EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
                 }
               }
@@ -1409,8 +1380,7 @@ int ExecuteLine(char *Line, byte Port)
             Led(BLUE);
             if(GetArgv(Command,TmpStr1,2))
               {
-              strcat(TmpStr1,".dat");
-              if(!SaveEventlistSDCard(TmpStr1))
+              if(!SaveEventlistSDCard(ProgmemString(Text_15), TmpStr1, "DAT"))
                 {
                 error=MESSAGE_SDCARD_ERROR;
                 break;
@@ -1460,21 +1430,22 @@ int ExecuteLine(char *Line, byte Port)
             }            
 
           case CMD_RAWSIGNAL_LIST:
-            FileList("/RAW",false,Port);
+            FileList(ProgmemString(Text_08),Port);
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
 
           case CMD_FILE_LIST:
-            FileList("/",false,Port);
+            FileList("",Port);
             EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
 
           case CMD_FILE_WRITE:
             if(GetArgv(Command,TmpStr1,2) && strlen(TmpStr1)<=8)
               {
-              strcat(TmpStr1,".dat");
+              TmpStr1[8]=0;//voor de zekerheid een te lange string afkappen
               strcpy(TempLogFile,TmpStr1);
               FileWriteMode=120;
+              PrintString(ProgmemString(Text_22),Port);
               EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
               }
             else
@@ -1484,13 +1455,26 @@ int ExecuteLine(char *Line, byte Port)
           case CMD_FILE_WRITE_LINE:
             if(GetArgv(Command,TmpStr1,2) && strlen(TmpStr1)<=8)
               {
-              strcat(TmpStr1,".dat");
-              AddFileSDCard(TmpStr1,Line+LinePos+1);
+              FileWriteLine(ProgmemString(Text_15), TmpStr1, "DAT", Line+LinePos+1, false);
               LinePos=LineLength+1; // ga direct naar einde van de regel.
               EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
               }
             else
               error=MESSAGE_INVALID_PARAMETER;
+            break;
+
+          case CMD_ALIAS_WRITE:
+            x=StringFind(Line,cmd2str(CMD_ALIAS_WRITE))+strlen(cmd2str(CMD_ALIAS_WRITE));
+            while(Command[x]==' ')x++;             // eventuele spaties verwijderen
+            error=AliasWrite(Line+x);
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
+            break;
+
+          case CMD_ALIAS_ERASE:
+            x=StringFind(Line,cmd2str(CMD_ALIAS_ERASE))+strlen(cmd2str(CMD_ALIAS_ERASE));
+            while(Command[x]==' ')x++;             // eventuele spaties verwijderen
+            error=AliasErase(Line+x);
+            EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
             break;
 
           case CMD_HTTP_REQUEST:
@@ -1516,18 +1500,20 @@ int ExecuteLine(char *Line, byte Port)
             {              
             // Ingevoerde commando is niet gevonden. 
             // Loop de devices langs om te checken if er een hit is. Zo ja, dan de struct
-            // met de juiste waarden gevuld. Is er geen hit, dan keetr PluginCall() terug met een false.
+            // met de juiste waarden gevuld. Is er geen hit, dan keert PluginCall() terug met een false.
             // in dat geval kijken of er een commando op SDCard staat
-//            if(!PluginCall(PLUGIN_MMI_IN,&EventToExecute,Command))
-//              {
-//              // Als het geen regulier commando was EN geen commando met afwijkende MMI en geen Plugin, dan kijken of file op SDCard staat)
-//              error=FileExecute(Command, EventToExecute.Par2==VALUE_ON, VALUE_ALL);
-//              EventToExecute.Command=0;
-//      
-//              // als script niet te openen, dan is het ingevoerde commando ongeldig.
-//              if(error==MESSAGE_UNABLE_OPEN_FILE)
-//                error=MESSAGE_UNKNOWN_COMMAND;
-//              }
+            if(!PluginCall(PLUGIN_MMI_IN,&EventToExecute,Command))
+              {
+              // Als het geen regulier commando was EN geen commando met afwijkende MMI en geen Plugin en geen alias, dan kijken of file op SDCard staat)
+              error=FileExecute(ProgmemString(Text_15),Command,"DAT", VALUE_OFF, VALUE_ALL,false);
+                
+              // als script niet te openen, dan is het ingevoerde commando ongeldig.
+              if(error)
+                error=MESSAGE_UNKNOWN_COMMAND;
+
+              EventToExecute.Command=0;      
+              }
+
             if(error)
               {
               strcpy(TmpStr1,Command);
@@ -1580,7 +1566,7 @@ int ExecuteLine(char *Line, byte Port)
         }// if(LineChar.
 
       // Tekens toevoegen aan commando zolang er nog ruimte is in de string
-      if(LineChar!=';' && CommandPos<MaxCommandLength)
+      if(LineChar!=';' && CommandPos<INPUT_COMMAND_SIZE)
         Command[CommandPos++]=LineChar;      
 
       LinePos++;
@@ -1600,6 +1586,7 @@ int ExecuteLine(char *Line, byte Port)
 
   free(TmpStr2);
   free(TmpStr1);
+  free(Command);
 
   // Verwerk eventuele events die in de queue zijn geplaatst.
   if(error==0)

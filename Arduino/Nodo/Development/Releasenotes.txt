@@ -20,13 +20,12 @@ R619
 - Issue 755:	DHT11Read: unknown device
 - Diverse aanpassingen RawSignal:
 
-  * Nieuwe analyse RawSinal: LET OP: RawSignal levert andere HEX-Codes !!!
-  * Nieuw commando [RawSignalShow] laat de opbouw van het signaal zien. Deze
-    mag eveneens worden opgenomen in de eventlist. Dan zonder opties.
+  * Nieuwe analyse RawSinal: LET OP: RawSignal levert andere HEX-Codes en oude op SDCard opgeslagen
+    RawSignals niet meer worden verzonden!!!
+  * Nieuw commando [RawSignalShow] laat de opbouw van het signaal zien.
   * Analyse tolerantie aangepast. Levert stabieler dezelfde HEX waarden.
-  * Oude op SDCard opgeslagen RawSignals kunnen nog worden verzonden, maar nieuwe binnen
-    gekomen events leveren een andere HEX-waarde.
-  * Commando [RawSignalSave] gerenamed naar [RawSignalWrite]. Oude wordt omgezet naar nieuwe syntax. 
+  * Commando [RawSignalSave] gerenamed naar [RawSignalWrite]. Oude wordt omgezet naar nieuwe syntax.
+  * Als [RawsignalReceive] op [Off] staat, komen de op SDCard opgeslagen RawSignals wel binnen als event     
     
 - Bug opgelost in invoer grote HEX getallen. 
 

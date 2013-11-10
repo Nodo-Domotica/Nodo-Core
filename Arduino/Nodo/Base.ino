@@ -1,15 +1,13 @@
-byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
-
-#define NODO_BUILD                   619 // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                   621 // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR             2 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR             3 // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                      1 // Unit nummer van deze Nodo
 #define HOME_NODO                      1 // Home adres van Nodo's die tot één groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
 #define MIN_RAW_PULSES                16 // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
 #define RAWSIGNAL_TX_REPEATS          10 // Aantal keer dat een frame met pulsen herhaald wordt verzonden (RawSignalSend)
-#define RAWSIGNAL_TX_DELAY             5 // Tijd in mSec. tussen herhalingen frames bij zenden. (RawSignalSend)
+#define RAWSIGNAL_TX_DELAY            10 // Tijd in mSec. tussen herhalingen frames bij zenden. (RawSignalSend)
 #define RAWSIGNAL_TOLERANCE          100 // Tolerantie die gehanteerd wordt bij decoderen van RF/IR signaal. T.b.v. uitrekenen HEX-code.
-#define RAWSIGNAL_SAMPLE              20 // Sample grootte / Resolutie in uSec waarmee ontvangen Rawsignalen pulsen worden opgeslagen
+#define RAWSIGNAL_SAMPLE              25 // ???Sample grootte / Resolutie in uSec waarmee ontvangen Rawsignalen pulsen worden opgeslagen
 #define WAIT_FREE_RX               false // true: wacht default op verzenden van een event tot de IR/RF lijn onbezet is. Wordt overruled door commando [WaitFreeRX]
 #define WAIT_FREE_RX_WINDOW          500 // minimale wachttijd wanneer wordt gewacht op een vrije RF of IR band. Is deze waarde te klein, dan kunnen er restanten van signalen binnenkomen als RawSignal. Te groot maakt de Nodo sloom.
 #define WAITFREE_TIMEOUT           30000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
@@ -31,6 +29,8 @@ byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
 #define ETHERNET_MAC_2              0xAA // Dit is byte 2 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
 #define CLOCK                       true // true=code voor Real Time Clock mee compileren.
 
+byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
+
 #include <SPI.h>
 #include <Arduino.h>
 #include <EEPROM.h>
@@ -40,7 +40,6 @@ byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
 #define CONFIGFILE2(a, b) stringify(a/Config/b)
 #define CONFIGFILE(a, b) CONFIGFILE2(a, b)
 #include CONFIGFILE(SKETCH_PATH,CONFIG_FILE)
-
 
 // Onderstaande commando codes mogen worden gebruikt door andere devices dan een Nodo.
 // Uit compatibility overwegingen zullen deze commando codes niet worden aangepast bij 
@@ -186,8 +185,10 @@ byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
 #define CMD_RAWSIGNAL_REPEATS           132
 #define CMD_RAWSIGNAL_DELAY             133
 #define CMD_RAWSIGNAL_PULSES            134
-#define CMD_ALIAS_SET                   135
-#define COMMAND_MAX                     136 // hoogste commando
+#define CMD_ALIAS_WRITE                 135
+#define CMD_ALIAS_ERASE                 136
+#define CMD_ALIAS_SHOW                  137
+#define COMMAND_MAX                     137 // hoogste commando
 
 #define MESSAGE_OK                      0
 #define MESSAGE_UNKNOWN_COMMAND         1
@@ -349,7 +350,9 @@ prog_char PROGMEM Cmd_131[]="RawSignalShow";
 prog_char PROGMEM Cmd_132[]="RawSignalRepeats";
 prog_char PROGMEM Cmd_133[]="RawSignalDelay";
 prog_char PROGMEM Cmd_134[]="RawSignalPulses";
-prog_char PROGMEM Cmd_135[]="AliasSet";
+prog_char PROGMEM Cmd_135[]="AliasWrite";
+prog_char PROGMEM Cmd_136[]="AliasErase";
+prog_char PROGMEM Cmd_137[]="AliasShow";
 
 
 // tabel die refereert aan de commando strings
@@ -367,25 +370,25 @@ Cmd_90,Cmd_91,Cmd_92,Cmd_93,Cmd_94,Cmd_95,Cmd_96,Cmd_97,Cmd_98,Cmd_99,
 Cmd_100,Cmd_101,Cmd_102,Cmd_103,Cmd_104,Cmd_105,Cmd_106,Cmd_107,Cmd_108,Cmd_109,
 Cmd_110,Cmd_111,Cmd_112,Cmd_113,Cmd_114,Cmd_115,Cmd_116,Cmd_117,Cmd_118,Cmd_119,
 Cmd_120,Cmd_121,Cmd_122,Cmd_123,Cmd_124,Cmd_125,Cmd_126,Cmd_127,Cmd_128,Cmd_129,
-Cmd_130,Cmd_131,Cmd_132,Cmd_133,Cmd_134,Cmd_135};
+Cmd_130,Cmd_131,Cmd_132,Cmd_133,Cmd_134,Cmd_135,Cmd_136,Cmd_137};
 
 // Message max. 40 pos    "1234567890123456789012345678901234567890"
-prog_char PROGMEM Msg_0[]="Ok.";
-prog_char PROGMEM Msg_1[]="Unknown command.";
-prog_char PROGMEM Msg_2[]="Invalid parameter in command.";
-prog_char PROGMEM Msg_3[]="Unable to open file.";
-prog_char PROGMEM Msg_4[]="Nesting error in file or eventlist.";
-prog_char PROGMEM Msg_5[]="Reading/writing eventlist failed.";
-prog_char PROGMEM Msg_6[]="Unable to establish TCP/IP connection.";
-prog_char PROGMEM Msg_7[]="Execution stopped.";
-prog_char PROGMEM Msg_8[]="Access denied.";
-prog_char PROGMEM Msg_9[]="SendTo error.";
-prog_char PROGMEM Msg_10[]="SDCard error.";
-prog_char PROGMEM Msg_11[]="Break.";
-prog_char PROGMEM Msg_12[]="RawSignal saved.";
-prog_char PROGMEM Msg_13[]="Unknown device.";
-prog_char PROGMEM Msg_14[]="Plugin returned an error.";
-prog_char PROGMEM Msg_15[]="Incompatibel event received.";
+prog_char PROGMEM Msg_0[]  = "Ok.";
+prog_char PROGMEM Msg_1[]  = "Unknown command.";
+prog_char PROGMEM Msg_2[]  = "Invalid parameter in command.";
+prog_char PROGMEM Msg_3[]  = "Unable to open file.";
+prog_char PROGMEM Msg_4[]  = "Nesting error in file or eventlist.";
+prog_char PROGMEM Msg_5[]  = "Reading/writing eventlist failed.";
+prog_char PROGMEM Msg_6[]  = "Unable to establish TCP/IP connection.";
+prog_char PROGMEM Msg_7[]  = "Execution stopped.";
+prog_char PROGMEM Msg_8[]  = "Access denied.";
+prog_char PROGMEM Msg_9[]  = "SendTo error.";
+prog_char PROGMEM Msg_10[] = "SDCard error.";
+prog_char PROGMEM Msg_11[] = "Break.";
+prog_char PROGMEM Msg_12[] = "RawSignal saved.";
+prog_char PROGMEM Msg_13[] = "Unknown device.";
+prog_char PROGMEM Msg_14[] = "Plugin returned an error.";
+prog_char PROGMEM Msg_15[] = "Incompatibel event received.";
 
 // tabel die refereert aan de message strings
 PROGMEM const char *MessageText_tabel[]={Msg_0,Msg_1,Msg_2,Msg_3,Msg_4,Msg_5,Msg_6,Msg_7,Msg_8,Msg_9,Msg_10,Msg_11,Msg_12,Msg_13,Msg_14,Msg_15};
@@ -400,14 +403,18 @@ prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
 prog_char PROGMEM Text_03[] = "Enter your password: ";
 prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSat";
 prog_char PROGMEM Text_05[] = "0123456789abcdef";
+prog_char PROGMEM Text_06[] = "\nIncomming Rawsignal saved:";
 prog_char PROGMEM Text_07[] = "Waiting...";
+prog_char PROGMEM Text_08[] = "RAWSIGN";   // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_09[] = "(Last 100 KByte)";
 prog_char PROGMEM Text_10[] = "Tranmission claimed by unit %d. Waiting...";
+prog_char PROGMEM Text_11[] = "ALIAS_I"; // Directory op de SDCard voor opslag Input: Aliassen van gebruiker -> Nodo Keyword.
+prog_char PROGMEM Text_12[] = "ALIAS_O"; // Directory op de SDCard voor opslag Output: Nodo Keywords -> Alias van gebruiker.
 prog_char PROGMEM Text_13[] = "RawSignal saved.";
 prog_char PROGMEM Text_14[] = "Event=";
+prog_char PROGMEM Text_15[] = ""; // Script directory
 prog_char PROGMEM Text_22[] = "!******************************************************************************!";
-prog_char PROGMEM Text_23[] = "LOG.DAT";
-prog_char PROGMEM Text_28[] = "RAW"; // Directory op de SDCard voor opslag RawSignal
+prog_char PROGMEM Text_23[] = "LOG";
 prog_char PROGMEM Text_30[] = "Terminal connection closed.";
 
 #endif
@@ -465,8 +472,8 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define HW_PLUGIN      19
 
 // Definitie van de speciale hardware uitvoeringen van de Nodo.
-#define BIC_DEFAULT                  0  // Standaard Nodo zonder specifike hardware aansturing
-#define BIC_HWMESH_NES_V1X           1  // Nodo Ethernet Shield V1.x met Aurel tranceiver. Vereist speciale pulse op PIN_BSF_0 voor omschakelen tussen Rx en Tx.
+#define BIC_DEFAULT                  0 // Standaard Nodo zonder specifike hardware aansturing
+#define BIC_HWMESH_NES_V1X           1 // Nodo Ethernet Shield V1.x met Aurel tranceiver. Vereist speciale pulse op PIN_BSF_0 voor omschakelen tussen Rx en Tx.
 
 #define PLUGIN_MAX                  32 // Maximaal aantal devices 
 #define MACRO_EXECUTION_DEPTH       10 // maximale nesting van macro's.
@@ -474,6 +481,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #if NODO_MEGA // Definities voor de Nodo-Mega variant.
 #define EVENT_QUEUE_MAX             16 // maximaal aantal plaatsen in de queue.
 #define INPUT_BUFFER_SIZE          128 // Buffer waar de karakters van de seriele/IP poort in worden opgeslagen.
+#define INPUT_COMMAND_SIZE          40 // Maximaal aantal tekens waar een commando uit kan bestaan.
 #define TIMER_MAX                   15 // aantal beschikbare timers voor de user, gerekend vanaf 1
 #define ALARM_MAX                    8 // aantal alarmen voor de user
 #define USER_VARIABLES_MAX          15 // aantal beschikbare gebruikersvariabelen voor de user.
@@ -490,41 +498,41 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define PIN_IO_2                    39 // Extra IO-lijn 2 voor gebruikers.
 #define PIN_IO_3                    40 // Extra IO-lijn 3 voor gebruikers.
 #define PIN_IO_4                    41 // Extra IO-lijn 4 voor gebruikers.
-#define PIN_WIRED_IN_1               8 // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_IN_2               9 // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_IN_3              10 // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_IN_4              11 // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_IN_5              12 // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_IN_6              13 // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_IN_7              14 // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_IN_8              15 // NIET VERANDEREN. Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_IN_1               8 // Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_IN_2               9 // Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_IN_3              10 // Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_IN_4              11 // Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_IN_5              12 // Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_IN_6              13 // Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_IN_7              14 // Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
+#define PIN_WIRED_IN_8              15 // Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
 #define PIN_LED_RGB_R               47 // RGB-Led, aansluiting rood
 #define PIN_LED_RGB_G               48 // RGB-Led, aansluiting groen
 #define PIN_LED_RGB_B               49 // RGB-Led, aansluiting blauw
-#define PIN_SPEAKER                 42 // luidspreker aansluiting
-#define PIN_IR_TX_DATA              17 // NIET VERANDEREN. Aan deze pin zit een zender IR-Led. (gebufferd via transistor i.v.m. hogere stroom die nodig is voor IR-led)
+#define PIN_SPEAKER                 42 // Luidspreker aansluiting
+#define PIN_IR_TX_DATA              17 // Zender IR-Led. (gebufferd via transistor i.v.m. hogere stroom die nodig is voor IR-led)
 #define PIN_IR_RX_DATA              18 // Op deze input komt het IR signaal binnen van de TSOP. Bij HIGH bij geen signaal.
 #define PIN_RF_TX_VCC               15 // +5 volt / Vcc spanning naar de zender.
-#define PIN_RF_TX_DATA              14 // data naar de zender
+#define PIN_RF_TX_DATA              14 // Data naar de 433Mhz zender
 #define PIN_RF_RX_VCC               16 // Spanning naar de ontvanger via deze pin.
 #define PIN_RF_RX_DATA              19 // Op deze input komt het 433Mhz-RF signaal binnen. LOW bij geen signaal.
-#define PIN_WIRED_OUT_1             30 // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_OUT_2             31 // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_OUT_3             32 // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_OUT_4             33 // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_OUT_5             34 // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_OUT_6             35 // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_OUT_7             36 // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_OUT_8             37 // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredIn 1 tot en met 8
-#define EthernetShield_SCK          52 // NIET VERANDEREN. Ethernet shield: SCK-lijn van de ethernet kaart
-#define EthernetShield_CS_SDCardH   53 // NIET VERANDEREN. Ethernet shield: Gereserveerd voor correct funktioneren van de SDCard: Hardware CS/SPI ChipSelect
-#define EthernetShield_CS_SDCard     4 // NIET VERANDEREN. Ethernet shield: Chipselect van de SDCard. Niet gebruiken voor andere doeleinden
-#define EthernetShield_CS_W5100     10 // NIET VERANDEREN. Ethernet shield: D10..D13  // gereserveerd voor Ethernet & SDCard
-#define PIN_CLOCK_SDA               20 // I2C communicatie lijn voor de realtime clock.
-#define PIN_CLOCK_SLC               21 // I2C communicatie lijn voor de realtime clock.
+#define PIN_WIRED_OUT_1             30 // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredOut 1 tot en met 8
+#define PIN_WIRED_OUT_2             31 // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredOut 1 tot en met 8
+#define PIN_WIRED_OUT_3             32 // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredOut 1 tot en met 8
+#define PIN_WIRED_OUT_4             33 // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredOut 1 tot en met 8
+#define PIN_WIRED_OUT_5             34 // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredOut 1 tot en met 8
+#define PIN_WIRED_OUT_6             35 // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredOut 1 tot en met 8
+#define PIN_WIRED_OUT_7             36 // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredOut 1 tot en met 8
+#define PIN_WIRED_OUT_8             37 // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredOut 1 tot en met 8
+#define EthernetShield_SCK          52 // Ethernet shield: SCK-lijn van de ethernet kaart
+#define EthernetShield_CS_SDCardH   53 // Ethernet shield: Gereserveerd voor correct funktioneren van de SDCard: Hardware CS/SPI ChipSelect
+#define EthernetShield_CS_SDCard     4 // Ethernet shield: Chipselect van de SDCard. Niet gebruiken voor andere doeleinden
+#define EthernetShield_CS_W5100     10 // Ethernet shield: D10..D13  // gereserveerd voor Ethernet & SDCard
+#define PIN_CLOCK_SDA               20 // I2C communicatie lijn voor de o.a. de realtime clock.
+#define PIN_CLOCK_SLC               21 // I2C communicatie lijn voor de o.a. de realtime clock.
 #define TERMINAL_PORT               23 // TelNet poort. Standaard 23
 #define EEPROM_SIZE               4096 // Groote van het EEPROM geheugen.
-#define WIRED_PORTS                  8 // aantal WiredIn/WiredOut poorten
+#define WIRED_PORTS                  8 // aAntal WiredIn/WiredOut poorten
 #define COOKIE_REFRESH_TIME         60 // Tijd in sec. tussen automatisch verzenden van een nieuw Cookie als de beveiligde HTTP modus is inschakeld.
 #define SERIAL_STAY_SHARP_TIME      50 // Tijd in mSec. dat na ontvangen van een tken uitsluitend naar Serial als input wordt geluisterd. 
 
@@ -537,21 +545,21 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define WIRED_PORTS                  4 // aantal WiredIn/WiredOut poorten
 #define PIN_LED_RGB_R               13 // RGB-Led, aansluiting rood
 #define PIN_LED_RGB_B               13 // RGB-Led, aansluiting blauw, maar voor de Nodo Small is dit de eveneens de rode led.
-#define PIN_WIRED_IN_1               0 // Eerste WIRED input pin. Wired-IN loopt van A0 tot en met 3
-#define PIN_WIRED_IN_2               1 // Eerste WIRED input pin. Wired-IN loopt van A0 tot en met 3
-#define PIN_WIRED_IN_3               2 // Eerste WIRED input pin. Wired-IN loopt van A0 tot en met 3
-#define PIN_WIRED_IN_4               3 // Eerste WIRED input pin. Wired-IN loopt van A0 tot en met 3
-#define PIN_SPEAKER                  6 // luidspreker aansluiting
-#define PIN_IR_TX_DATA              11 // NIET VERANDEREN. Aan deze pin zit een zender IR-Led. (gebufferd via transistor i.v.m. hogere stroom die nodig is voor IR-led)
+#define PIN_WIRED_IN_1               0 // Wired-In 1 t/m 4 aangesloten op A0 t/m A3
+#define PIN_WIRED_IN_2               1 // Wired-In 1 t/m 4 aangesloten op A0 t/m A3
+#define PIN_WIRED_IN_3               2 // Wired-In 1 t/m 4 aangesloten op A0 t/m A3
+#define PIN_WIRED_IN_4               3 // Wired-In 1 t/m 4 aangesloten op A0 t/m A3
+#define PIN_SPEAKER                  6 // Luidspreker aansluiting
+#define PIN_IR_TX_DATA              11 // Zender IR-Led. (gebufferd via transistor i.v.m. hogere stroom die nodig is voor IR-led)
 #define PIN_IR_RX_DATA               3 // Op deze input komt het IR signaal binnen van de TSOP. Bij HIGH bij geen signaal.
 #define PIN_RF_TX_VCC                4 // +5 volt / Vcc spanning naar de zender.
 #define PIN_RF_TX_DATA               5 // data naar de zender
 #define PIN_RF_RX_DATA               2 // Op deze input komt het 433Mhz-RF signaal binnen. LOW bij geen signaal.
 #define PIN_RF_RX_VCC               12 // Spanning naar de ontvanger via deze pin.
-#define PIN_WIRED_OUT_1              7 // 4 digitale outputs D07 t/m D10 worden gebruikt voor WiredIn 1 tot en met 4
-#define PIN_WIRED_OUT_2              8 // 4 digitale outputs D07 t/m D10 worden gebruikt voor WiredIn 1 tot en met 4
-#define PIN_WIRED_OUT_3              9 // (pwm) 4 digitale outputs D07 t/m D10 worden gebruikt voor WiredIn 1 tot en met 4
-#define PIN_WIRED_OUT_4             10 // (pwm) 4 digitale outputs D07 t/m D10 worden gebruikt voor WiredIn 1 tot en met 4
+#define PIN_WIRED_OUT_1              7 // 4 digitale outputs D07 t/m D10 worden gebruikt voor WiredOut 1 tot en met 4
+#define PIN_WIRED_OUT_2              8 // 4 digitale outputs D07 t/m D10 worden gebruikt voor WiredOut 1 tot en met 4
+#define PIN_WIRED_OUT_3              9 // (pwm) 4 digitale outputs D07 t/m D10 worden gebruikt voor WiredOut 1 tot en met 4
+#define PIN_WIRED_OUT_4             10 // (pwm) 4 digitale outputs D07 t/m D10 worden gebruikt voor WiredOut 1 tot en met 4
 #endif
 //****************************************************************************************************************************************
 
@@ -588,6 +596,7 @@ struct SettingsStruct
   byte    EchoTelnet;
   byte    Log;
   byte    RawSignalSave;
+  byte    Alias;
   #endif
   }Settings;
 
@@ -808,7 +817,7 @@ void setup()
   SDCardInit();  // SDCard detecteren en evt. gereed maken voor gebruik in de Nodo
 
   // Voer bestand config uit als deze bestaat. die goeie oude MD-DOS tijd ;-)
-  //??? FileExecute("config.dat",true,VALUE_ALL);
+  FileExecute(ProgmemString(Text_15),"config","dat",true,VALUE_ALL,false);
   #endif
   
   // initialiseer de Wired ingangen.
@@ -913,10 +922,13 @@ void setup()
   Serial.println(F("\nReady.\n"));
 
   // Voer bestand AutoExec uit als deze bestaat. die goeie oude MD-DOS tijd ;-)
-  FileExecute("autoexec.dat",true,VALUE_ALL);
+  FileExecute(ProgmemString(Text_15), "autoexec", "dat",true,VALUE_ALL,false);
 
   bitWrite(HW_Config,HW_SERIAL,Serial.available()?1:0); // Serial weer uitschakelen.
   #endif
+  
+  
+//  Test();
   }
 
 void loop() 

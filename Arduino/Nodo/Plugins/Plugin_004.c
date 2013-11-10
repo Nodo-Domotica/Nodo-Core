@@ -126,7 +126,6 @@ boolean Plugin_004(byte function, struct NodoEventStruct *event, char *string)
     
       if(GetArgv(string,str,1))
         {
-        LegacyMMI(str);
         if(strcasecmp(str,PLUGIN_NAME)==0)
           {
           if(GetArgv(string,str,2))
