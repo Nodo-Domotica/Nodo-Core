@@ -485,6 +485,10 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         Settings.EchoSerial=EventToExecute->Par1;        
       break;
 
+    case CMD_ALIAS_SHOW:
+      Settings.Alias=EventToExecute->Par1; 
+      break;
+
     case CMD_DEBUG: 
       Settings.Debug=EventToExecute->Par1;
       break;
@@ -494,21 +498,21 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
 
     case CMD_RAWSIGNAL_SAVE: 
-      Settings.RawSignalSave=EventToExecute->Par1;
+      if(EventToExecute->Par1==0)
+        {
+        // Sta huidige inhoud van de RawSignal buffer op.
+        // Daarvoor moet eerst de bijbehorende HEX-code worden uitgerekend.
+        ClearEvent(&TempEvent);//??? Kunnen de clearevents niet weg door deze eenmaal aan begin uit te voeren?
+        RawSignal_2_32bit(&TempEvent);
+        if(TempEvent.Par2==0)TempEvent.Par2=123;    //???
+        error=RawSignalWrite(TempEvent.Par2);
+        }
+      else
+        Settings.RawSignalSave=EventToExecute->Par1;
       break;
 
     case CMD_RAWSIGNAL_SHOW: 
-      error=RawSignalShow(EventToExecute->Par2);
-      break;
-
-    case CMD_RAWSIGNAL_ERASE: 
-      if(EventToExecute->Par2)
-        {
-        sprintf(TempString,"%s/%s.raw",ProgmemString(Text_28),int2strhex(EventToExecute->Par2)+2); // +2 om zo de "0x" van de string te strippen.
-        FileErase(TempString);
-        }
-      else
-        FileList("/RAW",true,0);
+      error=FileShow(ProgmemString(Text_08),int2strhex(EventToExecute->Par2)+2,"DAT", VALUE_ALL);
       break;
 
     case CMD_RAWSIGNAL_SEND:
@@ -517,18 +521,18 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       RawSignal.Source=EventToExecute->Par1;
 
       if(EventToExecute->Par2!=0)
-        if(RawSignalLoad(EventToExecute->Par2))
-          error=MESSAGE_UNABLE_OPEN_FILE;
+        error=FileExecute(ProgmemString(Text_08),int2strhex(EventToExecute->Par2)+2,"DAT", false, 0, true);
       
       if(!error)
         {        
+        if(EventToExecute->Par1==0)
+          EventToExecute->Par1=VALUE_ALL;
         ClearEvent(&TempEvent);
         TempEvent.Port=EventToExecute->Par1;
         TempEvent.Type= NODO_TYPE_EVENT;
         TempEvent.Command=EVENT_RAWSIGNAL;
         TempEvent.Par1=EventToExecute->Par1;
         TempEvent.Par2=EventToExecute->Par2;
-        PrintRawSignal();//???
         SendEvent(&TempEvent, true ,true, Settings.WaitFree==VALUE_ON);
         }
       break;

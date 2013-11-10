@@ -20,54 +20,112 @@ void SDCardInit(void)
   SelectSDCard(true);
   if(SD.begin(EthernetShield_CS_SDCard))
     {
-    SD.mkdir(ProgmemString(Text_28)); // maak directory aan waar de Rawsignal KEY bestanden in worden opgeslagen
+    SD.mkdir(ProgmemString(Text_08));// RAWSIGN
+    SD.mkdir(ProgmemString(Text_11));// ALIAS_I 
+    SD.mkdir(ProgmemString(Text_12));// ALIAS_O
     bitWrite(HW_Config,HW_SDCARD,1);
     }
   SelectSDCard(false);
   }
 
+
+
  /*********************************************************************************************\
  * Wis een file
  \*********************************************************************************************/
-void FileErase(char *FileName)
+void FileErase(char* Path, char* Filename, char* Extention)//??? Nog inbouwen dat een hele directory gewist kan worden
   {
   SelectSDCard(true);
-  SD.remove(FileName);
+  
+  if(strcmp(Filename,"*")==0)// Alles wissen
+    {
+    File root;
+    File entry;
+    char *TempString=(char*)malloc(30);
+  
+    SelectSDCard(true);
+    if(root=SD.open(Path))
+      {
+      root.rewindDirectory();
+      while(entry = root.openNextFile())
+        {
+        if(!entry.isDirectory())
+          {
+          TempString[0]=0;
+          strcpy(TempString,Path);
+          strcat(TempString,"/");
+          strcat(TempString,entry.name());
+          SD.remove(TempString);
+          }
+        entry.close();
+        }
+      root.close();
+      }
+    free(TempString);  
+    }
+  else
+    {
+    SD.remove(PathFile(Path, Filename, Extention));
+    }
   SelectSDCard(false);
+  }
+
+ /*********************************************************************************************\
+ * Eenvoudige funktie om pad en bestandsnaam aan elkaar te plakken. Scheelt elders code. 
+ \*********************************************************************************************/
+#define PATH_BUFFER_SIZE 25
+char* PathFile(char* Path, char* File, char* Extention)
+  {
+  static char PathBuffer[PATH_BUFFER_SIZE+1];  
+  if(strlen(Path) + strlen(File) < PATH_BUFFER_SIZE)
+    {
+    sprintf(PathBuffer,"%s/%s.%s",Path, File, Extention);
+    }
+  else
+    PathBuffer[0]=0;
+  
+  return PathBuffer;
   }
 
  /*********************************************************************************************\
  * 
  \*********************************************************************************************/
-boolean AddFileSDCard(char *FileName, char *Line)
+byte FileWriteLine(char* Path, char* Filename, char* Extention, char *Line, boolean Delete)
   {
-  boolean r;
+  byte error=0;
 
   SelectSDCard(true);
-  File LogFile = SD.open(FileName, FILE_WRITE);
-  if(LogFile)
-    {
-    r=true;
-    //??? vervangen of heeft het cons. voor binnenhalen BodyTexk etc. ? ==> LogFile.write((uint8_t*)Line,strlen(Line));
-    
-    for(int x=0;x<strlen(Line);x++)
-      if(isprint(Line[x]))
-        LogFile.write(Line[x]);
-        
-    LogFile.write('\n'); // nieuwe regel
-    LogFile.close();
-    }
-  else
-    r=false;
 
+  if(Delete)
+    SD.remove(PathFile(Path, Filename, Extention));
+
+  if(Line!=0 && Line[0]!=0)
+    {
+    File LogFile = SD.open(PathFile(Path, Filename, Extention), FILE_WRITE);
+    if(LogFile)
+      {
+      //??? vervangen of heeft het cons. voor binnenhalen BodyTexk etc. ? ==> LogFile.write((uint8_t*)Line,strlen(Line));
+      
+      for(int x=0;x<strlen(Line);x++)
+        if(isprint(Line[x]))
+          LogFile.write(Line[x]);
+          
+      LogFile.write('\n'); // nieuwe regel
+      LogFile.close();
+      }
+    else
+      error=MESSAGE_UNABLE_OPEN_FILE;
+;
+    }
+      
   SelectSDCard(false);
-  return r;
+  return error;
   }
 
 /**********************************************************************************************\
  * Voeg een regel toe aan de logfile.
  \*********************************************************************************************/
-boolean SaveEventlistSDCard(char *FileName)
+boolean SaveEventlistSDCard(char* Path, char* Filename, char* Extention)
  {
   int x;
   boolean r=true;
@@ -76,9 +134,9 @@ boolean SaveEventlistSDCard(char *FileName)
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
   SelectSDCard(true);
 
-  SD.remove(FileName); // eerst bestand wissen, anders wordt de data toegevoegd
+  SD.remove(PathFile(Path, Filename, Extention)); // eerst bestand wissen, anders wordt de data toegevoegd
 
-  File EventlistFile = SD.open(FileName, FILE_WRITE);
+  File EventlistFile = SD.open(PathFile(Path, Filename, Extention), FILE_WRITE);
   if(EventlistFile) 
     {
     strcpy(TempString,cmd2str(CMD_EVENTLIST_ERASE));
@@ -109,7 +167,7 @@ boolean SaveEventlistSDCard(char *FileName)
   }
 
 
-boolean FileList(char *rootdir, boolean Erase, byte Port)
+boolean FileList(char *Path, byte Port)
   {
   byte error=0;
   File root;
@@ -117,48 +175,34 @@ boolean FileList(char *rootdir, boolean Erase, byte Port)
   char *TempString=(char*)malloc(30);
 
   SelectSDCard(true);
-  if(root = SD.open(rootdir))
+  if(root = SD.open(Path))
     {
-    if(!Erase)
-      {
-      SelectSDCard(false);
-      PrintString(ProgmemString(Text_22), Port);
-      SelectSDCard(true);
-      }
+    SelectSDCard(false);
+    PrintString(ProgmemString(Text_22), Port);
+    SelectSDCard(true);
   
     root.rewindDirectory();
     while(entry = root.openNextFile())
       {
       if(!entry.isDirectory())
         {
-        if(Erase)
-          {
-          strcpy(TempString,rootdir);
-          strcat(TempString,"/");
-          strcat(TempString,entry.name());
-          FileErase(TempString);
-          }
-        else
-          {
-          TempString[0]=0;
-          // Als de funktie is aangeroepen vanuit RawSignalList, dan voor de bestandnamen 0x plakken omdat de bestandsnamen een 
-          // hexadecimale waarde representeren. Niet netjes op deze wijze maar bespaart code. 
-          if(strcasecmp(rootdir,"/RAW")==0)
-            strcat(TempString,"0x");
-          strcat(TempString,entry.name());
-          TempString[StringFind(TempString,".")]=0;
-          SelectSDCard(false);
-          PrintString(TempString,Port);
-          SelectSDCard(true);
-          }
+        TempString[0]=0;
+        // Als de funktie is aangeroepen vanuit RawSignalList, dan voor de bestandnamen 0x plakken omdat de bestandsnamen een 
+        // hexadecimale waarde representeren. Niet netjes op deze wijze maar bespaart code. 
+        if(strcasecmp(Path,"/RAW")==0)
+          strcat(TempString,"0x");
+        strcat(TempString,entry.name());
+        TempString[StringFind(TempString,".")]=0;
+        SelectSDCard(false);
+        PrintString(TempString,Port);
+        SelectSDCard(true);
         }
       entry.close();
       }
     root.close();
 
     SelectSDCard(false);
-    if(!Erase)
-      PrintString(ProgmemString(Text_22),Port);
+    PrintString(ProgmemString(Text_22),Port);
     }
   else
     error=MESSAGE_SDCARD_ERROR;
@@ -168,18 +212,17 @@ boolean FileList(char *rootdir, boolean Erase, byte Port)
   }
 
 
-byte FileExecute(char* FileName, boolean ContinueOnError, byte PrintPort)
+byte FileExecute(char* Path, char* Filename, char* Extention, boolean ContinueOnError, byte PrintPort, boolean Nesting)
   {
   int x,y;
   byte error=0;
-  static boolean FileExecuteActive=false;// voorkom nesting van fileexecute
-      
+  static boolean FileExecuteActive=false;// voorkom nesting van fileexecute      
   char *TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
-  
-Serial.print("*** FileExecute() File=");Serial.println(FileName);//???
-Serial.print("*** FileExecute() FileExecuteActive=");Serial.println(FileExecuteActive);//???
 
-  if(FileExecuteActive)
+
+  //Serial.print("Fileexecute=");Serial.println(PathFile(Path,Filename,Extention));//???
+
+  if(FileExecuteActive && !Nesting)
     {
     RaiseMessage(MESSAGE_NESTING_ERROR,0);
     }
@@ -189,7 +232,7 @@ Serial.print("*** FileExecute() FileExecuteActive=");Serial.println(FileExecuteA
     FileExecuteActive=true;
     
     SelectSDCard(true);
-    File dataFile=SD.open(FileName);
+    File dataFile=SD.open(PathFile(Path, Filename, Extention));
     
     if(dataFile) 
       {
@@ -206,8 +249,7 @@ Serial.print("*** FileExecute() FileExecuteActive=");Serial.println(FileExecuteA
           SelectSDCard(false);
           if(PrintPort)
             PrintString(TmpStr, PrintPort);
-Serial.print("*** FileExecute() Voer regel uit =");Serial.println(TmpStr);//???
-
+        
           error=ExecuteLine(TmpStr,VALUE_SOURCE_FILE);
           SelectSDCard(true);
   
@@ -232,17 +274,14 @@ Serial.print("*** FileExecute() Voer regel uit =");Serial.println(TmpStr);//???
   }    
 
 
-byte FileShow(char *FileName, byte Port)
+byte FileShow(char* Path, char* Filename, char* Extention, byte Port)
   {
   char *TmpStr2=(char*)malloc(INPUT_BUFFER_SIZE+2);
   byte error=0;
   
-
-Serial.print("*** FileShow() File=");Serial.println(FileName);//???
-
   SelectSDCard(true);
 
-  File dataFile=SD.open(FileName);
+  File dataFile=SD.open(PathFile(Path, Filename, Extention));
   if(dataFile) 
     {
     SelectSDCard(false);

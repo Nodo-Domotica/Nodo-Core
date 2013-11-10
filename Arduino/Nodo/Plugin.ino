@@ -887,7 +887,7 @@ void PluginInit(void)
 byte PluginCall(byte Function, struct NodoEventStruct *Event, char *str)
   {
   int x;
-return true;//???  
+
   switch(Function)
     {
     // Alle plugins langslopen, geen messages genereren.

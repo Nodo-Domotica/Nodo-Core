@@ -11,7 +11,7 @@
 #define NODO_MEGA     true // true = Nodo Mega, false=Nodo-Small
 #define ETHERNET     false // true = Deze Nodo beschikt over een ethernet kaart
 
-
+#define DEBUG_PROCESSING
 // #define DEBUG_EVENT
 // #define DEBUG_PROCESSING_TIME
 

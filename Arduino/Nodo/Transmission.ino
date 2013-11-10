@@ -397,9 +397,8 @@ boolean SendHTTPRequest(char* Request)
     {
     TempString[8]=0; // voorkom dat filenaam meer dan acht posities heeft
     strcpy(filename,TempString);                
-    strcat(filename,".dat");
     SelectSDCard(true);
-    FileErase(filename);
+    FileErase(ProgmemString(Text_15), filename,"DAT");
     SelectSDCard(false);
     }  
 
@@ -637,8 +636,7 @@ boolean ParseHTTPRequest(char* StringToParse,char* Keyword, char* ResultString,c
         for(y=0;y<strlen(BreakChars);y++)
           if(BreakChars[y]==StringToParse[z])
             y=100; // stop tekens toevoegen aan resultstring
-        }
-        
+        }        
       ResultString[x]=0;
       
       return true;
