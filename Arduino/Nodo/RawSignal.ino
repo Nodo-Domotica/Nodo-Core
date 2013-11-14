@@ -11,7 +11,7 @@
 void RawSendRF(void)
   {
   int x;
-  digitalWrite(PIN_RF_RX_VCC,LOW);   // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
+  digitalWrite(PIN_RF_RX_VCC,LOW);  // Spanning naar de RF ontvanger uit om interferentie met de zender te voorkomen.
   digitalWrite(PIN_RF_TX_VCC,HIGH); // zet de 433Mhz zender aan
 
   delay(5);// kleine pause om de zender de tijd te geven om stabiel te worden 
@@ -24,7 +24,7 @@ void RawSendRF(void)
   for(byte y=0; y<RawSignal.Repeats; y++) // herhaal verzenden RF code
     {
     x=1;
-    noInterrupts();//???
+    noInterrupts();
     while(x<RawSignal.Number)
       {
       digitalWrite(PIN_RF_TX_DATA,HIGH);
@@ -33,7 +33,7 @@ void RawSendRF(void)
       delayMicroseconds(RawSignal.Pulses[x++]*RawSignal.Multiply-7);// min een kleine correctie
       }
     interrupts();
-    delay(RawSignal.Delay);// Delay buiten het gebied waar de interrupts zijn uitgeschakeld! Anders werkt deze funktie niet
+    delay(RawSignal.Delay);// Delay buiten het gebied waar de interrupts zijn uitgeschakeld! Anders werkt deze funktie niet.
     }
 
   digitalWrite(PIN_RF_TX_VCC,LOW); // zet de 433Mhz zender weer uit
@@ -53,13 +53,13 @@ void RawSendRF(void)
 
 
 /*********************************************************************************************\
- * Deze routine zendt een 32-bits code via IR. 
+ * Deze routine zendt een RawSignal via IR. 
  * De inhoud van de buffer RawSignal moet de pulstijden bevatten. 
  * RawSignal.Number het aantal pulsen*2
  * Pulsen worden verzonden op en draaggolf van 38Khz.
  *
  * LET OP: Deze routine is speciaal geschreven voor de Arduino Mega1280 of Mega2560 met een
- * klokfrequentie van 16Mhz. De IR pin is D17.
+ * klokfrequentie van 16Mhz.
  \*********************************************************************************************/
 
 void RawSendIR(void)
@@ -177,26 +177,6 @@ void Nodo_2_RawSignal(struct NodoEventStruct *Event)
   RawSignal.Number=BitCounter;
   }
 
-
-/**********************************************************************************************\
- * Haal de pulsen en plaats in buffer. 
- * bij de TSOP1738 is in rust is de uitgang hoog. StateSignal moet LOW zijn
- * bij de 433RX is in rust is de uitgang laag. StateSignal moet HIGH zijn
- * 
- \*********************************************************************************************/
-// Omdat deze routine zeer tijdkritisch is halen we de gebruikte variabelen op globaal niveau
-// zodat ze niet bij iedere functie-call opnieuw geinitialiseerd hoeven te worden. dit scheelt 
-// verwerkingstijd.
-
-int RawCodeLength=1;
-unsigned long PulseLength=0;
-unsigned long numloops = 0;
-unsigned long maxloops=0;
-boolean toggle=false;
-uint8_t Fbit=0;
-uint8_t Fport=0;
-uint8_t FstateMask=0;
-
 // De while() loop waar de statemask wordt getest doorloopt een aantal cycles per milliseconde. Dit is afhankelijk
 // van de kloksnelheid van de Arduino. Deze routine is in de praktijk geklokt met een processorsnelheid van
 // 16Mhz. Naast de doorlijktijd van de while() loop en er ook nog overhead die moet worden opgetelt bij de 
@@ -205,40 +185,57 @@ uint8_t FstateMask=0;
 // van de ontvangers kunnen eveneens van invloed zijn op de pulstijden.
  
 const unsigned long LoopsPerMilli=345;
-const unsigned long Overhead=90;  
+const unsigned long Overhead=0;  
+
+/**********************************************************************************************\
+ * Haal de pulsen en plaats in buffer. 
+ * bij de TSOP1738 is in rust is de uitgang hoog. StateSignal moet LOW zijn
+ * bij de 433RX is in rust is de uitgang laag. StateSignal moet HIGH zijn
+ * 
+ \*********************************************************************************************/
+
+// Omdat deze routine zeer tijdkritisch is halen we de gebruikte variabelen op globaal niveau
+// zodat ze niet bij iedere functie-call opnieuw geinitialiseerd hoeven te worden. dit scheelt 
+// verwerkingstijd.
+int RawCodeLength=0;
+unsigned long PulseLength=0;
+unsigned long numloops=0;
+unsigned long maxloops=0;
+boolean Ftoggle=false;
+uint8_t Fbit=0;
+uint8_t Fport=0;
+uint8_t FstateMask=0;
 
 inline boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
   {
-  Fbit = digitalPinToBitMask(DataPin);
-  Fport = digitalPinToPort(DataPin);
-  FstateMask = (StateSignal ? Fbit : 0);
+  uint8_t Fbit = digitalPinToBitMask(DataPin);
+  uint8_t Fport = digitalPinToPort(DataPin);
+  uint8_t FstateMask = (StateSignal ? Fbit : 0);
 
   // Kijk of er een signaal binnen komt. Zo niet, dan direct deze funktie verlaten.
   if((*portInputRegister(Fport) & Fbit) != FstateMask)
     return false;
 
   RawCodeLength=1;
-  PulseLength=0;
-  numloops = 0;  
-  toggle=false;
+  Ftoggle=false;
   maxloops = (unsigned long)TimeOut * LoopsPerMilli;  
 
   do{// lees de pulsen in microseconden en plaats deze in de tijdelijke buffer RawSignal
     numloops = 0;
-    while(((*portInputRegister(Fport) & Fbit) == FstateMask) ^ toggle) // while() loop *A*
+    while(((*portInputRegister(Fport) & Fbit) == FstateMask) ^ Ftoggle) // while() loop *A*
       if(numloops++ == maxloops)
         break;//timeout opgetreden
 
-    PulseLength=((numloops * 1000) / LoopsPerMilli)+Overhead;// Bevat nu de pulslengte in microseconden
-
+    PulseLength=((numloops + Overhead)* 1000) / LoopsPerMilli;// Bevat nu de pulslengte in microseconden
+    
     // bij kleine stoorpulsen die geen betekenis hebben zo snel mogelijk weer terug
-    if(PulseLength<10 /*MIN_PULSE_LENGTH*/)
+    if(PulseLength<MIN_PULSE_LENGTH)
       return false;
 
-    toggle=!toggle;    
+    Ftoggle=!Ftoggle;    
 
     // sla op in de tabel RawSignal
-    RawSignal.Pulses[RawCodeLength++]=PulseLength/(unsigned long)RAWSIGNAL_SAMPLE;
+    RawSignal.Pulses[RawCodeLength++]=PulseLength/(unsigned long)RawSignal.Multiply;
     }
   while(RawCodeLength<RAW_BUFFER_SIZE && numloops<=maxloops);// loop *B* Zolang nog ruimte in de buffer
 
@@ -253,6 +250,7 @@ inline boolean FetchSignal(byte DataPin, boolean StateSignal, int TimeOut)
   RawSignal.Number=0;
   return false;
   }
+
 
 boolean AnalyzeRawSignal(struct NodoEventStruct *E)
   {

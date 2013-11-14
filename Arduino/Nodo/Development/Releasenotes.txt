@@ -18,8 +18,9 @@ R619
 - Issue 721:	DHT11 geeft bij eerste uitlezing een nul waarde terug
 - Issue 799:	P1Read bug
 - Issue 755:	DHT11Read: unknown device
-- Diverse aanpassingen RawSignal:
 
+R621
+- Diverse aanpassingen RawSignal:
   * Nieuwe analyse RawSinal: LET OP: RawSignal levert andere HEX-Codes en oude op SDCard opgeslagen
     RawSignals niet meer worden verzonden!!!
   * Nieuw commando [RawSignalShow] laat de opbouw van het signaal zien.
@@ -30,8 +31,9 @@ R619
 - Bug opgelost in invoer grote HEX getallen. 
 
 Nog te doen:
-
-testen:
+- intput=- bij invoer Serial
+- uitklokken ontvangstroutine met analyser
+- wissen RawSignals testen
+- Plugin / Voorziening voor schonen RawSignal
 - Aanpassen en testen: Lock mechanisme
-
 \*****************************************************************************************/

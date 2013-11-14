@@ -30,9 +30,6 @@ byte ProcessEventExt(struct NodoEventStruct *Event)
   // Een event kan een verzoek bevatten om bevestiging. Doe dit dan pas na alle verwerking.
   if(RequestForConfirm)
     {  
-    // Initialiseer een Event en Transmissie
-    // Serial.println("Send Confirm.");//???
-
     ClearEvent(&TempEvent);    
     TempEvent.DestinationUnit       = Event->SourceUnit;
     TempEvent.Port                  = Event->Port;

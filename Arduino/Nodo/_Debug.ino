@@ -1,26 +1,3 @@
-void Trace(char *Func, unsigned long Value)
-  {
-  stackptr = (uint8_t *)malloc(4);        // use stackptr temporarily
-  heapptr = stackptr;                     // save value of heap pointer
-  free(stackptr);                         // free up the memory again (sets stackptr to 0)
-  stackptr =  (uint8_t *)(SP);            // save value of stack pointer
-  static unsigned long time=millis();
-
-  if(Func!=0 && Func[0]!=0)
-    {
-    Serial.print(F("=> Trace: "));
-    Serial.print(Func);
-    Serial.print(F(", Value="));
-    Serial.print(Value);
-    Serial.print(F(", dTime="));
-    Serial.print(millis()-time);
-    Serial.print(F(", FreeMem="));
-    Serial.println(stackptr-heapptr);
-    delay(100);
-    }
-  time=millis();
-  }
-
 //#######################################################################################################
 //##################################### Misc: Debugging    ##############################################
 //#######################################################################################################
