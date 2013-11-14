@@ -948,17 +948,18 @@ void Status(struct NodoEventStruct *Request)
  * Deze functie haalt een tekst op uit PROGMEM en geeft als string terug
  \*********************************************************************************************/
 char* ProgmemString(prog_char* text)
-{
+  {
   byte x=0;
   static char buffer[90];
 
+  buffer[0]=0;
   do
-  {
+    {
     buffer[x]=pgm_read_byte_near(text+x);
-  }
-  while(buffer[x++]!=0);
+    }while(buffer[x++]!=0);
+    
   return buffer;
-}
+  }
 
 /*********************************************************************************************\
  * Deze routine parsed string en geeft het opgegeven argument nummer Argc terug in Argv
@@ -2208,7 +2209,7 @@ boolean EventlistEntry2str(int entry, byte d, char* Line, boolean Script)
         {
         strcpy(Line,int2str(entry));
         strcat(Line,": ");
-        }
+        }                                          
       else
         {
         strcpy(Line,cmd2str(CMD_EVENTLIST_WRITE));
@@ -2217,11 +2218,15 @@ boolean EventlistEntry2str(int entry, byte d, char* Line, boolean Script)
   
       // geef het event weer
       Event2str(&Event, TempString);
+      if(Settings.Alias==VALUE_ON)
+        Alias(TempString,false);
       strcat(Line, TempString);
   
       // geef het action weer
       strcat(Line,"; ");
       Event2str(&Action, TempString);  
+      if(Settings.Alias==VALUE_ON)
+        Alias(TempString,false);
       strcat(Line,TempString);
       }
     else
@@ -2406,8 +2411,7 @@ float ul2float(unsigned long ul)
 boolean Alias(char* Command, boolean IsInput)
   {
   boolean Success=false;
-  
-  int c,y=0;
+  int c=0,y=0;
 
   SelectSDCard(true);
   File dataFile=SD.open(PathFile(IsInput?ProgmemString(Text_11):ProgmemString(Text_12),int2strhex(AliasHash(Command))+2,"DAT"));
@@ -2428,7 +2432,6 @@ boolean Alias(char* Command, boolean IsInput)
     dataFile.close();
     }  
   SelectSDCard(false);
-
   return y>0;
   } 
 
@@ -2440,12 +2443,12 @@ boolean Alias(char* Command, boolean IsInput)
 byte AliasWrite(char* Line)
   {
   byte x=0,y=0,w,error=0;
-  unsigned long Hash;
+  unsigned long HashAlias;
+  unsigned long HashKeyword;
     
-  char *Keyword=(char*)malloc(INPUT_COMMAND_SIZE+1);
-  char *Alias=(char*)malloc(INPUT_COMMAND_SIZE+1);
+  char *StrKeyword=(char*)malloc(INPUT_COMMAND_SIZE+1);
+  char *StrAlias=(char*)malloc(INPUT_COMMAND_SIZE+1);
   char *String=(char*)malloc(INPUT_BUFFER_SIZE);
-
 
   // Zowel het door de gebruiker opgegeven keyword als de route terug moeten worden opgeslagen.
   // Beide worden in een aparte file in een aparte directory opgeslagen zodat beide richtingen uit
@@ -2453,44 +2456,50 @@ byte AliasWrite(char* Line)
   
   do{
     w=Line[x];
-    Keyword[x++]=w;              
+    StrKeyword[x++]=w;              
     }while(w!='=' && w!=0 && x<INPUT_COMMAND_SIZE);
-  Keyword[x-1]=0;
+  StrKeyword[x-1]=0;
   
     do{
     w=Line[x++];
-    Alias[y++]=w;              
+    StrAlias[y++]=w;              
     }while(w!=0  && y<INPUT_COMMAND_SIZE);
 
   // een Nodo events is het niet toegestaan om een alias voor aan te maken. Dit omdat anders
-  // een situatie kan ontstaan waarbij de Nodo op slot gezet kan worden doordat commando's niet 
-  // meer benaderbaar zijn.
-  if(str2cmd(Keyword))
+  // een situatie kan ontstaan waarbij de Nodo op slot gezet kan worden doordat essentiele commando's niet 
+  // meer benaderbaar zijn.  
+  GetArgv(StrKeyword,String,1);
+  if(str2cmd(String)!=0)
+    {
     error=MESSAGE_INVALID_PARAMETER;
-    
+    }    
   else
     {
-    // Omdat de Nodo keywords ook weer terugvertaald moeten worden naar de Alias, is het wij om het opgegeven keyword
-    // op te bouwen zoals deze ook door de Nodo weergegeven wordt. Hoe dit op te lossen ??? 
-    // struct NodoEvent TempEvent;
-    // Str2Event() => bestaat niet !
-    // Event2str(Event,Keyword);
-    
-    Hash=AliasHash(Keyword);
-    strcpy(String, Alias);
-    strcat(String, "=");
-    strcat(String, Keyword); 
-    FileWriteLine(ProgmemString(Text_11),int2strhex(Hash)+2,"DAT",String,true);
+    // Omdat de Nodo keywords ook weer terugvertaald moeten worden vanuit de Alias, is het nodig om het opgegeven keyword
+    // op te bouwen zoals deze ook door de Nodo weergegeven wordt. Dus [Sound] wordt dan [Sound 0,0]
+    struct NodoEventStruct TempEvent;
+    if(Str2Event(StrAlias,&TempEvent)==0)
+      Event2str(&TempEvent,StrAlias);
   
-    Hash=AliasHash(Alias);
-    strcpy(String, Keyword);
+    HashKeyword  = AliasHash(StrKeyword);
+    HashAlias    = AliasHash(StrAlias);
+
+    // Wis eventuele bestaande alias
+    AliasErase(StrAlias);
+  
+    strcpy(String, StrAlias);
     strcat(String, "=");
-    strcat(String, Alias); 
-    error=FileWriteLine(ProgmemString(Text_12),int2strhex(Hash)+2,"DAT",String,true);
+    strcat(String, StrKeyword); 
+    FileWriteLine(ProgmemString(Text_11),int2strhex(HashKeyword)+2,"DAT",String,true);
+
+    strcpy(String, StrKeyword);
+    strcat(String, "=");
+    strcat(String, StrAlias); 
+    error=FileWriteLine(ProgmemString(Text_12),int2strhex(HashAlias)+2,"DAT",String,true);
     }
     
-  free(Keyword);
-  free(Alias);
+  free(StrKeyword);
+  free(StrAlias);
   free(String);
   return error;
   }  
@@ -2500,20 +2509,29 @@ byte AliasWrite(char* Line)
  *
  *  
  \*********************************************************************************************/
-byte AliasErase(char* Keyword)
+byte AliasErase(char* FileToDelete)
   {
-  unsigned long Hash=AliasHash(Keyword);
-      
-  if(Hash==42)// Keyword = "*"
+  char *Keyword=(char*)malloc(INPUT_COMMAND_SIZE+1);
+  strcpy(Keyword,FileToDelete);// maak een kopie anders wordt de originele string onbedoeld veranderd.
+
+  unsigned long Hash_1=AliasHash(Keyword);
+  Alias(Keyword,false);
+  unsigned long Hash_2=AliasHash(Keyword);
+
+  if(Hash_1==42)// Keyword = "*"
     {
     FileErase(ProgmemString(Text_11),"*","DAT");
     FileErase(ProgmemString(Text_12),"*","DAT");
     }
   else
     {
-    FileErase(ProgmemString(Text_11),int2strhex(Hash)+2,"DAT");
-    FileErase(ProgmemString(Text_12),int2strhex(Hash)+2,"DAT");
+    FileErase(ProgmemString(Text_11),int2strhex(Hash_1)+2,"DAT");
+    FileErase(ProgmemString(Text_11),int2strhex(Hash_2)+2,"DAT");
+    FileErase(ProgmemString(Text_12),int2strhex(Hash_1)+2,"DAT");
+    FileErase(ProgmemString(Text_12),int2strhex(Hash_2)+2,"DAT");
     }
+
+  free(Keyword);
   return 0;
   }  
 
@@ -2538,4 +2556,41 @@ unsigned long AliasHash(char* Input)
   free(TmpStr);
   return Hash;
   }  
+  
+  
+/*********************************************************************************************\
+ * Wis een file
+ \*********************************************************************************************/
+void AliasList(char* Keyword, byte Port)
+  {
+  SelectSDCard(true);
+    
+  File root;
+  File entry;
+  char *TempString=(char*)malloc(30); //??? #define voor 30?
+  int y;
+  
+  SelectSDCard(true);
+  if(root=SD.open(ProgmemString(Text_12)))
+    {
+    root.rewindDirectory();
+    while(entry = root.openNextFile())
+      {
+      if(!entry.isDirectory())
+        {
+        strcpy(TempString,entry.name());
+        y=StringFind(TempString,".");
+        TempString[y]=0;
+        FileShow(ProgmemString(Text_12), TempString, "DAT", Port);
+        SelectSDCard(true);
+        }
+      entry.close();
+      }
+    root.close();
+    }
+  free(TempString);  
+  SelectSDCard(false);
+  }  
+  
+  
 #endif

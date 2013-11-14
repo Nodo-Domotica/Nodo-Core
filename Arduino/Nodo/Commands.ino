@@ -504,7 +504,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         // Daarvoor moet eerst de bijbehorende HEX-code worden uitgerekend.
         ClearEvent(&TempEvent);//??? Kunnen de clearevents niet weg door deze eenmaal aan begin uit te voeren?
         RawSignal_2_32bit(&TempEvent);
-        if(TempEvent.Par2==0)TempEvent.Par2=123;    //???
         error=RawSignalWrite(TempEvent.Par2);
         }
       else

@@ -398,7 +398,7 @@ boolean SendHTTPRequest(char* Request)
     TempString[8]=0; // voorkom dat filenaam meer dan acht posities heeft
     strcpy(filename,TempString);                
     SelectSDCard(true);
-    FileErase(ProgmemString(Text_15), filename,"DAT");
+    FileErase("", filename,"DAT");
     SelectSDCard(false);
     }  
 

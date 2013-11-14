@@ -28,15 +28,15 @@ void SDCardInit(void)
   SelectSDCard(false);
   }
 
-
-
  /*********************************************************************************************\
  * Wis een file
  \*********************************************************************************************/
-void FileErase(char* Path, char* Filename, char* Extention)//??? Nog inbouwen dat een hele directory gewist kan worden
+void FileErase(char* Path, char* Filename, char* Extention)
   {
   SelectSDCard(true);
   
+  // Serial.print("FileErase(); = ");Serial.println(PathFile(Path, Filename, Extention));//???
+
   if(strcmp(Filename,"*")==0)// Alles wissen
     {
     File root;
@@ -93,6 +93,8 @@ char* PathFile(char* Path, char* File, char* Extention)
 byte FileWriteLine(char* Path, char* Filename, char* Extention, char *Line, boolean Delete)
   {
   byte error=0;
+
+  // Serial.print("FileWriteLine=");Serial.println(PathFile(Path,Filename,Extention));//???
 
   SelectSDCard(true);
 
@@ -189,7 +191,7 @@ boolean FileList(char *Path, byte Port)
         TempString[0]=0;
         // Als de funktie is aangeroepen vanuit RawSignalList, dan voor de bestandnamen 0x plakken omdat de bestandsnamen een 
         // hexadecimale waarde representeren. Niet netjes op deze wijze maar bespaart code. 
-        if(strcasecmp(Path,"/RAW")==0)
+        if(strcasecmp(Path,ProgmemString(Text_08))==0)
           strcat(TempString,"0x");
         strcat(TempString,entry.name());
         TempString[StringFind(TempString,".")]=0;
@@ -284,10 +286,6 @@ byte FileShow(char* Path, char* Filename, char* Extention, byte Port)
   File dataFile=SD.open(PathFile(Path, Filename, Extention));
   if(dataFile) 
     {
-    SelectSDCard(false);
-    PrintString(ProgmemString(Text_22), Port);
-    SelectSDCard(true);
-
     // Als de file groter is dan 10K, dan alleen laatste stuk laten zien
     unsigned long a=dataFile.size();
     if(a>100000UL)
@@ -318,12 +316,9 @@ byte FileShow(char* Path, char* Filename, char* Extention, byte Port)
         }
       }
     dataFile.close();
-    SelectSDCard(false);
-    PrintString(ProgmemString(Text_22),Port);
     }  
   else
     error=MESSAGE_UNABLE_OPEN_FILE;
-
 
   SelectSDCard(false);
   free(TmpStr2);

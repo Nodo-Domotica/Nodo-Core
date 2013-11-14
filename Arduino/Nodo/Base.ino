@@ -11,7 +11,7 @@
 #define WAIT_FREE_RX               false // true: wacht default op verzenden van een event tot de IR/RF lijn onbezet is. Wordt overruled door commando [WaitFreeRX]
 #define WAIT_FREE_RX_WINDOW          500 // minimale wachttijd wanneer wordt gewacht op een vrije RF of IR band. Is deze waarde te klein, dan kunnen er restanten van signalen binnenkomen als RawSignal. Te groot maakt de Nodo sloom.
 #define WAITFREE_TIMEOUT           30000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
-#define MIN_PULSE_LENGTH              25 // pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
+#define MIN_PULSE_LENGTH              50 // Pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define SIGNAL_TIMEOUT_RF              4 // na deze tijd in mSec. wordt één RF signaal als beëindigd beschouwd.
 #define SIGNAL_TIMEOUT_IR             10 // na deze tijd in mSec. wordt één IR signaal als beëindigd beschouwd.
 #define SIGNAL_REPEAT_TIME          1000 // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF/IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
@@ -188,7 +188,9 @@ byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
 #define CMD_ALIAS_WRITE                 135
 #define CMD_ALIAS_ERASE                 136
 #define CMD_ALIAS_SHOW                  137
-#define COMMAND_MAX                     137 // hoogste commando
+#define CMD_ALIAS_LIST                  138
+#define CMD_POWERSAVE                   139
+#define COMMAND_MAX                     139 // hoogste commando
 
 #define MESSAGE_OK                      0
 #define MESSAGE_UNKNOWN_COMMAND         1
@@ -350,9 +352,11 @@ prog_char PROGMEM Cmd_131[]="RawSignalShow";
 prog_char PROGMEM Cmd_132[]="RawSignalRepeats";
 prog_char PROGMEM Cmd_133[]="RawSignalDelay";
 prog_char PROGMEM Cmd_134[]="RawSignalPulses";
-prog_char PROGMEM Cmd_135[]="AliasWrite";
+prog_char PROGMEM Cmd_135[]="Alias";
 prog_char PROGMEM Cmd_136[]="AliasErase";
 prog_char PROGMEM Cmd_137[]="AliasShow";
+prog_char PROGMEM Cmd_138[]="AliasList";
+prog_char PROGMEM Cmd_139[]="PowerSave";
 
 
 // tabel die refereert aan de commando strings
@@ -370,9 +374,9 @@ Cmd_90,Cmd_91,Cmd_92,Cmd_93,Cmd_94,Cmd_95,Cmd_96,Cmd_97,Cmd_98,Cmd_99,
 Cmd_100,Cmd_101,Cmd_102,Cmd_103,Cmd_104,Cmd_105,Cmd_106,Cmd_107,Cmd_108,Cmd_109,
 Cmd_110,Cmd_111,Cmd_112,Cmd_113,Cmd_114,Cmd_115,Cmd_116,Cmd_117,Cmd_118,Cmd_119,
 Cmd_120,Cmd_121,Cmd_122,Cmd_123,Cmd_124,Cmd_125,Cmd_126,Cmd_127,Cmd_128,Cmd_129,
-Cmd_130,Cmd_131,Cmd_132,Cmd_133,Cmd_134,Cmd_135,Cmd_136,Cmd_137};
+Cmd_130,Cmd_131,Cmd_132,Cmd_133,Cmd_134,Cmd_135,Cmd_136,Cmd_137,Cmd_138,Cmd_139};
 
-// Message max. 40 pos    "1234567890123456789012345678901234567890"
+// Message max. 40 pos       "1234567890123456789012345678901234567890"
 prog_char PROGMEM Msg_0[]  = "Ok.";
 prog_char PROGMEM Msg_1[]  = "Unknown command.";
 prog_char PROGMEM Msg_2[]  = "Invalid parameter in command.";
@@ -412,7 +416,6 @@ prog_char PROGMEM Text_11[] = "ALIAS_I"; // Directory op de SDCard voor opslag I
 prog_char PROGMEM Text_12[] = "ALIAS_O"; // Directory op de SDCard voor opslag Output: Nodo Keywords -> Alias van gebruiker.
 prog_char PROGMEM Text_13[] = "RawSignal saved.";
 prog_char PROGMEM Text_14[] = "Event=";
-prog_char PROGMEM Text_15[] = ""; // Script directory
 prog_char PROGMEM Text_22[] = "!******************************************************************************!";
 prog_char PROGMEM Text_23[] = "LOG";
 prog_char PROGMEM Text_30[] = "Terminal connection closed.";
@@ -817,7 +820,7 @@ void setup()
   SDCardInit();  // SDCard detecteren en evt. gereed maken voor gebruik in de Nodo
 
   // Voer bestand config uit als deze bestaat. die goeie oude MD-DOS tijd ;-)
-  FileExecute(ProgmemString(Text_15),"config","dat",true,VALUE_ALL,false);
+  FileExecute("","config","dat",true,VALUE_ALL,false);
   #endif
   
   // initialiseer de Wired ingangen.
@@ -922,7 +925,7 @@ void setup()
   Serial.println(F("\nReady.\n"));
 
   // Voer bestand AutoExec uit als deze bestaat. die goeie oude MD-DOS tijd ;-)
-  FileExecute(ProgmemString(Text_15), "autoexec", "dat",true,VALUE_ALL,false);
+  FileExecute("", "autoexec", "dat",true,VALUE_ALL,false);
 
   bitWrite(HW_Config,HW_SERIAL,Serial.available()?1:0); // Serial weer uitschakelen.
   #endif
