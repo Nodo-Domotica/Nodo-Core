@@ -85,7 +85,10 @@ boolean ScanEvent(struct NodoEventStruct *Event)// Deze routine maakt deel uit v
         else
           {
           Fetched=VALUE_SOURCE_RF;
-          if(RawSignal.Repeats)
+          // Herhalende signalen onderdrukken, echter niet als Transmission_NodoOnly, want dan zou een per ongeluk
+          // langskomende pulsenreeks de Nodo in de WaitFree zetten. Dit is met name van belang voor een goede
+          // overdracht tijdens een SendTo.
+          if(RawSignal.Repeats && !Transmission_NodoOnly)
             BlockReceivingTimer=millis()+SIGNAL_REPEAT_TIME;
           }
         }

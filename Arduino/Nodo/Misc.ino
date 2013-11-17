@@ -1,4 +1,19 @@
-
+void DetectHardwareReset(void)
+  {
+  unsigned long ResetTime=millis()+10000;
+  boolean toggle=false;
+  Led(0);
+  do
+    {
+    toggle=!toggle;
+    digitalWrite(PIN_LED_RGB_R,toggle);
+    delay(100);
+    if(ResetTime<millis())
+      ResetFactory();
+    }while(digitalRead(PIN_IR_RX_DATA)==toggle);
+  }
+  
+  
 //#######################################################################################################
 //##################################### Misc: EEPROM / Eventlist  #######################################
 //#######################################################################################################
@@ -555,6 +570,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
 
   case CMD_RAWSIGNAL_SAVE:
     Event->Par1=Settings.RawSignalSave;
+    Event->Par2=Settings.RawSignalCleanUp;
     break;
 
     // pro-forma de commando's die geen fout op mogen leveren omdat deze elders in de statusafhandeling worden weergegeven
@@ -670,6 +686,7 @@ void ResetFactory(void)
   Settings.EchoTelnet                 = VALUE_OFF;  
   Settings.Log                        = VALUE_OFF;  
   Settings.RawSignalSave              = VALUE_OFF;  
+  Settings.RawSignalCleanUp           = 0;  
   Settings.Alias                      = VALUE_ON;  
   Settings.Password[0]                = 0;
 
@@ -965,9 +982,9 @@ char* ProgmemString(prog_char* text)
  * Deze routine parsed string en geeft het opgegeven argument nummer Argc terug in Argv
  * argumenten worden van elkaar gescheiden door een komma of een spatie.
  * Let op dat de ruimte in de doelstring voldoende is EN dat de bron string netjes is afgesloten 
- * met een 0-byte.
+ * met een 0-byte. 
  \*********************************************************************************************/
-boolean GetArgv(char *string, char *argv, int argc)
+byte GetArgv(char *string, char *argv, int argc)
 {
   int string_pos=0,argv_pos=0,argc_pos=0; 
   char c,d;
@@ -995,9 +1012,7 @@ boolean GetArgv(char *string, char *argv, int argc)
         argc_pos++;
 
         if(argc_pos==argc)
-          {
           return true;
-          }
           
         argv[0]=0;
         argv_pos=0;
@@ -1006,7 +1021,7 @@ boolean GetArgv(char *string, char *argv, int argc)
     }
     string_pos++;
   }
-  return false;
+  return 0;
 }
 
 
@@ -2512,10 +2527,10 @@ byte AliasWrite(char* Line)
 byte AliasErase(char* FileToDelete)
   {
   char *Keyword=(char*)malloc(INPUT_COMMAND_SIZE+1);
-  strcpy(Keyword,FileToDelete);// maak een kopie anders wordt de originele string onbedoeld veranderd.
+  strcpy(Keyword,FileToDelete);// maak een kopie anders wordt de originele string in de functiecall onbedoeld veranderd.
 
   unsigned long Hash_1=AliasHash(Keyword);
-  Alias(Keyword,false);
+  Alias(Keyword,true);
   unsigned long Hash_2=AliasHash(Keyword);
 
   if(Hash_1==42)// Keyword = "*"
@@ -2536,7 +2551,7 @@ byte AliasErase(char* FileToDelete)
   }  
 
  /********************************************************************************************\
- * Deze routine berekent uit een string (Commando) een hashwaarde volgens de Danel Bernstein 
+ * Deze routine berekent uit een string (Commando) een hashwaarde volgens de Daniel Bernstein 
  * methode. In het commando worden parameters van elkaar gescheiden door komma's of spaties.
  * De string wordt eerst 'opgeschoond' zodat spaties en komma's niet meer van invloed zijn
  * op de berekende hashwaarde. Ook hoofdletters zijn niet van invloed.   
@@ -2547,12 +2562,18 @@ unsigned long AliasHash(char* Input)
   char *c;
   unsigned long Hash=0UL;
     
-  byte x=1;
-  while(GetArgv(Input,TmpStr,x++))
+  if(GetArgv(Input,TmpStr,1))
     {
     c=TmpStr;
     while(*c) Hash=Hash * 33 + tolower(*c++);
     }  
+
+  if(GetArgv(Input,TmpStr,2))
+    {
+    c=TmpStr;
+    while(*c) Hash=Hash * 33 + tolower(*c++);
+    }  
+
   free(TmpStr);
   return Hash;
   }  
@@ -2591,6 +2612,6 @@ void AliasList(char* Keyword, byte Port)
   free(TempString);  
   SelectSDCard(false);
   }  
-  
-  
+
+
 #endif

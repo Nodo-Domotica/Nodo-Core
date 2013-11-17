@@ -58,33 +58,33 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     error=MESSAGE_NESTING_ERROR; // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
     }
 
-  // Komt er een SendTo event voorbij, dan deze en opvolgende separaat afhandelen
-  if(Continue && (Event->Command==CMD_SENDTO)) // Is dit event de eerste uit een [SendTo] reeks?
-    {
-    QueueReceive(Event);
+  if(Event->Type == NODO_TYPE_SYSTEM)
+    {                       
+    if(Event->Command==SYSTEM_COMMAND_SENDTO) // Eerste uit een [SendTo] reeks?
+      {
+      QueueReceive(Event);
+      Continue=false;
+      }
     Continue=false;
     }
 
   // Als er een LOCK actief is, dan commando's blokkeren behalve...
   if(Settings.Lock && (Event->Port==VALUE_SOURCE_RF || Event->Port==VALUE_SOURCE_IR ))
     {
-    if(millis()>60000) // de eerste minuut is de lock nog niet actief. Ontsnapping voor als abusievelijk ingesteld
+    switch(Event->Command) // command
       {
-      switch(Event->Command) // command
-        {
-        // onderstaande mogen WEL worden doorgelaten als de lock aan staat
-        case CMD_LOCK:                // om weer te kunnen unlocken
-        case EVENT_VARIABLE:           // Maakt ontvangst van variabelen mogelijk
-        case EVENT_USEREVENT:           // Noodzakelijk voor uitwisseling userevents tussen Nodo.
-        case CMD_STATUS:              // uitvragen status is onschuldig en kan handig zijn.
-        case EVENT_MESSAGE:             // Voorkomt dat een message van een andere Nodo een error genereert
-        case EVENT_BOOT:          // Voorkomt dat een boot van een adere Nodo een error genereert
-          break;
+      // onderstaande mogen WEL worden doorgelaten als de lock aan staat
+      case CMD_LOCK:                // om weer te kunnen unlocken
+      case EVENT_VARIABLE:          // Maakt ontvangst van variabelen mogelijk
+      case EVENT_USEREVENT:         // Noodzakelijk voor uitwisseling userevents tussen Nodo.
+      case CMD_STATUS:              // uitvragen status is onschuldig en kan handig zijn.
+      case EVENT_MESSAGE:           // Voorkomt dat een message van een andere Nodo een error genereert
+      case EVENT_BOOT:              // Voorkomt dat een boot van een adere Nodo een error genereert
+        break;
 
-        default:
-          Continue=false;
-          RaiseMessage(MESSAGE_ACCESS_DENIED,0);
-        }
+      default:
+        Continue=false;
+        RaiseMessage(MESSAGE_ACCESS_DENIED,0);
       }
     }
 
@@ -95,7 +95,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     Continue=false;
     }
 
-  // restanten van een niet correct verwekt SndTo niet uitvoeren
+  // restanten van een niet correct verwekt SendTo niet uitvoeren
   if(Continue && (Event->Flags & TRANSMISSION_SENDTO))
     {
     Continue=false;
@@ -103,7 +103,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
 
   #if NODO_MEGA
   if(Continue && bitRead(HW_Config,HW_SDCARD))
-    if(Event->Command==EVENT_RAWSIGNAL && Settings.RawSignalSave==VALUE_ALL)
+    if(Event->Command==EVENT_RAWSIGNAL && Settings.RawSignalSave==VALUE_ON)
       if(!RawSignalExist(Event->Par2))
         RawSignalWrite(Event->Par2);
   #endif    
@@ -115,12 +115,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     #endif
     
     // ############# Verwerk event ################  
-    if(Event->Type == NODO_TYPE_SYSTEM)
-      {
-      Continue=false;  // systeem commando's niet uitvoeren
-      }
-
-    else if(Event->Type==NODO_TYPE_COMMAND)
+    if(Event->Type==NODO_TYPE_COMMAND)
       {
       error=ExecuteCommand(Event);
       }
@@ -152,7 +147,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
         error=0;
       }      
     // Als de SendTo niet permanent is ingeschakeld, dan deze weer uitzetten
-    if(Transmission_SendToAll!=VALUE_ALL)Transmission_SendToUnit=0;
+    if(!Transmission_SendToAll)Transmission_SendToUnit=0;
     }
     
   ExecutionDepth--;
@@ -364,19 +359,20 @@ byte QueueSend(boolean fast)
   if(Port==0)
     Port=VALUE_SOURCE_RF;
 
-  // Eerste fase: Zorg dat de inhoud van de queue correct aan komt op de slave.
+  // Eerste fase: Zorg dat de inhoud van de queue correct aan komt op de slave. Activeer aan slave zijde de QueueReceive()
   do
     {
     ClearEvent(&Event);
     Event.SourceUnit          = Settings.Unit;
     Event.Port                = Port;
     Event.Type                = NODO_TYPE_SYSTEM;      
-    Event.Command             = CMD_SENDTO;      
+    Event.Command             = SYSTEM_COMMAND_SENDTO;      
     Event.Par1                = SendQueuePosition;   // Aantal te verzenden events in de queue. Wordt later gecheckt en teruggezonden in de confirm.
     Event.Par2                = ID;
     Event.Flags               = TRANSMISSION_SENDTO | TRANSMISSION_NEXT | TRANSMISSION_LOCK;
-    SendEvent(&Event,false,false,Settings.WaitFree==VALUE_ON);         // Alleen de eerste vooraf laten gaan door een WaitFree;
-          
+
+  SendEvent(&Event,false,false,Settings.WaitFree==VALUE_ON);         // Alleen de eerste vooraf laten gaan door een WaitFree;
+
     // Verzend alle events uit de queue. Alleen de bestemmings Nodo zal deze events in de queue plaatsen
     for(x=0;x<SendQueuePosition;x++)
       {
@@ -429,16 +425,18 @@ void QueueReceive(NodoEventStruct *Event)
   {
   static unsigned long PreviousID=0L;
 
-  // Alle Nodo events die nu binnen komen op slaan in de queue.
+  // Onderstaande vlag zorgt er voor dat de Nodo uitsluitend Nodo events
+  // oppikt. Andere signalen worden tijdelijk volledig genegeerd.
   Transmission_NodoOnly=true;
+  
+  // Alle Nodo events die nu binnen komen op slaan in de queue.
   QueuePosition=0;
-  Wait(5, false, 0, true);  
+  Wait(5, false, 0, true);
   byte count=QueuePosition;
   
   // Als aantal regels in de queue overeenkomt met wat in het SendTo verzoek is vermeldt
   // EN de queue is nog niet eerder binnen gekomen (ID) dan uitvoeren.
   // Stuur vervolgens de master ter bevestiging het aantal ontvangen events die zich nu in de queue bevinden.
-
 
   if(PreviousID!=Event->Par2)
     {

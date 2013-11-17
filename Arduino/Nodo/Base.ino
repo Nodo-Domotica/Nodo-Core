@@ -1,5 +1,5 @@
-#define NODO_BUILD                   621 // ??? Ophogen bij iedere Build / versiebeheer.
-#define NODO_VERSION_MINOR             2 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
+#define NODO_BUILD                   624 // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_VERSION_MINOR             3 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR             3 // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                      1 // Unit nummer van deze Nodo
 #define HOME_NODO                      1 // Home adres van Nodo's die tot één groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
@@ -185,12 +185,13 @@ byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
 #define CMD_RAWSIGNAL_REPEATS           132
 #define CMD_RAWSIGNAL_DELAY             133
 #define CMD_RAWSIGNAL_PULSES            134
-#define CMD_ALIAS_WRITE                 135
-#define CMD_ALIAS_ERASE                 136
-#define CMD_ALIAS_SHOW                  137
-#define CMD_ALIAS_LIST                  138
-#define CMD_POWERSAVE                   139
-#define COMMAND_MAX                     139 // hoogste commando
+#define CMD_RAWSIGNAL_CLEANUP           135
+#define CMD_ALIAS_WRITE                 136
+#define CMD_ALIAS_ERASE                 137
+#define CMD_ALIAS_SHOW                  138
+#define CMD_ALIAS_LIST                  139
+#define CMD_POWERSAVE                   140
+#define COMMAND_MAX                     140 // hoogste commando
 
 #define MESSAGE_OK                      0
 #define MESSAGE_UNKNOWN_COMMAND         1
@@ -352,11 +353,12 @@ prog_char PROGMEM Cmd_131[]="RawSignalShow";
 prog_char PROGMEM Cmd_132[]="RawSignalRepeats";
 prog_char PROGMEM Cmd_133[]="RawSignalDelay";
 prog_char PROGMEM Cmd_134[]="RawSignalPulses";
-prog_char PROGMEM Cmd_135[]="Alias";
-prog_char PROGMEM Cmd_136[]="AliasErase";
-prog_char PROGMEM Cmd_137[]="AliasShow";
-prog_char PROGMEM Cmd_138[]="AliasList";
-prog_char PROGMEM Cmd_139[]="PowerSave";
+prog_char PROGMEM Cmd_135[]="RawSignalClean";
+prog_char PROGMEM Cmd_136[]="Alias";
+prog_char PROGMEM Cmd_137[]="AliasErase";
+prog_char PROGMEM Cmd_138[]="AliasShow";
+prog_char PROGMEM Cmd_139[]="AliasList";
+prog_char PROGMEM Cmd_140[]="PowerSave";
 
 
 // tabel die refereert aan de commando strings
@@ -374,14 +376,15 @@ Cmd_90,Cmd_91,Cmd_92,Cmd_93,Cmd_94,Cmd_95,Cmd_96,Cmd_97,Cmd_98,Cmd_99,
 Cmd_100,Cmd_101,Cmd_102,Cmd_103,Cmd_104,Cmd_105,Cmd_106,Cmd_107,Cmd_108,Cmd_109,
 Cmd_110,Cmd_111,Cmd_112,Cmd_113,Cmd_114,Cmd_115,Cmd_116,Cmd_117,Cmd_118,Cmd_119,
 Cmd_120,Cmd_121,Cmd_122,Cmd_123,Cmd_124,Cmd_125,Cmd_126,Cmd_127,Cmd_128,Cmd_129,
-Cmd_130,Cmd_131,Cmd_132,Cmd_133,Cmd_134,Cmd_135,Cmd_136,Cmd_137,Cmd_138,Cmd_139};
+Cmd_130,Cmd_131,Cmd_132,Cmd_133,Cmd_134,Cmd_135,Cmd_136,Cmd_137,Cmd_138,Cmd_139,
+Cmd_140};
 
 // Message max. 40 pos       "1234567890123456789012345678901234567890"
 prog_char PROGMEM Msg_0[]  = "Ok.";
 prog_char PROGMEM Msg_1[]  = "Unknown command.";
-prog_char PROGMEM Msg_2[]  = "Invalid parameter in command.";
-prog_char PROGMEM Msg_3[]  = "Unable to open file.";
-prog_char PROGMEM Msg_4[]  = "Nesting error in file or eventlist.";
+prog_char PROGMEM Msg_2[]  = "Invalid parameter..";
+prog_char PROGMEM Msg_3[]  = "Unable to open.";
+prog_char PROGMEM Msg_4[]  = "Nesting error.";
 prog_char PROGMEM Msg_5[]  = "Reading/writing eventlist failed.";
 prog_char PROGMEM Msg_6[]  = "Unable to establish TCP/IP connection.";
 prog_char PROGMEM Msg_7[]  = "Execution stopped.";
@@ -407,15 +410,14 @@ prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
 prog_char PROGMEM Text_03[] = "Enter your password: ";
 prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSat";
 prog_char PROGMEM Text_05[] = "0123456789abcdef";
-prog_char PROGMEM Text_06[] = "\nIncomming Rawsignal saved:";
 prog_char PROGMEM Text_07[] = "Waiting...";
 prog_char PROGMEM Text_08[] = "RAWSIGN";   // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_09[] = "(Last 100 KByte)";
 prog_char PROGMEM Text_10[] = "Tranmission claimed by unit %d. Waiting...";
 prog_char PROGMEM Text_11[] = "ALIAS_I"; // Directory op de SDCard voor opslag Input: Aliassen van gebruiker -> Nodo Keyword.
 prog_char PROGMEM Text_12[] = "ALIAS_O"; // Directory op de SDCard voor opslag Output: Nodo Keywords -> Alias van gebruiker.
-prog_char PROGMEM Text_13[] = "RawSignal saved.";
 prog_char PROGMEM Text_14[] = "Event=";
+prog_char PROGMEM Text_15[] = "! %d Pulses \n! Sample resolution %d microseconds\n! Pulse gauge value %d\n!\n";
 prog_char PROGMEM Text_22[] = "!******************************************************************************!";
 prog_char PROGMEM Text_23[] = "LOG";
 prog_char PROGMEM Text_30[] = "Terminal connection closed.";
@@ -531,13 +533,15 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define EthernetShield_CS_SDCardH   53 // Ethernet shield: Gereserveerd voor correct funktioneren van de SDCard: Hardware CS/SPI ChipSelect
 #define EthernetShield_CS_SDCard     4 // Ethernet shield: Chipselect van de SDCard. Niet gebruiken voor andere doeleinden
 #define EthernetShield_CS_W5100     10 // Ethernet shield: D10..D13  // gereserveerd voor Ethernet & SDCard
-#define PIN_CLOCK_SDA               20 // I2C communicatie lijn voor de o.a. de realtime clock.
-#define PIN_CLOCK_SLC               21 // I2C communicatie lijn voor de o.a. de realtime clock.
+#define PIN_SERIAL_RX                0 // RX-0 lijn o.a. verbonden met de UART-USB
+#define PIN_SERIAL_TX                1 // TX-0 lijn o.a. verbonden met de UART-USB
+#define PIN_I2C_SDA                 20 // I2C communicatie lijn voor de o.a. de realtime clock.
+#define PIN_I2C_SLC                 21 // I2C communicatie lijn voor de o.a. de realtime clock.
 #define TERMINAL_PORT               23 // TelNet poort. Standaard 23
 #define EEPROM_SIZE               4096 // Groote van het EEPROM geheugen.
 #define WIRED_PORTS                  8 // aAntal WiredIn/WiredOut poorten
 #define COOKIE_REFRESH_TIME         60 // Tijd in sec. tussen automatisch verzenden van een nieuw Cookie als de beveiligde HTTP modus is inschakeld.
-#define SERIAL_STAY_SHARP_TIME      50 // Tijd in mSec. dat na ontvangen van een tken uitsluitend naar Serial als input wordt geluisterd. 
+#define SERIAL_STAY_SHARP_TIME     100 // Tijd in mSec. dat na ontvangen van een teken uitsluitend naar Serial als input wordt geluisterd. 
 
 #else // als het voor de Nodo-Small variant is
 #define EVENT_QUEUE_MAX              8 // maximaal aantal plaatsen in de queue
@@ -563,6 +567,8 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define PIN_WIRED_OUT_2              8 // 4 digitale outputs D07 t/m D10 worden gebruikt voor WiredOut 1 tot en met 4
 #define PIN_WIRED_OUT_3              9 // (pwm) 4 digitale outputs D07 t/m D10 worden gebruikt voor WiredOut 1 tot en met 4
 #define PIN_WIRED_OUT_4             10 // (pwm) 4 digitale outputs D07 t/m D10 worden gebruikt voor WiredOut 1 tot en met 4
+#define PIN_I2C_SDA                 A4 // I2C communicatie lijn voor de o.a. de realtime clock.
+#define PIN_I2C_SLC                 A5 // I2C communicatie lijn voor de o.a. de realtime clock.
 #endif
 //****************************************************************************************************************************************
 
@@ -599,6 +605,7 @@ struct SettingsStruct
   byte    EchoTelnet;
   byte    Log;
   byte    RawSignalSave;
+  byte    RawSignalCleanUp;
   byte    Alias;
   #endif
   }Settings;
@@ -639,6 +646,7 @@ struct SettingsStruct
 
 // De Nodo kent naast gebruikers commando's en events eveneens Nodo interne events
 #define SYSTEM_COMMAND_CONFIRMED  1
+#define SYSTEM_COMMAND_SENDTO     2  // Dit is aankondiging van de inhoudelijke reeks, dus niet het user comando "SendTo".
 
   
 struct NodoEventStruct
@@ -665,8 +673,6 @@ boolean RebootNodo=false;                                   // Als deze vlag sta
 unsigned long HoldTransmission=0L;                          // wachten op dit tijdstip in millis() alvorens event te verzenden.
 byte Transmission_SelectedUnit=0;                           // 
 byte  Transmission_SendToUnit=0;                            // Unitnummer waar de events naar toe gestuurd worden. 0=alle.
-byte  Transmission_SendToAll=0;                             // Vlag die aangeeft of de SendTo permanent staat ingesteld of eenmalig (VALUE_ALL)
-byte  Transmission_SendToFast=0;                             // Vlag die aangeeft of de SendTo permanent staat ingesteld of eenmalig (VALUE_FAST)
 boolean Transmission_ThisUnitIsMaster=false;
 boolean Transmission_NodoOnly=false;                        // Als deze vlag staat, dan worden er uitsluitend Nodo-eigen signalen ontvangen.  
 byte QueuePosition=0;
@@ -693,6 +699,8 @@ byte Plugin_id[PLUGIN_MAX];
 boolean ExecuteCommand(NodoEventStruct *EventToExecute);//protoype definieren.
 
 #if NODO_MEGA
+boolean  Transmission_SendToAll=false;                      // Vlag die aangeeft of de SendTo permanent staat ingesteld of eenmalig (VALUE_ALL)
+byte  Transmission_SendToFast=0;                            // Vlag die aangeeft of de SendTo permanent staat ingesteld of eenmalig (VALUE_FAST)
 byte AlarmPrevious[ALARM_MAX];                              // Bevat laatste afgelopen alarm. Ter voorkoming dat alarmen herhaald aflopen.
 byte BIC=0;                                                 // Board Identification Code: identificeert de hardware uitvoering van de Nodo
 uint8_t MD5HashCode[16];                                    // tabel voor berekenen van MD5 hash codes.
@@ -813,15 +821,11 @@ void setup()
 
   LoadSettings();      // laad alle settings zoals deze in de EEPROM zijn opgeslagen
 
-  if(Settings.Version!=NODO_VERSION_MINOR)ResetFactory(); // Als versienummer in EEPROM niet correct is, dan een ResetFactory.
   
-
-  #if NODO_MEGA
-  SDCardInit();  // SDCard detecteren en evt. gereed maken voor gebruik in de Nodo
-
-  // Voer bestand config uit als deze bestaat. die goeie oude MD-DOS tijd ;-)
-  FileExecute("","config","dat",true,VALUE_ALL,false);
-  #endif
+  // De Nodo resetten als:
+  // A: De Versie van de settings zoals geladen vanuit EEPROM niet correct is.
+  if(Settings.Version!=NODO_VERSION_MINOR)ResetFactory();
+  
   
   // initialiseer de Wired ingangen.
   for(x=0;x<WIRED_PORTS;x++)
@@ -834,6 +838,18 @@ void setup()
     pinMode(PIN_WIRED_OUT_1+x,OUTPUT); // definieer Arduino pin's voor Wired-Out
     }
   for(x=0;x<WIRED_PORTS;x++){WiredInputStatus[x]=true;}
+
+  // De Nodo resetten als:
+  // B: De WiredOut-1 verbonden is met de WiredIn-1
+  DetectHardwareReset();
+  
+  #if NODO_MEGA
+  SDCardInit();  // SDCard detecteren en evt. gereed maken voor gebruik in de Nodo
+
+  // Voer bestand config uit als deze bestaat. die goeie oude MD-DOS tijd ;-)
+  FileExecute("","config","dat",true,VALUE_ALL,false);
+  #endif
+  
 
   // Start luisteren naar de I2C poort. 
   WireNodo.begin(Settings.Unit + I2C_START_ADDRESS - 1);
@@ -965,7 +981,9 @@ void loop()
     {
     // Check voor IR, I2C of RF events
     if(ScanEvent(&ReceivedEvent)) 
+      {
       ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
+      }
     
     // SERIAL: *************** kijk of er data klaar staat op de seriële poort **********************
     if(Serial.available())

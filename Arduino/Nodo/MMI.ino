@@ -23,7 +23,7 @@ int ExecuteLine(char *Line, byte Port)
   Led(RED);
 
   // Als de SendTo niet permanent is ingeschakeld, dan deze weer uitzetten
-  if(Transmission_SendToAll!=VALUE_ALL)Transmission_SendToUnit=0;
+  if(!Transmission_SendToAll)Transmission_SendToUnit=0;
 
   // verwerking van commando's is door gebruiker tijdelijk geblokkeerd door FileWrite commando
   if(FileWriteMode>0)
@@ -31,9 +31,9 @@ int ExecuteLine(char *Line, byte Port)
     if(StringFind(Line,cmd2str(CMD_FILE_WRITE))!=-1)// string gevonden!
       {
       // Stop de FileWrite modus
-      PrintString(ProgmemString(Text_22),Port);
       FileWriteMode=0;
       TempLogFile[0]=0;
+      PrintString(ProgmemString(Text_22),Port);
       }
     if(TempLogFile[0]!=0)
       FileWriteLine("",TempLogFile,"DAT",Line, false); // Extra logfile op verzoek van gebruiker
@@ -119,12 +119,12 @@ int ExecuteLine(char *Line, byte Port)
           switch(EventToExecute.Command)
             {
             case CMD_SENDTO:
-              EventToExecute.Par2=0UL;
-              EventToExecute.Type=NODO_TYPE_COMMAND;
+              Transmission_SendToUnit=EventToExecute.Par1;
               
-              if(StringFind(Command, cmd2str(VALUE_OFF))!=-1)
+              if(StringFind(Command,cmd2str(VALUE_OFF))!=-1)
                 {
-                EventToExecute.Par1=0;
+                Transmission_SendToUnit=0;
+                Transmission_SendToAll=false;  
                 }
               else
                 {
@@ -134,29 +134,29 @@ int ExecuteLine(char *Line, byte Port)
                   {
                   // Zoek of in een van de parameters All staat
                   if(StringFind(Command, cmd2str(VALUE_ALL))!=-1)
-                    EventToExecute.Par2|=(unsigned long)VALUE_ALL;  
+                    Transmission_SendToAll=true;  
                     
                   // Zoek of in een van de parameters Fast staat
                   if(StringFind(Command, cmd2str(VALUE_FAST))!=-1)
-                    EventToExecute.Par2|=(((unsigned long)VALUE_FAST)<<8);
+                    Transmission_SendToFast=true;
                   }
                 }
-              ExecuteCommand(&EventToExecute);            
               break;    
         
             case CMD_EVENTLIST_WRITE:
               EventToExecute.Type=NODO_TYPE_COMMAND;
-              if(Transmission_SendToUnit==Settings.Unit || Transmission_SendToUnit==0)
+              if(Transmission_SendToUnit==Settings.Unit || Transmission_SendToUnit==0)// Als geen SendTo actief
                 {                          
                 if(EventToExecute.Par1<=EventlistMax)
                   {
                   EventlistWriteLine=EventToExecute.Par1;
                   State_EventlistWrite=1;
-                  EventToExecute.Command=0;// geen verdere verwerking
                   }
                 else
                   error=MESSAGE_INVALID_PARAMETER;
                 }
+              else
+                QueueAdd(&EventToExecute);        // Plaats in queue voor verzending.
               break;
         
             case CMD_PASSWORD:
@@ -463,7 +463,8 @@ int ExecuteLine(char *Line, byte Port)
                 PrintString(TmpStr1,VALUE_ALL);
                 }
               }                          
-            }// switch(command...@2          
+            }// switch(command...@2
+          EventToExecute.Command=0;//??? toegevoegd vanuit de werking van Sendto. Invloed op andere MEGA comando's?          
           }            
 
         if(EventToExecute.Command && error==0)
@@ -493,9 +494,6 @@ int ExecuteLine(char *Line, byte Port)
             UndoNewNodo();// Status NewNodo verwijderen indien van toepassing
             if(!Eventlist_Write(EventlistWriteLine,&TempEvent,&EventToExecute))
               {
-              PrintNodoEvent("EventlistWrite: Event",&TempEvent);//???
-              PrintNodoEvent("EventlistWrite: Action",&EventToExecute);//???
-
               RaiseMessage(MESSAGE_EVENTLIST_FAILED,EventlistWriteLine);
               break;
               }
@@ -521,7 +519,7 @@ int ExecuteLine(char *Line, byte Port)
     // Verzend de inhoud van de queue naar de slave Nodo
     if(Transmission_SendToUnit!=Settings.Unit && Transmission_SendToUnit!=0 && error==0 && QueuePosition>0)
       {
-      error=QueueSend(Transmission_SendToFast==VALUE_FAST);
+      error=QueueSend(Transmission_SendToFast);
       if(error)
         {
         CommandPos=0;
@@ -878,6 +876,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         break;
 
       // Par1 als tekst en par2 als getal
+      case CMD_RAWSIGNAL_SAVE:
       case CMD_STATUS:
         ParameterToView[0]=PAR1_TEXT;
         ParameterToView[1]=PAR2_INT;
@@ -887,7 +886,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_RAWSIGNAL_RECEIVE:
       case CMD_SEND_EVENT:
       case CMD_LOCK:
-      case CMD_RAWSIGNAL_SAVE:
       case CMD_DEBUG:
       case CMD_LOG:
       case CMD_ECHO:
@@ -1405,6 +1403,14 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
         error=MESSAGE_INVALID_PARAMETER;
       break;
 
+    case CMD_RAWSIGNAL_SAVE:
+      ResultEvent->Type=NODO_TYPE_COMMAND;
+      if(ResultEvent->Par1!=VALUE_ON && ResultEvent->Par1!=VALUE_OFF && ResultEvent->Par1!=0)
+        error=MESSAGE_INVALID_PARAMETER;
+      if(!(ResultEvent->Par2==0 || (ResultEvent->Par2>=2  && ResultEvent->Par2<=5 )))
+        error=MESSAGE_INVALID_PARAMETER;
+      break;
+      
     case CMD_OUTPUT:
       ResultEvent->Type=NODO_TYPE_COMMAND;
       if(ResultEvent->Par1!=VALUE_SOURCE_I2C && ResultEvent->Par1!=VALUE_SOURCE_IR && ResultEvent->Par1!=VALUE_SOURCE_RF && ResultEvent->Par1!=VALUE_SOURCE_HTTP)
@@ -1591,12 +1597,6 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
       break;
       }
 
-    case CMD_RAWSIGNAL_SAVE:
-      ResultEvent->Type=NODO_TYPE_COMMAND;
-      if(ResultEvent->Par1!=VALUE_ALL && ResultEvent->Par1!=VALUE_OFF && ResultEvent->Par1!=0)
-        error=MESSAGE_INVALID_PARAMETER;
-      break;
-      
     case CMD_RAWSIGNAL_SHOW:      
     case CMD_RAWSIGNAL_SEND:      
       ResultEvent->Type=NODO_TYPE_COMMAND;
