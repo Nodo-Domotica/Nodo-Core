@@ -35,7 +35,7 @@ void FileErase(char* Path, char* Filename, char* Extention)
   {
   SelectSDCard(true);
   
-  // Serial.print("FileErase(); = ");Serial.println(PathFile(Path, Filename, Extention));//???
+  // Serial.print("FileErase(); = ");Serial.println(PathFile(Path, Filename, Extention));
 
   if(strcmp(Filename,"*")==0)// Alles wissen
     {
@@ -94,7 +94,7 @@ byte FileWriteLine(char* Path, char* Filename, char* Extention, char *Line, bool
   {
   byte error=0;
 
-  // Serial.print("FileWriteLine=");Serial.println(PathFile(Path,Filename,Extention));//???
+  // Serial.print("FileWriteLine=");Serial.println(PathFile(Path,Filename,Extention));
 
   SelectSDCard(true);
 
@@ -221,8 +221,7 @@ byte FileExecute(char* Path, char* Filename, char* Extention, boolean ContinueOn
   static boolean FileExecuteActive=false;// voorkom nesting van fileexecute      
   char *TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
 
-
-  //Serial.print("Fileexecute=");Serial.println(PathFile(Path,Filename,Extention));//???
+  // Serial.print("Fileexecute=");Serial.println(PathFile(Path,Filename,Extention));
 
   if(FileExecuteActive && !Nesting)
     {

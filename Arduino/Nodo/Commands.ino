@@ -436,22 +436,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       ResetFactory();
       break;
 
-    case CMD_SENDTO:
-      Transmission_SendToUnit=EventToExecute->Par1;
-      Transmission_SendToAll=EventToExecute->Par2&0xff;
-      Transmission_SendToFast=(EventToExecute->Par2>>8)&0xff;
-      
-//      // als de SendTo wordt opgeheven vanuit de master, geef dit dan aan alle Nodo's te kennen
-//      // anders blijven deze in de wachtstand staan.
-//      if(Transmission_SendToUnit==0)
-//        {
-//        EventToExecute->SourceUnit=Settings.Unit;
-//        EventToExecute->Port=VALUE_ALL;
-//        SendEvent(EventToExecute, false,true, Settings.WaitFree==VALUE_ON);
-//        }
-//???
-      break;    
-
     case CMD_EVENTLIST_ERASE:
       Led(BLUE);
       ClearEvent(&TempEvent);
@@ -507,7 +491,12 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         error=RawSignalWrite(TempEvent.Par2);
         }
       else
+        {
         Settings.RawSignalSave=EventToExecute->Par1;
+        Settings.RawSignalCleanUp=EventToExecute->Par2&0xff;
+        if(EventToExecute->Par1==VALUE_ON)
+          Settings.RawSignalReceive=VALUE_ON;
+        }        
       break;
 
     case CMD_RAWSIGNAL_SHOW: 

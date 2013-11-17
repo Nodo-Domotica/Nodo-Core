@@ -23,17 +23,25 @@ R621
 - Diverse aanpassingen RawSignal:
   * Nieuwe analyse RawSinal: LET OP: RawSignal levert andere HEX-Codes en oude op SDCard opgeslagen
     RawSignals niet meer worden verzonden!!!
-  * Nieuw commando [RawSignalShow] laat de opbouw van het signaal zien.
+  * Nieuw commando [RawSignalShow <Hex-code> ] laat de opbouw van een op SDCard opgeslagen signaal zien.
   * Analyse tolerantie aangepast. Levert stabieler dezelfde HEX waarden.
   * Commando [RawSignalSave] gerenamed naar [RawSignalWrite]. Oude wordt omgezet naar nieuwe syntax.
-  * Als [RawsignalReceive] op [Off] staat, komen de op SDCard opgeslagen RawSignals wel binnen als event     
-    
+  * Als [RawsignalReceive] op [Off] staat, komen de op SDCard opgeslagen RawSignals wel binnen als event.
+  * Als [RawSignalWrite] wordt aan gezet, dan wordt [RawSignalReceive] ook ingeschakeld.
+  * [RawSignalWrite] heeft een tweede optionele parameter voor 'schonen' van signaal naar beperkt aantal (2..5) pulstijden.
+  * [RawSignalPulses] in scriptfile laadt de pulsenbuffer voor latere verzending. Syntax: zie resultaat [RawSignalShow]      
+       
+- Nodo emercency reset Pulse (IR_RX_DATA) te verbinden met de LED-RED
 - Bug opgelost in invoer grote HEX getallen. 
+- Alias funktionaliteit toegevoegd:
+  * Voeg een alias toe met [Alias <alias>=<keyword>]
+  * [AliasErase <alias | * > ] toegevoegd
+  * [AliasList] toegevoegd.
+- Commando [FileErase] wist alle bestanden als Par1 een asterisk '*' teken is. (Vroeger was zonder parameters alles wissen)       
+
 
 Nog te doen:
-- intput=- bij invoer Serial
+- [AliasWrite] werkt alleen nog voor alle bestanden. Enkel bestand wissen werkt niet (altijd).
 - uitklokken ontvangstroutine met analyser
-- wissen RawSignals testen
-- Plugin / Voorziening voor schonen RawSignal
 - Aanpassen en testen: Lock mechanisme
 \*****************************************************************************************/
