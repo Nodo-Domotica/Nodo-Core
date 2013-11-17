@@ -19,25 +19,26 @@ R619
 - Issue 799:	P1Read bug
 - Issue 755:	DHT11Read: unknown device
 
-R621
+R624
+- Automatich renamen van oude commando namen vervallen (zoals [SendUserEvent] versus [UserEventSend])
 - Diverse aanpassingen RawSignal:
   * Nieuwe analyse RawSinal: LET OP: RawSignal levert andere HEX-Codes en oude op SDCard opgeslagen
     RawSignals niet meer worden verzonden!!!
   * Nieuw commando [RawSignalShow <Hex-code> ] laat de opbouw van een op SDCard opgeslagen signaal zien.
   * Analyse tolerantie aangepast. Levert stabieler dezelfde HEX waarden.
-  * Commando [RawSignalSave] gerenamed naar [RawSignalWrite]. Oude wordt omgezet naar nieuwe syntax.
+  * Commando [RawSignalSave] gerenamed naar [RawSignalWrite]. Oude wordt NIET meer omgezet naar nieuwe syntax.
   * Als [RawsignalReceive] op [Off] staat, komen de op SDCard opgeslagen RawSignals wel binnen als event.
   * Als [RawSignalWrite] wordt aan gezet, dan wordt [RawSignalReceive] ook ingeschakeld.
   * [RawSignalWrite] heeft een tweede optionele parameter voor 'schonen' van signaal naar beperkt aantal (2..5) pulstijden.
   * [RawSignalPulses] in scriptfile laadt de pulsenbuffer voor latere verzending. Syntax: zie resultaat [RawSignalShow]      
        
-- Nodo emercency reset Pulse (IR_RX_DATA) te verbinden met de LED-RED
+- Nodo emercency reset door Pulse (IR_RX_DATA) tien seconden te verbinden met de LED-RED. (Zowel Mega als Small)
 - Bug opgelost in invoer grote HEX getallen. 
 - Alias funktionaliteit toegevoegd:
   * Voeg een alias toe met [Alias <alias>=<keyword>]
   * [AliasErase <alias | * > ] toegevoegd
   * [AliasList] toegevoegd.
-- Commando [FileErase] wist alle bestanden als Par1 een asterisk '*' teken is. (Vroeger was zonder parameters alles wissen)       
+- Commando [FileErase] wist alle bestanden als Par1 een asterisk '*' teken is. (Vroeger was zonder parameters alles wissen)  
 
 
 Nog te doen:
