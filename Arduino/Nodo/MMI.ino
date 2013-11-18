@@ -6,9 +6,6 @@
  \*******************************************************************************************************/
 int ExecuteLine(char *Line, byte Port)
   {
-
-  // Serial.print("ExecuteLine(); Line=");Serial.println(Line);//???
-
   char *Command=(char*)malloc(INPUT_COMMAND_SIZE+1);
   char *TmpStr1=(char*)malloc(INPUT_COMMAND_SIZE+1);
   char *TmpStr2=(char*)malloc(INPUT_BUFFER_SIZE+1);
@@ -73,8 +70,6 @@ int ExecuteLine(char *Line, byte Port)
         Command[CommandPos]=0;
         CommandPos=0;
 
-        //??? Serial.print("ExecuteLine(); Command (voor alias)=");Serial.println(Command);//???
-
         // De Nodo kan berekeningen maken en variabelen vullen. Voer deze taak uit.
         if(Substitute(Command)!=0)
           error=MESSAGE_INVALID_PARAMETER;
@@ -82,7 +77,8 @@ int ExecuteLine(char *Line, byte Port)
         // check of ingevoerde commando een alias is. Is dit het geval, dan wordt Command vervangen door de alias.
         Alias(Command,true); //  ??? Niet als het een standaadrd Nodo commando is. Nog inbouwen.
 
-        //??? Serial.print("ExecuteLine(); Command (na alias)=");Serial.println(Command);//???
+        // Serial.print("ExecuteLine(); Command (na alias)=");Serial.println(Command);
+        
 
         // Commando's in tekst format moeten worden omgezet naar een Nodo event.
         error=Str2Event(Command, &EventToExecute);
@@ -115,8 +111,10 @@ int ExecuteLine(char *Line, byte Port)
             if(!EventToExecute.Par2)
               EventToExecute.Par2=str2int(TmpStr1);
             }        
-  
-          switch(EventToExecute.Command)
+          x=EventToExecute.Command;
+          EventToExecute.Command=0;//??? toegevoegd vanuit de werking van Sendto. Invloed op andere MEGA comando's?          
+
+          switch(x)
             {
             case CMD_SENDTO:
               Transmission_SendToUnit=EventToExecute.Par1;
@@ -464,7 +462,6 @@ int ExecuteLine(char *Line, byte Port)
                 }
               }                          
             }// switch(command...@2
-          EventToExecute.Command=0;//??? toegevoegd vanuit de werking van Sendto. Invloed op andere MEGA comando's?          
           }            
 
         if(EventToExecute.Command && error==0)
@@ -478,8 +475,9 @@ int ExecuteLine(char *Line, byte Port)
             {
             if(Transmission_SendToUnit==Settings.Unit || Transmission_SendToUnit==0)
               {
+              EventToExecute.Port=Port;
               EventToExecute.Direction=VALUE_DIRECTION_INPUT;
-              error=ProcessEventExt(&EventToExecute);
+              error=ProcessEvent(&EventToExecute);  //??? ext of niet
               }
             else
               {
