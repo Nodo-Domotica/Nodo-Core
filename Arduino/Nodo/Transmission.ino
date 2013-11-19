@@ -74,7 +74,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   while(millis()<HoldTransmission);
  
   // Verstuur signaal als IR
-  if(Settings.TransmitIR==VALUE_ON && (Port==VALUE_SOURCE_IR || Port==VALUE_ALL))
+  if(Settings.TransmitIR==VALUE_ALL || (Settings.TransmitIR==VALUE_ON && (Port==VALUE_SOURCE_IR || Port==VALUE_ALL)))
     { 
     ES->Port=VALUE_SOURCE_IR;
     #if NODO_MEGA
@@ -87,7 +87,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   // Verstuur signaal als HTTP-event.
   if(bitRead(HW_Config,HW_ETHERNET))// Als Ethernet shield aanwezig.
     {
-    if(Settings.TransmitIP==VALUE_ON && (Port==VALUE_SOURCE_HTTP || Port==VALUE_ALL))
+    if(Settings.TransmitIP==VALUE_ALL || (Settings.TransmitIP==VALUE_ON && (Port==VALUE_SOURCE_HTTP || Port==VALUE_ALL)))
       {
       SendHTTPEvent(ES);
       ES->Port=VALUE_SOURCE_HTTP;
@@ -114,7 +114,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     }
 
   // Verstuur signaal als RF
-  if(Settings.TransmitRF==VALUE_ON && (Port==VALUE_SOURCE_RF || Port==VALUE_ALL))
+  if(Settings.TransmitRF==VALUE_ALL || (Settings.TransmitRF==VALUE_ON && (Port==VALUE_SOURCE_RF || Port==VALUE_ALL)))
     {
     ES->Port=VALUE_SOURCE_RF;
     #if NODO_MEGA
@@ -502,7 +502,7 @@ boolean SendHTTPRequest(char* Request)
                   {
                   // Openen nieuw bestand.
                   SelectSDCard(true);
-                  BodyTextFile = SD.open(filename, FILE_WRITE);
+                  BodyTextFile = SD.open(PathFile("",filename,"DAT"), FILE_WRITE);
                   SelectSDCard(false);
                   }
                 }
