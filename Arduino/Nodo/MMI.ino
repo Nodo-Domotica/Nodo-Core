@@ -1413,7 +1413,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
       ResultEvent->Type=NODO_TYPE_COMMAND;
       if(ResultEvent->Par1!=VALUE_SOURCE_I2C && ResultEvent->Par1!=VALUE_SOURCE_IR && ResultEvent->Par1!=VALUE_SOURCE_RF && ResultEvent->Par1!=VALUE_SOURCE_HTTP)
         error=MESSAGE_INVALID_PARAMETER;
-      if(ResultEvent->Par2!=VALUE_OFF && ResultEvent->Par2!=VALUE_ON)
+      if(ResultEvent->Par2!=VALUE_OFF && ResultEvent->Par2!=VALUE_ON && ResultEvent->Par2!=VALUE_ALL)
         error=MESSAGE_INVALID_PARAMETER;
       break;
 

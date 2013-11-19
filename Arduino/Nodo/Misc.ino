@@ -694,9 +694,12 @@ void ResetFactory(void)
   for(x=0;x<ALARM_MAX;x++)
     Settings.Alarm[x]=0L;
 
+  AliasErase("*");// Wis alle aliassen
+  FileErase(ProgmemString(Text_08),"*","DAT");// Wis alle RawSignals
+
 #endif
 
-  // zet analoge waarden op default
+  // zet analoge poort  waarden op default
   for(x=0;x<WIRED_PORTS;x++)
     {
     Settings.WiredInputThreshold[x]=512; 
@@ -2107,33 +2110,33 @@ char* ip2str(byte* IP)
  * 
  \*********************************************************************************************/
 boolean str2ip(char *string, byte* IP)
-{
+  {
   byte c;
   byte part=0;
   int value=0;
 
   for(int x=0;x<=strlen(string);x++)
-  {
+    {
     c=string[x];
     if(isdigit(c))
-    {
+      {
       value*=10;
       value+=c-'0';
-    }
+      }
 
     else if(c=='.' || c==0) // volgende deel uit IP adres
-    {
+      {
       if(value<=255)
         IP[part++]=value;
       else 
         return false;
       value=0;
-    }
+      }
     else if(c==' ') // deze tekens negeren
       ;
     else // ongeldig teken
     return false;
-  }
+    }
   if(part==4)// correct aantal delen van het IP adres
     return true;
   return false;

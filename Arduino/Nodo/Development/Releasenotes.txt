@@ -40,6 +40,9 @@ R624
   * [AliasList] toegevoegd.
 - Commando [FileErase] wist alle bestanden als Par1 een asterisk '*' teken is. (Vroeger was zonder parameters alles wissen)  
 
+R626:
+- Commando[Output] kan nu naast [On] en [Off] ook optie [All] meekrijgen. Dan worden alle uitgaande events altijd verzonden.
+
 
 Nog te doen:
 - [AliasWrite] werkt alleen nog voor alle bestanden. Enkel bestand wissen werkt niet (altijd).
