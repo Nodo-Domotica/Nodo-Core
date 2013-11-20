@@ -116,8 +116,9 @@ byte FileWriteLine(char* Path, char* Filename, char* Extention, char *Line, bool
       LogFile.close();
       }
     else
+      {
       error=MESSAGE_UNABLE_OPEN_FILE;
-;
+      }
     }
       
   SelectSDCard(false);

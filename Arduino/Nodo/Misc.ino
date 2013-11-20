@@ -997,7 +997,6 @@ byte GetArgv(char *string, char *argv, int argc)
     c=string[string_pos];
     d=string[string_pos+1];
 
-    // dit is niet meer de handigste methode. Op termijn vereenvoudigen.
     if       (c==' ' && d==' '){}
     else if  (c==' ' && d==','){}
     else if  (c==',' && d==' '){}
@@ -1005,8 +1004,11 @@ byte GetArgv(char *string, char *argv, int argc)
     else if  (c==',' && d>=33 && d<=126){}
     else 
       {
-      argv[argv_pos++]=c;
-      argv[argv_pos]=0;          
+      if(c!=' ' && c!=',')
+        {
+        argv[argv_pos++]=c;
+        argv[argv_pos]=0;
+        }          
 
       if(d==' ' || d==',' || d==0)
         {
@@ -2478,12 +2480,14 @@ byte AliasWrite(char* Line)
     StrInput[x++]=w;              
     }while(w!='=' && w!=0 && x<INPUT_COMMAND_SIZE);
   StrInput[x-1]=0;
-  
+
+    
   do{
     w=Line[x++];
     StrOutput[y++]=w;              
-    }while(w!=0  && y<INPUT_COMMAND_SIZE);
-
+    }while(w!=0 && y<INPUT_COMMAND_SIZE);
+    
+  
   // een Nodo events is het niet toegestaan om een alias voor aan te maken. Dit omdat anders
   // een situatie kan ontstaan waarbij de Nodo op slot gezet kan worden doordat essentiele commando's niet 
   // meer benaderbaar zijn.  
@@ -2502,7 +2506,7 @@ byte AliasWrite(char* Line)
   
     HashInput  = AliasHash(StrInput);
     HashOutput = AliasHash(StrOutput);
-    
+
     // Wis eventuele bestaande Output die is aangemaakt bij een eerder alias commando 
     AliasErase(StrOutput);
   
