@@ -598,6 +598,7 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
   Event2str(Event,TmpStr);
   if(Settings.Alias==VALUE_ON)
     Alias(TmpStr,false);
+
   strcat(StringToPrint, TmpStr);
 
   // WEERGEVEN OP TERMINAL

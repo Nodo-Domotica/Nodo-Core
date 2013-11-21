@@ -1,4 +1,4 @@
-#define NODO_BUILD                   625 // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                   627 // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR             3 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR             3 // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                      1 // Unit nummer van deze Nodo
@@ -672,7 +672,6 @@ volatile unsigned long PulseTime=0L;                        // Tijdsduur tussen 
 boolean RebootNodo=false;                                   // Als deze vlag staat, dan reboot de Nodo (cold-start)
 unsigned long HoldTransmission=0L;                          // wachten op dit tijdstip in millis() alvorens event te verzenden.
 byte Transmission_SelectedUnit=0;                           // 
-byte  Transmission_SendToUnit=0;                            // Unitnummer waar de events naar toe gestuurd worden. 0=alle.
 boolean Transmission_ThisUnitIsMaster=false;
 boolean Transmission_NodoOnly=false;                        // Als deze vlag staat, dan worden er uitsluitend Nodo-eigen signalen ontvangen.  
 byte QueuePosition=0;
@@ -699,6 +698,7 @@ byte Plugin_id[PLUGIN_MAX];
 boolean ExecuteCommand(NodoEventStruct *EventToExecute);//protoype definieren.
 
 #if NODO_MEGA
+byte  Transmission_SendToUnit=0;                            // Unitnummer waar de events naar toe gestuurd worden. 0=alle.
 boolean  Transmission_SendToAll=false;                      // Vlag die aangeeft of de SendTo permanent staat ingesteld of eenmalig (VALUE_ALL)
 byte  Transmission_SendToFast=0;                            // Vlag die aangeeft of de SendTo permanent staat ingesteld of eenmalig (VALUE_FAST)
 byte AlarmPrevious[ALARM_MAX];                              // Bevat laatste afgelopen alarm. Ter voorkoming dat alarmen herhaald aflopen.
