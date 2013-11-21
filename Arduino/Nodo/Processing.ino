@@ -146,8 +146,11 @@ byte ProcessEvent(struct NodoEventStruct *Event)
       if(error==MESSAGE_BREAK)
         error=0;
       }      
+
     // Als de SendTo niet permanent is ingeschakeld, dan deze weer uitzetten
+    #if NODO_MEGA
     if(!Transmission_SendToAll)Transmission_SendToUnit=0;
+    #endif
     }
     
   ExecutionDepth--;

@@ -45,7 +45,7 @@ R626:
 
 
 Nog te doen:
-- [AliasWrite] werkt alleen nog voor alle bestanden. Enkel bestand wissen werkt niet (altijd).
+- Eventlistwrite via een SendTo naar een andere Nodo wordt nog niet goed ontvangen
 - uitklokken ontvangstroutine met analyser
 - Aanpassen en testen: Lock mechanisme
 \*****************************************************************************************/

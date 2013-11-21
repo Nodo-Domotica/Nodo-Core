@@ -33,7 +33,9 @@ void WaitFree(byte Port, int TimeOut)
 boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Display, boolean WaitForFree)
   {    
   ES->Direction=VALUE_DIRECTION_OUTPUT;
+  #if NODO_MEGA
   ES->DestinationUnit=Transmission_SendToUnit;
+  #endif
   byte Port=ES->Port;
 
   // Als een Nodo actief is en excusief communiceert met een andere Nodo, c.q. de ether heeft geclaimd is, dan mag deze Nodo niet zenden.
