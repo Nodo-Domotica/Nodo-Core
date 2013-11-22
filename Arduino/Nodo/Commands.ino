@@ -509,7 +509,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       RawSignal.Source=EventToExecute->Par1;
 
       if(EventToExecute->Par2!=0)
-        error=FileExecute(ProgmemString(Text_08),int2strhex(EventToExecute->Par2)+2,"DAT", false, 0, true);
+        error=FileExecute(ProgmemString(Text_08),int2strhex(EventToExecute->Par2)+2,"DAT", false, 0);
       
       if(!error)
         {        

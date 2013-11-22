@@ -117,8 +117,7 @@ int ExecuteLine(char *Line, byte Port)
           switch(x)
             {
             case CMD_SENDTO:
-              Transmission_SendToUnit=EventToExecute.Par1;
-              
+              Transmission_SendToUnit=EventToExecute.Par1;              
               if(StringFind(Command,cmd2str(VALUE_OFF))!=-1)
                 {
                 Transmission_SendToUnit=0;
@@ -143,6 +142,7 @@ int ExecuteLine(char *Line, byte Port)
         
             case CMD_EVENTLIST_WRITE:
               EventToExecute.Type=NODO_TYPE_COMMAND;
+              EventToExecute.Command=CMD_EVENTLIST_WRITE;      
               if(Transmission_SendToUnit==Settings.Unit || Transmission_SendToUnit==0)// Als geen SendTo actief
                 {                          
                 if(EventToExecute.Par1<=EventlistMax)
@@ -155,6 +155,8 @@ int ExecuteLine(char *Line, byte Port)
                 }
               else
                 QueueAdd(&EventToExecute);        // Plaats in queue voor verzending.
+              
+              EventToExecute.Command=0;      
               break;
         
             case CMD_PASSWORD:
@@ -268,7 +270,7 @@ int ExecuteLine(char *Line, byte Port)
                 {
                 EventToExecute.Par2=str2int(TmpStr1);
                 if(State_EventlistWrite==0)// Commando uitvoeren heeft alleen zin er geen eventlistwrite commando actief is
-                  error=FileExecute("",TmpStr1,"DAT", EventToExecute.Par1==VALUE_ON, VALUE_ALL, false);
+                  error=FileExecute("",TmpStr1,"DAT", EventToExecute.Par1==VALUE_ON, VALUE_ALL);
                 }
               break;
         
@@ -399,6 +401,22 @@ int ExecuteLine(char *Line, byte Port)
                 error=MESSAGE_INVALID_PARAMETER;
               break;
         
+            case CMD_IP_SEND:  //??? experimenteel
+              if(GetArgv(Line,TmpStr2,2))// URL
+                {
+                if(y=GetArgv(Line,TmpStr1,3))// Poort
+                  {
+                  x=str2int(TmpStr1);// Poort
+                  error=IPSend(TmpStr2,x,Line + y);
+                  }                  
+                LinePos=LineLength+1; // ga direct naar einde van de regel.
+                }
+              else
+                error=MESSAGE_INVALID_PARAMETER;
+              break;
+            
+              break;
+
             case CMD_FILE_WRITE_LINE:
               if(GetArgv(Command,TmpStr1,2) && strlen(TmpStr1)<=8)
                 {
@@ -445,7 +463,7 @@ int ExecuteLine(char *Line, byte Port)
               if(!PluginCall(PLUGIN_MMI_IN,&EventToExecute,Command))
                 {
                 // Als het geen regulier commando was EN geen commando met afwijkende MMI en geen Plugin en geen alias, dan kijken of file op SDCard staat)
-                error=FileExecute("",Command,"DAT", VALUE_OFF, VALUE_ALL,false);
+                error=FileExecute("",Command,"DAT", VALUE_OFF, VALUE_ALL);
                   
                 // als script niet te openen, dan is het ingevoerde commando ongeldig.
                 if(error)

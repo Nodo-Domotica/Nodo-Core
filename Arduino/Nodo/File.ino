@@ -215,23 +215,22 @@ boolean FileList(char *Path, byte Port)
   }
 
 
-byte FileExecute(char* Path, char* Filename, char* Extention, boolean ContinueOnError, byte PrintPort, boolean Nesting)
+byte FileExecute(char* Path, char* Filename, char* Extention, boolean ContinueOnError, byte PrintPort)
   {
   int x,y;
   byte error=0;
-  static boolean FileExecuteActive=false;// voorkom nesting van fileexecute      
+  static byte FileExecuteNesting=0;// voorkom nesting van fileexecute      
   char *TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
 
   // Serial.print("Fileexecute=");Serial.println(PathFile(Path,Filename,Extention));
 
-  if(FileExecuteActive && !Nesting)
+  if(++FileExecuteNesting>3)
     {
     RaiseMessage(MESSAGE_NESTING_ERROR,0);
     }
   else
     {
     Led(RED);
-    FileExecuteActive=true;
     
     SelectSDCard(true);
     File dataFile=SD.open(PathFile(Path, Filename, Extention));
@@ -268,10 +267,11 @@ byte FileExecute(char* Path, char* Filename, char* Extention, boolean ContinueOn
       error=MESSAGE_UNABLE_OPEN_FILE;
     }
 
-  FileExecuteActive=false;
+  FileExecuteNesting=false;
   free(TmpStr);    
   SelectSDCard(false);
 
+  FileExecuteNesting--;
   return error;
   }    
 
