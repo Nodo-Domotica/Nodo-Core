@@ -183,6 +183,53 @@ void SendI2C(struct NodoEventStruct *EventBlock)
 //##################################### Transmission: HTTP  #############################################
 //#######################################################################################################
 
+boolean IPSend(char* URL, int Port, char* Request)
+  {
+  int InByteCounter;
+  byte InByte;
+  byte Try=0;
+  byte error=0;
+  unsigned long TimeoutTimer;
+  const int TimeOut=5000;
+  EthernetClient IPClient;
+
+  Serial.print(F("URL="));Serial.println(URL);
+  Serial.print(F("Port="));Serial.println(Port);
+  Serial.print(F("Request="));Serial.println(Request);
+
+  do
+    {
+    if(IPClient.connect(URL,Port))
+      {
+      IPClient.println(Request);
+      TimeoutTimer=millis()+TimeOut; // Als er te lange tijd geen datatransport is, dan wordt aangenomen dat de verbinding (om wat voor reden dan ook) is afgebroken.
+
+      while(TimeoutTimer>millis() && IPClient.connected())
+        {
+        if(IPClient.available())
+          {
+          InByte=IPClient.read();
+          Serial.write(InByte);
+          TimeoutTimer=millis()+TimeOut; // er is nog data transport, dus de timeout timer weer op max. zetten.
+          }
+        Serial.println();
+        }        
+      delay(100);
+      HTTPClient.flush();// Verwijder eventuele rommel in de buffer.
+      HTTPClient.stop();
+      }
+    else
+      {
+      //??? error afhandeling
+      error=MESSAGE_TCPIP_FAILED; 
+      }
+    }
+  while(error && ++Try<3);
+
+  return error;
+  }
+
+
 #define IP_BUFFER_SIZE            256
 
 #if NODO_MEGA

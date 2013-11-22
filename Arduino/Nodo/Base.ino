@@ -191,7 +191,8 @@ byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
 #define CMD_ALIAS_SHOW                  138
 #define CMD_ALIAS_LIST                  139
 #define CMD_POWERSAVE                   140
-#define COMMAND_MAX                     140 // hoogste commando
+#define CMD_IP_SEND                     141
+#define COMMAND_MAX                     141 // hoogste commando
 
 #define MESSAGE_OK                      0
 #define MESSAGE_UNKNOWN_COMMAND         1
@@ -359,6 +360,7 @@ prog_char PROGMEM Cmd_137[]="AliasErase";
 prog_char PROGMEM Cmd_138[]="AliasShow";
 prog_char PROGMEM Cmd_139[]="AliasList";
 prog_char PROGMEM Cmd_140[]="PowerSave";
+prog_char PROGMEM Cmd_141[]="IPSend";
 
 
 // tabel die refereert aan de commando strings
@@ -377,7 +379,7 @@ Cmd_100,Cmd_101,Cmd_102,Cmd_103,Cmd_104,Cmd_105,Cmd_106,Cmd_107,Cmd_108,Cmd_109,
 Cmd_110,Cmd_111,Cmd_112,Cmd_113,Cmd_114,Cmd_115,Cmd_116,Cmd_117,Cmd_118,Cmd_119,
 Cmd_120,Cmd_121,Cmd_122,Cmd_123,Cmd_124,Cmd_125,Cmd_126,Cmd_127,Cmd_128,Cmd_129,
 Cmd_130,Cmd_131,Cmd_132,Cmd_133,Cmd_134,Cmd_135,Cmd_136,Cmd_137,Cmd_138,Cmd_139,
-Cmd_140};
+Cmd_140,Cmd_141};
 
 // Message max. 40 pos       "1234567890123456789012345678901234567890"
 prog_char PROGMEM Msg_0[]  = "Ok.";
@@ -647,7 +649,6 @@ struct SettingsStruct
 // De Nodo kent naast gebruikers commando's en events eveneens Nodo interne events
 #define SYSTEM_COMMAND_CONFIRMED  1
 #define SYSTEM_COMMAND_SENDTO     2  // Dit is aankondiging van de inhoudelijke reeks, dus niet het user comando "SendTo".
-
   
 struct NodoEventStruct
   {
@@ -847,7 +848,7 @@ void setup()
   SDCardInit();  // SDCard detecteren en evt. gereed maken voor gebruik in de Nodo
 
   // Voer bestand config uit als deze bestaat. die goeie oude MD-DOS tijd ;-)
-  FileExecute("","config","dat",true,VALUE_ALL,false);
+  FileExecute("","config","dat",true,VALUE_ALL);
   #endif
   
 
@@ -941,7 +942,7 @@ void setup()
   Serial.println(F("\nReady.\n"));
 
   // Voer bestand AutoExec uit als deze bestaat. die goeie oude MD-DOS tijd ;-)
-  FileExecute("", "autoexec", "dat",true,VALUE_ALL,false);
+  FileExecute("", "autoexec", "dat",true,VALUE_ALL);
 
   bitWrite(HW_Config,HW_SERIAL,Serial.available()?1:0); // Serial weer uitschakelen.
   #endif

@@ -985,7 +985,8 @@ char* ProgmemString(prog_char* text)
  * Deze routine parsed string en geeft het opgegeven argument nummer Argc terug in Argv
  * argumenten worden van elkaar gescheiden door een komma of een spatie.
  * Let op dat de ruimte in de doelstring voldoende is EN dat de bron string netjes is afgesloten 
- * met een 0-byte. 
+ * met een 0-byte. Bij succes keert de routine terug met als waarde de positie naar het eerste teken 
+ * van het volgende argument.  
  \*********************************************************************************************/
 byte GetArgv(char *string, char *argv, int argc)
 {
@@ -1017,7 +1018,7 @@ byte GetArgv(char *string, char *argv, int argc)
         argc_pos++;
 
         if(argc_pos==argc)
-          return true;
+          return string_pos+1;
           
         argv[0]=0;
         argv_pos=0;
