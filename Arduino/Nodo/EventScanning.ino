@@ -99,7 +99,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)// Deze routine maakt deel uit v
     {
     Event->Port=Fetched;
     Event->Direction=VALUE_DIRECTION_INPUT;
-
+    
     // Signaal wordt echter alleen als event weergegeven als de setting
     // RawSignalReceive op On staat of het een bekend RawSignal is die is opgeslagen op SDCard.
     if(Event->Command==EVENT_RAWSIGNAL)

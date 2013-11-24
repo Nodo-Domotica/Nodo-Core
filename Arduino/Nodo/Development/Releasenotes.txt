@@ -47,6 +47,9 @@ R629:
 - Bug in SendTo/EventlistWrite van build R262 opgelost.
 
 Nog te doen:
+- Boot 0 event
+- boot event uitvoer op Small ??? lijkt niet goed uitgevoerd te worden
+- eventlistshow vanuit een Small??? Onderzoeken.
 - uitklokken ontvangstroutine met analyser
 - Aanpassen en testen: Lock mechanisme
 \*****************************************************************************************/
