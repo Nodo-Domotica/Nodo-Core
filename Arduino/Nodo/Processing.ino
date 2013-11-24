@@ -13,7 +13,7 @@ byte ProcessEventExt(struct NodoEventStruct *Event)
   SerialHold(true);  // als er een regel ontvangen is, dan binnenkomst van signalen stopzetten met een seriele XOFF
   Led(RED); // LED aan als er iets verwerkt wordt      
 
-  #if NODO_MEGA
+#if NODO_MEGA
   if(FileWriteMode!=0)
     return 0;
   #endif
@@ -58,16 +58,6 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     error=MESSAGE_NESTING_ERROR; // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
     }
 
-  if(Event->Type == NODO_TYPE_SYSTEM)
-    {                       
-    if(Event->Command==SYSTEM_COMMAND_SENDTO) // Eerste uit een [SendTo] reeks?
-      {
-      QueueReceive(Event);
-      Continue=false;
-      }
-    Continue=false;
-    }
-
   // Als er een LOCK actief is, dan commando's blokkeren behalve...
   if(Settings.Lock && (Event->Port==VALUE_SOURCE_RF || Event->Port==VALUE_SOURCE_IR ))
     {
@@ -88,14 +78,32 @@ byte ProcessEvent(struct NodoEventStruct *Event)
       }
     }
 
+  if(Event->Type == NODO_TYPE_SYSTEM)
+    {                       
+    if(Event->Command==SYSTEM_COMMAND_SENDTO) // Eerste uit een [SendTo] reeks?
+      QueueReceive(Event);
+
+    Continue=false;
+    }
+
   // Als de queue vlag staat, dan direct in de queue stoppen en verder niets mee doen.
   if(Continue && (Event->Flags & TRANSMISSION_QUEUE))
     {
     QueueAdd(Event);
+    Wait(5, false, 0, true);
     Continue=false;
     }
 
-  // restanten van een niet correct verwekt SendTo niet uitvoeren
+//  #if NODO_MEGA
+//  // Alleen weergeven zonder event af te handelen
+//  if(Continue && (Event->Flags & TRANSMISSION_VIEW_ONLY))
+//    {
+//    PrintEvent(Event,VALUE_ALL); //??? of naar een specifieke poort van herkomst commando?
+//    Continue=false;
+//    }
+//  #endif
+  
+  // restanten van een niet correct verwerkt SendTo niet uitvoeren
   if(Continue && (Event->Flags & TRANSMISSION_SENDTO))
     {
     Continue=false;
@@ -107,6 +115,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
       if(!RawSignalExist(Event->Par2))
         RawSignalWrite(Event->Par2);
   #endif    
+
   
   if(Continue && error==0)
     {
@@ -154,6 +163,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     }
     
   ExecutionDepth--;
+
   return error;
   }
 
@@ -267,7 +277,9 @@ boolean QueueAdd(struct NodoEventStruct *Event)
   {
   if(QueuePosition<EVENT_QUEUE_MAX)
     {
-    Queue[QueuePosition].Flags   = Event->Flags;
+    Event->Flags&=~TRANSMISSION_QUEUE; //  Haal eventuele QUEUE vlag er af. Anders loopt de queue vol door recursiviteit;
+
+    Queue[QueuePosition].Flags   = Event->Flags; 
     Queue[QueuePosition].Port    = Event->Port;
     Queue[QueuePosition].Unit    = Event->SourceUnit;
     Queue[QueuePosition].Type    = Event->Type;
@@ -292,22 +304,63 @@ void QueueProcess(void)
   // Initialiseer een Event en Transmissie
   struct NodoEventStruct Event;
   ClearEvent(&Event);
+  struct NodoEventStruct E;
+  struct NodoEventStruct A;
 
   if(QueuePosition>0)
     {
     for(x=0;x<QueuePosition;x++)
-      {  
+      {
+      #if NODO_MEGA
+      // Als er in de queue een EventlistShow commando zit, dan moet deze, en de twee opvolgende als een eventlistregel
+      // worden weergegeven.
+      if(Queue[x].Command==CMD_EVENTLIST_SHOW && x<(QueuePosition-2)) // cmd
+        {
+        char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+        char *TempString2=(char*)malloc(INPUT_BUFFER_SIZE+1);
+        
+        strcpy(TempString2,"(Nog niet gereed!) ");//??? 
+        strcat(TempString2,int2str(Queue[x].Par1)); 
+        strcat(TempString2,": ");
+
+        // geef het event weer
+        E.Type=Queue[x+1].Type;
+        E.Command=Queue[x+1].Command;
+        E.Par1=Queue[x+1].Par1;
+        E.Par2=Queue[x+1].Par2;
+        Event2str(&E, TempString);
+        if(Settings.Alias==VALUE_ON)
+          Alias(TempString,false);
+        strcat(TempString2, TempString);
+    
+        // geef het action weer
+        A.Type=Queue[x+2].Type;
+        A.Command=Queue[x+2].Command;
+        A.Par1=Queue[x+2].Par1;
+        A.Par2=Queue[x+2].Par2;
+        strcat(TempString2,"; ");
+        Event2str(&A, TempString);  
+        if(Settings.Alias==VALUE_ON)
+          Alias(TempString,false);
+        strcat(TempString2,TempString);
+        
+        PrintString(TempString2,VALUE_ALL);//??? nog alleen naar de poort van herkomst laten weergeven
+
+        free(TempString2);
+        free(TempString);
+        QueuePosition=0;// Maak de queue weer leeg want de weergegeven items behoeven geen verdere verwering.
+        }
+      #endif
+      
       // Als er in de queue een EventlistWrite commando zit, dan moeten de twee opvolgende posities uit de queue
       // worden weggeschreven naar de eventlist.      
       if(Queue[x].Command==CMD_EVENTLIST_WRITE && x<(QueuePosition-2)) // cmd
         {
-        struct NodoEventStruct E;
         E.Type=Queue[x+1].Type;
         E.Command=Queue[x+1].Command;
         E.Par1=Queue[x+1].Par1;
         E.Par2=Queue[x+1].Par2;
 
-        struct NodoEventStruct A;
         A.Type=Queue[x+2].Type;
         A.Command=Queue[x+2].Command;
         A.Par1=Queue[x+2].Par1;
@@ -318,6 +371,7 @@ void QueueProcess(void)
           x+=2;
           UndoNewNodo();
           }
+        QueuePosition=0;// Maak de queue weer leeg want de weergegeven items behoeven geen verdere verwering. ??? Lijkt hier te horen, testen !
         }
       else
         {
@@ -435,6 +489,7 @@ void QueueReceive(NodoEventStruct *Event)
   // Alle Nodo events die nu binnen komen op slaan in de queue.
   QueuePosition=0;
   Wait(5, false, 0, true);
+
   byte count=QueuePosition;
   
   // Als aantal regels in de queue overeenkomt met wat in het SendTo verzoek is vermeldt

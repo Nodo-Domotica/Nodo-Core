@@ -1,5 +1,5 @@
 #define NODO_BUILD                   627 // ??? Ophogen bij iedere Build / versiebeheer.
-#define NODO_VERSION_MINOR             3 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
+#define NODO_VERSION_MINOR             4 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR             3 // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                      1 // Unit nummer van deze Nodo
 #define HOME_NODO                      1 // Home adres van Nodo's die tot één groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
@@ -947,8 +947,6 @@ void setup()
   bitWrite(HW_Config,HW_SERIAL,Serial.available()?1:0); // Serial weer uitschakelen.
   #endif
   
-  
-//  Test();
   }
 
 void loop() 
@@ -982,9 +980,7 @@ void loop()
     {
     // Check voor IR, I2C of RF events
     if(ScanEvent(&ReceivedEvent)) 
-      {
       ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
-      }
     
     // SERIAL: *************** kijk of er data klaar staat op de seriële poort **********************
     if(Serial.available())

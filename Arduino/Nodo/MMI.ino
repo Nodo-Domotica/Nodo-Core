@@ -272,31 +272,7 @@ int ExecuteLine(char *Line, byte Port)
                 if(State_EventlistWrite==0)// Commando uitvoeren heeft alleen zin er geen eventlistwrite commando actief is
                   error=FileExecute("",TmpStr1,"DAT", EventToExecute.Par1==VALUE_ON, VALUE_ALL);
                 }
-              break;
-        
-            case CMD_EVENTLIST_SHOW:
-              EventToExecute.Type=NODO_TYPE_COMMAND;
-              if(EventToExecute.Par1<=EventlistMax)
-                {
-                PrintString(ProgmemString(Text_22),Port);
-                if(EventToExecute.Par1==0)
-                  {
-                  x=1;
-                  while(EventlistEntry2str(x++,0,TmpStr2,false))
-                    if(TmpStr2[0]!=0)
-                      PrintString(TmpStr2,Port);
-                  }
-                else
-                  {
-                  EventlistEntry2str(EventToExecute.Par1,0,TmpStr2,false);
-                    if(TmpStr2[0]!=0)
-                      PrintString(TmpStr2,Port);
-                  }
-                PrintString(ProgmemString(Text_22),Port);
-                }
-              else
-                error=MESSAGE_INVALID_PARAMETER;
-              break;
+              break;                                                                             
                 
             case CMD_NODO_IP:
               EventToExecute.Type=NODO_TYPE_COMMAND;
@@ -1165,6 +1141,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
       break; 
 
     //test; geen, altijd goed
+    case CMD_EVENTLIST_SHOW:
     case CMD_EVENTLIST_ERASE:
     case CMD_STOP:
     case CMD_RESET:

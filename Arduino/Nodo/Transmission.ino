@@ -64,13 +64,13 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
 
   // Stuur afhankelijk van de instellingen het event door naar I2C, RF, IR. Eerst wordt het event geprint,daarna een korte wachttijd om
   // te zorgen dat er een minimale wachttijd tussen de signlen zit. Tot slot wordt het signaal verzonden.
+
   if(WaitForFree)
     if(Port==VALUE_SOURCE_RF || Port==VALUE_SOURCE_IR ||(Settings.TransmitRF==VALUE_ON && Port==VALUE_ALL))
       WaitFree(VALUE_ALL, WAITFREE_TIMEOUT);
 
   if(!UseRawSignal)
     Nodo_2_RawSignal(ES);
-
 
   // Respecteer een minimale tijd tussen verzenden van events. Wachten op dit tijdstip in millis() alvorens event te verzenden.
   while(millis()<HoldTransmission);
@@ -179,6 +179,11 @@ void SendI2C(struct NodoEventStruct *EventBlock)
   WireNodo.endTransmission(true); // Geef de bus vrij
   }
 
+
+#define IP_BUFFER_SIZE            256
+
+#if NODO_MEGA
+
 //#######################################################################################################
 //##################################### Transmission: HTTP  #############################################
 //#######################################################################################################
@@ -230,9 +235,7 @@ boolean IPSend(char* URL, int Port, char* Request)
   }
 
 
-#define IP_BUFFER_SIZE            256
 
-#if NODO_MEGA
 boolean EthernetInit(void)
   {
   int x;

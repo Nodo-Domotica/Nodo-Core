@@ -12,6 +12,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
   byte error=0;
   
   struct NodoEventStruct TempEvent=*EventToExecute;
+  struct NodoEventStruct TempEvent2;//???
   
   #if NODO_MEGA
   char *TempString=(char*)malloc(50);
@@ -452,7 +453,87 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         }
       break;        
         
-#if NODO_MEGA
+
+    case CMD_EVENTLIST_SHOW:
+      // Er kunnen zich hier twee situaties voordoen: het verzoek is afkomstig van een Terminal (Serial/Telnet) of 
+      // via IR/RF/I2C. Beide kennen een andere afhandeling immers de Terminal variant kan direct naar de MMI.
+      // Bij de anderen moet er nog transport plaats vinden via IR, RF, I2C. De Terminal variant is NIET relevant
+      // voor een Small omdat deze geen MMI heeft.
+
+      #if NODO_MEGA
+      if(EventToExecute->Port==VALUE_SOURCE_SERIAL || EventToExecute->Port==VALUE_SOURCE_TELNET)
+        {      
+        if(EventToExecute->Par1<=EventlistMax)
+          {
+          PrintString(ProgmemString(Text_22),EventToExecute->Port);
+          if(EventToExecute->Par1==0)
+            {
+            x=1;
+            while(EventlistEntry2str(x++,0,TempString,false))
+              if(TempString[0]!=0)
+                PrintString(TempString,EventToExecute->Port);
+            }
+          else
+            {
+            EventlistEntry2str(EventToExecute->Par1,0,TempString,false);
+              if(TempString[0]!=0)
+                PrintString(TempString,EventToExecute->Port);
+            }
+          PrintString(ProgmemString(Text_22),EventToExecute->Port);
+          }
+        else
+          error=MESSAGE_INVALID_PARAMETER;
+        }
+      else // Transmissie via I2C/RF/IR: dan de inhoud van de Eventlist versturen.
+        {
+
+      #endif
+      
+        if(EventToExecute->Par1==0)
+          {
+          x=1;
+          y=EventlistMax;
+          }
+        else
+          {
+          x=EventToExecute->Par1;
+          y=EventToExecute->Par1;
+          }
+                
+        // Haal de event en action op uit eeprom en verzend deze met extra transmissie vlaggen zodat de data:
+        // 1. alleen wordt verstuurd naar de nodo die de data heeft opgevraagd.
+        // 2. alleen wordt verzonden naar de poort waar het verzoek vandaan kwam
+        // 3. aan de ontvangende zijde in de queue wordt geplaatst
+        // 4. de vlag VIEW_ONLY mee krijgt zodat de events/commando's niet worden uitgevoerd aan de ontvangende zijde.
+        // 5. Met LOCK alle andere Nodo's tijdelijk in de hold worden gezet.
+  
+        EventToExecute->Flags=TRANSMISSION_VIEW_ONLY | TRANSMISSION_QUEUE | TRANSMISSION_NEXT;
+        
+        while(x<=y && Eventlist_Read(x,&TempEvent,&TempEvent2))   //kunnen we door TempEvent twee maal te laten vullen de geheugenruimte van TempEvent2 besparen???
+          {
+          EventToExecute->Par1=x;
+          if(TempEvent.Command!=0)
+            {
+            SendEvent(EventToExecute,false,false,false);
+    
+            TempEvent.Flags=TRANSMISSION_VIEW_ONLY | TRANSMISSION_NEXT | TRANSMISSION_QUEUE ;
+            TempEvent.Port=EventToExecute->Port;
+            TempEvent.DestinationUnit=EventToExecute->SourceUnit;
+            SendEvent(&TempEvent,false,false,false);
+    
+            TempEvent2.Flags=TRANSMISSION_VIEW_ONLY | TRANSMISSION_QUEUE ; // de laatste
+            TempEvent2.Port=EventToExecute->Port;
+            TempEvent2.DestinationUnit=EventToExecute->SourceUnit;
+            SendEvent(&TempEvent2,false,false,false);
+            }
+          x++;
+          }
+      #if NODO_MEGA
+        }        
+      #endif
+      break;
+
+#if NODO_MEGA // vanaf hier commando's die alleen de Mega kent.
 
     case CMD_PORT_INPUT:
       Settings.PortInput=EventToExecute->Par2;
