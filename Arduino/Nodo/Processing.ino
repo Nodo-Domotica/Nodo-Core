@@ -92,22 +92,20 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     QueueAdd(Event);
     Wait(5, false, 0, true);
     Continue=false;
+    //???QueueProcess();
     }
 
-//  #if NODO_MEGA
-//  // Alleen weergeven zonder event af te handelen
-//  if(Continue && (Event->Flags & TRANSMISSION_VIEW_ONLY))
-//    {
-//    PrintEvent(Event,VALUE_ALL); //??? of naar een specifieke poort van herkomst commando?
-//    Continue=false;
-//    }
-//  #endif
+  #if NODO_MEGA
+  
+  // Alleen weergeven zonder event af te handelen
+  if(Continue && (Event->Flags & TRANSMISSION_VIEW_ONLY))
+    Continue=false;
+  #endif
   
   // restanten van een niet correct verwerkt SendTo niet uitvoeren
   if(Continue && (Event->Flags & TRANSMISSION_SENDTO))
-    {
     Continue=false;
-    }
+
 
   #if NODO_MEGA
   if(Continue && bitRead(HW_Config,HW_SDCARD))
@@ -319,8 +317,7 @@ void QueueProcess(void)
         char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
         char *TempString2=(char*)malloc(INPUT_BUFFER_SIZE+1);
         
-        strcpy(TempString2,"(Nog niet gereed!) ");//??? 
-        strcat(TempString2,int2str(Queue[x].Par1)); 
+        strcpy(TempString2,int2str(Queue[x].Par1)); 
         strcat(TempString2,": ");
 
         // geef het event weer
