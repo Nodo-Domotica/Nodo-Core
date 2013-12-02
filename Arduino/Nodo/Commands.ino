@@ -21,7 +21,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
   switch(EventToExecute->Command)
     {   
     case CMD_VARIABLE_INC:
-      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
+      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afgevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         UserVar[EventToExecute->Par1-1]+=ul2float(EventToExecute->Par2);
         TempEvent.Type         = NODO_TYPE_EVENT;
@@ -279,7 +279,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.Port                  = VALUE_ALL;
         TempEvent.Type                  = NODO_TYPE_COMMAND;
         TempEvent.DestinationUnit       = 0;    
-        TempEvent.Flags                 = TRANSMISSION_QUEUE | TRANSMISSION_NEXT | TRANSMISSION_LOCK; 
+        TempEvent.Flags                 = TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK; 
         TempEvent.Command=CMD_CLOCK_DATE;
         TempEvent.Par2= ((unsigned long)Time.Year  %10)      | ((unsigned long)Time.Year  /10)%10<<4  | ((unsigned long)Time.Year/100)%10<<8 | ((unsigned long)Time.Year/1000)%10<<12 | 
                         ((unsigned long)Time.Month %10) <<16 | ((unsigned long)Time.Month /10)%10<<20 | 
@@ -506,31 +506,36 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         // 3. aan de ontvangende zijde in de queue wordt geplaatst
         // 4. de vlag VIEW_ONLY mee krijgt zodat de events/commando's niet worden uitgevoerd aan de ontvangende zijde.
         // 5. Met LOCK alle andere Nodo's tijdelijk in de hold worden gezet.
-  
-        EventToExecute->Flags=TRANSMISSION_VIEW_ONLY | TRANSMISSION_QUEUE | TRANSMISSION_NEXT;
+        EventToExecute->Command=SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW;
+        EventToExecute->Flags=TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
+        EventToExecute->Type=NODO_TYPE_SYSTEM;
         
-        while(x<=y && Eventlist_Read(x,&TempEvent,&TempEvent2))   //kunnen we door TempEvent twee maal te laten vullen de geheugenruimte van TempEvent2 besparen???
+        while(x<=y && Eventlist_Read(x,&TempEvent,&TempEvent2))                 //kunnen we door TempEvent twee maal te laten vullen de geheugenruimte van TempEvent2 besparen???
           {
           EventToExecute->Par1=x;
           if(TempEvent.Command!=0)
             {
             SendEvent(EventToExecute,false,false,false);
-    
-            TempEvent.Flags=TRANSMISSION_VIEW_ONLY | TRANSMISSION_NEXT | TRANSMISSION_QUEUE ;
+            TempEvent.Flags=TRANSMISSION_VIEW_ONLY | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
             TempEvent.Port=EventToExecute->Port;
             TempEvent.DestinationUnit=EventToExecute->SourceUnit;
             SendEvent(&TempEvent,false,false,false);
     
-            TempEvent2.Flags=TRANSMISSION_VIEW_ONLY | TRANSMISSION_QUEUE ; // de laatste
+
+            if(x==y)                                                            // Lock staat aan. Als laatste regel uit de eventlist, dan de ether weer vrijgeven. 
+              TempEvent2.Flags=TRANSMISSION_VIEW_ONLY;                          // de laatste van de gehele eventlist
+            else
+              TempEvent2.Flags=TRANSMISSION_VIEW_ONLY | TRANSMISSION_QUEUE | TRANSMISSION_LOCK;      // de laatste van de regel uit de eventlist
+
             TempEvent2.Port=EventToExecute->Port;
             TempEvent2.DestinationUnit=EventToExecute->SourceUnit;
             SendEvent(&TempEvent2,false,false,false);
             }
           x++;
           }
-      #if NODO_MEGA
+        #if NODO_MEGA
         }        
-      #endif
+        #endif
       break;
 
 #if NODO_MEGA // vanaf hier commando's die alleen de Mega kent.

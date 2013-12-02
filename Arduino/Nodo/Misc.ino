@@ -294,7 +294,7 @@ void Led(byte Color)
  * - <Timeout> seconden zijn voorbij. In dit geval geeft deze funktie een <false> terug.
  * - Het opgegeven event <WaitForEvent> voorbij is gekomen
  * - De ether weer is vrijgegeven voor Nodo communicatie (WaitForFreeTransmission=true)
- * - Er is een event opgevangen waar de TRANSMISSION_SEQUENCE vlag NIET staat.
+ * - Er is een event opgevangen waar de TRANSMISSION_QUEUE_NEXT vlag NIET staat.
  \*********************************************************************************************/
 boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruct *WaitForEvent, boolean EndSequence)
   {
@@ -323,9 +323,14 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
       
     if(ScanEvent(&Event))
       {
-      // Events voor deze Nodo kunnen NU niet worden verwerkt. Plaats daarom in de queue
+      // Als er nog geldige events voorbij komen, dan de TimeOut weer opnieuw laten ingaan.
+      TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
+            
+      // Events die voorbij komen in de queue plaatsen.
       QueueAdd(&Event);
-      if(EndSequence && (Event.Flags&TRANSMISSION_NEXT)==0)
+
+
+      if(EndSequence && (Event.Flags&TRANSMISSION_QUEUE_NEXT)==0)
         break;
         
       // als het gewacht wordt totdat de communicatie poorten weer beschikbaar zijn, dan wachtloop verlaten.        

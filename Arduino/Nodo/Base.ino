@@ -1,33 +1,34 @@
-#define NODO_BUILD                   627 // ??? Ophogen bij iedere Build / versiebeheer.
-#define NODO_VERSION_MINOR             4 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
-#define NODO_VERSION_MAJOR             3 // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
-#define UNIT_NODO                      1 // Unit nummer van deze Nodo
-#define HOME_NODO                      1 // Home adres van Nodo's die tot één groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
-#define MIN_RAW_PULSES                16 // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
-#define RAWSIGNAL_TX_REPEATS          10 // Aantal keer dat een frame met pulsen herhaald wordt verzonden (RawSignalSend)
-#define RAWSIGNAL_TX_DELAY            10 // Tijd in mSec. tussen herhalingen frames bij zenden. (RawSignalSend)
-#define RAWSIGNAL_TOLERANCE          100 // Tolerantie die gehanteerd wordt bij decoderen van RF/IR signaal. T.b.v. uitrekenen HEX-code.
-#define RAWSIGNAL_SAMPLE              25 // ???Sample grootte / Resolutie in uSec waarmee ontvangen Rawsignalen pulsen worden opgeslagen
-#define WAIT_FREE_RX               false // true: wacht default op verzenden van een event tot de IR/RF lijn onbezet is. Wordt overruled door commando [WaitFreeRX]
-#define WAIT_FREE_RX_WINDOW          500 // minimale wachttijd wanneer wordt gewacht op een vrije RF of IR band. Is deze waarde te klein, dan kunnen er restanten van signalen binnenkomen als RawSignal. Te groot maakt de Nodo sloom.
-#define WAITFREE_TIMEOUT           30000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
-#define MIN_PULSE_LENGTH              50 // Pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
-#define SIGNAL_TIMEOUT_RF              4 // na deze tijd in mSec. wordt één RF signaal als beëindigd beschouwd.
-#define SIGNAL_TIMEOUT_IR             10 // na deze tijd in mSec. wordt één IR signaal als beëindigd beschouwd.
-#define SIGNAL_REPEAT_TIME          1000 // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF/IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
-#define PULSE_DEBOUNCE_TIME           10 // pulsen kleiner dan deze waarde in milliseconden worden niet geteld. Bedoeld om verstoringen a.g.v. ruis of dender te voorkomen
-#define PULSE_TRANSITION         FALLING // FALLING of RISING: Geeft aan op welke flank de PulseCounter start start met tellen. Default FALLING
-#define I2C_START_ADDRESS              1 // Alle Nodo's op de I2C bus hebben een uniek adres dat start vanaf dit nummer. Er zijn max. 32 Nodo's. Let op overlap met andere devices. RTC zit op adres 104.
-#define BAUD                       19200 // Baudrate voor seriële communicatie.
-#define PASSWORD_MAX_RETRY             5 // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
-#define PASSWORD_TIMEOUT             300 // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
-#define TERMINAL_TIMEOUT             600 // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
-#define DELAY_BETWEEN_TRANSMISSIONS  500 // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
-#define NODO_TX_TO_RX_SWITCH_TIME    500 // Tijd die andere Nodo's nodig hebben om na zenden weer gereed voor ontvangst te staan. (Opstarttijd 433RX modules)
-#define ETHERNET_MAC_0              0xCC // Dit is byte 0 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
-#define ETHERNET_MAC_1              0xBB // Dit is byte 1 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
-#define ETHERNET_MAC_2              0xAA // Dit is byte 2 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
-#define CLOCK                       true // true=code voor Real Time Clock mee compileren.
+#define NODO_BUILD                       627 // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_VERSION_MINOR                 4 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
+#define NODO_VERSION_MAJOR                 3 // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
+#define UNIT_NODO                          1 // Unit nummer van deze Nodo
+#define HOME_NODO                          1 // Home adres van Nodo's die tot één groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
+#define MIN_RAW_PULSES                    16 // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
+#define RAWSIGNAL_TX_REPEATS              10 // Aantal keer dat een frame met pulsen herhaald wordt verzonden (RawSignalSend)
+#define RAWSIGNAL_TX_DELAY                10 // Tijd in mSec. tussen herhalingen frames bij zenden. (RawSignalSend)
+#define RAWSIGNAL_TOLERANCE              100 // Tolerantie die gehanteerd wordt bij decoderen van RF/IR signaal. T.b.v. uitrekenen HEX-code.
+#define RAWSIGNAL_SAMPLE                  25 // ???Sample grootte / Resolutie in uSec waarmee ontvangen Rawsignalen pulsen worden opgeslagen
+#define WAIT_FREE_RX                   false // true: wacht default op verzenden van een event tot de IR/RF lijn onbezet is. Wordt overruled door commando [WaitFreeRX]
+#define WAIT_FREE_RX_WINDOW              500 // minimale wachttijd wanneer wordt gewacht op een vrije RF of IR band. Is deze waarde te klein, dan kunnen er restanten van signalen binnenkomen als RawSignal. Te groot maakt de Nodo sloom.
+#define WAITFREE_TIMEOUT               30000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
+#define MIN_PULSE_LENGTH                  50 // Pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
+#define SIGNAL_TIMEOUT_RF                  4 // na deze tijd in mSec. wordt één RF signaal als beëindigd beschouwd.
+#define SIGNAL_TIMEOUT_IR                 10 // na deze tijd in mSec. wordt één IR signaal als beëindigd beschouwd.
+#define SIGNAL_REPEAT_TIME              1000 // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF/IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
+#define PULSE_DEBOUNCE_TIME               10 // pulsen kleiner dan deze waarde in milliseconden worden niet geteld. Bedoeld om verstoringen a.g.v. ruis of dender te voorkomen
+#define PULSE_TRANSITION             FALLING // FALLING of RISING: Geeft aan op welke flank de PulseCounter start start met tellen. Default FALLING
+#define I2C_START_ADDRESS                  1 // Alle Nodo's op de I2C bus hebben een uniek adres dat start vanaf dit nummer. Er zijn max. 32 Nodo's. Let op overlap met andere devices. RTC zit op adres 104.
+#define BAUD                           19200 // Baudrate voor seriële communicatie.
+#define PASSWORD_MAX_RETRY                 5 // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
+#define PASSWORD_TIMEOUT                 300 // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
+#define TERMINAL_TIMEOUT                 600 // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
+#define DELAY_BETWEEN_TRANSMISSIONS      500 // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
+#define DELAY_BETWEEN_TRANSMISSIONS_Q     50 // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
+#define NODO_TX_TO_RX_SWITCH_TIME        500 // Tijd die andere Nodo's nodig hebben om na zenden weer gereed voor ontvangst te staan. (Opstarttijd 433RX modules)
+#define ETHERNET_MAC_0                  0xCC // Dit is byte 0 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
+#define ETHERNET_MAC_1                  0xBB // Dit is byte 1 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
+#define ETHERNET_MAC_2                  0xAA // Dit is byte 2 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
+#define CLOCK                           true // true=code voor Real Time Clock mee compileren.
 
 byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
 
@@ -631,24 +632,26 @@ struct SettingsStruct
    };
 
 
-// Een Nodo signaal bestaat uit een 32-bit Event en een 32-bit met meta-data t.b.v. het transport van Nodo naar Nodo.
-// In het transport deel bevinden zich de volgende transmissievlaggen:
-#define TRANSMISSION_QUEUE          1  // Master => Slave : Event maakt deel uit van een reeks die aan de slave zijde in de queue geplaatst moeten worden alvorens te verwerken.
-#define TRANSMISSION_SENDTO         2  // Master => Slave : Event maakt deel uit van een SendTo reeks die in de queue geplaatst moet worden
-#define TRANSMISSION_NEXT           4  // Master => Slave : Na dit event volgt direct nog een event.
-#define TRANSMISSION_LOCK           8  // Master => Slave : Verzoek om de ether te blokkeren voor exclusieve communicatie tussen master en een slave Nodo.
-#define TRANSMISSION_CONFIRM       16  // Master => Slave : Verzoek aan master om bevestiging te sturen na ontvangst.
-#define TRANSMISSION_VIEW_ONLY     32  // Master => Slave : Uitsluitend het event weergeven, niet uitvoeren
+// In het transport deel van een Nodo event kunnen zich de volgende vlaggen bevinden:
+#define TRANSMISSION_QUEUE                               1  // Master => Slave : Event maakt deel uit van een reeks die in de queue geplaatst moet worden
+#define TRANSMISSION_QUEUE_NEXT                          2  // Master => Slave : Event maakt deel uit van een reeks die in de queue geplaatst moet worden
+#define TRANSMISSION_QUEUE_WAIT                          4  // Master => Slave : Als deze vlag staat stuurd de Slave pas een bevesting NA verwerking queue
+#define TRANSMISSION_LOCK                                8  // Master => Slave : Verzoek om de ether te blokkeren voor exclusieve communicatie tussen master en een slave Nodo.
+#define TRANSMISSION_CONFIRM                            16  // Master => Slave : Verzoek aan master om bevestiging te sturen na ontvangst.
+#define TRANSMISSION_VIEW_ONLY                          32  // Master => Slave : Uitsluitend het event weergeven, niet uitvoeren
 
-#define NODO_TYPE_EVENT             1
-#define NODO_TYPE_COMMAND           2
-#define NODO_TYPE_SYSTEM            3
-#define NODO_TYPE_PLUGIN_EVENT      4
-#define NODO_TYPE_PLUGIN_COMMAND    5
+// Er zijn een aantal type Nodo events die op verschillende wijze worden behandeld:
+#define NODO_TYPE_EVENT                                  1
+#define NODO_TYPE_COMMAND                                2
+#define NODO_TYPE_SYSTEM                                 3               
+#define NODO_TYPE_PLUGIN_EVENT                           4
+#define NODO_TYPE_PLUGIN_COMMAND                         5
 
 // De Nodo kent naast gebruikers commando's en events eveneens Nodo interne events
-#define SYSTEM_COMMAND_CONFIRMED  1
-#define SYSTEM_COMMAND_SENDTO     2  // Dit is aankondiging van de inhoudelijke reeks, dus niet het user comando "SendTo".
+#define SYSTEM_COMMAND_CONFIRMED                         1
+#define SYSTEM_COMMAND_QUEUE_SENDTO                      2  // Dit is aankondiging reeks, dus niet het user comando "SendTo".
+#define SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW              3  // Dit is aankondiging reeks, dus niet het user comando "EventlistShow".
+#define SYSTEM_COMMAND_QUEUE_EVENTLIST_WRITE             4  // Dit is aankondiging reeks, dus niet het user comando "EventlistShow".
   
 struct NodoEventStruct
   {
@@ -698,10 +701,11 @@ boolean (*Plugin_ptr[PLUGIN_MAX])(byte, struct NodoEventStruct*, char*);
 byte Plugin_id[PLUGIN_MAX];
 boolean ExecuteCommand(NodoEventStruct *EventToExecute);//protoype definieren.
 
+
 #if NODO_MEGA
 byte  Transmission_SendToUnit=0;                            // Unitnummer waar de events naar toe gestuurd worden. 0=alle.
-boolean  Transmission_SendToAll=false;                      // Vlag die aangeeft of de SendTo permanent staat ingesteld of eenmalig (VALUE_ALL)
-byte  Transmission_SendToFast=0;                            // Vlag die aangeeft of de SendTo permanent staat ingesteld of eenmalig (VALUE_FAST)
+byte  Transmission_SendToAll=0;                             // Waarde die aangeeft of het SendTo permanent staat ingeschakeld. 0=uit, in andere gevallen het unitnummer.
+boolean Transmission_SendToFast=0;                          // Vlag die aangeeft of de SendTo permanent staat ingesteld of eenmalig (true/false)
 byte AlarmPrevious[ALARM_MAX];                              // Bevat laatste afgelopen alarm. Ter voorkoming dat alarmen herhaald aflopen.
 byte BIC=0;                                                 // Board Identification Code: identificeert de hardware uitvoering van de Nodo
 uint8_t MD5HashCode[16];                                    // tabel voor berekenen van MD5 hash codes.
@@ -715,14 +719,14 @@ char InputBuffer_Serial[INPUT_BUFFER_SIZE+2];               // Buffer voor input
 char InputBuffer_Terminal[INPUT_BUFFER_SIZE+2];             // Buffer voor input terminal verbinding Telnet sessie
 boolean ClockSyncHTTP=false;
 
+
 // ethernet classes voor IP communicatie Telnet terminal en HTTP.
-EthernetServer HTTPServer(80);                              // Server class voor HTTP sessie. Poort wordt later goed gezet.
-EthernetClient HTTPClient;                                  // Client calls voor HTTP sessie.
+EthernetServer IPServer(80);                                // Server class voor HTTP sessie. Poort wordt later goed gezet.
+EthernetClient IPClient;                                    // Client calls voor HTTP sessie.
 EthernetServer TerminalServer(TERMINAL_PORT);               // Server class voor Terminal sessie.
 EthernetClient TerminalClient;                              // Client class voor Terminal sessie.
-
 byte ClientIPAddress[4];                                    // IP adres van de client die verbinding probeert te maken c.q. verbonden is.
-byte HTTPClientIP[4];                                       // IP adres van de Host
+byte IPClientIP[4];                                         // IP adres van de Host
 #endif
 
 
@@ -1043,7 +1047,7 @@ void loop()
           {
           // IP Event: *************** kijk of er een Event van IP komt **********************    
           if(bitRead(HW_Config,HW_ETHERNET))
-            if(HTTPServer.available())
+            if(IPServer.available())
               if(!PluginCall(PLUGIN_ETHERNET_IN,0,0))
                 ExecuteIP();
 
