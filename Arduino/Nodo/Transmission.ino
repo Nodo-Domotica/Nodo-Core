@@ -64,7 +64,6 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
 
   // Stuur afhankelijk van de instellingen het event door naar I2C, RF, IR. Eerst wordt het event geprint,daarna een korte wachttijd om
   // te zorgen dat er een minimale wachttijd tussen de signlen zit. Tot slot wordt het signaal verzonden.
-
   if(WaitForFree)
     if(Port==VALUE_SOURCE_RF || Port==VALUE_SOURCE_IR ||(Settings.TransmitRF==VALUE_ON && Port==VALUE_ALL))
       WaitFree(VALUE_ALL, WAITFREE_TIMEOUT);
@@ -72,9 +71,14 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   if(!UseRawSignal)
     Nodo_2_RawSignal(ES);
 
-  // Respecteer een minimale tijd tussen verzenden van events. Wachten op dit tijdstip in millis() alvorens event te verzenden.
-  while(millis()<HoldTransmission);
- 
+  // Respecteer een minimale tijd tussen verzenden van events. Wachten alvorens event te verzenden.
+  // In geval van verzending naar queue zal deze tijd niet van toepassing zijn omdat er dan geen verwerkingstijd nodig is.
+  if(ES->Flags & TRANSMISSION_QUEUE)
+    delay(DELAY_BETWEEN_TRANSMISSIONS_Q);
+  else
+    while(millis()<HoldTransmission);
+  
+                                             
   // Verstuur signaal als IR
   if(Settings.TransmitIR==VALUE_ALL || (Settings.TransmitIR==VALUE_ON && (Port==VALUE_SOURCE_IR || Port==VALUE_ALL)))
     { 
@@ -124,7 +128,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     #endif
     RawSendRF();
     }
-  
+
   // Onthoud wanneer de verzending plaats heeft gevonden om opvolgend even niet te snel te verzenden.
   HoldTransmission=millis()+DELAY_BETWEEN_TRANSMISSIONS;
   }
@@ -188,7 +192,7 @@ void SendI2C(struct NodoEventStruct *EventBlock)
 //##################################### Transmission: HTTP  #############################################
 //#######################################################################################################
 
-boolean IPSend(char* URL, int Port, char* Request)
+boolean IPSend(char* URL, int Port, char* Request) // Nog niet operationeel. Test.
   {
   int InByteCounter;
   byte InByte;
@@ -220,8 +224,8 @@ boolean IPSend(char* URL, int Port, char* Request)
         Serial.println();
         }        
       delay(100);
-      HTTPClient.flush();// Verwijder eventuele rommel in de buffer.
-      HTTPClient.stop();
+      IPClient.flush();// Verwijder eventuele rommel in de buffer.
+      IPClient.stop();
       }
     else
       {
@@ -268,8 +272,8 @@ boolean EthernetInit(void)
   if(Ok) // Als er een IP adres is, dan HTTP en TelNet servers inschakelen
     {
     // Start Server voor ontvangst van HTTP-Events
-    HTTPServer=EthernetServer(Settings.PortInput);
-    HTTPServer.begin(); 
+    IPServer=EthernetServer(Settings.PortInput);
+    IPServer.begin(); 
 
     // Start server voor Terminalsessies via TelNet
     TerminalServer=EthernetServer(TERMINAL_PORT);
@@ -284,22 +288,22 @@ boolean EthernetInit(void)
       strcpy(TempString,Settings.HTTPRequest);
       TempString[x]=0;
 
-      EthernetClient HTTPClient;
-      if(HTTPClient.connect(TempString,Settings.PortOutput))   
+      EthernetClient IPClient;
+      if(IPClient.connect(TempString,Settings.PortOutput))   
         {
-        HTTPClient.getRemoteIP(HTTPClientIP);
+        IPClient.getRemoteIP(IPClientIP);
         Ok=true;
         bitWrite(HW_Config,HW_WEBAPP,1);
         delay(10); //even wachten op response van de server.
-        HTTPClient.flush(); // gooi alles weg, alleen IP adres was van belang.
-        HTTPClient.stop();
+        IPClient.flush(); // gooi alles weg, alleen IP adres was van belang.
+        IPClient.stop();
         }
       else
         {
-        HTTPClientIP[0]=0;
-        HTTPClientIP[1]=0;
-        HTTPClientIP[2]=0;
-        HTTPClientIP[3]=0;
+        IPClientIP[0]=0;
+        IPClientIP[1]=0;
+        IPClientIP[2]=0;
+        IPClientIP[3]=0;
         Serial.println(F("Error: No TCP/IP connection to host."));
         Ok=false;
         }
@@ -436,7 +440,7 @@ boolean SendHTTPRequest(char* Request)
   unsigned long TimeoutTimer;
   char filename[13];
   const int TimeOut=5000;
-  EthernetClient HTTPClient; // Client class voor HTTP sessie.
+  EthernetClient IPClient; // Client class voor HTTP sessie.
   byte State=0;
   char *IPBuffer=(char*)malloc(IP_BUFFER_SIZE+1);
   char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
@@ -495,30 +499,30 @@ boolean SendHTTPRequest(char* Request)
 
   do
     {
-    if(HTTPClient.connect(HTTPClientIP,Settings.PortOutput))
+    if(IPClient.connect(IPClientIP,Settings.PortOutput))
       {
-      ClientIPAddress[0]=HTTPClientIP[0];
-      ClientIPAddress[1]=HTTPClientIP[1];
-      ClientIPAddress[2]=HTTPClientIP[2];
-      ClientIPAddress[3]=HTTPClientIP[3];
+      ClientIPAddress[0]=IPClientIP[0];
+      ClientIPAddress[1]=IPClientIP[1];
+      ClientIPAddress[2]=IPClientIP[2];
+      ClientIPAddress[3]=IPClientIP[3];
 
-      HTTPClient.println(IPBuffer);
-      HTTPClient.print(F("Host: "));
-      HTTPClient.println(TempString);
-      HTTPClient.print(F("User-Agent: Nodo/Build="));
-      HTTPClient.println(int2str(NODO_BUILD));             
-      HTTPClient.println(F("Connection: Close"));
-      HTTPClient.println();// Afsluiten met een lege regel is verplicht in http protocol/
+      IPClient.println(IPBuffer);
+      IPClient.print(F("Host: "));
+      IPClient.println(TempString);
+      IPClient.print(F("User-Agent: Nodo/Build="));
+      IPClient.println(int2str(NODO_BUILD));             
+      IPClient.println(F("Connection: Close"));
+      IPClient.println();// Afsluiten met een lege regel is verplicht in http protocol/
 
       TimeoutTimer=millis()+TimeOut; // Als er te lange tijd geen datatransport is, dan wordt aangenomen dat de verbinding (om wat voor reden dan ook) is afgebroken.
       IPBuffer[0]=0;
       InByteCounter=0;
 
-      while(TimeoutTimer>millis() && HTTPClient.connected())
+      while(TimeoutTimer>millis() && IPClient.connected())
         {
-        if(HTTPClient.available())
+        if(IPClient.available())
           {
-          InByte=HTTPClient.read();
+          InByte=IPClient.read();
           if(isprint(InByte) && InByteCounter<IP_BUFFER_SIZE)
             IPBuffer[InByteCounter++]=InByte;
 
@@ -609,8 +613,8 @@ boolean SendHTTPRequest(char* Request)
         SelectSDCard(false);
         }        
       delay(100);
-      HTTPClient.flush();// Verwijder eventuele rommel in de buffer.
-      HTTPClient.stop();
+      IPClient.flush();// Verwijder eventuele rommel in de buffer.
+      IPClient.stop();
       }
     else
       {
@@ -716,11 +720,11 @@ void ExecuteIP(void)
 
   Event[0]=0; // maak de string leeg.
 
-  HTTPClient=HTTPServer.available();
+  IPClient=IPServer.available();
 
-  if(HTTPClient)
+  if(IPClient)
     {
-    HTTPClient.getRemoteIP(ClientIPAddress);  
+    IPClient.getRemoteIP(ClientIPAddress);  
 
     // Controleer of het IP adres van de Client geldig is. 
     if((Settings.Client_IP[0]!=0 && ClientIPAddress[0]!=Settings.Client_IP[0]) ||
@@ -733,11 +737,11 @@ void ExecuteIP(void)
     else
       {
       InByteCounter=0;
-      while(HTTPClient.connected()  && !Completed && TimeoutTimer>millis())
+      while(IPClient.connected()  && !Completed && TimeoutTimer>millis())
         {
-        if(HTTPClient.available()) 
+        if(IPClient.available()) 
           {
-          InByte=HTTPClient.read();
+          InByte=IPClient.read();
 
           if(isprint(InByte) && InByteCounter<IP_BUFFER_SIZE)
             {
@@ -791,26 +795,26 @@ void ExecuteIP(void)
                     RequestEvent=true;
                     RequestCompleted=true;
                     strcpy(TmpStr1,"HTTP/1.1 200 Ok");
-                    HTTPClient.println(TmpStr1);
-                    HTTPClient.println(TmpStr1);
+                    IPClient.println(TmpStr1);
+                    IPClient.println(TmpStr1);
                     ExecuteEvent=true;
                     }
                   else
-                    HTTPClient.println(F("HTTP/1.1 400 Bad Request"));
+                    IPClient.println(F("HTTP/1.1 400 Bad Request"));
                   }
                 else                    
-                  HTTPClient.println(F("HTTP/1.1 403 Forbidden"));
+                  IPClient.println(F("HTTP/1.1 403 Forbidden"));
                 }
 
-              HTTPClient.println(F("Content-Type: text/html"));
-              HTTPClient.print(F("Server: Nodo/Build="));
-              HTTPClient.println(int2str(NODO_BUILD));             
+              IPClient.println(F("Content-Type: text/html"));
+              IPClient.print(F("Server: Nodo/Build="));
+              IPClient.println(int2str(NODO_BUILD));             
               if(bitRead(HW_Config,HW_CLOCK))
                 {
-                HTTPClient.print(F("Date: "));
-                HTTPClient.println(DateTimeString());             
+                IPClient.print(F("Date: "));
+                IPClient.println(DateTimeString());             
                 }
-              HTTPClient.println(""); // HTTP Request wordt altijd afgesloten met een lege regel
+              IPClient.println(""); // HTTP Request wordt altijd afgesloten met een lege regel
 
               // Haal nu de resultaten op van het verwerken van de binnengekomen HTTP-regel. Stuur de inhoud als bodytext terug
               // naar de client. De WebApp zal deze content uitparsen. Indien toegang via browser, dan wordt het verwerkings-
@@ -832,8 +836,8 @@ void ExecuteIP(void)
         }
       }
     delay(100);  // korte pauze om te voorkomen dat de verbinding wordt verbroken alvorens alle data door client verwerkt is.
-    HTTPClient.flush();// Verwijder eventuele rommel in de buffer.
-    HTTPClient.stop();
+    IPClient.flush();// Verwijder eventuele rommel in de buffer.
+    IPClient.stop();
     }
 
   free(TmpStr1);

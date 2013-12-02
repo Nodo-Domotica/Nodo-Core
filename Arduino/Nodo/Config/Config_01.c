@@ -9,7 +9,7 @@
 #define UNIT_NODO        1 // Na een reset wordt dit het unitnummer van de Nodo
 #define CLOCK         true // true=code voor Real Time Clock mee compileren.
 #define NODO_MEGA     true // true = Nodo Mega, false=Nodo-Small
-#define ETHERNET      true // true = Deze Nodo beschikt over een ethernet kaart
+#define ETHERNET     false // true = Deze Nodo beschikt over een ethernet kaart
 
 // Kaku              : Klik-Aan-Klik-Uit
 #define PLUGIN_001
@@ -37,6 +37,7 @@
 
 // DTH-22 Vocht/Temperatuursensor
 #define PLUGIN_006
-#define PLUGIN_006_CORE 22
 
+// BMP085
+#define PLUGIN_020
 

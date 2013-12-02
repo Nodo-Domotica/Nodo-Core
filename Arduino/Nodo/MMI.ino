@@ -19,8 +19,14 @@ int ExecuteLine(char *Line, byte Port)
 
   Led(RED);
 
-  // Als de SendTo niet permanent is ingeschakeld, dan deze weer uitzetten
-  if(!Transmission_SendToAll)Transmission_SendToUnit=0;
+  // Als de SendTo wel/niet permanent, dan unitnummer overnemen of uitschekelen.
+  Transmission_SendToUnit=Transmission_SendToAll;
+
+  // Als de SendTo wel permanent is ingeschakeld, dan de queue leegmaken omdat anders eventuele oude queue inhoud
+  // mee wordt verzonden met de SendTo
+  if(Transmission_SendToAll)
+    QueuePosition=0;
+
 
   // verwerking van commando's is door gebruiker tijdelijk geblokkeerd door FileWrite commando
   if(FileWriteMode>0)
@@ -117,11 +123,14 @@ int ExecuteLine(char *Line, byte Port)
           switch(x)
             {
             case CMD_SENDTO:
-              Transmission_SendToUnit=EventToExecute.Par1;              
+              QueuePosition=0;//We gebruiken de Queue voor verwerking van de commando's die middels SendTo naar de Slave moeten  
+              Transmission_SendToUnit=EventToExecute.Par1;
+              Transmission_SendToAll=0;  
+              Transmission_SendToFast=false;
+                            
               if(StringFind(Command,cmd2str(VALUE_OFF))!=-1)
                 {
                 Transmission_SendToUnit=0;
-                Transmission_SendToAll=false;  
                 }
               else
                 {
@@ -131,7 +140,7 @@ int ExecuteLine(char *Line, byte Port)
                   {
                   // Zoek of in een van de parameters All staat
                   if(StringFind(Command, cmd2str(VALUE_ALL))!=-1)
-                    Transmission_SendToAll=true;  
+                    Transmission_SendToAll=Transmission_SendToUnit;  
                     
                   // Zoek of in een van de parameters Fast staat
                   if(StringFind(Command, cmd2str(VALUE_FAST))!=-1)
@@ -154,7 +163,13 @@ int ExecuteLine(char *Line, byte Port)
                   error=MESSAGE_INVALID_PARAMETER;
                 }
               else
-                QueueAdd(&EventToExecute);        // Plaats in queue voor verzending.
+                {
+                // Het EventlistWrite commando moet naar de Slave worden verzonden. In dit geval maken we er een systeem commando
+                // van omdat deze bijzondere behandeling aan de slave zijde nodig heeft.
+                EventToExecute.Command=SYSTEM_COMMAND_QUEUE_EVENTLIST_WRITE;
+                EventToExecute.Type=NODO_TYPE_SYSTEM;
+                QueueAdd(&EventToExecute);
+                }
               
               EventToExecute.Command=0;      
               break;
@@ -439,7 +454,8 @@ int ExecuteLine(char *Line, byte Port)
               if(!PluginCall(PLUGIN_MMI_IN,&EventToExecute,Command))
                 {
                 // Als het geen regulier commando was EN geen commando met afwijkende MMI en geen Plugin en geen alias, dan kijken of file op SDCard staat)
-                error=FileExecute("",Command,"DAT", VALUE_OFF, VALUE_ALL);
+                // Voer bestand uit en verwerking afbreken als er een foutmelding is.
+                error=FileExecute("",Command,"DAT", false, VALUE_ALL);
                   
                 // als script niet te openen, dan is het ingevoerde commando ongeldig.
                 if(error)
@@ -476,7 +492,9 @@ int ExecuteLine(char *Line, byte Port)
             else
               {
               if(EventToExecute.Command)          // geen lege events in de queue plaatsen
+                {
                 QueueAdd(&EventToExecute);        // Plaats in queue voor latere verzending.
+                }
               }
             continue;
             }
@@ -692,8 +710,8 @@ void PrintWelcome(void)
       TempString[x]=0;    
       strcat(TempString,", HostIP=");        
   
-      if((HTTPClientIP[0] + HTTPClientIP[1] + HTTPClientIP[2] + HTTPClientIP[3]) > 0)
-        strcat(TempString,ip2str(HTTPClientIP));
+      if((IPClientIP[0] + IPClientIP[1] + IPClientIP[2] + IPClientIP[3]) > 0)
+        strcat(TempString,ip2str(IPClientIP));
       else
         strcat(TempString,"?");        
   
@@ -719,10 +737,10 @@ void PrintString(char* LineToPrint, byte Port)
     if((Port==VALUE_SOURCE_TELNET || Port==VALUE_ALL) && TerminalClient.connected() && TerminalConnected>0 && TerminalLocked==0)
       TerminalClient.println(LineToPrint);
       
-    if((Port==VALUE_SOURCE_HTTP || Port==VALUE_ALL) && HTTPClient.connected())
+    if((Port==VALUE_SOURCE_HTTP || Port==VALUE_ALL) && IPClient.connected())
       {
-      HTTPClient.print(LineToPrint);
-      HTTPClient.println("<br>");
+      IPClient.print(LineToPrint);
+      IPClient.println("<br>");
       }
     }
 
