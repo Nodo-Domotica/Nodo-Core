@@ -330,7 +330,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       UserTimer[EventToExecute->Par1-1]=millis()+random(EventToExecute->Par2)*1000;
       break;
 
-    case CMD_WAIT_EVENT:// WaitEvent <unit>, <command>
+    case CMD_WAIT_EVENT:// WaitEvent <unit>, <command> //??? kunnen we deze laten vervallen???
       ClearEvent(&TempEvent);
       TempEvent.SourceUnit=EventToExecute->Par1;
       TempEvent.Command=EventToExecute->Par2;
@@ -504,8 +504,11 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         // 1. alleen wordt verstuurd naar de nodo die de data heeft opgevraagd.
         // 2. alleen wordt verzonden naar de poort waar het verzoek vandaan kwam
         // 3. aan de ontvangende zijde in de queue wordt geplaatst
-        // 4. de vlag VIEW_ONLY mee krijgt zodat de events/commando's niet worden uitgevoerd aan de ontvangende zijde.
+        // 4. de vlag VIEW_SPECIAL mee krijgt zodat de events/commando's niet worden uitgevoerd aan de ontvangende zijde.
         // 5. Met LOCK alle andere Nodo's tijdelijk in de hold worden gezet.
+        // In geval van verzending naar queue zal deze tijd niet van toepassing zijn omdat er dan geen verwerkingstijd nodig is.
+        // Tussen de events die de queue in gaan een kortere delaytussen verzendingen.
+
         EventToExecute->Command=SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW;
         EventToExecute->Flags=TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
         EventToExecute->Type=NODO_TYPE_SYSTEM;
@@ -516,21 +519,24 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
           if(TempEvent.Command!=0)
             {
             SendEvent(EventToExecute,false,false,false);
-            TempEvent.Flags=TRANSMISSION_VIEW_ONLY | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
+            TempEvent.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
             TempEvent.Port=EventToExecute->Port;
             TempEvent.DestinationUnit=EventToExecute->SourceUnit;
+            HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS_Q+millis();
             SendEvent(&TempEvent,false,false,false);
     
 
             if(x==y)                                                            // Lock staat aan. Als laatste regel uit de eventlist, dan de ether weer vrijgeven. 
-              TempEvent2.Flags=TRANSMISSION_VIEW_ONLY;                          // de laatste van de gehele eventlist
+              TempEvent2.Flags=TRANSMISSION_VIEW_SPECIAL;                          // de laatste van de gehele eventlist
             else
-              TempEvent2.Flags=TRANSMISSION_VIEW_ONLY | TRANSMISSION_QUEUE | TRANSMISSION_LOCK;      // de laatste van de regel uit de eventlist
+              TempEvent2.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE | TRANSMISSION_LOCK;      // de laatste van de regel uit de eventlist
 
             TempEvent2.Port=EventToExecute->Port;
             TempEvent2.DestinationUnit=EventToExecute->SourceUnit;
+            HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS_Q+millis();
             SendEvent(&TempEvent2,false,false,false);
             }
+          HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS_Q+millis();
           x++;
           }
         #if NODO_MEGA
