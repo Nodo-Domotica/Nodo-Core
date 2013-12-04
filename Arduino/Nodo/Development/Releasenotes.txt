@@ -43,13 +43,15 @@ R624
 R626:
 - Commando[Output] kan nu naast [On] en [Off] ook optie [All] meekrijgen. Dan worden alle uitgaande events altijd verzonden.
 
-R629:
-- Bug in SendTo/EventlistWrite van build R262 opgelost.
+R633:
+- Bug in SendTo/EventlistWrite van build R626 opgelost.
+- Status opvragen met SendTo levert geen events op maar directe weergave op terminal
+- EventlistShow kan worden opgevraagd met een SendTo
+- Plugin_020 (BMP085Read) aangepast. WireNodo library aanpassing.
 
 Nog te doen:
-- Boot 0 event
-- boot event uitvoer op Small ??? lijkt niet goed uitgevoerd te worden
-- eventlistshow vanuit een Small??? Onderzoeken.
+
+- Status uitvraag via SendTo: Moet er een voorziening komen om toch events te kunnen genereren met de status waarden? Via VariableSet?
 - uitklokken ontvangstroutine met analyser
 - Aanpassen en testen: Lock mechanisme
 \*****************************************************************************************/

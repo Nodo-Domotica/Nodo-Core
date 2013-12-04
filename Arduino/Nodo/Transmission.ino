@@ -32,6 +32,9 @@ void WaitFree(byte Port, int TimeOut)
  \*********************************************************************************************/
 boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Display, boolean WaitForFree)
   {    
+
+  digitalWrite(PIN_WIRED_OUT_2,HIGH);//???
+
   ES->Direction=VALUE_DIRECTION_OUTPUT;
   #if NODO_MEGA
   ES->DestinationUnit=Transmission_SendToUnit;
@@ -72,12 +75,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     Nodo_2_RawSignal(ES);
 
   // Respecteer een minimale tijd tussen verzenden van events. Wachten alvorens event te verzenden.
-  // In geval van verzending naar queue zal deze tijd niet van toepassing zijn omdat er dan geen verwerkingstijd nodig is.
-  if(ES->Flags & TRANSMISSION_QUEUE)
-    delay(DELAY_BETWEEN_TRANSMISSIONS_Q);
-  else
-    while(millis()<HoldTransmission);
-  
+  while(millis()<HoldTransmission);  
                                              
   // Verstuur signaal als IR
   if(Settings.TransmitIR==VALUE_ALL || (Settings.TransmitIR==VALUE_ON && (Port==VALUE_SOURCE_IR || Port==VALUE_ALL)))
@@ -131,6 +129,10 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
 
   // Onthoud wanneer de verzending plaats heeft gevonden om opvolgend even niet te snel te verzenden.
   HoldTransmission=millis()+DELAY_BETWEEN_TRANSMISSIONS;
+  
+  
+  digitalWrite(PIN_WIRED_OUT_2,LOW);//???
+
   }
   
 #if NODO_MEGA

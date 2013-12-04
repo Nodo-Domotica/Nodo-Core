@@ -322,10 +322,14 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
     #endif
       
     if(ScanEvent(&Event))
-      {
-      // Als er nog geldige events voorbij komen, dan de TimeOut weer opnieuw laten ingaan.
+      {            
+      // Zolang er events binnen blijven komen is er nog niets aan de hand.
+      #if NODO_MEGA
+      MessageTimer=millis() + 5000;
+      #endif
+      
       TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
-            
+      
       // Events die voorbij komen in de queue plaatsen.
       QueueAdd(&Event);
 
@@ -944,7 +948,11 @@ void Status(struct NodoEventStruct *Request)
         if(Result.Command!=0)
           {
           if(!Display)
-            SendEvent(&Result,false,true,Settings.WaitFree==VALUE_ON); // verzend als event            
+            {
+            Result.Flags=TRANSMISSION_VIEW | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
+            HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS_Q+millis();
+            SendEvent(&Result,false,true,false); // verzend als event   ??? niet weergeven. Nog aanpassen.
+            }            
   
           #if NODO_MEGA
           else

@@ -40,4 +40,5 @@
 
 // BMP085
 #define PLUGIN_020
+#define PLUGIN_020_CORE
 

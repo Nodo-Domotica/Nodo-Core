@@ -1,4 +1,4 @@
-#define NODO_BUILD                       627 // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       633 // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                 4 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3 // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1 // Unit nummer van deze Nodo
@@ -12,7 +12,7 @@
 #define WAIT_FREE_RX_WINDOW              500 // minimale wachttijd wanneer wordt gewacht op een vrije RF of IR band. Is deze waarde te klein, dan kunnen er restanten van signalen binnenkomen als RawSignal. Te groot maakt de Nodo sloom.
 #define WAITFREE_TIMEOUT               30000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
 #define MIN_PULSE_LENGTH                  50 // Pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
-#define SIGNAL_TIMEOUT_RF                  4 // na deze tijd in mSec. wordt één RF signaal als beëindigd beschouwd.
+#define SIGNAL_TIMEOUT_RF                  5 // na deze tijd in mSec. wordt één RF signaal als beëindigd beschouwd.
 #define SIGNAL_TIMEOUT_IR                 10 // na deze tijd in mSec. wordt één IR signaal als beëindigd beschouwd.
 #define SIGNAL_REPEAT_TIME              1000 // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF/IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
 #define PULSE_DEBOUNCE_TIME               10 // pulsen kleiner dan deze waarde in milliseconden worden niet geteld. Bedoeld om verstoringen a.g.v. ruis of dender te voorkomen
@@ -638,7 +638,8 @@ struct SettingsStruct
 #define TRANSMISSION_QUEUE_WAIT                          4  // Master => Slave : Als deze vlag staat stuurd de Slave pas een bevesting NA verwerking queue
 #define TRANSMISSION_LOCK                                8  // Master => Slave : Verzoek om de ether te blokkeren voor exclusieve communicatie tussen master en een slave Nodo.
 #define TRANSMISSION_CONFIRM                            16  // Master => Slave : Verzoek aan master om bevestiging te sturen na ontvangst.
-#define TRANSMISSION_VIEW_ONLY                          32  // Master => Slave : Uitsluitend het event weergeven, niet uitvoeren
+#define TRANSMISSION_VIEW                               32  // Master => Slave : Uitsluitend het event weergeven, niet uitvoeren
+#define TRANSMISSION_VIEW_SPECIAL                       64  // Master => Slave : Uitsluitend het event weergeven, niet uitvoeren
 
 // Er zijn een aantal type Nodo events die op verschillende wijze worden behandeld:
 #define NODO_TYPE_EVENT                                  1
@@ -929,7 +930,7 @@ void setup()
   bitWrite(HW_Config,HW_I2C,false); // Zet I2C weer uit. Wordt weer geactiveerd als er een I2C event op de bus verschijnt.
 
   // Wacht even kort op reacties van andere Nodo's en stop deze in de queue.
-  Wait(2, false,0 , false);  
+  Wait(3, false,0 , false);  
   
   // Voer het boot event zelf ook uit.
   ClearEvent(&TempEvent);

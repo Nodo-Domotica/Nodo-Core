@@ -96,7 +96,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
 
   #if NODO_MEGA  
   // Alleen weergeven zonder event af te handelen
-  if(Continue && (Event->Flags & TRANSMISSION_VIEW_ONLY))
+  if(Continue && (Event->Flags & TRANSMISSION_VIEW_SPECIAL))
     {
     Continue=false;
     //??? waar wordt deze weergegeven?
@@ -104,7 +104,6 @@ byte ProcessEvent(struct NodoEventStruct *Event)
   #endif
   
   
-
   #if NODO_MEGA
   if(Continue && bitRead(HW_Config,HW_SDCARD))
     if(Event->Command==EVENT_RAWSIGNAL && Settings.RawSignalSave==VALUE_ON)
@@ -287,7 +286,19 @@ boolean QueueAdd(struct NodoEventStruct *Event)
     // Een EventlistShow staat welliswaar in de queue, maar die kunnen we als het de informatie compleet is gelijk weergeven
     // en vervolgens weer uit de queue halen. Deze voorziening is er alleen voor de Mega omdag een Small geen MMI heeft.
     #if NODO_MEGA
-    if(QueuePosition>=3)
+    char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+    char *TempString2=(char*)malloc(INPUT_BUFFER_SIZE+1);
+    
+    if(Event->Type!=NODO_TYPE_SYSTEM && Event->Flags&TRANSMISSION_VIEW)
+      {
+      Event2str(Event, TempString);  
+      if(Settings.Alias==VALUE_ON)
+        Alias(TempString,false);
+      PrintString(TempString,VALUE_ALL);//??? nog alleen naar de poort van herkomst laten weergeven
+      QueuePosition--;
+      }
+
+    else if(QueuePosition>=3)
       {
       if(Queue[QueuePosition-3].Type==NODO_TYPE_SYSTEM && Queue[QueuePosition-3].Command==SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW)
         {
@@ -295,9 +306,6 @@ boolean QueueAdd(struct NodoEventStruct *Event)
         struct NodoEventStruct A;
         ClearEvent(&E);
         ClearEvent(&A);
-
-        char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
-        char *TempString2=(char*)malloc(INPUT_BUFFER_SIZE+1);
         
         strcpy(TempString2,int2str(Queue[0].Par1)); 
         strcat(TempString2,": ");
@@ -325,12 +333,13 @@ boolean QueueAdd(struct NodoEventStruct *Event)
         
         PrintString(TempString2,VALUE_ALL);//??? nog alleen naar de poort van herkomst laten weergeven
 
-        free(TempString2);
-        free(TempString);
         QueuePosition-=3;
         }
       }    
-      #endif
+      
+    free(TempString2);
+    free(TempString);
+    #endif
     return true;
     }
   return false;
@@ -460,12 +469,16 @@ byte QueueSend(boolean fast)
       Event.Par2                = SendQueue[x].Par2;
 
       // Verzendvlaggen geven aan dat er nog events verzonden gaan worden en dat de ether tijdelijk gereserveerd is
-      // voor deze gegevensuitwisseling. De laatste verzonden event markeren als laatste in de sequence en de ether weer vrij geven.
+      // voor deze gegevensuitwisseling. 
       if(x==(SendQueuePosition-1))
-        Event.Flags = TRANSMISSION_QUEUE;
-      else        
+        Event.Flags = TRANSMISSION_QUEUE | TRANSMISSION_LOCK;
+      else
         Event.Flags = TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
 
+      // In geval van verzending naar queue zal deze tijd niet van toepassing zijn omdat er dan geen verwerkingstijd nodig is.
+      // Tussen de events die de queue in gaan een kortere delaytussen verzendingen.
+      HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS_Q+millis();
+        
       SendEvent(&Event,false,false,false);
       // PrintNodoEvent("QueueSend() Verzonden event",&Event);//???
       }
@@ -477,7 +490,8 @@ byte QueueSend(boolean fast)
       }
     else
       {
-      // De ontvangende Nodo verzendt als het goed is een bevestiging dat het is ontvangen en het aantal commando's
+      // De ontvangende Nodo verzendt als het goed is een bevestiging dat het is ontvangen en het aantal commando's. De slave haalt tevens de Lock
+      // van de Nodo's af zodat de ether weer door alle Nodo's gebruikt kunnen worden.
       ClearEvent(&Event);
       Event.SourceUnit          = Transmission_SendToUnit;
       Event.Command             = SYSTEM_COMMAND_CONFIRMED;
@@ -543,14 +557,10 @@ void QueueReceive(NodoEventStruct *Event)
       // Stuur vervolgens de master ter bevestiging het aantal ontvangen events die zich nu in de queue bevinden.
       if(PreviousID!=Event->Par2)
         {
-        // Serial.print("QueuePosition=");Serial.print(QueuePosition);//???
-        // Serial.print(", Event->Par1=");Serial.println(Event->Par1);//???
         if(QueuePosition==Event->Par1)
           {
           PreviousID=Event->Par2;
-          // Serial.println("QueueReceive() Aanroep QueueProcess();");//???
-          
-          // Queue gelijk verwerken alvorens een bevestiging te versturen zorgt er voor  dat de Master
+          // Queue gelijk verwerken alvorens een bevestiging te versturen zorgt er voor dat de Master
           // pas doorgaan met verwerking als deze Slave gereed is.
           if(Event->Flags & TRANSMISSION_QUEUE_WAIT)
             QueueProcess();
@@ -562,12 +572,10 @@ void QueueReceive(NodoEventStruct *Event)
       TempEvent.Type                = NODO_TYPE_SYSTEM; 
       TempEvent.Command             = SYSTEM_COMMAND_CONFIRMED;      
       TempEvent.Par1                = count;
-      // PrintNodoEvent("QueueReceive() Verzend bevestiging",&TempEvent);//???
       SendEvent(&TempEvent,false, false, false);
       }
     else if(Event->Command==SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW)
       {
-      // Serial.println("QueueReceive() Ontvangen Eventlist...");//???
       QueueProcess();
       }
     }
