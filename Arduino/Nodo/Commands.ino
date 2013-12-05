@@ -509,6 +509,8 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         // In geval van verzending naar queue zal deze tijd niet van toepassing zijn omdat er dan geen verwerkingstijd nodig is.
         // Tussen de events die de queue in gaan een kortere delaytussen verzendingen.
 
+        delay(DELAY_BETWEEN_TRANSMISSIONS);//???tijdelijk of niet
+
         EventToExecute->Command=SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW;
         EventToExecute->Flags=TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
         EventToExecute->Type=NODO_TYPE_SYSTEM;
@@ -518,6 +520,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
           EventToExecute->Par1=x;
           if(TempEvent.Command!=0)
             {
+delay(50);
             SendEvent(EventToExecute,false,false,false);
             TempEvent.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
             TempEvent.Port=EventToExecute->Port;

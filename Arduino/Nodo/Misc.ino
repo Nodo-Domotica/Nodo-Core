@@ -938,6 +938,8 @@ void Status(struct NodoEventStruct *Request)
         Par1_End=Request->Par2;
         }
 
+      delay(DELAY_BETWEEN_TRANSMISSIONS);//???tijdelijk of niet
+
       for(byte y=Par1_Start;y<=Par1_End;y++)
         {
         Result.Command=x;
