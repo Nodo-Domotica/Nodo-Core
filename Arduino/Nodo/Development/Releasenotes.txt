@@ -45,7 +45,7 @@ R626:
 
 R633:
 - Bug in SendTo/EventlistWrite van build R626 opgelost.
-- Status opvragen met SendTo levert geen events op maar directe weergave op terminal
+- Status opvragen met SendTo levert geen events op maar directe weergave op terminal !!!
 - EventlistShow kan worden opgevraagd met een SendTo
 - Plugin_020 (BMP085Read) aangepast. WireNodo library aanpassing.
 
