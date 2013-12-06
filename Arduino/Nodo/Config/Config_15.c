@@ -8,7 +8,7 @@
 // ****************************************************************************************************************************************
 
 #define UNIT_NODO       15 // Na een reset wordt dit het unitnummer van de Nodo
-#define CLOCK        false // true=code voor Real Time Clock mee compileren.
+#define CLOCK        true // true=code voor Real Time Clock mee compileren.
 #define NODO_MEGA    false // true = Nodo Mega, false=Nodo-Small
 #define ETHERNET     false // true = Deze Nodo beschikt over een ethernet kaart
 

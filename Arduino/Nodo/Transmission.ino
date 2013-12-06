@@ -811,11 +811,14 @@ void ExecuteIP(void)
               IPClient.println(F("Content-Type: text/html"));
               IPClient.print(F("Server: Nodo/Build="));
               IPClient.println(int2str(NODO_BUILD));             
+              #if clock
               if(bitRead(HW_Config,HW_CLOCK))
                 {
                 IPClient.print(F("Date: "));
                 IPClient.println(DateTimeString());             
                 }
+              #endif clock
+              
               IPClient.println(""); // HTTP Request wordt altijd afgesloten met een lege regel
 
               // Haal nu de resultaten op van het verwerken van de binnengekomen HTTP-regel. Stuur de inhoud als bodytext terug

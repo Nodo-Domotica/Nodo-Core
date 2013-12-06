@@ -1,4 +1,4 @@
-#define NODO_BUILD                       633 // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       634 // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                 4 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3 // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1 // Unit nummer van deze Nodo
@@ -23,7 +23,7 @@
 #define PASSWORD_TIMEOUT                 300 // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
 #define TERMINAL_TIMEOUT                 600 // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
 #define DELAY_BETWEEN_TRANSMISSIONS      500 // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
-#define DELAY_BETWEEN_TRANSMISSIONS_Q    100 // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
+#define DELAY_BETWEEN_TRANSMISSIONS_Q     50 // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
 #define NODO_TX_TO_RX_SWITCH_TIME        500 // Tijd die andere Nodo's nodig hebben om na zenden weer gereed voor ontvangst te staan. (Opstarttijd 433RX modules)
 #define ETHERNET_MAC_0                  0xCC // Dit is byte 0 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
 #define ETHERNET_MAC_1                  0xBB // Dit is byte 1 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
@@ -1330,10 +1330,13 @@ void loop()
         Reboot();
 
       #if NODO_MEGA
+
+      #if clock
       // ALARM: **************** Genereer event als één van de alarmen afgelopen is ***********************    
       if(bitRead(HW_Config,HW_CLOCK))//check of de klok aanwzig is
         if(ScanAlarm(&ReceivedEvent)) 
           ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
+      #endif clock
 
       // Terminal onderhoudstaken
       // tel seconden terug nadat de gebruiker gedefinieerd maal foutief wachtwoord ingegeven

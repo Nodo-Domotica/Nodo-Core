@@ -953,7 +953,7 @@ void Status(struct NodoEventStruct *Request)
             {
             Result.Flags=TRANSMISSION_VIEW | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
             HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS_Q+millis();
-            SendEvent(&Result,false,true,false); // verzend als event   ??? niet weergeven. Nog aanpassen.
+            SendEvent(&Result,false,false,false);
             }            
   
           #if NODO_MEGA

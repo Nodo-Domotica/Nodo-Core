@@ -31,7 +31,7 @@
 * bugs kunnen worden gelogd op                      : https://code.google.com/p/arduino-nodo/
 * Compiler voor deze programmacode te downloaden op : http://arduino.cc
 * Voor vragen of suggesties, mail naar              : p.k.tonkes@gmail.com
-* Compiler                                          : Arduino Compiler met minimaal versie 1.0.1
+* Compiler                                          : Arduino Compiler met minimaal versie 1.0.5
 * Libraties                                         : EthernetNodo library vervangt de standaard Ethernet library!
 \*************************************************************************************************************************/
 
@@ -58,7 +58,7 @@
 // ============================================================================================================================
 
 //???
-#define CONFIG_FILE Config_15.c
+#define CONFIG_FILE Config_01.c
 
 
 // ============================================================================================================================
@@ -68,5 +68,5 @@
 // ============================================================================================================================
 
 //???
-// #include <SD.h>
-// #include <EthernetNodo.h>
+#include <SD.h>
+#include <EthernetNodo.h>
