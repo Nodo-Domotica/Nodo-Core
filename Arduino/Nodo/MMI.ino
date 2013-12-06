@@ -620,12 +620,16 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
   if(bitRead(HW_Config,HW_SDCARD) && Settings.Log==VALUE_ON) 
     {
     TmpStr[0]=0;
+
     // datum en tijd weergeven
+    #if clock
     if(bitRead(HW_Config,HW_CLOCK)) // alleen als er een RTC aanwezig is.
       {   
       strcat(TmpStr,DateTimeString());
       strcat(TmpStr,"; ");
       }
+    #endif clock
+
     strcat(TmpStr,StringToPrint);
     FileWriteLine("",ProgmemString(Text_23),"DAT", TmpStr, false);
     }
@@ -638,6 +642,7 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
 /**********************************************************************************************\
  * Print actuele dag, datum, tijd.
  \*********************************************************************************************/
+#if clock
 char* DateTimeString(void)
   {
   int x;
@@ -653,6 +658,7 @@ char* DateTimeString(void)
 
   return dt;
   }
+#endif clock
 
 /**********************************************************************************************\
  * Print de welkomsttekst van de Nodo.
@@ -678,13 +684,15 @@ void PrintWelcome(void)
 
   PrintString(TempString,VALUE_ALL);
 
-  // Geef datum en tijd weer.
+  #if clock
+ // Geef datum en tijd weer.
   if(bitRead(HW_Config,HW_CLOCK))
     {
     sprintf(TempString,"%s %s",DateTimeString(), cmd2str(Time.DaylightSaving?VALUE_DLS:0));
     PrintString(TempString,VALUE_ALL);
     }
-
+  #endif
+  
   // print IP adres van de Nodo
   if(bitRead(HW_Config,HW_ETHERNET))
     {
