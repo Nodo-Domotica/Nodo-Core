@@ -509,10 +509,13 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         // In geval van verzending naar queue zal deze tijd niet van toepassing zijn omdat er dan geen verwerkingstijd nodig is.
         // Tussen de events die de queue in gaan een kortere delaytussen verzendingen.
 
+
         EventToExecute->Command=SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW;
         EventToExecute->Flags=TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
         EventToExecute->Type=NODO_TYPE_SYSTEM;
         
+        HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS+millis();
+
         while(x<=y && Eventlist_Read(x,&TempEvent,&TempEvent2))                 //kunnen we door TempEvent twee maal te laten vullen de geheugenruimte van TempEvent2 besparen???
           {
           EventToExecute->Par1=x;
@@ -527,7 +530,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
     
 
             if(x==y)                                                            // Lock staat aan. Als laatste regel uit de eventlist, dan de ether weer vrijgeven. 
-              TempEvent2.Flags=TRANSMISSION_VIEW_SPECIAL;                          // de laatste van de gehele eventlist
+              TempEvent2.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE ;                          // de laatste van de gehele eventlist
             else
               TempEvent2.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE | TRANSMISSION_LOCK;      // de laatste van de regel uit de eventlist
 
