@@ -1,4 +1,4 @@
-#define NODO_BUILD                       636 // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       637 // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                 4 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3 // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1 // Unit nummer van deze Nodo
@@ -11,7 +11,7 @@
 #define WAIT_FREE_RX                   false // true: wacht default op verzenden van een event tot de IR/RF lijn onbezet is. Wordt overruled door commando [WaitFreeRX]
 #define WAIT_FREE_RX_WINDOW              500 // minimale wachttijd wanneer wordt gewacht op een vrije RF of IR band. Is deze waarde te klein, dan kunnen er restanten van signalen binnenkomen als RawSignal. Te groot maakt de Nodo sloom.
 #define WAITFREE_TIMEOUT               30000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
-#define MIN_PULSE_LENGTH                  50 // Pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
+#define MIN_PULSE_LENGTH                  25 // Pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define SIGNAL_TIMEOUT_RF                  5 // na deze tijd in mSec. wordt één RF signaal als beëindigd beschouwd.
 #define SIGNAL_TIMEOUT_IR                 10 // na deze tijd in mSec. wordt één IR signaal als beëindigd beschouwd.
 #define SIGNAL_REPEAT_TIME              1000 // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF/IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
@@ -23,7 +23,7 @@
 #define PASSWORD_TIMEOUT                 300 // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
 #define TERMINAL_TIMEOUT                 600 // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
 #define DELAY_BETWEEN_TRANSMISSIONS      500 // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
-#define DELAY_BETWEEN_TRANSMISSIONS_Q     50 // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
+#define DELAY_BETWEEN_TRANSMISSIONS_Q    100 // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
 #define NODO_TX_TO_RX_SWITCH_TIME        500 // Tijd die andere Nodo's nodig hebben om na zenden weer gereed voor ontvangst te staan. (Opstarttijd 433RX modules)
 #define ETHERNET_MAC_0                  0xCC // Dit is byte 0 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
 #define ETHERNET_MAC_1                  0xBB // Dit is byte 1 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.

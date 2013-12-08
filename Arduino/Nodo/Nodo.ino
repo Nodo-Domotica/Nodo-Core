@@ -69,10 +69,10 @@
 // - Gebruik je een Arduino-Uno/Duemillanove met daarop de code voor een Nodo-Small, plaats dan altijd een "//" markeringen voorafgaand aan
 //   onderstaande twee regels. 
 //
-// - Gebruik je een Arduino-Mega op basis van een ATMega2560 chip, dan de '//'  voor beide regels weglaten. De ethernet voorziening 
-//   heeft eveneens een SDCard nodig. Om deze reden worden beide libraries altijd mee gecompileerd voor een Mega.
+// - Gebruik je een Arduino-Mega op basis van een ATMega2560 chip, dan de '//'  voor beide regels weglaten. De Mega 
+//   heeft altijd de library voor de SDCard nodig. De Ethernet library kan eventueel worden geremarked.
 // ============================================================================================================================
 
 //???
-// #include <SD.h>
+#include <SD.h>
 // #include <EthernetNodo.h>
