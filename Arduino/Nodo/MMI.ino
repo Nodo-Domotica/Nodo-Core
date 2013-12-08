@@ -254,6 +254,7 @@ int ExecuteLine(char *Line, byte Port)
                 }
               break;
                   
+            #ifdef ethernetserver_h
             case CMD_FILE_GET_HTTP:
               EventToExecute.Type=NODO_TYPE_COMMAND;
               if(GetArgv(Command,TmpStr1,2))
@@ -263,7 +264,8 @@ int ExecuteLine(char *Line, byte Port)
                 }
               else
                 error=MESSAGE_INVALID_PARAMETER;            
-              break; 
+              break;
+            #endif 
               
             case CMD_FILE_SHOW:
               EventToExecute.Type=NODO_TYPE_COMMAND;
@@ -392,6 +394,7 @@ int ExecuteLine(char *Line, byte Port)
                 error=MESSAGE_INVALID_PARAMETER;
               break;
         
+            #ifdef ethernetserver_h
             case CMD_IP_SEND:  //??? experimenteel
               if(GetArgv(Line,TmpStr2,2))// URL
                 {
@@ -405,9 +408,8 @@ int ExecuteLine(char *Line, byte Port)
               else
                 error=MESSAGE_INVALID_PARAMETER;
               break;
+            #endif
             
-              break;
-
             case CMD_FILE_WRITE_LINE:
               if(GetArgv(Command,TmpStr1,2) && strlen(TmpStr1)<=8)
                 {
@@ -577,12 +579,15 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
   
     // Poort
     strcat(StringToPrint, cmd2str(Event->Port));
+    
+    #ifdef ethernetserver_h
     if(Event->Port==VALUE_SOURCE_HTTP || Event->Port==VALUE_SOURCE_TELNET)
       {
       strcat(StringToPrint, "(");
       strcat(StringToPrint, ip2str(ClientIPAddress));
       strcat(StringToPrint, ")");
       }
+    #endif
       
     if(Event->Port==VALUE_SOURCE_EVENTLIST)
       {
@@ -694,6 +699,7 @@ void PrintWelcome(void)
   #endif
   
   // print IP adres van de Nodo
+  #ifdef ethernetserver_h
   if(bitRead(HW_Config,HW_ETHERNET))
     {
     sprintf(TempString,"IP=%u.%u.%u.%u, ", EthernetNodo.localIP()[0],EthernetNodo.localIP()[1],EthernetNodo.localIP()[2],EthernetNodo.localIP()[3]);
@@ -726,6 +732,7 @@ void PrintWelcome(void)
       PrintString(TempString,VALUE_ALL);
       }
     }
+  #endif
     
   PrintString(ProgmemString(Text_22),VALUE_ALL);
   free(TempString);
@@ -740,6 +747,7 @@ void PrintString(char* LineToPrint, byte Port)
   if((Port==VALUE_SOURCE_SERIAL || Port==VALUE_ALL) && bitRead(HW_Config,HW_SERIAL))
     Serial.println(LineToPrint);
 
+  #ifdef ethernetserver_h
   if(bitRead(HW_Config,HW_ETHERNET))
     {
     if((Port==VALUE_SOURCE_TELNET || Port==VALUE_ALL) && TerminalClient.connected() && TerminalConnected>0 && TerminalLocked==0)
@@ -751,7 +759,8 @@ void PrintString(char* LineToPrint, byte Port)
       IPClient.println("<br>");
       }
     }
-
+  #endif
+  
   // FileLog wordt hier uitgevoerd.
   if(TempLogFile[0]!=0)
     if(bitRead(HW_Config,HW_SDCARD))

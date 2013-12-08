@@ -770,6 +770,12 @@ void Status(struct NodoEventStruct *Request)
       break;      
     }
 
+  // Als de status informatie verzonden moet worden, dan komt deze terecht in de queue van de master waar het status verzoek
+  // vandaan kwam. Hier een korte wachttijd omdat anders i.v.m. de omschakeltijd van de Master van zenden naar ontvangen
+  // de eerste waarden die door deze slave worden verzonden niet aankomen.
+  if(!Display)
+    delay(DELAY_BETWEEN_TRANSMISSIONS);
+  
   Result.Command=Request->Par1;
   
   if(Request->Par2==VALUE_ALL)
@@ -804,6 +810,7 @@ void Status(struct NodoEventStruct *Request)
       switch (x)
         {
         #if NODO_MEGA          
+        #ifdef ethernetserver_h
         case CMD_CLIENT_IP:
           sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_CLIENT_IP),Settings.Client_IP[0],Settings.Client_IP[1],Settings.Client_IP[2],Settings.Client_IP[3]);
           PrintString(TempString, Port);
@@ -858,6 +865,8 @@ void Status(struct NodoEventStruct *Request)
           PrintString(TempString, Port);
           break;
   
+        #endif // ethernetserver_h
+
         case CMD_ID:
           sprintf(TempString,"%s %s",cmd2str(CMD_ID), Settings.ID);
           PrintString(TempString, Port);
@@ -937,8 +946,6 @@ void Status(struct NodoEventStruct *Request)
         Par1_Start=Request->Par2;
         Par1_End=Request->Par2;
         }
-
-      delay(DELAY_BETWEEN_TRANSMISSIONS);//???tijdelijk of niet
 
       for(byte y=Par1_Start;y<=Par1_End;y++)
         {

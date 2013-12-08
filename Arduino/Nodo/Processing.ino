@@ -87,7 +87,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     }
 
 
-  if(Event->Type == NODO_TYPE_SYSTEM)//??? hoe afvangen?
+  if(Event->Type == NODO_TYPE_SYSTEM)
     {                       
     Continue=false;
     }

@@ -8,7 +8,7 @@
 // ****************************************************************************************************************************************
 
 #define UNIT_NODO       15 // Na een reset wordt dit het unitnummer van de Nodo
-#define CLOCK        true // true=code voor Real Time Clock mee compileren.
+#define CLOCK        false // true=code voor Real Time Clock mee compileren.
 #define NODO_MEGA    false // true = Nodo Mega, false=Nodo-Small
 #define ETHERNET     false // true = Deze Nodo beschikt over een ethernet kaart
 
@@ -29,10 +29,10 @@
 // #define PLUGIN_004_CORE
 
 // DTH-22 Vocht/Temperatuursensor
-// #define PLUGIN_006
-// #define PLUGIN_006_CORE 22
+#define PLUGIN_006
+#define PLUGIN_006_CORE 22
 
 // BMP085 Luchtdruk sensor
-// #define PLUGIN_020
-// #define PLUGIN_020_CORE 
+#define PLUGIN_020
+#define PLUGIN_020_CORE 
 

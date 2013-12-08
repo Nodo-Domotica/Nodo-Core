@@ -49,11 +49,15 @@ R633:
 - EventlistShow kan worden opgevraagd met een SendTo
 - Plugin_020 (BMP085Read) aangepast. WireNodo library aanpassing.
 
-R635
+R635:
 - Issue 792:	'Wire' was not declared in this scope voor plugin 20 en 21.
 - Issue 793:	"#define CLOCK false" geeft problemen met compileren
 - Issue 815:	Plugin 20 komt niet door de compiler
 - Issue 794:	P24 werkt niet op Arduino 1.0.1. (de geadviseerde versie volgens Nodo.Ino) wel met 1.0.5.
+
+R636:
+- Ethernet code wordt in het geheel niet meer meegecompileerd als de ethernet library niet ge-include is.
+
 
 Nog te doen:
 - Status debug geeft vreemde waarde.

@@ -42,6 +42,7 @@
 // Dit is nodig om device- en configuratiebestanden te kunnen compileren.
 // Geef het volledige pad op. Let op: Bij Linux/Unix zijn de namen case-sensitive.
 // ============================================================================================================================
+
 #define SKETCH_PATH C:\Users\tonkes\Google Drive\Paul\Nodo\SVN\Arduino\Nodo
 //???#define SKETCH_PATH C:\..\..\..\Nodo
 
@@ -62,11 +63,16 @@
 
 
 // ============================================================================================================================
-// Gebruik je een Arduino-Uno/Duemillanove met daarop de code voor een Nodo-Small, plaats dan een "//" markeringen voorafgaand aan
-// onderstaande twee regels. Gebruik je een Arduino-Mega op basis van een ATMega2560 chip, dan hoef je in deze stap niets te doen.
-// Dit omdat een 'onhebbelijkheid' in de Arduino compiler anders de library altijd meecompileerd waardoor deze niet meer in een ATMeg328 past.
+// Met onderstaande includes kan worden aangegeven of je gebruik maakt van een ethernetkaart. 
+// LET OP:
+//  
+// - Gebruik je een Arduino-Uno/Duemillanove met daarop de code voor een Nodo-Small, plaats dan altijd een "//" markeringen voorafgaand aan
+//   onderstaande twee regels. 
+//
+// - Gebruik je een Arduino-Mega op basis van een ATMega2560 chip, dan de '//'  voor beide regels weglaten. De ethernet voorziening 
+//   heeft eveneens een SDCard nodig. Om deze reden worden beide libraries altijd mee gecompileerd voor een Mega.
 // ============================================================================================================================
 
 //???
-#include <SD.h>
-#include <EthernetNodo.h>
+// #include <SD.h>
+// #include <EthernetNodo.h>
