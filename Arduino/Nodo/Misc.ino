@@ -435,10 +435,6 @@ boolean GetStatus(struct NodoEventStruct *Event)
     Event->Par2=HW_Config;      
     break;        
 
-  case CMD_DEBUG:
-    Event->Par1=Settings.Debug;
-    break;
-
   case CMD_RAWSIGNAL_RECEIVE:
     Event->Par1=Settings.RawSignalReceive;
     break;
@@ -543,6 +539,10 @@ boolean GetStatus(struct NodoEventStruct *Event)
     break;
 
 #if NODO_MEGA
+
+  case CMD_DEBUG:
+    Event->Par1=Settings.Debug;
+    break;
 
   case CMD_ALIAS_SHOW:
     Event->Par1=Settings.Alias;
