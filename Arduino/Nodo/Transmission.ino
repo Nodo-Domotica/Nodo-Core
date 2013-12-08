@@ -32,9 +32,6 @@ void WaitFree(byte Port, int TimeOut)
  \*********************************************************************************************/
 boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Display, boolean WaitForFree)
   {    
-
-  digitalWrite(PIN_WIRED_OUT_2,HIGH);//???
-
   ES->Direction=VALUE_DIRECTION_OUTPUT;
   #if NODO_MEGA
   ES->DestinationUnit=Transmission_SendToUnit;
@@ -87,7 +84,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     RawSendIR();
     }
 
-  #if NODO_MEGA
+  #ifdef ethernetserver_h
   // Verstuur signaal als HTTP-event.
   if(bitRead(HW_Config,HW_ETHERNET))// Als Ethernet shield aanwezig.
     {
@@ -129,10 +126,6 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
 
   // Onthoud wanneer de verzending plaats heeft gevonden om opvolgend even niet te snel te verzenden.
   HoldTransmission=millis()+DELAY_BETWEEN_TRANSMISSIONS;
-  
-  
-  digitalWrite(PIN_WIRED_OUT_2,LOW);//???
-
   }
   
 #if NODO_MEGA
@@ -193,6 +186,7 @@ void SendI2C(struct NodoEventStruct *EventBlock)
 //#######################################################################################################
 //##################################### Transmission: HTTP  #############################################
 //#######################################################################################################
+#ifdef ethernetserver_h
 
 boolean IPSend(char* URL, int Port, char* Request) // Nog niet operationeel. Test.
   {
@@ -852,6 +846,7 @@ void ExecuteIP(void)
   return;
   }  
 
+#endif //ethernetserver_h
 #endif //MEGA
 
 //#######################################################################################################

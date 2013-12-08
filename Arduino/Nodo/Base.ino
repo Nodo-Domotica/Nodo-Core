@@ -1,4 +1,4 @@
-#define NODO_BUILD                       634 // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       636 // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                 4 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3 // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1 // Unit nummer van deze Nodo
@@ -722,12 +722,15 @@ boolean ClockSyncHTTP=false;
 
 
 // ethernet classes voor IP communicatie Telnet terminal en HTTP.
+#ifdef ethernetserver_h
 EthernetServer IPServer(80);                                // Server class voor HTTP sessie. Poort wordt later goed gezet.
 EthernetClient IPClient;                                    // Client calls voor HTTP sessie.
 EthernetServer TerminalServer(TERMINAL_PORT);               // Server class voor Terminal sessie.
 EthernetClient TerminalClient;                              // Client class voor Terminal sessie.
 byte ClientIPAddress[4];                                    // IP adres van de client die verbinding probeert te maken c.q. verbonden is.
 byte IPClientIP[4];                                         // IP adres van de Host
+#endif
+
 #endif
 
 
@@ -872,7 +875,7 @@ void setup()
   #endif CLOCK 
 
   // Start Ethernet kaart en start de HTTP-Server en de Telnet-server
-  #if ETHERNET
+  #ifdef ethernetserver_h
   // Detecteren of fysieke laag is aangesloten wordt niet ondersteund door de Ethernet Library van Arduino.
   bitWrite(HW_Config,HW_ETHERNET,1); 
   
@@ -1047,16 +1050,18 @@ void loop()
         case 1: // binnen Slice_1
           {
           // IP Event: *************** kijk of er een Event van IP komt **********************    
+          #ifdef ethernetserver_h
           if(bitRead(HW_Config,HW_ETHERNET))
             if(IPServer.available())
               if(!PluginCall(PLUGIN_ETHERNET_IN,0,0))
                 ExecuteIP();
-
+          #endif
           break;
           }
    
         case 2: // binnen Slice_1 
           {
+          #ifdef ethernetserver_h
           // IP Telnet verbinding : *************** kijk of er verzoek tot verbinding vanuit een terminal is **********************    
           if(bitRead(HW_Config,HW_ETHERNET))
             {
@@ -1172,6 +1177,7 @@ void loop()
                 }
               }
             }
+          #endif
           break;
           }
         #endif
@@ -1340,6 +1346,7 @@ void loop()
 
       // Terminal onderhoudstaken
       // tel seconden terug nadat de gebruiker gedefinieerd maal foutief wachtwoord ingegeven
+      #ifdef ethernetserver_h
       if(TerminalLocked>PASSWORD_MAX_RETRY)
         if(--TerminalLocked==PASSWORD_MAX_RETRY)TerminalLocked=1;
 
@@ -1355,14 +1362,6 @@ void loop()
           TerminalClient.stop();
           }        
         }
-      
-      // Timer voor blokkeren verwerking. teller verlagen
-      if(FileWriteMode>0)
-        {
-        FileWriteMode--;
-        if(FileWriteMode==0)
-          TempLogFile[0]=0;
-        }
         
       // Timer voor verzenden van Cookie naar de WebApp/Server
       if(Settings.Password[0]!=0 && Settings.TransmitIP==VALUE_ON)
@@ -1375,7 +1374,18 @@ void loop()
           SendHTTPCookie(); // Verzend een nieuw cookie
           }
         }
-      #endif
+      #endif // ethernetserver_h
+
+
+      // Timer voor blokkeren verwerking. teller verlagen
+      if(FileWriteMode>0)
+        {
+        FileWriteMode--;
+        if(FileWriteMode==0)
+          TempLogFile[0]=0;
+        }
+
+      #endif //Mega
       }
     }// while 
   }

@@ -7,9 +7,10 @@
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  * Support            : www.nodo-domotica.nl
  * Datum              : 12 Aug 2013
- * Versie             : 1.2
+ * Versie             : 1.3
  *                      
  *                      Modificaties: 
+ *                      2013-11, V1.3, Paul Tonkes: Geen events meer genereren bij vullen variabelen
  *                      2013-11, V1.2, Paul Tonkes: Retry bij fout tijdens uitlezen en DHT-22 compatibel
  *                         
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
@@ -109,49 +110,21 @@ boolean Plugin_006(byte function, struct NodoEventStruct *event, char *string)
 
             if(dht_dat[4]== dht_check_sum)
               {
-              byte VarNr = event->Par2; // De originele Par1 tijdelijk opslaan want hier zit de variabelenummer in waar de gebruiker de uitgelezen waarde in wil hebben
 
               #if PLUGIN_006_CORE==11
-              byte temperature = dht_dat[2];
-              byte humidity = dht_dat[0];
-
-              ClearEvent(event);                                      // Ga uit van een default schone event. Oude eventgegevens wissen.      
-              event->Type         = NODO_TYPE_COMMAND;
-              event->Direction    = VALUE_DIRECTION_INPUT;
-              event->Port         = VALUE_SOURCE_PLUGIN;
-              event->Command      = CMD_VARIABLE_SET;                 // Commando "VariableSet"
-              event->Par1         = VarNr;                            // Par1 is de variabele die we willen vullen.
-              event->Par2         = float2ul(float(temperature));
-              ProcessEvent(event);
-              event->Par1         = VarNr+1;                          // Par1+1 is de variabele die we willen vullen voor luchtvochtigheid
-              event->Par2         = float2ul(float(humidity));
-              ProcessEvent(event);
+              UserVar[event->Par2 -1] = float(dht_dat[2]); // Temperatuur
+              UserVar[event->Par2   ] = float(dht_dat[0]); // vochtigheid
               #endif
               
               #if PLUGIN_006_CORE==22
-              float temperature;
               if (dht_dat[2] & 0x80) // negative temperature
-                temperature = -0.1 * word(dht_dat[2] & 0x7F, dht_dat[3]);
+                UserVar[event->Par2 -1] = -0.1 * word(dht_dat[2] & 0x7F, dht_dat[3]);
               else
-                temperature = 0.1 * word(dht_dat[2], dht_dat[3]);
+                UserVar[event->Par2 -1] = 0.1 * word(dht_dat[2], dht_dat[3]);
 
-              float humidity = word(dht_dat[0], dht_dat[1]) * 0.1;
-
-              ClearEvent(event);                                      // Ga uit van een default schone event. Oude eventgegevens wissen.      
-              event->Type         = NODO_TYPE_COMMAND;
-              event->Direction    = VALUE_DIRECTION_INPUT;
-              event->Port         = VALUE_SOURCE_PLUGIN;
-              event->Command      = CMD_VARIABLE_SET;                 // Commando "VariableSet"
-              event->Par1         = VarNr;                            // Par1 is de variabele die we willen vullen.
-              event->Par2         = float2ul(temperature);
-              ProcessEvent(event);
-              event->Par1         = VarNr+1;                          // Par1+1 is de variabele die we willen vullen voor luchtvochtigheid
-              event->Par2         = float2ul(humidity);
-              ProcessEvent(event);
-  
+              UserVar[event->Par2] = word(dht_dat[0], dht_dat[1]) * 0.1; // vochtigheid
               #endif
-        
-              ClearEvent(event);                                      // Ga uit van een default schone event. Oude eventgegevens wissen.
+
               success=true;
               }
             }
