@@ -859,7 +859,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_WIRED_SMITTTRIGGER:
       case CMD_WIRED_THRESHOLD:
       case VALUE_WIRED_ANALOG:
-      case CMD_VARIABLE_RECEIVE:
         ParameterToView[0]=PAR1_INT;
         ParameterToView[1]=PAR2_INT;
         break;
@@ -872,13 +871,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         ParameterToView[0]=PAR2_INT;
         break;
         
-      case CMD_WAIT_EVENT:
-        if(Event->Par1==VALUE_ALL)
-          ParameterToView[0]=PAR1_TEXT;
-        else
-          ParameterToView[0]=PAR1_INT;
-  
-        ParameterToView[1]=PAR2_TEXT;
+      case CMD_SLEEP://???
         break;
 
       // Par1 als waarde en par2 als tekst
@@ -897,6 +890,13 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         ParameterToView[1]=PAR2_TEXT;
         break;
 
+
+      case CMD_VARIABLE_GET:
+        ParameterToView[0]=PAR1_INT;
+        ParameterToView[1]=PAR2_INT8;
+        ParameterToView[2]=PAR3_INT;
+      
+        break;
       case EVENT_WILDCARD:
         ParameterToView[0]=PAR1_TEXT;
         ParameterToView[1]=PAR2_TEXT;
@@ -1183,6 +1183,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
     case CMD_REBOOT:
     case CMD_SETTINGS_SAVE:
     case CMD_STATUS:
+    case CMD_SLEEP:
     case CMD_DELAY:
     case CMD_SOUND: 
     case CMD_SEND_USEREVENT:
@@ -1217,12 +1218,6 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
         error=MESSAGE_INVALID_PARAMETER;
       break;
             
-    case CMD_WAIT_EVENT:
-      ResultEvent->Type=NODO_TYPE_COMMAND;
-      if((ResultEvent->Par1<1 || ResultEvent->Par1>UNIT_MAX) &&  ResultEvent->Par1!=VALUE_ALL)
-        error=MESSAGE_INVALID_PARAMETER;
-      break;
-
     case EVENT_ALARM:
       ResultEvent->Type=NODO_TYPE_EVENT;
       if(ResultEvent->Par1<1 || ResultEvent->Par1>ALARM_MAX)
@@ -1263,7 +1258,6 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
     case CMD_BREAK_ON_VAR_LESS_VAR:
     case CMD_BREAK_ON_VAR_MORE_VAR:
     case CMD_VARIABLE_VARIABLE:
-    case CMD_VARIABLE_RECEIVE:
       ResultEvent->Type=NODO_TYPE_COMMAND;
       if(ResultEvent->Par1<1 || ResultEvent->Par1>USER_VARIABLES_MAX)
         error=MESSAGE_INVALID_PARAMETER;
@@ -1468,6 +1462,27 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
       else
         error=MESSAGE_INVALID_PARAMETER;
       break;
+
+    case CMD_VARIABLE_GET: // VariableGet <Variabele>, <Unit>, <VariabeleBron> 
+      ResultEvent->Type=NODO_TYPE_COMMAND;
+      error=MESSAGE_INVALID_PARAMETER;
+
+      if(ResultEvent->Par1>0 && ResultEvent->Par1<=USER_VARIABLES_MAX)
+        {
+        if(ResultEvent->Par2>0 && ResultEvent->Par2<=UNIT_MAX)
+          {
+          if(GetArgv(Command,TmpStr1,4))// VariabeleBron
+            {
+            x=str2int(TmpStr1);
+            if(x>0 && x<=USER_VARIABLES_MAX)
+              {
+              ResultEvent->Par2|=(x<<8);
+              error=0;
+              }
+            }
+          }
+        }  
+       break;
 
     case CMD_BREAK_ON_VAR_EQU:
     case CMD_BREAK_ON_VAR_LESS:

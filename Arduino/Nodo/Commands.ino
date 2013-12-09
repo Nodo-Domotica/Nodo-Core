@@ -12,7 +12,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
   byte error=0;
   
   struct NodoEventStruct TempEvent=*EventToExecute;
-  struct NodoEventStruct TempEvent2;//???
+  struct NodoEventStruct TempEvent2;
   
   #if NODO_MEGA
   char *TempString=(char*)malloc(50);
@@ -50,10 +50,11 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afgevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         UserVar[EventToExecute->Par1-1]=ul2float(EventToExecute->Par2);
+        TempEvent.SourceUnit   = Settings.Unit;
         TempEvent.Type         = NODO_TYPE_EVENT;
-        TempEvent.Command=EVENT_VARIABLE;
-        TempEvent.Port=VALUE_SOURCE_SYSTEM;
-        TempEvent.Direction=VALUE_DIRECTION_INPUT;
+        TempEvent.Command      = EVENT_VARIABLE;
+        TempEvent.Port         = VALUE_SOURCE_SYSTEM;
+        TempEvent.Direction    = VALUE_DIRECTION_INPUT;
         ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
         }
       break;         
@@ -76,28 +77,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         {
         UserVar[EventToExecute->Par1-1]=UserVar[EventToExecute->Par2-1];
         TempEvent.Type         = NODO_TYPE_EVENT;
-        TempEvent.Command=EVENT_VARIABLE;
-        TempEvent.Port=VALUE_SOURCE_SYSTEM;
-        TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
-        TempEvent.Direction=VALUE_DIRECTION_INPUT;
-        ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
-        }
-      break;        
-
-    case CMD_VARIABLE_RECEIVE: // VariableReceive <Variabelenummer_Bestemming>, <Variabelenummer_Bron_Andere_Nodo>
-      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afgevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
-        {
-        // Als het vorige event betrekking had op variabele/poort die de gebruiker heeft opgegeven in Par2
-        // dan de waarde uit het vorige event overnemen.
-        if(LastReceived.Command==EVENT_VARIABLE)
-          {
-          if(EventToExecute->Par2==LastReceived.Par1)
-            {
-            x=EventToExecute->Par1-1;
-            UserVar[x]=ul2float(LastReceived.Par2);
-            }
-          }
-        TempEvent.Type=NODO_TYPE_EVENT;
         TempEvent.Command=EVENT_VARIABLE;
         TempEvent.Port=VALUE_SOURCE_SYSTEM;
         TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
@@ -330,11 +309,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       UserTimer[EventToExecute->Par1-1]=millis()+random(EventToExecute->Par2)*1000;
       break;
 
-    case CMD_WAIT_EVENT:// WaitEvent <unit>, <command> //??? kunnen we deze laten vervallen???
-      ClearEvent(&TempEvent);
-      TempEvent.SourceUnit=EventToExecute->Par1;
-      TempEvent.Command=EventToExecute->Par2;
-      Wait(30,false,&TempEvent,false);
+    case CMD_SLEEP://??? Nog uitwerken=
       break;
 
     case CMD_DELAY:
@@ -414,7 +389,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
     case CMD_STATUS:
       Status(EventToExecute);
       break;
-      
+            
     case CMD_UNIT_SET:
       if(EventToExecute->Par1>0 && EventToExecute->Par1<=UNIT_MAX)
         {
@@ -443,7 +418,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       
       if(EventToExecute->Par1==0)
         {
-        x=1;
+        x=1;                                          
         UndoNewNodo();// Status NewNodo verwijderen indien van toepassing
         while(Eventlist_Write(x++,&TempEvent,&TempEvent));
         }
@@ -531,7 +506,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
     
 
             if(x==y)                                                            // Lock staat aan. Als laatste regel uit de eventlist, dan de ether weer vrijgeven. 
-              TempEvent2.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE ;                          // de laatste van de gehele eventlist
+              TempEvent2.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE ; // de laatste van de gehele eventlist
             else
               TempEvent2.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT |TRANSMISSION_LOCK;      // de laatste van de regel uit de eventlist
 
@@ -549,6 +524,47 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
 
 #if NODO_MEGA // vanaf hier commando's die alleen de Mega kent.
+
+    case CMD_VARIABLE_GET: // VariableReceive <Variabelenummer_Bestemming>, <unit>, <Variabelenummer_Bron_Andere_Nodo>
+      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afgevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
+        {
+        error=MESSAGE_SENDTO_ERROR;
+        y=0; // retries
+        do
+          {
+          // <VariabeleNummerBestemming> zit in Par1
+          // <Unit> zit in bit 0..7 van Par2
+          // <VariabeleNummerBron> zit in bit bit 15..8 van Par2
+          //
+          // Verzend naar de andere Nodo een verzoek om de variabele te verzenden.
+          ClearEvent(&TempEvent);
+          TempEvent.DestinationUnit=EventToExecute->Par2&0xff;
+          TempEvent.Type=NODO_TYPE_COMMAND;
+          TempEvent.Command=CMD_VARIABLE_SEND;
+          TempEvent.Port=VALUE_ALL;
+          TempEvent.Par1=(EventToExecute->Par2>>8)&0xff;                        // VariabeleBron
+          TempEvent.Par2=NodoOnline(EventToExecute->Par2&0xff,0);               // Poort waaronder de Slave Nodo bekend is.
+          SendEvent(&TempEvent,false,y==0,Settings.WaitFree==VALUE_ON);
+          
+          // Wacht tot event voorbij komt. De Wait(); funktie wacht op type, command en unit.
+          ClearEvent(&TempEvent);
+          TempEvent.SourceUnit          = EventToExecute->Par2&0xff;
+          TempEvent.Command             = EVENT_VARIABLE;
+          TempEvent.Type                = NODO_TYPE_EVENT;
+
+          if(Wait(10,false,&TempEvent,false))
+            {
+            TempEvent.Par1            = EventToExecute->Par1;  
+            TempEvent.Type            = NODO_TYPE_COMMAND;
+            TempEvent.Command         = CMD_VARIABLE_SET;
+            TempEvent.Direction       = VALUE_DIRECTION_INPUT;
+            if(QueuePosition)QueuePosition--;                                   // binnengekomen event is eveneens op de queue geplaatst. deze mag weg.
+            ProcessEvent(&TempEvent);                                           // verwerk binnengekomen event.
+            error=0;
+            }
+          }while(error && ++y<5);
+        }
+      break;        
 
     case CMD_PORT_INPUT:
       Settings.PortInput=EventToExecute->Par2;
