@@ -286,7 +286,7 @@ boolean QueueAdd(struct NodoEventStruct *Event)
     // Een EventlistShow staat welliswaar in de queue, maar die kunnen we als het de informatie compleet is gelijk weergeven
     // en vervolgens weer uit de queue halen. Deze voorziening is er alleen voor de Mega omdag een Small geen MMI heeft.
     #if NODO_MEGA
-    char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+    char *TempString=(char*)malloc(INPUT_COMMAND_SIZE+1);
     char *TempString2=(char*)malloc(INPUT_BUFFER_SIZE+1);
     
     if(Event->Type!=NODO_TYPE_SYSTEM && Event->Flags&TRANSMISSION_VIEW)
@@ -336,7 +336,6 @@ boolean QueueAdd(struct NodoEventStruct *Event)
         QueuePosition-=3;
         }
       }    
-      
     free(TempString2);
     free(TempString);
     #endif
@@ -447,6 +446,7 @@ byte QueueSend(boolean fast)
   do
     {
     ClearEvent(&Event);
+    Event.DestinationUnit     = Transmission_SendToUnit;
     Event.SourceUnit          = Settings.Unit;
     Event.Port                = Port;
     Event.Type                = NODO_TYPE_SYSTEM;      
@@ -461,6 +461,7 @@ byte QueueSend(boolean fast)
     for(x=0;x<SendQueuePosition;x++)
       {
       ClearEvent(&Event);
+      Event.DestinationUnit     = Transmission_SendToUnit;
       Event.SourceUnit          = Settings.Unit;
       Event.Port                = Port;
       Event.Type                = SendQueue[x].Type;
@@ -499,7 +500,7 @@ byte QueueSend(boolean fast)
   
       // PrintNodoEvent("QueueSend() wacht op bevestiging",&Event);//???
 
-      if(Wait(10,false,&Event,false))
+    if(Wait(10,false,&Event,false))
         if(x==(Event.Par1-1))// Verzonden events gelijk aan ontvangen events? -1 omdat aan de Slave zijde het eerste element in de queue geen deel uit maakt van de SendTo events.
           error=0;
   

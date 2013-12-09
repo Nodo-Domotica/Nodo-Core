@@ -732,7 +732,7 @@ void Status(struct NodoEventStruct *Request)
   byte Par1_Start,Par1_End;
   byte Port=0,x;
   boolean s;
-  boolean Display=false;
+  boolean DisplayLocal=false;
   struct NodoEventStruct Result;
 
 
@@ -752,12 +752,12 @@ void Status(struct NodoEventStruct *Request)
       break;
 
     #if NODO_MEGA
-    // bronnen waar de output geprint moet wordenaals tekst
+    // bronnen waar de output geprint moet worden als tekst
     case VALUE_SOURCE_SERIAL:
     case VALUE_SOURCE_TELNET:
     case VALUE_SOURCE_HTTP:
       Port=Request->Port;
-      Display=true;
+      DisplayLocal=true;
       break;
     #endif
   
@@ -773,7 +773,7 @@ void Status(struct NodoEventStruct *Request)
   // Als de status informatie verzonden moet worden, dan komt deze terecht in de queue van de master waar het status verzoek
   // vandaan kwam. Hier een korte wachttijd omdat anders i.v.m. de omschakeltijd van de Master van zenden naar ontvangen
   // de eerste waarden die door deze slave worden verzonden niet aankomen.
-  if(!Display)
+  if(!DisplayLocal)
     delay(DELAY_BETWEEN_TRANSMISSIONS);
   
   Result.Command=Request->Par1;
@@ -782,7 +782,7 @@ void Status(struct NodoEventStruct *Request)
     Request->Par2==0;
 
   #if NODO_MEGA          
-  if(Display && (Request->Par1==0 || Request->Par1==VALUE_ALL))
+  if(DisplayLocal && (Request->Par1==0 || Request->Par1==VALUE_ALL))
     PrintWelcome();
   #endif
 
@@ -804,7 +804,7 @@ void Status(struct NodoEventStruct *Request)
   for(x=CMD_Start; x<=CMD_End; x++)
     {
     s=false;
-    if(Display)
+    if(DisplayLocal)
       {
       s=true;
       switch (x)
@@ -956,10 +956,10 @@ void Status(struct NodoEventStruct *Request)
         
         if(Result.Command!=0)
           {
-          if(!Display)
+          if(!DisplayLocal)
             {
             Result.Flags=TRANSMISSION_VIEW | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
-            HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS_Q+millis();
+            HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS_Q+millis();              
             SendEvent(&Result,false,false,false);
             }            
   
@@ -976,7 +976,7 @@ void Status(struct NodoEventStruct *Request)
     }
 
   #if NODO_MEGA
-  if(Display && Request->Par1==VALUE_ALL)
+  if(DisplayLocal && Request->Par1==VALUE_ALL)
     PrintString(ProgmemString(Text_22), Request->Port);
 
   free(TempString);

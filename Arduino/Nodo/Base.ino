@@ -151,7 +151,7 @@ byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
 #define VALUE_SOURCE_SERIAL             96
 #define CMD_SETTINGS_SAVE               97
 #define CMD_STATUS                      98
-#define CMD_STOP                        99
+#define CMD_RES                         99   //??? reserve
 #define CMD_SUBNET                      100
 #define VALUE_SOURCE_SYSTEM             101
 #define CMD_TEMP                        102
@@ -167,11 +167,11 @@ byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
 #define CMD_VARIABLE_INC                112
 #define CMD_VARIABLE_PULSE_COUNT        113
 #define CMD_VARIABLE_PULSE_TIME         114
-#define CMD_VARIABLE_RECEIVE            115
+#define CMD_VARIABLE_GET                115
 #define CMD_VARIABLE_SEND               116
 #define CMD_VARIABLE_VARIABLE           117
 #define CMD_VARIABLE_SET_WIRED_ANALOG   118
-#define CMD_WAIT_EVENT                  119
+#define CMD_SLEEP                       119
 #define CMD_WAITFREERF                  120
 #define EVENT_WILDCARD                  121
 #define VALUE_SOURCE_WIRED              122
@@ -194,7 +194,8 @@ byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
 #define CMD_ALIAS_LIST                  139
 #define CMD_POWERSAVE                   140
 #define CMD_IP_SEND                     141
-#define COMMAND_MAX                     141 // hoogste commando
+#define CMD_STOP                        142
+#define COMMAND_MAX                     142 // hoogste commando
 
 #define MESSAGE_OK                      0
 #define MESSAGE_UNKNOWN_COMMAND         1
@@ -320,7 +321,7 @@ prog_char PROGMEM Cmd_95[]="UserEventSend";
 prog_char PROGMEM Cmd_96[]="Serial";
 prog_char PROGMEM Cmd_97[]="SettingsSave";
 prog_char PROGMEM Cmd_98[]="Status";
-prog_char PROGMEM Cmd_99[]="Stop";
+prog_char PROGMEM Cmd_99[]="";  //??? reserve
 prog_char PROGMEM Cmd_100[]="Subnet";
 prog_char PROGMEM Cmd_101[]="System";
 prog_char PROGMEM Cmd_102[]="Temp";
@@ -336,11 +337,11 @@ prog_char PROGMEM Cmd_111[]="VariableDec";
 prog_char PROGMEM Cmd_112[]="VariableInc";
 prog_char PROGMEM Cmd_113[]="VariablePulseCount";
 prog_char PROGMEM Cmd_114[]="VariablePulseTime";
-prog_char PROGMEM Cmd_115[]="VariableReceive";
+prog_char PROGMEM Cmd_115[]="VariableGet";
 prog_char PROGMEM Cmd_116[]="VariableSend";
 prog_char PROGMEM Cmd_117[]="VariableSetVariable";
 prog_char PROGMEM Cmd_118[]="VariableWiredAnalog";
-prog_char PROGMEM Cmd_119[]="WaitEvent";
+prog_char PROGMEM Cmd_119[]="Sleep";
 prog_char PROGMEM Cmd_120[]="WaitFreeRX";
 prog_char PROGMEM Cmd_121[]="WildCard";
 prog_char PROGMEM Cmd_122[]="Wired";
@@ -363,6 +364,7 @@ prog_char PROGMEM Cmd_138[]="AliasShow";
 prog_char PROGMEM Cmd_139[]="AliasList";
 prog_char PROGMEM Cmd_140[]="PowerSave";
 prog_char PROGMEM Cmd_141[]="IPSend";
+prog_char PROGMEM Cmd_142[]="Stop";
 
 
 // tabel die refereert aan de commando strings
@@ -381,7 +383,7 @@ Cmd_100,Cmd_101,Cmd_102,Cmd_103,Cmd_104,Cmd_105,Cmd_106,Cmd_107,Cmd_108,Cmd_109,
 Cmd_110,Cmd_111,Cmd_112,Cmd_113,Cmd_114,Cmd_115,Cmd_116,Cmd_117,Cmd_118,Cmd_119,
 Cmd_120,Cmd_121,Cmd_122,Cmd_123,Cmd_124,Cmd_125,Cmd_126,Cmd_127,Cmd_128,Cmd_129,
 Cmd_130,Cmd_131,Cmd_132,Cmd_133,Cmd_134,Cmd_135,Cmd_136,Cmd_137,Cmd_138,Cmd_139,
-Cmd_140,Cmd_141};
+Cmd_140,Cmd_141,Cmd_142};
 
 // Message max. 40 pos       "1234567890123456789012345678901234567890"
 prog_char PROGMEM Msg_0[]  = "Ok.";
@@ -393,7 +395,7 @@ prog_char PROGMEM Msg_5[]  = "Reading/writing eventlist failed.";
 prog_char PROGMEM Msg_6[]  = "Unable to establish TCP/IP connection.";
 prog_char PROGMEM Msg_7[]  = "Execution stopped.";
 prog_char PROGMEM Msg_8[]  = "Access denied.";
-prog_char PROGMEM Msg_9[]  = "SendTo error.";
+prog_char PROGMEM Msg_9[]  = "Communication error.";
 prog_char PROGMEM Msg_10[] = "SDCard error.";
 prog_char PROGMEM Msg_11[] = "Break.";
 prog_char PROGMEM Msg_12[] = "RawSignal saved.";
