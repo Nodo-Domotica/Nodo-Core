@@ -871,9 +871,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         ParameterToView[0]=PAR2_INT;
         break;
         
-      case CMD_SLEEP://???
-        break;
-
       // Par1 als waarde en par2 als tekst
       case CMD_VARIABLE_SEND:
       case CMD_WIRED_PULLUP:
@@ -963,6 +960,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         break;
         
       // geen parameters.
+      case CMD_SLEEP:
       case CMD_REBOOT:
       case CMD_CLOCK_SYNC:
       case CMD_RESET:
@@ -1175,7 +1173,8 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
       ResultEvent->Type=NODO_TYPE_EVENT;
       break; 
 
-    //test; geen, altijd goed
+    // altijd goed
+    case CMD_SLEEP:
     case CMD_EVENTLIST_SHOW:
     case CMD_EVENTLIST_ERASE:
     case CMD_STOP:
@@ -1183,7 +1182,6 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
     case CMD_REBOOT:
     case CMD_SETTINGS_SAVE:
     case CMD_STATUS:
-    case CMD_SLEEP:
     case CMD_DELAY:
     case CMD_SOUND: 
     case CMD_SEND_USEREVENT:

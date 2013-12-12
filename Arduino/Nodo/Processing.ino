@@ -36,7 +36,7 @@ byte ProcessEventExt(struct NodoEventStruct *Event)
     TempEvent.Type                  = NODO_TYPE_SYSTEM;    // Event is niet voor de gebruiker bedoeld
     TempEvent.Command               = SYSTEM_COMMAND_CONFIRMED;
     TempEvent.Par1                  = RequestForConfirm;
-    SendEvent(&TempEvent, false,false,Settings.WaitFree==VALUE_ON);
+    SendEvent(&TempEvent, false,false,false);
     RequestForConfirm=0;
     }  
   return error;

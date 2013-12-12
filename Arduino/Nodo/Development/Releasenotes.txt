@@ -60,6 +60,8 @@ R637:
 - Commando [VariableReceive] vervangen door [VariableGet <VariabeleBestemming>, <UnitBron>, <VariabeleBron>]
 - Tekst "SendTo error." gerenamed naar de algemenere melding "Communication error.". Dit i.v.m. hergebruik elders.
 
+R640:
+- Commando [Sleep] toegevoegd. Sleep zet de Arduino in de energiezuinige mode en wordt wakker bij aflopen van een timer.
 
 Nog te doen:
 - uitklokken ontvangstroutine met analyser
