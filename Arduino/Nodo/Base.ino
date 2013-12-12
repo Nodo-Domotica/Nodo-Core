@@ -1,5 +1,5 @@
-#define NODO_BUILD                       637 // ??? Ophogen bij iedere Build / versiebeheer.
-#define NODO_VERSION_MINOR                 4 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
+#define NODO_BUILD                       640 // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_VERSION_MINOR                 5 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3 // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1 // Unit nummer van deze Nodo
 #define HOME_NODO                          1 // Home adres van Nodo's die tot één groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
@@ -30,6 +30,7 @@
 #define ETHERNET_MAC_1                  0xBB // Dit is byte 1 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
 #define ETHERNET_MAC_2                  0xAA // Dit is byte 2 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
 #define CLOCK                           true // true=code voor Real Time Clock mee compileren.
+#define SLEEP                           true // Sleep mode mee compileren?
 
 byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
 
@@ -589,12 +590,12 @@ struct SettingsStruct
   byte    TransmitIR;
   byte    TransmitRF;
   byte    WaitFree;
-  byte    Debug;                                            // Weergeven van extra gegevens t.b.v. beter inzicht verloop van de verwerking
   byte    RawSignalReceive;
   unsigned long Lock;                                       // bevat de pincode waarmee IR/RF ontvangst is geblokkeerd. Bit nummer hoogste bit wordt gebruiktvoor in/uitschakelen.
   
   #if NODO_MEGA
   unsigned long Alarm[ALARM_MAX];                           // Instelbaar alarm
+  byte    Debug;                                            // Weergeven van extra gegevens t.b.v. beter inzicht verloop van de verwerking
   byte    TransmitIP;                                       // Definitie van het gebruik van HTTP-communicatie via de IP-poort: [Off] of [On]
   char    Password[26];                                     // String met wachtwoord.
   char    ID[10];                                           // ID waar de Nodo uniek mee geïdentificeerd kan worden in een netwerk
@@ -675,6 +676,14 @@ struct NodoEventStruct
   byte Checksum;
   };
 
+  // Van alle devices die worden mee gecompileerd, worden in een tabel de adressen opgeslagen zodat
+// hier naar toe gesprongen kan worden
+void PluginInit(void);
+boolean (*Plugin_ptr[PLUGIN_MAX])(byte, struct NodoEventStruct*, char*);
+byte Plugin_id[PLUGIN_MAX];
+boolean ExecuteCommand(NodoEventStruct *EventToExecute);//protoype definieren.
+
+
 volatile unsigned long PulseCount=0L;                       // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
 volatile unsigned long PulseTime=0L;                        // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
 boolean RebootNodo=false;                                   // Als deze vlag staat, dan reboot de Nodo (cold-start)
@@ -696,15 +705,6 @@ unsigned long HW_Config=0;                                  // Hardware configur
 struct NodoEventStruct LastReceived;                        // Laatst ontvangen event
 byte RequestForConfirm=0;                                   // Als ongelijk nul, dan heeft deze Nodo een verzoek ontvangen om een systemevent 'Confirm' te verzenden. Waarde wordt in Par1 meegezonden.
 int EventlistMax=0;                                         // beschikbaar aantal regels in de eventlist. Wordt tijdens setup berekend.
-
-
-// Van alle devices die worden mee gecompileerd, worden in een tabel de adressen opgeslagen zodat
-// hier naar toe gesprongen kan worden
-void PluginInit(void);
-boolean (*Plugin_ptr[PLUGIN_MAX])(byte, struct NodoEventStruct*, char*);
-byte Plugin_id[PLUGIN_MAX];
-boolean ExecuteCommand(NodoEventStruct *EventToExecute);//protoype definieren.
-
 
 #if NODO_MEGA
 byte  Transmission_SendToUnit=0;                            // Unitnummer waar de events naar toe gestuurd worden. 0=alle.

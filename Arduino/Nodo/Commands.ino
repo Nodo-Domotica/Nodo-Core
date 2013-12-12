@@ -309,7 +309,12 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       UserTimer[EventToExecute->Par1-1]=millis()+random(EventToExecute->Par2)*1000;
       break;
 
-    case CMD_SLEEP://??? Nog uitwerken=
+    case CMD_SLEEP:
+      #if !NODO_MEGA
+      #if SLEEP
+      GoodNightSleepTight();
+      #endif
+      #endif      
       break;
 
     case CMD_DELAY:
@@ -552,7 +557,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
           TempEvent.Command             = EVENT_VARIABLE;
           TempEvent.Type                = NODO_TYPE_EVENT;
 
-          if(Wait(10,false,&TempEvent,false))
+          if(Wait(3,false,&TempEvent,false))
             {
             TempEvent.Par1            = EventToExecute->Par1;  
             TempEvent.Type            = NODO_TYPE_COMMAND;
@@ -596,7 +601,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
     case CMD_RAWSIGNAL_SAVE: 
       if(EventToExecute->Par1==0)
         {
-        // Sta huidige inhoud van de RawSignal buffer op.
+        // Sla huidige inhoud van de RawSignal buffer op.
         // Daarvoor moet eerst de bijbehorende HEX-code worden uitgerekend.
         ClearEvent(&TempEvent);//??? Kunnen de clearevents niet weg door deze eenmaal aan begin uit te voeren?
         RawSignal_2_32bit(&TempEvent);

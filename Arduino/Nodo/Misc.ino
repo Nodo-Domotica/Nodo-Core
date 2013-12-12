@@ -2639,3 +2639,87 @@ void AliasList(char* Keyword, byte Port)
 
 
 #endif
+
+
+#if !NODO_MEGA
+ /********************************************************************************************\
+ * Onderstaande funkties zijn alleen voor de Small en zetten de Nodo in de sleep mode
+ * zodat batterij voeding mogelijk is.
+ *  
+ \********************************************************************************************/
+
+#if SLEEP
+#include <avr/sleep.h>
+#include <avr/wdt.h>
+
+// watchdog interrupt routine
+ISR (WDT_vect) 
+  {
+  wdt_disable();  // disable watchdog
+  }
+
+void GoodNightSleepTight(void)
+  {
+  // De WDT timer haalt de Nodo om de acht seconden uit de Sleep mode. We blijven net zo lang in de Sleep mode totdat
+  // een timer is afgelopen. Aangezien de timers tijdens de Sleep mode niet meer lopen, zullen we deze zelf moeten laten
+  // aftellen. De eerste timer die afloopt bepaalt de Sleep tijd. Dit mechanisme zorgt wel voor onnauwkeurigheid in het
+  // aflopen van de timers. Als er geen timer binnen 10 seconden afloopt, dan wordt de sleep mode NIET geactiveerd.
+  unsigned long MinTimer=0L;
+  boolean Sleep=true;
+  byte x;
+  
+  while(Sleep)
+    {
+    // Haal de tijd op van de eerste timer die afloopt.
+    MinTimer=0xffffff;
+    for(x=0;x<TIMER_MAX;x++)
+      if(UserTimer[x]>0 && UserTimer[x]<MinTimer)
+        MinTimer=UserTimer[x];
+
+    // Duurt het aflopen van de eerste timer langer dan 10 seconden, dan in de sleep-mode.
+    if(MinTimer!=0xffffff && (MinTimer-millis()) > 10000)
+      {
+      // Bespaar energie
+      Led(0);     
+      digitalWrite(PIN_RF_RX_VCC,LOW);                                          // Spanning naar de RF ontvanger uit
+      wdsleep();
+            
+      // Nu zijn we acht seconden verder. Herstel de timers.
+      for(x=0;x<TIMER_MAX;x++)                                                  // loop de timers langs
+        {
+        if(UserTimer[x]>0)
+          {                                                                     // Als de timer in gebruik
+          UserTimer[x]-=8000;                                                   // dan min acht seconden
+          if(UserTimer[x]>0x5265C00)                                            // Als waarde groter dan een etmaal dan was er een roll-over (negatief) 
+            UserTimer[x]=0;                                                     // In dat geval de timer op nul zetten.
+          }
+        }
+      }
+    else
+      Sleep=false;
+    }
+  digitalWrite(PIN_RF_RX_VCC,HIGH);                                             // Spanning naar de RF ontvanger weer aan
+  Led(RED);     
+  }
+
+void wdsleep()
+  {
+  ADCSRA = 0;                                                                   // disable ADC  
+  MCUSR = 0;                                                                    // clear various "reset" flags     
+  WDTCSR = _BV (WDCE) | _BV (WDE);                                              // allow changes, disable reset
+  WDTCSR = _BV (WDIE) | _BV (WDP3) | _BV (WDP0);                                // set interrupt mode and an interval set WDIE, and 8 seconds delay
+  wdt_reset();                                                                  // pat the dog
+ 
+  set_sleep_mode (SLEEP_MODE_PWR_DOWN);  
+  sleep_enable();
+
+  // turn off brown-out enable in software
+  MCUCR = _BV (BODS) | _BV (BODSE);
+  MCUCR = _BV (BODS); 
+  sleep_cpu ();  
+   
+  // cancel sleep as a precaution
+  sleep_disable();
+  }
+#endif
+#endif
