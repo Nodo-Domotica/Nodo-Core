@@ -2658,46 +2658,42 @@ ISR (WDT_vect)
   wdt_disable();  // disable watchdog
   }
 
+
+#define WDT_TIME 8000
 void GoodNightSleepTight(void)
   {
   // De WDT timer haalt de Nodo om de acht seconden uit de Sleep mode. We blijven net zo lang in de Sleep mode totdat
   // een timer is afgelopen. Aangezien de timers tijdens de Sleep mode niet meer lopen, zullen we deze zelf moeten laten
   // aftellen. De eerste timer die afloopt bepaalt de Sleep tijd. Dit mechanisme zorgt wel voor onnauwkeurigheid in het
   // aflopen van de timers. Als er geen timer binnen 10 seconden afloopt, dan wordt de sleep mode NIET geactiveerd.
-  unsigned long MinTimer=0L;
-  boolean Sleep=true;
+  unsigned long SleepTimer=0L;
   byte x;
   
-  while(Sleep)
-    {
-    // Haal de tijd op van de eerste timer die afloopt.
-    MinTimer=0xffffff;
-    for(x=0;x<TIMER_MAX;x++)
-      if(UserTimer[x]>0 && UserTimer[x]<MinTimer)
-        MinTimer=UserTimer[x];
 
-    // Duurt het aflopen van de eerste timer langer dan 10 seconden, dan in de sleep-mode.
-    if(MinTimer!=0xffffff && (MinTimer-millis()) > 10000)
-      {
-      // Bespaar energie
-      Led(0);     
-      digitalWrite(PIN_RF_RX_VCC,LOW);                                          // Spanning naar de RF ontvanger uit
-      wdsleep();
-            
-      // Nu zijn we acht seconden verder. Herstel de timers.
-      for(x=0;x<TIMER_MAX;x++)                                                  // loop de timers langs
-        {
-        if(UserTimer[x]>0)
-          {                                                                     // Als de timer in gebruik
-          UserTimer[x]-=8000;                                                   // dan min acht seconden
-          if(UserTimer[x]>0x5265C00)                                            // Als waarde groter dan een etmaal dan was er een roll-over (negatief) 
-            UserTimer[x]=0;                                                     // In dat geval de timer op nul zetten.
-          }
-        }
-      }
-    else
-      Sleep=false;
-    }
+  // Haal de tijd op van de eerste timer die afloopt.
+  SleepTimer=0xffffff;
+  for(x=0;x<TIMER_MAX;x++)
+    if(UserTimer[x]>0 && UserTimer[x]<SleepTimer)
+      SleepTimer=UserTimer[x];
+
+  // bereken de tijd in eenheden van 8 seconden dat de Nodo moet gaan slapen. 
+  SleepTimer=(SleepTimer-millis())/WDT_TIME+1;
+
+  // Als we uit de Sleep mode komen, dan hebben alle timers een achterstand gelijk aan de Sleep tijd omdat
+  // millis(); stil staat gedurende de sleep mode. De de Timers alvast op de juiste tijd. 
+  for(x=0;x<TIMER_MAX;x++)
+    if(UserTimer[x]>0)                                                          // Als de timer in gebruik, dan bevat deze een tijdstip in millis()
+      UserTimer[x]-=SleepTimer*WDT_TIME;                                        // dan min acht seconden
+
+  // Spaar energie door de LED uit te zetten en de spanning naar de ontvanger.
+  Led(0);     
+  digitalWrite(PIN_RF_RX_VCC,LOW);                                            // Spanning naar de RF ontvanger uit
+
+  // Zzzzz.....
+  while(SleepTimer--)
+    wdsleep();
+
+  // Spanning weer op de RF ontvanger anders is de Nodo doof.
   digitalWrite(PIN_RF_RX_VCC,HIGH);                                             // Spanning naar de RF ontvanger weer aan
   Led(RED);     
   }
@@ -2716,7 +2712,7 @@ void wdsleep()
   // turn off brown-out enable in software
   MCUCR = _BV (BODS) | _BV (BODSE);
   MCUCR = _BV (BODS); 
-  sleep_cpu ();  
+  sleep_cpu();  
    
   // cancel sleep as a precaution
   sleep_disable();

@@ -64,6 +64,10 @@ R640:
 - Commando [Sleep] toegevoegd. Sleep zet de Arduino in de energiezuinige mode en wordt wakker bij aflopen van een timer.
 
 Nog te doen:
+
+- Bug: Timer-1 event via RF verzenden via SendTo wordt niet door EventList afgehandeld.  
+- Bug: Boot van een Slave claimed soms de RF band. Waarom deze lock en komt de band niet vrij?
+- Bug: Input=RF; Unit=4; Event=Message 14,5: Plugin returned an error. ==> Reboot master !
 - uitklokken ontvangstroutine met analyser
 - Aanpassen en testen: Lock mechanisme
 \*****************************************************************************************/
