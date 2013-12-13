@@ -10,7 +10,6 @@
 #define UNIT_NODO       15 // Na een reset wordt dit het unitnummer van de Nodo
 #define CLOCK        false // true=code voor Real Time Clock mee compileren.
 #define NODO_MEGA    false // true = Nodo Mega, false=Nodo-Small
-#define ETHERNET     false // true = Deze Nodo beschikt over een ethernet kaart
 
 // Kaku              : Klik-Aan-Klik-Uit / HomeEasy protocol ontvangst
 // #define PLUGIN_001
@@ -29,10 +28,13 @@
 // #define PLUGIN_004_CORE
 
 // DTH-22 Vocht/Temperatuursensor
-#define PLUGIN_006
-#define PLUGIN_006_CORE 22
+// #define PLUGIN_006
+// #define PLUGIN_006_CORE 22
 
 // BMP085 Luchtdruk sensor
-#define PLUGIN_020
-#define PLUGIN_020_CORE 
+// #define PLUGIN_020
+// #define PLUGIN_020_CORE 
 
+// TempSensor        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
+// #define PLUGIN_005 
+// #define PLUGIN_005_CORE
