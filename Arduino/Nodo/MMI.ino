@@ -627,7 +627,7 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
     TmpStr[0]=0;
 
     // datum en tijd weergeven
-    #if clock
+    #if CLOCK
     if(bitRead(HW_Config,HW_CLOCK)) // alleen als er een RTC aanwezig is.
       {   
       strcat(TmpStr,DateTimeString());
@@ -647,7 +647,7 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
 /**********************************************************************************************\
  * Print actuele dag, datum, tijd.
  \*********************************************************************************************/
-#if clock
+#if CLOCK
 char* DateTimeString(void)
   {
   int x;
@@ -689,11 +689,11 @@ void PrintWelcome(void)
 
   PrintString(TempString,VALUE_ALL);
 
-  #if clock
+  #if CLOCK
  // Geef datum en tijd weer.
-  if(bitRead(HW_Config,HW_CLOCK))
+  if(bitRead(HW_Config,HW_CLOCK) || true) //???
     {
-    sprintf(TempString,"%s %s",DateTimeString(), cmd2str(Time.DaylightSaving?VALUE_DLS:0));
+    sprintf(TempString,"Testje: %s %s",DateTimeString(), cmd2str(Time.DaylightSaving?VALUE_DLS:0));//???
     PrintString(TempString,VALUE_ALL);
     }
   #endif

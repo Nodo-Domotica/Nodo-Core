@@ -407,9 +407,6 @@ prog_char PROGMEM Msg_15[] = "Incompatibel event received.";
 // tabel die refereert aan de message strings
 PROGMEM const char *MessageText_tabel[]={Msg_0,Msg_1,Msg_2,Msg_3,Msg_4,Msg_5,Msg_6,Msg_7,Msg_8,Msg_9,Msg_10,Msg_11,Msg_12,Msg_13,Msg_14,Msg_15};
 
-// Tabel met zonsopgang en -ondergang momenten. afgeleid van KNMI gegevens midden Nederland.
-PROGMEM prog_uint16_t Sunrise[]={528,525,516,503,487,467,446,424,401,378,355,333,313,295,279,268,261,259,263,271,283,297,312,329,345,367,377,394,411,428,446,464,481,498,512,522,528,527};
-PROGMEM prog_uint16_t Sunset[]={999,1010,1026,1044,1062,1081,1099,1117,1135,1152,1169,1186,1203,1219,1235,1248,1258,1263,1264,1259,1249,1235,1218,1198,1177,1154,1131,1107,1084,1062,1041,1023,1008,996,990,989,993,1004};
 
 // strings met vaste tekst naar PROGMEM om hiermee RAM-geheugen te sparen.
 prog_char PROGMEM Text_01[] = "Nodo Domotica controller (c) Copyright 2013 P.K.Tonkes.";
@@ -431,10 +428,17 @@ prog_char PROGMEM Text_30[] = "Terminal connection closed.";
 
 #endif
 
+// Tabel met zonsopgang en -ondergang momenten. afgeleid van KNMI gegevens midden Nederland.
 #if CLOCK
+PROGMEM prog_uint16_t Sunrise[]={528,525,516,503,487,467,446,424,401,378,355,333,313,295,279,268,261,259,263,271,283,297,312,329,345,367,377,394,411,428,446,464,481,498,512,522,528,527};
+PROGMEM prog_uint16_t Sunset[]={999,1010,1026,1044,1062,1081,1099,1117,1135,1152,1169,1186,1203,1219,1235,1248,1258,1263,1264,1259,1249,1235,1218,1198,1177,1154,1131,1107,1084,1062,1041,1023,1008,996,990,989,993,1004};
+
 // omschakeling zomertijd / wintertijd voor komende 10 jaar. één int bevat de omschakeldatum van maart en oktober.
 #define DLSBase 2010 // jaar van eerste element uit de array
 PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,3127};
+// RealTimeclock DS1307
+
+struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,DaylightSaving,DaylightSavingSetMonth,DaylightSavingSetDate; int Year;}Time; // Hier wordt datum & tijd in opgeslagen afkomstig van de RTC.
 #endif //CLOCK
 
 #define PLUGIN_MMI_IN                1
@@ -457,8 +461,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define SERIAL_TERMINATOR_1         0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>
 #define SERIAL_TERMINATOR_2         0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
 #define Loop_INTERVAL_1               50 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
-#define Loop_INTERVAL_2              250 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
-#define Loop_INTERVAL_3             1000 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
+#define Loop_INTERVAL_2             1000 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
 
 
 // Hardware in gebruik: Bits worden geset in de variabele HW_Config, uit te lezen met [Status HWConfig]
@@ -577,7 +580,31 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 #define PIN_I2C_SDA                 A4 // I2C communicatie lijn voor de o.a. de realtime clock.
 #define PIN_I2C_SLC                 A5 // I2C communicatie lijn voor de o.a. de realtime clock.
 #endif
+
+// In het transport deel van een Nodo event kunnen zich de volgende vlaggen bevinden:
+#define TRANSMISSION_QUEUE                               1  // Master => Slave : Event maakt deel uit van een reeks die in de queue geplaatst moet worden
+#define TRANSMISSION_QUEUE_NEXT                          2  // Master => Slave : Event maakt deel uit van een reeks die in de queue geplaatst moet worden
+#define TRANSMISSION_QUEUE_WAIT                          4  // Master => Slave : Als deze vlag staat stuurd de Slave pas een bevesting NA verwerking queue
+#define TRANSMISSION_LOCK                                8  // Master => Slave : Verzoek om de ether te blokkeren voor exclusieve communicatie tussen master en een slave Nodo.
+#define TRANSMISSION_CONFIRM                            16  // Master => Slave : Verzoek aan master om bevestiging te sturen na ontvangst.
+#define TRANSMISSION_VIEW                               32  // Master => Slave : Uitsluitend het event weergeven, niet uitvoeren
+#define TRANSMISSION_VIEW_SPECIAL                       64  // Master => Slave : Uitsluitend het event weergeven, niet uitvoeren
+
+// Er zijn een aantal type Nodo events die op verschillende wijze worden behandeld:
+#define NODO_TYPE_EVENT                                  1
+#define NODO_TYPE_COMMAND                                2
+#define NODO_TYPE_SYSTEM                                 3               
+#define NODO_TYPE_PLUGIN_EVENT                           4
+#define NODO_TYPE_PLUGIN_COMMAND                         5
+
+// De Nodo kent naast gebruikers commando's en events eveneens Nodo interne events
+#define SYSTEM_COMMAND_CONFIRMED                         1
+#define SYSTEM_COMMAND_QUEUE_SENDTO                      2  // Dit is aankondiging reeks, dus niet het user comando "SendTo".
+#define SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW              3  // Dit is aankondiging reeks, dus niet het user comando "EventlistShow".
+#define SYSTEM_COMMAND_QUEUE_EVENTLIST_WRITE             4  // Dit is aankondiging reeks, dus niet het user comando "EventlistShow".
+
 //****************************************************************************************************************************************
+
 
 struct SettingsStruct
   {
@@ -635,28 +662,6 @@ struct SettingsStruct
    unsigned long ActionPar2;
    };
 
-
-// In het transport deel van een Nodo event kunnen zich de volgende vlaggen bevinden:
-#define TRANSMISSION_QUEUE                               1  // Master => Slave : Event maakt deel uit van een reeks die in de queue geplaatst moet worden
-#define TRANSMISSION_QUEUE_NEXT                          2  // Master => Slave : Event maakt deel uit van een reeks die in de queue geplaatst moet worden
-#define TRANSMISSION_QUEUE_WAIT                          4  // Master => Slave : Als deze vlag staat stuurd de Slave pas een bevesting NA verwerking queue
-#define TRANSMISSION_LOCK                                8  // Master => Slave : Verzoek om de ether te blokkeren voor exclusieve communicatie tussen master en een slave Nodo.
-#define TRANSMISSION_CONFIRM                            16  // Master => Slave : Verzoek aan master om bevestiging te sturen na ontvangst.
-#define TRANSMISSION_VIEW                               32  // Master => Slave : Uitsluitend het event weergeven, niet uitvoeren
-#define TRANSMISSION_VIEW_SPECIAL                       64  // Master => Slave : Uitsluitend het event weergeven, niet uitvoeren
-
-// Er zijn een aantal type Nodo events die op verschillende wijze worden behandeld:
-#define NODO_TYPE_EVENT                                  1
-#define NODO_TYPE_COMMAND                                2
-#define NODO_TYPE_SYSTEM                                 3               
-#define NODO_TYPE_PLUGIN_EVENT                           4
-#define NODO_TYPE_PLUGIN_COMMAND                         5
-
-// De Nodo kent naast gebruikers commando's en events eveneens Nodo interne events
-#define SYSTEM_COMMAND_CONFIRMED                         1
-#define SYSTEM_COMMAND_QUEUE_SENDTO                      2  // Dit is aankondiging reeks, dus niet het user comando "SendTo".
-#define SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW              3  // Dit is aankondiging reeks, dus niet het user comando "EventlistShow".
-#define SYSTEM_COMMAND_QUEUE_EVENTLIST_WRITE             4  // Dit is aankondiging reeks, dus niet het user comando "EventlistShow".
   
 struct NodoEventStruct
   {
@@ -736,11 +741,6 @@ byte IPClientIP[4];                                         // IP adres van de H
 
 #endif
 
-
-// RealTimeclock DS1307
-#if CLOCK
-struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,DaylightSaving,DaylightSavingSetMonth,DaylightSavingSetDate; int Year;}Time; // Hier wordt datum & tijd in opgeslagen afkomstig van de RTC.
-#endif CLOCK
 
 #define RAW_BUFFER_SIZE            256                      // Maximaal aantal te ontvangen 128 bits is voldoende voor capture meeste signalen.
 struct RawSignalStruct                                      // Variabelen geplaatst in struct zodat deze later eenvoudig kunnen worden weggeschreven naar SDCard
@@ -899,9 +899,9 @@ void setup()
       RaiseMessage(MESSAGE_TCPIP_FAILED,0);
       }
     }
-  #endif
+  #endif //ethernet
 
-  #endif
+  #endif // Mega
 
   WireNodo.onReceive(ReceiveI2C);   // verwijs naar ontvangstroutine
 
@@ -971,9 +971,8 @@ void loop()
   struct NodoEventStruct ReceivedEvent;
   byte PreviousMinutes=0;                                     // Sla laatst gecheckte minuut op zodat niet vaker dan nodig (eenmaal per minuut de eventlist wordt doorlopen
   
-  unsigned long LoopIntervalTimer_1=millis();                 // Timer voor periodieke verwerking. millis() maakt dat de intervallen van 1 en 2 niet op zelfde moment vallen => 1 en 2 nu asynchroon.
+  unsigned long LoopIntervalTimer_1=25;                       // Timer voor periodieke verwerking. 25 willekeurig gekozen zodat de intervallen niet gelijk lopen met de andere intervaltimer.
   unsigned long LoopIntervalTimer_2=0L;                       // Timer voor periodieke verwerking.
-  unsigned long LoopIntervalTimer_3=0L;                       // Timer voor periodieke verwerking.
   unsigned long StaySharpTimer;                               // Timer die er voor zorgt dat bij communicatie via een kanaal de focus hier ook enige tijd op blijft
   unsigned long PreviousTimeEvent=0L; 
 
@@ -1040,17 +1039,12 @@ void loop()
     if(LoopIntervalTimer_1<millis()) // korte interval
       {
       LoopIntervalTimer_1=millis()+Loop_INTERVAL_1; // reset de timer  
+      Led(GREEN);
 
       switch(Slice_1++)
-        {
-        case 0:  // binnen Slice_1
-          {
-          Led(GREEN);
-          break;
-          }
-        
+        {        
         #if NODO_MEGA
-        case 1: // binnen Slice_1
+        case 0: // binnen Slice_1
           {
           // IP Event: *************** kijk of er een Event van IP komt **********************    
           #ifdef ethernetserver_h
@@ -1062,7 +1056,7 @@ void loop()
           break;
           }
    
-        case 2: // binnen Slice_1 
+        case 1: // binnen Slice_1 
           {
           #ifdef ethernetserver_h
           // IP Telnet verbinding : *************** kijk of er verzoek tot verbinding vanuit een terminal is **********************    
@@ -1185,74 +1179,7 @@ void loop()
           }
         #endif
         
-        default:  // binnen Slice_1
-          Slice_1=0;
-          break;
-        }// switch
-      }//LoopTinterval 1
-
-    // 2: niet tijdkritische processen die periodiek uitgevoerd moeten worden
-    if(LoopIntervalTimer_2<millis())// lange interval
-      {
-      LoopIntervalTimer_2=millis()+Loop_INTERVAL_2; // reset de timer        
-      switch(Slice_2++)
-        {
-        case 0:
-          {
-          #if CLOCK
-          // CLOCK: **************** Check op time events  ***********************          
-          if(bitRead(HW_Config,HW_CLOCK) && Time.Minutes!=PreviousMinutes)//Als klok aanwezig en er is een minuut verstreken
-            {
-            PreviousMinutes=Time.Minutes;
-            ClearEvent(&ReceivedEvent);
-            ReceivedEvent.Type             = NODO_TYPE_EVENT;
-            ReceivedEvent.Command          = EVENT_TIME;
-            ReceivedEvent.Par2             = Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12 | (unsigned long)Time.Day<<16;
-            ReceivedEvent.Direction        = VALUE_DIRECTION_INPUT;
-            ReceivedEvent.Port             = VALUE_SOURCE_CLOCK;
-            
-            if(CheckEventlist(&ReceivedEvent))
-              {
-              if(PreviousTimeEvent!=ReceivedEvent.Par2)
-                {
-                ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
-                PreviousTimeEvent=ReceivedEvent.Par2; 
-                }
-              }
-            else
-              PreviousTimeEvent=0L;
-            }
-          #endif CLOCK
-          break;
-          }
-
-        case 1:
-          {
-          #if NODO_MEGA    
-          #if CLOCK 
-
-          // DAYLIGHT: **************** Check zonsopkomst & zonsondergang  ***********************
-          if(bitRead(HW_Config,HW_CLOCK))
-            {
-            SetDaylight();
-            if(Time.Daylight!=DaylightPrevious)// er heeft een zonsondergang of zonsopkomst event voorgedaan
-              {
-              ClearEvent(&ReceivedEvent);
-              ReceivedEvent.Type             = NODO_TYPE_EVENT;
-              ReceivedEvent.Command          = EVENT_CLOCK_DAYLIGHT;
-              ReceivedEvent.Par1             = Time.Daylight;
-              ReceivedEvent.Direction        = VALUE_DIRECTION_INPUT;
-              ReceivedEvent.Port             = VALUE_SOURCE_CLOCK;
-              ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
-              DaylightPrevious=Time.Daylight;
-              }
-            }
-          #endif CLOCK 
-          #endif
-          break;
-          }
-          
-        case 2:
+        case 2: // binnen Slice_1 
           {
           // WIRED: *************** kijk of statussen gewijzigd zijn op WIRED **********************  
           // als de huidige waarde groter dan threshold EN de vorige keer was dat nog niet zo DAN event genereren
@@ -1273,6 +1200,7 @@ void loop()
               WiredInputStatus[x]=false;
               z=true;
               }
+    
             if(z)
               {
               bitWrite(HW_Config,HW_WIRED_IN,true);
@@ -1286,66 +1214,91 @@ void loop()
               ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
               }
             }
-          break;
           }
-
-        case 3:
-          {
-          // TIMER: **************** Genereer event als één van de Timers voor de gebruiker afgelopen is ***********************    
-          for(x=0;x<TIMER_MAX;x++)
-            {
-            if(UserTimer[x]!=0L)// als de timer actief is
-              {
-              if(UserTimer[x]<millis()) // als de timer is afgelopen.
-                {
-                UserTimer[x]=0L;// zet de timer op inactief.
-
-                ClearEvent(&ReceivedEvent);
-                ReceivedEvent.Type             = NODO_TYPE_EVENT;
-                ReceivedEvent.Command          = EVENT_TIMER;
-                ReceivedEvent.Par1             = x+1;
-                ReceivedEvent.Direction        = VALUE_DIRECTION_INPUT;
-                ReceivedEvent.Port             = VALUE_SOURCE_CLOCK;
-                ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
-                }
-              }
-            }
+          
+        default:  // binnen Slice_1
+          Slice_1=0;
           break;
-          }
-                  
-        default:
-          Slice_2=0;
-        }
-      }
+        }// switch
+      }//LoopTinterval 1
 
-    // 3: niet tijdkritische processen die periodiek uitgevoerd moeten worden
-    if(LoopIntervalTimer_3<millis())// lange interval: Iedere seconde.
+
+    // 2: niet tijdkritische processen die periodiek uitgevoerd moeten worden
+    if(LoopIntervalTimer_2<millis())// lange interval: Iedere seconde.
       {
-      LoopIntervalTimer_3=millis()+Loop_INTERVAL_3; // reset de timer  
+      LoopIntervalTimer_2=millis()+Loop_INTERVAL_2; // reset de timer  
 
-    
-      // CLOCK: **************** Lees periodiek de realtime klok uit en check op events  ***********************
-      #if CLOCK
-      ClockRead(); // Lees de Real Time Clock waarden in de struct Time
-      #endif CLOCK 
-
-      // Loopt voor de devices de periodieke aanroep langs.
+      // PLUGIN: **************** Loop iedere seconde de plugins langs voor onderhoudstaken ***********************
       PluginCall(PLUGIN_ONCE_A_SECOND,&ReceivedEvent,0);
 
-      // rebooten van de Nodo is buiten de processing routines geplaatst om zo te voorkomen dat er een reboot van de Arduino
-      // plaats vindt terwijl er nog open bestanden of communicatie is. Dit kan mogelijk leiden tot problemen.
-      // Op deze plek zijn files gesloten en kan een reboot veilig plaats vinden.
-      if(RebootNodo)
-        Reboot();
 
-      #if NODO_MEGA
+      // TIMER: **************** Genereer event als één van de Timers voor de gebruiker afgelopen is ***********************    
+      for(x=0;x<TIMER_MAX;x++)
+        {
+        if(UserTimer[x]!=0L)// als de timer actief is
+          {
+          if(UserTimer[x]<millis()) // als de timer is afgelopen.
+            {
+            UserTimer[x]=0L;// zet de timer op inactief.
 
-      #if clock
-      // ALARM: **************** Genereer event als één van de alarmen afgelopen is ***********************    
-      if(bitRead(HW_Config,HW_CLOCK))//check of de klok aanwzig is
+            ClearEvent(&ReceivedEvent);
+            ReceivedEvent.Type             = NODO_TYPE_EVENT;
+            ReceivedEvent.Command          = EVENT_TIMER;
+            ReceivedEvent.Par1             = x+1;
+            ReceivedEvent.Direction        = VALUE_DIRECTION_INPUT;
+            ReceivedEvent.Port             = VALUE_SOURCE_CLOCK;
+            ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
+            }
+          }
+        }
+
+      // CLOCK: **************** Lees periodiek de realtime klok uit en check op events  ***********************
+      #if CLOCK
+      if(bitRead(HW_Config,HW_CLOCK))
+        {
+        ClockRead(); // Lees de Real Time Clock waarden in de struct Time
+
+        if(Time.Minutes!=PreviousMinutes)//Als klok aanwezig en er is een minuut verstreken
+          {
+          PreviousMinutes=Time.Minutes;
+          ClearEvent(&ReceivedEvent);
+          ReceivedEvent.Type             = NODO_TYPE_EVENT;
+          ReceivedEvent.Command          = EVENT_TIME;
+          ReceivedEvent.Par2             = Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12 | (unsigned long)Time.Day<<16;
+          ReceivedEvent.Direction        = VALUE_DIRECTION_INPUT;
+          ReceivedEvent.Port             = VALUE_SOURCE_CLOCK;
+          
+          if(CheckEventlist(&ReceivedEvent))
+            {
+            if(PreviousTimeEvent!=ReceivedEvent.Par2)
+              {
+              ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
+              PreviousTimeEvent=ReceivedEvent.Par2; 
+              }
+            }
+          else
+            PreviousTimeEvent=0L;
+          }
+
+        SetDaylight();
+        if(Time.Daylight!=DaylightPrevious)// er heeft een zonsondergang of zonsopkomst event voorgedaan
+          {
+          ClearEvent(&ReceivedEvent);
+          ReceivedEvent.Type             = NODO_TYPE_EVENT;
+          ReceivedEvent.Command          = EVENT_CLOCK_DAYLIGHT;
+          ReceivedEvent.Par1             = Time.Daylight;
+          ReceivedEvent.Direction        = VALUE_DIRECTION_INPUT;
+          ReceivedEvent.Port             = VALUE_SOURCE_CLOCK;
+          ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
+          DaylightPrevious=Time.Daylight;
+            }
+
         if(ScanAlarm(&ReceivedEvent)) 
           ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
-      #endif clock
+
+        }
+      #endif CLOCK 
+    
 
       // Terminal onderhoudstaken
       // tel seconden terug nadat de gebruiker gedefinieerd maal foutief wachtwoord ingegeven
@@ -1381,13 +1334,13 @@ void loop()
 
 
       // Timer voor blokkeren verwerking. teller verlagen
+      #if NODO_MEGA
       if(FileWriteMode>0)
         {
         FileWriteMode--;
         if(FileWriteMode==0)
           TempLogFile[0]=0;
         }
-
       #endif //Mega
       }
     }// while 

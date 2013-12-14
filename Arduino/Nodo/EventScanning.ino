@@ -158,7 +158,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)// Deze routine maakt deel uit v
 
 
 #if NODO_MEGA
-#if clock
+#if CLOCK
 boolean ScanAlarm(struct NodoEventStruct *Event)
   {
   unsigned long Mask;

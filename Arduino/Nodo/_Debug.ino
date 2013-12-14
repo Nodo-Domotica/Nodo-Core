@@ -4,16 +4,16 @@
 void PrintNodoEvent(char* str, struct NodoEventStruct *Event)
   {    
   Serial.print(str);
-  Serial.print(F(", Command="));Serial.print(Event->Command);
-  Serial.print(F(", Par1="));Serial.print(Event->Par1);
-  Serial.print(F(", Par2=0x"));Serial.print(Event->Par2,HEX);
-  Serial.print(F(", Version=0x"));Serial.print(Event->Version);
-  Serial.print(F(" => Port="));Serial.print(Event->Port);
-  Serial.print(F(", Direction="));Serial.print(Event->Direction);
-  Serial.print(F(", Flags="));Serial.print(Event->Flags,BIN);
-  Serial.print(F(", DestinationUnit= "));Serial.print(Event->DestinationUnit);
-  Serial.print(F(", SourceUnit="));Serial.print(Event->SourceUnit);
-  Serial.print(F(", Type="));Serial.println(Event->Type);
+  Serial.print(F(", Type="));             Serial.print(Event->Type);
+  Serial.print(F(", Command="));          Serial.print(Event->Command);
+  Serial.print(F(", Par1="));             Serial.print(Event->Par1);
+  Serial.print(F(", Par2=0x"));           Serial.print(Event->Par2,HEX);
+  Serial.print(F(", Version=0x"));        Serial.print(Event->Version);
+  Serial.print(F(" => Port="));           Serial.print(Event->Port);
+  Serial.print(F(", Direction="));        Serial.print(Event->Direction);
+  Serial.print(F(", Flags="));            Serial.print(Event->Flags,BIN);
+  Serial.print(F(", DestinationUnit= ")); Serial.print(Event->DestinationUnit);
+  Serial.print(F(", SourceUnit="));       Serial.println(Event->SourceUnit);
   }
 
 void PrintRawSignal(void)
