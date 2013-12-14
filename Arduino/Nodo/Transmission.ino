@@ -43,21 +43,23 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   // Als er een timeout optreedt, dan de blokkade opheffen. Dit ter voorkoming dat Nodo's oneindig wachten op vrije lijn.
   // Uitzondering is als de Nodo zelf de master was, dan deze mag altijd zenden.
 
-  if(Transmission_SelectedUnit!=0 && Transmission_SelectedUnit!=Settings.Unit && !Transmission_ThisUnitIsMaster)
-    {
-    #if NODO_MEGA
-    char* TempString=(char*)malloc(25);
-    sprintf(TempString,ProgmemString(Text_10), Transmission_SelectedUnit);    
-    PrintString(TempString, VALUE_ALL);
-    free(TempString);
-    #endif
+  // PrintNodoEvent("SendEvent(); ",ES);//$$$
 
-    if(!Wait(120,true,0,false))
-      {
-      Transmission_SelectedUnit=0;
-      Transmission_NodoOnly=false;
-      }
-    }
+//  if(Transmission_SelectedUnit!=0 && Transmission_SelectedUnit!=Settings.Unit && !Transmission_ThisUnitIsMaster)
+//    {
+//    #if NODO_MEGA
+//    char* TempString=(char*)malloc(25);
+//    sprintf(TempString,ProgmemString(Text_10), Transmission_SelectedUnit);    
+//    PrintString(TempString, VALUE_ALL);
+//    free(TempString);
+//    #endif
+
+//    if(!Wait(60,true,0,false))
+//      {
+//      Transmission_SelectedUnit=0;
+//      Transmission_NodoOnly=false;
+//      }
+//    }
 
   // loop de plugins langs voor eventuele afhandeling van dit event.
   PluginCall(PLUGIN_EVENT_OUT, ES,0);
@@ -805,7 +807,7 @@ void ExecuteIP(void)
               IPClient.println(F("Content-Type: text/html"));
               IPClient.print(F("Server: Nodo/Build="));
               IPClient.println(int2str(NODO_BUILD));             
-              #if clock
+              #if CLOCK
               if(bitRead(HW_Config,HW_CLOCK))
                 {
                 IPClient.print(F("Date: "));

@@ -10,7 +10,6 @@
 #define NODO_MEGA     true // true = Nodo Mega, false=Nodo-Small
 #define ETHERNET     false // true = Deze Nodo beschikt over een ethernet kaart
 
-
 // Kaku              : Klik-Aan-Klik-Uit / HomeEasy protocol ontvangst
 #define PLUGIN_001
 #define PLUGIN_001_CORE

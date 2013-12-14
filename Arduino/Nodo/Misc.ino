@@ -2680,7 +2680,7 @@ void GoodNightSleepTight(void)
   SleepTimer=(SleepTimer-millis())/WDT_TIME+1;
 
   // Als we uit de Sleep mode komen, dan hebben alle timers een achterstand gelijk aan de Sleep tijd omdat
-  // millis(); stil staat gedurende de sleep mode. De de Timers alvast op de juiste tijd. 
+  // millis(); stil staat gedurende de sleep mode. Zet de Timers alvast op de juiste tijd. 
   for(x=0;x<TIMER_MAX;x++)
     if(UserTimer[x]>0)                                                          // Als de timer in gebruik, dan bevat deze een tijdstip in millis()
       UserTimer[x]-=SleepTimer*WDT_TIME;                                        // dan min acht seconden

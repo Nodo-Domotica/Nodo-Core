@@ -47,6 +47,9 @@ byte ProcessEvent(struct NodoEventStruct *Event)
   int x;
   byte error=0;
   boolean Continue=true;
+
+  // PrintNodoEvent("ProcessEvent() ",Event);//$$$
+
     
   if(Event->Command==0)
     return error;
@@ -76,7 +79,6 @@ byte ProcessEvent(struct NodoEventStruct *Event)
         RaiseMessage(MESSAGE_ACCESS_DENIED,0);
       }
     }
-
   
   // Events die de QUEUE vlag hebben staan hoorden oorspronkelijk tot een reeks die verzonden is
   // met QueueSend(). Op deze plaats in de code hebben deze events geen betekenis en dus volledig negeren.
@@ -86,12 +88,10 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     Continue=false;
     }
 
-
   if(Event->Type == NODO_TYPE_SYSTEM)
     {                       
     Continue=false;
     }
-
 
 
   #if NODO_MEGA  
@@ -103,14 +103,12 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     }
   #endif
   
-  
   #if NODO_MEGA
   if(Continue && bitRead(HW_Config,HW_SDCARD))
     if(Event->Command==EVENT_RAWSIGNAL && Settings.RawSignalSave==VALUE_ON)
       if(!RawSignalExist(Event->Par2))
         RawSignalWrite(Event->Par2);
   #endif    
-
   
   if(Continue && error==0)
     {
@@ -185,6 +183,9 @@ byte CheckEventlist(struct NodoEventStruct *Event)
  \*********************************************************************************************/
 boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroEvent)
   {  
+  //PrintNodoEvent("CheckEvent(), Event-1",Event);//$$$
+  //PrintNodoEvent("CheckEvent(), Event-2",MacroEvent);//$$$
+
   // geen lege events verwerken
   if(MacroEvent->Command==0 || Event->Command==0)
     return false;  
@@ -193,7 +194,7 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
   if(MacroEvent->Command == EVENT_WILDCARD)                                                                                 // is regel uit de eventlist een WildCard?
     if( MacroEvent->Par1==VALUE_ALL          ||   MacroEvent->Par1==Event->Port)                                            // Correspondeert de poort of mogen alle poorten?
       if((MacroEvent->Par2&0xff)==VALUE_ALL  ||  (MacroEvent->Par2&0xff)==Event->Command && Event->Type==NODO_TYPE_EVENT)   // Correspondeert het commando deel
-        if(((MacroEvent->Par2>>8)&0xff)==0   || ((MacroEvent->Par2>>8)&0xff)==Event->SourceUnit)                            // Correspondeert het unitnummer of is deze niet opgegeven
+        if(((MacroEvent->Par2>>8)&0xff)==0   || ((MacroEvent->Par2>>8)&0xff)==Event->DestinationUnit)                            // Correspondeert het unitnummer of is deze niet opgegeven
           return true;          
 
   // ### USEREVENT: beschouw bij een UserEvent een 0 voor Par1 of Par2 als een wildcard.
@@ -205,7 +206,7 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
     
   // Herkomst van een andere Nodo, dan er niets meer mee doen TENZIJ het een UserEvent is of behandeling door Wildcard. Die werden hierboven 
   // al afgevangen.
-  if(Event->SourceUnit!=0  && Event->SourceUnit!=Settings.Unit)
+  if(Event->DestinationUnit!=0  && Event->DestinationUnit!=Settings.Unit)
     return false;
 
 
@@ -394,7 +395,7 @@ void QueueProcess(void)
       {
       for(x=0;x<QueuePosition;x++)
         {      
-        // Serial.print("QueueProcess(); Uitvoer event uit queue nummer=");Serial.println(x);//???
+        // Serial.print("QueueProcess(); Uitvoer event uit queue nummer=");Serial.println(x);//$$$
         Event.SourceUnit=Queue[x].Unit;
         Event.Type=Queue[x].Type;
         Event.Command=Queue[x].Command;
@@ -403,6 +404,7 @@ void QueueProcess(void)
         Event.Direction=VALUE_DIRECTION_INPUT;
         Event.Port=Queue[x].Port;
         Event.Flags=Queue[x].Flags;
+        // PrintNodoEvent("ProcessQueue();",&Event);//$$$
         ProcessEvent(&Event);      // verwerk binnengekomen event.
         }
       }
@@ -429,7 +431,7 @@ byte QueueSend(boolean fast)
 
   byte SendQueuePosition=QueuePosition;
   QueuePosition=0;
-  // Serial.print("QueueSend() Te verzenden aantal events=");Serial.println(SendQueuePosition);//???  
+  // Serial.print("QueueSend() Te verzenden aantal events=");Serial.println(SendQueuePosition);//$$$  
   
   // De port waar de SendTo naar toe moet halen we uit de lijst met Nodo's die wordt onderhouden door de funktie NodoOnline();
   // als de Nodo nog niet bekend is, dan nemen we aan dat deze via RF benaderbaar is.
@@ -437,12 +439,10 @@ byte QueueSend(boolean fast)
   if(Port==0)
     Port=VALUE_SOURCE_RF;
 
-
   // Eerste fase: Zorg dat de inhoud van de queue correct aan komt op de slave. Activeer aan slave zijde de QueueReceive()
   // Verzend in deze activering tevens het aantal events datdat vanuit de queue verzonden zal worden naar de Slave. Eveneens wordt
   // er een ID verzonden. Deze unieke waarde zorgt er voor dat bij een eventuele re-send de reeks niet nogmaals aankomt op de 
   // slave.
-  // Serial.println("Verzenden queue...");//???
   do
     {
     ClearEvent(&Event);
@@ -481,12 +481,10 @@ byte QueueSend(boolean fast)
       HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS_Q+millis();
         
       SendEvent(&Event,false,false,false);
-      // PrintNodoEvent("QueueSend() Verzonden event",&Event);//???
       }
     
     if(fast)
       {
-      // Serial.println("Fast...");//???
       error=0;
       }
     else
@@ -498,9 +496,7 @@ byte QueueSend(boolean fast)
       Event.Command             = SYSTEM_COMMAND_CONFIRMED;
       Event.Type                = NODO_TYPE_SYSTEM;
   
-      // PrintNodoEvent("QueueSend() wacht op bevestiging",&Event);//???
-
-    if(Wait(10,false,&Event,false))
+      if(Wait(10,false,&Event,false))
         if(x==(Event.Par1-1))// Verzonden events gelijk aan ontvangen events? -1 omdat aan de Slave zijde het eerste element in de queue geen deel uit maakt van de SendTo events.
           error=0;
   
@@ -531,7 +527,7 @@ void QueueReceive(NodoEventStruct *Event)
   
   Wait(5, false, 0, true);// ??? niet uitvoeren als de NEXT flag niet staat.
   count=QueuePosition;
-  // Serial.print("QueueReceive() Ontvangen en in queue geplaatst=");Serial.println(count);//???  
+  // Serial.print("QueueReceive() Ontvangen en in queue geplaatst=");Serial.println(count);//$$$  
 
 
   // Haal de QUEUE vlag van de events af.
@@ -552,7 +548,7 @@ void QueueReceive(NodoEventStruct *Event)
     {
     if(Event->Command==SYSTEM_COMMAND_QUEUE_SENDTO)
       {
-      // Serial.println("QueueReceive() Ontvangen SendTo...");//???
+      // Serial.println("QueueReceive() Ontvangen SendTo...");//$$$
       // Als aantal regels in de queue overeenkomt met wat in het SendTo verzoek is vermeldt
       // EN de queue is nog niet eerder binnen gekomen (ID) dan uitvoeren.
       // Stuur vervolgens de master ter bevestiging het aantal ontvangen events die zich nu in de queue bevinden.
