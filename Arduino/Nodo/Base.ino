@@ -1,4 +1,4 @@
-#define NODO_BUILD                       640 // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       643 // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                 5 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3 // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1 // Unit nummer van deze Nodo
@@ -71,7 +71,7 @@ byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
 
 #define EVENT_ALARM                     16
 #define CMD_ALARM_SET                   17
-#define VALUE_ALL                       18
+#define VALUE_ALL                       18 // VALUE_ALL moet groter zijn dan USER_VARIABLES_MAX !
 #define CMD_ANALYSE_SETTINGS            19
 #define CMD_BREAK_ON_DAYLIGHT           20
 #define CMD_BREAK_ON_TIME_EARLIER       21
@@ -172,7 +172,7 @@ byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
 #define CMD_VARIABLE_SEND               116
 #define CMD_VARIABLE_VARIABLE           117
 #define CMD_VARIABLE_SET_WIRED_ANALOG   118
-#define CMD_SLEEP                       119
+#define CMD_VARIABLE_LOG                119
 #define CMD_WAITFREERF                  120
 #define EVENT_WILDCARD                  121
 #define VALUE_SOURCE_WIRED              122
@@ -196,7 +196,8 @@ byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
 #define CMD_POWERSAVE                   140
 #define CMD_IP_SEND                     141
 #define CMD_STOP                        142
-#define COMMAND_MAX                     142 // hoogste commando
+#define CMD_SLEEP                       143   
+#define COMMAND_MAX                     143 // hoogste commando
 
 #define MESSAGE_OK                      0
 #define MESSAGE_UNKNOWN_COMMAND         1
@@ -342,7 +343,7 @@ prog_char PROGMEM Cmd_115[]="VariableGet";
 prog_char PROGMEM Cmd_116[]="VariableSend";
 prog_char PROGMEM Cmd_117[]="VariableSetVariable";
 prog_char PROGMEM Cmd_118[]="VariableWiredAnalog";
-prog_char PROGMEM Cmd_119[]="Sleep";
+prog_char PROGMEM Cmd_119[]="VariableLog";
 prog_char PROGMEM Cmd_120[]="WaitFreeRX";
 prog_char PROGMEM Cmd_121[]="WildCard";
 prog_char PROGMEM Cmd_122[]="Wired";
@@ -366,6 +367,7 @@ prog_char PROGMEM Cmd_139[]="AliasList";
 prog_char PROGMEM Cmd_140[]="PowerSave";
 prog_char PROGMEM Cmd_141[]="IPSend";
 prog_char PROGMEM Cmd_142[]="Stop";
+prog_char PROGMEM Cmd_143[]="Sleep";
 
 
 // tabel die refereert aan de commando strings
@@ -384,7 +386,7 @@ Cmd_100,Cmd_101,Cmd_102,Cmd_103,Cmd_104,Cmd_105,Cmd_106,Cmd_107,Cmd_108,Cmd_109,
 Cmd_110,Cmd_111,Cmd_112,Cmd_113,Cmd_114,Cmd_115,Cmd_116,Cmd_117,Cmd_118,Cmd_119,
 Cmd_120,Cmd_121,Cmd_122,Cmd_123,Cmd_124,Cmd_125,Cmd_126,Cmd_127,Cmd_128,Cmd_129,
 Cmd_130,Cmd_131,Cmd_132,Cmd_133,Cmd_134,Cmd_135,Cmd_136,Cmd_137,Cmd_138,Cmd_139,
-Cmd_140,Cmd_141,Cmd_142};
+Cmd_140,Cmd_141,Cmd_142,Cmd_143};
 
 // Message max. 40 pos       "1234567890123456789012345678901234567890"
 prog_char PROGMEM Msg_0[]  = "Ok.";
@@ -422,6 +424,9 @@ prog_char PROGMEM Text_11[] = "ALIAS_I"; // Directory op de SDCard voor opslag I
 prog_char PROGMEM Text_12[] = "ALIAS_O"; // Directory op de SDCard voor opslag Output: Nodo Keywords -> Alias van gebruiker.
 prog_char PROGMEM Text_14[] = "Event=";
 prog_char PROGMEM Text_15[] = "! %d Pulses \n! Sample resolution %d microseconds\n! Pulse gauge value %d\n!\n";
+prog_char PROGMEM Text_16[] = "! Date=%02d-%02d-%d, Time=%02d:%02d, Variable=%d, Value=";
+prog_char PROGMEM Text_17[] = "Date=%02d-%02d-%d (%s), Time=%02d:%02d";
+prog_char PROGMEM Text_18[] = "%s %u.%u.%u.%u";
 prog_char PROGMEM Text_22[] = "!******************************************************************************!";
 prog_char PROGMEM Text_23[] = "LOG";
 prog_char PROGMEM Text_30[] = "Terminal connection closed.";
@@ -1043,7 +1048,6 @@ void loop()
 
       switch(Slice_1++)
         {        
-        #if NODO_MEGA
         case 0: // binnen Slice_1
           {
           // IP Event: *************** kijk of er een Event van IP komt **********************    
@@ -1177,7 +1181,6 @@ void loop()
           #endif
           break;
           }
-        #endif
         
         case 2: // binnen Slice_1 
           {
@@ -1214,6 +1217,7 @@ void loop()
               ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
               }
             }
+          break;
           }
           
         default:  // binnen Slice_1
@@ -1279,7 +1283,7 @@ void loop()
           else
             PreviousTimeEvent=0L;
           }
-
+        #if NODO_MEGA
         SetDaylight();
         if(Time.Daylight!=DaylightPrevious)// er heeft een zonsondergang of zonsopkomst event voorgedaan
           {
@@ -1295,7 +1299,7 @@ void loop()
 
         if(ScanAlarm(&ReceivedEvent)) 
           ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
-
+        #endif NODO_MEGA
         }
       #endif CLOCK 
     

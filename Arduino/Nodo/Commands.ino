@@ -8,14 +8,15 @@
 boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
   {
   unsigned long a;
-  int x,y;
+  int w,x,y;
   byte error=0;
   
   struct NodoEventStruct TempEvent=*EventToExecute;
   struct NodoEventStruct TempEvent2;
   
   #if NODO_MEGA
-  char *TempString=(char*)malloc(50);
+  char *TempString=(char*)malloc(80);
+  char *TempString2=(char*)malloc(15);
   #endif
   
   switch(EventToExecute->Command)
@@ -530,6 +531,30 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
 
 #if NODO_MEGA // vanaf hier commando's die alleen de Mega kent.
 
+    case CMD_VARIABLE_LOG:
+      {
+      if(EventToExecute->Par1==0)
+        {
+        x=1;
+        y=USER_VARIABLES_MAX;
+        }
+      else
+        {
+        x=EventToExecute->Par1;
+        y=EventToExecute->Par1;
+        }
+      
+      for(w=x;w<=y;w++)
+        {
+        sprintf(TempString,ProgmemString(Text_16),Time.Date,Time.Month,Time.Year,Time.Hour,Time.Minutes,w);
+        dtostrf(UserVar[w-1], 0, 2,TempString+strlen(TempString));
+        strcpy(TempString2,"VAR_");
+        strcat(TempString2,int2str(w));
+        FileWriteLine("",TempString2,"DAT",TempString, false);
+        }        
+      break;
+      }
+
     case CMD_VARIABLE_GET: // VariableReceive <Variabelenummer_Bestemming>, <unit>, <Variabelenummer_Bron_Andere_Nodo>
       if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afgevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
@@ -659,6 +684,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
     }
 
   #if NODO_MEGA
+  free(TempString2);
   free(TempString);
   #endif
 

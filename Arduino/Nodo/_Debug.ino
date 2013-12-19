@@ -22,7 +22,11 @@ void PrintRawSignal(void)
   
   Serial.print(F("*** Debug: RawSignal: Repeats="));Serial.print(RawSignal.Repeats);
   Serial.print(F(", Delay="));Serial.print(RawSignal.Delay);
+  #if NODO_MEGA
   Serial.print(F(", Source="));Serial.print(cmd2str(RawSignal.Source));
+  #else if
+  Serial.print(F(", Source="));Serial.print(RawSignal.Source);
+  #endif
   Serial.print(F(", Multiply="));Serial.print(RawSignal.Multiply);
   Serial.print(F(", Number="));Serial.print(RawSignal.Number);
   Serial.print(F(", Pulses (uSec): "));

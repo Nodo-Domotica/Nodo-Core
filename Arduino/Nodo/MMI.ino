@@ -570,7 +570,7 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
   char* TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
 
   StringToPrint[0]=0; // als start een lege string
-  
+
   // Direction
   if(Event->Direction)
     {
@@ -624,7 +624,9 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
   // LOG OP SDCARD
   if(bitRead(HW_Config,HW_SDCARD) && Settings.Log==VALUE_ON) 
     {
-    TmpStr[0]=0;
+    TmpStr[0]='!';
+    TmpStr[1]=' ';
+    TmpStr[2]=0;
 
     // datum en tijd weergeven
     #if CLOCK
@@ -659,7 +661,7 @@ char* DateTimeString(void)
     s[x]=(*(ProgmemString(Text_04)+(Time.Day-1)*3+x));
   s[x]=0;
 
-  sprintf(dt,"Date=%02d-%02d-%d (%s), Time=%02d:%02d",Time.Date,Time.Month,Time.Year, s, Time.Hour, Time.Minutes);
+  sprintf(dt,ProgmemString(Text_17),Time.Date,Time.Month,Time.Year, s, Time.Hour, Time.Minutes);
 
   return dt;
   }
@@ -691,9 +693,9 @@ void PrintWelcome(void)
 
   #if CLOCK
  // Geef datum en tijd weer.
-  if(bitRead(HW_Config,HW_CLOCK) || true) //???
+  if(bitRead(HW_Config,HW_CLOCK))
     {
-    sprintf(TempString,"Testje: %s %s",DateTimeString(), cmd2str(Time.DaylightSaving?VALUE_DLS:0));//???
+    sprintf(TempString,"%s %s",DateTimeString(), cmd2str(Time.DaylightSaving?VALUE_DLS:0));
     PrintString(TempString,VALUE_ALL);
     }
   #endif
@@ -1451,6 +1453,12 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
         }
       break;
 
+    case CMD_VARIABLE_LOG:
+      ResultEvent->Type=NODO_TYPE_COMMAND;
+      if(ResultEvent->Par1>USER_VARIABLES_MAX)
+        error=MESSAGE_INVALID_PARAMETER;
+      break;
+      
     case CMD_VARIABLE_SET:
       ResultEvent->Type=NODO_TYPE_COMMAND;
       if(ResultEvent->Par1>USER_VARIABLES_MAX)

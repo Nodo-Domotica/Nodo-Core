@@ -8,24 +8,24 @@
 // ****************************************************************************************************************************************
 
 #define UNIT_NODO       15 // Na een reset wordt dit het unitnummer van de Nodo
-#define CLOCK        false // true=code voor Real Time Clock mee compileren.
+#define CLOCK         true // true=code voor Real Time Clock mee compileren.
 #define NODO_MEGA    false // true = Nodo Mega, false=Nodo-Small
 
-// Kaku              : Klik-Aan-Klik-Uit / HomeEasy protocol ontvangst
-// #define PLUGIN_001
-// #define PLUGIN_001_CORE
+// Kaku              : Klik-Aan-Klik-Uit ontvangst
+#define PLUGIN_001
+#define PLUGIN_001_CORE
 
-// KakuSend          : Klik-Aan-Klik-Uit / HomeEasy protocol verzenden 
-// #define PLUGIN_002
-// #define PLUGIN_002_CORE
+// KakuSend          : Klik-Aan-Klik-Uit  verzenden 
+#define PLUGIN_002
+#define PLUGIN_002_CORE
 
 // NewKAKU           : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno.
-// #define PLUGIN_003
-// #define PLUGIN_003_CORE
+#define PLUGIN_003
+#define PLUGIN_003_CORE
 
 // NewKAKUSend       : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno. 
-// #define PLUGIN_004
-// #define PLUGIN_004_CORE
+#define PLUGIN_004
+#define PLUGIN_004_CORE
 
 // DTH-22 Vocht/Temperatuursensor
 // #define PLUGIN_006
