@@ -812,12 +812,12 @@ void Status(struct NodoEventStruct *Request)
         #if NODO_MEGA          
         #ifdef ethernetserver_h
         case CMD_CLIENT_IP:
-          sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_CLIENT_IP),Settings.Client_IP[0],Settings.Client_IP[1],Settings.Client_IP[2],Settings.Client_IP[3]);
+          sprintf(TempString,ProgmemString(Text_18),cmd2str(CMD_CLIENT_IP),Settings.Client_IP[0],Settings.Client_IP[1],Settings.Client_IP[2],Settings.Client_IP[3]);
           PrintString(TempString, Port);
           break;
 
         case CMD_NODO_IP:
-          sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_NODO_IP), EthernetNodo.localIP()[0],EthernetNodo.localIP()[1],EthernetNodo.localIP()[2],EthernetNodo.localIP()[3]);
+          sprintf(TempString,ProgmemString(Text_18),cmd2str(CMD_NODO_IP), EthernetNodo.localIP()[0],EthernetNodo.localIP()[1],EthernetNodo.localIP()[2],EthernetNodo.localIP()[3]);
           if(dhcp)
             strcat(TempString,"(DHCP)");
           PrintString(TempString, Port);
@@ -827,7 +827,7 @@ void Status(struct NodoEventStruct *Request)
           // Gateway
           if(!dhcp)
             {
-            sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_GATEWAY),Settings.Gateway[0],Settings.Gateway[1],Settings.Gateway[2],Settings.Gateway[3]);
+            sprintf(TempString,ProgmemString(Text_18),cmd2str(CMD_GATEWAY),Settings.Gateway[0],Settings.Gateway[1],Settings.Gateway[2],Settings.Gateway[3]);
             PrintString(TempString, Port);
             }
           break;
@@ -836,7 +836,7 @@ void Status(struct NodoEventStruct *Request)
           // Subnetmask
           if(!dhcp)
             {
-            sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_SUBNET),Settings.Subnet[0],Settings.Subnet[1],Settings.Subnet[2],Settings.Subnet[3]);
+            sprintf(TempString,ProgmemString(Text_18),cmd2str(CMD_SUBNET),Settings.Subnet[0],Settings.Subnet[1],Settings.Subnet[2],Settings.Subnet[3]);
             PrintString(TempString, Port);
             }
           break;
@@ -845,7 +845,7 @@ void Status(struct NodoEventStruct *Request)
           if(!dhcp)
             {
             // DnsServer
-            sprintf(TempString,"%s %u.%u.%u.%u",cmd2str(CMD_DNS_SERVER),Settings.DnsServer[0],Settings.DnsServer[1],Settings.DnsServer[2],Settings.DnsServer[3]);
+            sprintf(TempString,ProgmemString(Text_18),cmd2str(CMD_DNS_SERVER),Settings.DnsServer[0],Settings.DnsServer[1],Settings.DnsServer[2],Settings.DnsServer[3]);
             PrintString(TempString, Port);
             }
           break;

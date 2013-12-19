@@ -66,6 +66,9 @@ R640:
 R641:
 - Aanpassing [Sleep] onder de motorkap
 
+R642
+- Toevoeging commando [VariableLog <variabelenummer>]. Slaat logging op op SDCard. 0=wildcard. Werkt alleen op Mega met SDCard.
+
 Nog te doen:
 
 - Reboot vanuit sendto ander oplossen
