@@ -67,8 +67,7 @@ boolean Plugin_029(byte function, struct NodoEventStruct *event, char *string)
     #if NODO_MEGA // alleen relevant voor een Nodo Mega want de Small heeft geen MMI!
     case PLUGIN_MMI_IN:
       {
-      char *TempStr=(char*)malloc(26);
-      string[25]=0;
+      char *TempStr=(char*)malloc(INPUT_COMMAND_SIZE);
 
       if(GetArgv(string,TempStr,1))
         {

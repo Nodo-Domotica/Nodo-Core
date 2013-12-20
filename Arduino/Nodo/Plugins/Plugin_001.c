@@ -87,8 +87,7 @@ boolean Plugin_001(byte function, struct NodoEventStruct *event, char *string)
       {
       // Reserveer een kleine string en kap voor de zekerheid de inputstring af om te voorkomen dat er
       // buiten gereserveerde geheugen gewerkt wordt.
-      char *TempStr=(char*)malloc(26);
-      string[25]=0;
+      char *TempStr=(char*)malloc(INPUT_COMMAND_SIZE);
 
       // Hier aangekomen bevat string het volledige commando. Test als eerste of het opgegeven commando overeen komt met "Kaku"
       // Dit is het eerste argument in het commando.

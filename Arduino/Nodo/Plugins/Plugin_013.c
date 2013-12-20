@@ -69,8 +69,7 @@ boolean Plugin_013(byte function, struct NodoEventStruct *event, char *string)
 #if NODO_MEGA
   case PLUGIN_MMI_IN:
     {
-    char* str=(char*)malloc(40);
-    string[25]=0; // kap voor de zekerheid de string af.
+    char* str=(char*)malloc(INPUT_COMMAND_SIZE);
   
     if(GetArgv(string,str,1))
       {

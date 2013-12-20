@@ -73,11 +73,10 @@ void FileErase(char* Path, char* Filename, char* Extention)
  /*********************************************************************************************\
  * Eenvoudige funktie om pad en bestandsnaam aan elkaar te plakken. Scheelt elders code. 
  \*********************************************************************************************/
-#define PATH_BUFFER_SIZE 25
 char* PathFile(char* Path, char* File, char* Extention)
   {
-  static char PathBuffer[PATH_BUFFER_SIZE+1];  
-  if(strlen(Path) + strlen(File) < PATH_BUFFER_SIZE)
+  static char PathBuffer[INPUT_COMMAND_SIZE];  
+  if(strlen(Path)<(INPUT_COMMAND_SIZE-13) && strlen(File)<=8)
     {
     sprintf(PathBuffer,"%s/%s.%s",Path, File, Extention);
     }

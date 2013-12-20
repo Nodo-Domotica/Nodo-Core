@@ -72,23 +72,17 @@ int ExecuteLine(char *Line, byte Port)
         Command[CommandPos]=0;
         CommandPos=0;
 
-        Serial.print(F("Verwerken commando. Command="));Serial.println(Command);//???
-
         // De Nodo kan berekeningen maken en variabelen vullen. Voer deze taak uit.
 
-        Serial.println(F("Substitute."));//???
         if(Substitute(Command)!=0)
           error=MESSAGE_INVALID_PARAMETER;
 
         // check of ingevoerde commando een alias is. Is dit het geval, dan wordt Command vervangen door de alias.
-        Serial.println(F("Alias."));//???
         Alias(Command,true); //  ??? Niet als het een standaadrd Nodo commando is. Nog inbouwen.
 
-        // Serial.print("ExecuteLine(); Command (na alias)=");Serial.println(Command);
-        
+        // Serial.print("ExecuteLine(); Command (na alias)=");Serial.println(Command);        
 
         // Commando's in tekst format moeten worden omgezet naar een Nodo event.
-        Serial.println(F("Str2Event."));//???
         error=Str2Event(Command, &EventToExecute);
         EventToExecute.Port=Port;
         
@@ -98,8 +92,6 @@ int ExecuteLine(char *Line, byte Port)
         if(error)
           {
           error=0; // nieuwe poging.
-
-Serial.println(F("Afhandeling door ExecuteLine."));//???
 
           // Bouw een nieuw event op.
           ClearEvent(&EventToExecute);
@@ -461,7 +453,8 @@ Serial.println(F("Afhandeling door ExecuteLine."));//???
                 {
                 // Als het geen regulier commando was EN geen commando met afwijkende MMI en geen Plugin en geen alias, dan kijken of file op SDCard staat)
                 // Voer bestand uit en verwerking afbreken als er een foutmelding is.
-                error=FileExecute("",Command,"DAT", false, VALUE_ALL);
+                if(strlen(Command)<=8)
+                  error=FileExecute("",Command,"DAT", false, VALUE_ALL);
                   
                 // als script niet te openen, dan is het ingevoerde commando ongeldig.
                 if(error)
@@ -523,15 +516,11 @@ Serial.println(F("Afhandeling door ExecuteLine."));//???
             State_EventlistWrite=2;
             }
           }
-        Serial.println(F("Verwerken commando gereed."));//???
         }// if(LineChar.
 
       // Tekens toevoegen aan commando zolang er nog ruimte is in de string
       if(LineChar!=';' && CommandPos<(INPUT_COMMAND_SIZE-1) )
         Command[CommandPos++]=LineChar;      
-      Serial.print(F("CommandPos="));Serial.print(CommandPos);//???
-      Serial.print(F(", LinePos="));Serial.println(LinePos);//???
-
       LinePos++;
       }// while(LinePos...
   
@@ -557,7 +546,6 @@ Serial.println(F("Afhandeling door ExecuteLine."));//???
     
   return error;
   }
-
 
 
 /*********************************************************************************************\
