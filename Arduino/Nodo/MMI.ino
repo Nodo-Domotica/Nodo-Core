@@ -6,9 +6,9 @@
  \*******************************************************************************************************/
 int ExecuteLine(char *Line, byte Port)
   {
-  char *Command=(char*)malloc(INPUT_COMMAND_SIZE+1);
-  char *TmpStr1=(char*)malloc(INPUT_COMMAND_SIZE+1);
-  char *TmpStr2=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  char *Command=(char*)malloc(INPUT_COMMAND_SIZE);
+  char *TmpStr1=(char*)malloc(INPUT_COMMAND_SIZE);
+  char *TmpStr2=(char*)malloc(INPUT_LINE_SIZE);
   int CommandPos;
   int LinePos;
   int w,x,y;
@@ -43,10 +43,6 @@ int ExecuteLine(char *Line, byte Port)
     }
   else
     {
-//??? Wat hiermee?
-//    if(Substitute(Line)!=0)
-//      error=MESSAGE_INVALID_PARAMETER;
-
     CommandPos=0;
     LinePos=0;    
     int LineLength=strlen(Line);
@@ -70,23 +66,29 @@ int ExecuteLine(char *Line, byte Port)
         LinePos=LineLength+1; // ga direct naar einde van de regel.
         }
 
-      // Commandoo compleet als puntkomma (scheidt opdrachten) of einde string.
-      if((LineChar=='!' || LineChar=='$' ||LineChar==';' || LineChar==0) && CommandPos>0)
+      // Commando compleet als puntkomma (scheidt opdrachten) of einde string.
+      if((LineChar=='!' || LineChar=='$' ||LineChar==';' || LineChar==0) && CommandPos>0 || CommandPos==(INPUT_COMMAND_SIZE-1))
         {
         Command[CommandPos]=0;
         CommandPos=0;
 
+        Serial.print(F("Verwerken commando. Command="));Serial.println(Command);//???
+
         // De Nodo kan berekeningen maken en variabelen vullen. Voer deze taak uit.
+
+        Serial.println(F("Substitute."));//???
         if(Substitute(Command)!=0)
           error=MESSAGE_INVALID_PARAMETER;
 
         // check of ingevoerde commando een alias is. Is dit het geval, dan wordt Command vervangen door de alias.
+        Serial.println(F("Alias."));//???
         Alias(Command,true); //  ??? Niet als het een standaadrd Nodo commando is. Nog inbouwen.
 
         // Serial.print("ExecuteLine(); Command (na alias)=");Serial.println(Command);
         
 
         // Commando's in tekst format moeten worden omgezet naar een Nodo event.
+        Serial.println(F("Str2Event."));//???
         error=Str2Event(Command, &EventToExecute);
         EventToExecute.Port=Port;
         
@@ -96,6 +98,8 @@ int ExecuteLine(char *Line, byte Port)
         if(error)
           {
           error=0; // nieuwe poging.
+
+Serial.println(F("Afhandeling door ExecuteLine."));//???
 
           // Bouw een nieuw event op.
           ClearEvent(&EventToExecute);
@@ -519,11 +523,14 @@ int ExecuteLine(char *Line, byte Port)
             State_EventlistWrite=2;
             }
           }
+        Serial.println(F("Verwerken commando gereed."));//???
         }// if(LineChar.
 
       // Tekens toevoegen aan commando zolang er nog ruimte is in de string
-      if(LineChar!=';' && CommandPos<INPUT_COMMAND_SIZE)
+      if(LineChar!=';' && CommandPos<(INPUT_COMMAND_SIZE-1) )
         Command[CommandPos++]=LineChar;      
+      Serial.print(F("CommandPos="));Serial.print(CommandPos);//???
+      Serial.print(F(", LinePos="));Serial.println(LinePos);//???
 
       LinePos++;
       }// while(LinePos...
@@ -567,7 +574,7 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
     return;
   
   char* StringToPrint=(char*)malloc(80);
-  char* TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  char* TmpStr=(char*)malloc(INPUT_LINE_SIZE);
 
   StringToPrint[0]=0; // als start een lege string
 
@@ -1140,7 +1147,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
  \*******************************************************************************************************/
 boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
   {
-  char *TmpStr1=(char*)malloc(INPUT_COMMAND_SIZE+1);
+  char *TmpStr1=(char*)malloc(INPUT_COMMAND_SIZE);
   int w,x,y;
   byte error=0;
   unsigned long a;

@@ -207,7 +207,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       if(EventToExecute->Par1==VALUE_ON)
         {// Als verzoek om inschakelen dan Lock waarde vullen
         if(Settings.Lock==0)// mits niet al gelocked.
-          Settings.Lock=EventToExecute->Par2; 
+          Settings.Lock=EventToExecute->Par2;
         else
           error=MESSAGE_ACCESS_DENIED;
         }
@@ -497,7 +497,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         
         HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS+millis();
 
-        while(x<=y && Eventlist_Read(x,&TempEvent,&TempEvent2))                 //kunnen we door TempEvent twee maal te laten vullen de geheugenruimte van TempEvent2 besparen???
+        while(x<=y && Eventlist_Read(x,&TempEvent,&TempEvent2))
           {
           EventToExecute->Par1=x;
           if(TempEvent.Command!=0)
@@ -628,7 +628,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         {
         // Sla huidige inhoud van de RawSignal buffer op.
         // Daarvoor moet eerst de bijbehorende HEX-code worden uitgerekend.
-        ClearEvent(&TempEvent);//??? Kunnen de clearevents niet weg door deze eenmaal aan begin uit te voeren?
+        ClearEvent(&TempEvent);
         RawSignal_2_32bit(&TempEvent);
         error=RawSignalWrite(TempEvent.Par2);
         }

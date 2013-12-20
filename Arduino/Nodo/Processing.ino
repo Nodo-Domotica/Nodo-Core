@@ -64,14 +64,14 @@ byte ProcessEvent(struct NodoEventStruct *Event)
   // Als er een LOCK actief is, dan commando's blokkeren behalve...
   if(Settings.Lock && (Event->Port==VALUE_SOURCE_RF || Event->Port==VALUE_SOURCE_IR ))
     {
-    switch(Event->Command)          // onderstaande mogen WEL worden doorgelaten als de lock aan staat
+    switch(Event->Command)                                                      // onderstaande mogen WEL worden doorgelaten als de lock aan staat
       {
-      case CMD_LOCK:                // om weer te kunnen unlocken
-      case EVENT_VARIABLE:          // Maakt ontvangst van variabelen mogelijk
-      case EVENT_USEREVENT:         // Noodzakelijk voor uitwisseling userevents tussen Nodo.
-      case CMD_STATUS:              // uitvragen status is onschuldig en kan handig zijn.
-      case EVENT_MESSAGE:           // Voorkomt dat een message van een andere Nodo een error genereert
-      case EVENT_BOOT:              // Voorkomt dat een boot van een andere Nodo een error genereert
+      case CMD_LOCK:                                                            // om weer te kunnen unlocken
+      case SYSTEM_COMMAND_QUEUE_SENDTO:                                         // om weer te kunnen unlocken
+      case EVENT_VARIABLE:                                                      // Maakt ontvangst van variabelen mogelijk
+      case EVENT_USEREVENT:                                                     // Noodzakelijk voor uitwisseling userevents tussen Nodo.
+      case EVENT_MESSAGE:                                                       // Voorkomt dat een message van een andere Nodo een error genereert
+      case EVENT_BOOT:                                                          // Voorkomt dat een boot van een andere Nodo een error genereert
         break;
 
       default:
@@ -287,8 +287,8 @@ boolean QueueAdd(struct NodoEventStruct *Event)
     // Een EventlistShow staat welliswaar in de queue, maar die kunnen we als het de informatie compleet is gelijk weergeven
     // en vervolgens weer uit de queue halen. Deze voorziening is er alleen voor de Mega omdag een Small geen MMI heeft.
     #if NODO_MEGA
-    char *TempString=(char*)malloc(INPUT_COMMAND_SIZE+1);
-    char *TempString2=(char*)malloc(INPUT_BUFFER_SIZE+1);
+    char *TempString=(char*)malloc(INPUT_COMMAND_SIZE);
+    char *TempString2=(char*)malloc(INPUT_LINE_SIZE);
     
     if(Event->Type!=NODO_TYPE_SYSTEM && Event->Flags&TRANSMISSION_VIEW)
       {
@@ -427,7 +427,21 @@ byte QueueSend(boolean fast)
   // We maken tijdelijk gebruik van een SendQueue zodat de reguliere queue zijn werk kan blijven doen.
   struct QueueStruct SendQueue[EVENT_QUEUE_MAX];
   for(x=0;x<QueuePosition;x++)
+    {
+    // Kopieer de inhoud van de queue.
     SendQueue[x]=Queue[x];
+
+    // Er zijn enkele commando's die geen reacte teruggeven. Zet in deze gevallen de fast mode aan.
+    if(Queue[x].Type==NODO_TYPE_COMMAND)
+      {
+      switch(Queue[x].Command)
+        {
+        case CMD_RESET:
+        case CMD_REBOOT:
+          fast=true;
+        }
+      }
+    }
 
   byte SendQueuePosition=QueuePosition;
   QueuePosition=0;

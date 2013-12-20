@@ -737,7 +737,7 @@ void Status(struct NodoEventStruct *Request)
 
 
   #if NODO_MEGA          
-  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  char *TempString=(char*)malloc(INPUT_LINE_SIZE);
   boolean dhcp=(Settings.Nodo_IP[0] + Settings.Nodo_IP[1] + Settings.Nodo_IP[2] + Settings.Nodo_IP[3])==0;
   #endif
 
@@ -992,7 +992,7 @@ void Status(struct NodoEventStruct *Request)
 char* ProgmemString(prog_char* text)
   {
   byte x=0;
-  static char buffer[90];
+  static char buffer[90]; 
 
   buffer[0]=0;
   do
@@ -1583,9 +1583,9 @@ boolean Substitute(char* Input)
   byte Res;
   byte x;
 
-  char *Output=(char*)malloc(INPUT_BUFFER_SIZE);
-  char *TmpStr=(char*)malloc(INPUT_BUFFER_SIZE);
-  char *TmpStr2=(char*)malloc(50);
+  char *Output=(char*)malloc(INPUT_LINE_SIZE);
+  char *TmpStr=(char*)malloc(INPUT_LINE_SIZE);
+  char *TmpStr2=(char*)malloc(INPUT_COMMAND_SIZE);
   char* InputPos  = Input;
   char* OutputPos = Output;
   char* TmpStrPos = TmpStr;
@@ -2241,7 +2241,7 @@ boolean EventlistEntry2str(int entry, byte d, char* Line, boolean Script)
   ClearEvent(&Event);
   ClearEvent(&Action);
  
-  char *TempString=(char*)malloc(100);
+  char *TempString=(char*)malloc(INPUT_LINE_SIZE);
   boolean Ok;
 
   if(Ok=Eventlist_Read(entry,&Event,&Action)) // lees regel uit de Eventlist. Ga door als gelukt.
@@ -2464,7 +2464,7 @@ boolean Alias(char* Command, boolean IsInput)
     while(dataFile.available())
       {
       c=dataFile.read();
-      if(isprint(c) && y<INPUT_COMMAND_SIZE && c!='=')
+      if(isprint(c) && y<(INPUT_COMMAND_SIZE-1) && c!='=')
         Command[y++]=c;
       else
         {
@@ -2490,9 +2490,9 @@ byte AliasWrite(char* Line)
   unsigned long HashOutput;
   unsigned long HashInput;
     
-  char *StrInput=(char*)malloc(INPUT_COMMAND_SIZE+1);
-  char *StrOutput=(char*)malloc(INPUT_COMMAND_SIZE+1);
-  char *String=(char*)malloc(INPUT_BUFFER_SIZE);
+  char *StrInput=(char*)malloc(INPUT_COMMAND_SIZE);
+  char *StrOutput=(char*)malloc(INPUT_COMMAND_SIZE);
+  char *String=(char*)malloc(INPUT_LINE_SIZE);
 
   // Zowel het door de gebruiker opgegeven Input als de route terug moeten worden opgeslagen.
   // Beide worden in een aparte file in een aparte directory opgeslagen zodat beide richtingen uit
@@ -2501,14 +2501,14 @@ byte AliasWrite(char* Line)
   do{
     w=Line[x];
     StrInput[x++]=w;              
-    }while(w!='=' && w!=0 && x<INPUT_COMMAND_SIZE);
+    }while(w!='=' && w!=0 && x<(INPUT_COMMAND_SIZE-1));
   StrInput[x-1]=0;
 
     
   do{
     w=Line[x++];
     StrOutput[y++]=w;              
-    }while(w!=0 && y<INPUT_COMMAND_SIZE);
+    }while(w!=0 && y<(INPUT_COMMAND_SIZE-1));
     
   
   // een Nodo events is het niet toegestaan om een alias voor aan te maken. Dit omdat anders
@@ -2557,7 +2557,7 @@ byte AliasWrite(char* Line)
  \*********************************************************************************************/
 byte AliasErase(char* FileToDelete)
   {
-  char *Keyword=(char*)malloc(INPUT_COMMAND_SIZE+1);
+  char *Keyword=(char*)malloc(INPUT_COMMAND_SIZE);
   strcpy(Keyword,FileToDelete);// maak een kopie anders wordt de originele string in de functiecall onbedoeld veranderd.
 
   unsigned long Hash_1=AliasHash(Keyword); // Input
@@ -2587,7 +2587,7 @@ byte AliasErase(char* FileToDelete)
  \*********************************************************************************************/
 unsigned long AliasHash(char* Input)
   {
-  char *TmpStr=(char*)malloc(INPUT_COMMAND_SIZE+1);
+  char *TmpStr=(char*)malloc(INPUT_COMMAND_SIZE);
   char *c;
   unsigned long Hash=0UL;
   int x=1;
@@ -2612,7 +2612,7 @@ void AliasList(char* Keyword, byte Port)
     
   File root;
   File entry;
-  char *TempString=(char*)malloc(30); //??? #define voor 30?
+  char *TempString=(char*)malloc(INPUT_COMMAND_SIZE);
   int y;
   
   SelectSDCard(true);

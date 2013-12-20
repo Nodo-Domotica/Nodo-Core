@@ -13,8 +13,9 @@
  * 
  * Auteur             : Nodo-team (P.K.Tonkes) www.nodo-domotca.nl
  * Support            : www.nodo-domotica.nl
- * Datum              : Jan.2013
- * Versie             : 1.0
+ * Versie             : 1.1, 22-12-2013, P.K.Tonkes: Timing stopbit aangepast 
+ *                      1.0, 01-01-2013, P.K.Tonkes: Initiële versie.
+ *                     
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
  * Compatibiliteit    : Vanaf Nodo build nummer 507
  * Compiled size      : 1100 bytes voor een Mega, 540 bytes voor een Small

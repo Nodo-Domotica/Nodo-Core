@@ -331,8 +331,8 @@ boolean EthernetInit(void)
  \*******************************************************************************************************/
 byte GetHTTPFile(char* filename)
   {
-  char *HttpRequest=(char*)malloc(INPUT_BUFFER_SIZE+1);
-  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  char *HttpRequest=(char*)malloc(INPUT_LINE_SIZE);
+  char *TempString=(char*)malloc(INPUT_LINE_SIZE);
   byte Ok;
 
   strcpy(HttpRequest,"?id=");
@@ -369,8 +369,8 @@ byte SendHTTPEvent(struct NodoEventStruct *Event)
   if(Settings.TransmitIP!=VALUE_ON || Settings.HTTPRequest[0]==0)
     return false;
 
-  char *HttpRequest=(char*)malloc(INPUT_BUFFER_SIZE+1);
-  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  char *HttpRequest=(char*)malloc(INPUT_LINE_SIZE);
+  char *TempString=(char*)malloc(INPUT_LINE_SIZE);
 
   strcpy(HttpRequest,"?id=");
   strcat(HttpRequest,Settings.ID);  
@@ -411,7 +411,7 @@ boolean SendHTTPCookie(void)
   if(Settings.TransmitIP!=VALUE_ON)
     return false;
 
-  char *HttpRequest=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  char *HttpRequest=(char*)malloc(INPUT_LINE_SIZE);
 
   strcpy(HttpRequest,"?id=");
   strcat(HttpRequest,Settings.ID);  
@@ -440,8 +440,8 @@ boolean SendHTTPRequest(char* Request)
   const int TimeOut=5000;
   EthernetClient IPClient; // Client class voor HTTP sessie.
   byte State=0;
-  char *IPBuffer=(char*)malloc(IP_BUFFER_SIZE+1);
-  char *TempString=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  char *IPBuffer=(char*)malloc(IP_BUFFER_SIZE);
+  char *TempString=(char*)malloc(INPUT_LINE_SIZE);
   File BodyTextFile;
   struct NodoEventStruct TempEvent;
 
@@ -711,9 +711,9 @@ void ExecuteIP(void)
   int x;
   unsigned long TimeoutTimer=millis() + 60000; //
  
-  char *InputBuffer_IP = (char*) malloc(IP_BUFFER_SIZE+1);
-  char *Event          = (char*) malloc(INPUT_BUFFER_SIZE+1);
-  char *TmpStr1        = (char*) malloc(INPUT_BUFFER_SIZE+1);
+  char *InputBuffer_IP = (char*) malloc(IP_BUFFER_SIZE);
+  char *Event          = (char*) malloc(INPUT_LINE_SIZE);
+  char *TmpStr1        = (char*) malloc(INPUT_LINE_SIZE);
   char *TmpStr2        = (char*) malloc(40); 
 
   Event[0]=0; // maak de string leeg.
