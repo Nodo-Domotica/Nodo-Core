@@ -41,7 +41,7 @@ void FileErase(char* Path, char* Filename, char* Extention)
     {
     File root;
     File entry;
-    char *TempString=(char*)malloc(30);
+    char *TempString=(char*)malloc(INPUT_COMMAND_SIZE);
   
     SelectSDCard(true);
     if(root=SD.open(Path))
@@ -132,7 +132,7 @@ boolean SaveEventlistSDCard(char* Path, char* Filename, char* Extention)
  {
   int x;
   boolean r=true;
-  char *TempString=(char*)malloc(100);
+  char *TempString=(char*)malloc(INPUT_LINE_SIZE);
 
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
   SelectSDCard(true);
@@ -175,7 +175,7 @@ boolean FileList(char *Path, byte Port)
   byte error=0;
   File root;
   File entry;
-  char *TempString=(char*)malloc(30);
+  char *TempString=(char*)malloc(INPUT_COMMAND_SIZE);
 
   SelectSDCard(true);
   if(root = SD.open(Path))
@@ -220,7 +220,7 @@ byte FileExecute(char* Path, char* Filename, char* Extention, boolean ContinueOn
   int x,y;
   byte error=0;
   static byte FileExecuteNesting=0;// voorkom nesting van fileexecute      
-  char *TmpStr=(char*)malloc(INPUT_BUFFER_SIZE+1);
+  char *TmpStr=(char*)malloc(INPUT_LINE_SIZE);
 
   // Serial.print("Fileexecute=");Serial.println(PathFile(Path,Filename,Extention));
 
@@ -241,7 +241,7 @@ byte FileExecute(char* Path, char* Filename, char* Extention, boolean ContinueOn
       while(dataFile.available() && !error)
         {
         x=dataFile.read();
-        if(isprint(x) && y<INPUT_BUFFER_SIZE)
+        if(isprint(x) && y<(INPUT_LINE_SIZE-1))
           TmpStr[y++]=x;
         else
           {
@@ -278,7 +278,7 @@ byte FileExecute(char* Path, char* Filename, char* Extention, boolean ContinueOn
 
 byte FileShow(char* Path, char* Filename, char* Extention, byte Port)
   {
-  char *TmpStr2=(char*)malloc(INPUT_BUFFER_SIZE+2);
+  char *TmpStr2=(char*)malloc(INPUT_LINE_SIZE);
   byte error=0;
   
   SelectSDCard(true);
@@ -302,7 +302,7 @@ byte FileShow(char* Path, char* Filename, char* Extention, byte Port)
     while(dataFile.available())
       {
       byte x=dataFile.read();
-      if(isprint(x) && y<INPUT_BUFFER_SIZE)
+      if(isprint(x) && y<(INPUT_LINE_SIZE-1))
         {
         TmpStr2[y++]=x;
         }

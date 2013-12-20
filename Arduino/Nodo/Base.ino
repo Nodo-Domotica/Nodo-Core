@@ -1,4 +1,4 @@
-#define NODO_BUILD                       643 // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       644 // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                 5 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3 // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1 // Unit nummer van deze Nodo
@@ -360,7 +360,7 @@ prog_char PROGMEM Cmd_132[]="RawSignalRepeats";
 prog_char PROGMEM Cmd_133[]="RawSignalDelay";
 prog_char PROGMEM Cmd_134[]="RawSignalPulses";
 prog_char PROGMEM Cmd_135[]="RawSignalClean";
-prog_char PROGMEM Cmd_136[]="Alias";
+prog_char PROGMEM Cmd_136[]="AliasWrite";
 prog_char PROGMEM Cmd_137[]="AliasErase";
 prog_char PROGMEM Cmd_138[]="AliasShow";
 prog_char PROGMEM Cmd_139[]="AliasList";
@@ -500,7 +500,7 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 
 #if NODO_MEGA // Definities voor de Nodo-Mega variant.
 #define EVENT_QUEUE_MAX             16 // maximaal aantal plaatsen in de queue.
-#define INPUT_BUFFER_SIZE          128 // Buffer waar de karakters van de seriele/IP poort in worden opgeslagen.
+#define INPUT_LINE_SIZE            128 // Buffer waar de karakters van de seriele/IP poort in worden opgeslagen.
 #define INPUT_COMMAND_SIZE          40 // Maximaal aantal tekens waar een commando uit kan bestaan.
 #define TIMER_MAX                   15 // aantal beschikbare timers voor de user, gerekend vanaf 1
 #define ALARM_MAX                    8 // aantal alarmen voor de user
@@ -729,8 +729,8 @@ int TerminalLocked=1;                                       // 0 als als gebruik
 char TempLogFile[13];                                       // Naam van de Logfile waar (naast de standaard logging) de verwerking in gelogd moet worden.
 char HTTPCookie[10];                                        // Cookie voor uitwisselen van encrypted events via HTTP
 int FileWriteMode=0;                                        // Het aantal seconden dat deze timer ingesteld staat zal er geen verwerking plaats vinden van TerminalInvoer. Iedere seconde --.
-char InputBuffer_Serial[INPUT_BUFFER_SIZE+2];               // Buffer voor input Seriele data
-char InputBuffer_Terminal[INPUT_BUFFER_SIZE+2];             // Buffer voor input terminal verbinding Telnet sessie
+char InputBuffer_Serial[INPUT_LINE_SIZE];               // Buffer voor input Seriele data
+char InputBuffer_Terminal[INPUT_LINE_SIZE];             // Buffer voor input terminal verbinding Telnet sessie
 boolean ClockSyncHTTP=false;
 
 
@@ -1018,7 +1018,7 @@ void loop()
           
           if(isprint(SerialInByte))
             {
-            if(SerialInByteCounter<INPUT_BUFFER_SIZE) // alleen tekens aan de string toevoegen als deze nog in de buffer past.
+            if(SerialInByteCounter<(INPUT_LINE_SIZE-1)) // alleen tekens aan de string toevoegen als deze nog in de buffer past.
               InputBuffer_Serial[SerialInByteCounter++]=SerialInByte;
             }
             
@@ -1106,7 +1106,7 @@ void loop()
                 
                 if(isprint(TerminalInByte))
                   {
-                  if(TerminalInbyteCounter<INPUT_BUFFER_SIZE)
+                  if(TerminalInbyteCounter<(INPUT_LINE_SIZE-1))
                     {
                     if(Settings.EchoTelnet==VALUE_ON)
                       {
