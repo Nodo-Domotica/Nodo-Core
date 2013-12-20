@@ -66,11 +66,14 @@ R640:
 R641:
 - Aanpassing [Sleep] onder de motorkap
 
-R644
+R644:
 - Toevoeging commando [VariableLog <variabelenummer>]. Slaat logging op op SDCard. 0=wildcard. Werkt alleen op Mega met SDCard.
 
-Nog te doen:
+R645:
+- MMI bug invoer commando's >40 posities veroorzaakte vastloper.
 
+
+Nog te doen:
 - Bug: Boot van een Slave claimt soms de RF band. Waarom deze lock en komt de band niet vrij? Hoe reproduceren?
 - Bug: Input=RF; Unit=4; Event=Message 14,5: Plugin returned an error. ==> Reboot master !
 - uitklokken ontvangstroutine met analyser

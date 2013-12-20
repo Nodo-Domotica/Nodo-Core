@@ -241,8 +241,7 @@ boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
       // Op deze plek kan de invoer [string] worden geparsed en omgezet naar een struct [event]. Als parsen van de invoerstring [string]
       // is gelukt en de struct is gevuld, dan de variabele [success] vullen met true zodat de Nodo zorg kan dragen voor verdere verwerking van het event.
 
-      char *TempStr=(char*)malloc(26);
-      string[25]=0;
+      char *TempStr=(char*)malloc(INPUT_COMMAND_SIZE);
 
       // Met PLUGIN_MMI_IN wordt de invoer van de gebruiker (string) omgezet naar een event zodat de Nodo deze intern kan verwerken.
       // Hier aangekomen bevat string het volledige commando. Test als eerste of het opgegeven commando overeen komt met PLUGIN_NAME
