@@ -462,7 +462,7 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define GREEN                          2 // Led = Groen
 #define BLUE                           3 // Led = Blauw
 #define UNIT_MAX                      31 // Hoogst mogelijke unit nummer van een Nodo
-#define HOME_MAX                       7 // Hoogst mogelijke unit nummer van een Nodo
+#define HOME_MAX                       7 // Hoogst mogelijke home nummer van een Nodo
 #define SERIAL_TERMINATOR_1         0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>
 #define SERIAL_TERMINATOR_2         0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
 #define Loop_INTERVAL_1               50 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
@@ -690,13 +690,13 @@ struct NodoEventStruct
 // hier naar toe gesprongen kan worden
 void PluginInit(void);
 boolean (*Plugin_ptr[PLUGIN_MAX])(byte, struct NodoEventStruct*, char*);
+void (*FastLoopCall_ptr)(void);
 byte Plugin_id[PLUGIN_MAX];
 boolean ExecuteCommand(NodoEventStruct *EventToExecute);//protoype definieren.
 
 
 volatile unsigned long PulseCount=0L;                       // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
 volatile unsigned long PulseTime=0L;                        // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
-boolean RebootNodo=false;                                   // Als deze vlag staat, dan reboot de Nodo (cold-start)
 unsigned long HoldTransmission=0L;                          // wachten op dit tijdstip in millis() alvorens event te verzenden.
 byte Transmission_SelectedUnit=0;                           // 
 boolean Transmission_ThisUnitIsMaster=false;
@@ -997,58 +997,67 @@ void loop()
     if(ScanEvent(&ReceivedEvent)) 
       ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
     
-    // SERIAL: *************** kijk of er data klaar staat op de seriële poort **********************
-    if(Serial.available())
-      {
-      PluginCall(PLUGIN_SERIAL_IN,0,0);
-
-      #if NODO_MEGA     
-      bitWrite(HW_Config,HW_SERIAL,1);// Input op seriele poort ontvangen. Vanaf nu ook output naar Seriele poort want er is klaarblijkelijk een actieve verbinding
-      StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;
-
-      while(StaySharpTimer>millis()) // blijf even paraat voor luisteren naar deze poort en voorkom dat andere input deze communicatie onderbreekt
-        {          
-        while(Serial.available())
-          {                        
-          SerialInByte=Serial.read();                
-          if(Settings.EchoSerial==VALUE_ON)
-            Serial.write(SerialInByte);// echo ontvangen teken
-
-          StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
-          
-          if(isprint(SerialInByte))
-            {
-            if(SerialInByteCounter<(INPUT_LINE_SIZE-1)) // alleen tekens aan de string toevoegen als deze nog in de buffer past.
-              InputBuffer_Serial[SerialInByteCounter++]=SerialInByte;
-            }
-            
-          if(SerialInByte=='\n')
-            {
-            SerialHold(true);
-            InputBuffer_Serial[SerialInByteCounter]=0; // serieel ontvangen regel is compleet
-            ExecutionDepth=0;
-            RaiseMessage(ExecuteLine(InputBuffer_Serial,VALUE_SOURCE_SERIAL),0);
-            Serial.write('>'); // Prompt
-            SerialInByteCounter=0;  
-            InputBuffer_Serial[0]=0; // serieel ontvangen regel is verwerkt. String leegmaken
-            SerialHold(false);
-            StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
-            }
-          }
-        }
-      #endif
-      }// if(Serial.available())
-
 
     // 1: minder tijdkritische processen die periodiek uitgevoerd moeten worden
     if(LoopIntervalTimer_1<millis()) // korte interval
       {
       LoopIntervalTimer_1=millis()+Loop_INTERVAL_1; // reset de timer  
-      Led(GREEN);
+
+      // Een plugin mag tijdelijk een claim doen op de snelle aanroep vanuit de hoofdloop. 
+      // Als de waarde FastLoopCall_ptr is gevuld met het adres van een funktie dan wordt de betreffende funktie eenmaal
+      // per 50mSec aangeroepen.
+      if(FastLoopCall_ptr)
+        FastLoopCall_ptr();
+
 
       switch(Slice_1++)
         {        
         case 0: // binnen Slice_1
+          {
+          // SERIAL: *************** kijk of er data klaar staat op de seriële poort **********************
+          if(Serial.available())
+            {
+            PluginCall(PLUGIN_SERIAL_IN,0,0);
+      
+            #if NODO_MEGA     
+            bitWrite(HW_Config,HW_SERIAL,1);// Input op seriele poort ontvangen. Vanaf nu ook output naar Seriele poort want er is klaarblijkelijk een actieve verbinding
+            StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;
+      
+            while(StaySharpTimer>millis()) // blijf even paraat voor luisteren naar deze poort en voorkom dat andere input deze communicatie onderbreekt
+              {          
+              while(Serial.available())
+                {                        
+                SerialInByte=Serial.read();                
+                if(Settings.EchoSerial==VALUE_ON)
+                  Serial.write(SerialInByte);// echo ontvangen teken
+      
+                StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
+                
+                if(isprint(SerialInByte))
+                  {
+                  if(SerialInByteCounter<(INPUT_LINE_SIZE-1)) // alleen tekens aan de string toevoegen als deze nog in de buffer past.
+                    InputBuffer_Serial[SerialInByteCounter++]=SerialInByte;
+                  }
+                  
+                if(SerialInByte=='\n')
+                  {
+                  SerialHold(true);
+                  InputBuffer_Serial[SerialInByteCounter]=0; // serieel ontvangen regel is compleet
+                  ExecutionDepth=0;
+                  RaiseMessage(ExecuteLine(InputBuffer_Serial,VALUE_SOURCE_SERIAL),0);
+                  Serial.write('>'); // Prompt
+                  SerialInByteCounter=0;  
+                  InputBuffer_Serial[0]=0; // serieel ontvangen regel is verwerkt. String leegmaken
+                  SerialHold(false);
+                  StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
+                  }
+                }
+              }
+            #endif
+            }// if(Serial.available())
+          }
+
+        case 1:
           {
           // IP Event: *************** kijk of er een Event van IP komt **********************    
           #ifdef ethernetserver_h
@@ -1060,7 +1069,7 @@ void loop()
           break;
           }
    
-        case 1: // binnen Slice_1 
+        case 2: // binnen Slice_1 
           {
           #ifdef ethernetserver_h
           // IP Telnet verbinding : *************** kijk of er verzoek tot verbinding vanuit een terminal is **********************    
@@ -1182,7 +1191,7 @@ void loop()
           break;
           }
         
-        case 2: // binnen Slice_1 
+        case 3: // binnen Slice_1 
           {
           // WIRED: *************** kijk of statussen gewijzigd zijn op WIRED **********************  
           // als de huidige waarde groter dan threshold EN de vorige keer was dat nog niet zo DAN event genereren

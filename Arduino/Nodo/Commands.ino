@@ -401,7 +401,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         {
         Settings.Unit=EventToExecute->Par1;  
         Save_Settings();
-        RebootNodo=true;
+        Reboot();
         break;
         }
       
@@ -411,7 +411,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
       
     case CMD_REBOOT:
-      RebootNodo=true;
+      Reboot();
       break;        
       
     case CMD_RESET:

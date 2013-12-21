@@ -1,4 +1,3 @@
-
 //#######################################################################################################
 //#################################### Plugin-23: PWM Led dimmer ########################################
 //#######################################################################################################
@@ -12,17 +11,20 @@
  * Auteur             : P.K.Tonkes
  * Support            : P.K.Tonkes@gmail.com
  * Datum              : 26-05-2013
- * Versie             : 1.0 (Beta)
- * Nodo productnummer : Plugin-23 PWM Led-dimmer (SWACDE-23-V10)
- * Compatibiliteit    : Vanaf Nodo build nummer 530
- * Syntax             : PWM <R>,<G>,<B>, <Fade: On | Off>
- *                      De opgegeven waarden R,G en B kunnen een waarde hebben van 0..255
- *                      Laatste parameter <fade> is optioneel en kan [On] of [Off] zijn.
+ * Versie             : 22-12-2013, Versie 1,1, P.K.Tonkes: Event en Send commando in 1 plugin ondergebracht.
+ *                      26-05-2013, Versie 1.0, P.K.Tonkes: Beta versie 
+ * Nodo productnummer : Plugin-23 PWM Led-dimmer (SWACDE-23-V11)
+ * Compatibiliteit    : Vanaf Nodo build nummer 645
+ * Syntax             : RGBLed <Red>,<Green>,<Blue>,<FadeTimeInMinutes> ==> Stuurt de RGB-led aan
+ *                      RGBLedSend <NodoUnit>,<Red>,<Green>,<Blue>,<FadeTimeInMinutes> ==> Verzendt event en stuurt
+ *                      de RGB-led van een andere Nodo aan
+ * 
+ * LET OP: De PLUGIN_CORE niet gebruiken als er een IR-Zender is aangesloten !
+ *         Een van de RGB-kleuren maakt gebruik van de IR_TX_DATA pen. Het continue
+ *         aansturen van de IR-Leds zou de Leds/transistor kunnen overbelasten.   
+ * 
  ***********************************************************************************************
  * Technische beschrijving:
- *
- * Compiled size      : 1225 bytes
- * Externe funkties   : str2cmd(), GetArgv(), cmd2str(), str2int(), int2str().
  *
  * De dimfunktie werkt op basis van Pulsbreedte modulatie (PWM) Dit is een standaard methode voor 
  * dimmen van LED's, mmaar wrdt ook gebruikt voor regelen van snelheid van motoren. 
@@ -40,7 +42,8 @@
  \*********************************************************************************************/
  
 #define PLUGIN_ID 23
-#define PLUGIN_NAME_23 "LedOut"
+#define PLUGIN_NAME_23_COMMAND "RGBLedSend"
+#define PLUGIN_NAME_23_EVENT   "RGBLed"
 
 #if NODO_MEGA
 #define PWM_R     5
@@ -52,56 +55,95 @@
 #define PWM_B    11
 #endif
 
+#ifdef PLUGIN_023_CORE
+byte InputLevelR=0, InputLevelG=0, InputLevelB=0;
+byte OutputLevelR=0, OutputLevelG=0, OutputLevelB=0;
+int CalledCounter=0, FadeTimeCounter=0;
+
+boolean FadeLed(void)
+  {
+  if(InputLevelR>OutputLevelR)OutputLevelR++;
+  if(InputLevelG>OutputLevelG)OutputLevelG++;
+  if(InputLevelB>OutputLevelB)OutputLevelB++;
+
+  if(InputLevelR<OutputLevelR)OutputLevelR--;
+  if(InputLevelG<OutputLevelG)OutputLevelG--;
+  if(InputLevelB<OutputLevelB)OutputLevelB--;
+
+  analogWrite(PWM_R,OutputLevelR);
+  analogWrite(PWM_G,OutputLevelG);
+  analogWrite(PWM_B,OutputLevelB);
+
+  if(InputLevelR==OutputLevelR && InputLevelG==OutputLevelG && InputLevelB==OutputLevelB)
+    return false;// klaar met faden naar nieuwe waarde
+  else
+    return true;
+  }
+  
+void Plugin_023_FLC(void)
+  {  
+  if(FadeTimeCounter==CalledCounter++)
+    {
+    CalledCounter=0;
+    if(!FadeLed())
+      FastLoopCall_ptr==0;
+    }
+  }
+  
+#endif  
+
 boolean Plugin_023(byte function, struct NodoEventStruct *event, char *string)
   {
   boolean success=false;
-  static byte InputLevelR=0, InputLevelG=0, InputLevelB=0;
-  static byte OutputLevelR=0, OutputLevelG=0, OutputLevelB=0;
-  static byte fade=VALUE_OFF;
+  byte x;
+  struct NodoEventStruct TempEvent;  
+  static byte fade=0;
   
   switch(function)
     { 
     #ifdef PLUGIN_023_CORE
-    case PLUGIN_ONCE_A_SECOND:
+    case PLUGIN_EVENT_IN:
       {
-      if(fade==VALUE_ON)
-        {
-        if(InputLevelR>OutputLevelR)OutputLevelR++;
-        if(InputLevelG>OutputLevelG)OutputLevelG++;
-        if(InputLevelB>OutputLevelB)OutputLevelB++;
-  
-        if(InputLevelR<OutputLevelR)OutputLevelR--;
-        if(InputLevelG<OutputLevelG)OutputLevelG--;
-        if(InputLevelB<OutputLevelB)OutputLevelB--;
-  
-        analogWrite(PWM_R,OutputLevelR);
-        analogWrite(PWM_G,OutputLevelG);
-        analogWrite(PWM_B,OutputLevelB);
+      x=event->Par1 & 0x1f; // Unit nummer
 
-        if(InputLevelR==OutputLevelR && InputLevelG==OutputLevelG && InputLevelB==OutputLevelB)
-          fade=VALUE_OFF;
+      if(x==0 || x==Settings.Unit)
+        {
+        fade=event->Par1>>5;
+        InputLevelR = (event->Par2>>16) & 0xff;
+        InputLevelG = (event->Par2>>8 ) & 0xff;
+        InputLevelB = (event->Par2)&0xff;
+        
+        if(fade==0)
+          {
+          while(FadeLed())
+            delay(5);
+          }
+        else
+          {
+          // De waarde fade bevat het aantal minuten dat de omschakeling maximaal mag duren.
+          // Per minuut 60000/Loop_INTERVAL_1 keer een call naar Plugin_023_FLC
+          // In een minuut max. 255 dimniveaus ==> (60000/(Loop_INTERVAL_1 * 255)) calls nodig voor 1 dimniveau verschil. 
+          FadeTimeCounter=fade*60000/(Loop_INTERVAL_1*255);
+          CalledCounter=0;
+          FastLoopCall_ptr=&Plugin_023_FLC;
+          }
+        
+        success=true;
         }
-      success=true;
       break;
       }
-      
+
     case PLUGIN_COMMAND:
       {
-      InputLevelR=(event->Par2 >>16)&0xff;
-      InputLevelG=(event->Par2 >> 8)&0xff;
-      InputLevelB=(event->Par2     )&0xff;  
-      fade=event->Par1;
-      
-      if(fade!=VALUE_ON)
-        {
-        OutputLevelR=InputLevelR;
-        OutputLevelG=InputLevelG;
-        OutputLevelB=InputLevelB;
-
-        analogWrite(PWM_R,OutputLevelR);
-        analogWrite(PWM_G,OutputLevelG);
-        analogWrite(PWM_B,OutputLevelB);
-        }
+      ClearEvent(&TempEvent);
+      TempEvent.DestinationUnit=event->Par1&0x1F; 
+      TempEvent.Port      = VALUE_ALL;
+      TempEvent.Type      = NODO_TYPE_PLUGIN_EVENT;
+      TempEvent.Command   = PLUGIN_ID;
+      TempEvent.Par1      = event->Par1;
+      TempEvent.Par2      = event->Par2;
+      SendEvent(&TempEvent, false ,true, Settings.WaitFree==VALUE_ON);
+  
       success=true;
       break;
       }
@@ -110,29 +152,63 @@ boolean Plugin_023(byte function, struct NodoEventStruct *event, char *string)
     #if NODO_MEGA
     case PLUGIN_MMI_IN:
       {
+
       char *TempStr=(char*)malloc(INPUT_COMMAND_SIZE);
 
       if(GetArgv(string,TempStr,1))
         {
-        if(strcasecmp(TempStr,PLUGIN_NAME_23)==0)
+        event->Command = 23;                                                    // Plugin nummer  
+        event->Type = 0;
+        
+        // Event:   RGBLed <R>,<G>,<B>,<Fade> 
+        if(strcasecmp(TempStr,PLUGIN_NAME_23_EVENT)==0)
           {
-          if(GetArgv(string,TempStr,2)) 
+          event->Type = NODO_TYPE_PLUGIN_EVENT;
+          event->Par1=0;
+          if(event->Type)
             {
-            event->Par2=str2int(TempStr)<<16;
-            if(GetArgv(string,TempStr,3))
+            if(GetArgv(string,TempStr,2))                                       // R 
               {
-              event->Par2|=str2int(TempStr)<<8;
-              if(GetArgv(string,TempStr,4))
+              event->Par2=str2int(TempStr)<<16;
+              if(GetArgv(string,TempStr,3))                                     // G
                 {
-                event->Par2|=str2int(TempStr);
-                success=true;
-                event->Command = 23; // Plugin nummer  
-                event->Type = NODO_TYPE_PLUGIN_COMMAND;
+                event->Par2|=str2int(TempStr)<<8;
+                if(GetArgv(string,TempStr,4))                                   // B
+                  {
+                  event->Par2|=str2int(TempStr);
+                  success=true;
+                  }
+                if(GetArgv(string,TempStr,5))                                   // Fade
+                  event->Par1=(str2int(TempStr)<<5);                            // Fade zit in de hoogste drie bits (0..7)
                 }
-              if(GetArgv(string,TempStr,5))
-                event->Par1=str2cmd(TempStr);
-              else
-                event->Par1=VALUE_OFF;
+              }
+            }
+          }
+          
+        // Command: RGBLedSend <NodoUnit>,<R>,<G>,<B>,<Fade> 
+        if(strcasecmp(TempStr,PLUGIN_NAME_23_COMMAND)==0)
+          {
+          event->Type = NODO_TYPE_PLUGIN_COMMAND;
+          if(event->Type)
+            {
+            if(GetArgv(string,TempStr,2))                                       // Unit
+              {
+              event->Par1=str2int(TempStr)&0x1F;                                // Unit zit in de eerste vijf bits (0..31)                                       
+              if(GetArgv(string,TempStr,3))                                     // R 
+                {
+                event->Par2=str2int(TempStr)<<16;
+                if(GetArgv(string,TempStr,4))                                   // G
+                  {
+                  event->Par2|=str2int(TempStr)<<8;
+                  if(GetArgv(string,TempStr,5))                                 // B
+                    {
+                    event->Par2|=str2int(TempStr);
+                    success=true;
+                    }
+                  if(GetArgv(string,TempStr,6))                                 // Fade
+                    event->Par1|=(str2int(TempStr)<<5);                         // Fade zit in de hoogste drie bits (0..7)
+                  }
+                }
               }
             }
           }
@@ -143,15 +219,27 @@ boolean Plugin_023(byte function, struct NodoEventStruct *event, char *string)
 
     case PLUGIN_MMI_OUT:
       {
-      strcpy(string,PLUGIN_NAME_23);                        // Commando 
-      strcat(string," ");
-      strcat(string,int2str((event->Par2 >>16)&0xff));      // Parameter-1 = R (8-bit)
+      if(event->Type==NODO_TYPE_PLUGIN_COMMAND)
+        {
+        strcpy(string,PLUGIN_NAME_23_COMMAND);
+        strcat(string," ");
+        strcat(string,int2str((event->Par1 & 0x1f)));                           // Unit
+        strcat(string,",");
+        }
+      else
+        {
+        strcpy(string,PLUGIN_NAME_23_EVENT);
+        strcat(string," ");
+        }
+        
+      strcat(string,int2str((event->Par2 >>16)&0xff));                          // Parameter-1 = R (5-bit)
       strcat(string,",");
-      strcat(string,int2str((event->Par2 >> 8)&0xff));      // Parameter-2 = G (8-bit)
+      strcat(string,int2str((event->Par2 >> 8)&0xff));                          // Parameter-2 = G (8-bit)
       strcat(string,",");
-      strcat(string,int2str((event->Par2     )&0xff));      // Parameter-3 = B (8-bit)
+      strcat(string,int2str((event->Par2     )&0xff));                          // Parameter-3 = B (8-bit)
       strcat(string,",");
-      strcat(string,cmd2str(event->Par1));                  // Parameter-4 = Fading <On | Off> (8-bit)
+      strcat(string,int2str((event->Par1     )>>5));                            // Parameter-4 = Fade (3-bit)
+
       break;
       }
     #endif //MMI
@@ -159,3 +247,4 @@ boolean Plugin_023(byte function, struct NodoEventStruct *event, char *string)
   return success;
   }
 
+  

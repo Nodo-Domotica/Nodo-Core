@@ -59,7 +59,6 @@ boolean Plugin_002(byte function, struct NodoEventStruct *event, char *string)
       event->Port=VALUE_ALL;                 // Signaal mag naar alle door de gebruiker met [Output] ingestelde poorten worden verzonden.
      
       unsigned long Bitstream = event->Par2 | (0x600 | ((event->Par1&1 /*Commando*/) << 11)); // Stel een bitstream samen
-      Serial.println(Bitstream,BIN);//???
       
       // loop de 12-bits langs en vertaal naar pulse/space signalen.  
       for (byte i=0; i<KAKU_CodeLength; i++)
@@ -91,7 +90,6 @@ boolean Plugin_002(byte function, struct NodoEventStruct *event, char *string)
         }
 
       SendEvent(event,true,true,Settings.WaitFree==VALUE_ON);
-      PrintRawSignal();//???
       success=true;
       break;
       }

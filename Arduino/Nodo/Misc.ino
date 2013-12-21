@@ -717,8 +717,7 @@ void ResetFactory(void)
     }
 
   Save_Settings();
-
-  RebootNodo=true;
+  Reboot();
   }
 
 
