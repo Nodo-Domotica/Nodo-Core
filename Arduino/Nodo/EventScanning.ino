@@ -8,7 +8,6 @@ boolean ScanEvent(struct NodoEventStruct *Event)// Deze routine maakt deel uit v
   byte Fetched=0;
   static unsigned long BlockReceivingTimer=0;
 
-
   // I2C: *************** kijk of er data is binnengekomen op de I2C-bus **********************
   if(I2C_Received)
    {

@@ -18,8 +18,6 @@ byte ProcessEventExt(struct NodoEventStruct *Event)
     return 0;
   #endif
 
-  // loop de plugins langs voor eventuele afhandeling van dit event.
-  PluginCall(PLUGIN_EVENT_IN, Event,0);
 
   // Verwerk het binnengekomen event
   error=ProcessEvent(Event);
@@ -39,6 +37,8 @@ byte ProcessEventExt(struct NodoEventStruct *Event)
     SendEvent(&TempEvent, false,false,false);
     RequestForConfirm=0;
     }  
+
+  Led(GREEN);
   return error;
   }
     
@@ -60,6 +60,9 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     Continue=false;
     error=MESSAGE_NESTING_ERROR; // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
     }
+
+  // loop de plugins langs voor eventuele afhandeling van dit event.
+  PluginCall(PLUGIN_EVENT_IN, Event,0);
 
   // Als er een LOCK actief is, dan commando's blokkeren behalve...
   if(Settings.Lock && (Event->Port==VALUE_SOURCE_RF || Event->Port==VALUE_SOURCE_IR ))
