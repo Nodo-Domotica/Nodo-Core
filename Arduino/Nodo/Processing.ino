@@ -38,7 +38,6 @@ byte ProcessEventExt(struct NodoEventStruct *Event)
     RequestForConfirm=0;
     }  
 
-  Led(GREEN);
   return error;
   }
     
