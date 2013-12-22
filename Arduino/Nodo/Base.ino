@@ -1015,6 +1015,8 @@ void loop()
         case 0: // binnen Slice_1
           {
           // SERIAL: *************** kijk of er data klaar staat op de seriële poort **********************
+          Led(GREEN);
+          
           if(Serial.available())
             {
             PluginCall(PLUGIN_SERIAL_IN,0,0);
