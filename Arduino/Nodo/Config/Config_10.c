@@ -19,4 +19,5 @@
 
 
 #define PLUGIN_023
+#define PLUGIN_023_CORE
                       

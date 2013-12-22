@@ -19,9 +19,17 @@
  *                      RGBLedSend <NodoUnit>,<Red>,<Green>,<Blue>,<FadeTimeInMinutes> ==> Verzendt event en stuurt
  *                      de RGB-led van een andere Nodo aan
  * 
- * LET OP: De PLUGIN_CORE niet gebruiken als er een IR-Zender is aangesloten !
- *         Een van de RGB-kleuren maakt gebruik van de IR_TX_DATA pen. Het continue
+ * LET OP: Een van de RGB-kleuren maakt gebruik van de IR_TX_DATA pen. Het continue
  *         aansturen van de IR-Leds zou de Leds/transistor kunnen overbelasten.   
+ *         Als je deze plugin wilt gebruiken voor aansturing een RGB-LED en je hebt GEEN infrarood-LED's 
+ *         aangesloten, dan in je config file de volgende regel opnemen:
+ *         
+ *         #define PLUGIN_023_CORE_RGBLED 
+ *          
+ *         Zonder deze regel zal de plugin geen LED's aansturen en is alleen RGBLedSend beschikbaar.
+ *         Dit is uit veiligheid om te voorkomen dat de Nodo beschadigd raakt omdat default Nodo's op deze 
+ *         poort de IR zender aangesloten heeft. 
+ * 
  * 
  ***********************************************************************************************
  * Technische beschrijving:
@@ -72,6 +80,8 @@ boolean FadeLed(void)
 
   analogWrite(PWM_R,OutputLevelR);
   analogWrite(PWM_G,OutputLevelG);
+
+
   analogWrite(PWM_B,OutputLevelB);
 
   if(InputLevelR==OutputLevelR && InputLevelG==OutputLevelG && InputLevelB==OutputLevelB)
@@ -101,7 +111,7 @@ boolean Plugin_023(byte function, struct NodoEventStruct *event, char *string)
   
   switch(function)
     { 
-    #ifdef PLUGIN_023_CORE
+    #ifdef PLUGIN_023_CORE_RGBLED
     case PLUGIN_EVENT_IN:
       {
       x=event->Par1 & 0x1f; // Unit nummer
@@ -132,7 +142,9 @@ boolean Plugin_023(byte function, struct NodoEventStruct *event, char *string)
         }
       break;
       }
+    #endif    
 
+    #ifdef PLUGIN_023_CORE
     case PLUGIN_COMMAND:
       {
       ClearEvent(&TempEvent);
