@@ -672,12 +672,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
       
     case CMD_FILE_EXECUTE:
-      strcpy(TempString,cmd2str(CMD_FILE_EXECUTE));
-      strcat(TempString," ");
-      strcat(TempString,int2str(EventToExecute->Par2));
-      strcat(TempString,",");
-      strcat(TempString,int2str(EventToExecute->Par1));
-      ExecuteLine(TempString,EventToExecute->Port);
+      error=FileExecute("",int2str(EventToExecute->Par2),"DAT", EventToExecute->Par1==VALUE_ON, VALUE_ALL);
       break;      
               
     #endif    
