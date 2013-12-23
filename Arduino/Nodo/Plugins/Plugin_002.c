@@ -114,7 +114,7 @@ boolean Plugin_002(byte function, struct NodoEventStruct *event, char *string)
         event->SourceUnit    = 0;                                               // Komt niet van een Nodo unit af, dus unit op nul zetten
         RawSignal.Repeats    = true;                                            // het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
         event->Type          = NODO_TYPE_PLUGIN_EVENT;
-        event->Command       = 3;                                               // nummer van dit device
+        event->Command       = PLUGIN_ID;                                       // nummer van dit device
         success=true;
         }   
       break;

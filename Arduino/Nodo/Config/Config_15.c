@@ -14,7 +14,7 @@
 // Kaku              : Klik-Aan-Klik-Uit ontvangst
 // #define PLUGIN_001
 // #define PLUGIN_001_CORE
-
+                                                                                                                             C:\Users\tonkes\Google Drive\Paul\Nodo\SVN\Arduino\Nodo\Config\Config_15.cJe moet op ALLE Nodo's j
 // KakuSend          : Klik-Aan-Klik-Uit  verzenden 
 // #define PLUGIN_002
 // #define PLUGIN_002_CORE

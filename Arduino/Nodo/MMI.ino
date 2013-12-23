@@ -1,4 +1,5 @@
 #if NODO_MEGA
+
  /*******************************************************************************************************\
  * Deze funktie parsed een string zoals die door de gebruiker wordt opgegeven. De commando's
  * worden gechecked op geldigheid en ter uitvoering doorgegeven.
@@ -453,12 +454,11 @@ int ExecuteLine(char *Line, byte Port)
                 {
                 // Als het geen regulier commando was EN geen commando met afwijkende MMI en geen Plugin en geen alias, dan kijken of file op SDCard staat)
                 // Voer bestand uit en verwerking afbreken als er een foutmelding is.
+                error=MESSAGE_UNKNOWN_COMMAND;
                 if(strlen(Command)<=8)
                   error=FileExecute("",Command,"DAT", false, VALUE_ALL);
                   
                 // als script niet te openen, dan is het ingevoerde commando ongeldig.
-                if(error)
-                  error=MESSAGE_UNKNOWN_COMMAND;
   
                 EventToExecute.Command=0;      
                 }
