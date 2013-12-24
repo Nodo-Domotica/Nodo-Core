@@ -47,9 +47,6 @@ byte ProcessEvent(struct NodoEventStruct *Event)
   byte error=0;
   boolean Continue=true;
 
-  // PrintNodoEvent("ProcessEvent() ",Event);//$$$
-
-    
   if(Event->Command==0)
     return error;
 
@@ -101,7 +98,6 @@ byte ProcessEvent(struct NodoEventStruct *Event)
   if(Continue && (Event->Flags & TRANSMISSION_VIEW_SPECIAL))
     {
     Continue=false;
-    //??? waar wordt deze weergegeven?
     }
   #endif
   
