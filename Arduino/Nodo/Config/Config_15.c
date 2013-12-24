@@ -11,34 +11,14 @@
 #define CLOCK        false // true=code om Real Time Clock mee compileren.
 #define NODO_MEGA    false // true = Nodo Mega, false=Nodo-Small
 
-// Kaku              : Klik-Aan-Klik-Uit ontvangst
+// Kaku              : Klik-Aan-Klik-Uit
 // #define PLUGIN_001
 // #define PLUGIN_001_CORE
-                                                                                                                             C:\Users\tonkes\Google Drive\Paul\Nodo\SVN\Arduino\Nodo\Config\Config_15.cJe moet op ALLE Nodo's j
-// KakuSend          : Klik-Aan-Klik-Uit  verzenden 
-// #define PLUGIN_002
-// #define PLUGIN_002_CORE
 
-// NewKAKU           : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno.
+// NewKAKU           : Klik-Aan-Klik-Uit met automatische codering. Tevens bekend als Intertechno.
 // #define PLUGIN_003
 // #define PLUGIN_003_CORE
 
-// NewKAKUSend       : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno. 
-// #define PLUGIN_004
-// #define PLUGIN_004_CORE
-
-// DTH-22 Vocht/Temperatuursensor
-#define PLUGIN_006
-#define PLUGIN_006_CORE 22
-
-// BMP085 Luchtdruk sensor
-#define PLUGIN_020
-#define PLUGIN_020_CORE 
-
 #define PLUGIN_023
 #define PLUGIN_023_CORE
-
-
-// TempSensor        : Temperatuursensor Dallas DS18B20. (Let op; -B- variant, dus niet DS1820)
-/// #define PLUGIN_005 
-// #define PLUGIN_005_CORE
+#define PLUGIN_023_CORE_RGBLED

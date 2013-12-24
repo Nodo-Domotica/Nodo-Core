@@ -273,21 +273,7 @@ int ExecuteLine(char *Line, byte Port)
                 PrintString(ProgmemString(Text_22), Port);
                 }
               break;
-        
-            case CMD_FILE_EXECUTE:
-              EventToExecute.Type=NODO_TYPE_COMMAND;
-              if(EventToExecute.Par2==VALUE_ON)
-                EventToExecute.Par1=VALUE_ON;
-              else
-                EventToExecute.Par1=VALUE_OFF;
-              if(GetArgv(Command,TmpStr1,2))
-                {
-                EventToExecute.Par2=str2int(TmpStr1);
-                if(State_EventlistWrite==0)// Commando uitvoeren heeft alleen zin er geen eventlistwrite commando actief is
-                  error=FileExecute("",TmpStr1,"DAT", EventToExecute.Par1==VALUE_ON, VALUE_ALL);
-                }
-              break;                                                                             
-                
+                        
             case CMD_NODO_IP:
               EventToExecute.Type=NODO_TYPE_COMMAND;
               if(GetArgv(Command,TmpStr1,2))
@@ -891,6 +877,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         ParameterToView[2]=PAR3_INT;
       
         break;
+
       case EVENT_WILDCARD:
         ParameterToView[0]=PAR1_TEXT;
         ParameterToView[1]=PAR2_TEXT;
@@ -1088,7 +1075,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
           strcat(EventString, int2str((Event->Par2>>16)&0xf));
             strcat(EventString, "-");
           strcat(EventString, int2str((Event->Par2>>12)&0xf));
-          strcat(EventString, int2str((Event->Par2>>8)&0xf));
+          strcat(EventString, int2str((Event->Par2>>8 )&0xf));
           strcat(EventString, int2str((Event->Par2>>4 )&0xf));
           strcat(EventString, int2str((Event->Par2    )&0xf));
           break;
@@ -1499,6 +1486,17 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
       else
         error=MESSAGE_INVALID_PARAMETER;
       break;
+
+    case CMD_FILE_EXECUTE:
+      ResultEvent->Type=NODO_TYPE_COMMAND;
+      if(ResultEvent->Par2==VALUE_ON)
+        ResultEvent->Par1=VALUE_ON;
+      else
+        ResultEvent->Par1=VALUE_OFF;
+      if(GetArgv(Command,TmpStr1,2))
+        ResultEvent->Par2=str2int(TmpStr1);
+      break;                                                                             
+
 
     case EVENT_VARIABLE:
       ResultEvent->Type=NODO_TYPE_EVENT;
