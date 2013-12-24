@@ -1,5 +1,5 @@
-#define NODO_BUILD                       645 // ??? Ophogen bij iedere Build / versiebeheer.
-#define NODO_VERSION_MINOR                 5 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
+#define NODO_BUILD                       650 // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_VERSION_MINOR                 6 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3 // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1 // Unit nummer van deze Nodo
 #define HOME_NODO                          1 // Home adres van Nodo's die tot één groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres

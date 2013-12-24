@@ -97,15 +97,10 @@ boolean Plugin_002(byte function, struct NodoEventStruct *event, char *string)
           i+=4;                                                                 // volgende pulsenquartet
           }while(i<RawSignal.Number-2);                                         //-2 omdat de space/pulse van de stopbit geen deel meer van signaal uit maakt.
             
-        // Adres deel:
-        if(bitstream>0xffff)                                                    // Is het signaal van een originele KAKU zender afkomstig, of van een Nodo ingegeven door de gebruiker ?
-          // Oude Nodo compatibel
-          event->Par2=bitstream &0x0FFFFFCF;                                    // Op hoogste nibble zat vroeger het signaaltype. 
-          // event->Par2=bitstream &0xFFFFFFCF;                                 // dan hele adres incl. unitnummer overnemen. Alleen de twee commando-bits worden er uit gefilterd
-        
+        if(bitstream>0xffff)                                                    // Adres-deel: Is het signaal van een originele KAKU zender afkomstig, of van een Nodo ingegeven door de gebruiker ?
+          event->Par2=bitstream &0x0FFFFFCF;                                    // Op hoogste nibble zat vroeger het signaaltype. & is t.b.v. compatibiliteit 
         else                                                                    // Het is van een andere Nodo afkomstig. 
           event->Par2=(bitstream>>6)&0xff;                                      // Neem dan alleen 8bit v/h adresdeel van KAKU signaal over
-          
         
         if(i>140)                                                               // Commando en Dim deel
           event->Par1++;                                                        // Dim level. +1 omdat gebruiker dim level begint bij één.
