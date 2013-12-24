@@ -1,4 +1,4 @@
-#define NODO_BUILD                       650 // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       651 // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                 6 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3 // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1 // Unit nummer van deze Nodo
@@ -423,7 +423,7 @@ prog_char PROGMEM Text_10[] = "Tranmission claimed by unit %d. Waiting...";
 prog_char PROGMEM Text_11[] = "ALIAS_I"; // Directory op de SDCard voor opslag Input: Aliassen van gebruiker -> Nodo Keyword.
 prog_char PROGMEM Text_12[] = "ALIAS_O"; // Directory op de SDCard voor opslag Output: Nodo Keywords -> Alias van gebruiker.
 prog_char PROGMEM Text_14[] = "Event=";
-prog_char PROGMEM Text_15[] = "! %d Pulses \n! Sample resolution %d microseconds\n! Pulse gauge value %d\n!\n";
+prog_char PROGMEM Text_15[] = "! RawSignal 0x%s\n! %d Pulses \n! Sample resolution %d microseconds\n! Pulse gauge value %d\n!\n";
 prog_char PROGMEM Text_16[] = "! Date=%02d-%02d-%d, Time=%02d:%02d, Variable=%d, Value=";
 prog_char PROGMEM Text_17[] = "Date=%02d-%02d-%d (%s), Time=%02d:%02d";
 prog_char PROGMEM Text_18[] = "%s %u.%u.%u.%u";
