@@ -1,17 +1,17 @@
-#define NODO_BUILD                       651 // ??? Ophogen bij iedere Build / versiebeheer.
-#define NODO_VERSION_MINOR                 6 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
+#define NODO_BUILD                       652 // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_VERSION_MINOR                 7 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3 // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1 // Unit nummer van deze Nodo
 #define HOME_NODO                          1 // Home adres van Nodo's die tot één groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
 #define MIN_RAW_PULSES                    16 // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
-#define RAWSIGNAL_TX_REPEATS              10 // Aantal keer dat een frame met pulsen herhaald wordt verzonden (RawSignalSend)
-#define RAWSIGNAL_TX_DELAY                10 // Tijd in mSec. tussen herhalingen frames bij zenden. (RawSignalSend)
+#define RAWSIGNAL_TX_REPEATS               8 // Aantal keer dat een frame met pulsen herhaald wordt verzonden (RawSignalSend)
+#define RAWSIGNAL_TX_DELAY                20 // Tijd in mSec. tussen herhalingen frames bij zenden. (RawSignalSend)
 #define RAWSIGNAL_TOLERANCE              100 // Tolerantie die gehanteerd wordt bij decoderen van RF/IR signaal. T.b.v. uitrekenen HEX-code.
-#define RAWSIGNAL_SAMPLE                  25 // ???Sample grootte / Resolutie in uSec waarmee ontvangen Rawsignalen pulsen worden opgeslagen
+#define RAWSIGNAL_SAMPLE_DEFAULT          25 // Sample grootte / Resolutie in uSec waarmee ontvangen Rawsignalen pulsen worden opgeslagen
 #define WAIT_FREE_RX                   false // true: wacht default op verzenden van een event tot de IR/RF lijn onbezet is. Wordt overruled door commando [WaitFreeRX]
 #define WAIT_FREE_RX_WINDOW              500 // minimale wachttijd wanneer wordt gewacht op een vrije RF of IR band. Is deze waarde te klein, dan kunnen er restanten van signalen binnenkomen als RawSignal. Te groot maakt de Nodo sloom.
 #define WAITFREE_TIMEOUT               30000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
-#define MIN_PULSE_LENGTH                  25 // Pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
+#define MIN_PULSE_LENGTH                  15 // Pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define SIGNAL_TIMEOUT_RF                  5 // na deze tijd in mSec. wordt één RF signaal als beëindigd beschouwd.
 #define SIGNAL_TIMEOUT_IR                 10 // na deze tijd in mSec. wordt één IR signaal als beëindigd beschouwd.
 #define SIGNAL_REPEAT_TIME              1000 // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF/IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
@@ -183,7 +183,7 @@ byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
 #define CMD_WIRED_SMITTTRIGGER          127
 #define CMD_WIRED_THRESHOLD             128
 #define CMD_FILE_WRITE_LINE             129
-#define VALUE_FAST                      130
+#define CMD_RAWSIGNAL_SAMPLE            130
 #define CMD_RAWSIGNAL_SHOW              131
 #define CMD_RAWSIGNAL_REPEATS           132
 #define CMD_RAWSIGNAL_DELAY             133
@@ -197,7 +197,8 @@ byte dummy=1; // linker even op weg helpen. Bugje in Arduino.
 #define CMD_IP_SEND                     141
 #define CMD_STOP                        142
 #define CMD_SLEEP                       143   
-#define COMMAND_MAX                     143 // hoogste commando
+#define VALUE_FAST                      144
+#define COMMAND_MAX                     144 // hoogste commando
 
 #define MESSAGE_OK                      0
 #define MESSAGE_UNKNOWN_COMMAND         1
@@ -354,7 +355,7 @@ prog_char PROGMEM Cmd_126[]="WiredPullup";
 prog_char PROGMEM Cmd_127[]="WiredSmittTrigger";
 prog_char PROGMEM Cmd_128[]="WiredThreshold";
 prog_char PROGMEM Cmd_129[]="FileWriteLine";
-prog_char PROGMEM Cmd_130[]="Fast";
+prog_char PROGMEM Cmd_130[]="RawSignalSample";
 prog_char PROGMEM Cmd_131[]="RawSignalShow";
 prog_char PROGMEM Cmd_132[]="RawSignalRepeats";
 prog_char PROGMEM Cmd_133[]="RawSignalDelay";
@@ -368,6 +369,7 @@ prog_char PROGMEM Cmd_140[]="PowerSave";
 prog_char PROGMEM Cmd_141[]="IPSend";
 prog_char PROGMEM Cmd_142[]="Stop";
 prog_char PROGMEM Cmd_143[]="Sleep";
+prog_char PROGMEM Cmd_144[]="Fast";
 
 
 // tabel die refereert aan de commando strings
@@ -386,7 +388,7 @@ Cmd_100,Cmd_101,Cmd_102,Cmd_103,Cmd_104,Cmd_105,Cmd_106,Cmd_107,Cmd_108,Cmd_109,
 Cmd_110,Cmd_111,Cmd_112,Cmd_113,Cmd_114,Cmd_115,Cmd_116,Cmd_117,Cmd_118,Cmd_119,
 Cmd_120,Cmd_121,Cmd_122,Cmd_123,Cmd_124,Cmd_125,Cmd_126,Cmd_127,Cmd_128,Cmd_129,
 Cmd_130,Cmd_131,Cmd_132,Cmd_133,Cmd_134,Cmd_135,Cmd_136,Cmd_137,Cmd_138,Cmd_139,
-Cmd_140,Cmd_141,Cmd_142,Cmd_143};
+Cmd_140,Cmd_141,Cmd_142,Cmd_143,Cmd_144};
 
 // Message max. 40 pos       "1234567890123456789012345678901234567890"
 prog_char PROGMEM Msg_0[]  = "Ok.";
@@ -423,7 +425,6 @@ prog_char PROGMEM Text_10[] = "Tranmission claimed by unit %d. Waiting...";
 prog_char PROGMEM Text_11[] = "ALIAS_I"; // Directory op de SDCard voor opslag Input: Aliassen van gebruiker -> Nodo Keyword.
 prog_char PROGMEM Text_12[] = "ALIAS_O"; // Directory op de SDCard voor opslag Output: Nodo Keywords -> Alias van gebruiker.
 prog_char PROGMEM Text_14[] = "Event=";
-prog_char PROGMEM Text_15[] = "! RawSignal 0x%s\n! %d Pulses \n! Sample resolution %d microseconds\n! Pulse gauge value %d\n!\n";
 prog_char PROGMEM Text_16[] = "! Date=%02d-%02d-%d, Time=%02d:%02d, Variable=%d, Value=";
 prog_char PROGMEM Text_17[] = "Date=%02d-%02d-%d (%s), Time=%02d:%02d";
 prog_char PROGMEM Text_18[] = "%s %u.%u.%u.%u";
@@ -501,7 +502,7 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #if NODO_MEGA // Definities voor de Nodo-Mega variant.
 #define EVENT_QUEUE_MAX             16 // maximaal aantal plaatsen in de queue.
 #define INPUT_LINE_SIZE            128 // Buffer waar de karakters van de seriele/IP poort in worden opgeslagen.
-#define INPUT_COMMAND_SIZE          40 // Maximaal aantal tekens waar een commando uit kan bestaan.
+#define INPUT_COMMAND_SIZE          80 // Maximaal aantal tekens waar een commando uit kan bestaan.
 #define TIMER_MAX                   15 // aantal beschikbare timers voor de user, gerekend vanaf 1
 #define ALARM_MAX                    8 // aantal alarmen voor de user
 #define USER_VARIABLES_MAX          15 // aantal beschikbare gebruikersvariabelen voor de user.
@@ -623,6 +624,7 @@ struct SettingsStruct
   byte    TransmitRF;
   byte    WaitFree;
   byte    RawSignalReceive;
+  byte    RawSignalSample;
   unsigned long Lock;                                       // bevat de pincode waarmee IR/RF ontvangst is geblokkeerd. Bit nummer hoogste bit wordt gebruiktvoor in/uitschakelen.
   
   #if NODO_MEGA
@@ -646,6 +648,10 @@ struct SettingsStruct
   byte    RawSignalSave;
   byte    RawSignalCleanUp;
   byte    Alias;
+  byte    Res1;
+  byte    Res2;
+  byte    Res3;
+  byte    Res4;
   #endif
   }Settings;
 
@@ -1077,7 +1083,7 @@ void loop()
           // IP Telnet verbinding : *************** kijk of er verzoek tot verbinding vanuit een terminal is **********************    
           if(bitRead(HW_Config,HW_ETHERNET))
             {
-            if(TerminalServer.available())
+            while(TerminalServer.available())// was if
               {          
               if(TerminalConnected==0)// indien een nieuwe connectie
                 {
@@ -1182,8 +1188,8 @@ void loop()
                 else 
                   {
                     // bij een niet printbaar teken 
-                  InputBuffer_Terminal[0]=0;
-                  TerminalClient.flush();// eventuele rommel weggooien.
+                  // InputBuffer_Terminal[0]=0;
+                  //???TerminalClient.flush();// eventuele rommel weggooien.
                   break;
                   }
                 }

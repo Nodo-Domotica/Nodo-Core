@@ -1,81 +1,9 @@
-/********************* Aanpassingen t.o.v. versie 3.6.0  **********************************\
+/********************* Aanpassingen t.o.v. versie 3.6.9 Build 651  **********************************\
 
-R601
-- Issue 785:	Parameter 2 van VariableSend wordt altijd gevuld met ALL
-- Issue 804:	SendTo vreet geen regels na compatibiliteitconversie	
-- #define CLOCK voor wel/niet meecompileren realtime clock funktionaliteit
-                                                                                           
-R610
-- Issue 805:	NewNodo melding komt ondanks wegschrijven eventlist
-- Issue 808:	Plugin error message is cryptisch
-- Poort "Plugin" toegevoegd.                               
-- Plugin_006: Dubbel setten van variabele verwijderd. Tevens toevoeging poort="Plugin" en retry bij error.
-- Plugin_006: Geschikt gemaakt voor DHT-22
-
-R619
-- Issue 789:	Nesting van file executes afvangen
-- Issue 796:	Plugin_006 Genereert 2x Event=Variable voor par2+1
-- Issue 721:	DHT11 geeft bij eerste uitlezing een nul waarde terug
-- Issue 799:	P1Read bug
-- Issue 755:	DHT11Read: unknown device
-
-R624
-- Automatich renamen van oude commando namen vervallen (zoals [SendUserEvent] versus [UserEventSend])
-- Diverse aanpassingen RawSignal:
-  * Nieuwe analyse RawSinal: LET OP: RawSignal levert andere HEX-Codes en oude op SDCard opgeslagen
-    RawSignals niet meer worden verzonden!!!
-  * Nieuw commando [RawSignalShow <Hex-code> ] laat de opbouw van een op SDCard opgeslagen signaal zien.
-  * Analyse tolerantie aangepast. Levert stabieler dezelfde HEX waarden.
-  * Commando [RawSignalSave] gerenamed naar [RawSignalWrite]. Oude wordt NIET meer omgezet naar nieuwe syntax.
-  * Als [RawsignalReceive] op [Off] staat, komen de op SDCard opgeslagen RawSignals wel binnen als event.
-  * Als [RawSignalWrite] wordt aan gezet, dan wordt [RawSignalReceive] ook ingeschakeld.
-  * [RawSignalWrite] heeft een tweede optionele parameter voor 'schonen' van signaal naar beperkt aantal (2..5) pulstijden.
-  * [RawSignalPulses] in scriptfile laadt de pulsenbuffer voor latere verzending. Syntax: zie resultaat [RawSignalShow]      
-       
-- Nodo emercency reset door Pulse (IR_RX_DATA) tien seconden te verbinden met de LED-RED. (Zowel Mega als Small)
-- Bug opgelost in invoer grote HEX getallen. 
-- Alias funktionaliteit toegevoegd:
-  * Voeg een alias toe met [Alias <alias>=<keyword>]
-  * [AliasErase <alias | * > ] toegevoegd
-  * [AliasList] toegevoegd.
-- Commando [FileErase] wist alle bestanden als Par1 een asterisk '*' teken is. (Vroeger was zonder parameters alles wissen)  
-
-R626:
-- Commando[Output] kan nu naast [On] en [Off] ook optie [All] meekrijgen. Dan worden alle uitgaande events altijd verzonden.
-
-R633:
-- Bug in SendTo/EventlistWrite van build R626 opgelost.
-- Status opvragen met SendTo levert geen events op maar directe weergave op terminal !!!
-- EventlistShow kan worden opgevraagd met een SendTo
-- Plugin_020 (BMP085Read) aangepast. WireNodo library aanpassing.
-
-R635:
-- Issue 792:	'Wire' was not declared in this scope voor plugin 20 en 21.
-- Issue 793:	"#define CLOCK false" geeft problemen met compileren
-- Issue 815:	Plugin 20 komt niet door de compiler
-- Issue 794:	P24 werkt niet op Arduino 1.0.1. (de geadviseerde versie volgens Nodo.Ino) wel met 1.0.5.
-
-R637:
-- Ethernet code wordt in het geheel niet meer meegecompileerd als de ethernet library niet ge-include is. #define Ethernet komen te vervallen.
-- Commando [VariableReceive] vervangen door [VariableGet <VariabeleBestemming>, <UnitBron>, <VariabeleBron>]
-- Tekst "SendTo error." gerenamed naar de algemenere melding "Communication error.". Dit i.v.m. hergebruik elders.
-
-R640:
-- Commando [Sleep] toegevoegd. Sleep zet de Arduino in de energiezuinige mode en wordt wakker bij aflopen van een timer.
-
-R641:
-- Aanpassing [Sleep] onder de motorkap
-
-R644:
-- Toevoeging commando [VariableLog <variabelenummer>]. Slaat logging op op SDCard. 0=wildcard. Werkt alleen op Mega met SDCard.
-
-R645:
-- MMI bug invoer commando's >40 posities veroorzaakte vastloper.
-
-
-Nog te doen:
-- Bug: Boot van een Slave claimt soms de RF band. Waarom deze lock en komt de band niet vrij? Hoe reproduceren?
-- Bug: Input=RF; Unit=4; Event=Message 14,5: Plugin returned an error. ==> Reboot master !
-- uitklokken ontvangstroutine met analyser
-\*****************************************************************************************/
+R652:
+- Div. aanpassingen RawSignalWrite
+- Invoer langere commando's mogelijk. Leverde problemen op bij lange AliasWrite regels.
+- TelNet invoer negeert non-ascii teken in plaats van de gehele invoer weg te gooien
+- Commando [RawSignalSample] zichtbaar met [Status]
+- Versienummer aangepast in welkomsttekst 3.6.9 (beta)
 

@@ -229,6 +229,14 @@ int ExecuteLine(char *Line, byte Port)
               RawSignal.Delay=EventToExecute.Par1;
               break;
         
+            case CMD_RAWSIGNAL_SAMPLE:
+              if(EventToExecute.Par1==0)
+                Settings.RawSignalSample=RAWSIGNAL_SAMPLE_DEFAULT;
+              else
+                Settings.RawSignalSample=EventToExecute.Par1;
+              RawSignal.Multiply=Settings.RawSignalSample;
+              break;
+        
             case CMD_RAWSIGNAL_REPEATS:
               RawSignal.Repeats=EventToExecute.Par1;
               EventToExecute.Command=0; // Geen verdere verwerking meer nodig.
@@ -652,7 +660,7 @@ char* DateTimeString(void)
 /**********************************************************************************************\
  * Print de welkomsttekst van de Nodo.
  \*********************************************************************************************/
-prog_char PROGMEM Text_welcome[] = "Nodo-Mega V3.6, Product=SWACNC-MEGA-R%03d, Home=%d, ThisUnit=%d";
+prog_char PROGMEM Text_welcome[] = "Nodo-Mega V3.6.9 (Beta), Product=SWACNC-MEGA-R%03d, Home=%d, ThisUnit=%d";
 void PrintWelcome(void)
   {
   char *TempString=(char*)malloc(80);
@@ -906,6 +914,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         break;
 
       // Par1 als waarde en par2 niet
+      case CMD_RAWSIGNAL_SAMPLE:
       case CMD_RAWSIGNAL_DELAY:
       case CMD_RAWSIGNAL_REPEATS:
       case CMD_EVENTLIST_SHOW:
@@ -1683,7 +1692,7 @@ void PrintWelcome(void)
   Serial.println(F("!******************************************************************************!"));
   Serial.println(F("Nodo Domotica controller (c) Copyright 2013 P.K.Tonkes."));
   Serial.println(F("Licensed under GNU General Public License."));
-  Serial.print(F("Nodo-Small V3.6, Product=SWACNC-SMALL-R"));
+  Serial.print(F("Nodo-Small V3.6.9 (beta), Product=SWACNC-SMALL-R"));
   Serial.print(NODO_BUILD);
   Serial.print(F(", Home="));
   Serial.print(Settings.Home);

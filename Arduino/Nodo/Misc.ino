@@ -539,6 +539,9 @@ boolean GetStatus(struct NodoEventStruct *Event)
     break;
 
 #if NODO_MEGA
+  case CMD_RAWSIGNAL_SAMPLE:
+    Event->Par1=Settings.RawSignalSample;
+    break;
 
   case CMD_DEBUG:
     Event->Par1=Settings.Debug;
@@ -656,6 +659,7 @@ void ResetFactory(void)
   Settings.Unit                       = UNIT_NODO;
   Settings.Home                       = HOME_NODO;
   Settings.RawSignalReceive           = VALUE_OFF;
+  Settings.RawSignalSample            = RAWSIGNAL_SAMPLE_DEFAULT;  
 
 #if WAIT_FREE_RX
   Settings.WaitFree                   = VALUE_ON;
@@ -696,15 +700,12 @@ void ResetFactory(void)
   Settings.Log                        = VALUE_OFF;  
   Settings.RawSignalSave              = VALUE_OFF;  
   Settings.RawSignalCleanUp           = 0;  
-  Settings.Alias                      = VALUE_ON;  
+  Settings.Alias                      = VALUE_OFF;  
   Settings.Password[0]                = 0;
 
   // Maak de alarmen leeg
   for(x=0;x<ALARM_MAX;x++)
     Settings.Alarm[x]=0L;
-
-  AliasErase("*");// Wis alle aliassen
-  FileErase(ProgmemString(Text_08),"*","DAT");// Wis alle RawSignals
 
 #endif
 
