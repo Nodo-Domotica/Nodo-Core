@@ -623,7 +623,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       Settings.RawSignalReceive=EventToExecute->Par1;
       break;
 
-    case CMD_RAWSIGNAL_SAVE: 
+    case CMD_RAWSIGNAL_SAVE: // Geen Par1=Huidige inhoud opslaan. In andere gevallen de settine op VALUE_ON of VALUE_OFF instellen 
       if(EventToExecute->Par1==0)
         {
         // Sla huidige inhoud van de RawSignal buffer op.
@@ -646,7 +646,8 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
 
     case CMD_RAWSIGNAL_SEND:
-      RawSignal.Repeats=RAWSIGNAL_TX_REPEATS;
+      if(RawSignal.Repeats==0)
+        RawSignal.Repeats=RAWSIGNAL_TX_REPEATS;
       RawSignal.Delay=RAWSIGNAL_TX_DELAY;
       RawSignal.Source=EventToExecute->Par1;
 
