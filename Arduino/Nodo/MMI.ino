@@ -846,6 +846,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_RAWSIGNAL_SEND:
       case EVENT_RAWSIGNAL:
         ParameterToView[0]=PAR2_INT_HEX;
+        ParameterToView[1]=PAR1_TEXT;
         break;
 
       case CMD_WIRED_SMITTTRIGGER:
@@ -1653,8 +1654,9 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
     case CMD_RAWSIGNAL_SHOW:      
     case CMD_RAWSIGNAL_SEND:      
       ResultEvent->Type=NODO_TYPE_COMMAND;
-      if(GetArgv(Command,TmpStr1,1))
-        ResultEvent->Par1=str2int(TmpStr1);            // Haal Par2 uit het commando. let op Par2 gebruiker wordt opgeslagen in struct Par1.
+      ResultEvent->Par1=VALUE_ALL;
+      if(GetArgv(Command,TmpStr1,3))
+        ResultEvent->Par1=str2cmd(TmpStr1);            // Haal Par2 uit het commando. let op Par2 gebruiker wordt opgeslagen in struct Par1.
       if(GetArgv(Command,TmpStr1,2))
         ResultEvent->Par2=str2int(TmpStr1);            // Haal Par1 uit het commando. let op Par1 gebruiker is een 32-bit hex-getal die wordt opgeslagen in struct Par2.
       break;

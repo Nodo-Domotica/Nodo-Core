@@ -656,8 +656,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       
       if(!error)
         {        
-        if(EventToExecute->Par1==0)
-          EventToExecute->Par1=VALUE_ALL;
         ClearEvent(&TempEvent);
         TempEvent.Port=EventToExecute->Par1;
         TempEvent.Type= NODO_TYPE_EVENT;
