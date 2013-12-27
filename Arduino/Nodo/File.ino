@@ -125,13 +125,19 @@ byte FileWriteLine(char* Path, char* Filename, char* Extention, char *Line, bool
   }
 
 /**********************************************************************************************\
- * Voeg een regel toe aan de logfile.
+ * Schrijf Eventlist naar SDCard.
  \*********************************************************************************************/
 boolean SaveEventlistSDCard(char* Path, char* Filename, char* Extention)
- {
+  {
   int x;
+  byte TempAliasSetting=Settings.Alias;
   boolean r=true;
   char *TempString=(char*)malloc(INPUT_LINE_SIZE);
+
+
+  // Aliassen uitschakelen omdat het schrijven naar de EventlistFile en daarbinnen op SDCard naar Aliassen
+  // zoeken niet samen gaat. Hier verslikt de SD library zich in. 
+  Settings.Alias=VALUE_OFF;
 
   // SDCard en de W5100 kunnen niet gelijktijdig werken. Selecteer SDCard chip
   SelectSDCard(true);
@@ -139,16 +145,14 @@ boolean SaveEventlistSDCard(char* Path, char* Filename, char* Extention)
   SD.remove(PathFile(Path, Filename, Extention)); // eerst bestand wissen, anders wordt de data toegevoegd
 
   File EventlistFile = SD.open(PathFile(Path, Filename, Extention), FILE_WRITE);
+
   if(EventlistFile) 
     {
-    strcpy(TempString,cmd2str(CMD_EVENTLIST_ERASE));
-    EventlistFile.write((uint8_t*)TempString,strlen(TempString));      
-    EventlistFile.write('\n'); // nieuwe regel
+    EventlistFile.println(cmd2str(CMD_EVENTLIST_ERASE));
 
     x=1;
     while(EventlistEntry2str(x++,0,TempString,true))
       {
-
       if(TempString[0]!=0)// als de string niet leeg is, dan de regel weg schrijven
         {
         EventlistFile.write((uint8_t*)TempString,strlen(TempString));      
@@ -165,6 +169,8 @@ boolean SaveEventlistSDCard(char* Path, char* Filename, char* Extention)
   SelectSDCard(false);
 
   free(TempString);
+  Settings.Alias=TempAliasSetting;
+  
   return r;
   }
 

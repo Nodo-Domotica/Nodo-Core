@@ -1,8 +1,8 @@
-#define NODO_BUILD                       652 // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       655 // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                 7 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3 // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1 // Unit nummer van deze Nodo
-#define HOME_NODO                          1 // Home adres van Nodo's die tot één groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
+#define HOME_NODO                          1 // Home adres van Nodo's die tot Ã©Ã©n groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
 #define MIN_RAW_PULSES                    16 // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
 #define RAWSIGNAL_TX_REPEATS               8 // Aantal keer dat een frame met pulsen herhaald wordt verzonden (RawSignalSend)
 #define RAWSIGNAL_TX_DELAY                20 // Tijd in mSec. tussen herhalingen frames bij zenden. (RawSignalSend)
@@ -12,13 +12,13 @@
 #define WAIT_FREE_RX_WINDOW              500 // minimale wachttijd wanneer wordt gewacht op een vrije RF of IR band. Is deze waarde te klein, dan kunnen er restanten van signalen binnenkomen als RawSignal. Te groot maakt de Nodo sloom.
 #define WAITFREE_TIMEOUT               30000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
 #define MIN_PULSE_LENGTH                  15 // Pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
-#define SIGNAL_TIMEOUT_RF                  5 // na deze tijd in mSec. wordt één RF signaal als beëindigd beschouwd.
-#define SIGNAL_TIMEOUT_IR                 10 // na deze tijd in mSec. wordt één IR signaal als beëindigd beschouwd.
+#define SIGNAL_TIMEOUT_RF                  5 // na deze tijd in mSec. wordt Ã©Ã©n RF signaal als beÃ«indigd beschouwd.
+#define SIGNAL_TIMEOUT_IR                 10 // na deze tijd in mSec. wordt Ã©Ã©n IR signaal als beÃ«indigd beschouwd.
 #define SIGNAL_REPEAT_TIME              1000 // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF/IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
 #define PULSE_DEBOUNCE_TIME               10 // pulsen kleiner dan deze waarde in milliseconden worden niet geteld. Bedoeld om verstoringen a.g.v. ruis of dender te voorkomen
 #define PULSE_TRANSITION             FALLING // FALLING of RISING: Geeft aan op welke flank de PulseCounter start start met tellen. Default FALLING
 #define I2C_START_ADDRESS                  1 // Alle Nodo's op de I2C bus hebben een uniek adres dat start vanaf dit nummer. Er zijn max. 32 Nodo's. Let op overlap met andere devices. RTC zit op adres 104.
-#define BAUD                           19200 // Baudrate voor seriële communicatie.
+#define BAUD                           19200 // Baudrate voor seriÃ«le communicatie.
 #define PASSWORD_MAX_RETRY                 5 // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
 #define PASSWORD_TIMEOUT                 300 // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
 #define TERMINAL_TIMEOUT                 600 // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
@@ -439,7 +439,7 @@ prog_char PROGMEM Text_30[] = "Terminal connection closed.";
 PROGMEM prog_uint16_t Sunrise[]={528,525,516,503,487,467,446,424,401,378,355,333,313,295,279,268,261,259,263,271,283,297,312,329,345,367,377,394,411,428,446,464,481,498,512,522,528,527};
 PROGMEM prog_uint16_t Sunset[]={999,1010,1026,1044,1062,1081,1099,1117,1135,1152,1169,1186,1203,1219,1235,1248,1258,1263,1264,1259,1249,1235,1218,1198,1177,1154,1131,1107,1084,1062,1041,1023,1008,996,990,989,993,1004};
 
-// omschakeling zomertijd / wintertijd voor komende 10 jaar. één int bevat de omschakeldatum van maart en oktober.
+// omschakeling zomertijd / wintertijd voor komende 10 jaar. Ã©Ã©n int bevat de omschakeldatum van maart en oktober.
 #define DLSBase 2010 // jaar van eerste element uit de array
 PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,3127};
 // RealTimeclock DS1307
@@ -466,8 +466,8 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define HOME_MAX                       7 // Hoogst mogelijke home nummer van een Nodo
 #define SERIAL_TERMINATOR_1         0x0A // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>
 #define SERIAL_TERMINATOR_2         0x00 // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
-#define Loop_INTERVAL_1               50 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
-#define Loop_INTERVAL_2             1000 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
+#define SCAN_HIGH_TIME               100 // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
+#define SCAN_LOW_TIME               1000 // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
 
 
 // Hardware in gebruik: Bits worden geset in de variabele HW_Config, uit te lezen met [Status HWConfig]
@@ -616,7 +616,7 @@ struct SettingsStruct
   {
   int     Version;        
   byte    Unit; // Max 5 bits in bebruik
-  byte    Home; // Max 3 bits in gebruik, wordt voordat er verzonden wordt samen met Unit tot één byte gemaakt.
+  byte    Home; // Max 3 bits in gebruik, wordt voordat er verzonden wordt samen met Unit tot Ã©Ã©n byte gemaakt.
   boolean NewNodo;
   int     WiredInputThreshold[WIRED_PORTS], WiredInputSmittTrigger[WIRED_PORTS];
   byte    WiredInputPullUp[WIRED_PORTS];
@@ -632,7 +632,7 @@ struct SettingsStruct
   byte    Debug;                                            // Weergeven van extra gegevens t.b.v. beter inzicht verloop van de verwerking
   byte    TransmitIP;                                       // Definitie van het gebruik van HTTP-communicatie via de IP-poort: [Off] of [On]
   char    Password[26];                                     // String met wachtwoord.
-  char    ID[10];                                           // ID waar de Nodo uniek mee geïdentificeerd kan worden in een netwerk
+  char    ID[10];                                           // ID waar de Nodo uniek mee geÃ¯dentificeerd kan worden in een netwerk
   char    HTTPRequest[80];                                  // HTTP request;
   char    Temp[26];                                         // Tijdelijke variabele voor de gebruiker;
   byte    Nodo_IP[4];                                       // IP adres van van de Nodo. als 0.0.0.0 ingevuld, dan IP toekenning o.b.v. DHCP
@@ -658,7 +658,7 @@ struct SettingsStruct
 
  // Niet alle gegevens uit een event zijn relevant. Om ruimte in EEPROM te besparen worden uitsluitend
  // de alleen noodzakelijke gegevens in EEPROM opgeslagen. Hiervoor een struct vullen die later als
- // één blok weggeschreven kan worden.
+ // Ã©Ã©n blok weggeschreven kan worden.
 
  struct EventlistStruct
    {
@@ -701,7 +701,7 @@ byte Plugin_id[PLUGIN_MAX];
 boolean ExecuteCommand(NodoEventStruct *EventToExecute);//protoype definieren.
 
 
-volatile unsigned long PulseCount=0L;                       // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met één verhoogd
+volatile unsigned long PulseCount=0L;                       // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met Ã©Ã©n verhoogd
 volatile unsigned long PulseTime=0L;                        // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
 unsigned long HoldTransmission=0L;                          // wachten op dit tijdstip in millis() alvorens event te verzenden.
 byte Transmission_SelectedUnit=0;                           // 
@@ -759,7 +759,7 @@ struct RawSignalStruct                                      // Variabelen geplaa
   byte Source;                                              // Bron waar het signaal op is binnengekomen.
   int  Number;                                              // aantal bits, maal twee omdat iedere bit een mark en een space heeft.
   byte Repeats;                                             // Aantal maal dat de pulsreeks verzonden moet worden bij een zendactie.
-  byte Delay;                                               // Pauze in ms. na verzenden van één enkele pulsenreeks
+  byte Delay;                                               // Pauze in ms. na verzenden van Ã©Ã©n enkele pulsenreeks
   byte Multiply;                                            // Pulses[] * Multiply is de echte tijd van een puls in microseconden
   byte reserved_1;                                          // future use: voorkomt dat bij uitbreiding alle RawSignals niet meer van SDCard te lezen zijn
   byte reserved_2;                                          // future use: voorkomt dat bij uitbreiding alle RawSignals niet meer van SDCard te lezen zijn
@@ -775,7 +775,7 @@ void setup()
   int x;
   struct NodoEventStruct TempEvent;
 
-  Serial.begin(BAUD);  // Initialiseer de seriële poort
+  Serial.begin(BAUD);  // Initialiseer de seriÃ«le poort
 
   // bereken aantal beschikbare eventlistregels in het eeprom geheugen
   x=(EEPROM_SIZE-sizeof(struct SettingsStruct))/sizeof(struct EventlistStruct);
@@ -805,7 +805,7 @@ void setup()
   pinMode(PIN_LED_RGB_R,  OUTPUT);
   pinMode(PIN_SPEAKER,    OUTPUT);
   pinMode(PIN_LED_RGB_B,  OUTPUT);
-  digitalWrite(PIN_IR_TX_DATA,LOW);   // Zet de IR zenders initiëel uit! Anders mogelijk overbelasting !
+  digitalWrite(PIN_IR_TX_DATA,LOW);   // Zet de IR zenders initiÃ«el uit! Anders mogelijk overbelasting !
   digitalWrite(PIN_RF_RX_VCC,HIGH);   // Spanning naar de RF ontvanger aan.
   digitalWrite(PIN_IR_RX_DATA,INPUT_PULLUP);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
   digitalWrite(PIN_RF_RX_DATA,INPUT_PULLUP);  // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
@@ -978,12 +978,11 @@ void loop()
   byte TerminalInByte;
   int SerialInByteCounter=0;
   int TerminalInbyteCounter=0;
-  byte Slice_1=0,Slice_2=0;    
+  byte Slice_1;    
   struct NodoEventStruct ReceivedEvent;
   byte PreviousMinutes=0;                                     // Sla laatst gecheckte minuut op zodat niet vaker dan nodig (eenmaal per minuut de eventlist wordt doorlopen
   
-  unsigned long LoopIntervalTimer_1=25;                       // Timer voor periodieke verwerking. 25 willekeurig gekozen zodat de intervallen niet gelijk lopen met de andere intervaltimer.
-  unsigned long LoopIntervalTimer_2=0L;                       // Timer voor periodieke verwerking.
+  unsigned long LoopIntervalTimer=0L;                       // Timer voor periodieke verwerking.
   unsigned long StaySharpTimer;                               // Timer die er voor zorgt dat bij communicatie via een kanaal de focus hier ook enige tijd op blijft
   unsigned long PreviousTimeEvent=0L; 
 
@@ -999,261 +998,256 @@ void loop()
 
   while(true)
     {
+
     // Check voor IR, I2C of RF events
     if(ScanEvent(&ReceivedEvent)) 
       ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
-    
-
-    // 1: minder tijdkritische processen die periodiek uitgevoerd moeten worden
-    if(LoopIntervalTimer_1<millis()) // korte interval
-      {
-      LoopIntervalTimer_1=millis()+Loop_INTERVAL_1; // reset de timer  
-
-      // Een plugin mag tijdelijk een claim doen op de snelle aanroep vanuit de hoofdloop. 
-      // Als de waarde FastLoopCall_ptr is gevuld met het adres van een funktie dan wordt de betreffende funktie eenmaal
-      // per 50mSec aangeroepen.
-      if(FastLoopCall_ptr)
-        FastLoopCall_ptr();
 
 
-      switch(Slice_1++)
-        {        
-        case 0: // binnen Slice_1
+    // Een plugin mag tijdelijk een claim doen op de snelle aanroep vanuit de hoofdloop. 
+    // Als de waarde FastLoopCall_ptr is gevuld met het adres van een funktie dan wordt de betreffende funktie eenmaal
+    // per FAST_LOOP mSec aangeroepen.
+    if(FastLoopCall_ptr)
+      FastLoopCall_ptr();
+
+
+    switch(Slice_1++)
+      {        
+      case 0:
+        {
+        // SERIAL: *************** kijk of er data klaar staat op de seriÃ«le poort **********************
+        Led(GREEN);
+        
+        if(Serial.available())
           {
-          // SERIAL: *************** kijk of er data klaar staat op de seriële poort **********************
-          Led(GREEN);
-          
-          if(Serial.available())
-            {
-            PluginCall(PLUGIN_SERIAL_IN,0,0);
-      
-            #if NODO_MEGA     
-            bitWrite(HW_Config,HW_SERIAL,1);// Input op seriele poort ontvangen. Vanaf nu ook output naar Seriele poort want er is klaarblijkelijk een actieve verbinding
-            StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;
-      
-            while(StaySharpTimer>millis()) // blijf even paraat voor luisteren naar deze poort en voorkom dat andere input deze communicatie onderbreekt
-              {          
-              while(Serial.available())
-                {                        
-                SerialInByte=Serial.read();                
-                if(Settings.EchoSerial==VALUE_ON)
-                  Serial.write(SerialInByte);// echo ontvangen teken
-      
-                StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
+          PluginCall(PLUGIN_SERIAL_IN,0,0);
+    
+          #if NODO_MEGA     
+          bitWrite(HW_Config,HW_SERIAL,1);// Input op seriele poort ontvangen. Vanaf nu ook output naar Seriele poort want er is klaarblijkelijk een actieve verbinding
+          StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;
+    
+          while(StaySharpTimer>millis()) // blijf even paraat voor luisteren naar deze poort en voorkom dat andere input deze communicatie onderbreekt
+            {          
+            while(Serial.available())
+              {                        
+              SerialInByte=Serial.read();                
+              if(Settings.EchoSerial==VALUE_ON)
+                Serial.write(SerialInByte);// echo ontvangen teken
+    
+              StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
+              
+              if(isprint(SerialInByte))
+                {
+                if(SerialInByteCounter<(INPUT_LINE_SIZE-1)) // alleen tekens aan de string toevoegen als deze nog in de buffer past.
+                  InputBuffer_Serial[SerialInByteCounter++]=SerialInByte;
+                }
                 
-                if(isprint(SerialInByte))
-                  {
-                  if(SerialInByteCounter<(INPUT_LINE_SIZE-1)) // alleen tekens aan de string toevoegen als deze nog in de buffer past.
-                    InputBuffer_Serial[SerialInByteCounter++]=SerialInByte;
-                  }
-                  
-                if(SerialInByte=='\n')
-                  {
-                  SerialHold(true);
-                  InputBuffer_Serial[SerialInByteCounter]=0; // serieel ontvangen regel is compleet
-                  ExecutionDepth=0;
-                  RaiseMessage(ExecuteLine(InputBuffer_Serial,VALUE_SOURCE_SERIAL),0);
-                  Serial.write('>'); // Prompt
-                  SerialInByteCounter=0;  
-                  InputBuffer_Serial[0]=0; // serieel ontvangen regel is verwerkt. String leegmaken
-                  SerialHold(false);
-                  StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
-                  }
+              if(SerialInByte=='\n')
+                {
+                SerialHold(true);
+                InputBuffer_Serial[SerialInByteCounter]=0; // serieel ontvangen regel is compleet
+                ExecutionDepth=0;
+                RaiseMessage(ExecuteLine(InputBuffer_Serial,VALUE_SOURCE_SERIAL),0);
+                Serial.write('>'); // Prompt
+                SerialInByteCounter=0;  
+                InputBuffer_Serial[0]=0; // serieel ontvangen regel is verwerkt. String leegmaken
+                SerialHold(false);
+                StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
                 }
               }
-            #endif
-            }// if(Serial.available())
-          }
-
-        case 1:
-          {
-          // IP Event: *************** kijk of er een Event van IP komt **********************    
-          #ifdef ethernetserver_h
-          if(bitRead(HW_Config,HW_ETHERNET))
-            if(IPServer.available())
-              if(!PluginCall(PLUGIN_ETHERNET_IN,0,0))
-                ExecuteIP();
+            }
           #endif
-          break;
-          }
-   
-        case 2: // binnen Slice_1 
-          {
-          #ifdef ethernetserver_h
-          // IP Telnet verbinding : *************** kijk of er verzoek tot verbinding vanuit een terminal is **********************    
-          if(bitRead(HW_Config,HW_ETHERNET))
-            {
-            while(TerminalServer.available())// was if
-              {          
-              if(TerminalConnected==0)// indien een nieuwe connectie
-                {
-                // we hebben een nieuwe Terminal client
-                TerminalClient=TerminalServer.available();
-                TerminalConnected=TERMINAL_TIMEOUT;
-                InputBuffer_Terminal[0]=0;
-                TerminalInbyteCounter=0;
-                TerminalClient.flush();// eventuele rommel weggooien.
+          }// if(Serial.available())
+        }
 
-                if(Settings.Password[0]!=0)
+      case 1:
+        {
+        // IP Event: *************** kijk of er een Event van IP komt **********************    
+        #ifdef ethernetserver_h
+        if(bitRead(HW_Config,HW_ETHERNET))
+          if(IPServer.available())
+            if(!PluginCall(PLUGIN_ETHERNET_IN,0,0))
+              ExecuteIP();
+        #endif
+        break;
+        }
+ 
+      case 2:
+        {
+        #ifdef ethernetserver_h
+        // IP Telnet verbinding : *************** kijk of er verzoek tot verbinding vanuit een terminal is **********************    
+        if(bitRead(HW_Config,HW_ETHERNET))
+          {
+          while(TerminalServer.available())// was if
+            {          
+            if(TerminalConnected==0)// indien een nieuwe connectie
+              {
+              // we hebben een nieuwe Terminal client
+              TerminalClient=TerminalServer.available();
+              TerminalConnected=TERMINAL_TIMEOUT;
+              InputBuffer_Terminal[0]=0;
+              TerminalInbyteCounter=0;
+              TerminalClient.flush();// eventuele rommel weggooien.
+
+              if(Settings.Password[0]!=0)
+                {
+                if(TerminalLocked==0)
+                  TerminalLocked=1;
+                  
+                if(TerminalLocked<=PASSWORD_MAX_RETRY)
+                   TerminalClient.print(ProgmemString(Text_03));
+                else
                   {
-                  if(TerminalLocked==0)
-                    TerminalLocked=1;
-                    
-                  if(TerminalLocked<=PASSWORD_MAX_RETRY)
-                     TerminalClient.print(ProgmemString(Text_03));
-                  else
+                  TerminalClient.print(cmd2str(MESSAGE_ACCESS_DENIED));
+                  RaiseMessage(MESSAGE_ACCESS_DENIED,0);
+                  }
+                }
+              else
+                {
+                TerminalLocked=0;
+                y=bitRead(HW_Config,HW_SERIAL);
+                bitWrite(HW_Config,HW_SERIAL,0);
+                PrintWelcome();
+                bitWrite(HW_Config,HW_SERIAL,y);
+                }                
+              }
+            
+            while(TerminalClient.available()) 
+              {
+              TerminalInByte=TerminalClient.read();
+              
+              if(isprint(TerminalInByte))
+                {
+                if(TerminalInbyteCounter<(INPUT_LINE_SIZE-1))
+                  {
+                  if(Settings.EchoTelnet==VALUE_ON)
                     {
-                    TerminalClient.print(cmd2str(MESSAGE_ACCESS_DENIED));
-                    RaiseMessage(MESSAGE_ACCESS_DENIED,0);
+                    if(TerminalLocked && isprint(TerminalInByte))
+                      TerminalClient.write('*');// echo asterisk zodat wachtwoord niet zichtbaar is a.g.v. echo.
+                    else
+                      TerminalClient.write(TerminalInByte);// Echo ontvangen teken                  
                     }
+                  InputBuffer_Terminal[TerminalInbyteCounter++]=TerminalInByte;
+                  }
+                else
+                   TerminalClient.write('?');// geen ruimte meer.
+                }
+
+              else if(TerminalInByte==0x0a /*LF*/ || TerminalInByte==0x0d /*CR*/)
+                {                    
+                if(Settings.EchoTelnet==VALUE_ON)
+                  TerminalClient.println("");// Echo de nieuwe regel.
+                TerminalConnected=TERMINAL_TIMEOUT;
+                InputBuffer_Terminal[TerminalInbyteCounter]=0;
+                TerminalInbyteCounter=0;
+              
+                if(TerminalLocked==0) // als op niet op slot
+                  {
+                  TerminalClient.getRemoteIP(ClientIPAddress);
+                  ExecutionDepth=0;
+                  RaiseMessage(ExecuteLine(InputBuffer_Terminal,VALUE_SOURCE_TELNET),0);
+                  TerminalClient.write('>');// prompt
                   }
                 else
                   {
-                  TerminalLocked=0;
-                  y=bitRead(HW_Config,HW_SERIAL);
-                  bitWrite(HW_Config,HW_SERIAL,0);
-                  PrintWelcome();
-                  bitWrite(HW_Config,HW_SERIAL,y);
-                  }                
-                }
-              
-              while(TerminalClient.available()) 
-                {
-                TerminalInByte=TerminalClient.read();
-                
-                if(isprint(TerminalInByte))
-                  {
-                  if(TerminalInbyteCounter<(INPUT_LINE_SIZE-1))
+                  if(TerminalLocked<=PASSWORD_MAX_RETRY)// teller is wachtloop bij herhaaldelijke pogingen foutief wachtwoord. Bij >3 pogingen niet meer toegestaan
                     {
-                    if(Settings.EchoTelnet==VALUE_ON)
+                    if(strcmp(InputBuffer_Terminal,Settings.Password)==0)// als wachtwoord goed is, dan slot er af
                       {
-                      if(TerminalLocked && isprint(TerminalInByte))
-                        TerminalClient.write('*');// echo asterisk zodat wachtwoord niet zichtbaar is a.g.v. echo.
+                      TerminalLocked=0;
+                      y=bitRead(HW_Config,HW_SERIAL);
+                      bitWrite(HW_Config,HW_SERIAL,0);
+                      PrintWelcome();
+                      bitWrite(HW_Config,HW_SERIAL,y);
+                      }
+                    else// als foutief wachtwoord, dan teller 
+                      {
+                      TerminalLocked++;
+                      TerminalClient.println("?");
+                      if(TerminalLocked>PASSWORD_MAX_RETRY)
+                        {
+                        TerminalLocked=PASSWORD_TIMEOUT; // blokkeer tijd terminal
+                        TerminalClient.print(cmd2str(MESSAGE_ACCESS_DENIED));
+                        RaiseMessage(MESSAGE_ACCESS_DENIED,0);
+                        }
                       else
-                        TerminalClient.write(TerminalInByte);// Echo ontvangen teken                  
+                        TerminalClient.print(ProgmemString(Text_03));
                       }
-                    InputBuffer_Terminal[TerminalInbyteCounter++]=TerminalInByte;
-                    }
-                  else
-                     TerminalClient.write('?');// geen ruimte meer.
-                  }
-
-                else if(TerminalInByte==0x0a /*LF*/ || TerminalInByte==0x0d /*CR*/)
-                  {                    
-                  if(Settings.EchoTelnet==VALUE_ON)
-                    TerminalClient.println("");// Echo de nieuwe regel.
-                  TerminalConnected=TERMINAL_TIMEOUT;
-                  InputBuffer_Terminal[TerminalInbyteCounter]=0;
-                  TerminalInbyteCounter=0;
-                
-                  if(TerminalLocked==0) // als op niet op slot
-                    {
-                    TerminalClient.getRemoteIP(ClientIPAddress);
-                    ExecutionDepth=0;
-                    RaiseMessage(ExecuteLine(InputBuffer_Terminal,VALUE_SOURCE_TELNET),0);
-                    TerminalClient.write('>');// prompt
                     }
                   else
                     {
-                    if(TerminalLocked<=PASSWORD_MAX_RETRY)// teller is wachtloop bij herhaaldelijke pogingen foutief wachtwoord. Bij >3 pogingen niet meer toegestaan
-                      {
-                      if(strcmp(InputBuffer_Terminal,Settings.Password)==0)// als wachtwoord goed is, dan slot er af
-                        {
-                        TerminalLocked=0;
-                        y=bitRead(HW_Config,HW_SERIAL);
-                        bitWrite(HW_Config,HW_SERIAL,0);
-                        PrintWelcome();
-                        bitWrite(HW_Config,HW_SERIAL,y);
-                        }
-                      else// als foutief wachtwoord, dan teller 
-                        {
-                        TerminalLocked++;
-                        TerminalClient.println("?");
-                        if(TerminalLocked>PASSWORD_MAX_RETRY)
-                          {
-                          TerminalLocked=PASSWORD_TIMEOUT; // blokkeer tijd terminal
-                          TerminalClient.print(cmd2str(MESSAGE_ACCESS_DENIED));
-                          RaiseMessage(MESSAGE_ACCESS_DENIED,0);
-                          }
-                        else
-                          TerminalClient.print(ProgmemString(Text_03));
-                        }
-                      }
-                    else
-                      {
-                      TerminalClient.println(cmd2str(MESSAGE_ACCESS_DENIED));
-                      }
+                    TerminalClient.println(cmd2str(MESSAGE_ACCESS_DENIED));
                     }
                   }
-                else 
-                  {
-                    // bij een niet printbaar teken 
-                  // InputBuffer_Terminal[0]=0;
-                  //???TerminalClient.flush();// eventuele rommel weggooien.
-                  break;
-                  }
+                }
+              else 
+                {
+                  // bij een niet printbaar teken 
+                // InputBuffer_Terminal[0]=0;
+                //???TerminalClient.flush();// eventuele rommel weggooien.
+                break;
                 }
               }
             }
-          #endif
-          break;
           }
-        
-        case 3: // binnen Slice_1 
-          {
-          // WIRED: *************** kijk of statussen gewijzigd zijn op WIRED **********************  
-          // als de huidige waarde groter dan threshold EN de vorige keer was dat nog niet zo DAN event genereren
-          for(x=0;x<WIRED_PORTS;x++)
-            {
-            // lees analoge waarde. Dit is een 10-bit waarde, unsigned 0..1023
-            y=analogRead(PIN_WIRED_IN_1+x);
-            z=false; // verandering
-            
-            if(!WiredInputStatus[x] && y>(Settings.WiredInputThreshold[x]+Settings.WiredInputSmittTrigger[x]))
-              {
-              WiredInputStatus[x]=true;
-              z=true;
-              }
+        #endif
+        break;
+        }
       
-            if(WiredInputStatus[x] && y<(Settings.WiredInputThreshold[x]-Settings.WiredInputSmittTrigger[x]))
-              {
-              WiredInputStatus[x]=false;
-              z=true;
-              }
-    
-            if(z)
-              {
-              bitWrite(HW_Config,HW_WIRED_IN,true);
-              ClearEvent(&ReceivedEvent);
-              ReceivedEvent.Type             = NODO_TYPE_EVENT;
-              ReceivedEvent.Command          = EVENT_WIRED_IN;
-              ReceivedEvent.Par1             = x+1;
-              ReceivedEvent.Par2             = WiredInputStatus[x]?VALUE_ON:VALUE_OFF;
-              ReceivedEvent.Direction        = VALUE_DIRECTION_INPUT;
-              ReceivedEvent.Port             = VALUE_SOURCE_WIRED;
-              ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
-              }
-            }
-          break;
-          }
+      case 3:
+        {
+        // WIRED: *************** kijk of statussen gewijzigd zijn op WIRED **********************  
+        // als de huidige waarde groter dan threshold EN de vorige keer was dat nog niet zo DAN event genereren
+        for(x=0;x<WIRED_PORTS;x++)
+          {
+          // lees analoge waarde. Dit is een 10-bit waarde, unsigned 0..1023
+          y=analogRead(PIN_WIRED_IN_1+x);
+          z=false; // verandering
           
-        default:  // binnen Slice_1
-          Slice_1=0;
-          break;
-        }// switch
-      }//LoopTinterval 1
+          if(!WiredInputStatus[x] && y>(Settings.WiredInputThreshold[x]+Settings.WiredInputSmittTrigger[x]))
+            {
+            WiredInputStatus[x]=true;
+            z=true;
+            }
+    
+          if(WiredInputStatus[x] && y<(Settings.WiredInputThreshold[x]-Settings.WiredInputSmittTrigger[x]))
+            {
+            WiredInputStatus[x]=false;
+            z=true;
+            }
+  
+          if(z)
+            {
+            bitWrite(HW_Config,HW_WIRED_IN,true);
+            ClearEvent(&ReceivedEvent);
+            ReceivedEvent.Type             = NODO_TYPE_EVENT;
+            ReceivedEvent.Command          = EVENT_WIRED_IN;
+            ReceivedEvent.Par1             = x+1;
+            ReceivedEvent.Par2             = WiredInputStatus[x]?VALUE_ON:VALUE_OFF;
+            ReceivedEvent.Direction        = VALUE_DIRECTION_INPUT;
+            ReceivedEvent.Port             = VALUE_SOURCE_WIRED;
+            ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
+            }
+          }
+        break;
+        }
+        
+      default:
+        Slice_1=0;
+        break;
+      }// switch
 
 
-    // 2: niet tijdkritische processen die periodiek uitgevoerd moeten worden
-    if(LoopIntervalTimer_2<millis())// lange interval: Iedere seconde.
+    // Niet tijdkritische processen die periodiek uitgevoerd moeten worden
+    if(LoopIntervalTimer<millis())// lange interval: Iedere seconde.
       {
-      LoopIntervalTimer_2=millis()+Loop_INTERVAL_2; // reset de timer  
+      LoopIntervalTimer=millis()+SCAN_LOW_TIME; // reset de timer  
 
       // PLUGIN: **************** Loop iedere seconde de plugins langs voor onderhoudstaken ***********************
       PluginCall(PLUGIN_ONCE_A_SECOND,&ReceivedEvent,0);
 
 
-      // TIMER: **************** Genereer event als één van de Timers voor de gebruiker afgelopen is ***********************    
+      // TIMER: **************** Genereer event als Ã©Ã©n van de Timers voor de gebruiker afgelopen is ***********************    
       for(x=0;x<TIMER_MAX;x++)
         {
         if(UserTimer[x]!=0L)// als de timer actief is
@@ -1366,6 +1360,5 @@ void loop()
       }
     }// while 
   }
-
 
 
