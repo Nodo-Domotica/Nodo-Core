@@ -13,11 +13,59 @@ byte ProcessEventExt(struct NodoEventStruct *Event)
   SerialHold(true);  // als er een regel ontvangen is, dan binnenkomst van signalen stopzetten met een seriele XOFF
   Led(RED); // LED aan als er iets verwerkt wordt      
 
-#if NODO_MEGA
+  #if NODO_MEGA
   if(FileWriteMode!=0)
     return 0;
   #endif
 
+  // Signaal wordt echter alleen als event weergegeven als de setting
+  // RawSignalReceive op On staat of het een bekend RawSignal is die is opgeslagen op SDCard.
+  if(Event->Command==EVENT_RAWSIGNAL)
+    {
+    if(Settings.RawSignalReceive!=VALUE_ON)
+      return false;
+      
+    #if NODO_MEGA
+    else if(!RawSignalExist(Event->Par2))
+      return false;
+    #endif
+    }
+
+    // Toets of de versienummers corresponderen. Is dit niet het geval, dan zullen er verwerkingsfouten optreden! Dan een waarschuwing tonen en geen verdere verwerking.
+  // Er is een uitzondering: De eerste commando/eventnummers zijn stabiel en mogen van oudere versienummers zijn.
+  if(Event->Version!=0 && Event->Version!=NODO_VERSION_MINOR && Event->Command>COMMAND_MAX_FIXED)
+    {
+    #if NODO_MEGA
+    Event->Command=CMD_DUMMY;
+    Event->Type=NODO_TYPE_EVENT;
+    Event->Par1=0;
+    Event->Par2=0;
+    PrintEvent(Event,VALUE_ALL);
+    RaiseMessage(MESSAGE_VERSION_ERROR,Event->Version);
+    #endif
+    return false;
+    }     
+
+  // Een event kan een verzoek bevatten om bevestiging. Doe dit dan pas na verwerking.
+  if(Event->Flags & TRANSMISSION_CONFIRM)
+    RequestForConfirm=true;
+
+  // registreer welke Nodo's op welke poort zitten en actualiseer tabel.
+  // Wordt gebruikt voor SendTo en I2C communicatie op de Mega.
+  // Hiermee kan later automatisch de juiste poort worden geselecteerd met de SendTo en kan in
+  // geval van I2C communicatie uitsluitend naar de I2C verbonden Nodo's worden gecommuniceerd.
+  NodoOnline(Event->SourceUnit,Event->Port);
+
+  // Als er een specifieke Nodo is geselecteerd, dan moeten andere Nodo's worden gelocked.
+  // Hierdoor is het mogelijk dat een master en een slave Nodo tijdelijk exclusief gebruik kunnen maken van de bandbreedte
+  // zodat de communicatie niet wordt verstoord.  
+  if(Event->DestinationUnit!=0)
+    Transmission_SelectedUnit = Event->DestinationUnit;
+
+  // Als het Nodo event voor deze unit bestemd is, dan klaar. Zo niet, dan terugkeren met een false
+  // zodat er geen verdere verwerking plaatsvindt.
+  if(Event->DestinationUnit!=0 && Event->DestinationUnit!=Settings.Unit)
+    return false;
 
   // Verwerk het binnengekomen event
   error=ProcessEvent(Event);

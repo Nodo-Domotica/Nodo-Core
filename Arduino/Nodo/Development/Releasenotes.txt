@@ -7,3 +7,6 @@ R652:
 - Commando [RawSignalSample] zichtbaar met [Status]
 - Versienummer aangepast in welkomsttekst 3.6.9 (beta)
 
+R655:
+- Issue 825:	Webapp script uploaden werkt niet (FileExecute schreef alleen nummerieke bestandsnamen)
+-

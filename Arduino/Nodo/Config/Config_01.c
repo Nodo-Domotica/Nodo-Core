@@ -10,14 +10,31 @@
 #define CLOCK         true // true=code voor Real Time Clock mee compileren.
 #define NODO_MEGA     true // true = Nodo Mega, false=Nodo-Small
 
-// Kaku              : Klik-Aan-Klik-Uit
+// Kaku : Klik-Aan-Klik-Uit
 #define PLUGIN_001
 #define PLUGIN_001_CORE
 
-// NewKAKU           : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno.
+// NewKAKU : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno.
 #define PLUGIN_002
 #define PLUGIN_002_CORE
 
+// RGB-Led aansturing
+#define PLUGIN_023
+#define PLUGIN_023_CORE
+
+// Temperatuursensor Dallas DS18B20
+#define PLUGIN_005
+
+//Luchtdruksensor BPM085
+#define PLUGIN_020
+
+// Oude UserEvents Nodo Due compatibiliteit
+#define PLUGIN_007
+#define PLUGIN_007_CORE
+
+// Vonchtigheidssensor / Temperatuursensor DHT-22
+#define PLUGIN_023
+#define PLUGIN_023_CORE 22
 
 
 

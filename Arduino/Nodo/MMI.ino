@@ -119,6 +119,24 @@ int ExecuteLine(char *Line, byte Port)
 
           switch(x)
             {
+            case CMD_FILE_EXECUTE:
+              if(EventToExecute.Par2==VALUE_ON)
+                EventToExecute.Par1=VALUE_ON;
+              else
+                EventToExecute.Par1=VALUE_OFF;
+                
+              if(GetArgv(Command,TmpStr1,2))
+                EventToExecute.Par2=str2int(TmpStr1);
+
+              if(EventToExecute.Par2==0)
+                  error=FileExecute("",TmpStr1,"DAT", EventToExecute.Par1==VALUE_ON, VALUE_ALL);
+              else
+                {
+                EventToExecute.Type=NODO_TYPE_COMMAND;
+                EventToExecute.Command=CMD_FILE_EXECUTE;
+                }
+              break;                                                                             
+        
             case CMD_SENDTO:
               QueuePosition=0;//We gebruiken de Queue voor verwerking van de commando's die middels SendTo naar de Slave moeten  
               Transmission_SendToUnit=EventToExecute.Par1;
@@ -322,7 +340,7 @@ int ExecuteLine(char *Line, byte Port)
               EventToExecute.Type=NODO_TYPE_COMMAND;
               if(GetArgv(Command,TmpStr1,2))
                 {
-                if(!SaveEventlistSDCard("", TmpStr1, "DAT"))
+                if(!SaveEventlistSDCard("",TmpStr1,"DAT"))
                   {
                   error=MESSAGE_SDCARD_ERROR;
                   break;
@@ -451,7 +469,10 @@ int ExecuteLine(char *Line, byte Port)
                 // Voer bestand uit en verwerking afbreken als er een foutmelding is.
                 error=MESSAGE_UNKNOWN_COMMAND;
                 if(strlen(Command)<=8)
+                  {
                   error=FileExecute("",Command,"DAT", false, VALUE_ALL);
+                  Serial.println("ExecuteLine-2");//???
+                  }
                   
                 // als script niet te openen, dan is het ingevoerde commando ongeldig.
   
@@ -1497,16 +1518,6 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
       else
         error=MESSAGE_INVALID_PARAMETER;
       break;
-
-    case CMD_FILE_EXECUTE:
-      ResultEvent->Type=NODO_TYPE_COMMAND;
-      if(ResultEvent->Par2==VALUE_ON)
-        ResultEvent->Par1=VALUE_ON;
-      else
-        ResultEvent->Par1=VALUE_OFF;
-      if(GetArgv(Command,TmpStr1,2))
-        ResultEvent->Par2=str2int(TmpStr1);
-      break;                                                                             
 
 
     case EVENT_VARIABLE:
