@@ -8,8 +8,8 @@
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  *                      Support WS1100 door forumlid: Arendst
  * Support            : www.nodo-domotica.nl
- * Datum              : 12 Aug 2013
- * Versie             : 1.1
+ * Datum              : 27 Dec 2013
+ * Versie             : 1.2
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
  * Compatibiliteit    : Vanaf Nodo build nummer 555
  * Syntax             : "AlectoV3 <Par1:Sensor ID>, <Par2:Basis Variabele>"
@@ -60,7 +60,6 @@ boolean Plugin_010(byte function, struct NodoEventStruct *event, char *string)
     {
       if ((RawSignal.Number != WS1100_PULSECOUNT) && (RawSignal.Number != WS1200_PULSECOUNT)) return false;
 
-      RawSignal.Multiply=50;
       unsigned long bitstream1=0;
       unsigned long bitstream2=0;
       byte rc=0;

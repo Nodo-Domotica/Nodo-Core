@@ -7,8 +7,8 @@
  * 
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  * Support            : www.nodo-domotica.nl
- * Datum              : 12 Aug 2013
- * Versie             : 1.1
+ * Datum              : 27 Dec 2013
+ * Versie             : 1.2
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
  * Compatibiliteit    : Vanaf Nodo build nummer 555
  * Syntax             : "AlectoV1 <Par1:Sensor ID>, <Par2:Basis Variabele>"
@@ -77,7 +77,6 @@ boolean Plugin_008(byte function, struct NodoEventStruct *event, char *string)
     {
       if (RawSignal.Number != WS3500_PULSECOUNT) return false;
 
-      const byte PTMF=50;
       unsigned long bitstream=0;
       byte nibble0=0;
       byte nibble1=0;
@@ -100,13 +99,13 @@ boolean Plugin_008(byte function, struct NodoEventStruct *event, char *string)
 
       for(byte x=2; x<=64; x=x+2)
         {
-        if(RawSignal.Pulses[x]*PTMF > 0xA00) bitstream = ((bitstream >> 1) |(0x1L << 31)); 
+        if(RawSignal.Pulses[x]*RawSignal.Multiply > 0xA00) bitstream = ((bitstream >> 1) |(0x1L << 31)); 
         else bitstream = (bitstream >> 1);
         }
 
       for(byte x=66; x<=72; x=x+2)
         {
-        if(RawSignal.Pulses[x]*PTMF > 0xA00) checksum = ((checksum >> 1) |(0x1L << 3)); 
+        if(RawSignal.Pulses[x]*RawSignal.Multiply > 0xA00) checksum = ((checksum >> 1) |(0x1L << 3)); 
         else checksum = (checksum >> 1);
         }
 
