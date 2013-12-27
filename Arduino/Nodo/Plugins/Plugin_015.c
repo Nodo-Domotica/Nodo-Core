@@ -10,8 +10,8 @@
  *
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotca.nl
  * Support            : www.nodo-domotica.nl
- * Datum              : 12 Aug 2013
- * Versie             : 1.1
+ * Datum              : 27 Dec 2013
+ * Versie             : 1.2
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
  * Compatibiliteit    : Vanaf Nodo build nummer 555
  * Syntax             : "HomeEasy <Adres>,<On|Off>
@@ -48,7 +48,6 @@ boolean Plugin_015(byte function, struct NodoEventStruct *event, char *string)
       byte rfbit =0;
       byte state = 0;
       unsigned long channel = 0;
-      RawSignal.Multiply=50;
 
       // valid messages are 116 pulses          
       if (RawSignal.Number != 116) return false;

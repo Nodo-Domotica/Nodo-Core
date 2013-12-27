@@ -7,8 +7,8 @@
  * 
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  * Support            : www.nodo-domotica.nl
- * Datum              : 12 Aug 2013
- * Versie             : 1.1
+ * Datum              : 27 Dec 2013
+ * Versie             : 1.2
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
  * Compatibiliteit    : Vanaf Nodo build nummer 555
  * Syntax             : "SmokeAlertSend 0, <Par2: rookmelder ID>"
@@ -22,6 +22,10 @@
  *
  * Let op: De rookmelder geeft alarm zolang dit bericht wordt verzonden en stopt daarna automatisch
  \*********************************************************************************************/
+#define FA20RFSTART                 8000
+#define FA20RFSPACE                  800
+#define FA20RFLOW                   1300
+#define FA20RFHIGH                  2600
 
 #define PLUGIN_ID 14
 #define PLUGIN_NAME "SmokeAlertSend"
@@ -42,8 +46,9 @@ boolean Plugin_014(byte function, struct NodoEventStruct *event, char *string)
     {
     unsigned long bitstream=event->Par2;
     RawSignal.Multiply=50;
-    RawSignal.Repeats=1;
-    RawSignal.Delay=0;
+    if (event->Par1 == 0) event->Par1=50;
+    RawSignal.Repeats=event->Par1;
+    RawSignal.Delay=20;
     RawSignal.Pulses[1]=FA20RFSTART/RawSignal.Multiply;
     RawSignal.Pulses[2]=FA20RFSPACE/RawSignal.Multiply;
     RawSignal.Pulses[3]=FA20RFSPACE/RawSignal.Multiply;
@@ -59,7 +64,7 @@ boolean Plugin_014(byte function, struct NodoEventStruct *event, char *string)
     RawSignal.Pulses[52]=0;
     RawSignal.Number=52;
 
-    for (byte x =0; x<50; x++) RawSendRF();
+    RawSendRF();
     success=true;
     break;
     } 

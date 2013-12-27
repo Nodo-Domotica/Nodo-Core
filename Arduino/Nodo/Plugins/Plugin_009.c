@@ -8,8 +8,8 @@
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  *                      Support ACH2010 en code optimalisatie door forumlid: Arendst
  * Support            : www.nodo-domotica.nl
- * Datum              : 12 Aug 2013
- * Versie             : 1.1
+ * Datum              : 27 Dec 2013
+ * Versie             : 1.2
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
  * Compatibiliteit    : Vanaf Nodo build nummer 555
  * Syntax             : "AlectoV2 <Par1:Sensor ID>, <Par2:Basis Variabele>"
@@ -75,7 +75,6 @@ boolean Plugin_009(byte function, struct NodoEventStruct *event, char *string)
     {
       if (!(((RawSignal.Number >= ACH2010_MIN_PULSECOUNT) && (RawSignal.Number <= ACH2010_MAX_PULSECOUNT)) || (RawSignal.Number == DKW2012_PULSECOUNT))) return false;
 
-      const byte PTMF=50;
       byte c=0;
       byte rfbit;
       byte data[9]; 
@@ -92,7 +91,7 @@ boolean Plugin_009(byte function, struct NodoEventStruct *event, char *string)
       byte idx = maxidx;
       for(byte x=RawSignal.Number; x>0; x=x-2)
         {
-          if(RawSignal.Pulses[x-1]*PTMF < 0x300) rfbit = 0x80; else rfbit = 0;  
+          if(RawSignal.Pulses[x-1]*RawSignal.Multiply < 0x300) rfbit = 0x80; else rfbit = 0;  
           data[idx] = (data[idx] >> 1) | rfbit;
           c++;
           if (c == 8) 

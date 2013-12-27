@@ -8,8 +8,8 @@
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  *                      Support THGN132N en code optimalisatie door forumlid: Arendst
  * Support            : www.nodo-domotica.nl
- * Datum              : 05 Okt 2013
- * Versie             : 1.4
+ * Datum              : 27 Dec 2013
+ * Versie             : 1.5
  * Nodo productnummer : 
  * Compatibiliteit    : Vanaf Nodo build nummer 555
  * Syntax             : "OregonV2 <Par1:Sensor ID>, <Par2:Basis Variabele>"
@@ -57,7 +57,6 @@ boolean Plugin_012(byte function, struct NodoEventStruct *event, char *string)
 #ifdef PLUGIN_012_CORE
   case PLUGIN_RAWSIGNAL_IN:
     {
-      RawSignal.Multiply=50;
       byte nibble[17]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
       byte y = 1;
       byte c = 1;

@@ -7,8 +7,8 @@
  * 
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  * Support            : www.nodo-domotica.nl
- * Datum              : 28 Okt 2013
- * Versie             : 1.2
+ * Datum              : 27 Dec 2013
+ * Versie             : 1.3
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
  * Compatibiliteit    : Vanaf Nodo build nummer 596
  * Syntax             : "SmokeAlert 0, <Par2: rookmelder ID>"
@@ -20,11 +20,6 @@
  * Na het koppelen hebben ze dus allemaal hetzelfde ID!
  * Je gebruikt 1 unit als master, waarvan de je code aanleert aan de andere units (slaves)
  \*********************************************************************************************/
-#define FA20RFSTART                 3000
-#define FA20RFSPACE                  800
-#define FA20RFLOW                   1300
-#define FA20RFHIGH                  2600
-
 #define PLUGIN_ID 13
 #define PLUGIN_NAME "SmokeAlert"
 
@@ -37,7 +32,6 @@ boolean Plugin_013(byte function, struct NodoEventStruct *event, char *string)
 #ifdef PLUGIN_013_CORE
   case PLUGIN_RAWSIGNAL_IN:
     {
-      RawSignal.Multiply=50;
       if (RawSignal.Number != 52) return false;
 
       unsigned long bitstream=0L;
