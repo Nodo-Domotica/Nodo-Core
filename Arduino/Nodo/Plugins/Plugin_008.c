@@ -77,6 +77,8 @@ boolean Plugin_008(byte function, struct NodoEventStruct *event, char *string)
     {
       if (RawSignal.Number != WS3500_PULSECOUNT) return false;
 
+      RawSignal.Repeats    = false;                                            // het is een herhalend signaal. Bij ontvangst herhalingen NIET onderdrukken.
+
       unsigned long bitstream=0;
       byte nibble0=0;
       byte nibble1=0;
