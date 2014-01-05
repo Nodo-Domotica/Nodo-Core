@@ -1,4 +1,4 @@
-#define NODO_BUILD                       659 // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       660 // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                 7 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3 // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1 // Unit nummer van deze Nodo
@@ -12,9 +12,9 @@
 #define WAIT_FREE_RX_WINDOW              500 // minimale wachttijd wanneer wordt gewacht op een vrije RF of IR band. Is deze waarde te klein, dan kunnen er restanten van signalen binnenkomen als RawSignal. Te groot maakt de Nodo sloom.
 #define WAITFREE_TIMEOUT               30000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
 #define MIN_PULSE_LENGTH                  15 // Pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
-#define SIGNAL_TIMEOUT_RF                  5 // na deze tijd in mSec. wordt Ã©Ã©n RF signaal als beÃ«indigd beschouwd.
-#define SIGNAL_TIMEOUT_IR                 10 // na deze tijd in mSec. wordt Ã©Ã©n IR signaal als beÃ«indigd beschouwd.
-#define SIGNAL_REPEAT_TIME              1000 // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF/IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
+#define SIGNAL_TIMEOUT_RF                  5 // na deze tijd in mSec. wordt een RF signaal als beeindigd beschouwd.
+#define SIGNAL_TIMEOUT_IR                 10 // na deze tijd in mSec. wordt een IR signaal als beeindigd beschouwd.
+#define SIGNAL_REPEAT_TIME              1500 // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF/IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
 #define PULSE_DEBOUNCE_TIME               10 // pulsen kleiner dan deze waarde in milliseconden worden niet geteld. Bedoeld om verstoringen a.g.v. ruis of dender te voorkomen
 #define PULSE_TRANSITION             FALLING // FALLING of RISING: Geeft aan op welke flank de PulseCounter start start met tellen. Default FALLING
 #define I2C_START_ADDRESS                  1 // Alle Nodo's op de I2C bus hebben een uniek adres dat start vanaf dit nummer. Er zijn max. 32 Nodo's. Let op overlap met andere devices. RTC zit op adres 104.
