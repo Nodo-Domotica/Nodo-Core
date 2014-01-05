@@ -9,4 +9,6 @@ R652:
 
 R655:
 - Issue 825:	Webapp script uploaden werkt niet (FileExecute schreef alleen nummerieke bestandsnamen)
--
+- Nog een kleine versnelling in de scanloop van de Nodo aangebracht.
+
+
