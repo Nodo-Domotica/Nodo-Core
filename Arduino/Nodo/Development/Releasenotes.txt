@@ -11,4 +11,10 @@ R655:
 - Issue 825:	Webapp script uploaden werkt niet (FileExecute schreef alleen nummerieke bestandsnamen)
 - Nog een kleine versnelling in de scanloop van de Nodo aangebracht.
 
+R662:
+- Aanpassingen ontvangst RawSignal en onderdrukken herhaald binnenkomende signalen.
+- Aanpassing aan welkomsttekst.
+- Verwijderen overbodige code (was bedoeld voor debugging)
+
+
 

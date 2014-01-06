@@ -18,54 +18,6 @@ byte ProcessEventExt(struct NodoEventStruct *Event)
     return 0;
   #endif
 
-  // Signaal wordt echter alleen als event weergegeven als de setting
-  // RawSignalReceive op On staat of het een bekend RawSignal is die is opgeslagen op SDCard.
-  if(Event->Command==EVENT_RAWSIGNAL)
-    {
-    if(Settings.RawSignalReceive!=VALUE_ON)
-      return false;
-      
-    #if NODO_MEGA
-    else if(!RawSignalExist(Event->Par2))
-      return false;
-    #endif
-    }
-
-    // Toets of de versienummers corresponderen. Is dit niet het geval, dan zullen er verwerkingsfouten optreden! Dan een waarschuwing tonen en geen verdere verwerking.
-  // Er is een uitzondering: De eerste commando/eventnummers zijn stabiel en mogen van oudere versienummers zijn.
-  if(Event->Version!=0 && Event->Version!=NODO_VERSION_MINOR && Event->Command>COMMAND_MAX_FIXED)
-    {
-    #if NODO_MEGA
-    Event->Command=CMD_DUMMY;
-    Event->Type=NODO_TYPE_EVENT;
-    Event->Par1=0;
-    Event->Par2=0;
-    PrintEvent(Event,VALUE_ALL);
-    RaiseMessage(MESSAGE_VERSION_ERROR,Event->Version);
-    #endif
-    return false;
-    }     
-
-  // Een event kan een verzoek bevatten om bevestiging. Doe dit dan pas na verwerking.
-  if(Event->Flags & TRANSMISSION_CONFIRM)
-    RequestForConfirm=true;
-
-  // registreer welke Nodo's op welke poort zitten en actualiseer tabel.
-  // Wordt gebruikt voor SendTo en I2C communicatie op de Mega.
-  // Hiermee kan later automatisch de juiste poort worden geselecteerd met de SendTo en kan in
-  // geval van I2C communicatie uitsluitend naar de I2C verbonden Nodo's worden gecommuniceerd.
-  NodoOnline(Event->SourceUnit,Event->Port);
-
-  // Als er een specifieke Nodo is geselecteerd, dan moeten andere Nodo's worden gelocked.
-  // Hierdoor is het mogelijk dat een master en een slave Nodo tijdelijk exclusief gebruik kunnen maken van de bandbreedte
-  // zodat de communicatie niet wordt verstoord.  
-  if(Event->DestinationUnit!=0)
-    Transmission_SelectedUnit = Event->DestinationUnit;
-
-  // Als het Nodo event voor deze unit bestemd is, dan klaar. Zo niet, dan terugkeren met een false
-  // zodat er geen verdere verwerking plaatsvindt.
-  if(Event->DestinationUnit!=0 && Event->DestinationUnit!=Settings.Unit)
-    return false;
 
   // Verwerk het binnengekomen event
   error=ProcessEvent(Event);
@@ -178,7 +130,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
       // het is een ander soort event. Loop de gehele eventlist langs om te kijken of er een treffer is.   
       struct NodoEventStruct EventlistEvent, EventlistAction;   
 
-      // sla event op voor later gebruik in SendEvent en VariableEvent.
+      // sla event op voor later gebruik in SendEvent.
       LastReceived=*Event;
 
       x=0;
@@ -190,7 +142,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
           error=ProcessEvent(&EventlistAction);
           }
         }
-      // abort is geen fatale error/break. Deze niet verder behandelen als een error.
+      // abort is geen fatale error maar een break. Deze dus niet verder behandelen als een error.
       if(error==MESSAGE_BREAK)
         error=0;
       }      
@@ -239,8 +191,8 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
   // ### WILDCARD:      
   if(MacroEvent->Command == EVENT_WILDCARD)                                                                                 // is regel uit de eventlist een WildCard?
     if( MacroEvent->Par1==VALUE_ALL          ||   MacroEvent->Par1==Event->Port)                                            // Correspondeert de poort of mogen alle poorten?
-      if((MacroEvent->Par2&0xff)==VALUE_ALL  ||  (MacroEvent->Par2&0xff)==Event->Command && Event->Type==NODO_TYPE_EVENT)   // Correspondeert het commando deel
-        if(((MacroEvent->Par2>>8)&0xff)==0   || ((MacroEvent->Par2>>8)&0xff)==Event->DestinationUnit)                            // Correspondeert het unitnummer of is deze niet opgegeven
+      if((MacroEvent->Par2&0xff)==VALUE_ALL  ||  (MacroEvent->Par2&0xff)==Event->Command && (Event->Type==NODO_TYPE_EVENT || Event->Type==NODO_TYPE_RAWSIGNAL))   // Correspondeert het commando deel
+        if(((MacroEvent->Par2>>8)&0xff)==0   || ((MacroEvent->Par2>>8)&0xff)==Event->DestinationUnit)                       // Correspondeert het unitnummer of is deze niet opgegeven
           return true;          
 
   // ### USEREVENT: beschouw bij een UserEvent een 0 voor Par1 of Par2 als een wildcard.

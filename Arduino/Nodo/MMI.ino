@@ -469,10 +469,7 @@ int ExecuteLine(char *Line, byte Port)
                 // Voer bestand uit en verwerking afbreken als er een foutmelding is.
                 error=MESSAGE_UNKNOWN_COMMAND;
                 if(strlen(Command)<=8)
-                  {
                   error=FileExecute("",Command,"DAT", false, VALUE_ALL);
-                  Serial.println("ExecuteLine-2");//???
-                  }
                   
                 // als script niet te openen, dan is het ingevoerde commando ongeldig.
   
@@ -862,13 +859,19 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         ParameterToView[1]=PAR2_FLOAT;
         break;
 
-      // Par2 als hex waarde
+      // Par2 als hex waarde, par2 als tekst.
       case CMD_RAWSIGNAL_SHOW:
       case CMD_RAWSIGNAL_SEND:
-      case EVENT_RAWSIGNAL:
         ParameterToView[0]=PAR2_INT_HEX;
         ParameterToView[1]=PAR1_TEXT;
         break;
+
+      // Par2 als hex, geen andere parameters.
+      case VALUE_HWCONFIG:
+      case EVENT_RAWSIGNAL:
+        ParameterToView[0]=PAR2_INT_HEX;
+        break;
+
 
       case CMD_WIRED_SMITTTRIGGER:
       case CMD_WIRED_THRESHOLD:
@@ -877,8 +880,9 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         ParameterToView[1]=PAR2_INT;
         break;
 
+
+      // Par2 als decimale int.
       case VALUE_BUILD:
-      case VALUE_HWCONFIG:
       case VALUE_FREEMEM:
       case CMD_PORT_INPUT:
       case CMD_PORT_OUTPUT:
@@ -1539,8 +1543,9 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
       else if(GetArgv(Command,TmpStr1,3))
         ResultEvent->Par2=str2int(TmpStr1);
       break;
+
     case EVENT_RAWSIGNAL:
-      ResultEvent->Type=NODO_TYPE_EVENT;
+      ResultEvent->Type=NODO_TYPE_RAWSIGNAL;
       if(GetArgv(Command,TmpStr1,2))
         {
         ResultEvent->Par1=0;

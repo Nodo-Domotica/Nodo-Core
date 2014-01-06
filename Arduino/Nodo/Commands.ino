@@ -658,7 +658,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         {        
         ClearEvent(&TempEvent);
         TempEvent.Port=EventToExecute->Par1;
-        TempEvent.Type= NODO_TYPE_EVENT;
+        TempEvent.Type=NODO_TYPE_RAWSIGNAL;
         TempEvent.Command=EVENT_RAWSIGNAL;
         TempEvent.Par1=EventToExecute->Par1;
         TempEvent.Par2=EventToExecute->Par2;
