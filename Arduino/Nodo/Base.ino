@@ -1,4 +1,4 @@
-#define NODO_BUILD                       660 // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       663 // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                 7 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3 // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1 // Unit nummer van deze Nodo
@@ -9,9 +9,9 @@
 #define RAWSIGNAL_TOLERANCE              100 // Tolerantie die gehanteerd wordt bij decoderen van RF/IR signaal. T.b.v. uitrekenen HEX-code.
 #define RAWSIGNAL_SAMPLE_DEFAULT          25 // Sample grootte / Resolutie in uSec waarmee ontvangen Rawsignalen pulsen worden opgeslagen
 #define WAIT_FREE_RX                   false // true: wacht default op verzenden van een event tot de IR/RF lijn onbezet is. Wordt overruled door commando [WaitFreeRX]
-#define WAIT_FREE_RX_WINDOW              500 // minimale wachttijd wanneer wordt gewacht op een vrije RF of IR band. Is deze waarde te klein, dan kunnen er restanten van signalen binnenkomen als RawSignal. Te groot maakt de Nodo sloom.
-#define WAITFREE_TIMEOUT               30000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
-#define MIN_PULSE_LENGTH                  15 // Pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
+#define WAIT_FREE_RX_WINDOW             1000 // minimale wachttijd wanneer wordt gewacht op een vrije RF of IR band.
+#define WAIT_FREE_RX_TIMEOUT            5000 // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
+#define MIN_PULSE_LENGTH                  50 // Pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define SIGNAL_TIMEOUT_RF                  5 // na deze tijd in mSec. wordt een RF signaal als beeindigd beschouwd.
 #define SIGNAL_TIMEOUT_IR                 10 // na deze tijd in mSec. wordt een IR signaal als beeindigd beschouwd.
 #define SIGNAL_REPEAT_TIME              1500 // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF/IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
@@ -597,6 +597,7 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define TRANSMISSION_VIEW_SPECIAL                       64  // Master => Slave : Uitsluitend het event weergeven, niet uitvoeren
 
 // Er zijn een aantal type Nodo events die op verschillende wijze worden behandeld:
+#define NODO_TYPE_RAWSIGNAL                              6 //??? nog omnummeren bij de volgende versie
 #define NODO_TYPE_EVENT                                  1
 #define NODO_TYPE_COMMAND                                2
 #define NODO_TYPE_SYSTEM                                 3               
@@ -961,7 +962,7 @@ void setup()
   QueueProcess();
 
   #if NODO_MEGA
-  Serial.println(F("\nReady.\n"));
+  Serial.println(F("\nReady. Nodo is waiting for serial input...\n"));
 
   // Voer bestand AutoExec uit als deze bestaat. die goeie oude MD-DOS tijd ;-)
   FileExecute("", "autoexec", "dat",true,VALUE_ALL);
@@ -1003,6 +1004,8 @@ void loop()
     if(ScanEvent(&ReceivedEvent)) 
       ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
 
+    Led(GREEN);
+
 
     // Een plugin mag tijdelijk een claim doen op de snelle aanroep vanuit de hoofdloop. 
     // Als de waarde FastLoopCall_ptr is gevuld met het adres van een funktie dan wordt de betreffende funktie eenmaal
@@ -1016,8 +1019,6 @@ void loop()
       case 0:
         {
         // SERIAL: *************** kijk of er data klaar staat op de seriÃ«le poort **********************
-        Led(GREEN);
-        
         if(Serial.available())
           {
           PluginCall(PLUGIN_SERIAL_IN,0,0);

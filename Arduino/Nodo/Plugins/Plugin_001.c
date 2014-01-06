@@ -59,7 +59,7 @@ boolean Plugin_001(byte function, struct NodoEventStruct *event, char *string)
       {
       int i,j;
       unsigned long bitstream=0;
-      
+
       if (RawSignal.Number!=(KAKU_CodeLength*4)+2)return false;                 // conventionele KAKU bestaat altijd uit 12 data bits plus stop. Ongelijk, dan geen KAKU!
     
       for (i=0; i<KAKU_CodeLength; i++)
@@ -80,6 +80,7 @@ boolean Plugin_001(byte function, struct NodoEventStruct *event, char *string)
         event->SourceUnit    = 0;                                               // Komt niet van een Nodo unit af.
         event->Type          = NODO_TYPE_PLUGIN_EVENT;
         event->Command       = 1;                                               // nummer van deze plugin
+        RawSignal.Repeats    = true;                                            // Hiermee geven we aan dat het om een herhalend signaal gaat en vervolgpulsen NIET tot een event moeten leiden.
         success=true;
         }
       break;

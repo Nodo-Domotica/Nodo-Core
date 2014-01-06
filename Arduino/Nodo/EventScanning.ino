@@ -4,18 +4,23 @@ int  I2C_Received=0;                                                            
 byte I2C_ReceiveBuffer[I2C_BUFFERSIZE+1];
 unsigned long BlockReceivingTimer=0L;
 unsigned long EventHash,EventHashPrevious=0L;
+byte EventTypePrevious=0;
 
-boolean ScanEvent(struct NodoEventStruct *Event)                                 // Deze routine maakt deel uit van de hoofdloop en wordt iedere 125uSec. doorlopen
+boolean ScanEvent(struct NodoEventStruct *Event)                                // Deze routine maakt deel uit van de hoofdloop en wordt iedere 125uSec. doorlopen
   {
   byte Fetched=0;
   unsigned long ScanTimer=millis()+SCAN_HIGH_TIME;
-    
+
+  // Zorg er voor dat de FetchSignal() funktie niet halverwege een pulsenreeks ' binnenvalt'. Wacht op een korte tijd rust op de band.
+  //  while(BlockReceivingTimer>millis() && (pulseIn(PIN_RF_RX_DATA,LOW ,SIGNAL_TIMEOUT_RF*1000)!=0 || pulseIn(PIN_IR_RX_DATA,HIGH ,SIGNAL_TIMEOUT_IR*1000)!=0));
+  while(BlockReceivingTimer>millis() && pulseIn(PIN_RF_RX_DATA,LOW ,SIGNAL_TIMEOUT_RF*1000)!=0);
+      
   while(ScanTimer>millis())
     {
     if(I2C_Received)                                                            // I2C: *************** kijk of er data is binnengekomen op de I2C-bus **********************
       {
-      if(I2C_Received==sizeof(struct NodoEventStruct))                           // Er is I2C data binnengekomen maar weten nog niet of het een NodoEventStruct betreft.
-        {                                                                        // Het is een NodoEventStruct
+      if(I2C_Received==sizeof(struct NodoEventStruct))                          // Er is I2C data binnengekomen maar weten nog niet of het een NodoEventStruct betreft.
+        {                                                                       // Het is een NodoEventStruct
         memcpy(Event, &I2C_ReceiveBuffer, sizeof(struct NodoEventStruct));
   
         if(Checksum(Event))
@@ -26,17 +31,17 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
           }
         }
       else
-        {                                                                         // Het is geen NodoEventStruct. In dit geval verwerken als reguliere commandline string.
+        {                                                                       // Het is geen NodoEventStruct. In dit geval verwerken als reguliere commandline string.
         PluginCall(PLUGIN_I2C_IN,0,0);
   
         #if NODO_MEGA
-        I2C_ReceiveBuffer[I2C_Received]=0;                                        // Sluit buffer af als een string.
+        I2C_ReceiveBuffer[I2C_Received]=0;                                      // Sluit buffer af als een string.
   
-        for(int q=0;q<I2C_Received;q++)                                           // In een commando bevinden zich geen bijzondere tekens. Is dit wel het geval, dan string leeg maken.
+        for(int q=0;q<I2C_Received;q++)                                         // In een commando bevinden zich geen bijzondere tekens. Is dit wel het geval, dan string leeg maken.
          if(!isprint(I2C_ReceiveBuffer[q]))
            I2C_ReceiveBuffer[0]=0;
           
-        if(I2C_ReceiveBuffer[0]!=0)                                               // Is er een geldige string binnen, dan verwerken als commandline.
+        if(I2C_ReceiveBuffer[0]!=0)                                             // Is er een geldige string binnen, dan verwerken als commandline.
           ExecuteLine((char*)&I2C_ReceiveBuffer[0],VALUE_SOURCE_I2C);
   
         #endif
@@ -46,7 +51,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
         }
       }
   
-    else if((*portInputRegister(IRport)&IRbit)==0)                              // IR: *************** kijk of er data start **********************
+     else if((*portInputRegister(IRport)&IRbit)==0)                             // IR: *************** kijk of er data start **********************
       {
       if(FetchSignal(PIN_IR_RX_DATA,LOW,SIGNAL_TIMEOUT_IR))
         {
@@ -57,8 +62,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
           }
         }
       }
-  
-    
+      
     else if((*portInputRegister(RFport)&RFbit)==RFbit)                          // RF: *************** kijk of er data start **********************
       {
       if(FetchSignal(PIN_RF_RX_DATA,HIGH,SIGNAL_TIMEOUT_RF))
@@ -76,40 +80,30 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       Event->Port=Fetched;
       Event->Direction=VALUE_DIRECTION_INPUT;
 
-      // Onderdruk herhalende events/signalen die binnenkomen. Er kunnen zich twee situaties voordoen waaruit kan worden opgemaakt of er een 
-      // herhalend signaal binnen is gekomen:
-      // A: de ontvangstroutine (plugin) heeft signaal herkend als een herhalend Signaal (RawSignal.Repeats!=0)
-      // B: hetzelfde RawSignalEvent event is binnen korte tijd nogmaals binnengekomen.
+
+      // Onderdruk herhalende events/signalen die binnenkomen. Er kunnen zich twee situaties voordoen waar we rekening mee moeten houden: 
+      // A: Na vorig niet-RawSignal event komen er RawSignals binnen die we moeten onderdrukken;
+      // B: Er komt binnen (te) korte tijd hetzelfde event binnen die we moeten onderdrukken.
       // We maken een hash om te kijken of event al eerder is binnengekomen.
+
+      EventHash=(Event->Command<<24 | Event->Type<<16 | Event->Par1<<8) ^ Event->Par2;
       if(BlockReceivingTimer>millis())
         {
-        EventHash=(Event->Command<<24 | Event->Type<<16 | Event->Par1<<8) ^ Event->Par2;
-        if(EventHash==EventHashPrevious && (RawSignal.Repeats || Event->Command==EVENT_RAWSIGNAL))
-          {
-          WaitFree(Event->Port, WAIT_FREE_RX_WINDOW);
+        if(Event->Type==NODO_TYPE_RAWSIGNAL && EventTypePrevious!=NODO_TYPE_RAWSIGNAL /* A */ )   
+          {  
+          WaitFree(Event->Port);
           return false;
           }
-        EventHashPrevious=EventHash;
-        }
-      BlockReceivingTimer=millis()+SIGNAL_REPEAT_TIME;
-        
 
-      // Signaal wordt echter alleen als event weergegeven als de setting
-      // RawSignalReceive op On staat of het een bekend RawSignal is die is opgeslagen op SDCard.
-      if(Event->Command==EVENT_RAWSIGNAL)
-        {
-        if(Settings.RawSignalReceive==VALUE_ON)
-          return true;
-          
-        #if NODO_MEGA
-        if(RawSignalExist(Event->Par2))
-          return true;
-        #endif
-        
-        return false;
+        if(EventHash==EventHashPrevious && Event->Type!=NODO_TYPE_EVENT && Event->Type!=NODO_TYPE_COMMAND /* B */ )
+          {  
+          WaitFree(Event->Port);
+          return false;
+          }
         }
-  
 
+
+                  
       // Nodo event: Toets of de versienummers corresponderen. Is dit niet het geval, dan zullen er verwerkingsfouten optreden! Dan een waarschuwing tonen en geen verdere verwerking.
       // Er is een uitzondering: De eerste commando/eventnummers zijn stabiel en mogen van oudere versienummers zijn.
       if(Event->Version!=0 && Event->Version!=NODO_VERSION_MINOR && Event->Command>COMMAND_MAX_FIXED)
@@ -144,7 +138,12 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       // Als het Nodo event voor deze unit bestemd is, dan klaar. Zo niet, dan terugkeren met een false
       // zodat er geen verdere verwerking plaatsvindt.
       if(Event->DestinationUnit==0 || Event->DestinationUnit==Settings.Unit)
+        {
+        BlockReceivingTimer=millis()+SIGNAL_REPEAT_TIME;
+        EventHashPrevious=EventHash;
+        EventTypePrevious=Event->Type;
         return true;
+        }
   
       }// fetched
     }
