@@ -11,7 +11,6 @@ byte ProcessEventExt(struct NodoEventStruct *Event)
   byte error=0;
 
   SerialHold(true);  // als er een regel ontvangen is, dan binnenkomst van signalen stopzetten met een seriele XOFF
-  Led(RED); // LED aan als er iets verwerkt wordt      
 
   #if NODO_MEGA
   if(FileWriteMode!=0)
@@ -52,15 +51,16 @@ byte ProcessEvent(struct NodoEventStruct *Event)
   if(Event->Command==0)
     return error;
 
+  Led(RED);                                                                     // LED aan als er iets verwerkt wordt      
+
   if(++ExecutionDepth>=MACRO_EXECUTION_DEPTH)
     {
     QueuePosition=0;
     Continue=false;
-    error=MESSAGE_NESTING_ERROR; // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
+    error=MESSAGE_NESTING_ERROR;                                                // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
     }
 
-  // loop de plugins langs voor eventuele afhandeling van dit event.
-  PluginCall(PLUGIN_EVENT_IN, Event,0);
+  PluginCall(PLUGIN_EVENT_IN, Event,0);                                         // loop de plugins langs voor eventuele afhandeling van dit event.
 
   // Als er een LOCK actief is, dan commando's blokkeren behalve...
   if(Settings.Lock && (Event->Port==VALUE_SOURCE_RF || Event->Port==VALUE_SOURCE_IR ))
