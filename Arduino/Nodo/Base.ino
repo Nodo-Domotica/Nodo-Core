@@ -1,4 +1,4 @@
-#define NODO_BUILD                       664 // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       665 // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                 7 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3 // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1 // Unit nummer van deze Nodo

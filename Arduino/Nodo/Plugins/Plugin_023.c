@@ -131,7 +131,7 @@ boolean Plugin_023(byte function, struct NodoEventStruct *event, char *string)
         else
           {
           // De waarde fade bevat het aantal minuten dat de omschakeling maximaal mag duren.
-          // Per minuut 60000/Loop_INTERVAL_1 keer een call naar Plugin_023_FLC
+          // Per minuut 60000/SCAN_HIGH_TIME keer een call naar Plugin_023_FLC
           // In een minuut max. 255 dimniveaus ==> (60000/(SCAN_HIGH_TIME * 255)) calls nodig voor 1 dimniveau verschil. 
           FadeTimeCounter=fade*60000/(SCAN_HIGH_TIME*255);
           CalledCounter=0;
