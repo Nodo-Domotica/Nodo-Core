@@ -3,6 +3,7 @@
 int  I2C_Received=0;                                                            // Bevat aantal binnengomen bytes op I2C;
 byte I2C_ReceiveBuffer[I2C_BUFFERSIZE+1];
 unsigned long BlockRepeatsTimer=0L;
+unsigned long EventHash,EventHashPrevious=0L;
 
 boolean ScanEvent(struct NodoEventStruct *Event)                                // Deze routine maakt deel uit van de hoofdloop en wordt iedere 125uSec. doorlopen
   {
@@ -77,6 +78,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       {
       Event->Port=Fetched;
       Event->Direction=VALUE_DIRECTION_INPUT;
+      EventHash=(Event->Command<<24 | Event->Type<<16 | Event->Par1<<8) ^ Event->Par2;
 
       // Onderdruk herhalende events/signalen die binnenkomen. Er kunnen zich twee situaties voordoen waar we rekening mee moeten houden.
       if(BlockRepeatsTimer>millis())
@@ -87,8 +89,10 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
         
         // B: Er komt binnen (te) korte tijd hetzelfde event binnen dat we moeten onderdrukken.
         if(Event->Type==NODO_TYPE_PLUGIN_EVENT || Event->Type==NODO_TYPE_RAWSIGNAL) // Het is géén Nodo event, dus kans op herhalend signaal
-          if(LastReceived.Command==Event->Command && LastReceived.Type==Event->Type && LastReceived.Par1==Event->Par1 && LastReceived.Par2==Event->Par2) // Event hetzelfde?
+          {
+          if(EventHash==EventHashPrevious) // Event hetzelfde?
             Fetched=0;
+          }
         }
     
       if(Fetched==0)
@@ -133,6 +137,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       if(Event->DestinationUnit==0 || Event->DestinationUnit==Settings.Unit)
         {
         BlockRepeatsTimer=millis()+SIGNAL_REPEAT_TIME;
+        EventHashPrevious=EventHash;
         return true;
         }
   
