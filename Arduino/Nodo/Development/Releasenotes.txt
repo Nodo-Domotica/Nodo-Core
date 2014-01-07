@@ -16,5 +16,8 @@ R662:
 - Aanpassing aan welkomsttekst.
 - Verwijderen overbodige code (was bedoeld voor debugging)
 
+R663:
+- Issue 827:	WIldCard met source aanduiding werkt niet.
+- Issue 822:	NewKAKU event wordt niet herkend
 
 
