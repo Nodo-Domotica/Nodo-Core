@@ -3,8 +3,6 @@
 int  I2C_Received=0;                                                            // Bevat aantal binnengomen bytes op I2C;
 byte I2C_ReceiveBuffer[I2C_BUFFERSIZE+1];
 unsigned long BlockReceivingTimer=0L;
-unsigned long EventHash,EventHashPrevious=0L;
-byte EventTypePrevious=0;
 
 boolean ScanEvent(struct NodoEventStruct *Event)                                // Deze routine maakt deel uit van de hoofdloop en wordt iedere 125uSec. doorlopen
   {
@@ -12,7 +10,6 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
   unsigned long ScanTimer=millis()+SCAN_HIGH_TIME;
 
   // Zorg er voor dat de FetchSignal() funktie niet halverwege een pulsenreeks ' binnenvalt'. Wacht op een korte tijd rust op de band.
-  //  while(BlockReceivingTimer>millis() && (pulseIn(PIN_RF_RX_DATA,LOW ,SIGNAL_TIMEOUT_RF*1000)!=0 || pulseIn(PIN_IR_RX_DATA,HIGH ,SIGNAL_TIMEOUT_IR*1000)!=0));
   while(BlockReceivingTimer>millis() && pulseIn(PIN_RF_RX_DATA,LOW ,SIGNAL_TIMEOUT_RF*1000)!=0);
       
   while(ScanTimer>millis())
@@ -51,7 +48,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
         }
       }
   
-     else if((*portInputRegister(IRport)&IRbit)==0)                             // IR: *************** kijk of er data start **********************
+    else if((*portInputRegister(IRport)&IRbit)==0)                              // IR: *************** kijk of er data start **********************
       {
       if(FetchSignal(PIN_IR_RX_DATA,LOW,SIGNAL_TIMEOUT_IR))
         {
@@ -81,29 +78,26 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       Event->Direction=VALUE_DIRECTION_INPUT;
 
 
-      // Onderdruk herhalende events/signalen die binnenkomen. Er kunnen zich twee situaties voordoen waar we rekening mee moeten houden: 
-      // A: Na vorig niet-RawSignal event komen er RawSignals binnen die we moeten onderdrukken;
-      // B: Er komt binnen (te) korte tijd hetzelfde event binnen die we moeten onderdrukken.
-      // We maken een hash om te kijken of event al eerder is binnengekomen.
-
-      EventHash=(Event->Command<<24 | Event->Type<<16 | Event->Par1<<8) ^ Event->Par2;
+      // Onderdruk herhalende events/signalen die binnenkomen. Er kunnen zich twee situaties voordoen waar we rekening mee moeten houden. 
       if(BlockReceivingTimer>millis())
         {
-        if(Event->Type==NODO_TYPE_RAWSIGNAL && EventTypePrevious!=NODO_TYPE_RAWSIGNAL /* A */ )   
-          {  
-          WaitFree(Event->Port);
-          return false;
-          }
-
-        if(EventHash==EventHashPrevious && Event->Type!=NODO_TYPE_EVENT && Event->Type!=NODO_TYPE_COMMAND /* B */ )
-          {  
-          WaitFree(Event->Port);
-          return false;
-          }
+        // A: Na vorig niet-RawSignal event komen er RawSignals binnen die we moeten onderdrukken;
+        if(Event->Type==NODO_TYPE_RAWSIGNAL && LastReceived.Type!=NODO_TYPE_RAWSIGNAL)   
+          Fetched=0;
+        
+        // B: Er komt binnen (te) korte tijd hetzelfde event binnen dat we moeten onderdrukken.
+        if(Event->Type==NODO_TYPE_PLUGIN_EVENT || Event->Type==NODO_TYPE_RAWSIGNAL) // Het is géén Nodo event, dus kans op herhalend signaal
+          if(LastReceived.Command==Event->Command && LastReceived.Type==Event->Type && LastReceived.Par1==Event->Par1 && LastReceived.Par2==Event->Par2) // Event hetzelfde?
+            Fetched=0;
         }
-
-
-                  
+    
+      if(Fetched==0)
+        {
+        BlockReceivingTimer=millis()+SIGNAL_REPEAT_TIME;
+        return false;
+        }        
+        
+                          
       // Nodo event: Toets of de versienummers corresponderen. Is dit niet het geval, dan zullen er verwerkingsfouten optreden! Dan een waarschuwing tonen en geen verdere verwerking.
       // Er is een uitzondering: De eerste commando/eventnummers zijn stabiel en mogen van oudere versienummers zijn.
       if(Event->Version!=0 && Event->Version!=NODO_VERSION_MINOR && Event->Command>COMMAND_MAX_FIXED)
@@ -140,8 +134,6 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       if(Event->DestinationUnit==0 || Event->DestinationUnit==Settings.Unit)
         {
         BlockReceivingTimer=millis()+SIGNAL_REPEAT_TIME;
-        EventHashPrevious=EventHash;
-        EventTypePrevious=Event->Type;
         return true;
         }
   

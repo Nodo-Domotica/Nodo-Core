@@ -18,6 +18,8 @@ byte ProcessEventExt(struct NodoEventStruct *Event)
     return 0;
   #endif
 
+  // sla event op voor later gebruik (o.a. SendEvent en blokkeren herhaald binnenkomen events)
+  LastReceived=*Event;
 
   // Verwerk het binnengekomen event
   error=ProcessEvent(Event);
@@ -130,9 +132,6 @@ byte ProcessEvent(struct NodoEventStruct *Event)
       // het is een ander soort event. Loop de gehele eventlist langs om te kijken of er een treffer is.   
       struct NodoEventStruct EventlistEvent, EventlistAction;   
 
-      // sla event op voor later gebruik in SendEvent.
-      LastReceived=*Event;
-
       x=0;
       while(Eventlist_Read(++x,&EventlistEvent,&EventlistAction) && error==0) // Zolang er nog regels zijn in de eventlist...
         {      
@@ -181,8 +180,8 @@ byte CheckEventlist(struct NodoEventStruct *Event)
  \*********************************************************************************************/
 boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroEvent)
   {  
-  //PrintNodoEvent("CheckEvent(), Event-1",Event);//$$$
-  //PrintNodoEvent("CheckEvent(), Event-2",MacroEvent);//$$$
+  // PrintNodoEvent("CheckEvent(), Event-1",Event);//$$$
+  // PrintNodoEvent("CheckEvent(), Event-2",MacroEvent);//$$$
 
   // geen lege events verwerken
   if(MacroEvent->Command==0 || Event->Command==0)
@@ -192,7 +191,7 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
   if(MacroEvent->Command == EVENT_WILDCARD)                                                                                 // is regel uit de eventlist een WildCard?
     if( MacroEvent->Par1==VALUE_ALL          ||   MacroEvent->Par1==Event->Port)                                            // Correspondeert de poort of mogen alle poorten?
       if((MacroEvent->Par2&0xff)==VALUE_ALL  ||  (MacroEvent->Par2&0xff)==Event->Command && (Event->Type==NODO_TYPE_EVENT || Event->Type==NODO_TYPE_RAWSIGNAL))   // Correspondeert het commando deel
-        if(((MacroEvent->Par2>>8)&0xff)==0   || ((MacroEvent->Par2>>8)&0xff)==Event->DestinationUnit)                       // Correspondeert het unitnummer of is deze niet opgegeven
+        if(((MacroEvent->Par2>>8)&0xff)==0   || ((MacroEvent->Par2>>8)&0xff)==Event->SourceUnit)                       // Correspondeert het unitnummer of is deze niet opgegeven
           return true;          
 
   // ### USEREVENT: beschouw bij een UserEvent een 0 voor Par1 of Par2 als een wildcard.
