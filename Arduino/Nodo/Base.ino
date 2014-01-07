@@ -1,4 +1,4 @@
-#define NODO_BUILD                       663 // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       664 // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                 7 // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3 // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1 // Unit nummer van deze Nodo
@@ -14,7 +14,7 @@
 #define MIN_PULSE_LENGTH                  50 // Pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define SIGNAL_TIMEOUT_RF                  5 // na deze tijd in mSec. wordt een RF signaal als beeindigd beschouwd.
 #define SIGNAL_TIMEOUT_IR                 10 // na deze tijd in mSec. wordt een IR signaal als beeindigd beschouwd.
-#define SIGNAL_REPEAT_TIME              1500 // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF/IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
+#define SIGNAL_REPEAT_TIME              1000 // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF/IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
 #define PULSE_DEBOUNCE_TIME               10 // pulsen kleiner dan deze waarde in milliseconden worden niet geteld. Bedoeld om verstoringen a.g.v. ruis of dender te voorkomen
 #define PULSE_TRANSITION             FALLING // FALLING of RISING: Geeft aan op welke flank de PulseCounter start start met tellen. Default FALLING
 #define I2C_START_ADDRESS                  1 // Alle Nodo's op de I2C bus hebben een uniek adres dat start vanaf dit nummer. Er zijn max. 32 Nodo's. Let op overlap met andere devices. RTC zit op adres 104.
@@ -833,7 +833,7 @@ void setup()
   IRbit=digitalPinToBitMask(PIN_IR_RX_DATA);
   IRport=digitalPinToPort(PIN_IR_RX_DATA);
 
-  Led(BLUE);
+  Led(RED);
 
   ClearEvent(&LastReceived);
 
@@ -999,12 +999,11 @@ void loop()
 
   while(true)
     {
+    Led(GREEN);
 
     // Check voor IR, I2C of RF events
     if(ScanEvent(&ReceivedEvent)) 
       ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
-
-    Led(GREEN);
 
 
     // Een plugin mag tijdelijk een claim doen op de snelle aanroep vanuit de hoofdloop. 
@@ -1012,7 +1011,6 @@ void loop()
     // per FAST_LOOP mSec aangeroepen.
     if(FastLoopCall_ptr)
       FastLoopCall_ptr();
-
 
     switch(Slice_1++)
       {        

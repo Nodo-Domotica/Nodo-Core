@@ -2,15 +2,16 @@
 
 int  I2C_Received=0;                                                            // Bevat aantal binnengomen bytes op I2C;
 byte I2C_ReceiveBuffer[I2C_BUFFERSIZE+1];
-unsigned long BlockReceivingTimer=0L;
+unsigned long BlockRepeatsTimer=0L;
 
 boolean ScanEvent(struct NodoEventStruct *Event)                                // Deze routine maakt deel uit van de hoofdloop en wordt iedere 125uSec. doorlopen
   {
   byte Fetched=0;
+  static boolean BlockRepeatsStatus=false;
   unsigned long ScanTimer=millis()+SCAN_HIGH_TIME;
 
-  // Zorg er voor dat de FetchSignal() funktie niet halverwege een pulsenreeks ' binnenvalt'. Wacht op een korte tijd rust op de band.
-  while(BlockReceivingTimer>millis() && pulseIn(PIN_RF_RX_DATA,LOW ,SIGNAL_TIMEOUT_RF*1000)!=0);
+  // Zorg er voor dat de FetchSignal() funktie niet halverwege een pulsenreeks ' binnenvalt'. Wacht op een korte tijd rust in signaal
+  while(BlockRepeatsTimer>millis() && pulseIn(PIN_RF_RX_DATA,LOW ,SIGNAL_TIMEOUT_RF*1000)!=0);
       
   while(ScanTimer>millis())
     {
@@ -48,7 +49,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
         }
       }
   
-    else if((*portInputRegister(IRport)&IRbit)==0)                              // IR: *************** kijk of er data start **********************
+     else if((*portInputRegister(IRport)&IRbit)==0)                             // IR: *************** kijk of er data start **********************
       {
       if(FetchSignal(PIN_IR_RX_DATA,LOW,SIGNAL_TIMEOUT_IR))
         {
@@ -77,9 +78,8 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       Event->Port=Fetched;
       Event->Direction=VALUE_DIRECTION_INPUT;
 
-
-      // Onderdruk herhalende events/signalen die binnenkomen. Er kunnen zich twee situaties voordoen waar we rekening mee moeten houden. 
-      if(BlockReceivingTimer>millis())
+      // Onderdruk herhalende events/signalen die binnenkomen. Er kunnen zich twee situaties voordoen waar we rekening mee moeten houden.
+      if(BlockRepeatsTimer>millis())
         {
         // A: Na vorig niet-RawSignal event komen er RawSignals binnen die we moeten onderdrukken;
         if(Event->Type==NODO_TYPE_RAWSIGNAL && LastReceived.Type!=NODO_TYPE_RAWSIGNAL)   
@@ -93,10 +93,9 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
     
       if(Fetched==0)
         {
-        BlockReceivingTimer=millis()+SIGNAL_REPEAT_TIME;
+        BlockRepeatsTimer=millis()+SIGNAL_REPEAT_TIME;
         return false;
-        }        
-        
+        }
                           
       // Nodo event: Toets of de versienummers corresponderen. Is dit niet het geval, dan zullen er verwerkingsfouten optreden! Dan een waarschuwing tonen en geen verdere verwerking.
       // Er is een uitzondering: De eerste commando/eventnummers zijn stabiel en mogen van oudere versienummers zijn.
@@ -133,7 +132,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       // zodat er geen verdere verwerking plaatsvindt.
       if(Event->DestinationUnit==0 || Event->DestinationUnit==Settings.Unit)
         {
-        BlockReceivingTimer=millis()+SIGNAL_REPEAT_TIME;
+        BlockRepeatsTimer=millis()+SIGNAL_REPEAT_TIME;
         return true;
         }
   

@@ -1,23 +1,17 @@
 
 /**********************************************************************************************\
- * Deze functie wacht totdat de 433 en IR band vrij zijn of er een timeout heeft plaats gevonden.
- * Er wordt gemeten hoeveel geldige pulden ( > MIN_PULSE_LENGTH) er zich voordoen binnen een 
+ * Deze functie wacht totdat de 433 en de IR band vrij zijn of er een timeout heeft plaats gevonden.
+ * Er wordt gemeten hoeveel geldige pulsen ( > MIN_PULSE_LENGTH) er zich voordoen binnen een 
  * vast tijdsframe. Als er spikes zijn (=ruis) of er zijn geen pulsen, dan wordt teruggekeerd.
- * Ook wordt teruggekeerd als er een timeout optreedt.    
  \*********************************************************************************************/
-void WaitFree(byte Port)
+void WaitFree(void)
   {
   unsigned long TimeOutTimer=millis()+WAIT_FREE_RX_TIMEOUT;                     // tijd waarna de routine wordt afgebroken in milliseconden
-  unsigned long WindowTimer,PulseTime;
+  unsigned long WindowTimer;
 
-  int x;
+  int x,y;
   
   Led(BLUE);
-
-  // Ether vrij als:
-  //
-  // A: Volledige stilte
-  // B: Ruis = geen pulsen die lang genoeg zijn om als signaal aangemerkt te kunnen worden.
 
   do
     {
@@ -25,30 +19,20 @@ void WaitFree(byte Port)
     x=0;
     while(WindowTimer>millis())
       {
-      if(Port==VALUE_SOURCE_IR)
+      if((*portInputRegister(IRport)&IRbit)==0)                                 // Puls op RF?
         {
-        if((*portInputRegister(IRport)&IRbit)==0)
-          {
-          x++;
-          if(pulseIn(PIN_IR_RX_DATA,LOW) < MIN_PULSE_LENGTH && x>0)
-            x=0;
-          }
+        x++;
+        if(pulseIn(PIN_IR_RX_DATA,LOW) < MIN_PULSE_LENGTH && x>0)               // Was het een spike?
+          x=0;
         }
-      if(Port==VALUE_SOURCE_RF)
+      if((*portInputRegister(RFport)&RFbit)==RFbit)                             // Pulse op IR
         {
-        if((*portInputRegister(RFport)&RFbit)==RFbit)
-          {
-          x++;
-          if(pulseIn(PIN_RF_RX_DATA,HIGH) < MIN_PULSE_LENGTH && x>0)
-            x=0;
-          }
+        y++;
+        if(pulseIn(PIN_RF_RX_DATA,HIGH) < MIN_PULSE_LENGTH && y>0)              // Was het een spike?
+          y=0;
         }
       }
- 
-
-    }while(TimeOutTimer>millis() && x>0);
-
-
+    }while(TimeOutTimer>millis() && (x>0 || y>0));                              // Zolang nog pulsen op RF of IR en nog geen timeout
 
   Led(RED);
   }
@@ -95,7 +79,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   // te zorgen dat er een minimale wachttijd tussen de signlen zit. Tot slot wordt het signaal verzonden.
   if(WaitForFree)
     if(Port==VALUE_SOURCE_RF || Port==VALUE_SOURCE_IR ||(Settings.TransmitRF==VALUE_ON && Port==VALUE_ALL))
-      WaitFree(VALUE_ALL);
+      WaitFree();
 
   if(!UseRawSignal)
     Nodo_2_RawSignal(ES);
