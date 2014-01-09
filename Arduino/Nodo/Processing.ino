@@ -201,9 +201,11 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
        && (Event->Par2==MacroEvent->Par2 || MacroEvent->Par2==0 || Event->Par2==0))                         // Par2 deel een match?
          return true; 
     
-  // Herkomst van een andere Nodo, dan er niets meer mee doen TENZIJ het een UserEvent is of behandeling door Wildcard. Die werden hierboven 
-  // al afgevangen.
-  if(Event->DestinationUnit!=0  && Event->DestinationUnit!=Settings.Unit)
+  
+  // Events die niet voor deze Nodo bestemd zijn worden an niet doorgelaten door EventScanning(), echter events die voor alle Nodo's bestemd zijn
+  // horen NIET langs de eventlist te worden gehaald. Deze daarom niet verder behandelen TENZIJ het een UserEvent is of behandeling door Wildcard. 
+  // Die werden hierboven al behandeld.
+  if(Event->SourceUnit!=0  && Event->SourceUnit!=Settings.Unit)
     return false;
 
 
