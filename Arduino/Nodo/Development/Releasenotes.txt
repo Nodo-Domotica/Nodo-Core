@@ -20,4 +20,6 @@ R663:
 - Issue 827:	WIldCard met source aanduiding werkt niet.
 - Issue 822:	NewKAKU event wordt niet herkend
 
+R672:
+- Issue 831:	Variabele vanuit andere nodo geeft hit in eventlist
 
