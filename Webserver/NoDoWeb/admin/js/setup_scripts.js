@@ -124,10 +124,14 @@ $('#write').click( function( e ) {
 		
         if ($('#scriptfile').val() != 'choose' || EventlistButtonPressed == 1) {
 			if (EventlistButtonPressed == 1) {
+				$('#write_message').append('<img src="../media/loading.gif"/> Please wait, writing eventlist....<br \>');
+				$( "#scripts_popup_msg" ).popup("open");
 				$.post("../webservice/admin/json_scripts.php", { checkbox: $("#checkbox").is(":checked"), write: "1", scriptfile: "EVENTLST", script: $('#scriptcontent').val() },function(data) {   
 				
 					if ($("#checkbox").is(":checked")==true) {
-						$('#write_message').append('The eventlist is written to the Nodo');
+						$('#write_message').empty();
+						$('#write_message').append('The eventlist is written to the Nodo<br \><br \>');
+						//$('#write_message').append(data);
 					}
 					
 					$( "#scripts_popup_msg" ).popup("open");
@@ -135,16 +139,23 @@ $('#write').click( function( e ) {
 				});
 			}
 			else {
+				
+			    $('#write_message').append('<img src="../media/loading.gif"/> Please wait, uploading script....<br \>');
+				$( "#scripts_popup_msg" ).popup("open");
 				$.post("../webservice/admin/json_scripts.php", { checkbox: $("#checkbox").is(":checked"), write: "1", scriptfile: $('#scriptfile').val(), script: $('#scriptcontent').val() },function(data) {   
 					
 						if ($("#checkbox").is(":checked")==true) {
-							$('#write_message').append('The script is sent to the Nodo<br \> and will be executed.');
+							$('#write_message').empty();
+							$('#write_message').append('The script is sent to the Nodo<br \> and is executed.<br \><br \>');
+							//$('#write_message').append(data);
 						}
 						else {
-							$('#write_message').append('The script is send to the Nodo.');
+							$('#write_message').empty();
+							$('#write_message').append('The script is send to the Nodo.<br \><br \>');
+							//$('#write_message').append(data);
 						}
-						
-							$( "#scripts_popup_msg" ).popup("open");
+						$( "#scripts_popup_msg" ).popup("open");
+							
 									
 				});
 			}

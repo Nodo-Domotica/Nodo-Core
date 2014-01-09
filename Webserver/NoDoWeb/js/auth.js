@@ -2,7 +2,7 @@
 $('#login_form').bind('submit', function () {
 
     //send a post request to your web-service
-    $.post('login.php', $(this).serialize(), function (response) {
+    $.post("login.php", $(this).serialize(), function (response) {
        
 	    //check if the authorization was successful or not
         

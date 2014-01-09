@@ -64,11 +64,14 @@ if ($action != NULL) {
 	$homecode = $row_RSdevices['homecode'];
 	$address = $row_RSdevices['address'];
 	
-	$kaku = "SendKaku%20$homecode$address,";
+	if ($build >= 596) {$kaku = "KakuSend%20$homecode$address,";}
+	else {$kaku = "SendKaku%20$homecode$address,";}
+	
 	$kaku_on = $kaku . "on";
 	$kaku_off = $kaku . "off";
 	
-	$newkaku = "SendNewKaku%20$address,";
+	if ($build >= 596) {$newkaku = "NewKakuSend%20$address,";}
+	else {$newkaku = "SendNewKaku%20$address,";}
 	$newkaku_on = $newkaku . "on";
 	$newkaku_off = $newkaku . "off";
 	$newkaku_dim = $newkaku . $dim;
@@ -77,7 +80,10 @@ if ($action != NULL) {
 	$wired_out_on = $wired_out_1 . "on";
 	$wired_out_off = $wired_out_1 . "off";
 	
-	$send_user_event = "SendUserEvent%20";
+	
+	if ($build >= 596) {$send_user_event = "UserEventSend%20";}
+	else {$send_user_event = "SendUserEvent%20";}
+	
 	$send_user_event_on = $send_user_event . $row_RSdevices['user_event_on'];
 	$send_user_event_off = $send_user_event . $row_RSdevices['user_event_off'];
 	
@@ -265,5 +271,6 @@ if ($user_cmd != NULL) {
 }
 
 echo $data;
+
 
 ?>

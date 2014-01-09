@@ -212,21 +212,21 @@ if (isset($_POST['write']))
 		
 			
 			//Execute script on Nodo
-			HTTPRequest("http://$nodo_ip/?event=FileGetHTTP%20$file;FileExecute%20$file&key=$key");
+			$scriptres=HTTPRequest("http://$nodo_ip/?event=FileGetHTTP%20$file;FileExecute%20$file&key=$key");
 			
 		}
 		
 		else {
 		
 		//Save script on Nodo 
-		HTTPRequest("http://$nodo_ip/?event=FileGetHTTP%20$file&key=$key");
+		$scriptres=HTTPRequest("http://$nodo_ip/?event=FileGetHTTP%20$file&key=$key");
 		
 		}
 	
 		
 	}
-	echo $file;
-	echo $scriptpost;
+	
+	echo $scriptres;
 }
 
 

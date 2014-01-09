@@ -98,7 +98,7 @@ do {
 				}
 		
 				
-				$query_RSsensor_value_data = "SELECT DATE_FORMAT(timestamp , '%Y-%m-%d') as timestamp , SUM(data) as data FROM nodo_tbl_sensor_data WHERE sensor_id='$sensor_id' AND timestamp >= NOW() - INTERVAL $graph_hours HOUR GROUP BY date(timestamp) ORDER BY timestamp DESC LIMIT 1;";
+				$query_RSsensor_value_data = "SELECT DATE_FORMAT( timestamp, '%Y-%m-%d' ) AS timestamp, SUM( data ) AS data	FROM nodo_tbl_sensor_data WHERE sensor_id = '$sensor_id' AND timestamp >= NOW( ) - INTERVAL 1 DAY GROUP BY date( timestamp ) ORDER BY timestamp DESC LIMIT 1";
 				$RSsensor_value_data = mysql_query($query_RSsensor_value_data, $db) or die(mysql_error()); 
 				$row_RSsensor_value_data = mysql_fetch_assoc($RSsensor_value_data);
 					
