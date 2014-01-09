@@ -24,7 +24,7 @@ require_once('../include/user_settings.php');
 		   
 mysql_select_db($database, $db);
 
-$RSevent_log = mysql_query("SELECT nodo_unit_nr,event,timestamp FROM (SELECT * FROM nodo_tbl_event_log WHERE user_id='$userId' ORDER BY id DESC LIMIT 100)x ORDER BY id") or die(mysql_error());
+$RSevent_log = mysql_query("SELECT nodo_unit_nr,event,timestamp FROM (SELECT * FROM nodo_tbl_event_log WHERE user_id='$userId' AND event NOT LIKE 'Message%' ORDER BY id DESC LIMIT 100)x ORDER BY id") or die(mysql_error());
 ?>
 
 <table>    
@@ -39,11 +39,11 @@ $RSevent_log = mysql_query("SELECT nodo_unit_nr,event,timestamp FROM (SELECT * F
  <tbody>
 
 <?php		
-		while($row = mysql_fetch_array($RSevent_log)) 
+		while($row = mysql_fetch_assoc($RSevent_log)) 
 		{                                
 ?>		 
 		<tr>	
-		<td width="50"><?php echo $row['nodo_unit_nr'];?></td> <td width="200"><?php echo $row['event'];?></td><td><?php echo $row['timestamp'];?></td>		
+		<td width="50"><?php echo $row['nodo_unit_nr'];?></td> <td width="40%"><?php echo $row['event'];?></td><td <td><?php echo $row['timestamp'];?></td>		
 		</tr>
 <?php		
 		}         

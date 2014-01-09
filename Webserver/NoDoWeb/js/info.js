@@ -11,8 +11,10 @@ $('#info_page').on('pageshow', function(event) {
 	pagetitle='Info';
 	
 	checkSession();
-    Get_Nodo_Events(); 
-    varEventsTimer=setInterval(function() {Get_Nodo_Events()},2000);
+    Get_Nodo_Events();
+	Get_Nodo_Messages();
+    varEventsTimer=setInterval(function() {Get_Nodo_Events()},3000);
+	varMessagesTimer=setInterval(function() {Get_Nodo_Messages()},5000);
 	$('#header_info').append('<div id="nodostate">'+pagetitle+'</div>');
 	Nodo_State();
 	
@@ -21,6 +23,7 @@ $('#info_page').on('pageshow', function(event) {
 $('#info_page').on('pagehide', function(event) {
 	
     clearInterval(varEventsTimer);
+	clearInterval(varMessagesTimer);
 	$('#header_info').empty();	
 
 });

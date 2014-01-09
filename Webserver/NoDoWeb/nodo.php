@@ -141,14 +141,37 @@ if($userId > 0 && $key_match == 1) {
 		//Controleren of we een notificatie moeten sturen	
 		$RSnotify = mysql_query("SELECT recipient, subject, body FROM nodo_tbl_notifications WHERE user_id='$userId' AND event='$eventraw'") or die(mysql_error());  
 							
-		while($row_RSnotify = mysql_fetch_array($RSnotify)) {                                
+		while($row_RSnotify = mysql_fetch_array($RSnotify)) {  
+
+			 
 		   
 			 $to = $row_RSnotify['recipient'];
 			 $subject = $row_RSnotify['subject'];
 			 $message = $row_RSnotify['body'];
 			 $from = "webapp@nodo-domotica.nl";
 			 $headers = "From:" . $from;
-			 mail($to,$subject,$message,$headers);
+			 
+			 if (strpos($to,'pushingbox') !== false) {
+			 
+			 $devid = explode(":", $to);
+			 $devid = $devid[1];
+			 
+			 $subject=urlencode($subject);
+			 $message=urlencode($message);
+			
+			 
+			 $ch = curl_init("http://api.pushingbox.com/pushingbox?devid=$devid&subject=$subject&message=$message");
+			 curl_exec ($ch);
+             curl_close ($ch);
+			 
+			 
+			}
+			else
+			{
+			  mail($to,$subject,$message,$headers);
+			   
+			  
+			 }
 		}
 													
 		//Controleren of de gebruiker een device of value heeft aangemaakt welke met het event overeenkomt

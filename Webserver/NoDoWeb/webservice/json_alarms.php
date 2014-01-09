@@ -111,7 +111,7 @@ if (isset($_GET['alarms'])) {
 
 	
 			 $httpresponse=str_replace("<br>","",(HTTPRequest("http://$nodo_ip/?event=status%20alarmset%20&key=$key")));
-			 
+			 if ($httpresponse != "") {
 			$alarm1 = get_phrase_after_string($httpresponse,"AlarmSet 1,");
 			$alarm2 = get_phrase_after_string($httpresponse,"AlarmSet 2,");
 			$alarm3 = get_phrase_after_string($httpresponse,"AlarmSet 3,");
@@ -171,5 +171,5 @@ if (isset($_GET['alarms'])) {
 	
 		$json = json_encode($Alarms);
 
-		echo '{"alarms":'. $json .'}'; 
+		echo '{"alarms":'. $json .'}'; }
 }

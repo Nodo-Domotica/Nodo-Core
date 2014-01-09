@@ -5,7 +5,7 @@ $(document).ready(function(e){
 				
 			e.preventDefault();
 			
-			$.post("../webservice/admin/json_setup_groups.php", $('#group_add').serialize(),function(data) {   
+			$.post("../webservice/admin/json_setup_groups.php", $("#group_add").serialize(),function(data) {   
 			
 			if (data == true) {
 			

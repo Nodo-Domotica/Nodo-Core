@@ -268,11 +268,16 @@
 
 		<div data-role="collapsible" data-collapsed="true" data-inset="false" data-collapsed-icon="plus" data-expanded-icon="minus" data-iconpos="right">
 			<h3>Eventlog</h3>
-			<h3>Last 100 events</h3>	
-			<div id="events_div"></div>
+			<div id="events_div" style="font-family:monospace"></div>
 			<br \>
 			<a href="webservice/export_csv_events.php" data-role="button" data-inline="true" data-ajax="false">Export all events to csv</a>
 		</div>	
+		
+		<div data-role="collapsible" data-collapsed="true" data-inset="false" data-collapsed-icon="plus" data-expanded-icon="minus" data-iconpos="right">
+			<h3>Messages</h3>
+			<div id="messages_div" style="font-family:monospace"></div>
+			
+		</div>
 	
 	<div data-role="collapsible" class="nodostatus" data-collapsed="true" data-inset="false" data-collapsed-icon="plus" data-expanded-icon="minus" data-iconpos="right">
 		<h3>Nodo status</h3>
@@ -317,6 +322,7 @@
 <script src="js/user_settings.js"></script>
 <script src="js/get_nodo_status.js"></script>
 <script src="js/get_events.js"></script>
+<script src="js/get_messages.js"></script>
 <script src="js/json_nodo_state.js"></script>
 <script src="js/devices.js"></script>
 <script src="js/activities.js"></script>
