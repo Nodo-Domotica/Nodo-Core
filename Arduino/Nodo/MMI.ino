@@ -81,8 +81,6 @@ int ExecuteLine(char *Line, byte Port)
         // check of ingevoerde commando een alias is. Is dit het geval, dan wordt Command vervangen door de alias.
         Alias(Command,true); //  ??? Niet als het een standaadrd Nodo commando is. Nog inbouwen.
 
-        // Serial.print("ExecuteLine(); Command (na alias)=");Serial.println(Command);        
-
         // Commando's in tekst format moeten worden omgezet naar een Nodo event.
         error=Str2Event(Command, &EventToExecute);
         EventToExecute.Port=Port;
@@ -796,7 +794,6 @@ void PrintString(char* LineToPrint, byte Port)
 #define PAR5_INT          16
 #define PAR3_TEXT         17
 
-
 void Event2str(struct NodoEventStruct *Event, char* EventString)
   {
   int x;
@@ -1106,10 +1103,10 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         case PAR2_DATE:
           strcat(EventString, int2str((Event->Par2>>28)&0xf));
           strcat(EventString, int2str((Event->Par2>>24)&0xf));
-            strcat(EventString, "-");
+          strcat(EventString, "-");
           strcat(EventString, int2str((Event->Par2>>20)&0xf));
           strcat(EventString, int2str((Event->Par2>>16)&0xf));
-            strcat(EventString, "-");
+          strcat(EventString, "-");
           strcat(EventString, int2str((Event->Par2>>12)&0xf));
           strcat(EventString, int2str((Event->Par2>>8 )&0xf));
           strcat(EventString, int2str((Event->Par2>>4 )&0xf));

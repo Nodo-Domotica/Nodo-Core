@@ -23,3 +23,6 @@ R663:
 R672:
 - Issue 831:	Variabele vanuit andere nodo geeft hit in eventlist
 
+R675:
+- Aliassen worden nu ook via HTTP events doorgegeven. (Voorbereiding op nieuwe WebApp)
+
