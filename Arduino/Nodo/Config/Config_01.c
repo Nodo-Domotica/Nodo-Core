@@ -6,7 +6,7 @@
 // http://www.nodo-domotica.nl/index.php
 // ****************************************************************************************************************************************
 
-#define UNIT_NODO        1 // Na een reset wordt dit het unitnummer van de Nodo
+#define UNIT_NODO        1 // Na een [Reset] commando wordt dit het unitnummer van de Nodo
 #define CLOCK         true // true=code voor Real Time Clock mee compileren.
 #define NODO_MEGA     true // true = Nodo Mega, false=Nodo-Small
 
