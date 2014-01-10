@@ -10,11 +10,12 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
   byte Fetched=0;
   static boolean BlockRepeatsStatus=false;
   unsigned long ScanTimer=millis()+SCAN_HIGH_TIME;
-
-  // Zorg er voor dat de FetchSignal() funktie niet halverwege een pulsenreeks ' binnenvalt'. Wacht op een korte tijd rust in signaal
-  while(BlockRepeatsTimer>millis() && pulseIn(PIN_RF_RX_DATA,LOW ,SIGNAL_TIMEOUT_RF*1000)!=0);
       
-  while(ScanTimer>millis())
+
+  // Zorg er voor dat de FetchSignal() funktie na verwerking door de Nodo niet halverwege een pulsenreeks ' binnenvalt'. Wacht op een korte tijd rust in signaal
+  while(BlockRepeatsTimer>millis() && pulseIn(PIN_RF_RX_DATA,LOW ,SIGN;AL_TIMEOUT_RF*1000)!=0)
+
+  while(ScanTimer>millis() || BlockRepeatsTimer>millis())
     {
     if(I2C_Received)                                                            // I2C: *************** kijk of er data is binnengekomen op de I2C-bus **********************
       {
@@ -84,9 +85,9 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       if(BlockRepeatsTimer>millis())
         {
         // A: Na vorig niet-RawSignal event komen er RawSignals binnen die we moeten onderdrukken;
-        if(Event->Type==NODO_TYPE_RAWSIGNAL && LastReceived.Type!=NODO_TYPE_RAWSIGNAL)   
+        if(Event->Type==NODO_TYPE_RAWSIGNAL && LastReceived.Type!=NODO_TYPE_RAWSIGNAL)
           Fetched=0;
-        
+                  
         // B: Er komt binnen (te) korte tijd hetzelfde event binnen dat we moeten onderdrukken.
         if(Event->Type==NODO_TYPE_PLUGIN_EVENT || Event->Type==NODO_TYPE_RAWSIGNAL) // Het is géén Nodo event, dus kans op herhalend signaal
           {
@@ -98,50 +99,51 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       if(Fetched==0)
         {
         BlockRepeatsTimer=millis()+SIGNAL_REPEAT_TIME;
-        return false;
         }
-                          
-      // Nodo event: Toets of de versienummers corresponderen. Is dit niet het geval, dan zullen er verwerkingsfouten optreden! Dan een waarschuwing tonen en geen verdere verwerking.
-      // Er is een uitzondering: De eerste commando/eventnummers zijn stabiel en mogen van oudere versienummers zijn.
-      if(Event->Version!=0 && Event->Version!=NODO_VERSION_MINOR && Event->Command>COMMAND_MAX_FIXED)
+      else                          
         {
-        #if NODO_MEGA
-        Event->Command=CMD_DUMMY;
-        Event->Type=NODO_TYPE_EVENT;
-        Event->Par1=0;
-        Event->Par2=0;
-        PrintEvent(Event,VALUE_ALL);
-        RaiseMessage(MESSAGE_VERSION_ERROR,Event->Version);
-        #endif
-        return false;
-        }     
-  
-      // Een event kan een verzoek bevatten om bevestiging. Doe dit dan pas na verwerking.
-      if(Event->Flags & TRANSMISSION_CONFIRM)
-        RequestForConfirm=true;
-  
-      // registreer welke Nodo's op welke poort zitten en actualiseer tabel.
-      // Wordt gebruikt voor SendTo en I2C communicatie op de Mega.
-      // Hiermee kan later automatisch de juiste poort worden geselecteerd met de SendTo en kan in
-      // geval van I2C communicatie uitsluitend naar de I2C verbonden Nodo's worden gecommuniceerd.
-      NodoOnline(Event->SourceUnit,Event->Port);
-  
-      // Als er een specifieke Nodo is geselecteerd, dan moeten andere Nodo's worden gelocked.
-      // Hierdoor is het mogelijk dat een master en een slave Nodo tijdelijk exclusief gebruik kunnen maken van de bandbreedte
-      // zodat de communicatie niet wordt verstoord.  
-      if(Event->DestinationUnit!=0)
-        Transmission_SelectedUnit = Event->DestinationUnit;
-  
-      // Als het Nodo event voor deze unit bestemd is, dan klaar. Zo niet, dan terugkeren met een false
-      // zodat er geen verdere verwerking plaatsvindt.
-      if(Event->DestinationUnit==0 || Event->DestinationUnit==Settings.Unit)
-        {
-        BlockRepeatsTimer=millis()+SIGNAL_REPEAT_TIME;
-        EventHashPrevious=EventHash;
-        return true;
+        // Nodo event: Toets of de versienummers corresponderen. Is dit niet het geval, dan zullen er verwerkingsfouten optreden! Dan een waarschuwing tonen en geen verdere verwerking.
+        // Er is een uitzondering: De eerste commando/eventnummers zijn stabiel en mogen van oudere versienummers zijn.
+        if(Event->Version!=0 && Event->Version!=NODO_VERSION_MINOR && Event->Command>COMMAND_MAX_FIXED)
+          {
+          #if NODO_MEGA
+          Event->Command=CMD_DUMMY;
+          Event->Type=NODO_TYPE_EVENT;
+          Event->Par1=0;
+          Event->Par2=0;
+          PrintEvent(Event,VALUE_ALL);
+          RaiseMessage(MESSAGE_VERSION_ERROR,Event->Version);
+          #endif
+          return false;
+          }     
+    
+        // Een event kan een verzoek bevatten om bevestiging. Doe dit dan pas na verwerking.
+        if(Event->Flags & TRANSMISSION_CONFIRM)
+          RequestForConfirm=true;
+    
+        // registreer welke Nodo's op welke poort zitten en actualiseer tabel.
+        // Wordt gebruikt voor SendTo en I2C communicatie op de Mega.
+        // Hiermee kan later automatisch de juiste poort worden geselecteerd met de SendTo en kan in
+        // geval van I2C communicatie uitsluitend naar de I2C verbonden Nodo's worden gecommuniceerd.
+        NodoOnline(Event->SourceUnit,Event->Port);
+    
+        // Als er een specifieke Nodo is geselecteerd, dan moeten andere Nodo's worden gelocked.
+        // Hierdoor is het mogelijk dat een master en een slave Nodo tijdelijk exclusief gebruik kunnen maken van de bandbreedte
+        // zodat de communicatie niet wordt verstoord.  
+        if(Event->DestinationUnit!=0)
+          Transmission_SelectedUnit = Event->DestinationUnit;
+    
+        // Als het Nodo event voor deze unit bestemd is, dan klaar. Zo niet, dan terugkeren met een false
+        // zodat er geen verdere verwerking plaatsvindt.
+        if(Event->DestinationUnit==0 || Event->DestinationUnit==Settings.Unit)
+          {
+          BlockRepeatsTimer=millis()+SIGNAL_REPEAT_TIME;
+          EventHashPrevious=EventHash;
+          return true;
+          }
+    
         }
-  
-      }// fetched
+      }
     }
   return false;
   }
