@@ -13,7 +13,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       
 
   // Zorg er voor dat de FetchSignal() funktie na verwerking door de Nodo niet halverwege een pulsenreeks ' binnenvalt'. Wacht op een korte tijd rust in signaal
-  while(BlockRepeatsTimer>millis() && pulseIn(PIN_RF_RX_DATA,LOW ,SIGN;AL_TIMEOUT_RF*1000)!=0)
+  while(BlockRepeatsTimer>millis() && pulseIn(PIN_RF_RX_DATA,LOW ,SIGNAL_TIMEOUT_RF*1000)!=0);
 
   while(ScanTimer>millis() || BlockRepeatsTimer>millis())
     {
