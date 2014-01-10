@@ -402,6 +402,9 @@ byte SendHTTPEvent(struct NodoEventStruct *Event)
 
   strcat(HttpRequest,"&event=");
   Event2str(Event,TempString);
+  if(Settings.Alias==VALUE_ON)
+    Alias(TempString,false);
+
   strcat(HttpRequest,TempString);
 
   free(TempString);
