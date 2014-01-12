@@ -304,12 +304,12 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
   unsigned long MessageTimer=millis() + 5000;
   boolean WaitMessage=false;
   #endif
+
+  Serial.println(F("DEBUG: Wait()"));
   
   // Initialiseer een Event en Transmissie
   struct NodoEventStruct Event;
   ClearEvent(&Event);
-
-  Led(BLUE);
 
   while(TimeoutTimer>millis())
     {
@@ -328,13 +328,13 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
       MessageTimer=millis() + 5000;
       #endif
       
-      TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
+      if(WaitForFreeTransmission)
+        TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
       
       // Events die voorbij komen in de queue plaatsen.
       QueueAdd(&Event);
 
-
-      if(EndSequence && (Event.Flags&TRANSMISSION_QUEUE_NEXT)==0)
+      if(EndSequence && (Event.Flags & TRANSMISSION_QUEUE_NEXT)==0)
         break;
         
       // als het gewacht wordt totdat de communicatie poorten weer beschikbaar zijn, dan wachtloop verlaten.        
@@ -356,8 +356,11 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
           }
         }
       }
+    Led(RED);
     }   
     
+  Serial.println(F("DEBUG: Wait() verlaten."));
+
   // als timeout, dan error terug geven
   if(TimeoutTimer<=millis())
     return false;
@@ -607,16 +610,15 @@ boolean GetStatus(struct NodoEventStruct *Event)
  * Sla alle settings op in het EEPROM geheugen.
  \*********************************************************************************************/
 void Save_Settings(void)  
-{
-  Led(BLUE);
+  {
   char ByteToSave,*pointerToByteToSave=pointerToByteToSave=(char*)&Settings;    //pointer verwijst nu naar startadres van de struct. 
 
   for(int x=0; x<sizeof(struct SettingsStruct) ;x++)
-  {
+    {
     EEPROM.write(x,*pointerToByteToSave); 
     pointerToByteToSave++;
-  }  
-}
+    }  
+  }
 
 /*********************************************************************************************\
  * Laad de settings uit het EEPROM geheugen.
@@ -641,7 +643,6 @@ boolean LoadSettings()
 void ResetFactory(void)
   {
   int x,y;
-  Led(BLUE);
   Beep(2000,2000);
 
   // maak de eventlist leeg.

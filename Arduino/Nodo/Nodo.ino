@@ -1,6 +1,7 @@
 
 //??? *************** Checklist voor release uitbrengen ***********
-//??? Vraagteken comments checken
+//??? Zoeken naar comments met drie vraagtekens.
+//??? DEBUG: Regels remarken
 //??? Build nummer ophogen
 //??? Config_01.c schonen en ethernet default op true
 //??? Config_15.c aanpassen
@@ -73,4 +74,4 @@
 // ============================================================================================================================
 
 #include <SD.h>
-#include <EthernetNodo.h>
+//#include <EthernetNodo.h>
