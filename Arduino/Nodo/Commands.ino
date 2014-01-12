@@ -621,6 +621,8 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
 
     case CMD_RAWSIGNAL_RECEIVE:
       Settings.RawSignalReceive=EventToExecute->Par1;
+      if(EventToExecute->Par2==VALUE_ON || EventToExecute->Par2==VALUE_OFF)
+        Settings.RawSignalChecksum=EventToExecute->Par2;
       break;
 
     case CMD_RAWSIGNAL_SAVE: // Geen Par1=Huidige inhoud opslaan. In andere gevallen de settine op VALUE_ON of VALUE_OFF instellen 
@@ -635,7 +637,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       else
         {
         Settings.RawSignalSave=EventToExecute->Par1;
-        Settings.RawSignalCleanUp=EventToExecute->Par2&0xff;
+        Settings.RawSignalChecksum=EventToExecute->Par2&0xff;
         if(EventToExecute->Par1==VALUE_ON)
           Settings.RawSignalReceive=VALUE_ON;
         }        

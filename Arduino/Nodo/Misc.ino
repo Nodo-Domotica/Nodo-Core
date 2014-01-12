@@ -305,7 +305,7 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
   boolean WaitMessage=false;
   #endif
 
-  Serial.println(F("DEBUG: Wait()"));
+  // Serial.println(F("DEBUG: Wait()"));
   
   // Initialiseer een Event en Transmissie
   struct NodoEventStruct Event;
@@ -359,7 +359,7 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
     Led(RED);
     }   
     
-  Serial.println(F("DEBUG: Wait() verlaten."));
+  // Serial.println(F("DEBUG: Wait() verlaten."));
 
   // als timeout, dan error terug geven
   if(TimeoutTimer<=millis())
@@ -437,10 +437,6 @@ boolean GetStatus(struct NodoEventStruct *Event)
   case VALUE_HWCONFIG: 
     Event->Par2=HW_Config;      
     break;        
-
-  case CMD_RAWSIGNAL_RECEIVE:
-    Event->Par1=Settings.RawSignalReceive;
-    break;
 
   #if CLOCK 
   case EVENT_CLOCK_DAYLIGHT:
@@ -544,6 +540,11 @@ boolean GetStatus(struct NodoEventStruct *Event)
 #if NODO_MEGA
   case CMD_RAWSIGNAL_SAMPLE:
     Event->Par1=Settings.RawSignalSample;
+    break;
+
+  case CMD_RAWSIGNAL_RECEIVE:
+    Event->Par1=Settings.RawSignalReceive;
+    Event->Par2=Settings.RawSignalChecksum;
     break;
 
   case CMD_DEBUG:
@@ -701,6 +702,7 @@ void ResetFactory(void)
   Settings.Log                        = VALUE_OFF;  
   Settings.RawSignalSave              = VALUE_OFF;  
   Settings.RawSignalCleanUp           = 0;  
+  Settings.RawSignalChecksum          = VALUE_ON;  
   Settings.Alias                      = VALUE_OFF;  
   Settings.Password[0]                = 0;
 

@@ -1,4 +1,4 @@
-#define NODO_BUILD                       675                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       677                                    // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                 7                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1                                    // Unit nummer van deze Nodo
@@ -609,6 +609,7 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define SYSTEM_COMMAND_QUEUE_SENDTO                      2                      // Dit is aankondiging reeks, dus niet het user comando "SendTo".
 #define SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW              3                      // Dit is aankondiging reeks, dus niet het user comando "EventlistShow".
 #define SYSTEM_COMMAND_QUEUE_EVENTLIST_WRITE             4                      // Dit is aankondiging reeks, dus niet het user comando "EventlistShow".
+#define SYSTEM_COMMAND_QUEUE_POLL                        5                      // Verzoek om een poll naar een andere Nodo die moet worden beantwoord.
 
 //****************************************************************************************************************************************
 
@@ -648,8 +649,8 @@ struct SettingsStruct
   byte    Log;
   byte    RawSignalSave;
   byte    RawSignalCleanUp;
+  byte    RawSignalChecksum;
   byte    Alias;
-  byte    Res1;
   byte    Res2;
   byte    Res3;
   byte    Res4;
@@ -762,10 +763,11 @@ struct RawSignalStruct                                                          
   byte Repeats;                                                                 // Aantal maal dat de pulsreeks verzonden moet worden bij een zendactie.
   byte Delay;                                                                   // Pauze in ms. na verzenden van Ã©Ã©n enkele pulsenreeks
   byte Multiply;                                                                // Pulses[] * Multiply is de echte tijd van een puls in microseconden
+  boolean RepeatChecksum;                                                       // Als deze vlag staat moet er eentweede signaal als checksum binnenkomen om een geldig event te zijn. 
   unsigned long Time;                                                           // Tijdstempel wanneer signaal is binnengekomen (millis())
   byte Pulses[RAW_BUFFER_SIZE+2];                                               // Tabel met de gemeten pulsen in microseconden gedeeld door RawSignal.Multiply. Dit scheelt helft aan RAM geheugen.
                                                                                 // Om legacy redenen zit de eerste puls in element 1. Element 0 wordt dus niet gebruikt.
-  }RawSignal={0,0,0,0,0,0L};
+  }RawSignal={0,0,0,0,0,0,0L};
 
 
 void setup() 
@@ -978,6 +980,7 @@ void loop()
       { 
       ProcessEventExt(&ReceivedEvent);                                          // verwerk binnengekomen event.
       Slice_1=0;
+      // Serial.print(F("DEBUG: loop()\n\n\n"));
       }
 
 
