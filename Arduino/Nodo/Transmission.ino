@@ -54,7 +54,6 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   // Als er een timeout optreedt, dan de blokkade opheffen. Dit ter voorkoming dat Nodo's oneindig wachten op vrije lijn.
   // Uitzondering is als de Nodo zelf de master was, dan deze mag altijd zenden.
 
-  // PrintNodoEvent("SendEvent(); ",ES);//$$$
 
 //  if(Transmission_SelectedUnit!=0 && Transmission_SelectedUnit!=Settings.Unit && !Transmission_ThisUnitIsMaster)
 //    {
@@ -74,6 +73,8 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
 
   // loop de plugins langs voor eventuele afhandeling van dit event.
   PluginCall(PLUGIN_EVENT_OUT, ES,0);
+
+  PrintNodoEvent("DEBUG: SendEvent():", ES);
 
   // Stuur afhankelijk van de instellingen het event door naar I2C, RF, IR. Eerst wordt het event geprint,daarna een korte wachttijd om
   // te zorgen dat er een minimale wachttijd tussen de signlen zit. Tot slot wordt het signaal verzonden.
