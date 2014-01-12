@@ -898,6 +898,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
 
         // Par1 als tekst en par2 als tekst
       case CMD_OUTPUT:
+      case CMD_RAWSIGNAL_RECEIVE:
         ParameterToView[0]=PAR1_TEXT;
         ParameterToView[1]=PAR2_TEXT;
         break;
@@ -924,7 +925,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         break;
 
       // Par1 als tekst en par2 niet
-      case CMD_RAWSIGNAL_RECEIVE:
       case CMD_SEND_EVENT:
       case CMD_LOCK:
       case CMD_DEBUG:
@@ -1207,9 +1207,9 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
       break; 
 
     case CMD_LOG:
-    case CMD_RAWSIGNAL_RECEIVE:
     case CMD_DEBUG:
     case CMD_ECHO:
+    case CMD_RAWSIGNAL_RECEIVE:
       ResultEvent->Type=NODO_TYPE_COMMAND;
       if(ResultEvent->Par1!=VALUE_OFF && ResultEvent->Par1!=VALUE_ON)
         error=MESSAGE_INVALID_PARAMETER;

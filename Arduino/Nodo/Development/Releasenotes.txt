@@ -26,20 +26,15 @@ R672:
 R675:
 - Aliassen worden nu ook via HTTP events doorgegeven. (Voorbereiding op nieuwe WebApp)
 
-R676:
+R677:
 - Div. aanpassingen ontvangst RawSignal signalen.
 - Bug in [Delay] Binnenkomende events verlengde onterecht de wachttijd.
 - Aanpassingen Led kleuren: Blauw=binnenkomend signaal, rood is verwerking.
-
+- [RawSignaReceive] heeft een 2e Parameter: On=Repeats worden gebruikt als checksum (default), Off=ieder individueel signaal geldig.
 
 ToDo:
-- Testen ontvangst IR signalen
-- Testen of herhaald binnenkomen van gelijke Nodo events correct verloopt.
-- Testen SendTo i.c.m. WaitFreRX
-- Testen Betrouwbaarheid I2C n.a.v. verschuiven prioriteir afhandeling ten gunste van IR/RF
-- Testen EventlistShow via RF/...
-- Testen Status via RF/...
-
-
-
+- Bug: ontvangst IR signalen werkt in deze release nog niet
+- Bug: Status via RF laat de Master-Nodo wachten na laatste element uit de lijst 
+- Testen: SendTo i.c.m. WaitFreRX
+- Testen: Betrouwbaarheid I2C n.a.v. verschuiven prioriteit afhandeling ten gunste van IR/RF
 

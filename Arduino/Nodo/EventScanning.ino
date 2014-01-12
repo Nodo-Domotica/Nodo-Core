@@ -66,30 +66,29 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
 
     if(Fetched)
       {
+      Led(BLUE);
+      SignalHash=(Event->Command<<24 | Event->Type<<16 | Event->Par1<<8) ^ Event->Par2;
       Event->Port=Fetched;
       Event->Direction=VALUE_DIRECTION_INPUT;
-      SignalHash=(Event->Command<<24 | Event->Type<<16 | Event->Par1<<8) ^ Event->Par2;
       Fetched=false;
-      Led(BLUE);
 
-      Serial.print(F("DEBUG: Fetched. SignalHash="));Serial.println(SignalHash,HEX);
-          
-      // Signaal is ontvangen. Slechts op voorwaarden mag deze leiden tot een event.
+      if(RawSignal.RepeatChecksum)RawSignal.Repeats=true;
       
-      // 1. Het is een Nodo signaal
+      // Serial.print(F("DEBUG: Fetched. SignalHash="));Serial.print(SignalHash,HEX);Serial.print(F(", RawSignal.Repeats="));Serial.println(RawSignal.Repeats);
+      
+      // 1. Het is een (niet reperterend) Nodo signaal
       if(Event->Type==NODO_TYPE_EVENT || Event->Type==NODO_TYPE_COMMAND || Event->Type==NODO_TYPE_SYSTEM)
-        Fetched=true;
-      
-      // 2. Het is een herhalend plugin ondersteund signaal dat niet recent eerder is binnengekomen
-      else if(RawSignal.Repeats && Event->Type==NODO_TYPE_PLUGIN_EVENT && (SignalHash!=EventHashPrevious || RepeatingTimer<millis())) 
-        Fetched=true;       
+        Fetched=true;      
 
-      // 3. Het is een RawSignal die herhaald (als checksum) eerder is binnengekomen, maar nog niet als event is verwerkt.  
-      else if(Event->Type==NODO_TYPE_RAWSIGNAL && SignalHash==SignalHashPrevious && (SignalHash!=EventHashPrevious || RepeatingTimer<millis())) 
+      // 2. Het (mogelijk reperterend) binnenkomende signaal is niet recent eerder binnengekomen. ==> Plugin signalen zoals: KAKU, NewKAKU, ...  
+      else if(!RawSignal.RepeatChecksum && SignalHash!=SignalHashPrevious && RepeatingTimer<millis()) 
+        Fetched=true;
+
+      // 3. Het is een herhalend signaal waarbij een herhaling wordt gebruikt als checksum. ==> Zoals: RawSignals  
+      else if(RawSignal.RepeatChecksum && SignalHash==SignalHashPrevious && (SignalHash!=EventHashPrevious || RepeatingTimer<millis())) 
         Fetched=true;
 
       SignalHashPrevious=SignalHash;
-
       
       if(Fetched)
         {
@@ -131,7 +130,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
           EventHashPrevious=SignalHash;
           if(RawSignal.Repeats)
             RepeatingTimer=millis()+SIGNAL_REPEAT_TIME;
-          PrintNodoEvent("DEBUG: ScanEvent(): Fetched", Event);
+          // PrintNodoEvent("DEBUG: ScanEvent(): Fetched", Event);
           return true;
           }
         }
