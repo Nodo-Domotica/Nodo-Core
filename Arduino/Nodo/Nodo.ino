@@ -59,7 +59,7 @@
 // Config_15.c => Deze is default bestemd voor een Nodo Small met unitnummer 15.
 // ============================================================================================================================
 
-#define CONFIG_FILE Config_10.c
+#define CONFIG_FILE Config_15.c
 
 
 // ============================================================================================================================
@@ -73,5 +73,5 @@
 //   heeft altijd de library voor de SDCard nodig. De Ethernet library kan eventueel worden geremarked.
 // ============================================================================================================================
 
-#include <SD.h>
+//#include <SD.h>
 //#include <EthernetNodo.h>
