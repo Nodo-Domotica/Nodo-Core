@@ -74,7 +74,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
 
       if(RawSignal.RepeatChecksum)RawSignal.Repeats=true;
       
-      // Serial.print(F("DEBUG: Fetched. SignalHash="));Serial.print(SignalHash,HEX);Serial.print(F(", RawSignal.Repeats="));Serial.println(RawSignal.Repeats);
+      // Serial.print(F("DEBUG: Fetched. SignalHash="));Serial.print(SignalHash,HEX);Serial.print(F(", RawSignal.Repeats="));Serial.print(RawSignal.Repeats);Serial.print(F(", RawSignal.RepeatChecksum="));Serial.println(RawSignal.RepeatChecksum);
       
       // 1. Het is een (niet reperterend) Nodo signaal
       if(Event->Type==NODO_TYPE_EVENT || Event->Type==NODO_TYPE_COMMAND || Event->Type==NODO_TYPE_SYSTEM)
@@ -130,6 +130,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
           EventHashPrevious=SignalHash;
           if(RawSignal.Repeats)
             RepeatingTimer=millis()+SIGNAL_REPEAT_TIME;
+
           // PrintNodoEvent("DEBUG: ScanEvent(): Fetched", Event);
           return true;
           }

@@ -32,9 +32,12 @@ R677:
 - Aanpassingen Led kleuren: Blauw=binnenkomend signaal, rood is verwerking.
 - [RawSignaReceive] heeft een 2e Parameter: On=Repeats worden gebruikt als checksum (default), Off=ieder individueel signaal geldig.
 
+R678:
+- Pollen naar Nodo's vindt nu niet tijdens iedere Boot plaats, maar slechts wanneer dit nodig is: Bij SendTo
+- Commando [Output] is de optie [All] verwijderd. Wordt vrijwel niet gebruikt en ook niet gedocumenteerd.
+- 
 ToDo:
-- Bug: ontvangst IR signalen werkt in deze release nog niet
-- Bug: Status via RF laat de Master-Nodo wachten na laatste element uit de lijst 
+- Status via RF laat de Master-Nodo wachten na laatste element uit de lijst. Bug of verbindingsprobleem? 
 - Testen: SendTo i.c.m. WaitFreRX
-- Testen: Betrouwbaarheid I2C n.a.v. verschuiven prioriteit afhandeling ten gunste van IR/RF
+- Testen: I2C n.a.v. aanpassen FetchSignal() voor IR/RF
 

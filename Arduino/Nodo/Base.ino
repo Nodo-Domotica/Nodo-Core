@@ -1,5 +1,5 @@
-#define NODO_BUILD                       677                                    // ??? Ophogen bij iedere Build / versiebeheer.
-#define NODO_VERSION_MINOR                 7                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
+#define NODO_BUILD                       678                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_VERSION_MINOR                 6                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1                                    // Unit nummer van deze Nodo
 #define HOME_NODO                          1                                    // Home adres van Nodo's die tot Ã©Ã©n groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
@@ -406,7 +406,7 @@ prog_char PROGMEM Msg_11[] = "Break.";
 prog_char PROGMEM Msg_12[] = "RawSignal saved.";
 prog_char PROGMEM Msg_13[] = "Unknown device.";
 prog_char PROGMEM Msg_14[] = "Plugin returned an error.";
-prog_char PROGMEM Msg_15[] = "Incompatibel event received.";
+prog_char PROGMEM Msg_15[] = "Incompatibel Nodo event.";
 
 // tabel die refereert aan de message strings
 PROGMEM const char *MessageText_tabel[]={Msg_0,Msg_1,Msg_2,Msg_3,Msg_4,Msg_5,Msg_6,Msg_7,Msg_8,Msg_9,Msg_10,Msg_11,Msg_12,Msg_13,Msg_14,Msg_15};

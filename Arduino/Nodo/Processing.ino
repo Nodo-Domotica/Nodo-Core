@@ -427,7 +427,8 @@ byte QueueSend(boolean fast)
 
   // De port waar de SendTo naar toe moet halen we uit de lijst met Nodo's die wordt onderhouden door de funktie NodoOnline();
   // als de Nodo nog niet bekend is, dan pollen we naar deze Nodo.
-  
+    
+  x=bitRead(HW_Config,HW_I2C);                                                  // Zet I2C tijdelijk aan
   do
     {
     Port=NodoOnline(Transmission_SendToUnit,0);
@@ -442,9 +443,10 @@ byte QueueSend(boolean fast)
 
       SendEvent(&Event, false, false, Settings.WaitFree==VALUE_ON);
 
-      Wait(3, false,0 , false);  
+      Wait(2, false,0 , false);  
       }
     }while(Port==0 && ++Retry<3);
+  bitWrite(HW_Config,HW_I2C,x);
 
   
   if(Port!=0)
