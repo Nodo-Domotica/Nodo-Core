@@ -12,8 +12,7 @@
 #define WAIT_FREE_RX_WINDOW             1000                                    // minimale wachttijd wanneer wordt gewacht op een vrije RF of IR band.
 #define WAIT_FREE_RX_TIMEOUT            5000                                    // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
 #define MIN_PULSE_LENGTH                  50                                    // Pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
-#define SIGNAL_TIMEOUT                     5                                    //??? // na deze tijd in mSec. wordt een signaal als beeindigd beschouwd.
-//???#define SIGNAL_TIMEOUT_IR                 10 // na deze tijd in mSec. wordt een IR signaal als beeindigd beschouwd.
+#define SIGNAL_TIMEOUT                     5                                    // na deze tijd in mSec. wordt een signaal als beeindigd beschouwd.
 #define SIGNAL_REPEAT_TIME              1000                                    // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF/IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
 #define PULSE_DEBOUNCE_TIME               10                                    // pulsen kleiner dan deze waarde in milliseconden worden niet geteld. Bedoeld om verstoringen a.g.v. ruis of dender te voorkomen
 #define PULSE_TRANSITION             FALLING                                    // FALLING of RISING: Geeft aan op welke flank de PulseCounter start start met tellen. Default FALLING
@@ -39,6 +38,8 @@ byte dummy=1;                                                                   
 #include <EEPROM.h>
 #include <WireNodo.h>
 
+
+// t.b.v. includen Config_xx.c files
 #define stringify(x) #x
 #define CONFIGFILE2(a, b) stringify(a/Config/b)
 #define CONFIGFILE(a, b) CONFIGFILE2(a, b)
@@ -108,7 +109,7 @@ byte dummy=1;                                                                   
 #define CMD_FILE_EXECUTE                52
 #define CMD_FILE_GET_HTTP               53
 #define CMD_FILE_LIST                   54
-#define CMD_FILE_LOG                    55
+#define CMD_RES_55                      55 //??? reserve
 #define CMD_FILE_SHOW                   56
 #define CMD_FILE_WRITE                  57
 #define VALUE_FREEMEM                   58
@@ -280,7 +281,7 @@ prog_char PROGMEM Cmd_51[]="FileErase";
 prog_char PROGMEM Cmd_52[]="FileExecute";
 prog_char PROGMEM Cmd_53[]="FileGetHTTP";
 prog_char PROGMEM Cmd_54[]="FileList";
-prog_char PROGMEM Cmd_55[]="FileLog";
+prog_char PROGMEM Cmd_55[]="";//??? reserve
 prog_char PROGMEM Cmd_56[]="FileShow";
 prog_char PROGMEM Cmd_57[]="FileWrite";
 prog_char PROGMEM Cmd_58[]="FreeMem";

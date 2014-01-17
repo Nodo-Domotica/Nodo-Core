@@ -35,7 +35,12 @@ R677:
 R678:
 - Pollen naar Nodo's vindt nu niet tijdens iedere Boot plaats, maar slechts wanneer dit nodig is: Bij SendTo
 - Commando [Output] is de optie [All] verwijderd. Wordt vrijwel niet gebruikt en ook niet gedocumenteerd.
-- 
+
+R679:
+- Commando [FileLog] vervallen. Met [Log] , [FileWrite] en [FileWriteLine] hebben we alternatieven.
+- Bug opgelost in commando [FileWriteLine]
+
+ 
 ToDo:
 - Status via RF laat de Master-Nodo wachten na laatste element uit de lijst. Bug of verbindingsprobleem? 
 - Testen: SendTo i.c.m. WaitFreRX
