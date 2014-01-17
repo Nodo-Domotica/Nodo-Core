@@ -70,25 +70,31 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       SignalHash=(Event->Command<<24 | Event->Type<<16 | Event->Par1<<8) ^ Event->Par2;
       Event->Port=Fetched;
       Event->Direction=VALUE_DIRECTION_INPUT;
-      Fetched=false;
+      Fetched=0;
 
       if(RawSignal.RepeatChecksum)RawSignal.Repeats=true;
+            
+      // Er zijn een aantal situaties die moeten leiden te een event. Echter er zijn er ook die (nog) niet mogen leiden 
+      // tot een event en waar het binnengekomen signaal moet worden onderdrukt.
       
-      // Serial.print(F("DEBUG: Fetched. SignalHash="));Serial.print(SignalHash,HEX);Serial.print(F(", RawSignal.Repeats="));Serial.print(RawSignal.Repeats);Serial.print(F(", RawSignal.RepeatChecksum="));Serial.println(RawSignal.RepeatChecksum);
-      
-      // 1. Het is een (niet reperterend) Nodo signaal
+      // 1. Het is een (niet reperterend) Nodo signaal => Alle gevallen doorlaten
       if(Event->Type==NODO_TYPE_EVENT || Event->Type==NODO_TYPE_COMMAND || Event->Type==NODO_TYPE_SYSTEM)
-        Fetched=true;      
+        Fetched=1;      
 
-      // 2. Het (mogelijk reperterend) binnenkomende signaal is niet recent eerder binnengekomen. ==> Plugin signalen zoals: KAKU, NewKAKU, ...  
-      else if(!RawSignal.RepeatChecksum && SignalHash!=SignalHashPrevious && RepeatingTimer<millis()) 
-        Fetched=true;
+      // 2. Het (mogelijk reperterend) binnenkomende signaal is niet recent eerder binnengekomen, zoals plugin signalen als KAKU, NewKAKU, ... => Herhalingen onderdrukken  
+      else if(!RawSignal.RepeatChecksum && (SignalHash!=SignalHashPrevious || RepeatingTimer<millis())) 
+        Fetched=2;
 
-      // 3. Het is een herhalend signaal waarbij een herhaling wordt gebruikt als checksum. ==> Zoals: RawSignals  
+      // 3. Het is een herhalend signaal waarbij een herhaling wordt gebruikt als checksum zoals RAwSignals => Pas na twee gelijke signalen een event.
       else if(RawSignal.RepeatChecksum && SignalHash==SignalHashPrevious && (SignalHash!=EventHashPrevious || RepeatingTimer<millis())) 
-        Fetched=true;
+        Fetched=3;
+
+      // Serial.print(F("DEBUG: Fetched. SignalHash="));Serial.print(SignalHash,HEX);Serial.print(F(", RawSignal.Repeats="));Serial.print(RawSignal.Repeats);Serial.print(F(", RawSignal.RepeatChecksum="));Serial.print(RawSignal.RepeatChecksum);Serial.print(F(", RepeatingTimer>millis()="));Serial.print(RepeatingTimer>millis());Serial.print(F(", Fetched="));Serial.println(Fetched);
 
       SignalHashPrevious=SignalHash;
+
+      if(RawSignal.Repeats)
+        RepeatingTimer=millis()+SIGNAL_REPEAT_TIME;
       
       if(Fetched)
         {
@@ -122,14 +128,12 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
         // zodat de communicatie niet wordt verstoord.  
         if(Event->DestinationUnit!=0)
           Transmission_SelectedUnit = Event->DestinationUnit;
-    
+
         // Als het Nodo event voor deze unit bestemd is, dan klaar. Zo niet, dan terugkeren met een false
         // zodat er geen verdere verwerking plaatsvindt.
         if(Event->DestinationUnit==0 || Event->DestinationUnit==Settings.Unit)
           {
           EventHashPrevious=SignalHash;
-          if(RawSignal.Repeats)
-            RepeatingTimer=millis()+SIGNAL_REPEAT_TIME;
 
           // PrintNodoEvent("DEBUG: ScanEvent(): Fetched", Event);
           return true;
