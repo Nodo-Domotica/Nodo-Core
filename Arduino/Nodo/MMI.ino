@@ -40,7 +40,7 @@ int ExecuteLine(char *Line, byte Port)
       PrintString(ProgmemString(Text_22),Port);
       }
     if(TempLogFile[0]!=0)
-      FileWriteLine("",TempLogFile,"DAT",Line, false); // Extra logfile op verzoek van gebruiker
+      FileWriteLine("",TempLogFile,"DAT",Line, false);
     }
   else
     {
@@ -229,13 +229,6 @@ int ExecuteLine(char *Line, byte Port)
               break;
               }  
             
-            case CMD_FILE_LOG:
-              EventToExecute.Type=NODO_TYPE_COMMAND;
-              Command[9]=0; // voor de zekerheid string afkappen.
-              if(!GetArgv(Command,TempLogFile,2));
-                TempLogFile[0]=0;
-              break;
-            
             case CMD_FILE_ERASE:      
               if(GetArgv(Command,TmpStr1,2))// ??? alles wissen nog inbouwen
                 FileErase("",TmpStr1,"DAT");
@@ -421,7 +414,9 @@ int ExecuteLine(char *Line, byte Port)
             case CMD_FILE_WRITE_LINE:
               if(GetArgv(Command,TmpStr1,2) && strlen(TmpStr1)<=8)
                 {
-                FileWriteLine("", TmpStr1, "DAT", Line+LinePos+1, false);
+                x=StringFind(Line,TmpStr1)+strlen(TmpStr1);
+                while(Line[x]==32)x++;
+                FileWriteLine("",TmpStr1, "DAT", Line+x, false);
                 LinePos=LineLength+1; // ga direct naar einde van de regel.
                 }
               else
@@ -769,10 +764,6 @@ void PrintString(char* LineToPrint, byte Port)
     }
   #endif
   
-  // FileLog wordt hier uitgevoerd.
-  if(TempLogFile[0]!=0)
-    if(bitRead(HW_Config,HW_SDCARD))
-      FileWriteLine("",TempLogFile,"DAT",LineToPrint, false); // Extra logfile op verzoek van gebruiker: CMD_FILE_LOG
   }
   
 
