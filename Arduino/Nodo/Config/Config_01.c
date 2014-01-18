@@ -18,24 +18,23 @@
 #define PLUGIN_002
 #define PLUGIN_002_CORE
 
-// RGB-Led aansturing
-#define PLUGIN_023
-#define PLUGIN_023_CORE
+// Vochtigheidssensor / Temperatuursensor DHT-22
+#define PLUGIN_006
+//#define PLUGIN_006_CORE 22
 
 // Temperatuursensor Dallas DS18B20
 #define PLUGIN_005
-
-//Luchtdruksensor BPM085
-#define PLUGIN_020
 
 // Oude UserEvents Nodo Due compatibiliteit
 #define PLUGIN_007
 #define PLUGIN_007_CORE
 
-// Vonchtigheidssensor / Temperatuursensor DHT-22
-#define PLUGIN_023
-#define PLUGIN_023_CORE 22
+//Luchtdruksensor BPM085
+#define PLUGIN_020
 
+// RGB-Led aansturing
+#define PLUGIN_023
+#define PLUGIN_023_CORE
 
 
 

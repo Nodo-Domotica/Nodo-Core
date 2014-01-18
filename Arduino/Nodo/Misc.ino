@@ -127,11 +127,11 @@ void RaiseMessage(byte MessageCode, unsigned long Option)
     PrintEvent(&TempEvent, VALUE_ALL);
     #endif
   
-    // sommige meldingen mogen niet worden verzonden.
-    switch(MessageCode)
+    switch(MessageCode)                                                         // sommige meldingen mogen niet worden verzonden.
       {
-      case MESSAGE_VERSION_ERROR:      // gaat rondzingen van events tussen Nodo's opleveren.
-      case MESSAGE_EXECUTION_STOPPED:  // Slechts een boodschap voor gebruiker. Onnodig om te versturen.
+      case MESSAGE_BREAK:                                                       // normale break
+      case MESSAGE_VERSION_ERROR:                                               // gaat rondzingen van events tussen Nodo's opleveren.
+      case MESSAGE_EXECUTION_STOPPED:                                           // Slechts een boodschap voor gebruiker. Onnodig om te versturen.
         return;
       }
   
@@ -291,7 +291,7 @@ void Led(byte Color)
  * Wachtloop. Als <EventsInQueue>=true dan worden voorbijkomende events in de queue geplaatst
  *
  * wachtloop die wordt afgebroken als:
- * - <Timeout> seconden zijn voorbij. In dit geval geeft deze funktie een <false> terug.
+ * - <Timeout> seconden zijn voorbij. In dit geval geeft deze funktie een <false> terug. (Timeout verlengd tijd als geldige events binnenkomen!)
  * - Het opgegeven event <WaitForEvent> voorbij is gekomen
  * - De ether weer is vrijgegeven voor Nodo communicatie (WaitForFreeTransmission=true)
  * - Er is een event opgevangen waar de TRANSMISSION_QUEUE_NEXT vlag NIET staat.
@@ -323,16 +323,14 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
       
     if(ScanEvent(&Event))
       {            
-      // Zolang er events binnen blijven komen is er nog niets aan de hand.
       #if NODO_MEGA
-      MessageTimer=millis() + 5000;
+      MessageTimer=millis() + 5000;                                             // Als wachten langer duurt dan 5sec. dan melding weergeven aan gebruiker.
       #endif
+
+      // PrintNodoEvent("DEBUG: Wait() Binnengekomen event",&Event);
       
-      if(WaitForFreeTransmission)
-        TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
-      
-      // Events die voorbij komen in de queue plaatsen.
-      QueueAdd(&Event);
+      TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;                    // Zolang er event binnenkomen geen timeout.
+      QueueAdd(&Event);                                                         // Events die voorbij komen in de queue plaatsen.
 
       if(EndSequence && (Event.Flags & TRANSMISSION_QUEUE_NEXT)==0)
         break;
@@ -738,7 +736,8 @@ void Status(struct NodoEventStruct *Request)
   boolean DisplayLocal=false;
   struct NodoEventStruct Result;
 
-
+  byte teller=0;//??? mag weg! debugging
+  
   #if NODO_MEGA          
   char *TempString=(char*)malloc(INPUT_LINE_SIZE);
   boolean dhcp=(Settings.Nodo_IP[0] + Settings.Nodo_IP[1] + Settings.Nodo_IP[2] + Settings.Nodo_IP[3])==0;
@@ -961,8 +960,8 @@ void Status(struct NodoEventStruct *Request)
           {
           if(!DisplayLocal)
             {
-            Result.Flags=TRANSMISSION_VIEW | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
-            HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS_Q+millis();              
+            Result.Flags=TRANSMISSION_VIEW;//??? | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
+            HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS_Q+millis(); // wordt dit niet afgevangen in de SendEvent???              
             SendEvent(&Result,false,false,false);
             }            
   

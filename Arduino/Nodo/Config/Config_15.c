@@ -12,12 +12,16 @@
 #define NODO_MEGA    false // true = Nodo Mega, false=Nodo-Small
 
 // Kaku              : Klik-Aan-Klik-Uit
-// #define PLUGIN_001
-// #define PLUGIN_001_CORE
+#define PLUGIN_001
+#define PLUGIN_001_CORE
 
 // NewKAKU           : Klik-Aan-Klik-Uit met automatische codering. Tevens bekend als Intertechno.
 // #define PLUGIN_002
 // #define PLUGIN_002_CORE
+
+// Temperatuursensor Dallas DS18B20
+#define PLUGIN_005
+#define PLUGIN_005_CORE
 
 // DTH-22 Vocht/Temperatuursensor
 #define PLUGIN_006
@@ -28,6 +32,6 @@
 #define PLUGIN_020_CORE 
 
 // RGB-Led aansturing
-// #define PLUGIN_023
-// #define PLUGIN_023_CORE
-// #define PLUGIN_023_CORE_RGBLED
+#define PLUGIN_023
+#define PLUGIN_023_CORE
+#define PLUGIN_023_CORE_RGBLED
