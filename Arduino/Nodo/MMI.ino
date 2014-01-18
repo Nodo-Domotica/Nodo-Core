@@ -160,6 +160,7 @@ int ExecuteLine(char *Line, byte Port)
                     Transmission_SendToFast=true;
                   }
                 }
+              EventToExecute.Command=0;      
               break;    
         
             case CMD_EVENTLIST_WRITE:
@@ -415,7 +416,7 @@ int ExecuteLine(char *Line, byte Port)
               if(GetArgv(Command,TmpStr1,2) && strlen(TmpStr1)<=8)
                 {
                 x=StringFind(Line,TmpStr1)+strlen(TmpStr1);
-                while(Line[x]==32)x++;
+                while(Line[x]==32 || Line[x]==' ;')x++;
                 FileWriteLine("",TmpStr1, "DAT", Line+x, false);
                 LinePos=LineLength+1; // ga direct naar einde van de regel.
                 }
@@ -1123,7 +1124,13 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
           // Een float en een unsigned long zijn beide 4bytes groot. We gebruiken ruimte van Par2 om een float in op te slaan
           float f;
           memcpy(&f, &Event->Par2, 4);
-          dtostrf(f, 0, 2,EventString+strlen(EventString)); // Kaboem... 2100 bytes programmacode extra ! Gelukkig alleen voor de mega.
+          
+          // Als de float (bij benadering) .00 is, dan alleen de cijfers voor de komma weergeven.
+          x=0;
+          if((((int)(f*(1000))-((int)f)*(1000)))!=0)
+            x=3;
+            
+          dtostrf(f, 0, x,EventString+strlen(EventString)); // Kaboem... 2100 bytes programmacode extra ! Gelukkig alleen voor de mega.
           break;
 
         case PAR2_INT_HEX:

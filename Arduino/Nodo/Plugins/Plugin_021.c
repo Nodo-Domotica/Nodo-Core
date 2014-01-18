@@ -22,7 +22,7 @@
 \*********************************************************************************************/
 
 #define PLUGIN_ID 21
-#define PLUGIN_NAME "LCDI2CWrite"
+#define PLUGIN_NAME "LCDWrite"
 
 prog_char PROGMEM LCD_01[] = "Nodo Domotica";
 prog_char PROGMEM LCD_02[] = "Mega R:%03d U:%d";
@@ -106,58 +106,58 @@ uint8_t _backlightval=LCD_BACKLIGHT;
 #endif
 
 boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
-{
- boolean success=false;
+  {
+  boolean success=false;
 
- switch(function)
- {
+  switch(function)
+   {
 #ifdef PLUGIN_021_CORE
    case PLUGIN_INIT:
      {
-       _displayfunction = LCD_2LINE;
-       _numlines = 2;
-       delay(50); 
-       // Now we pull both RS and R/W low to begin commands
-       LCD_I2C_expanderWrite(_backlightval);	// reset expanderand turn backlight off (Bit 8 =1)
-       delay(1000);
+     _displayfunction = LCD_2LINE;
+     _numlines = 2;
+     delay(50); 
+     // Now we pull both RS and R/W low to begin commands
+     LCD_I2C_expanderWrite(_backlightval);	// reset expanderand turn backlight off (Bit 8 =1)
+     delay(1000);
 
-       //put the LCD into 4 bit mode, this is according to the hitachi HD44780 datasheet, figure 24, pg 46
-       LCD_I2C_write4bits(0x03 << 4);        // we start in 8bit mode, try to set 4 bit mode
-       delayMicroseconds(4500);              // wait min 4.1ms
-       LCD_I2C_write4bits(0x03 << 4);        // second try
-       delayMicroseconds(4500);              // wait min 4.1ms
-       LCD_I2C_write4bits(0x03 << 4);        // third go!
-       delayMicroseconds(150);
-       LCD_I2C_write4bits(0x02 << 4);        // finally, set to 4-bit interface
-       LCD_I2C_command(LCD_FUNCTIONSET | _displayfunction);              // set # lines, font size, etc.
-       _displaycontrol = LCD_DISPLAYON | LCD_CURSOROFF | LCD_BLINKOFF;   // turn the display on with no cursor or blinking default
-       LCD_I2C_display();
-       LCD_I2C_clear();                                                  // clear it off
-       _displaymode = LCD_ENTRYLEFT | LCD_ENTRYSHIFTDECREMENT;           // Initialize to default text direction (for roman languages)
-       LCD_I2C_command(LCD_ENTRYMODESET | _displaymode);                 // set the entry mode
-       LCD_I2C_home();
+     //put the LCD into 4 bit mode, this is according to the hitachi HD44780 datasheet, figure 24, pg 46
+     LCD_I2C_write4bits(0x03 << 4);        // we start in 8bit mode, try to set 4 bit mode
+     delayMicroseconds(4500);              // wait min 4.1ms
+     LCD_I2C_write4bits(0x03 << 4);        // second try
+     delayMicroseconds(4500);              // wait min 4.1ms
+     LCD_I2C_write4bits(0x03 << 4);        // third go!
+     delayMicroseconds(150);
+     LCD_I2C_write4bits(0x02 << 4);        // finally, set to 4-bit interface
+     LCD_I2C_command(LCD_FUNCTIONSET | _displayfunction);              // set # lines, font size, etc.
+     _displaycontrol = LCD_DISPLAYON | LCD_CURSOROFF | LCD_BLINKOFF;   // turn the display on with no cursor or blinking default
+     LCD_I2C_display();
+     LCD_I2C_clear();                                                  // clear it off
+     _displaymode = LCD_ENTRYLEFT | LCD_ENTRYSHIFTDECREMENT;           // Initialize to default text direction (for roman languages)
+     LCD_I2C_command(LCD_ENTRYMODESET | _displaymode);                 // set the entry mode
+     LCD_I2C_home();
 
-       LCD_I2C_printline(0,ProgmemString(LCD_01));
-       char TempString[18];
-       #if NODO_MEGA
-        sprintf(TempString,ProgmemString(LCD_02), NODO_BUILD, Settings.Unit);
-       #else
-         sprintf(TempString,ProgmemString(LCD_03), NODO_BUILD, Settings.Unit);
-       #endif
-       LCD_I2C_printline(1,TempString);
+     LCD_I2C_printline(0,ProgmemString(LCD_01));
+     char TempString[18];
+     #if NODO_MEGA
+      sprintf(TempString,ProgmemString(LCD_02), NODO_BUILD, Settings.Unit);
+     #else
+       sprintf(TempString,ProgmemString(LCD_03), NODO_BUILD, Settings.Unit);
+     #endif
+     LCD_I2C_printline(1,TempString);
      }
   case PLUGIN_COMMAND:
      {
      if ((event->Par1 == 1) || (event->Par1 == 2))
        {
-         if (event->Par2 == 0) LCD_I2C_printline(event->Par1-1,"");
-         if ((event->Par2 > 0) && (event->Par2 <= LCDI2C_MSG_MAX))
-           {
-             char TempString[18];
-             strcpy_P(TempString,(char*)pgm_read_word(&(LCDText_tabel[event->Par2-1])));
-             LCD_I2C_printline(event->Par1-1, TempString);
-           }
-         success=true;
+       if (event->Par2 == 0) LCD_I2C_printline(event->Par1-1,"");
+       if ((event->Par2 > 0) && (event->Par2 <= LCDI2C_MSG_MAX))
+         {
+         char TempString[18];
+         strcpy_P(TempString,(char*)pgm_read_word(&(LCDText_tabel[event->Par2-1])));
+         LCD_I2C_printline(event->Par1-1, TempString);
+         }
+       success=true;
        }
      break;
      }

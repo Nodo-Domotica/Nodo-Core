@@ -50,28 +50,41 @@
 
 
 // ============================================================================================================================
-// Bij gebruik van meerdere Nodo's kan voor iedere Nodo een eigen configutatie file worden aangemaakt. Deze
-// files bevinden zich in de directory ../Config. In deze configuratiefiles kunnen settings worden opgegeven die worden 
-// meegecompileerd of kunnen devices worden opgegeven waar de Nodo mee moet kunnen communiceren.
+// We kennen twee type Nodo's:
+//
+// Nodo-Mega:   Een Nodo op basis van een Arduino Mega met een ATMega1280 of 2560 processor. Deze Nodo heeft o.a. de mogelijkheid
+//              tot ethernet communicatie.
+//
+// Nodo-Small:  Dit is een kleine Nodo die wordt vooral wordt gebruikt als satelliet in combinatie met een centrale Nodo-Mega.
+//              Een Nodo-Small maakt gebruik van een Arduino met een ATMega328 processor. (Nano, Pro,Duemillanove, Uno, etc)                                                                                                                
+//
+// Bij gebruik van meerdere Nodo's kan voor iedere Nodo een eigen configutatie file worden aangemaakt. In deze configuratie files
+// kan worden aangegeven welke plugins worden gebruikt en kunnen eventueel speciale instellingen worden opgegeven die mee
+// gaan met het compileren van de code.
+// Configuratie bestanden bevinden zich in de directory ../Config. In deze configuratiefiles kunnen settings worden opgegeven 
+// die worden meegecompileerd of kunnen devices worden opgegeven waar de Nodo mee moet kunnen communiceren.
 // Default zijn de volgende configuratie files gemaakt:
 //
 // Config_01.c => Deze is default bestemd voor een Nodo Mega met unitnummer 1.
 // Config_15.c => Deze is default bestemd voor een Nodo Small met unitnummer 15.
-// ============================================================================================================================
-
-#define CONFIG_FILE Config_10.c
-
-
-// ============================================================================================================================
-// Met onderstaande includes kan worden aangegeven of je gebruik maakt van een ethernetkaart. 
+//
+// Alle regels gemarkeerd met een '//' worden niet meegecompilileerd.
+// 
 // LET OP:
 //  
-// - Gebruik je een Arduino-Uno/Duemillanove met daarop de code voor een Nodo-Small, plaats dan altijd een "//" markeringen voorafgaand aan
-//   onderstaande twee regels. 
+// -  Het unitnummer van de Nodo zal pas veranderen nadat de Nodo software voor het eerst wordt geinstalleerd of de Nodo het 
+//    commando [Reset] uitvoert. Dus niet altijd na een compilatie!
+// -  Indien gewenst kunnen de config files ook voor andere unitnummers worden aangemaakt (1..31)
 //
-// - Gebruik je een Arduino-Mega op basis van een ATMega2560 chip, dan de '//'  voor beide regels weglaten. De Mega 
-//   heeft altijd de library voor de SDCard nodig. De Ethernet library kan eventueel worden geremarked.
 // ============================================================================================================================
 
-#include <SD.h>
-//#include <EthernetNodo.h>
+
+// ================================= Unit-1: Configuratie voor de Nodo-Mega ===================================================
+#define CONFIG_FILE Config_01.c
+#include <SD.h>                                 // Deze include noodzakelijk voor een Nodo-Mega. Niet gebruiken voor een Small!
+// #include <EthernetNodo.h>                       // Deze include optioneel als Ethernet wordt gebruikt. Niet gebruiken voor een Small!
+
+
+// ================================= Unit-15: Configuratie voor de Nodo-Small =================================================
+// #define CONFIG_FILE Config_15.c
+

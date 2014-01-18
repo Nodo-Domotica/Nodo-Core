@@ -39,10 +39,15 @@ R678:
 R679:
 - Commando [FileLog] vervallen. Met [Log] , [FileWrite] en [FileWriteLine] hebben we alternatieven.
 - Bug opgelost in commando [FileWriteLine]
+- Issue 616:	BreakOn... laat verwerking script stoppen
 
+R680:
+- Issue 792:	'Wire' was not declared in this scope voor plugin 20 en 21.
+- Issue 803:	Event ClockDaylight komt niet na boot
+- Gehele getallen worden niet meer als een float met cijfers achter de komma weergegeven.
  
 ToDo:
 - Status via RF laat de Master-Nodo wachten na laatste element uit de lijst. Bug of verbindingsprobleem? 
-- Testen: SendTo i.c.m. WaitFreRX
+- Testen: SendTo i.c.m. WaitFreeRX
 - Testen: I2C n.a.v. aanpassen FetchSignal() voor IR/RF
 

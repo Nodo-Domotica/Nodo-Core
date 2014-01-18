@@ -76,18 +76,37 @@ byte ProcessEvent(struct NodoEventStruct *Event)
       }
     }
   
-  // Events die de QUEUE vlag hebben staan hoorden oorspronkelijk tot een reeks die verzonden is
-  // met QueueSend(). Op deze plaats in de code hebben deze events geen betekenis en dus volledig negeren.
-  if(Continue && (Event->Flags & TRANSMISSION_QUEUE))
-    {
-    QueueReceive(Event);
-    Continue=false;
-    }
 
   if(Event->Type == NODO_TYPE_SYSTEM)
     {                       
+    switch(Event->Command)
+      {
+      case SYSTEM_COMMAND_QUEUE_SENDTO:
+        // Serial.println(F("\n\nDEBUG: SYSTEM_COMMAND_QUEUE_SENDTO ontvangen.")); 
+        QueueReceive(Event);
+        break;
+
+      #if NODO_MEGA
+      case SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW:                                 // Normaal deel van een SendTo en dus al in de Wait afgevangen
+        // Serial.println(F("\n\nDEBUG: ProcessEvent() SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW ontvangen.")); 
+        Wait(3, false,0 , false);  
+        break;
+      #endif
+      }
+    }
+
+
+  if(Continue && (Event->Flags & TRANSMISSION_QUEUE_NEXT))
+    {
+    Wait(2, false,0 , false);  
     Continue=false;
     }
+
+
+  // Events die nu nog de QUEUE vlag hebben staan hoorden oorspronkelijk tot een reeks die verzonden is
+  // met vlag TRANSMISSION_QUEUE_NEXT. Op deze plaats in de code hebben deze events geen betekenis en dus volledig negeren.
+  if(Continue && (Event->Flags & TRANSMISSION_QUEUE))
+    Continue=false;
 
 
   #if NODO_MEGA  
@@ -290,7 +309,7 @@ boolean QueueAdd(struct NodoEventStruct *Event)
     char *TempString=(char*)malloc(INPUT_COMMAND_SIZE);
     char *TempString2=(char*)malloc(INPUT_LINE_SIZE);
     
-    if(Event->Type!=NODO_TYPE_SYSTEM && Event->Flags&TRANSMISSION_VIEW)
+    if(Event->Flags & TRANSMISSION_VIEW)                                        // Als alleen weergeven, dan direct doen en niet in de queue plaatsen.
       {
       Event2str(Event, TempString);  
       if(Settings.Alias==VALUE_ON)
@@ -424,7 +443,6 @@ byte QueueSend(boolean fast)
   unsigned long ID=millis();
   struct NodoEventStruct Event;
 
-
   // De port waar de SendTo naar toe moet halen we uit de lijst met Nodo's die wordt onderhouden door de funktie NodoOnline();
   // als de Nodo nog niet bekend is, dan pollen we naar deze Nodo.
     
@@ -460,6 +478,7 @@ byte QueueSend(boolean fast)
         {
         switch(Queue[x].Command)
           {
+          case CMD_UNIT_SET:
           case CMD_RESET:
           case CMD_REBOOT:
             fast=true;
@@ -494,27 +513,29 @@ byte QueueSend(boolean fast)
     byte SendQueuePosition=QueuePosition;
     QueuePosition=0;
     Retry=0;
-    // Serial.print(F("DEBUG: QueueSend() Te verzenden aantal events="));Serial.println(SendQueuePosition); 
     
     
     // Eerste fase: Zorg dat de inhoud van de queue correct aan komt op de slave. Activeer aan slave zijde de QueueReceive()
-    // Verzend in deze activering tevens het aantal events datdat vanuit de queue verzonden zal worden naar de Slave. Eveneens wordt
+    // Verzend in deze activering tevens het aantal events dat vanuit de queue verzonden zal worden naar de Slave. Eveneens wordt
     // er een ID verzonden. Deze unieke waarde zorgt er voor dat bij een eventuele re-send de reeks niet nogmaals aankomt op de 
     // slave.
     do
       {
+      // Serial.print(F("\n\nDEBUG: QueueSend() Te verzenden aantal events="));Serial.print(SendQueuePosition);Serial.print(F(", ID="));Serial.println(ID); 
+
       ClearEvent(&Event);
       Event.DestinationUnit     = Transmission_SendToUnit;
       Event.SourceUnit          = Settings.Unit;
       Event.Port                = Port;
       Event.Type                = NODO_TYPE_SYSTEM;      
       Event.Command             = SYSTEM_COMMAND_QUEUE_SENDTO;      
-      Event.Par1                = SendQueuePosition+1;                            // Aantal te verzenden events in de queue. Wordt later gecheckt en teruggezonden in de confirm. +1 omdat DIT event ook in de queue komt.
+      Event.Par1                = SendQueuePosition;                            // Aantal te verzenden events in de queue. Wordt later gecheckt en teruggezonden in de confirm. +1 omdat DIT event ook in de queue komt.
       Event.Par2                = ID;
-      Event.Flags               = TRANSMISSION_LOCK | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_WAIT;
-      SendEvent(&Event,false,false,Settings.WaitFree==VALUE_ON);                  // Alleen de eerste vooraf laten gaan door een WaitFree (indien setting zo staat ingesteld);
+      Event.Flags               = TRANSMISSION_LOCK;
+      // PrintNodoEvent("DEBUG: QueueSend() Verzend SYSTEM_COMMAND_QUEUE_SENDTO",&Event);
+      SendEvent(&Event,false,false,Settings.WaitFree==VALUE_ON);                // Alleen de eerste vooraf laten gaan door een WaitFree (indien setting zo staat ingesteld);
   
-      for(x=0;x<SendQueuePosition;x++)                                            // Verzend alle events uit de queue. Alleen de bestemmings Nodo zal deze events in de queue plaatsen
+      for(x=0;x<SendQueuePosition;x++)                                          // Verzend alle events uit de queue. Alleen de bestemmings Nodo zal deze events in de queue plaatsen
         {
         ClearEvent(&Event);
         Event.DestinationUnit     = Transmission_SendToUnit;
@@ -533,6 +554,7 @@ byte QueueSend(boolean fast)
         // In geval van verzending naar queue zal deze tijd niet van toepassing zijn omdat er dan geen verwerkingstijd nodig is.
         // Tussen de events die de queue in gaan een kortere delaytussen verzendingen.
         HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS_Q+millis();        
+        // PrintNodoEvent("DEBUG: QueueSend() Verzend event",&Event);
         SendEvent(&Event,false,false,false);
         }
       
@@ -543,16 +565,18 @@ byte QueueSend(boolean fast)
       Event.Command             = SYSTEM_COMMAND_CONFIRMED;
       Event.Type                = NODO_TYPE_SYSTEM;
   
-      // Serial.print(F("DEBUG: QueueSend() => Wait() op SYSTEM_COMMAND_CONFIRMED."));Serial.println(x);
+      // Serial.print(F("DEBUG: QueueSend() => Wait() wacht op SYSTEM_COMMAND_CONFIRMED. Verzonden events="));Serial.println(x);
       if(Wait(10,false,&Event,false))
-        if(x==(Event.Par1-1))                                                     // Verzonden events gelijk aan ontvangen events? -1 omdat aan de Slave zijde het eerste element in de queue geen deel uit maakt van de SendTo events.
+        if(x==(Event.Par1))                                                     // Verzonden events gelijk aan ontvangen events? -1 omdat aan de Slave zijde het eerste element in de queue geen deel uit maakt van de SendTo events.
           error=0;
   
-      // Serial.print(F("DEBUG: QueueSend() Wachten verlaten. Error="));Serial.println(error);  
       
-      if(error)                                                                   // Als er een timeout was of het aantal events is niet correct bevestigd, dan de gebruiker een waarschuwing tonen 
-        delay(1000);                                                              // kleine pauze om zeker te weten dat de ontvanger van de ontvangende Nodo weer gereed staat voor ontvangst (starttijd RF module)
-      }while((++Retry<5) && error);    
+      if(error)                                                                 // Als er een timeout was of het aantal events is niet correct bevestigd, dan de gebruiker een waarschuwing tonen
+        { 
+        // Serial.print(F("DEBUG: QueueSend() Verwacht aantal="));Serial.print(x);Serial.print(F(", Bevestigd aantal="));Serial.print(Event.Par1);PrintNodoEvent(", Ontvangen=",&Event);
+        delay(1000);                                                            // kleine pauze om zeker te weten dat de ontvanger van de ontvangende Nodo weer gereed staat voor ontvangst (starttijd RF module)
+        }
+      }while((++Retry<5) && error);   
     }
     
   return error;
@@ -564,78 +588,40 @@ void QueueReceive(NodoEventStruct *Event)
   {
   static unsigned long PreviousID=0L;
   struct NodoEventStruct TempEvent;
-  byte x, count;
+  byte x, Received;
 
-  // Onderstaande vlag zorgt er voor dat de Nodo uitsluitend Nodo events
-  // oppikt. Andere signalen worden tijdelijk volledig genegeerd.
-  Transmission_NodoOnly=true;
+  Transmission_NodoOnly=true;                                                   // Uitsluitend Nodo events. Andere signalen worden tijdelijk volledig genegeerd.
   
-  // Alle Nodo events die nu binnen komen op slaan in de queue. We beginnen met een schone queue.
-  QueuePosition=0;
-  QueueAdd(Event);
+  // Serial.println(F("DEBUG: QueueReceive() => Wait() vult queue met events."));   
+  Wait(5, false, 0, true);
+  Received=QueuePosition; 
   
-  // Serial.println(F("DEBUG: QueueReceive() => Wait().")); 
-  
-  Wait(5, false, 0, true);// ??? niet uitvoeren als de NEXT flag niet staat.
-  count=QueuePosition;
-  // Serial.print(F("DEBUG: QueueReceive() In queue geplaatst="));Serial.println(count);
-
-
-  // Haal de QUEUE vlag van de events af.
-  for(x=0;x<QueuePosition;x++)
+  for(x=0;x<QueuePosition;x++)                                                    // Haal de QUEUE vlag van de events af.
     {
     bitClear(Queue[x].Flags,TRANSMISSION_QUEUE);// Haal QUEUE vlag er af, anders worden de events niet verwerkt n.a.v. onderdrukken incomplete SendTo reeksen.
     Queue[x].Flags=0;
     }
 
-  // Er kunnen zich twee situaties voordoen:
-  // A: Er bevinden zich een willekeurige reeks events in de queue of,
-  // B: Er bevindt zich een reeks in de queue die deel uit maakt van een queue-opdracht zoals SendTo of EventlistShow. In dit geval bevat het eerste
-  //    event in de queue gegevens over de inhoud van de queue die gebruikt moeten worden.
-  ClearEvent(&TempEvent);
-  
-  if(Event->Type==NODO_TYPE_SYSTEM)
+
+  // Serial.print(F("DEBUG: QueueReceive() ID check: "));Serial.print(PreviousID);Serial.print("==");Serial.print(Event->Par2);Serial.print(F(", Aantal events "));Serial.print(QueuePosition);Serial.print("==");Serial.print(Event->Par1);Serial.print(F(", In queue="));Serial.println(Received);
+  if(PreviousID!=Event->Par2 && Received==Event->Par1)                             // Als aantal regels in de queue overeenkomt en queue is nog niet eerder binnen gekomen (ID)
     {
-    if(Event->Command==SYSTEM_COMMAND_QUEUE_SENDTO)
-      {
-      // Serial.println(F("DEBUG: QueueReceive() SYSTEM_COMMAND_QUEUE_SENDTO Ontvangen."));
-      // Als aantal regels in de queue overeenkomt met wat in het SendTo verzoek is vermeldt
-      // EN de queue is nog niet eerder binnen gekomen (ID) dan uitvoeren.
-      // Stuur vervolgens de master ter bevestiging het aantal ontvangen events die zich nu in de queue bevinden.
-      if(PreviousID!=Event->Par2)
-        {
-        if(QueuePosition==Event->Par1)
-          {
-          PreviousID=Event->Par2;
-          // Queue gelijk verwerken alvorens een bevestiging te versturen zorgt er voor dat de Master
-          // pas doorgaan met verwerking als deze Slave gereed is.
-          if(Event->Flags & TRANSMISSION_QUEUE_WAIT)
-            {
-            // Serial.println(F("DEBUG: QueueReceive() => QueueProcess()"));
-            QueueProcess();
-            }
-          }
-        }
-      TempEvent.DestinationUnit     = Event->SourceUnit;
-      TempEvent.SourceUnit          = Settings.Unit;
-      TempEvent.Port                = Event->Port;
-      TempEvent.Type                = NODO_TYPE_SYSTEM; 
-      TempEvent.Command             = SYSTEM_COMMAND_CONFIRMED;      
-      TempEvent.Par1                = count;
-      // Serial.println(F("DEBUG: QueueReceive() SYSTEM_COMMAND_CONFIRMED => SendEvent();"));
-      SendEvent(&TempEvent,false, false, false);
-      }
-    else if(Event->Command==SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW)
-      {
-      // Serial.println(F("DEBUG: QueueReceive() SYSTEM_COMMAND_QUEU_EVENTLIST_SHOW => ProcessQueue()."));
-      QueueProcess();
-      }
-    }
-  else
-    {
-    // Serial.println(F("DEBUG: QueueReceive() => QueueProcess()"));  
+    PreviousID=Event->Par2;
     QueueProcess();
-    }    
+    }
+
+
+  // Stuur vervolgens de master ter bevestiging het aantal ontvangen events die zich nu in de queue bevinden.
+  ClearEvent(&TempEvent);
+  TempEvent.DestinationUnit     = Event->SourceUnit;
+  TempEvent.SourceUnit          = Settings.Unit;
+  TempEvent.Port                = Event->Port;
+  TempEvent.Type                = NODO_TYPE_SYSTEM; 
+  TempEvent.Command             = SYSTEM_COMMAND_CONFIRMED;      
+  TempEvent.Par1                = Received;
+  // Serial.print(F("DEBUG: QueueReceive() Ontvangen aantal="));Serial.print(Received);PrintNodoEvent(", Verzend=",&TempEvent);
+
+  SendEvent(&TempEvent,false, false, false);
     
   // Omdat ProcessQueue de queue heeft leeggedraaid, kan de queue positie op 0 worden gezet.
   QueuePosition=0;
