@@ -1703,7 +1703,7 @@ void PrintWelcome(void)
   {
   // Print Welkomsttekst
   Serial.println(F("!******************************************************************************!"));
-  Serial.println(F("Nodo Domotica controller (c) Copyright 2013 P.K.Tonkes."));
+  Serial.println(F("Nodo Domotica controller (c) Copyright 2014 P.K.Tonkes."));
   Serial.println(F("Licensed under GNU General Public License."));
   Serial.print(F("Nodo-Small V3.6.9 (beta), Product=SWACNC-SMALL-R"));
   Serial.print(NODO_BUILD);

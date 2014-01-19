@@ -91,20 +91,22 @@ byte ProcessEvent(struct NodoEventStruct *Event)
         break;
       #endif
       }
-    }
-
-
-  if(Continue && (Event->Flags & TRANSMISSION_QUEUE_NEXT))
-    {
-    Wait(2, false,0 , false);  
     Continue=false;
     }
 
+  // Events die nu nog de TRANSMISSION_SENDTO vlag hebben staan hoorden oorspronkelijk tot een reeks die verzonden is
+  // met een SendTo. Deze events hebben dier geen betekenis en dus volledig negeren.
+  if(Continue && (Event->Flags & TRANSMISSION_SENDTO))
+    Continue=false;
 
-  // Events die nu nog de QUEUE vlag hebben staan hoorden oorspronkelijk tot een reeks die verzonden is
-  // met vlag TRANSMISSION_QUEUE_NEXT. Op deze plaats in de code hebben deze events geen betekenis en dus volledig negeren.
+
   if(Continue && (Event->Flags & TRANSMISSION_QUEUE))
+    {
+    QueueAdd(Event);
+    if(Event->Flags & TRANSMISSION_QUEUE_NEXT)
+      Wait(5, false,0 , false);  
     Continue=false;
+    }
 
 
   #if NODO_MEGA  
@@ -194,12 +196,12 @@ byte CheckEventlist(struct NodoEventStruct *Event)
  \*********************************************************************************************/
 boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroEvent)
   {  
-  // PrintNodoEvent("DEBUG: CheckEvent(), Event-1",Event);
-  // PrintNodoEvent("DEBUG: CheckEvent(), Event-2",MacroEvent);
-
   // geen lege events verwerken
   if(MacroEvent->Command==0 || Event->Command==0)
     return false;  
+
+  // PrintNodoEvent("\nDEBUG: CheckEvent(), Input",Event);
+  // PrintNodoEvent("DEBUG: CheckEvent(), Eventlist",MacroEvent);
     
   // ### WILDCARD:      
   if(MacroEvent->Command == EVENT_WILDCARD)                                                                                 // is regel uit de eventlist een WildCard?
@@ -215,13 +217,11 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
        && (Event->Par2==MacroEvent->Par2 || MacroEvent->Par2==0 || Event->Par2==0))                         // Par2 deel een match?
          return true; 
     
-  
   // Events die niet voor deze Nodo bestemd zijn worden an niet doorgelaten door EventScanning(), echter events die voor alle Nodo's bestemd zijn
   // horen NIET langs de eventlist te worden gehaald. Deze daarom niet verder behandelen TENZIJ het een UserEvent is of behandeling door Wildcard. 
   // Die werden hierboven al behandeld.
   if(Event->SourceUnit!=0  && Event->SourceUnit!=Settings.Unit)
     return false;
-
 
   // #### EXACT: als huidige event exact overeenkomt met het event in de regel uit de Eventlist, dan een match. 
   if(MacroEvent->Command == Event->Command &&
@@ -485,13 +485,14 @@ byte QueueSend(boolean fast)
       for(x=0;x<QueuePosition;x++)                                              // Verzend alle events uit de queue.
         {
         ClearEvent(&Event);
+        Event.Flags               = TRANSMISSION_QUEUE;  
         Event.DestinationUnit     = Transmission_SendToUnit;
         Event.SourceUnit          = Settings.Unit;
         Event.Port                = Port;
         Event.Type                = Queue[x].Type;
         Event.Command             = Queue[x].Command;
         Event.Par1                = Queue[x].Par1;
-        Event.Par2                = Queue[x].Par2;  
+        Event.Par2                = Queue[x].Par2;
           
         // Serial.print(F("DEBUG: QueueSend() => FAST: SendEvent() x="));Serial.println(x); 
         SendEvent(&Event,false,false,Settings.WaitFree==VALUE_ON);
@@ -538,9 +539,9 @@ byte QueueSend(boolean fast)
         Event.Par2                = SendQueue[x].Par2;
   
         if(x==(SendQueuePosition-1))
-          Event.Flags = TRANSMISSION_QUEUE | TRANSMISSION_LOCK;                   // Verzendvlaggen geven aan dat er nog events verzonden gaan worden en dat de ether tijdelijk gereserveerd is
+          Event.Flags = TRANSMISSION_SENDTO | TRANSMISSION_QUEUE | TRANSMISSION_LOCK;                   // Verzendvlaggen geven aan dat er nog events verzonden gaan worden en dat de ether tijdelijk gereserveerd is
         else
-          Event.Flags = TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
+          Event.Flags = TRANSMISSION_SENDTO | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
   
         // In geval van verzending naar queue zal deze tijd niet van toepassing zijn omdat er dan geen verwerkingstijd nodig is.
         // Tussen de events die de queue in gaan een kortere delaytussen verzendingen.
@@ -584,14 +585,17 @@ void QueueReceive(NodoEventStruct *Event)
   // Serial.println(F("DEBUG: QueueReceive() => Wait() vult queue met events."));   
   Transmission_NodoOnly=true;                                                   // Uitsluitend Nodo events. Andere signalen worden tijdelijk volledig genegeerd.
   Wait(5, false, 0, true);
+  Transmission_NodoOnly=false;
   Received=QueuePosition; 
   
   // Serial.print(F("DEBUG: QueueReceive() ID check: "));Serial.print(PreviousID);Serial.print("==");Serial.print(Event->Par2);Serial.print(F(", Aantal events "));Serial.print(QueuePosition);Serial.print("==");Serial.print(Event->Par1);Serial.print(F(", In queue="));Serial.println(Received);
   if(PreviousID!=Event->Par2 && Received==Event->Par1)                          // Als aantal regels in de queue overeenkomt en queue is nog niet eerder binnen gekomen (ID)
     {
-    for(x=0;x<QueuePosition;x++)                                                // Haal de QUEUE vlag van de events af.
-      Queue[x].Flags=0;
-
+    for(x=0;x<QueuePosition;x++)                                                
+      {
+      Queue[x].Flags=0;                                                         // Haal de QUEUE vlag van de events af.
+      Queue[x].Unit=0;
+      }
     PreviousID=Event->Par2;
     QueueProcess();
     }
@@ -609,5 +613,4 @@ void QueueReceive(NodoEventStruct *Event)
   SendEvent(&TempEvent,false, false, false);
     
   QueuePosition=0;                                                              // Omdat ProcessQueue de queue heeft leeggedraaid, kan de queue positie op 0 worden gezet.
-  Transmission_NodoOnly=false;
   }
