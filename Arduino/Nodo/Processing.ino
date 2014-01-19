@@ -82,13 +82,11 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     switch(Event->Command)
       {
       case SYSTEM_COMMAND_QUEUE_SENDTO:
-        // Serial.println(F("\n\nDEBUG: SYSTEM_COMMAND_QUEUE_SENDTO ontvangen.")); 
         QueueReceive(Event);
         break;
 
       #if NODO_MEGA
       case SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW:                                 // Normaal deel van een SendTo en dus al in de Wait afgevangen
-        // Serial.println(F("\n\nDEBUG: ProcessEvent() SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW ontvangen.")); 
         Wait(3, false,0 , false);  
         break;
       #endif
@@ -145,30 +143,26 @@ byte ProcessEvent(struct NodoEventStruct *Event)
       
     else
       {
-      // het is een ander soort event. Loop de gehele eventlist langs om te kijken of er een treffer is.   
-      struct NodoEventStruct EventlistEvent, EventlistAction;   
-
-      // sla event op voor later gebruik (o.a. SendEvent)
-      LastReceived=*Event;
+      struct NodoEventStruct EventlistEvent, EventlistAction;                   // het is een ander soort event. Loop de gehele eventlist langs om te kijken of er een treffer is.   
+      LastReceived=*Event;                                                      // sla event op voor later gebruik (o.a. SendEvent)
 
       x=0;
-      while(Eventlist_Read(++x,&EventlistEvent,&EventlistAction) && error==0) // Zolang er nog regels zijn in de eventlist...
+      while(Eventlist_Read(++x,&EventlistEvent,&EventlistAction) && error==0)   // Zolang er nog regels zijn in de eventlist...
         {      
-        if(CheckEvent(Event,&EventlistEvent)) // Als er een match is tussen het binnengekomen event en de regel uit de eventlist.
+        if(CheckEvent(Event,&EventlistEvent))                                   // Als er een match is tussen het binnengekomen event en de regel uit de eventlist.
           {        
           Led(RED);                                                             // LED aan als er iets verwerkt wordt      
           ExecutionLine=x;
           error=ProcessEvent(&EventlistAction);
           }
         }
-      // abort is geen fatale error maar een break. Deze dus niet verder behandelen als een error.
-      if(error==MESSAGE_BREAK)
+      
+      if(error==MESSAGE_BREAK)                                                  // abort is geen fatale error maar een break. Deze dus niet verder behandelen als een error.
         error=0;
       }      
 
-    // Als de SendTo niet permanent is ingeschakeld, dan deze weer uitzetten
     #if NODO_MEGA
-    if(!Transmission_SendToAll)Transmission_SendToUnit=0;
+    if(!Transmission_SendToAll)Transmission_SendToUnit=0;                       // Als de SendTo niet permanent is ingeschakeld, dan deze weer uitzetten
     #endif
     }
     
@@ -189,7 +183,7 @@ byte CheckEventlist(struct NodoEventStruct *Event)
   while(Eventlist_Read(x++,&MacroEvent,&MacroAction))
     if(MacroEvent.Command)
       if(CheckEvent(Event,&MacroEvent))
-        return x; // match gevonden
+        return x;                                                               // match gevonden
 
   return false;
   }
@@ -292,7 +286,7 @@ boolean QueueAdd(struct NodoEventStruct *Event)
   {
   if(QueuePosition<EVENT_QUEUE_MAX)
     {
-    Event->Flags&=~TRANSMISSION_QUEUE; //  Haal eventuele QUEUE vlag er af. Anders loopt de queue vol door recursiviteit;
+    Event->Flags&=~TRANSMISSION_QUEUE;                                          //  Haal eventuele QUEUE vlag er af. Anders loopt de queue vol door recursiviteit;
     
     Queue[QueuePosition].Flags   = Event->Flags; 
     Queue[QueuePosition].Port    = Event->Port;
@@ -314,7 +308,7 @@ boolean QueueAdd(struct NodoEventStruct *Event)
       Event2str(Event, TempString);  
       if(Settings.Alias==VALUE_ON)
         Alias(TempString,false);
-      PrintString(TempString,VALUE_ALL);//??? nog alleen naar de poort van herkomst laten weergeven
+      PrintString(TempString,VALUE_ALL);
       QueuePosition--;
       }
 
@@ -351,7 +345,7 @@ boolean QueueAdd(struct NodoEventStruct *Event)
           Alias(TempString,false);
         strcat(TempString2,TempString);
         
-        PrintString(TempString2,VALUE_ALL);//??? nog alleen naar de poort van herkomst laten weergeven
+        PrintString(TempString2,VALUE_ALL);
 
         QueuePosition-=3;
         }
@@ -393,19 +387,20 @@ void QueueProcess(void)
       // in een nieuwe verzending zit. Op de eerste positie (=0) zit het systeem commando QUEUE_SEND, die moeten
       // we negeren. Op de tweede zit het systeemcommando EventlistWrite, daarna het Event en de Actie.    
   
-      if(Queue[1].Command==SYSTEM_COMMAND_QUEUE_EVENTLIST_WRITE && QueuePosition==4) // cmd
+      if(Queue[0].Command==SYSTEM_COMMAND_QUEUE_EVENTLIST_WRITE && QueuePosition==3) // cmd
         {
-        E.Type=Queue[2].Type;
-        E.Command=Queue[2].Command;
-        E.Par1=Queue[2].Par1;
-        E.Par2=Queue[2].Par2;
-        A.Type=Queue[3].Type;
-        A.Command=Queue[3].Command;
-        A.Par1=Queue[3].Par1;
-        A.Par2=Queue[3].Par2;
+        E.Type=Queue[1].Type;
+        E.Command=Queue[1].Command;
+        E.Par1=Queue[1].Par1;
+        E.Par2=Queue[1].Par2;
+        A.Type=Queue[2].Type;
+        A.Command=Queue[2].Command;
+        A.Par1=Queue[2].Par1;
+        A.Par2=Queue[2].Par2;
        
-        if(Eventlist_Write(Queue[1].Par1, &E, &A))
+        if(Eventlist_Write(Queue[0].Par1, &E, &A))
           UndoNewNodo();
+
         QueuePosition=0;
         }
       }
@@ -414,7 +409,6 @@ void QueueProcess(void)
       {
       for(x=0;x<QueuePosition;x++)
         {      
-        // Serial.print("DEBUG: QueueProcess(); Uitvoer event uit queue nummer=");Serial.println(x);
         Event.SourceUnit=Queue[x].Unit;
         Event.Type=Queue[x].Type;
         Event.Command=Queue[x].Command;
@@ -423,7 +417,6 @@ void QueueProcess(void)
         Event.Direction=VALUE_DIRECTION_INPUT;
         Event.Port=Queue[x].Port;
         Event.Flags=Queue[x].Flags;
-        // PrintNodoEvent("DEBUG: ProcessQueue();",&Event);
         ProcessEvent(&Event);      // verwerk binnengekomen event.
         }
       }
@@ -461,7 +454,7 @@ byte QueueSend(boolean fast)
 
       SendEvent(&Event, false, false, Settings.WaitFree==VALUE_ON);
 
-      Wait(2, false,0 , false);  
+      Wait(5, false,0 , false);  
       }
     }while(Port==0 && ++Retry<3);
   bitWrite(HW_Config,HW_I2C,x);
@@ -469,12 +462,12 @@ byte QueueSend(boolean fast)
   
   if(Port!=0)
     {
-    struct QueueStruct SendQueue[EVENT_QUEUE_MAX];                                // We maken tijdelijk gebruik van een SendQueue zodat de reguliere queue zijn werk kan blijven doen.
+    struct QueueStruct SendQueue[EVENT_QUEUE_MAX];                              // We maken tijdelijk gebruik van een SendQueue zodat de reguliere queue zijn werk kan blijven doen.
     for(x=0;x<QueuePosition;x++)
       {
-      SendQueue[x]=Queue[x];                                                      // Kopieer de inhoud van de queue.
+      SendQueue[x]=Queue[x];                                                    // Kopieer de inhoud van de queue.
       
-      if(Queue[x].Type==NODO_TYPE_COMMAND)                                        // Er zijn enkele commando's die geen reacte teruggeven. Zet in deze gevallen de fast mode aan.
+      if(Queue[x].Type==NODO_TYPE_COMMAND)                                      // Er zijn enkele commando's die geen reacte teruggeven. Zet in deze gevallen de fast mode aan.
         {
         switch(Queue[x].Command)
           {
@@ -489,7 +482,7 @@ byte QueueSend(boolean fast)
   
     if(fast)
       {
-      for(x=0;x<QueuePosition;x++)                                                // Verzend alle events uit de queue.
+      for(x=0;x<QueuePosition;x++)                                              // Verzend alle events uit de queue.
         {
         ClearEvent(&Event);
         Event.DestinationUnit     = Transmission_SendToUnit;
@@ -498,9 +491,7 @@ byte QueueSend(boolean fast)
         Event.Type                = Queue[x].Type;
         Event.Command             = Queue[x].Command;
         Event.Par1                = Queue[x].Par1;
-        Event.Par2                = Queue[x].Par2;
-  
-        HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS_Q+millis();
+        Event.Par2                = Queue[x].Par2;  
           
         // Serial.print(F("DEBUG: QueueSend() => FAST: SendEvent() x="));Serial.println(x); 
         SendEvent(&Event,false,false,Settings.WaitFree==VALUE_ON);
@@ -566,19 +557,19 @@ byte QueueSend(boolean fast)
       Event.Type                = NODO_TYPE_SYSTEM;
   
       // Serial.print(F("DEBUG: QueueSend() => Wait() wacht op SYSTEM_COMMAND_CONFIRMED. Verzonden events="));Serial.println(x);
-      if(Wait(10,false,&Event,false))
+      if(Wait(5,false,&Event,false))
         if(x==(Event.Par1))                                                     // Verzonden events gelijk aan ontvangen events? -1 omdat aan de Slave zijde het eerste element in de queue geen deel uit maakt van de SendTo events.
           error=0;
   
-      
       if(error)                                                                 // Als er een timeout was of het aantal events is niet correct bevestigd, dan de gebruiker een waarschuwing tonen
         { 
         // Serial.print(F("DEBUG: QueueSend() Verwacht aantal="));Serial.print(x);Serial.print(F(", Bevestigd aantal="));Serial.print(Event.Par1);PrintNodoEvent(", Ontvangen=",&Event);
         delay(1000);                                                            // kleine pauze om zeker te weten dat de ontvanger van de ontvangende Nodo weer gereed staat voor ontvangst (starttijd RF module)
         }
-      }while((++Retry<5) && error);   
+      }while((++Retry<10) && error);   
     }
     
+  QueuePosition=0;
   return error;
   }
 #endif
@@ -589,27 +580,21 @@ void QueueReceive(NodoEventStruct *Event)
   static unsigned long PreviousID=0L;
   struct NodoEventStruct TempEvent;
   byte x, Received;
-
-  Transmission_NodoOnly=true;                                                   // Uitsluitend Nodo events. Andere signalen worden tijdelijk volledig genegeerd.
   
   // Serial.println(F("DEBUG: QueueReceive() => Wait() vult queue met events."));   
+  Transmission_NodoOnly=true;                                                   // Uitsluitend Nodo events. Andere signalen worden tijdelijk volledig genegeerd.
   Wait(5, false, 0, true);
   Received=QueuePosition; 
   
-  for(x=0;x<QueuePosition;x++)                                                    // Haal de QUEUE vlag van de events af.
-    {
-    bitClear(Queue[x].Flags,TRANSMISSION_QUEUE);// Haal QUEUE vlag er af, anders worden de events niet verwerkt n.a.v. onderdrukken incomplete SendTo reeksen.
-    Queue[x].Flags=0;
-    }
-
-
   // Serial.print(F("DEBUG: QueueReceive() ID check: "));Serial.print(PreviousID);Serial.print("==");Serial.print(Event->Par2);Serial.print(F(", Aantal events "));Serial.print(QueuePosition);Serial.print("==");Serial.print(Event->Par1);Serial.print(F(", In queue="));Serial.println(Received);
-  if(PreviousID!=Event->Par2 && Received==Event->Par1)                             // Als aantal regels in de queue overeenkomt en queue is nog niet eerder binnen gekomen (ID)
+  if(PreviousID!=Event->Par2 && Received==Event->Par1)                          // Als aantal regels in de queue overeenkomt en queue is nog niet eerder binnen gekomen (ID)
     {
+    for(x=0;x<QueuePosition;x++)                                                // Haal de QUEUE vlag van de events af.
+      Queue[x].Flags=0;
+
     PreviousID=Event->Par2;
     QueueProcess();
     }
-
 
   // Stuur vervolgens de master ter bevestiging het aantal ontvangen events die zich nu in de queue bevinden.
   ClearEvent(&TempEvent);
@@ -620,10 +605,9 @@ void QueueReceive(NodoEventStruct *Event)
   TempEvent.Command             = SYSTEM_COMMAND_CONFIRMED;      
   TempEvent.Par1                = Received;
   // Serial.print(F("DEBUG: QueueReceive() Ontvangen aantal="));Serial.print(Received);PrintNodoEvent(", Verzend=",&TempEvent);
-
+  HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS+millis();        
   SendEvent(&TempEvent,false, false, false);
     
-  // Omdat ProcessQueue de queue heeft leeggedraaid, kan de queue positie op 0 worden gezet.
-  QueuePosition=0;
+  QueuePosition=0;                                                              // Omdat ProcessQueue de queue heeft leeggedraaid, kan de queue positie op 0 worden gezet.
   Transmission_NodoOnly=false;
   }
