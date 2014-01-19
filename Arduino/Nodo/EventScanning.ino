@@ -93,7 +93,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
 
       SignalHashPrevious=SignalHash;
 
-      if(RawSignal.Repeats)
+      //if(RawSignal.Repeats) //??? kan de if() niet weg om zo ook voor Nodo events even focus te houden?
         RepeatingTimer=millis()+SIGNAL_REPEAT_TIME;
       
       if(Fetched)

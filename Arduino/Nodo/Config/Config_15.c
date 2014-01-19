@@ -20,8 +20,8 @@
 #define PLUGIN_002_CORE
 
 // Temperatuursensor Dallas DS18B20
-// #define PLUGIN_005
-// #define PLUGIN_005_CORE
+#define PLUGIN_005
+#define PLUGIN_005_CORE
 
 // DTH-22 Vocht/Temperatuursensor
 // #define PLUGIN_006
