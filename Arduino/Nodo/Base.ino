@@ -974,6 +974,12 @@ void loop()
   // dit is een tijdkritische loop die wacht tot binnengekomen event op IR, RF, I2C, SERIAL, CLOCK, DAYLIGHT, TIMER, etc
   // Er is bewust NIET gekozen voor opvangen van signalen via IRQ's omdat er dan communicatie problemen ontstaan.
 
+
+
+  void *Plugin_share;
+  
+  Plugin_share=&ReceivedEvent;
+
   while(true)
     {
     // Check voor IR, I2C of RF events

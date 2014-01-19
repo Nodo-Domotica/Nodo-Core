@@ -134,8 +134,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
         if(Event->DestinationUnit==0 || Event->DestinationUnit==Settings.Unit)
           {
           EventHashPrevious=SignalHash;
-
-          // PrintNodoEvent("DEBUG: ScanEvent(): Fetched", Event);
+          //PrintNodoEvent("DEBUG: ScanEvent(): Fetched", Event);
           return true;
           }
         }
