@@ -154,32 +154,32 @@ void RaiseMessage(byte MessageCode, unsigned long Option)
  \*********************************************************************************************/
 
 void Beep(int frequency, int duration)//Herz,millisec 
-{
+  {
   long halfperiod=500000L/frequency;
   long loops=(long)duration*frequency/(long)1000;
 
   for(loops;loops>0;loops--) 
-  {
+    {
     digitalWrite(PIN_SPEAKER, HIGH);
     delayMicroseconds(halfperiod);
     digitalWrite(PIN_SPEAKER, LOW);
     delayMicroseconds(halfperiod);
+    }
   }
-}
 
 /**********************************************************************************************\
  * Geeft een belsignaal.
  * Revision 01, 09-03-2009, P.K.Tonkes@gmail.com
  \*********************************************************************************************/
 void Alarm(int Variant,int Option)
-{
+  {
   byte x,y;
 
   switch (Variant)
   { 
   case 1:// four beeps
     for(y=1;y<=(Option>1?Option:1);y++)
-    {
+      {
       Beep(3000,30);
       delay(100);
       Beep(3000,30);
@@ -188,28 +188,28 @@ void Alarm(int Variant,int Option)
       delay(100);
       Beep(3000,30);
       delay(1000);
-    }    
+      }    
     break;
 
   case 2: // whoop up
     for(y=1;y<=(Option>1?Option:1);y++)
-    {
+      {
       for(x=1;x<=50;x++)
         Beep(250*x/4,20);
-    }          
+      }          
     break;
 
   case 3: // whoop down
     for(y=1;y<=(Option>1?Option:1);y++)
-    {
+      {
       for(x=50;x>0;x--)
         Beep(250*x/4,20);
-    }          
+      }          
     break;
 
   case 4:// Settings.O.Settings.
     for(y=1;y<=(Option>1?Option:1);y++)
-    {
+      {
       Beep(1200,50);
       delay(100);
       Beep(1200,50);
@@ -228,24 +228,24 @@ void Alarm(int Variant,int Option)
       delay(100);
       Beep(1200,50);
       if(Option>1)delay(500);
-    }
+      }
     break;
 
   case 5:// ding-dong
     for(x=1;x<=(Option>1?Option:1);x++)
-    {
+      {
       if(x>1)delay(2000);
       Beep(1500,500);
       Beep(1200,500);
-    }    
+      }    
     break;
 
   case 6: // phone ring
     for(x=1;x<(15*(Option>1?Option:1));x++)
-    {
+      {
       Beep(1000,40);
       Beep(750,40);
-    }
+      }
     break;
 
   case 7: // boot
@@ -262,8 +262,8 @@ void Alarm(int Variant,int Option)
 
     Beep(100*Option,Variant*10);
     break;
+    }
   }
-}
 
 
 /**********************************************************************************************\
@@ -276,15 +276,15 @@ void Alarm(int Variant,int Option)
  * Blauw = Bijzondere modus Nodo waarin Nodo niet in staat is om events te ontvangen of genereren.
  \*********************************************************************************************/
 void Led(byte Color)
-{
-#if NODO_MEGA
+  { 
+  #if NODO_MEGA
   digitalWrite(PIN_LED_RGB_R,Color==RED);
   digitalWrite(PIN_LED_RGB_B,Color==BLUE);
   digitalWrite(PIN_LED_RGB_G,Color==GREEN);
-#else
+  #else
   digitalWrite(PIN_LED_RGB_R,(Color==RED || Color==BLUE));
-#endif
-}
+  #endif
+  }
 
 
 /*********************************************************************************************\
@@ -368,31 +368,6 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
   }
 
 
-/*********************************************************************************************\
- * (re)set een timer. Eenheden in seconden. 
- * Timer 1..15. Timer=0 is een wildcard voor alle timers
- * Als de timer op 0 wordt gezet, wordt er geen event gegenereerd.
- \*********************************************************************************************/
-void TimerSet(byte Timer, unsigned long Time)
-  {
-  if(Timer==0)// 0=wildcard voor alle timers
-    {
-    for(int x=0;x<TIMER_MAX;x++)
-      {
-      if(Time==0)
-        UserTimer[x]=0L;
-      else
-        UserTimer[x]=millis()+(unsigned long)(Time)*1000L;
-      }
-    }
-  else if(Timer<=TIMER_MAX)
-    {
-    if(Time==0)
-      UserTimer[Timer-1]=0L;
-    else
-      UserTimer[Timer-1]=millis()+(unsigned long)Time*1000L;
-    }
-  }
 
 /*********************************************************************************************\
  * Haal voor het opgegeven Command de status op door resultaat in de event struct te plaatsen.
@@ -657,7 +632,6 @@ void ResetFactory(void)
   Settings.TransmitIR                 = VALUE_OFF;
   Settings.TransmitRF                 = VALUE_ON;
   Settings.Unit                       = UNIT_NODO;
-  Settings.Home                       = HOME_NODO;
   Settings.RawSignalReceive           = VALUE_OFF;
   Settings.RawSignalSample            = RAWSIGNAL_SAMPLE_DEFAULT;  
 

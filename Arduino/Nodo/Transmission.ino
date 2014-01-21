@@ -118,6 +118,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   //          RawSignal wordt verzonden via RF/IR. Anders zal het commando worden verstuurd over I2C waarna de Nodo's op I2C het commando nogmaal
   //          zullen uitvoeren. Zo zal er een ongewenste loop ontstaan.
   
+  #if I2C
   if(!UseRawSignal)
     {
     if((Port==VALUE_SOURCE_I2C || Port==VALUE_ALL) && bitRead(HW_Config,HW_I2C))
@@ -129,7 +130,8 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
       SendI2C(ES);
       }
     }
-
+  #endif
+  
   // Verstuur signaal als RF
   if(Settings.TransmitRF==VALUE_ON && (Port==VALUE_SOURCE_RF || Port==VALUE_ALL))
     {
@@ -155,6 +157,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
 
 // Deze routine wordt vanuit de Wire library aangeroepen zodra er data op de I2C bus verschijnt die voor deze nodo bestemd is.
 // er vindt geen verdere verwerking plaats, slechts opslaan van het data. 
+#if I2C
 void ReceiveI2C(int n)
   {
   I2C_Received=0;
@@ -193,7 +196,7 @@ void SendI2C(struct NodoEventStruct *EventBlock)
     }
   WireNodo.endTransmission(true); // Geef de bus vrij
   }
-
+#endif //I2c
 
 #define IP_BUFFER_SIZE            256
 
@@ -265,7 +268,7 @@ boolean EthernetInit(void)
   Ethernet_MAC_Address[0]=ETHERNET_MAC_0;
   Ethernet_MAC_Address[1]=ETHERNET_MAC_1;
   Ethernet_MAC_Address[2]=ETHERNET_MAC_2;
-  Ethernet_MAC_Address[3]=(Settings.Home%10)+'0';
+  Ethernet_MAC_Address[3]=(HOME_NODO    %10)+'0';
   Ethernet_MAC_Address[4]=(Settings.Unit/10)+'0';
   Ethernet_MAC_Address[5]=(Settings.Unit%10)+'0';
 

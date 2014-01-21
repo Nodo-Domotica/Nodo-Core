@@ -299,11 +299,14 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
     #endif CLOCK 
 
     case CMD_TIMER_SET:
-      TimerSet(EventToExecute->Par1,EventToExecute->Par2);
+      if(EventToExecute->Par2==0)
+        UserTimer[EventToExecute->Par1-1]=0L;
+      else
+        UserTimer[EventToExecute->Par1-1]=millis()+EventToExecute->Par2*1000L;
       break;
 
     case CMD_TIMER_SET_VARIABLE:
-       TimerSet(EventToExecute->Par1,(unsigned long)UserVar[EventToExecute->Par2-1]);
+       UserTimer[EventToExecute->Par1-1]=millis()+(unsigned long)(UserVar[EventToExecute->Par2-1])*1000L;
       break;
 
     case CMD_TIMER_RANDOM:
@@ -404,11 +407,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         Reboot();
         break;
         }
-      
-    case CMD_HOME_SET:
-      if(EventToExecute->Par1>0 && EventToExecute->Par1<=HOME_MAX)
-        Settings.Home=EventToExecute->Par1;  
-      break;
       
     case CMD_REBOOT:
       Reboot();

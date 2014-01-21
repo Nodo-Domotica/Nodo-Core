@@ -684,7 +684,7 @@ void PrintWelcome(void)
   PrintString(ProgmemString(Text_02),VALUE_ALL);
 
   // print versienummer, unit en indien gevuld het ID
-  sprintf(TempString,ProgmemString(Text_welcome), NODO_BUILD, Settings.Home, Settings.Unit);
+  sprintf(TempString,ProgmemString(Text_welcome), NODO_BUILD, HOME_NODO, Settings.Unit);
   if(Settings.ID[0])
     {
     strcat(TempString,", ID=");
@@ -941,7 +941,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case VALUE_SOURCE_PLUGIN:
       case EVENT_NEWNODO:
       case CMD_UNIT_SET:
-      case CMD_HOME_SET:
       case CMD_VARIABLE_PULSE_TIME:
       case CMD_VARIABLE_PULSE_COUNT:
         ParameterToView[0]=PAR1_INT;
@@ -1221,7 +1220,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
         
     case CMD_TIMER_SET:
       ResultEvent->Type=NODO_TYPE_COMMAND;
-      if(ResultEvent->Par1>TIMER_MAX)
+      if(ResultEvent->Par1==0 || ResultEvent->Par1>TIMER_MAX)
         error=MESSAGE_INVALID_PARAMETER;
       break;
             
@@ -1246,12 +1245,6 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
     case CMD_UNIT_SET:
       ResultEvent->Type=NODO_TYPE_COMMAND;
       if(ResultEvent->Par1<1 || ResultEvent->Par1>UNIT_MAX)
-        error=MESSAGE_INVALID_PARAMETER;
-      break;
-
-    case CMD_HOME_SET:
-      ResultEvent->Type=NODO_TYPE_COMMAND;
-      if(ResultEvent->Par1<1 || ResultEvent->Par1>HOME_MAX)
         error=MESSAGE_INVALID_PARAMETER;
       break;
 
@@ -1707,8 +1700,6 @@ void PrintWelcome(void)
   Serial.println(F("Licensed under GNU General Public License."));
   Serial.print(F("Nodo-Small V3.6.9 (beta), Product=SWACNC-SMALL-R"));
   Serial.print(NODO_BUILD);
-  Serial.print(F(", Home="));
-  Serial.print(Settings.Home);
   Serial.print(F(", ThisUnit="));
   Serial.println(Settings.Unit);
   Serial.println(F("!******************************************************************************!"));
