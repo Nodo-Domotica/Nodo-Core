@@ -30,6 +30,8 @@
 #define ETHERNET_MAC_2                  0xAA                                    // Dit is byte 2 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
 #define CLOCK                           true                                    // true=code voor Real Time Clock mee compileren.
 #define SLEEP                           true                                    // Sleep mode mee compileren?
+#define I2C                             true                                    // I2C communicatie mee compileren (I2C plugins en klok blijvel wel gebruik maken van I2)
+
 
 byte dummy=1;                                                                   // linker even op weg helpen. Bugje in Arduino.
 
@@ -114,7 +116,7 @@ byte dummy=1;                                                                   
 #define CMD_FILE_WRITE                  57
 #define VALUE_FREEMEM                   58
 #define CMD_GATEWAY                     59
-#define CMD_HOME_SET                    60
+#define CMD_RES_60                      60 //??? reserve
 #define VALUE_SOURCE_HTTP               61
 #define CMD_HTTP_REQUEST                62
 #define VALUE_HWCONFIG                  63
@@ -286,7 +288,7 @@ prog_char PROGMEM Cmd_56[]="FileShow";
 prog_char PROGMEM Cmd_57[]="FileWrite";
 prog_char PROGMEM Cmd_58[]="FreeMem";
 prog_char PROGMEM Cmd_59[]="Gateway";
-prog_char PROGMEM Cmd_60[]="HomeSet";
+prog_char PROGMEM Cmd_60[]="";//??? reserve
 prog_char PROGMEM Cmd_61[]="HTTP";
 prog_char PROGMEM Cmd_62[]="HTTPHost";
 prog_char PROGMEM Cmd_63[]="HWConfig";
@@ -464,7 +466,6 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define GREEN                          2                                        // Led = Groen
 #define BLUE                           3                                        // Led = Blauw
 #define UNIT_MAX                      31                                        // Hoogst mogelijke unit nummer van een Nodo
-#define HOME_MAX                       7                                        // Hoogst mogelijke home nummer van een Nodo
 #define SERIAL_TERMINATOR_1         0x0A                                        // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>
 #define SERIAL_TERMINATOR_2         0x00                                        // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
 #define SCAN_HIGH_TIME               100                                        // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
@@ -619,7 +620,7 @@ struct SettingsStruct
   {
   int     Version;        
   byte    Unit; // Max 5 bits in bebruik
-  byte    Home; // Max 3 bits in gebruik, wordt voordat er verzonden wordt samen met Unit tot Ã©Ã©n byte gemaakt.
+  byte    Reserved; 
   boolean NewNodo;
   int     WiredInputThreshold[WIRED_PORTS], WiredInputSmittTrigger[WIRED_PORTS];
   byte    WiredInputPullUp[WIRED_PORTS];
@@ -794,6 +795,10 @@ void setup()
     AlarmPrevious[x]=0xff;                                                      // Deze waarde kan niet bestaan en voldoet dus.
   #endif
 
+
+  for(x=0;x<TIMER_MAX;x++)                                                      // Alle timers op nul zetten.
+    UserTimer[x]=0L;
+
   // Initialiseer in/output poorten.
   pinMode(PIN_IR_RX_DATA, INPUT);
   pinMode(PIN_RF_RX_DATA, INPUT);
@@ -853,19 +858,20 @@ void setup()
       pinMode(A0+PIN_WIRED_IN_1+x,INPUT);
 
     pinMode(PIN_WIRED_OUT_1+x,OUTPUT);                                          // definieer Arduino pin's voor Wired-Out
+    WiredInputStatus[x]=true;                                                   // Status van de wired poort setten zodat er niet onterect bij start al events worden gegenereerd.
     }
-  for(x=0;x<WIRED_PORTS;x++){WiredInputStatus[x]=true;}
-
-  
+    
   DetectHardwareReset();                                                        // De Nodo resetten als de WiredOut-1 verbonden is met de WiredIn-1
   
   #if NODO_MEGA
   SDCardInit();                                                                 // SDCard detecteren en evt. gereed maken voor gebruik in de Nodo
-
   FileExecute("","config","dat",true,VALUE_ALL);                                // Voer bestand config uit als deze bestaat. die goeie oude MD-DOS tijd ;-)
   #endif
    
+  #if I2C
   WireNodo.begin(Settings.Unit + I2C_START_ADDRESS - 1);                        // Start luisteren naar de I2C poort.
+  WireNodo.onReceive(ReceiveI2C);                                               // verwijs naar de I2C ontvangstroutine
+  #endif
 
   #if CLOCK
   ClockRead();                                                                  //Lees de tijd uit de RTC en zorg ervoor dat er niet direct na een boot een CMD_CLOCK_DAYLIGHT event optreedt
@@ -902,13 +908,14 @@ void setup()
 
   #endif // Mega
 
-  WireNodo.onReceive(ReceiveI2C);   // verwijs naar ontvangstroutine
 
   // Alle devices moeten aan te roepen zijn vanuit de Pluginnummers zoals die in de events worden opgegeven
   // initialiseer de lijst met pointers naar de device funkties.
   PluginInit();
 
+  #if I2C
   bitWrite(HW_Config,HW_I2C,true); // Zet I2C aan zodat het boot event op de I2C-bus wordt verzonden. Hiermee worden bij de andere Nodos de I2C geactiveerd.
+  #endif
 
   #if NODO_MEGA
   bitWrite(HW_Config,HW_SERIAL,1);                                              // Serial tijdelijk inschakelen.
@@ -929,8 +936,9 @@ void setup()
     TempEvent.Command   = EVENT_BOOT;
   SendEvent(&TempEvent,false,true,Settings.WaitFree==VALUE_ON);                 // Zend boot event naar alle Nodo's.  
 
+  #if I2C
   bitWrite(HW_Config,HW_I2C,false);                                             // Zet I2C weer uit. Wordt weer geactiveerd als er een I2C event op de bus verschijnt.
-  
+  #endif
   
   TempEvent.Direction = VALUE_DIRECTION_INPUT;
   TempEvent.Port      = VALUE_SOURCE_SYSTEM;

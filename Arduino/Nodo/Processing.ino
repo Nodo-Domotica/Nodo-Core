@@ -562,14 +562,9 @@ byte QueueSend(boolean fast)
         if(x==(Event.Par1))                                                     // Verzonden events gelijk aan ontvangen events? -1 omdat aan de Slave zijde het eerste element in de queue geen deel uit maakt van de SendTo events.
           error=0;
   
-      if(error)                                                                 // Als er een timeout was of het aantal events is niet correct bevestigd, dan de gebruiker een waarschuwing tonen
-        { 
-        // Serial.print(F("DEBUG: QueueSend() Verwacht aantal="));Serial.print(x);Serial.print(F(", Bevestigd aantal="));Serial.print(Event.Par1);PrintNodoEvent(", Ontvangen=",&Event);
-        delay(1000);                                                            // kleine pauze om zeker te weten dat de ontvanger van de ontvangende Nodo weer gereed staat voor ontvangst (starttijd RF module)
-        }
+      // if(error){Serial.print(F("DEBUG: QueueSend() Verwacht aantal="));Serial.print(x);Serial.print(F(", Bevestigd aantal="));Serial.print(Event.Par1);PrintNodoEvent(", Ontvangen=",&Event);}
       }while((++Retry<10) && error);   
     }
-    
   QueuePosition=0;
   return error;
   }

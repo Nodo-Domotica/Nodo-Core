@@ -1,7 +1,10 @@
 #define I2C_BUFFERSIZE                80                                        // Moet altijd groter zijn dan de struct NodoEventStruct
 
+#if I2C
 int  I2C_Received=0;                                                            // Bevat aantal binnengomen bytes op I2C;
 byte I2C_ReceiveBuffer[I2C_BUFFERSIZE+1];
+#endif
+
 unsigned long RepeatingTimer=0L;
 unsigned long EventHashPrevious=0,SignalHash,SignalHashPrevious=0L;
 
@@ -11,6 +14,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
   static boolean BlockRepeatsStatus=false;
   unsigned long Timer=millis()+SCAN_HIGH_TIME;
       
+  #if I2C
   if(I2C_Received)                                                              // I2C: *************** kijk of er data is binnengekomen op de I2C-bus **********************
     {
     if(I2C_Received==sizeof(struct NodoEventStruct))                            // Er is I2C data binnengekomen maar weten nog niet of het een NodoEventStruct betreft.
@@ -43,7 +47,8 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       I2C_Received=0;
       }
     }
-
+  #endif
+  
   while(Timer>millis() || RepeatingTimer>millis())
     {
     if(FetchSignal(PIN_IR_RX_DATA,LOW))                                         // IR: *************** kijk of er data start **********************
