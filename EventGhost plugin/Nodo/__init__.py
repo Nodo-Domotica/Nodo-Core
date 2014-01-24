@@ -182,7 +182,7 @@ class NodoSerial(eg.PluginClass):
             self.serialThread.Write(StringToSend[i])                                
 
         # kleine pause omdat anders kans dat het XOFF van de Nodo nog niet opgepikt is door de PC.
-        eg.plugins.EventGhost.Wait(0.2) #???        
+        eg.plugins.EventGhost.Wait(0.5) #???        
     
 #===============================================================================
 
