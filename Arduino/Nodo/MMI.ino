@@ -42,6 +42,12 @@ int ExecuteLine(char *Line, byte Port)
     CommandPos=0;
     LinePos=0;    
     int LineLength=strlen(Line);
+
+    // De Nodo kan berekeningen maken en variabelen vullen. Voer deze taak uit.
+    if(Substitute(Line)!=0)
+      error=MESSAGE_INVALID_PARAMETER;
+
+
     while(LinePos<=LineLength && error==0)
       {
       char LineChar=Line[LinePos];
@@ -51,26 +57,11 @@ int ExecuteLine(char *Line, byte Port)
         LinePos=LineLength+1;                                                   // ga direct naar einde van de regel.
         }
 
-     
-      if(LineChar=='$')                                                         // Chat teken. 
-        {
-        y=bitRead(HW_Config,HW_SERIAL);
-        bitWrite(HW_Config,HW_SERIAL,1);
-        PrintString(Line+LinePos, VALUE_ALL);
-        bitWrite(HW_Config,HW_SERIAL,y);
-        LinePos=LineLength+1;                                                   // ga direct naar einde van de regel.
-        }
-
       // Commando compleet als puntkomma (scheidt opdrachten) of einde string.
-      if((LineChar=='!' || LineChar=='$' ||LineChar==';' || LineChar==0) && CommandPos>0 || CommandPos==(INPUT_COMMAND_SIZE-1))
+      if((LineChar=='!' || LineChar==';' || LineChar==0) && CommandPos>0 || CommandPos==(INPUT_COMMAND_SIZE-1))
         {
         Command[CommandPos]=0;
         CommandPos=0;
-
-        // De Nodo kan berekeningen maken en variabelen vullen. Voer deze taak uit.
-
-        if(Substitute(Command)!=0)
-          error=MESSAGE_INVALID_PARAMETER;
 
         // check of ingevoerde commando een alias is. Is dit het geval, dan wordt Command vervangen door de alias.
         Alias(Command,true); //  ??? Niet als het een standaadrd Nodo commando is. Nog inbouwen.
