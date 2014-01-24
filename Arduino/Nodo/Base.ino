@@ -17,7 +17,7 @@
 #define PULSE_DEBOUNCE_TIME               10                                    // pulsen kleiner dan deze waarde in milliseconden worden niet geteld. Bedoeld om verstoringen a.g.v. ruis of dender te voorkomen
 #define PULSE_TRANSITION             FALLING                                    // FALLING of RISING: Geeft aan op welke flank de PulseCounter start start met tellen. Default FALLING
 #define I2C_START_ADDRESS                  1                                    // Alle Nodo's op de I2C bus hebben een uniek adres dat start vanaf dit nummer. Er zijn max. 32 Nodo's. Let op overlap met andere devices. RTC zit op adres 104.
-#define BAUD                           19200                                    // Baudrate voor seriÃ«le communicatie.
+#define BAUD                           19200                                    // Baudrate voor seriele communicatie.
 #define PASSWORD_MAX_RETRY                 5                                    // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
 #define PASSWORD_TIMEOUT                 300                                    // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
 #define TERMINAL_TIMEOUT                 600                                    // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
@@ -30,7 +30,7 @@
 #define ETHERNET_MAC_2                  0xAA                                    // Dit is byte 2 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
 #define CLOCK                           true                                    // true=code voor Real Time Clock mee compileren.
 #define SLEEP                           true                                    // Sleep mode mee compileren?
-#define I2C                             true                                    // I2C communicatie mee compileren (I2C plugins en klok blijvel wel gebruik maken van I2)
+#define I2C                             true                                    // I2C communicatie mee compileren (I2C plugins en klok blijven wel gebruik maken van I2)
 #define WIRED                          false
 
 byte dummy=1;                                                                   // linker even op weg helpen. Bugje in Arduino.
@@ -493,6 +493,7 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define HW_WEBAPP      17
 #define HW_PULSE       18
 #define HW_PLUGIN      19
+#define HW_WIRED       20
 
 // Definitie van de speciale hardware uitvoeringen van de Nodo.
 #define BIC_DEFAULT                  0                                          // Standaard Nodo zonder specifike hardware aansturing
@@ -500,6 +501,9 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 
 #define PLUGIN_MAX                  32                                          // Maximaal aantal devices 
 #define MACRO_EXECUTION_DEPTH       10                                          // maximale nesting van macro's.
+
+#define XON                       0x11                                          // Seriale communicatie XON/XOFF handshaking
+#define XOFF                      0x13                                          // Seriale communicatie XON/XOFF handshaking
 
 #if NODO_MEGA // Definities voor de Nodo-Mega variant.
 #define EVENT_QUEUE_MAX             16                                          // maximaal aantal plaatsen in de queue.
@@ -559,7 +563,7 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define EEPROM_SIZE               4096                                          // Groote van het EEPROM geheugen.
 #define WIRED_PORTS                  8                                          // aAntal WiredIn/WiredOut poorten
 #define COOKIE_REFRESH_TIME         60                                          // Tijd in sec. tussen automatisch verzenden van een nieuw Cookie als de beveiligde HTTP modus is inschakeld.
-#define SERIAL_STAY_SHARP_TIME     100                                          // Tijd in mSec. dat na ontvangen van een teken uitsluitend naar Serial als input wordt geluisterd. 
+#define SERIAL_STAY_SHARP_TIME      50                                          // Tijd in mSec. dat na ontvangen van een teken uitsluitend naar Serial als input wordt geluisterd. 
 
 #else // als het voor de Nodo-Small variant is
 #define EVENT_QUEUE_MAX              8                                          // maximaal aantal plaatsen in de queue
@@ -856,6 +860,7 @@ void setup()
   if(Settings.Version!=NODO_VERSION_MINOR)ResetFactory();                       // De Nodo resetten als Versie van de settings zoals geladen vanuit EEPROM niet correct is.
   
   #if WIRED  
+  bitWrite(HW_Config,HW_WIRED,1);
   for(x=0;x<WIRED_PORTS;x++)                                                    // initialiseer de Wired ingangen.
     {
     if(Settings.WiredInputPullUp[x]==VALUE_ON)
@@ -980,20 +985,14 @@ void loop()
   unsigned long PreviousTimeEvent=0L; 
 
   #if NODO_MEGA
-  SerialHold(false);                                                            // er mogen weer tekens binnen komen van SERIAL
   InputBuffer_Serial[0]=0;                                                      // serieel buffer string leeg maken
+  SerialHold(false);                                                            // er mogen weer tekens binnen komen van SERIAL
   TempLogFile[0]=0;                                                             // geen extra logging
   #endif
 
   // hoofdloop: scannen naar signalen
   // dit is een tijdkritische loop die wacht tot binnengekomen event op IR, RF, I2C, SERIAL, CLOCK, DAYLIGHT, TIMER, etc
   // Er is bewust NIET gekozen voor opvangen van signalen via IRQ's omdat er dan communicatie problemen ontstaan.
-
-
-
-  void *Plugin_share;
-  
-  Plugin_share=&ReceivedEvent;
 
   while(true)
     {
@@ -1016,7 +1015,7 @@ void loop()
       {        
       case 0:
         {
-        // SERIAL: *************** kijk of er data klaar staat op de seriÃ«le poort **********************
+        // SERIAL: *************** kijk of er data klaar staat op de seriele poort **********************
         if(Serial.available())
           {
           PluginCall(PLUGIN_SERIAL_IN,0,0);
@@ -1029,11 +1028,15 @@ void loop()
             {          
             while(Serial.available())
               {                        
+              StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
+
+
               SerialInByte=Serial.read();                
+
               if(Settings.EchoSerial==VALUE_ON)
                 Serial.write(SerialInByte);                                     // echo ontvangen teken
-    
-              StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
+              else if(SerialInByte==XON)
+                Serial.write(XON);                                              // om te voorkomen dat beide devices om wat voor reden dan ook op elkaar wachten
               
               if(isprint(SerialInByte))
                 {
@@ -1043,18 +1046,16 @@ void loop()
                 
               if(SerialInByte=='\n')
                 {
-                SerialHold(true);
                 InputBuffer_Serial[SerialInByteCounter]=0;                      // serieel ontvangen regel is compleet
-                ExecutionDepth=0;
                 RaiseMessage(ExecuteLine(InputBuffer_Serial,VALUE_SOURCE_SERIAL),0);
                 Serial.write('>');                                              // Prompt
                 SerialInByteCounter=0;  
                 InputBuffer_Serial[0]=0;                                        // serieel ontvangen regel is verwerkt. String leegmaken
-                SerialHold(false);
                 StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
                 }
               }
             }
+          SerialHold(false);
           #endif
           }// if(Serial.available())
         }
@@ -1079,14 +1080,13 @@ void loop()
           {
           while(TerminalServer.available())
             {          
-            if(TerminalConnected==0)// indien een nieuwe connectie
+            if(TerminalConnected==0)                                            // indien een nieuwe connectie
               {
-              // we hebben een nieuwe Terminal client
               TerminalClient=TerminalServer.available();
               TerminalConnected=TERMINAL_TIMEOUT;
               InputBuffer_Terminal[0]=0;
               TerminalInbyteCounter=0;
-              TerminalClient.flush();// eventuele rommel weggooien.
+              TerminalClient.flush();                                           // eventuele rommel weggooien.
 
               if(Settings.Password[0]!=0)
                 {
@@ -1122,36 +1122,36 @@ void loop()
                   if(Settings.EchoTelnet==VALUE_ON)
                     {
                     if(TerminalLocked && isprint(TerminalInByte))
-                      TerminalClient.write('*');// echo asterisk zodat wachtwoord niet zichtbaar is a.g.v. echo.
+                      TerminalClient.write('*');                                // echo asterisk zodat wachtwoord niet zichtbaar is a.g.v. echo.
                     else
-                      TerminalClient.write(TerminalInByte);// Echo ontvangen teken                  
+                      TerminalClient.write(TerminalInByte);                     // Echo ontvangen teken                  
                     }
                   InputBuffer_Terminal[TerminalInbyteCounter++]=TerminalInByte;
                   }
                 else
-                   TerminalClient.write('?');// geen ruimte meer.
+                   TerminalClient.write('?');                                   // geen ruimte meer.
                 }
 
               else if(TerminalInByte==0x0a /*LF*/ || TerminalInByte==0x0d /*CR*/)
                 {                    
                 if(Settings.EchoTelnet==VALUE_ON)
-                  TerminalClient.println("");// Echo de nieuwe regel.
+                  TerminalClient.println("");                                   // Echo de nieuwe regel.
                 TerminalConnected=TERMINAL_TIMEOUT;
                 InputBuffer_Terminal[TerminalInbyteCounter]=0;
                 TerminalInbyteCounter=0;
               
-                if(TerminalLocked==0) // als op niet op slot
+                if(TerminalLocked==0)                                           // als op niet op slot
                   {
                   TerminalClient.getRemoteIP(ClientIPAddress);
                   ExecutionDepth=0;
                   RaiseMessage(ExecuteLine(InputBuffer_Terminal,VALUE_SOURCE_TELNET),0);
-                  TerminalClient.write('>');// prompt
+                  TerminalClient.write('>');                                    // prompt
                   }
                 else
                   {
-                  if(TerminalLocked<=PASSWORD_MAX_RETRY)// teller is wachtloop bij herhaaldelijke pogingen foutief wachtwoord. Bij >3 pogingen niet meer toegestaan
+                  if(TerminalLocked<=PASSWORD_MAX_RETRY)                        // teller is wachtloop bij herhaaldelijke pogingen foutief wachtwoord. Bij >3 pogingen niet meer toegestaan
                     {
-                    if(strcmp(InputBuffer_Terminal,Settings.Password)==0)// als wachtwoord goed is, dan slot er af
+                    if(strcmp(InputBuffer_Terminal,Settings.Password)==0)       // als wachtwoord goed is, dan slot er af
                       {
                       TerminalLocked=0;
                       y=bitRead(HW_Config,HW_SERIAL);
@@ -1159,13 +1159,13 @@ void loop()
                       PrintWelcome();
                       bitWrite(HW_Config,HW_SERIAL,y);
                       }
-                    else// als foutief wachtwoord, dan teller 
+                    else                                                        // als foutief wachtwoord, dan teller 
                       {
                       TerminalLocked++;
                       TerminalClient.println("?");
                       if(TerminalLocked>PASSWORD_MAX_RETRY)
                         {
-                        TerminalLocked=PASSWORD_TIMEOUT; // blokkeer tijd terminal
+                        TerminalLocked=PASSWORD_TIMEOUT;                        // blokkeer tijd terminal
                         TerminalClient.print(cmd2str(MESSAGE_ACCESS_DENIED));
                         RaiseMessage(MESSAGE_ACCESS_DENIED,0);
                         }
