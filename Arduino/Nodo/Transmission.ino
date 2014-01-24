@@ -143,7 +143,10 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     }
 
   // Onthoud wanneer de verzending plaats heeft gevonden om opvolgend even niet te snel te verzenden.
-  HoldTransmission=millis()+DELAY_BETWEEN_TRANSMISSIONS;
+  if(ES->Flags & TRANSMISSION_QUEUE_NEXT)
+    HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS_Q+millis();
+  else              
+    HoldTransmission=millis()+DELAY_BETWEEN_TRANSMISSIONS;
   }
   
 #if NODO_MEGA
@@ -859,9 +862,6 @@ void ExecuteIP(void)
 //#######################################################################################################
 //##################################### Transmission: SERIAL  ###########################################
 //#######################################################################################################
-
-#define XON                       0x11
-#define XOFF                      0x13
 
 void SerialHold(boolean x)
 {

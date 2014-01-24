@@ -497,8 +497,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         EventToExecute->Flags=TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
         EventToExecute->Type=NODO_TYPE_SYSTEM;
         
-        HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS+millis();
-
         while(x<=y && Eventlist_Read(x,&TempEvent,&TempEvent2))
           {
           EventToExecute->Par1=x;
@@ -509,7 +507,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
             TempEvent.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
             TempEvent.Port=EventToExecute->Port;
             TempEvent.DestinationUnit=EventToExecute->SourceUnit;
-            HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS_Q+millis();
             SendEvent(&TempEvent,false,false,false);
     
             if(x==y)                                                            // Lock staat aan. Als laatste regel uit de eventlist, dan de ether weer vrijgeven. 
@@ -519,10 +516,8 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
 
             TempEvent2.Port=EventToExecute->Port;
             TempEvent2.DestinationUnit=EventToExecute->SourceUnit;
-            HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS_Q+millis();
             SendEvent(&TempEvent2,false,false,false);
             }
-          HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS+millis();
           x++;
           }
         #if NODO_MEGA

@@ -423,13 +423,13 @@ boolean GetStatus(struct NodoEventStruct *Event)
         Event->Par2=Settings.TransmitRF;
         break;
   
-  #if NODO_MEGA
+      #if NODO_MEGA
       case VALUE_SOURCE_HTTP:
         Event->Par2=Settings.TransmitIP;
         break;
-  #endif 
+       #endif 
       default:
-        Event->Command=0;// Geen geldige optie. Als 0 wordt teruggegeven in command dan wordt niets weergegeven met de status.
+        Event->Command=0;                                                       // Geen geldige optie. Als 0 wordt teruggegeven in command dan wordt niets weergegeven met de status.
       }
     break;
 
@@ -438,7 +438,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
     if(x)
       Event->Par1=x;
     else
-        Event->Command=0;// Geen device op deze positie
+        Event->Command=0;                                                       // Geen device op deze positie
     break;
 
   case CMD_VARIABLE_SET:
@@ -534,7 +534,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
       Event->Par2=x;
       }
     else
-      Event->Command=0;// Als resultaat niet geldig is en niet weergegeven mag worden
+      Event->Command=0;                                                         // Als resultaat niet geldig is en niet weergegeven mag worden
     
     break;
 
@@ -560,7 +560,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
     Event->Par2=Settings.RawSignalCleanUp;
     break;
 
-    // pro-forma de commando's die geen fout op mogen leveren omdat deze elders in de statusafhandeling worden weergegeven
+  // pro-forma de commando's die geen fout op mogen leveren omdat deze elders in de statusafhandeling worden weergegeven
   case CMD_NODO_IP:
   case CMD_GATEWAY:
   case CMD_SUBNET:
@@ -569,7 +569,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
   case CMD_ID:
   case CMD_TEMP:
     break;
-#endif      
+  #endif      
   default:
     return false;
   }
@@ -710,8 +710,6 @@ void Status(struct NodoEventStruct *Request)
   boolean DisplayLocal=false;
   struct NodoEventStruct Result;
 
-  byte teller=0;//??? mag weg! debugging
-  
   #if NODO_MEGA          
   char *TempString=(char*)malloc(INPUT_LINE_SIZE);
   boolean dhcp=(Settings.Nodo_IP[0] + Settings.Nodo_IP[1] + Settings.Nodo_IP[2] + Settings.Nodo_IP[3])==0;
@@ -771,7 +769,7 @@ void Status(struct NodoEventStruct *Request)
   else
     {
     Result.Command=Request->Par1;
-    if(!GetStatus(&Result))// kijk of voor de opgegeven parameter de status opvraagbaar is. Zo niet dan klaar.
+    if(!GetStatus(&Result))                                                     // kijk of voor de opgegeven parameter de status opvraagbaar is. Zo niet dan klaar.
       return;
     CMD_Start=Request->Par1;
     CMD_End=Request->Par1;
@@ -864,9 +862,9 @@ void Status(struct NodoEventStruct *Request)
     Result.Command=x;
     Result.Par1=Request->Par1;    
     
-    if(!s && GetStatus(&Result)) // Als het een geldige uitvraag is.
+    if(!s && GetStatus(&Result))                                                // Als het een geldige uitvraag is.
       {
-      if(Request->Par2==0) // Als in het commando 'Status Par1, Par2' Par2 niet is gevuld met een waarde
+      if(Request->Par2==0)                                                      // Als in het commando 'Status Par1, Par2' Par2 niet is gevuld met een waarde
         {
         switch(x)
           {
@@ -934,8 +932,7 @@ void Status(struct NodoEventStruct *Request)
           {
           if(!DisplayLocal)
             {
-            Result.Flags=TRANSMISSION_VIEW;//??? | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
-            HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS_Q+millis(); // wordt dit niet afgevangen in de SendEvent???              
+            Result.Flags=TRANSMISSION_VIEW | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
             SendEvent(&Result,false,false,false);
             }            
   

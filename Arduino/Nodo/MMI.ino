@@ -19,23 +19,18 @@ int ExecuteLine(char *Line, byte Port)
   struct NodoEventStruct EventToExecute,TempEvent;
 
   Led(RED);
+  SerialHold(true);                                                             // Geen seriele data meer accepteren
 
-  // Als de SendTo wel/niet permanent, dan unitnummer overnemen of uitschekelen.
-  Transmission_SendToUnit=Transmission_SendToAll;
+  Transmission_SendToUnit=Transmission_SendToAll;                               // Als de SendTo wel/niet permanent, dan unitnummer overnemen of uitschakelen.
 
-  // Als de SendTo wel permanent is ingeschakeld, dan de queue leegmaken omdat anders eventuele oude queue inhoud
-  // mee wordt verzonden met de SendTo
-  if(Transmission_SendToAll)
+  if(Transmission_SendToAll)                                                    // Als SendTo wel permanent ingeschakeld, dan queue leegmaken anders eventuele oude queue inhoud meeverzonden met SendTo
     QueuePosition=0;
 
-
-  // verwerking van commando's is door gebruiker tijdelijk geblokkeerd door FileWrite commando
-  if(FileWriteMode>0)
+  if(FileWriteMode>0)                                                           // verwerking van commando's is door gebruiker tijdelijk geblokkeerd door FileWrite commando
     {
-    if(StringFind(Line,cmd2str(CMD_FILE_WRITE))!=-1)// string gevonden!
+    if(StringFind(Line,cmd2str(CMD_FILE_WRITE))!=-1)                            // string gevonden!
       {
-      // Stop de FileWrite modus
-      FileWriteMode=0;
+      FileWriteMode=0;                                                          // Stop de FileWrite modus
       TempLogFile[0]=0;
       PrintString(ProgmemString(Text_22),Port);
       }
@@ -51,20 +46,19 @@ int ExecuteLine(char *Line, byte Port)
       {
       char LineChar=Line[LinePos];
   
-      // Comment teken. hierna verder niets meer doen.
-      if(LineChar=='!') 
+      if(LineChar=='!')                                                         // Comment teken. hierna verder niets meer doen. 
         {
-        LinePos=LineLength+1; // ga direct naar einde van de regel.
+        LinePos=LineLength+1;                                                   // ga direct naar einde van de regel.
         }
 
-      // Chat teken. 
-      if(LineChar=='$')
+     
+      if(LineChar=='$')                                                         // Chat teken. 
         {
         y=bitRead(HW_Config,HW_SERIAL);
         bitWrite(HW_Config,HW_SERIAL,1);
         PrintString(Line+LinePos, VALUE_ALL);
         bitWrite(HW_Config,HW_SERIAL,y);
-        LinePos=LineLength+1; // ga direct naar einde van de regel.
+        LinePos=LineLength+1;                                                   // ga direct naar einde van de regel.
         }
 
       // Commando compleet als puntkomma (scheidt opdrachten) of einde string.

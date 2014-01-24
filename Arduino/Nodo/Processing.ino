@@ -45,6 +45,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
   int x;
   byte error=0;
   boolean Continue=true;
+  SerialHold(true);                                                             // Geen seriele data meer accepteren
 
   if(Event->Command==0)
     return error;
