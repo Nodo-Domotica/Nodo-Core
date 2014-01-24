@@ -60,6 +60,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         }
       break;         
 
+    #if WIRED
     case CMD_VARIABLE_SET_WIRED_ANALOG:
       if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afgevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
@@ -71,7 +72,8 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
         ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
         }
-      break;         
+      break;
+    #endif         
   
     case CMD_VARIABLE_VARIABLE:
       if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
@@ -336,6 +338,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       Alarm(EventToExecute->Par1,EventToExecute->Par2);
       break;     
   
+    #if WIRED
     case CMD_WIRED_PULLUP:
       Settings.WiredInputPullUp[EventToExecute->Par1-1]=EventToExecute->Par2; // EventToExecute->Par1 is de poort[1..]
       
@@ -356,6 +359,18 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       PrintEvent(&TempEvent,VALUE_ALL);
       #endif
       break;
+
+    case CMD_WIRED_SMITTTRIGGER:
+      if(EventToExecute->Par1>0 && EventToExecute->Par1<=WIRED_PORTS)
+        Settings.WiredInputSmittTrigger[EventToExecute->Par1-1]=EventToExecute->Par2;
+      break;                  
+
+    case CMD_WIRED_THRESHOLD:
+      if(EventToExecute->Par1>0 && EventToExecute->Par1<=WIRED_PORTS)
+        Settings.WiredInputThreshold[EventToExecute->Par1-1]=EventToExecute->Par2;
+      break;                  
+
+    #endif //WIRED
                          
     case CMD_SETTINGS_SAVE:
       UndoNewNodo();// Status NewNodo verwijderen indien van toepassing
@@ -385,16 +400,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       
       break;
       
-    case CMD_WIRED_SMITTTRIGGER:
-      if(EventToExecute->Par1>0 && EventToExecute->Par1<=WIRED_PORTS)
-        Settings.WiredInputSmittTrigger[EventToExecute->Par1-1]=EventToExecute->Par2;
-      break;                  
-
-    case CMD_WIRED_THRESHOLD:
-      if(EventToExecute->Par1>0 && EventToExecute->Par1<=WIRED_PORTS)
-        Settings.WiredInputThreshold[EventToExecute->Par1-1]=EventToExecute->Par2;
-      break;                  
-
     case CMD_STATUS:
       Status(EventToExecute);
       break;

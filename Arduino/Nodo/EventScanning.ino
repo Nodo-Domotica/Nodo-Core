@@ -10,48 +10,49 @@ unsigned long EventHashPrevious=0,SignalHash,SignalHashPrevious=0L;
 
 boolean ScanEvent(struct NodoEventStruct *Event)                                // Deze routine maakt deel uit van de hoofdloop en wordt iedere 125uSec. doorlopen
   {
-  byte Fetched=0;
+  byte Fetched=0, Focus=0;
   static boolean BlockRepeatsStatus=false;
   unsigned long Timer=millis()+SCAN_HIGH_TIME;
       
-  #if I2C
-  if(I2C_Received)                                                              // I2C: *************** kijk of er data is binnengekomen op de I2C-bus **********************
-    {
-    if(I2C_Received==sizeof(struct NodoEventStruct))                            // Er is I2C data binnengekomen maar weten nog niet of het een NodoEventStruct betreft.
-      {                                                                         // Het is een NodoEventStruct
-      memcpy(Event, &I2C_ReceiveBuffer, sizeof(struct NodoEventStruct));
-
-      if(Checksum(Event))
-        {   
-        bitWrite(HW_Config,HW_I2C,true);
-        I2C_Received=0;
-        Fetched=VALUE_SOURCE_I2C;
-        }
-      }
-    else
-      {                                                                         // Het is geen NodoEventStruct. In dit geval verwerken als reguliere commandline string.
-      PluginCall(PLUGIN_I2C_IN,0,0);
-
-      #if NODO_MEGA
-      I2C_ReceiveBuffer[I2C_Received]=0;                                        // Sluit buffer af als een string.
-
-      for(int q=0;q<I2C_Received;q++)                                           // In een commando bevinden zich geen bijzondere tekens. Is dit wel het geval, dan string leeg maken.
-       if(!isprint(I2C_ReceiveBuffer[q]))
-         I2C_ReceiveBuffer[0]=0;
-        
-      if(I2C_ReceiveBuffer[0]!=0)                                               // Is er een geldige string binnen, dan verwerken als commandline.
-        ExecuteLine((char*)&I2C_ReceiveBuffer[0],VALUE_SOURCE_I2C);  
-      #endif
-
-      Fetched=0;
-      I2C_Received=0;
-      }
-    }
-  #endif
   
   while(Timer>millis() || RepeatingTimer>millis())
     {
-    if(FetchSignal(PIN_IR_RX_DATA,LOW))                                         // IR: *************** kijk of er data start **********************
+    #if I2C
+    if(I2C_Received && (Focus==0 || Focus==VALUE_SOURCE_I2C))                   // I2C: *************** kijk of er data is binnengekomen op de I2C-bus **********************
+      {
+      if(I2C_Received==sizeof(struct NodoEventStruct))                          // Er is I2C data binnengekomen maar weten nog niet of het een NodoEventStruct betreft.
+        {                                                                       // Het is een NodoEventStruct
+        memcpy(Event, &I2C_ReceiveBuffer, sizeof(struct NodoEventStruct));
+  
+        if(Checksum(Event))
+          {   
+          bitWrite(HW_Config,HW_I2C,true);
+          I2C_Received=0;
+          Fetched=VALUE_SOURCE_I2C;
+          }
+        }
+      else
+        {                                                                       // Het is geen NodoEventStruct. In dit geval verwerken als reguliere commandline string.
+        PluginCall(PLUGIN_I2C_IN,0,0);
+  
+        #if NODO_MEGA
+        I2C_ReceiveBuffer[I2C_Received]=0;                                      // Sluit buffer af als een string.
+  
+        for(int q=0;q<I2C_Received;q++)                                         // In een commando bevinden zich geen bijzondere tekens. Is dit wel het geval, dan string leeg maken.
+         if(!isprint(I2C_ReceiveBuffer[q]))
+           I2C_ReceiveBuffer[0]=0;
+          
+        if(I2C_ReceiveBuffer[0]!=0)                                             // Is er een geldige string binnen, dan verwerken als commandline.
+          ExecuteLine((char*)&I2C_ReceiveBuffer[0],VALUE_SOURCE_I2C);  
+        #endif
+  
+        Fetched=0;
+        I2C_Received=0;
+        }
+      }
+    #endif
+  
+    if(FetchSignal(PIN_IR_RX_DATA,LOW) && (Focus==0 || Focus==VALUE_SOURCE_IR)) // IR: *************** kijk of er data start **********************
       {
       if(AnalyzeRawSignal(Event))
         {
@@ -60,7 +61,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
         }
       }
       
-    else if(FetchSignal(PIN_RF_RX_DATA,HIGH))                                   // RF: *************** kijk of er data start **********************
+    else if(FetchSignal(PIN_RF_RX_DATA,HIGH) && (Focus==0 || Focus==VALUE_SOURCE_RF))                                   // RF: *************** kijk of er data start **********************
       {
       if(AnalyzeRawSignal(Event))
         {
@@ -75,8 +76,9 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       SignalHash=(Event->Command<<24 | Event->Type<<16 | Event->Par1<<8) ^ Event->Par2;
       Event->Port=Fetched;
       Event->Direction=VALUE_DIRECTION_INPUT;
+      Focus=Fetched;
       Fetched=0;
-
+      
       if(RawSignal.RepeatChecksum)RawSignal.Repeats=true;
             
       // Er zijn een aantal situaties die moeten leiden te een event. Echter er zijn er ook die (nog) niet mogen leiden 
@@ -99,7 +101,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       SignalHashPrevious=SignalHash;
 
       //if(RawSignal.Repeats) //??? kan de if() niet weg om zo ook voor Nodo events even focus te houden?
-        RepeatingTimer=millis()+SIGNAL_REPEAT_TIME;
+      RepeatingTimer=millis()+SIGNAL_REPEAT_TIME;
       
       if(Fetched)
         {
@@ -139,7 +141,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
         if(Event->DestinationUnit==0 || Event->DestinationUnit==Settings.Unit)
           {
           EventHashPrevious=SignalHash;
-          //PrintNodoEvent("DEBUG: ScanEvent(): Fetched", Event);
+          // PrintNodoEvent("DEBUG: ScanEvent(): Fetched", Event);
           return true;
           }
         }
@@ -156,25 +158,27 @@ boolean ScanAlarm(struct NodoEventStruct *Event)
   
   for(byte x=0;x<ALARM_MAX;x++)
     {
-    if((Settings.Alarm[x]>>20)&1) // Als alarm enabled is, dan ingestelde alarmtijd vergelijke met de echte tijd.
+    if((Settings.Alarm[x]>>20)&1)                                               // Als alarm enabled is, dan ingestelde alarmtijd vergelijke met de echte tijd.
       {
       // stel een vergelijkingswaarde op
       unsigned long Cmp=Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12 | (unsigned long)Time.Day<<16 | 1UL<<20;
 
-      // In het ingestelde alarm kunnen zich wildcards bevinden. Maskeer de posities met 0xF wildcard nibble        
-      for(byte y=0;y<8;y++)// loop de acht nibbles van de 32-bit Par2 langs
+                                                                                // In het ingestelde alarm kunnen zich wildcards bevinden. 
+                                                                                // Maskeer de posities met 0xF wildcard nibble. 
+                                                                                // Loop de acht nibbles van de 32-bit Par2 langs        
+      for(byte y=0;y<8;y++)
         {          
-        if(((Settings.Alarm[x]>>(y*4))&0xf) == 0xf) // als in nibble y een wildcard waarde 0xf staat
+        if(((Settings.Alarm[x]>>(y*4))&0xf) == 0xf)                             // als in nibble y een wildcard waarde 0xf staat
           {
-          Mask=0xffffffff  ^ (0xFUL <<(y*4)); // Mask maken om de nibble positie y te wissen.
-          Cmp&=Mask;                          // Maak nibble leeg
-          Cmp|=(0xFUL<<(y*4));                // vul met wildcard waarde 0xf
+          Mask=0xffffffff  ^ (0xFUL <<(y*4));                                   // Mask maken om de nibble positie y te wissen.
+          Cmp&=Mask;                                                            // Maak nibble leeg
+          Cmp|=(0xFUL<<(y*4));                                                  // vul met wildcard waarde 0xf
           }
         }
       
-     if(Settings.Alarm[x]==Cmp) // Als ingestelde alarmtijd overeen komt met huidige tijd.
+     if(Settings.Alarm[x]==Cmp)                                                 // Als ingestelde alarmtijd overeen komt met huidige tijd.
        {
-       if(AlarmPrevious[x]!=Time.Minutes) // Als alarm niet eerder is afgegaan
+       if(AlarmPrevious[x]!=Time.Minutes)                                       // Als alarm niet eerder is afgegaan
          {
          AlarmPrevious[x]=Time.Minutes;
 
