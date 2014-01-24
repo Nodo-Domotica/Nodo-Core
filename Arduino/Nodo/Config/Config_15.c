@@ -11,7 +11,7 @@
 #define HOME_NODO                          1                                    // Home adres. Alleen Nodo's met hetzelde Home adres kunnen ondeling gegevens uitwisselen
 #define CLOCK                          false                                    // true=code om Real Time Clock mee compileren.
 #define SLEEP                          false                                    // Sleep mode mee compileren?
-#define I2C                            false                                    // I2C communicatie mee compileren (I2C plugins en klok blijvel wel gebruik maken van I2)
+#define I2C                             true                                    // I2C communicatie mee compileren (I2C plugins en klok blijvel wel gebruik maken van I2)
 
 
 // Kaku              : Klik-Aan-Klik-Uit

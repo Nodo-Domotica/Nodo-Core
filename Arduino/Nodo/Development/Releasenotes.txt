@@ -54,4 +54,4 @@ R684:
 ToDo:
 - Testen: SendTo i.c.m. WaitFreeRX
 - Testen: I2C n.a.v. aanpassen FetchSignal() voor IR/RF
-
+- Wachten geeft geen melding "Waiting..." 

@@ -29,7 +29,7 @@ byte ProcessEventExt(struct NodoEventStruct *Event)
     ClearEvent(&TempEvent);    
     TempEvent.DestinationUnit       = Event->SourceUnit;
     TempEvent.Port                  = Event->Port;
-    TempEvent.Type                  = NODO_TYPE_SYSTEM;    // Event is niet voor de gebruiker bedoeld
+    TempEvent.Type                  = NODO_TYPE_SYSTEM;                         // Event is niet voor de gebruiker bedoeld
     TempEvent.Command               = SYSTEM_COMMAND_CONFIRMED;
     TempEvent.Par1                  = RequestForConfirm;
     SendEvent(&TempEvent, false,false,false);
@@ -39,6 +39,7 @@ byte ProcessEventExt(struct NodoEventStruct *Event)
   return error;
   }
     
+
 byte ProcessEvent(struct NodoEventStruct *Event)
   {
   int x;
@@ -87,7 +88,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
 
       #if NODO_MEGA
       case SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW:                                 // Normaal deel van een SendTo en dus al in de Wait afgevangen
-        Wait(3, false,0 , false);  
+        Wait(5, false,0 , false);  
         break;
       #endif
       }
@@ -286,6 +287,8 @@ boolean QueueAdd(struct NodoEventStruct *Event)
   {
   if(QueuePosition<EVENT_QUEUE_MAX)
     {
+    // PrintNodoEvent("DEBUG: QueueAdd()",Event);
+
     Event->Flags&=~TRANSMISSION_QUEUE;                                          //  Haal eventuele QUEUE vlag er af. Anders loopt de queue vol door recursiviteit;
     
     Queue[QueuePosition].Flags   = Event->Flags; 
@@ -321,24 +324,24 @@ boolean QueueAdd(struct NodoEventStruct *Event)
         ClearEvent(&E);
         ClearEvent(&A);
         
-        strcpy(TempString2,int2str(Queue[0].Par1)); 
+        strcpy(TempString2,int2str(Queue[QueuePosition-3].Par1)); 
         strcat(TempString2,": ");
 
         // geef het event weer
-        E.Type=Queue[QueuePosition-2].Type;
-        E.Command=Queue[QueuePosition-2].Command;
-        E.Par1=Queue[QueuePosition-2].Par1;
-        E.Par2=Queue[QueuePosition-2].Par2;
+        E.Type    = Queue[QueuePosition-2].Type;
+        E.Command = Queue[QueuePosition-2].Command;
+        E.Par1    = Queue[QueuePosition-2].Par1;
+        E.Par2    = Queue[QueuePosition-2].Par2;
         Event2str(&E, TempString);
         if(Settings.Alias==VALUE_ON)
           Alias(TempString,false);
         strcat(TempString2, TempString);
     
         // geef het action weer
-        A.Type=Queue[QueuePosition-1].Type;
-        A.Command=Queue[QueuePosition-1].Command;
-        A.Par1=Queue[QueuePosition-1].Par1;
-        A.Par2=Queue[QueuePosition-1].Par2;
+        A.Type    = Queue[QueuePosition-1].Type;
+        A.Command = Queue[QueuePosition-1].Command;
+        A.Par1    = Queue[QueuePosition-1].Par1;
+        A.Par2    = Queue[QueuePosition-1].Par2;
         strcat(TempString2,"; ");
         Event2str(&A, TempString);  
         if(Settings.Alias==VALUE_ON)
@@ -440,6 +443,7 @@ byte QueueSend(boolean fast)
   // als de Nodo nog niet bekend is, dan pollen we naar deze Nodo.
     
   x=bitRead(HW_Config,HW_I2C);                                                  // Zet I2C tijdelijk aan
+  bitWrite(HW_Config,HW_I2C,1);
   do
     {
     Port=NodoOnline(Transmission_SendToUnit,0);
@@ -447,7 +451,7 @@ byte QueueSend(boolean fast)
       {
       ClearEvent(&Event);
       Event.Port                  = VALUE_ALL;
-      Event.Type                  = NODO_TYPE_EVENT;
+      Event.Type                  = NODO_TYPE_SYSTEM;
       Event.Command               = SYSTEM_COMMAND_QUEUE_POLL;
       Event.DestinationUnit       = Transmission_SendToUnit;
       Event.Flags                 = TRANSMISSION_CONFIRM;
@@ -457,7 +461,7 @@ byte QueueSend(boolean fast)
       Wait(5, false,0 , false);  
       }
     }while(Port==0 && ++Retry<3);
-  bitWrite(HW_Config,HW_I2C,x);
+  bitWrite(HW_Config,HW_I2C,Port==VALUE_SOURCE_I2C | x);
 
   
   if(Port!=0)

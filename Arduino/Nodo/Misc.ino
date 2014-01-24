@@ -107,7 +107,7 @@ boolean Eventlist_Read(int address, struct NodoEventStruct *Event, struct NodoEv
 
 /*********************************************************************************************\
  * Deze funktie verstuurt een message. Aanroep van deze funktie in de code daar waar de foutmelding 
- * is opgetreden, dodat er geen foutcodes door de code heen getransporteerd hoeven te worden.
+ * is opgetreden, zodat er geen foutcodes door de code heen getransporteerd hoeven te worden.
  * 
  * 
  \*********************************************************************************************/
@@ -301,20 +301,19 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
   unsigned long TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;
 
   #if NODO_MEGA
-  unsigned long MessageTimer=millis() + 5000;
+  unsigned long MessageTimer=millis() + 3000;
   boolean WaitMessage=false;
   #endif
 
   // Serial.println(F("DEBUG: Wait()"));
   
-  // Initialiseer een Event en Transmissie
   struct NodoEventStruct Event;
   ClearEvent(&Event);
 
   while(TimeoutTimer>millis())
     {
     #if NODO_MEGA
-    if(!WaitMessage && MessageTimer<millis())
+    if(!WaitMessage && MessageTimer<millis())                                   // Als wachten langer duurt dan 5sec. dan melding weergeven aan gebruiker.
       {
       WaitMessage=true;
       PrintString(ProgmemString(Text_07),VALUE_ALL);
@@ -323,10 +322,6 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
       
     if(ScanEvent(&Event))
       {            
-      #if NODO_MEGA
-      MessageTimer=millis() + 5000;                                             // Als wachten langer duurt dan 5sec. dan melding weergeven aan gebruiker.
-      #endif
-
       // PrintNodoEvent("DEBUG: Wait() Binnengekomen event",&Event);
       
       TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;                    // Zolang er event binnenkomen geen timeout.
@@ -359,8 +354,7 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
     
   // Serial.println(F("DEBUG: Wait() verlaten."));
 
-  // als timeout, dan error terug geven
-  if(TimeoutTimer<=millis())
+  if(TimeoutTimer<=millis())                                                    // als timeout, dan error terug geven
     return false;
 
   else
@@ -472,6 +466,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
       Event->Par2=0;
     break;
 
+  #if WIRED
   case CMD_WIRED_PULLUP:
     Event->Par1=xPar1;
     Event->Par2=Settings.WiredInputPullUp[xPar1-1];
@@ -491,11 +486,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
     Event->Par1=xPar1;
     Event->Par2=Settings.WiredInputSmittTrigger[xPar1-1];
     break;
-
-  case VALUE_FREEMEM:    
-    Event->Par2=FreeMem();
-    break;
-
+    
   case EVENT_WIRED_IN:
     Event->Par1=xPar1;
     Event->Par2=(WiredInputStatus[xPar1-1])?VALUE_ON:VALUE_OFF;
@@ -505,6 +496,13 @@ boolean GetStatus(struct NodoEventStruct *Event)
     Event->Par1=xPar1;
     Event->Par2=(WiredOutputStatus[xPar1-1])?VALUE_ON:VALUE_OFF;
     break;
+
+  #endif //WIRED
+
+  case VALUE_FREEMEM:    
+    Event->Par2=FreeMem();
+    break;
+
 
   case CMD_LOCK:
     Event->Par1=Settings.Lock?VALUE_ON:VALUE_OFF;;
@@ -685,12 +683,14 @@ void ResetFactory(void)
 #endif
 
   // zet analoge poort  waarden op default
+  #if WIRED
   for(x=0;x<WIRED_PORTS;x++)
     {
     Settings.WiredInputThreshold[x]=512; 
     Settings.WiredInputSmittTrigger[x]=10;
     Settings.WiredInputPullUp[x]=VALUE_ON;
     }
+  #endif //WIRED
 
   Save_Settings();
   Reboot();

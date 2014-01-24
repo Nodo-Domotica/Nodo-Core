@@ -31,7 +31,7 @@
 #define CLOCK                           true                                    // true=code voor Real Time Clock mee compileren.
 #define SLEEP                           true                                    // Sleep mode mee compileren?
 #define I2C                             true                                    // I2C communicatie mee compileren (I2C plugins en klok blijvel wel gebruik maken van I2)
-
+#define WIRED                          false
 
 byte dummy=1;                                                                   // linker even op weg helpen. Bugje in Arduino.
 
@@ -618,18 +618,20 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 
 struct SettingsStruct
   {
-  int     Version;        
   byte    Unit; // Max 5 bits in bebruik
   byte    Reserved; 
   boolean NewNodo;
-  int     WiredInputThreshold[WIRED_PORTS], WiredInputSmittTrigger[WIRED_PORTS];
-  byte    WiredInputPullUp[WIRED_PORTS];
   byte    TransmitIR;
   byte    TransmitRF;
   byte    WaitFree;
   byte    RawSignalReceive;
   byte    RawSignalSample;
   unsigned long Lock;                                                           // bevat de pincode waarmee IR/RF ontvangst is geblokkeerd. Bit nummer hoogste bit wordt gebruiktvoor in/uitschakelen.
+  
+  #if WIRED
+  int     WiredInputThreshold[WIRED_PORTS], WiredInputSmittTrigger[WIRED_PORTS];
+  byte    WiredInputPullUp[WIRED_PORTS];
+  #endif
   
   #if NODO_MEGA
   unsigned long Alarm[ALARM_MAX];                                               // Instelbaar alarm
@@ -657,6 +659,7 @@ struct SettingsStruct
   byte    Res3;
   byte    Res4;
   #endif
+  int     Version;                                                              // Onjuiste versie in EEPROM zorgt voor een [Reset]
   }Settings;
 
 
@@ -713,8 +716,6 @@ boolean Transmission_ThisUnitIsMaster=false;
 boolean Transmission_NodoOnly=false;                                            // Als deze vlag staat, dan worden er uitsluitend Nodo-eigen signalen ontvangen.  
 byte QueuePosition=0;
 unsigned long UserTimer[TIMER_MAX];                                             // Timers voor de gebruiker.
-boolean WiredInputStatus[WIRED_PORTS];                                          // Status van de WiredIn worden hierin opgeslagen.
-boolean WiredOutputStatus[WIRED_PORTS];                                         // Wired variabelen.
 byte DaylightPrevious;                                                          // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet.
 byte ExecutionDepth=0;                                                          // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's.
 int ExecutionLine=0;                                                            // Regel in de eventlist die in uitvoer is.
@@ -725,6 +726,11 @@ unsigned long HW_Config=0;                                                      
 struct NodoEventStruct LastReceived;                                            // Laatst ontvangen event
 byte RequestForConfirm=0;                                                       // Als ongelijk nul, dan heeft deze Nodo een verzoek ontvangen om een systemevent 'Confirm' te verzenden. Waarde wordt in Par1 meegezonden.
 int EventlistMax=0;                                                             // beschikbaar aantal regels in de eventlist. Wordt tijdens setup berekend.
+
+#if WIRED
+boolean WiredInputStatus[WIRED_PORTS];                                          // Status van de WiredIn worden hierin opgeslagen.
+boolean WiredOutputStatus[WIRED_PORTS];                                         // Wired variabelen.
+#endif
 
 #if NODO_MEGA
 byte  Transmission_SendToUnit=0;                                                // Unitnummer waar de events naar toe gestuurd worden. 0=alle.
@@ -849,7 +855,7 @@ void setup()
 
   if(Settings.Version!=NODO_VERSION_MINOR)ResetFactory();                       // De Nodo resetten als Versie van de settings zoals geladen vanuit EEPROM niet correct is.
   
-  
+  #if WIRED  
   for(x=0;x<WIRED_PORTS;x++)                                                    // initialiseer de Wired ingangen.
     {
     if(Settings.WiredInputPullUp[x]==VALUE_ON)
@@ -860,8 +866,9 @@ void setup()
     pinMode(PIN_WIRED_OUT_1+x,OUTPUT);                                          // definieer Arduino pin's voor Wired-Out
     WiredInputStatus[x]=true;                                                   // Status van de wired poort setten zodat er niet onterect bij start al events worden gegenereerd.
     }
+  #endif
     
-  DetectHardwareReset();                                                        // De Nodo resetten als de WiredOut-1 verbonden is met de WiredIn-1
+  DetectHardwareReset();                                                        // De Nodo resetten als lijnen LED_RED en IR_RX_DATAverbonden zijn.
   
   #if NODO_MEGA
   SDCardInit();                                                                 // SDCard detecteren en evt. gereed maken voor gebruik in de Nodo
@@ -1188,6 +1195,7 @@ void loop()
       
       case 3:
         {
+        #if WIRED
         // WIRED: *************** kijk of statussen gewijzigd zijn op WIRED **********************  
         // als de huidige waarde groter dan threshold EN de vorige keer was dat nog niet zo DAN event genereren
         for(x=0;x<WIRED_PORTS;x++)
@@ -1221,6 +1229,7 @@ void loop()
             ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
             }
           }
+        #endif
         break;
         }
         

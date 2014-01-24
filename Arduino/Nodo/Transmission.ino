@@ -179,24 +179,26 @@ void SendI2C(struct NodoEventStruct *EventBlock)
   byte x;
   byte *B=(byte*)EventBlock;  
 
-  Checksum(EventBlock);// bereken checksum: crc-8 uit alle bytes in de struct.
+  Checksum(EventBlock);                                                         // bereken checksum: crc-8 uit alle bytes in de struct.
 
   for(int y=1;y<=UNIT_MAX;y++)
     {            
     // We sturen de events naar bekende Nodo's die zich op de I2C bus bevinden. Als deze Nodo later op de bus wordt aangesloten,
     // dan zal Boot event van deze Nodo de andere uitnodigen om een bekendmaking te sturen zodat de lijst compleet is.
-    // Daarom wordt het Boot event naar alle I2C adressen gestuurd waar zich een Nodo op kan bevinden.
-    if(EventBlock->Command==EVENT_BOOT || EventBlock->Command==EVENT_NEWNODO || (NodoOnline(y,0)==VALUE_SOURCE_I2C))// Type moet hier nog mee als voorwaarde ???
+    // Daarom wordt het Boot, NewNodo en POLL event naar alle I2C adressen gestuurd waar zich een Nodo op kan bevinden.
+    if((EventBlock->Type==NODO_TYPE_EVENT  && (EventBlock->Command==EVENT_BOOT || EventBlock->Command==EVENT_NEWNODO)) || 
+      (EventBlock->Type==NODO_TYPE_SYSTEM &&  EventBlock->Command==SYSTEM_COMMAND_QUEUE_POLL) || 
+      NodoOnline(y,0)==VALUE_SOURCE_I2C)
       {
       WireNodo.beginTransmission(I2C_START_ADDRESS+y-1);
       for(x=0;x<sizeof(struct NodoEventStruct);x++)
         WireNodo.write(*(B+x));
-      WireNodo.endTransmission(false); // verzend de data, sluit af maar geef de bus NIET vrij
+      WireNodo.endTransmission(false);                                          // verzend de data, sluit af maar geef de bus NIET vrij
       }
     }
-  WireNodo.endTransmission(true); // Geef de bus vrij
+  WireNodo.endTransmission(true);                                               // Geef de bus vrij
   }
-#endif //I2c
+#endif // I2C
 
 #define IP_BUFFER_SIZE            256
 
@@ -436,8 +438,7 @@ boolean SendHTTPCookie(void)
   strcpy(HttpRequest,"?id=");
   strcat(HttpRequest,Settings.ID);  
 
-  // Verzend tevens een nieuwe cookie voor het eerstvolgende event.
-  RandomCookie(HTTPCookie);
+  RandomCookie(HTTPCookie);                                                     // Verzend tevens een nieuwe cookie voor het eerstvolgende event.
   strcat(HttpRequest,"&cookie=");
   strcat(HttpRequest,HTTPCookie);
 
@@ -458,18 +459,17 @@ boolean SendHTTPRequest(char* Request)
   unsigned long TimeoutTimer;
   char filename[13];
   const int TimeOut=5000;
-  EthernetClient IPClient; // Client class voor HTTP sessie.
+  EthernetClient IPClient;                                                      // Client class voor HTTP sessie.
   byte State=0;
   char *IPBuffer=(char*)malloc(IP_BUFFER_SIZE);
   char *TempString=(char*)malloc(INPUT_LINE_SIZE);
   File BodyTextFile;
   struct NodoEventStruct TempEvent;
 
-  // pluk de filename uit het http request als die er is.
   filename[0]=0;
-  if(ParseHTTPRequest(Request,"file=", TempString,"&? "))
+  if(ParseHTTPRequest(Request,"file=", TempString,"&? "))                       // pluk de filename uit het http request als die er is.
     {
-    TempString[8]=0; // voorkom dat filenaam meer dan acht posities heeft
+    TempString[8]=0;                                                            // voorkom dat filenaam meer dan acht posities heeft
     strcpy(filename,TempString);                
     SelectSDCard(true);
     FileErase("", filename,"DAT");
@@ -478,14 +478,11 @@ boolean SendHTTPRequest(char* Request)
 
   strcpy(IPBuffer,"GET ");
 
-  // Haal uit het HTTP request URL de Host. 
-  // zoek naar de eerste slash in de opgegeven HTTP-Host adres
-  SlashPos=StringFind(Settings.HTTPRequest,"/");
+  SlashPos=StringFind(Settings.HTTPRequest,"/");                                // Haal uit het HTTP request URL de Host. Zoek naar de eerste slash in de opgegeven HTTP-Host adres
   if(SlashPos!=-1)
     strcat(IPBuffer,Settings.HTTPRequest+SlashPos);
 
-  // Alle spaties omzetten naar %20 en toevoegen aan de te verzenden regel.
-  y=strlen(IPBuffer);
+  y=strlen(IPBuffer);                                                           // Alle spaties omzetten naar %20 en toevoegen aan de te verzenden regel.
   for(x=0;x<strlen(Request);x++)
     {            
     if(Request[x]==32)
@@ -501,11 +498,8 @@ boolean SendHTTPRequest(char* Request)
     }
   IPBuffer[y]=0;
 
-  // Sluit HTTP-request af met protocol versienummer
-  strcat(IPBuffer," HTTP/1.1");
-
-  // IPBuffer bevat nu het volledige HTTP-request, gereed voor verzending.
-
+  strcat(IPBuffer," HTTP/1.1");                                                 // Sluit HTTP-request af met protocol versienummer
+                                                                                // IPBuffer bevat nu het volledige HTTP-request, gereed voor verzending.
   if(Settings.Debug==VALUE_ON)
     {
     Serial.print(F("Debug: HTTP-Output="));
@@ -530,9 +524,9 @@ boolean SendHTTPRequest(char* Request)
       IPClient.print(F("User-Agent: Nodo/Build="));
       IPClient.println(int2str(NODO_BUILD));             
       IPClient.println(F("Connection: Close"));
-      IPClient.println();// Afsluiten met een lege regel is verplicht in http protocol/
+      IPClient.println();                                                       // Afsluiten met een lege regel is verplicht in http protocol/
 
-      TimeoutTimer=millis()+TimeOut; // Als er te lange tijd geen datatransport is, dan wordt aangenomen dat de verbinding (om wat voor reden dan ook) is afgebroken.
+      TimeoutTimer=millis()+TimeOut;                                            // Als er te lange tijd geen datatransport is, dan wordt aangenomen dat de verbinding (om wat voor reden dan ook) is afgebroken.
       IPBuffer[0]=0;
       InByteCounter=0;
 
@@ -546,19 +540,17 @@ boolean SendHTTPRequest(char* Request)
 
           else if(InByte==0x0A)
             {
-            IPBuffer[InByteCounter]=0;
-            // De regel is binnen 
+            IPBuffer[InByteCounter]=0;                                          // De regel is binnen
 
             if(Settings.Debug==VALUE_ON)
               {
-              strcpy(TempString,"Debug: HTTP-Input=");
+              strcpy(TempString,"DEBUG: HTTP-Input=");
               strcat(TempString,IPBuffer);
               Serial.println(TempString);
               }
-            TimeoutTimer=millis()+TimeOut; // er is nog data transport, dus de timeout timer weer op max. zetten.
+            TimeoutTimer=millis()+TimeOut;                                      // er is nog data transport, dus de timeout timer weer op max. zetten.
 
-            // State 0: wachten totdat in de initial-request line OK/200 voorbij komt en er dus response is van de server.
-            if(State==0)
+            if(State==0)                                                        // State 0: wachten totdat in de initial-request line OK/200 voorbij komt en er dus response is van de server.
               {
               if(StringFind(IPBuffer,"200")!=-1 && StringFind(IPBuffer,"HTTP")!=-1)
                 {
@@ -566,15 +558,13 @@ boolean SendHTTPRequest(char* Request)
                 }
               }
     
-            // State 1: In deze state komen de header-lines voorbij. Deze state is klaar zodra er een lege header-line voorbij komt.
-            else if(State==1)
+            else if(State==1)                                                   // State 1: In deze state komen de header-lines voorbij. Deze state is klaar zodra er een lege header-line voorbij komt.
               {            
               if(InByteCounter==0)
                 {
                 State=2;
-                if(filename[0])
+                if(filename[0])                                                 // Openen nieuw bestand.
                   {
-                  // Openen nieuw bestand.
                   SelectSDCard(true);
                   BodyTextFile = SD.open(PathFile("",filename,"DAT"), FILE_WRITE);
                   SelectSDCard(false);
@@ -582,8 +572,7 @@ boolean SendHTTPRequest(char* Request)
                 }
               else
                 {
-                // als de tijd wordt meegeleverd, dan de clock gelijkzetten.
-                if(ClockSyncHTTP)
+                if(ClockSyncHTTP)                                               // als de tijd wordt meegeleverd, dan de clock gelijkzetten.
                   {
                   if(ParseHTTPRequest(IPBuffer,"time=", TempString,";, "))
                     {
@@ -592,8 +581,8 @@ boolean SendHTTPRequest(char* Request)
                     TempEvent.Par2=str2ultime(TempString);
                     if(TempEvent.Par2<0xffffffff)
                       ExecuteCommand(&TempEvent);
-
                     }            
+
                   if(ParseHTTPRequest(IPBuffer,"date=", TempString,";, "))
                     {
                     ClearEvent(&TempEvent);
@@ -606,15 +595,13 @@ boolean SendHTTPRequest(char* Request)
                 }
               }
 
-            // State 2: In deze state komen de regels van de body-text voorbij
-            else if(State==2)
+            else if(State==2)                                                   // State 2: In deze state komen de regels van de body-text voorbij
               {
-              // als bodytext moet worden opgeslagen in en bestand
               SelectSDCard(true);
-              if(BodyTextFile)
+              if(BodyTextFile)                                                  // als bodytext moet worden opgeslagen in en bestand
                 {
                 BodyTextFile.write((uint8_t*)IPBuffer,strlen(IPBuffer));
-                BodyTextFile.write('\n'); // nieuwe regel
+                BodyTextFile.write('\n');                                       // nieuwe regel
                 }
               SelectSDCard(false);
               }
@@ -623,24 +610,22 @@ boolean SendHTTPRequest(char* Request)
           }
         }
 
-      // eventueel geopende bestand op SDCard afsluiten
-      if(BodyTextFile)
+      if(BodyTextFile)                                                          // eventueel geopende bestand op SDCard afsluiten
         {
         SelectSDCard(true);
         BodyTextFile.close();
         SelectSDCard(false);
         }        
       delay(100);
-      IPClient.flush();// Verwijder eventuele rommel in de buffer.
+      IPClient.flush();                                                         // Verwijder eventuele rommel in de buffer.
       IPClient.stop();
       }
-    else
+    else                                                                        // niet gelukt om de TCP-IP verbinding op te zetten. Genereer error en her-initialiseer de ethernetkaart.
       {
-      // niet gelukt om de TCP-IP verbinding op te zetten. Genereer error en her-initialiseer de ethernetkaart.
       State=0;
-      delay(3000); // korte pause tussen de nieuwe pogingen om verbinding te maken.
+      delay(3000);                                                              // korte pause tussen de nieuwe pogingen om verbinding te maken.
       if(EthernetInit())
-        CookieTimer=1;// gelijk een nieuwe cookie versturen.
+        CookieTimer=1;                                                          // gelijk een nieuwe cookie versturen.
       }
     }
   while(State==0 && ++Try<3);
@@ -650,10 +635,10 @@ boolean SendHTTPRequest(char* Request)
 
   if(!State)
     {
-    x=Settings.TransmitIP; // HTTP tijdelijk uitzetten want die deed het immers niet.
-    Settings.TransmitIP=VALUE_OFF; // HTTP tijdelijk uitzetten want die deed het immers niet.
+    x=Settings.TransmitIP;                                                      // HTTP tijdelijk uitzetten want die deed het immers niet.
+    Settings.TransmitIP=VALUE_OFF;                                              // HTTP tijdelijk uitzetten want die deed het immers niet.
     RaiseMessage(MESSAGE_TCPIP_FAILED,0);
-    Settings.TransmitIP=x; // HTTP weer terugzetten naar oorspronkelijke waarde.
+    Settings.TransmitIP=x;                                                      // HTTP weer terugzetten naar oorspronkelijke waarde.
     }
 
   return State;

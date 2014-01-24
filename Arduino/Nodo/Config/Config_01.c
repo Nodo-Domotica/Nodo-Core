@@ -11,30 +11,30 @@
 #define NODO_MEGA     true // true = Nodo Mega, false=Nodo-Small
 
 // Kaku : Klik-Aan-Klik-Uit
-// #define PLUGIN_001
-// #define PLUGIN_001_CORE
+#define PLUGIN_001
+#define PLUGIN_001_CORE
 
 // NewKAKU : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno.
-// #define PLUGIN_002
-// #define PLUGIN_002_CORE
+#define PLUGIN_002
+#define PLUGIN_002_CORE
 
 // Vochtigheidssensor / Temperatuursensor DHT-22
-// #define PLUGIN_006
-//#define PLUGIN_006_CORE 22
+#define PLUGIN_006
+#define PLUGIN_006_CORE 22
 
 // Temperatuursensor Dallas DS18B20
-// #define PLUGIN_005
+#define PLUGIN_005
 
 // Oude UserEvents Nodo Due compatibiliteit
-// #define PLUGIN_007
-// #define PLUGIN_007_CORE
+#define PLUGIN_007
+#define PLUGIN_007_CORE
 
 //Luchtdruksensor BPM085
-// #define PLUGIN_020
+#define PLUGIN_020
 
 // RGB-Led aansturing
-// #define PLUGIN_023
-// #define PLUGIN_023_CORE
+#define PLUGIN_023
+#define PLUGIN_023_CORE
 
 
 
