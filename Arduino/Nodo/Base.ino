@@ -561,7 +561,7 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define EEPROM_SIZE               4096                                          // Groote van het EEPROM geheugen.
 #define WIRED_PORTS                  8                                          // aAntal WiredIn/WiredOut poorten
 #define COOKIE_REFRESH_TIME         60                                          // Tijd in sec. tussen automatisch verzenden van een nieuw Cookie als de beveiligde HTTP modus is inschakeld.
-#define SERIAL_STAY_SHARP_TIME     100                                          // Tijd in mSec. dat na ontvangen van een teken uitsluitend naar Serial als input wordt geluisterd. 
+#define SERIAL_STAY_SHARP_TIME     500                                          // Tijd in mSec. dat na ontvangen van een teken uitsluitend naar Serial als input wordt geluisterd. 
 
 #else // als het voor de Nodo-Small variant is
 #define EVENT_QUEUE_MAX              8                                          // maximaal aantal plaatsen in de queue
@@ -1015,7 +1015,6 @@ void loop()
         {          
         if(Serial.available())
           {                        
-          StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
           SerialInByte=Serial.read();                
 
           if(Settings.EchoSerial==VALUE_ON)
@@ -1030,16 +1029,20 @@ void loop()
               
           if(SerialInByte=='\n')
             {
+            SerialHold(true);
             InputBuffer_Serial[SerialInByteCounter]=0;                      // serieel ontvangen regel is compleet
+      
+//???            Serial.print("Verwerken: ");Serial.println(InputBuffer_Serial);
+      
             RaiseMessage(ExecuteLine(InputBuffer_Serial,VALUE_SOURCE_SERIAL),0);
             Serial.write('>');                                              // Prompt
             SerialInByteCounter=0;  
             InputBuffer_Serial[0]=0;                                        // serieel ontvangen regel is verwerkt. String leegmaken
-            StaySharpTimer=0;      
+            SerialHold(false);
             }
+          StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
           }
         }
-      SerialHold(false);
       #endif
       }// if(Serial.available())
 
