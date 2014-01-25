@@ -8,8 +8,8 @@
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  *                      Support ACH2010 en code optimalisatie door forumlid: Arendst
  * Support            : www.nodo-domotica.nl
- * Datum              : 27 Dec 2013
- * Versie             : 1.2
+ * Datum              : 25 Jan 2013
+ * Versie             : 1.3
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
  * Compatibiliteit    : Vanaf Nodo build nummer 555
  * Syntax             : "AlectoV2 <Par1:Sensor ID>, <Par2:Basis Variabele>"
@@ -57,12 +57,12 @@
 #define ACH2010_MIN_PULSECOUNT 160 // reduce this value (144?) in case of bad reception
 #define ACH2010_MAX_PULSECOUNT 160
 
-byte ProtocolAlectoCheckID(byte checkID);
-uint8_t ProtocolAlectoCRC8( uint8_t *addr, uint8_t len);
+byte Plugin_009_ProtocolAlectoCheckID(byte checkID);
+uint8_t Plugin_009_ProtocolAlectoCRC8( uint8_t *addr, uint8_t len);
 
-byte ProtocolAlectoValidID[5];
-byte ProtocolAlectoVar[5];
-unsigned int ProtocolAlectoRainBase=0;
+byte Plugin_009_ProtocolAlectoValidID[5];
+byte Plugin_009_ProtocolAlectoVar[5];
+unsigned int Plugin_009_ProtocolAlectoRainBase=0;
 
 boolean Plugin_009(byte function, struct NodoEventStruct *event, char *string)
 {
@@ -103,14 +103,14 @@ boolean Plugin_009(byte function, struct NodoEventStruct *event, char *string)
         }
 
       checksum = data[maxidx];
-      checksumcalc = ProtocolAlectoCRC8(data, maxidx);
+      checksumcalc = Plugin_009_ProtocolAlectoCRC8(data, maxidx);
   
       msgtype = (data[0] >> 4) & 0xf;
       rc = (data[0] << 4) | (data[1] >> 4);
 
       if (checksum != checksumcalc) return false;
   
-      basevar = ProtocolAlectoCheckID(rc);
+      basevar = Plugin_009_ProtocolAlectoCheckID(rc);
 
       event->Par1=rc;
       event->Par2=basevar;
@@ -127,12 +127,12 @@ boolean Plugin_009(byte function, struct NodoEventStruct *event, char *string)
 
       rain = (data[6] * 256) + data[7];
       // check if rain unit has been reset!
-      if (rain < ProtocolAlectoRainBase) ProtocolAlectoRainBase=rain;
-      if (ProtocolAlectoRainBase > 0)
+      if (rain < Plugin_009_ProtocolAlectoRainBase) Plugin_009_ProtocolAlectoRainBase=rain;
+      if (Plugin_009_ProtocolAlectoRainBase > 0)
       {
-        UserVar[basevar +2 -1] += ((float)rain - ProtocolAlectoRainBase) * 0.30;
+        UserVar[basevar +2 -1] += ((float)rain - Plugin_009_ProtocolAlectoRainBase) * 0.30;
       }
-      ProtocolAlectoRainBase = rain;
+      Plugin_009_ProtocolAlectoRainBase = rain;
 
       UserVar[basevar +3 -1] = (float)data[4] * 1.08;
       UserVar[basevar +4 -1] = (float)data[5] * 1.08;
@@ -144,14 +144,14 @@ boolean Plugin_009(byte function, struct NodoEventStruct *event, char *string)
     }
   case PLUGIN_COMMAND:
     {
-    if ((event->Par2 > 0) && (ProtocolAlectoCheckID(event->Par1) == 0))
+    if ((event->Par2 > 0) && (Plugin_009_ProtocolAlectoCheckID(event->Par1) == 0))
       {
       for (byte x=0; x<5; x++)
         {
-        if (ProtocolAlectoValidID[x] == 0)
+        if (Plugin_009_ProtocolAlectoValidID[x] == 0)
           {
-            ProtocolAlectoValidID[x] = event->Par1;
-            ProtocolAlectoVar[x] = event->Par2;
+            Plugin_009_ProtocolAlectoValidID[x] = event->Par1;
+            Plugin_009_ProtocolAlectoVar[x] = event->Par2;
             success = true;
             break;
           }
@@ -196,13 +196,14 @@ boolean Plugin_009(byte function, struct NodoEventStruct *event, char *string)
   return success;
 }
 
+#ifdef PLUGIN_009_CORE
 /*********************************************************************************************\
  * Calculates CRC-8 checksum
  * reference http://lucsmall.com/2012/04/29/weather-station-hacking-part-2/
  *           http://lucsmall.com/2012/04/30/weather-station-hacking-part-3/
  *           https://github.com/lucsmall/WH2-Weather-Sensor-Library-for-Arduino/blob/master/WeatherSensorWH2.cpp
  \*********************************************************************************************/
-uint8_t ProtocolAlectoCRC8( uint8_t *addr, uint8_t len)
+uint8_t Plugin_009_ProtocolAlectoCRC8( uint8_t *addr, uint8_t len)
 {
   uint8_t crc = 0;
   // Indicated changes are from reference CRC-8 function in OneWire library
@@ -221,8 +222,9 @@ uint8_t ProtocolAlectoCRC8( uint8_t *addr, uint8_t len)
 /*********************************************************************************************\
  * Check for valid sensor ID
  \*********************************************************************************************/
-byte ProtocolAlectoCheckID(byte checkID)
+byte Plugin_009_ProtocolAlectoCheckID(byte checkID)
 {
-  for (byte x=0; x<5; x++) if (ProtocolAlectoValidID[x] == checkID) return ProtocolAlectoVar[x];
+  for (byte x=0; x<5; x++) if (Plugin_009_ProtocolAlectoValidID[x] == checkID) return Plugin_009_ProtocolAlectoVar[x];
   return 0;
 }
+#endif //CORE
