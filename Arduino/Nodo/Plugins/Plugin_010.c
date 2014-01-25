@@ -117,7 +117,7 @@ boolean Plugin_010(byte function, struct NodoEventStruct *event, char *string)
       {
         rain = (((bitstream2 >> 24) & 0xff) * 256) + ((bitstream1 >> 0) & 0xff);
         // check if rain unit has been reset!
-        if (rain < Plugin_010ProtocolAlectoRainBase) Plugin_010_ProtocolAlectoRainBase=rain;
+        if (rain < Plugin_010_ProtocolAlectoRainBase) Plugin_010_ProtocolAlectoRainBase=rain;
         if (Plugin_010_ProtocolAlectoRainBase > 0)
         {
           UserVar[basevar+1 -1] += ((float)rain - Plugin_010_ProtocolAlectoRainBase) * 0.30;
