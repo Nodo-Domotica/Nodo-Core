@@ -7,10 +7,10 @@
  * 
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  * Support            : www.nodo-domotica.nl
- * Datum              : 13 Sep 2013
- * Versie             : 1.0
+ * Datum              : 25 Jan 2014
+ * Versie             : 1.1
  * Nodo productnummer : 
- * Compatibiliteit    : Vanaf Nodo build nummer 555
+ * Compatibiliteit    : Vanaf Nodo build nummer 691
  * Syntax             : "ExtWiredAnalog <Par1:Poort>, <Par2:Variable>"
  *********************************************************************************************
  * Technische beschrijving:
@@ -49,15 +49,15 @@ boolean Plugin_029(byte function, struct NodoEventStruct *event, char *string)
       uint8_t address = 0x48 + unit;
 
       // get the current pin value
-      Wire.beginTransmission(address);
-      Wire.write(port-1);
-      Wire.endTransmission();
+      WireNodo.beginTransmission(address);
+      WireNodo.write(port-1);
+      WireNodo.endTransmission();
 
-      Wire.requestFrom(address, (uint8_t)0x2);
-      if(Wire.available())
+      WireNodo.requestFrom(address, (uint8_t)0x2);
+      if(WireNodo.available())
       {
-        Wire.read(); // Read older value first (stored in chip)
-        UserVar[event->Par2-1] = (float)Wire.read();// now read actual value and store into Nodo var
+        WireNodo.read(); // Read older value first (stored in chip)
+        UserVar[event->Par2-1] = (float)WireNodo.read();// now read actual value and store into Nodo var
         success=true;
       }
       break;
