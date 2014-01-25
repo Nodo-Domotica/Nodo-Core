@@ -7,8 +7,8 @@
  * 
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  * Support            : www.nodo-domotica.nl
- * Datum              : 27 Dec 2013
- * Versie             : 1.2
+ * Datum              : 25 Jan 2014
+ * Versie             : 1.3
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
  * Compatibiliteit    : Vanaf Nodo build nummer 555
  * Syntax             : "AlectoV1 <Par1:Sensor ID>, <Par2:Basis Variabele>"
@@ -59,12 +59,11 @@
 
 #define WS3500_PULSECOUNT 74
 
-byte ProtocolAlectoCheckID(byte checkID);
-uint8_t ProtocolAlectoCRC8( uint8_t *addr, uint8_t len);
+byte Plugin_008_ProtocolAlectoCheckID(byte checkID);
 
-byte ProtocolAlectoValidID[5];
-byte ProtocolAlectoVar[5];
-unsigned int ProtocolAlectoRainBase=0;
+byte Plugin_008_ProtocolAlectoValidID[5];
+byte Plugin_008_ProtocolAlectoVar[5];
+unsigned int Plugin_008_ProtocolAlectoRainBase=0;
 
 boolean Plugin_008(byte function, struct NodoEventStruct *event, char *string)
 {
@@ -136,7 +135,7 @@ boolean Plugin_008(byte function, struct NodoEventStruct *event, char *string)
       if (checksum != checksumcalc) return false;
       rc = bitstream & 0xff;
 
-      basevar = ProtocolAlectoCheckID(rc);
+      basevar = Plugin_008_ProtocolAlectoCheckID(rc);
 
       event->Par1=rc;
       event->Par2=basevar;
@@ -165,12 +164,12 @@ boolean Plugin_008(byte function, struct NodoEventStruct *event, char *string)
         {
           rain = ((bitstream >> 16) & 0xffff);
           // check if rain unit has been reset!
-          if (rain < ProtocolAlectoRainBase) ProtocolAlectoRainBase=rain;
-          if (ProtocolAlectoRainBase > 0)
+          if (rain < Plugin_008_ProtocolAlectoRainBase) Plugin_008_ProtocolAlectoRainBase=rain;
+          if (Plugin_008_ProtocolAlectoRainBase > 0)
           {
-            UserVar[basevar +2 -1] += ((float)rain - ProtocolAlectoRainBase) * 0.25;
+            UserVar[basevar +2 -1] += ((float)rain - Plugin_008_ProtocolAlectoRainBase) * 0.25;
           }
-          ProtocolAlectoRainBase = rain;
+          Plugin_008_ProtocolAlectoRainBase = rain;
           return true;
         }
 
@@ -199,14 +198,14 @@ boolean Plugin_008(byte function, struct NodoEventStruct *event, char *string)
     }
   case PLUGIN_COMMAND:
     {
-    if ((event->Par2 > 0) && (ProtocolAlectoCheckID(event->Par1) == 0))
+    if ((event->Par2 > 0) && (Plugin_008_ProtocolAlectoCheckID(event->Par1) == 0))
       {
       for (byte x=0; x<5; x++)
         {
-        if (ProtocolAlectoValidID[x] == 0)
+        if (Plugin_008_ProtocolAlectoValidID[x] == 0)
           {
-          ProtocolAlectoValidID[x] = event->Par1;
-          ProtocolAlectoVar[x] = event->Par2;
+          Plugin_008_ProtocolAlectoValidID[x] = event->Par1;
+          Plugin_008_ProtocolAlectoVar[x] = event->Par2;
           success = true;
           break;
           }
@@ -251,34 +250,13 @@ boolean Plugin_008(byte function, struct NodoEventStruct *event, char *string)
   return success;
 }
 
-/*********************************************************************************************\
- * Calculates CRC-8 checksum
- * reference http://lucsmall.com/2012/04/29/weather-station-hacking-part-2/
- *           http://lucsmall.com/2012/04/30/weather-station-hacking-part-3/
- *           https://github.com/lucsmall/WH2-Weather-Sensor-Library-for-Arduino/blob/master/WeatherSensorWH2.cpp
- \*********************************************************************************************/
-uint8_t ProtocolAlectoCRC8( uint8_t *addr, uint8_t len)
-{
-  uint8_t crc = 0;
-  // Indicated changes are from reference CRC-8 function in OneWire library
-  while (len--) {
-    uint8_t inbyte = *addr++;
-    for (uint8_t i = 8; i; i--) {
-      uint8_t mix = (crc ^ inbyte) & 0x80; // changed from & 0x01
-      crc <<= 1; // changed from right shift
-      if (mix) crc ^= 0x31;// changed from 0x8C;
-      inbyte <<= 1; // changed from right shift
-    }
-  }
-  return crc;
-}
-
+#ifdef PLUGIN_008_CORE
 /*********************************************************************************************\
  * Check for valid sensor ID
  \*********************************************************************************************/
-byte ProtocolAlectoCheckID(byte checkID)
+byte Plugin_008_ProtocolAlectoCheckID(byte checkID)
 {
-  for (byte x=0; x<5; x++) if (ProtocolAlectoValidID[x] == checkID) return ProtocolAlectoVar[x];
+  for (byte x=0; x<5; x++) if (Plugin_008_ProtocolAlectoValidID[x] == checkID) return Plugin_008_ProtocolAlectoVar[x];
   return 0;
 }
-
+#endif //CORE
