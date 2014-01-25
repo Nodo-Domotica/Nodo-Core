@@ -1,4 +1,4 @@
-#define NODO_BUILD                       683                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       694                                    // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                 6                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1                                    // Unit nummer van deze Nodo
@@ -468,8 +468,12 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define UNIT_MAX                      31                                        // Hoogst mogelijke unit nummer van een Nodo
 #define SERIAL_TERMINATOR_1         0x0A                                        // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>
 #define SERIAL_TERMINATOR_2         0x00                                        // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
-#define SCAN_HIGH_TIME               100                                        // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
+#define SCAN_HIGH_TIME                50                                        // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
 #define SCAN_LOW_TIME               1000                                        // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
+#define PLUGIN_MAX                    32                                        // Maximaal aantal devices 
+#define MACRO_EXECUTION_DEPTH         10                                        // maximale nesting van macro's.
+#define XON                         0x11                                        // Seriale communicatie XON/XOFF handshaking
+#define XOFF                        0x13                                        // Seriale communicatie XON/XOFF handshaking
 
 
 // Hardware in gebruik: Bits worden geset in de variabele HW_Config, uit te lezen met [Status HWConfig]
@@ -498,12 +502,6 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 // Definitie van de speciale hardware uitvoeringen van de Nodo.
 #define BIC_DEFAULT                  0                                          // Standaard Nodo zonder specifike hardware aansturing
 #define BIC_HWMESH_NES_V1X           1                                          // Nodo Ethernet Shield V1.x met Aurel tranceiver. Vereist speciale pulse op PIN_BSF_0 voor omschakelen tussen Rx en Tx.
-
-#define PLUGIN_MAX                  32                                          // Maximaal aantal devices 
-#define MACRO_EXECUTION_DEPTH       10                                          // maximale nesting van macro's.
-
-#define XON                       0x11                                          // Seriale communicatie XON/XOFF handshaking
-#define XOFF                      0x13                                          // Seriale communicatie XON/XOFF handshaking
 
 #if NODO_MEGA // Definities voor de Nodo-Mega variant.
 #define EVENT_QUEUE_MAX             16                                          // maximaal aantal plaatsen in de queue.
@@ -563,7 +561,7 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define EEPROM_SIZE               4096                                          // Groote van het EEPROM geheugen.
 #define WIRED_PORTS                  8                                          // aAntal WiredIn/WiredOut poorten
 #define COOKIE_REFRESH_TIME         60                                          // Tijd in sec. tussen automatisch verzenden van een nieuw Cookie als de beveiligde HTTP modus is inschakeld.
-#define SERIAL_STAY_SHARP_TIME      50                                          // Tijd in mSec. dat na ontvangen van een teken uitsluitend naar Serial als input wordt geluisterd. 
+#define SERIAL_STAY_SHARP_TIME     100                                          // Tijd in mSec. dat na ontvangen van een teken uitsluitend naar Serial als input wordt geluisterd. 
 
 #else // als het voor de Nodo-Small variant is
 #define EVENT_QUEUE_MAX              8                                          // maximaal aantal plaatsen in de queue
@@ -1004,6 +1002,48 @@ void loop()
       // Serial.print(F("DEBUG: loop()\n\n\n"));
       }
 
+    // SERIAL: *************** kijk of er data klaar staat op de seriele poort **********************
+    if(Serial.available())
+      {
+      PluginCall(PLUGIN_SERIAL_IN,0,0);
+
+      #if NODO_MEGA     
+      bitWrite(HW_Config,HW_SERIAL,1);                                      // Input op seriele poort ontvangen. Vanaf nu ook output naar Seriele poort want er is klaarblijkelijk een actieve verbinding
+      StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;
+
+      while(StaySharpTimer>millis())                                        // blijf even paraat voor luisteren naar deze poort en voorkom dat andere input deze communicatie onderbreekt
+        {          
+        if(Serial.available())
+          {                        
+          StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
+          SerialInByte=Serial.read();                
+
+          if(Settings.EchoSerial==VALUE_ON)
+            Serial.write(SerialInByte);                                     // echo ontvangen teken
+          
+          if(SerialInByte==XON)
+            Serial.write(XON);                                              // om te voorkomen dat beide devices om wat voor reden dan ook op elkaar wachten
+          
+          if(isprint(SerialInByte))
+            if(SerialInByteCounter<(INPUT_LINE_SIZE-1))
+              InputBuffer_Serial[SerialInByteCounter++]=SerialInByte;
+              
+          if(SerialInByte=='\n')
+            {
+            InputBuffer_Serial[SerialInByteCounter]=0;                      // serieel ontvangen regel is compleet
+            RaiseMessage(ExecuteLine(InputBuffer_Serial,VALUE_SOURCE_SERIAL),0);
+            Serial.write('>');                                              // Prompt
+            SerialInByteCounter=0;  
+            InputBuffer_Serial[0]=0;                                        // serieel ontvangen regel is verwerkt. String leegmaken
+            StaySharpTimer=0;      
+            }
+          }
+        }
+      SerialHold(false);
+      #endif
+      }// if(Serial.available())
+
+
 
     // Een plugin mag tijdelijk een claim doen op de snelle aanroep vanuit de hoofdloop. 
     // Als de waarde FastLoopCall_ptr is gevuld met het adres van een funktie dan wordt de betreffende funktie eenmaal
@@ -1015,53 +1055,6 @@ void loop()
       {        
       case 0:
         {
-        // SERIAL: *************** kijk of er data klaar staat op de seriele poort **********************
-        if(Serial.available())
-          {
-          PluginCall(PLUGIN_SERIAL_IN,0,0);
-    
-          #if NODO_MEGA     
-          bitWrite(HW_Config,HW_SERIAL,1);                                      // Input op seriele poort ontvangen. Vanaf nu ook output naar Seriele poort want er is klaarblijkelijk een actieve verbinding
-          StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;
-    
-          while(StaySharpTimer>millis())                                        // blijf even paraat voor luisteren naar deze poort en voorkom dat andere input deze communicatie onderbreekt
-            {          
-            while(Serial.available())
-              {                        
-              StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
-
-
-              SerialInByte=Serial.read();                
-
-              if(Settings.EchoSerial==VALUE_ON)
-                Serial.write(SerialInByte);                                     // echo ontvangen teken
-              else if(SerialInByte==XON)
-                Serial.write(XON);                                              // om te voorkomen dat beide devices om wat voor reden dan ook op elkaar wachten
-              
-              if(isprint(SerialInByte))
-                {
-                if(SerialInByteCounter<(INPUT_LINE_SIZE-1))                     // alleen tekens aan de string toevoegen als deze nog in de buffer past.
-                  InputBuffer_Serial[SerialInByteCounter++]=SerialInByte;
-                }
-                
-              if(SerialInByte=='\n')
-                {
-                InputBuffer_Serial[SerialInByteCounter]=0;                      // serieel ontvangen regel is compleet
-                RaiseMessage(ExecuteLine(InputBuffer_Serial,VALUE_SOURCE_SERIAL),0);
-                Serial.write('>');                                              // Prompt
-                SerialInByteCounter=0;  
-                InputBuffer_Serial[0]=0;                                        // serieel ontvangen regel is verwerkt. String leegmaken
-                StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
-                }
-              }
-            }
-          SerialHold(false);
-          #endif
-          }// if(Serial.available())
-        }
-
-      case 1:
-        {
         // IP Event: *************** kijk of er een Event van IP komt **********************    
         #ifdef ethernetserver_h
         if(bitRead(HW_Config,HW_ETHERNET))
@@ -1072,7 +1065,7 @@ void loop()
         break;
         }
  
-      case 2:
+      case 1:
         {
         #ifdef ethernetserver_h
         // IP Telnet verbinding : *************** kijk of er verzoek tot verbinding vanuit een terminal is **********************    
@@ -1193,7 +1186,7 @@ void loop()
         break;
         }
       
-      case 3:
+      case 2:
         {
         #if WIRED
         // WIRED: *************** kijk of statussen gewijzigd zijn op WIRED **********************  

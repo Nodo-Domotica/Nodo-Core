@@ -115,7 +115,7 @@ class NodoSerial(eg.PluginClass):
         eg.plugins.EventGhost.Wait(1.0)
 
         if len(eg.globals.ThisUnit)==0:
-            print "# Nodo Plugin: error! Nodo not found."
+            print "*** Nodo Plugin: error! Nodo not found."
         
     def __stop__(self):
         self.serialThread.Close()
@@ -182,7 +182,7 @@ class NodoSerial(eg.PluginClass):
             self.serialThread.Write(StringToSend[i])                                
 
         # kleine pause omdat anders kans dat het XOFF van de Nodo nog niet opgepikt is door de PC.
-        eg.plugins.EventGhost.Wait(0.5) #???        
+        eg.plugins.EventGhost.Wait(0.3) #???        
     
 #===============================================================================
 
