@@ -10,63 +10,72 @@ unsigned long EventHashPrevious=0,SignalHash,SignalHashPrevious=0L;
 
 boolean ScanEvent(struct NodoEventStruct *Event)                                // Deze routine maakt deel uit van de hoofdloop en wordt iedere 125uSec. doorlopen
   {
-  byte Fetched=0, Focus=0;
+  byte Fetched=0;
+  static byte Focus=0;
   static boolean BlockRepeatsStatus=false;
   unsigned long Timer=millis()+SCAN_HIGH_TIME;
       
-  
   while(Timer>millis() || RepeatingTimer>millis())
     {
     #if I2C
-    if(I2C_Received && (Focus==0 || Focus==VALUE_SOURCE_I2C))                   // I2C: *************** kijk of er data is binnengekomen op de I2C-bus **********************
+    if(Focus==0 || Focus==VALUE_SOURCE_I2C)
       {
-      if(I2C_Received==sizeof(struct NodoEventStruct))                          // Er is I2C data binnengekomen maar weten nog niet of het een NodoEventStruct betreft.
-        {                                                                       // Het is een NodoEventStruct
-        memcpy(Event, &I2C_ReceiveBuffer, sizeof(struct NodoEventStruct));
-  
-        if(Checksum(Event))
-          {   
-          bitWrite(HW_Config,HW_I2C,true);
-          I2C_Received=0;
-          Fetched=VALUE_SOURCE_I2C;
+      if(I2C_Received)                                                          // I2C: *************** kijk of er data is binnengekomen op de I2C-bus **********************
+        {
+        if(I2C_Received==sizeof(struct NodoEventStruct))                        // Er is I2C data binnengekomen maar weten nog niet of het een NodoEventStruct betreft.
+          {                                                                     // Het is een NodoEventStruct
+          memcpy(Event, &I2C_ReceiveBuffer, sizeof(struct NodoEventStruct));
+    
+          if(Checksum(Event))
+            {   
+            bitWrite(HW_Config,HW_I2C,true);
+            I2C_Received=0;
+            Fetched=VALUE_SOURCE_I2C;
+            }
           }
-        }
-      else
-        {                                                                       // Het is geen NodoEventStruct. In dit geval verwerken als reguliere commandline string.
-        PluginCall(PLUGIN_I2C_IN,0,0);
-  
-        #if NODO_MEGA
-        I2C_ReceiveBuffer[I2C_Received]=0;                                      // Sluit buffer af als een string.
-  
-        for(int q=0;q<I2C_Received;q++)                                         // In een commando bevinden zich geen bijzondere tekens. Is dit wel het geval, dan string leeg maken.
-         if(!isprint(I2C_ReceiveBuffer[q]))
-           I2C_ReceiveBuffer[0]=0;
-          
-        if(I2C_ReceiveBuffer[0]!=0)                                             // Is er een geldige string binnen, dan verwerken als commandline.
-          ExecuteLine((char*)&I2C_ReceiveBuffer[0],VALUE_SOURCE_I2C);  
-        #endif
-  
-        Fetched=0;
-        I2C_Received=0;
+        else
+          {                                                                     // Het is geen NodoEventStruct. In dit geval verwerken als reguliere commandline string.
+          PluginCall(PLUGIN_I2C_IN,0,0);
+    
+          #if NODO_MEGA
+          I2C_ReceiveBuffer[I2C_Received]=0;                                    // Sluit buffer af als een string.
+    
+          for(int q=0;q<I2C_Received;q++)                                       // In een commando bevinden zich geen bijzondere tekens. Is dit wel het geval, dan string leeg maken.
+           if(!isprint(I2C_ReceiveBuffer[q]))
+             I2C_ReceiveBuffer[0]=0;
+            
+          if(I2C_ReceiveBuffer[0]!=0)                                           // Is er een geldige string binnen, dan verwerken als commandline.
+            ExecuteLine((char*)&I2C_ReceiveBuffer[0],VALUE_SOURCE_I2C);  
+          #endif
+    
+          Fetched=0;
+          I2C_Received=0;
+          }
         }
       }
     #endif
   
-    if(FetchSignal(PIN_IR_RX_DATA,LOW) && (Focus==0 || Focus==VALUE_SOURCE_IR)) // IR: *************** kijk of er data start **********************
+    if(Focus==0 || Focus==VALUE_SOURCE_IR)
       {
-      if(AnalyzeRawSignal(Event))
+      if(FetchSignal(PIN_IR_RX_DATA,LOW))                                       // IR: *************** kijk of er data start **********************
         {
-        bitWrite(HW_Config,HW_IR_RX,true);
-        Fetched=VALUE_SOURCE_IR;
+        if(AnalyzeRawSignal(Event))
+          {
+          bitWrite(HW_Config,HW_IR_RX,true);
+          Fetched=VALUE_SOURCE_IR;
+          }
         }
       }
       
-    else if(FetchSignal(PIN_RF_RX_DATA,HIGH) && (Focus==0 || Focus==VALUE_SOURCE_RF))                                   // RF: *************** kijk of er data start **********************
+    if(Focus==0 || Focus==VALUE_SOURCE_RF)
       {
-      if(AnalyzeRawSignal(Event))
+      if(FetchSignal(PIN_RF_RX_DATA,HIGH))                                      // RF: *************** kijk of er data start **********************
         {
-        bitWrite(HW_Config,HW_RF_RX,true);
-        Fetched=VALUE_SOURCE_RF;
+        if(AnalyzeRawSignal(Event))
+          {
+          bitWrite(HW_Config,HW_RF_RX,true);
+          Fetched=VALUE_SOURCE_RF;
+          }
         }
       }
 
@@ -100,7 +109,6 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
 
       SignalHashPrevious=SignalHash;
 
-      //if(RawSignal.Repeats) //??? kan de if() niet weg om zo ook voor Nodo events even focus te houden?
       RepeatingTimer=millis()+SIGNAL_REPEAT_TIME;
       
       if(Fetched)
@@ -147,6 +155,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
         }
       }
     }// while
+  Focus=0;
   return false;
   }
 

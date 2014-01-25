@@ -44,9 +44,6 @@ int ExecuteLine(char *Line, byte Port)
     int LineLength=strlen(Line);
 
     // De Nodo kan berekeningen maken en variabelen vullen. Voer deze taak uit.
-    if(Substitute(Line)!=0)
-      error=MESSAGE_INVALID_PARAMETER;
-
 
     while(LinePos<=LineLength && error==0)
       {
@@ -62,6 +59,9 @@ int ExecuteLine(char *Line, byte Port)
         {
         Command[CommandPos]=0;
         CommandPos=0;
+
+        if(Substitute(COmmand)!=0)
+          error=MESSAGE_INVALID_PARAMETER;
 
         // check of ingevoerde commando een alias is. Is dit het geval, dan wordt Command vervangen door de alias.
         Alias(Command,true); //  ??? Niet als het een standaadrd Nodo commando is. Nog inbouwen.
@@ -402,6 +402,10 @@ int ExecuteLine(char *Line, byte Port)
                 {
                 x=StringFind(Line,TmpStr1)+strlen(TmpStr1);
                 while(Line[x]==32 || Line[x]==' ;')x++;
+
+                if(Substitute(Line+x)!=0)
+                  error=MESSAGE_INVALID_PARAMETER;
+
                 FileWriteLine("",TmpStr1, "DAT", Line+x, false);
                 LinePos=LineLength+1; // ga direct naar einde van de regel.
                 }
