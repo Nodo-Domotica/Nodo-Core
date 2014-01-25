@@ -1,4 +1,4 @@
-#define NODO_BUILD                       694                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       698                                    // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                 6                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1                                    // Unit nummer van deze Nodo
@@ -13,7 +13,7 @@
 #define WAIT_FREE_RX_TIMEOUT            5000                                    // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
 #define MIN_PULSE_LENGTH                  50                                    // Pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
 #define SIGNAL_TIMEOUT                     5                                    // na deze tijd in mSec. wordt een signaal als beeindigd beschouwd.
-#define SIGNAL_REPEAT_TIME              1000                                    // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF/IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
+#define SIGNAL_REPEAT_TIME               500                                    // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF/IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
 #define PULSE_DEBOUNCE_TIME               10                                    // pulsen kleiner dan deze waarde in milliseconden worden niet geteld. Bedoeld om verstoringen a.g.v. ruis of dender te voorkomen
 #define PULSE_TRANSITION             FALLING                                    // FALLING of RISING: Geeft aan op welke flank de PulseCounter start start met tellen. Default FALLING
 #define I2C_START_ADDRESS                  1                                    // Alle Nodo's op de I2C bus hebben een uniek adres dat start vanaf dit nummer. Er zijn max. 32 Nodo's. Let op overlap met andere devices. RTC zit op adres 104.
@@ -22,7 +22,7 @@
 #define PASSWORD_TIMEOUT                 300                                    // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
 #define TERMINAL_TIMEOUT                 600                                    // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
 #define DELAY_BETWEEN_TRANSMISSIONS      500                                    // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
-#define DELAY_BETWEEN_TRANSMISSIONS_Q     50                                    // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
+#define DELAY_BETWEEN_TRANSMISSIONS_Q    100                                    // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
 #define NODO_TX_TO_RX_SWITCH_TIME        500                                    // Tijd die andere Nodo's nodig hebben om na zenden weer gereed voor ontvangst te staan. (Opstarttijd 433RX modules)
 #define TRANSMITTER_STABLE_TIME            5                                    // Tijd die de RF zender nodig heeft om na inschakelen van de voedspanning een stabiele draaggolf te hebben.
 #define ETHERNET_MAC_0                  0xCC                                    // Dit is byte 0 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
@@ -561,7 +561,7 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define EEPROM_SIZE               4096                                          // Groote van het EEPROM geheugen.
 #define WIRED_PORTS                  8                                          // aAntal WiredIn/WiredOut poorten
 #define COOKIE_REFRESH_TIME         60                                          // Tijd in sec. tussen automatisch verzenden van een nieuw Cookie als de beveiligde HTTP modus is inschakeld.
-#define SERIAL_STAY_SHARP_TIME     500                                          // Tijd in mSec. dat na ontvangen van een teken uitsluitend naar Serial als input wordt geluisterd. 
+#define FOCUS_TIME                 500                                          // Tijd in mSec. dat na ontvangen van een teken uitsluitend naar Serial als input wordt geluisterd. 
 
 #else // als het voor de Nodo-Small variant is
 #define EVENT_QUEUE_MAX              8                                          // maximaal aantal plaatsen in de queue
@@ -979,7 +979,7 @@ void loop()
   byte PreviousMinutes=0;                                                       // Sla laatst gecheckte minuut op zodat niet vaker dan nodig (eenmaal per minuut de eventlist wordt doorlopen
   
   unsigned long LoopIntervalTimer=0L;                                           // Timer voor periodieke verwerking.
-  unsigned long StaySharpTimer;                                                 // Timer die er voor zorgt dat bij communicatie via een kanaal de focus hier ook enige tijd op blijft
+  unsigned long FocusTimer;                                                 // Timer die er voor zorgt dat bij communicatie via een kanaal de focus hier ook enige tijd op blijft
   unsigned long PreviousTimeEvent=0L; 
 
   #if NODO_MEGA
@@ -1008,20 +1008,20 @@ void loop()
       PluginCall(PLUGIN_SERIAL_IN,0,0);
 
       #if NODO_MEGA     
-      bitWrite(HW_Config,HW_SERIAL,1);                                      // Input op seriele poort ontvangen. Vanaf nu ook output naar Seriele poort want er is klaarblijkelijk een actieve verbinding
-      StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;
+      bitWrite(HW_Config,HW_SERIAL,1);                                          // Input op seriele poort ontvangen. Vanaf nu ook output naar Seriele poort want er is klaarblijkelijk een actieve verbinding
+      FocusTimer=millis()+FOCUS_TIME;
 
-      while(StaySharpTimer>millis())                                        // blijf even paraat voor luisteren naar deze poort en voorkom dat andere input deze communicatie onderbreekt
+      while(FocusTimer>millis())                                                // blijf even paraat voor luisteren naar deze poort en voorkom dat andere input deze communicatie onderbreekt.
         {          
         if(Serial.available())
           {                        
           SerialInByte=Serial.read();                
 
           if(Settings.EchoSerial==VALUE_ON)
-            Serial.write(SerialInByte);                                     // echo ontvangen teken
+            Serial.write(SerialInByte);                                         // echo ontvangen teken
           
           if(SerialInByte==XON)
-            Serial.write(XON);                                              // om te voorkomen dat beide devices om wat voor reden dan ook op elkaar wachten
+            Serial.write(XON);                                                  // om te voorkomen dat beide devices om wat voor reden dan ook op elkaar wachten
           
           if(isprint(SerialInByte))
             if(SerialInByteCounter<(INPUT_LINE_SIZE-1))
@@ -1030,17 +1030,14 @@ void loop()
           if(SerialInByte=='\n')
             {
             SerialHold(true);
-            InputBuffer_Serial[SerialInByteCounter]=0;                      // serieel ontvangen regel is compleet
-      
-//???            Serial.print("Verwerken: ");Serial.println(InputBuffer_Serial);
-      
+            InputBuffer_Serial[SerialInByteCounter]=0;                          // serieel ontvangen regel is compleet
             RaiseMessage(ExecuteLine(InputBuffer_Serial,VALUE_SOURCE_SERIAL),0);
-            Serial.write('>');                                              // Prompt
+            Serial.write('>');                                                  // Prompt
             SerialInByteCounter=0;  
-            InputBuffer_Serial[0]=0;                                        // serieel ontvangen regel is verwerkt. String leegmaken
+            InputBuffer_Serial[0]=0;                                            // serieel ontvangen regel is verwerkt. String leegmaken
             SerialHold(false);
             }
-          StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
+          FocusTimer=millis()+FOCUS_TIME;      
           }
         }
       #endif

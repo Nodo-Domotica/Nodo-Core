@@ -325,6 +325,7 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
       // PrintNodoEvent("DEBUG: Wait() Binnengekomen event",&Event);
       
       TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;                    // Zolang er event binnenkomen geen timeout.
+      MessageTimer=millis() + 3000;
       QueueAdd(&Event);                                                         // Events die voorbij komen in de queue plaatsen.
 
       if(EndSequence && (Event.Flags & TRANSMISSION_QUEUE_NEXT)==0)
