@@ -7,10 +7,10 @@
  * 
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.Plugin
  * Support            : www.nodo-domotica.Plugin
- * Datum              : 10 Sep 2013
- * Versie             : 1.0
+ * Datum              : 25 jan 2014
+ * Versie             : 1.1
  * Nodo productnummer : 
- * Compatibiliteit    : Vanaf Nodo build nummer 555
+ * Compatibiliteit    : Vanaf Nodo build nummer 691
  * Syntax             : "ExtWiredIn <Par1:Poort>, <Par2:On/Off>"
  *********************************************************************************************
  * Technische beschrijving:
@@ -41,8 +41,8 @@ boolean Plugin_026(byte function, struct NodoEventStruct *event, char *string)
     {
       // get the current pin status
       uint8_t address = 0x20;
-      Wire.requestFrom(address, (uint8_t)0x1);
-      if(Wire.available()) portValue = Wire.read();
+      WireNodo.requestFrom(address, (uint8_t)0x1);
+      if(WireNodo.available()) portValue = WireNodo.read();
       break;
     }
     
@@ -52,10 +52,10 @@ boolean Plugin_026(byte function, struct NodoEventStruct *event, char *string)
       uint8_t address = 0x20;
 
       // get the current pin status
-      Wire.requestFrom(address, (uint8_t)0x1);
-      if(Wire.available())
+      WireNodo.requestFrom(address, (uint8_t)0x1);
+      if(WireNodo.available())
       {
-        tmpPortValue = Wire.read();
+        tmpPortValue = WireNodo.read();
         if (tmpPortValue != portValue)
           {
             for (byte x=0; x<8; x++)

@@ -7,8 +7,8 @@
  * 
  * Auteur             : Martinus van den Broek / Richard Ten Klooster
  * Support            : www.nodo-domotica.nl
- * Datum              : 02 Jan 2014
- * Versie             : 0.2
+ * Datum              : 25 Jan 2014
+ * Versie             : 0.3
  * Nodo productnummer : 
  * Compatibiliteit    : Vanaf Nodo build nummer 596
  * Syntax             : "RFIDWG 0,<tag ID>
@@ -84,7 +84,7 @@ boolean Plugin_030(byte function, struct NodoEventStruct *event, char *string)
           TempEvent.Par1       = 0;
           TempEvent.Par2       = keyBuffer;
           TempEvent.Type       = NODO_TYPE_PLUGIN_EVENT;
-          ProcessEvent2(&TempEvent);
+          ProcessEvent(&TempEvent);
 
           keyBuffer = 0;          // Clear the buffer for the next iteration.
         }
