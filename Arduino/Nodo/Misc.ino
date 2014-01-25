@@ -1557,6 +1557,8 @@ boolean Substitute(char* Input)
   byte Res;
   byte x;
 
+  // Serial.print(F("DEBUG: Substitute() Input="));Serial.println(Input); 
+
   char *Output=(char*)malloc(INPUT_LINE_SIZE);
   char *TmpStr=(char*)malloc(INPUT_LINE_SIZE);
   char *TmpStr2=(char*)malloc(INPUT_COMMAND_SIZE);
@@ -1657,6 +1659,9 @@ boolean Substitute(char* Input)
   }
   *OutputPos=0;// Sluit string af.
 
+  // Serial.print(F("DEBUG: Substitute() Substituted="));Serial.println(Input); 
+
+
   if(TmpStr[0]!=0)
   {
     strcpy(Input,Output);  
@@ -1735,6 +1740,7 @@ boolean Substitute(char* Input)
   free(TmpStr);
   free(Output);
 
+  // Serial.print(F("DEBUG: Substitute() Calculated="));Serial.println(Input); 
   return error;
 }
 #endif
