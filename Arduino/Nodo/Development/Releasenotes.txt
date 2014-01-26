@@ -51,7 +51,9 @@ R684:
 - Home adres alleen nog instelbaar middels een #define HOME_NODO. De waarde 1..7
 - I2C no optioneel compileerbaar. "#define I2C false" scheelt +/- 1KB geheugen. 
  
+R692
+- Issue 776: Opslaan variabele(n) zoals voor R506
+- Commando [VariableSave <VariabeleNummer>] toegevoegd. Zie issue 776
+
+
 ToDo:
-- Testen: SendTo i.c.m. WaitFreeRX
-- Testen: I2C n.a.v. aanpassen FetchSignal() voor IR/RF
-- Wachten geeft geen melding "Waiting..." 

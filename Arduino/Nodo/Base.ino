@@ -1,4 +1,4 @@
-#define NODO_BUILD                       698                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       700                                    // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                 6                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1                                    // Unit nummer van deze Nodo
@@ -155,7 +155,7 @@ byte dummy=1;                                                                   
 #define VALUE_SOURCE_SERIAL             96
 #define CMD_SETTINGS_SAVE               97
 #define CMD_STATUS                      98
-#define CMD_RES                         99                                      //??? reserve
+#define CMD_VARIABLE_SAVE               99
 #define CMD_SUBNET                      100
 #define VALUE_SOURCE_SYSTEM             101
 #define CMD_TEMP                        102
@@ -327,7 +327,7 @@ prog_char PROGMEM Cmd_95[]="UserEventSend";
 prog_char PROGMEM Cmd_96[]="Serial";
 prog_char PROGMEM Cmd_97[]="SettingsSave";
 prog_char PROGMEM Cmd_98[]="Status";
-prog_char PROGMEM Cmd_99[]="";                                                  //??? reserve
+prog_char PROGMEM Cmd_99[]="VariableSave";
 prog_char PROGMEM Cmd_100[]="Subnet";
 prog_char PROGMEM Cmd_101[]="System";
 prog_char PROGMEM Cmd_102[]="Temp";
