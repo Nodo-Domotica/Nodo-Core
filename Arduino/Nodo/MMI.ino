@@ -930,6 +930,8 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_DELAY:
       case VALUE_SOURCE_PLUGIN:
       case EVENT_NEWNODO:
+      case CMD_VARIABLE_SAVE:
+      case CMD_VARIABLE_LOG:
       case CMD_UNIT_SET:
       case CMD_VARIABLE_PULSE_TIME:
       case CMD_VARIABLE_PULSE_COUNT:
@@ -1449,6 +1451,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
         }
       break;
 
+    case CMD_VARIABLE_SAVE:
     case CMD_VARIABLE_LOG:
       ResultEvent->Type=NODO_TYPE_COMMAND;
       if(ResultEvent->Par1>USER_VARIABLES_MAX)

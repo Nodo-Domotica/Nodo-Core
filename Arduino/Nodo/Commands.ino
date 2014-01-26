@@ -8,7 +8,7 @@
 boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
   {
   unsigned long a;
-  int w,x,y;
+  int w,x,y,z;
   byte error=0;
   
   struct NodoEventStruct TempEvent=*EventToExecute;
@@ -204,6 +204,41 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
       SendEvent(&TempEvent, false, true,Settings.WaitFree==VALUE_ON);
       break;         
+
+    case CMD_VARIABLE_SAVE:
+      for(z=1;z<=USER_VARIABLES_MAX;z++)
+        {
+        if(z==EventToExecute->Par1 || EventToExecute->Par1==0)
+          {
+          x=0;
+          w=0;                                                                  // Plaats waar variabele al bestaat in eventlist
+          y=0;                                                                  // hoogste beschikbare plaats
+          while(Eventlist_Read(++x,&TempEvent,&TempEvent2))                     // Zoek of variabele al bestaat in eventlist
+            {
+            if(TempEvent.Type==NODO_TYPE_EVENT && TempEvent.Command==EVENT_BOOT && TempEvent.Par1==Settings.Unit)
+              if(TempEvent2.Type==NODO_TYPE_COMMAND && TempEvent2.Command==CMD_VARIABLE_SET && TempEvent2.Par1==z)
+                w=x;
+              
+            if(TempEvent.Command==0)
+              y=x;
+            }            
+
+          x=w>0?w:y;                                                            // Bestaande regel of laatste vrije plaats.
+    
+          TempEvent.Type      = NODO_TYPE_EVENT;
+          TempEvent.Command   = EVENT_BOOT;
+          TempEvent.Par1      = Settings.Unit;
+          TempEvent.Par2      = 0;
+          TempEvent2.Type     = NODO_TYPE_COMMAND;
+          TempEvent2.Command  = CMD_VARIABLE_SET;
+          TempEvent2.Par1     = z;
+          TempEvent2.Par2     = float2ul(UserVar[z-1]);
+         
+          Eventlist_Write(x, &TempEvent, &TempEvent2);                          // Schrijf weg in eventlist
+          }
+        }
+
+      break;
 
     case CMD_LOCK:
       if(EventToExecute->Par1==VALUE_ON)
