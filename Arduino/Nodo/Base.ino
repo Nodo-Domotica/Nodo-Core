@@ -31,7 +31,7 @@
 #define CLOCK                           true                                    // true=code voor Real Time Clock mee compileren.
 #define SLEEP                           true                                    // Sleep mode mee compileren?
 #define I2C                             true                                    // I2C communicatie mee compileren (I2C plugins en klok blijven wel gebruik maken van I2)
-#define WIRED                          false
+#define WIRED                           true
 
 byte dummy=1;                                                                   // linker even op weg helpen. Bugje in Arduino.
 
