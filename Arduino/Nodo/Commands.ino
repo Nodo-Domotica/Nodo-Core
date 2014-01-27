@@ -1,4 +1,3 @@
-
 /*********************************************************************************************\
  * Deze functie checked of de code die ontvangen is een uitvoerbare opdracht is/
  * Als het een correct commando is wordt deze uitgevoerd en 

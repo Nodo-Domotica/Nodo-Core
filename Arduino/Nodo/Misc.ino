@@ -1,3 +1,4 @@
+
 void DetectHardwareReset(void)
   {
   unsigned long ResetTime=millis()+10000;
@@ -390,10 +391,9 @@ boolean GetStatus(struct NodoEventStruct *Event)
       while(Eventlist_Read(++x,&dummy,&dummy))
         {
         if(dummy.Command)
-          Event->Par1=x;
+          Event->Par1++;
         }
-      Event->Par2=x-Event->Par1;
-        
+      Event->Par2=x-Event->Par1-1;
       break;
 
   case CMD_WAITFREERF: 
