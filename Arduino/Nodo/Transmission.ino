@@ -1,4 +1,3 @@
-
 /**********************************************************************************************\
  * Deze functie wacht totdat de 433 en de IR band vrij zijn of er een timeout heeft plaats gevonden.
  * Er wordt gemeten hoeveel geldige pulsen ( > MIN_PULSE_LENGTH) er zich voordoen binnen een 

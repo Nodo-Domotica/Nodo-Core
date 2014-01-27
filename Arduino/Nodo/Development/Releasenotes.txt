@@ -1,3 +1,4 @@
+
 /********************* Aanpassingen t.o.v. versie 3.6.9 Build 651  **********************************\
 
 R652:
@@ -51,9 +52,13 @@ R684:
 - Home adres alleen nog instelbaar middels een #define HOME_NODO. De waarde 1..7
 - I2C no optioneel compileerbaar. "#define I2C false" scheelt +/- 1KB geheugen. 
  
-R692
+R692:
 - Issue 776: Opslaan variabele(n) zoals voor R506
 - Commando [VariableSave <VariabeleNummer>] toegevoegd. Zie issue 776
+
+R703:
+- In Datum/tijdweergave ';' als scheiding i.p.v. ',' (O.a. in welkomsttekst, LOG.DAT en in de HTML-Header)
+- Foutief aantal regels vrij/gebruikt in [Status EventlistCount]
 
 
 ToDo:

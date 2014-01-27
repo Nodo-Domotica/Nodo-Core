@@ -1,3 +1,4 @@
+
 #define I2C_BUFFERSIZE                80                                        // Moet altijd groter zijn dan de struct NodoEventStruct
 
 #if I2C
