@@ -7,8 +7,8 @@
  * 
  * Auteur             : Martinus van den Broek
  * Support            : www.nodo-domotica.nl
- * Datum              : 25 Jan 2013
- * Versie             : BETA 0.1
+ * Datum              : 28 Jan 2013
+ * Versie             : BETA 0.2
  * Nodo productnummer : SWACDE-31-V10
  * Compatibiliteit    : Vanaf Nodo build nummer 691 (LET OP: DEZE PLUGIN WERKT ALLEEN OP EEN NODO MEGA!!!
  \*********************************************************************************************/
@@ -48,6 +48,7 @@ public:
 };
 
 EthernetUDP Udp;
+byte Plugin_031_HostIP=0;
 
 boolean Plugin_031(byte function, struct NodoEventStruct *event, char *string)
 {
@@ -57,80 +58,72 @@ boolean Plugin_031(byte function, struct NodoEventStruct *event, char *string)
   {
 #ifdef PLUGIN_031_CORE
 
+  case PLUGIN_EVENT_IN:
   case PLUGIN_EVENT_OUT:
     {
-      char* StringToPrint=(char*)malloc(100);
-      char* TmpStr=(char*)malloc(INPUT_COMMAND_SIZE+1);
-
-      StringToPrint[0]=0; // als start een lege string
-  
-      if(event->Direction)
+      if (Plugin_031_HostIP > 0)
         {
-        strcat(StringToPrint,cmd2str(event->Direction));      
-        strcat(StringToPrint,"=");
+          char* StringToPrint=(char*)malloc(100);
+          char* TmpStr=(char*)malloc(INPUT_COMMAND_SIZE+1);
+
+          StringToPrint[0]=0; // als start een lege string
   
-        strcat(StringToPrint, cmd2str(event->Port));
-        if(event->Port==VALUE_SOURCE_HTTP || event->Port==VALUE_SOURCE_TELNET)
-          {
-          strcat(StringToPrint, "(");
-          strcat(StringToPrint, ip2str(ClientIPAddress));
-          strcat(StringToPrint, ")");
-          }
+          if(event->Direction)
+            {
+            strcat(StringToPrint,"<7>");
+            strcat(StringToPrint,cmd2str(event->Direction));
+            strcat(StringToPrint,"=");
+  
+            strcat(StringToPrint, cmd2str(event->Port));
+            if(event->Port==VALUE_SOURCE_HTTP || event->Port==VALUE_SOURCE_TELNET)
+              {
+              strcat(StringToPrint, "(");
+              strcat(StringToPrint, ip2str(ClientIPAddress));
+              strcat(StringToPrint, ")");
+              }
       
-        if(event->Port==VALUE_SOURCE_EVENTLIST)
-          {
-          // print de nessting diepte van de eventlist en de regel uit de eventlist.
-          strcat(StringToPrint, "(");
-          strcat(StringToPrint, int2str(ExecutionDepth-1));
-          strcat(StringToPrint, ".");
-          strcat(StringToPrint, int2str(ExecutionLine));
-          strcat(StringToPrint, ")");
-          }
-        strcat(StringToPrint, "; "); 
+            if(event->Port==VALUE_SOURCE_EVENTLIST)
+              {
+              // print de nessting diepte van de eventlist en de regel uit de eventlist.
+              strcat(StringToPrint, "(");
+              strcat(StringToPrint, int2str(ExecutionDepth-1));
+              strcat(StringToPrint, ".");
+              strcat(StringToPrint, int2str(ExecutionLine));
+              strcat(StringToPrint, ")");
+              }
+            strcat(StringToPrint, "; "); 
+            }
+
+          // Unit 
+          strcat(StringToPrint, cmd2str(VALUE_UNIT));
+          strcat(StringToPrint, "=");  
+          if(event->Direction==VALUE_DIRECTION_OUTPUT && event->Port!=VALUE_SOURCE_HTTP)
+            strcat(StringToPrint, int2str(event->DestinationUnit));
+          else
+            strcat(StringToPrint, int2str(event->SourceUnit)); 
+ 
+          // Event
+          strcat(StringToPrint, "; ");
+          strcat(StringToPrint, ProgmemString(Text_14));
+          Event2str(event,TmpStr);
+          strcat(StringToPrint, TmpStr);
+
+          IPAddress broadcastIP(EthernetNodo.localIP()[0],EthernetNodo.localIP()[1],EthernetNodo.localIP()[2], Plugin_031_HostIP);
+          Udp.begin(514);
+          Udp.beginPacket(broadcastIP, 514);
+          Udp.write(StringToPrint);
+          Udp.endPacket();
+          Udp.stop();
+          free(TmpStr);
+          free(StringToPrint);
         }
-
-      // Unit 
-      strcat(StringToPrint, cmd2str(VALUE_UNIT));
-      strcat(StringToPrint, "=");  
-      if(event->Direction==VALUE_DIRECTION_OUTPUT && event->Port!=VALUE_SOURCE_HTTP)
-        strcat(StringToPrint, int2str(event->DestinationUnit));
-      else
-        strcat(StringToPrint, int2str(event->SourceUnit)); 
-
-      // Event
-      strcat(StringToPrint, "; ");
-      strcat(StringToPrint, ProgmemString(Text_14));
-      Event2str(event,TmpStr);
-      strcat(StringToPrint, TmpStr);
-
-      IPAddress broadcastIP(EthernetNodo.localIP()[0],EthernetNodo.localIP()[1],EthernetNodo.localIP()[2], 255);
-      Udp.begin(514);
-      Udp.beginPacket(broadcastIP, 514);
-      Udp.write(StringToPrint);
-      Udp.endPacket();
-      Udp.stop();
-      free(TmpStr);
-      free(StringToPrint);
       success=true;
       break;
     } // case
 
   case PLUGIN_COMMAND:
     {
-      char *TempStr=(char*)malloc(26);
-      TempStr[25]=0;
-      strcpy(TempStr,"UserEvent");
-      strcat(TempStr," ");
-      strcat(TempStr,int2str(event->Par1));
-      strcat(TempStr,",");
-      strcat(TempStr,int2str(event->Par2));
-      IPAddress broadcastIP(EthernetNodo.localIP()[0],EthernetNodo.localIP()[1],EthernetNodo.localIP()[2], 255);
-      Udp.begin(514);
-      Udp.beginPacket(broadcastIP, 514);
-      Udp.write(TempStr);
-      Udp.endPacket();
-      Udp.stop();
-      free(TempStr);
+      Plugin_031_HostIP=event->Par1;
       success=true;
       break;
     } // case
@@ -146,12 +139,9 @@ boolean Plugin_031(byte function, struct NodoEventStruct *event, char *string)
           {
           if(GetArgv(string,TempStr,2)) 
             {
-            if(GetArgv(string,TempStr,3))
-              {
                 event->Type = NODO_TYPE_PLUGIN_COMMAND;
                 event->Command = PLUGIN_ID; // Plugin nummer  
                 success=true;
-              }
             }
           }
         }
@@ -164,8 +154,6 @@ boolean Plugin_031(byte function, struct NodoEventStruct *event, char *string)
       strcpy(string,PLUGIN_NAME_031);
       strcat(string," ");
       strcat(string,int2str(event->Par1));
-      strcat(string,",");
-      strcat(string,int2str(event->Par2));
       break;
       }
     #endif //MMI
