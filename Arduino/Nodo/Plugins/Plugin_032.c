@@ -7,8 +7,8 @@
  * 
  * Auteur             : Martinus van den Broek
  * Support            : www.nodo-domotica.nl
- * Datum              : 27 Jan 2013
- * Versie             : 1.0
+ * Datum              : 28 Jan 2013
+ * Versie             : 1.1
  * Nodo productnummer : SWACDE-32-V10
  * Compatibiliteit    : Vanaf Nodo build nummer 691 (LET OP: DEZE PLUGIN WERKT ALLEEN OP EEN NODO MEGA!!!
  \*********************************************************************************************/
@@ -50,20 +50,24 @@ prog_char PROGMEM Plugin_032_Protocol_01[] = "Nodo V2";
 prog_char PROGMEM Plugin_032_Protocol_02[] = "Nodo V1";
 prog_char PROGMEM Plugin_032_Protocol_03[] = "KAKU V1";
 prog_char PROGMEM Plugin_032_Protocol_04[] = "KAKU V2";
-prog_char PROGMEM Plugin_032_Protocol_05[] = "Alecto V1";
-prog_char PROGMEM Plugin_032_Protocol_06[] = "Alecto V2";
-prog_char PROGMEM Plugin_032_Protocol_07[] = "Alecto V3";
-prog_char PROGMEM Plugin_032_Protocol_08[] = "Oregon V2";
-prog_char PROGMEM Plugin_032_Protocol_09[] = "Flamengo FA20RF";
-prog_char PROGMEM Plugin_032_Protocol_10[] = "Home Easy 300EU";
-prog_char PROGMEM Plugin_032_Protocol_11[] = "Unknown";
+prog_char PROGMEM Plugin_032_Protocol_05[] = "Alecto V1-Temp";
+prog_char PROGMEM Plugin_032_Protocol_06[] = "Alecto V1-Rain";
+prog_char PROGMEM Plugin_032_Protocol_07[] = "Alecto V1-Wspeed";
+prog_char PROGMEM Plugin_032_Protocol_08[] = "Alecto V1-Wdir";
+prog_char PROGMEM Plugin_032_Protocol_09[] = "Alecto V2";
+prog_char PROGMEM Plugin_032_Protocol_10[] = "Alecto V3";
+prog_char PROGMEM Plugin_032_Protocol_11[] = "Oregon V2";
+prog_char PROGMEM Plugin_032_Protocol_12[] = "Flamengo FA20RF";
+prog_char PROGMEM Plugin_032_Protocol_13[] = "Home Easy 300EU";
+prog_char PROGMEM Plugin_032_Protocol_14[] = "Unknown";
 
-PROGMEM const char *Plugin_032_ProtocolText_tabel[]={Plugin_032_Protocol_01,Plugin_032_Protocol_02,Plugin_032_Protocol_03,Plugin_032_Protocol_04,Plugin_032_Protocol_05,Plugin_032_Protocol_06,Plugin_032_Protocol_07,Plugin_032_Protocol_08,Plugin_032_Protocol_09,Plugin_032_Protocol_10,Plugin_032_Protocol_11};
-int Plugin_032_count_protocol[11];
+PROGMEM const char *Plugin_032_ProtocolText_tabel[]={Plugin_032_Protocol_01,Plugin_032_Protocol_02,Plugin_032_Protocol_03,Plugin_032_Protocol_04,Plugin_032_Protocol_05,Plugin_032_Protocol_06,Plugin_032_Protocol_07,Plugin_032_Protocol_08,Plugin_032_Protocol_09,Plugin_032_Protocol_10,Plugin_032_Protocol_11,Plugin_032_Protocol_12,Plugin_032_Protocol_13,Plugin_032_Protocol_14};
+int Plugin_032_count_protocol[14];
 
 boolean Plugin_032_active=false;
 unsigned long Plugin_032_timer=millis();
 byte Plugin_032_mode=1;
+unsigned long Plugin_032_scantimer=0;
 
 boolean Plugin_032(byte function, struct NodoEventStruct *event, char *string)
   {
@@ -98,6 +102,10 @@ boolean Plugin_032(byte function, struct NodoEventStruct *event, char *string)
 
           Plugin_032_mode=1;
           char Plugin_032_command=0;
+          for (byte x=0;x<14;x++) Plugin_032_count_protocol[x]=0;
+
+          Plugin_032_scantimer=millis();
+
           while(Plugin_032_command != 'q')
             {
               // Dedicated Sniffer loop!
@@ -165,15 +173,19 @@ void Plugin_032_DisplayStats()
   Serial.println(ProgmemString(Plugin_032_Text_14));
   Serial.println("Counters:");
   
-  for (byte x=0; x < 11; x++)
+  for (byte x=0; x < 14; x++)
     {
       strcpy_P(str,(char*)pgm_read_word(&(Plugin_032_ProtocolText_tabel[x])));
       Serial.print(str);
       Serial.print(":");
       Serial.println(Plugin_032_count_protocol[x]);
     }
+    Serial.print("Scanning for ");
+    Serial.print(round((millis()-Plugin_032_scantimer)/1000));
+    Serial.println(" Seconds");
+
   Serial.println(ProgmemString(Plugin_032_Text_14));
-  free(str);    
+  free(str);
 }
 
 /*********************************************************************************************\
@@ -253,7 +265,8 @@ boolean Plugin_032_AnalyzeRawSignal(byte mode)
   if(Plugin_032_oregonv2()) return true;
   if(Plugin_032_flamengofa20rf()) return true;
   if(Plugin_032_homeeasy()) return true;
-  else Serial.println("?");
+  Serial.println("?");
+  Plugin_032_count_protocol[13]++;
   return false;   
 }
 
@@ -546,7 +559,7 @@ boolean Plugin_032_alectov1()
       if (checksum != checksumcalc) return false;
       rc = bitstream & 0xff;
 
-      Serial.print(ProgmemString(Plugin_032_Protocol_05));
+      Serial.print("Alecto V1");
       Serial.print(", ID:");
       Serial.print(rc);
 
@@ -571,7 +584,7 @@ boolean Plugin_032_alectov1()
           rain = ((bitstream >> 16) & 0xffff);
           Serial.print(", Rain:");
           Serial.println(rain);
-          Plugin_032_count_protocol[4]++;
+          Plugin_032_count_protocol[5]++;
           return true;
         }
 
@@ -580,7 +593,7 @@ boolean Plugin_032_alectov1()
           windspeed = ((bitstream >> 24) & 0xff);
           Serial.print(", WindSpeed:");
           Serial.println(windspeed);
-          Plugin_032_count_protocol[4]++;
+          Plugin_032_count_protocol[6]++;
           return true;
         }
 
@@ -592,7 +605,7 @@ boolean Plugin_032_alectov1()
           windgust = ((bitstream >> 24) & 0xff);
           Serial.print(", WindGust:");
           Serial.println(windgust);
-          Plugin_032_count_protocol[4]++;
+          Plugin_032_count_protocol[7]++;
           return true;
         }
       }
@@ -646,7 +659,7 @@ boolean Plugin_032_alectov2()
       if (checksum != checksumcalc) return false;
   
       if ((msgtype != 10) && (msgtype != 5)) return true;
-      Serial.print(ProgmemString(Plugin_032_Protocol_06));
+      Serial.print(ProgmemString(Plugin_032_Protocol_09));
       Serial.print(", ID:");
       Serial.print(rc);
 
@@ -669,7 +682,7 @@ boolean Plugin_032_alectov2()
           Serial.print((float)(data[8] & 0xf));
         }
    Serial.println("");        
-   Plugin_032_count_protocol[5]++;
+   Plugin_032_count_protocol[8]++;
    return true;
 }
 
@@ -723,7 +736,7 @@ boolean Plugin_032_alectov3()
 
       if (checksum != checksumcalc) return false;
 
-      Serial.print(ProgmemString(Plugin_032_Protocol_07));
+      Serial.print(ProgmemString(Plugin_032_Protocol_10));
       Serial.print(", ID:");
       Serial.print(rc);
 
@@ -744,7 +757,7 @@ boolean Plugin_032_alectov3()
         Serial.print((float)humidity/10);
       }
     Serial.println("");
-    Plugin_032_count_protocol[6]++;
+    Plugin_032_count_protocol[9]++;
     return true;
 }
 
@@ -835,7 +848,7 @@ boolean Plugin_032_oregonv2()
         }
       if (checksum != checksumcalc) return false;
 
-      Serial.print(ProgmemString(Plugin_032_Protocol_08));
+      Serial.print(ProgmemString(Plugin_032_Protocol_11));
       Serial.print(", ID:");
       Serial.print((nibble[6] << 4) | nibble[5]);
 
@@ -854,7 +867,7 @@ boolean Plugin_032_oregonv2()
         }
       }
   Serial.println("");
-  Plugin_032_count_protocol[7]++;
+  Plugin_032_count_protocol[10]++;
   return true;
 }
 
@@ -875,10 +888,10 @@ boolean Plugin_032_flamengofa20rf()
       }
     if (bitstream == 0) return false;
 
-    Serial.print(ProgmemString(Plugin_032_Protocol_09));
+    Serial.print(ProgmemString(Plugin_032_Protocol_12));
     Serial.print(", ID:");
     Serial.println(bitstream,HEX);
-    Plugin_032_count_protocol[8]++;
+    Plugin_032_count_protocol[11]++;
     return true;
 }
 
@@ -920,7 +933,7 @@ boolean Plugin_032_homeeasy()
       if (state == 1) address = address & 0xFFFFFEF;
       else address = address | 0x00000010;
 
-      Serial.print(ProgmemString(Plugin_032_Protocol_10));
+      Serial.print(ProgmemString(Plugin_032_Protocol_13));
       Serial.print(", Address:");
       Serial.print(address);
       if (state == 0)
@@ -928,7 +941,7 @@ boolean Plugin_032_homeeasy()
       else
         Serial.println(", State:Off");
 
-      Plugin_032_count_protocol[9]++;
+      Plugin_032_count_protocol[12]++;
       return true;      
 }
 
