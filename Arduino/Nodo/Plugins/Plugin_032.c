@@ -7,10 +7,10 @@
  * 
  * Auteur             : Martinus van den Broek
  * Support            : www.nodo-domotica.nl
- * Datum              : 28 Jan 2013
- * Versie             : 1.1
+ * Datum              : 29 Jan 2013
+ * Versie             : 1.2
  * Nodo productnummer : SWACDE-32-V10
- * Compatibiliteit    : Vanaf Nodo build nummer 691 (LET OP: DEZE PLUGIN WERKT ALLEEN OP EEN NODO MEGA!!!
+ * Compatibiliteit    : Vanaf Nodo build nummer 596
  \*********************************************************************************************/
 
 void Plugin_032_DisplayStats();
@@ -112,7 +112,11 @@ boolean Plugin_032(byte function, struct NodoEventStruct *event, char *string)
               if (Plugin_032_command == 'n') Plugin_032_mode=1;
               if (Plugin_032_command == 'r') Plugin_032_mode=2;
               if (Plugin_032_command == 'c') Plugin_032_DisplayStats();
+#if (NODO_BUILD < 676)
+              if (Plugin_032_mode == 1) if((*portInputRegister(RFport)&RFbit)==RFbit) if(FetchSignal(PIN_RF_RX_DATA,HIGH,5)) Plugin_032_AnalyzeRawSignal(Plugin_032_mode);
+#else
               if (Plugin_032_mode == 1) if((*portInputRegister(RFport)&RFbit)==RFbit) if(FetchSignal(PIN_RF_RX_DATA,HIGH)) Plugin_032_AnalyzeRawSignal(Plugin_032_mode);
+#endif
               if (Plugin_032_mode == 2) Plugin_032_bandwidthUsage();
               if(Serial.available()) Plugin_032_command=Serial.read();
             }
