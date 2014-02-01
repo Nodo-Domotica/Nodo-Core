@@ -12,7 +12,12 @@
 *                      02-2014 versie 1.3 Support 4x20 display en uitbreiding functionaliteit met Par3/Par4 (Martinus)
 * Nodo productnummer : 
 * Compatibiliteit    : Vanaf Nodo build nummer 707
-* Syntax             : "LCDWrite <row>,<prefix message id>,<variable | special options>,<suffix message id>
+* Syntax             : "LCDWrite <row>, <column>, <command>, <option>
+*                       Commands:	Message		<option> = ID in plugin label definities
+*					Variable	<option> = Variabele nummer
+*					Clock		toont datum en tijd		
+*					IP		toont IP adres (alleen Mega)
+*					Event		toont laatste event (alleen Mega)
 ***********************************************************************************************
 * Technische beschrijving:
 *
