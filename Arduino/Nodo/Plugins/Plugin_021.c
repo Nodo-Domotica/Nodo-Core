@@ -7,17 +7,19 @@
 * 
 * Auteur             : Martinus van den Broek
 * Support            : www.nodo-domotica.nl
-* Datum              : 12 Aug 2013
+* Datum              : 1 Feb 2014
 * Versie             : 12-2013 versie 1.2 Modificatie WireNodo library (Hans Man)
+*                      02-2014 versie 1.3 Support 4x20 display en uitbreiding functionaliteit met Par3/Par4 (Martinus)
 * Nodo productnummer : 
-* Compatibiliteit    : Vanaf Nodo build nummer 550
-* Syntax             : "LCDI2CWrite <row>,<message id>
+* Compatibiliteit    : Vanaf Nodo build nummer 707
+* Syntax             : "LCDWrite <row>,<prefix message id>,<variable | special options>,<suffix message id>
 ***********************************************************************************************
 * Technische beschrijving:
 *
 * De LCDI2C1602 is een LCD Display van twee regels en 16 tekens per regel.
 * De aansturing vindt plaats via de standaard TwoWire interface van de Nodo (I2C)
-* Het display heeft een vast adres van 0x27
+* Er wordt op het convertor board gebruik gemaakt van een PCF8574 op adres 0x27
+* Mocht je ook losse PCF8574 chips gebruiken met Plugin 025, stel deze dan niet in op 0x27!
 * Er kan dus maar 1 display per I2C bus worden aangesloten.
 \*********************************************************************************************/
 
@@ -27,18 +29,37 @@
 prog_char PROGMEM LCD_01[] = "Nodo Domotica";
 prog_char PROGMEM LCD_02[] = "Mega R:%03d U:%d";
 prog_char PROGMEM LCD_03[] = "Small R:%03d U:%d";
-prog_char PROGMEM LCD_04[] = "Alarm On";
-prog_char PROGMEM LCD_05[] = "Alarm Off";
-prog_char PROGMEM LCD_06[] = "6";
-prog_char PROGMEM LCD_07[] = "7";
-prog_char PROGMEM LCD_08[] = "8";
-prog_char PROGMEM LCD_09[] = "9";
-prog_char PROGMEM LCD_10[] = "10";
-#define LCDI2C_MSG_MAX        10
+prog_char PROGMEM LCD_04[] = PLUGIN_021_LABEL_04;
+prog_char PROGMEM LCD_05[] = PLUGIN_021_LABEL_05;
+prog_char PROGMEM LCD_06[] = PLUGIN_021_LABEL_06;
+prog_char PROGMEM LCD_07[] = PLUGIN_021_LABEL_07;
+prog_char PROGMEM LCD_08[] = PLUGIN_021_LABEL_08;
+prog_char PROGMEM LCD_09[] = PLUGIN_021_LABEL_09;
+prog_char PROGMEM LCD_10[] = PLUGIN_021_LABEL_10;
+prog_char PROGMEM LCD_11[] = PLUGIN_021_LABEL_11;
+prog_char PROGMEM LCD_12[] = PLUGIN_021_LABEL_12;
+prog_char PROGMEM LCD_13[] = PLUGIN_021_LABEL_13;
+prog_char PROGMEM LCD_14[] = PLUGIN_021_LABEL_14;
+prog_char PROGMEM LCD_15[] = PLUGIN_021_LABEL_15;
+prog_char PROGMEM LCD_16[] = PLUGIN_021_LABEL_16;
+prog_char PROGMEM LCD_17[] = PLUGIN_021_LABEL_17;
+prog_char PROGMEM LCD_18[] = PLUGIN_021_LABEL_18;
+prog_char PROGMEM LCD_19[] = PLUGIN_021_LABEL_19;
+prog_char PROGMEM LCD_20[] = PLUGIN_021_LABEL_20;
 
-PROGMEM const char *LCDText_tabel[]={LCD_01,LCD_02,LCD_03,LCD_04,LCD_05,LCD_06,LCD_07,LCD_08,LCD_09,LCD_10};
+#define LCDI2C_MSG_MAX        20
+
+PROGMEM const char *LCDText_tabel[]={LCD_01,LCD_02,LCD_03,LCD_04,LCD_05,LCD_06,LCD_07,LCD_08,LCD_09,LCD_10,LCD_11,LCD_12,LCD_13,LCD_14,LCD_15,LCD_16,LCD_17,LCD_18,LCD_19,LCD_20};
 
 #define LCD_I2C_ADDRESS 0x27
+
+#if PLUGIN_021_CORE==2
+  #define PLUGIN_021_ROWS  2
+  #define PLUGIN_021_COLS 16
+#else
+  #define PLUGIN_021_ROWS  4
+  #define PLUGIN_021_COLS 20
+#endif
 
 #define LCD_CLEARDISPLAY 0x01
 #define LCD_RETURNHOME 0x02
@@ -115,7 +136,7 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
    case PLUGIN_INIT:
      {
      _displayfunction = LCD_2LINE;
-     _numlines = 2;
+     _numlines = PLUGIN_021_ROWS;
      delay(50); 
      // Now we pull both RS and R/W low to begin commands
      LCD_I2C_expanderWrite(_backlightval);	// reset expanderand turn backlight off (Bit 8 =1)
@@ -138,7 +159,7 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
      LCD_I2C_home();
 
      LCD_I2C_printline(0,ProgmemString(LCD_01));
-     char TempString[18];
+     char TempString[PLUGIN_021_COLS+1];
      #if NODO_MEGA
       sprintf(TempString,ProgmemString(LCD_02), NODO_BUILD, Settings.Unit);
      #else
@@ -148,15 +169,65 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
      }
   case PLUGIN_COMMAND:
      {
-     if ((event->Par1 == 1) || (event->Par1 == 2))
+     byte Par2=event->Par2 & 0xff;
+     byte Par3=event->Par2>>8 & 0xff;
+     byte Par4=event->Par2>>16 & 0xff;
+
+     if (event->Par1 > 0 && event->Par1 <= PLUGIN_021_ROWS)
        {
-       if (event->Par2 == 0) LCD_I2C_printline(event->Par1-1,"");
-       if ((event->Par2 > 0) && (event->Par2 <= LCDI2C_MSG_MAX))
+       char TempString[2*PLUGIN_021_COLS+1];  // create string buffer, size of 2 progmem string (prefix/suffix)
+       TempString[0]=0;
+
+       // Prefix
+       if ((Par2 > 0) && (Par2 <= LCDI2C_MSG_MAX))
+         strcpy_P(TempString,(char*)pgm_read_word(&(LCDText_tabel[Par2-1])));
+#if PLUGIN_021_ADDON
+       char TempString2[PLUGIN_021_COLS+1];
+
+       // if variable to display
+       if (Par3 > 0 && Par3 <16)
          {
-         char TempString[18];
-         strcpy_P(TempString,(char*)pgm_read_word(&(LCDText_tabel[event->Par2-1])));
-         LCD_I2C_printline(event->Par1-1, TempString);
+           int d1 = UserVar[Par3-1];            // Get the integer part
+           float f2 = UserVar[Par3-1] - d1;     // Get fractional part
+           int d2 = trunc(f2 * 10);   // Turn into integer
+           if (d2<0) d2=d2*-1;
+           sprintf(TempString2,"%d.%01d", d1,d2);
          }
+       else
+         {
+           // some specials here
+           switch (Par3)
+             {
+                #if CLOCK
+                case 100:	// Display date/time
+	          sprintf(TempString2,"%02d-%02d-%04d %02d:%02d",Time.Date,Time.Month,Time.Year, Time.Hour, Time.Minutes);
+                  break;
+                #endif
+
+                #if NODO_MEGA
+                case 101:	// Display IP on Mega
+                  sprintf(TempString2,"%u.%u.%u.%u", EthernetNodo.localIP()[0],EthernetNodo.localIP()[1],EthernetNodo.localIP()[2],EthernetNodo.localIP()[3]);
+                  break;
+                #endif
+             }
+         }
+
+       if (Par3 > 0) strcat(TempString, TempString2);
+
+       // Suffix
+       if ((Par4 > 0) && (Par4 <= LCDI2C_MSG_MAX))
+         {
+           char TempString2[PLUGIN_021_COLS+1];
+           strcpy_P(TempString2,(char*)pgm_read_word(&(LCDText_tabel[Par4-1])));
+           strcat(TempString, TempString2);
+         }
+#endif
+       // clear or print line
+       if (Par2 == 0 && Par3 == 0 && Par4 == 0)
+         LCD_I2C_printline(event->Par1-1,"");
+       else
+         LCD_I2C_printline(event->Par1-1, TempString);
+
        success=true;
        }
      break;
@@ -172,10 +243,17 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
        {
        if(strcasecmp(TempStr,PLUGIN_NAME)==0)
          {
-         if(event->Par1>0 && event->Par1<=2 && event->Par2>0 && event->Par2<=LCDI2C_MSG_MAX)
+         if(event->Par1 > 0 && event->Par1 <= PLUGIN_021_ROWS)
            {
+
+           if(GetArgv(string,TempStr,4))
+               event->Par2|=str2int(TempStr)<<8;
+
+           if(GetArgv(string,TempStr,5))
+               event->Par2|=str2int(TempStr)<<16;
+
            event->Type = NODO_TYPE_PLUGIN_COMMAND;
-           event->Command = 21; // Plugin nummer  
+           event->Command = PLUGIN_ID; // Plugin nummer  
            success=true;
            }
          }
@@ -190,7 +268,11 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
      strcat(string," ");
      strcat(string,int2str(event->Par1));
      strcat(string,",");
-     strcat(string,int2str(event->Par2));
+     strcat(string,int2str(event->Par2 & 0xff));
+     strcat(string,",");
+     strcat(string,int2str(event->Par2>>8 & 0xff));
+     strcat(string,",");
+     strcat(string,int2str(event->Par2>>16 & 0xff));
      break;
      }
    #endif //NODO_MEGA
@@ -204,9 +286,9 @@ void LCD_I2C_printline(byte row, char* message)
 /*********************************************************************/
 {
  LCD_I2C_setCursor(0,row);
- for (byte x=0; x<16; x++) LCD_I2C_write(' ');
+ for (byte x=0; x<PLUGIN_021_COLS; x++) LCD_I2C_write(' ');
  LCD_I2C_setCursor(0,row);
- for (byte x=0; x<16; x++)
+ for (byte x=0; x<PLUGIN_021_COLS; x++)
    {
      if (message[x] != 0) LCD_I2C_write(message[x]);
      else break;
@@ -301,7 +383,7 @@ void LCD_I2C_pulseEnable(uint8_t _data){
 char* ProgmemString(prog_char* text)
 {
  byte x=0;
- static char buffer[90];
+ static char buffer[PLUGIN_021_COLS+1];
 
  do
  {
