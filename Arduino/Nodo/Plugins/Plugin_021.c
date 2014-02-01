@@ -106,7 +106,7 @@ PROGMEM const char *LCDText_tabel[]={LCD_01,LCD_02,LCD_03,LCD_04,LCD_05,LCD_06,L
 #define Rw B00000010  // Read/Write bit
 #define Rs B00000001  // Register select bit
 
-void LCD_I2C_printline(byte row, char* message);
+void LCD_I2C_printline(byte row, byte col, char* message);
 inline size_t LCD_I2C_write(uint8_t value);
 void LCD_I2C_display();
 void LCD_I2C_clear();
@@ -158,75 +158,67 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
      LCD_I2C_command(LCD_ENTRYMODESET | _displaymode);                 // set the entry mode
      LCD_I2C_home();
 
-     LCD_I2C_printline(0,ProgmemString(LCD_01));
+     LCD_I2C_printline(0,0,ProgmemString(LCD_01));
      char TempString[PLUGIN_021_COLS+1];
      #if NODO_MEGA
       sprintf(TempString,ProgmemString(LCD_02), NODO_BUILD, Settings.Unit);
      #else
        sprintf(TempString,ProgmemString(LCD_03), NODO_BUILD, Settings.Unit);
      #endif
-     LCD_I2C_printline(1,TempString);
+     LCD_I2C_printline(1,0,TempString);
      }
   case PLUGIN_COMMAND:
      {
-     byte Par2=event->Par2 & 0xff;
-     byte Par3=event->Par2>>8 & 0xff;
-     byte Par4=event->Par2>>16 & 0xff;
+     byte Par2=event->Par2 & 0xff;		// Column
+     byte Par3=event->Par2>>8 & 0xff;		// Data to display
+     byte Par4=event->Par2>>16 & 0xff;		// In case of var, variable number
 
      if (event->Par1 > 0 && event->Par1 <= PLUGIN_021_ROWS)
        {
-       char TempString[2*PLUGIN_021_COLS+1];  // create string buffer, size of 2 progmem string (prefix/suffix)
+       #if NODO_MEGA
+         char TempString[80];
+       #else
+         char TempString[PLUGIN_021_COLS+1];
+       #endif
        TempString[0]=0;
 
-       // Prefix
-       if ((Par2 > 0) && (Par2 <= LCDI2C_MSG_MAX))
-         strcpy_P(TempString,(char*)pgm_read_word(&(LCDText_tabel[Par2-1])));
-#if PLUGIN_021_ADDON
-       char TempString2[PLUGIN_021_COLS+1];
-
-       // if variable to display
-       if (Par3 > 0 && Par3 <16)
+       switch (Par3)
          {
-           int d1 = UserVar[Par3-1];            // Get the integer part
-           float f2 = UserVar[Par3-1] - d1;     // Get fractional part
-           int d2 = trunc(f2 * 10);   // Turn into integer
-           if (d2<0) d2=d2*-1;
-           sprintf(TempString2,"%d.%01d", d1,d2);
-         }
-       else
-         {
-           // some specials here
-           switch (Par3)
-             {
-                #if CLOCK
-                case 100:	// Display date/time
-	          sprintf(TempString2,"%02d-%02d-%04d %02d:%02d",Time.Date,Time.Month,Time.Year, Time.Hour, Time.Minutes);
-                  break;
-                #endif
+           case EVENT_MESSAGE:
+             if ((Par4 > 0) && (Par4 <= LCDI2C_MSG_MAX))
+              strcpy_P(TempString,(char*)pgm_read_word(&(LCDText_tabel[Par4-1])));
+             break;
+           case EVENT_VARIABLE:
+             if (Par4 > 0 && Par4 <16)
+               {
+                 int d1 = UserVar[Par4-1];            // Get the integer part
+                 float f2 = UserVar[Par4-1] - d1;     // Get fractional part
+                 int d2 = trunc(f2 * 10);   // Turn into integer
+                 if (d2<0) d2=d2*-1;
+                 sprintf(TempString,"%d.%01d", d1,d2);
+               }
+             break;
+           #if CLOCK
+           case VALUE_SOURCE_CLOCK:	// Display date/time
+             sprintf(TempString,"%02d-%02d-%04d %02d:%02d",Time.Date,Time.Month,Time.Year, Time.Hour, Time.Minutes);
+             break;
+           #endif
 
-                #if NODO_MEGA
-                case 101:	// Display IP on Mega
-                  sprintf(TempString2,"%u.%u.%u.%u", EthernetNodo.localIP()[0],EthernetNodo.localIP()[1],EthernetNodo.localIP()[2],EthernetNodo.localIP()[3]);
-                  break;
-                #endif
-             }
+           #if NODO_MEGA
+           case CMD_NODO_IP:	// Display IP on Mega
+             sprintf(TempString,"%u.%u.%u.%u", EthernetNodo.localIP()[0],EthernetNodo.localIP()[1],EthernetNodo.localIP()[2],EthernetNodo.localIP()[3]);
+             break;
+           case VALUE_RECEIVED_EVENT:	// Display event on Mega
+             Event2str(&LastReceived,TempString);
+             break;
+           #endif
          }
 
-       if (Par3 > 0) strcat(TempString, TempString2);
-
-       // Suffix
-       if ((Par4 > 0) && (Par4 <= LCDI2C_MSG_MAX))
-         {
-           char TempString2[PLUGIN_021_COLS+1];
-           strcpy_P(TempString2,(char*)pgm_read_word(&(LCDText_tabel[Par4-1])));
-           strcat(TempString, TempString2);
-         }
-#endif
        // clear or print line
        if (Par2 == 0 && Par3 == 0 && Par4 == 0)
-         LCD_I2C_printline(event->Par1-1,"");
+         LCD_I2C_printline(event->Par1-1,0, "");
        else
-         LCD_I2C_printline(event->Par1-1, TempString);
+         LCD_I2C_printline(event->Par1-1, Par2-1, TempString);
 
        success=true;
        }
@@ -247,7 +239,7 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
            {
 
            if(GetArgv(string,TempStr,4))
-               event->Par2|=str2int(TempStr)<<8;
+               event->Par2|=str2cmd(TempStr)<<8;
 
            if(GetArgv(string,TempStr,5))
                event->Par2|=str2int(TempStr)<<16;
@@ -270,7 +262,7 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
      strcat(string,",");
      strcat(string,int2str(event->Par2 & 0xff));
      strcat(string,",");
-     strcat(string,int2str(event->Par2>>8 & 0xff));
+     strcat(string,cmd2str(event->Par2>>8 & 0xff));
      strcat(string,",");
      strcat(string,int2str(event->Par2>>16 & 0xff));
      break;
@@ -282,17 +274,21 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
 
 #ifdef PLUGIN_021_CORE
 /*********************************************************************/
-void LCD_I2C_printline(byte row, char* message)
+void LCD_I2C_printline(byte row, byte col, char* message)
 /*********************************************************************/
 {
- LCD_I2C_setCursor(0,row);
- for (byte x=0; x<PLUGIN_021_COLS; x++) LCD_I2C_write(' ');
- LCD_I2C_setCursor(0,row);
- for (byte x=0; x<PLUGIN_021_COLS; x++)
-   {
-     if (message[x] != 0) LCD_I2C_write(message[x]);
-     else break;
-   }
+ LCD_I2C_setCursor(col,row);
+ byte maxcol = PLUGIN_021_COLS-col;
+
+ //clear line if empty message
+ if (message[0]==0)
+   for (byte x=0; x<PLUGIN_021_COLS; x++) LCD_I2C_write(' ');
+ else
+   for (byte x=0; x < maxcol; x++)
+     {
+       if (message[x] != 0) LCD_I2C_write(message[x]);
+       else break;
+     }
 }
 
 /*********************************************************************/
