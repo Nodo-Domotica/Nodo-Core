@@ -11,13 +11,18 @@
  * Auteur             : P.K.Tonkes
  * Support            : P.K.Tonkes@gmail.com
  * Datum              : 26-05-2013
- * Versie             : 22-12-2013, Versie 1,1, P.K.Tonkes: Event en Send commando in 1 plugin ondergebracht.
+ * Versie             : 02-02-2014, Versie 1,2, P.K.Tonkes: Bug verwijderd: Leds schakelden soms ook op andere events. FadeOn,FadeOff,VarOn,Varoff toegevoegd
+ *                    : 22-12-2013, Versie 1,1, P.K.Tonkes: Event en Send commando in 1 plugin ondergebracht.
  *                      26-05-2013, Versie 1.0, P.K.Tonkes: Beta versie 
+ *
  * Nodo productnummer : Plugin-23 PWM Led-dimmer (SWACDE-23-V11)
  * Compatibiliteit    : Vanaf Nodo build nummer 645
- * Syntax             : RGBLed <Red>,<Green>,<Blue>,<FadeTimeInMinutes> ==> Stuurt de RGB-led aan
- *                      RGBLedSend <NodoUnit>,<Red>,<Green>,<Blue>,<FadeTimeInMinutes> ==> Verzendt event en stuurt
+ * Syntax             : RGBLed <Red>,<Green>,<Blue>,<FadeOn|FadeOff|VarOn|VarrOff> ==> Stuurt de RGB-led aan
+ *                      RGBLedSend <NodoUnit>,<Red>,<Green>,<Blue>,<FadeOn|FadeOff|VarOn|VarrOff> ==> Verzendt event en stuurt
  *                      de RGB-led van een andere Nodo aan
+ *                      
+ *                      FadeOn laat de kleuren langzaam in elkaar overvloeien, FadeOff schakelt deze optie weer uit.
+ *                      VarOn laat de plugin de waarden overnemen van de variabelen 1,2 en 3. VarOff schakelt dit weer uit.   
  * 
  * LET OP: Een van de RGB-kleuren maakt gebruik van de IR_TX_DATA pen. Het continue
  *         aansturen van de IR-Leds zou de Leds/transistor kunnen overbelasten.   
@@ -45,28 +50,44 @@
  *
  * Nodo Small: Rood  = Arduino pen D9
  *             Groen = Arduino pen D10
- *             Blauw = Arduino pen D11 (LET OP: Op een standaard Nodo is dit de IR zend-led. Deze verwijderen!)
+ *             Blauw = Arduino pen D11 (LET OP: Op een standaard Nodo is dit de IR zend-led. Deze verwijderen!!!)
  *             
  \*********************************************************************************************/
  
 #define PLUGIN_ID 23
-#define PLUGIN_NAME_23_COMMAND "RGBLedSend"
-#define PLUGIN_NAME_23_EVENT   "RGBLed"
+#define PLUGIN_23_COMMAND "RGBLedSend"
+#define PLUGIN_23_EVENT   "RGBLed"
+#define PLUGIN_23_FADEON  "FadeOn"
+#define PLUGIN_23_FADEOFF "FadeOff"
+#define PLUGIN_23_VARON   "VarOn"
+#define PLUGIN_23_VAROFF  "VarOff"
 
 #if NODO_MEGA
-#define PWM_R     5
-#define PWM_G     6
-#define PWM_B     7
+#define PWM_R          5
+#define PWM_G          6
+#define PWM_B          7
 #else
-#define PWM_R     9
-#define PWM_G    10
-#define PWM_B    11
+#define PWM_R          9
+#define PWM_G         10
+#define PWM_B         11
 #endif
 
 #ifdef PLUGIN_023_CORE
 byte InputLevelR=0, InputLevelG=0, InputLevelB=0;
 byte OutputLevelR=0, OutputLevelG=0, OutputLevelB=0;
 int CalledCounter=0, FadeTimeCounter=0;
+boolean RGBFade=false;
+boolean RGBVariables=false;
+
+
+#define RGBLED_MODE_SETRGB         1
+#define RGBLED_MODE_VARIABLES_ON   2
+#define RGBLED_MODE_VARIABLES_OFF  4
+#define RGBLED_MODE_FADE_ON        8
+#define RGBLED_MODE_FADE_OFF      16
+
+int StringFind(char *string, char *keyword);
+
 
 boolean FadeLed(void)
   {
@@ -80,10 +101,15 @@ boolean FadeLed(void)
 
   analogWrite(PWM_R,OutputLevelR);
   analogWrite(PWM_G,OutputLevelG);
-
-
   analogWrite(PWM_B,OutputLevelB);
 
+  if(RGBVariables)
+    {
+    UserVar[0]=OutputLevelR;
+    UserVar[1]=OutputLevelG;
+    UserVar[2]=OutputLevelB;
+    }
+    
   if(InputLevelR==OutputLevelR && InputLevelG==OutputLevelG && InputLevelB==OutputLevelB)
     return false;// klaar met faden naar nieuwe waarde
   else
@@ -104,41 +130,72 @@ void Plugin_023_FLC(void)
 
 boolean Plugin_023(byte function, struct NodoEventStruct *event, char *string)
   {
-  boolean success=false;
-  byte x;
+  boolean success=false, Set=false;
+  byte x,y;
   struct NodoEventStruct TempEvent;  
-  static byte fade=0;
   
   switch(function)
     { 
     #ifdef PLUGIN_023_CORE_RGBLED
     case PLUGIN_EVENT_IN:
       {
-      x=event->Par1 & 0x1f; // Unit nummer
-
-      if(x==0 || x==Settings.Unit)
+      if(event->Command==EVENT_VARIABLE && event->Type==NODO_TYPE_EVENT)   // Er is en variabele gewijzigd. 
         {
-        fade=event->Par1>>5;
-        InputLevelR = (event->Par2>>16) & 0xff;
-        InputLevelG = (event->Par2>>8 ) & 0xff;
-        InputLevelB = (event->Par2)&0xff;
-        
-        if(fade==0)
+        if(RGBVariables)
           {
-          while(FadeLed())
-            delay(5);
+          InputLevelR = UserVar[0];
+          InputLevelG = UserVar[1];
+          InputLevelB = UserVar[2];
+          Set=true;
           }
-        else
+        }
+
+      else if(event->Command==PLUGIN_ID && event->Type==NODO_TYPE_PLUGIN_EVENT) 
+        { 
+        x=event->Par1 & 0x1f; // Unit nummer
+  
+        if(x==0 || x==Settings.Unit)
+          {
+          if(((event->Par2>>24) & 0xff) & RGBLED_MODE_SETRGB)
+            {
+            InputLevelR = (event->Par2    ) & 0xff;
+            InputLevelG = (event->Par2>>8 ) & 0xff;
+            InputLevelB = (event->Par2>>16) & 0xff;
+            }
+                                       
+          if(((event->Par2>>24) & 0xff) & RGBLED_MODE_FADE_ON)
+            RGBFade=true;
+
+          if(((event->Par2>>24) & 0xff) & RGBLED_MODE_FADE_OFF)
+            RGBFade=false;
+
+          if(((event->Par2>>24) & 0xff) & RGBLED_MODE_VARIABLES_ON)
+            RGBVariables=true;
+
+          if(((event->Par2>>24) & 0xff) & RGBLED_MODE_VARIABLES_OFF)
+            RGBVariables=false;
+
+          Set=true;
+          }
+        }
+
+      if(Set)
+        {            
+        if(RGBFade)
           {
           // De waarde fade bevat het aantal minuten dat de omschakeling maximaal mag duren.
           // Per minuut 60000/SCAN_HIGH_TIME keer een call naar Plugin_023_FLC
           // In een minuut max. 255 dimniveaus ==> (60000/(SCAN_HIGH_TIME * 255)) calls nodig voor 1 dimniveau verschil. 
-          FadeTimeCounter=fade*60000/(SCAN_HIGH_TIME*255);
+          FadeTimeCounter=3*60000/(SCAN_HIGH_TIME*255);
           CalledCounter=0;
           FastLoopCall_ptr=&Plugin_023_FLC;
           }
-        
-        success=true;
+        else
+          {
+          while(FadeLed())
+            delay(5);
+          success=true;
+          }
         }
       break;
       }
@@ -148,14 +205,13 @@ boolean Plugin_023(byte function, struct NodoEventStruct *event, char *string)
     case PLUGIN_COMMAND:
       {
       ClearEvent(&TempEvent);
-      TempEvent.DestinationUnit=event->Par1&0x1F; 
+      TempEvent.DestinationUnit=event->Par1; 
       TempEvent.Port      = VALUE_ALL;
       TempEvent.Type      = NODO_TYPE_PLUGIN_EVENT;
       TempEvent.Command   = PLUGIN_ID;
       TempEvent.Par1      = event->Par1;
       TempEvent.Par2      = event->Par2;
       SendEvent(&TempEvent, false ,true, Settings.WaitFree==VALUE_ON);
-  
       success=true;
       break;
       }
@@ -164,64 +220,68 @@ boolean Plugin_023(byte function, struct NodoEventStruct *event, char *string)
     #if NODO_MEGA
     case PLUGIN_MMI_IN:
       {
-
       char *TempStr=(char*)malloc(INPUT_COMMAND_SIZE);
 
-      if(GetArgv(string,TempStr,1))
+      y=1;                                                                      // Parameter teller
+      if(GetArgv(string,TempStr,y++))
         {
-        event->Command = 23;                                                    // Plugin nummer  
-        event->Type = 0;
+        event->Type=0;
+        event->Par1 = 0;
         
-        // Event:   RGBLed <R>,<G>,<B>,<Fade> 
-        if(strcasecmp(TempStr,PLUGIN_NAME_23_EVENT)==0)
+        // Command: RGBLedSend <NodoUnit>,<R>,<G>,<B> | fade | variables 
+        if(strcasecmp(TempStr,PLUGIN_23_COMMAND)==0)
           {
+          event->Type = NODO_TYPE_PLUGIN_COMMAND;
+
+          if(GetArgv(string,TempStr,y++))                                       // RGBLed adres
+            event->Par1=str2int(TempStr);
+          }
+
+        // Event: RGBLed <R>,<G>,<B>  | fade | variables
+        if(strcasecmp(TempStr,PLUGIN_23_EVENT)==0)
           event->Type = NODO_TYPE_PLUGIN_EVENT;
-          event->Par1=0;
-          if(event->Type)
+
+        if(event->Type)
+          {
+          event->Command = PLUGIN_ID;                                           // Plugin nummer  
+          event->Par2 = 0;
+          
+          if(GetArgv(string,TempStr,y++))                                       // R 
             {
-            if(GetArgv(string,TempStr,2))                                       // R 
+            event->Par2=str2int(TempStr);
+            if(GetArgv(string,TempStr,y++))                                     // G 
               {
-              event->Par2=str2int(TempStr)<<16;
-              if(GetArgv(string,TempStr,3))                                     // G
+              event->Par2|=str2int(TempStr)<<8;
+              if(GetArgv(string,TempStr,y++))                                   // B
                 {
-                event->Par2|=str2int(TempStr)<<8;
-                if(GetArgv(string,TempStr,4))                                   // B
-                  {
-                  event->Par2|=str2int(TempStr);
-                  success=true;
-                  }
-                if(GetArgv(string,TempStr,5))                                   // Fade
-                  event->Par1=(str2int(TempStr)<<5);                            // Fade zit in de hoogste drie bits (0..7)
+                event->Par2|=str2int(TempStr)<<16;
+                event->Par2|=((unsigned long)RGBLED_MODE_SETRGB)<<24;
+                success=true;
                 }
               }
             }
-          }
-          
-        // Command: RGBLedSend <NodoUnit>,<R>,<G>,<B>,<Fade> 
-        if(strcasecmp(TempStr,PLUGIN_NAME_23_COMMAND)==0)
-          {
-          event->Type = NODO_TYPE_PLUGIN_COMMAND;
-          if(event->Type)
+            
+          if(!success)
+            event->Par2=0;
+
+          x=0;
+
+          if(StringFind(string,PLUGIN_23_FADEON)!=-1)
+            x|=RGBLED_MODE_FADE_ON;
+            
+          if(StringFind(string,PLUGIN_23_FADEOFF)!=-1)
+            x|=RGBLED_MODE_FADE_OFF;
+            
+          if(StringFind(string,PLUGIN_23_VARON)!=-1)
+            x|=RGBLED_MODE_VARIABLES_ON;
+
+          if(StringFind(string,PLUGIN_23_VAROFF)!=-1)
+            x|=RGBLED_MODE_VARIABLES_OFF;
+
+          if(x)
             {
-            if(GetArgv(string,TempStr,2))                                       // Unit
-              {
-              event->Par1=str2int(TempStr)&0x1F;                                // Unit zit in de eerste vijf bits (0..31)                                       
-              if(GetArgv(string,TempStr,3))                                     // R 
-                {
-                event->Par2=str2int(TempStr)<<16;
-                if(GetArgv(string,TempStr,4))                                   // G
-                  {
-                  event->Par2|=str2int(TempStr)<<8;
-                  if(GetArgv(string,TempStr,5))                                 // B
-                    {
-                    event->Par2|=str2int(TempStr);
-                    success=true;
-                    }
-                  if(GetArgv(string,TempStr,6))                                 // Fade
-                    event->Par1|=(str2int(TempStr)<<5);                         // Fade zit in de hoogste drie bits (0..7)
-                  }
-                }
-              }
+            event->Par2|=((unsigned long)x)<<24;
+            success=true;
             }
           }
         }
@@ -231,27 +291,62 @@ boolean Plugin_023(byte function, struct NodoEventStruct *event, char *string)
 
     case PLUGIN_MMI_OUT:
       {
+      y=0;
       if(event->Type==NODO_TYPE_PLUGIN_COMMAND)
         {
-        strcpy(string,PLUGIN_NAME_23_COMMAND);
+        strcpy(string,PLUGIN_23_COMMAND);
         strcat(string," ");
-        strcat(string,int2str((event->Par1 & 0x1f)));                           // Unit
-        strcat(string,",");
+        strcat(string,int2str(event->Par1));                                    // Unit
+        y++;
         }
       else
         {
-        strcpy(string,PLUGIN_NAME_23_EVENT);
-        strcat(string," ");
+        strcpy(string,PLUGIN_23_EVENT);
         }
         
-      strcat(string,int2str((event->Par2 >>16)&0xff));                          // Parameter-1 = R (5-bit)
-      strcat(string,",");
-      strcat(string,int2str((event->Par2 >> 8)&0xff));                          // Parameter-2 = G (8-bit)
-      strcat(string,",");
-      strcat(string,int2str((event->Par2     )&0xff));                          // Parameter-3 = B (8-bit)
-      strcat(string,",");
-      strcat(string,int2str((event->Par1     )>>5));                            // Parameter-4 = Fade (3-bit)
+      if(((event->Par2>>24) & 0xff) & RGBLED_MODE_SETRGB)
+        {
+        if(y++)
+          strcat(string,",");
+        else
+          strcat(string," ");
+        
+        strcat(string,int2str((event->Par2       ) &0xff));                     // Parameter-1 = R (8-bit)
+        strcat(string,",");
+        strcat(string,int2str((event->Par2 >> 8  ) &0xff));                     // Parameter-2 = G (8-bit)
+        strcat(string,",");                                     
+        strcat(string,int2str((event->Par2 >> 16 ) &0xff));                     // Parameter-3 = B (8-bit)
+        y++;
+        }
 
+      x=(event->Par2>>24) & 0xff;
+  
+      if(y==0)strcat(string," ");
+  
+      if(x & RGBLED_MODE_FADE_ON)
+        {
+        if(y++)strcat(string,",");
+        strcat(string,PLUGIN_23_FADEON);
+        }
+
+      if(x & RGBLED_MODE_FADE_OFF)
+        {
+        if(y++)strcat(string,",");
+        strcat(string,PLUGIN_23_FADEOFF);
+        }
+
+      if(x & RGBLED_MODE_VARIABLES_ON)
+        {
+        if(y++)strcat(string,",");
+        strcat(string,PLUGIN_23_VARON);
+        }
+
+      if(x & RGBLED_MODE_VARIABLES_OFF)
+        {
+        if(y++)strcat(string,",");
+        strcat(string,PLUGIN_23_VAROFF);
+        }
+        
       break;
       }
     #endif //MMI

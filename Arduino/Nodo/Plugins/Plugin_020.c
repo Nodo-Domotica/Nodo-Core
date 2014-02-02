@@ -89,7 +89,7 @@ boolean Plugin_020(byte function, struct NodoEventStruct *event, char *string)
         {
         if(event->Par1 >0 && event->Par1<=USER_VARIABLES_MAX-1)
           {
-          event->Command = 20; // Plugin nummer  
+          event->Command = PLUGIN_ID; // Plugin nummer  
           event->Type = NODO_TYPE_PLUGIN_COMMAND;
           success=true;
           }
