@@ -335,7 +335,7 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
         break;
         
       // als het gewacht wordt totdat de communicatie poorten weer beschikbaar zijn, dan wachtloop verlaten.        
-      if(WaitForFreeTransmission && (Transmission_SelectedUnit==0 || Transmission_SelectedUnit==Settings.Unit))
+      if(WaitForFreeTransmission && (Transmission_LockedBy==0 || Transmission_LockedBy==Settings.Unit))
         break;
       
       // break af als opgegeven event voorbij komt. Let op, alleen events met als bestemming 0 of dit unitnummer worden gedetecteerd!

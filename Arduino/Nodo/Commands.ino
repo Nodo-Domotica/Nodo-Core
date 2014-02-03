@@ -300,6 +300,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.Par2= ((unsigned long)Time.Year  %10)      | ((unsigned long)Time.Year  /10)%10<<4  | ((unsigned long)Time.Year/100)%10<<8 | ((unsigned long)Time.Year/1000)%10<<12 | 
                         ((unsigned long)Time.Month %10) <<16 | ((unsigned long)Time.Month /10)%10<<20 | 
                         ((unsigned long)Time.Date  %10) <<24 | ((unsigned long)Time.Date  /10)%10<<28 ;
+
         SendEvent(&TempEvent, false, true, Settings.WaitFree==VALUE_ON);
               
         // Verzend tijd
@@ -309,8 +310,8 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.DestinationUnit       = 0;    
         TempEvent.Flags                 = TRANSMISSION_QUEUE; 
         TempEvent.Command=CMD_CLOCK_TIME;
-        TempEvent.Flags =0;
         TempEvent.Par2=Time.Minutes%10 | Time.Minutes/10<<4 | Time.Hour%10<<8 | Time.Hour/10<<12;
+
         SendEvent(&TempEvent, false, true, Settings.WaitFree==VALUE_ON);        
         }
       break;
@@ -542,6 +543,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
             TempEvent.Port=EventToExecute->Port;
             TempEvent.DestinationUnit=EventToExecute->SourceUnit;
             SendEvent(&TempEvent,false,false,false);
+    
     
             if(x==y)                                                            // Lock staat aan. Als laatste regel uit de eventlist, dan de ether weer vrijgeven. 
               TempEvent2.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE ; // de laatste van de gehele eventlist
