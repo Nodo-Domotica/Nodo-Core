@@ -53,29 +53,23 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   // Als er een timeout optreedt, dan de blokkade opheffen. Dit ter voorkoming dat Nodo's oneindig wachten op vrije lijn.
   // Uitzondering is als de Nodo zelf de master was, dan deze mag altijd zenden.
 
+  if(Transmission_LockedBy!=0 && Transmission_LockedBy!=Settings.Unit)
+    {
+    #if NODO_MEGA
+    char* TempString=(char*)malloc(25);
+    sprintf(TempString,ProgmemString(Text_10), Transmission_LockedBy);    
+    PrintString(TempString, VALUE_ALL);
+    free(TempString);
+    #endif
 
-//  if(Transmission_SelectedUnit!=0 && Transmission_SelectedUnit!=Settings.Unit && !Transmission_ThisUnitIsMaster)
-//    {
-//    #if NODO_MEGA
-//    char* TempString=(char*)malloc(25);
-//    sprintf(TempString,ProgmemString(Text_10), Transmission_SelectedUnit);    
-//    PrintString(TempString, VALUE_ALL);
-//    free(TempString);
-//    #endif
-
-//    if(!Wait(60,true,0,false))
-//      {
-//      Transmission_SelectedUnit=0;
-//      Transmission_NodoOnly=false;
-//      }
-//    }
-
+    if(!Wait(60,true,0,false))
+      Transmission_LockedBy=0;
+    }
 
   // PrintNodoEvent("DEBUG: SendEvent():", ES);
 
   // loop de plugins langs voor eventuele afhandeling van dit event.
   PluginCall(PLUGIN_EVENT_OUT, ES,0);
-
 
   // Stuur afhankelijk van de instellingen het event door naar I2C, RF, IR. Eerst wordt het event geprint,daarna een korte wachttijd om
   // te zorgen dat er een minimale wachttijd tussen de signlen zit. Tot slot wordt het signaal verzonden.
@@ -89,6 +83,9 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   // Respecteer een minimale tijd tussen verzenden van events. Wachten alvorens event te verzenden.
   while(millis()<HoldTransmission);  
                                              
+  // digitalWrite(PIN_WIRED_OUT_2,LOW);//???
+  // digitalWrite(PIN_WIRED_OUT_2,HIGH);//???
+  
   // Verstuur signaal als IR
   if(Settings.TransmitIR==VALUE_ON && (Port==VALUE_SOURCE_IR || Port==VALUE_ALL))
     { 

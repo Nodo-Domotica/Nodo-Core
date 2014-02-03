@@ -15,7 +15,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
   static byte Focus=0;
   static boolean BlockRepeatsStatus=false;
   unsigned long Timer=millis()+SCAN_HIGH_TIME;
-      
+
   while(Timer>millis() || RepeatingTimer>millis())
     {
     #if I2C
@@ -83,6 +83,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
     if(Fetched)
       {
       Led(BLUE);
+      HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS+millis();
       SignalHash=(Event->Command<<24 | Event->Type<<16 | Event->Par1<<8) ^ Event->Par2;
       Event->Port=Fetched;
       Event->Direction=VALUE_DIRECTION_INPUT;
@@ -114,6 +115,8 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       
       if(Fetched)
         {
+        // digitalWrite(PIN_WIRED_OUT_4,LOW);//???
+        // digitalWrite(PIN_WIRED_OUT_4,HIGH);//???
         // Nodo event: Toets of de versienummers corresponderen. Is dit niet het geval, dan zullen er verwerkingsfouten optreden! Dan een waarschuwing tonen en geen verdere verwerking.
         // Er is een uitzondering: De eerste commando/eventnummers zijn stabiel en mogen van oudere versienummers zijn.
         if(Event->Version!=0 && Event->Version!=NODO_VERSION_MINOR && Event->Command>COMMAND_MAX_FIXED)
@@ -142,8 +145,11 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
         // Als er een specifieke Nodo is geselecteerd, dan moeten andere Nodo's worden gelocked.
         // Hierdoor is het mogelijk dat een master en een slave Nodo tijdelijk exclusief gebruik kunnen maken van de bandbreedte
         // zodat de communicatie niet wordt verstoord.  
-        if(Event->DestinationUnit!=0)
-          Transmission_SelectedUnit = Event->DestinationUnit;
+
+        if(Event->Flags & TRANSMISSION_LOCK)
+          Transmission_LockedBy = Event->DestinationUnit;
+        else
+          Transmission_LockedBy = 0;
 
         // Als het Nodo event voor deze unit bestemd is, dan klaar. Zo niet, dan terugkeren met een false
         // zodat er geen verdere verwerking plaatsvindt.
