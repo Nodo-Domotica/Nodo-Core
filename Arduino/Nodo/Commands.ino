@@ -457,7 +457,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
 
     case CMD_EVENTLIST_ERASE:
-      Led(BLUE);
+      Led(9, BLUE);
       ClearEvent(&TempEvent);
       
       if(EventToExecute->Par1==0)

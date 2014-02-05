@@ -19,7 +19,7 @@ int ExecuteLine(char *Line, byte Port)
   unsigned long a;
   struct NodoEventStruct EventToExecute,TempEvent;
 
-  Led(RED);
+  Led(12, RED);
   SerialHold(true);                                                             // Geen seriele data meer accepteren
 
   Transmission_SendToUnit=Transmission_SendToAll;                               // Als de SendTo wel/niet permanent, dan unitnummer overnemen of uitschakelen.
@@ -261,7 +261,7 @@ int ExecuteLine(char *Line, byte Port)
               EventToExecute.Type=NODO_TYPE_COMMAND;
               if(GetArgv(Command,TmpStr1,2))
                 {
-                Led(BLUE);
+                Led(10,BLUE);
                 GetHTTPFile(TmpStr1);
                 }
               else

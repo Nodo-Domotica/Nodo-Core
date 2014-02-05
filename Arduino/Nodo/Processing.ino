@@ -135,13 +135,13 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     // ############# Verwerk event ################  
     if(Event->Type==NODO_TYPE_COMMAND)
       {
-      Led(RED);                                                                 // LED aan als er iets verwerkt wordt      
+      Led(6,RED);                                                                 // LED aan als er iets verwerkt wordt      
       error=ExecuteCommand(Event);
       }
 
     else if(Event->Type==NODO_TYPE_PLUGIN_COMMAND)
       {
-      Led(RED);                                                                 // LED aan als er iets verwerkt wordt      
+      Led(7, RED);                                                                 // LED aan als er iets verwerkt wordt      
       PluginCall(PLUGIN_COMMAND,Event,0);
       }
       
@@ -155,7 +155,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
         {      
         if(CheckEvent(Event,&EventlistEvent))                                   // Als er een match is tussen het binnengekomen event en de regel uit de eventlist.
           {        
-          Led(RED);                                                             // LED aan als er iets verwerkt wordt      
+          Led(8, RED);                                                             // LED aan als er iets verwerkt wordt      
           ExecutionLine=x;
           error=ProcessEvent(&EventlistAction);
           }
