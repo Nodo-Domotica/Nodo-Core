@@ -276,7 +276,7 @@ void Alarm(int Variant,int Option)
  * Rood = Nodo verwerkt event of commando.
  * Blauw = Bijzondere modus Nodo waarin Nodo niet in staat is om events te ontvangen of genereren.
  \*********************************************************************************************/
-void Led(byte Color)
+void Led(int bron, byte Color)
   { 
   #if NODO_MEGA
   digitalWrite(PIN_LED_RGB_R,Color==RED);
