@@ -755,7 +755,6 @@ void PrintString(char* LineToPrint, byte Port)
       }
     }
   #endif
-  
   }
   
 
