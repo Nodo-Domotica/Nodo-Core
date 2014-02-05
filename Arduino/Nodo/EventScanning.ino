@@ -26,18 +26,17 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
         if(I2C_Received==sizeof(struct NodoEventStruct))                        // Er is I2C data binnengekomen maar weten nog niet of het een NodoEventStruct betreft.
           {                                                                     // Het is een NodoEventStruct
           memcpy(Event, &I2C_ReceiveBuffer, sizeof(struct NodoEventStruct));
-    
           if(Checksum(Event))
             {   
             bitWrite(HW_Config,HW_I2C,true);
             I2C_Received=0;
             Fetched=VALUE_SOURCE_I2C;
+            Focus=Fetched;
             }
           }
         else
           {                                                                     // Het is geen NodoEventStruct. In dit geval verwerken als reguliere commandline string.
           PluginCall(PLUGIN_I2C_IN,0,0);
-    
           #if NODO_MEGA
           I2C_ReceiveBuffer[I2C_Received]=0;                                    // Sluit buffer af als een string.
     
@@ -64,6 +63,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
           {
           bitWrite(HW_Config,HW_IR_RX,true);
           Fetched=VALUE_SOURCE_IR;
+          Focus=Fetched;
           }
         }
       }
@@ -76,6 +76,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
           {
           bitWrite(HW_Config,HW_RF_RX,true);
           Fetched=VALUE_SOURCE_RF;
+          Focus=Fetched;
           }
         }
       }
@@ -87,7 +88,6 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       SignalHash=(Event->Command<<24 | Event->Type<<16 | Event->Par1<<8) ^ Event->Par2;
       Event->Port=Fetched;
       Event->Direction=VALUE_DIRECTION_INPUT;
-      Focus=Fetched;
       Fetched=0;
       
       if(RawSignal.RepeatChecksum)RawSignal.Repeats=true;
@@ -95,11 +95,11 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       // Er zijn een aantal situaties die moeten leiden te een event. Echter er zijn er ook die (nog) niet mogen leiden 
       // tot een event en waar het binnengekomen signaal moet worden onderdrukt.
       
-      // 1. Het is een (niet reperterend) Nodo signaal => Alle gevallen doorlaten
-      if(Event->Type==NODO_TYPE_EVENT || Event->Type==NODO_TYPE_COMMAND || Event->Type==NODO_TYPE_SYSTEM)
+      // 1. Het is een (niet reperterend) Nodo signaal of is de herkomst I2C => Alle gevallen doorlaten
+      if(Event->Type==NODO_TYPE_EVENT || Event->Type==NODO_TYPE_COMMAND || Event->Type==NODO_TYPE_SYSTEM || Event->Port==VALUE_SOURCE_I2C)
         Fetched=1;      
 
-      // 2. Het (mogelijk reperterend) binnenkomende signaal is niet recent eerder binnengekomen, zoals plugin signalen als KAKU, NewKAKU, ... => Herhalingen onderdrukken  
+      // 2. Het (mogelijk repeterend) binnenkomende signaal is niet recent eerder binnengekomen, zoals plugin signalen als KAKU, NewKAKU, ... => Herhalingen onderdrukken  
       else if(!RawSignal.RepeatChecksum && (SignalHash!=SignalHashPrevious || RepeatingTimer<millis())) 
         Fetched=2;
 

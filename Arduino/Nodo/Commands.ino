@@ -526,22 +526,29 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         // 4. de vlag VIEW_SPECIAL mee krijgt zodat de events/commando's niet worden uitgevoerd aan de ontvangende zijde.
         // 5. Met LOCK alle andere Nodo's tijdelijk in de hold worden gezet.
         // In geval van verzending naar queue zal deze tijd niet van toepassing zijn omdat er dan geen verwerkingstijd nodig is.
-        // Tussen de events die de queue in gaan een kortere delaytussen verzendingen.
+        // Tussen de events die de queue in gaan een kortere delay tussen verzendingen.
 
-        EventToExecute->Command=SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW;
-        EventToExecute->Flags=TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
-        EventToExecute->Type=NODO_TYPE_SYSTEM;
+        z=EventToExecute->Port;
+        w=EventToExecute->SourceUnit;
         
         while(x<=y && Eventlist_Read(x,&TempEvent,&TempEvent2))
           {
+          ClearEvent(EventToExecute);
           EventToExecute->Par1=x;
+          EventToExecute->Command=SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW;
+          EventToExecute->Flags=TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
+          EventToExecute->Type=NODO_TYPE_SYSTEM;
+          EventToExecute->Port=z;
+          EventToExecute->SourceUnit=Settings.Unit;
+          EventToExecute->DestinationUnit=w;
+
           if(TempEvent.Command!=0)
             {
             SendEvent(EventToExecute,false,false,false);
 
             TempEvent.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
-            TempEvent.Port=EventToExecute->Port;
-            TempEvent.DestinationUnit=EventToExecute->SourceUnit;
+            TempEvent.Port=z;
+            TempEvent.DestinationUnit=w;
             SendEvent(&TempEvent,false,false,false);
     
     
@@ -550,8 +557,8 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
             else
               TempEvent2.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT |TRANSMISSION_LOCK;      // de laatste van de regel uit de eventlist
 
-            TempEvent2.Port=EventToExecute->Port;
-            TempEvent2.DestinationUnit=EventToExecute->SourceUnit;
+            TempEvent2.Port=z;
+            TempEvent2.DestinationUnit=w;
             SendEvent(&TempEvent2,false,false,false);
             }
           x++;
