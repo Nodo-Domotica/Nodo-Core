@@ -842,7 +842,7 @@ void setup()
   IRbit=digitalPinToBitMask(PIN_IR_RX_DATA);
   IRport=digitalPinToPort(PIN_IR_RX_DATA);
 
-  Led(RED);
+  Led(3, RED);
 
   ClearEvent(&LastReceived);
 
@@ -1056,10 +1056,10 @@ void loop()
         {
 //???        // IP Event: *************** kijk of er een Event van IP komt **********************    
         #ifdef ethernetserver_h
-//        if(bitRead(HW_Config,HW_ETHERNET))
-//          if(IPServer.available())
-//            if(!PluginCall(PLUGIN_ETHERNET_IN,0,0))
-//              ExecuteIP();
+        if(bitRead(HW_Config,HW_ETHERNET))
+          if(IPServer.available())
+            if(!PluginCall(PLUGIN_ETHERNET_IN,0,0))
+              ExecuteIP();
         #endif
         break;
         }
@@ -1226,7 +1226,7 @@ void loop()
         }
         
       default:
-        Led(GREEN);
+        Led(4, GREEN);
         Slice_1=0;
         break;
       }// switch

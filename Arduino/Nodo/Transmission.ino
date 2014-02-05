@@ -10,7 +10,7 @@ void WaitFree(void)
 
   int x,y;
   
-  Led(BLUE);
+  Led(1,BLUE);
 
   do
     {
@@ -33,7 +33,7 @@ void WaitFree(void)
       }
     }while(TimeOutTimer>millis() && (x>0 || y>0));                              // Zolang nog pulsen op RF of IR en nog geen timeout
 
-  Led(RED);
+  Led(2, RED);
   }
 
 

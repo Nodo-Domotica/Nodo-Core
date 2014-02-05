@@ -3,7 +3,7 @@ void DetectHardwareReset(void)
   {
   unsigned long ResetTime=millis()+10000;
   boolean toggle=false;
-  Led(0);
+  Led(0,0);
   do
     {
     toggle=!toggle;
@@ -276,7 +276,7 @@ void Alarm(int Variant,int Option)
  * Rood = Nodo verwerkt event of commando.
  * Blauw = Bijzondere modus Nodo waarin Nodo niet in staat is om events te ontvangen of genereren.
  \*********************************************************************************************/
-void Led( byte Color)
+void Led(int bron, byte Color)//??? bron weer weghalen.
   { 
   #if NODO_MEGA
   digitalWrite(PIN_LED_RGB_R,Color==RED);
@@ -284,7 +284,8 @@ void Led( byte Color)
   digitalWrite(PIN_LED_RGB_G,Color==GREEN);
   #else
 
-  //FileWriteLine("",TempLogFile,"DAT",Line, false);
+  if(Color==BLUE)//???
+    FileWriteLine("","DEBUG","DAT",int2str(bron), false);
 
   digitalWrite(PIN_LED_RGB_R,(Color==RED || Color==BLUE));
   #endif
@@ -356,7 +357,7 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
           }
         }
       }
-    Led(RED);
+    Led(0,RED);
     }   
     
   // Serial.println(F("DEBUG: Wait() verlaten."));
@@ -2671,7 +2672,7 @@ void GoodNightSleepTight(void)
       UserTimer[x]-=SleepTimer*WDT_TIME;                                        // dan min acht seconden
 
   // Spaar energie door de LED uit te zetten en de spanning naar de ontvanger.
-  Led(0);     
+  Led(0,0);     
   digitalWrite(PIN_RF_RX_VCC,LOW);                                            // Spanning naar de RF ontvanger uit
 
   // Zzzzz.....
@@ -2680,7 +2681,7 @@ void GoodNightSleepTight(void)
 
   // Spanning weer op de RF ontvanger anders is de Nodo doof.
   digitalWrite(PIN_RF_RX_VCC,HIGH);                                             // Spanning naar de RF ontvanger weer aan
-  Led(RED);     
+  Led(0, RED);     
   }
 
 void wdsleep()
