@@ -1054,12 +1054,12 @@ void loop()
       {        
       case 0:
         {
-        // IP Event: *************** kijk of er een Event van IP komt **********************    
+//???        // IP Event: *************** kijk of er een Event van IP komt **********************    
         #ifdef ethernetserver_h
-        if(bitRead(HW_Config,HW_ETHERNET))
-          if(IPServer.available())
-            if(!PluginCall(PLUGIN_ETHERNET_IN,0,0))
-              ExecuteIP();
+//        if(bitRead(HW_Config,HW_ETHERNET))
+//          if(IPServer.available())
+//            if(!PluginCall(PLUGIN_ETHERNET_IN,0,0))
+//              ExecuteIP();
         #endif
         break;
         }

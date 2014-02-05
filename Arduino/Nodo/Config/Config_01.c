@@ -60,31 +60,31 @@
 #define PLUGIN_002_CORE
 
 // Vochtigheidssensor / Temperatuursensor DHT-22
-//#define PLUGIN_006
-//#define PLUGIN_006_CORE 22
+#define PLUGIN_006
+#define PLUGIN_006_CORE 22
 
 // Temperatuursensor Dallas DS18B20
-//#define PLUGIN_005
-//#define PLUGIN_005_CORE
+#define PLUGIN_005
+#define PLUGIN_005_CORE
 
 // Oude UserEvents Nodo Due compatibiliteit
-//#define PLUGIN_007
-//#define PLUGIN_007_CORE
+#define PLUGIN_007
+#define PLUGIN_007_CORE
 
 //Luchtdruksensor BPM085
-//#define PLUGIN_020
-//#define PLUGIN_020_CORE
+#define PLUGIN_020
+#define PLUGIN_020_CORE
 
 // RGB-Led aansturing
-//#define PLUGIN_023
-//#define PLUGIN_023_CORE
+#define PLUGIN_023
+#define PLUGIN_023_CORE
 
 // Pulse
-//#define PLUGIN_028
+#define PLUGIN_028
 
 // AlectoV1 Weerstation
-//#define PLUGIN_008
-//#define PLUGIN_008_CORE
+#define PLUGIN_008
+#define PLUGIN_008_CORE
 
 // Hardware test plugin
 //#define PLUGIN_017

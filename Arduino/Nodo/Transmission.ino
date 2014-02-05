@@ -529,7 +529,7 @@ boolean SendHTTPRequest(char* Request)
       IPBuffer[0]=0;
       InByteCounter=0;
 
-      while(TimeoutTimer>millis() && IPClient.connected())
+      while(TimeoutTimer>millis() && IPClient.connected()) //??? afbreken  als alle tekens in bodytext ontvangen. teller laten lopen, dan close
         {
         if(IPClient.available())
           {
@@ -616,7 +616,7 @@ boolean SendHTTPRequest(char* Request)
         SelectSDCard(false);
         }        
       delay(100);
-      IPClient.flush();                                                         // Verwijder eventuele rommel in de buffer.
+      IPClient.flush();    ///??? direct de while openen.                                                     // Verwijder eventuele rommel in de buffer.
       IPClient.stop();
       }
     else                                                                        // niet gelukt om de TCP-IP verbinding op te zetten. Genereer error en her-initialiseer de ethernetkaart.

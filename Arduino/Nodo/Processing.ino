@@ -316,7 +316,7 @@ boolean QueueAdd(struct NodoEventStruct *Event)
       QueuePosition--;
       }
 
-    else if(QueuePosition==3)
+    else if(QueuePosition>=3)
       {
       if(Queue[QueuePosition-3].Type==NODO_TYPE_SYSTEM && Queue[QueuePosition-3].Command==SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW)
         {
