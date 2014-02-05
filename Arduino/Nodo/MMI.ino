@@ -745,14 +745,14 @@ void PrintString(char* LineToPrint, byte Port)
   #ifdef ethernetserver_h
   if(bitRead(HW_Config,HW_ETHERNET))
     {
-//    if((Port==VALUE_SOURCE_TELNET || Port==VALUE_ALL) && TerminalClient.connected() && TerminalConnected>0 && TerminalLocked==0)
-//???      TerminalClient.println(LineToPrint);
+    if((Port==VALUE_SOURCE_TELNET || Port==VALUE_ALL) && TerminalClient.connected() && TerminalConnected>0 && TerminalLocked==0)
+      TerminalClient.println(LineToPrint);
       
-//    if((Port==VALUE_SOURCE_HTTP || Port==VALUE_ALL) && IPClient.connected())
-//      {
-//      IPClient.print(LineToPrint);
-//      IPClient.println("<br>");
-//      }
+    if((Port==VALUE_SOURCE_HTTP || Port==VALUE_ALL) && IPClient.connected())
+      {
+      IPClient.print(LineToPrint);
+      IPClient.println("<br>");
+      }
     }
   #endif
   
