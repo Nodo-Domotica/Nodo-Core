@@ -1,7 +1,10 @@
-#define EN_AA       0x01  // Register for Enable Auto Acknowledge configuration register
-#define RF_SETUP    0x06  // Register for Set Data Rate
-#define SETUP_RETR  0x04  // Register for Retry delay and count
-#define STATUS      0x07  // Register for status
+#define NRF_CONFIG      0x00  // Register for config
+#define NRF_EN_AA       0x01  // Register for Enable Auto Acknowledge configuration register
+#define NRF_SETUP_RETR  0x04  // Register for Retry delay and count
+#define NRF_RF_CH       0x05  // Register to set channel
+#define NRF_RF_SETUP    0x06  // Register for Set Data Rate
+#define NRF_STATUS      0x07  // Register for status
+#define NRF_CD          0x09  // Register for Carried Detect
 
 #define mirf_ADDR_LEN	5
 #define mirf_CONFIG ((1<<EN_CRC) | (0<<CRCO) )
@@ -10,7 +13,7 @@
 uint8_t Nrf24_PTX;
 uint8_t Nrf24_channel=1;
 
-byte address[5] = { 1,2,3,4,0 };
+byte NRF_address[5] = { 1,2,3,4,0 };
 byte NRF_status=0;
 
 void NRF_init(void)
@@ -24,17 +27,17 @@ void NRF_init(void)
   SPI.setDataMode(SPI_MODE0);
   SPI.setClockDivider(SPI_2XCLOCK_MASK);
   Nrf24_init();
-  address[4]=NRF_RECEIVE_ADDRESS;
-  Nrf24_setRADDR((byte *)address);
-  Nrf24_channel = NRF_CHANNEL;
+  NRF_address[4]=Settings.Address;
+  Nrf24_setRADDR((byte *)NRF_address);
+  Nrf24_channel = Settings.Channel;
   Nrf24_config();
 
   byte rf_setup=0x26; // 250 kbps
-  Nrf24_writeRegister(RF_SETUP, &rf_setup, sizeof(rf_setup) );
+  Nrf24_writeRegister(NRF_RF_SETUP, &rf_setup, sizeof(rf_setup) );
   byte en_aa=0x3F; // Auto-Ack Enabled
-  Nrf24_writeRegister(EN_AA, &en_aa, sizeof(en_aa) );
+  Nrf24_writeRegister(NRF_EN_AA, &en_aa, sizeof(en_aa) );
   byte setup_retr=0xff;  // delay 4000uS, 15 retries
-  Nrf24_writeRegister(SETUP_RETR, &setup_retr, sizeof(setup_retr) );
+  Nrf24_writeRegister(NRF_SETUP_RETR, &setup_retr, sizeof(setup_retr) );
   Nrf24_flushRx();
 }
 
@@ -44,6 +47,7 @@ boolean NRF_receive(struct NodoEventStruct *event)
   
   if(!Nrf24_isSending() && Nrf24_dataReady())
     {
+      Serial.println("NRF RX");
       byte Payload[NRF_PAYLOAD_SIZE];
       Nrf24_getData((byte *)Payload);
       if (Payload[0]==0)
@@ -69,9 +73,9 @@ void NRF_send(struct NodoEventStruct *event)
         {
           Serial.print("Send to NRF address: ");
           Serial.println((int)y);
-          address[4]=y;
+          NRF_address[4]=y;
           NRF_status=0;
-          Nrf24_setTADDR((byte *)address);
+          Nrf24_setTADDR((byte *)NRF_address);
           Nrf24_send((byte *)Payload);
           while(Nrf24_isSending()) {}
       //    if(NRF_status==46)
@@ -88,9 +92,9 @@ void NRF_CheckOnline()
   Payload[0]=255;
   for(int y=1;y<=NRF_UNIT_MAX;y++)
     {
-          address[4]=y;
+          NRF_address[4]=y;
           NRF_status=0;
-          Nrf24_setTADDR((byte *)address);
+          Nrf24_setTADDR((byte *)NRF_address);
           Nrf24_send((byte *)Payload);
           while(Nrf24_isSending()) {}
 
@@ -102,6 +106,7 @@ void NRF_CheckOnline()
             }
     }
 }
+
 
 // ***********************************************************************************************************
 // NRF24 specific code
@@ -144,17 +149,11 @@ void NRF_CheckOnline()
 #define CD          0x09
 #define RX_ADDR_P0  0x0A
 #define RX_ADDR_P1  0x0B
-//#define RX_ADDR_P2  0x0C
-//#define RX_ADDR_P3  0x0D
-//#define RX_ADDR_P4  0x0E
-//#define RX_ADDR_P5  0x0F
+#define RX_ADDR_P2  0x0C
 #define TX_ADDR     0x10
 #define RX_PW_P0    0x11
 #define RX_PW_P1    0x12
-//#define RX_PW_P2    0x13
-//#define RX_PW_P3    0x14
-//#define RX_PW_P4    0x15
-//#define RX_PW_P5    0x16
+#define RX_PW_P2    0x13
 #define FIFO_STATUS 0x17
 
 /* Bit Mnemonics */
@@ -165,18 +164,6 @@ void NRF_CheckOnline()
 #define CRCO        2
 #define PWR_UP      1
 #define PRIM_RX     0
-//#define ENAA_P5     5
-//#define ENAA_P4     4
-//#define ENAA_P3     3
-//#define ENAA_P2     2
-//#define ENAA_P1     1
-//#define ENAA_P0     0
-//#define ERX_P5      5
-//#define ERX_P4      4
-//#define ERX_P3      3
-//#define ERX_P2      2
-//#define ERX_P1      1
-//#define ERX_P0      0
 #define AW          0
 #define ARD         4
 #define ARC         0
@@ -207,7 +194,6 @@ void NRF_CheckOnline()
 #define FLUSH_RX      0xE2
 #define REUSE_TX_PL   0xE3
 #define NOP           0xFF
-
 
 void Nrf24_transferSync(uint8_t *dataout,uint8_t *datain,uint8_t len)
 {
