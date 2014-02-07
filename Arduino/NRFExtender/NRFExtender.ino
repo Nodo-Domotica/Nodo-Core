@@ -16,13 +16,16 @@
  \*************************************************************************************************************************/
 
 // Nodo NRF Extender
-// Prototype 001
-// 06-02-2014
+// Prototype 002
+// 07-02-2014
 // This version is Nodo version dependent!
+// release notes
+//   07-02-2014: added MMI for unit,address and channel configuration, stored in EEPROM
+//               added channel scanner
 
-#define NRF_RECEIVE_ADDRESS      60 // Range 1-64
+#define NRF_RECEIVE_ADDRESS      60 // Default Radio address, range 1-64
 
-#define THIS_EXTENDER_UNIT       31
+#define THIS_EXTENDER_UNIT       31 // Default Unit, range 1-31
 
 #define NODO_VERSION_MAJOR        3
 #define NODO_VERSION_MINOR        6
@@ -30,7 +33,7 @@
 // NRF Settings
 #define NRF_CSN_PIN               7
 #define NRF_CE_PIN                8
-#define NRF_CHANNEL              72
+#define NRF_CHANNEL              72 // Default Radio channel, range 1-125
 #define NRF_PAYLOAD_SIZE	 32
 #define NRF_UNIT_MAX             64
 
@@ -49,11 +52,16 @@
 #include <SPI.h>
 #include <Arduino.h>
 #include <WireNodo.h>
+#include <EEPROM.h>
+
+void(*Reboot)(void)=0;
 
 struct SettingsStruct
 {
   int     Version;        
   byte    Unit;
+  byte    Address;
+  byte    Channel;
 }
 Settings;
 
@@ -82,7 +90,9 @@ byte I2C_ReceiveBuffer[I2C_BUFFERSIZE];         // I2C receive buffer
 
 void setup() 
 {
-  Settings.Unit=THIS_EXTENDER_UNIT;
+  LoadSettings();
+  if(Settings.Version!=NODO_VERSION_MINOR)ResetFactory();
+  
   Serial.begin(19200);
   WireNodo.begin(Settings.Unit + I2C_START_ADDRESS - 1);
   WireNodo.onReceive(ReceiveI2C);
@@ -104,14 +114,7 @@ void setup()
 void loop() 
 {
   if(Serial.available())
-  {
-    byte command=Serial.read();
-    if (command == '?')
-    {
-      NRF_CheckOnline();
-      PrintNodoOnline();
-    }
-  }
+    serial();
 
   if(NRF_receive(&NodoEvent))
   {
