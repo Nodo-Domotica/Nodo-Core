@@ -1,6 +1,6 @@
 void Save_Settings(void)  
 {
-  char ByteToSave,*pointerToByteToSave=pointerToByteToSave=(char*)&Settings;    //pointer verwijst nu naar startadres van de struct. 
+  char ByteToSave,*pointerToByteToSave=pointerToByteToSave=(char*)&Settings;    //pointer to settings struct 
 
   for(int x=0; x<sizeof(struct SettingsStruct) ;x++)
   {
@@ -10,34 +10,34 @@ void Save_Settings(void)
 }
 
 /*********************************************************************************************\
- * Laad de settings uit het EEPROM geheugen.
+ * Load settings from EEPROM
  \*********************************************************************************************/
 boolean LoadSettings()
  {
   byte x;
 
-  char ByteToSave,*pointerToByteToRead=(char*)&Settings;    //pointer verwijst nu naar startadres van de struct.
+  char ByteToSave,*pointerToByteToRead=(char*)&Settings;    //pointer to settings struct
 
   for(int x=0; x<sizeof(struct SettingsStruct);x++)
     {
     *pointerToByteToRead=EEPROM.read(x);
-    pointerToByteToRead++;// volgende byte uit de struct
+    pointerToByteToRead++;// next byte
     }
   }
   
 /*********************************************************************************************\
- * Alle settings van de Nodo weer op default.
+ * Reset Extender settings to default values.
 \*********************************************************************************************/
 
 void ResetFactory(void)
   {
     Serial.println("Reset!");
-    // Herstel alle settings naar defaults
-    Settings.Version    = NODO_VERSION_MINOR;
+
+    Settings.Version    = EXTENDER_VERSION;
     Settings.Unit       = THIS_EXTENDER_UNIT;
     Settings.Address    = NRF_RECEIVE_ADDRESS;
     Settings.Channel    = NRF_CHANNEL;
-    
+
     Save_Settings();
     Reboot();
   }

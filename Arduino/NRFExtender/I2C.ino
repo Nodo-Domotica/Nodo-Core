@@ -17,84 +17,52 @@ void ReceiveI2C(int n)
 /**********************************************************************************************\
  * Send event on I2C bus. 
  \*********************************************************************************************/
-void SendI2C(struct NodoEventStruct *EventBlock)
-{  
-  byte x;
-  byte *B=(byte*)EventBlock;  
-
-  Checksum(EventBlock);// calculate checksum: crc-8
-
-  for(int y=1;y<=UNIT_MAX;y++)
+void SendI2C()
+{
+  for(int y=1;y<=I2C_UNIT_MAX;y++)
   {            
-    if((EventBlock->Command==EVENT_BOOT && EventBlock->Type == NODO_TYPE_EVENT) || (NodoOnline(y,0)==VALUE_SOURCE_I2C))
+    if(I2COnline[y]==true)
     {
       Serial.print("Send to I2C address:");
       Serial.println((int)y);
       WireNodo.beginTransmission(I2C_START_ADDRESS+y-1);
-      for(x=0;x<sizeof(struct NodoEventStruct);x++)
-        WireNodo.write(*(B+x));
-      WireNodo.endTransmission(false); // verzend de data, sluit af maar geef de bus NIET vrij
+      for(byte x=0;x<NRFPayload.Size;x++)
+        WireNodo.write(NRFPayload.Data[x]);
+      WireNodo.endTransmission(false); // transmit data, do not release I2C bus
     }
   }
-  WireNodo.endTransmission(true); // Geef de bus vrij
-}
-
-/*********************************************************************************************\
- * I2C Checksum
- \*********************************************************************************************/
-
-boolean Checksum(NodoEventStruct *event)
-{
-  byte OldChecksum=event->Checksum;
-  byte NewChecksum=NODO_VERSION_MAJOR;  // Verwerk versie in checksum om communicatie tussen verschillende versies te voorkomen
-
-  event->Checksum=0; // anders levert de beginsituatie een andere checksum op
-
-  for(int x=0;x<sizeof(struct NodoEventStruct);x++)
-    NewChecksum^(*((byte*)event+x)); 
-
-  event->Checksum=NewChecksum;
-  return(OldChecksum==NewChecksum);
+  WireNodo.endTransmission(true); // Release I2C bus
 }
 
 /*******************************************************************************************************\
- * Keep track of all Online Nodo units
+ * Discover I2C peers
  \*******************************************************************************************************/
-byte NodoOnline(byte Unit, byte Port)
+byte CheckI2COnline()
 {
-  static byte NodoOnlinePort[UNIT_MAX+1];
-  static boolean FirstTime=true;
-
-  int x;
-
-  // On first call, clear table
-  if(FirstTime)
+  byte I2Cstatus, I2Caddress;
+  
+  for(I2Caddress = 1; I2Caddress < I2C_UNIT_MAX; I2Caddress++ ) 
   {
-    FirstTime=false;
-    for(x=0;x<=UNIT_MAX;x++)
-      NodoOnlinePort[x]=0;
+    WireNodo.beginTransmission(I2Caddress);
+    I2Cstatus = WireNodo.endTransmission();
+
+    if (I2Cstatus == 0)
+    {
+      I2COnline[I2Caddress]=true;
+    }
   }
-
-  if(Port && Port!=NodoOnlinePort[Unit])
-  {
-    // Update table.
-    if(Port==VALUE_SOURCE_I2C)
-      NodoOnlinePort[Unit]=VALUE_SOURCE_I2C;
-  }    
-  return NodoOnlinePort[Unit];
 }
 
-void PrintNodoOnline(void)
+void PrintI2COnline(void)
 {
-  Serial.println("Nodo Online:");
-  for(int y=1;y<=UNIT_MAX;y++)
+  Serial.println("I2C Peers Online:");
+  for(int y=1;y<=I2C_UNIT_MAX;y++)
   {            
-    if((NodoOnline(y,0)==VALUE_SOURCE_I2C))
+    if(I2COnline[y]==true)
     {
       Serial.print((int)y);
       Serial.println(" is Online");
     }
   }
 }
-
 
