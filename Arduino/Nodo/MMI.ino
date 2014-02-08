@@ -910,6 +910,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_SEND_EVENT:
       case CMD_LOCK:
       case CMD_DEBUG:
+      case CMD_WAIT_BUSY_NODO:
       case CMD_LOG:
       case CMD_ECHO:
       case CMD_WAITFREERF:
@@ -1195,6 +1196,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
       ResultEvent->Type=NODO_TYPE_COMMAND;
       break; 
 
+    case CMD_WAIT_BUSY_NODO:
     case CMD_LOG:
     case CMD_DEBUG:
     case CMD_ECHO:

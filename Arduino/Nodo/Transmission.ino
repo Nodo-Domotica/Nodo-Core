@@ -1,42 +1,3 @@
-/**********************************************************************************************\
- * Deze functie wacht totdat de 433 en de IR band vrij zijn of er een timeout heeft plaats gevonden.
- * Er wordt gemeten hoeveel geldige pulsen ( > MIN_PULSE_LENGTH) er zich voordoen binnen een 
- * vast tijdsframe. Als er spikes zijn (=ruis) of er zijn geen pulsen, dan wordt teruggekeerd.
- \*********************************************************************************************/
-void WaitFree(void)
-  {
-  unsigned long TimeOutTimer=millis()+WAIT_FREE_RX_TIMEOUT;                     // tijd waarna de routine wordt afgebroken in milliseconden
-  unsigned long WindowTimer;
-
-  int x,y;
-  
-  Led(1,BLUE);
-
-  do
-    {
-    WindowTimer=millis()+250;
-    x=0;
-    while(WindowTimer>millis())
-      {
-      if((*portInputRegister(IRport)&IRbit)==0)                                 // Puls op RF?
-        {
-        x++;
-        if(pulseIn(PIN_IR_RX_DATA,LOW) < MIN_PULSE_LENGTH && x>0)               // Was het een spike?
-          x=0;
-        }
-      if((*portInputRegister(RFport)&RFbit)==RFbit)                             // Pulse op IR
-        {
-        y++;
-        if(pulseIn(PIN_RF_RX_DATA,HIGH) < MIN_PULSE_LENGTH && y>0)              // Was het een spike?
-          y=0;
-        }
-      }
-    }while(TimeOutTimer>millis() && (x>0 || y>0));                              // Zolang nog pulsen op RF of IR en nog geen timeout
-
-  Led(2, RED);
-  }
-
-
 
 /**********************************************************************************************\
  * verzendt een event en geeft dit tevens weer op SERIAL
@@ -47,24 +8,21 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   {    
   ES->Direction=VALUE_DIRECTION_OUTPUT;
   byte Port=ES->Port;
-
-  // Als een Nodo actief is en excusief communiceert met een andere Nodo, c.q. de ether heeft geclaimd is, dan mag deze Nodo niet zenden.
-  // In dit geval resteert deze Nodo niets anders dan even te wachten tot de lijn weer vrijgegeven wordt of de wachttijd verlopen is.
-  // Als er een timeout optreedt, dan de blokkade opheffen. Dit ter voorkoming dat Nodo's oneindig wachten op vrije lijn.
-  // Uitzondering is als de Nodo zelf de master was, dan deze mag altijd zenden.
-
-  if(Transmission_LockedBy!=0 && Transmission_LockedBy!=Settings.Unit)
+ 
+  // Als een Nodo heeft aangegeven busy te zijn, dan wachten. 
+  if(BusyNodo!=0 && BusyNodo!=Settings.Unit)
     {
     #if NODO_MEGA
     char* TempString=(char*)malloc(25);
-    sprintf(TempString,ProgmemString(Text_10), Transmission_LockedBy);    
+    sprintf(TempString,ProgmemString(Text_10), BusyNodo);    
     PrintString(TempString, VALUE_ALL);
     free(TempString);
     #endif
 
     if(!Wait(60,true,0,false))
-      Transmission_LockedBy=0;
+      BusyNodo=0;
     }
+
 
   // PrintNodoEvent("DEBUG: SendEvent():", ES);
 
@@ -83,9 +41,6 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   // Respecteer een minimale tijd tussen verzenden van events. Wachten alvorens event te verzenden.
   while(millis()<HoldTransmission);  
                                              
-  // digitalWrite(PIN_WIRED_OUT_2,LOW);//???
-  // digitalWrite(PIN_WIRED_OUT_2,HIGH);//???
-  
   // Verstuur signaal als IR
   if(Settings.TransmitIR==VALUE_ON && (Port==VALUE_SOURCE_IR || Port==VALUE_ALL))
     { 
@@ -110,7 +65,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   #endif 
 
   // Verstuur event via I2C
-  // LET OP:  Voor I2C geldt een uitzondering: Als een device een signaal verzendt, dan mag dit commando alleen er toe leiden dat het
+  // LET OP:  Voor I2C geldt een verwerking: Als een device een signaal verzendt, dan mag dit commando alleen er toe leiden dat het
   //          RawSignal wordt verzonden via RF/IR. Anders zal het commando worden verstuurd over I2C waarna de Nodo's op I2C het commando nogmaal
   //          zullen uitvoeren. Zo zal er een ongewenste loop ontstaan.
   
@@ -138,11 +93,6 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     RawSendRF();
     }
 
-  // Onthoud wanneer de verzending plaats heeft gevonden om opvolgend even niet te snel te verzenden.
-  if(ES->Flags & TRANSMISSION_QUEUE_NEXT)
-    HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS_Q+millis();
-  else              
-    HoldTransmission=millis()+DELAY_BETWEEN_TRANSMISSIONS;
   }
   
 #if NODO_MEGA
@@ -245,7 +195,6 @@ boolean IPSend(char* URL, int Port, char* Request) // Nog niet operationeel. Tes
       }
     else
       {
-      //??? error afhandeling
       error=MESSAGE_TCPIP_FAILED; 
       }
     }
@@ -457,13 +406,14 @@ boolean SendHTTPRequest(char* Request)
   byte Try=0;
   unsigned long TimeoutTimer;
   char filename[13];
-  const int TimeOut=5000;
   EthernetClient IPClient;                                                      // Client class voor HTTP sessie.
   byte State=0;
   char *IPBuffer=(char*)malloc(IP_BUFFER_SIZE);
   char *TempString=(char*)malloc(INPUT_LINE_SIZE);
   File BodyTextFile;
   struct NodoEventStruct TempEvent;
+  unsigned long TimeNeeded=millis();//???
+  int ContentLength=0;
 
   filename[0]=0;
   if(ParseHTTPRequest(Request,"file=", TempString,"&? "))                       // pluk de filename uit het http request als die er is.
@@ -525,16 +475,23 @@ boolean SendHTTPRequest(char* Request)
       IPClient.println(F("Connection: Close"));
       IPClient.println();                                                       // Afsluiten met een lege regel is verplicht in http protocol/
 
-      TimeoutTimer=millis()+TimeOut;                                            // Als er te lange tijd geen datatransport is, dan wordt aangenomen dat de verbinding (om wat voor reden dan ook) is afgebroken.
+      TimeoutTimer=millis()+3000;                                               // Als er te lange tijd geen datatransport is, dan wordt aangenomen dat de verbinding (om wat voor reden dan ook) is afgebroken.
       IPBuffer[0]=0;
       InByteCounter=0;
+
+      
+      Serial.print(F("DEBUG: HTTP header verzonden="));Serial.println(millis()-TimeNeeded);//???
 
       while(TimeoutTimer>millis() && IPClient.connected()) //??? afbreken  als alle tekens in bodytext ontvangen. teller laten lopen, dan close
         {
         if(IPClient.available())
           {
           InByte=IPClient.read();
-          if(isprint(InByte) && InByteCounter<IP_BUFFER_SIZE)
+          
+          if(State==2 && ContentLength>0)                                       // Als de bodytext verzonden wordt, dan tellen hoeveel bytes al verzonden door client
+            ContentLength--;
+          
+          if(isprint(InByte) && InByteCounter<(IP_BUFFER_SIZE-1))
             IPBuffer[InByteCounter++]=InByte;
 
           else if(InByte==0x0A)
@@ -547,7 +504,7 @@ boolean SendHTTPRequest(char* Request)
               strcat(TempString,IPBuffer);
               Serial.println(TempString);
               }
-            TimeoutTimer=millis()+TimeOut;                                      // er is nog data transport, dus de timeout timer weer op max. zetten.
+            TimeoutTimer=millis()+3000;                                         // er is nog data transport, dus de timeout timer weer op max. zetten.
 
             if(State==0)                                                        // State 0: wachten totdat in de initial-request line OK/200 voorbij komt en er dus response is van de server.
               {
@@ -571,6 +528,12 @@ boolean SendHTTPRequest(char* Request)
                 }
               else
                 {
+                if(ParseHTTPRequest(IPBuffer,"content-length:", TempString,";, "))
+                  {
+                  ContentLength=str2int(TempString);
+                  Serial.print(F("DEBUG: HTTP verzenden. ContentLength="));Serial.println(ContentLength);//???
+                  }            
+
                 if(ClockSyncHTTP)                                               // als de tijd wordt meegeleverd, dan de clock gelijkzetten.
                   {
                   if(ParseHTTPRequest(IPBuffer,"time=", TempString,";, "))
@@ -596,17 +559,22 @@ boolean SendHTTPRequest(char* Request)
 
             else if(State==2)                                                   // State 2: In deze state komen de regels van de body-text voorbij
               {
-              SelectSDCard(true);
               if(BodyTextFile)                                                  // als bodytext moet worden opgeslagen in en bestand
                 {
+                SelectSDCard(true);
                 BodyTextFile.write((uint8_t*)IPBuffer,strlen(IPBuffer));
                 BodyTextFile.write('\n');                                       // nieuwe regel
+                SelectSDCard(false);
                 }
-              SelectSDCard(false);
               }
             InByteCounter=0;          
             }
           }
+        if(State==2 && ContentLength==0)                                        // Als er geen content meer wordt verwacht in de bodytext, dan gereed.
+          {
+          TimeoutTimer=0;
+          Serial.print(F("DEBUG: HTTP verzenden. Einde i.v.m. complete content ="));Serial.println(millis()-TimeNeeded);//???
+          }                
         }
 
       if(BodyTextFile)                                                          // eventueel geopende bestand op SDCard afsluiten
@@ -615,12 +583,14 @@ boolean SendHTTPRequest(char* Request)
         BodyTextFile.close();
         SelectSDCard(false);
         }        
-      delay(100);
-      IPClient.flush();    ///??? direct de while openen.                                                     // Verwijder eventuele rommel in de buffer.
+      Serial.print(F("DEBUG: HTTP verzenden gereed. IPClient.flush() ="));Serial.println(millis()-TimeNeeded);//???
+      IPClient.flush();                                                         // Verwijder eventuele rommel in de buffer.
       IPClient.stop();
+      Serial.print(F("DEBUG: HTTP connectie gesloten. ="));Serial.println(millis()-TimeNeeded);//???
       }
     else                                                                        // niet gelukt om de TCP-IP verbinding op te zetten. Genereer error en her-initialiseer de ethernetkaart.
       {
+      Serial.print(F("DEBUG: HTTP verzending NIET gelukt ="));Serial.println(millis()-TimeNeeded);//???
       State=0;
       delay(3000);                                                              // korte pause tussen de nieuwe pogingen om verbinding te maken.
       if(EthernetInit())
@@ -642,6 +612,7 @@ boolean SendHTTPRequest(char* Request)
 
   return State;
   }
+
 
 
 /*********************************************************************************************\
@@ -719,6 +690,9 @@ void ExecuteIP(void)
   char *Event          = (char*) malloc(INPUT_LINE_SIZE);
   char *TmpStr1        = (char*) malloc(INPUT_LINE_SIZE);
   char *TmpStr2        = (char*) malloc(40); 
+
+  unsigned long TimeNeeded=millis();//???
+
 
   Event[0]=0; // maak de string leeg.
 
@@ -827,7 +801,9 @@ void ExecuteIP(void)
               if(ExecuteEvent)
                 {              
                 // Voer binnengekomen event uit
+                Serial.print(F("DEBUG: Start verwerken event="));Serial.println(millis()-TimeNeeded);//???
                 ExecuteLine(Event, Protocol);
+                Serial.print(F("DEBUG: Verwerken event gereed="));Serial.println(millis()-TimeNeeded);//???
                 }
               } // einde HTTP-request
             }
@@ -840,10 +816,11 @@ void ExecuteIP(void)
           }
         }
       }
-    delay(100);  // korte pauze om te voorkomen dat de verbinding wordt verbroken alvorens alle data door client verwerkt is.
     IPClient.flush();// Verwijder eventuele rommel in de buffer.
     IPClient.stop();
     }
+
+  Serial.print(F("DEBUG: HTTP ontvangen, event verwerkt en connectie gesloten="));Serial.println(millis()-TimeNeeded);Serial.println();//???
 
   free(TmpStr1);
   free(TmpStr2);
@@ -860,13 +837,13 @@ void ExecuteIP(void)
 //#######################################################################################################
 
 void SerialHold(boolean x)
-{
+  {
   static boolean previous=true;
 
   if(x==previous)
     return;
   else
-  {
+    {
     if(x)
       Serial.write(XOFF);
     else
@@ -894,3 +871,44 @@ boolean Checksum(NodoEventStruct *event)
   event->Checksum=NewChecksum;
   return(OldChecksum==NewChecksum);
   }
+
+/**********************************************************************************************\
+ * Deze functie wacht totdat de 433 en de IR band vrij zijn of er een timeout heeft plaats gevonden.
+ * Er wordt gemeten hoeveel geldige pulsen ( > MIN_PULSE_LENGTH) er zich voordoen binnen een 
+ * vast tijdsframe. Als er spikes zijn (=ruis) of er zijn geen pulsen, dan wordt teruggekeerd.
+ \*********************************************************************************************/
+void WaitFree(void)
+  {
+  unsigned long TimeOutTimer=millis()+WAIT_FREE_RX_TIMEOUT;                     // tijd waarna de routine wordt afgebroken in milliseconden
+  unsigned long WindowTimer;
+
+  int x,y;
+  
+  Led(1,BLUE);
+
+  do
+    {
+    WindowTimer=millis()+250;
+    x=0;
+    while(WindowTimer>millis())
+      {
+      if((*portInputRegister(IRport)&IRbit)==0)                                 // Puls op RF?
+        {
+        x++;
+        if(pulseIn(PIN_IR_RX_DATA,LOW) < MIN_PULSE_LENGTH && x>0)               // Was het een spike?
+          x=0;
+        }
+      if((*portInputRegister(RFport)&RFbit)==RFbit)                             // Pulse op IR
+        {
+        y++;
+        if(pulseIn(PIN_RF_RX_DATA,HIGH) < MIN_PULSE_LENGTH && y>0)              // Was het een spike?
+          y=0;
+        }
+      }
+    }while(TimeOutTimer>millis() && (x>0 || y>0));                              // Zolang nog pulsen op RF of IR en nog geen timeout
+
+  Led(2, RED);
+  }
+
+
+  

@@ -1,5 +1,5 @@
 #define NODO_BUILD                       712                                    // ??? Ophogen bij iedere Build / versiebeheer.
-#define NODO_VERSION_MINOR                 6                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
+#define NODO_VERSION_MINOR                 7                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1                                    // Unit nummer van deze Nodo
 #define HOME_NODO                          1                                    // Home adres van Nodo's die tot Ã©Ã©n groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
@@ -21,8 +21,7 @@
 #define PASSWORD_MAX_RETRY                 5                                    // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
 #define PASSWORD_TIMEOUT                 300                                    // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
 #define TERMINAL_TIMEOUT                 600                                    // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
-#define DELAY_BETWEEN_TRANSMISSIONS      500                                    // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
-#define DELAY_BETWEEN_TRANSMISSIONS_Q     50                                    // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
+#define DELAY_BETWEEN_TRANSMISSIONS       50                                    // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
 #define NODO_TX_TO_RX_SWITCH_TIME        500                                    // Tijd die andere Nodo's nodig hebben om na zenden weer gereed voor ontvangst te staan. (Opstarttijd 433RX modules)
 #define TRANSMITTER_STABLE_TIME            5                                    // Tijd die de RF zender nodig heeft om na inschakelen van de voedspanning een stabiele draaggolf te hebben.
 #define ETHERNET_MAC_0                  0xCC                                    // Dit is byte 0 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
@@ -116,7 +115,7 @@ byte dummy=1;                                                                   
 #define CMD_FILE_WRITE                  57
 #define VALUE_FREEMEM                   58
 #define CMD_GATEWAY                     59
-#define CMD_RES_60                      60 //??? reserve
+#define CMD_WAIT_BUSY_NODO              60 
 #define VALUE_SOURCE_HTTP               61
 #define CMD_HTTP_REQUEST                62
 #define VALUE_HWCONFIG                  63
@@ -201,7 +200,8 @@ byte dummy=1;                                                                   
 #define CMD_STOP                        142
 #define CMD_SLEEP                       143   
 #define VALUE_FAST                      144
-#define COMMAND_MAX                     144                                     // hoogste commando
+#define CMD_MASTER                      145                                     // ???
+#define COMMAND_MAX                     145                                     // hoogste commando
 
 #define MESSAGE_OK                      0
 #define MESSAGE_UNKNOWN_COMMAND         1
@@ -288,7 +288,7 @@ prog_char PROGMEM Cmd_56[]="FileShow";
 prog_char PROGMEM Cmd_57[]="FileWrite";
 prog_char PROGMEM Cmd_58[]="FreeMem";
 prog_char PROGMEM Cmd_59[]="Gateway";
-prog_char PROGMEM Cmd_60[]="";//??? reserve
+prog_char PROGMEM Cmd_60[]="WaitBusyNodo";
 prog_char PROGMEM Cmd_61[]="HTTP";
 prog_char PROGMEM Cmd_62[]="HTTPHost";
 prog_char PROGMEM Cmd_63[]="HWConfig";
@@ -373,6 +373,7 @@ prog_char PROGMEM Cmd_141[]="IPSend";
 prog_char PROGMEM Cmd_142[]="Stop";
 prog_char PROGMEM Cmd_143[]="Sleep";
 prog_char PROGMEM Cmd_144[]="Fast";
+prog_char PROGMEM Cmd_145[]="Master";//???
 
 
 // tabel die refereert aan de commando strings
@@ -391,7 +392,7 @@ Cmd_100,Cmd_101,Cmd_102,Cmd_103,Cmd_104,Cmd_105,Cmd_106,Cmd_107,Cmd_108,Cmd_109,
 Cmd_110,Cmd_111,Cmd_112,Cmd_113,Cmd_114,Cmd_115,Cmd_116,Cmd_117,Cmd_118,Cmd_119,
 Cmd_120,Cmd_121,Cmd_122,Cmd_123,Cmd_124,Cmd_125,Cmd_126,Cmd_127,Cmd_128,Cmd_129,
 Cmd_130,Cmd_131,Cmd_132,Cmd_133,Cmd_134,Cmd_135,Cmd_136,Cmd_137,Cmd_138,Cmd_139,
-Cmd_140,Cmd_141,Cmd_142,Cmd_143,Cmd_144};
+Cmd_140,Cmd_141,Cmd_142,Cmd_143,Cmd_144,Cmd_145};
 
 // Message max. 40 pos       "1234567890123456789012345678901234567890"
 prog_char PROGMEM Msg_0[]  = "Ok.";
@@ -424,7 +425,7 @@ prog_char PROGMEM Text_05[] = "0123456789abcdef";
 prog_char PROGMEM Text_07[] = "Waiting...";
 prog_char PROGMEM Text_08[] = "RAWSIGN";                                        // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_09[] = "(Last 100 KByte)";
-prog_char PROGMEM Text_10[] = "Nodo unit %d is transmitting, please wait...";
+prog_char PROGMEM Text_10[] = "Nodo unit %d is busy, please wait...";
 prog_char PROGMEM Text_11[] = "ALIAS_I";                                        // Directory op de SDCard voor opslag Input: Aliassen van gebruiker -> Nodo Keyword.
 prog_char PROGMEM Text_12[] = "ALIAS_O";                                        // Directory op de SDCard voor opslag Output: Nodo Keywords -> Alias van gebruiker.
 prog_char PROGMEM Text_14[] = "Event=";
@@ -592,21 +593,22 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #endif
 
 // In het transport deel van een Nodo event kunnen zich de volgende vlaggen bevinden:
-#define TRANSMISSION_QUEUE                               1                      // Master => Slave : Event maakt deel uit van een reeks die in de queue geplaatst moet worden
-#define TRANSMISSION_QUEUE_NEXT                          2                      // Master => Slave : Event maakt deel uit van een reeks die in de queue geplaatst moet worden
-#define TRANSMISSION_SENDTO                              4                      // Master => Slave : Aan deze vlag kunnen we herkennen dat een event deel uit maakt van een SendTo reeks. 
-#define TRANSMISSION_LOCK                                8                      // Master => Slave : Verzoek om de ether te blokkeren voor exclusieve communicatie tussen master en een slave Nodo.
-#define TRANSMISSION_CONFIRM                            16                      // Master => Slave : Verzoek aan master om bevestiging te sturen na ontvangst.
-#define TRANSMISSION_VIEW                               32                      // Master => Slave : Uitsluitend het event weergeven, niet uitvoeren
-#define TRANSMISSION_VIEW_SPECIAL                       64                      // Master => Slave : Uitsluitend het event weergeven, niet uitvoeren
+#define TRANSMISSION_MASTER                              1
+#define TRANSMISSION_BUSY                                2
+#define TRANSMISSION_QUEUE                               4                      // Event maakt deel uit van een reeks die in de queue geplaatst moet worden
+#define TRANSMISSION_QUEUE_NEXT                          8                      // Event maakt deel uit van een reeks die in de queue geplaatst moet worden
+#define TRANSMISSION_SENDTO                             16                      // Aan deze vlag kunnen we herkennen dat een event deel uit maakt van een SendTo reeks. 
+#define TRANSMISSION_CONFIRM                            32                      // Verzoek aan master om bevestiging te sturen na ontvangst.
+#define TRANSMISSION_VIEW                               64                      // Uitsluitend het event weergeven, niet uitvoeren
+#define TRANSMISSION_VIEW_SPECIAL                      128                      // Uitsluitend het event weergeven, niet uitvoeren
 
 // Er zijn een aantal type Nodo events die op verschillende wijze worden behandeld:
-#define NODO_TYPE_RAWSIGNAL                              6                      //??? nog omnummeren bij de volgende versie
 #define NODO_TYPE_EVENT                                  1
 #define NODO_TYPE_COMMAND                                2
 #define NODO_TYPE_SYSTEM                                 3               
 #define NODO_TYPE_PLUGIN_EVENT                           4
 #define NODO_TYPE_PLUGIN_COMMAND                         5
+#define NODO_TYPE_RAWSIGNAL                              6
 
 // De Nodo kent naast gebruikers commando's en events eveneens Nodo interne events
 #define SYSTEM_COMMAND_CONFIRMED                         1
@@ -620,8 +622,7 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 
 struct SettingsStruct
   {
-  byte    Unit; // Max 5 bits in bebruik
-  byte    Reserved; 
+  byte    Unit; // Max 5 bits in gebruik = 1..31
   boolean NewNodo;
   byte    TransmitIR;
   byte    TransmitRF;
@@ -713,7 +714,8 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute);                        
 volatile unsigned long PulseCount=0L;                                           // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met Ã©Ã©n verhoogd
 volatile unsigned long PulseTime=0L;                                            // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
 unsigned long HoldTransmission=0L;                                              // wachten op dit tijdstip in millis() alvorens event te verzenden.
-byte Transmission_LockedBy=0;                                               // 
+byte BusyNodo=0;                                                                // ???
+byte MasterNodo=0;                                                              // ???
 boolean Transmission_NodoOnly=false;                                            // Als deze vlag staat, dan worden er uitsluitend Nodo-eigen signalen ontvangen.  
 byte QueuePosition=0;
 unsigned long UserTimer[TIMER_MAX];                                             // Timers voor de gebruiker.
@@ -1054,7 +1056,7 @@ void loop()
       {        
       case 0:
         {
-//???        // IP Event: *************** kijk of er een Event van IP komt **********************    
+        // IP Event: *************** kijk of er een Event van IP komt **********************    
         #ifdef ethernetserver_h
         if(bitRead(HW_Config,HW_ETHERNET))
           if(IPServer.available())
@@ -1173,9 +1175,7 @@ void loop()
                 }
               else 
                 {
-                  // bij een niet printbaar teken 
-                // InputBuffer_Terminal[0]=0;
-                //???TerminalClient.flush();// eventuele rommel weggooien.
+                // bij een niet printbaar teken 
                 break;
                 }
               }

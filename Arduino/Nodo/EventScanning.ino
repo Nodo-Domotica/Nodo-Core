@@ -141,15 +141,28 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
         // Hiermee kan later automatisch de juiste poort worden geselecteerd met de SendTo en kan in
         // geval van I2C communicatie uitsluitend naar de I2C verbonden Nodo's worden gecommuniceerd.
         NodoOnline(Event->SourceUnit,Event->Port);
-    
-        // Als er een specifieke Nodo is geselecteerd, dan moeten andere Nodo's worden gelocked.
-        // Hierdoor is het mogelijk dat een master en een slave Nodo tijdelijk exclusief gebruik kunnen maken van de bandbreedte
-        // zodat de communicatie niet wordt verstoord.  
+        
+        if(Event->Flags & TRANSMISSION_MASTER && MasterNodo!=Settings.Unit)     // Iedere Nodo kan claimen om de master te worden, maar niet als DEZE nodo master is.
+          {
+          Serial.print(F("DEBUG: Master Nodo="));Serial.println(MasterNodo);
+          MasterNodo = Event->SourceUnit;
+          }
+        
+        if (MasterNodo==Event->SourceUnit && (Event->Flags&TRANSMISSION_MASTER)==0)// Alleen de Master mag deze rol vrijgeven.
+          {
+          Serial.print(F("DEBUG: Master Nodo released"));Serial.println();
+          MasterNodo = 0;
+          BusyNodo = 0;
+          } 
 
-        if(Event->Flags & TRANSMISSION_LOCK)
-          Transmission_LockedBy = Event->DestinationUnit;
-        else
-          Transmission_LockedBy = 0;
+        if(Event->Flags & TRANSMISSION_BUSY)                                    // Iedere Nodo kan aangeven busy te zijn, alleen de master geeft weer vrij
+          {
+          Serial.print(F("DEBUG: Busy Nodo="));Serial.println(BusyNodo);
+          BusyNodo = Event->SourceUnit;
+          }
+
+
+        Serial.print(F("DEBUG: ScanEvent() MasterNodo="));Serial.print(MasterNodo); Serial.print(F(", BusyNodo="));Serial.println(BusyNodo);
 
         // Als het Nodo event voor deze unit bestemd is, dan klaar. Zo niet, dan terugkeren met een false
         // zodat er geen verdere verwerking plaatsvindt.

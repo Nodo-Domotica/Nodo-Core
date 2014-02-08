@@ -62,3 +62,6 @@ R703:
 
 
 ToDo:
+- Handshaking I2C
+- Content-Length: voor HTTP requests.
+- Verwijderen DEBUG.DAT logging voor Led(BLUE)

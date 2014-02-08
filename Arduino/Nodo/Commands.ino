@@ -295,7 +295,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.Port                  = VALUE_ALL;
         TempEvent.Type                  = NODO_TYPE_COMMAND;
         TempEvent.DestinationUnit       = 0;    
-        TempEvent.Flags                 = TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK; 
+        TempEvent.Flags                 = TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT; 
         TempEvent.Command=CMD_CLOCK_DATE;
         TempEvent.Par2= ((unsigned long)Time.Year  %10)      | ((unsigned long)Time.Year  /10)%10<<4  | ((unsigned long)Time.Year/100)%10<<8 | ((unsigned long)Time.Year/1000)%10<<12 | 
                         ((unsigned long)Time.Month %10) <<16 | ((unsigned long)Time.Month /10)%10<<20 | 
@@ -457,7 +457,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
 
     case CMD_EVENTLIST_ERASE:
-      Led(9, BLUE);
+      Led(9,BLUE);
       ClearEvent(&TempEvent);
       
       if(EventToExecute->Par1==0)
@@ -472,6 +472,9 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         }
       break;        
         
+    case CMD_MASTER: 
+      MasterNodo=EventToExecute->Par1;
+      break;
 
     case CMD_EVENTLIST_SHOW:
       // Er kunnen zich hier twee situaties voordoen: het verzoek is afkomstig van een Terminal (Serial/Telnet) of 
@@ -536,7 +539,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
           ClearEvent(EventToExecute);
           EventToExecute->Par1=x;
           EventToExecute->Command=SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW;
-          EventToExecute->Flags=TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
+          EventToExecute->Flags=TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT;
           EventToExecute->Type=NODO_TYPE_SYSTEM;
           EventToExecute->Port=z;
           EventToExecute->SourceUnit=Settings.Unit;
@@ -546,7 +549,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
             {
             SendEvent(EventToExecute,false,false,false);
 
-            TempEvent.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
+            TempEvent.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT;
             TempEvent.Port=z;
             TempEvent.DestinationUnit=w;
             SendEvent(&TempEvent,false,false,false);
@@ -555,7 +558,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
             if(x==y)                                                            // Lock staat aan. Als laatste regel uit de eventlist, dan de ether weer vrijgeven. 
               TempEvent2.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE ; // de laatste van de gehele eventlist
             else
-              TempEvent2.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT |TRANSMISSION_LOCK;      // de laatste van de regel uit de eventlist
+              TempEvent2.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT;      // de laatste van de regel uit de eventlist
 
             TempEvent2.Port=z;
             TempEvent2.DestinationUnit=w;
