@@ -5,6 +5,9 @@
 #define NRF_RF_SETUP    0x06  // Register for Set Data Rate
 #define NRF_STATUS      0x07  // Register for status
 #define NRF_CD          0x09  // Register for Carried Detect
+#define NRF_RX_ADDR_P1  0x0B
+#define NRF_RX_ADDR_P2  0x0C
+#define NRF_EN_RXADDR   0x02
 
 #define mirf_ADDR_LEN	5
 #define mirf_CONFIG ((1<<EN_CRC) | (0<<CRCO) )
@@ -13,7 +16,8 @@
 uint8_t Nrf24_PTX;
 uint8_t Nrf24_channel=1;
 
-byte NRF_address[5] = { 1,2,3,4,0 };
+//byte NRF_address[5] = { 0,'N','o','d','o' };
+byte NRF_address[5] = { 1,2,3,4,5 };
 byte NRF_status=0;
 
 void NRF_init(void)
@@ -27,45 +31,57 @@ void NRF_init(void)
   SPI.setDataMode(SPI_MODE0);
   SPI.setClockDivider(SPI_2XCLOCK_MASK);
   Nrf24_init();
-  NRF_address[4]=Settings.Address;
+  NRF_address[0]=Settings.Address;
   Nrf24_setRADDR((byte *)NRF_address);
   Nrf24_channel = Settings.Channel;
   Nrf24_config();
 
   byte rf_setup=0x26; // 250 kbps
   Nrf24_writeRegister(NRF_RF_SETUP, &rf_setup, sizeof(rf_setup) );
-  byte en_aa=0x3F; // Auto-Ack Enabled
+  byte en_aa=0x3f; // Auto-Ack Enabled
   Nrf24_writeRegister(NRF_EN_AA, &en_aa, sizeof(en_aa) );
   byte setup_retr=0xff;  // delay 4000uS, 15 retries
   Nrf24_writeRegister(NRF_SETUP_RETR, &setup_retr, sizeof(setup_retr) );
+  byte en_rxaddr=0x7;  // enable RX pipes 0,1,2
+  Nrf24_writeRegister(NRF_EN_RXADDR, &en_rxaddr, sizeof(en_rxaddr) );
   Nrf24_flushRx();
 }
 
-boolean NRF_receive(struct NodoEventStruct *event)
+boolean NRF_receive(void)
 {
-  boolean dataready=false;
-  
   if(!Nrf24_isSending() && Nrf24_dataReady())
     {
-      Serial.println("NRF RX");
-      byte Payload[NRF_PAYLOAD_SIZE];
-      Nrf24_getData((byte *)Payload);
-      if (Payload[0]==0)
+      Nrf24_getData((byte *)&NRFPayload);
+
+      Serial.print("NRF RX ");
+      Serial.print("S:");
+      Serial.print((int)NRFPayload.Source);
+      Serial.print(", D:");
+      Serial.print((int)NRFPayload.Destination);
+      Serial.print(", ID:");
+      Serial.print((int)NRFPayload.ID);
+      Serial.print(", SZ:");
+      Serial.println((int)NRFPayload.Size);
+      
+      if (NRFPayload.ID==255)
         {
-          memcpy((byte*)event, (byte*)&Payload+1,sizeof(struct NodoEventStruct));
-          dataready=true;
+          Serial.print("NRF RX anouncement from:");
+          Serial.println((int)NRFPayload.Source);
+          NRFOnline[NRFPayload.Source]=true;
+        }
+      else
+        {
+          return true;
         }
     }
-
-  return dataready;
+  return false;
 }
 
-void NRF_send(struct NodoEventStruct *event)
+void NRF_send()
 {
-
-  byte Payload[NRF_PAYLOAD_SIZE];
-  Payload[0]=0;
-  memcpy((byte*)&Payload+1, (byte*)event,sizeof(struct NodoEventStruct));
+  NRFPayload.ID=0;
+  NRFPayload.Source=Settings.Address;
+  memcpy((byte*)&NRFPayload+4, (byte*)&I2C_ReceiveBuffer,I2C_Received);
   
   for(int y=1;y<=NRF_UNIT_MAX;y++)
     {
@@ -73,38 +89,44 @@ void NRF_send(struct NodoEventStruct *event)
         {
           Serial.print("Send to NRF address: ");
           Serial.println((int)y);
-          NRF_address[4]=y;
+          NRFPayload.Destination=y;
+          NRFPayload.Size=I2C_Received;
+          NRF_address[0]=y;
           NRF_status=0;
           Nrf24_setTADDR((byte *)NRF_address);
-          Nrf24_send((byte *)Payload);
+          Nrf24_send((byte *)&NRFPayload);
           while(Nrf24_isSending()) {}
       //    if(NRF_status==46)
       //      do something...
         }
     }
+  NRF_address[0]=0;
+  Nrf24_setTADDR((byte *)NRF_address);
 }
 
 void NRF_CheckOnline()
 {
-  Serial.println("NRF Online Check ");
-  byte Payload[NRF_PAYLOAD_SIZE];
-  for(byte x=0; x < NRF_PAYLOAD_SIZE; x++) Payload[x]=0;
-  Payload[0]=255;
+  Serial.println("NRF Peers Online:");
+  NRFPayload.ID=255;
+  NRFPayload.Source=Settings.Address;
+  for(byte x=0; x < NRF_PAYLOAD_SIZE-4; x++) NRFPayload.Data[x]=0;
   for(int y=1;y<=NRF_UNIT_MAX;y++)
-    {
-          NRF_address[4]=y;
-          NRF_status=0;
-          Nrf24_setTADDR((byte *)NRF_address);
-          Nrf24_send((byte *)Payload);
-          while(Nrf24_isSending()) {}
-
-          if(NRF_status==46)
-            {
-              Serial.print((int)y);
-              Serial.println(" is Online");
-              NRFOnline[y]=true;
-            }
+    { 
+      NRFPayload.Destination=y;
+      NRF_address[0]=y;
+      NRF_status=0;
+      Nrf24_setTADDR((byte *)NRF_address);
+      Nrf24_send((byte *)&NRFPayload);
+      while(Nrf24_isSending()) {}
+      if(NRF_status==46)
+        {
+           Serial.print((int)y);
+          Serial.println(" is Online");
+          NRFOnline[y]=true;
+        }
     }
+  NRF_address[0]=0;
+  Nrf24_setTADDR((byte *)NRF_address);
 }
 
 
@@ -232,6 +254,7 @@ void Nrf24_config()
     // Set length of incoming payload 
 	Nrf24_configRegister(RX_PW_P0, NRF_PAYLOAD_SIZE);
 	Nrf24_configRegister(RX_PW_P1, NRF_PAYLOAD_SIZE);
+	Nrf24_configRegister(RX_PW_P2, NRF_PAYLOAD_SIZE);
 
     // Start receiver 
     Nrf24_powerUpRx();
@@ -243,6 +266,8 @@ void Nrf24_setRADDR(uint8_t * adr)
 {
 	Nrf24_ceLow();
 	Nrf24_writeRegister(RX_ADDR_P1,adr,mirf_ADDR_LEN);
+        byte broadcast=255;
+	Nrf24_writeRegister(RX_ADDR_P2,&broadcast,1);
 	Nrf24_ceHi();
 }
 
