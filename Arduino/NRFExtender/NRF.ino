@@ -71,7 +71,7 @@ boolean NRF_receive(void)
         }
       else
         {
-          return true;
+          if (NRFPayload.ID==0) return true;
         }
     }
   return false;
