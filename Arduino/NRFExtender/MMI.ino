@@ -51,6 +51,7 @@ int ExecuteLine(char *Line)
   if(GetArgv(Line,TmpStr1,3)) Par2=str2int(TmpStr1);
 
   ExecuteCommand(Command,Par1,Par2);
+  free(TmpStr1);
 }
 
 boolean GetArgv(char *string, char *argv, int argc)
