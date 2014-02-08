@@ -85,5 +85,5 @@
 
 
 // ================================= Unit-15: Configuratie voor de Nodo-Small =================================================
-//  #define CONFIG_FILE Config_15.c
+// #define CONFIG_FILE Config_15.c
 

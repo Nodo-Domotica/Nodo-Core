@@ -23,11 +23,23 @@ byte ProcessEventExt(struct NodoEventStruct *Event)
   // Verwerk eventuele events die in de queue zijn geplaatst.
   QueueProcess();    
 
+
+  ClearEvent(&TempEvent);    
+
+  // Als deze Nodo de master was, dan mag alleen deze de busy status weer vrijgeven en zijn rol opheffen.
+  TempEvent.DestinationUnit=Event->SourceUnit;
+  if(MasterNodo==Settings.Unit)
+    {
+    Serial.println(F("DEBUG: Opheffen master rol en busy status"));
+    TempEvent.DestinationUnit=0;
+    MasterNodo=0;
+    BusyNodo=0;
+    RequestForConfirm=true;
+    }
+
   // Een event kan een verzoek bevatten om bevestiging. Doe dit dan pas na alle verwerking.
   if(RequestForConfirm)
     {  
-    ClearEvent(&TempEvent);    
-    TempEvent.DestinationUnit       = Event->SourceUnit;
     TempEvent.Port                  = Event->Port;
     TempEvent.Type                  = NODO_TYPE_SYSTEM;                         // Event is niet voor de gebruiker bedoeld
     TempEvent.Command               = SYSTEM_COMMAND_CONFIRMED;
@@ -528,7 +540,6 @@ byte QueueSend(boolean fast)
       Event.Command             = SYSTEM_COMMAND_QUEUE_SENDTO;      
       Event.Par1                = SendQueuePosition;                            // Aantal te verzenden events in de queue. Wordt later gecheckt en teruggezonden in de confirm. +1 omdat DIT event ook in de queue komt.
       Event.Par2                = ID;
-      Event.Flags               = TRANSMISSION_LOCK;
       // PrintNodoEvent("DEBUG: QueueSend() Verzend SYSTEM_COMMAND_QUEUE_SENDTO",&Event);
       SendEvent(&Event,false,false,Settings.WaitFree==VALUE_ON);                // Alleen de eerste vooraf laten gaan door een WaitFree (indien setting zo staat ingesteld);
   
@@ -544,13 +555,10 @@ byte QueueSend(boolean fast)
         Event.Par2                = SendQueue[x].Par2;
   
         if(x==(SendQueuePosition-1))
-          Event.Flags = TRANSMISSION_SENDTO | TRANSMISSION_QUEUE | TRANSMISSION_LOCK;                   // Verzendvlaggen geven aan dat er nog events verzonden gaan worden en dat de ether tijdelijk gereserveerd is
+          Event.Flags = TRANSMISSION_SENDTO | TRANSMISSION_QUEUE;               // Verzendvlaggen geven aan dat er nog events verzonden gaan worden en dat de ether tijdelijk gereserveerd is
         else
-          Event.Flags = TRANSMISSION_SENDTO | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
+          Event.Flags = TRANSMISSION_SENDTO | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT;
   
-        // In geval van verzending naar queue zal deze tijd niet van toepassing zijn omdat er dan geen verwerkingstijd nodig is.
-        // Tussen de events die de queue in gaan een kortere delaytussen verzendingen.
-        HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS_Q+millis();        
         // PrintNodoEvent("DEBUG: QueueSend() Verzend event",&Event);
         SendEvent(&Event,false,false,false);
         }

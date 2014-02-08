@@ -282,10 +282,11 @@ void Led(int bron, byte Color)//??? bron weer weghalen.
   digitalWrite(PIN_LED_RGB_R,Color==RED);
   digitalWrite(PIN_LED_RGB_B,Color==BLUE);
   digitalWrite(PIN_LED_RGB_G,Color==GREEN);
-  #else
 
   if(Color==BLUE)//???
     FileWriteLine("","DEBUG","DAT",int2str(bron), false);
+
+  #else
 
   digitalWrite(PIN_LED_RGB_R,(Color==RED || Color==BLUE));
   #endif
@@ -339,7 +340,7 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
         break;
         
       // als het gewacht wordt totdat de communicatie poorten weer beschikbaar zijn, dan wachtloop verlaten.        
-      if(WaitForFreeTransmission && (Transmission_LockedBy==0 || Transmission_LockedBy==Settings.Unit))
+      if(WaitForFreeTransmission && (BusyNodo==0 || BusyNodo==Settings.Unit))
         break;
       
       // break af als opgegeven event voorbij komt. Let op, alleen events met als bestemming 0 of dit unitnummer worden gedetecteerd!
@@ -939,7 +940,7 @@ void Status(struct NodoEventStruct *Request)
           {
           if(!DisplayLocal)
             {
-            Result.Flags=TRANSMISSION_VIEW | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_LOCK;
+            Result.Flags=TRANSMISSION_VIEW | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT;
             SendEvent(&Result,false,false,false);
             }            
   
