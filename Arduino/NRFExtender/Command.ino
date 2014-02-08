@@ -62,6 +62,10 @@ void ExecuteCommand(char *Command, byte Par1, byte Par2)
         Nrf24_send((byte *)&NRFPayload);
         while(Nrf24_isSending()) {}
       }
-      
+
+   if(strcasecmp(Command,"Freemem")==0)
+      {
+        Serial.println(FreeMem());
+      }
 }
 

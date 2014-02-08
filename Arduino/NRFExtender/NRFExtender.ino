@@ -16,7 +16,7 @@
  \*************************************************************************************************************************/
 
 // NRF Extender
-// Prototype R004
+// Prototype R005
 // 08-02-2014
 
 // This version is "Nodo independent" but needs a small plugin!
@@ -28,6 +28,8 @@
 // R003 08-02-2014  added additional generic receive pipe on NRF
 //                  changed to Nodo independent version
 // R004 08-02-2014  filter on ID=0 in NRF receive
+// R005 08-02-2014  malloc/free issue fixed
+//                  added freemem command
 
 #define NRF_RECEIVE_ADDRESS      16 // Default Radio address, range 1-31
 #define THIS_EXTENDER_UNIT       31 // Default Unit, range 1-31
