@@ -16,10 +16,6 @@
 uint8_t Nrf24_PTX;
 uint8_t Nrf24_channel=1;
 
-//byte NRF_address[5] = { 0,'N','o','d','o' };
-byte NRF_address[5] = { 1,2,3,4,5 };
-byte NRF_status=0;
-
 void NRF_init(void)
 {
   pinMode(NRF_CSN_PIN,OUTPUT);
@@ -62,16 +58,32 @@ boolean NRF_receive(void)
       Serial.print((int)NRFPayload.ID);
       Serial.print(", SZ:");
       Serial.println((int)NRFPayload.Size);
-      
-      if (NRFPayload.ID==255)
+
+      switch(NRFPayload.ID)
         {
-          Serial.print("NRF RX anouncement from:");
-          Serial.println((int)NRFPayload.Source);
-          NRFOnline[NRFPayload.Source]=true;
-        }
-      else
-        {
-          if (NRFPayload.ID==0) return true;
+          case NRF_PAYLOAD_NODO:
+            {
+              return true;
+              break;
+            }  
+          case NRF_PAYLOAD_ONLINE:
+            {
+              Serial.print("NRF RX anouncement from:");
+              Serial.println((int)NRFPayload.Source);
+              NRFOnline[NRFPayload.Source]=true;
+              break;
+            }          
+          case NRF_PAYLOAD_PINGREP:
+            {
+              Serial.print("Ping Reply:");
+              Serial.println((int)NRFPayload.Source);
+              break;
+            }
+          case NRF_PAYLOAD_PINGREQ:
+            {
+              NRF_sendpacket(Settings.Address, NRFPayload.Source, NRF_PAYLOAD_PINGREP, 0);
+              break;
+            }
         }
     }
   return false;
@@ -79,8 +91,6 @@ boolean NRF_receive(void)
 
 void NRF_send()
 {
-  NRFPayload.ID=0;
-  NRFPayload.Source=Settings.Address;
   memcpy((byte*)&NRFPayload+4, (byte*)&I2C_ReceiveBuffer,I2C_Received);
   
   for(int y=1;y<=NRF_UNIT_MAX;y++)
@@ -89,46 +99,47 @@ void NRF_send()
         {
           Serial.print("Send to NRF address: ");
           Serial.println((int)y);
-          NRFPayload.Destination=y;
-          NRFPayload.Size=I2C_Received;
-          NRF_address[0]=y;
-          NRF_status=0;
-          Nrf24_setTADDR((byte *)NRF_address);
-          Nrf24_send((byte *)&NRFPayload);
-          while(Nrf24_isSending()) {}
-      //    if(NRF_status==46)
-      //      do something...
+          NRF_sendpacket(Settings.Address, y, NRF_PAYLOAD_NODO, I2C_Received);
         }
     }
-  NRF_address[0]=0;
-  Nrf24_setTADDR((byte *)NRF_address);
 }
 
 void NRF_CheckOnline()
 {
   Serial.println("NRF Peers Online:");
-  NRFPayload.ID=255;
-  NRFPayload.Source=Settings.Address;
-  for(byte x=0; x < NRF_PAYLOAD_SIZE-4; x++) NRFPayload.Data[x]=0;
+  
   for(int y=1;y<=NRF_UNIT_MAX;y++)
-    { 
-      NRFPayload.Destination=y;
-      NRF_address[0]=y;
-      NRF_status=0;
-      Nrf24_setTADDR((byte *)NRF_address);
-      Nrf24_send((byte *)&NRFPayload);
-      while(Nrf24_isSending()) {}
-      if(NRF_status==46)
+    {
+      if (NRF_sendpacket(Settings.Address, y, NRF_PAYLOAD_ONLINE, 0) == 46)
         {
           Serial.print((int)y);
           Serial.println(" is Online");
           NRFOnline[y]=true;
         }
     }
-  NRF_address[0]=0;
-  Nrf24_setTADDR((byte *)NRF_address);
+    
+  // this fixes the strange issue with repeated "online"
+  // the mechanisme works fine anyway, but targets will report it only once without this fix
+  // this line just sends a dummy message to address 254 (black hole...)
+  NRF_sendpacket(Settings.Address, 254, 254, 0);
 }
 
+byte NRF_sendpacket(byte Source, byte Destination, byte ID, byte Size)
+{
+  NRFPayload.Source=Source;
+  NRFPayload.Destination=Destination;
+  NRFPayload.ID=ID;
+  NRFPayload.Size=Size;
+  
+  NRF_address[0]=Destination;
+  NRF_status=0;
+  Nrf24_setTADDR((byte *)NRF_address);
+  Nrf24_send((byte *)&NRFPayload);
+  while(Nrf24_isSending()) {}
+  NRF_address[0]=0;
+  Nrf24_setTADDR((byte *)NRF_address);
+  return NRF_status;
+}
 
 // ***********************************************************************************************************
 // NRF24 specific code

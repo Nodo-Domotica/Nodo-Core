@@ -16,8 +16,8 @@
  \*************************************************************************************************************************/
 
 // NRF Extender
-// Prototype R005
-// 08-02-2014
+// Prototype R006
+// 09-02-2014
 
 // This version is "Nodo independent" but needs a small plugin!
 
@@ -30,6 +30,8 @@
 // R004 08-02-2014  filter on ID=0 in NRF receive
 // R005 08-02-2014  malloc/free issue fixed
 //                  added freemem command
+// R006 09-02-2014  added ping command
+//                  code optimizations
 
 #define NRF_RECEIVE_ADDRESS      16 // Default Radio address, range 1-31
 #define THIS_EXTENDER_UNIT       31 // Default Unit, range 1-31
@@ -47,6 +49,14 @@
 #define I2C_UNIT_MAX             31
 #define I2C_START_ADDRESS         1
 #define I2C_BUFFERSIZE           32
+
+#define NRF_PAYLOAD_NODO           0
+#define NRF_PAYLOAD_SENSOR         1
+#define NRF_PAYLOAD_EVENT          2
+#define NRF_PAYLOAD_TEXT           3
+#define NRF_PAYLOAD_PINGREQ        4
+#define NRF_PAYLOAD_PINGREP        5
+#define NRF_PAYLOAD_ONLINE       255
 
 #include <SPI.h>
 #include <Arduino.h>
@@ -73,6 +83,9 @@ struct NRFPayloadStruct
   byte Data[28];
 }
 NRFPayload;
+
+byte NRF_status=0;
+byte NRF_address[5] = { 1,2,3,4,5 };
 
 boolean NRFOnline[NRF_UNIT_MAX+1];
 boolean I2COnline[I2C_UNIT_MAX+1];
