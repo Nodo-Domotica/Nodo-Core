@@ -16,8 +16,8 @@
  \*************************************************************************************************************************/
 
 // NRF Extender
-// Prototype R006
-// 09-02-2014
+// Prototype R007
+// 10-02-2014
 
 // This version is "Nodo independent" but needs a small plugin!
 
@@ -32,6 +32,7 @@
 //                  added freemem command
 // R006 09-02-2014  added ping command
 //                  code optimizations
+// R007 10-02-2014  leave auto-ack receive pipe at address 0 after send packet
 
 #define NRF_RECEIVE_ADDRESS      16 // Default Radio address, range 1-31
 #define THIS_EXTENDER_UNIT       31 // Default Unit, range 1-31
