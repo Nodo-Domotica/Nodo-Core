@@ -117,11 +117,6 @@ void NRF_CheckOnline()
           NRFOnline[y]=true;
         }
     }
-    
-  // this fixes the strange issue with repeated "online"
-  // the mechanisme works fine anyway, but targets will report it only once without this fix
-  // this line just sends a dummy message to address 254 (black hole...)
-  NRF_sendpacket(Settings.Address, 254, 254, 0);
 }
 
 byte NRF_sendpacket(byte Source, byte Destination, byte ID, byte Size)
@@ -136,6 +131,7 @@ byte NRF_sendpacket(byte Source, byte Destination, byte ID, byte Size)
   Nrf24_setTADDR((byte *)NRF_address);
   Nrf24_send((byte *)&NRFPayload);
   while(Nrf24_isSending()) {}
+  // set auto-ack receive pipe to null
   NRF_address[0]=0;
   Nrf24_setTADDR((byte *)NRF_address);
   return NRF_status;
