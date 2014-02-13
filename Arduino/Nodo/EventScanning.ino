@@ -1,5 +1,4 @@
-
-#define I2C_BUFFERSIZE                80                                        // Moet altijd groter zijn dan de struct NodoEventStruct
+#define I2C_BUFFERSIZE                32                                        
 
 #if I2C
 int  I2C_Received=0;                                                            // Bevat aantal binnengomen bytes op I2C;
@@ -83,7 +82,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
 
     if(Fetched)
       {
-      Led(5,BLUE);
+      Led(BLUE);
       HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS+millis();
       SignalHash=(Event->Command<<24 | Event->Type<<16 | Event->Par1<<8) ^ Event->Par2;
       Event->Port=Fetched;
@@ -115,8 +114,6 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       
       if(Fetched)
         {
-        // digitalWrite(PIN_WIRED_OUT_4,LOW);//???
-        // digitalWrite(PIN_WIRED_OUT_4,HIGH);//???
         // Nodo event: Toets of de versienummers corresponderen. Is dit niet het geval, dan zullen er verwerkingsfouten optreden! Dan een waarschuwing tonen en geen verdere verwerking.
         // Er is een uitzondering: De eerste commando/eventnummers zijn stabiel en mogen van oudere versienummers zijn.
         if(Event->Version!=0 && Event->Version!=NODO_VERSION_MINOR && Event->Command>COMMAND_MAX_FIXED)
@@ -132,38 +129,19 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
           return false;
           }     
     
-        // Een event kan een verzoek bevatten om bevestiging. Doe dit dan pas na verwerking.
-        if(Event->Flags & TRANSMISSION_CONFIRM)
-          RequestForConfirm=true;
-    
-        // registreer welke Nodo's op welke poort zitten en actualiseer tabel.
-        // Wordt gebruikt voor SendTo en I2C communicatie op de Mega.
-        // Hiermee kan later automatisch de juiste poort worden geselecteerd met de SendTo en kan in
-        // geval van I2C communicatie uitsluitend naar de I2C verbonden Nodo's worden gecommuniceerd.
-        NodoOnline(Event->SourceUnit,Event->Port);
-        
-        if(Event->Flags & TRANSMISSION_MASTER && MasterNodo!=Settings.Unit)     // Iedere Nodo kan claimen om de master te worden, maar niet als DEZE nodo master is.
+        // als het informatie uitwisseling tussen Nodo's betreft...
+        if(Event->Type==NODO_TYPE_EVENT || Event->Type==NODO_TYPE_COMMAND || Event->Type==NODO_TYPE_SYSTEM)
           {
-          Serial.print(F("DEBUG: Master Nodo="));Serial.println(MasterNodo);
-          MasterNodo = Event->SourceUnit;
+          // registreer welke Nodo's op welke poort zitten en actualiseer tabel.
+          // Wordt gebruikt voor SendTo en I2C communicatie op de Mega.
+          // Hiermee kan later automatisch de juiste poort worden geselecteerd met de SendTo en kan in
+          // geval van I2C communicatie uitsluitend naar de I2C verbonden Nodo's worden gecommuniceerd.
+          NodoOnline(Event->SourceUnit,Event->Port);
+
+          // Een Nodo kan aangeven dat hij Busy is.
+          bitWrite(BusyNodo, Event->SourceUnit,(Event->Flags&TRANSMISSION_BUSY)>0);
           }
-        
-        if (MasterNodo==Event->SourceUnit && (Event->Flags&TRANSMISSION_MASTER)==0)// Alleen de Master mag deze rol vrijgeven.
-          {
-          Serial.print(F("DEBUG: Master Nodo released"));Serial.println();
-          MasterNodo = 0;
-          BusyNodo = 0;
-          } 
-
-        if(Event->Flags & TRANSMISSION_BUSY)                                    // Iedere Nodo kan aangeven busy te zijn, alleen de master geeft weer vrij
-          {
-          Serial.print(F("DEBUG: Busy Nodo="));Serial.println(BusyNodo);
-          BusyNodo = Event->SourceUnit;
-          }
-
-
-        Serial.print(F("DEBUG: ScanEvent() MasterNodo="));Serial.print(MasterNodo); Serial.print(F(", BusyNodo="));Serial.println(BusyNodo);
-
+                  
         // Als het Nodo event voor deze unit bestemd is, dan klaar. Zo niet, dan terugkeren met een false
         // zodat er geen verdere verwerking plaatsvindt.
         if(Event->DestinationUnit==0 || Event->DestinationUnit==Settings.Unit)

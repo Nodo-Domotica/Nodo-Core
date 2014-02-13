@@ -4,63 +4,56 @@
  * Doorlopen van een volledig gevulde eventlist duurt ongeveer 15ms inclusief printen naar serial
  * maar exclusief verwerking n.a.v. een 'hit' in de eventlist
  \*********************************************************************************************/
-byte ProcessEventExt(struct NodoEventStruct *Event)
+void ProcessingStatus(boolean Processing)
   {
-  struct NodoEventStruct TempEvent;
-  ExecutionDepth=0;               // nesting nog niet aan de orde. Dit is het eerste begin.
-  byte error=0;
-
-  SerialHold(true);  // als er een regel ontvangen is, dan binnenkomst van signalen stopzetten met een seriele XOFF
-
-  #if NODO_MEGA
-  if(FileWriteMode!=0)
-    return 0;
-  #endif
-
-  // Verwerk het binnengekomen event
-  error=ProcessEvent(Event);
-    
-  // Verwerk eventuele events die in de queue zijn geplaatst.
-  QueueProcess();    
-
-
-  ClearEvent(&TempEvent);    
-
-  // Als deze Nodo de master was, dan mag alleen deze de busy status weer vrijgeven en zijn rol opheffen.
-  TempEvent.DestinationUnit=Event->SourceUnit;
-  if(MasterNodo==Settings.Unit)
+  static boolean PreviousProcessing=false;
+  
+  if(PreviousProcessing!=Processing)
     {
-    Serial.println(F("DEBUG: Opheffen master rol en busy status"));
-    TempEvent.DestinationUnit=0;
-    MasterNodo=0;
-    BusyNodo=0;
-    RequestForConfirm=true;
+    PreviousProcessing=Processing;
+    if(Processing)
+      {
+      Serial.write(XOFF);
+      Led(RED);
+
+      // #if NODO_MEGA
+      // if(FileWriteMode!=0)
+      // return 0;
+      // #endif
+      }
+    else
+      {
+      QueueProcess();                                                           // Verwerk eventuele events die in de queue zijn geplaatst.    
+
+      if(RequestForConfirm)                                                     // Een event kan een verzoek bevatten om bevestiging. Doe dit dan pas na alle verwerking. 
+        {  
+        struct NodoEventStruct TempEvent;
+        ClearEvent(&TempEvent);    
+        TempEvent.Port                  = VALUE_ALL;                            //??? was oorspronkelijk Event->Port;
+        TempEvent.Type                  = NODO_TYPE_SYSTEM;                     // Event is niet voor de gebruiker bedoeld
+        TempEvent.Command               = SYSTEM_COMMAND_CONFIRMED;
+        TempEvent.Par1                  = RequestForConfirm;
+        SendEvent(&TempEvent, false,false,false);
+        RequestForConfirm=false;
+        }
+      Serial.write(XON);
+      Led(GREEN);
+      }  
     }
-
-  // Een event kan een verzoek bevatten om bevestiging. Doe dit dan pas na alle verwerking.
-  if(RequestForConfirm)
-    {  
-    TempEvent.Port                  = Event->Port;
-    TempEvent.Type                  = NODO_TYPE_SYSTEM;                         // Event is niet voor de gebruiker bedoeld
-    TempEvent.Command               = SYSTEM_COMMAND_CONFIRMED;
-    TempEvent.Par1                  = RequestForConfirm;
-    SendEvent(&TempEvent, false,false,false);
-    RequestForConfirm=0;
-    }  
-
-  return error;
   }
     
 
 byte ProcessEvent(struct NodoEventStruct *Event)
   {
+  struct NodoEventStruct TempEvent;
   int x;
   byte error=0;
   boolean Continue=true;
-  SerialHold(true);                                                             // Geen seriele data meer accepteren
 
   if(Event->Command==0)
     return error;
+
+  ProcessingStatus(true);
 
   if(++ExecutionDepth>=MACRO_EXECUTION_DEPTH)
     {
@@ -74,23 +67,26 @@ byte ProcessEvent(struct NodoEventStruct *Event)
   // Als er een LOCK actief is, dan commando's blokkeren behalve...
   if(Settings.Lock && (Event->Port==VALUE_SOURCE_RF || Event->Port==VALUE_SOURCE_IR ))
     {
-    switch(Event->Command)                                                      // onderstaande mogen WEL worden doorgelaten als de lock aan staat
+    Continue=false;
+    if(Event->Type==NODO_TYPE_COMMAND)
       {
-      case CMD_LOCK:                                                            // om weer te kunnen unlocken
-      case SYSTEM_COMMAND_QUEUE_SENDTO:                                         // om weer te kunnen unlocken
-      case EVENT_VARIABLE:                                                      // Maakt ontvangst van variabelen mogelijk
-      case EVENT_USEREVENT:                                                     // Noodzakelijk voor uitwisseling userevents tussen Nodo.
-      case EVENT_MESSAGE:                                                       // Voorkomt dat een message van een andere Nodo een error genereert
-      case EVENT_BOOT:                                                          // Voorkomt dat een boot van een andere Nodo een error genereert
-        break;
-
-      default:
-        Continue=false;
-        RaiseMessage(MESSAGE_ACCESS_DENIED,0);
+      if(Event->Command==CMD_LOCK                   )Continue=true;
       }
+    else if(Event->Type==NODO_TYPE_EVENT)
+      {
+      if     (Event->Command==EVENT_VARIABLE         )Continue=true;
+      else if(Event->Command==EVENT_MESSAGE          )Continue=true;
+      else if(Event->Command==EVENT_BOOT             )Continue=true;
+      else if(Event->Command==EVENT_USEREVENT        )Continue=true;
+      }
+    else if(Event->Type==NODO_TYPE_SYSTEM)
+      {
+      if(Event->Command==SYSTEM_COMMAND_QUEUE_SENDTO )Continue=true;
+      }
+    if(!Continue)
+      RaiseMessage(MESSAGE_ACCESS_DENIED,0);
     }
   
-
   if(Event->Type == NODO_TYPE_SYSTEM)
     {                       
     switch(Event->Command)
@@ -118,7 +114,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     {
     QueueAdd(Event);
     if(Event->Flags & TRANSMISSION_QUEUE_NEXT)
-      Wait(5, false,0 , false);  
+      Wait(5, true,0,false);  
     Continue=false;
     }
 
@@ -147,13 +143,13 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     // ############# Verwerk event ################  
     if(Event->Type==NODO_TYPE_COMMAND)
       {
-      Led(6,RED);                                                                 // LED aan als er iets verwerkt wordt      
+      Led(RED);                                                                 // LED aan als er iets verwerkt wordt      
       error=ExecuteCommand(Event);
       }
 
     else if(Event->Type==NODO_TYPE_PLUGIN_COMMAND)
       {
-      Led(7, RED);                                                                 // LED aan als er iets verwerkt wordt      
+      Led(RED);                                                                 // LED aan als er iets verwerkt wordt      
       PluginCall(PLUGIN_COMMAND,Event,0);
       }
       
@@ -167,7 +163,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
         {      
         if(CheckEvent(Event,&EventlistEvent))                                   // Als er een match is tussen het binnengekomen event en de regel uit de eventlist.
           {        
-          Led(8, RED);                                                             // LED aan als er iets verwerkt wordt      
+          Led(RED);                                                             // LED aan als er iets verwerkt wordt      
           ExecutionLine=x;
           error=ProcessEvent(&EventlistAction);
           }
@@ -271,7 +267,7 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
      if(Inp==Cmp)                                                               // Als ingestelde alarmtijd overeen komt met huidige tijd.
        return true;
      }
-  return false; // geen match gevonden
+  return false;                                                                 // geen match gevonden
   }
 
 
@@ -433,13 +429,11 @@ void QueueProcess(void)
         Event.Direction=VALUE_DIRECTION_INPUT;
         Event.Port=Queue[x].Port;
         Event.Flags=Queue[x].Flags;
-        ProcessEvent(&Event);      // verwerk binnengekomen event.
+        ProcessEvent(&Event);                                                   // verwerk binnengekomen event.
         }
       }
     }
-    
-  // Aan het einde van het verwerken van de Queue deze weer leeg maken.
-  QueuePosition=0;
+  QueuePosition=0;                                                              // Aan het einde van verwerken van de Queue deze weer leeg maken.
   }
 
 #if NODO_MEGA  
@@ -452,15 +446,15 @@ byte QueueSend(boolean fast)
   unsigned long ID=millis();
   struct NodoEventStruct Event;
 
-  // De port waar de SendTo naar toe moet halen we uit de lijst met Nodo's die wordt onderhouden door de funktie NodoOnline();
-  // als de Nodo nog niet bekend is, dan pollen we naar deze Nodo.
+  byte Org_WFN=Settings.WaitFreeNodo;                                           // Stel de oorspronkelijke WaitFreeNodo setting veilig
+  Settings.WaitFreeNodo=VALUE_OFF;                                              // Schakel WaitFreeNodo uit omdat dit het SendTo mechanisme doorkruist.
     
   x=bitRead(HW_Config,HW_I2C);                                                  // Zet I2C tijdelijk aan
   bitWrite(HW_Config,HW_I2C,1);
   do
     {
-    Port=NodoOnline(Transmission_SendToUnit,0);
-    if(Port==0)
+    Port=NodoOnline(Transmission_SendToUnit,0);                                 // Port waar SendTo naar toe moet halen we uit lijst met Nodo's onderhouden door NodoOnline();
+    if(Port==0)                                                                 // als de Nodo nog niet bekend is, dan pollen we naar deze Nodo.
       {
       ClearEvent(&Event);
       Event.Port                  = VALUE_ALL;
@@ -579,6 +573,7 @@ byte QueueSend(boolean fast)
       }while((++Retry<10) && error);   
     }
   QueuePosition=0;
+  Settings.WaitFreeNodo=Org_WFN;                                                // Herstel de oorspronkelijke WaitFreeNodo setting.  
   return error;
   }
 #endif
@@ -589,14 +584,15 @@ void QueueReceive(NodoEventStruct *Event)
   static unsigned long PreviousID=0L;
   struct NodoEventStruct TempEvent;
   byte x, Received;
+
+  byte Org_WFN=Settings.WaitFreeNodo;                                           // Stel de oorspronkelijke WaitFreeNodo setting veilig
+  Settings.WaitFreeNodo=VALUE_OFF;                                              // Schakel WaitFreeNodo uit omdat dit het SendTo mechanisme doorkruist.
   
-  // Serial.println(F("DEBUG: QueueReceive() => Wait() vult queue met events."));   
   Transmission_NodoOnly=true;                                                   // Uitsluitend Nodo events. Andere signalen worden tijdelijk volledig genegeerd.
   Wait(5, false, 0, true);
   Transmission_NodoOnly=false;
   Received=QueuePosition; 
   
-  // Serial.print(F("DEBUG: QueueReceive() ID check: "));Serial.print(PreviousID);Serial.print("==");Serial.print(Event->Par2);Serial.print(F(", Aantal events "));Serial.print(QueuePosition);Serial.print("==");Serial.print(Event->Par1);Serial.print(F(", In queue="));Serial.println(Received);
   if(PreviousID!=Event->Par2 && Received==Event->Par1)                          // Als aantal regels in de queue overeenkomt en queue is nog niet eerder binnen gekomen (ID)
     {
     for(x=0;x<QueuePosition;x++)                                                
@@ -608,7 +604,6 @@ void QueueReceive(NodoEventStruct *Event)
     QueueProcess();
     }
 
-  // Stuur vervolgens de master ter bevestiging het aantal ontvangen events die zich nu in de queue bevinden.
   ClearEvent(&TempEvent);
   TempEvent.DestinationUnit     = Event->SourceUnit;
   TempEvent.SourceUnit          = Settings.Unit;
@@ -616,9 +611,8 @@ void QueueReceive(NodoEventStruct *Event)
   TempEvent.Type                = NODO_TYPE_SYSTEM; 
   TempEvent.Command             = SYSTEM_COMMAND_CONFIRMED;      
   TempEvent.Par1                = Received;
-  // Serial.print(F("DEBUG: QueueReceive() Ontvangen aantal="));Serial.print(Received);PrintNodoEvent(", Verzend=",&TempEvent);
-  HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS+millis();        
-  SendEvent(&TempEvent,false, false, false);
+  SendEvent(&TempEvent,false, false, false);                                    // Stuur vervolgens de master ter bevestiging het aantal ontvangen events die zich nu in de queue bevinden.
     
   QueuePosition=0;                                                              // Omdat ProcessQueue de queue heeft leeggedraaid, kan de queue positie op 0 worden gezet.
+  Settings.WaitFreeNodo=Org_WFN;                                                // Herstel de oorspronkelijke WaitFreeNodo setting.  
   }
