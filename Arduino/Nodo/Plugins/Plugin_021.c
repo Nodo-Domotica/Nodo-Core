@@ -3,20 +3,27 @@
 //#######################################################################################################
 
 /*********************************************************************************************\
-* Dit protocol zorgt voor communicatie met een DFRobot LCD I2C/TWI 1602 display
-* 
+* Dit protocol zorgt voor communicatie met een LCD Display dat wordt bestuurd via I2C/TWI
+* Er worden twee versies ondersteund, aangeduidt met 1602 (2 x 16 tekens) of 2004 (4 x 20 tekens)
+* Getest op een I2C/TWI LCD1602 van DFRobot en een Funduino I2C LCD2004
 * Auteur             : Martinus van den Broek
 * Support            : www.nodo-domotica.nl
-* Datum              : 1 Feb 2014
+* Datum              : 13 Feb 2014
 * Versie             : 12-2013 versie 1.2 Modificatie WireNodo library (Hans Man)
 *                      02-2014 versie 1.3 Support 4x20 display en uitbreiding functionaliteit met Par3/Par4 (Martinus)
+*                      02-2014 versie 1.4 Support PortInput, LCDWrite 0,0 clears screen (Martinus)
 * Nodo productnummer : 
 * Compatibiliteit    : Vanaf Nodo build nummer 707
 * Syntax             : "LCDWrite <row>, <column>, <command>, <option>
-*                       Commands:	Message		<option> = ID in plugin label definities
+*
+*                       LCDWrite <row>,0		clear entire row
+*                       LCDWrite 0,0			clear entire screen
+*
+*                       Command:	Message		<option> = ID in plugin label definities
 *					Variable	<option> = Variabele nummer
 *					Clock		toont datum en tijd		
 *					IP		toont IP adres (alleen Mega)
+*					PortInput	toont input port voor http verkeer (alleen Mega)
 *					Event		toont laatste event (alleen Mega)
 ***********************************************************************************************
 * Technische beschrijving:
@@ -178,7 +185,7 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
      byte Par3=event->Par2>>8 & 0xff;		// Data to display
      byte Par4=event->Par2>>16 & 0xff;		// In case of var, variable number
 
-     if (event->Par1 > 0 && event->Par1 <= PLUGIN_021_ROWS)
+     if (event->=Par1 > 0 && event->Par1 <= PLUGIN_021_ROWS)
        {
        #if NODO_MEGA
          char TempString[80];
@@ -213,6 +220,9 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
            case CMD_NODO_IP:	// Display IP on Mega
              sprintf(TempString,"%u.%u.%u.%u", EthernetNodo.localIP()[0],EthernetNodo.localIP()[1],EthernetNodo.localIP()[2],EthernetNodo.localIP()[3]);
              break;
+           case CMD_PORT_INPUT:	// Display Port on Mega
+             sprintf(TempString,"%s",int2str(Settings.PortInput));
+             break;
            case VALUE_RECEIVED_EVENT:	// Display event on Mega
              Event2str(&LastReceived,TempString);
              break;
@@ -221,7 +231,12 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
 
        // clear or print line
        if (Par2 == 0 && Par3 == 0 && Par4 == 0)
-         LCD_I2C_printline(event->Par1-1,0, "");
+         {
+           if (event->Par1 == 0)
+             LCD_I2C_clear();
+           else
+             LCD_I2C_printline(event->Par1-1,0, "");
+         }
        else
          LCD_I2C_printline(event->Par1-1, Par2-1, TempString);
 
@@ -240,7 +255,7 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
        {
        if(strcasecmp(TempStr,PLUGIN_NAME)==0)
          {
-         if(event->Par1 > 0 && event->Par1 <= PLUGIN_021_ROWS)
+         if(event->Par1 >= 0 && event->Par1 <= PLUGIN_021_ROWS)
            {
 
            if(GetArgv(string,TempStr,4))
