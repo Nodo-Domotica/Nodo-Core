@@ -10,8 +10,9 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
   int w,x,y,z;
   byte error=0;
   
-  struct NodoEventStruct TempEvent=*EventToExecute;
-  struct NodoEventStruct TempEvent2;
+  struct NodoEventStruct TempEvent,TempEvent2;//???=*EventToExecute;
+  ClearEvent(&TempEvent);
+  ClearEvent(&TempEvent2);
   
   #if NODO_MEGA
   char *TempString=(char*)malloc(80);
@@ -184,7 +185,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
 
 
     case CMD_SEND_USEREVENT:
-      ClearEvent(&TempEvent);    
       TempEvent.Port                  = VALUE_ALL;
       TempEvent.Type                  = NODO_TYPE_EVENT;
       TempEvent.Command               = EVENT_USEREVENT;
@@ -194,7 +194,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
 
     case CMD_VARIABLE_SEND:
-      ClearEvent(&TempEvent);    
       TempEvent.Type=NODO_TYPE_EVENT;
       TempEvent.Command=EVENT_VARIABLE;
       TempEvent.Port=EventToExecute->Par2;
@@ -291,7 +290,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         // Geef de juiste tijd nu door aan alle andere Nodo's
 
         // Verzend datum
-        ClearEvent(&TempEvent);    
         TempEvent.Port                  = VALUE_ALL;
         TempEvent.Type                  = NODO_TYPE_COMMAND;
         TempEvent.DestinationUnit       = 0;    
@@ -363,7 +361,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;        
 
     case CMD_SEND_EVENT:
-      ClearEvent(&TempEvent);
       TempEvent=LastReceived;
       TempEvent.Port=EventToExecute->Par1==0?VALUE_ALL:EventToExecute->Par1;
       SendEvent(&TempEvent, TempEvent.Command==EVENT_RAWSIGNAL,true, Settings.WaitFree==VALUE_ON);
@@ -456,10 +453,23 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       ResetFactory();
       break;
 
+    case CMD_WAIT_FREE_NODO:
+      Settings.WaitFreeNodo=EventToExecute->Par1;
+
+      if(Settings.WaitFreeNodo!=VALUE_ON)
+        {
+        BusyNodo=0;
+        TempEvent.Port                  = VALUE_ALL;
+        TempEvent.Type                  = NODO_TYPE_COMMAND;
+        TempEvent.Command               = CMD_WAIT_FREE_NODO;
+        TempEvent.Par1                  = VALUE_OFF;
+        SendEvent(&TempEvent, false, true,Settings.WaitFree==VALUE_ON);
+        }
+
+      break;                                                                      
+
     case CMD_EVENTLIST_ERASE:
-      Led(9,BLUE);
-      ClearEvent(&TempEvent);
-      
+      Led(BLUE);
       if(EventToExecute->Par1==0)
         {
         x=1;                                          
@@ -472,10 +482,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         }
       break;        
         
-    case CMD_MASTER: 
-      MasterNodo=EventToExecute->Par1;
-      break;
-
     case CMD_EVENTLIST_SHOW:
       // Er kunnen zich hier twee situaties voordoen: het verzoek is afkomstig van een Terminal (Serial/Telnet) of 
       // via IR/RF/I2C. Beide kennen een andere afhandeling immers de Terminal variant kan direct naar de MMI.
@@ -539,7 +545,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
           ClearEvent(EventToExecute);
           EventToExecute->Par1=x;
           EventToExecute->Command=SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW;
-          EventToExecute->Flags=TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT;
+          EventToExecute->Flags=TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_BUSY;
           EventToExecute->Type=NODO_TYPE_SYSTEM;
           EventToExecute->Port=z;
           EventToExecute->SourceUnit=Settings.Unit;
@@ -549,16 +555,16 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
             {
             SendEvent(EventToExecute,false,false,false);
 
-            TempEvent.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT;
+            TempEvent.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_BUSY;
             TempEvent.Port=z;
             TempEvent.DestinationUnit=w;
             SendEvent(&TempEvent,false,false,false);
     
     
-            if(x==y)                                                            // Lock staat aan. Als laatste regel uit de eventlist, dan de ether weer vrijgeven. 
-              TempEvent2.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE ; // de laatste van de gehele eventlist
+            if(x==y)                                                            // Als laatste regel uit de eventlist, dan de ether weer vrijgeven. 
+              TempEvent2.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE ; 
             else
-              TempEvent2.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT;      // de laatste van de regel uit de eventlist
+              TempEvent2.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_BUSY;
 
             TempEvent2.Port=z;
             TempEvent2.DestinationUnit=w;
@@ -672,7 +678,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         {
         // Sla huidige inhoud van de RawSignal buffer op.
         // Daarvoor moet eerst de bijbehorende HEX-code worden uitgerekend.
-        ClearEvent(&TempEvent);
         RawSignal_2_32bit(&TempEvent);
         error=RawSignalWrite(TempEvent.Par2);
         }
@@ -700,7 +705,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       
       if(!error)
         {        
-        ClearEvent(&TempEvent);
         TempEvent.Port=EventToExecute->Par1;
         TempEvent.Type=NODO_TYPE_RAWSIGNAL;
         TempEvent.Command=EVENT_RAWSIGNAL;

@@ -1,5 +1,5 @@
-#define NODO_BUILD                       712                                    // ??? Ophogen bij iedere Build / versiebeheer.
-#define NODO_VERSION_MINOR                 7                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
+#define NODO_BUILD                       727                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_VERSION_MINOR                 8                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1                                    // Unit nummer van deze Nodo
 #define HOME_NODO                          1                                    // Home adres van Nodo's die tot Ã©Ã©n groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
@@ -115,7 +115,7 @@ byte dummy=1;                                                                   
 #define CMD_FILE_WRITE                  57
 #define VALUE_FREEMEM                   58
 #define CMD_GATEWAY                     59
-#define CMD_WAIT_BUSY_NODO              60 
+#define CMD_RES60                       60 //??? reserve 
 #define VALUE_SOURCE_HTTP               61
 #define CMD_HTTP_REQUEST                62
 #define VALUE_HWCONFIG                  63
@@ -200,7 +200,7 @@ byte dummy=1;                                                                   
 #define CMD_STOP                        142
 #define CMD_SLEEP                       143   
 #define VALUE_FAST                      144
-#define CMD_MASTER                      145                                     // ???
+#define CMD_WAIT_FREE_NODO              145                                     // ???
 #define COMMAND_MAX                     145                                     // hoogste commando
 
 #define MESSAGE_OK                      0
@@ -219,7 +219,8 @@ byte dummy=1;                                                                   
 #define MESSAGE_PLUGIN_UNKNOWN          13
 #define MESSAGE_PLUGIN_ERROR            14
 #define MESSAGE_VERSION_ERROR           15
-#define MESSAGE_MAX                     15                                      // laatste bericht tekst
+#define MESSAGE_BUSY_TIMEOUT            16
+#define MESSAGE_MAX                     16                                      // laatste bericht tekst
 
 
 #if NODO_MEGA
@@ -288,7 +289,7 @@ prog_char PROGMEM Cmd_56[]="FileShow";
 prog_char PROGMEM Cmd_57[]="FileWrite";
 prog_char PROGMEM Cmd_58[]="FreeMem";
 prog_char PROGMEM Cmd_59[]="Gateway";
-prog_char PROGMEM Cmd_60[]="WaitBusyNodo";
+prog_char PROGMEM Cmd_60[]="";//??? reserve
 prog_char PROGMEM Cmd_61[]="HTTP";
 prog_char PROGMEM Cmd_62[]="HTTPHost";
 prog_char PROGMEM Cmd_63[]="HWConfig";
@@ -373,7 +374,7 @@ prog_char PROGMEM Cmd_141[]="IPSend";
 prog_char PROGMEM Cmd_142[]="Stop";
 prog_char PROGMEM Cmd_143[]="Sleep";
 prog_char PROGMEM Cmd_144[]="Fast";
-prog_char PROGMEM Cmd_145[]="Master";//???
+prog_char PROGMEM Cmd_145[]="WaitFreeNodo"; 
 
 
 // tabel die refereert aan de commando strings
@@ -411,9 +412,10 @@ prog_char PROGMEM Msg_12[] = "RawSignal saved.";
 prog_char PROGMEM Msg_13[] = "Unknown device.";
 prog_char PROGMEM Msg_14[] = "Plugin returned an error.";
 prog_char PROGMEM Msg_15[] = "Incompatibel Nodo event.";
+prog_char PROGMEM Msg_16[] = "Timeout on busy Nodo.";
 
 // tabel die refereert aan de message strings
-PROGMEM const char *MessageText_tabel[]={Msg_0,Msg_1,Msg_2,Msg_3,Msg_4,Msg_5,Msg_6,Msg_7,Msg_8,Msg_9,Msg_10,Msg_11,Msg_12,Msg_13,Msg_14,Msg_15};
+PROGMEM const char *MessageText_tabel[]={Msg_0,Msg_1,Msg_2,Msg_3,Msg_4,Msg_5,Msg_6,Msg_7,Msg_8,Msg_9,Msg_10,Msg_11,Msg_12,Msg_13,Msg_14,Msg_15,Msg_16};
 
 
 // strings met vaste tekst naar PROGMEM om hiermee RAM-geheugen te sparen.
@@ -593,14 +595,14 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #endif
 
 // In het transport deel van een Nodo event kunnen zich de volgende vlaggen bevinden:
-#define TRANSMISSION_MASTER                              1
-#define TRANSMISSION_BUSY                                2
-#define TRANSMISSION_QUEUE                               4                      // Event maakt deel uit van een reeks die in de queue geplaatst moet worden
-#define TRANSMISSION_QUEUE_NEXT                          8                      // Event maakt deel uit van een reeks die in de queue geplaatst moet worden
-#define TRANSMISSION_SENDTO                             16                      // Aan deze vlag kunnen we herkennen dat een event deel uit maakt van een SendTo reeks. 
-#define TRANSMISSION_CONFIRM                            32                      // Verzoek aan master om bevestiging te sturen na ontvangst.
-#define TRANSMISSION_VIEW                               64                      // Uitsluitend het event weergeven, niet uitvoeren
-#define TRANSMISSION_VIEW_SPECIAL                      128                      // Uitsluitend het event weergeven, niet uitvoeren
+#define TRANSMISSION_BUSY                                1
+#define TRANSMISSION_RUBBERDUCK                        128
+#define TRANSMISSION_QUEUE                               2                      // Event maakt deel uit van een reeks die in de queue geplaatst moet worden
+#define TRANSMISSION_QUEUE_NEXT                          4                      // Event maakt deel uit van een reeks die in de queue geplaatst moet worden
+#define TRANSMISSION_SENDTO                              8                      // Aan deze vlag kunnen we herkennen dat een event deel uit maakt van een SendTo reeks. 
+#define TRANSMISSION_CONFIRM                            16                      // Verzoek aan master om bevestiging te sturen na ontvangst.
+#define TRANSMISSION_VIEW                               32                      // Uitsluitend het event weergeven, niet uitvoeren
+#define TRANSMISSION_VIEW_SPECIAL                       64                      // Uitsluitend het event weergeven, niet uitvoeren
 
 // Er zijn een aantal type Nodo events die op verschillende wijze worden behandeld:
 #define NODO_TYPE_EVENT                                  1
@@ -612,10 +614,13 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 
 // De Nodo kent naast gebruikers commando's en events eveneens Nodo interne events
 #define SYSTEM_COMMAND_CONFIRMED                         1
-#define SYSTEM_COMMAND_QUEUE_SENDTO                      2                      // Dit is aankondiging reeks, dus niet het user comando "SendTo".
-#define SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW              3                      // Dit is aankondiging reeks, dus niet het user comando "EventlistShow".
-#define SYSTEM_COMMAND_QUEUE_EVENTLIST_WRITE             4                      // Dit is aankondiging reeks, dus niet het user comando "EventlistShow".
-#define SYSTEM_COMMAND_QUEUE_POLL                        5                      // Verzoek om een poll naar een andere Nodo die moet worden beantwoord.
+#define SYSTEM_COMMAND_RTS                               2
+#define SYSTEM_COMMAND_CTS                               3
+#define SYSTEM_COMMAND_QUEUE_SENDTO                      4                      // Dit is aankondiging reeks, dus niet het user comando "SendTo".
+#define SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW              5                      // Dit is aankondiging reeks, dus niet het user comando "EventlistShow".
+#define SYSTEM_COMMAND_QUEUE_EVENTLIST_WRITE             6                      // Dit is aankondiging reeks, dus niet het user comando "EventlistShow".
+#define SYSTEM_COMMAND_QUEUE_POLL                        7                      // Verzoek om een poll naar een andere Nodo die moet worden beantwoord.
+
 
 //****************************************************************************************************************************************
 
@@ -624,6 +629,7 @@ struct SettingsStruct
   {
   byte    Unit; // Max 5 bits in gebruik = 1..31
   boolean NewNodo;
+  byte    WaitFreeNodo;
   byte    TransmitIR;
   byte    TransmitRF;
   byte    WaitFree;
@@ -714,20 +720,19 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute);                        
 volatile unsigned long PulseCount=0L;                                           // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met Ã©Ã©n verhoogd
 volatile unsigned long PulseTime=0L;                                            // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
 unsigned long HoldTransmission=0L;                                              // wachten op dit tijdstip in millis() alvorens event te verzenden.
-byte BusyNodo=0;                                                                // ???
-byte MasterNodo=0;                                                              // ???
+unsigned long BusyNodo=0;                                                                // ???
 boolean Transmission_NodoOnly=false;                                            // Als deze vlag staat, dan worden er uitsluitend Nodo-eigen signalen ontvangen.  
 byte QueuePosition=0;
 unsigned long UserTimer[TIMER_MAX];                                             // Timers voor de gebruiker.
 byte DaylightPrevious;                                                          // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet.
 byte ExecutionDepth=0;                                                          // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's.
-int ExecutionLine=0;                                                            // Regel in de eventlist die in uitvoer is.
+int ExecutionLine=0;                                                            // Regel in de eventlist die in uitvoer is.??? wordt deze nog gebruikt.
 void(*Reboot)(void)=0;                                                          // reset functie op adres 0.
 uint8_t RFbit,RFport,IRbit,IRport;                                              // t.b.v. verwerking IR/FR signalen.
 float UserVar[USER_VARIABLES_MAX];                                              // Gebruikers variabelen
 unsigned long HW_Config=0;                                                      // Hardware configuratie zoals gedetecteerd door de Nodo. 
 struct NodoEventStruct LastReceived;                                            // Laatst ontvangen event
-byte RequestForConfirm=0;                                                       // Als ongelijk nul, dan heeft deze Nodo een verzoek ontvangen om een systemevent 'Confirm' te verzenden. Waarde wordt in Par1 meegezonden.
+byte RequestForConfirm=false;                                                   // Als true dan heeft deze Nodo een verzoek ontvangen om een systemevent 'Confirm' te verzenden. Waarde wordt in Par1 meegezonden.
 int EventlistMax=0;                                                             // beschikbaar aantal regels in de eventlist. Wordt tijdens setup berekend.
 
 #if WIRED
@@ -844,14 +849,13 @@ void setup()
   IRbit=digitalPinToBitMask(PIN_IR_RX_DATA);
   IRport=digitalPinToPort(PIN_IR_RX_DATA);
 
-  Led(3, RED);
+  Led(RED);
 
   ClearEvent(&LastReceived);
 
   #if NODO_MEGA
   bitWrite(HW_Config,HW_BOARD_MEGA,1);
   Serial.println(F("Booting..."));
-  SerialHold(true);                                                             // XOFF verzenden zodat PC even wacht met versturen van data via Serial (Xon/Xoff-handshaking)
   #endif
 
   LoadSettings();                                                               // laad alle settings zoals deze in de EEPROM zijn opgeslagen
@@ -919,7 +923,6 @@ void setup()
 
   #endif // Mega
 
-
   // Alle devices moeten aan te roepen zijn vanuit de Pluginnummers zoals die in de events worden opgegeven
   // initialiseer de lijst met pointers naar de device funkties.
   PluginInit();
@@ -980,12 +983,11 @@ void loop()
   byte PreviousMinutes=0;                                                       // Sla laatst gecheckte minuut op zodat niet vaker dan nodig (eenmaal per minuut de eventlist wordt doorlopen
   
   unsigned long LoopIntervalTimer=0L;                                           // Timer voor periodieke verwerking.
-  unsigned long FocusTimer;                                                 // Timer die er voor zorgt dat bij communicatie via een kanaal de focus hier ook enige tijd op blijft
+  unsigned long FocusTimer;                                                     // Timer die er voor zorgt dat bij communicatie via een kanaal de focus hier ook enige tijd op blijft
   unsigned long PreviousTimeEvent=0L; 
 
   #if NODO_MEGA
   InputBuffer_Serial[0]=0;                                                      // serieel buffer string leeg maken
-  SerialHold(false);                                                            // er mogen weer tekens binnen komen van SERIAL
   TempLogFile[0]=0;                                                             // geen extra logging
   #endif
 
@@ -998,7 +1000,7 @@ void loop()
     // Check voor IR, I2C of RF events
     if(ScanEvent(&ReceivedEvent))
       { 
-      ProcessEventExt(&ReceivedEvent);                                          // verwerk binnengekomen event.
+      ProcessEvent(&ReceivedEvent);                                             // verwerk binnengekomen event.
       Slice_1=0;
       // Serial.print(F("DEBUG: loop()\n\n\n"));
       }
@@ -1030,15 +1032,13 @@ void loop()
               
           if(SerialInByte=='\n')
             {
-            SerialHold(true);
             InputBuffer_Serial[SerialInByteCounter]=0;                          // serieel ontvangen regel is compleet
             RaiseMessage(ExecuteLine(InputBuffer_Serial,VALUE_SOURCE_SERIAL),0);
             Serial.write('>');                                                  // Prompt
             SerialInByteCounter=0;  
             InputBuffer_Serial[0]=0;                                            // serieel ontvangen regel is verwerkt. String leegmaken
-            SerialHold(false);
             }
-          FocusTimer=millis()+FOCUS_TIME;      
+          FocusTimer=millis()+FOCUS_TIME;                                             
           }
         }
       #endif
@@ -1218,7 +1218,7 @@ void loop()
             ReceivedEvent.Par2             = WiredInputStatus[x]?VALUE_ON:VALUE_OFF;
             ReceivedEvent.Direction        = VALUE_DIRECTION_INPUT;
             ReceivedEvent.Port             = VALUE_SOURCE_WIRED;
-            ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
+            ProcessEvent(&ReceivedEvent); // verwerk binnengekomen event.
             }
           }
         #endif
@@ -1226,7 +1226,7 @@ void loop()
         }
         
       default:
-        Led(4, GREEN);
+        ProcessingStatus(false);
         Slice_1=0;
         break;
       }// switch
@@ -1256,7 +1256,7 @@ void loop()
             ReceivedEvent.Par1             = x+1;
             ReceivedEvent.Direction        = VALUE_DIRECTION_INPUT;
             ReceivedEvent.Port             = VALUE_SOURCE_CLOCK;
-            ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
+            ProcessEvent(&ReceivedEvent); // verwerk binnengekomen event.
             }
           }
         }
@@ -1281,7 +1281,7 @@ void loop()
             {
             if(PreviousTimeEvent!=ReceivedEvent.Par2)
               {
-              ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
+              ProcessEvent(&ReceivedEvent); // verwerk binnengekomen event.
               PreviousTimeEvent=ReceivedEvent.Par2; 
               }
             }
@@ -1298,12 +1298,12 @@ void loop()
           ReceivedEvent.Par1             = Time.Daylight;
           ReceivedEvent.Direction        = VALUE_DIRECTION_INPUT;
           ReceivedEvent.Port             = VALUE_SOURCE_CLOCK;
-          ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
+          ProcessEvent(&ReceivedEvent); // verwerk binnengekomen event.
           DaylightPrevious=Time.Daylight;
             }
 
         if(ScanAlarm(&ReceivedEvent)) 
-          ProcessEventExt(&ReceivedEvent); // verwerk binnengekomen event.
+          ProcessEvent(&ReceivedEvent); // verwerk binnengekomen event.
         #endif NODO_MEGA
         }
       #endif CLOCK 

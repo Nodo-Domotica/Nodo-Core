@@ -3,7 +3,7 @@ void DetectHardwareReset(void)
   {
   unsigned long ResetTime=millis()+10000;
   boolean toggle=false;
-  Led(0,0);
+  Led(0);
   do
     {
     toggle=!toggle;
@@ -276,18 +276,13 @@ void Alarm(int Variant,int Option)
  * Rood = Nodo verwerkt event of commando.
  * Blauw = Bijzondere modus Nodo waarin Nodo niet in staat is om events te ontvangen of genereren.
  \*********************************************************************************************/
-void Led(int bron, byte Color)//??? bron weer weghalen.
+void Led(byte Color)
   { 
   #if NODO_MEGA
   digitalWrite(PIN_LED_RGB_R,Color==RED);
   digitalWrite(PIN_LED_RGB_B,Color==BLUE);
   digitalWrite(PIN_LED_RGB_G,Color==GREEN);
-
-  if(Color==BLUE)//???
-    FileWriteLine("","DEBUG","DAT",int2str(bron), false);
-
   #else
-
   digitalWrite(PIN_LED_RGB_R,(Color==RED || Color==BLUE));
   #endif
   }
@@ -337,11 +332,17 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
       QueueAdd(&Event);                                                         // Events die voorbij komen in de queue plaatsen.
 
       if(EndSequence && (Event.Flags & TRANSMISSION_QUEUE_NEXT)==0)
+        {
+        // Serial.println(F("DEBUG: Wait() TRANSMISSION_QUEUE_NEXT niet gedetecteerd."));
         break;
+        }
         
       // als het gewacht wordt totdat de communicatie poorten weer beschikbaar zijn, dan wachtloop verlaten.        
-      if(WaitForFreeTransmission && (BusyNodo==0 || BusyNodo==Settings.Unit))
+      if(WaitForFreeTransmission && BusyNodo==0)
+        {
+        // Serial.println(F("DEBUG: Wait() BusyNodo=0"));
         break;
+        }
       
       // break af als opgegeven event voorbij komt. Let op, alleen events met als bestemming 0 of dit unitnummer worden gedetecteerd!
       // De check vindt alleen plaats Type, Command en Unit, dus niet op Par1 en Par2.
@@ -353,18 +354,24 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
           if(WaitForEvent->SourceUnit==Event.SourceUnit || WaitForEvent->SourceUnit==0)
             {
             *WaitForEvent=Event;
+            // Serial.println(F("DEBUG: Wait() WaitForEvent geslaagd."));
             break;
             }
           }
         }
       }
-    Led(0,RED);
+    Led(RED);
     }   
     
   // Serial.println(F("DEBUG: Wait() verlaten."));
 
+  HoldTransmission=NODO_TX_TO_RX_SWITCH_TIME+millis();                          //??? Zoveel tijd??? Hier ingelast om snel afwisselend events uitwisselen tussen twee i2c Nodo's te laten werken.         
+
   if(TimeoutTimer<=millis())                                                    // als timeout, dan error terug geven
+    {
+    // Serial.println(F("DEBUG: Wait() Timeout."));
     return false;
+    }
 
   else
     return true;
@@ -563,6 +570,10 @@ boolean GetStatus(struct NodoEventStruct *Event)
     Event->Par1=Settings.Log;
     break;
 
+  case CMD_WAIT_FREE_NODO:
+    Event->Par1=Settings.WaitFreeNodo;
+    break;
+
   case CMD_RAWSIGNAL_SAVE:
     Event->Par1=Settings.RawSignalSave;
     Event->Par2=Settings.RawSignalCleanUp;
@@ -635,6 +646,7 @@ void ResetFactory(void)
   Settings.Version                    = NODO_VERSION_MINOR;
   Settings.NewNodo                    = true;
   Settings.Lock                       = 0;
+  Settings.WaitFreeNodo               = VALUE_ON;
   Settings.TransmitIR                 = VALUE_OFF;
   Settings.TransmitRF                 = VALUE_ON;
   Settings.Unit                       = UNIT_NODO;
@@ -940,7 +952,7 @@ void Status(struct NodoEventStruct *Request)
           {
           if(!DisplayLocal)
             {
-            Result.Flags=TRANSMISSION_VIEW | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT;
+            Result.Flags=TRANSMISSION_VIEW | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_BUSY;
             SendEvent(&Result,false,false,false);
             }            
   
@@ -2673,7 +2685,7 @@ void GoodNightSleepTight(void)
       UserTimer[x]-=SleepTimer*WDT_TIME;                                        // dan min acht seconden
 
   // Spaar energie door de LED uit te zetten en de spanning naar de ontvanger.
-  Led(0,0);     
+  Led(0);     
   digitalWrite(PIN_RF_RX_VCC,LOW);                                            // Spanning naar de RF ontvanger uit
 
   // Zzzzz.....
@@ -2682,7 +2694,7 @@ void GoodNightSleepTight(void)
 
   // Spanning weer op de RF ontvanger anders is de Nodo doof.
   digitalWrite(PIN_RF_RX_VCC,HIGH);                                             // Spanning naar de RF ontvanger weer aan
-  Led(0, RED);     
+  Led(RED);     
   }
 
 void wdsleep()
