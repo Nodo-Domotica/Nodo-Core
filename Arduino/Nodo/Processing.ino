@@ -456,12 +456,12 @@ byte QueueSend(boolean fast)
     
   if(!fast)
     {
-    x=bitRead(HW_Config,HW_I2C);                                                  // Zet I2C tijdelijk aan
+    x=bitRead(HW_Config,HW_I2C);                                                // Zet I2C tijdelijk aan
     bitWrite(HW_Config,HW_I2C,1);
     do
       {
-      Port=NodoOnline(Transmission_SendToUnit,0);                                 // Port waar SendTo naar toe moet halen we uit lijst met Nodo's onderhouden door NodoOnline();
-      if(Port==0)                                                                 // als de Nodo nog niet bekend is, dan pollen we naar deze Nodo.
+      Port=NodoOnline(Transmission_SendToUnit,0);                               // Port waar SendTo naar toe moet halen we uit lijst met Nodo's onderhouden door NodoOnline();
+      if(Port==0)                                                               // als de Nodo nog niet bekend is, dan pollen we naar deze Nodo.
         {
         ClearEvent(&Event);
         Event.Port                  = VALUE_ALL;
