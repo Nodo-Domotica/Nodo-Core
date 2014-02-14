@@ -22,7 +22,8 @@
  *                      de RGB-led van een andere Nodo aan
  *                      
  *                      FadeOn laat de kleuren langzaam in elkaar overvloeien, FadeOff schakelt deze optie weer uit.
- *                      VarOn laat de plugin de waarden overnemen van de variabelen 1,2 en 3. VarOff schakelt dit weer uit.   
+ *                      VarOn laat de plugin de waarden overnemen van de variabelen 1,2 en 3. VarOff schakelt dit weer uit.
+ *                      Als de optie VarOn en FadeOn zijn ingeschakeld, dan is Variabele-4 de fade tijd.    
  * 
  * LET OP: Een van de RGB-kleuren maakt gebruik van de IR_TX_DATA pen. Het continue
  *         aansturen van de IR-Leds zou de Leds/transistor kunnen overbelasten.   
@@ -111,7 +112,7 @@ boolean FadeLed(void)
     }
     
   if(InputLevelR==OutputLevelR && InputLevelG==OutputLevelG && InputLevelB==OutputLevelB)
-    return false;// klaar met faden naar nieuwe waarde
+    return false;                                                               // klaar met faden naar nieuwe waarde
   else
     return true;
   }
@@ -137,12 +138,34 @@ boolean Plugin_023(byte function, struct NodoEventStruct *event, char *string)
   switch(function)
     { 
     #ifdef PLUGIN_023_CORE_RGBLED
+
+    case PLUGIN_INIT:
+      {
+      analogWrite(PWM_R,255);
+      analogWrite(PWM_G,255);
+      analogWrite(PWM_B,255);
+      delay(100);
+      analogWrite(PWM_R,0);
+      analogWrite(PWM_G,0);
+      analogWrite(PWM_B,0);
+
+      break;
+      }
+
     case PLUGIN_EVENT_IN:
       {
-      if(event->Command==EVENT_VARIABLE && event->Type==NODO_TYPE_EVENT)   // Er is en variabele gewijzigd. 
+      if(event->Command==EVENT_VARIABLE && event->Type==NODO_TYPE_EVENT)        // Er is en variabele gewijzigd. 
         {
         if(RGBVariables)
           {
+          if(UserVar[0]>255)UserVar[0]=255;
+          if(UserVar[1]>255)UserVar[1]=255;
+          if(UserVar[2]>255)UserVar[2]=255;
+
+          if(UserVar[0]<0)UserVar[0]=0;
+          if(UserVar[1]<0)UserVar[1]=0;
+          if(UserVar[2]<0)UserVar[2]=0;
+
           InputLevelR = UserVar[0];
           InputLevelG = UserVar[1];
           InputLevelB = UserVar[2];
@@ -152,7 +175,7 @@ boolean Plugin_023(byte function, struct NodoEventStruct *event, char *string)
 
       else if(event->Command==PLUGIN_ID && event->Type==NODO_TYPE_PLUGIN_EVENT) 
         { 
-        x=event->Par1 & 0x1f; // Unit nummer
+        x=event->Par1 & 0x1f;                                                   // Unit nummer
   
         if(x==0 || x==Settings.Unit)
           {
@@ -186,12 +209,17 @@ boolean Plugin_023(byte function, struct NodoEventStruct *event, char *string)
           // De waarde fade bevat het aantal minuten dat de omschakeling maximaal mag duren.
           // Per minuut 60000/SCAN_HIGH_TIME keer een call naar Plugin_023_FLC
           // In een minuut max. 255 dimniveaus ==> (60000/(SCAN_HIGH_TIME * 255)) calls nodig voor 1 dimniveau verschil. 
-          FadeTimeCounter=3*60000/(SCAN_HIGH_TIME*255);
+          if(RGBVariables)
+            x=UserVar[3];
+          else
+            x=3;
+            
+          FadeTimeCounter=x*60000/(SCAN_HIGH_TIME*255);
           CalledCounter=0;
           FastLoopCall_ptr=&Plugin_023_FLC;
           }
         else
-          {
+          {                                                                       
           while(FadeLed())
             delay(5);
           success=true;

@@ -15,12 +15,12 @@
 
 
 // Kaku              : Klik-Aan-Klik-Uit
-// #define PLUGIN_001
-// #define PLUGIN_001_CORE
+#define PLUGIN_001
+#define PLUGIN_001_CORE
 
 // NewKAKU           : Klik-Aan-Klik-Uit met automatische codering. Tevens bekend als Intertechno.
-// #define PLUGIN_002
-// #define PLUGIN_002_CORE
+#define PLUGIN_002
+#define PLUGIN_002_CORE
 
 // Temperatuursensor Dallas DS18B20
 // #define PLUGIN_005
