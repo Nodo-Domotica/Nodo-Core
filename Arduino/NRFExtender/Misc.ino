@@ -37,6 +37,7 @@ void ResetFactory(void)
     Settings.Unit       = THIS_EXTENDER_UNIT;
     Settings.Address    = NRF_RECEIVE_ADDRESS;
     Settings.Channel    = NRF_CHANNEL;
+    Settings.Peer       = 0;
 
     Save_Settings();
     Reboot();
