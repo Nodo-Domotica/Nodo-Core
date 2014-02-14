@@ -60,8 +60,8 @@ R703:
 - In Datum/tijdweergave ';' als scheiding i.p.v. ',' (O.a. in welkomsttekst, LOG.DAT en in de HTML-Header)
 - Foutief aantal regels vrij/gebruikt in [Status EventlistCount]
 
-R7xx:
-
+R727:
+- Commando [WaitFreeNodo <on|off>] toegevoegd. Deze zorgt er voor dat een Nodo's elkaars verwerkingstijd respecteren alvorens events te verzenden.
 
 ToDo:
 - FileWrite testen !

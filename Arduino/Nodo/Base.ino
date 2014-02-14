@@ -1001,6 +1001,7 @@ void loop()
     if(ScanEvent(&ReceivedEvent))
       { 
       ProcessEvent(&ReceivedEvent);                                             // verwerk binnengekomen event.
+      ProcessingStatus(false);
       Slice_1=0;
       // Serial.print(F("DEBUG: loop()\n\n\n"));
       }
@@ -1037,6 +1038,7 @@ void loop()
             Serial.write('>');                                                  // Prompt
             SerialInByteCounter=0;  
             InputBuffer_Serial[0]=0;                                            // serieel ontvangen regel is verwerkt. String leegmaken
+            ProcessingStatus(false);
             }
           FocusTimer=millis()+FOCUS_TIME;                                             
           }

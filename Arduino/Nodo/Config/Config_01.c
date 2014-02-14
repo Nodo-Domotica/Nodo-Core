@@ -25,14 +25,9 @@
 // Temperatuursensor Dallas DS18B20
 #define PLUGIN_005
 
-// Oude UserEvents Nodo Due compatibiliteit
-#define PLUGIN_007
-#define PLUGIN_007_CORE
-
 //Luchtdruksensor BPM085
 #define PLUGIN_020
 
 // RGB-Led aansturing
 #define PLUGIN_023
 #define PLUGIN_023_CORE
-

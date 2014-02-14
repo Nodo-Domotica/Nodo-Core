@@ -646,7 +646,7 @@ void ResetFactory(void)
   Settings.Version                    = NODO_VERSION_MINOR;
   Settings.NewNodo                    = true;
   Settings.Lock                       = 0;
-  Settings.WaitFreeNodo               = VALUE_ON;
+  Settings.WaitFreeNodo               = VALUE_OFF;
   Settings.TransmitIR                 = VALUE_OFF;
   Settings.TransmitRF                 = VALUE_ON;
   Settings.Unit                       = UNIT_NODO;
