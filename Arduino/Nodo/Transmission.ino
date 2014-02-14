@@ -8,31 +8,24 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   {    
   ES->Direction=VALUE_DIRECTION_OUTPUT;
   byte Port=ES->Port;
- 
     
   if(Settings.WaitFreeNodo==VALUE_ON)
     {
     if(BusyNodo!=0)                                                               // Als een Nodo heeft aangegeven busy te zijn, dan wachten.
       {
-      Settings.WaitFreeNodo=VALUE_OFF;
       if(!Wait(30,true,0,false))
         {
         for(byte x=1;x<=31;x++)
           if(BusyNodo&(1<<x))
-            {
             RaiseMessage(MESSAGE_BUSY_TIMEOUT,x);
-            delay(1000);
-            }
+
         BusyNodo=0;
-        Settings.WaitFreeNodo=VALUE_OFF;
         }
       }
       
     if(ES->Type!=NODO_TYPE_SYSTEM && ES->Command!=SYSTEM_COMMAND_CONFIRMED)
       {
-      ES->Flags|=TRANSMISSION_BUSY;
-      ES->Flags|=TRANSMISSION_QUEUE;
-      ES->Flags|=TRANSMISSION_QUEUE_NEXT;
+      ES->Flags|=TRANSMISSION_BUSY | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT;
       RequestForConfirm=true;
       }
     }  
@@ -67,7 +60,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   // Verstuur signaal als HTTP-event.
   if(bitRead(HW_Config,HW_ETHERNET))// Als Ethernet shield aanwezig.
     {
-    if(Settings.TransmitIP==VALUE_ON && (Port==VALUE_SOURCE_HTTP || Port==VALUE_ALL))
+    if(Settings.TransmitIP==VALUE_ON && (Port==VALUE_SOURCE_HTTP || Port==VALUE_ALL) && Settings.PortOutput!=0 )
       {
       SendHTTPEvent(ES);
       ES->Port=VALUE_SOURCE_HTTP;
@@ -539,7 +532,9 @@ boolean SendHTTPRequest(char* Request)
               else
                 {
                 if(ParseHTTPRequest(IPBuffer,"content-length:", TempString,";, "))
+                  {
                   ContentLength=str2int(TempString);
+                  }
 
                 if(ClockSyncHTTP)                                               // als de tijd wordt meegeleverd, dan de clock gelijkzetten.
                   {

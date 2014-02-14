@@ -53,6 +53,11 @@ byte ProcessEvent(struct NodoEventStruct *Event)
   if(Event->Command==0)
     return error;
 
+  #if NODO_MEGA
+  if(FileWriteMode!=0)
+    return 0;
+  #endif
+
   ProcessingStatus(true);
 
   if(++ExecutionDepth>=MACRO_EXECUTION_DEPTH)

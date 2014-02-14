@@ -27,6 +27,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         UserVar[EventToExecute->Par1-1]+=ul2float(EventToExecute->Par2);
         TempEvent.Type         = NODO_TYPE_EVENT;
         TempEvent.Command      = EVENT_VARIABLE;
+        TempEvent.Par1         = EventToExecute->Par1;
         TempEvent.Par2         = float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Direction    = VALUE_DIRECTION_INPUT;
         TempEvent.Port         = VALUE_SOURCE_SYSTEM;
@@ -40,6 +41,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         UserVar[EventToExecute->Par1-1]-=ul2float(EventToExecute->Par2);
         TempEvent.Type         = NODO_TYPE_EVENT;
         TempEvent.Command      = EVENT_VARIABLE;
+        TempEvent.Par1         = EventToExecute->Par1;
         TempEvent.Par2         = float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Direction    = VALUE_DIRECTION_INPUT;
         TempEvent.Port         = VALUE_SOURCE_SYSTEM;
@@ -56,6 +58,8 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.Command      = EVENT_VARIABLE;
         TempEvent.Port         = VALUE_SOURCE_SYSTEM;
         TempEvent.Direction    = VALUE_DIRECTION_INPUT;
+        TempEvent.Par1         = EventToExecute->Par1;
+        TempEvent.Par2         = EventToExecute->Par2;
         ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
         }
       break;         
@@ -65,6 +69,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afgevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         UserVar[EventToExecute->Par1-1]=analogRead(PIN_WIRED_IN_1+EventToExecute->Par2-1);
+        TempEvent.Par1         = EventToExecute->Par1;
         TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Type         = NODO_TYPE_EVENT;
         TempEvent.Command=EVENT_VARIABLE;
@@ -82,6 +87,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.Type         = NODO_TYPE_EVENT;
         TempEvent.Command=EVENT_VARIABLE;
         TempEvent.Port=VALUE_SOURCE_SYSTEM;
+        TempEvent.Par1         = EventToExecute->Par1;
         TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Direction=VALUE_DIRECTION_INPUT;
         ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
@@ -97,6 +103,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         UserVar[EventToExecute->Par1-1]=PulseCount;
+        TempEvent.Par1         = EventToExecute->Par1;
         TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Command=EVENT_VARIABLE;
         TempEvent.Type=NODO_TYPE_EVENT;
@@ -116,6 +123,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
         {
         UserVar[EventToExecute->Par1-1]=PulseTime;
+        TempEvent.Par1         = EventToExecute->Par1;
         TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
         TempEvent.Type= NODO_TYPE_EVENT;
         TempEvent.Command=EVENT_VARIABLE;
