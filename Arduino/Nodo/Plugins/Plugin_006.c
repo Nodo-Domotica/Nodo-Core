@@ -121,7 +121,6 @@ boolean Plugin_006(byte function, struct NodoEventStruct *event, char *string)
                 UserVar[event->Par2 -1] = -0.1 * word(dht_dat[2] & 0x7F, dht_dat[3]);
               else
                 UserVar[event->Par2 -1] = 0.1 * word(dht_dat[2], dht_dat[3]);
-
               UserVar[event->Par2] = word(dht_dat[0], dht_dat[1]) * 0.1; // vochtigheid
               #endif
 

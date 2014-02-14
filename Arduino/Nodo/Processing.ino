@@ -454,27 +454,29 @@ byte QueueSend(boolean fast)
   byte Org_WFN=Settings.WaitFreeNodo;                                           // Stel de oorspronkelijke WaitFreeNodo setting veilig
   Settings.WaitFreeNodo=VALUE_OFF;                                              // Schakel WaitFreeNodo uit omdat dit het SendTo mechanisme doorkruist.
     
-  x=bitRead(HW_Config,HW_I2C);                                                  // Zet I2C tijdelijk aan
-  bitWrite(HW_Config,HW_I2C,1);
-  do
+  if(!fast)
     {
-    Port=NodoOnline(Transmission_SendToUnit,0);                                 // Port waar SendTo naar toe moet halen we uit lijst met Nodo's onderhouden door NodoOnline();
-    if(Port==0)                                                                 // als de Nodo nog niet bekend is, dan pollen we naar deze Nodo.
+    x=bitRead(HW_Config,HW_I2C);                                                  // Zet I2C tijdelijk aan
+    bitWrite(HW_Config,HW_I2C,1);
+    do
       {
-      ClearEvent(&Event);
-      Event.Port                  = VALUE_ALL;
-      Event.Type                  = NODO_TYPE_SYSTEM;
-      Event.Command               = SYSTEM_COMMAND_QUEUE_POLL;
-      Event.DestinationUnit       = Transmission_SendToUnit;
-      Event.Flags                 = TRANSMISSION_CONFIRM;
-
-      SendEvent(&Event, false, false, Settings.WaitFree==VALUE_ON);
-
-      Wait(5, false,0 , false);  
-      }
-    }while(Port==0 && ++Retry<3);
-  bitWrite(HW_Config,HW_I2C,Port==VALUE_SOURCE_I2C | x);
-
+      Port=NodoOnline(Transmission_SendToUnit,0);                                 // Port waar SendTo naar toe moet halen we uit lijst met Nodo's onderhouden door NodoOnline();
+      if(Port==0)                                                                 // als de Nodo nog niet bekend is, dan pollen we naar deze Nodo.
+        {
+        ClearEvent(&Event);
+        Event.Port                  = VALUE_ALL;
+        Event.Type                  = NODO_TYPE_SYSTEM;
+        Event.Command               = SYSTEM_COMMAND_QUEUE_POLL;
+        Event.DestinationUnit       = Transmission_SendToUnit;
+        Event.Flags                 = TRANSMISSION_CONFIRM;
+  
+        SendEvent(&Event, false, false, Settings.WaitFree==VALUE_ON);
+  
+        Wait(5, false,0 , false);  
+        }
+      }while(Port==0 && ++Retry<3);
+    bitWrite(HW_Config,HW_I2C,Port==VALUE_SOURCE_I2C | x);
+    }
   
   if(Port!=0)
     {

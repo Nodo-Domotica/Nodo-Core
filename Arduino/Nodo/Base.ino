@@ -708,7 +708,7 @@ struct NodoEventStruct
   byte Checksum;
   };
 
-  // Van alle devices die worden mee gecompileerd, worden in een tabel de adressen opgeslagen zodat
+ // Van alle devices die worden mee gecompileerd, worden in een tabel de adressen opgeslagen zodat
 // hier naar toe gesprongen kan worden
 void PluginInit(void);
 boolean (*Plugin_ptr[PLUGIN_MAX])(byte, struct NodoEventStruct*, char*);
