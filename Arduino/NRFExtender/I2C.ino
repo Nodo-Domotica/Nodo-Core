@@ -23,8 +23,11 @@ void SendI2C()
   {            
     if(I2COnline[y]==true)
     {
-      Serial.print("Send to I2C address:");
-      Serial.println((int)y);
+      if(command_mode)
+        {
+          Serial.print("Send to I2C address:");
+          Serial.println((int)y);
+        }
       WireNodo.beginTransmission(I2C_START_ADDRESS+y-1);
       for(byte x=0;x<NRFPayload.Size;x++)
         WireNodo.write(NRFPayload.Data[x]);

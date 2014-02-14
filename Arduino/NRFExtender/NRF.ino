@@ -49,16 +49,26 @@ boolean NRF_receive(void)
     {
       Nrf24_getData((byte *)&NRFPayload);
 
-      Serial.print("NRF RX ");
-      Serial.print("S:");
-      Serial.print((int)NRFPayload.Source);
-      Serial.print(", D:");
-      Serial.print((int)NRFPayload.Destination);
-      Serial.print(", ID:");
-      Serial.print((int)NRFPayload.ID);
-      Serial.print(", SZ:");
-      Serial.println((int)NRFPayload.Size);
-
+      if(command_mode)
+        {
+          Serial.print("NRF RX ");
+          Serial.print("S:");
+          Serial.print((int)NRFPayload.Source);
+          Serial.print(", D:");
+          Serial.print((int)NRFPayload.Destination);
+          Serial.print(", ID:");
+          Serial.print((int)NRFPayload.ID);
+          Serial.print(", SZ:");
+          Serial.println((int)NRFPayload.Size);
+        
+          for (byte x=0; x < NRFPayload.Size; x++)
+            {
+              Serial.print(NRFPayload.Data[x]);
+              Serial.print(' ');
+            }
+          Serial.println("");
+        }
+      
       switch(NRFPayload.ID)
         {
           case NRF_PAYLOAD_NODO:
@@ -68,15 +78,21 @@ boolean NRF_receive(void)
             }  
           case NRF_PAYLOAD_ONLINE:
             {
-              Serial.print("NRF RX anouncement from:");
-              Serial.println((int)NRFPayload.Source);
+              if(command_mode)
+                {
+                  Serial.print("NRF RX anouncement from:");
+                  Serial.println((int)NRFPayload.Source);
+                }
               NRFOnline[NRFPayload.Source]=true;
               break;
             }          
           case NRF_PAYLOAD_PINGREP:
             {
-              Serial.print("Ping Reply:");
-              Serial.println((int)NRFPayload.Source);
+              if(command_mode)
+                {
+                  Serial.print("Ping Reply:");
+                  Serial.println((int)NRFPayload.Source);
+                }
               break;
             }
           case NRF_PAYLOAD_PINGREQ:
@@ -84,6 +100,12 @@ boolean NRF_receive(void)
               NRF_sendpacket(Settings.Address, NRFPayload.Source, NRF_PAYLOAD_PINGREP, 0);
               break;
             }
+          case NRF_PAYLOAD_TEXT:
+            {
+              for (byte x=0; x < NRFPayload.Size; x++)
+                Serial.write(NRFPayload.Data[x]);
+              break;
+            }          
         }
     }
   return false;
@@ -91,29 +113,84 @@ boolean NRF_receive(void)
 
 void NRF_send()
 {
-  memcpy((byte*)&NRFPayload+4, (byte*)&I2C_ReceiveBuffer,I2C_Received);
-  
-  for(int y=1;y<=NRF_UNIT_MAX;y++)
+  byte len=I2C_Received;
+  memcpy((byte*)&NRFPayload+4, (byte*)&I2C_ReceiveBuffer,len);
+  byte first=1;
+  byte last=NRF_UNIT_MAX;
+  if (Settings.Peer != 0)
+    {
+      first=Settings.Peer;
+      last=Settings.Peer;
+    }
+
+  for(int y=first;y<=last;y++)
     {
       if(NRFOnline[y]==true)
         {
-          Serial.print("Send to NRF address: ");
-          Serial.println((int)y);
-          NRF_sendpacket(Settings.Address, y, NRF_PAYLOAD_NODO, I2C_Received);
+          if(command_mode)
+            {
+              Serial.print("Send to NRF address: ");
+              Serial.println((int)y);
+            }
+          NRF_sendpacket(Settings.Address, y, NRF_PAYLOAD_NODO, len);
+        }
+    }
+}
+
+void NRF_send_text(char * data, byte len)
+{
+  data[len]=0x0d;
+  data[len+1]=0x0a;
+  len+=2;
+
+  byte first=1;
+  byte last=NRF_UNIT_MAX;
+  if (Settings.Peer != 0)
+    {
+      first=Settings.Peer;
+      last=Settings.Peer;
+    }
+
+  for(int y=first;y<=last;y++)
+    {
+      if(NRFOnline[y]==true)
+        {
+          byte pos=0;
+          int sendlen=0;
+          while(pos < len)
+          {
+            sendlen=len-pos;
+            if (sendlen > NRF_PAYLOAD_SIZE-4) sendlen=NRF_PAYLOAD_SIZE-4;
+            memcpy((byte*)&NRFPayload+4, (byte*)data+pos,sendlen);
+            NRF_sendpacket(Settings.Address, y, NRF_PAYLOAD_TEXT, sendlen);
+            pos+=NRF_PAYLOAD_SIZE-4;
+          }
         }
     }
 }
 
 void NRF_CheckOnline()
 {
-  Serial.println("NRF Peers Online:");
-  
-  for(int y=1;y<=NRF_UNIT_MAX;y++)
+  if(command_mode)
+    Serial.println("NRF Peers Online:");
+
+  byte first=1;
+  byte last=NRF_UNIT_MAX;
+  if (Settings.Peer != 0)
+    {
+      first=Settings.Peer;
+      last=Settings.Peer;
+    }
+    
+  for(int y=first;y<=last;y++)
     {
       if (NRF_sendpacket(Settings.Address, y, NRF_PAYLOAD_ONLINE, 0) == 46)
         {
-          Serial.print((int)y);
-          Serial.println(" is Online");
+          if(command_mode)
+            {
+              Serial.print((int)y);
+              Serial.println(" is Online");
+            }
           NRFOnline[y]=true;
         }
     }

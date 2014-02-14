@@ -1,7 +1,5 @@
 #define INPUT_BUFFER_SIZE          128
-#define SERIAL_STAY_SHARP_TIME      50
 
-unsigned long StaySharpTimer;
 byte SerialInByte;
 int SerialInByteCounter=0;
 char InputBuffer_Serial[INPUT_BUFFER_SIZE+2];
@@ -9,16 +7,12 @@ char Command[40];
 
 void serial()
 {
-  StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;
-
-  while(StaySharpTimer>millis()) // stay focussed
-  {          
     while(Serial.available())
     {                        
-      SerialInByte=Serial.read();                
-      Serial.write(SerialInByte);// echo received char
+      SerialInByte=Serial.read();
 
-      StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
+      if(command_mode)
+        Serial.write(SerialInByte);// echo received char
 
       if(isprint(SerialInByte))
       {
@@ -29,14 +23,31 @@ void serial()
       if(SerialInByte=='\n')
       {
         InputBuffer_Serial[SerialInByteCounter]=0; // serial data completed
-        ExecuteLine(InputBuffer_Serial);
-        Serial.write('>'); // Prompt
-        SerialInByteCounter=0;  
+
+        if(command_mode)
+          {
+            ExecuteLine(InputBuffer_Serial);
+          }
+        else
+          {
+            if(strcasecmp(InputBuffer_Serial,COMMAND_MODE_STRING)==0)
+              {
+                Serial.println("Command mode>");
+                command_mode=true;
+              }
+            else
+              { 
+                NRF_send_text(InputBuffer_Serial,SerialInByteCounter);
+              }
+          }
+
+        if(command_mode)
+          Serial.write('>'); // Prompt
+
+        SerialInByteCounter=0; 
         InputBuffer_Serial[0]=0; // serial data processed, clear buffer
-        StaySharpTimer=millis()+SERIAL_STAY_SHARP_TIME;      
       }
     }
-  }
 }
 
 int ExecuteLine(char *Line)

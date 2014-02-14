@@ -15,6 +15,11 @@ void ExecuteCommand(char *Command, byte Par1, byte Par2)
         Settings.Channel=Par1;
       }
 
+  if(strcasecmp(Command,"Peer")==0)
+      {
+        Settings.Peer=Par1;
+      }
+
   if(strcasecmp(Command,"Reboot")==0)
       {
         Reboot();
@@ -48,6 +53,8 @@ void ExecuteCommand(char *Command, byte Par1, byte Par2)
         Serial.println((int)Settings.Address);
         Serial.print("Channel:");
         Serial.println((int)Settings.Channel);
+        Serial.print("Peer:");
+        Serial.println((int)Settings.Peer);
       }
 
    if(strcasecmp(Command,"Ping")==0)
@@ -70,7 +77,16 @@ void ExecuteCommand(char *Command, byte Par1, byte Par2)
       {
         NRF_sendpacket(Settings.Address, Par1, Par2, 0);
       }
-      
+
+   if(strcasecmp(Command,"Reset")==0) // Reset device on Pin D3
+      {
+        pinMode(3, OUTPUT);
+        digitalWrite(3, LOW);
+        delay(500);
+        digitalWrite(3, HIGH);
+        pinMode(3, INPUT);
+      }
+            
    if(strcasecmp(Command,"Freemem")==0)
       {
         Serial.println(FreeMem());

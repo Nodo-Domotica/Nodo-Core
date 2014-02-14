@@ -16,8 +16,8 @@
  \*************************************************************************************************************************/
 
 // NRF Extender
-// Prototype R007
-// 10-02-2014
+// Prototype R008
+// 14-02-2014
 
 // This version is "Nodo independent" but needs a small plugin!
 
@@ -33,11 +33,20 @@
 // R006 09-02-2014  added ping command
 //                  code optimizations
 // R007 10-02-2014  leave auto-ack receive pipe at address 0 after send packet
+// R008 14-02-2014  added more debugging output (dump payload data)
+//                  added "wireless serial" mode, now default mode after boot!
+//                    (type @command@ to get into command/debug mode)
+//                  added "single peer" transmit mode
+//                  added "reset" command to reset connected device on pin D3
+//                    (future I2C watchdog or other purposes)
+//                  bugfix for I2C_Received changed during NRFsend
 
 #define NRF_RECEIVE_ADDRESS      16 // Default Radio address, range 1-31
 #define THIS_EXTENDER_UNIT       31 // Default Unit, range 1-31
 
 #define EXTENDER_VERSION          1
+
+#define COMMAND_MODE_STRING       "@command@"
 
 // NRF Settings
 #define NRF_UNIT_MAX             32
@@ -68,10 +77,11 @@ void(*Reboot)(void)=0;
 
 struct SettingsStruct
 {
-  int     Version;        
-  byte    Unit;
-  byte    Address;
-  byte    Channel;
+  int  Version;        
+  byte Unit;
+  byte Address;
+  byte Channel;
+  byte Peer; 
 }
 Settings;
 
@@ -94,13 +104,14 @@ boolean I2COnline[I2C_UNIT_MAX+1];
 byte I2C_Received=0;                            // nr of bytes received through I2C bus
 byte I2C_ReceiveBuffer[I2C_BUFFERSIZE];         // I2C receive buffer
 
+boolean command_mode=false;
+
 void setup() 
 {
   LoadSettings();
   if(Settings.Version!=EXTENDER_VERSION)ResetFactory();
   
   Serial.begin(19200);
-  Serial.println("NRFExtender started!");
   WireNodo.begin(Settings.Unit + I2C_START_ADDRESS - 1);
   WireNodo.onReceive(ReceiveI2C);
 
@@ -117,21 +128,24 @@ void loop()
 
   if(NRF_receive())
     {
-       Serial.println("NRF -> I2C");
-       SendI2C();
+      if(command_mode)
+        Serial.println("NRF -> I2C");
+      SendI2C();
     }
 
   if(I2C_Received > 0)
   {
-      Serial.println("I2C -> NRF");
+      if(command_mode)
+        Serial.println("I2C -> NRF");
+
       if (I2C_Received <=NRF_PAYLOAD_SIZE-4)
       {
         NRF_send();
         I2C_Received=0;
       }
       else
-        Serial.println("I2C data too large!");
+        if(command_mode)
+          Serial.println("I2C data too large!");
   }
 }
-
 
