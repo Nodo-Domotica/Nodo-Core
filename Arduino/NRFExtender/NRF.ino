@@ -114,6 +114,7 @@ boolean NRF_receive(void)
 void NRF_send()
 {
   byte len=I2C_Received;
+  I2C_Received=0;
   memcpy((byte*)&NRFPayload+4, (byte*)&I2C_ReceiveBuffer,len);
   byte first=1;
   byte last=NRF_UNIT_MAX;
