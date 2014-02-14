@@ -16,7 +16,7 @@
  \*************************************************************************************************************************/
 
 // NRF Extender
-// Prototype R008
+// Prototype R009
 // 14-02-2014
 
 // This version is "Nodo independent" but needs a small plugin!
@@ -40,6 +40,7 @@
 //                  added "reset" command to reset connected device on pin D3
 //                    (future I2C watchdog or other purposes)
 //                  bugfix for I2C_Received changed during NRFsend
+// R009 14-02-2014  bugfix, I2C_Received set to 0 after NRFsend leads to Sendto Failure
 
 #define NRF_RECEIVE_ADDRESS      16 // Default Radio address, range 1-31
 #define THIS_EXTENDER_UNIT       31 // Default Unit, range 1-31
@@ -141,7 +142,6 @@ void loop()
       if (I2C_Received <=NRF_PAYLOAD_SIZE-4)
       {
         NRF_send();
-        I2C_Received=0;
       }
       else
         if(command_mode)
