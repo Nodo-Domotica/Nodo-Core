@@ -21,77 +21,73 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
   
   switch(EventToExecute->Command)
     {   
+    case CMD_VARIABLE_TOGGLE:
+      UserVar[EventToExecute->Par1-1]=UserVar[EventToExecute->Par1-1]>0.5?0.0:1.0;
+      TempEvent.Type         = NODO_TYPE_EVENT;
+      TempEvent.Command      = EVENT_VARIABLE;
+      TempEvent.Par1         = EventToExecute->Par1;
+      TempEvent.Par2         = float2ul(UserVar[EventToExecute->Par1-1]);
+      TempEvent.Direction    = VALUE_DIRECTION_INPUT;
+      TempEvent.Port         = VALUE_SOURCE_SYSTEM;
+      ProcessEvent(&TempEvent);
+      break;        
+
     case CMD_VARIABLE_INC:
-      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afgevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
-        {
-        UserVar[EventToExecute->Par1-1]+=ul2float(EventToExecute->Par2);
-        TempEvent.Type         = NODO_TYPE_EVENT;
-        TempEvent.Command      = EVENT_VARIABLE;
-        TempEvent.Par1         = EventToExecute->Par1;
-        TempEvent.Par2         = float2ul(UserVar[EventToExecute->Par1-1]);
-        TempEvent.Direction    = VALUE_DIRECTION_INPUT;
-        TempEvent.Port         = VALUE_SOURCE_SYSTEM;
-        ProcessEvent(&TempEvent);
-        }
+      UserVar[EventToExecute->Par1-1]+=ul2float(EventToExecute->Par2);
+      TempEvent.Type         = NODO_TYPE_EVENT;
+      TempEvent.Command      = EVENT_VARIABLE;
+      TempEvent.Par1         = EventToExecute->Par1;
+      TempEvent.Par2         = float2ul(UserVar[EventToExecute->Par1-1]);
+      TempEvent.Direction    = VALUE_DIRECTION_INPUT;
+      TempEvent.Port         = VALUE_SOURCE_SYSTEM;
+      ProcessEvent(&TempEvent);
       break;        
 
     case CMD_VARIABLE_DEC:
-      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
-        {
-        UserVar[EventToExecute->Par1-1]-=ul2float(EventToExecute->Par2);
-        TempEvent.Type         = NODO_TYPE_EVENT;
-        TempEvent.Command      = EVENT_VARIABLE;
-        TempEvent.Par1         = EventToExecute->Par1;
-        TempEvent.Par2         = float2ul(UserVar[EventToExecute->Par1-1]);
-        TempEvent.Direction    = VALUE_DIRECTION_INPUT;
-        TempEvent.Port         = VALUE_SOURCE_SYSTEM;
-        ProcessEvent(&TempEvent);
-        }
+      UserVar[EventToExecute->Par1-1]-=ul2float(EventToExecute->Par2);
+      TempEvent.Type         = NODO_TYPE_EVENT;
+      TempEvent.Command      = EVENT_VARIABLE;
+      TempEvent.Par1         = EventToExecute->Par1;
+      TempEvent.Par2         = float2ul(UserVar[EventToExecute->Par1-1]);
+      TempEvent.Direction    = VALUE_DIRECTION_INPUT;
+      TempEvent.Port         = VALUE_SOURCE_SYSTEM;
+      ProcessEvent(&TempEvent);
       break;        
 
     case CMD_VARIABLE_SET:
-      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afgevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
-        {
-        UserVar[EventToExecute->Par1-1]=ul2float(EventToExecute->Par2);
-        TempEvent.SourceUnit   = Settings.Unit;
-        TempEvent.Type         = NODO_TYPE_EVENT;
-        TempEvent.Command      = EVENT_VARIABLE;
-        TempEvent.Port         = VALUE_SOURCE_SYSTEM;
-        TempEvent.Direction    = VALUE_DIRECTION_INPUT;
-        TempEvent.Par1         = EventToExecute->Par1;
-        TempEvent.Par2         = EventToExecute->Par2;
-        ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
-        }
+      UserVar[EventToExecute->Par1-1]=ul2float(EventToExecute->Par2);
+      TempEvent.SourceUnit   = Settings.Unit;
+      TempEvent.Type         = NODO_TYPE_EVENT;
+      TempEvent.Command      = EVENT_VARIABLE;
+      TempEvent.Port         = VALUE_SOURCE_SYSTEM;
+      TempEvent.Direction    = VALUE_DIRECTION_INPUT;
+      TempEvent.Par1         = EventToExecute->Par1;
+      TempEvent.Par2         = EventToExecute->Par2;
+      ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
       break;         
 
     #if WIRED
     case CMD_VARIABLE_SET_WIRED_ANALOG:
-      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afgevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
-        {
-        UserVar[EventToExecute->Par1-1]=analogRead(PIN_WIRED_IN_1+EventToExecute->Par2-1);
-        TempEvent.Par1         = EventToExecute->Par1;
-        TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
-        TempEvent.Type         = NODO_TYPE_EVENT;
-        TempEvent.Command=EVENT_VARIABLE;
-        TempEvent.Port=VALUE_SOURCE_SYSTEM;
-        TempEvent.Direction=VALUE_DIRECTION_INPUT;
-        ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
-        }
+      UserVar[EventToExecute->Par1-1]=analogRead(PIN_WIRED_IN_1+EventToExecute->Par2-1);
+      TempEvent.Par1         = EventToExecute->Par1;
+      TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
+      TempEvent.Type         = NODO_TYPE_EVENT;
+      TempEvent.Command=EVENT_VARIABLE;
+      TempEvent.Port=VALUE_SOURCE_SYSTEM;
+      TempEvent.Direction=VALUE_DIRECTION_INPUT;
+      ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
       break;
     #endif         
   
     case CMD_VARIABLE_VARIABLE:
-      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
-        {
-        UserVar[EventToExecute->Par1-1]=UserVar[EventToExecute->Par2-1];
-        TempEvent.Type         = NODO_TYPE_EVENT;
-        TempEvent.Command=EVENT_VARIABLE;
-        TempEvent.Port=VALUE_SOURCE_SYSTEM;
-        TempEvent.Par1         = EventToExecute->Par1;
-        TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
-        TempEvent.Direction=VALUE_DIRECTION_INPUT;
-        ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
-        }
+      UserVar[EventToExecute->Par1-1]=UserVar[EventToExecute->Par2-1];
+      TempEvent.Type         = NODO_TYPE_EVENT;
+      TempEvent.Command=EVENT_VARIABLE;
+      TempEvent.Port=VALUE_SOURCE_SYSTEM;
+      TempEvent.Par1         = EventToExecute->Par1;
+      TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
+      TempEvent.Direction=VALUE_DIRECTION_INPUT;
+      ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
       break;        
 
     case CMD_VARIABLE_PULSE_COUNT:
@@ -100,18 +96,15 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       bitWrite(HW_Config,HW_PULSE,true);
       attachInterrupt(PULSE_IRQ,PulseCounterISR,PULSE_TRANSITION); 
       
-      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
-        {
-        UserVar[EventToExecute->Par1-1]=PulseCount;
-        TempEvent.Par1         = EventToExecute->Par1;
-        TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
-        TempEvent.Command=EVENT_VARIABLE;
-        TempEvent.Type=NODO_TYPE_EVENT;
-        TempEvent.Port=VALUE_SOURCE_SYSTEM;
-        TempEvent.Direction=VALUE_DIRECTION_INPUT;
-        PulseCount=0;
-        ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
-        }
+      UserVar[EventToExecute->Par1-1]=PulseCount;
+      TempEvent.Par1         = EventToExecute->Par1;
+      TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
+      TempEvent.Command=EVENT_VARIABLE;
+      TempEvent.Type=NODO_TYPE_EVENT;
+      TempEvent.Port=VALUE_SOURCE_SYSTEM;
+      TempEvent.Direction=VALUE_DIRECTION_INPUT;
+      PulseCount=0;
+      ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
       break;         
 
     case CMD_VARIABLE_PULSE_TIME:
@@ -120,18 +113,14 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       bitWrite(HW_Config,HW_PULSE,true);
       attachInterrupt(PULSE_IRQ,PulseCounterISR,PULSE_TRANSITION); 
 
-      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afvevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
-        {
-        UserVar[EventToExecute->Par1-1]=PulseTime;
-        TempEvent.Par1         = EventToExecute->Par1;
-        TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
-        TempEvent.Type= NODO_TYPE_EVENT;
-        TempEvent.Command=EVENT_VARIABLE;
-        TempEvent.Port=VALUE_SOURCE_SYSTEM;
-        TempEvent.Direction=VALUE_DIRECTION_INPUT;
-        ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
-        }
-        
+      UserVar[EventToExecute->Par1-1]=PulseTime;
+      TempEvent.Par1         = EventToExecute->Par1;
+      TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
+      TempEvent.Type= NODO_TYPE_EVENT;
+      TempEvent.Command=EVENT_VARIABLE;
+      TempEvent.Port=VALUE_SOURCE_SYSTEM;
+      TempEvent.Direction=VALUE_DIRECTION_INPUT;
+      ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
       break;         
 
     case CMD_STOP:
@@ -417,7 +406,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       Save_Settings();
       break;
 
-    case CMD_WAITFREERF: 
+    case CMD_WAIT_FREE_RX: 
       Settings.WaitFree=EventToExecute->Par1;
       break;
 

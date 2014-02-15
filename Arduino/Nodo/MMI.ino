@@ -904,7 +904,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_WAIT_FREE_NODO:
       case CMD_LOG:
       case CMD_ECHO:
-      case CMD_WAITFREERF:
+      case CMD_WAIT_FREE_RX:
       case CMD_ALIAS_SHOW:
       case CMD_BREAK_ON_DAYLIGHT:
         ParameterToView[0]=PAR1_TEXT;
@@ -924,6 +924,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case EVENT_NEWNODO:
       case CMD_VARIABLE_SAVE:
       case CMD_VARIABLE_LOG:
+      case CMD_VARIABLE_TOGGLE:
       case CMD_UNIT_SET:
       case CMD_VARIABLE_PULSE_TIME:
       case CMD_VARIABLE_PULSE_COUNT:
@@ -1412,7 +1413,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
      // par2 mag alles zijn
     case CMD_ALIAS_SHOW:
     case CMD_BREAK_ON_DAYLIGHT:
-    case CMD_WAITFREERF:
+    case CMD_WAIT_FREE_RX:
       ResultEvent->Type=NODO_TYPE_COMMAND;
       if(ResultEvent->Par1!=VALUE_OFF && ResultEvent->Par1!=VALUE_ON)
         error=MESSAGE_INVALID_PARAMETER;
@@ -1445,6 +1446,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
         }
       break;
 
+    case CMD_VARIABLE_TOGGLE:
     case CMD_VARIABLE_SAVE:
     case CMD_VARIABLE_LOG:
       ResultEvent->Type=NODO_TYPE_COMMAND;
