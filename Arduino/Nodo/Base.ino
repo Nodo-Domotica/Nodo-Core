@@ -1,4 +1,4 @@
-#define NODO_BUILD                       732                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       735                                    // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                 8                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1                                    // Unit nummer van deze Nodo
@@ -115,7 +115,7 @@ byte dummy=1;                                                                   
 #define CMD_FILE_WRITE                  57
 #define VALUE_FREEMEM                   58
 #define CMD_GATEWAY                     59
-#define CMD_RES60                       60 //??? reserve 
+#define CMD_WAIT_FREE_RX                60 
 #define VALUE_SOURCE_HTTP               61
 #define CMD_HTTP_REQUEST                62
 #define VALUE_HWCONFIG                  63
@@ -175,7 +175,7 @@ byte dummy=1;                                                                   
 #define CMD_VARIABLE_VARIABLE           117
 #define CMD_VARIABLE_SET_WIRED_ANALOG   118
 #define CMD_VARIABLE_LOG                119
-#define CMD_WAITFREERF                  120
+#define CMD_VARIABLE_TOGGLE             120
 #define EVENT_WILDCARD                  121
 #define VALUE_SOURCE_WIRED              122
 #define VALUE_WIRED_ANALOG              123
@@ -289,7 +289,7 @@ prog_char PROGMEM Cmd_56[]="FileShow";
 prog_char PROGMEM Cmd_57[]="FileWrite";
 prog_char PROGMEM Cmd_58[]="FreeMem";
 prog_char PROGMEM Cmd_59[]="Gateway";
-prog_char PROGMEM Cmd_60[]="";//??? reserve
+prog_char PROGMEM Cmd_60[]="WaitFreeRX";
 prog_char PROGMEM Cmd_61[]="HTTP";
 prog_char PROGMEM Cmd_62[]="HTTPHost";
 prog_char PROGMEM Cmd_63[]="HWConfig";
@@ -349,7 +349,7 @@ prog_char PROGMEM Cmd_116[]="VariableSend";
 prog_char PROGMEM Cmd_117[]="VariableSetVariable";
 prog_char PROGMEM Cmd_118[]="VariableWiredAnalog";
 prog_char PROGMEM Cmd_119[]="VariableLog";
-prog_char PROGMEM Cmd_120[]="WaitFreeRX";
+prog_char PROGMEM Cmd_120[]="VariableToggle";
 prog_char PROGMEM Cmd_121[]="WildCard";
 prog_char PROGMEM Cmd_122[]="Wired";
 prog_char PROGMEM Cmd_123[]="WiredAnalog";
@@ -505,6 +505,7 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 // Definitie van de speciale hardware uitvoeringen van de Nodo.
 #define BIC_DEFAULT                  0                                          // Standaard Nodo zonder specifike hardware aansturing
 #define BIC_HWMESH_NES_V1X           1                                          // Nodo Ethernet Shield V1.x met Aurel tranceiver. Vereist speciale pulse op PIN_BSF_0 voor omschakelen tussen Rx en Tx.
+#define USER_VARIABLES_MAX          15                                          // aantal beschikbare gebruikersvariabelen voor de user.
 
 #if NODO_MEGA // Definities voor de Nodo-Mega variant.
 #define EVENT_QUEUE_MAX             16                                          // maximaal aantal plaatsen in de queue.
@@ -512,7 +513,6 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define INPUT_COMMAND_SIZE          80                                          // Maximaal aantal tekens waar een commando uit kan bestaan.
 #define TIMER_MAX                   15                                          // aantal beschikbare timers voor de user, gerekend vanaf 1
 #define ALARM_MAX                    8                                          // aantal alarmen voor de user
-#define USER_VARIABLES_MAX          15                                          // aantal beschikbare gebruikersvariabelen voor de user.
 #define PULSE_IRQ                    5                                          // IRQ verbonden aan de IR_RX_DATA pen 18 van de Mega
 #define PIN_BIC_0                   26                                          // Board Identification Code: bit-0
 #define PIN_BIC_1                   27                                          // Board Identification Code: bit-1
@@ -569,7 +569,6 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #else // als het voor de Nodo-Small variant is
 #define EVENT_QUEUE_MAX              8                                          // maximaal aantal plaatsen in de queue
 #define TIMER_MAX                    8                                          // aantal beschikbare timers voor de user, gerekend vanaf 1
-#define USER_VARIABLES_MAX           8                                          // aantal beschikbare gebruikersvariabelen voor de user.
 #define PULSE_IRQ                    1                                          // IRQ-1 verbonden aan de IR_RX_DATA pen 3 van de ATMega328 (Uno/Nano/Duemillanove)
 #define EEPROM_SIZE               1024                                          // Groote van het EEPROM geheugen.
 #define WIRED_PORTS                  4                                          // aantal WiredIn/WiredOut poorten

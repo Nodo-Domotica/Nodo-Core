@@ -408,7 +408,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
       Event->Par2=x-Event->Par1-1;
       break;
 
-  case CMD_WAITFREERF: 
+  case CMD_WAIT_FREE_RX: 
     Event->Par1=Settings.WaitFree;
     break;
 
