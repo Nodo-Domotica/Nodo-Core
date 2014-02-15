@@ -185,7 +185,7 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
      byte Par3=event->Par2>>8 & 0xff;		// Data to display
      byte Par4=event->Par2>>16 & 0xff;		// In case of var, variable number
 
-     if (event->=Par1 > 0 && event->Par1 <= PLUGIN_021_ROWS)
+     if (event->Par1 >= 0 && event->Par1 <= PLUGIN_021_ROWS)
        {
        #if NODO_MEGA
          char TempString[80];
