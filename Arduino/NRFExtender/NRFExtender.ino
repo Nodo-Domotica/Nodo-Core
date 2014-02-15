@@ -16,8 +16,8 @@
  \*************************************************************************************************************************/
 
 // NRF Extender
-// Prototype R009
-// 14-02-2014
+// Prototype R010
+// 15-02-2014
 
 // This version is "Nodo independent" but needs a small plugin!
 
@@ -41,10 +41,10 @@
 //                    (future I2C watchdog or other purposes)
 //                  bugfix for I2C_Received changed during NRFsend
 // R009 14-02-2014  bugfix, I2C_Received set to 0 after NRFsend leads to Sendto Failure
+// R010 15-02-2014  experimental I2C ack message to make Sendto <x>; Eventlistshow work
 
 #define NRF_RECEIVE_ADDRESS      16 // Default Radio address, range 1-31
-#define THIS_EXTENDER_UNIT       31 // Default Unit, range 1-31
-
+#define THIS_EXTENDER_UNIT      127 // Default Unit (I2C) address
 #define EXTENDER_VERSION          1
 
 #define COMMAND_MODE_STRING       "@command@"
@@ -139,9 +139,13 @@ void loop()
       if(command_mode)
         Serial.println("I2C -> NRF");
 
+      if(command_mode)
+        Serial.println(I2C_ReceiveBuffer[9]);
+
       if (I2C_Received <=NRF_PAYLOAD_SIZE-4)
       {
         NRF_send();
+        SendI2CAck();
       }
       else
         if(command_mode)
