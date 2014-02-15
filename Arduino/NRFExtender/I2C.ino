@@ -37,6 +37,30 @@ void SendI2C()
   WireNodo.endTransmission(true); // Release I2C bus
 }
 
+/**********************************************************************************************\
+ * Send ack on I2C bus. 
+ \*********************************************************************************************/
+void SendI2CAck()
+{
+  for(int y=1;y<=I2C_UNIT_MAX;y++)
+  {            
+    if(I2COnline[y]==true)
+    {
+      if(command_mode)
+        {
+          Serial.print("Send Ack to I2C address:");
+          Serial.println((int)y);
+        }
+      WireNodo.beginTransmission(I2C_START_ADDRESS+y-1);
+        WireNodo.write(1);
+        WireNodo.write(2);
+        WireNodo.write(3);
+      WireNodo.endTransmission(false); // transmit data, do not release I2C bus
+    }
+  }
+  WireNodo.endTransmission(true); // Release I2C bus
+}
+
 /*******************************************************************************************************\
  * Discover I2C peers
  \*******************************************************************************************************/
