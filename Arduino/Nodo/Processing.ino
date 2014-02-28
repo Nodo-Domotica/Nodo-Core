@@ -1,9 +1,3 @@
-
- /**********************************************************************************************\
- * Voert alle relevante acties in de eventlist uit die horen bij het binnengekomen event
- * Doorlopen van een volledig gevulde eventlist duurt ongeveer 15ms inclusief printen naar serial
- * maar exclusief verwerking n.a.v. een 'hit' in de eventlist
- \*********************************************************************************************/
 void ProcessingStatus(boolean Processing)
   {
   static boolean PreviousProcessing=false;
@@ -15,11 +9,6 @@ void ProcessingStatus(boolean Processing)
       {
       Serial.write(XOFF);
       Led(RED);
-
-      // #if NODO_MEGA
-      // if(FileWriteMode!=0)
-      // return 0;
-      // #endif
       }
     else
       {

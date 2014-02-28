@@ -1,4 +1,4 @@
-#define NODO_BUILD                       735                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       736                                    // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                 8                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1                                    // Unit nummer van deze Nodo
@@ -398,7 +398,7 @@ Cmd_140,Cmd_141,Cmd_142,Cmd_143,Cmd_144,Cmd_145};
 // Message max. 40 pos       "1234567890123456789012345678901234567890"
 prog_char PROGMEM Msg_0[]  = "Ok.";
 prog_char PROGMEM Msg_1[]  = "Unknown command.";
-prog_char PROGMEM Msg_2[]  = "Invalid parameter..";
+prog_char PROGMEM Msg_2[]  = "Invalid parameter in command.";
 prog_char PROGMEM Msg_3[]  = "Unable to open.";
 prog_char PROGMEM Msg_4[]  = "Nesting error.";
 prog_char PROGMEM Msg_5[]  = "Reading/writing eventlist failed.";

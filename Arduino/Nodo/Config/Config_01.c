@@ -31,3 +31,6 @@
 // RGB-Led aansturing
 #define PLUGIN_023
 #define PLUGIN_023_CORE
+
+#define PLUGIN_025
+#define PLUGIN_025_CORE
