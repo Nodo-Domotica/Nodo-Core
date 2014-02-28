@@ -601,44 +601,52 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       }
 
     case CMD_VARIABLE_GET: // VariableReceive <Variabelenummer_Bestemming>, <unit>, <Variabelenummer_Bron_Andere_Nodo>
-      if(EventToExecute->Par1>0 && EventToExecute->Par1<=USER_VARIABLES_MAX) // in de MMI al afgevangen, maar deze beschermt tegen vastlopers i.g.v. een foutief ontvangen event
+      y=0; // retries
+      error=MESSAGE_SENDTO_ERROR;
+      do
         {
-        error=MESSAGE_SENDTO_ERROR;
-        y=0; // retries
-        do
-          {
-          // <VariabeleNummerBestemming> zit in Par1
-          // <Unit> zit in bit 0..7 van Par2
-          // <VariabeleNummerBron> zit in bit bit 15..8 van Par2
-          //
-          // Verzend naar de andere Nodo een verzoek om de variabele te verzenden.
-          ClearEvent(&TempEvent);
-          TempEvent.DestinationUnit=EventToExecute->Par2&0xff;
-          TempEvent.Type=NODO_TYPE_COMMAND;
-          TempEvent.Command=CMD_VARIABLE_SEND;
-          TempEvent.Port=VALUE_ALL;
-          TempEvent.Par1=(EventToExecute->Par2>>8)&0xff;                        // VariabeleBron
-          TempEvent.Par2=NodoOnline(EventToExecute->Par2&0xff,0);               // Poort waaronder de Slave Nodo bekend is.
-          SendEvent(&TempEvent,false,y==0,Settings.WaitFree==VALUE_ON);
-          
-          // Wacht tot event voorbij komt. De Wait(); funktie wacht op type, command en unit.
-          ClearEvent(&TempEvent);
-          TempEvent.SourceUnit          = EventToExecute->Par2&0xff;
-          TempEvent.Command             = EVENT_VARIABLE;
-          TempEvent.Type                = NODO_TYPE_EVENT;
+        // <VariabeleNummerBestemming> zit in Par1
+        // <Unit> zit in bit 0..7 van Par2
+        // <VariabeleNummerBron> zit in bit bit 15..8 van Par2
+        //
+        // Verzend naar de andere Nodo een verzoek om de variabele te verzenden.
+        ClearEvent(&TempEvent);
+        TempEvent.DestinationUnit=EventToExecute->Par2&0xff;
+        TempEvent.Type=NODO_TYPE_COMMAND;
+        TempEvent.Command=CMD_VARIABLE_SEND;
+        TempEvent.Port=VALUE_ALL;
+        TempEvent.Par1=(EventToExecute->Par2>>8)&0xff;                          // VariabeleBron
+        TempEvent.Par2=NodoOnline(EventToExecute->Par2&0xff,0);                 // Poort waaronder de Slave Nodo bekend is.
+        TempEvent.Flags=TRANSMISSION_QUEUE;
 
-          if(Wait(3,false,&TempEvent,false))
-            {
-            TempEvent.Par1            = EventToExecute->Par1;  
-            TempEvent.Type            = NODO_TYPE_COMMAND;
+        if(TempEvent.Par2==0)                                                   // Als unitnummer niet bekend is
+          TempEvent.Par2=VALUE_ALL;
+
+        if(TempEvent.Par2==VALUE_SOURCE_SYSTEM)
+          {
+          error=MESSAGE_INVALID_PARAMETER;
+          break;
+          }
+
+        SendEvent(&TempEvent,false,y==0,Settings.WaitFree==VALUE_ON);
+        
+        // Wacht tot event voorbij komt. De Wait(); funktie wacht op type, command en unit.
+        ClearEvent(&TempEvent);
+        TempEvent.SourceUnit          = EventToExecute->Par2&0xff;
+        TempEvent.Command             = EVENT_VARIABLE;
+        TempEvent.Type                = NODO_TYPE_EVENT;
+
+        if(Wait(3,false,&TempEvent,false))
+          {
+          TempEvent.Par1            = EventToExecute->Par1;  
+          TempEvent.Type            = NODO_TYPE_COMMAND;
             TempEvent.Command         = CMD_VARIABLE_SET;
-            TempEvent.Direction       = VALUE_DIRECTION_INPUT;
-            if(QueuePosition)QueuePosition--;                                   // binnengekomen event is eveneens op de queue geplaatst. deze mag weg.
-            ProcessEvent(&TempEvent);                                           // verwerk binnengekomen event.
-            error=0;
-            }
-          }while(error && ++y<5);
-        }
+          TempEvent.Direction       = VALUE_DIRECTION_INPUT;
+          if(QueuePosition)QueuePosition--;                                   // binnengekomen event is eveneens op de queue geplaatst. deze mag weg.
+          ProcessEvent(&TempEvent);                                           // verwerk binnengekomen event.
+          error=0;
+          }
+        }while(error && ++y<3);
       break;        
 
     case CMD_PORT_INPUT:

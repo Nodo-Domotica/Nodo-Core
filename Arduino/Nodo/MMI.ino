@@ -71,7 +71,7 @@ int ExecuteLine(char *Line, byte Port)
         // Enkele comando's kennen een afwijkende behandeling. Dit zijn commando's die niet uitgevoerd
         // kunnen worden door ExecuteCommand() omdat we in de Nodo geen strings kunnen doorgeven in de
         // eventstruct, Deze commando's separaat parsen en direct hier uitvoeren.
-        if(error)
+        if(error==MESSAGE_UNKNOWN_COMMAND)
           {
           error=0;                                                              // nieuwe poging.
 
@@ -1482,7 +1482,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
               }
             }
           }
-        }  
+        }
        break;
 
     case CMD_BREAK_ON_VAR_EQU:
@@ -1673,7 +1673,6 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
   free(TmpStr1);
   return error;
   }
-
 
 #else
 

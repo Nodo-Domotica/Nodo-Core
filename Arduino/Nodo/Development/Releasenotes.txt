@@ -64,9 +64,12 @@ R727:
 - Commando [WaitFreeNodo <on|off>] toegevoegd. Deze zorgt er voor dat een Nodo's elkaars verwerkingstijd respecteren alvorens events te verzenden.
 
 
-R735
+R736:
 - Toegevoegd commando [VariableToggle <VariabeleNummer>]
--
+- Bug: In enkele gevallen kwam de melding 'Unknown Command'  daar waar dit 'Invalid parameter' moest zijn.
+- Issue 695:	Zomertijd en wintertijd omschakeling niet correct.
+- Issue 857:	VariableGet parameter checking.
+
 
 ToDo:
  

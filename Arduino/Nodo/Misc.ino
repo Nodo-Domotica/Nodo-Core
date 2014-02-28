@@ -110,7 +110,6 @@ boolean Eventlist_Read(int address, struct NodoEventStruct *Event, struct NodoEv
  * Deze funktie verstuurt een message. Aanroep van deze funktie in de code daar waar de foutmelding 
  * is opgetreden, zodat er geen foutcodes door de code heen getransporteerd hoeven te worden.
  * 
- * 
  \*********************************************************************************************/
 void RaiseMessage(byte MessageCode, unsigned long Option)
   {
@@ -1919,11 +1918,11 @@ void ClockRead(void)
 
   if(Time.DaylightSaving!=DLS  && x!=y)  // Als DaylightSaving status volgens de RTC niet overeenkomt met de DaylightSaving zoals berekend uit de datum EN de RTC is vandaag nog niet verzet...
     {  
-    if(DLS)// als het zomertijd is en wintertijd wordt
+    if(!DLS)// als het zomertijd is en wintertijd wordt
       Time.Hour=Time.Hour==0?23:Time.Hour-1;// ...dan de klok een uur terug.
     else // als het wintertijd is en zomertijd wordt
       Time.Hour=Time.Hour<23?Time.Hour+1:0; //... dan klok uur vooruit.
-
+              
     Time.DaylightSavingSetMonth=Time.Month;
     Time.DaylightSavingSetDate=Time.Date;
     Time.DaylightSaving=DLS;
