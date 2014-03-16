@@ -687,7 +687,7 @@ void ExecuteIP(void)
   char *InputBuffer_IP = (char*) malloc(IP_BUFFER_SIZE);
   char *Event          = (char*) malloc(INPUT_LINE_SIZE);
   char *TmpStr1        = (char*) malloc(INPUT_LINE_SIZE);
-  char *TmpStr2        = (char*) malloc(40); 
+  char *TmpStr2        = (char*) malloc(40); // 40 is genoeg want er hoeft alleen een MD5 string in 
 
   Event[0]=0; // maak de string leeg.
 
@@ -714,7 +714,7 @@ void ExecuteIP(void)
           {
           InByte=IPClient.read();
 
-          if(isprint(InByte) && InByteCounter<IP_BUFFER_SIZE)
+          if(isprint(InByte) && InByteCounter<(IP_BUFFER_SIZE-1))
             {
             InputBuffer_IP[InByteCounter++]=InByte;
             }
