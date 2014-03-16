@@ -550,7 +550,7 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
   if(Event->Type==NODO_TYPE_SYSTEM || Event->Type==0)
     return;
   
-  char* StringToPrint=(char*)malloc(80);  //??? 80
+  char* StringToPrint=(char*)malloc(128);
   char* TmpStr=(char*)malloc(INPUT_LINE_SIZE);
 
   StringToPrint[0]=0; // als start een lege string
@@ -657,7 +657,7 @@ char* DateTimeString(void)
 prog_char PROGMEM Text_welcome[] = "Nodo-Mega V3.6.9 (Beta), Product=SWACNC-MEGA-R%03d, Home=%d, ThisUnit=%d";
 void PrintWelcome(void)
   {
-  char *TempString=(char*)malloc(80);
+  char *TempString=(char*)malloc(128);
 
   // Print Welkomsttekst
   PrintString("",VALUE_ALL);
