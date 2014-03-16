@@ -8,16 +8,14 @@
 * Getest op een I2C/TWI LCD1602 van DFRobot en een Funduino I2C LCD2004
 * Auteur             : Martinus van den Broek
 * Support            : www.nodo-domotica.nl
-* Datum              : 13 Feb 2014
+* Datum              : 16 Maart 2014
 * Versie             : 12-2013 versie 1.2 Modificatie WireNodo library (Hans Man)
 *                      02-2014 versie 1.3 Support 4x20 display en uitbreiding functionaliteit met Par3/Par4 (Martinus)
 *                      02-2014 versie 1.4 Support PortInput, LCDWrite 0,0 clears screen (Martinus)
+*                      03-2014 versie 1.5 Support Backlight on/off (Martinus)
 * Nodo productnummer : 
 * Compatibiliteit    : Vanaf Nodo build nummer 707
 * Syntax             : "LCDWrite <row>, <column>, <command>, <option>
-*
-*                       LCDWrite <row>,0		clear entire row
-*                       LCDWrite 0,0			clear entire screen
 *
 *                       Command:	Message		<option> = ID in plugin label definities
 *					Variable	<option> = Variabele nummer
@@ -25,6 +23,12 @@
 *					IP		toont IP adres (alleen Mega)
 *					PortInput	toont input port voor http verkeer (alleen Mega)
 *					Event		toont laatste event (alleen Mega)
+*
+*                       Special commands:
+*					<x>,<0>, Reset	wist regel x
+*					<0>,<0>, Reset	wist scherm
+*					<0>,<0>, On	backlight aan
+*					<0>,<0>, Off	backlight uit
 ***********************************************************************************************
 * Technische beschrijving:
 *
@@ -184,6 +188,7 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
      byte Par2=event->Par2 & 0xff;		// Column
      byte Par3=event->Par2>>8 & 0xff;		// Data to display
      byte Par4=event->Par2>>16 & 0xff;		// In case of var, variable number
+     boolean Print = true;
 
      if (event->Par1 >= 0 && event->Par1 <= PLUGIN_021_ROWS)
        {
@@ -196,10 +201,32 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
 
        switch (Par3)
          {
+           case 0:
+           case CMD_RESET:
+             if (event->Par1 == 0)
+               LCD_I2C_clear();
+             else
+               LCD_I2C_printline(event->Par1-1,0, "");
+             Print=false;
+             break;
+
+           case VALUE_ON:
+             _backlightval=LCD_BACKLIGHT;
+             LCD_I2C_expanderWrite(0);
+             Print=false;
+             break;
+
+           case VALUE_OFF:
+             _backlightval=LCD_NOBACKLIGHT;
+             LCD_I2C_expanderWrite(0);
+             Print=false;
+             break;
+
            case EVENT_MESSAGE:
              if ((Par4 > 0) && (Par4 <= LCDI2C_MSG_MAX))
               strcpy_P(TempString,(char*)pgm_read_word(&(LCDText_tabel[Par4-1])));
              break;
+
            case EVENT_VARIABLE:
              if (Par4 > 0 && Par4 <16)
                {
@@ -210,6 +237,7 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
                  sprintf(TempString,"%d.%01d", d1,d2);
                }
              break;
+
            #if CLOCK
            case VALUE_SOURCE_CLOCK:	// Display date/time
              sprintf(TempString,"%02d-%02d-%04d %02d:%02d",Time.Date,Time.Month,Time.Year, Time.Hour, Time.Minutes);
@@ -217,31 +245,28 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
            #endif
 
            #if NODO_MEGA
+           #ifdef ethernetserver_h
            case CMD_NODO_IP:	// Display IP on Mega
-             sprintf(TempString,"%u.%u.%u.%u", EthernetNodo.localIP()[0],EthernetNodo.localIP()[1],EthernetNodo.localIP()[2],EthernetNodo.localIP()[3]);
-             break;
+           sprintf(TempString,"%u.%u.%u.%u", EthernetNodo.localIP()[0],EthernetNodo.localIP()[1],EthernetNodo.localIP()[2],EthernetNodo.localIP()[3]);
+           break;
+
            case CMD_PORT_INPUT:	// Display Port on Mega
              sprintf(TempString,"%s",int2str(Settings.PortInput));
              break;
+           #endif
            case VALUE_RECEIVED_EVENT:	// Display event on Mega
              Event2str(&LastReceived,TempString);
              break;
            #endif
-         }
 
-       // clear or print line
-       if (Par2 == 0 && Par3 == 0 && Par4 == 0)
-         {
-           if (event->Par1 == 0)
-             LCD_I2C_clear();
-           else
-             LCD_I2C_printline(event->Par1-1,0, "");
-         }
-       else
-         LCD_I2C_printline(event->Par1-1, Par2-1, TempString);
+         }  // case
 
-       success=true;
+         if (Print)
+           LCD_I2C_printline(event->Par1-1, Par2-1, TempString);
+
+         success=true;
        }
+
      break;
      }
 #endif // PLUGIN_021_CORE
