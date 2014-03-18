@@ -60,7 +60,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   // Verstuur signaal als HTTP-event.
   if(bitRead(HW_Config,HW_ETHERNET))// Als Ethernet shield aanwezig.
     {
-    if(Settings.TransmitIP==VALUE_ON && (Port==VALUE_SOURCE_HTTP || Port==VALUE_ALL) && Settings.PortOutput!=0 )
+    if((Settings.TransmitHTTP==VALUE_ALL || Settings.TransmitHTTP==VALUE_ON) && (Port==VALUE_SOURCE_HTTP || Port==VALUE_ALL) && Settings.PortOutput!=0 )
       {
       SendHTTPEvent(ES);
       ES->Port=VALUE_SOURCE_HTTP;
@@ -250,7 +250,7 @@ boolean EthernetInit(void)
     TerminalServer=EthernetServer(TERMINAL_PORT);
     TerminalServer.begin(); 
 
-    if(Settings.TransmitIP==VALUE_ON && Settings.HTTPRequest[0]!=0)
+    if(Settings.TransmitHTTP!=VALUE_OFF && Settings.HTTPRequest[0]!=0)
       {
       // Haal IP adres op van de Host waar de nodo de HTTP events naar verzendt zodat niet iedere transactie een DNS-resolve plaats hoeft te vinden.
       // Haal uit het HTTP request URL de Host. Zoek naar de eerste slash in de opgegeven HTTP-Host adres
@@ -339,7 +339,7 @@ byte SendHTTPEvent(struct NodoEventStruct *Event)
   {
   byte x;
 
-  if(Settings.TransmitIP!=VALUE_ON || Settings.HTTPRequest[0]==0)
+  if(Settings.TransmitHTTP==VALUE_OFF || Settings.HTTPRequest[0]==0)
     return false;
 
   char *HttpRequest=(char*)malloc(INPUT_LINE_SIZE);
@@ -384,7 +384,7 @@ boolean SendHTTPCookie(void)
 {
   boolean Status;
 
-  if(Settings.TransmitIP!=VALUE_ON)
+  if(Settings.TransmitHTTP==VALUE_OFF)
     return false;
 
   char *HttpRequest=(char*)malloc(INPUT_LINE_SIZE);
@@ -404,7 +404,7 @@ boolean SendHTTPCookie(void)
 
 boolean SendHTTPRequest(char* Request)
   {
-  if(Settings.TransmitIP!=VALUE_ON)
+  if(Settings.TransmitHTTP==VALUE_OFF)
     return false;
 
   int InByteCounter,x,y,SlashPos;
@@ -572,7 +572,16 @@ boolean SendHTTPRequest(char* Request)
             InByteCounter=0;          
             }
           }
-        if(State==2 && ContentLength==0)                                        // Als er geen content meer wordt verwacht in de bodytext, dan gereed.
+
+
+        // ??? 
+        // @Martin:
+        //
+        // Als je de false uit onderstaande if() verwijderd dan zal de Nodo de sessie afbreken als het aantal
+        // binnengekomen tekens overeen komt met de content-length. Nu nog even zo opgelost omdat de WebApp nog niet de 
+        // content-length verstuurd bij versturen van een file naar de Nodo
+        //
+        if(false && State==2 && ContentLength==0)                                        // Als er geen content meer wordt verwacht in de bodytext, dan gereed.
           {
           TimeoutTimer=0;
           }                
@@ -602,10 +611,10 @@ boolean SendHTTPRequest(char* Request)
 
   if(!State)
     {
-    x=Settings.TransmitIP;                                                      // HTTP tijdelijk uitzetten want die deed het immers niet.
-    Settings.TransmitIP=VALUE_OFF;                                              // HTTP tijdelijk uitzetten want die deed het immers niet.
+    x=Settings.TransmitHTTP;                                                      // HTTP tijdelijk uitzetten want die deed het immers niet.
+    Settings.TransmitHTTP=VALUE_OFF;                                              // HTTP tijdelijk uitzetten want die deed het immers niet.
     RaiseMessage(MESSAGE_TCPIP_FAILED,0);
-    Settings.TransmitIP=x;                                                      // HTTP weer terugzetten naar oorspronkelijke waarde.
+    Settings.TransmitHTTP=x;                                                      // HTTP weer terugzetten naar oorspronkelijke waarde.
     }
 
   return State;

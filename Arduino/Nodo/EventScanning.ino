@@ -82,7 +82,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
 
     if(Fetched)
       {
-      Led(BLUE);
+//      Led(BLUE);
       HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS+millis();
       SignalHash=(Event->Command<<24 | Event->Type<<16 | Event->Par1<<8) ^ Event->Par2;
       Event->Port=Fetched;
@@ -94,7 +94,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       // Er zijn een aantal situaties die moeten leiden te een event. Echter er zijn er ook die (nog) niet mogen leiden 
       // tot een event en waar het binnengekomen signaal moet worden onderdrukt.
       
-      // 1. Het is een (niet reperterend) Nodo signaal of is de herkomst I2C => Alle gevallen doorlaten
+      // 1. Het is een (niet repeterend) Nodo signaal of is de herkomst I2C => Alle gevallen doorlaten
       if(Event->Type==NODO_TYPE_EVENT || Event->Type==NODO_TYPE_COMMAND || Event->Type==NODO_TYPE_SYSTEM || Event->Port==VALUE_SOURCE_I2C)
         Fetched=1;      
 
