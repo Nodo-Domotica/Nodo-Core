@@ -132,7 +132,15 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     {
     #if NODO_MEGA
     PrintEvent(Event, VALUE_ALL);
+    if(Settings.TransmitHTTP==VALUE_ALL)
+      {
+      TempEvent=*Event;
+      TempEvent.Port=VALUE_SOURCE_HTTP;
+      SendEvent(&TempEvent,false,true,false);
+      }
     #endif
+
+
     
     // ############# Verwerk event ################  
     if(Event->Type==NODO_TYPE_COMMAND)

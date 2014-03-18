@@ -422,7 +422,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
 
         #if NODO_MEGA
         case VALUE_SOURCE_HTTP:
-          Settings.TransmitIP=EventToExecute->Par2;        
+          Settings.TransmitHTTP=EventToExecute->Par2;        
           break;       
         #endif
         }

@@ -1,4 +1,4 @@
-#define NODO_BUILD                       739                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       740                                    // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                 8                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1                                    // Unit nummer van deze Nodo
@@ -644,7 +644,7 @@ struct SettingsStruct
   #if NODO_MEGA
   unsigned long Alarm[ALARM_MAX];                                               // Instelbaar alarm
   byte    Debug;                                                                // Weergeven van extra gegevens t.b.v. beter inzicht verloop van de verwerking
-  byte    TransmitIP;                                                           // Definitie van het gebruik van HTTP-communicatie via de IP-poort: [Off] of [On]
+  byte    TransmitHTTP;                                                           // Definitie van het gebruik van HTTP-communicatie via de IP-poort: [Off | On | All]
   char    Password[26];                                                         // String met wachtwoord.
   char    ID[10];                                                               // ID waar de Nodo uniek mee geÃ¯dentificeerd kan worden in een netwerk
   char    HTTPRequest[80];                                                      // HTTP request;
@@ -909,7 +909,7 @@ void setup()
       {
       // als het verkrijgen van een ethernet adres gelukt is en de servers draaien, zet dan de vlag dat ethernet present is
       // Als ethernet enabled en beveiligde modus, dan direct een Cookie sturen, ander worden eerste events niet opgepikt door de WebApp
-      if(Settings.Password[0]!=0 && Settings.TransmitIP==VALUE_ON && bitRead(HW_Config,HW_ETHERNET))
+      if(Settings.Password[0]!=0 && Settings.TransmitHTTP!=VALUE_OFF && bitRead(HW_Config,HW_ETHERNET))
         SendHTTPCookie(); // Verzend een nieuw cookie
       }
     else
@@ -1330,7 +1330,7 @@ void loop()
         }
         
       // Timer voor verzenden van Cookie naar de WebApp/Server
-      if(Settings.Password[0]!=0 && Settings.TransmitIP==VALUE_ON)
+      if(Settings.Password[0]!=0 && Settings.TransmitHTTP!=VALUE_OFF)
         {
         if(CookieTimer>0)
           CookieTimer--;

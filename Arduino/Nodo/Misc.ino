@@ -439,7 +439,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
   
       #if NODO_MEGA
       case VALUE_SOURCE_HTTP:
-        Event->Par2=Settings.TransmitIP;
+        Event->Par2=Settings.TransmitHTTP;
         break;
        #endif 
       default:
@@ -659,7 +659,7 @@ void ResetFactory(void)
 #endif
 
 #if NODO_MEGA
-  Settings.TransmitIP                 = VALUE_OFF;
+  Settings.TransmitHTTP               = VALUE_OFF;
   Settings.Debug                      = VALUE_OFF;
   Settings.HTTPRequest[0]             = 0; // string van het HTTP adres leeg maken
   Settings.Client_IP[0]               = 0;
