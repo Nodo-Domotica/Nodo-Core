@@ -70,8 +70,12 @@ R736:
 - Issue 695:	Zomertijd en wintertijd omschakeling niet correct.
 - Issue 857:	VariableGet parameter checking.
 
+R738:
+- Issue 845:	R698 Plugin-005 foutmelding en hangen Mega
 
+R740:
+- Setting [Output HTTP,All] zorgt er voor dat ieder event/commando wordt doorgegeven naar HTTP (WebApp).
+
+      
 ToDo:
- 
- 
- 
+-
