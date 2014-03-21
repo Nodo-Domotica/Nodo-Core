@@ -45,7 +45,7 @@
 #define NewKAKU_RawSignalLength      132
 #define NewKAKUdim_RawSignalLength   148
 #define NewKAKU_1T                   275        // us
-#define NewKAKU_mT                   500        // us, midden tussen 1T en 4T 
+#define NewKAKU_mT                   650        // us, ergens ongeveer midden tussen 1T en 4T 
 #define NewKAKU_4T                  1100        // us
 #define NewKAKU_8T                  2200        // us, Tijd van de space na de startbit
 
