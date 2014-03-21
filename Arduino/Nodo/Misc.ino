@@ -123,11 +123,12 @@ void RaiseMessage(byte MessageCode, unsigned long Option)
     TempEvent.Par2      = Option;
     TempEvent.Direction = VALUE_DIRECTION_INPUT;
     TempEvent.Port      = VALUE_SOURCE_SYSTEM;
+
     #if NODO_MEGA
     PrintEvent(&TempEvent, VALUE_ALL);
     #endif
   
-    switch(MessageCode)                                                         // sommige meldingen mogen niet worden verzonden.
+    switch(MessageCode)                                                         // sommige meldingen mogen niet worden verzonden als event
       {
       case MESSAGE_BREAK:                                                       // normale break
       case MESSAGE_VERSION_ERROR:                                               // gaat rondzingen van events tussen Nodo's opleveren.

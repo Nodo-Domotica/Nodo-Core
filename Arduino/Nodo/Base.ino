@@ -196,7 +196,7 @@ byte dummy=1;                                                                   
 #define CMD_ALIAS_SHOW                  138
 #define CMD_ALIAS_LIST                  139
 #define CMD_POWERSAVE                   140
-#define CMD_IP_SEND                     141
+#define CMD_RES141                      141
 #define CMD_STOP                        142
 #define CMD_SLEEP                       143   
 #define VALUE_FAST                      144
@@ -370,7 +370,7 @@ prog_char PROGMEM Cmd_137[]="AliasErase";
 prog_char PROGMEM Cmd_138[]="AliasShow";
 prog_char PROGMEM Cmd_139[]="AliasList";
 prog_char PROGMEM Cmd_140[]="PowerSave";
-prog_char PROGMEM Cmd_141[]="IPSend";
+prog_char PROGMEM Cmd_141[]="";// future use
 prog_char PROGMEM Cmd_142[]="Stop";
 prog_char PROGMEM Cmd_143[]="Sleep";
 prog_char PROGMEM Cmd_144[]="Fast";
@@ -719,7 +719,7 @@ boolean ExecuteCommand(NodoEventStruct *EventToExecute);                        
 volatile unsigned long PulseCount=0L;                                           // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met Ã©Ã©n verhoogd
 volatile unsigned long PulseTime=0L;                                            // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
 unsigned long HoldTransmission=0L;                                              // wachten op dit tijdstip in millis() alvorens event te verzenden.
-unsigned long BusyNodo=0;                                                                // ???
+unsigned long BusyNodo=0;                                                       // In deze variabele wordt per bitpositie aangegeven of een Nodo unitnummer busy is.
 boolean Transmission_NodoOnly=false;                                            // Als deze vlag staat, dan worden er uitsluitend Nodo-eigen signalen ontvangen.  
 byte QueuePosition=0;
 unsigned long UserTimer[TIMER_MAX];                                             // Timers voor de gebruiker.
@@ -742,7 +742,7 @@ boolean WiredOutputStatus[WIRED_PORTS];                                         
 #if NODO_MEGA
 byte  Transmission_SendToUnit=0;                                                // Unitnummer waar de events naar toe gestuurd worden. 0=alle.
 byte  Transmission_SendToAll=0;                                                 // Waarde die aangeeft of het SendTo permanent staat ingeschakeld. 0=uit, in andere gevallen het unitnummer.
-boolean Transmission_SendToFast=0;                                              // Vlag die aangeeft of de SendTo permanent staat ingesteld of eenmalig (true/false)
+boolean Transmission_SendToFast=false;                                          // Vlag die aangeeft of de SendTo via de snelle modus (zonder handshaking) plaats moet vinden.
 byte AlarmPrevious[ALARM_MAX];                                                  // Bevat laatste afgelopen alarm. Ter voorkoming dat alarmen herhaald aflopen.
 byte BIC=0;                                                                     // Board Identification Code: identificeert de hardware uitvoering van de Nodo
 uint8_t MD5HashCode[16];                                                        // tabel voor berekenen van MD5 hash codes.

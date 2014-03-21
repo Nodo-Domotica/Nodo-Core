@@ -10,7 +10,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
   int w,x,y,z;
   byte error=0;
   
-  struct NodoEventStruct TempEvent,TempEvent2;//???=*EventToExecute;
+  struct NodoEventStruct TempEvent,TempEvent2;
   ClearEvent(&TempEvent);
   ClearEvent(&TempEvent2);
   
