@@ -132,7 +132,22 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     {
     #if NODO_MEGA
     PrintEvent(Event, VALUE_ALL);
-    if(Settings.TransmitHTTP==VALUE_ALL)
+    
+    // Enkele commando's moet de WebApp terug ontvangen omdat anders statussen niet correct zijn.
+    // Dit is een tijdelijke oplossing.
+    x=false;
+    if(Settings.TransmitHTTP==VALUE_ON && Event->Type==NODO_TYPE_COMMAND)
+      {
+      switch(Event->Command)
+        {
+        case CMD_ALARM_SET:
+        case CMD_WIRED_OUT:
+          x=true;
+        }
+      }
+      
+
+    if(Settings.TransmitHTTP==VALUE_ALL || x)
       {
       TempEvent=*Event;
       TempEvent.Port=VALUE_SOURCE_HTTP;

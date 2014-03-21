@@ -372,22 +372,6 @@ int ExecuteLine(char *Line, byte Port)
               else
                 error=MESSAGE_INVALID_PARAMETER;
               break;
-        
-            #ifdef ethernetserver_h
-            case CMD_IP_SEND:  //??? experimenteel
-              if(GetArgv(Line,TmpStr2,2))// URL
-                {
-                if(y=GetArgv(Line,TmpStr1,3))// Poort
-                  {
-                  x=str2int(TmpStr1);// Poort
-                  error=IPSend(TmpStr2,x,Line + y);
-                  }                  
-                LinePos=LineLength+1; // ga direct naar einde van de regel.
-                }
-              else
-                error=MESSAGE_INVALID_PARAMETER;
-              break;
-            #endif
             
             case CMD_FILE_WRITE_LINE:
               if(GetArgv(Command,TmpStr1,2) && strlen(TmpStr1)<=8)

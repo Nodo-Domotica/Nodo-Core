@@ -573,15 +573,7 @@ boolean SendHTTPRequest(char* Request)
             }
           }
 
-
-        // ??? 
-        // @Martin:
-        //
-        // Als je de false uit onderstaande if() verwijderd dan zal de Nodo de sessie afbreken als het aantal
-        // binnengekomen tekens overeen komt met de content-length. Nu nog even zo opgelost omdat de WebApp nog niet de 
-        // content-length verstuurd bij versturen van een file naar de Nodo
-        //
-        if(false && State==2 && ContentLength==0)                                        // Als er geen content meer wordt verwacht in de bodytext, dan gereed.
+        if(State==2 && ContentLength==0)                                        // Als er geen content meer wordt verwacht in de bodytext, dan gereed.
           {
           TimeoutTimer=0;
           }                

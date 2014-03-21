@@ -106,8 +106,6 @@ byte FileWriteLine(char* Path, char* Filename, char* Extention, char *Line, bool
     File LogFile = SD.open(PathFile(Path, Filename, Extention), FILE_WRITE);
     if(LogFile)
       {
-      //??? vervangen of heeft het cons. voor binnenhalen BodyTexk etc. ? ==> LogFile.write((uint8_t*)Line,strlen(Line));
-      
       for(int x=0;x<strlen(Line);x++)
         if(isprint(Line[x]))
           LogFile.write(Line[x]);
@@ -225,10 +223,8 @@ byte FileExecute(char* Path, char* Filename, char* Extention, boolean ContinueOn
   {
   int x,y;
   byte error=0;
-  static byte FileExecuteNesting=0;// voorkom nesting van fileexecute      
+  static byte FileExecuteNesting=0;                                             // ter voorkoming nesting van fileexecute      
   char *TmpStr=(char*)malloc(INPUT_LINE_SIZE);
-
-  // Serial.print("Fileexecute=");Serial.println(PathFile(Path,Filename,Extention));
 
   if(++FileExecuteNesting>3)
     {
@@ -278,6 +274,13 @@ byte FileExecute(char* Path, char* Filename, char* Extention, boolean ContinueOn
   SelectSDCard(false);
 
   FileExecuteNesting--;
+
+  if(error)                                                                     // Als een error tijdens uitvoer script, dan moet een eventuele SendTo worden uitgezet.
+    {
+    Transmission_SendToUnit=0;                                                  // Unitnummer waar de events naar toe gestuurd worden. 0=alle.
+    Transmission_SendToAll=0;                                                   // Waarde die aangeeft of het SendTo permanent staat ingeschakeld. 0=uit, in andere gevallen het unitnummer.
+    }
+    
   return error;
   }    
 

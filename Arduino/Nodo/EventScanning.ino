@@ -82,7 +82,6 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
 
     if(Fetched)
       {
-//      Led(BLUE);
       HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS+millis();
       SignalHash=(Event->Command<<24 | Event->Type<<16 | Event->Par1<<8) ^ Event->Par2;
       Event->Port=Fetched;
