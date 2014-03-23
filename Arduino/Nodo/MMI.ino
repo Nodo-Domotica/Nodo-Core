@@ -63,7 +63,6 @@ int ExecuteLine(char *Line, byte Port)
           error=MESSAGE_INVALID_PARAMETER;
 
         Alias(Command,true);                                                    // check of ingevoerde commando een alias is. Is dit het geval, dan wordt Command vervangen door de alias.
-        //  ??? Niet als het een standaard Nodo commando is. Nog inbouwen.
 
         error=Str2Event(Command, &EventToExecute);                              // Commando's in tekst format moeten worden omgezet naar een Nodo event.
         EventToExecute.Port=Port;
@@ -93,7 +92,7 @@ int ExecuteLine(char *Line, byte Port)
               EventToExecute.Par2=str2int(TmpStr1);
             }        
           x=EventToExecute.Command;
-          EventToExecute.Command=0;//??? toegevoegd vanuit de werking van Sendto. Invloed op andere MEGA comando's?          
+          EventToExecute.Command=0;                                             // Toegevoegd voor de werking van Sendto.          
 
           switch(x)
             {
@@ -208,7 +207,7 @@ int ExecuteLine(char *Line, byte Port)
               }  
             
             case CMD_FILE_ERASE:      
-              if(GetArgv(Command,TmpStr1,2))                                    // ??? alles wissen nog inbouwen
+              if(GetArgv(Command,TmpStr1,2))
                 FileErase("",TmpStr1,"DAT");
               break;
         
@@ -237,7 +236,7 @@ int ExecuteLine(char *Line, byte Port)
               break;
             
             case CMD_RAWSIGNAL_ERASE:      
-              if(GetArgv(Command,TmpStr1,2))                                    // ??? alles wissen nog inbouwen
+              if(GetArgv(Command,TmpStr1,2))
                 {
                 if(TmpStr1[0]!='*')
                   x=2;
@@ -439,7 +438,7 @@ int ExecuteLine(char *Line, byte Port)
               if(error)
                 {
                 strcpy(TmpStr2,Command);
-                strcat(TmpStr2,"???");
+                strcat(TmpStr2,"?");
                 PrintString(TmpStr2,VALUE_ALL);
                 }
               }                          
@@ -459,13 +458,13 @@ int ExecuteLine(char *Line, byte Port)
               {
               EventToExecute.Port=Port;
               EventToExecute.Direction=VALUE_DIRECTION_INPUT;
-              error=ProcessEvent(&EventToExecute);  //??? ext of niet
+              error=ProcessEvent(&EventToExecute);  
               }
             else
               {
-              if(EventToExecute.Command)          // geen lege events in de queue plaatsen
+              if(EventToExecute.Command)                                        // geen lege events in de queue plaatsen
                 {
-                QueueAdd(&EventToExecute);        // Plaats in queue voor latere verzending.
+                QueueAdd(&EventToExecute);                                      // Plaats in queue voor latere verzending.
                 }
               }
             continue;
@@ -638,7 +637,7 @@ char* DateTimeString(void)
 /**********************************************************************************************\
  * Print de welkomsttekst van de Nodo.
  \*********************************************************************************************/
-prog_char PROGMEM Text_welcome[] = "Nodo-Mega V3.6.9 (Beta), Product=SWACNC-MEGA-R%03d, Home=%d, ThisUnit=%d";
+prog_char PROGMEM Text_welcome[] = "Nodo-Mega V3.7, Product=SWACNC-MEGA-R%03d, Home=%d, ThisUnit=%d";
 void PrintWelcome(void)
   {
   char *TempString=(char*)malloc(128);
@@ -768,7 +767,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
   // vullen dan behandelen als een regulier event/commando
   if(Event->Type == NODO_TYPE_PLUGIN_COMMAND || Event->Type == NODO_TYPE_PLUGIN_EVENT)
     {
-    strcpy(EventString,"???");
+    strcpy(EventString,"?");
     PluginCall(PLUGIN_MMI_OUT, Event,EventString);
     }
     
@@ -1670,7 +1669,7 @@ void PrintWelcome(void)
   Serial.println(F("!******************************************************************************!"));
   Serial.println(F("Nodo Domotica controller (c) Copyright 2014 P.K.Tonkes."));
   Serial.println(F("Licensed under GNU General Public License."));
-  Serial.print(F("Nodo-Small V3.6.9 (beta), Product=SWACNC-SMALL-R"));
+  Serial.print(F("Nodo-Small V3.7, Product=SWACNC-SMALL-R"));
   Serial.print(NODO_BUILD);
   Serial.print(F(", ThisUnit="));
   Serial.println(Settings.Unit);

@@ -1,5 +1,5 @@
-#define NODO_BUILD                       740                                    // ??? Ophogen bij iedere Build / versiebeheer.
-#define NODO_VERSION_MINOR                 8                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
+#define NODO_BUILD                       744                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_VERSION_MINOR                10                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1                                    // Unit nummer van deze Nodo
 #define HOME_NODO                          1                                    // Home adres van Nodo's die tot Ã©Ã©n groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
@@ -110,7 +110,7 @@ byte dummy=1;                                                                   
 #define CMD_FILE_EXECUTE                52
 #define CMD_FILE_GET_HTTP               53
 #define CMD_FILE_LIST                   54
-#define CMD_RES_55                      55 //??? reserve
+#define CMD_RES_55                      55                                      //??? reserve
 #define CMD_FILE_SHOW                   56
 #define CMD_FILE_WRITE                  57
 #define VALUE_FREEMEM                   58
@@ -284,7 +284,7 @@ prog_char PROGMEM Cmd_51[]="FileErase";
 prog_char PROGMEM Cmd_52[]="FileExecute";
 prog_char PROGMEM Cmd_53[]="FileGetHTTP";
 prog_char PROGMEM Cmd_54[]="FileList";
-prog_char PROGMEM Cmd_55[]="";//??? reserve
+prog_char PROGMEM Cmd_55[]="";                                                  //??? reserve
 prog_char PROGMEM Cmd_56[]="FileShow";
 prog_char PROGMEM Cmd_57[]="FileWrite";
 prog_char PROGMEM Cmd_58[]="FreeMem";

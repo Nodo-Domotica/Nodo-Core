@@ -365,7 +365,7 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
     
   // Serial.println(F("DEBUG: Wait() verlaten."));
 
-  HoldTransmission=NODO_TX_TO_RX_SWITCH_TIME+millis();                          //??? Zoveel tijd??? Hier ingelast om snel afwisselend events uitwisselen tussen twee i2c Nodo's te laten werken.         
+  HoldTransmission=NODO_TX_TO_RX_SWITCH_TIME+millis();                          // Hier ingelast om snel afwisselend events uitwisselen tussen twee i2c Nodo's te laten werken.         
 
   if(TimeoutTimer<=millis())                                                    // als timeout, dan error terug geven
     {
@@ -1863,19 +1863,19 @@ void ClockSet(void)
   y-=Time.Month<3;
   Time.Day=(y + y/4 - y/100 + y/400 + t[Time.Month-1] + Time.Date) % 7 +1;
 
-  rtc[DS1307_SEC]      =DS1307_CLOCKHALT;  // Stop the clock. Set the ClockHalt bit high to stop the rtc. This bit is part of the seconds byte
+  rtc[DS1307_SEC]      =DS1307_CLOCKHALT;                                       // Stop the clock. Set the ClockHalt bit high to stop the rtc. This bit is part of the seconds byte
   DS1307_save();
   
   rtc[DS1307_MIN]      = ((Time.Minutes/10)<<4)+(Time.Minutes%10);
-  rtc[DS1307_HR]       = ((Time.Hour/10)<<4)+(Time.Hour%10); // schrijf de wintertijd weg. (??? Omschakeling zit bug in. Issue 695
+  rtc[DS1307_HR]       = ((Time.Hour/10)<<4)+(Time.Hour%10);                    // schrijf de wintertijd weg.
   rtc[DS1307_DOW]      = Time.Day;
   rtc[DS1307_DATE]     = ((Time.Date/10)<<4)+(Time.Date%10);
   rtc[DS1307_MTH]      = ((Time.Month/10)<<4)+(Time.Month%10);
   rtc[DS1307_YR]       = (((Time.Year-DS1307_BASE_YR)/10)<<4)+(Time.Year%10); 
-  rtc[DS1307_SEC]      = ((Time.Seconds/10)<<4)+(Time.Seconds%10); // and start the clock again...
+  rtc[DS1307_SEC]      = ((Time.Seconds/10)<<4)+(Time.Seconds%10);              // and start the clock again...
   rtc[DS1307_DLS]      = Time.DaylightSaving;
-  rtc[DS1307_DLS_M]    = Time.DaylightSavingSetMonth; // Maand waarin de laatste zomertijd/wintertijd omschakeling plaats gevonden heeft
-  rtc[DS1307_DLS_D]    = Time.DaylightSavingSetDate;  // Datum waarop de laatste zomertijd/wintertijd omschakeling plaats gevonden heeft
+  rtc[DS1307_DLS_M]    = Time.DaylightSavingSetMonth;                           // Maand waarin de laatste zomertijd/wintertijd omschakeling plaats gevonden heeft
+  rtc[DS1307_DLS_D]    = Time.DaylightSavingSetDate;                            // Datum waarop de laatste zomertijd/wintertijd omschakeling plaats gevonden heeft
   rtc[DS1307_RESERVED] = 0;
   DS1307_save();
 }
