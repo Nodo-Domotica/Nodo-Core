@@ -18,7 +18,7 @@ void ProcessingStatus(boolean Processing)
         {  
         struct NodoEventStruct TempEvent;
         ClearEvent(&TempEvent);    
-        TempEvent.Port                  = VALUE_ALL;                            //??? was oorspronkelijk Event->Port;
+        TempEvent.Port                  = VALUE_ALL;
         TempEvent.Type                  = NODO_TYPE_SYSTEM;                     // Event is niet voor de gebruiker bedoeld
         TempEvent.Command               = SYSTEM_COMMAND_CONFIRMED;
         TempEvent.Par1                  = RequestForConfirm;

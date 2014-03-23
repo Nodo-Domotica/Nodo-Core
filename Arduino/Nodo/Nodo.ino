@@ -2,6 +2,7 @@
 //??? Zoeken naar comments met drie vraagtekens.
 //??? DEBUG: Regels remarken
 //??? Build nummer ophogen
+//??? VERSION_MINOR aanpassen indien nodig.
 //??? Config_01.c schonen en ethernet default op true
 //??? Config_15.c aanpassen
 //??? Alleen plugins 1..5 meeleveren
@@ -79,11 +80,11 @@
 
 
 // ================================= Unit-1: Configuratie voor de Nodo-Mega ===================================================
-#define CONFIG_FILE Config_10.c
-#include <SD.h>                                 // Deze include noodzakelijk voor een Nodo-Mega. Niet gebruiken voor een Small!
-#include <EthernetNodo.h>                       // Deze include optioneel als Ethernet wordt gebruikt. Niet gebruiken voor een Small!
+// #define CONFIG_FILE Config_10.c
+// #include <SD.h>                                 // Deze include noodzakelijk voor een Nodo-Mega. Niet gebruiken voor een Small!
+// #include <EthernetNodo.h>                       // Deze include optioneel als Ethernet wordt gebruikt. Niet gebruiken voor een Small!
 
 
 // ================================= Unit-15: Configuratie voor de Nodo-Small =================================================
-// #define CONFIG_FILE Config_05.c
+#define CONFIG_FILE Config_02.c
 
