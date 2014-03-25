@@ -8,11 +8,12 @@
 * Getest op een I2C/TWI LCD1602 van DFRobot en een Funduino I2C LCD2004
 * Auteur             : Martinus van den Broek
 * Support            : www.nodo-domotica.nl
-* Datum              : 16 Maart 2014
+* Datum              : 25 Maart 2014
 * Versie             : 12-2013 versie 1.2 Modificatie WireNodo library (Hans Man)
 *                      02-2014 versie 1.3 Support 4x20 display en uitbreiding functionaliteit met Par3/Par4 (Martinus)
 *                      02-2014 versie 1.4 Support PortInput, LCDWrite 0,0 clears screen (Martinus)
 *                      03-2014 versie 1.5 Support Backlight on/off (Martinus)
+*                      03-2014 versie 1.6 Fix buffer issue in progmem (Martinus)
 * Nodo productnummer : 
 * Compatibiliteit    : Vanaf Nodo build nummer 707
 * Syntax             : "LCDWrite <row>, <column>, <command>, <option>
@@ -424,7 +425,7 @@ void LCD_I2C_pulseEnable(uint8_t _data){
 char* ProgmemString(prog_char* text)
 {
  byte x=0;
- static char buffer[PLUGIN_021_COLS+1];
+ static char buffer[PLUGIN_021_COLS+5];
 
  do
  {

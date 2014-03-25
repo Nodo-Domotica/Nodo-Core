@@ -10,8 +10,8 @@
  *
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotca.nl
  * Support            : www.nodo-domotica.nl
- * Datum              : 27 Dec 2013
- * Versie             : 1.2
+ * Datum              : 25 Mrt 2013
+ * Versie             : 1.3
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
  * Compatibiliteit    : Vanaf Nodo build nummer 555
  * Syntax             : "HomeEasy <Adres>,<On|Off>
@@ -63,19 +63,15 @@ boolean Plugin_015(byte function, struct NodoEventStruct *event, char *string)
         if ((x>=87) && (x<=114)) bitstream = (bitstream << 1) | rfbit;
 
       }
-      state = (bitstream >> 8) & 0x3;
+      state = ((bitstream >> 8) & 0x3)-1;
       channel = (bitstream) & 0x3f;
 
       // Add channel info to base address, first shift channel info 6 positions, so it can't interfere with bit 5
       channel = channel << 6;
       address = address + channel;
 
-      // Set bit 5 based on command information in the Home Easy protocol
-      if (state == 1) address = address & 0xFFFFFEF;
-      else address = address | 0x00000010;
-
       RawSignal.Repeats    = true; // het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
-      event->Par1=((address>>4)&0x01)?VALUE_ON:VALUE_OFF; // On/Off bit omzetten naar een Nodo waarde. 
+      event->Par1=state?VALUE_ON:VALUE_OFF; // On/Off bit omzetten naar een Nodo waarde. 
       event->Par2=address &0xFFFFFFCF; 
       event->SourceUnit    = 0;                     // Komt niet van een Nodo unit af, dus unit op nul zetten
       event->Type          = NODO_TYPE_PLUGIN_EVENT;
