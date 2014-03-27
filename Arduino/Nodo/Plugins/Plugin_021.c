@@ -8,12 +8,13 @@
 * Getest op een I2C/TWI LCD1602 van DFRobot en een Funduino I2C LCD2004
 * Auteur             : Martinus van den Broek
 * Support            : www.nodo-domotica.nl
-* Datum              : 25 Maart 2014
+* Datum              : 27 Maart 2014
 * Versie             : 12-2013 versie 1.2 Modificatie WireNodo library (Hans Man)
 *                      02-2014 versie 1.3 Support 4x20 display en uitbreiding functionaliteit met Par3/Par4 (Martinus)
 *                      02-2014 versie 1.4 Support PortInput, LCDWrite 0,0 clears screen (Martinus)
 *                      03-2014 versie 1.5 Support Backlight on/off (Martinus)
 *                      03-2014 versie 1.6 Fix buffer issue in progmem (Martinus)
+*                      03-2014 versie 1.7 Fix I2C Multimaster "conflict" (Martinus)
 * Nodo productnummer : 
 * Compatibiliteit    : Vanaf Nodo build nummer 707
 * Syntax             : "LCDWrite <row>, <column>, <command>, <option>
@@ -231,11 +232,15 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
            case EVENT_VARIABLE:
              if (Par4 > 0 && Par4 <16)
                {
-                 int d1 = UserVar[Par4-1];            // Get the integer part
-                 float f2 = UserVar[Par4-1] - d1;     // Get fractional part
-                 int d2 = trunc(f2 * 10);   // Turn into integer
-                 if (d2<0) d2=d2*-1;
-                 sprintf(TempString,"%d.%01d", d1,d2);
+                 #if NODO_MEGA
+                   dtostrf(UserVar[Par4-1], 0, 2,TempString);
+                 #else
+                   int d1 = UserVar[Par4-1];            // Get the integer part
+                   float f2 = UserVar[Par4-1] - d1;     // Get fractional part
+                   int d2 = trunc(f2 * 10);   // Turn into integer
+                   if (d2<0) d2=d2*-1;
+                   sprintf(TempString,"%d.%01d", d1,d2);
+                 #endif
                }
              break;
 
@@ -265,6 +270,7 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
          if (Print)
            LCD_I2C_printline(event->Par1-1, Par2-1, TempString);
 
+         WireNodo.endTransmission(true);
          success=true;
        }
 
@@ -403,7 +409,7 @@ void LCD_I2C_expanderWrite(uint8_t _data){
 /*********************************************************************/
  WireNodo.beginTransmission(LCD_I2C_ADDRESS);
  WireNodo.write((int)(_data) | _backlightval);
- WireNodo.endTransmission();   
+ WireNodo.endTransmission(false);   
 }
 
 /*********************************************************************/
