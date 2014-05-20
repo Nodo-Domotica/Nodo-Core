@@ -7,7 +7,8 @@
  * electra en/of gasverbruik te meten en de waarden te gebruiken als Nodo variabelen. Deze
  * variabelen kunnen desgewenst worden weergegeven in de WebApp.   
  *
- * Auteur             : Paul Tonkes, p.k.tonkes@gmail.com
+ * Auteur             : Paul Tonkes, p.k.tonkes@gmail.com,
+ *                      Hans Man, j.h.man@hccnet.nl 
  * Support            : www.nodo-domotica.nl
  * Datum              : Okt.2013
  * Versie             : 0.5 Nog ernstig in beta
@@ -42,36 +43,18 @@
  *         meer om via seriele communicatie commando's naar de Nodo te sturen of events te bekijken.
  *         Voor een Nodo-small is dit geen probleem daar deze geen MMI heeft. Voor een Mega blijft 
  *         een TelNet verbinding wel gewoon mogelijk.
- *         van de Nodo. In geval van debugging kan, als de seriele settings op uw terminal programma
- *         overeenkomen met die van de Slimme Meter en deze plugin, wel worden gebruikt om de output
- *         van de Slimme meter te bekijken. In alle overige situaties een eventuele USB/FTDI aansluiting
- *         loskoppelen.        
+ *         van de Nodo.
+ *         
+ * LET OP: tijdens het compileren en laden van de Nodo software moet de aansluiting op RX0 worden losgenomen!           
  *   
  ***********************************************************************************************
  * Configuratie:
  *  
- *       - P1 meters van verschillende fabrikanten hanteren wel eens andere communicatie snelheden 
- *         en -settings. Kijk hiervoor naar de specificaties van uw meter en pas in deze plugin de 
- *         waarden P24_SERIAL_BAUD en P24_SERIAL_CONFIG aan. 
- *
- *       - Er zijn twee mogelijkheden om de data van de Slimme Meter op te vangen:
- *        
- *         1. OBIS-code: Dit is een standaard codering die wordt gehanteerd door alle netbeheerders
- *            en dus ook (vrijwel) altijd wordt ondersteund door alle Slimme Meters. Door een OBIS-
- *            code op te nemen in de opvangtabel, kan een bijbehorende waarde worden opgevangen.   
- *            Wilt je andere waarden uitlezen dan nu voorgedefinieerd in de opvangtabel, zoek dan 
- *            de OBIS code op van de waarde die u wilt uitlezen en pas de tabel aan.
- *            
- *          2. Regelnummer: In sommige gevallen is de waarde die je wilt gebruiken niet aan een
- *             OBIS-code gekoppeld (Vaak geval bij een gasmeter waarde). In deze gevallen kun je
- *             als je de dump van je meter kent, opgeven uit welk regelnummer je de data wilt halen.
- *             Geen dan in de opvangtabel niet de OBIS-Code, maar het regelnummer vooraf gegaan 
- *             met een # teken. Zodra dit regelnummer voorbij komt, wordt de waarde er uitgehaald.      
- *
- *        - Let op dat deze plugin alleen numurieke waarden teruggeeft die zich bevinden tussen haakjes.
- *          Niet nummerieke tekens tussen de haakjes, zoals 'Kwh' of 'm3' aanduidingen worden genegeerd.
- *          De variabelen worden gevuld met twee cijfers achter de komma, mits de meter deze ook zo 
- *          aanlevert.    
+ *       - De meters die worden ondersteund door deze plugin staan beschreven in de Wiki.
+ *         Geef in de #define voor de core aan welk type meter je hebt. Bijvorbeeld:
+ *           // P1 Slimme meter PLUGIN
+ *           #define PLUGIN_024                       
+ *           #define PLUGIN_024_CORE 2       
  *  
  ***********************************************************************************************
  * Gebruik:  P1Read <Variable>, <Value 1..>
@@ -99,26 +82,56 @@
  * Specificatie P1    : Dutch Smart Meter Requirements v4.0.4 Final P1 ZT.doc Date: 03-04-2012 
  \*********************************************************************************************/
 
-#define P24_SERIAL_BAUD   9600
-#define P24_SERIAL_CONFIG SERIAL_7E1
+#define CATCH_TABLE_MAX 8 // Aantal op te vangen mogelijkheden
 
+#if PLUGIN_024_CORE==2
+  // -------------------------
+  // Meter type 2: 
+  // * Kaifa MA-305.
+  //
+  // Baudrate: 115200
+  // Config: 8 databits, no parity, 1 stopbit
+  // -------------------------
+  #define P24_SERIAL_BAUD   115200
+  #define P24_SERIAL_CONFIG SERIAL_8N1
+  char CatchTable[CATCH_TABLE_MAX][10]={   ":1.8.1",     // Waarde 1, Electra: Meterstand afgenomen, tarief 1 (laag tarief)
+                                           ":1.8.2",     // Waarde 2, Electra: Meterstand afgenomen, tarief 2 (hoog tarief)
+                                           ":2.8.1",     // Waarde 3, Electra: Meterstand teruggeleverd, tarief 1 (laag tarief)
+                                           ":2.8.2",     // Waarde 4, Electra: Meterstand teruggeleverd, tarief 2 (hoog tarief)
+                                           ":1.7.0",     // Waarde 5, Electra: Huidig verbruik
+                                           ":2.7.0",     // Waarde 6, Electra: Huidige teruglevering
+                                           "#37",        // Waarde 7, Gas: Meterstand, op regel 37
+                                           ":96.14.0"};  // Waarde 8, Electra tarief indicator 
+#endif
 
-#define CATCH_TABLE_MAX 7 // Aantal op te vangen mogelijkheden
-
-char CatchTable[CATCH_TABLE_MAX][10]={   "1.8.1",     // Waarde 1, Electra: Totaal verbruik tarief 1 (nacht)
-                                         "1.8.2",     // Waarde 2, Electra: Totaal verbruik tarief 2 (dag)
-                                         "2.8.1",     // Waarde 3, Electra: Totaal geleverd tarief 1 (nacht)
-                                         "2.8.2",     // Waarde 4, Electra: Totaal geleverd tarief 2 (dag)
-                                         "1.7.0",     // Waarde 5, Electra: Huidig verbruik
-                                         "2.7.0",     // Waarde 6, Electra: Huidige teruglevering
-                                         "#18"  };    // Waarde 7, Gas: Huidige verbruik op regel 18 (Verschilt per meter!)
+#ifndef P24_SERIAL_BAUD
+  // -------------------------
+  // No valid meter was defined yet, fallback to default type 1
+  // Meter type 1, and default: 
+  // * Landys&Gyr E350 
+  // * Iskra ME382
+  //
+  // Baudrate: 9600
+  // Config: 7 databits, even parity, 1 stopbit
+  // -------------------------
+  #define P24_SERIAL_BAUD   9600
+  #define P24_SERIAL_CONFIG SERIAL_7E1
+  char CatchTable[CATCH_TABLE_MAX][10]={   ":1.8.1",     // Waarde 1, Electra: Meterstand afgenomen, tarief 1 (laag tarief)
+                                           ":1.8.2",     // Waarde 2, Electra: Meterstand afgenomen, tarief 2 (hoog tarief)
+                                           ":2.8.1",     // Waarde 3, Electra: Meterstand teruggeleverd, tarief 1 (laag tarief)
+                                           ":2.8.2",     // Waarde 4, Electra: Meterstand teruggeleverd, tarief 2 (hoog tarief)
+                                           ":1.7.0",     // Waarde 5, Electra: Huidig verbruik
+                                           ":2.7.0",     // Waarde 6, Electra: Huidige teruglevering
+                                           "#18",        // Waarde 7, Gas: Meterstand, op regel 18
+                                           ":96.14.0"};  // Waarde 8, Electra tarief indicator                                              
+#endif                                         
 
 #define PLUGIN_ID 24
 #define PLUGIN_NAME "P1Read"
 #define P24_BUFFERSIZE 80
 boolean ParseString_24(char* Input, char* Result, char* Start, char* StopChrs, char* ValidChrs);
 char P24_Str[P24_BUFFERSIZE];
-unsigned long EvenWachtenPizza=0;
+unsigned long ReceiveWindow=0;
 boolean P24_Initialized=false;
 
 
@@ -129,6 +142,7 @@ void P24Init(void)
   Serial.begin(P24_SERIAL_BAUD,P24_SERIAL_CONFIG);
   P24_Initialized=true;
   }
+  
 
 boolean Plugin_024(byte function, struct NodoEventStruct *event, char *string)
   {
@@ -138,7 +152,7 @@ boolean Plugin_024(byte function, struct NodoEventStruct *event, char *string)
   byte ReceivedChar,var;
   byte Try=0,Line;
   
-  float FetchedData=0;
+  float FetchedData=0;  
   
   switch(function)
     {
@@ -158,8 +172,8 @@ boolean Plugin_024(byte function, struct NodoEventStruct *event, char *string)
         
         // wacht beperkte tijd op binnenkomende data. Het datablok zal in normale situaties
         // zeker binnen 1.5 seconde binnengekomen moeten zijn.
-        EvenWachtenPizza=millis()+1500;
-        while(EvenWachtenPizza>millis())
+        ReceiveWindow=millis()+1500;
+        while(ReceiveWindow>millis())
           {
           while(Serial.available())
             {
@@ -327,8 +341,9 @@ boolean ParseString_24(char* Input, char* Result, char* Start, char* StopChrs, c
       Result[z++]=Input[x];
     }
   Result[z]=0;
-    
+
   return (z>0);
   }
+
   
 #endif //CORE
