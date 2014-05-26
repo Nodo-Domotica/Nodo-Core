@@ -109,7 +109,7 @@ boolean Plugin_005(byte function, struct NodoEventStruct *event, char *string)
           {
           // Par1 en Par2 hoeven niet te worden geparsed omdat deze default al door de MMI invoer van de Nodo 
           // worden gevuld indien het integer waarden zijn. Toetsen op bereiken moet nog wel plaats vinden.
-          if(event->Par1>0 && event->Par1<WIRED_PORTS && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX)            
+          if(event->Par1>0 && event->Par1<=WIRED_PORTS && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX)            
             {
             success=true;
             event->Type = NODO_TYPE_PLUGIN_COMMAND;
