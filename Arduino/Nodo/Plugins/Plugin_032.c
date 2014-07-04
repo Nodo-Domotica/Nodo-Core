@@ -7,8 +7,8 @@
  * 
  * Auteur             : Martinus van den Broek
  * Support            : www.nodo-domotica.nl
- * Datum              : 29 Jan 2013
- * Versie             : 1.2
+ * Datum              : 4 Jul 2013
+ * Versie             : 1.3
  * Nodo productnummer : SWACDE-32-V10
  * Compatibiliteit    : Vanaf Nodo build nummer 596
  \*********************************************************************************************/
@@ -34,17 +34,18 @@ boolean Plugin_032_homeeasy();
 prog_char PROGMEM Plugin_032_Text_01[] = "RF Scanner Plugin V1.0";
 prog_char PROGMEM Plugin_032_Text_02[] = "Licensed under GNU General Public License.";
 prog_char PROGMEM Plugin_032_Text_03[] = "n - Normal scan mode";
-prog_char PROGMEM Plugin_032_Text_04[] = "r - Show Signal Ratio";
-prog_char PROGMEM Plugin_032_Text_05[] = "c - Show Packet Count";
-prog_char PROGMEM Plugin_032_Text_06[] = "q - Quit";
-prog_char PROGMEM Plugin_032_Text_07[] = "";
+prog_char PROGMEM Plugin_032_Text_04[] = "p - Normal scan mode with packet details";
+prog_char PROGMEM Plugin_032_Text_05[] = "r - Show Signal Ratio";
+prog_char PROGMEM Plugin_032_Text_06[] = "c - Show Packet Count";
+prog_char PROGMEM Plugin_032_Text_07[] = "q - Quit";
 prog_char PROGMEM Plugin_032_Text_08[] = "";
 prog_char PROGMEM Plugin_032_Text_09[] = "";
-prog_char PROGMEM Plugin_032_Text_10[] = "Signal Ratio:";
-prog_char PROGMEM Plugin_032_Text_11[] = "%, Pulsecount:";
-prog_char PROGMEM Plugin_032_Text_12[] = ", Shortest:";
-prog_char PROGMEM Plugin_032_Text_13[] = ", Longest:";
-prog_char PROGMEM Plugin_032_Text_14[] = "**********************************************************************";
+prog_char PROGMEM Plugin_032_Text_10[] = "";
+prog_char PROGMEM Plugin_032_Text_11[] = "Signal Ratio:";
+prog_char PROGMEM Plugin_032_Text_12[] = "%, Pulsecount:";
+prog_char PROGMEM Plugin_032_Text_13[] = ", Shortest:";
+prog_char PROGMEM Plugin_032_Text_14[] = ", Longest:";
+prog_char PROGMEM Plugin_032_Text_15[] = "**********************************************************************";
 
 prog_char PROGMEM Plugin_032_Protocol_01[] = "Nodo V2";
 prog_char PROGMEM Plugin_032_Protocol_02[] = "Nodo V1";
@@ -90,7 +91,7 @@ boolean Plugin_032(byte function, struct NodoEventStruct *event, char *string)
 
       if(Plugin_032_active)
         {
-          Serial.println(ProgmemString(Plugin_032_Text_14));
+          Serial.println(ProgmemString(Plugin_032_Text_15));
           Serial.println(ProgmemString(Plugin_032_Text_01));
           Serial.println(ProgmemString(Plugin_032_Text_02));
           Serial.println();
@@ -98,7 +99,8 @@ boolean Plugin_032(byte function, struct NodoEventStruct *event, char *string)
           Serial.println(ProgmemString(Plugin_032_Text_03));
           Serial.println(ProgmemString(Plugin_032_Text_04));
           Serial.println(ProgmemString(Plugin_032_Text_05));
-          Serial.println(ProgmemString(Plugin_032_Text_14));
+          Serial.println(ProgmemString(Plugin_032_Text_06));
+          Serial.println(ProgmemString(Plugin_032_Text_15));
 
           Plugin_032_mode=1;
           char Plugin_032_command=0;
@@ -110,14 +112,11 @@ boolean Plugin_032(byte function, struct NodoEventStruct *event, char *string)
             {
               // Dedicated Sniffer loop!
               if (Plugin_032_command == 'n') Plugin_032_mode=1;
-              if (Plugin_032_command == 'r') Plugin_032_mode=2;
+              if (Plugin_032_command == 'p') Plugin_032_mode=2;
+              if (Plugin_032_command == 'r') Plugin_032_mode=3;
               if (Plugin_032_command == 'c') Plugin_032_DisplayStats();
-#if (NODO_BUILD < 676)
-              if (Plugin_032_mode == 1) if((*portInputRegister(RFport)&RFbit)==RFbit) if(FetchSignal(PIN_RF_RX_DATA,HIGH,5)) Plugin_032_AnalyzeRawSignal(Plugin_032_mode);
-#else
-              if (Plugin_032_mode == 1) if((*portInputRegister(RFport)&RFbit)==RFbit) if(FetchSignal(PIN_RF_RX_DATA,HIGH)) Plugin_032_AnalyzeRawSignal(Plugin_032_mode);
-#endif
-              if (Plugin_032_mode == 2) Plugin_032_bandwidthUsage();
+              if (Plugin_032_mode <= 2) if((*portInputRegister(RFport)&RFbit)==RFbit) if(FetchSignal(PIN_RF_RX_DATA,HIGH)) Plugin_032_AnalyzeRawSignal(Plugin_032_mode);
+              if (Plugin_032_mode == 3) Plugin_032_bandwidthUsage();
               if(Serial.available()) Plugin_032_command=Serial.read();
             }
           Serial.println("RFScanner disabled!");
@@ -174,7 +173,7 @@ void Plugin_032_DisplayStats()
 {
   char* str=(char*)malloc(80);
   Serial.println();
-  Serial.println(ProgmemString(Plugin_032_Text_14));
+  Serial.println(ProgmemString(Plugin_032_Text_15));
   Serial.println("Counters:");
   
   for (byte x=0; x < 14; x++)
@@ -188,7 +187,7 @@ void Plugin_032_DisplayStats()
     Serial.print(round((millis()-Plugin_032_scantimer)/1000));
     Serial.println(" Seconds");
 
-  Serial.println(ProgmemString(Plugin_032_Text_14));
+  Serial.println(ProgmemString(Plugin_032_Text_15));
   free(str);
 }
 
@@ -232,14 +231,14 @@ void Plugin_032_bandwidthUsage(void)
     if (state==1) highcounter++; 
     else lowcounter++;
   }
-  Serial.print(ProgmemString(Plugin_032_Text_10));
-  Serial.print((100 * highcounter) / (highcounter+lowcounter));
   Serial.print(ProgmemString(Plugin_032_Text_11));
-  Serial.print(pulscounter);
+  Serial.print((100 * highcounter) / (highcounter+lowcounter));
   Serial.print(ProgmemString(Plugin_032_Text_12));
+  Serial.print(pulscounter);
+  Serial.print(ProgmemString(Plugin_032_Text_13));
   Serial.print(shortest);
   Serial.print("uS");
-  Serial.print(ProgmemString(Plugin_032_Text_13));
+  Serial.print(ProgmemString(Plugin_032_Text_14));
   Serial.print(longest);
   Serial.println("uS");
 }
@@ -251,26 +250,42 @@ void Plugin_032_bandwidthUsage(void)
 boolean Plugin_032_AnalyzeRawSignal(byte mode)
 {
   if(RawSignal.Number==RAW_BUFFER_SIZE)return false;
+
   Serial.write('+');
   Serial.print(millis()-Plugin_032_timer);
   Plugin_032_timer = millis();
 
   Serial.print(" Pulses:");
   Serial.print((int)RawSignal.Number);
-  Serial.print(" Protocol: ");
 
-  if(Plugin_032_Nodo()) return true;
-  if(Plugin_032_ClassicNodo()) return true;
-  if(Plugin_032_kaku()) return true;
-  if(Plugin_032_newkaku()) return true;
-  if(Plugin_032_alectov1()) return true;
-  if(Plugin_032_alectov2()) return true;
-  if(Plugin_032_alectov3()) return true;
-  if(Plugin_032_oregonv2()) return true;
-  if(Plugin_032_flamengofa20rf()) return true;
-  if(Plugin_032_homeeasy()) return true;
-  Serial.println("?");
-  Plugin_032_count_protocol[13]++;
+  if (mode == 1)
+    {
+      Serial.print(" Protocol: ");
+
+      if(Plugin_032_Nodo()) return true;
+      if(Plugin_032_ClassicNodo()) return true;
+      if(Plugin_032_kaku()) return true;
+      if(Plugin_032_newkaku()) return true;
+      if(Plugin_032_alectov1()) return true;
+      if(Plugin_032_alectov2()) return true;
+      if(Plugin_032_alectov3()) return true;
+      if(Plugin_032_oregonv2()) return true;
+      if(Plugin_032_flamengofa20rf()) return true;
+      if(Plugin_032_homeeasy()) return true;
+      Serial.println("?");
+      Plugin_032_count_protocol[13]++;
+    }
+
+  if (mode == 2)
+    {
+      Serial.print(" Details: ");
+      for (byte x=1; x <= RawSignal.Number; x++)
+        {
+          Serial.print((int)RawSignal.Pulses[x]*RawSignal.Multiply);
+          Serial.print(',');
+        }
+      Serial.println();
+    }
   return false;   
 }
 
