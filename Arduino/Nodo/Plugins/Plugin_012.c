@@ -8,8 +8,8 @@
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  *                      Support THGN132N en code optimalisatie door forumlid: Arendst
  * Support            : www.nodo-domotica.nl
- * Datum              : 27 Dec 2013
- * Versie             : 1.5
+ * Datum              : 5 Jul 2014
+ * Versie             : 1.6
  * Nodo productnummer : 
  * Compatibiliteit    : Vanaf Nodo build nummer 555
  * Syntax             : "OregonV2 <Par1:Sensor ID>, <Par2:Basis Variabele>"
@@ -40,7 +40,7 @@
 #define THGN123N_ID              721
 #define THGR810_ID             17039
 #define THN132N_MIN_PULSECOUNT   196
-#define THN132N_MAX_PULSECOUNT   205
+#define THN132N_MAX_PULSECOUNT   206
 #define THGN123N_MIN_PULSECOUNT  225
 #define THGN123N_MAX_PULSECOUNT  240
 

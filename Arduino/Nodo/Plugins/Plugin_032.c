@@ -7,8 +7,8 @@
  * 
  * Auteur             : Martinus van den Broek
  * Support            : www.nodo-domotica.nl
- * Datum              : 4 Jul 2013
- * Versie             : 1.3
+ * Datum              : 5 Jul 2013
+ * Versie             : 1.4
  * Nodo productnummer : SWACDE-32-V10
  * Compatibiliteit    : Vanaf Nodo build nummer 596
  \*********************************************************************************************/
@@ -804,7 +804,7 @@ uint8_t Plugin_032_ProtocolAlectoCRC8( uint8_t *addr, uint8_t len)
 #define Plugin_032_THGN123N_ID              721
 #define Plugin_032_THGR810_ID             17039
 #define Plugin_032_THN132N_MIN_PULSECOUNT   196
-#define Plugin_032_THN132N_MAX_PULSECOUNT   205
+#define Plugin_032_THN132N_MAX_PULSECOUNT   206
 #define Plugin_032_THGN123N_MIN_PULSECOUNT  228
 #define Plugin_032_THGN123N_MAX_PULSECOUNT  238
 boolean Plugin_032_oregonv2()
