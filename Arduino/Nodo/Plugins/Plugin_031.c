@@ -7,10 +7,10 @@
  * 
  * Auteur             : Martinus van den Broek
  * Support            : www.nodo-domotica.nl
- * Datum              : 28 Jan 2013
- * Versie             : BETA 0.2
+ * Datum              : 12 Jul 2014
+ * Versie             : BETA 0.3
  * Nodo productnummer : SWACDE-31-V10
- * Compatibiliteit    : Vanaf Nodo build nummer 691 (LET OP: DEZE PLUGIN WERKT ALLEEN OP EEN NODO MEGA!!!
+ * Compatibiliteit    : Vanaf Nodo build nummer 744 (LET OP: DEZE PLUGIN WERKT ALLEEN OP EEN NODO MEGA!!!
  \*********************************************************************************************/
 
 #define PLUGIN_ID 31
@@ -61,7 +61,7 @@ boolean Plugin_031(byte function, struct NodoEventStruct *event, char *string)
   case PLUGIN_EVENT_IN:
   case PLUGIN_EVENT_OUT:
     {
-      if (Plugin_031_HostIP > 0)
+      if ((Plugin_031_HostIP > 0) && (!TerminalClient.connected())) // Log only if telnet is not connected or we might run short on W5100 sockets!
         {
           char* StringToPrint=(char*)malloc(100);
           char* TmpStr=(char*)malloc(INPUT_COMMAND_SIZE+1);
