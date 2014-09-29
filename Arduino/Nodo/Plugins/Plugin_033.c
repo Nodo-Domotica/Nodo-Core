@@ -7,8 +7,8 @@
  * 
  * Auteur             : Martinus van den Broek
  * Support            : Beta !!
- * Datum              : 21 Sep 2014
- * Versie             : 0.1
+ * Datum              : 29 Sep 2014 (delay & checkonline after channel change request)
+ * Versie             : 0.2
  * Nodo productnummer : 
  * Compatibiliteit    : Vanaf Nodo build nummer 744
  * Syntax             : De plugin kan worden gebruikt zonder commando's!
@@ -174,6 +174,18 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
               #if NRF_DEBUG
                 Serial.println(Nrf24_channel);
               #endif
+              for (byte x=1; x < Settings.Unit+2; x++)
+                 {
+                   #if NRF_DEBUG
+                     Serial.print("Wait:");
+                     Serial.print(x);
+                     Serial.print('/');
+                     Serial.println(Settings.Unit+2);
+                   #endif
+                   delay(3000);
+                   Nrf24_flushRx();
+                 }
+              NRF_CheckOnline();
               break;
             }
 
@@ -292,10 +304,18 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
 
 void NRF_CheckOnline()
 {
+  Nrf24_flushRx();
+  #if NRF_DEBUG
+    Serial.println("Online:");
+  #endif
   for(int y=1;y<=NRF_UNIT_MAX;y++)
     {
       if ((NRF_sendpacket(Settings.Unit, y, NRF_PAYLOAD_ONLINE, 0) & 0x20) == 0x20)
         {
+          #if NRF_DEBUG
+            Serial.print((int)y);
+            Serial.println(" is Online");
+          #endif
           NRFOnline[y]=true;
         }
     }
@@ -346,6 +366,7 @@ byte NRF_findMaster()
 {
   byte channel=2;
   byte found=0;
+  Nrf24_flushRx();
   while(found < 5 && channel <63)
     {
       #if NRF_DEBUG
