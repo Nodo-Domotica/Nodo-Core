@@ -6,9 +6,13 @@
  * Dit protocol zorgt voor communicatie met de NRF24L01 2.4 GHz Transceiver
  * 
  * Auteur             : Martinus van den Broek
- * Support            : Beta !!
- * Datum              : 29 Sep 2014 (delay & checkonline after channel change request)
- * Versie             : 0.2
+ * Support            : Beta !
+ * Datum              : 01 Dec 2014
+ *				added 'findmaster' to reset command
+ *			 	added type 'PLUGIN_EVENT' to event out
+ *				'findmaster' no longer default, set channel to 0 to activate!
+ *					(findmaster is still very experimental)
+ * Versie             : 0.3
  * Nodo productnummer : 
  * Compatibiliteit    : Vanaf Nodo build nummer 744
  * Syntax             : De plugin kan worden gebruikt zonder commando's!
@@ -45,12 +49,9 @@
 #ifndef NRF_ADDRESS
   #define NRF_ADDRESS               2,3,4,5 // last 4 bytes of address, 1st byte is controlled by plugin
 #endif
+
 #ifndef NRF_CHANNEL
-  #if NODO_MEGA
-    #define NRF_CHANNEL               36 // Mega defaults to channel 36
-  #else
-    #define NRF_CHANNEL               0 // Small defaults to 0 (run findmaster)
-  #endif
+  #define NRF_CHANNEL               36 // if not specified in unit config, default to channel 36
 #endif
 
 #define PLUGIN_ID 33
@@ -199,6 +200,7 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
       if (event->Par1 == CMD_RESET)
         {
           NRF_live=NRF_init();
+          if (Nrf24_channel==0) NRF_findMaster();
           NRF_CheckOnline();
         }
 
@@ -245,7 +247,7 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
     {
     // Only send messages for port RF or ALL and only send Nodo messages (events)
     // This will process commands like "UserEventSend" and "VariableSend" 
-    if(NRF_live && ((event->Port==VALUE_SOURCE_RF) || (event->Port==VALUE_ALL)) && event->Type==NODO_TYPE_EVENT)
+    if(NRF_live && ((event->Port==VALUE_SOURCE_RF) || (event->Port==VALUE_ALL)) && ((event->Type==NODO_TYPE_EVENT) || (event->Type==NODO_TYPE_PLUGIN_EVENT)))
       {
         // on the receiving end, this event may be passed through by NRFExtender on the I2C bus, so it needs a checksum
         Checksum(event);// bereken checksum: crc-8 uit alle bytes in de struct.
