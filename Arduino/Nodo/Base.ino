@@ -1,4 +1,4 @@
-#define NODO_BUILD                       744                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       755                                    // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                10                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1                                    // Unit nummer van deze Nodo
@@ -464,6 +464,12 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define PLUGIN_SERIAL_IN             9
 #define PLUGIN_I2C_IN               10
 #define PLUGIN_ETHERNET_IN          11
+
+// mvdbro R755 02-12-2014 Experimental support for Sendto within plugins
+  #ifdef NODO_BETA_PLUGIN_SENDTO
+    #define PLUGIN_SCAN_EVENT          255
+  #endif
+// endof mvdbro
 
 #define RED                            1                                        // Led = Rood
 #define GREEN                          2                                        // Led = Groen

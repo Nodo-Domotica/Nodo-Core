@@ -32,7 +32,14 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   // PrintNodoEvent("DEBUG: SendEvent():", ES);
 
   // loop de plugins langs voor eventuele afhandeling van dit event.
-  PluginCall(PLUGIN_EVENT_OUT, ES,0);
+
+// mvdbro R755 02-12-2014 Experimental support for Sendto within plugins
+  #ifdef NODO_BETA_PLUGIN_SENDTO
+    if(!UseRawSignal) PluginCall(PLUGIN_EVENT_OUT, ES,0);
+  #else
+    PluginCall(PLUGIN_EVENT_OUT, ES,0);
+  #endif
+// endof mvdbro
 
   // Stuur afhankelijk van de instellingen het event door naar I2C, RF, IR. Eerst wordt het event geprint,daarna een korte wachttijd om
   // te zorgen dat er een minimale wachttijd tussen de signlen zit. Tot slot wordt het signaal verzonden.
