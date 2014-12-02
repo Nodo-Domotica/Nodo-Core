@@ -80,6 +80,15 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
         }
       }
 
+// mvdbro R755 02-12-2014 Experimental support for Sendto within plugins
+    #ifdef NODO_BETA_PLUGIN_SENDTO
+    for(byte x=0; x<PLUGIN_MAX; x++)
+      if(Plugin_id[x]==80 || Plugin_id[x]==83 || Plugin_id[x]==33)
+        if(Plugin_ptr[x](PLUGIN_SCAN_EVENT,Event,0))
+          Fetched=VALUE_SOURCE_RF;
+    #endif
+// endof mvdbro
+
     if(Fetched)
       {
       HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS+millis();
