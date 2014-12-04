@@ -8,7 +8,7 @@
  * Author             : Martinus van den Broek
  * Support            : None!
  * Date               : Dec 2014
- * Versie             : 0.1
+ * Versie             : 0.2
  * Compatibility      : R744
  * Syntax             : "Ping <result var>, <ip address>"
  * Sample             : Ping 10,8.8.8.8
@@ -28,8 +28,6 @@ byte Plugin_035_GetArgv(char *string, char *argv, int argc, char delimiter);
 
 #include <utility/w5100.h>
 
-SOCKET _icmpsocket;
-
 boolean Plugin_035(byte function, struct NodoEventStruct *event, char *string)
 {
   boolean success=false;
@@ -39,6 +37,15 @@ boolean Plugin_035(byte function, struct NodoEventStruct *event, char *string)
 #ifdef PLUGIN_035_CORE
   case PLUGIN_COMMAND:
     {
+      // find available W5100 socket
+      byte i=0;
+      for (i = 0; i < MAX_SOCK_NUM; i++)
+        {
+          uint8_t s = W5100.readSnSR(i);
+          if (s == SnSR::CLOSED || s == SnSR::FIN_WAIT)
+            break;
+        }
+
       if (!TerminalClient.connected())  // Ping only if telnet is not connected or we might run short on W5100 sockets!
         {
           Serial.println("Pinging...");
@@ -50,6 +57,8 @@ boolean Plugin_035(byte function, struct NodoEventStruct *event, char *string)
           IPaddress[1] = (event->Par2 >>16) & 0xff;
           IPaddress[2] = (event->Par2 >> 8) & 0xff;
           IPaddress[3] = event->Par2 & 0xff;
+
+          SOCKET _icmpsocket=i;
 
           // init
           W5100.execCmdSn(_icmpsocket, Sock_CLOSE);
