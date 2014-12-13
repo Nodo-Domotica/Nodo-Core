@@ -7,8 +7,8 @@
  * 
  * Auteur             : Martinus van den Broek
  * Support            : Beta !!
- * Datum              : 2 Dec 2014 (experimental sendto support)
- * Versie             : 0.4
+ * Datum              : 6 Dec 2014 (single master option)
+ * Versie             : 0.5
  * Nodo productnummer : 
  * Compatibiliteit    : Vanaf Nodo build nummer 755 voor Sendto (!!!!)
  *
@@ -142,8 +142,12 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
     case PLUGIN_INIT:
       {
         NRF_live=NRF_init();
-        if (Nrf24_channel==0) NRF_findMaster();
-        NRF_CheckOnline();
+        #ifdef NRF_FINDMASTER
+          if (Nrf24_channel==0) NRF_findMaster();
+        #endif
+        #ifndef NRF_SINGLE_MASTER_NODE
+          NRF_CheckOnline();
+        #endif
         break;
       }
 
@@ -162,6 +166,7 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
               memcpy((byte*)event, (byte*)&NRFPayload+4,sizeof(struct NodoEventStruct));
               event->Direction = VALUE_DIRECTION_INPUT;
               event->Port      = VALUE_SOURCE_RF;
+              NRFOnline[event->SourceUnit]=true;
               success=true;
               break;
             }
@@ -184,7 +189,9 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
                    delay(3000);
                    Nrf24_flushRx();
                  }
-              NRF_CheckOnline();
+              #ifndef NRF_SINGLE_MASTER_NODE
+                NRF_CheckOnline();
+              #endif
               break;
             }
 
@@ -208,6 +215,7 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
               memcpy((byte*)&TempEvent, (byte*)&NRFPayload+4,sizeof(struct NodoEventStruct));
               TempEvent.Direction = VALUE_DIRECTION_INPUT;
               TempEvent.Port      = VALUE_SOURCE_RF;
+              NRFOnline[event->SourceUnit]=true;
               ProcessEvent(&TempEvent);
               success=true;
               break;
@@ -231,7 +239,9 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
                    delay(3000);
                    Nrf24_flushRx();
                  }
-              NRF_CheckOnline();
+              #ifndef NRF_SINGLE_MASTER_NODE
+                NRF_CheckOnline();
+              #endif
               break;
             }
 
@@ -246,8 +256,12 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
       if (event->Par1 == CMD_RESET)
         {
           NRF_live=NRF_init();
-          if (Nrf24_channel==0) NRF_findMaster();
-          NRF_CheckOnline();
+          #ifdef NRF_FINDMASTER
+            if (Nrf24_channel==0) NRF_findMaster();
+          #endif
+          #ifndef NRF_SINGLE_MASTER_NODE
+            NRF_CheckOnline();
+          #endif
         }
 
       if (event->Par1 == VALUE_OFF)
@@ -258,7 +272,9 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
       #if NODO_MEGA
       if (event->Par1 == VALUE_SOURCE_RF)
         {
-          if (event->Par2 == 0) NRF_findMaster();
+          #ifdef NRF_FINDMASTER
+            if (event->Par2 == 0) NRF_findMaster();
+          #endif
           if ((event->Par2 >= 1) && (event->Par2 <= 62))  // Select channel between 1 <> 62
             {
               Nrf24_channel = event->Par2;
@@ -304,6 +320,7 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
         Checksum(event);// bereken checksum: crc-8 uit alle bytes in de struct.
         memcpy((byte*)&NRFPayload+4, (byte*)event,sizeof(struct NodoEventStruct));
 
+      #ifndef NRF_SINGLE_MASTER_NODE
         for(int y=1;y<=NRF_UNIT_MAX;y++)
           {
             if(NRFOnline[y]==true)
@@ -311,6 +328,9 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
                 NRF_sendpacket(Settings.Unit, y, NRF_PAYLOAD_NODO, sizeof(struct NodoEventStruct));
               }
           }
+      #else
+        NRF_sendpacket(Settings.Unit, NRF_SINGLE_MASTER_NODE, NRF_PAYLOAD_NODO, sizeof(struct NodoEventStruct));
+      #endif
       }
       success=true;
       break;
@@ -355,6 +375,8 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
 
 #ifdef PLUGIN_033_CORE
 
+
+#ifndef NRF_SINGLE_MASTER_NODE
 void NRF_CheckOnline()
 {
   Nrf24_flushRx();
@@ -370,9 +392,11 @@ void NRF_CheckOnline()
             Serial.println(" is Online");
           #endif
           NRFOnline[y]=true;
+          NodoOnline(y,VALUE_SOURCE_RF);
         }
     }
 }
+#endif
 
 boolean NRF_init(void)
 {
@@ -415,6 +439,7 @@ boolean NRF_init(void)
   return true;
 }
 
+#ifdef NRF_FINDMASTER
 byte NRF_findMaster()
 {
   byte channel=2;
@@ -440,6 +465,7 @@ byte NRF_findMaster()
    }
   return channel;
 }
+#endif
 
 void NRF_changeChannel(byte channel)
 {
