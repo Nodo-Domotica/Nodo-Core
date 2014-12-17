@@ -7,8 +7,8 @@
  * 
  * Auteur             : Martinus van den Broek
  * Support            : Beta !!
- * Datum              : 6 Dec 2014 (single master option)
- * Versie             : 0.5
+ * Datum              : 17 Dec 2014 (single target bij eventlistshow request, timeout in while loops)
+ * Versie             : 0.6c
  * Nodo productnummer : 
  * Compatibiliteit    : Vanaf Nodo build nummer 755 voor Sendto (!!!!)
  *
@@ -115,6 +115,7 @@ void NRF_CheckOnline();
 byte NRF_sendpacket(byte Source, byte Destination, byte ID, byte Size);
 
 boolean NRFOnline[NRF_UNIT_MAX+1];
+byte NRF_single_target=0;
 
 #endif
 
@@ -167,6 +168,34 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
               event->Direction = VALUE_DIRECTION_INPUT;
               event->Port      = VALUE_SOURCE_RF;
               NRFOnline[event->SourceUnit]=true;
+
+              #if NRF_DEBUG
+                Serial.print("<T ");
+                Serial.print((int)event->Type);
+                Serial.print(" S ");
+                Serial.print((int)event->SourceUnit);
+                Serial.print(" D ");
+                Serial.print((int)event->DestinationUnit);
+                Serial.print(" C ");
+                Serial.print((int)event->Command);
+                Serial.print(" F ");
+                Serial.print((int)event->Flags);
+                Serial.print(" ST ");
+                Serial.println((int)NRF_single_target);
+              #endif
+
+              // experimental
+              // this code is to speed up sendto eventlistshow
+              // remember peer node during sendto 
+              if ((event->Type == NODO_TYPE_SYSTEM) && (event->Command == SYSTEM_COMMAND_QUEUE_SENDTO) && (event->DestinationUnit == Settings.Unit))
+                {
+                  NRF_single_target = event->SourceUnit;
+                  #if NRF_DEBUG
+                    Serial.print("SQ to ");
+                    Serial.println((int)NRF_single_target);
+                  #endif
+                }
+
               success=true;
               break;
             }
@@ -320,17 +349,58 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
         Checksum(event);// bereken checksum: crc-8 uit alle bytes in de struct.
         memcpy((byte*)&NRFPayload+4, (byte*)event,sizeof(struct NodoEventStruct));
 
-      #ifndef NRF_SINGLE_MASTER_NODE
-        for(int y=1;y<=NRF_UNIT_MAX;y++)
+        byte first=1;
+        byte last=NRF_UNIT_MAX;
+
+        #if NODO_MEGA
+          if ((event->Type == NODO_TYPE_COMMAND) && (event->Command == CMD_EVENTLIST_SHOW))
+              NRF_single_target = event->DestinationUnit;
+        #endif
+
+        // reset single target if flags are 0
+        if (event->Flags ==0)
+          {
+            NRF_single_target = 0;
+            #if NRF_DEBUG
+              Serial.print("So ");
+              Serial.println((int)NRF_single_target);
+            #endif
+          }
+
+        if (NRF_single_target > 0)
+          {
+            first=NRF_single_target;
+            last=NRF_single_target;
+          }
+
+              #if NRF_DEBUG
+                Serial.print(">T ");
+                Serial.print((int)event->Type);
+                Serial.print(" S ");
+                Serial.print((int)event->SourceUnit);
+                Serial.print(" D ");
+                Serial.print((int)event->DestinationUnit);
+                Serial.print(" C ");
+                Serial.print((int)event->Command);
+                Serial.print(" F ");
+                Serial.print((int)event->Flags);
+                Serial.print(" ST ");
+                Serial.println((int)NRF_single_target);
+              #endif
+
+        #ifndef NRF_SINGLE_MASTER_NODE
+        for(int y=first;y<=last;y++)
           {
             if(NRFOnline[y]==true)
               {
                 NRF_sendpacket(Settings.Unit, y, NRF_PAYLOAD_NODO, sizeof(struct NodoEventStruct));
               }
           }
-      #else
-        NRF_sendpacket(Settings.Unit, NRF_SINGLE_MASTER_NODE, NRF_PAYLOAD_NODO, sizeof(struct NodoEventStruct));
-      #endif
+        #else
+          NRF_sendpacket(Settings.Unit, NRF_SINGLE_MASTER_NODE, NRF_PAYLOAD_NODO, sizeof(struct NodoEventStruct));
+        #endif
+//        if (event->Flags)
+//          delay(1); // delay during eventlists
       }
       success=true;
       break;
@@ -403,12 +473,15 @@ boolean NRF_init(void)
   SPI_begin();
   Nrf24_init();
 
+  byte rf_setup=0x27;								// 250 kbps (bit 0 set for SI24R1 clone)
+  Nrf24_writeRegister(NRF_RF_SETUP, &rf_setup, sizeof(rf_setup) );
+
   byte check=0;
-  Nrf24_readRegister(0,&check,1);
+  Nrf24_readRegister(NRF_RF_SETUP,&check,1);
   #if NRF_DEBUG
     Serial.println((int)check);
   #endif
-  if (check == 0xff || check == 0x0)
+  if (check != 0x27)
     {
       #if NRF_DEBUG
         for(byte x=0; x < 10; x++)
@@ -426,8 +499,6 @@ boolean NRF_init(void)
   Nrf24_setRADDR((byte *)NRF_address);
   Nrf24_config();
 
-  byte rf_setup=0x27;								// 250 kbps (bit 0 set for SI24R1 clone)
-  Nrf24_writeRegister(NRF_RF_SETUP, &rf_setup, sizeof(rf_setup) );
   byte en_aa=0x3F;								// Auto-Ack Enabled
   Nrf24_writeRegister(NRF_EN_AA, &en_aa, sizeof(en_aa) );
   byte setup_retr=0xff;								// delay 4000uS, 15 retries
@@ -492,7 +563,16 @@ byte NRF_sendpacket(byte Source, byte Destination, byte ID, byte Size)
   NRF_status=0;
   Nrf24_setTADDR((byte *)NRF_address);
   Nrf24_send((byte *)&NRFPayload);
-  while(Nrf24_isSending()) {}
+  unsigned long timer=millis()+100;
+  while(Nrf24_isSending() && millis()<timer) {}
+
+  #if NRF_DEBUG      
+    Serial.print("NRF Send:");
+    Serial.print((int)Destination);
+    Serial.print(" - ");
+    Serial.println((int)NRF_status);
+  #endif
+
   // set auto-ack receive pipe to null
   NRF_address[0]=0;
   Nrf24_setTADDR((byte *)NRF_address);
@@ -694,7 +774,8 @@ void Nrf24_send(uint8_t * value)
     uint8_t status;
     status = Nrf24_getStatus();
 
-    while (Nrf24_PTX) {
+    unsigned long timer=millis()+100;
+    while (Nrf24_PTX && millis()<timer) {
 	    status = Nrf24_getStatus();
 
 	    if((status & ((1 << TX_DS)  | (1 << MAX_RT)))){
