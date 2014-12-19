@@ -91,8 +91,6 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
           if(Plugin_ptr[x](PLUGIN_SCAN_EVENT,Event,0))
             {
               Fetched=VALUE_SOURCE_RF;
-              RawSignal.RepeatChecksum=0;
-              SignalHash=SignalHashPrevious+1;
               Focus=255;
             }
     #endif
