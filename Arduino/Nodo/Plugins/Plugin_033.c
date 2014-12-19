@@ -7,8 +7,8 @@
  * 
  * Auteur             : Martinus van den Broek
  * Support            : Beta !!
- * Datum              : 19 Dec 2014 (changed NRF24 code, added high level retry option)
- * Versie             : 0.7
+ * Datum              : 19 Dec 2014 (added sequence counter for pid/crc duplicate issue)
+ * Versie             : 0.8
  * Nodo productnummer : 
  * Compatibiliteit    : Vanaf Nodo build nummer 762 voor Sendto (!!!!)
  *
@@ -75,8 +75,8 @@
 
 #ifdef PLUGIN_033_CORE
 
-#define mirf_ADDR_LEN	5
-#define mirf_CONFIG ((1<<EN_CRC) | (0<<CRCO) )
+#define NRF_ADDR_LEN	5
+#define NRF_CONFIG_DATA ((1<<EN_CRC) | (0<<CRCO) )
 
 void SPI_begin();
 unsigned char SPI_transfer(unsigned char Byte);
@@ -89,7 +89,6 @@ byte Nrf24_send(uint8_t *value);
 void Nrf24_setRADDR(uint8_t * adr);
 void Nrf24_setTADDR(uint8_t * adr);
 bool Nrf24_dataReady();
-bool Nrf24_isSending();
 bool Nrf24_rxFifoEmpty();
 bool Nrf24_txFifoEmpty();
 void Nrf24_getData(uint8_t * data);
@@ -121,10 +120,7 @@ byte NRF_single_target=0;
 
 #if NRF_DEBUG
   boolean NRF_debug = true;
-  int NRF_sendDelay = 0;
 #endif
-
-boolean NRF_Send_Echo = true;
 
 #endif // plugin core
 
@@ -138,7 +134,8 @@ struct NRFPayloadStruct
   byte Destination;
   byte ID;
   byte Size;
-  byte Data[28];
+  byte Sequence;
+  byte Data[27];
 }
 NRFPayload;
 
@@ -179,7 +176,7 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
             {
             case NRF_PAYLOAD_NODO:
             {
-              memcpy((byte*)event, (byte*)&NRFPayload+4,sizeof(struct NodoEventStruct));
+              memcpy((byte*)event, (byte*)&NRFPayload+5,sizeof(struct NodoEventStruct));
               event->Direction = VALUE_DIRECTION_INPUT;
               event->Port      = VALUE_SOURCE_RF;
               NRFOnline[event->SourceUnit]=true;
@@ -268,7 +265,7 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
             case NRF_PAYLOAD_NODO:
             {
               struct NodoEventStruct TempEvent;
-              memcpy((byte*)&TempEvent, (byte*)&NRFPayload+4,sizeof(struct NodoEventStruct));
+              memcpy((byte*)&TempEvent, (byte*)&NRFPayload+5,sizeof(struct NodoEventStruct));
               TempEvent.Direction = VALUE_DIRECTION_INPUT;
               TempEvent.Port      = VALUE_SOURCE_RF;
               NRFOnline[event->SourceUnit]=true;
@@ -321,11 +318,6 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
         {
           if (event->Par2 == VALUE_OFF) NRF_debug = false;
           if (event->Par2 == VALUE_ON) NRF_debug = true;
-        }
-
-      if (event->Par1 == CMD_DELAY)							// set send delay after each packet, default = 0 ms
-        {
-          NRF_sendDelay = event->Par2;
         }
       #endif
 
@@ -384,12 +376,6 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
             }
         }
       #endif 
-
-      if (event->Par1 == CMD_ECHO)
-        {
-          if (event->Par2 == VALUE_OFF) NRF_Send_Echo = false;
-          if (event->Par2 == VALUE_ON) NRF_Send_Echo = true;
-        }
  
       success=true;
       break;
@@ -409,7 +395,7 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
       {
         // on the receiving end, this event may be passed through by NRFExtender on the I2C bus, so it needs a checksum
         Checksum(event);// bereken checksum: crc-8 uit alle bytes in de struct.
-        memcpy((byte*)&NRFPayload+4, (byte*)event,sizeof(struct NodoEventStruct));
+        memcpy((byte*)&NRFPayload+5, (byte*)event,sizeof(struct NodoEventStruct));
 
         byte first=1;
         byte last=NRF_UNIT_MAX;
@@ -644,13 +630,10 @@ byte NRF_sendpacket(byte Source, byte Destination, byte ID, byte Size, byte retr
 {
   if (!NRF_live) return 0;
 
-  #if NRF_DEBUG
-    delay(NRF_sendDelay);
-  #endif
-
   NRFPayload.Source=Source;
   NRFPayload.Destination=Destination;
   NRFPayload.ID=ID;
+  NRFPayload.Sequence++;
   NRFPayload.Size=Size;
   
   NRF_address[0]=Destination;
@@ -680,13 +663,6 @@ byte NRF_sendpacket(byte Source, byte Destination, byte ID, byte Size, byte retr
         Serial.println((int)NRF_status);
       }
   #endif
-
-  // fix receive issue (cannot receive same message sometimes...)
-  if(NRF_Send_Echo)
-    {
-      NRFPayload.ID=123;
-      Nrf24_send((byte *)&NRFPayload);
-    }
 
   // set auto-ack receive pipe to null
   NRF_address[0]=0;
@@ -826,15 +802,15 @@ void Nrf24_config()
 
 void Nrf24_setRADDR(uint8_t * adr) 
 {
-	Nrf24_writeRegister(RX_ADDR_P1,adr,mirf_ADDR_LEN);
+	Nrf24_writeRegister(RX_ADDR_P1,adr,NRF_ADDR_LEN);
         byte broadcast=255;
 	Nrf24_writeRegister(RX_ADDR_P2,&broadcast,1);
 }
 
 void Nrf24_setTADDR(uint8_t * adr)
 {
-	Nrf24_writeRegister(RX_ADDR_P0,adr,mirf_ADDR_LEN);
-	Nrf24_writeRegister(TX_ADDR,adr,mirf_ADDR_LEN);
+	Nrf24_writeRegister(RX_ADDR_P0,adr,NRF_ADDR_LEN);
+	Nrf24_writeRegister(TX_ADDR,adr,NRF_ADDR_LEN);
 }
 
 bool Nrf24_dataReady() 
@@ -886,7 +862,7 @@ void Nrf24_writeRegister(uint8_t reg, uint8_t * value, uint8_t len)
 
 byte Nrf24_send(uint8_t * value) 
 {
-    Nrf24_configRegister(CONFIG, mirf_CONFIG ); // power down trick to workaround CE pin tied high!
+    Nrf24_configRegister(CONFIG, NRF_CONFIG_DATA); // power down trick to workaround CE pin tied high!
     Nrf24_powerUpTx();       // Set to transmitter mode , Power up
        
     Nrf24_csnLow();                    // Pull down chip select
@@ -919,7 +895,7 @@ uint8_t Nrf24_getStatus()
 
 void Nrf24_powerUpRx()
 {
-	Nrf24_configRegister(CONFIG, mirf_CONFIG | ( (1<<PWR_UP) | (1<<PRIM_RX) ) );
+	Nrf24_configRegister(CONFIG, NRF_CONFIG_DATA | ( (1<<PWR_UP) | (1<<PRIM_RX) ) );
 	Nrf24_configRegister(STATUS,(1 << TX_DS) | (1 << MAX_RT)); 
 }
 
@@ -939,7 +915,7 @@ void Nrf24_flushTx()
 
 void Nrf24_powerUpTx()
 {
-	Nrf24_configRegister(CONFIG, mirf_CONFIG | ( (1<<PWR_UP) | (0<<PRIM_RX) ) );
+	Nrf24_configRegister(CONFIG, NRF_CONFIG_DATA| ( (1<<PWR_UP) | (0<<PRIM_RX) ) );
 }
 
 void Nrf24_csnHi()
@@ -954,7 +930,7 @@ void Nrf24_csnLow()
 
 void Nrf24_powerDown()
 {
-	Nrf24_configRegister(CONFIG, mirf_CONFIG );
+	Nrf24_configRegister(CONFIG, NRF_CONFIG_DATA);
 }
 
 // Software SPI routines
