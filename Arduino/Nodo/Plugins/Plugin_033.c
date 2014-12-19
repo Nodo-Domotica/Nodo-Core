@@ -7,10 +7,10 @@
  * 
  * Auteur             : Martinus van den Broek
  * Support            : Beta !!
- * Datum              : 17 Dec 2014 (single target bij eventlistshow request, timeout in while loops)
- * Versie             : 0.6c
+ * Datum              : 19 Dec 2014 (changed NRF24 code, added high level retry option)
+ * Versie             : 0.7
  * Nodo productnummer : 
- * Compatibiliteit    : Vanaf Nodo build nummer 755 voor Sendto (!!!!)
+ * Compatibiliteit    : Vanaf Nodo build nummer 762 voor Sendto (!!!!)
  *
  * 			en deze regel moet zijn opgenomen in de unit config file:
  *				#define NODO_BETA_PLUGIN_SENDTO
@@ -58,6 +58,8 @@
 
 #define NRF_PAYLOAD_SIZE	  32
 #define NRF_UNIT_MAX              32
+#define NRF_SEND_RETRIES           3
+#define NRF_RETRY_DELAYMS         50
 
 #define NRF_PAYLOAD_NODO           0
 #define NRF_PAYLOAD_PINGREQ        4
@@ -83,7 +85,7 @@ unsigned char SPI_transfer(unsigned char Byte);
 void Nrf24_setChannel(byte channel);
 void Nrf24_init();
 void Nrf24_config();
-void Nrf24_send(uint8_t *value);
+byte Nrf24_send(uint8_t *value);
 void Nrf24_setRADDR(uint8_t * adr);
 void Nrf24_setTADDR(uint8_t * adr);
 bool Nrf24_dataReady();
@@ -103,21 +105,28 @@ void Nrf24_powerDown();
 void Nrf24_csnHi();
 void Nrf24_csnLow();
 void Nrf24_flushRx();
+void Nrf24_flushTx();
 
 // NRF Variables
-uint8_t Nrf24_PTX;
 uint8_t Nrf24_channel=NRF_CHANNEL;
 
 boolean NRF_init(void);
 byte NRF_findMaster();
 void NRF_changeChannel(byte channel);
 void NRF_CheckOnline();
-byte NRF_sendpacket(byte Source, byte Destination, byte ID, byte Size);
+byte NRF_sendpacket(byte Source, byte Destination, byte ID, byte Size, byte retries);
 
 boolean NRFOnline[NRF_UNIT_MAX+1];
 byte NRF_single_target=0;
 
+#if NRF_DEBUG
+  boolean NRF_debug = true;
+  int NRF_sendDelay = 0;
 #endif
+
+boolean NRF_Send_Echo = true;
+
+#endif // plugin core
 
 byte NRF_address[5] = { 1,NRF_ADDRESS };
 byte NRF_status=0;
@@ -155,13 +164,19 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
 #ifdef NODO_BETA_PLUGIN_SENDTO
   case PLUGIN_SCAN_EVENT:
     {
-      while(NRF_live && !Nrf24_isSending() && Nrf24_dataReady())
+      if(NRF_live && Nrf24_dataReady())
         {
           Nrf24_getData((byte *)&NRFPayload);
 
+          #if NRF_DEBUG
+            if (NRF_debug)
+              {
+                Serial.println("NRF");
+              }
+          #endif
+
           switch(NRFPayload.ID)
             {
-
             case NRF_PAYLOAD_NODO:
             {
               memcpy((byte*)event, (byte*)&NRFPayload+4,sizeof(struct NodoEventStruct));
@@ -170,18 +185,21 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
               NRFOnline[event->SourceUnit]=true;
 
               #if NRF_DEBUG
-                Serial.print("<T ");
-                Serial.print((int)event->Type);
-                Serial.print(" S ");
-                Serial.print((int)event->SourceUnit);
-                Serial.print(" D ");
-                Serial.print((int)event->DestinationUnit);
-                Serial.print(" C ");
-                Serial.print((int)event->Command);
-                Serial.print(" F ");
-                Serial.print((int)event->Flags);
-                Serial.print(" ST ");
-                Serial.println((int)NRF_single_target);
+                if (NRF_debug)
+                  {
+                    Serial.print("<T ");
+                    Serial.print((int)event->Type);
+                    Serial.print(" S ");
+                    Serial.print((int)event->SourceUnit);
+                    Serial.print(" D ");
+                    Serial.print((int)event->DestinationUnit);
+                    Serial.print(" C ");
+                    Serial.print((int)event->Command);
+                    Serial.print(" F ");
+                    Serial.print((int)event->Flags);
+                    Serial.print(" ST ");
+                    Serial.println((int)NRF_single_target);
+                  }
               #endif
 
               // experimental
@@ -191,8 +209,11 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
                 {
                   NRF_single_target = event->SourceUnit;
                   #if NRF_DEBUG
-                    Serial.print("SQ to ");
-                    Serial.println((int)NRF_single_target);
+                    if (NRF_debug)
+                      {
+                        Serial.print("SQ to ");
+                        Serial.println((int)NRF_single_target);
+                      }
                   #endif
                 }
 
@@ -205,15 +226,21 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
               Nrf24_channel = NRFPayload.Data[0];
               Nrf24_setChannel(Nrf24_channel);
               #if NRF_DEBUG
-                Serial.println(Nrf24_channel);
+                if (NRF_debug)
+                  {
+                    Serial.println(Nrf24_channel);
+                  }
               #endif
               for (byte x=1; x < Settings.Unit+2; x++)
                  {
                    #if NRF_DEBUG
-                     Serial.print("Wait:");
-                     Serial.print(x);
-                     Serial.print('/');
-                     Serial.println(Settings.Unit+2);
+                     if (NRF_debug)
+                       {
+                         Serial.print("Wait:");
+                         Serial.print(x);
+                         Serial.print('/');
+                         Serial.println(Settings.Unit+2);
+                        }
                    #endif
                    delay(3000);
                    Nrf24_flushRx();
@@ -231,7 +258,7 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
 #else
   case PLUGIN_ONCE_A_SECOND:
     {
-      while(NRF_live && !Nrf24_isSending() && Nrf24_dataReady())
+      while(NRF_live && Nrf24_dataReady())
         {
           Nrf24_getData((byte *)&NRFPayload);
 
@@ -255,15 +282,21 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
               Nrf24_channel = NRFPayload.Data[0];
               Nrf24_setChannel(Nrf24_channel);
               #if NRF_DEBUG
-                Serial.println(Nrf24_channel);
+                if (NRF_debug)
+                  {
+                    Serial.println(Nrf24_channel);
+                  }
               #endif
               for (byte x=1; x < Settings.Unit+2; x++)
                  {
                    #if NRF_DEBUG
-                     Serial.print("Wait:");
-                     Serial.print(x);
-                     Serial.print('/');
-                     Serial.println(Settings.Unit+2);
+                     if (NRF_debug)
+                       {
+                         Serial.print("Wait:");
+                         Serial.print(x);
+                         Serial.print('/');
+                         Serial.println(Settings.Unit+2);
+                       }
                    #endif
                    delay(3000);
                    Nrf24_flushRx();
@@ -282,6 +315,20 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
 
   case PLUGIN_COMMAND:
     {
+
+      #if NRF_DEBUG
+      if (event->Par1 == CMD_DEBUG)      
+        {
+          if (event->Par2 == VALUE_OFF) NRF_debug = false;
+          if (event->Par2 == VALUE_ON) NRF_debug = true;
+        }
+
+      if (event->Par1 == CMD_DELAY)							// set send delay after each packet, default = 0 ms
+        {
+          NRF_sendDelay = event->Par2;
+        }
+      #endif
+
       if (event->Par1 == CMD_RESET)
         {
           NRF_live=NRF_init();
@@ -316,8 +363,7 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
       if (event->Par1 == CMD_STATUS)
         {
            unsigned long NRF_roundtrip=millis();
-           NRF_status=0;
-           NRF_sendpacket(Settings.Unit, event->Par2, NRF_PAYLOAD_PINGREQ, 0);
+           NRF_status= NRF_sendpacket(Settings.Unit, event->Par2, NRF_PAYLOAD_PINGREQ, 0,0);
            Serial.print("status ");
            Serial.println((int)NRF_status);
            Serial.print("roundtrip ");
@@ -327,7 +373,23 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
            Serial.print("retries ");
            Serial.println((int)(NRF_retries & 0x0f));
         }
+      #else
+      if (event->Par1 == VALUE_SOURCE_RF)
+        {
+          if ((event->Par2 >= 1) && (event->Par2 <= 62))  // Select channel between 1 <> 62
+            {
+              Nrf24_channel = event->Par2;
+              Nrf24_setChannel(Nrf24_channel);
+              NRF_CheckOnline();                      // Send data on air to find out who's online
+            }
+        }
       #endif 
+
+      if (event->Par1 == CMD_ECHO)
+        {
+          if (event->Par2 == VALUE_OFF) NRF_Send_Echo = false;
+          if (event->Par2 == VALUE_ON) NRF_Send_Echo = true;
+        }
  
       success=true;
       break;
@@ -352,8 +414,10 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
         byte first=1;
         byte last=NRF_UNIT_MAX;
 
-        #if NODO_MEGA
+        #if NODO_MEGA  // Sendto optimalisatie
           if ((event->Type == NODO_TYPE_COMMAND) && (event->Command == CMD_EVENTLIST_SHOW))
+              NRF_single_target = event->DestinationUnit;
+          if ((event->Flags != 0) && (event->DestinationUnit != 0))
               NRF_single_target = event->DestinationUnit;
         #endif
 
@@ -362,8 +426,11 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
           {
             NRF_single_target = 0;
             #if NRF_DEBUG
-              Serial.print("So ");
-              Serial.println((int)NRF_single_target);
+              if (NRF_debug)
+                {
+                  Serial.print("So ");
+                  Serial.println((int)NRF_single_target);
+                }
             #endif
           }
 
@@ -374,18 +441,21 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
           }
 
               #if NRF_DEBUG
-                Serial.print(">T ");
-                Serial.print((int)event->Type);
-                Serial.print(" S ");
-                Serial.print((int)event->SourceUnit);
-                Serial.print(" D ");
-                Serial.print((int)event->DestinationUnit);
-                Serial.print(" C ");
-                Serial.print((int)event->Command);
-                Serial.print(" F ");
-                Serial.print((int)event->Flags);
-                Serial.print(" ST ");
-                Serial.println((int)NRF_single_target);
+                if (NRF_debug)
+                  {
+                    Serial.print(">T ");
+                    Serial.print((int)event->Type);
+                    Serial.print(" S ");
+                    Serial.print((int)event->SourceUnit);
+                    Serial.print(" D ");
+                    Serial.print((int)event->DestinationUnit);
+                    Serial.print(" C ");
+                    Serial.print((int)event->Command);
+                    Serial.print(" F ");
+                    Serial.print((int)event->Flags);
+                    Serial.print(" ST ");
+                    Serial.println((int)NRF_single_target);
+                  }
               #endif
 
         #ifndef NRF_SINGLE_MASTER_NODE
@@ -393,14 +463,12 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
           {
             if(NRFOnline[y]==true)
               {
-                NRF_sendpacket(Settings.Unit, y, NRF_PAYLOAD_NODO, sizeof(struct NodoEventStruct));
+                NRF_sendpacket(Settings.Unit, y, NRF_PAYLOAD_NODO, sizeof(struct NodoEventStruct),NRF_SEND_RETRIES);
               }
           }
         #else
           NRF_sendpacket(Settings.Unit, NRF_SINGLE_MASTER_NODE, NRF_PAYLOAD_NODO, sizeof(struct NodoEventStruct));
         #endif
-//        if (event->Flags)
-//          delay(1); // delay during eventlists
       }
       success=true;
       break;
@@ -451,15 +519,21 @@ void NRF_CheckOnline()
 {
   Nrf24_flushRx();
   #if NRF_DEBUG
-    Serial.println("Online:");
+    if (NRF_debug)
+      {
+        Serial.println("Online:");
+      }
   #endif
   for(int y=1;y<=NRF_UNIT_MAX;y++)
     {
-      if ((NRF_sendpacket(Settings.Unit, y, NRF_PAYLOAD_ONLINE, 0) & 0x20) == 0x20)
+      if ((NRF_sendpacket(Settings.Unit, y, NRF_PAYLOAD_ONLINE, 0,0) & 0x20) == 0x20)
         {
           #if NRF_DEBUG
-            Serial.print((int)y);
-            Serial.println(" is Online");
+            if (NRF_debug)
+              {
+                Serial.print((int)y);
+                Serial.println(" is Online");
+              }
           #endif
           NRFOnline[y]=true;
           NodoOnline(y,VALUE_SOURCE_RF);
@@ -479,18 +553,24 @@ boolean NRF_init(void)
   byte check=0;
   Nrf24_readRegister(NRF_RF_SETUP,&check,1);
   #if NRF_DEBUG
-    Serial.println((int)check);
+    if (NRF_debug)
+      {
+        Serial.println((int)check);
+      }
   #endif
   if (check != 0x27)
     {
       #if NRF_DEBUG
-        for(byte x=0; x < 10; x++)
+        if (NRF_debug)
           {
-            digitalWrite(PIN_LED_RGB_R,HIGH);
-            delay(50);
-            digitalWrite(PIN_LED_RGB_R,LOW);
-            delay(50);
-          } 
+            for(byte x=0; x < 10; x++)
+              {
+                digitalWrite(PIN_LED_RGB_R,HIGH);
+                delay(50);
+                digitalWrite(PIN_LED_RGB_R,LOW);
+                delay(50);
+              } 
+          }
       #endif
       return false;
     }
@@ -519,10 +599,13 @@ byte NRF_findMaster()
   while(found < 5 && channel <63)
     {
       #if NRF_DEBUG
-        Serial.print((int)channel);
+        if (NRF_debug)
+          {
+            Serial.print((int)channel);
+          }
       #endif
       Nrf24_setChannel(channel);
-      if ((NRF_sendpacket(Settings.Unit, 255, NRF_PAYLOAD_ONLINE, 0) & 0x20) == 0x20)
+      if ((NRF_sendpacket(Settings.Unit, 255, NRF_PAYLOAD_ONLINE, 0,0) & 0x20) == 0x20)
         found++;
       else
         {
@@ -530,8 +613,11 @@ byte NRF_findMaster()
           channel++;
         }
       #if NRF_DEBUG
-        Serial.print("-");
-        Serial.println((int)NRF_status);
+        if (NRF_debug)
+          {
+            Serial.print("-");
+            Serial.println((int)NRF_status);
+          }
       #endif
    }
   return channel;
@@ -544,38 +630,68 @@ void NRF_changeChannel(byte channel)
   for (byte x=1; x <63; x++)
     {
       #if NRF_DEBUG
-        Serial.println((int)x);
+        if (NRF_debug)
+          {
+            Serial.println((int)x);
+          }
       #endif
       Nrf24_setChannel(x);
-      NRF_sendpacket(Settings.Unit, 255, NRF_PAYLOAD_CHANNEL, 1);
+      NRF_sendpacket(Settings.Unit, 255, NRF_PAYLOAD_CHANNEL, 1,0);
    }
 }
 
-byte NRF_sendpacket(byte Source, byte Destination, byte ID, byte Size)
+byte NRF_sendpacket(byte Source, byte Destination, byte ID, byte Size, byte retries)
 {
   if (!NRF_live) return 0;
+
+  #if NRF_DEBUG
+    delay(NRF_sendDelay);
+  #endif
+
   NRFPayload.Source=Source;
   NRFPayload.Destination=Destination;
   NRFPayload.ID=ID;
   NRFPayload.Size=Size;
   
   NRF_address[0]=Destination;
-  NRF_status=0;
   Nrf24_setTADDR((byte *)NRF_address);
-  Nrf24_send((byte *)&NRFPayload);
-  unsigned long timer=millis()+100;
-  while(Nrf24_isSending() && millis()<timer) {}
+  for (byte retry=0; retry <= retries; retry++)
+    {
+      #if NRF_DEBUG
+        if (retry > 0)
+          {
+            Serial.print("R");
+            Serial.println(retry);
+          }
+      #endif
+      NRF_status = Nrf24_send((byte *)&NRFPayload);
+      if ((NRF_status & 0x20) == 0x20)
+        break;
+      else
+        delay(NRF_RETRY_DELAYMS + Settings.Unit);
+    }
 
-  #if NRF_DEBUG      
-    Serial.print("NRF Send:");
-    Serial.print((int)Destination);
-    Serial.print(" - ");
-    Serial.println((int)NRF_status);
+  #if NRF_DEBUG
+    if (NRF_debug)
+      {
+        Serial.print("NRF Send:");
+        Serial.print((int)Destination);
+        Serial.print(" - ");
+        Serial.println((int)NRF_status);
+      }
   #endif
+
+  // fix receive issue (cannot receive same message sometimes...)
+  if(NRF_Send_Echo)
+    {
+      NRFPayload.ID=123;
+      Nrf24_send((byte *)&NRFPayload);
+    }
 
   // set auto-ack receive pipe to null
   NRF_address[0]=0;
   Nrf24_setTADDR((byte *)NRF_address);
+
   return NRF_status;
 }
 
@@ -768,53 +884,30 @@ void Nrf24_writeRegister(uint8_t reg, uint8_t * value, uint8_t len)
     Nrf24_csnHi();
 }
 
-
-void Nrf24_send(uint8_t * value) 
+byte Nrf24_send(uint8_t * value) 
 {
-    uint8_t status;
-    status = Nrf24_getStatus();
-
-    unsigned long timer=millis()+100;
-    while (Nrf24_PTX && millis()<timer) {
-	    status = Nrf24_getStatus();
-
-	    if((status & ((1 << TX_DS)  | (1 << MAX_RT)))){
-		    Nrf24_PTX = 0;
-		    break;
-	    }
-    }                  // Wait until last paket is send
-
     Nrf24_configRegister(CONFIG, mirf_CONFIG ); // power down trick to workaround CE pin tied high!
     Nrf24_powerUpTx();       // Set to transmitter mode , Power up
-    
-    Nrf24_csnLow();                    // Pull down chip select
-    SPI_transfer( FLUSH_TX );     // Write cmd to flush tx fifo
-    Nrf24_csnHi();                    // Pull up chip select
-    
+       
     Nrf24_csnLow();                    // Pull down chip select
     SPI_transfer( W_TX_PAYLOAD ); // Write cmd to write payload
     Nrf24_transmitSync(value,NRF_PAYLOAD_SIZE);   // Write payload
     Nrf24_csnHi();                    // Pull up chip select
-}
 
+    unsigned long timer=millis()+100;
+    uint8_t status = Nrf24_getStatus();
+    while(millis()<timer)
+      {
+        status = Nrf24_getStatus();
+        if((status & ((1 << TX_DS)  | (1 << MAX_RT))))
+          {
+            break;
+          }
+      }
 
-bool Nrf24_isSending()
-{
-	uint8_t status;
-	if(Nrf24_PTX){
-		status = Nrf24_getStatus();
-
-		// if sending successful (TX_DS) or max retries exceded (MAX_RT).
-
-		if((status & ((1 << TX_DS)  | (1 << MAX_RT)))){
-			Nrf24_powerUpRx();
-                        NRF_status = status;
-			return false; 
-		}
-
-		return true;
-	}
-	return false;
+  Nrf24_flushTx();
+  Nrf24_powerUpRx();
+  return status;
 }
 
 uint8_t Nrf24_getStatus()
@@ -826,7 +919,6 @@ uint8_t Nrf24_getStatus()
 
 void Nrf24_powerUpRx()
 {
-	Nrf24_PTX = 0;
 	Nrf24_configRegister(CONFIG, mirf_CONFIG | ( (1<<PWR_UP) | (1<<PRIM_RX) ) );
 	Nrf24_configRegister(STATUS,(1 << TX_DS) | (1 << MAX_RT)); 
 }
@@ -838,9 +930,15 @@ void Nrf24_flushRx()
     Nrf24_csnHi();
 }
 
+void Nrf24_flushTx()
+{
+    Nrf24_csnLow();
+    SPI_transfer( FLUSH_TX );
+    Nrf24_csnHi();
+}
+
 void Nrf24_powerUpTx()
 {
-	Nrf24_PTX = 1;
 	Nrf24_configRegister(CONFIG, mirf_CONFIG | ( (1<<PWR_UP) | (0<<PRIM_RX) ) );
 }
 
