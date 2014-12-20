@@ -7,8 +7,8 @@
  * 
  * Auteur             : Martinus van den Broek
  * Support            : Beta !!
- * Datum              : 19 Dec 2014 (added sequence counter for pid/crc duplicate issue)
- * Versie             : 0.8
+ * Datum              : 20 Dec 2014 (timeout adjustments)
+ * Versie             : 0.9
  * Nodo productnummer : 
  * Compatibiliteit    : Vanaf Nodo build nummer 762 voor Sendto (!!!!)
  *
@@ -53,6 +53,16 @@
   #define NRF_CHANNEL               36 // Mega defaults to channel 36
 #endif
 
+#ifdef NRF_HWSPI		// test purposes for std hardware, not officially supported !!!
+  #if NODO_MEGA
+    #define NRF_CSN_PIN  40
+    #define NRF_CE_PIN   41
+  #else
+    #define NRF_CSN_PIN   7
+    #define NRF_CE_PIN    8
+  #endif
+#endif
+
 #define PLUGIN_ID 33
 #define PLUGIN_NAME_033 "NRF"
 
@@ -60,6 +70,7 @@
 #define NRF_UNIT_MAX              32
 #define NRF_SEND_RETRIES           3
 #define NRF_RETRY_DELAYMS         50
+#define NRF_SEND_TIMEOUTMS        150
 
 #define NRF_PAYLOAD_NODO           0
 #define NRF_PAYLOAD_PINGREQ        4
@@ -870,7 +881,7 @@ byte Nrf24_send(uint8_t * value)
     Nrf24_transmitSync(value,NRF_PAYLOAD_SIZE);   // Write payload
     Nrf24_csnHi();                    // Pull up chip select
 
-    unsigned long timer=millis()+100;
+    unsigned long timer=millis()+NRF_SEND_TIMEOUTMS;
     uint8_t status = Nrf24_getStatus();
     while(millis()<timer)
       {
@@ -921,10 +932,22 @@ void Nrf24_powerUpTx()
 void Nrf24_csnHi()
 {
 	digitalWrite(NRF_CSN_PIN,HIGH);
+	#ifdef NRF_HWSPI
+	  #if NODO_MEGA
+	    digitalWrite(EthernetShield_CS_W5100, 0);
+	    digitalWrite(EthernetShield_CS_SDCard, 1);
+	  #endif
+	#endif
 }
 
 void Nrf24_csnLow()
 {
+	#ifdef NRF_HWSPI
+	  #if NODO_MEGA
+	    digitalWrite(EthernetShield_CS_W5100, 1);
+	    digitalWrite(EthernetShield_CS_SDCard, 1);
+	  #endif
+	#endif
 	digitalWrite(NRF_CSN_PIN,LOW);
 }
 
@@ -933,6 +956,23 @@ void Nrf24_powerDown()
 	Nrf24_configRegister(CONFIG, NRF_CONFIG_DATA);
 }
 
+#ifdef NRF_HWSPI
+void SPI_begin()
+{
+  SPI.begin();
+  SPI.setDataMode(SPI_MODE0);
+  SPI.setClockDivider(SPI_CLOCK_DIV16);
+  pinMode(NRF_CE_PIN,OUTPUT);
+  digitalWrite(NRF_CE_PIN,HIGH);
+  Serial.println("HW SPI");
+}
+
+unsigned char SPI_transfer(unsigned char Byte)
+{
+  return SPI.transfer(Byte);
+}
+
+#else
 // Software SPI routines
 
 void SPI_begin()
@@ -977,5 +1017,6 @@ unsigned char SPI_transfer(unsigned char Byte)
   SREG = oldSREG;
   return(Byte);
 }
+#endif // hw/sw spi
 
 #endif
