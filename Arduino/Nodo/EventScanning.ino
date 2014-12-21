@@ -92,6 +92,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
             {
               Fetched=VALUE_SOURCE_RF;
               Focus=255;
+              RawSignal.RepeatChecksum=0;
             }
     #endif
 // endof mvdbro
