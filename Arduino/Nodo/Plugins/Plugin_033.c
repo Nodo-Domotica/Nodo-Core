@@ -7,10 +7,10 @@
  * 
  * Auteur             : Martinus van den Broek
  * Support            : Beta !!
- * Datum              : 20 Dec 2014 (timeout adjustments)
- * Versie             : 0.9
+ * Datum              : 21 Dec 2014 (bugfix in single master mode)
+ * Versie             : 0.10
  * Nodo productnummer : 
- * Compatibiliteit    : Vanaf Nodo build nummer 762 voor Sendto (!!!!)
+ * Compatibiliteit    : Vanaf Nodo build nummer 765 voor Sendto (!!!!)
  *
  * 			en deze regel moet zijn opgenomen in de unit config file:
  *				#define NODO_BETA_PLUGIN_SENDTO
@@ -383,7 +383,9 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
             {
               Nrf24_channel = event->Par2;
               Nrf24_setChannel(Nrf24_channel);
-              NRF_CheckOnline();                      // Send data on air to find out who's online
+              #ifndef NRF_SINGLE_MASTER_NODE
+                NRF_CheckOnline();                      // Send data on air to find out who's online
+              #endif
             }
         }
       #endif 
@@ -464,7 +466,7 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
               }
           }
         #else
-          NRF_sendpacket(Settings.Unit, NRF_SINGLE_MASTER_NODE, NRF_PAYLOAD_NODO, sizeof(struct NodoEventStruct));
+          NRF_sendpacket(Settings.Unit, NRF_SINGLE_MASTER_NODE, NRF_PAYLOAD_NODO, sizeof(struct NodoEventStruct),NRF_SEND_RETRIES);
         #endif
       }
       success=true;
