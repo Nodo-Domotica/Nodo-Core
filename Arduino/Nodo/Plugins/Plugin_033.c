@@ -7,8 +7,8 @@
  * 
  * Auteur             : Martinus van den Broek
  * Support            : Beta !!
- * Datum              : 21 Dec 2014 (bugfix in single master mode)
- * Versie             : 0.10
+ * Datum              : 23 Dec 2014 (change packet structure)
+ * Versie             : 0.11
  * Nodo productnummer : 
  * Compatibiliteit    : Vanaf Nodo build nummer 765 voor Sendto (!!!!)
  *
@@ -146,7 +146,10 @@ struct NRFPayloadStruct
   byte ID;
   byte Size;
   byte Sequence;
-  byte Data[27];
+  byte Flags;
+  byte Future1;
+  byte Future2;
+  byte Data[24];
 }
 NRFPayload;
 
@@ -187,7 +190,7 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
             {
             case NRF_PAYLOAD_NODO:
             {
-              memcpy((byte*)event, (byte*)&NRFPayload+5,sizeof(struct NodoEventStruct));
+              memcpy((byte*)event, (byte*)&NRFPayload+8,sizeof(struct NodoEventStruct));
               event->Direction = VALUE_DIRECTION_INPUT;
               event->Port      = VALUE_SOURCE_RF;
               NRFOnline[event->SourceUnit]=true;
@@ -276,7 +279,7 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
             case NRF_PAYLOAD_NODO:
             {
               struct NodoEventStruct TempEvent;
-              memcpy((byte*)&TempEvent, (byte*)&NRFPayload+5,sizeof(struct NodoEventStruct));
+              memcpy((byte*)&TempEvent, (byte*)&NRFPayload+8,sizeof(struct NodoEventStruct));
               TempEvent.Direction = VALUE_DIRECTION_INPUT;
               TempEvent.Port      = VALUE_SOURCE_RF;
               NRFOnline[event->SourceUnit]=true;
@@ -408,7 +411,7 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
       {
         // on the receiving end, this event may be passed through by NRFExtender on the I2C bus, so it needs a checksum
         Checksum(event);// bereken checksum: crc-8 uit alle bytes in de struct.
-        memcpy((byte*)&NRFPayload+5, (byte*)event,sizeof(struct NodoEventStruct));
+        memcpy((byte*)&NRFPayload+8, (byte*)event,sizeof(struct NodoEventStruct));
 
         byte first=1;
         byte last=NRF_UNIT_MAX;
@@ -646,8 +649,11 @@ byte NRF_sendpacket(byte Source, byte Destination, byte ID, byte Size, byte retr
   NRFPayload.Source=Source;
   NRFPayload.Destination=Destination;
   NRFPayload.ID=ID;
-  NRFPayload.Sequence++;
   NRFPayload.Size=Size;
+  NRFPayload.Sequence++;
+  NRFPayload.Flags=0;
+  NRFPayload.Future1=0;
+  NRFPayload.Future2=0;
   
   NRF_address[0]=Destination;
   Nrf24_setTADDR((byte *)NRF_address);
