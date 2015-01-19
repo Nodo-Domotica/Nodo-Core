@@ -7,8 +7,8 @@
  * 
  * Auteur             : Martinus van den Broek
  * Support            : Beta !
- * Datum              : 4 Jan 2015 (Static routing, Node discovery, noack broadcast)
- * Versie             : 0.13
+ * Datum              : 18 Jan 2015 (handle other NRF ID events)
+ * Versie             : 0.14
  * Nodo productnummer : 
  * Compatibiliteit    : Vanaf Nodo build nummer 765 voor Sendto (!)
  *
@@ -73,7 +73,7 @@
   #define NRF_CHANNEL               36 // Mega defaults to channel 36
 #endif
 
-#ifdef NRF_HWSPI		// test purposes for std hardware, not officially supported !!!
+#ifdef NRF_HWSPI		// test purposes for std hardware, not officially supported !
   #if NODO_MEGA
     #define NRF_CSN_PIN  40
     #define NRF_CE_PIN   41
@@ -93,8 +93,10 @@
 #define NRF_SEND_TIMEOUTMS       150
 
 #define NRF_PAYLOAD_NODO           0
-#define NRF_PAYLOAD_PINGREQ        4
-#define NRF_PAYLOAD_PINGREP        5
+#define NRF_PAYLOAD_SENSOR         1
+#define NRF_PAYLOAD_EVENT          2
+#define NRF_PAYLOAD_TEXT           3
+#define NRF_PAYLOAD_ICMP           4
 #define NRF_PAYLOAD_SYSTEM       255
 
 #define NRF_SYSTEMCMD_CHECKONLINE  1
@@ -342,7 +344,7 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
         {
            unsigned long NRF_roundtrip=millis();
            NRFOnline[0]=0;
-           byte NRF_status= NRF_sendpacket(Settings.Unit, event->Par2, NRF_PAYLOAD_PINGREQ, 0,NRFSequence++,0,0);
+           byte NRF_status= NRF_sendpacket(Settings.Unit, event->Par2, NRF_PAYLOAD_ICMP, 0,NRFSequence++,0,0);
            NRFOnline[0]=1;
            Serial.print("status ");
            Serial.println((int)NRF_status);
@@ -647,6 +649,18 @@ if (!blocked)
                 break;
               }
 
+              default:
+              {
+                // must be some other packet, just create log event within Nodo
+                // other plugins can check this event and use NRFPayload for processing
+                ClearEvent(event); 
+                event->Type=NODO_TYPE_PLUGIN_EVENT;
+                event->Command=PLUGIN_ID;
+                event->Par1=71;
+                event->Par2=NRFPayload.ID;
+                success=true;
+              }
+
             } // switch payload id
 
             #if NRF_FEATURE_NODE_DISCOVERY
@@ -879,8 +893,8 @@ byte NRF_sendpacket(byte Source, byte Destination, byte ID, byte Size, byte Sequ
   NRFPayload.Size=Size;
   NRFPayload.Sequence=Sequence;
   NRFPayload.Flags=Flags;
-  NRFPayload.Future=0;
   NRFPayload.Gateway=Settings.Unit;
+  NRFPayload.Future=0;
 
   boolean ack=true;
   if (first == NRF_BROADCAST_ADDRESS &&  !(NRFPayload.ID == NRF_PAYLOAD_SYSTEM && NRFPayload.Data[0] == NRF_SYSTEMCMD_FINDMASTER))
