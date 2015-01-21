@@ -2,7 +2,7 @@
 ! RawSignal Scriptfile: ELRO 
 !
 ! Arduino Domotica project "Nodo"
-! © Copyright 2013 Paul Tonkes 
+! Â© Copyright 2013 Paul Tonkes 
 ! http://www.nodo-domotica.nl 
 !
 ! Nodo script voor laden Rawsignals voor ELRO schakelmateriaal. 
@@ -43,7 +43,7 @@ RawSignalPulses 10:850,250,250,850,850,250,250,850,850,250
 RawSignalPulses 20:250,850,250,850,250,850,850,250,250,850
 RawSignalPulses 30:850,250,250,850,850,250,250,850,850,250
 RawSignalPulses 40:250,850,250,850,250,850,850,250,250,0
-
+RawSignalWrite
 
 AliasWrite ELRO 1A,Off=RawSignal 0xD57556
 AliasWrite ELROSend 1A,Off=RawSignalSend 0xD57556
@@ -52,7 +52,7 @@ RawSignalPulses 10:850,250,250,850,850,250,250,850,850,250
 RawSignalPulses 20:250,850,250,850,250,850,850,250,250,850
 RawSignalPulses 30:850,250,250,850,850,250,250,850,850,250
 RawSignalPulses 40:250,850,850,250,250,850,250,850,250,0
-
+RawSignalWrite
 
 AliasWrite ELRO 1B,On=RawSignal 0xD55D5C
 AliasWrite ELROSend 1B,On=RawSignalSend 0xD55D5C
@@ -61,7 +61,7 @@ RawSignalPulses 10:850,250,250,850,850,250,250,850,850,250
 RawSignalPulses 20:250,850,850,250,250,850,250,850,250,850
 RawSignalPulses 30:850,250,250,850,850,250,250,850,850,250
 RawSignalPulses 40:250,850,250,850,250,850,850,250,250,0
-
+RawSignalWrite
 
 AliasWrite ELRO 1B,Off=RawSignal 0xD55D56
 AliasWrite ELROSend 1B,Off=RawSignalSend 0xD55D56
@@ -70,7 +70,7 @@ RawSignalPulses 10:850,250,250,850,850,250,250,850,850,250
 RawSignalPulses 20:250,850,850,250,250,850,250,850,250,850
 RawSignalPulses 30:850,250,250,850,850,250,250,850,850,250
 RawSignalPulses 40:250,850,850,250,250,850,250,850,250,0
-
+RawSignalWrite
 
 AliasWrite ELRO 1C,On=RawSignal 0xD5575C
 AliasWrite ELROSend 1C,On=RawSignalSend 0xD5575C
@@ -79,7 +79,7 @@ RawSignalPulses 10:850,250,250,850,850,250,250,850,850,250
 RawSignalPulses 20:250,850,850,250,250,850,850,250,250,850
 RawSignalPulses 30:250,850,250,850,850,250,250,850,850,250
 RawSignalPulses 40:250,850,250,850,250,850,850,250,250,0
-
+RawSignalWrite
 
 AliasWrite ELRO 1C,Off=RawSignal 0xD55756
 AliasWrite ELROSend 1C,Off=RawSignalSend 0xD55756
@@ -88,7 +88,7 @@ RawSignalPulses 10:850,250,250,850,850,250,250,850,850,250
 RawSignalPulses 20:250,850,850,250,250,850,850,250,250,850
 RawSignalPulses 30:250,850,250,850,850,250,250,850,850,250
 RawSignalPulses 40:250,850,850,250,250,850,250,850,250,0
-
+RawSignalWrite
 
 AliasWrite ELRO 1D,On=RawSignal 0xD555DC
 AliasWrite ELROSend 1D,On=RawSignalSend 0xD555DC
@@ -97,7 +97,7 @@ RawSignalPulses 10:850,250,250,850,850,250,250,850,850,250
 RawSignalPulses 20:250,850,850,250,250,850,850,250,250,850
 RawSignalPulses 30:850,250,250,850,250,850,250,850,850,250
 RawSignalPulses 40:250,850,250,850,250,850,850,250,250,0
-
+RawSignalWrite
 
 AliasWrite ELRO 1D,Off=RawSignal 0xD555D6
 AliasWrite ELROSend 1D,Off=RawSignalSend 0xD555D6
@@ -106,7 +106,7 @@ RawSignalPulses 10:850,250,250,850,850,250,250,850,850,250
 RawSignalPulses 20:250,850,850,250,250,850,850,250,250,850
 RawSignalPulses 30:850,250,250,850,250,850,250,850,850,250
 RawSignalPulses 40:250,850,850,250,250,850,250,850,250,0
-
+RawSignalWrite
 
 AliasWrite ELRO 2A,On=RawSignal 0x8A8AA2
 AliasWrite ELROSend 2A,On=RawSignalSend 0x8A8AA2
@@ -115,7 +115,7 @@ RawSignalPulses 10:850,250,250,850,850,250,250,850,850,250
 RawSignalPulses 20:250,850,250,850,250,850,850,250,250,850
 RawSignalPulses 30:850,250,250,850,850,250,250,850,850,250
 RawSignalPulses 40:250,850,250,850,250,850,850,250,250,0
-
+RawSignalWrite
 
 AliasWrite ELRO 2A,Off=RawSignal 0x8A8AA8
 AliasWrite ELROSend 2A,Off=RawSignalSend 0x8A8AA8
@@ -124,7 +124,7 @@ RawSignalPulses 10:850,250,250,850,850,250,250,850,850,250
 RawSignalPulses 20:250,850,250,850,250,850,850,250,250,850
 RawSignalPulses 30:850,250,250,850,850,250,250,850,850,250
 RawSignalPulses 40:250,850,850,250,250,850,250,850,250,0
-
+RawSignalWrite
 
 AliasWrite ELRO 2B,On=RawSignal 0x8AA2A2
 AliasWrite ELROSend 2B,On=RawSignalSend 0x8AA2A2
@@ -133,7 +133,7 @@ RawSignalPulses 10:850,250,250,850,850,250,250,850,850,250
 RawSignalPulses 20:250,850,850,250,250,850,250,850,250,850
 RawSignalPulses 30:850,250,250,850,850,250,250,850,850,250
 RawSignalPulses 40:250,850,250,850,250,850,850,250,250,0
-
+RawSignalWrite
 
 AliasWrite ELRO 2B,Off=RawSignal 0x8AA2A8
 AliasWrite ELROSend 2B,Off=RawSignalSend 0x8AA2A8
@@ -142,7 +142,7 @@ RawSignalPulses 10:850,250,250,850,850,250,250,850,850,250
 RawSignalPulses 20:250,850,850,250,250,850,250,850,250,850
 RawSignalPulses 30:850,250,250,850,850,250,250,850,850,250
 RawSignalPulses 40:250,850,850,250,250,850,250,850,250,0
-
+RawSignalWrite
 
 AliasWrite ELRO 2C,On=RawSignal 0x8AA8A2
 AliasWrite ELROSend 2C,On=RawSignalSend 0x8AA8A2
@@ -151,7 +151,7 @@ RawSignalPulses 10:850,250,250,850,850,250,250,850,850,250
 RawSignalPulses 20:250,850,850,250,250,850,850,250,250,850
 RawSignalPulses 30:250,850,250,850,850,250,250,850,850,250
 RawSignalPulses 40:250,850,250,850,250,850,850,250,250,0
-
+RawSignalWrite
 
 AliasWrite ELRO 2C,Off=RawSignal 0x8AA8A8
 AliasWrite ELROSend 2C,Off=RawSignalSend 0x8AA8A8
@@ -160,7 +160,7 @@ RawSignalPulses 10:850,250,250,850,850,250,250,850,850,250
 RawSignalPulses 20:250,850,850,250,250,850,850,250,250,850
 RawSignalPulses 30:250,850,250,850,850,250,250,850,850,250
 RawSignalPulses 40:250,850,850,250,250,850,250,850,250,0
-
+RawSignalWrite
 
 AliasWrite ELRO 2D,On=RawSignal 0x8AAA22
 AliasWrite ELROSend 2D,On=RawSignalSend 0x8AAA22
@@ -169,7 +169,7 @@ RawSignalPulses 10:850,250,250,850,850,250,250,850,850,250
 RawSignalPulses 20:250,850,850,250,250,850,850,250,250,850
 RawSignalPulses 30:850,250,250,850,250,850,250,850,850,250
 RawSignalPulses 40:250,850,250,850,250,850,850,250,250,0
-
+RawSignalWrite
 
 AliasWrite ELRO 2D,Off=RawSignal 0x8AAA28
 AliasWrite ELROSend 2D,Off=RawSignalSend 0x8AAA28
@@ -178,6 +178,7 @@ RawSignalPulses 10:850,250,250,850,850,250,250,850,850,250
 RawSignalPulses 20:250,850,850,250,250,850,850,250,250,850
 RawSignalPulses 30:850,250,250,850,250,850,250,850,850,250
 RawSignalPulses 40:250,850,850,250,250,850,250,850,250,0
+RawSignalWrite
 
 Sound 3
 
