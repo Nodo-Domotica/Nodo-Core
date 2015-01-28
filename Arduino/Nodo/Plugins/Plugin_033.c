@@ -7,8 +7,8 @@
  * 
  * Auteur             : Martinus van den Broek
  * Support            : Beta !
- * Datum              : 18 Jan 2015 (handle other NRF ID events)
- * Versie             : 0.14
+ * Datum              : 28 Jan 2015 (learn mechanisme aangepast)
+ * Versie             : 0.15
  * Nodo productnummer : 
  * Compatibiliteit    : Vanaf Nodo build nummer 765 voor Sendto (!)
  *
@@ -291,10 +291,22 @@ boolean Plugin_033(byte function, struct NodoEventStruct *event, char *string)
       #endif
 
       #if NRF_DEBUG
-      if (event->Par1 == CMD_DEBUG)      
+      if (event->Par1 == CMD_DEBUG)
         {
           if (event->Par2 == VALUE_OFF) NRF_debug = false;
           if (event->Par2 == VALUE_ON) NRF_debug = true;
+          if (event->Par2 == 1)
+            {
+              unsigned long duur=micros();
+              if(Nrf24_dataReady()) {}
+              Serial.println(micros()-duur);
+            }
+          if (event->Par2 == 2)
+            {
+              unsigned long duur=micros();
+              SPI_transfer(255);
+              Serial.println(micros()-duur);
+            }
         }
       #endif
 
@@ -495,43 +507,6 @@ boolean NRF_receive(struct NodoEventStruct *event)
               }
           #endif
 
-// testmode block, to simulate unreachable nodo's in testlab, remove before production!
-#ifdef NRF_TESTBLOCK1
-  boolean blocked=false;
-  if ((NRFPayload.Source==NRF_TESTBLOCK1 || NRFPayload.Source==NRF_TESTBLOCK2 || NRFPayload.Source==NRF_TESTBLOCK3) && (NRFPayload.Flags & 0x3)==0)
-    {
-      Serial.println("In Blocked1");
-      blocked=true;
-      NRFPayload.ID=123;
-      NRFPayload.Flags=1;
-      NRFPayload.Source=0;
-      NRFPayload.Destination=Settings.Unit;
-    }
-  if ((NRFPayload.Gateway==NRF_TESTBLOCK1 || NRFPayload.Gateway==NRF_TESTBLOCK2 || NRFPayload.Gateway==NRF_TESTBLOCK3))
-    {
-      Serial.println("In Blocked2");
-      blocked=true;
-      NRFPayload.ID=123;
-      NRFPayload.Flags=1;
-      NRFPayload.Source=0;
-      NRFPayload.Destination=Settings.Unit;
-    }
-if (!blocked)
-#endif
-          if(NRFPayload.Source!=Settings.Unit && NRFOnline[NRFPayload.Source]==0)
-            {
-              NRFOnline[NRFPayload.Source]=NRFPayload.Gateway;
-              #if NRF_DEBUG
-              if (NRF_debug)
-                {
-                  Serial.print("Learned ");
-                  Serial.print((int)NRFPayload.Source);
-                  Serial.print(" using ");
-                  Serial.println((int)NRFPayload.Gateway);
-                }
-              #endif
-            }
-
           #if NRF_FEATURE_ROUTER
           // static routing
           if (NRFPayload.Destination != NRF_BROADCAST_ADDRESS_ACK && NRFPayload.Destination != NRF_BROADCAST_ADDRESS && NRFPayload.Destination != Settings.Unit && (NRFPayload.Flags & 0x3) < 3)
@@ -557,6 +532,58 @@ if (!blocked)
             }
           else 
             {
+
+// testmode block, to simulate unreachable nodo's in testlab, remove before production!
+#ifdef NRF_TESTBLOCK1
+  boolean blocked=false;
+  if ((NRFPayload.Source==NRF_TESTBLOCK1 || NRFPayload.Source==NRF_TESTBLOCK2 || NRFPayload.Source==NRF_TESTBLOCK3) && (NRFPayload.Flags & 0x3)==0)
+    {
+      Serial.println("In Blocked1");
+      blocked=true;
+      NRFPayload.ID=123;
+      NRFPayload.Flags=1;
+      NRFPayload.Source=0;
+      NRFPayload.Destination=Settings.Unit;
+    }
+  if ((NRFPayload.Gateway==NRF_TESTBLOCK1 || NRFPayload.Gateway==NRF_TESTBLOCK2 || NRFPayload.Gateway==NRF_TESTBLOCK3))
+    {
+      Serial.println("In Blocked2");
+      blocked=true;
+      NRFPayload.ID=123;
+      NRFPayload.Flags=1;
+      NRFPayload.Source=0;
+      NRFPayload.Destination=Settings.Unit;
+    }
+if (!blocked)
+#endif
+            if(NRFPayload.Source!=Settings.Unit && NRFOnline[NRFPayload.Source]==0)
+            {
+              #if NRF_FEATURE_NODE_DISCOVERY
+                NRFOnline[NRFPayload.Source]=NRFPayload.Gateway;
+                #if NRF_DEBUG
+                if (NRF_debug)
+                  {
+                    Serial.print("Learned ");
+                    Serial.print((int)NRFPayload.Source);
+                    Serial.print(" using ");
+                    Serial.println((int)NRFPayload.Gateway);
+                  }
+                #endif
+              #else
+                // accept only direct targets
+                if (NRFPayload.Source==NRFPayload.Gateway)
+                  {
+                    NRFOnline[NRFPayload.Source]=NRFPayload.Gateway;
+                    #if NRF_DEBUG
+                      if (NRF_debug)
+                        {
+                          Serial.print("Learned ");
+                          Serial.println((int)NRFPayload.Source);
+                        }
+                    #endif
+                  }
+              #endif
+            }
 
             switch(NRFPayload.ID)
             {
