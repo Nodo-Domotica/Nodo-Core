@@ -111,7 +111,7 @@ boolean Monitor=false, DigitalOutput=false,DigitalOutputPrev=false;
 byte VarInput=VARIABLE_INPUT, VarOutput=VARIABLE_OUTPUT,VarSetpoint=VARIABLE_SETPOINT;
 
 
-boolean Plugin_100(byte function, struct NodoEventStruct *event, char *string)
+boolean Plugin_036(byte function, struct NodoEventStruct *event, char *string)
   {
   boolean success=false;
   int x,y;
