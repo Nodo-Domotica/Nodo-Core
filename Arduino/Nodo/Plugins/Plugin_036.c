@@ -1,5 +1,5 @@
 //#######################################################################################################
-//#################################### Plugin-100: PID-Regelaar        ##################################
+//#################################### Plugin-036: PID-Regelaar        ##################################
 //#######################################################################################################
 
 /*********************************************************************************************\
@@ -7,7 +7,7 @@
 * Support            : www.nodo-domotica.nl
 * Datum              : 29-01-2015
 * Versie             : 0.1 Zandbak versie 
-* Nodo productnummer : Plugin-36 PID-Controller (SWACDE-Plugin36 PID-Controller-V0.1)
+* Nodo productnummer : Plugin-036 PID-Controller (SWACDE-Plugin36 PID-Controller-V0.1)
 * Compatibiliteit    : Nodo versie 3.7 (Mega of Small)
 * Syntax             : PID <parameter>, <waarde>
 *
