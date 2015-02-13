@@ -270,7 +270,7 @@ boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
               // Een plugin kan worden verwerkt als een commando of een event. Geef dit aan want 
               // op moment van invoer moet de Nodo t.b.v. latere verwerking weten hoe de zaken afgehandeld moeten worden
               event->Type    = NODO_TYPE_PLUGIN_COMMAND;
-              event->Command = 255; // nummer van dit plugin
+              event->Command = PLUGIN_ID; // nummer van dit plugin
               
               // Als success wordt gevuld met true, dan wordt het commando/event
               // geaccepteerd als geldig.
