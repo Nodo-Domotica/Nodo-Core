@@ -77,7 +77,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   #endif 
 
   // Verstuur event via I2C
-  // LET OP:  Voor I2C geldt een verwerking: Als een device een signaal verzendt, dan mag dit commando alleen er toe leiden dat het
+  // LET OP:  Voor I2C geldt een beperking: Als een device een signaal verzendt, dan mag dit commando alleen er toe leiden dat het
   //          RawSignal wordt verzonden via RF/IR. Anders zal het commando worden verstuurd over I2C waarna de Nodo's op I2C het commando nogmaal
   //          zullen uitvoeren. Zo zal er een ongewenste loop ontstaan.
   

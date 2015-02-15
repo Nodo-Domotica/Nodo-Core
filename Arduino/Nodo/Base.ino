@@ -196,7 +196,7 @@ byte dummy=1;                                                                   
 #define CMD_ALIAS_SHOW                  138
 #define CMD_ALIAS_LIST                  139
 #define CMD_POWERSAVE                   140
-#define CMD_RES141                      141
+#define CMD_VARIABLE_PUT                141
 #define CMD_STOP                        142
 #define CMD_SLEEP                       143   
 #define VALUE_FAST                      144
@@ -220,7 +220,8 @@ byte dummy=1;                                                                   
 #define MESSAGE_PLUGIN_ERROR            14
 #define MESSAGE_VERSION_ERROR           15
 #define MESSAGE_BUSY_TIMEOUT            16
-#define MESSAGE_MAX                     16                                      // laatste bericht tekst
+#define MESSAGE_NODO_NOT_FOUND          17
+#define MESSAGE_MAX                     17                                      // laatste bericht tekst
 
 
 #if NODO_MEGA
@@ -370,7 +371,7 @@ prog_char PROGMEM Cmd_137[]="AliasErase";
 prog_char PROGMEM Cmd_138[]="AliasShow";
 prog_char PROGMEM Cmd_139[]="AliasList";
 prog_char PROGMEM Cmd_140[]="PowerSave";
-prog_char PROGMEM Cmd_141[]="";// future use
+prog_char PROGMEM Cmd_141[]="VariablePut";
 prog_char PROGMEM Cmd_142[]="Stop";
 prog_char PROGMEM Cmd_143[]="Sleep";
 prog_char PROGMEM Cmd_144[]="Fast";
@@ -409,13 +410,14 @@ prog_char PROGMEM Msg_9[]  = "Communication error.";
 prog_char PROGMEM Msg_10[] = "SDCard error.";
 prog_char PROGMEM Msg_11[] = "Break.";
 prog_char PROGMEM Msg_12[] = "RawSignal saved.";
-prog_char PROGMEM Msg_13[] = "Unknown device.";
+prog_char PROGMEM Msg_13[] = "Unknown plugin.";
 prog_char PROGMEM Msg_14[] = "Plugin returned an error.";
 prog_char PROGMEM Msg_15[] = "Incompatibel Nodo event.";
 prog_char PROGMEM Msg_16[] = "Timeout on busy Nodo.";
+prog_char PROGMEM Msg_17[] = "Nodo not found.";
 
 // tabel die refereert aan de message strings
-PROGMEM const char *MessageText_tabel[]={Msg_0,Msg_1,Msg_2,Msg_3,Msg_4,Msg_5,Msg_6,Msg_7,Msg_8,Msg_9,Msg_10,Msg_11,Msg_12,Msg_13,Msg_14,Msg_15,Msg_16};
+PROGMEM const char *MessageText_tabel[]={Msg_0,Msg_1,Msg_2,Msg_3,Msg_4,Msg_5,Msg_6,Msg_7,Msg_8,Msg_9,Msg_10,Msg_11,Msg_12,Msg_13,Msg_14,Msg_15,Msg_16,Msg_17};
 
 
 // strings met vaste tekst naar PROGMEM om hiermee RAM-geheugen te sparen.
@@ -650,7 +652,7 @@ struct SettingsStruct
   #if NODO_MEGA
   unsigned long Alarm[ALARM_MAX];                                               // Instelbaar alarm
   byte    Debug;                                                                // Weergeven van extra gegevens t.b.v. beter inzicht verloop van de verwerking
-  byte    TransmitHTTP;                                                           // Definitie van het gebruik van HTTP-communicatie via de IP-poort: [Off | On | All]
+  byte    TransmitHTTP;                                                         // Definitie van het gebruik van HTTP-communicatie via de IP-poort: [Off | On | All]
   char    Password[26];                                                         // String met wachtwoord.
   char    ID[10];                                                               // ID waar de Nodo uniek mee geÃ¯dentificeerd kan worden in een netwerk
   char    HTTPRequest[80];                                                      // HTTP request;
@@ -748,7 +750,7 @@ boolean WiredOutputStatus[WIRED_PORTS];                                         
 #if NODO_MEGA
 byte  Transmission_SendToUnit=0;                                                // Unitnummer waar de events naar toe gestuurd worden. 0=alle.
 byte  Transmission_SendToAll=0;                                                 // Waarde die aangeeft of het SendTo permanent staat ingeschakeld. 0=uit, in andere gevallen het unitnummer.
-boolean Transmission_SendToFast=false;                                          // Vlag die aangeeft of de SendTo via de snelle modus (zonder handshaking) plaats moet vinden.
+boolean Transmission_SendtoFast=false;                                          // Vlag die aangeeft of de SendTo via de snelle modus (zonder handshaking) plaats moet vinden.
 byte AlarmPrevious[ALARM_MAX];                                                  // Bevat laatste afgelopen alarm. Ter voorkoming dat alarmen herhaald aflopen.
 byte BIC=0;                                                                     // Board Identification Code: identificeert de hardware uitvoering van de Nodo
 uint8_t MD5HashCode[16];                                                        // tabel voor berekenen van MD5 hash codes.
