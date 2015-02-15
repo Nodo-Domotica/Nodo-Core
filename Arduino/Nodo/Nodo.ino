@@ -44,10 +44,7 @@
 // Geef het volledige pad op. Let op: Bij Linux/Unix zijn de namen case-sensitive.
 // ============================================================================================================================
 
-#define SKETCH_PATH C:\Users\tonkes\Google Drive\Paul\Nodo\SVN\Arduino\Nodo
-//???#define SKETCH_PATH C:\..\..\..\Nodo
-
-
+#define SKETCH_PATH   D:\User\Paul\svn\Arduino\Nodo
 
 // ============================================================================================================================
 // We kennen twee type Nodo's:
@@ -80,11 +77,11 @@
 
 
 // ================================= Unit-1: Configuratie voor de Nodo-Mega ===================================================
-// #define CONFIG_FILE Config_10.c
-// #include <SD.h>                                 // Deze include noodzakelijk voor een Nodo-Mega. Niet gebruiken voor een Small!
-// #include <EthernetNodo.h>                       // Deze include optioneel als Ethernet wordt gebruikt. Niet gebruiken voor een Small!
+#define CONFIG_FILE Config_10.c
+#include <SD.h>                                 // Deze include noodzakelijk voor een Nodo-Mega. Niet gebruiken voor een Small!
+//#include <EthernetNodo.h>                       // Deze include optioneel als Ethernet wordt gebruikt. Niet gebruiken voor een Small!
 
 
 // ================================= Unit-15: Configuratie voor de Nodo-Small =================================================
-#define CONFIG_FILE Config_02.c
+// #define CONFIG_FILE Config_15.c
 

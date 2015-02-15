@@ -143,6 +143,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
           #endif
           return false;
           }     
+        // PrintNodoEvent("DEBUG: ScanEvent(): Fetched", Event);
     
         // als het informatie uitwisseling tussen Nodo's betreft...
         if(Event->Type==NODO_TYPE_EVENT || Event->Type==NODO_TYPE_COMMAND || Event->Type==NODO_TYPE_SYSTEM)
@@ -162,7 +163,6 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
         if(Event->DestinationUnit==0 || Event->DestinationUnit==Settings.Unit)
           {
           EventHashPrevious=SignalHash;
-          // PrintNodoEvent("DEBUG: ScanEvent(): Fetched", Event);
           return true;
           }
         }

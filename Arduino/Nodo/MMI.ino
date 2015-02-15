@@ -118,7 +118,7 @@ int ExecuteLine(char *Line, byte Port)
               QueuePosition=0;                                                  //We gebruiken de Queue voor verwerking van de commando's die middels SendTo naar de Slave moeten  
               Transmission_SendToUnit=EventToExecute.Par1;
               Transmission_SendToAll=0;  
-              Transmission_SendToFast=false;
+              Transmission_SendtoFast=false;
                             
               if(StringFind(Command,cmd2str(VALUE_OFF))!=-1)
                 {
@@ -134,7 +134,7 @@ int ExecuteLine(char *Line, byte Port)
                     Transmission_SendToAll=Transmission_SendToUnit;  
                     
                   if(StringFind(Command, cmd2str(VALUE_FAST))!=-1)              // Zoek of in een van de parameters Fast staat
-                    Transmission_SendToFast=true;
+                    Transmission_SendtoFast=true;
                   }
                 }
               EventToExecute.Command=0;      
@@ -499,7 +499,7 @@ int ExecuteLine(char *Line, byte Port)
     // Verzend de inhoud van de queue naar de slave Nodo
     if(Transmission_SendToUnit!=Settings.Unit && Transmission_SendToUnit!=0 && error==0 && QueuePosition>0)
       {
-      error=QueueSend(Transmission_SendToFast);
+      error=QueueSend(Transmission_SendtoFast);
       if(error)
         {
         CommandPos=0;
@@ -861,6 +861,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
 
 
       case CMD_VARIABLE_GET:
+      case CMD_VARIABLE_PUT:
         ParameterToView[0]=PAR1_INT;
         ParameterToView[1]=PAR2_INT8;
         ParameterToView[2]=PAR3_INT;
@@ -1448,6 +1449,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
       break;
 
     case CMD_VARIABLE_GET: // VariableGet <Variabele>, <Unit>, <VariabeleBron> 
+    case CMD_VARIABLE_PUT: // VariablePut <Variabele>, <Unit>, <VariabeleBestemming> 
       ResultEvent->Type=NODO_TYPE_COMMAND;
       error=MESSAGE_INVALID_PARAMETER;
 
@@ -1455,7 +1457,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
         {
         if(ResultEvent->Par2>0 && ResultEvent->Par2<=UNIT_MAX)
           {
-          if(GetArgv(Command,TmpStr1,4))// VariabeleBron
+          if(GetArgv(Command,TmpStr1,4))// VariabeleBron / bestemming
             {
             x=str2int(TmpStr1);
             if(x>0 && x<=USER_VARIABLES_MAX)

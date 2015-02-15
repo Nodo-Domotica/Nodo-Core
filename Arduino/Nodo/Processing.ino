@@ -99,10 +99,13 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     }
 
   // Events die nu nog de TRANSMISSION_SENDTO vlag hebben staan hoorden oorspronkelijk tot een reeks die verzonden is
-  // met een SendTo. Deze events hebben dier geen betekenis en dus volledig negeren.
+  // met een SendTo. Deze events hebben hier geen betekenis en dus volledig negeren.
   if(Continue && (Event->Flags & TRANSMISSION_SENDTO))
     Continue=false;
 
+  // Als in het event een verzoek zit om een bevestiging te verzenden...
+  if(Event->Flags & TRANSMISSION_CONFIRM)
+    RequestForConfirm=true;
 
   if(Continue && (Event->Flags & TRANSMISSION_QUEUE))
     {
@@ -134,7 +137,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     PrintEvent(Event, VALUE_ALL);
     
     // Enkele commando's moet de WebApp terug ontvangen omdat anders statussen niet correct zijn.
-    // Dit is een tijdelijke oplossing.
+    // Dit is een tijdelijke oplossing.  (???)
     x=false;
     if(Settings.TransmitHTTP==VALUE_ON && Event->Type==NODO_TYPE_COMMAND)
       {
@@ -459,37 +462,35 @@ void QueueProcess(void)
  \*********************************************************************************************/
 byte QueueSend(boolean fast)
   {
-  byte x,Port,error=MESSAGE_SENDTO_ERROR, Retry=0;
+  byte x,Port=0,error=MESSAGE_SENDTO_ERROR, Retry=0;
   unsigned long ID=millis();
   struct NodoEventStruct Event;
 
   byte Org_WFN=Settings.WaitFreeNodo;                                           // Stel de oorspronkelijke WaitFreeNodo setting veilig
   Settings.WaitFreeNodo=VALUE_OFF;                                              // Schakel WaitFreeNodo uit omdat dit het SendTo mechanisme doorkruist.
     
-  if(!fast)
+  Port=NodoOnline(Transmission_SendToUnit,0);                                   // Port waar SendTo naar toe moet halen we uit lijst met Nodo's onderhouden door NodoOnline();
+
+  if(fast && Port==0)                                                           // Als we de Nodo niet kennen en fast mode
+    Port=VALUE_ALL;                                                             // dan event naar alle poorten sturen.
+
+  while(Port==0 && ++Retry<3)
     {
     x=bitRead(HW_Config,HW_I2C);                                                // Zet I2C tijdelijk aan
     bitWrite(HW_Config,HW_I2C,1);
-    do
-      {
-      Port=NodoOnline(Transmission_SendToUnit,0);                               // Port waar SendTo naar toe moet halen we uit lijst met Nodo's onderhouden door NodoOnline();
-      if(Port==0)                                                               // als de Nodo nog niet bekend is, dan pollen we naar deze Nodo.
-        {
-        ClearEvent(&Event);
-        Event.Port                  = VALUE_ALL;
-        Event.Type                  = NODO_TYPE_SYSTEM;
-        Event.Command               = SYSTEM_COMMAND_QUEUE_POLL;
-        Event.DestinationUnit       = Transmission_SendToUnit;
-        Event.Flags                 = TRANSMISSION_CONFIRM;
-  
-        SendEvent(&Event, false, false, Settings.WaitFree==VALUE_ON);
-  
-        Wait(5, false,0 , false);  
-        }
-      }while(Port==0 && ++Retry<3);
-    bitWrite(HW_Config,HW_I2C,Port==VALUE_SOURCE_I2C | x);
+
+    ClearEvent(&Event);
+    Event.Port                  = VALUE_ALL;
+    Event.Type                  = NODO_TYPE_SYSTEM;
+    Event.Command               = SYSTEM_COMMAND_QUEUE_POLL;
+    Event.DestinationUnit       = Transmission_SendToUnit;
+    Event.Flags                 = TRANSMISSION_CONFIRM;
+    SendEvent(&Event, false, false, Settings.WaitFree==VALUE_ON);             // Zend event naar Nodo met verzoek om bevestiging.
+
+    Wait(5, false,0 , false);                                                 // Wacht op reactie van de Nodo
+    bitWrite(HW_Config,HW_I2C,Port==VALUE_SOURCE_I2C | x);                    // Zet I2C weer in oorspronkelijke status.
     }
-  
+    
   if(Port!=0)
     {
     struct QueueStruct SendQueue[EVENT_QUEUE_MAX];                              // We maken tijdelijk gebruik van een SendQueue zodat de reguliere queue zijn werk kan blijven doen.
@@ -524,7 +525,7 @@ byte QueueSend(boolean fast)
         Event.Par1                = Queue[x].Par1;
         Event.Par2                = Queue[x].Par2;
           
-        // Serial.print(F("DEBUG: QueueSend() => FAST: SendEvent() x="));Serial.println(x); 
+        //Serial.print(F("DEBUG: QueueSend() => FAST: SendEvent() x="));Serial.println(x); 
         SendEvent(&Event,false,false,Settings.WaitFree==VALUE_ON);
         }
       QueuePosition=0;
@@ -591,6 +592,9 @@ byte QueueSend(boolean fast)
       // if(error){Serial.print(F("DEBUG: QueueSend() Verwacht aantal="));Serial.print(x);Serial.print(F(", Bevestigd aantal="));Serial.print(Event.Par1);PrintNodoEvent(", Ontvangen=",&Event);}
       }while((++Retry<10) && error);   
     }
+  else
+    RaiseMessage(MESSAGE_NODO_NOT_FOUND,0);
+    
   QueuePosition=0;
   Settings.WaitFreeNodo=Org_WFN;                                                // Herstel de oorspronkelijke WaitFreeNodo setting.  
   return error;

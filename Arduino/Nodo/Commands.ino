@@ -1,4 +1,4 @@
-/*********************************************************************************************\
+ /*********************************************************************************************\
  * Deze functie checked of de code die ontvangen is een uitvoerbare opdracht is/
  * Als het een correct commando is wordt deze uitgevoerd en 
  * true teruggegeven. Zo niet dan wordt er een 'false' retour gegeven.
@@ -199,6 +199,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
       SendEvent(&TempEvent, false, true,Settings.WaitFree==VALUE_ON);
       break;         
+
 
     case CMD_VARIABLE_SAVE:
       for(z=1;z<=USER_VARIABLES_MAX;z++)
@@ -600,7 +601,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
       }
 
-    case CMD_VARIABLE_GET: // VariableReceive <Variabelenummer_Bestemming>, <unit>, <Variabelenummer_Bron_Andere_Nodo>
+    case CMD_VARIABLE_GET: // VariableGet <Variabelenummer_Bestemming>, <unit>, <Variabelenummer_Bron_Andere_Nodo>
       y=0; // retries
       error=MESSAGE_SENDTO_ERROR;
       do
@@ -647,6 +648,24 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
           error=0;
           }
         }while(error && ++y<3);
+      break;        
+
+    case CMD_VARIABLE_PUT: // VariablePut <Variabelenummer_Bron>, <unit>, <Variabelenummer_Bestemming_Andere_Nodo>
+        x=EventToExecute->Par2&0xff;                                            // Unit nummer
+        y=NodoOnline(x,0);                                                      // Poort waar unitnummer op gezien is
+        if(y==0)y=VALUE_ALL;                                                    // Als we de poort (nog) niet kennen, dan naar alle poorten zenden.
+
+        ClearEvent(&TempEvent);
+        TempEvent.DestinationUnit=x;
+        TempEvent.Type=NODO_TYPE_COMMAND;
+        TempEvent.Command=CMD_VARIABLE_SET;
+        TempEvent.Port=y;
+        TempEvent.Flags=TRANSMISSION_QUEUE;
+        TempEvent.Par1=(EventToExecute->Par2>>8)&0xff;                          // Variabele aan de kant van de bestemming
+        TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);               // Waarde 
+
+        SendEvent(&TempEvent,false,y==0,Settings.WaitFree==VALUE_ON);
+        
       break;        
 
     case CMD_PORT_INPUT:

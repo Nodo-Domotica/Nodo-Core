@@ -1,81 +1,10 @@
 
-/********************* Aanpassingen t.o.v. versie 3.6.9 Build 651  **********************************\
+/********************* Aanpassingen t.o.v. versie 3.7  **********************************\
 
-R652:
-- Div. aanpassingen RawSignalWrite
-- Invoer langere commando's mogelijk. Leverde problemen op bij lange AliasWrite regels.
-- TelNet invoer negeert non-ascii teken in plaats van de gehele invoer weg te gooien
-- Commando [RawSignalSample] zichtbaar met [Status]
-- Versienummer aangepast in welkomsttekst 3.6.9 (beta)
-
-R655:
-- Issue 825:	Webapp script uploaden werkt niet (FileExecute schreef alleen nummerieke bestandsnamen)
-- Nog een kleine versnelling in de scanloop van de Nodo aangebracht.
-
-R662:
-- Aanpassingen ontvangst RawSignal en onderdrukken herhaald binnenkomende signalen.
-- Aanpassing aan welkomsttekst.
-- Verwijderen overbodige code (was bedoeld voor debugging)
-
-R663:
-- Issue 827:	WIldCard met source aanduiding werkt niet.
-- Issue 822:	NewKAKU event wordt niet herkend
-
-R672:
-- Issue 831:	Variabele vanuit andere nodo geeft hit in eventlist
-
-R675:
-- Aliassen worden nu ook via HTTP events doorgegeven. (Voorbereiding op nieuwe WebApp)
-
-R677:
-- Div. aanpassingen ontvangst RawSignal signalen.
-- Bug in [Delay] Binnenkomende events verlengde onterecht de wachttijd.
-- Aanpassingen Led kleuren: Blauw=binnenkomend signaal, rood is verwerking.
-- [RawSignaReceive] heeft een 2e Parameter: On=Repeats worden gebruikt als checksum (default), Off=ieder individueel signaal geldig.
-
-R678:
-- Pollen naar Nodo's vindt nu niet tijdens iedere Boot plaats, maar slechts wanneer dit nodig is: Bij SendTo
-- Commando [Output] is de optie [All] verwijderd. Wordt vrijwel niet gebruikt en ook niet gedocumenteerd.
-
-R679:
-- Commando [FileLog] vervallen. Met [Log] , [FileWrite] en [FileWriteLine] hebben we alternatieven.
-- Bug opgelost in commando [FileWriteLine]
-- Issue 616:	BreakOn... laat verwerking script stoppen
-
-R680:
-- Issue 792:	'Wire' was not declared in this scope voor plugin 20 en 21.
-- Issue 803:	Event ClockDaylight komt niet na boot
-- Gehele getallen worden niet meer als een float met cijfers achter de komma weergegeven.
-
-R684:
-- Wildcard optie [TimerSet] vervallen.
-- Home adres alleen nog instelbaar middels een #define HOME_NODO. De waarde 1..7
-- I2C nu optioneel compileerbaar. "#define I2C false" scheelt +/- 1KB geheugen. 
- 
-R692:
-- Issue 776: Opslaan variabele(n) zoals voor R506
-- Commando [VariableSave <VariabeleNummer>] toegevoegd. Zie issue 776
-
-R703:
-- In Datum/tijdweergave ';' als scheiding i.p.v. ',' (O.a. in welkomsttekst, LOG.DAT en in de HTML-Header)
-- Foutief aantal regels vrij/gebruikt in [Status EventlistCount]
-
-R727:
-- Commando [WaitFreeNodo <on|off>] toegevoegd. Deze zorgt er voor dat een Nodo's elkaars verwerkingstijd respecteren alvorens events te verzenden.
-
-
-R736:
-- Toegevoegd commando [VariableToggle <VariabeleNummer>]
-- Bug: In enkele gevallen kwam de melding 'Unknown Command'  daar waar dit 'Invalid parameter' moest zijn.
-- Issue 695:	Zomertijd en wintertijd omschakeling niet correct.
-- Issue 857:	VariableGet parameter checking.
-
-R738:
-- Issue 845:	R698 Plugin-005 foutmelding en hangen Mega
-
-R740:
-- Setting [Output HTTP,All] zorgt er voor dat ieder event/commando wordt doorgegeven naar HTTP (WebApp).
-
+Rxxx:
+- Bug: SendTo Fast werkte niet altijd correct.
+- Aanpassing verzenden ACK op basis van verzoek van andere Nodo.
+      
       
 ToDo:
 -
