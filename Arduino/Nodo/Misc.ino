@@ -2354,10 +2354,12 @@ char * floatToString(char * outstr, double val, byte precision, byte widthp){
 
 /*******************************************************************************************************\
  * Converteert een string naar een weekdag. Geldige input:
- * Sun, Mon, ..... All, 0,1..7
+ * Sun, Mon, Tue, Wed, Thu, Fri, Sat, Sun, Wrk, Wnd, *, All, 0,1..9
  * 1..7=Zondag...zaterdag
- * 0xf=Wildcard
- * 0 als geen geldige invoer
+ * 8=Wrk (Workday)
+ * 9=Wnd (Weekend) 
+ * 0xf='*' of 'All' of '0'  (Wildcard)
+ * return waarde 1..9, 0 als geen geldige invoer
  *
  * LET OP: voorloop spaties en vreemde tekens moeten reeds zijn verwijderd
  \*******************************************************************************************************/
@@ -2371,22 +2373,22 @@ int str2weekday(char *Input)
    y=str2cmd(Input);
    if(y==VALUE_ALL || Input[0]=='*' || Input[0]=='0')return 0xF;
    
-   // check of de gebruiker een getal 1..7 heeft ingevoerd.
+   // check of de gebruiker een getal 1..9 heeft ingevoerd.
    y=str2int(Input);
-   if(y>=1 && y<=7)return y;   
+   if(y>=1 && y<=9)return y;   
    
    // De string moet nu minimaal drie tekens bevatten, anders geen geldige invoer
    if(strlen(Input)<3)return 0;
    
    Input[3]=0; // Sluit de string voor de zekerheid af zodat er niet meer dan drie posities zijn
    
-   for(x=0;x<=6;x++)
+   for(x=0;x<=8;x++)
      {
      char *StrPtr=ProgmemString(Text_04)+(x*3);
      *(StrPtr+3)=0; // Sluit deze string ook af einde afkorting weekdag
      if(strcasecmp(StrPtr,Input)==0)return x+1;
      }
-   return false;   
+   return 0;   
    }       
 #endif
 

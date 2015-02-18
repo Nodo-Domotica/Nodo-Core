@@ -3,8 +3,11 @@
 
 Rxxx:
 - Bug: SendTo Fast werkte niet altijd correct.
-- Aanpassing verzenden ACK op basis van verzoek van andere Nodo.
+- Technisch: Aanpassing verzenden ACK op basis van verzoek van andere Nodo.
+- Issue 870: TimerRandom
+- Issue 818: Alarm op WeekDays en WeekendDays (Tevens toegepast op Time events in de eventlist)
       
       
 ToDo:
 -
+
