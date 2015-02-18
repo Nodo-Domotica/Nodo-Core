@@ -63,7 +63,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       TempEvent.Direction    = VALUE_DIRECTION_INPUT;
       TempEvent.Par1         = EventToExecute->Par1;
       TempEvent.Par2         = EventToExecute->Par2;
-      ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
+      ProcessEvent(&TempEvent);                                                 // verwerk binnengekomen event.
       break;         
 
     #if WIRED

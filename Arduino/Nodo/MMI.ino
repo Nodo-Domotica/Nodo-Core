@@ -1518,12 +1518,16 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
     case CMD_ALARM_SET:
       ResultEvent->Type=NODO_TYPE_COMMAND;
       // Commando format: [AlarmSet <AlarmNumber 1..4>, <Enabled On|Off>, <Time HHMM>, <Day 1..7>]
-      //                  [Time <Time HHMM>, <Day 1..7>]
+      //                  [Time <Time HHMM>, Day <Sun..Sat>]
+      // 
       // We moeten wat truucs uithalen om al deze info in een 32-bit variabele te krijgen.
       // Alarmtijd wordt in Par2 opgeslagen volgens volgende format: MSB-EEEEWWWWAAAABBBBCCCCDDDD-LSB
       // E=Enabled, WWWW=weekdag, AAAA=Uren tiental, BBBB=uren, CCCC=minuten tiental DDDD=minuten
       // Als een deel gevuld met 0xE, dan waarde niet setten.
-      // Als gevuld met 0xF, dan wildcard.             
+      // Als gevuld met 0xF, dan wildcard.
+      // Als dag gevuld met 8, dan werkdag
+      // Als dag gevuld met 9, dan weekend
+                   
       if(GetArgv(Command,TmpStr1,2)) // Alarm number
         {
         error=MESSAGE_INVALID_PARAMETER;

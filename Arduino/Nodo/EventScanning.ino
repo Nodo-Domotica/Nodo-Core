@@ -177,13 +177,25 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
 boolean ScanAlarm(struct NodoEventStruct *Event)
   {
   unsigned long Mask;
-  
+  byte y,z;
+    
   for(byte x=0;x<ALARM_MAX;x++)
     {
     if((Settings.Alarm[x]>>20)&1)                                               // Als alarm enabled is, dan ingestelde alarmtijd vergelijke met de echte tijd.
       {
+      
+      // Twee opties moeten afwijkend worden behandeld: Werkdagen en weekend.
+      z=Time.Day;                                                               // Dag van vandaag
+      y=(Settings.Alarm[x]>>16)&0xf;                                            // De door de gebruiker opgegeven dag
+
+      if(y==8 && z>=2 && z<=6)                                                  // als werkdag
+        z=y;                                                                    // dan event
+
+      if(y==9 && (z==1 || z==7))                                                // als weekend dag
+        z=y;                                                                    // dan event
+
       // stel een vergelijkingswaarde op
-      unsigned long Cmp=Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12 | (unsigned long)Time.Day<<16 | 1UL<<20;
+      unsigned long Cmp=Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12 | (unsigned long)z<<16 | 1UL<<20;
 
                                                                                 // In het ingestelde alarm kunnen zich wildcards bevinden. 
                                                                                 // Maskeer de posities met 0xF wildcard nibble. 
@@ -200,7 +212,7 @@ boolean ScanAlarm(struct NodoEventStruct *Event)
       
      if(Settings.Alarm[x]==Cmp)                                                 // Als ingestelde alarmtijd overeen komt met huidige tijd.
        {
-       if(AlarmPrevious[x]!=Time.Minutes)                                       // Als alarm niet eerder is afgegaan
+       if(true || AlarmPrevious[x]!=Time.Minutes)                                       // Als alarm niet eerder is afgegaan
          {
          AlarmPrevious[x]=Time.Minutes;
 

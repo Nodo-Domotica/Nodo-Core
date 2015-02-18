@@ -56,7 +56,7 @@ byte dummy=1;                                                                   
 #define EVENT_USEREVENT                 3
 #define EVENT_VARIABLE                  4
 #define CMD_VARIABLE_SET                5
-#define RESERVED_06                     6
+#define CMD_VARIABLE_PUT                6
 #define RESERVED_07                     7
 #define RESERVED_08                     8
 #define RESERVED_09                     9
@@ -196,12 +196,16 @@ byte dummy=1;                                                                   
 #define CMD_ALIAS_SHOW                  138
 #define CMD_ALIAS_LIST                  139
 #define CMD_POWERSAVE                   140
-#define CMD_VARIABLE_PUT                141
+#define CMD_FUTURE_141                  141  //??? future use
 #define CMD_STOP                        142
 #define CMD_SLEEP                       143   
 #define VALUE_FAST                      144
-#define CMD_WAIT_FREE_NODO              145                                     // ???
-#define COMMAND_MAX                     145                                     // hoogste commando
+#define CMD_WAIT_FREE_NODO              145
+#define CMD_FUTURE_146                  146                                     // FUTURE
+#define CMD_FUTURE_147                  147                                     // FUTURE
+#define CMD_FUTURE_148                  148                                     // FUTURE
+#define CMD_FUTURE_149                  149                                     // FUTURE
+#define COMMAND_MAX                     149                                     // hoogste commando
 
 #define MESSAGE_OK                      0
 #define MESSAGE_UNKNOWN_COMMAND         1
@@ -221,7 +225,10 @@ byte dummy=1;                                                                   
 #define MESSAGE_VERSION_ERROR           15
 #define MESSAGE_BUSY_TIMEOUT            16
 #define MESSAGE_NODO_NOT_FOUND          17
-#define MESSAGE_MAX                     17                                      // laatste bericht tekst
+#define MESSAGE_FUTURE_18               18 //??? FUTURE
+#define MESSAGE_FUTURE_19               19 //??? FUTURE
+#define MESSAGE_FUTURE_20               20 //??? FUTURE
+#define MESSAGE_MAX                     20                                      // laatste bericht tekst
 
 
 #if NODO_MEGA
@@ -233,7 +240,7 @@ prog_char PROGMEM Cmd_2[]="Sound";
 prog_char PROGMEM Cmd_3[]="UserEvent";
 prog_char PROGMEM Cmd_4[]="Variable";
 prog_char PROGMEM Cmd_5[]="VariableSet";
-prog_char PROGMEM Cmd_6[]="";
+prog_char PROGMEM Cmd_6[]="VariablePut";
 prog_char PROGMEM Cmd_7[]="";
 prog_char PROGMEM Cmd_8[]="";
 prog_char PROGMEM Cmd_9[]="";
@@ -336,7 +343,7 @@ prog_char PROGMEM Cmd_102[]="Temp";
 prog_char PROGMEM Cmd_103[]="Terminal";
 prog_char PROGMEM Cmd_104[]="Time";
 prog_char PROGMEM Cmd_105[]="Timer";
-prog_char PROGMEM Cmd_106[]="TimerRandom";
+prog_char PROGMEM Cmd_106[]="TimerSetRandom";
 prog_char PROGMEM Cmd_107[]="TimerSet";
 prog_char PROGMEM Cmd_108[]="TimerSetVariable";
 prog_char PROGMEM Cmd_109[]="Unit";
@@ -371,11 +378,15 @@ prog_char PROGMEM Cmd_137[]="AliasErase";
 prog_char PROGMEM Cmd_138[]="AliasShow";
 prog_char PROGMEM Cmd_139[]="AliasList";
 prog_char PROGMEM Cmd_140[]="PowerSave";
-prog_char PROGMEM Cmd_141[]="VariablePut";
+prog_char PROGMEM Cmd_141[]="";                                                 //??? FUTURE
 prog_char PROGMEM Cmd_142[]="Stop";
 prog_char PROGMEM Cmd_143[]="Sleep";
 prog_char PROGMEM Cmd_144[]="Fast";
 prog_char PROGMEM Cmd_145[]="WaitFreeNodo"; 
+prog_char PROGMEM Cmd_146[]="";                                                 // ??? FUTURE 
+prog_char PROGMEM Cmd_147[]="";                                                 // ??? FUTURE 
+prog_char PROGMEM Cmd_148[]="";                                                 // ??? FUTURE 
+prog_char PROGMEM Cmd_149[]="";                                                 // ??? FUTURE 
 
 
 // tabel die refereert aan de commando strings
@@ -394,15 +405,15 @@ Cmd_100,Cmd_101,Cmd_102,Cmd_103,Cmd_104,Cmd_105,Cmd_106,Cmd_107,Cmd_108,Cmd_109,
 Cmd_110,Cmd_111,Cmd_112,Cmd_113,Cmd_114,Cmd_115,Cmd_116,Cmd_117,Cmd_118,Cmd_119,
 Cmd_120,Cmd_121,Cmd_122,Cmd_123,Cmd_124,Cmd_125,Cmd_126,Cmd_127,Cmd_128,Cmd_129,
 Cmd_130,Cmd_131,Cmd_132,Cmd_133,Cmd_134,Cmd_135,Cmd_136,Cmd_137,Cmd_138,Cmd_139,
-Cmd_140,Cmd_141,Cmd_142,Cmd_143,Cmd_144,Cmd_145};
+Cmd_140,Cmd_141,Cmd_142,Cmd_143,Cmd_144,Cmd_145,Cmd_146,Cmd_147,Cmd_148,Cmd_149};
 
-// Message max. 40 pos       "1234567890123456789012345678901234567890"
+// Message max. 40 pos.      "1234567890123456789012345678901234567890"
 prog_char PROGMEM Msg_0[]  = "Ok.";
 prog_char PROGMEM Msg_1[]  = "Unknown command.";
 prog_char PROGMEM Msg_2[]  = "Invalid parameter in command.";
 prog_char PROGMEM Msg_3[]  = "Unable to open.";
 prog_char PROGMEM Msg_4[]  = "Nesting error.";
-prog_char PROGMEM Msg_5[]  = "Reading/writing eventlist failed.";
+prog_char PROGMEM Msg_5[]  = "Reading/writing eventlist.";
 prog_char PROGMEM Msg_6[]  = "Unable to establish TCP/IP connection.";
 prog_char PROGMEM Msg_7[]  = "Execution stopped.";
 prog_char PROGMEM Msg_8[]  = "Access denied.";
@@ -415,17 +426,20 @@ prog_char PROGMEM Msg_14[] = "Plugin returned an error.";
 prog_char PROGMEM Msg_15[] = "Incompatibel Nodo event.";
 prog_char PROGMEM Msg_16[] = "Timeout on busy Nodo.";
 prog_char PROGMEM Msg_17[] = "Nodo not found.";
+prog_char PROGMEM Msg_18[] = ""; //??? FUTURE
+prog_char PROGMEM Msg_19[] = ""; //??? FUTURE
+prog_char PROGMEM Msg_20[] = ""; //??? FUTURE
 
 // tabel die refereert aan de message strings
-PROGMEM const char *MessageText_tabel[]={Msg_0,Msg_1,Msg_2,Msg_3,Msg_4,Msg_5,Msg_6,Msg_7,Msg_8,Msg_9,Msg_10,Msg_11,Msg_12,Msg_13,Msg_14,Msg_15,Msg_16,Msg_17};
+PROGMEM const char *MessageText_tabel[]={Msg_0,Msg_1,Msg_2,Msg_3,Msg_4,Msg_5,Msg_6,Msg_7,Msg_8,Msg_9,Msg_10,Msg_11,Msg_12,Msg_13,Msg_14,Msg_15,Msg_16,Msg_17,Msg_18,Msg_19,Msg_20};
 
 
 // strings met vaste tekst naar PROGMEM om hiermee RAM-geheugen te sparen.
-prog_char PROGMEM Text_01[] = "Nodo Domotica controller (c) Copyright 2014 P.K.Tonkes.";
+prog_char PROGMEM Text_01[] = "Nodo Domotica controller (c) Copyright 2015 P.K.Tonkes.";
 prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
 prog_char PROGMEM Text_03[] = "Enter your password: ";
-prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSat";
-prog_char PROGMEM Text_05[] = "0123456789abcdef";
+prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSatWrkWnd";
+prog_char PROGMEM Text_05[] = "0123456789ABCDEF";
 prog_char PROGMEM Text_07[] = "Waiting...";
 prog_char PROGMEM Text_08[] = "RAWSIGN";                                        // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_09[] = "(Last 100 KByte)";
@@ -447,7 +461,7 @@ prog_char PROGMEM Text_30[] = "Terminal connection closed.";
 PROGMEM prog_uint16_t Sunrise[]={528,525,516,503,487,467,446,424,401,378,355,333,313,295,279,268,261,259,263,271,283,297,312,329,345,367,377,394,411,428,446,464,481,498,512,522,528,527};
 PROGMEM prog_uint16_t Sunset[]={999,1010,1026,1044,1062,1081,1099,1117,1135,1152,1169,1186,1203,1219,1235,1248,1258,1263,1264,1259,1249,1235,1218,1198,1177,1154,1131,1107,1084,1062,1041,1023,1008,996,990,989,993,1004};
 
-// omschakeling zomertijd / wintertijd voor komende 10 jaar. Ã©Ã©n int bevat de omschakeldatum van maart en oktober.
+// omschakeling zomertijd / wintertijd voor komende 10 jaar. Een int bevat de omschakeldatum van maart en oktober.
 #define DLSBase 2010 // jaar van eerste element uit de array
 PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,3127};
 // RealTimeclock DS1307
@@ -509,6 +523,7 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define HW_PULSE       18
 #define HW_PLUGIN      19
 #define HW_WIRED       20
+#define HW_NRF24       21
 
 // Definitie van de speciale hardware uitvoeringen van de Nodo.
 #define BIC_DEFAULT                  0                                          // Standaard Nodo zonder specifike hardware aansturing
@@ -1278,11 +1293,21 @@ void loop()
 
         if(Time.Minutes!=PreviousMinutes)//Als klok aanwezig en er is een minuut verstreken
           {
+          // Twee opties moeten afwijkend worden behandeld: Werkdagen en weekend.
+          z=Time.Day;                                                               // Dag van vandaag
+          y=(Settings.Alarm[x]>>16)&0xf;                                            // De door de gebruiker opgegeven dag
+    
+          if(y==8 && z>=2 && z<=6)                                                  // als werkdag
+            z=y;                                                                    // dan event
+    
+          if(y==9 && (z==1 || z==7))                                                // als weekend dag
+            z=y;                                                                    // dan event
+
           PreviousMinutes=Time.Minutes;
           ClearEvent(&ReceivedEvent);
           ReceivedEvent.Type             = NODO_TYPE_EVENT;
           ReceivedEvent.Command          = EVENT_TIME;
-          ReceivedEvent.Par2             = Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12 | (unsigned long)Time.Day<<16;
+          ReceivedEvent.Par2             = Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12 | (unsigned long)z<<16;
           ReceivedEvent.Direction        = VALUE_DIRECTION_INPUT;
           ReceivedEvent.Port             = VALUE_SOURCE_CLOCK;
           
@@ -1290,7 +1315,7 @@ void loop()
             {
             if(PreviousTimeEvent!=ReceivedEvent.Par2)
               {
-              ProcessEvent(&ReceivedEvent); // verwerk binnengekomen event.
+              ProcessEvent(&ReceivedEvent);                                     // verwerk binnengekomen event.
               PreviousTimeEvent=ReceivedEvent.Par2; 
               }
             }
@@ -1299,7 +1324,7 @@ void loop()
           }
         #if NODO_MEGA
         SetDaylight();
-        if(Time.Daylight!=DaylightPrevious)// er heeft een zonsondergang of zonsopkomst event voorgedaan
+        if(Time.Daylight!=DaylightPrevious)                                     // er heeft een zonsondergang of zonsopkomst event voorgedaan
           {
           ClearEvent(&ReceivedEvent);
           ReceivedEvent.Type             = NODO_TYPE_EVENT;
@@ -1307,12 +1332,12 @@ void loop()
           ReceivedEvent.Par1             = Time.Daylight;
           ReceivedEvent.Direction        = VALUE_DIRECTION_INPUT;
           ReceivedEvent.Port             = VALUE_SOURCE_CLOCK;
-          ProcessEvent(&ReceivedEvent); // verwerk binnengekomen event.
+          ProcessEvent(&ReceivedEvent);                                         // verwerk binnengekomen event.
           DaylightPrevious=Time.Daylight;
             }
 
         if(ScanAlarm(&ReceivedEvent)) 
-          ProcessEvent(&ReceivedEvent); // verwerk binnengekomen event.
+          ProcessEvent(&ReceivedEvent);                                         // verwerk binnengekomen event.
         #endif NODO_MEGA
         }
       #endif CLOCK 
