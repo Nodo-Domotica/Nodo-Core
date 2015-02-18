@@ -45,7 +45,7 @@
 * kD              Differentiatietijd van de regelaar (D-actie): hoe groter Td, hoe meer D-actie
 * OutputMin       Minimale output van de regelaar (default 0)
 * OutputMax       Maximale output van de regelaar (default 100))
-* Monitor         Toggle monitor mode. Laat alle parameters zien tijdens uitvoer op Serial
+* Monitor         Toggle monitor mode. Laat alle PID parameters zien tijdens uitvoer op Serial
 * VarInput        Nodo Variabelenummer die wordt gebruikt als input van de PID regeling 
 * VarOutput       Nodo Variabelenummer die wordt gebruikt als output van de PID regeling (in de digitale modus worden events gegenereerd)
 * VarSetpoint     Nodo Variabelenummer die wordt gebruikt als setpoint van de PID regeling
@@ -66,7 +66,7 @@
 #define PID_OUTPUT_MAX                         100
 
 #define PLUGIN_NAME                          "PID"
-#define PLUGIN_ID                              100
+#define PLUGIN_ID                               36
 #define PID_MODE_MANUAL                          0
 #define PID_MODE_ANALOG                          1
 #define PID_MODE_DIGITAL                         2
@@ -208,7 +208,7 @@ boolean Plugin_036(byte function, struct NodoEventStruct *event, char *string)
         Serial.print(", Setpoint=");Serial.print(PID_Setpoint);
         Serial.print(", Input=");Serial.print(PID_Input);
         Serial.print(", Output=");Serial.print(PID_Output);
-        Serial.print(" (");Serial.print(((long)PID_Output)*100/WindowMax);Serial.print("%)");
+        Serial.print(" (");Serial.print(((long)PID_Output)*100/PID_outMax);Serial.print("%)");
 
         if(PID_Mode==PID_MODE_DIGITAL)
           {
