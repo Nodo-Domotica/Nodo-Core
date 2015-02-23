@@ -157,8 +157,6 @@ byte ProcessEvent(struct NodoEventStruct *Event)
       SendEvent(&TempEvent,false,true,false);
       }
     #endif
-
-
     
     // ############# Verwerk event ################  
     if(Event->Type==NODO_TYPE_COMMAND)
@@ -197,7 +195,6 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     if(!Transmission_SendToAll)Transmission_SendToUnit=0;                       // Als de SendTo niet permanent is ingeschakeld, dan deze weer uitzetten
     #endif
     }
-    
   ExecutionDepth--;
 
   return error;

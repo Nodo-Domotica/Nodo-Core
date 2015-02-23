@@ -226,7 +226,7 @@ byte FileExecute(char* Path, char* Filename, char* Extention, boolean ContinueOn
   static byte FileExecuteNesting=0;                                             // ter voorkoming nesting van fileexecute      
   char *TmpStr=(char*)malloc(INPUT_LINE_SIZE);
 
-  if(++FileExecuteNesting>3)
+  if(++FileExecuteNesting>=3)
     {
     RaiseMessage(MESSAGE_NESTING_ERROR,0);
     }
@@ -254,8 +254,17 @@ byte FileExecute(char* Path, char* Filename, char* Extention, boolean ContinueOn
             PrintString(TmpStr, PrintPort);
         
           error=ExecuteLine(TmpStr,VALUE_SOURCE_FILE);
+
           SelectSDCard(true);
   
+
+          if(error==MESSAGE_BREAK)                                              // Als het script is beeindigd a.g.v. een break commando dan geen error doorgeven maar alleen scriptfile stoppen.
+            {
+            RaiseMessage(MESSAGE_BREAK,0);
+            error=0;
+            break;
+            }
+            
           if(ContinueOnError)
             error=0;
   

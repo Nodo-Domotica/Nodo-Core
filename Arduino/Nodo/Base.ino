@@ -2,7 +2,7 @@
 #define NODO_VERSION_MINOR                10                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1                                    // Unit nummer van deze Nodo
-#define HOME_NODO                          1                                    // Home adres van Nodo's die tot Ã©Ã©n groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
+#define HOME_NODO                          1                                    // Home adres van Nodo's die tot een groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
 #define MIN_RAW_PULSES                    16                                    // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
 #define RAWSIGNAL_TX_REPEATS               8                                    // Aantal keer dat een frame met pulsen herhaald wordt verzonden (RawSignalSend)
 #define RAWSIGNAL_TX_DELAY                20                                    // Tijd in mSec. tussen herhalingen frames bij zenden. (RawSignalSend)
@@ -21,16 +21,16 @@
 #define PASSWORD_MAX_RETRY                 5                                    // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
 #define PASSWORD_TIMEOUT                 300                                    // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
 #define TERMINAL_TIMEOUT                 600                                    // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
-#define DELAY_BETWEEN_TRANSMISSIONS       50                                    // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
+#define DELAY_BETWEEN_TRANSMISSIONS      100                                    // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
 #define NODO_TX_TO_RX_SWITCH_TIME        500                                    // Tijd die andere Nodo's nodig hebben om na zenden weer gereed voor ontvangst te staan. (Opstarttijd 433RX modules)
-#define TRANSMITTER_STABLE_TIME            5                                    // Tijd die de RF zender nodig heeft om na inschakelen van de voedspanning een stabiele draaggolf te hebben.
+#define TRANSMITTER_STABLE_TIME           10                                    // Tijd die de RF zender nodig heeft om na inschakelen van de voedspanning een stabiele draaggolf te hebben.
 #define ETHERNET_MAC_0                  0xCC                                    // Dit is byte 0 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
 #define ETHERNET_MAC_1                  0xBB                                    // Dit is byte 1 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
 #define ETHERNET_MAC_2                  0xAA                                    // Dit is byte 2 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
-#define CLOCK                           true                                    // true=code voor Real Time Clock mee compileren.
+#define CFG_CLOCK                       true                                    // true=code voor Real Time Clock mee compileren.
 #define SLEEP                           true                                    // Sleep mode mee compileren?
 #define I2C                             true                                    // I2C communicatie mee compileren (I2C plugins en klok blijven wel gebruik maken van I2)
-#define WIRED                           true
+#define CFG_WIRED                       true                                    // gebruik van de WIRED IN/OUT voorzieningen.
 
 byte dummy=1;                                                                   // linker even op weg helpen. Bugje in Arduino.
 
@@ -57,10 +57,10 @@ byte dummy=1;                                                                   
 #define EVENT_VARIABLE                  4
 #define CMD_VARIABLE_SET                5
 #define CMD_VARIABLE_PUT                6
-#define RESERVED_07                     7
-#define RESERVED_08                     8
-#define RESERVED_09                     9
-#define RESERVED_10                     10
+#define EVENT_FLAG                      7
+#define CMD_FLAG_SET                    8
+#define VALUE_ON                        9
+#define VALUE_OFF                       10
 #define RESERVED_11                     11
 #define RESERVED_12                     12
 #define RESERVED_13                     13
@@ -84,7 +84,7 @@ byte dummy=1;                                                                   
 #define CMD_BREAK_ON_VAR_MORE           26
 #define CMD_BREAK_ON_VAR_MORE_VAR       27
 #define CMD_BREAK_ON_VAR_NEQU           28
-#define VALUE_BUILD                     29
+#define CMD_BREAK_ON_FLAG_EQU           29
 #define CMD_CLIENT_IP                   30
 #define VALUE_SOURCE_CLOCK              31
 #define EVENT_CLOCK_DAYLIGHT            32
@@ -129,8 +129,8 @@ byte dummy=1;                                                                   
 #define CMD_LOG                         71
 #define EVENT_MESSAGE                   72
 #define EVENT_NEWNODO                   73
-#define VALUE_OFF                       74
-#define VALUE_ON                        75
+#define FUTURE74                        74
+#define FUTURE75                        75
 #define CMD_OUTPUT                      76
 #define VALUE_DIRECTION_OUTPUT          77
 #define VALUE_RECEIVED_PAR1             78
@@ -175,7 +175,7 @@ byte dummy=1;                                                                   
 #define CMD_VARIABLE_VARIABLE           117
 #define CMD_VARIABLE_SET_WIRED_ANALOG   118
 #define CMD_VARIABLE_LOG                119
-#define CMD_VARIABLE_TOGGLE             120
+#define VALUE_TOGGLE                    120
 #define EVENT_WILDCARD                  121
 #define VALUE_SOURCE_WIRED              122
 #define VALUE_WIRED_ANALOG              123
@@ -196,15 +196,15 @@ byte dummy=1;                                                                   
 #define CMD_ALIAS_SHOW                  138
 #define CMD_ALIAS_LIST                  139
 #define CMD_POWERSAVE                   140
-#define CMD_FUTURE_141                  141  //??? future use
+#define VALUE_BUILD                     141
 #define CMD_STOP                        142
 #define CMD_SLEEP                       143   
 #define VALUE_FAST                      144
 #define CMD_WAIT_FREE_NODO              145
-#define CMD_FUTURE_146                  146                                     // FUTURE
-#define CMD_FUTURE_147                  147                                     // FUTURE
-#define CMD_FUTURE_148                  148                                     // FUTURE
-#define CMD_FUTURE_149                  149                                     // FUTURE
+#define CMD_FLAG_SYNC                   146
+#define FUTUEE147                       147
+#define FUTURE148                       148
+#define FUTURE_149                      149                                     // FUTURE
 #define COMMAND_MAX                     149                                     // hoogste commando
 
 #define MESSAGE_OK                      0
@@ -234,17 +234,17 @@ byte dummy=1;                                                                   
 #if NODO_MEGA
 
 // Commando's die in de lijst een vaste positie hebben en houden
-prog_char PROGMEM Cmd_0[]="-";
-prog_char PROGMEM Cmd_1[]="Boot";
-prog_char PROGMEM Cmd_2[]="Sound";
-prog_char PROGMEM Cmd_3[]="UserEvent";
-prog_char PROGMEM Cmd_4[]="Variable";
-prog_char PROGMEM Cmd_5[]="VariableSet";
-prog_char PROGMEM Cmd_6[]="VariablePut";
-prog_char PROGMEM Cmd_7[]="";
-prog_char PROGMEM Cmd_8[]="";
-prog_char PROGMEM Cmd_9[]="";
-prog_char PROGMEM Cmd_10[]="";
+prog_char PROGMEM Cmd_0[] ="-";
+prog_char PROGMEM Cmd_1[] ="Boot";
+prog_char PROGMEM Cmd_2[] ="Sound";
+prog_char PROGMEM Cmd_3[] ="UserEvent";
+prog_char PROGMEM Cmd_4[] ="Variable";
+prog_char PROGMEM Cmd_5[] ="VariableSet";
+prog_char PROGMEM Cmd_6[] ="VariablePut";
+prog_char PROGMEM Cmd_7[] ="Flag";
+prog_char PROGMEM Cmd_8[] ="FlagSet";
+prog_char PROGMEM Cmd_9[] ="On";
+prog_char PROGMEM Cmd_10[]="Off";
 prog_char PROGMEM Cmd_11[]="";
 prog_char PROGMEM Cmd_12[]="";
 prog_char PROGMEM Cmd_13[]="";
@@ -266,7 +266,7 @@ prog_char PROGMEM Cmd_25[]="BreakOnVarLessVar";
 prog_char PROGMEM Cmd_26[]="BreakOnVarMore";
 prog_char PROGMEM Cmd_27[]="BreakOnVarMoreVar";
 prog_char PROGMEM Cmd_28[]="BreakOnVarNEqu";
-prog_char PROGMEM Cmd_29[]="Build";
+prog_char PROGMEM Cmd_29[]="BreakOnFlag";
 prog_char PROGMEM Cmd_30[]="ClientIP";
 prog_char PROGMEM Cmd_31[]="Clock";
 prog_char PROGMEM Cmd_32[]="ClockDaylight";
@@ -280,8 +280,8 @@ prog_char PROGMEM Cmd_39[]="Plugin";
 prog_char PROGMEM Cmd_40[]="DnsServer";
 prog_char PROGMEM Cmd_41[]="Echo";
 prog_char PROGMEM Cmd_42[]="Event";
-prog_char PROGMEM Cmd_43[]="EventList";
-prog_char PROGMEM Cmd_44[]="Eventlist";
+prog_char PROGMEM Cmd_43[]="EventList";                                         // VALUE_EVENTLIST
+prog_char PROGMEM Cmd_44[]="Eventlist";                                         // VALUE_SOURCE_EVENTLIST
 prog_char PROGMEM Cmd_45[]="EventlistCount";
 prog_char PROGMEM Cmd_46[]="EventlistErase";
 prog_char PROGMEM Cmd_47[]="EventlistFile";
@@ -357,7 +357,7 @@ prog_char PROGMEM Cmd_116[]="VariableSend";
 prog_char PROGMEM Cmd_117[]="VariableSetVariable";
 prog_char PROGMEM Cmd_118[]="VariableWiredAnalog";
 prog_char PROGMEM Cmd_119[]="VariableLog";
-prog_char PROGMEM Cmd_120[]="VariableToggle";
+prog_char PROGMEM Cmd_120[]="Toggle";
 prog_char PROGMEM Cmd_121[]="WildCard";
 prog_char PROGMEM Cmd_122[]="Wired";
 prog_char PROGMEM Cmd_123[]="WiredAnalog";
@@ -378,14 +378,14 @@ prog_char PROGMEM Cmd_137[]="AliasErase";
 prog_char PROGMEM Cmd_138[]="AliasShow";
 prog_char PROGMEM Cmd_139[]="AliasList";
 prog_char PROGMEM Cmd_140[]="PowerSave";
-prog_char PROGMEM Cmd_141[]="";                                                 //??? FUTURE
+prog_char PROGMEM Cmd_141[]="Build";                                             
 prog_char PROGMEM Cmd_142[]="Stop";
 prog_char PROGMEM Cmd_143[]="Sleep";
 prog_char PROGMEM Cmd_144[]="Fast";
 prog_char PROGMEM Cmd_145[]="WaitFreeNodo"; 
-prog_char PROGMEM Cmd_146[]="";                                                 // ??? FUTURE 
-prog_char PROGMEM Cmd_147[]="";                                                 // ??? FUTURE 
-prog_char PROGMEM Cmd_148[]="";                                                 // ??? FUTURE 
+prog_char PROGMEM Cmd_146[]="FlagSync";
+prog_char PROGMEM Cmd_147[]=""; 
+prog_char PROGMEM Cmd_148[]=""; 
 prog_char PROGMEM Cmd_149[]="";                                                 // ??? FUTURE 
 
 
@@ -457,7 +457,7 @@ prog_char PROGMEM Text_30[] = "Terminal connection closed.";
 #endif
 
 // Tabel met zonsopgang en -ondergang momenten. afgeleid van KNMI gegevens midden Nederland.
-#if CLOCK
+#if CFG_CLOCK
 PROGMEM prog_uint16_t Sunrise[]={528,525,516,503,487,467,446,424,401,378,355,333,313,295,279,268,261,259,263,271,283,297,312,329,345,367,377,394,411,428,446,464,481,498,512,522,528,527};
 PROGMEM prog_uint16_t Sunset[]={999,1010,1026,1044,1062,1081,1099,1117,1135,1152,1169,1186,1203,1219,1235,1248,1258,1263,1264,1259,1249,1235,1218,1198,1177,1154,1131,1107,1084,1062,1041,1023,1008,996,990,989,993,1004};
 
@@ -499,7 +499,8 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define MACRO_EXECUTION_DEPTH         10                                        // maximale nesting van macro's.
 #define XON                         0x11                                        // Seriale communicatie XON/XOFF handshaking
 #define XOFF                        0x13                                        // Seriale communicatie XON/XOFF handshaking
-
+#define USER_VARIABLES_MAX            15                                        // aantal beschikbare gebruikersvariabelen voor de user.
+#define USER_FLAGS_MAX                32                                        // Aantal beschikbare vlaggen voor de user. 1..32. Moet passen in de unsigned long. 
 
 // Hardware in gebruik: Bits worden geset in de variabele HW_Config, uit te lezen met [Status HWConfig]
 #define HW_BIC_0        0
@@ -528,7 +529,6 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 // Definitie van de speciale hardware uitvoeringen van de Nodo.
 #define BIC_DEFAULT                  0                                          // Standaard Nodo zonder specifike hardware aansturing
 #define BIC_HWMESH_NES_V1X           1                                          // Nodo Ethernet Shield V1.x met Aurel tranceiver. Vereist speciale pulse op PIN_BSF_0 voor omschakelen tussen Rx en Tx.
-#define USER_VARIABLES_MAX          15                                          // aantal beschikbare gebruikersvariabelen voor de user.
 
 #if NODO_MEGA // Definities voor de Nodo-Mega variant.
 #define EVENT_QUEUE_MAX             16                                          // maximaal aantal plaatsen in de queue.
@@ -537,6 +537,7 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define TIMER_MAX                   15                                          // aantal beschikbare timers voor de user, gerekend vanaf 1
 #define ALARM_MAX                    8                                          // aantal alarmen voor de user
 #define PULSE_IRQ                    5                                          // IRQ verbonden aan de IR_RX_DATA pen 18 van de Mega
+
 #define PIN_BIC_0                   26                                          // Board Identification Code: bit-0
 #define PIN_BIC_1                   27                                          // Board Identification Code: bit-1
 #define PIN_BIC_2                   28                                          // Board Identification Code: bit-2
@@ -545,10 +546,10 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define PIN_BSF_1                   23                                          // Board Specific Function lijn-1
 #define PIN_BSF_2                   24                                          // Board Specific Function lijn-2
 #define PIN_BSF_3                   25                                          // Board Specific Function lijn-3
-#define PIN_IO_1                    38                                          // Extra IO-lijn 1 voor gebruikers.
-#define PIN_IO_2                    39                                          // Extra IO-lijn 2 voor gebruikers.
-#define PIN_IO_3                    40                                          // Extra IO-lijn 3 voor gebruikers.
-#define PIN_IO_4                    41                                          // Extra IO-lijn 4 voor gebruikers.
+#define PIN_IO_1                    38                                          // future
+#define PIN_IO_2                    39                                          // future
+#define PIN_IO_3                    40                                          // future
+#define PIN_IO_4                    41                                          // future
 #define PIN_WIRED_IN_1               8                                          // Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
 #define PIN_WIRED_IN_2               9                                          // Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
 #define PIN_WIRED_IN_3              10                                          // Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
@@ -583,6 +584,7 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define PIN_SERIAL_TX                1                                          // TX-0 lijn o.a. verbonden met de UART-USB
 #define PIN_I2C_SDA                 20                                          // I2C communicatie lijn voor de o.a. de realtime clock.
 #define PIN_I2C_SLC                 21                                          // I2C communicatie lijn voor de o.a. de realtime clock.
+
 #define TERMINAL_PORT               23                                          // TelNet poort. Standaard 23
 #define EEPROM_SIZE               4096                                          // Groote van het EEPROM geheugen.
 #define WIRED_PORTS                  8                                          // aAntal WiredIn/WiredOut poorten
@@ -659,7 +661,7 @@ struct SettingsStruct
   byte    RawSignalSample;
   unsigned long Lock;                                                           // bevat de pincode waarmee IR/RF ontvangst is geblokkeerd. Bit nummer hoogste bit wordt gebruiktvoor in/uitschakelen.
   
-  #if WIRED
+  #if CFG_WIRED
   int     WiredInputThreshold[WIRED_PORTS], WiredInputSmittTrigger[WIRED_PORTS];
   byte    WiredInputPullUp[WIRED_PORTS];
   #endif
@@ -752,12 +754,13 @@ int ExecutionLine=0;                                                            
 void(*Reboot)(void)=0;                                                          // reset functie op adres 0.
 uint8_t RFbit,RFport,IRbit,IRport;                                              // t.b.v. verwerking IR/FR signalen.
 float UserVar[USER_VARIABLES_MAX];                                              // Gebruikers variabelen
+unsigned long UserFlag=0L;                                                      // User vlag. Dit is een globale boolean variabele voor de gebruiker //???
 unsigned long HW_Config=0;                                                      // Hardware configuratie zoals gedetecteerd door de Nodo. 
 struct NodoEventStruct LastReceived;                                            // Laatst ontvangen event
 byte RequestForConfirm=false;                                                   // Als true dan heeft deze Nodo een verzoek ontvangen om een systemevent 'Confirm' te verzenden. Waarde wordt in Par1 meegezonden.
 int EventlistMax=0;                                                             // beschikbaar aantal regels in de eventlist. Wordt tijdens setup berekend.
 
-#if WIRED
+#if CFG_WIRED
 boolean WiredInputStatus[WIRED_PORTS];                                          // Status van de WiredIn worden hierin opgeslagen.
 boolean WiredOutputStatus[WIRED_PORTS];                                         // Wired variabelen.
 #endif
@@ -836,6 +839,10 @@ void setup()
     UserTimer[x]=0L;
 
   // Initialiseer in/output poorten.
+  #if CFG_SOUND
+    pinMode(PIN_SPEAKER,    OUTPUT);
+  #endif
+
   pinMode(PIN_IR_RX_DATA, INPUT);
   pinMode(PIN_RF_RX_DATA, INPUT);
   pinMode(PIN_RF_TX_DATA, OUTPUT);
@@ -843,7 +850,6 @@ void setup()
   pinMode(PIN_RF_RX_VCC,  OUTPUT);
   pinMode(PIN_IR_TX_DATA, OUTPUT);
   pinMode(PIN_LED_RGB_R,  OUTPUT);
-  pinMode(PIN_SPEAKER,    OUTPUT);
   pinMode(PIN_LED_RGB_B,  OUTPUT);
   digitalWrite(PIN_IR_TX_DATA,LOW);                                             // Zet de IR zenders initiÃ«el uit! Anders mogelijk overbelasting !
   digitalWrite(PIN_RF_RX_VCC,HIGH);                                             // Spanning naar de RF ontvanger aan.
@@ -884,7 +890,7 @@ void setup()
 
   if(Settings.Version!=NODO_VERSION_MINOR)ResetFactory();                       // De Nodo resetten als Versie van de settings zoals geladen vanuit EEPROM niet correct is.
   
-  #if WIRED  
+  #if CFG_WIRED  
   bitWrite(HW_Config,HW_WIRED,1);
   for(x=0;x<WIRED_PORTS;x++)                                                    // initialiseer de Wired ingangen.
     {
@@ -910,15 +916,15 @@ void setup()
   WireNodo.onReceive(ReceiveI2C);                                               // verwijs naar de I2C ontvangstroutine
   #endif
 
-  #if CLOCK
+  #if CFG_CLOCK
   ClockRead();                                                                  //Lees de tijd uit de RTC en zorg ervoor dat er niet direct na een boot een CMD_CLOCK_DAYLIGHT event optreedt
-  #endif CLOCK 
+  #endif CFG_CLOCK 
 
   #if NODO_MEGA
-  #if CLOCK
+  #if CFG_CLOCK
   SetDaylight();
   DaylightPrevious=0xff;                                                        // vul de waarde met een niet bestaande daylight status zodat er na een boot altijd een event wordt gegenereerd.
-  #endif CLOCK 
+  #endif CFG_CLOCK 
 
   
   #ifdef ethernetserver_h
@@ -1211,7 +1217,7 @@ void loop()
       
       case 2:
         {
-        #if WIRED
+        #if CFG_WIRED
         // WIRED: *************** kijk of statussen gewijzigd zijn op WIRED **********************  
         // als de huidige waarde groter dan threshold EN de vorige keer was dat nog niet zo DAN event genereren
         for(x=0;x<WIRED_PORTS;x++)
@@ -1286,7 +1292,7 @@ void loop()
         }
 
       // CLOCK: **************** Lees periodiek de realtime klok uit en check op events  ***********************
-      #if CLOCK
+      #if CFG_CLOCK
       if(bitRead(HW_Config,HW_CLOCK))
         {
         ClockRead(); // Lees de Real Time Clock waarden in de struct Time
@@ -1340,7 +1346,7 @@ void loop()
           ProcessEvent(&ReceivedEvent);                                         // verwerk binnengekomen event.
         #endif NODO_MEGA
         }
-      #endif CLOCK 
+      #endif CFG_CLOCK 
     
 
       // Terminal onderhoudstaken

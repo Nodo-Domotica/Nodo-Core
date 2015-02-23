@@ -10,12 +10,12 @@
  *                           
  * Auteur             : P.K.Tonkes
  * Support            : P.K.Tonkes@gmail.com
- * Datum              : 26-05-2013
- * Versie             : 02-02-2014, Versie 1,2, P.K.Tonkes: Bug verwijderd: Leds schakelden soms ook op andere events. FadeOn,FadeOff,VarOn,Varoff toegevoegd
+ * Versie             : 21-02-2015, Versie 1,4, P.K.Tonkes: Bug verwijderd: Issue 864:	Fade proces van plugin 23 wordt afgebroken
+ *                    : 02-02-2014, Versie 1,2, P.K.Tonkes: Bug verwijderd: Leds schakelden soms ook op andere events. FadeOn,FadeOff,VarOn,Varoff toegevoegd
  *                    : 22-12-2013, Versie 1,1, P.K.Tonkes: Event en Send commando in 1 plugin ondergebracht.
  *                      26-05-2013, Versie 1.0, P.K.Tonkes: Beta versie 
  *
- * Nodo productnummer : Plugin-23 PWM Led-dimmer (SWACDE-23-V11)
+ * Nodo productnummer : Plugin-23 PWM Led-dimmer (SWACDE-23-V14)
  * Compatibiliteit    : Vanaf Nodo build nummer 645
  * Syntax             : RGBLed <Red>,<Green>,<Blue>,<FadeOn|FadeOff|VarOn|VarrOff> ==> Stuurt de RGB-led aan
  *                      RGBLedSend <NodoUnit>,<Red>,<Green>,<Blue>,<FadeOn|FadeOff|VarOn|VarrOff> ==> Verzendt event en stuurt
@@ -156,7 +156,7 @@ boolean Plugin_023(byte function, struct NodoEventStruct *event, char *string)
       {
       if(event->Command==EVENT_VARIABLE && event->Type==NODO_TYPE_EVENT)        // Er is en variabele gewijzigd. 
         {
-        if(RGBVariables)
+        if(RGBVariables && !RGBFade)
           {
           if(UserVar[0]>255)UserVar[0]=255;
           if(UserVar[1]>255)UserVar[1]=255;

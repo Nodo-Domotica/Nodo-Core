@@ -596,7 +596,7 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
     TmpStr[2]=0;
 
     // datum en tijd weergeven
-    #if CLOCK
+    #if CFG_CLOCK
     if(bitRead(HW_Config,HW_CLOCK)) // alleen als er een RTC aanwezig is.
       {   
       strcat(TmpStr,DateTimeString());
@@ -616,7 +616,7 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
 /**********************************************************************************************\
  * Print actuele dag, datum, tijd.
  \*********************************************************************************************/
-#if CLOCK
+#if CFG_CLOCK
 char* DateTimeString(void)
   {
   int x;
@@ -658,7 +658,7 @@ void PrintWelcome(void)
 
   PrintString(TempString,VALUE_ALL);
 
-  #if CLOCK
+  #if CFG_CLOCK
  // Geef datum en tijd weer.
   if(bitRead(HW_Config,HW_CLOCK))
     {
@@ -733,22 +733,24 @@ void PrintString(char* LineToPrint, byte Port)
   
 
 #define PAR1_INT           1
-#define PAR1_TEXT          2
-#define PAR1_MESSAGE       3
-#define PAR2_INT           4
-#define PAR2_TEXT          5
-#define PAR2_FLOAT         6
-#define PAR2_INT_HEX       7
-#define PAR2_DIM           8
-#define PAR2_WDAY          9
-#define PAR2_TIME         10
-#define PAR2_DATE         11
-#define PAR2_ALARMENABLED 12
-#define PAR2_INT8         13
-#define PAR3_INT          14
-#define PAR4_INT          15
-#define PAR5_INT          16
-#define PAR3_TEXT         17
+#define PAR1_INT_0ALL      2
+#define PAR1_TEXT          3
+#define PAR1_MESSAGE       4
+#define PAR2_INT           5
+#define PAR2_TEXT          6
+#define PAR2_FLOAT         7
+#define PAR2_INT_HEX       8
+#define PAR2_DIM           9
+#define PAR2_WDAY         10
+#define PAR2_TIME         11
+#define PAR2_DATE         12
+#define PAR2_ALARMENABLED 13
+#define PAR2_INT8         14
+#define PAR2_HASHCODE     15
+#define PAR3_INT          16
+#define PAR4_INT          17
+#define PAR5_INT          18
+#define PAR3_TEXT         19
 
 void Event2str(struct NodoEventStruct *Event, char* EventString)
   {
@@ -825,7 +827,15 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         ParameterToView[0]=PAR2_INT_HEX;
         break;
 
-
+      // Par1 als int (0=All) en Par2 als tekst.
+      case CMD_BREAK_ON_FLAG_EQU:
+      case CMD_FLAG_SET:
+      case EVENT_FLAG:
+        ParameterToView[0]=PAR1_INT_0ALL;
+        ParameterToView[1]=PAR2_TEXT;
+        break;
+      
+      // Par1 als int en Par2 als int
       case CMD_WIRED_SMITTTRIGGER:
       case CMD_WIRED_THRESHOLD:
       case VALUE_WIRED_ANALOG:
@@ -908,7 +918,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case EVENT_NEWNODO:
       case CMD_VARIABLE_SAVE:
       case CMD_VARIABLE_LOG:
-      case CMD_VARIABLE_TOGGLE:
       case CMD_UNIT_SET:
       case CMD_VARIABLE_PULSE_TIME:
       case CMD_VARIABLE_PULSE_COUNT:
@@ -921,7 +930,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         ParameterToView[1]=PAR1_TEXT;
         break;
         
-      // Par1 ls int, Par2 als tekst, Par3(uit Par2) als tekst.
+      // Par1 als int, Par2 als tekst, Par3(uit Par2) als tekst.
       case CMD_SENDTO:
         if(Event->Par1==0)
           {
@@ -937,6 +946,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         break;
         
       // geen parameters.
+      case CMD_FLAG_SYNC:
       case CMD_SLEEP:
       case CMD_REBOOT:
       case CMD_CLOCK_SYNC:
@@ -962,6 +972,13 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         {
         case PAR1_INT:
           strcat(EventString,int2str(Event->Par1));
+          break;
+          
+        case PAR1_INT_0ALL:                                                     // Zelfde als PAR1_INT, echter de waarde 0 wordt als 'All' weergegeven.
+          if(Event->Par1==0)
+            strcat(EventString,cmd2str(VALUE_ALL));
+          else
+            strcat(EventString,int2str(Event->Par1));
           break;
           
         case PAR1_TEXT:
@@ -1157,6 +1174,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
       break; 
 
     // altijd goed
+    case CMD_FLAG_SYNC:
     case CMD_SLEEP:
     case CMD_EVENTLIST_SHOW:
     case CMD_EVENTLIST_ERASE:
@@ -1172,6 +1190,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
       ResultEvent->Type=NODO_TYPE_COMMAND;
       break; 
 
+      // Alleen een On/Off als parameter
     case CMD_LOG:
     case CMD_WAIT_FREE_NODO:
     case CMD_DEBUG:
@@ -1179,7 +1198,6 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
     case CMD_RAWSIGNAL_RECEIVE:
       ResultEvent->Type=NODO_TYPE_COMMAND;
       if(ResultEvent->Par1!=VALUE_OFF && ResultEvent->Par1!=VALUE_ON)
-      
         error=MESSAGE_INVALID_PARAMETER;
      break;
                   
@@ -1430,7 +1448,6 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
         }
       break;
 
-    case CMD_VARIABLE_TOGGLE:
     case CMD_VARIABLE_SAVE:
     case CMD_VARIABLE_LOG:
       ResultEvent->Type=NODO_TYPE_COMMAND;
@@ -1438,8 +1455,22 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
         error=MESSAGE_INVALID_PARAMETER;
       break;
       
+    case EVENT_FLAG:
+    case CMD_BREAK_ON_FLAG_EQU:
+    case CMD_FLAG_SET:                                                          // FlagSet <vlagnummer|ALL>, <On|Off>
+      if(ResultEvent->Command==CMD_BREAK_ON_FLAG_EQU || ResultEvent->Command==CMD_FLAG_SET)ResultEvent->Type=NODO_TYPE_COMMAND;        
+      if(ResultEvent->Command==EVENT_FLAG  )ResultEvent->Type=NODO_TYPE_EVENT;        
+
+      GetArgv(Command,TmpStr1,2);
+      if(str2cmd(TmpStr1)==VALUE_ALL)                                           // Alle waarden omzetten naar 0
+        ResultEvent->Par1=0;
+
+      if(ResultEvent->Par1>USER_FLAGS_MAX || (ResultEvent->Par2!=VALUE_ON && ResultEvent->Par2!=VALUE_OFF))
+        error=MESSAGE_INVALID_PARAMETER;
+      break;
+
     case CMD_VARIABLE_SET:
-      ResultEvent->Type=NODO_TYPE_COMMAND;
+      ResultEvent->Type=NODO_TYPE_COMMAND;        
       if(ResultEvent->Par1>USER_VARIABLES_MAX)
         error=MESSAGE_INVALID_PARAMETER;
       else if(GetArgv(Command,TmpStr1,3))// waarde van de variabele

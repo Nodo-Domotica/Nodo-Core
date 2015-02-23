@@ -143,7 +143,6 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
           #endif
           return false;
           }     
-        // PrintNodoEvent("DEBUG: ScanEvent(): Fetched", Event);
     
         // als het informatie uitwisseling tussen Nodo's betreft...
         if(Event->Type==NODO_TYPE_EVENT || Event->Type==NODO_TYPE_COMMAND || Event->Type==NODO_TYPE_SYSTEM)
@@ -166,6 +165,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
           return true;
           }
         }
+      Fetched=0; 
       }
     }// while
   Focus=0;
@@ -173,7 +173,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
   }
 
 #if NODO_MEGA
-#if CLOCK
+#if CFG_CLOCK
 boolean ScanAlarm(struct NodoEventStruct *Event)
   {
   unsigned long Mask;

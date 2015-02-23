@@ -788,7 +788,7 @@ void ExecuteIP(void)
               IPClient.println(F("Content-Type: text/html"));
               IPClient.print(F("Server: Nodo/Build="));
               IPClient.println(int2str(NODO_BUILD));             
-              #if CLOCK
+              #if CFG_CLOCK
               if(bitRead(HW_Config,HW_CLOCK))
                 {
                 IPClient.print(F("Date: "));

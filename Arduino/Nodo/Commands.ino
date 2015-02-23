@@ -1,5 +1,5 @@
  /*********************************************************************************************\
- * Deze functie checked of de code die ontvangen is een uitvoerbare opdracht is/
+ * Deze functie checkt of de code die ontvangen is een uitvoerbare opdracht is.
  * Als het een correct commando is wordt deze uitgevoerd en 
  * true teruggegeven. Zo niet dan wordt er een 'false' retour gegeven.
  \*********************************************************************************************/
@@ -21,17 +21,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
   
   switch(EventToExecute->Command)
     {   
-    case CMD_VARIABLE_TOGGLE:
-      UserVar[EventToExecute->Par1-1]=UserVar[EventToExecute->Par1-1]>0.5?0.0:1.0;
-      TempEvent.Type         = NODO_TYPE_EVENT;
-      TempEvent.Command      = EVENT_VARIABLE;
-      TempEvent.Par1         = EventToExecute->Par1;
-      TempEvent.Par2         = float2ul(UserVar[EventToExecute->Par1-1]);
-      TempEvent.Direction    = VALUE_DIRECTION_INPUT;
-      TempEvent.Port         = VALUE_SOURCE_SYSTEM;
-      ProcessEvent(&TempEvent);
-      break;        
-
     case CMD_VARIABLE_INC:
       UserVar[EventToExecute->Par1-1]+=ul2float(EventToExecute->Par2);
       TempEvent.Type         = NODO_TYPE_EVENT;
@@ -66,7 +55,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       ProcessEvent(&TempEvent);                                                 // verwerk binnengekomen event.
       break;         
 
-    #if WIRED
+    #if CFG_WIRED
     case CMD_VARIABLE_SET_WIRED_ANALOG:
       UserVar[EventToExecute->Par1-1]=analogRead(PIN_WIRED_IN_1+EventToExecute->Par2-1);
       TempEvent.Par1         = EventToExecute->Par1;
@@ -127,6 +116,14 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       error=MESSAGE_EXECUTION_STOPPED;
       break;
 
+    case CMD_BREAK_ON_FLAG_EQU:
+      {
+      if(bitRead(UserFlag,EventToExecute->Par1-1)==(EventToExecute->Par2==VALUE_ON))
+        error=MESSAGE_BREAK;
+
+      break;
+      }
+      
     case CMD_BREAK_ON_VAR_EQU:
       {
       if((int)UserVar[EventToExecute->Par1-1]==(int)ul2float(EventToExecute->Par2))
@@ -160,7 +157,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
 
 
-    #if CLOCK
+    #if CFG_CLOCK
     case CMD_BREAK_ON_DAYLIGHT:
       if(EventToExecute->Par1==VALUE_ON && (Time.Daylight==2 || Time.Daylight==3))
         error=MESSAGE_BREAK;
@@ -178,7 +175,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       if(EventToExecute->Par2>(Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12))
         error=MESSAGE_BREAK;
       break;
-    #endif CLOCK 
+    #endif CFG_CLOCK 
 
 
     case CMD_SEND_USEREVENT:
@@ -256,7 +253,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
 
 
     #if NODO_MEGA
-    #if CLOCK
+    #if CFG_CLOCK
     case CMD_ALARM_SET:
       if(EventToExecute->Par1>=1 && EventToExecute->Par1<=ALARM_MAX)              // niet buiten bereik array!
         {
@@ -311,10 +308,10 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         SendEvent(&TempEvent, false, true, Settings.WaitFree==VALUE_ON);        
         }
       break;
-    #endif CLOCK 
+    #endif CFG_CLOCK 
     #endif
           
-    #if CLOCK
+    #if CFG_CLOCK
     case CMD_CLOCK_TIME:
       Time.Hour    =((EventToExecute->Par2>>12)&0xf)*10 + ((EventToExecute->Par2>>8)&0xf);
       Time.Minutes =((EventToExecute->Par2>>4 )&0xf)*10 + ((EventToExecute->Par2   )&0xf);
@@ -329,7 +326,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       ClockSet();
       break;
 
-    #endif CLOCK 
+    #endif CFG_CLOCK 
 
     case CMD_TIMER_SET:
       if(EventToExecute->Par2==0)
@@ -364,11 +361,13 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       SendEvent(&TempEvent, TempEvent.Command==EVENT_RAWSIGNAL,true, Settings.WaitFree==VALUE_ON);
       break;        
 
+    #if CFG_SOUND
     case CMD_SOUND: 
       Alarm(EventToExecute->Par1,EventToExecute->Par2);
-      break;     
+      break;
+    #endif    
   
-    #if WIRED
+    #if CFG_WIRED
     case CMD_WIRED_PULLUP:
       Settings.WiredInputPullUp[EventToExecute->Par1-1]=EventToExecute->Par2; // EventToExecute->Par1 is de poort[1..]
       
@@ -400,7 +399,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         Settings.WiredInputThreshold[EventToExecute->Par1-1]=EventToExecute->Par2;
       break;                  
 
-    #endif //WIRED
+    #endif //CFG_WIRED
                          
     case CMD_SETTINGS_SAVE:
       UndoNewNodo();// Status NewNodo verwijderen indien van toepassing
@@ -442,7 +441,86 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         Reboot();
         break;
         }
-      
+
+    case CMD_FLAG_SYNC:
+      // Als het verzoek om de vlaggen te synchroniseren vanuit deze Nodo komt, dan
+      // de opdracht naar alle andere Nodo's sturen.
+      // Komt verzoek van buiten, dan de vlaggen aanpassen naar het ontvangen.
+      if(EventToExecute->SourceUnit==Settings.Unit)
+        {
+        TempEvent.Type=NODO_TYPE_COMMAND;
+        TempEvent.Command=CMD_FLAG_SYNC;
+        TempEvent.Port=VALUE_ALL;
+        TempEvent.Direction=VALUE_DIRECTION_OUTPUT;
+        TempEvent.Par1=EventToExecute->Par1;
+        TempEvent.Par2=UserFlag;
+
+        SendEvent(&TempEvent, false, true,Settings.WaitFree==VALUE_ON);
+        }
+      else
+        {
+        for(x=0;x<USER_FLAGS_MAX;x++)
+          {
+          y=bitRead(UserFlag,x);
+          z=bitRead(EventToExecute->Par2,x);
+          if(y!=z)              // Als de vlag niet correspondeert
+            {
+            bitWrite(UserFlag,x,z);                  // Zet de vlag.
+
+            // Veranderen van de vlag moet leiden tot een event die uitgevoerd moet worden
+            TempEvent.SourceUnit            = Settings.Unit;
+            TempEvent.Type                  = NODO_TYPE_EVENT;
+            TempEvent.Command               = EVENT_FLAG;
+            TempEvent.Port                  = VALUE_SOURCE_SYSTEM;
+            TempEvent.Direction             = VALUE_DIRECTION_INPUT;
+            TempEvent.Par1                  = x+1;
+            TempEvent.Par2                  = z?VALUE_ON:VALUE_OFF;
+            ProcessEvent(&TempEvent);
+            }
+          }
+        }
+      break;         
+
+    case CMD_FLAG_SET:
+      if(EventToExecute->Par1==0)                                               // Alle vlaggen
+        {
+        if(EventToExecute->Par2==VALUE_ON)
+          UserFlag=0xffffffff;
+        else
+          UserFlag=0L;
+        }
+      else
+        {
+        x=0;
+        if(EventToExecute->Par2==VALUE_TOGGLE)x=(!bitRead(UserFlag,EventToExecute->Par1-1));
+        if(EventToExecute->Par2==VALUE_ON)x=true;
+        bitWrite(UserFlag,EventToExecute->Par1-1,x);                  // Zet de vlag.
+
+        // Veranderen van de vlag moet leiden tot een event die uitgevoerd moet worden
+        TempEvent.SourceUnit            = Settings.Unit;
+        TempEvent.Type                  = NODO_TYPE_EVENT;
+        TempEvent.Command               = EVENT_FLAG;
+        TempEvent.Port                  = VALUE_SOURCE_SYSTEM;
+        TempEvent.Direction             = VALUE_DIRECTION_INPUT;
+        TempEvent.Par1                  = EventToExecute->Par1;
+        TempEvent.Par2                  = bitRead(UserFlag,EventToExecute->Par1-1)?VALUE_ON:VALUE_OFF;
+        ProcessEvent(&TempEvent);
+        }
+  
+      // Veranderen van de vlag moet bekend gemaakt worden bij andere Nodo's als
+      // deze gewijzigd is vanuit deze Nodo. Alle vlagen worden hierdoor globaal
+      // in het Nodo landschap. 
+      if(EventToExecute->SourceUnit==Settings.Unit)
+        {
+        TempEvent.SourceUnit            = Settings.Unit;
+        TempEvent.Direction             = VALUE_DIRECTION_OUTPUT;
+        TempEvent.Type                  = NODO_TYPE_COMMAND;
+        TempEvent.Port                  = VALUE_ALL;
+        TempEvent.Command               = CMD_FLAG_SET;
+        SendEvent(&TempEvent, false, true,Settings.WaitFree==VALUE_ON);
+        }
+      break;
+          
     case CMD_REBOOT:
       Reboot();
       break;        
@@ -758,3 +836,4 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
   }
 
 
+                             
