@@ -153,7 +153,7 @@ void RaiseMessage(byte MessageCode, unsigned long Option)
  * Routine wordt verlaten na beeindiging van de pieptoon.
  * Revision 01, 13-02-2009, P.K.Tonkes@gmail.com
  \*********************************************************************************************/
-
+#if CFG_SOUND
 void Beep(int frequency, int duration)//Herz,millisec 
   {
   long halfperiod=500000L/frequency;
@@ -265,7 +265,7 @@ void Alarm(int Variant,int Option)
     break;
     }
   }
-
+#endif
 
 /**********************************************************************************************\
  * Stuur de RGB-led.
@@ -420,11 +420,11 @@ boolean GetStatus(struct NodoEventStruct *Event)
     Event->Par2=HW_Config;      
     break;        
 
-  #if CLOCK 
+  #if CFG_CLOCK 
   case EVENT_CLOCK_DAYLIGHT:
     Event->Par1=Time.Daylight;
     break;
-  #endif CLOCK
+  #endif CFG_CLOCK
 
   case CMD_OUTPUT:
     Event->Par1=xPar1;
@@ -461,7 +461,12 @@ boolean GetStatus(struct NodoEventStruct *Event)
     Event->Par2=float2ul(UserVar[xPar1-1]);
     break;
 
-  #if CLOCK
+  case CMD_FLAG_SET:
+    Event->Par1=xPar1;
+    Event->Par2=bitRead(UserFlag,xPar1-1)?VALUE_ON:VALUE_OFF;
+    break;
+
+  #if CFG_CLOCK
   case CMD_CLOCK_DATE:
     Event->Par2= ((unsigned long)Time.Year  %10)      | ((unsigned long)Time.Year  /10)%10<<4  | ((unsigned long)Time.Year/100)%10<<8 | ((unsigned long)Time.Year/1000)%10<<12 | 
                  ((unsigned long)Time.Month %10) <<16 | ((unsigned long)Time.Month /10)%10<<20 | 
@@ -471,7 +476,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
   case CMD_CLOCK_TIME:
     Event->Par2=Time.Minutes%10 | Time.Minutes/10<<4 | Time.Hour%10<<8 | Time.Hour/10<<12;
     break;
-  #endif CLOCK
+  #endif CFG_CLOCK
 
   case CMD_TIMER_SET:
     Event->Par1=xPar1;
@@ -481,7 +486,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
       Event->Par2=0;
     break;
 
-  #if WIRED
+  #if CFG_WIRED
   case CMD_WIRED_PULLUP:
     Event->Par1=xPar1;
     Event->Par2=Settings.WiredInputPullUp[xPar1-1];
@@ -512,7 +517,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
     Event->Par2=(WiredOutputStatus[xPar1-1])?VALUE_ON:VALUE_OFF;
     break;
 
-  #endif //WIRED
+  #endif //CFG_WIRED
 
   case VALUE_FREEMEM:    
     Event->Par2=FreeMem();
@@ -634,8 +639,10 @@ boolean LoadSettings()
 void ResetFactory(void)
   {
   int x,y;
+  
+  #if CFG_SOUND
   Beep(2000,2000);
-
+  #endif
   // maak de eventlist leeg.
   struct NodoEventStruct dummy;
   ClearEvent(&dummy);
@@ -703,14 +710,14 @@ void ResetFactory(void)
 #endif
 
   // zet analoge poort  waarden op default
-  #if WIRED
+  #if CFG_WIRED
   for(x=0;x<WIRED_PORTS;x++)
     {
     Settings.WiredInputThreshold[x]=512; 
     Settings.WiredInputSmittTrigger[x]=10;
     Settings.WiredInputPullUp[x]=VALUE_ON;
     }
-  #endif //WIRED
+  #endif //CFG_WIRED
 
   Save_Settings();
   Reboot();
@@ -911,6 +918,11 @@ void Status(struct NodoEventStruct *Request)
           case CMD_VARIABLE_SET:
             Par1_Start=1;
             Par1_End=USER_VARIABLES_MAX;
+            break;
+
+          case CMD_FLAG_SET:
+            Par1_Start=1;
+            Par1_End=USER_FLAGS_MAX;
             break;
     
           case CMD_TIMER_SET:
@@ -1576,8 +1588,6 @@ boolean Substitute(char* Input)
   byte Res;
   byte x;
 
-  // Serial.print(F("DEBUG: Substitute() Input="));Serial.println(Input); 
-
   char *Output=(char*)malloc(INPUT_LINE_SIZE);
   char *TmpStr=(char*)malloc(INPUT_LINE_SIZE);
   char *TmpStr2=(char*)malloc(INPUT_COMMAND_SIZE);
@@ -1694,7 +1704,7 @@ boolean Substitute(char* Input)
   if(Grab) // Als % niet correct afgesloten...
     error=true;
   else
-  {
+    {
     // Nu zijn de formules aan de beurt.
     InputPos  = Input;
     OutputPos = Output;
@@ -1799,7 +1809,7 @@ void ClearEvent(struct NodoEventStruct *Event)
 //#######################################################################################################
 //##################################### Clock            ################################################
 //#######################################################################################################
-#if CLOCK
+#if CFG_CLOCK
 
 #define DS1307_SEC       0
 #define DS1307_MIN       1
@@ -1975,7 +1985,7 @@ void SetDaylight()
 }
 
 #endif
-#endif CLOCK 
+#endif CFG_CLOCK 
 
 //#######################################################################################################
 //##################################### Misc: Conversions     ###########################################
@@ -2720,3 +2730,4 @@ void wdsleep()
   }
 #endif
 #endif
+
