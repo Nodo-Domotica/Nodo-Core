@@ -5,13 +5,11 @@
 //??? VERSION_MINOR aanpassen indien nodig.
 //??? Config_01.c schonen en ethernet default op true
 //??? Config_15.c aanpassen
-//??? Alleen plugins 1..5 meeleveren
 //??? Includes zonder remarks
 //??? Tabblad debug.ino verwijderen
 //??? Nieuwe libraries mee distribueren
 //??? Final compilatie voor een Mega
 //??? Final compilatie voor een Small
-//??? 
 //??? Deze checklist verwijderen
 //??? 
 //??? 
@@ -19,7 +17,7 @@
 
 
 /****************************************************************************************************************************\
-* Arduino project "Nodo" © Copyright 2014 Paul Tonkes 
+* Arduino project "Nodo" © Copyright 2010..2015 Paul Tonkes 
 * 
 * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License 
 * as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -77,11 +75,11 @@
 
 
 // ================================= Unit-1: Configuratie voor de Nodo-Mega ===================================================
-// #define CONFIG_FILE Config_01.c
-// #include <SD.h>                                 // Deze include noodzakelijk voor een Nodo-Mega. Niet gebruiken voor een Small!
+#define CONFIG_FILE Config_01.c
+#include <SD.h>                                 // Deze include noodzakelijk voor een Nodo-Mega. Niet gebruiken voor een Small!
 // #include <EthernetNodo.h>                       // Deze include optioneel als Ethernet wordt gebruikt. Niet gebruiken voor een Small!
 
 
 // ================================= Unit-15: Configuratie voor de Nodo-Small =================================================
-#define CONFIG_FILE Config_15.c
+// #define CONFIG_FILE Config_15.c
 
