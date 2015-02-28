@@ -1,4 +1,5 @@
 
+
 #if NODO_MEGA
 
  /*******************************************************************************************************\
@@ -637,7 +638,7 @@ char* DateTimeString(void)
 /**********************************************************************************************\
  * Print de welkomsttekst van de Nodo.
  \*********************************************************************************************/
-prog_char PROGMEM Text_welcome[] = "Nodo-Mega V3.7, Product=SWACNC-MEGA-R%03d, Home=%d, ThisUnit=%d";
+prog_char PROGMEM Text_welcome[] = "Nodo-Mega V3.8, Product=SWACNC-MEGA-R%03d, Home=%d, ThisUnit=%d";
 void PrintWelcome(void)
   {
   char *TempString=(char*)malloc(128);
