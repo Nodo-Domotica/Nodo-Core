@@ -22,6 +22,11 @@
 #define PLUGIN_002
 #define PLUGIN_002_CORE
 
+
+#define PLUGIN_033                                                              // NRF24L01 Plugin
+#define PLUGIN_033_CORE
+
+
 // Temperatuursensor Dallas DS18B20
 // #define PLUGIN_005
 // #define PLUGIN_005_CORE

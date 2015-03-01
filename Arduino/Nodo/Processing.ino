@@ -459,43 +459,26 @@ void QueueProcess(void)
  \*********************************************************************************************/
 byte QueueSend(boolean fast)
   {
-  byte x,Port=0,error=MESSAGE_SENDTO_ERROR, Retry=0;
+  byte x,error=0, Retry=10,Success=false;
   unsigned long ID=millis();
-  struct NodoEventStruct Event;
-
+  struct NodoEventStruct Event;                                                 
+  struct QueueStruct SendQueue[EVENT_QUEUE_MAX];                                // We maken tijdelijk gebruik van een SendQueue zodat de reguliere queue zijn werk kan blijven doen.
   byte Org_WFN=Settings.WaitFreeNodo;                                           // Stel de oorspronkelijke WaitFreeNodo setting veilig
   Settings.WaitFreeNodo=VALUE_OFF;                                              // Schakel WaitFreeNodo uit omdat dit het SendTo mechanisme doorkruist.
+  byte SendQueuePosition=QueuePosition;
     
-  Port=NodoOnline(Transmission_SendToUnit,0);                                   // Port waar SendTo naar toe moet halen we uit lijst met Nodo's onderhouden door NodoOnline();
+  byte Port=NodoOnline(Transmission_SendToUnit,0);                              // Port waar SendTo naar toe moet halen we uit lijst met Nodo's onderhouden door NodoOnline();
 
   if(fast && Port==0)                                                           // Als we de Nodo niet kennen en fast mode
     Port=VALUE_ALL;                                                             // dan event naar alle poorten sturen.
 
-  while(Port==0 && ++Retry<3)
-    {
-    x=bitRead(HW_Config,HW_I2C);                                                // Zet I2C tijdelijk aan
-    bitWrite(HW_Config,HW_I2C,1);
-
-    ClearEvent(&Event);
-    Event.Port                  = VALUE_ALL;
-    Event.Type                  = NODO_TYPE_SYSTEM;
-    Event.Command               = SYSTEM_COMMAND_QUEUE_POLL;
-    Event.DestinationUnit       = Transmission_SendToUnit;
-    Event.Flags                 = TRANSMISSION_CONFIRM;
-    SendEvent(&Event, false, false, Settings.WaitFree==VALUE_ON);             // Zend event naar Nodo met verzoek om bevestiging.
-
-    Wait(5, false,0 , false);                                                 // Wacht op reactie van de Nodo
-    bitWrite(HW_Config,HW_I2C,Port==VALUE_SOURCE_I2C | x);                    // Zet I2C weer in oorspronkelijke status.
-    }
-    
   if(Port!=0)
     {
-    struct QueueStruct SendQueue[EVENT_QUEUE_MAX];                              // We maken tijdelijk gebruik van een SendQueue zodat de reguliere queue zijn werk kan blijven doen.
     for(x=0;x<QueuePosition;x++)
       {
-      SendQueue[x]=Queue[x];                                                    // Kopieer de inhoud van de queue.
+      SendQueue[x]=Queue[x];                                                    // Kopieer de inhoud van de queue omdat de queue wordt gebruikt door de Wait() funktie.
       
-      if(Queue[x].Type==NODO_TYPE_COMMAND)                                      // Er zijn enkele commando's die geen reacte teruggeven. Zet in deze gevallen de fast mode aan.
+      if(Queue[x].Type==NODO_TYPE_COMMAND)                                      // Er zijn enkele commando's die geen reactie teruggeven. Zet in deze gevallen de fast mode aan.
         {
         switch(Queue[x].Command)
           {
@@ -506,54 +489,28 @@ byte QueueSend(boolean fast)
           }
         }
       }
-  
-  
-    if(fast)
-      {
-      for(x=0;x<QueuePosition;x++)                                              // Verzend alle events uit de queue.
-        {
-        ClearEvent(&Event);
-        Event.Flags               = TRANSMISSION_QUEUE;  
-        Event.DestinationUnit     = Transmission_SendToUnit;
-        Event.SourceUnit          = Settings.Unit;
-        Event.Port                = Port;
-        Event.Type                = Queue[x].Type;
-        Event.Command             = Queue[x].Command;
-        Event.Par1                = Queue[x].Par1;
-        Event.Par2                = Queue[x].Par2;
-          
-        //Serial.print(F("DEBUG: QueueSend() => FAST: SendEvent() x="));Serial.println(x); 
-        SendEvent(&Event,false,false,Settings.WaitFree==VALUE_ON);
-        }
-      QueuePosition=0;
-      return 0;
-      }
-  
-  
-    byte SendQueuePosition=QueuePosition;
+      
     QueuePosition=0;
-    Retry=0;
-    
-    
+
     // Eerste fase: Zorg dat de inhoud van de queue correct aan komt op de slave. Activeer aan slave zijde de QueueReceive()
     // Verzend in deze activering tevens het aantal events dat vanuit de queue verzonden zal worden naar de Slave. Eveneens wordt
     // er een ID verzonden. Deze unieke waarde zorgt er voor dat bij een eventuele re-send de reeks niet nogmaals aankomt op de 
     // slave.
     do
       {
-      // Serial.print(F("\n\nDEBUG: QueueSend() Te verzenden aantal events="));Serial.print(SendQueuePosition);Serial.print(F(", ID="));Serial.println(ID); 
-
-      ClearEvent(&Event);
-      Event.DestinationUnit     = Transmission_SendToUnit;
-      Event.SourceUnit          = Settings.Unit;
-      Event.Port                = Port;
-      Event.Type                = NODO_TYPE_SYSTEM;      
-      Event.Command             = SYSTEM_COMMAND_QUEUE_SENDTO;      
-      Event.Par1                = SendQueuePosition;                            // Aantal te verzenden events in de queue. Wordt later gecheckt en teruggezonden in de confirm. +1 omdat DIT event ook in de queue komt.
-      Event.Par2                = ID;
-      // PrintNodoEvent("DEBUG: QueueSend() Verzend SYSTEM_COMMAND_QUEUE_SENDTO",&Event);
-      SendEvent(&Event,false,false,Settings.WaitFree==VALUE_ON);                // Alleen de eerste vooraf laten gaan door een WaitFree (indien setting zo staat ingesteld);
-  
+      if(!fast)
+        {
+        ClearEvent(&Event);
+        Event.DestinationUnit     = Transmission_SendToUnit;
+        Event.SourceUnit          = Settings.Unit;
+        Event.Port                = Port;
+        Event.Type                = NODO_TYPE_SYSTEM;      
+        Event.Command             = SYSTEM_COMMAND_QUEUE_SENDTO;      
+        Event.Par1                = SendQueuePosition;                            // Aantal te verzenden events in de queue. Wordt later gecheckt en teruggezonden in de confirm. +1 omdat DIT event ook in de queue komt.
+        Event.Par2                = ID;
+        SendEvent(&Event,false,false,Settings.WaitFree==VALUE_ON);                // Alleen de eerste vooraf laten gaan door een WaitFree (indien setting zo staat ingesteld);
+        }
+          
       for(x=0;x<SendQueuePosition;x++)                                          // Verzend alle events uit de queue. Alleen de bestemmings Nodo zal deze events in de queue plaatsen
         {
         ClearEvent(&Event);
@@ -564,35 +521,44 @@ byte QueueSend(boolean fast)
         Event.Command             = SendQueue[x].Command;
         Event.Par1                = SendQueue[x].Par1;
         Event.Par2                = SendQueue[x].Par2;
-  
+
         if(x==(SendQueuePosition-1))
-          Event.Flags = TRANSMISSION_SENDTO | TRANSMISSION_QUEUE;               // Verzendvlaggen geven aan dat er nog events verzonden gaan worden en dat de ether tijdelijk gereserveerd is
+          Event.Flags = TRANSMISSION_QUEUE;                                     // Verzendvlaggen geven aan dat er nog events verzonden gaan worden en dat de ether tijdelijk gereserveerd is
         else
-          Event.Flags = TRANSMISSION_SENDTO | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT;
-  
-        // PrintNodoEvent("DEBUG: QueueSend() Verzend event",&Event);
+          Event.Flags = TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT;
+
+        if(!fast)
+          Event.Flags = Event.Flags | TRANSMISSION_SENDTO;
+          
         SendEvent(&Event,false,false,false);
         }
-      
-      // De ontvangende Nodo verzendt als het goed is een bevestiging dat het is ontvangen en het aantal commando's. De slave haalt tevens de Lock
-      // van de Nodo's af zodat de ether weer door alle Nodo's gebruikt kunnen worden.
-      ClearEvent(&Event);
-      Event.SourceUnit          = Transmission_SendToUnit;
-      Event.Command             = SYSTEM_COMMAND_CONFIRMED;
-      Event.Type                = NODO_TYPE_SYSTEM;
-  
-      // Serial.print(F("DEBUG: QueueSend() => Wait() wacht op SYSTEM_COMMAND_CONFIRMED. Verzonden events="));Serial.println(x);
-      if(Wait(5,false,&Event,false))
-        if(x==(Event.Par1))                                                     // Verzonden events gelijk aan ontvangen events? -1 omdat aan de Slave zijde het eerste element in de queue geen deel uit maakt van de SendTo events.
-          error=0;
-  
-      // if(error){Serial.print(F("DEBUG: QueueSend() Verwacht aantal="));Serial.print(x);Serial.print(F(", Bevestigd aantal="));Serial.print(Event.Par1);PrintNodoEvent(", Ontvangen=",&Event);}
-      }while((++Retry<10) && error);   
+        
+      if(!fast)
+        {
+        // De ontvangende Nodo verzendt als het goed is een bevestiging dat het is ontvangen en het aantal commando's. De slave haalt tevens de Lock
+        // van de Nodo's af zodat de ether weer door alle Nodo's gebruikt kunnen worden.
+        ClearEvent(&Event);
+        Event.SourceUnit          = Transmission_SendToUnit;
+        Event.Command             = SYSTEM_COMMAND_CONFIRMED;
+        Event.Type                = NODO_TYPE_SYSTEM;
+    
+        if(Wait(5,false,&Event,false))        
+          if(x==Event.Par1)                                                     // Verzonden events gelijk aan ontvangen events? 
+            Success=true;
+
+        }
+      else
+        Success=true;                                                           // Bij fast optie hoeven we niet te wachten op bevestiging van de slave
+        
+      }while((--Retry>0) && !Success);   
     }
   else
-    RaiseMessage(MESSAGE_NODO_NOT_FOUND,0);
+    error=MESSAGE_NODO_NOT_FOUND;
+    // RaiseMessage(MESSAGE_NODO_NOT_FOUND,0);
+
+  if(Retry==0)
+    error=MESSAGE_SENDTO_ERROR;
     
-  QueuePosition=0;
   Settings.WaitFreeNodo=Org_WFN;                                                // Herstel de oorspronkelijke WaitFreeNodo setting.  
   return error;
   }
@@ -631,6 +597,7 @@ void QueueReceive(NodoEventStruct *Event)
   TempEvent.Type                = NODO_TYPE_SYSTEM; 
   TempEvent.Command             = SYSTEM_COMMAND_CONFIRMED;      
   TempEvent.Par1                = Received;
+
   SendEvent(&TempEvent,false, false, false);                                    // Stuur vervolgens de master ter bevestiging het aantal ontvangen events die zich nu in de queue bevinden.
     
   QueuePosition=0;                                                              // Omdat ProcessQueue de queue heeft leeggedraaid, kan de queue positie op 0 worden gezet.

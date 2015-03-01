@@ -106,6 +106,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     }
 
   HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS+millis();        
+  // PrintNodoEvent("DEBUG: Event sent=", ES);//???
   }
   
 #if NODO_MEGA

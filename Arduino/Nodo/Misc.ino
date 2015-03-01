@@ -2522,7 +2522,7 @@ byte AliasWrite(char* Line)
     }while(w!=0 && y<(INPUT_COMMAND_SIZE-1));
     
   
-  // een Nodo events is het niet toegestaan om een alias voor aan te maken. Dit omdat anders
+  // Voor Nodo events is het niet toegestaan om een alias voor aan te maken. Dit omdat anders
   // een situatie kan ontstaan waarbij de Nodo op slot gezet kan worden doordat essentiele commando's niet 
   // meer benaderbaar zijn.  
   GetArgv(StrInput,String,1);

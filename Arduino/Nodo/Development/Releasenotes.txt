@@ -15,6 +15,13 @@ R780:
 - Toegevoegd commando ' BreakOnFlag <VlagNummer>,<State>'
 - Toegevoegd commando 'FlagSync', geen parameters. Deze zorgt er voor dat alle nodo's in het landschap de vlaggen over neemt zoals die op deze nodo zijn ingesteld.   
       
+R782:
+- Aanpassing timings SendTo: toename betrouwbaarheid door meer tijd tussen omschakelen zenden/ontvangen
+- diverse kleine aanpassingen onder de motorkap.
+
+
+
 ToDo:
--
+- %..% in scriptfiles testen.
+- Communicatie WebApp testen.
  

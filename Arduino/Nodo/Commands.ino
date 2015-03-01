@@ -177,7 +177,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
     #endif CFG_CLOCK 
 
-
     case CMD_SEND_USEREVENT:
       TempEvent.Port                  = VALUE_ALL;
       TempEvent.Type                  = NODO_TYPE_EVENT;
