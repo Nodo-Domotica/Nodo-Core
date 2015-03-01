@@ -153,6 +153,9 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
           // geval van I2C communicatie uitsluitend naar de I2C verbonden Nodo's worden gecommuniceerd.
           NodoOnline(Event->SourceUnit,Event->Port);
 
+
+          // PrintNodoEvent("DEBUG: Received event=", Event);
+
           // Een Nodo kan aangeven dat hij Busy is.
           bitWrite(BusyNodo, Event->SourceUnit,(Event->Flags&TRANSMISSION_BUSY)>0);
           }
