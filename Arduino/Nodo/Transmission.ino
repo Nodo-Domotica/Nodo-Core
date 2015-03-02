@@ -81,7 +81,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   //          RawSignal wordt verzonden via RF/IR. Anders zal het commando worden verstuurd over I2C waarna de Nodo's op I2C het commando nogmaal
   //          zullen uitvoeren. Zo zal er een ongewenste loop ontstaan.
   
-  #if I2C
+  #if CFG_I2C
   if(!UseRawSignal)
     {
     if((Port==VALUE_SOURCE_I2C || Port==VALUE_ALL) && bitRead(HW_Config,HW_I2C))
@@ -120,7 +120,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
 
 // Deze routine wordt vanuit de Wire library aangeroepen zodra er data op de I2C bus verschijnt die voor deze nodo bestemd is.
 // er vindt geen verdere verwerking plaats, slechts opslaan van het data. 
-#if I2C
+#if CFG_I2C
 void ReceiveI2C(int n)
   {
   I2C_Received=0;
@@ -161,7 +161,7 @@ void SendI2C(struct NodoEventStruct *EventBlock)
     }
   WireNodo.endTransmission(true);                                               // Geef de bus vrij
   }
-#endif // I2C
+#endif // CFG_I2C
 
 #define IP_BUFFER_SIZE            256
 
@@ -795,7 +795,7 @@ void ExecuteIP(void)
                 IPClient.print(F("Date: "));
                 IPClient.println(DateTimeString());             
                 }
-              #endif clock
+              #endif //CFG_CLOCK
               
               IPClient.println(""); // HTTP Request wordt altijd afgesloten met een lege regel
 

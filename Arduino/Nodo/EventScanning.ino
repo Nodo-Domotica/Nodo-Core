@@ -1,6 +1,6 @@
 #define I2C_BUFFERSIZE                32                                        
 
-#if I2C
+#if CFG_I2C
 int  I2C_Received=0;                                                            // Bevat aantal binnengomen bytes op I2C;
 byte I2C_ReceiveBuffer[I2C_BUFFERSIZE+1];
 #endif
@@ -17,7 +17,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
 
   while(Timer>millis() || RepeatingTimer>millis())
     {
-    #if I2C
+    #if CFG_I2C
     if(Focus==0 || Focus==VALUE_SOURCE_I2C)
       {
       if(I2C_Received)                                                          // I2C: *************** kijk of er data is binnengekomen op de I2C-bus **********************

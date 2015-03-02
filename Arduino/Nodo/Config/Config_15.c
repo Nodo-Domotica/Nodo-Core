@@ -7,25 +7,28 @@
 // http://www.nodo-domotica.nl/index.php/Device
 // ****************************************************************************************************************************************
 
+
+
 #define UNIT_NODO                         15                                    // Na een reset wordt dit het unitnummer van de Nodo
 #define HOME_NODO                          1                                    // Home adres. Alleen Nodo's met hetzelde Home adres kunnen ondeling gegevens uitwisselen
-#define CFG_CLOCK                      false                                    // true=code om Real Time Clock mee compileren.
-#define SLEEP                          false                                    // Sleep mode mee compileren?
-#define I2C                             true                                    // I2C communicatie mee compileren (I2C plugins en klok blijvel wel gebruik maken van I2)
 
+// #define CFG_CLOCK                      false                                    // false=geen code voor Real Time Clock mee compileren. (Op Mega is meecompileren van Clock verplicht)
+// #define CFG_SOUND                      false                                    // false=geen luidspreker in gebruik.
+// #define CFG_WIRED                      false                                    // false=wired voorzieningen uitgeschakeld
+// #define CFG_I2C                        false                                    // false=I2C communicatie niet mee compileren (I2C plugins en klok blijvel wel gebruik maken van I2C)
+// #define CFG_SLEEP                      false                                    // false=Sleep mode mee compileren.
 
-// Kaku              : Klik-Aan-Klik-Uit
-#define PLUGIN_001
-#define PLUGIN_001_CORE
+// Kaku: Klik-Aan-Klik-Uit
+// #define PLUGIN_001
+// #define PLUGIN_001_CORE
 
-// NewKAKU           : Klik-Aan-Klik-Uit met automatische codering. Tevens bekend als Intertechno.
-#define PLUGIN_002
-#define PLUGIN_002_CORE
+// NewKAKU: Klik-Aan-Klik-Uit met automatische codering. Tevens bekend als Intertechno.
+// #define PLUGIN_002
+// #define PLUGIN_002_CORE
 
-
-#define PLUGIN_033                                                              // NRF24L01 Plugin
-#define PLUGIN_033_CORE
-
+// NRF24L01 Plugin
+// #define PLUGIN_033                                                              
+// #define PLUGIN_033_CORE
 
 // Temperatuursensor Dallas DS18B20
 // #define PLUGIN_005
@@ -40,6 +43,6 @@
 // #define PLUGIN_020_CORE 
 
 // RGB-Led aansturing
-#define PLUGIN_023
-#define PLUGIN_023_CORE
-#define PLUGIN_023_CORE_RGBLED
+// #define PLUGIN_023
+// #define PLUGIN_023_CORE
+// #define PLUGIN_023_CORE_RGBLED

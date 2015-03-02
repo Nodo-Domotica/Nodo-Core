@@ -603,7 +603,7 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
       strcat(TmpStr,DateTimeString());
       strcat(TmpStr,"; ");
       }
-    #endif clock
+    #endif
 
     strcat(TmpStr,StringToPrint);
     FileWriteLine("",ProgmemString(Text_23),"DAT", TmpStr, false);
@@ -633,7 +633,7 @@ char* DateTimeString(void)
 
   return dt;
   }
-#endif clock
+#endif //CFG_CLOCK
 
 /**********************************************************************************************\
  * Print de welkomsttekst van de Nodo.
@@ -666,7 +666,7 @@ void PrintWelcome(void)
     sprintf(TempString,"%s %s",DateTimeString(), cmd2str(Time.DaylightSaving?VALUE_DLS:0));
     PrintString(TempString,VALUE_ALL);
     }
-  #endif
+  #endif //CFG_CLOCK
   
   // print IP adres van de Nodo
   #ifdef ethernetserver_h
@@ -1619,7 +1619,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
       break;
     
     case EVENT_TIME:
-      // Event format: [Time <Time HHMM>, <Day 1..7>]
+      // Event format: [Time <Time HHMM>, <Day>]
       // We moeten wat truucs uithalen om al deze info in een 32-bit variabele te krijgen.
       // Tijd wordt in Par2 opgeslagen volgens volgende format: MSB-0000WWWWAAAABBBBCCCCDDDD-LSB
       // WWWW=weekdag, AAAA=Uren tiental, BBBB=uren, CCCC=minuten tiental DDDD=minuten

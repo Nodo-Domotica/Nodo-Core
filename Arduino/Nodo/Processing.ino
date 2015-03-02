@@ -204,6 +204,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
  * Toetst of Event ergens als entry voorkomt in de Eventlist. Geeft False als de opgegeven code niet bestaat.
  * geeft positie terug bij een match.
  \*********************************************************************************************/
+
 byte CheckEventlist(struct NodoEventStruct *Event)
   {
   struct NodoEventStruct MacroEvent,MacroAction;
@@ -244,7 +245,7 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
        && (Event->Par2==MacroEvent->Par2 || MacroEvent->Par2==0 || Event->Par2==0))                         // Par2 deel een match?
          return true; 
     
-  // Events die niet voor deze Nodo bestemd zijn worden an niet doorgelaten door EventScanning(), echter events die voor alle Nodo's bestemd zijn
+  // Events die niet voor deze Nodo bestemd zijn worden, worden niet doorgelaten door EventScanning(), echter events die voor alle Nodo's bestemd zijn
   // horen NIET langs de eventlist te worden gehaald. Deze daarom niet verder behandelen TENZIJ het een UserEvent is of behandeling door Wildcard. 
   // Die werden hierboven al behandeld.
   if(Event->SourceUnit!=0  && Event->SourceUnit!=Settings.Unit)
@@ -260,13 +261,19 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
   // ### TIME:
   if(Event->Type==NODO_TYPE_EVENT && Event->Command==EVENT_TIME)                // het binnengekomen event is een clock event.
     {
-    // Structuur technisch hoort onderstaande regel hier thuis, maar qua performance niet optimaal!
-    unsigned long Cmp=MacroEvent->Par2;
-    unsigned long Inp=Event->Par2;
+    unsigned long Cmp=MacroEvent->Par2;                                         // Event zoals door gebruiker ingevoerd in de eventlist
+    unsigned long Inp=Event->Par2;                                              // Event zoals gevuld door de klok
+
+    // Twee opties moeten afwijkend worden behandeld: Werkdagen en weekend.
+    byte y=(Cmp>>16)&0xf;                                                       // Te checken dag uit event opgegeven in de eventlist
+    byte z=(Inp>>16)&0xf;                                                       // Te checken dag uit de kloktijd opgegeven dag
+    if( (y==8 && z>=2 && z<=6)     ||                                           // als opgegeven dag in eventlist WRK en kloktijd is een werkdag,
+        (y==9 && (z==1 || z==7))    )                                           // als opgegeven dag in eventlist WND en kloktijd is een weekend dag
+        Cmp|=(0xfL<<16);                                                        // dan match op dag door maskeren met wildcard                                      
 
     // In het event in de eventlist kunnen zich wildcards bevinden. Maskeer de posities met 0xF wildcard nibble 
     // doe dit kruislings omdat zowel het invoer event als het event in de eventlist wildcards kunnen bevatten.
-    for(byte y=0;y<8;y++)// loop de acht nibbles van de 32-bit Par2 langs
+    for(y=0;y<8;y++)// loop de acht nibbles van de 32-bit Par2 langs
       {          
       unsigned long Mask=0xffffffff  ^ (0xFUL <<(y*4));                         // Masker maken om de nibble positie y te wissen.
       if(((Inp>>(y*4))&0xf) == 0xf)                                             // als in nibble y een wildcard waarde 0xf staat
