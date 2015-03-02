@@ -344,7 +344,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
 
     case CMD_SLEEP:
       #if !NODO_MEGA
-      #if SLEEP
+      #if CFG_SLEEP
       GoodNightSleepTight();
       #endif
       #endif      

@@ -2659,7 +2659,7 @@ void AliasList(char* Keyword, byte Port)
  *  
  \********************************************************************************************/
 
-#if SLEEP
+#if CFG_SLEEP
 #include <avr/sleep.h>
 #include <avr/wdt.h>
 

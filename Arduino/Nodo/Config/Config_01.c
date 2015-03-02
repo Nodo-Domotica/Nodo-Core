@@ -29,7 +29,3 @@
 #define PLUGIN_033_CORE
 
 
-#define CFG_CLOCK              true                                             // false=geen code voor Real Time Clock mee compileren. (Op Mega is meecompileren van Clock verplicht)
-#define CFG_SOUND              true                                             // false=geen luidspreker in gebruik.
-#define CFG_WIRED              true                                             // false=wired voorzieningen uitgeschakeld
-#define I2C                    true                                             // I2C communicatie mee compileren (I2C plugins en klok blijvel wel gebruik maken van I2)

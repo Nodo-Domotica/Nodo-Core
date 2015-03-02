@@ -1,3 +1,4 @@
+
 #define NODO_BUILD                       782                                    // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                10                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
@@ -27,10 +28,26 @@
 #define ETHERNET_MAC_0                  0xCC                                    // Dit is byte 0 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
 #define ETHERNET_MAC_1                  0xBB                                    // Dit is byte 1 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
 #define ETHERNET_MAC_2                  0xAA                                    // Dit is byte 2 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
-#define CFG_CLOCK                       true                                    // true=code voor Real Time Clock mee compileren.
-#define SLEEP                           true                                    // Sleep mode mee compileren?
-#define I2C                             true                                    // I2C communicatie mee compileren (I2C plugins en klok blijven wel gebruik maken van I2)
-#define CFG_WIRED                       true                                    // gebruik van de WIRED IN/OUT voorzieningen.
+
+#ifndef CFG_CLOCK
+#define CFG_CLOCK                       true                                    // false=geen code voor Real Time Clock mee compileren. (Op Mega is meecompileren van Clock verplicht)
+#endif
+
+#ifndef CFG_SOUND
+#define CFG_SOUND                       true                                    // false=geen luidspreker in gebruik.
+#endif
+
+#ifndef CFG_WIRED
+#define CFG_WIRED                       true                                    // false=wired voorzieningen uitgeschakeld
+#endif
+
+#ifndef CFG_I2C
+#define CFG_I2C                         true                                    // false=I2C communicatie niet mee compileren (I2C plugins en klok blijvel wel gebruik maken van I2C)
+#endif
+
+#ifndef CFG_SLEEP
+#define CFG_SLEEP                       true                                    // false=Sleep mode mee compileren.
+#endif
 
 byte dummy=1;                                                                   // linker even op weg helpen. Bugje in Arduino.
 
@@ -467,7 +484,7 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 // RealTimeclock DS1307
 
 struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,DaylightSaving,DaylightSavingSetMonth,DaylightSavingSetDate; int Year;}Time; // Hier wordt datum & tijd in opgeslagen afkomstig van de RTC.
-#endif //CLOCK
+#endif //CFG_CLOCK
 
 #define PLUGIN_MMI_IN                1
 #define PLUGIN_MMI_OUT               2
@@ -665,6 +682,8 @@ struct SettingsStruct
   int     WiredInputThreshold[WIRED_PORTS], WiredInputSmittTrigger[WIRED_PORTS];
   byte    WiredInputPullUp[WIRED_PORTS];
   #endif
+
+
   
   #if NODO_MEGA
   unsigned long Alarm[ALARM_MAX];                                               // Instelbaar alarm
@@ -698,7 +717,7 @@ struct SettingsStruct
 
  // Niet alle gegevens uit een event zijn relevant. Om ruimte in EEPROM te besparen worden uitsluitend
  // de alleen noodzakelijke gegevens in EEPROM opgeslagen. Hiervoor een struct vullen die later als
- // Ã©Ã©n blok weggeschreven kan worden.
+ // een geheel blok weggeschreven kan worden.
 
  struct EventlistStruct
    {
@@ -911,7 +930,7 @@ void setup()
   FileExecute("","config","dat",true,VALUE_ALL);                                // Voer bestand config uit als deze bestaat. die goeie oude MD-DOS tijd ;-)
   #endif
    
-  #if I2C
+  #if CFG_I2C
   WireNodo.begin(Settings.Unit + I2C_START_ADDRESS - 1);                        // Start luisteren naar de I2C poort.
   WireNodo.onReceive(ReceiveI2C);                                               // verwijs naar de I2C ontvangstroutine
   #endif
@@ -955,7 +974,7 @@ void setup()
   // initialiseer de lijst met pointers naar de device funkties.
   PluginInit();
 
-  #if I2C
+  #if CFG_I2C
   bitWrite(HW_Config,HW_I2C,true); // Zet I2C aan zodat het boot event op de I2C-bus wordt verzonden. Hiermee worden bij de andere Nodos de I2C geactiveerd.
   #endif
 
@@ -978,7 +997,7 @@ void setup()
     TempEvent.Command   = EVENT_BOOT;
   SendEvent(&TempEvent,false,true,Settings.WaitFree==VALUE_ON);                 // Zend boot event naar alle Nodo's.  
 
-  #if I2C
+  #if CFG_I2C
   bitWrite(HW_Config,HW_I2C,false);                                             // Zet I2C weer uit. Wordt weer geactiveerd als er een I2C event op de bus verschijnt.
   #endif
   
@@ -1271,7 +1290,7 @@ void loop()
       PluginCall(PLUGIN_ONCE_A_SECOND,&ReceivedEvent,0);
 
 
-      // TIMER: **************** Genereer event als Ã©Ã©n van de Timers voor de gebruiker afgelopen is ***********************    
+      // TIMER: **************** Genereer event als 1 van de Timers voor de gebruiker afgelopen is ***********************    
       for(x=0;x<TIMER_MAX;x++)
         {
         if(UserTimer[x]!=0L)// als de timer actief is
@@ -1291,29 +1310,20 @@ void loop()
           }
         }
 
-      // CLOCK: **************** Lees periodiek de realtime klok uit en check op events  ***********************
       #if CFG_CLOCK
-      if(bitRead(HW_Config,HW_CLOCK))
+      if(bitRead(HW_Config,HW_CLOCK))                                           // Als de klok aanwezig
         {
-        ClockRead(); // Lees de Real Time Clock waarden in de struct Time
-
-        if(Time.Minutes!=PreviousMinutes)//Als klok aanwezig en er is een minuut verstreken
+        ClockRead(); // Lees de Real Time Clock waarden in de struct Time       // Dan klok uitlezen
+        if(Time.Minutes!=PreviousMinutes)                                       // eenmaal per minuut
           {
-          // Twee opties moeten afwijkend worden behandeld: Werkdagen en weekend.
-          z=Time.Day;                                                               // Dag van vandaag
-          y=(Settings.Alarm[x]>>16)&0xf;                                            // De door de gebruiker opgegeven dag
-    
-          if(y==8 && z>=2 && z<=6)                                                  // als werkdag
-            z=y;                                                                    // dan event
-    
-          if(y==9 && (z==1 || z==7))                                                // als weekend dag
-            z=y;                                                                    // dan event
-
           PreviousMinutes=Time.Minutes;
+
+
+          // CLOCK: **************** Check op Time-events  ***********************
           ClearEvent(&ReceivedEvent);
           ReceivedEvent.Type             = NODO_TYPE_EVENT;
           ReceivedEvent.Command          = EVENT_TIME;
-          ReceivedEvent.Par2             = Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12 | (unsigned long)z<<16;
+          ReceivedEvent.Par2             = Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12 | (unsigned long)Time.Day<<16;
           ReceivedEvent.Direction        = VALUE_DIRECTION_INPUT;
           ReceivedEvent.Port             = VALUE_SOURCE_CLOCK;
           
@@ -1321,13 +1331,15 @@ void loop()
             {
             if(PreviousTimeEvent!=ReceivedEvent.Par2)
               {
-              ProcessEvent(&ReceivedEvent);                                     // verwerk binnengekomen event.
+              ProcessEvent(&ReceivedEvent); // verwerk binnengekomen event.
               PreviousTimeEvent=ReceivedEvent.Par2; 
               }
             }
           else
             PreviousTimeEvent=0L;
           }
+
+        // CLOCK: **************** Check op Daylight-events  ***********************
         #if NODO_MEGA
         SetDaylight();
         if(Time.Daylight!=DaylightPrevious)                                     // er heeft een zonsondergang of zonsopkomst event voorgedaan
@@ -1340,13 +1352,14 @@ void loop()
           ReceivedEvent.Port             = VALUE_SOURCE_CLOCK;
           ProcessEvent(&ReceivedEvent);                                         // verwerk binnengekomen event.
           DaylightPrevious=Time.Daylight;
-            }
+          }
 
+        // CLOCK: **************** Check op Alarm-events  ***********************
         if(ScanAlarm(&ReceivedEvent)) 
           ProcessEvent(&ReceivedEvent);                                         // verwerk binnengekomen event.
-        #endif NODO_MEGA
+        #endif  // NODO_MEGA
         }
-      #endif CFG_CLOCK 
+      #endif // CFG_CLOCK 
     
 
       // Terminal onderhoudstaken
