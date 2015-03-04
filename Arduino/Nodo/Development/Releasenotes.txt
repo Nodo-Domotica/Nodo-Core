@@ -10,7 +10,7 @@ R780:
 - Issue 870: TimerRandom.
 - Issue 893: BreakOn binnen een script.
 - Commando 'VariableToggle' vervallen. Maakt nu deel uit als optie voor 'FlagSet' 
-- Toegevoegd commando 'FlagSet <VlagNummer>,<State>', Vlagnummer is een waarde 1..32 of 'All'. State='On', 'Off', 'Toggle' . Vlaggen worden op alle Nodo's globaal beheerd. Bij 'All' geen event gegenereerd.
+- Toegevoegd commando 'FlagSet <VlagNummer>,<State>', Vlagnummer is een waarde 1..32 of 'All'. State=0,1,'Toggle' . Vlaggen worden op alle Nodo's globaal beheerd. Bij 'All' geen event gegenereerd.
 - Toegevoegd event 'Flag'
 - Toegevoegd commando 'BreakOnFlag <VlagNummer>,<State>'
 - Toegevoegd commando 'FlagSync', geen parameters. Deze zorgt er voor dat alle nodo's in het landschap de vlaggen over neemt zoals die op deze nodo zijn ingesteld.   
@@ -27,10 +27,16 @@ R783:
     #define CFG_I2C  
     #define CFG_SLEEP
 
-
+R784:
+- Issue 901: Time events, sourceunit = 0
+- #define CFG_RAWSIGNAL toegevoegd.
+- #define CFG_SERIAL toegevoegd.
+- Scripting syntax voor %...% vervangen door [...]. Dit analoog aan de WebApp.
+- Sendto doet geen poging meer om niet bekende Nodo te bereiken. Kost onnodig tijd.
+ 
 Todo:
-- %..% in scriptfiles testen.
 - Communicatie WebApp testen.
-- Variabelen globaal.
-- FlagSync pull i.p.v. push
+- Variabelen globaal?
+- Check of na een Boot de andere Nodo's wel een ACK verzenden.
+- FlagSync pull i.p.v. push?
  

@@ -118,7 +118,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
 
     case CMD_BREAK_ON_FLAG_EQU:
       {
-      if(bitRead(UserFlag,EventToExecute->Par1-1)==(EventToExecute->Par2==VALUE_ON))
+      if(bitRead(UserFlag,EventToExecute->Par1-1)==(EventToExecute->Par2>0))
         error=MESSAGE_BREAK;
 
       break;
@@ -473,7 +473,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
             TempEvent.Port                  = VALUE_SOURCE_SYSTEM;
             TempEvent.Direction             = VALUE_DIRECTION_INPUT;
             TempEvent.Par1                  = x+1;
-            TempEvent.Par2                  = z?VALUE_ON:VALUE_OFF;
+            TempEvent.Par2                  = z;
             ProcessEvent(&TempEvent);
             }
           }
@@ -490,9 +490,9 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         }
       else
         {
-        x=0;
+        x=false;
         if(EventToExecute->Par2==VALUE_TOGGLE)x=(!bitRead(UserFlag,EventToExecute->Par1-1));
-        if(EventToExecute->Par2==VALUE_ON)x=true;
+        if(EventToExecute->Par2>0)x=true;
         bitWrite(UserFlag,EventToExecute->Par1-1,x);                  // Zet de vlag.
 
         // Veranderen van de vlag moet leiden tot een event die uitgevoerd moet worden
@@ -502,7 +502,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.Port                  = VALUE_SOURCE_SYSTEM;
         TempEvent.Direction             = VALUE_DIRECTION_INPUT;
         TempEvent.Par1                  = EventToExecute->Par1;
-        TempEvent.Par2                  = bitRead(UserFlag,EventToExecute->Par1-1)?VALUE_ON:VALUE_OFF;
+        TempEvent.Par2                  = bitRead(UserFlag,EventToExecute->Par1-1);
         ProcessEvent(&TempEvent);
         }
   
