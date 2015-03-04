@@ -41,6 +41,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   #endif
 // endof mvdbro
 
+  #if CFG_RAWSIGNAL
   // Stuur afhankelijk van de instellingen het event door naar I2C, RF, IR. Eerst wordt het event geprint,daarna een korte wachttijd om
   // te zorgen dat er een minimale wachttijd tussen de signlen zit. Tot slot wordt het signaal verzonden.
   if(WaitForFree)
@@ -62,6 +63,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     #endif
     RawSendIR();
     }
+  #endif
 
   #ifdef ethernetserver_h
   // Verstuur signaal als HTTP-event.
@@ -95,6 +97,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     }
   #endif
   
+  #if CFG_RAWSIGNAL
   // Verstuur signaal als RF
   if(Settings.TransmitRF==VALUE_ON && (Port==VALUE_SOURCE_RF || Port==VALUE_ALL))
     {
@@ -104,6 +107,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     #endif
     RawSendRF();
     }
+  #endif
 
   HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS+millis();        
   // PrintNodoEvent("DEBUG: Event sent=", ES);//???

@@ -256,7 +256,6 @@ byte FileExecute(char* Path, char* Filename, char* Extention, boolean ContinueOn
           error=ExecuteLine(TmpStr,VALUE_SOURCE_FILE);
 
           SelectSDCard(true);
-  
 
           if(error==MESSAGE_BREAK)                                              // Als het script is beeindigd a.g.v. een break commando dan geen error doorgeven maar alleen scriptfile stoppen.
             {

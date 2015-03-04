@@ -12,11 +12,6 @@
 #define UNIT_NODO                         15                                    // Na een reset wordt dit het unitnummer van de Nodo
 #define HOME_NODO                          1                                    // Home adres. Alleen Nodo's met hetzelde Home adres kunnen ondeling gegevens uitwisselen
 
-// #define CFG_CLOCK                      false                                    // false=geen code voor Real Time Clock mee compileren. (Op Mega is meecompileren van Clock verplicht)
-// #define CFG_SOUND                      false                                    // false=geen luidspreker in gebruik.
-// #define CFG_WIRED                      false                                    // false=wired voorzieningen uitgeschakeld
-// #define CFG_I2C                        false                                    // false=I2C communicatie niet mee compileren (I2C plugins en klok blijvel wel gebruik maken van I2C)
-// #define CFG_SLEEP                      false                                    // false=Sleep mode mee compileren.
 
 // Kaku: Klik-Aan-Klik-Uit
 // #define PLUGIN_001

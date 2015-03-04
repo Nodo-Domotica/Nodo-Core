@@ -1,3 +1,13 @@
+// Wijzigen van onderstaande includes vallen buiten de policy van het Nodo concept dat de gebruiker zelf de Nodo-code moet aanpassen.
+// Dus: Geen support en geen garantie dat de Nodo stabiel funktioneert!
+
+#define CFG_CLOCK                       true                                    // false=geen code voor Real Time Clock mee compileren. (Op Mega is meecompileren van Clock verplicht)
+#define CFG_SOUND                       true                                    // false=geen luidspreker in gebruik.
+#define CFG_WIRED                       true                                    // false=wired voorzieningen uitgeschakeld
+#define CFG_I2C                         true                                    // false=I2C communicatie niet mee compileren (I2C plugins en klok blijvel wel gebruik maken van I2C)
+#define CFG_SLEEP                       true                                    // false=Sleep mode mee compileren.
+#define CFG_SERIAL                      true                                    // false=Seriele communicatie niet mee compileren. LET OP: hierdoor geen enkele weergave of input via seriele poort meer mogelijk!!! Alleen voor de Nodo-Small 
+#define CFG_RAWSIGNAL                   true                                    // false=Rawsignal niet meecompileren. LET OP: Zowel RF als IR communicatie alsmede diverse plugins gebruiken RawSignal voorzieningen. Alleen voor de Nodo-Small
 
 #define NODO_BUILD                       782                                    // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                10                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
@@ -29,25 +39,6 @@
 #define ETHERNET_MAC_1                  0xBB                                    // Dit is byte 1 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
 #define ETHERNET_MAC_2                  0xAA                                    // Dit is byte 2 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
 
-#ifndef CFG_CLOCK
-#define CFG_CLOCK                       true                                    // false=geen code voor Real Time Clock mee compileren. (Op Mega is meecompileren van Clock verplicht)
-#endif
-
-#ifndef CFG_SOUND
-#define CFG_SOUND                       true                                    // false=geen luidspreker in gebruik.
-#endif
-
-#ifndef CFG_WIRED
-#define CFG_WIRED                       true                                    // false=wired voorzieningen uitgeschakeld
-#endif
-
-#ifndef CFG_I2C
-#define CFG_I2C                         true                                    // false=I2C communicatie niet mee compileren (I2C plugins en klok blijvel wel gebruik maken van I2C)
-#endif
-
-#ifndef CFG_SLEEP
-#define CFG_SLEEP                       true                                    // false=Sleep mode mee compileren.
-#endif
 
 byte dummy=1;                                                                   // linker even op weg helpen. Bugje in Arduino.
 
@@ -816,6 +807,8 @@ byte IPClientIP[4];                                                             
 
 
 #define RAW_BUFFER_SIZE            256                                          // Maximaal aantal te ontvangen 128 bits is voldoende voor capture meeste signalen.
+
+#if CFG_RAWSIGNAL
 struct RawSignalStruct                                                          // Variabelen geplaatst in struct zodat deze later eenvoudig kunnen worden weggeschreven naar SDCard
   {
   byte Source;                                                                  // Bron waar het signaal op is binnengekomen.
@@ -828,15 +821,17 @@ struct RawSignalStruct                                                          
   byte Pulses[RAW_BUFFER_SIZE+2];                                               // Tabel met de gemeten pulsen in microseconden gedeeld door RawSignal.Multiply. Dit scheelt helft aan RAM geheugen.
                                                                                 // Om legacy redenen zit de eerste puls in element 1. Element 0 wordt dus niet gebruikt.
   }RawSignal={0,0,0,0,0,0,0L};
-
+#endif
 
 void setup() 
   {    
   int x;
   struct NodoEventStruct TempEvent;
 
+  #if CFG_SERIAL
   Serial.begin(BAUD);                                                           // Initialiseer de seriele poort
-
+  #endif
+  
   x=(EEPROM_SIZE-sizeof(struct SettingsStruct))/sizeof(struct EventlistStruct); // bereken aantal beschikbare eventlistregels in het eeprom geheugen
   EventlistMax=x>255?255:x;
 
@@ -982,8 +977,9 @@ void setup()
   bitWrite(HW_Config,HW_SERIAL,1);                                              // Serial tijdelijk inschakelen.
   #endif
   
+  #if CFG_SERIAL
   PrintWelcome();                                                               // geef de welkomsttekst weer
-
+  #endif
   
   ClearEvent(&TempEvent);
   TempEvent.Port      = VALUE_ALL;
@@ -1321,6 +1317,7 @@ void loop()
 
           // CLOCK: **************** Check op Time-events  ***********************
           ClearEvent(&ReceivedEvent);
+          ReceivedEvent.SourceUnit       = 0;
           ReceivedEvent.Type             = NODO_TYPE_EVENT;
           ReceivedEvent.Command          = EVENT_TIME;
           ReceivedEvent.Par2             = Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12 | (unsigned long)Time.Day<<16;

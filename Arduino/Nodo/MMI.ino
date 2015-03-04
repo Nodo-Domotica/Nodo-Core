@@ -331,7 +331,6 @@ int ExecuteLine(char *Line, byte Port)
                 }
               TmpStr1[y]=0;
               
-              // Zoek '=' teken op en splitst naar linker en rechter operand.
               x=StringFind(TmpStr1,"<>");
               if(x!=-1)
                 {
@@ -828,12 +827,19 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         ParameterToView[0]=PAR2_INT_HEX;
         break;
 
-      // Par1 als int (0=All) en Par2 als tekst.
+      // Par1 als int (0=All) en Par2 als int
       case CMD_BREAK_ON_FLAG_EQU:
+          ParameterToView[0]=PAR1_INT_0ALL;
+          ParameterToView[1]=PAR2_INT;
+        break;
+
       case CMD_FLAG_SET:
       case EVENT_FLAG:
         ParameterToView[0]=PAR1_INT_0ALL;
-        ParameterToView[1]=PAR2_TEXT;
+        if(Event->Par2==VALUE_TOGGLE)
+          ParameterToView[1]=PAR2_TEXT;
+        else
+          ParameterToView[1]=PAR2_INT;
         break;
       
       // Par1 als int en Par2 als int
@@ -1458,7 +1464,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
       
     case EVENT_FLAG:
     case CMD_BREAK_ON_FLAG_EQU:
-    case CMD_FLAG_SET:                                                          // FlagSet <vlagnummer|ALL>, <On|Off>
+    case CMD_FLAG_SET:                                                          // FlagSet <vlagnummer|ALL>, <0,1>
       if(ResultEvent->Command==CMD_BREAK_ON_FLAG_EQU || ResultEvent->Command==CMD_FLAG_SET)ResultEvent->Type=NODO_TYPE_COMMAND;        
       if(ResultEvent->Command==EVENT_FLAG  )ResultEvent->Type=NODO_TYPE_EVENT;        
 
@@ -1466,8 +1472,12 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
       if(str2cmd(TmpStr1)==VALUE_ALL)                                           // Alle waarden omzetten naar 0
         ResultEvent->Par1=0;
 
-      if(ResultEvent->Par1>USER_FLAGS_MAX || (ResultEvent->Par2!=VALUE_ON && ResultEvent->Par2!=VALUE_OFF))
+      if(ResultEvent->Par1>USER_FLAGS_MAX)
         error=MESSAGE_INVALID_PARAMETER;
+
+      if(ResultEvent->Par2!=0 && ResultEvent->Par2!=1 && ResultEvent->Par2!=VALUE_TOGGLE)
+        error=MESSAGE_INVALID_PARAMETER;
+
       break;
 
     case CMD_VARIABLE_SET:

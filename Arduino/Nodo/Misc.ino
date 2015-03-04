@@ -463,7 +463,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
 
   case CMD_FLAG_SET:
     Event->Par1=xPar1;
-    Event->Par2=bitRead(UserFlag,xPar1-1)?VALUE_ON:VALUE_OFF;
+    Event->Par2=bitRead(UserFlag,xPar1-1);
     break;
 
   #if CFG_CLOCK
@@ -1583,7 +1583,7 @@ int Calculate(const char *input, float* result)
 //################### Einde Calculate #################################
 
 boolean Substitute(char* Input)
-{
+  {
   boolean Grab=false;
   byte Res;
   byte x;
@@ -1599,25 +1599,24 @@ boolean Substitute(char* Input)
   Res=0;
   while(*(InputPos)!=0)// zolang einde van de string Input nog niet bereikt
    {
-    if(*InputPos=='%') 
-    {
-      if(!Grab)
-      {
-        Grab=true;
-        TmpStrPos=TmpStr;
-      }
-      else
-        {
-        Grab=false;
-        *TmpStrPos=0;// Sluit string af
+   if(*InputPos=='[' || *InputPos==']') 
+     {
+     if(!Grab)
+       {
+       Grab=true;
+       TmpStrPos=TmpStr;
+       }
+     else
+       {
+       Grab=false;
+       *TmpStrPos=0;// Sluit string af
 
-        // Haal de status van de variabele
-        byte Cmd=0;
-        GetArgv(TmpStr,TmpStr2,1);
-        Cmd=str2cmd(TmpStr2); // commando deel
-        TmpStr2[0]=0;
+       byte Cmd=0;
+       GetArgv(TmpStr,TmpStr2,1);
+       Cmd=str2cmd(TmpStr2); // commando deel
+       TmpStr2[0]=0;
 
-        if(Cmd!=0)
+       if(Cmd!=0)
           {
           // Er zijn twee type mogelijk: A)Direct te vullen omdat ze niet met status opvraagbaar zijn, B)Op te vragen met status
           byte Par1=0;
@@ -1665,7 +1664,7 @@ boolean Substitute(char* Input)
             Temp.Par1=Par1;
             Temp.Par2=Par2;
             Temp.Command=Cmd;
-            if(GetStatus(&Temp))
+           if(GetStatus(&Temp))
               {
               Event2str(&Temp,TmpStr);
               if(!GetArgv(TmpStr,TmpStr2,3)) // Als de waarde niet in de 3e parameter zat...
@@ -1751,8 +1750,8 @@ boolean Substitute(char* Input)
     }
     *OutputPos=0;// Sluit string af.
 
-    if(Grab) // Als % niet correct afgesloten...
-      error=true;
+    if(Grab) // Als [...] niet correct afgesloten...
+      error=true;     
 
     if(Res && !error)
     {

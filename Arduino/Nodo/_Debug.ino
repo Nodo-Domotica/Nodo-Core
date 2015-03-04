@@ -16,6 +16,7 @@ void PrintNodoEvent(char* str, struct NodoEventStruct *Event)
   Serial.print(F(", SourceUnit="));       Serial.println(Event->SourceUnit);
   }
 
+#if CFG_RAWSIGNAL
 void PrintRawSignal(void)
   {    
   int x;
@@ -38,4 +39,4 @@ void PrintRawSignal(void)
     }
   Serial.println();
   }
- 
+#endif 

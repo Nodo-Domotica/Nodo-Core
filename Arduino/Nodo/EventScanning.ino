@@ -54,6 +54,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       }
     #endif
   
+    #if CFR_RAWSIGNAL
     if(Focus==0 || Focus==VALUE_SOURCE_IR)
       {
       if(FetchSignal(PIN_IR_RX_DATA,LOW))                                       // IR: *************** kijk of er data start **********************
@@ -79,7 +80,8 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
           }
         }
       }
-
+    #endif
+  
 // mvdbro R761 17-12-2014 Experimental support for Sendto within plugins
     #ifdef NODO_BETA_PLUGIN_SENDTO
     static byte evtLoopCounter=0;
@@ -90,9 +92,11 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
         if(Plugin_id[x]==80 || Plugin_id[x]==83 || Plugin_id[x]==33)
           if(Plugin_ptr[x](PLUGIN_SCAN_EVENT,Event,0))
             {
-              Fetched=VALUE_SOURCE_RF;
-              Focus=255;
-              RawSignal.RepeatChecksum=0;
+            Fetched=VALUE_SOURCE_RF;
+            Focus=255;
+            #if CFG_RAWSIGNAL
+            RawSignal.RepeatChecksum=0;
+            #endif
             }
     #endif
 // endof mvdbro
@@ -105,8 +109,9 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       Event->Direction=VALUE_DIRECTION_INPUT;
       Fetched=0;
       
+      #if CFG_RAWSIGNAL
       if(RawSignal.RepeatChecksum)RawSignal.Repeats=true;
-            
+      #endif      
       // Er zijn een aantal situaties die moeten leiden te een event. Echter er zijn er ook die (nog) niet mogen leiden 
       // tot een event en waar het binnengekomen signaal moet worden onderdrukt.
       
@@ -114,6 +119,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       if(Event->Type==NODO_TYPE_EVENT || Event->Type==NODO_TYPE_COMMAND || Event->Type==NODO_TYPE_SYSTEM || Event->Port==VALUE_SOURCE_I2C)
         Fetched=1;      
 
+      #if CFG_RAWSIGNAL
       // 2. Het (mogelijk repeterend) binnenkomende signaal is niet recent eerder binnengekomen, zoals plugin signalen als KAKU, NewKAKU, ... => Herhalingen onderdrukken  
       else if(!RawSignal.RepeatChecksum && (SignalHash!=SignalHashPrevious || RepeatingTimer<millis())) 
         Fetched=2;
@@ -121,6 +127,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       // 3. Het is een herhalend signaal waarbij een herhaling wordt gebruikt als checksum zoals RAwSignals => Pas na twee gelijke signalen een event.
       else if(RawSignal.RepeatChecksum && SignalHash==SignalHashPrevious && (SignalHash!=EventHashPrevious || RepeatingTimer<millis())) 
         Fetched=3;
+      #endif
 
       // Serial.print(F("DEBUG: Fetched. SignalHash="));Serial.print(SignalHash,HEX);Serial.print(F(", RawSignal.Repeats="));Serial.print(RawSignal.Repeats);Serial.print(F(", RawSignal.RepeatChecksum="));Serial.print(RawSignal.RepeatChecksum);Serial.print(F(", RepeatingTimer>millis()="));Serial.print(RepeatingTimer>millis());Serial.print(F(", Fetched="));Serial.println(Fetched);
 
