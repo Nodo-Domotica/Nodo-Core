@@ -2,6 +2,7 @@
 /********************* Aanpassingen t.o.v. versie 3.7  **********************************\
 
 R780:
+- Ondersteuning voor NRF plugin in de Core.
 - Bug: SendTo Fast werkte niet altijd correct.
 - Issue 789: Nesting van file executes afvangen
 - Issue 818: Alarm op WorkDays (WKD) en WeekendDays (WND) (Tevens toegepast op Time events in de eventlist).
@@ -14,18 +15,21 @@ R780:
 - Toegevoegd event 'Flag'
 - Toegevoegd commando 'BreakOnFlag <VlagNummer>,<State>'
 - Toegevoegd commando 'FlagSync', geen parameters. Deze zorgt er voor dat alle nodo's in het landschap de vlaggen over neemt zoals die op deze nodo zijn ingesteld.   
+- Toegevoegd commando 'VariablePut <Variabele>, <Unit>, <VariabeleBestemming>'
+
       
 R782:
 - Aanpassing timings SendTo: toename betrouwbaarheid door meer tijd tussen omschakelen zenden/ontvangen
 - diverse kleine aanpassingen onder de motorkap.
 
 R783:
-- Aanpassing #defines om eventueel geheugen te besparen door delen code niet mee te compileren:
+- Issue 898: Kunnen disablen van 433 routines/poorten (Aanpassing #defines om eventueel geheugen te besparen door delen code niet mee te compileren)
     #define CFG_CLOCK 
     #define CFG_SOUND
     #define CFG_WIRED
     #define CFG_I2C  
     #define CFG_SLEEP
+    #define CFG_RAWSIGNAL
 
 R784:
 - Issue 901: Time events, sourceunit = 0
@@ -33,10 +37,13 @@ R784:
 - #define CFG_SERIAL toegevoegd.
 - Scripting syntax voor %...% vervangen door [...]. Dit analoog aan de WebApp.
 - Sendto doet geen poging meer om niet bekende Nodo te bereiken. Kost onnodig tijd.
+
+R785:
+- Type uit #define gehaald.
+
  
 Todo:
 - Communicatie WebApp testen.
-- Variabelen globaal?
 - Check of na een Boot de andere Nodo's wel een ACK verzenden.
 - FlagSync pull i.p.v. push?
  

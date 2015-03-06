@@ -1,5 +1,6 @@
-// Wijzigen van onderstaande includes vallen buiten de policy van het Nodo concept dat de gebruiker zelf de Nodo-code moet aanpassen.
-// Dus: Geen support en geen garantie dat de Nodo stabiel funktioneert!
+// Onderstaande settings kunnen worden gebruikt om geheugenruimte vrij te maken in een Nodo die
+// bepaalde voorzieningen niet gebruikt. Dit biedt ruimte voor grotere plugins. Deze defines kunnen 
+// worden overruled in een config_xx.c bestand.
 
 #define CFG_CLOCK                       true                                    // false=geen code voor Real Time Clock mee compileren. (Op Mega is meecompileren van Clock verplicht)
 #define CFG_SOUND                       true                                    // false=geen luidspreker in gebruik.
@@ -9,10 +10,13 @@
 #define CFG_SERIAL                      true                                    // false=Seriele communicatie niet mee compileren. LET OP: hierdoor geen enkele weergave of input via seriele poort meer mogelijk!!! Alleen voor de Nodo-Small 
 #define CFG_RAWSIGNAL                   true                                    // false=Rawsignal niet meecompileren. LET OP: Zowel RF als IR communicatie alsmede diverse plugins gebruiken RawSignal voorzieningen. Alleen voor de Nodo-Small
 
+// Wijzigen van onderstaande includes vallen buiten de policy van het Nodo concept dat de gebruiker zelf de Nodo-code moet aanpassen.
+// Dus: Geen support en geen garantie dat de Nodo stabiel funktioneert!
+
 #define NODO_BUILD                       782                                    // ??? Ophogen bij iedere Build / versiebeheer.
-#define NODO_VERSION_MINOR                10                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
+#define NODO_VERSION_MINOR                11                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
-#define UNIT_NODO                          1                                    // Unit nummer van deze Nodo
+#define UNIT_NODO                          1                                    // Unit nummer van deze Nodo. Wijzigen heeft pas effect na commando 'Reset'.
 #define HOME_NODO                          1                                    // Home adres van Nodo's die tot een groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
 #define MIN_RAW_PULSES                    16                                    // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
 #define RAWSIGNAL_TX_REPEATS               8                                    // Aantal keer dat een frame met pulsen herhaald wordt verzonden (RawSignalSend)
@@ -39,14 +43,12 @@
 #define ETHERNET_MAC_1                  0xBB                                    // Dit is byte 1 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
 #define ETHERNET_MAC_2                  0xAA                                    // Dit is byte 2 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
 
-
 byte dummy=1;                                                                   // linker even op weg helpen. Bugje in Arduino.
 
 #include <SPI.h>
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <WireNodo.h>
-
 
 // t.b.v. includen Config_xx.c files
 #define stringify(x) #x
@@ -857,18 +859,21 @@ void setup()
     pinMode(PIN_SPEAKER,    OUTPUT);
   #endif
 
+  #if CFG_RAWSIGNAL
   pinMode(PIN_IR_RX_DATA, INPUT);
   pinMode(PIN_RF_RX_DATA, INPUT);
   pinMode(PIN_RF_TX_DATA, OUTPUT);
   pinMode(PIN_RF_TX_VCC,  OUTPUT);
   pinMode(PIN_RF_RX_VCC,  OUTPUT);
   pinMode(PIN_IR_TX_DATA, OUTPUT);
-  pinMode(PIN_LED_RGB_R,  OUTPUT);
-  pinMode(PIN_LED_RGB_B,  OUTPUT);
   digitalWrite(PIN_IR_TX_DATA,LOW);                                             // Zet de IR zenders initiÃ«el uit! Anders mogelijk overbelasting !
   digitalWrite(PIN_RF_RX_VCC,HIGH);                                             // Spanning naar de RF ontvanger aan.
   digitalWrite(PIN_IR_RX_DATA,INPUT_PULLUP);                                    // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
   digitalWrite(PIN_RF_RX_DATA,INPUT_PULLUP);                                    // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
+  #endif
+
+  pinMode(PIN_LED_RGB_R,  OUTPUT);
+  pinMode(PIN_LED_RGB_B,  OUTPUT);
     
   #if NODO_MEGA
   pinMode(PIN_LED_RGB_G,  OUTPUT);

@@ -765,8 +765,8 @@ void Status(struct NodoEventStruct *Request)
     // bronnen waar niet teruggestuurd kan worden en dus naar alle poorten:
     case VALUE_SOURCE_SYSTEM:
     case VALUE_SOURCE_WIRED:
-    case VALUE_SOURCE_FILE:
     case VALUE_SOURCE_EVENTLIST:              
+    case VALUE_SOURCE_FILE:
       Port=VALUE_ALL;
       break;      
     }

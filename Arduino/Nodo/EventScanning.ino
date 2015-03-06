@@ -54,7 +54,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       }
     #endif
   
-    #if CFR_RAWSIGNAL
+    #if CFG_RAWSIGNAL
     if(Focus==0 || Focus==VALUE_SOURCE_IR)
       {
       if(FetchSignal(PIN_IR_RX_DATA,LOW))                                       // IR: *************** kijk of er data start **********************
