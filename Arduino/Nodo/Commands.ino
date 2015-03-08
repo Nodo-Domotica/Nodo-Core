@@ -774,21 +774,14 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         Settings.RawSignalChecksum=EventToExecute->Par2;
       break;
 
-    case CMD_RAWSIGNAL_SAVE: // Geen Par1=Huidige inhoud opslaan. In andere gevallen de settine op VALUE_ON of VALUE_OFF instellen 
-      if(EventToExecute->Par1==0)
-        {
-        // Sla huidige inhoud van de RawSignal buffer op.
-        // Daarvoor moet eerst de bijbehorende HEX-code worden uitgerekend.
-        RawSignal_2_32bit(&TempEvent);
-        error=RawSignalWrite(TempEvent.Par2);
-        }
+    case CMD_RAWSIGNAL_SAVE:
+      if(EventToExecute->Par2==0)                                               // Als er geen HEX-code is opgegeven door de gebruiker...
+        RawSignal32bit(&TempEvent);                                             // dan eentje berekenen aan de hand van de inhoud van de RawSignal buffer
       else
-        {
-        Settings.RawSignalSave=EventToExecute->Par1;
-        Settings.RawSignalChecksum=EventToExecute->Par2&0xff;
-        if(EventToExecute->Par1==VALUE_ON)
-          Settings.RawSignalReceive=VALUE_ON;
-        }        
+        TempEvent.Par2=EventToExecute->Par2;
+        
+      error=RawSignalWrite(TempEvent.Par2);
+      Settings.RawSignalReceive=VALUE_ON;
       break;
 
     case CMD_RAWSIGNAL_SHOW: 
