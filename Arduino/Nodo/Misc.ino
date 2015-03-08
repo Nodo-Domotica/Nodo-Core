@@ -579,11 +579,6 @@ boolean GetStatus(struct NodoEventStruct *Event)
     Event->Par1=Settings.WaitFreeNodo;
     break;
 
-  case CMD_RAWSIGNAL_SAVE:
-    Event->Par1=Settings.RawSignalSave;
-    Event->Par2=Settings.RawSignalCleanUp;
-    break;
-
   // pro-forma de commando's die geen fout op mogen leveren omdat deze elders in de statusafhandeling worden weergegeven
   case CMD_NODO_IP:
   case CMD_GATEWAY:
@@ -697,8 +692,6 @@ void ResetFactory(void)
   Settings.EchoSerial                 = VALUE_ON;
   Settings.EchoTelnet                 = VALUE_OFF;  
   Settings.Log                        = VALUE_OFF;  
-  Settings.RawSignalSave              = VALUE_OFF;  
-  Settings.RawSignalCleanUp           = 0;  
   Settings.RawSignalChecksum          = VALUE_ON;  
   Settings.Alias                      = VALUE_OFF;  
   Settings.Password[0]                = 0;

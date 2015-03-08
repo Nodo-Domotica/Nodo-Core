@@ -115,7 +115,6 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     Continue=false;
     }
 
-
   #if NODO_MEGA  
   // Alleen weergeven zonder event af te handelen
   if(Continue && (Event->Flags & TRANSMISSION_VIEW_SPECIAL))
@@ -126,7 +125,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
   
   #if NODO_MEGA
   if(Continue && bitRead(HW_Config,HW_SDCARD))
-    if(Event->Command==EVENT_RAWSIGNAL && Settings.RawSignalSave==VALUE_ON)
+    if(Event->Command==EVENT_RAWSIGNAL && Settings.RawSignalReceive==VALUE_ON)
       if(!RawSignalExist(Event->Par2))
         RawSignalWrite(Event->Par2);
   #endif    

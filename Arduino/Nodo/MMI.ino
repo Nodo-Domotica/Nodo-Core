@@ -1,5 +1,3 @@
-
-
 #if NODO_MEGA
 
  /*******************************************************************************************************\
@@ -814,8 +812,13 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         ParameterToView[1]=PAR2_FLOAT;
         break;
 
-      // Par2 als hex waarde, par2 als tekst.
+      // Par2 als hex waarde
       case CMD_RAWSIGNAL_SHOW:
+      case CMD_RAWSIGNAL_SAVE:
+        ParameterToView[0]=PAR2_INT_HEX;
+        break;
+
+      // Par2 als hex waarde, par2 als tekst.
       case CMD_RAWSIGNAL_SEND:
         ParameterToView[0]=PAR2_INT_HEX;
         ParameterToView[1]=PAR1_TEXT;
@@ -873,7 +876,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_OUTPUT:
       case CMD_RAWSIGNAL_RECEIVE:
         ParameterToView[0]=PAR1_TEXT;
-        ParameterToView[1]=PAR2_TEXT;
         break;
 
 
@@ -892,7 +894,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         break;
 
       // Par1 als tekst en par2 als getal
-      case CMD_RAWSIGNAL_SAVE:
       case CMD_STATUS:
         ParameterToView[0]=PAR1_TEXT;
         ParameterToView[1]=PAR2_INT;
@@ -1428,14 +1429,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
         error=MESSAGE_INVALID_PARAMETER;
       break;
 
-    case CMD_RAWSIGNAL_SAVE:
-      ResultEvent->Type=NODO_TYPE_COMMAND;
-      if(ResultEvent->Par1!=VALUE_ON && ResultEvent->Par1!=VALUE_OFF && ResultEvent->Par1!=0)
-        error=MESSAGE_INVALID_PARAMETER;
-      if(!(ResultEvent->Par2==0 || (ResultEvent->Par2>=2  && ResultEvent->Par2<=5 )))
-        error=MESSAGE_INVALID_PARAMETER;
-      break;
-      
+     
     case CMD_OUTPUT:
       ResultEvent->Type=NODO_TYPE_COMMAND;
       if(ResultEvent->Par1!=VALUE_SOURCE_I2C && ResultEvent->Par1!=VALUE_SOURCE_IR && ResultEvent->Par1!=VALUE_SOURCE_RF && ResultEvent->Par1!=VALUE_SOURCE_HTTP)
@@ -1675,12 +1669,18 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
       break;
       }
 
-    case CMD_RAWSIGNAL_SHOW:      
     case CMD_RAWSIGNAL_SEND:      
       ResultEvent->Type=NODO_TYPE_COMMAND;
       ResultEvent->Par1=VALUE_ALL;
       if(GetArgv(Command,TmpStr1,3))
         ResultEvent->Par1=str2cmd(TmpStr1);            // Haal Par2 uit het commando. let op Par2 gebruiker wordt opgeslagen in struct Par1.
+      if(GetArgv(Command,TmpStr1,2))
+        ResultEvent->Par2=str2int(TmpStr1);            // Haal Par1 uit het commando. let op Par1 gebruiker is een 32-bit hex-getal die wordt opgeslagen in struct Par2.
+      break;
+
+    case CMD_RAWSIGNAL_SHOW:      
+    case CMD_RAWSIGNAL_SAVE:      
+      ResultEvent->Type=NODO_TYPE_COMMAND;
       if(GetArgv(Command,TmpStr1,2))
         ResultEvent->Par2=str2int(TmpStr1);            // Haal Par1 uit het commando. let op Par1 gebruiker is een 32-bit hex-getal die wordt opgeslagen in struct Par2.
       break;
@@ -1725,4 +1725,4 @@ void PrintWelcome(void)
   }
 
 #endif
-  
+                                  

@@ -41,9 +41,17 @@ R784:
 R785:
 - Type uit #define gehaald.
 
+R786:
+- Aanpassing aan RawSignalSave. Verzenden van tijd=0 gaf een puls van 16mSec. a.g.v. niet coorect opgeloste bug in delayMicroSeconds(); 
+- RawSignalWrite schreef aantal repeats niet correct weg. Deze kreeg altijd de waarde 1
+- Als rawsignalreceive=on, dan worden codes ook opgeslagen op SDCard.
+- RawSignalReceive heeft optioneel als 2e parameter On/Off waarmee kan worden aangegeven of een signaal pas doorkomt na ontvangst herhaling.
+
  
 Todo:
-- Communicatie WebApp testen.
+- Communicatie WebApp herstellen.
 - Check of na een Boot de andere Nodo's wel een ACK verzenden.
 - FlagSync pull i.p.v. push?
+- GlobalVar
+- RawsignalCleanup
  

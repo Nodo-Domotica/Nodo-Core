@@ -696,8 +696,8 @@ struct SettingsStruct
   byte    EchoSerial;
   byte    EchoTelnet;
   byte    Log;
-  byte    RawSignalSave;
-  byte    RawSignalCleanUp;
+  byte    future1;
+  byte    future2;
   byte    RawSignalChecksum;
   byte    Alias;
   byte    Res2;
