@@ -876,6 +876,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_OUTPUT:
       case CMD_RAWSIGNAL_RECEIVE:
         ParameterToView[0]=PAR1_TEXT;
+        ParameterToView[1]=PAR2_TEXT;
         break;
 
 
