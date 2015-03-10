@@ -747,7 +747,9 @@ void ExecuteIP(void)
             if(Protocol==0)
               {
               if(StringFind(InputBuffer_IP,"GET")!=-1)
+                {
                 Protocol=VALUE_SOURCE_HTTP;// HTTP-Request
+                }
               }
 
             if(Protocol==VALUE_SOURCE_HTTP)
@@ -765,7 +767,7 @@ void ExecuteIP(void)
 
                   if(ParseHTTPRequest(InputBuffer_IP,"key=",TmpStr1,"&? "))
                     {
-                    if(strcmp(TmpStr2,TmpStr1)==0)
+                    if(strcasecmp(TmpStr2,TmpStr1)==0)
                       x=true;
                     }
                   }
@@ -806,8 +808,11 @@ void ExecuteIP(void)
               // Haal nu de resultaten op van het verwerken van de binnengekomen HTTP-regel. Stuur de inhoud als bodytext terug
               // naar de client. De WebApp zal deze content uitparsen. Indien toegang via browser, dan wordt het verwerkings-
               // resultaat getoond in de browser.
+
               if(ExecuteEvent)
+                {
                 ExecuteLine(Event, Protocol);                                   // Voer binnengekomen event uit
+                }
               } // einde HTTP-request
             }
           else

@@ -13,7 +13,7 @@
 // Wijzigen van onderstaande includes vallen buiten de policy van het Nodo concept dat de gebruiker zelf de Nodo-code moet aanpassen.
 // Dus: Geen support en geen garantie dat de Nodo stabiel funktioneert!
 
-#define NODO_BUILD                       782                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       787                                    // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                11                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1                                    // Unit nummer van deze Nodo. Wijzigen heeft pas effect na commando 'Reset'.
@@ -923,7 +923,7 @@ void setup()
     }
   #endif
     
-  DetectHardwareReset();                                                        // De Nodo resetten als lijnen LED_RED en IR_RX_DATAverbonden zijn.
+  DetectHardwareReset();                                                        // De Nodo resetten als lijnen LED_RED en IR_RX_DATA verbonden zijn.
   
   #if NODO_MEGA
   SDCardInit();                                                                 // SDCard detecteren en evt. gereed maken voor gebruik in de Nodo
@@ -1112,6 +1112,7 @@ void loop()
           if(IPServer.available())
             if(!PluginCall(PLUGIN_ETHERNET_IN,0,0))
               ExecuteIP();
+
         #endif
         break;
         }
