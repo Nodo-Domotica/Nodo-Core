@@ -214,7 +214,7 @@ byte dummy=1;                                                                   
 #define CMD_FLAG_SYNC                   146
 #define FUTUEE147                       147
 #define FUTURE148                       148
-#define FUTURE_149                      149                                     // FUTURE
+#define FUTURE149                       149                                     // FUTURE
 #define COMMAND_MAX                     149                                     // hoogste commando
 
 #define MESSAGE_OK                      0
@@ -449,7 +449,7 @@ prog_char PROGMEM Text_01[] = "Nodo Domotica controller (c) Copyright 2015 P.K.T
 prog_char PROGMEM Text_02[] = "Licensed under GNU General Public License.";
 prog_char PROGMEM Text_03[] = "Enter your password: ";
 prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSatWrkWnd";
-prog_char PROGMEM Text_05[] = "0123456789ABCDEF";
+prog_char PROGMEM Text_05[] = "0123456789abcdef";
 prog_char PROGMEM Text_07[] = "Waiting...";
 prog_char PROGMEM Text_08[] = "RAWSIGN";                                        // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_09[] = "(Last 100 KByte)";
@@ -766,6 +766,7 @@ int ExecutionLine=0;                                                            
 void(*Reboot)(void)=0;                                                          // reset functie op adres 0.
 uint8_t RFbit,RFport,IRbit,IRport;                                              // t.b.v. verwerking IR/FR signalen.
 float UserVar[USER_VARIABLES_MAX];                                              // Gebruikers variabelen
+byte UserVarKey[USER_VARIABLES_MAX];                                            // Nummer/sleutel van de gebruikersvariabelen
 unsigned long UserFlag=0L;                                                      // User vlag. Dit is een globale boolean variabele voor de gebruiker //???
 unsigned long HW_Config=0;                                                      // Hardware configuratie zoals gedetecteerd door de Nodo. 
 struct NodoEventStruct LastReceived;                                            // Laatst ontvangen event
@@ -905,6 +906,7 @@ void setup()
   Serial.println(F("Booting..."));
   #endif
 
+  UserVariableInit();                                                           // Initialiseer de user variabelen
   LoadSettings();                                                               // laad alle settings zoals deze in de EEPROM zijn opgeslagen
 
   if(Settings.Version!=NODO_VERSION_MINOR)ResetFactory();                       // De Nodo resetten als Versie van de settings zoals geladen vanuit EEPROM niet correct is.

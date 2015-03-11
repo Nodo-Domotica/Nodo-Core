@@ -2723,3 +2723,46 @@ void wdsleep()
 #endif
 #endif
 
+
+void UserVariableInit(void)
+  {
+  for(byte x=0;x<USER_VARIABLES_MAX;x++)
+    {
+    UserVar[x]=0;
+    UserVarKey[x]=0;
+    }
+  }
+
+
+boolean UserVariable(byte VarNr, float *Var)
+  {
+  byte x;
+
+  if(VarNr<1 || VarNr>USER_VARIABLES_MAX)
+    return false;
+    
+  for(x=0;x<USER_VARIABLES_MAX && UserVarKey[x]!=VarNr;x++);
+
+  *Var=UserVar[x];
+
+  Serial.print("*** Debug: UserVariable(). Waarde ");Serial.print(UserVar[x]);Serial.print(" opgehaald van Key ");Serial.println(x);//???
+
+  return true;  
+  }
+  
+boolean UserVariableSet(byte VarNr, float *Var)
+  {
+  byte x;
+
+  if(VarNr<1)
+    return false;
+  
+  for(x=0;x<USER_VARIABLES_MAX&&(UserVarKey[x]==VarNr| UserVarKey[x]==0);x++);  // Zoek of variabelenummer al bestaan of zoek eerste lege plek.
+
+  UserVarKey[x]=VarNr;                                                              // Ken variabelenummer toe aan positie
+  UserVar[x]=*Var;
+  
+  Serial.print("*** Debug: UserVariableSet(). Waarde ");Serial.print(UserVar[x]);Serial.print(" in variabele ");Serial.print(VarNr);Serial.print(" toegekend aan Key ");Serial.println(x);//???
+  }  
+  
+  
