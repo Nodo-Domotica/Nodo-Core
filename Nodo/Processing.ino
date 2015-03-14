@@ -58,28 +58,6 @@ byte ProcessEvent(struct NodoEventStruct *Event)
 
   PluginCall(PLUGIN_EVENT_IN, Event,0);                                         // loop de plugins langs voor eventuele afhandeling van dit event.
 
-  // Als er een LOCK actief is, dan commando's blokkeren behalve...
-  if(Settings.Lock && (Event->Port==VALUE_SOURCE_RF || Event->Port==VALUE_SOURCE_IR ))
-    {
-    Continue=false;
-    if(Event->Type==NODO_TYPE_COMMAND)
-      {
-      if(Event->Command==CMD_LOCK                   )Continue=true;
-      }
-    else if(Event->Type==NODO_TYPE_EVENT)
-      {
-      if     (Event->Command==EVENT_VARIABLE         )Continue=true;
-      else if(Event->Command==EVENT_MESSAGE          )Continue=true;
-      else if(Event->Command==EVENT_BOOT             )Continue=true;
-      else if(Event->Command==EVENT_USEREVENT        )Continue=true;
-      }
-    else if(Event->Type==NODO_TYPE_SYSTEM)
-      {
-      if(Event->Command==SYSTEM_COMMAND_QUEUE_SENDTO )Continue=true;
-      }
-    if(!Continue)
-      RaiseMessage(MESSAGE_ACCESS_DENIED,0);
-    }
   
   if(Event->Type == NODO_TYPE_SYSTEM)
     {                       
@@ -129,7 +107,14 @@ byte ProcessEvent(struct NodoEventStruct *Event)
       if(!RawSignalExist(Event->Par2))
         RawSignalWrite(Event->Par2);
   #endif    
-  
+
+  if(Event->Command==EVENT_VARIABLE && Event->Type==NODO_TYPE_EVENT && Event->SourceUnit!=Settings.Unit)            // Als er een Variabele event is binnengekomen
+    if(UserVariableGlobal(Event->Par1,false,false))                             // en op deze Nodo is het een globale variabele
+      {
+      TempFloat=ul2float(Event->Par2);
+      UserVariableSet(Event->Par1,&TempFloat,false);                            // Dan de variabele actualiseren
+      }
+
   if(Continue && error==0)
     {
     #if NODO_MEGA
@@ -147,7 +132,6 @@ byte ProcessEvent(struct NodoEventStruct *Event)
           x=true;
         }
       }
-      
 
     if(Settings.TransmitHTTP==VALUE_ALL || x)
       {

@@ -386,6 +386,7 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
 boolean GetStatus(struct NodoEventStruct *Event)
   { 
   int x;
+  float TempFloat;                                                              // Temp t.b.v. tussentijdse berekeningen. 
 
   // bewaar de opvraag gegevens en begin met een schoon event
   byte xPar1=Event->Par1;
@@ -456,9 +457,21 @@ boolean GetStatus(struct NodoEventStruct *Event)
         Event->Command=0;                                                       // Geen device op deze positie
     break;
 
-  case CMD_VARIABLE_SET:
+  case CMD_VARIABLE_GLOBAL:
     Event->Par1=xPar1;
-    Event->Par2=float2ul(UserVar[xPar1-1]);
+    Event->Par2=VALUE_ON;
+    if(!UserVariableGlobal(xPar1,false,false))
+      Event->Command=0;                                                       // Geen device op deze positie
+    break;
+    
+  case CMD_VARIABLE_SET:
+    if(UserVariable(xPar1, &TempFloat))
+      {
+      Event->Par1=xPar1;
+      Event->Par2=float2ul(TempFloat);
+      }    
+    else    
+      Event->Command=0;                                                           // Geen geldige optie. Als 0 wordt teruggegeven in command dan wordt niets weergegeven met de status.
     break;
 
   case CMD_FLAG_SET:
@@ -523,10 +536,6 @@ boolean GetStatus(struct NodoEventStruct *Event)
     Event->Par2=FreeMem();
     break;
 
-
-  case CMD_LOCK:
-    Event->Par1=Settings.Lock?VALUE_ON:VALUE_OFF;;
-    break;
 
 #if NODO_MEGA
   case CMD_RAWSIGNAL_SAMPLE:
@@ -647,7 +656,6 @@ void ResetFactory(void)
   // Herstel alle settings naar defaults
   Settings.Version                    = NODO_VERSION_MINOR;
   Settings.NewNodo                    = true;
-  Settings.Lock                       = 0;
   Settings.WaitFreeNodo               = VALUE_OFF;
   Settings.TransmitIR                 = VALUE_OFF;
   Settings.TransmitRF                 = VALUE_ON;
@@ -699,6 +707,9 @@ void ResetFactory(void)
   // Maak de alarmen leeg
   for(x=0;x<ALARM_MAX;x++)
     Settings.Alarm[x]=0L;
+
+  for(x=0;x<USER_VARIABLES_MAX;x++)
+    Settings.UserVarGlobal[x]=0;
 
 #endif
 
@@ -908,9 +919,10 @@ void Status(struct NodoEventStruct *Request)
             Par1_End=WIRED_PORTS;
             break;      
   
+          case CMD_VARIABLE_GLOBAL:
           case CMD_VARIABLE_SET:
             Par1_Start=1;
-            Par1_End=USER_VARIABLES_MAX;
+            Par1_End=USER_VARIABLES_MAX_NR;
             break;
 
           case CMD_FLAG_SET:
@@ -950,7 +962,7 @@ void Status(struct NodoEventStruct *Request)
         {
         Result.Command=x;
         Result.Par1=y;
-        GetStatus(&Result); 
+        GetStatus(&Result);                                                     // Haal de inhoudelijke waarde op 
         Result.Port=Port;
         
         if(Result.Command!=0)
@@ -965,7 +977,7 @@ void Status(struct NodoEventStruct *Request)
           else
             {
             Event2str(&Result,TempString);
-            PrintString(TempString, Request->Port); // geef weer op terminal
+            PrintString(TempString, Request->Port);                             // geef weer op terminal
             }
           #endif
           }
@@ -2724,6 +2736,7 @@ void wdsleep()
 #endif
 
 
+
 void UserVariableInit(void)
   {
   for(byte x=0;x<USER_VARIABLES_MAX;x++)
@@ -2733,36 +2746,106 @@ void UserVariableInit(void)
     }
   }
 
-
 boolean UserVariable(byte VarNr, float *Var)
   {
-  byte x;
+  int x;
 
-  if(VarNr<1 || VarNr>USER_VARIABLES_MAX)
+  if(VarNr<1 || VarNr>USER_VARIABLES_MAX_NR)
     return false;
-    
-  for(x=0;x<USER_VARIABLES_MAX && UserVarKey[x]!=VarNr;x++);
 
-  *Var=UserVar[x];
+  x=UserVariablePos(VarNr);
+  if(x!=-1)
+    {
+    *Var=UserVar[x];
+    return true;
+    }
 
-  Serial.print("*** Debug: UserVariable(). Waarde ");Serial.print(UserVar[x]);Serial.print(" opgehaald van Key ");Serial.println(x);//???
-
-  return true;  
+  return false;  
   }
   
-boolean UserVariableSet(byte VarNr, float *Var)
+
+int UserVariablePos(byte VarNr)
+  {
+  for(byte x=0;x<USER_VARIABLES_MAX;x++)
+    if(UserVarKey[x]==VarNr)
+      return x;
+
+  return -1;
+  }  
+
+
+// De Nodo heeft een tabel waarin wordt geadministreerd of een variabele globaal is of niet.
+// Globale variabelen worden automatisch verstuurd naar andere Nodo's als event en globale 
+// variabelen worden bij ontvangst automatisch geupdate als deze als event voorbij komt.
+// De tabel bevat variabelenummers en er worden alleen variabelen toegevoegd, niet meer 
+// verwijderd.
+
+boolean UserVariableGlobal(byte VarNr, boolean Change, boolean State)
   {
   byte x;
 
-  if(VarNr<1)
-    return false;
+  for(x=0;x<USER_VARIABLES_MAX;x++)                        
+    {
+    if(Settings.UserVarGlobal[x]==VarNr)                                                 // variabele bestaat reeds als globale.
+      {
+      if(Change)
+        Settings.UserVarGlobal[x]=State?VarNr:0;
+      return true;
+      }                                                              
+    
+    if(Settings.UserVarGlobal[x]==0)
+      {
+      if(Change)
+        {
+        Settings.UserVarGlobal[x]=State?VarNr:0;
+        return true;
+        }
+      else
+        false;
+      }
+    }  
+  return false;                                                             
+  }
   
-  for(x=0;x<USER_VARIABLES_MAX&&(UserVarKey[x]==VarNr| UserVarKey[x]==0);x++);  // Zoek of variabelenummer al bestaan of zoek eerste lege plek.
+boolean UserVariableSet(byte VarNr, float *Var, boolean Process)
+  {
+  byte x;
+  struct NodoEventStruct Event;
 
-  UserVarKey[x]=VarNr;                                                              // Ken variabelenummer toe aan positie
+  if(VarNr<1 || VarNr>USER_VARIABLES_MAX_NR)
+    return 0;
+  
+  for(x=0; x<=USER_VARIABLES_MAX; x++)                                          // Zoek of variabelenummer al bestaan of zoek eerste lege plek.
+    {
+    if(x==USER_VARIABLES_MAX)
+      return false;                                                             // Geen plaats meer.
+                                    
+    if(UserVarKey[x]==VarNr ||  UserVarKey[x]==0)                               // Als variabele al bestaat of er is een lege plek gevonden
+      break;    
+    }
+
+  UserVarKey[x]=VarNr;                                                          // Ken variabelenummer toe aan positie
   UserVar[x]=*Var;
   
-  Serial.print("*** Debug: UserVariableSet(). Waarde ");Serial.print(UserVar[x]);Serial.print(" in variabele ");Serial.print(VarNr);Serial.print(" toegekend aan Key ");Serial.println(x);//???
+  ClearEvent(&Event);
+  Event.SourceUnit        = Settings.Unit;
+  Event.DestinationUnit   = 0;                                                  // Naar alle units
+  Event.Type              = NODO_TYPE_EVENT;
+  Event.Command           = EVENT_VARIABLE;
+  Event.Port              = VALUE_SOURCE_SYSTEM;
+  Event.Direction         = VALUE_DIRECTION_INPUT;
+  Event.Par1              = VarNr;
+  Event.Par2              = float2ul(*Var);
+  ProcessEvent(&Event);                                                         // verwerk binnengekomen event.
+
+  if(Process && UserVariableGlobal(VarNr,false,false))                                     // Als deze variabele een globale variabele is
+    {
+    Event.Port         = VALUE_ALL;
+    Event.Direction    = VALUE_DIRECTION_OUTPUT;
+    SendEvent(&Event, false, true,Settings.WaitFree==VALUE_ON);                 // ...stuur dan automatisch een event uit naar de andere Nodo's
+    }
+
+  return true;
   }  
   
   

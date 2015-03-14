@@ -132,7 +132,8 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       // Serial.print(F("DEBUG: Fetched. SignalHash="));Serial.print(SignalHash,HEX);Serial.print(F(", RawSignal.Repeats="));Serial.print(RawSignal.Repeats);Serial.print(F(", RawSignal.RepeatChecksum="));Serial.print(RawSignal.RepeatChecksum);Serial.print(F(", RepeatingTimer>millis()="));Serial.print(RepeatingTimer>millis());Serial.print(F(", Fetched="));Serial.println(Fetched);
 
       SignalHashPrevious=SignalHash;
-      RepeatingTimer=millis()+SIGNAL_REPEAT_TIME;
+      if (Fetched==3) RepeatingTimer=millis()+SIGNAL_REPEAT_TIME;
+      // RepeatingTimer=millis()+SIGNAL_REPEAT_TIME; ??? Voorstel Martinus 14-03-2015 Testen.
       
       if(Fetched)
         {

@@ -13,7 +13,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
   struct NodoEventStruct TempEvent,TempEvent2;
   ClearEvent(&TempEvent);
   ClearEvent(&TempEvent2);
-  
+
   #if NODO_MEGA
   char *TempString=(char*)malloc(80);
   char *TempString2=(char*)malloc(15);
@@ -22,78 +22,57 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
   switch(EventToExecute->Command)
     {   
     case CMD_VARIABLE_INC:
-      UserVar[EventToExecute->Par1-1]+=ul2float(EventToExecute->Par2);
-      TempEvent.Type         = NODO_TYPE_EVENT;
-      TempEvent.Command      = EVENT_VARIABLE;
-      TempEvent.Par1         = EventToExecute->Par1;
-      TempEvent.Par2         = float2ul(UserVar[EventToExecute->Par1-1]);
-      TempEvent.Direction    = VALUE_DIRECTION_INPUT;
-      TempEvent.Port         = VALUE_SOURCE_SYSTEM;
-      ProcessEvent(&TempEvent);
-      break;        
+      TempFloat=0;
+      UserVariable(EventToExecute->Par1,&TempFloat);
+      TempFloat+=ul2float(EventToExecute->Par2);
+
+      if(!UserVariableSet(EventToExecute->Par1,&TempFloat,true))
+        error=MESSAGE_VARIABLE_ERROR;
+      break;         
 
     case CMD_VARIABLE_DEC:
-      UserVar[EventToExecute->Par1-1]-=ul2float(EventToExecute->Par2);
-      TempEvent.Type         = NODO_TYPE_EVENT;
-      TempEvent.Command      = EVENT_VARIABLE;
-      TempEvent.Par1         = EventToExecute->Par1;
-      TempEvent.Par2         = float2ul(UserVar[EventToExecute->Par1-1]);
-      TempEvent.Direction    = VALUE_DIRECTION_INPUT;
-      TempEvent.Port         = VALUE_SOURCE_SYSTEM;
-      ProcessEvent(&TempEvent);
-      break;        
+      TempFloat=0;
+      UserVariable(EventToExecute->Par1,&TempFloat);
+      TempFloat-=ul2float(EventToExecute->Par2);
+
+      if(!UserVariableSet(EventToExecute->Par1,&TempFloat,true))
+        error=MESSAGE_VARIABLE_ERROR;
+      break;         
 
     case CMD_VARIABLE_SET:
-      UserVar[EventToExecute->Par1-1]=ul2float(EventToExecute->Par2);
-      TempEvent.SourceUnit   = Settings.Unit;
-      TempEvent.Type         = NODO_TYPE_EVENT;
-      TempEvent.Command      = EVENT_VARIABLE;
-      TempEvent.Port         = VALUE_SOURCE_SYSTEM;
-      TempEvent.Direction    = VALUE_DIRECTION_INPUT;
-      TempEvent.Par1         = EventToExecute->Par1;
-      TempEvent.Par2         = EventToExecute->Par2;
-      ProcessEvent(&TempEvent);                                                 // verwerk binnengekomen event.
+      TempFloat=ul2float(EventToExecute->Par2);
+      if(!UserVariableSet(EventToExecute->Par1,&TempFloat,true))
+        error=MESSAGE_VARIABLE_ERROR;
       break;         
 
     #if CFG_WIRED
     case CMD_VARIABLE_SET_WIRED_ANALOG:
-      UserVar[EventToExecute->Par1-1]=analogRead(PIN_WIRED_IN_1+EventToExecute->Par2-1);
-      TempEvent.Par1         = EventToExecute->Par1;
-      TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
-      TempEvent.Type         = NODO_TYPE_EVENT;
-      TempEvent.Command=EVENT_VARIABLE;
-      TempEvent.Port=VALUE_SOURCE_SYSTEM;
-      TempEvent.Direction=VALUE_DIRECTION_INPUT;
-      ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
+      TempFloat=analogRead(PIN_WIRED_IN_1+EventToExecute->Par2-1);
+      if(!(UserVariableSet(EventToExecute->Par1,&TempFloat,true)))
+        error=MESSAGE_VARIABLE_ERROR;
       break;
     #endif         
   
     case CMD_VARIABLE_VARIABLE:
-      UserVar[EventToExecute->Par1-1]=UserVar[EventToExecute->Par2-1];
-      TempEvent.Type         = NODO_TYPE_EVENT;
-      TempEvent.Command=EVENT_VARIABLE;
-      TempEvent.Port=VALUE_SOURCE_SYSTEM;
-      TempEvent.Par1         = EventToExecute->Par1;
-      TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
-      TempEvent.Direction=VALUE_DIRECTION_INPUT;
-      ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
+      if(UserVariable(EventToExecute->Par2,&TempFloat))
+        if(!UserVariableSet(EventToExecute->Par1,&TempFloat,true))
+          error=MESSAGE_VARIABLE_ERROR;
       break;        
 
+    case CMD_VARIABLE_GLOBAL:
+      if(!UserVariableGlobal(EventToExecute->Par1,true,EventToExecute->Par2==VALUE_ON))
+        error=MESSAGE_VARIABLE_ERROR;
+      break;        
+                                                                                       
     case CMD_VARIABLE_PULSE_COUNT:
       // Tellen van pulsen actief: enable IRQ behorende bij PIN_IR_RX_DATA
       // Als er toch een reeks pulsen komt, dan wordt in FetchSignal() het tellen van pulsen gedisabled.
       bitWrite(HW_Config,HW_PULSE,true);
       attachInterrupt(PULSE_IRQ,PulseCounterISR,PULSE_TRANSITION); 
-      
-      UserVar[EventToExecute->Par1-1]=PulseCount;
-      TempEvent.Par1         = EventToExecute->Par1;
-      TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
-      TempEvent.Command=EVENT_VARIABLE;
-      TempEvent.Type=NODO_TYPE_EVENT;
-      TempEvent.Port=VALUE_SOURCE_SYSTEM;
-      TempEvent.Direction=VALUE_DIRECTION_INPUT;
-      PulseCount=0;
-      ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
+
+      TempFloat=PulseCount;
+      if(!(UserVariableSet(EventToExecute->Par1,&TempFloat,true)))
+        error=MESSAGE_VARIABLE_ERROR;
       break;         
 
     case CMD_VARIABLE_PULSE_TIME:
@@ -102,14 +81,9 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       bitWrite(HW_Config,HW_PULSE,true);
       attachInterrupt(PULSE_IRQ,PulseCounterISR,PULSE_TRANSITION); 
 
-      UserVar[EventToExecute->Par1-1]=PulseTime;
-      TempEvent.Par1         = EventToExecute->Par1;
-      TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
-      TempEvent.Type= NODO_TYPE_EVENT;
-      TempEvent.Command=EVENT_VARIABLE;
-      TempEvent.Port=VALUE_SOURCE_SYSTEM;
-      TempEvent.Direction=VALUE_DIRECTION_INPUT;
-      ProcessEvent(&TempEvent);      // verwerk binnengekomen event.
+      TempFloat=PulseTime;
+      if(!(UserVariableSet(EventToExecute->Par1,&TempFloat,true)))
+        error=MESSAGE_VARIABLE_ERROR;
       break;         
 
     case CMD_STOP:
@@ -126,34 +100,43 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       
     case CMD_BREAK_ON_VAR_EQU:
       {
-      if((int)UserVar[EventToExecute->Par1-1]==(int)ul2float(EventToExecute->Par2))
-        error=MESSAGE_BREAK;
+      if(UserVariable(EventToExecute->Par1,&TempFloat))
+        if((int)TempFloat==(int)ul2float(EventToExecute->Par2))
+          error=MESSAGE_BREAK;
       break;
       }
       
     case CMD_BREAK_ON_VAR_NEQU:
-      if((int)UserVar[EventToExecute->Par1-1]!=(int)ul2float(EventToExecute->Par2))
-        error=MESSAGE_BREAK;
+      if(UserVariable(EventToExecute->Par1,&TempFloat))
+        if((int)TempFloat!=(int)ul2float(EventToExecute->Par2))
+          error=MESSAGE_BREAK;
       break;
 
+
     case CMD_BREAK_ON_VAR_MORE:
-      if(UserVar[EventToExecute->Par1-1] > ul2float(EventToExecute->Par2))
-        error=MESSAGE_BREAK;
+      if(UserVariable(EventToExecute->Par1,&TempFloat))
+        if((int)TempFloat>(int)ul2float(EventToExecute->Par2))
+          error=MESSAGE_BREAK;
       break;
 
     case CMD_BREAK_ON_VAR_LESS:
-      if(UserVar[EventToExecute->Par1-1] < ul2float(EventToExecute->Par2))
-        error=MESSAGE_BREAK;
-      break;
+      if(UserVariable(EventToExecute->Par1,&TempFloat))
+        if((int)TempFloat<(int)ul2float(EventToExecute->Par2))
+          error=MESSAGE_BREAK;
+
 
     case CMD_BREAK_ON_VAR_LESS_VAR:
-      if(UserVar[EventToExecute->Par1-1] < UserVar[EventToExecute->Par2-1])
-        error=MESSAGE_BREAK;
+      if(UserVariable(EventToExecute->Par1,&TempFloat))
+        if(UserVariable(EventToExecute->Par2,&TempFloat2))
+          if(TempFloat<TempFloat2)
+            error=MESSAGE_BREAK;
       break;
 
     case CMD_BREAK_ON_VAR_MORE_VAR:
-      if(UserVar[EventToExecute->Par1-1] > UserVar[EventToExecute->Par2-1])
-        error=MESSAGE_BREAK;
+      if(UserVariable(EventToExecute->Par1,&TempFloat))
+        if(UserVariable(EventToExecute->Par2,&TempFloat2))
+          if(TempFloat>TempFloat2)
+            error=MESSAGE_BREAK;
       break;
 
 
@@ -186,18 +169,23 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       SendEvent(&TempEvent, false, true,Settings.WaitFree==VALUE_ON);
       break;
 
-    case CMD_VARIABLE_SEND:
-      TempEvent.Type=NODO_TYPE_EVENT;
-      TempEvent.Command=EVENT_VARIABLE;
-      TempEvent.Port=EventToExecute->Par2;
-      TempEvent.Direction=VALUE_DIRECTION_OUTPUT;
-      TempEvent.Par1=EventToExecute->Par1;
-      TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);
-      SendEvent(&TempEvent, false, true,Settings.WaitFree==VALUE_ON);
+    case CMD_VARIABLE_SEND: //??? Kan deze weg als we de voorziening hebben voor globale variabelen
+      if(UserVariable(EventToExecute->Par1,&TempFloat))
+        {
+        TempEvent.Type=NODO_TYPE_EVENT;
+        TempEvent.Command=EVENT_VARIABLE;
+        TempEvent.Port=EventToExecute->Par2;
+        TempEvent.Direction=VALUE_DIRECTION_OUTPUT;
+        TempEvent.Par1=EventToExecute->Par1;
+        TempEvent.Par2=float2ul(TempFloat);
+        SendEvent(&TempEvent, false, true,Settings.WaitFree==VALUE_ON);
+        }
+      else
+        error=MESSAGE_VARIABLE_ERROR;
       break;         
 
 
-    case CMD_VARIABLE_SAVE:
+    case CMD_VARIABLE_SAVE: //??? Herzien 
       for(z=1;z<=USER_VARIABLES_MAX;z++)
         {
         if(z==EventToExecute->Par1 || EventToExecute->Par1==0)
@@ -217,39 +205,25 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
 
           x=w>0?w:y;                                                            // Bestaande regel of laatste vrije plaats.
     
-          TempEvent.Type      = NODO_TYPE_EVENT;
-          TempEvent.Command   = EVENT_BOOT;
-          TempEvent.Par1      = Settings.Unit;
-          TempEvent.Par2      = 0;
-          TempEvent2.Type     = NODO_TYPE_COMMAND;
-          TempEvent2.Command  = CMD_VARIABLE_SET;
-          TempEvent2.Par1     = z;
-          TempEvent2.Par2     = float2ul(UserVar[z-1]);
-         
-          Eventlist_Write(x, &TempEvent, &TempEvent2);                          // Schrijf weg in eventlist
+          if(UserVariable(z,&TempFloat))
+            {
+            TempEvent.Type      = NODO_TYPE_EVENT;
+            TempEvent.Command   = EVENT_BOOT;
+            TempEvent.Par1      = Settings.Unit;
+            TempEvent.Par2      = 0;
+            TempEvent2.Type     = NODO_TYPE_COMMAND;
+            TempEvent2.Command  = CMD_VARIABLE_SET;
+            TempEvent2.Par1     = z;
+            TempEvent2.Par2     = float2ul(TempFloat);
+           
+            Eventlist_Write(x, &TempEvent, &TempEvent2);                          // Schrijf weg in eventlist
+            }
+          else
+            error=MESSAGE_VARIABLE_ERROR;
           }
         }
 
       break;
-
-    case CMD_LOCK:
-      if(EventToExecute->Par1==VALUE_ON)
-        {// Als verzoek om inschakelen dan Lock waarde vullen
-        if(Settings.Lock==0)// mits niet al gelocked.
-          Settings.Lock=EventToExecute->Par2;
-        else
-          error=MESSAGE_ACCESS_DENIED;
-        }
-      else
-        {// Verzoek om uitschakelen
-        if(Settings.Lock==EventToExecute->Par2 || Settings.Lock==0)// als lock code overeen komt of nog niet gevuld
-          Settings.Lock=0;
-        else
-          error=MESSAGE_ACCESS_DENIED;
-        }              
-      Save_Settings();
-      break;
-
 
     #if NODO_MEGA
     #if CFG_CLOCK
@@ -335,7 +309,10 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
 
     case CMD_TIMER_SET_VARIABLE:
-       UserTimer[EventToExecute->Par1-1]=millis()+(unsigned long)(UserVar[EventToExecute->Par2-1])*1000L;
+      if(UserVariable(EventToExecute->Par2,&TempFloat))
+        UserTimer[EventToExecute->Par1-1]=millis()+(unsigned long)(TempFloat)*1000L;
+      else
+        error=MESSAGE_VARIABLE_ERROR;
       break;
 
     case CMD_TIMER_RANDOM:
@@ -654,7 +631,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
 
 #if NODO_MEGA // vanaf hier commando's die alleen de Mega kent.
 
-    case CMD_VARIABLE_LOG:
+    case CMD_VARIABLE_LOG: //??? Herzien
       {
       if(EventToExecute->Par1==0)
         {
@@ -670,80 +647,16 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       for(w=x;w<=y;w++)
         {
         sprintf(TempString,ProgmemString(Text_16),Time.Date,Time.Month,Time.Year,Time.Hour,Time.Minutes,w);
-        dtostrf(UserVar[w-1], 0, 2,TempString+strlen(TempString));
-        strcpy(TempString2,"VAR_");
-        strcat(TempString2,int2str(w));
-        FileWriteLine("",TempString2,"DAT",TempString, false);
+        if(UserVariable(w,&TempFloat))
+          {
+          dtostrf(TempFloat, 0, 2,TempString+strlen(TempString));
+          strcpy(TempString2,"VAR_");
+          strcat(TempString2,int2str(w));
+          FileWriteLine("",TempString2,"DAT",TempString, false);
+          }
         }        
       break;
       }
-
-    case CMD_VARIABLE_GET: // VariableGet <Variabelenummer_Bestemming>, <unit>, <Variabelenummer_Bron_Andere_Nodo>
-      y=0; // retries
-      error=MESSAGE_SENDTO_ERROR;
-      do
-        {
-        // <VariabeleNummerBestemming> zit in Par1
-        // <Unit> zit in bit 0..7 van Par2
-        // <VariabeleNummerBron> zit in bit bit 15..8 van Par2
-        //
-        // Verzend naar de andere Nodo een verzoek om de variabele te verzenden.
-        ClearEvent(&TempEvent);
-        TempEvent.DestinationUnit=EventToExecute->Par2&0xff;
-        TempEvent.Type=NODO_TYPE_COMMAND;
-        TempEvent.Command=CMD_VARIABLE_SEND;
-        TempEvent.Port=VALUE_ALL;
-        TempEvent.Par1=(EventToExecute->Par2>>8)&0xff;                          // VariabeleBron
-        TempEvent.Par2=NodoOnline(EventToExecute->Par2&0xff,0);                 // Poort waaronder de Slave Nodo bekend is.
-        TempEvent.Flags=TRANSMISSION_QUEUE;
-
-        if(TempEvent.Par2==0)                                                   // Als unitnummer niet bekend is
-          TempEvent.Par2=VALUE_ALL;
-
-        if(TempEvent.Par2==VALUE_SOURCE_SYSTEM)
-          {
-          error=MESSAGE_INVALID_PARAMETER;
-          break;
-          }
-
-        SendEvent(&TempEvent,false,y==0,Settings.WaitFree==VALUE_ON);
-        
-        // Wacht tot event voorbij komt. De Wait(); funktie wacht op type, command en unit.
-        ClearEvent(&TempEvent);
-        TempEvent.SourceUnit          = EventToExecute->Par2&0xff;
-        TempEvent.Command             = EVENT_VARIABLE;
-        TempEvent.Type                = NODO_TYPE_EVENT;
-
-        if(Wait(3,false,&TempEvent,false))
-          {
-          TempEvent.Par1            = EventToExecute->Par1;  
-          TempEvent.Type            = NODO_TYPE_COMMAND;
-            TempEvent.Command         = CMD_VARIABLE_SET;
-          TempEvent.Direction       = VALUE_DIRECTION_INPUT;
-          if(QueuePosition)QueuePosition--;                                   // binnengekomen event is eveneens op de queue geplaatst. deze mag weg.
-          ProcessEvent(&TempEvent);                                           // verwerk binnengekomen event.
-          error=0;
-          }
-        }while(error && ++y<3);
-      break;        
-
-    case CMD_VARIABLE_PUT: // VariablePut <Variabelenummer_Bron>, <unit>, <Variabelenummer_Bestemming_Andere_Nodo>
-        x=EventToExecute->Par2&0xff;                                            // Unit nummer
-        y=NodoOnline(x,0);                                                      // Poort waar unitnummer op gezien is
-        if(y==0)y=VALUE_ALL;                                                    // Als we de poort (nog) niet kennen, dan naar alle poorten zenden.
-
-        ClearEvent(&TempEvent);
-        TempEvent.DestinationUnit=x;
-        TempEvent.Type=NODO_TYPE_COMMAND;
-        TempEvent.Command=CMD_VARIABLE_SET;
-        TempEvent.Port=y;
-        TempEvent.Flags=TRANSMISSION_QUEUE;
-        TempEvent.Par1=(EventToExecute->Par2>>8)&0xff;                          // Variabele aan de kant van de bestemming
-        TempEvent.Par2=float2ul(UserVar[EventToExecute->Par1-1]);               // Waarde 
-
-        SendEvent(&TempEvent,false,y==0,Settings.WaitFree==VALUE_ON);
-        
-      break;        
 
     case CMD_PORT_INPUT:
       Settings.PortInput=EventToExecute->Par2;

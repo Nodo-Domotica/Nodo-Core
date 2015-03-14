@@ -51,12 +51,16 @@ R786:
 
 R787:
 - WebApp communicatie hersteld.
+- Commando 'Lock' verwijderd. Dit is een hele ingewikkelde oplossing met laag beveiligingsniveau. Lossen we later anders op met NRF en/of rolling key.
 
- 
+R788:
+- Commando's VariableGet en VariablePut vervallen. Overbodig geworden met VariableGlobal
+- 100 variabele nummers beschikbaar 
+- Nodo-Mega: variabele plaatsen opgehoogd naar 25
+- Nodo-Small: variabele plaatsen verlaagd naar 10
+
 Todo:
-- Communicatie WebApp herstellen.
 - Check of na een Boot de andere Nodo's wel een ACK verzenden.
 - FlagSync pull i.p.v. push?
-- GlobalVar
 - RawsignalCleanup
  

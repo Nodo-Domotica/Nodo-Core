@@ -14,7 +14,7 @@
 // Dus: Geen support en geen garantie dat de Nodo stabiel funktioneert!
 
 #define NODO_BUILD                       787                                    // ??? Ophogen bij iedere Build / versiebeheer.
-#define NODO_VERSION_MINOR                11                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
+#define NODO_VERSION_MINOR                12                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1                                    // Unit nummer van deze Nodo. Wijzigen heeft pas effect na commando 'Reset'.
 #define HOME_NODO                          1                                    // Home adres van Nodo's die tot een groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
@@ -65,12 +65,12 @@ byte dummy=1;                                                                   
 #define CMD_SOUND                       2
 #define EVENT_USEREVENT                 3
 #define EVENT_VARIABLE                  4
-#define CMD_VARIABLE_SET                5
-#define CMD_VARIABLE_PUT                6
-#define EVENT_FLAG                      7
-#define CMD_FLAG_SET                    8
-#define VALUE_ON                        9
-#define VALUE_OFF                       10
+#define EVENT_FLAG                      5
+#define CMD_FLAG_SET                    6
+#define RESERVED_5                      7
+#define RESERVED_6                      8
+#define RESERVED_09                     9
+#define RESERVED_10                     10
 #define RESERVED_11                     11
 #define RESERVED_12                     12
 #define RESERVED_13                     13
@@ -135,12 +135,12 @@ byte dummy=1;                                                                   
 #define VALUE_DIRECTION_INPUT           67
 #define CMD_NODO_IP                     68
 #define VALUE_SOURCE_IR                 69
-#define CMD_LOCK                        70
+#define CMD_RES                         70 //???
 #define CMD_LOG                         71
 #define EVENT_MESSAGE                   72
 #define EVENT_NEWNODO                   73
-#define FUTURE74                        74
-#define FUTURE75                        75
+#define VALUE_OFF                       74
+#define VALUE_ON                        75
 #define CMD_OUTPUT                      76
 #define VALUE_DIRECTION_OUTPUT          77
 #define VALUE_RECEIVED_PAR1             78
@@ -180,12 +180,12 @@ byte dummy=1;                                                                   
 #define CMD_VARIABLE_INC                112
 #define CMD_VARIABLE_PULSE_COUNT        113
 #define CMD_VARIABLE_PULSE_TIME         114
-#define CMD_VARIABLE_GET                115
+#define CMD_VARIABLE_SET                115
 #define CMD_VARIABLE_SEND               116
 #define CMD_VARIABLE_VARIABLE           117
 #define CMD_VARIABLE_SET_WIRED_ANALOG   118
 #define CMD_VARIABLE_LOG                119
-#define VALUE_TOGGLE                    120
+#define CMD_VARIABLE_GLOBAL             120
 #define EVENT_WILDCARD                  121
 #define VALUE_SOURCE_WIRED              122
 #define VALUE_WIRED_ANALOG              123
@@ -212,9 +212,9 @@ byte dummy=1;                                                                   
 #define VALUE_FAST                      144
 #define CMD_WAIT_FREE_NODO              145
 #define CMD_FLAG_SYNC                   146
-#define FUTUEE147                       147
-#define FUTURE148                       148
-#define FUTURE149                       149                                     // FUTURE
+#define VALUE_TOGGLE                    147
+#define FUTURE148                       148                                     // let op: Moet groter zijn dan 16 i.v.m. compatibiliteit enkele plugins
+#define FUTURE149                       149                                     // let op: Moet groter zijn dan 16 i.v.m. compatibiliteit enkele plugins
 #define COMMAND_MAX                     149                                     // hoogste commando
 
 #define MESSAGE_OK                      0
@@ -235,7 +235,7 @@ byte dummy=1;                                                                   
 #define MESSAGE_VERSION_ERROR           15
 #define MESSAGE_BUSY_TIMEOUT            16
 #define MESSAGE_NODO_NOT_FOUND          17
-#define MESSAGE_FUTURE_18               18 //??? FUTURE
+#define MESSAGE_VARIABLE_ERROR          18
 #define MESSAGE_FUTURE_19               19 //??? FUTURE
 #define MESSAGE_FUTURE_20               20 //??? FUTURE
 #define MESSAGE_MAX                     20                                      // laatste bericht tekst
@@ -249,12 +249,12 @@ prog_char PROGMEM Cmd_1[] ="Boot";
 prog_char PROGMEM Cmd_2[] ="Sound";
 prog_char PROGMEM Cmd_3[] ="UserEvent";
 prog_char PROGMEM Cmd_4[] ="Variable";
-prog_char PROGMEM Cmd_5[] ="VariableSet";
-prog_char PROGMEM Cmd_6[] ="VariablePut";
-prog_char PROGMEM Cmd_7[] ="Flag";
-prog_char PROGMEM Cmd_8[] ="FlagSet";
-prog_char PROGMEM Cmd_9[] ="On";
-prog_char PROGMEM Cmd_10[]="Off";
+prog_char PROGMEM Cmd_5[] ="Flag";
+prog_char PROGMEM Cmd_6[] ="FlagSet";
+prog_char PROGMEM Cmd_7[] ="";
+prog_char PROGMEM Cmd_8[] ="";
+prog_char PROGMEM Cmd_9[] ="";
+prog_char PROGMEM Cmd_10[]="";
 prog_char PROGMEM Cmd_11[]="";
 prog_char PROGMEM Cmd_12[]="";
 prog_char PROGMEM Cmd_13[]="";
@@ -317,7 +317,7 @@ prog_char PROGMEM Cmd_66[]="if";
 prog_char PROGMEM Cmd_67[]="Input";
 prog_char PROGMEM Cmd_68[]="IP";
 prog_char PROGMEM Cmd_69[]="IR";
-prog_char PROGMEM Cmd_70[]="Lock";
+prog_char PROGMEM Cmd_70[]="";                                                  //???
 prog_char PROGMEM Cmd_71[]="Log";
 prog_char PROGMEM Cmd_72[]="Message";
 prog_char PROGMEM Cmd_73[]="NewNodo";
@@ -362,12 +362,12 @@ prog_char PROGMEM Cmd_111[]="VariableDec";
 prog_char PROGMEM Cmd_112[]="VariableInc";
 prog_char PROGMEM Cmd_113[]="VariablePulseCount";
 prog_char PROGMEM Cmd_114[]="VariablePulseTime";
-prog_char PROGMEM Cmd_115[]="VariableGet";
+prog_char PROGMEM Cmd_115[]="VariableSet";
 prog_char PROGMEM Cmd_116[]="VariableSend";
 prog_char PROGMEM Cmd_117[]="VariableSetVariable";
 prog_char PROGMEM Cmd_118[]="VariableWiredAnalog";
 prog_char PROGMEM Cmd_119[]="VariableLog";
-prog_char PROGMEM Cmd_120[]="Toggle";
+prog_char PROGMEM Cmd_120[]="VariableGlobal";
 prog_char PROGMEM Cmd_121[]="WildCard";
 prog_char PROGMEM Cmd_122[]="Wired";
 prog_char PROGMEM Cmd_123[]="WiredAnalog";
@@ -394,9 +394,9 @@ prog_char PROGMEM Cmd_143[]="Sleep";
 prog_char PROGMEM Cmd_144[]="Fast";
 prog_char PROGMEM Cmd_145[]="WaitFreeNodo"; 
 prog_char PROGMEM Cmd_146[]="FlagSync";
-prog_char PROGMEM Cmd_147[]=""; 
+prog_char PROGMEM Cmd_147[]="Toggle"; 
 prog_char PROGMEM Cmd_148[]=""; 
-prog_char PROGMEM Cmd_149[]="";                                                 // ??? FUTURE 
+prog_char PROGMEM Cmd_149[]="";
 
 
 // tabel die refereert aan de commando strings
@@ -436,7 +436,7 @@ prog_char PROGMEM Msg_14[] = "Plugin returned an error.";
 prog_char PROGMEM Msg_15[] = "Incompatibel Nodo event.";
 prog_char PROGMEM Msg_16[] = "Timeout on busy Nodo.";
 prog_char PROGMEM Msg_17[] = "Nodo not found.";
-prog_char PROGMEM Msg_18[] = ""; //??? FUTURE
+prog_char PROGMEM Msg_18[] = "Variable error.";
 prog_char PROGMEM Msg_19[] = ""; //??? FUTURE
 prog_char PROGMEM Msg_20[] = ""; //??? FUTURE
 
@@ -509,7 +509,7 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define MACRO_EXECUTION_DEPTH         10                                        // maximale nesting van macro's.
 #define XON                         0x11                                        // Seriale communicatie XON/XOFF handshaking
 #define XOFF                        0x13                                        // Seriale communicatie XON/XOFF handshaking
-#define USER_VARIABLES_MAX            15                                        // aantal beschikbare gebruikersvariabelen voor de user.
+#define USER_VARIABLES_MAX_NR        100                                        // Maximaal te gebruiken variabelenummer.
 #define USER_FLAGS_MAX                32                                        // Aantal beschikbare vlaggen voor de user. 1..32. Moet passen in de unsigned long. 
 
 // Hardware in gebruik: Bits worden geset in de variabele HW_Config, uit te lezen met [Status HWConfig]
@@ -541,6 +541,7 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define BIC_HWMESH_NES_V1X           1                                          // Nodo Ethernet Shield V1.x met Aurel tranceiver. Vereist speciale pulse op PIN_BSF_0 voor omschakelen tussen Rx en Tx.
 
 #if NODO_MEGA // Definities voor de Nodo-Mega variant.
+#define USER_VARIABLES_MAX          25                                        // aantal beschikbare gebruikersvariabelen voor de user.
 #define EVENT_QUEUE_MAX             16                                          // maximaal aantal plaatsen in de queue.
 #define INPUT_LINE_SIZE            128                                          // Buffer waar de karakters van de seriele/IP poort in worden opgeslagen.
 #define INPUT_COMMAND_SIZE          80                                          // Maximaal aantal tekens waar een commando uit kan bestaan.
@@ -602,6 +603,7 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define FOCUS_TIME                 500                                          // Tijd in mSec. dat na ontvangen van een teken uitsluitend naar Serial als input wordt geluisterd. 
 
 #else // als het voor de Nodo-Small variant is
+#define USER_VARIABLES_MAX          10                                          // aantal beschikbare gebruikersvariabelen voor de user.
 #define EVENT_QUEUE_MAX              8                                          // maximaal aantal plaatsen in de queue
 #define TIMER_MAX                    8                                          // aantal beschikbare timers voor de user, gerekend vanaf 1
 #define PULSE_IRQ                    1                                          // IRQ-1 verbonden aan de IR_RX_DATA pen 3 van de ATMega328 (Uno/Nano/Duemillanove)
@@ -669,7 +671,7 @@ struct SettingsStruct
   byte    WaitFree;
   byte    RawSignalReceive;
   byte    RawSignalSample;
-  unsigned long Lock;                                                           // bevat de pincode waarmee IR/RF ontvangst is geblokkeerd. Bit nummer hoogste bit wordt gebruiktvoor in/uitschakelen.
+  byte    UserVarGlobal[USER_VARIABLES_MAX];
   
   #if CFG_WIRED
   int     WiredInputThreshold[WIRED_PORTS], WiredInputSmittTrigger[WIRED_PORTS];
@@ -772,7 +774,7 @@ unsigned long HW_Config=0;                                                      
 struct NodoEventStruct LastReceived;                                            // Laatst ontvangen event
 byte RequestForConfirm=false;                                                   // Als true dan heeft deze Nodo een verzoek ontvangen om een systemevent 'Confirm' te verzenden. Waarde wordt in Par1 meegezonden.
 int EventlistMax=0;                                                             // beschikbaar aantal regels in de eventlist. Wordt tijdens setup berekend.
-
+float TempFloat,TempFloat2;                                                     // globale floats die gebruikt mogen worden als een tijdelijke variabele
 #if CFG_WIRED
 boolean WiredInputStatus[WIRED_PORTS];                                          // Status van de WiredIn worden hierin opgeslagen.
 boolean WiredOutputStatus[WIRED_PORTS];                                         // Wired variabelen.

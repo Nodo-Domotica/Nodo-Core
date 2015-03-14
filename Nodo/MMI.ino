@@ -171,16 +171,6 @@ int ExecuteLine(char *Line, byte Port)
               GetArgv(Command,TmpStr1,2);
               TmpStr1[25]=0;                                                    // voor geval de string te lang is.
               strcpy(Settings.Password,TmpStr1);
-        
-              if(Settings.Lock)                                                 // Als een lock actief, dan lock op basis van nieuwe password instellen
-                {
-                Settings.Lock=0L;
-                for(x=0;x<strlen(Settings.Password);x++)
-                  {
-                  Settings.Lock=Settings.Lock<<5;
-                  Settings.Lock^=Settings.Password[x];
-                  }
-                }
               break;
               }  
         
@@ -862,11 +852,12 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         ParameterToView[0]=PAR2_INT;
         break;
         
-      // Par1 als waarde en par2 als tekst
+      // Par1 als int en par2 als tekst
       case CMD_VARIABLE_SEND:
       case CMD_WIRED_PULLUP:
       case CMD_WIRED_OUT:
       case VALUE_UNIT:
+      case CMD_VARIABLE_GLOBAL:
       case EVENT_WIRED_IN:
         ParameterToView[0]=PAR1_INT;
         ParameterToView[1]=PAR2_TEXT;
@@ -877,15 +868,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_RAWSIGNAL_RECEIVE:
         ParameterToView[0]=PAR1_TEXT;
         ParameterToView[1]=PAR2_TEXT;
-        break;
-
-
-      case CMD_VARIABLE_GET:
-      case CMD_VARIABLE_PUT:
-        ParameterToView[0]=PAR1_INT;
-        ParameterToView[1]=PAR2_INT8;
-        ParameterToView[2]=PAR3_INT;
-      
         break;
 
       case EVENT_WILDCARD:
@@ -902,7 +884,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
 
       // Par1 als tekst en par2 niet
       case CMD_SEND_EVENT:
-      case CMD_LOCK:
       case CMD_DEBUG:
       case CMD_WAIT_FREE_NODO:
       case CMD_LOG:
@@ -1252,10 +1233,17 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
         error=MESSAGE_INVALID_PARAMETER;
       break;
 
+
+    case CMD_VARIABLE_GLOBAL:
+      ResultEvent->Type=NODO_TYPE_COMMAND;
+      if(ResultEvent->Par1<1 || ResultEvent->Par1>USER_VARIABLES_MAX_NR || (ResultEvent->Par2!=VALUE_OFF && ResultEvent->Par2!=VALUE_ON))
+        error=MESSAGE_INVALID_PARAMETER;
+      break;
+
     case CMD_VARIABLE_PULSE_TIME:
     case CMD_VARIABLE_PULSE_COUNT:
       ResultEvent->Type=NODO_TYPE_COMMAND;
-      if(ResultEvent->Par1<1 || ResultEvent->Par1>USER_VARIABLES_MAX)
+      if(ResultEvent->Par1<1 || ResultEvent->Par1>USER_VARIABLES_MAX_NR)
         error=MESSAGE_INVALID_PARAMETER;
       break;
 
@@ -1440,20 +1428,10 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
       break;
 
 
-    case CMD_LOCK: // Hier wordt de lock code o.b.v. het wachtwoord ingesteld. Alleen van toepassing voor de Mega
-      ResultEvent->Type=NODO_TYPE_COMMAND;
-      ResultEvent->Par2=0L;
-      for(x=0;x<strlen(Settings.Password);x++)
-        {// beetje hutselen met bitjes ;-)
-        ResultEvent->Par2=ResultEvent->Par2<<5;
-        ResultEvent->Par2^=Settings.Password[x];
-        }
-      break;
-
     case CMD_VARIABLE_SAVE:
     case CMD_VARIABLE_LOG:
       ResultEvent->Type=NODO_TYPE_COMMAND;
-      if(ResultEvent->Par1>USER_VARIABLES_MAX)
+      if(ResultEvent->Par1>USER_VARIABLES_MAX_NR || ResultEvent->Par1<1 )
         error=MESSAGE_INVALID_PARAMETER;
       break;
       
@@ -1477,35 +1455,13 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
 
     case CMD_VARIABLE_SET:
       ResultEvent->Type=NODO_TYPE_COMMAND;        
-      if(ResultEvent->Par1>USER_VARIABLES_MAX)
+      if(ResultEvent->Par1>USER_VARIABLES_MAX_NR || ResultEvent->Par1<1 )
         error=MESSAGE_INVALID_PARAMETER;
       else if(GetArgv(Command,TmpStr1,3))// waarde van de variabele
         ResultEvent->Par2=float2ul(atof(TmpStr1));
       else
         error=MESSAGE_INVALID_PARAMETER;
       break;
-
-    case CMD_VARIABLE_GET: // VariableGet <Variabele>, <Unit>, <VariabeleBron> 
-    case CMD_VARIABLE_PUT: // VariablePut <Variabele>, <Unit>, <VariabeleBestemming> 
-      ResultEvent->Type=NODO_TYPE_COMMAND;
-      error=MESSAGE_INVALID_PARAMETER;
-
-      if(ResultEvent->Par1>0 && ResultEvent->Par1<=USER_VARIABLES_MAX)
-        {
-        if(ResultEvent->Par2>0 && ResultEvent->Par2<=UNIT_MAX)
-          {
-          if(GetArgv(Command,TmpStr1,4))// VariabeleBron / bestemming
-            {
-            x=str2int(TmpStr1);
-            if(x>0 && x<=USER_VARIABLES_MAX)
-              {
-              ResultEvent->Par2|=(x<<8);
-              error=0;
-              }
-            }
-          }
-        }
-       break;
 
     case CMD_BREAK_ON_VAR_EQU:
     case CMD_BREAK_ON_VAR_LESS:
@@ -1514,7 +1470,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
     case CMD_VARIABLE_DEC:
     case CMD_VARIABLE_INC:
       ResultEvent->Type=NODO_TYPE_COMMAND;
-      if(ResultEvent->Par1<1 || ResultEvent->Par1>USER_VARIABLES_MAX)
+      if(ResultEvent->Par1<1 || ResultEvent->Par1>USER_VARIABLES_MAX_NR)
         error=MESSAGE_INVALID_PARAMETER;
       else if(GetArgv(Command,TmpStr1,3))// waarde van de variabele
         ResultEvent->Par2=float2ul(atof(TmpStr1));
@@ -1525,7 +1481,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
 
     case EVENT_VARIABLE:
       ResultEvent->Type=NODO_TYPE_EVENT;
-      if(ResultEvent->Par1<1 || ResultEvent->Par1>USER_VARIABLES_MAX)
+      if(ResultEvent->Par1<1 || ResultEvent->Par1>USER_VARIABLES_MAX_NR)
         error=MESSAGE_INVALID_PARAMETER;
       else if(GetArgv(Command,TmpStr1,3))// waarde van de variabele
         ResultEvent->Par2=float2ul(atof(TmpStr1));
