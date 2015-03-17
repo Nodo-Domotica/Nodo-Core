@@ -8,18 +8,8 @@
 
 
 #define UNIT_NODO       10 // Na een [Reset] commando wordt dit het unitnummer van de Nodo
+#define CLOCK         true // true=code voor Real Time Clock mee compileren.
+#define NODO_MEGA     true // true = Nodo Mega, false=Nodo-Small
 
 #define PLUGIN_036
 #define PLUGIN_036_CORE
-
-#define NODO_MEGA              true                                             // true = Nodo Mega, false=Nodo-Small
-#define UNIT_NODO                10                                             // LET OP: Alleen na een [Reset] commando wordt dit het unitnummer van de Nodo, dus niet direct bij upload van deze code!
-
-#define PLUGIN_001                                                              // Kaku : Klik-Aan-Klik-Uit
-#define PLUGIN_001_CORE
-
-#define PLUGIN_002                                                              // NewKAKU : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno.
-#define PLUGIN_002_CORE
-
-#define PLUGIN_033                                                              // NRF24L01 Plugin
-#define PLUGIN_033_CORE

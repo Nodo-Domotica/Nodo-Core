@@ -104,7 +104,7 @@ float PID_Input, PID_Output, PID_Setpoint;
 float lastInput=0;
 float timeChange, error=0, errSum=0, dErr=0, lastErr=0;
 float PID_kP=PID_KP, PID_kI=PID_KI, PID_kD=PID_KD;
-float PID_outMin=PID_OUTPUT_MIN, PID_outMax=PID_OUTPUT_MAX;
+float PID_outMin=PID_OUTPUT_MIN, PID_outMax=PID_OUTPUT_MAX, TempFloat;
 unsigned long WindowCounter=1, WindowMax=0, PID_LastTime=0L, Now=0, PID_Now;
 boolean PID_Mode=PID_MODE_ANALOG;
 boolean Monitor=false, DigitalOutput=false,DigitalOutputPrev=false; 
