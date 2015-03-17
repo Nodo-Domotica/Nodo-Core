@@ -152,8 +152,8 @@ void SendI2C(struct NodoEventStruct *EventBlock)
     {            
     // We sturen de events naar bekende Nodo's die zich op de I2C bus bevinden. Als deze Nodo later op de bus wordt aangesloten,
     // dan zal Boot event van deze Nodo de andere uitnodigen om een bekendmaking te sturen zodat de lijst compleet is.
-    // Daarom wordt het Boot, NewNodo en POLL event naar alle I2C adressen gestuurd waar zich een Nodo op kan bevinden.
-    if((EventBlock->Type==NODO_TYPE_EVENT  && (EventBlock->Command==EVENT_BOOT || EventBlock->Command==EVENT_NEWNODO)) || 
+    // Daarom wordt het Boot en POLL event naar alle I2C adressen gestuurd waar zich een Nodo op kan bevinden.
+    if((EventBlock->Type==NODO_TYPE_EVENT  && (EventBlock->Command==EVENT_BOOT)) || 
       (EventBlock->Type==NODO_TYPE_SYSTEM &&  EventBlock->Command==SYSTEM_COMMAND_QUEUE_POLL) || 
       NodoOnline(y,0)==VALUE_SOURCE_I2C)
       {

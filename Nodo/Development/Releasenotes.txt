@@ -58,9 +58,11 @@ R788:
 - 100 variabele nummers beschikbaar 
 - Nodo-Mega: variabele plaatsen opgehoogd naar 25
 - Nodo-Small: variabele plaatsen verlaagd naar 10
+- Event NewNodo verwijderd.
 
 Todo:
 - Check of na een Boot de andere Nodo's wel een ACK verzenden.
+- VariableSave herzien.
 - FlagSync pull i.p.v. push?
 - RawsignalCleanup
  

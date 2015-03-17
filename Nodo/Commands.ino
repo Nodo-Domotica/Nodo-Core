@@ -21,6 +21,45 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
   
   switch(EventToExecute->Command)
     {   
+    #if CFG_WIRED
+    case CMD_WIRED_PULLUP:
+      Settings.WiredInputPullUp[EventToExecute->Par1-1]=EventToExecute->Par2; // EventToExecute->Par1 is de poort[1..]
+      
+      if(EventToExecute->Par2==VALUE_ON)
+        pinMode(A0+PIN_WIRED_IN_1+EventToExecute->Par1-1,INPUT_PULLUP);
+      else
+        pinMode(A0+PIN_WIRED_IN_1+EventToExecute->Par1-1,INPUT);
+      break;
+                 
+    case CMD_WIRED_OUT:
+      digitalWrite(PIN_WIRED_OUT_1+EventToExecute->Par1-1,(EventToExecute->Par2==VALUE_ON));
+      WiredOutputStatus[EventToExecute->Par1-1]=(EventToExecute->Par2==VALUE_ON);
+      bitWrite(HW_Config,HW_WIRED_OUT,true);
+      #if NODO_MEGA
+      TempEvent.Par1=EventToExecute->Par1;
+      TempEvent.Port=VALUE_SOURCE_SYSTEM;
+      TempEvent.Direction=VALUE_DIRECTION_OUTPUT;
+      PrintEvent(&TempEvent,VALUE_ALL);
+      #endif
+      break;
+
+    case CMD_WIRED_SMITTTRIGGER:
+      if(EventToExecute->Par1>0 && EventToExecute->Par1<=WIRED_PORTS)
+        Settings.WiredInputSmittTrigger[EventToExecute->Par1-1]=EventToExecute->Par2;
+      break;                  
+
+    case CMD_WIRED_THRESHOLD:
+      if(EventToExecute->Par1>0 && EventToExecute->Par1<=WIRED_PORTS)
+        Settings.WiredInputThreshold[EventToExecute->Par1-1]=EventToExecute->Par2;
+      break;                  
+
+    case CMD_VARIABLE_SET_WIRED_ANALOG:
+      TempFloat=analogRead(PIN_WIRED_IN_1+EventToExecute->Par2-1);
+      if(!(UserVariableSet(EventToExecute->Par1,&TempFloat,true)))
+        error=MESSAGE_VARIABLE_ERROR;
+      break;
+    #endif //CFG_WIRED
+
     case CMD_VARIABLE_INC:
       TempFloat=0;
       UserVariable(EventToExecute->Par1,&TempFloat);
@@ -45,14 +84,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         error=MESSAGE_VARIABLE_ERROR;
       break;         
 
-    #if CFG_WIRED
-    case CMD_VARIABLE_SET_WIRED_ANALOG:
-      TempFloat=analogRead(PIN_WIRED_IN_1+EventToExecute->Par2-1);
-      if(!(UserVariableSet(EventToExecute->Par1,&TempFloat,true)))
-        error=MESSAGE_VARIABLE_ERROR;
-      break;
-    #endif         
-  
     case CMD_VARIABLE_VARIABLE:
       if(UserVariable(EventToExecute->Par2,&TempFloat))
         if(!UserVariableSet(EventToExecute->Par1,&TempFloat,true))
@@ -139,27 +170,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
             error=MESSAGE_BREAK;
       break;
 
-
-    #if CFG_CLOCK
-    case CMD_BREAK_ON_DAYLIGHT:
-      if(EventToExecute->Par1==VALUE_ON && (Time.Daylight==2 || Time.Daylight==3))
-        error=MESSAGE_BREAK;
-
-      if(EventToExecute->Par1==VALUE_OFF && (Time.Daylight==0 || Time.Daylight==1 || Time.Daylight==4))
-        error=MESSAGE_BREAK;
-      break;
-
-    case CMD_BREAK_ON_TIME_LATER:
-      if(EventToExecute->Par2<(Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12))
-        error=MESSAGE_BREAK;
-      break;
-
-    case CMD_BREAK_ON_TIME_EARLIER:
-      if(EventToExecute->Par2>(Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12))
-        error=MESSAGE_BREAK;
-      break;
-    #endif CFG_CLOCK 
-
     case CMD_SEND_USEREVENT:
       TempEvent.Port                  = VALUE_ALL;
       TempEvent.Type                  = NODO_TYPE_EVENT;
@@ -184,7 +194,35 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         error=MESSAGE_VARIABLE_ERROR;
       break;         
 
+    case CMD_TIMER_SET:
+      if(EventToExecute->Par2==0)
+        UserTimer[EventToExecute->Par1-1]=0L;
+      else
+        UserTimer[EventToExecute->Par1-1]=millis()+EventToExecute->Par2*1000L;
+      break;
 
+    case CMD_TIMER_SET_VARIABLE:
+      if(UserVariable(EventToExecute->Par2,&TempFloat))
+        UserTimer[EventToExecute->Par1-1]=millis()+(unsigned long)(TempFloat)*1000L;
+      else
+        error=MESSAGE_VARIABLE_ERROR;
+      break;
+
+    case CMD_TIMER_RANDOM:
+      UserTimer[EventToExecute->Par1-1]=millis()+random(EventToExecute->Par2)*1000;
+      break;
+
+    case CMD_DELAY:
+      Wait(EventToExecute->Par1, false, 0, false);
+      break;        
+
+    case CMD_SEND_EVENT:
+      TempEvent=LastReceived;
+      TempEvent.Port=EventToExecute->Par1==0?VALUE_ALL:EventToExecute->Par1;
+      SendEvent(&TempEvent, TempEvent.Command==EVENT_RAWSIGNAL,true, Settings.WaitFree==VALUE_ON);
+      break;        
+
+    #if CFG_EVENTLIST
     case CMD_VARIABLE_SAVE: //??? Herzien 
       for(z=1;z<=USER_VARIABLES_MAX;z++)
         {
@@ -222,8 +260,152 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
             error=MESSAGE_VARIABLE_ERROR;
           }
         }
-
       break;
+
+    case CMD_EVENTLIST_ERASE:
+      Led(BLUE);
+      if(EventToExecute->Par1==0)
+        {
+        x=1;                                          
+        while(Eventlist_Write(x++,&TempEvent,&TempEvent));
+        }
+      else
+        {
+        Eventlist_Write(EventToExecute->Par1,&TempEvent,&TempEvent);
+        }
+      break;        
+        
+    case CMD_EVENTLIST_SHOW:
+      // Er kunnen zich hier twee situaties voordoen: het verzoek is afkomstig van een Terminal (Serial/Telnet) of 
+      // via IR/RF/I2C. Beide kennen een andere afhandeling immers de Terminal variant kan direct naar de MMI.
+      // Bij de anderen moet er nog transport plaats vinden via IR, RF, I2C. De Terminal variant is NIET relevant
+      // voor een Small omdat deze geen MMI heeft.
+
+      #if NODO_MEGA
+      if(EventToExecute->Port==VALUE_SOURCE_SERIAL || EventToExecute->Port==VALUE_SOURCE_TELNET)
+        {      
+        if(EventToExecute->Par1<=EventlistMax)
+          {
+          PrintString(ProgmemString(Text_22),EventToExecute->Port);
+          if(EventToExecute->Par1==0)
+            {
+            x=1;
+            while(EventlistEntry2str(x++,0,TempString,false))
+              if(TempString[0]!=0)
+                PrintString(TempString,EventToExecute->Port);
+            }
+          else
+            {
+            EventlistEntry2str(EventToExecute->Par1,0,TempString,false);
+              if(TempString[0]!=0)
+                PrintString(TempString,EventToExecute->Port);
+            }
+          PrintString(ProgmemString(Text_22),EventToExecute->Port);
+          }
+        else
+          error=MESSAGE_INVALID_PARAMETER;
+        }
+      else // Transmissie via I2C/RF/IR: dan de inhoud van de Eventlist versturen.
+        {
+
+      #endif
+      
+        if(EventToExecute->Par1==0)
+          {
+          x=1;
+          y=EventlistMax;
+          }
+        else
+          {
+          x=EventToExecute->Par1;
+          y=EventToExecute->Par1;
+          }
+                
+        // Haal de event en action op uit eeprom en verzend deze met extra transmissie vlaggen zodat de data:
+        // 1. alleen wordt verstuurd naar de nodo die de data heeft opgevraagd.
+        // 2. alleen wordt verzonden naar de poort waar het verzoek vandaan kwam
+        // 3. aan de ontvangende zijde in de queue wordt geplaatst
+        // 4. de vlag VIEW_SPECIAL mee krijgt zodat de events/commando's niet worden uitgevoerd aan de ontvangende zijde.
+        // 5. Met LOCK alle andere Nodo's tijdelijk in de hold worden gezet.
+        // In geval van verzending naar queue zal deze tijd niet van toepassing zijn omdat er dan geen verwerkingstijd nodig is.
+        // Tussen de events die de queue in gaan een kortere delay tussen verzendingen.
+
+        z=EventToExecute->Port;
+        w=EventToExecute->SourceUnit;
+        
+        while(x<=y && Eventlist_Read(x,&TempEvent,&TempEvent2))
+          {
+          ClearEvent(EventToExecute);
+          EventToExecute->Par1=x;
+          EventToExecute->Command=SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW;
+          EventToExecute->Flags=TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_BUSY;
+          EventToExecute->Type=NODO_TYPE_SYSTEM;
+          EventToExecute->Port=z;
+          EventToExecute->SourceUnit=Settings.Unit;
+          EventToExecute->DestinationUnit=w;
+
+          if(TempEvent.Command!=0)
+            {
+            SendEvent(EventToExecute,false,false,false);
+
+            TempEvent.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_BUSY;
+            TempEvent.Port=z;
+            TempEvent.DestinationUnit=w;
+            SendEvent(&TempEvent,false,false,false);
+    
+    
+            if(x==y)                                                            // Als laatste regel uit de eventlist, dan de ether weer vrijgeven. 
+              TempEvent2.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE ; 
+            else
+              TempEvent2.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_BUSY;
+
+            TempEvent2.Port=z;
+            TempEvent2.DestinationUnit=w;
+            SendEvent(&TempEvent2,false,false,false);
+            }
+          x++;
+          }
+        #if NODO_MEGA
+        }        
+        #endif
+      break;
+    #endif CFG_EVENTLIST
+
+    #if CFG_CLOCK
+    case CMD_BREAK_ON_DAYLIGHT:
+      if(EventToExecute->Par1==VALUE_ON && (Time.Daylight==2 || Time.Daylight==3))
+        error=MESSAGE_BREAK;
+
+      if(EventToExecute->Par1==VALUE_OFF && (Time.Daylight==0 || Time.Daylight==1 || Time.Daylight==4))
+        error=MESSAGE_BREAK;
+      break;
+
+    case CMD_BREAK_ON_TIME_LATER:
+      if(EventToExecute->Par2<(Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12))
+        error=MESSAGE_BREAK;
+      break;
+
+    case CMD_BREAK_ON_TIME_EARLIER:
+      if(EventToExecute->Par2>(Time.Minutes%10 | (unsigned long)(Time.Minutes/10)<<4 | (unsigned long)(Time.Hour%10)<<8 | (unsigned long)(Time.Hour/10)<<12))
+        error=MESSAGE_BREAK;
+      break;
+
+    case CMD_CLOCK_TIME:
+      Time.Hour    =((EventToExecute->Par2>>12)&0xf)*10 + ((EventToExecute->Par2>>8)&0xf);
+      Time.Minutes =((EventToExecute->Par2>>4 )&0xf)*10 + ((EventToExecute->Par2   )&0xf);
+      Time.Seconds=0;
+      ClockSet();
+      break;
+
+    case CMD_CLOCK_DATE:
+      Time.Date    =((EventToExecute->Par2>>28 )&0xf)*10   + ((EventToExecute->Par2>>24 )&0xf);
+      Time.Month   =((EventToExecute->Par2>>20 )&0xf)*10   + ((EventToExecute->Par2>>16 )&0xf);
+      Time.Year    =((EventToExecute->Par2>>12 )&0xf)*1000 + ((EventToExecute->Par2>>8 )&0xf)*100 + ((EventToExecute->Par2>>4)&0xf)*10 + ((EventToExecute->Par2)&0xf);
+      ClockSet();
+      break;
+
+    #endif CFG_CLOCK 
+
 
     #if NODO_MEGA
     #if CFG_CLOCK
@@ -282,42 +464,8 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         }
       break;
     #endif CFG_CLOCK 
-    #endif
+    #endif NODO_MEGA
           
-    #if CFG_CLOCK
-    case CMD_CLOCK_TIME:
-      Time.Hour    =((EventToExecute->Par2>>12)&0xf)*10 + ((EventToExecute->Par2>>8)&0xf);
-      Time.Minutes =((EventToExecute->Par2>>4 )&0xf)*10 + ((EventToExecute->Par2   )&0xf);
-      Time.Seconds=0;
-      ClockSet();
-      break;
-
-    case CMD_CLOCK_DATE:
-      Time.Date    =((EventToExecute->Par2>>28 )&0xf)*10   + ((EventToExecute->Par2>>24 )&0xf);
-      Time.Month   =((EventToExecute->Par2>>20 )&0xf)*10   + ((EventToExecute->Par2>>16 )&0xf);
-      Time.Year    =((EventToExecute->Par2>>12 )&0xf)*1000 + ((EventToExecute->Par2>>8 )&0xf)*100 + ((EventToExecute->Par2>>4)&0xf)*10 + ((EventToExecute->Par2)&0xf);
-      ClockSet();
-      break;
-
-    #endif CFG_CLOCK 
-
-    case CMD_TIMER_SET:
-      if(EventToExecute->Par2==0)
-        UserTimer[EventToExecute->Par1-1]=0L;
-      else
-        UserTimer[EventToExecute->Par1-1]=millis()+EventToExecute->Par2*1000L;
-      break;
-
-    case CMD_TIMER_SET_VARIABLE:
-      if(UserVariable(EventToExecute->Par2,&TempFloat))
-        UserTimer[EventToExecute->Par1-1]=millis()+(unsigned long)(TempFloat)*1000L;
-      else
-        error=MESSAGE_VARIABLE_ERROR;
-      break;
-
-    case CMD_TIMER_RANDOM:
-      UserTimer[EventToExecute->Par1-1]=millis()+random(EventToExecute->Par2)*1000;
-      break;
 
     case CMD_SLEEP:
       #if !NODO_MEGA
@@ -327,15 +475,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       #endif      
       break;
 
-    case CMD_DELAY:
-      Wait(EventToExecute->Par1, false, 0, false);
-      break;        
-
-    case CMD_SEND_EVENT:
-      TempEvent=LastReceived;
-      TempEvent.Port=EventToExecute->Par1==0?VALUE_ALL:EventToExecute->Par1;
-      SendEvent(&TempEvent, TempEvent.Command==EVENT_RAWSIGNAL,true, Settings.WaitFree==VALUE_ON);
-      break;        
 
     #if CFG_SOUND
     case CMD_SOUND: 
@@ -343,42 +482,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
     #endif    
   
-    #if CFG_WIRED
-    case CMD_WIRED_PULLUP:
-      Settings.WiredInputPullUp[EventToExecute->Par1-1]=EventToExecute->Par2; // EventToExecute->Par1 is de poort[1..]
-      
-      if(EventToExecute->Par2==VALUE_ON)
-        pinMode(A0+PIN_WIRED_IN_1+EventToExecute->Par1-1,INPUT_PULLUP);
-      else
-        pinMode(A0+PIN_WIRED_IN_1+EventToExecute->Par1-1,INPUT);
-      break;
-                 
-    case CMD_WIRED_OUT:
-      digitalWrite(PIN_WIRED_OUT_1+EventToExecute->Par1-1,(EventToExecute->Par2==VALUE_ON));
-      WiredOutputStatus[EventToExecute->Par1-1]=(EventToExecute->Par2==VALUE_ON);
-      bitWrite(HW_Config,HW_WIRED_OUT,true);
-      #if NODO_MEGA
-      TempEvent.Par1=EventToExecute->Par1;
-      TempEvent.Port=VALUE_SOURCE_SYSTEM;
-      TempEvent.Direction=VALUE_DIRECTION_OUTPUT;
-      PrintEvent(&TempEvent,VALUE_ALL);
-      #endif
-      break;
-
-    case CMD_WIRED_SMITTTRIGGER:
-      if(EventToExecute->Par1>0 && EventToExecute->Par1<=WIRED_PORTS)
-        Settings.WiredInputSmittTrigger[EventToExecute->Par1-1]=EventToExecute->Par2;
-      break;                  
-
-    case CMD_WIRED_THRESHOLD:
-      if(EventToExecute->Par1>0 && EventToExecute->Par1<=WIRED_PORTS)
-        Settings.WiredInputThreshold[EventToExecute->Par1-1]=EventToExecute->Par2;
-      break;                  
-
-    #endif //CFG_WIRED
-                         
     case CMD_SETTINGS_SAVE:
-      UndoNewNodo();// Status NewNodo verwijderen indien van toepassing
       Save_Settings();
       break;
 
@@ -520,114 +624,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
 
       break;                                                                      
 
-    case CMD_EVENTLIST_ERASE:
-      Led(BLUE);
-      if(EventToExecute->Par1==0)
-        {
-        x=1;                                          
-        UndoNewNodo();// Status NewNodo verwijderen indien van toepassing
-        while(Eventlist_Write(x++,&TempEvent,&TempEvent));
-        }
-      else
-        {
-        Eventlist_Write(EventToExecute->Par1,&TempEvent,&TempEvent);
-        }
-      break;        
-        
-    case CMD_EVENTLIST_SHOW:
-      // Er kunnen zich hier twee situaties voordoen: het verzoek is afkomstig van een Terminal (Serial/Telnet) of 
-      // via IR/RF/I2C. Beide kennen een andere afhandeling immers de Terminal variant kan direct naar de MMI.
-      // Bij de anderen moet er nog transport plaats vinden via IR, RF, I2C. De Terminal variant is NIET relevant
-      // voor een Small omdat deze geen MMI heeft.
-
-      #if NODO_MEGA
-      if(EventToExecute->Port==VALUE_SOURCE_SERIAL || EventToExecute->Port==VALUE_SOURCE_TELNET)
-        {      
-        if(EventToExecute->Par1<=EventlistMax)
-          {
-          PrintString(ProgmemString(Text_22),EventToExecute->Port);
-          if(EventToExecute->Par1==0)
-            {
-            x=1;
-            while(EventlistEntry2str(x++,0,TempString,false))
-              if(TempString[0]!=0)
-                PrintString(TempString,EventToExecute->Port);
-            }
-          else
-            {
-            EventlistEntry2str(EventToExecute->Par1,0,TempString,false);
-              if(TempString[0]!=0)
-                PrintString(TempString,EventToExecute->Port);
-            }
-          PrintString(ProgmemString(Text_22),EventToExecute->Port);
-          }
-        else
-          error=MESSAGE_INVALID_PARAMETER;
-        }
-      else // Transmissie via I2C/RF/IR: dan de inhoud van de Eventlist versturen.
-        {
-
-      #endif
-      
-        if(EventToExecute->Par1==0)
-          {
-          x=1;
-          y=EventlistMax;
-          }
-        else
-          {
-          x=EventToExecute->Par1;
-          y=EventToExecute->Par1;
-          }
-                
-        // Haal de event en action op uit eeprom en verzend deze met extra transmissie vlaggen zodat de data:
-        // 1. alleen wordt verstuurd naar de nodo die de data heeft opgevraagd.
-        // 2. alleen wordt verzonden naar de poort waar het verzoek vandaan kwam
-        // 3. aan de ontvangende zijde in de queue wordt geplaatst
-        // 4. de vlag VIEW_SPECIAL mee krijgt zodat de events/commando's niet worden uitgevoerd aan de ontvangende zijde.
-        // 5. Met LOCK alle andere Nodo's tijdelijk in de hold worden gezet.
-        // In geval van verzending naar queue zal deze tijd niet van toepassing zijn omdat er dan geen verwerkingstijd nodig is.
-        // Tussen de events die de queue in gaan een kortere delay tussen verzendingen.
-
-        z=EventToExecute->Port;
-        w=EventToExecute->SourceUnit;
-        
-        while(x<=y && Eventlist_Read(x,&TempEvent,&TempEvent2))
-          {
-          ClearEvent(EventToExecute);
-          EventToExecute->Par1=x;
-          EventToExecute->Command=SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW;
-          EventToExecute->Flags=TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_BUSY;
-          EventToExecute->Type=NODO_TYPE_SYSTEM;
-          EventToExecute->Port=z;
-          EventToExecute->SourceUnit=Settings.Unit;
-          EventToExecute->DestinationUnit=w;
-
-          if(TempEvent.Command!=0)
-            {
-            SendEvent(EventToExecute,false,false,false);
-
-            TempEvent.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_BUSY;
-            TempEvent.Port=z;
-            TempEvent.DestinationUnit=w;
-            SendEvent(&TempEvent,false,false,false);
-    
-    
-            if(x==y)                                                            // Als laatste regel uit de eventlist, dan de ether weer vrijgeven. 
-              TempEvent2.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE ; 
-            else
-              TempEvent2.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_BUSY;
-
-            TempEvent2.Port=z;
-            TempEvent2.DestinationUnit=w;
-            SendEvent(&TempEvent2,false,false,false);
-            }
-          x++;
-          }
-        #if NODO_MEGA
-        }        
-        #endif
-      break;
 
 #if NODO_MEGA // vanaf hier commando's die alleen de Mega kent.
 

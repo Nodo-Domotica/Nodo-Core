@@ -156,10 +156,12 @@ byte ProcessEvent(struct NodoEventStruct *Event)
       
     else
       {
+      #if CFG_EVENTLIST
       struct NodoEventStruct EventlistEvent, EventlistAction;                   // het is een ander soort event. Loop de gehele eventlist langs om te kijken of er een treffer is.   
       LastReceived=*Event;                                                      // sla event op voor later gebruik (o.a. SendEvent)
 
       x=0;
+
       while(Eventlist_Read(++x,&EventlistEvent,&EventlistAction) && error==0)   // Zolang er nog regels zijn in de eventlist...
         {      
         if(CheckEvent(Event,&EventlistEvent))                                   // Als er een match is tussen het binnengekomen event en de regel uit de eventlist.
@@ -172,6 +174,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
       
       if(error==MESSAGE_BREAK)                                                  // abort is geen fatale error maar een break. Deze dus niet verder behandelen als een error.
         error=0;
+      #endif CFG_EVENTLIST
       }      
 
     #if NODO_MEGA
@@ -188,6 +191,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
  * geeft positie terug bij een match.
  \*********************************************************************************************/
 
+#if CFG_EVENTLIST
 byte CheckEventlist(struct NodoEventStruct *Event)
   {
   struct NodoEventStruct MacroEvent,MacroAction;
@@ -276,6 +280,7 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
      }
   return false;                                                                 // geen match gevonden
   }
+#endif CFG_EVENTLIST
 
 
 //#######################################################################################################
@@ -406,6 +411,7 @@ void QueueProcess(void)
       // in een nieuwe verzending zit. Op de eerste positie (=0) zit het systeem commando QUEUE_SEND, die moeten
       // we negeren. Op de tweede zit het systeemcommando EventlistWrite, daarna het Event en de Actie.    
   
+      #if CFG_EVENTLIST
       if(Queue[0].Command==SYSTEM_COMMAND_QUEUE_EVENTLIST_WRITE && QueuePosition==3) // cmd
         {
         E.Type=Queue[1].Type;
@@ -416,12 +422,10 @@ void QueueProcess(void)
         A.Command=Queue[2].Command;
         A.Par1=Queue[2].Par1;
         A.Par2=Queue[2].Par2;
-       
-        if(Eventlist_Write(Queue[0].Par1, &E, &A))
-          UndoNewNodo();
-
+        Eventlist_Write(Queue[0].Par1, &E, &A);
         QueuePosition=0;
         }
+      #endif CFG_EVENTLIST
       }
 
     if(QueuePosition)

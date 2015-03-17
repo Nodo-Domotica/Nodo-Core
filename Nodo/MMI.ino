@@ -460,7 +460,6 @@ int ExecuteLine(char *Line, byte Port)
     
           if(State_EventlistWrite==2)
             {            
-            UndoNewNodo();// Status NewNodo verwijderen indien van toepassing
             if(!Eventlist_Write(EventlistWriteLine,&TempEvent,&EventToExecute))
               {
               RaiseMessage(MESSAGE_EVENTLIST_FAILED,EventlistWriteLine);
@@ -905,7 +904,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case EVENT_BOOT:
       case CMD_DELAY:
       case VALUE_SOURCE_PLUGIN:
-      case EVENT_NEWNODO:
       case CMD_VARIABLE_SAVE:
       case CMD_VARIABLE_LOG:
       case CMD_UNIT_SET:
@@ -1214,7 +1212,6 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
       if(ResultEvent->Par1<1 || ResultEvent->Par1>ALARM_MAX)
         error=MESSAGE_INVALID_PARAMETER;
 
-    case EVENT_NEWNODO:
     case EVENT_BOOT:
       ResultEvent->Type=NODO_TYPE_EVENT;
       if(ResultEvent->Par1<1 || ResultEvent->Par1>UNIT_MAX)
@@ -1394,7 +1391,6 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
         case EVENT_TIMER:
         case EVENT_WIRED_IN:
         case EVENT_VARIABLE:
-        case EVENT_NEWNODO:
         case EVENT_MESSAGE:
         case EVENT_BOOT:
         case EVENT_ALARM:
@@ -1674,7 +1670,7 @@ void PrintWelcome(void)
   Serial.println(F("!******************************************************************************!"));
   Serial.println(F("Nodo Domotica controller (c) Copyright 2014 P.K.Tonkes."));
   Serial.println(F("Licensed under GNU General Public License."));
-  Serial.print(F("Nodo-Small V3.7, Product=SWACNC-SMALL-R"));
+  Serial.print(F("Nodo-Small V3.8, Product=SWACNC-SMALL-R"));
   Serial.print(NODO_BUILD);
   Serial.print(F(", ThisUnit="));
   Serial.println(Settings.Unit);

@@ -19,6 +19,7 @@ void DetectHardwareReset(void)
 //##################################### Misc: EEPROM / Eventlist  #######################################
 //#######################################################################################################
 
+#if CFG_EVENTLIST
 
 /**********************************************************************************************\
  * Schrijft een event in de Eventlist. Deze Eventlist bevindt zich in het EEPROM geheugen.
@@ -105,6 +106,8 @@ boolean Eventlist_Read(int address, struct NodoEventStruct *Event, struct NodoEv
   Action->Direction=VALUE_DIRECTION_INPUT;
   return true;
   }
+#endif CFG_EVENTLIST
+
 
 /*********************************************************************************************\
  * Deze funktie verstuurt een message. Aanroep van deze funktie in de code daar waar de foutmelding 
@@ -398,6 +401,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
 
   switch (xCommand)
     {
+    #if CFG_EVENTLIST
     case VALUE_EVENTLIST_COUNT:
       x=0;
       struct NodoEventStruct dummy;
@@ -408,6 +412,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
         }
       Event->Par2=x-Event->Par1-1;
       break;
+    #endif CFG_EVENTLIST
 
   case CMD_WAIT_FREE_RX: 
     Event->Par1=Settings.WaitFree;
@@ -650,12 +655,14 @@ void ResetFactory(void)
   // maak de eventlist leeg.
   struct NodoEventStruct dummy;
   ClearEvent(&dummy);
+
+  #if CFG_EVENTLIST
   x=1;
   while(Eventlist_Write(x++,&dummy,&dummy));
+  #endif CFG_EVENTLIST
 
   // Herstel alle settings naar defaults
   Settings.Version                    = NODO_VERSION_MINOR;
-  Settings.NewNodo                    = true;
   Settings.WaitFreeNodo               = VALUE_OFF;
   Settings.TransmitIR                 = VALUE_OFF;
   Settings.TransmitRF                 = VALUE_ON;
@@ -1778,17 +1785,6 @@ boolean Substitute(char* Input)
 }
 #endif
 
-/**********************************************************************************************\
- * Indien het een vers geresette Nodo is, dan ongedaan maken van deze status.
- \*********************************************************************************************/
-void UndoNewNodo(void)
-  {
-  if(Settings.NewNodo)
-    {
-    Settings.NewNodo=false;
-    Save_Settings();
-    } 
-  }
 
 /**********************************************************************************************\
  * Reset een vers geïnitialiseerde struct. Nodog om dat niet mag worden aangenomen dat alle

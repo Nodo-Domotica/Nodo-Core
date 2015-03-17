@@ -1,6 +1,6 @@
-// Onderstaande settings kunnen worden gebruikt om geheugenruimte vrij te maken in een Nodo die
+// Onderstaande settings kunnen worden gebruikt om voor een ATMega328 geheugenruimte vrij te maken in een Nodo die
 // bepaalde voorzieningen niet gebruikt. Dit biedt ruimte voor grotere plugins. Deze defines kunnen 
-// worden overruled in een config_xx.c bestand.
+// worden overruled in een config_xx.c bestand. Enkele settings werken NIET voor een ATMega2560 Nodo.
 
 #define CFG_CLOCK                       true                                    // false=geen code voor Real Time Clock mee compileren. (Op Mega is meecompileren van Clock verplicht)
 #define CFG_SOUND                       true                                    // false=geen luidspreker in gebruik.
@@ -9,12 +9,13 @@
 #define CFG_SLEEP                       true                                    // false=Sleep mode mee compileren.
 #define CFG_SERIAL                      true                                    // false=Seriele communicatie niet mee compileren. LET OP: hierdoor geen enkele weergave of input via seriele poort meer mogelijk!!! Alleen voor de Nodo-Small 
 #define CFG_RAWSIGNAL                   true                                    // false=Rawsignal niet meecompileren. LET OP: Zowel RF als IR communicatie alsmede diverse plugins gebruiken RawSignal voorzieningen. Alleen voor de Nodo-Small
+#define CFG_EVENTLIST                   true                                    // false=geen gebruik maken van de eventlist in EEPROM (Alleen voor Small)
 
 // Wijzigen van onderstaande includes vallen buiten de policy van het Nodo concept dat de gebruiker zelf de Nodo-code moet aanpassen.
 // Dus: Geen support en geen garantie dat de Nodo stabiel funktioneert!
 
-#define NODO_BUILD                       787                                    // ??? Ophogen bij iedere Build / versiebeheer.
-#define NODO_VERSION_MINOR                12                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
+#define NODO_BUILD                       788                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_VERSION_MINOR                13                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1                                    // Unit nummer van deze Nodo. Wijzigen heeft pas effect na commando 'Reset'.
 #define HOME_NODO                          1                                    // Home adres van Nodo's die tot een groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
@@ -138,7 +139,7 @@ byte dummy=1;                                                                   
 #define CMD_RES                         70 //???
 #define CMD_LOG                         71
 #define EVENT_MESSAGE                   72
-#define EVENT_NEWNODO                   73
+#define FUTURE_73                       73
 #define VALUE_OFF                       74
 #define VALUE_ON                        75
 #define CMD_OUTPUT                      76
@@ -317,10 +318,10 @@ prog_char PROGMEM Cmd_66[]="if";
 prog_char PROGMEM Cmd_67[]="Input";
 prog_char PROGMEM Cmd_68[]="IP";
 prog_char PROGMEM Cmd_69[]="IR";
-prog_char PROGMEM Cmd_70[]="";                                                  //???
+prog_char PROGMEM Cmd_70[]="";                                                  // future
 prog_char PROGMEM Cmd_71[]="Log";
 prog_char PROGMEM Cmd_72[]="Message";
-prog_char PROGMEM Cmd_73[]="NewNodo";
+prog_char PROGMEM Cmd_73[]="";                                                  // future
 prog_char PROGMEM Cmd_74[]="Off";
 prog_char PROGMEM Cmd_75[]="On";
 prog_char PROGMEM Cmd_76[]="Output";
@@ -664,7 +665,6 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 struct SettingsStruct
   {
   byte    Unit; // Max 5 bits in gebruik = 1..31
-  boolean NewNodo;
   byte    WaitFreeNodo;
   byte    TransmitIR;
   byte    TransmitRF;
@@ -995,11 +995,7 @@ void setup()
   TempEvent.Type      = NODO_TYPE_EVENT;
   TempEvent.Direction = VALUE_DIRECTION_OUTPUT;
   TempEvent.Par1      = Settings.Unit;
-
-  if(Settings.NewNodo)
-    TempEvent.Command  = EVENT_NEWNODO;
-  else
-    TempEvent.Command   = EVENT_BOOT;
+  TempEvent.Command   = EVENT_BOOT;
   SendEvent(&TempEvent,false,true,Settings.WaitFree==VALUE_ON);                 // Zend boot event naar alle Nodo's.  
 
   #if CFG_I2C
