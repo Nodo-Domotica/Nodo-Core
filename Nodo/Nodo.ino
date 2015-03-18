@@ -77,10 +77,10 @@
 // ================================= Unit-1: Configuratie voor de Nodo-Mega ===================================================
 #define CONFIG_FILE Config_01.c
 #include <SD.h>                                 // Deze include noodzakelijk voor een Nodo-Mega. Niet gebruiken voor een Small!
-#include <EthernetNodo.h>                       // Deze include optioneel als Ethernet wordt gebruikt. Niet gebruiken voor een Small!
+// #include <EthernetNodo.h>                       // Deze include optioneel als Ethernet wordt gebruikt. Niet gebruiken voor een Small!
    
 
 // ================================= Unit-15: Configuratie voor de Nodo-Small =================================================
 // #define NODO_MEGA                      false
-// #define CONFIG_FILE Config_02.c
+// #define CONFIG_FILE Config_04.c
 

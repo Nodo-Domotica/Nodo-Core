@@ -176,7 +176,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       TempEvent.Command               = EVENT_USEREVENT;
       TempEvent.Par1                  = EventToExecute->Par1;
       TempEvent.Par2                  = EventToExecute->Par2;
-      SendEvent(&TempEvent, false, true,Settings.WaitFree==VALUE_ON);
+      SendEvent(&TempEvent, false, true);
       break;
 
     case CMD_VARIABLE_SEND: //??? Kan deze weg als we de voorziening hebben voor globale variabelen
@@ -188,7 +188,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.Direction=VALUE_DIRECTION_OUTPUT;
         TempEvent.Par1=EventToExecute->Par1;
         TempEvent.Par2=float2ul(TempFloat);
-        SendEvent(&TempEvent, false, true,Settings.WaitFree==VALUE_ON);
+        SendEvent(&TempEvent, false, true);
         }
       else
         error=MESSAGE_VARIABLE_ERROR;
@@ -219,14 +219,14 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
     case CMD_SEND_EVENT:
       TempEvent=LastReceived;
       TempEvent.Port=EventToExecute->Par1==0?VALUE_ALL:EventToExecute->Par1;
-      SendEvent(&TempEvent, TempEvent.Command==EVENT_RAWSIGNAL,true, Settings.WaitFree==VALUE_ON);
+      SendEvent(&TempEvent, TempEvent.Command==EVENT_RAWSIGNAL,true);
       break;        
 
     #if CFG_EVENTLIST
-    case CMD_VARIABLE_SAVE: //??? Herzien 
-      for(z=1;z<=USER_VARIABLES_MAX;z++)
+    case CMD_VARIABLE_SAVE: 
+      for(z=0;z<=USER_VARIABLES_MAX;z++)
         {
-        if(z==EventToExecute->Par1 || EventToExecute->Par1==0)
+        if(UserVarKey[z]==EventToExecute->Par1 || EventToExecute->Par1==0)
           {
           x=0;
           w=0;                                                                  // Plaats waar variabele al bestaat in eventlist
@@ -234,7 +234,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
           while(Eventlist_Read(++x,&TempEvent,&TempEvent2))                     // Zoek of variabele al bestaat in eventlist
             {
             if(TempEvent.Type==NODO_TYPE_EVENT && TempEvent.Command==EVENT_BOOT && TempEvent.Par1==Settings.Unit)
-              if(TempEvent2.Type==NODO_TYPE_COMMAND && TempEvent2.Command==CMD_VARIABLE_SET && TempEvent2.Par1==z)
+              if(TempEvent2.Type==NODO_TYPE_COMMAND && TempEvent2.Command==CMD_VARIABLE_SET && TempEvent2.Par1==UserVarKey[z])
                 w=x;
               
             if(TempEvent.Command==0)
@@ -243,7 +243,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
 
           x=w>0?w:y;                                                            // Bestaande regel of laatste vrije plaats.
     
-          if(UserVariable(z,&TempFloat))
+          if(UserVariable(UserVarKey[z],&TempFloat))
             {
             TempEvent.Type      = NODO_TYPE_EVENT;
             TempEvent.Command   = EVENT_BOOT;
@@ -251,13 +251,11 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
             TempEvent.Par2      = 0;
             TempEvent2.Type     = NODO_TYPE_COMMAND;
             TempEvent2.Command  = CMD_VARIABLE_SET;
-            TempEvent2.Par1     = z;
+            TempEvent2.Par1     = UserVarKey[z];
             TempEvent2.Par2     = float2ul(TempFloat);
            
-            Eventlist_Write(x, &TempEvent, &TempEvent2);                          // Schrijf weg in eventlist
+            Eventlist_Write(x, &TempEvent, &TempEvent2);                        // Schrijf weg in eventlist
             }
-          else
-            error=MESSAGE_VARIABLE_ERROR;
           }
         }
       break;
@@ -346,12 +344,12 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
 
           if(TempEvent.Command!=0)
             {
-            SendEvent(EventToExecute,false,false,false);
+            SendEvent(EventToExecute,false,false);
 
             TempEvent.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_BUSY;
             TempEvent.Port=z;
             TempEvent.DestinationUnit=w;
-            SendEvent(&TempEvent,false,false,false);
+            SendEvent(&TempEvent,false,false);
     
     
             if(x==y)                                                            // Als laatste regel uit de eventlist, dan de ether weer vrijgeven. 
@@ -361,7 +359,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
 
             TempEvent2.Port=z;
             TempEvent2.DestinationUnit=w;
-            SendEvent(&TempEvent2,false,false,false);
+            SendEvent(&TempEvent2,false,false);
             }
           x++;
           }
@@ -433,7 +431,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
           {
           ClockSyncHTTP=true;
           EventToExecute->Port=VALUE_SOURCE_HTTP;
-          SendEvent(EventToExecute, false, true, Settings.WaitFree==VALUE_ON);
+          SendEvent(EventToExecute, false, true);
           ClockSyncHTTP=false;
           }
   
@@ -449,7 +447,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
                         ((unsigned long)Time.Month %10) <<16 | ((unsigned long)Time.Month /10)%10<<20 | 
                         ((unsigned long)Time.Date  %10) <<24 | ((unsigned long)Time.Date  /10)%10<<28 ;
 
-        SendEvent(&TempEvent, false, true, Settings.WaitFree==VALUE_ON);
+        SendEvent(&TempEvent, false, true);
               
         // Verzend tijd
         ClearEvent(&TempEvent);    
@@ -460,7 +458,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.Command=CMD_CLOCK_TIME;
         TempEvent.Par2=Time.Minutes%10 | Time.Minutes/10<<4 | Time.Hour%10<<8 | Time.Hour/10<<12;
 
-        SendEvent(&TempEvent, false, true, Settings.WaitFree==VALUE_ON);        
+        SendEvent(&TempEvent, false, true);        
         }
       break;
     #endif CFG_CLOCK 
@@ -484,10 +482,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
   
     case CMD_SETTINGS_SAVE:
       Save_Settings();
-      break;
-
-    case CMD_WAIT_FREE_RX: 
-      Settings.WaitFree=EventToExecute->Par1;
       break;
 
     case CMD_OUTPUT:
@@ -535,7 +529,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.Par1=EventToExecute->Par1;
         TempEvent.Par2=UserFlag;
 
-        SendEvent(&TempEvent, false, true,Settings.WaitFree==VALUE_ON);
+        SendEvent(&TempEvent, false, true);
         }
       else
         {
@@ -597,7 +591,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.Type                  = NODO_TYPE_COMMAND;
         TempEvent.Port                  = VALUE_ALL;
         TempEvent.Command               = CMD_FLAG_SET;
-        SendEvent(&TempEvent, false, true,Settings.WaitFree==VALUE_ON);
+        SendEvent(&TempEvent, false, true);
         }
       break;
           
@@ -619,7 +613,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.Type                  = NODO_TYPE_COMMAND;
         TempEvent.Command               = CMD_WAIT_FREE_NODO;
         TempEvent.Par1                  = VALUE_OFF;
-        SendEvent(&TempEvent, false, true,Settings.WaitFree==VALUE_ON);
+        SendEvent(&TempEvent, false, true);
         }
 
       break;                                                                      
@@ -713,7 +707,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.Command=EVENT_RAWSIGNAL;
         TempEvent.Par1=EventToExecute->Par1;
         TempEvent.Par2=EventToExecute->Par2;
-        SendEvent(&TempEvent, true ,true, Settings.WaitFree==VALUE_ON);
+        SendEvent(&TempEvent, true ,true);
         }
       break;
 

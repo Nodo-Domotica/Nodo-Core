@@ -140,7 +140,7 @@ void RaiseMessage(byte MessageCode, unsigned long Option)
       }
   
     TempEvent.Port      = VALUE_ALL;
-    SendEvent(&TempEvent,false,true,Settings.WaitFree==VALUE_ON);
+    SendEvent(&TempEvent,false,true);
     }
   }
 
@@ -414,10 +414,6 @@ boolean GetStatus(struct NodoEventStruct *Event)
       break;
     #endif CFG_EVENTLIST
 
-  case CMD_WAIT_FREE_RX: 
-    Event->Par1=Settings.WaitFree;
-    break;
-
   case VALUE_BUILD:
     Event->Par2=NODO_BUILD;      
     break;        
@@ -669,12 +665,6 @@ void ResetFactory(void)
   Settings.Unit                       = UNIT_NODO;
   Settings.RawSignalReceive           = VALUE_OFF;
   Settings.RawSignalSample            = RAWSIGNAL_SAMPLE_DEFAULT;  
-
-#if WAIT_FREE_RX
-  Settings.WaitFree                   = VALUE_ON;
-#else
-  Settings.WaitFree                   = VALUE_OFF;
-#endif
 
 #if NODO_MEGA
   Settings.TransmitHTTP               = VALUE_OFF;
@@ -977,7 +967,7 @@ void Status(struct NodoEventStruct *Request)
           if(!DisplayLocal)
             {
             Result.Flags=TRANSMISSION_VIEW | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_BUSY;
-            SendEvent(&Result,false,false,false);
+            SendEvent(&Result,false,false);
             }            
   
           #if NODO_MEGA
@@ -1611,7 +1601,7 @@ boolean Substitute(char* Input)
   Res=0;
   while(*(InputPos)!=0)// zolang einde van de string Input nog niet bereikt
    {
-   if(*InputPos=='[' || *InputPos==']') 
+   if(*InputPos=='[' || *InputPos==']' || *InputPos=='%') 
      {
      if(!Grab)
        {
@@ -2838,7 +2828,7 @@ boolean UserVariableSet(byte VarNr, float *Var, boolean Process)
     {
     Event.Port         = VALUE_ALL;
     Event.Direction    = VALUE_DIRECTION_OUTPUT;
-    SendEvent(&Event, false, true,Settings.WaitFree==VALUE_ON);                 // ...stuur dan automatisch een event uit naar de andere Nodo's
+    SendEvent(&Event, false, true);                 // ...stuur dan automatisch een event uit naar de andere Nodo's
     }
 
   return true;

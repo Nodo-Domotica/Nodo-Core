@@ -5,7 +5,7 @@
 #define CFG_CLOCK                       true                                    // false=geen code voor Real Time Clock mee compileren. (Op Mega is meecompileren van Clock verplicht)
 #define CFG_SOUND                       true                                    // false=geen luidspreker in gebruik.
 #define CFG_WIRED                       true                                    // false=wired voorzieningen uitgeschakeld
-#define CFG_I2C                         true                                    // false=I2C communicatie niet mee compileren (I2C plugins en klok blijvel wel gebruik maken van I2C)
+#define CFG_I2C                         true                                    // false=I2C communicatie niet mee compileren (I2C plugins en klok blijven wel gebruik maken van I2C)
 #define CFG_SLEEP                       true                                    // false=Sleep mode mee compileren.
 #define CFG_SERIAL                      true                                    // false=Seriele communicatie niet mee compileren. LET OP: hierdoor geen enkele weergave of input via seriele poort meer mogelijk!!! Alleen voor de Nodo-Small 
 #define CFG_RAWSIGNAL                   true                                    // false=Rawsignal niet meecompileren. LET OP: Zowel RF als IR communicatie alsmede diverse plugins gebruiken RawSignal voorzieningen. Alleen voor de Nodo-Small
@@ -15,7 +15,7 @@
 // Dus: Geen support en geen garantie dat de Nodo stabiel funktioneert!
 
 #define NODO_BUILD                       788                                    // ??? Ophogen bij iedere Build / versiebeheer.
-#define NODO_VERSION_MINOR                13                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
+#define NODO_VERSION_MINOR                14                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1                                    // Unit nummer van deze Nodo. Wijzigen heeft pas effect na commando 'Reset'.
 #define HOME_NODO                          1                                    // Home adres van Nodo's die tot een groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
@@ -24,10 +24,12 @@
 #define RAWSIGNAL_TX_DELAY                20                                    // Tijd in mSec. tussen herhalingen frames bij zenden. (RawSignalSend)
 #define RAWSIGNAL_TOLERANCE              100                                    // Tolerantie die gehanteerd wordt bij decoderen van RF/IR signaal. T.b.v. uitrekenen HEX-code.
 #define RAWSIGNAL_SAMPLE_DEFAULT          25                                    // Sample grootte / Resolutie in uSec waarmee ontvangen Rawsignalen pulsen worden opgeslagen
-#define WAIT_FREE_RX                   false                                    // true: wacht default op verzenden van een event tot de IR/RF lijn onbezet is. Wordt overruled door commando [WaitFreeRX]
 #define WAIT_FREE_RX_WINDOW             1000                                    // minimale wachttijd wanneer wordt gewacht op een vrije RF of IR band.
 #define WAIT_FREE_RX_TIMEOUT            5000                                    // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
 #define MIN_PULSE_LENGTH                  50                                    // Pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
+#define DELAY_BETWEEN_TRANSMISSIONS      250                                    // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
+#define NODO_TX_TO_RX_SWITCH_TIME        500                                    // Tijd die andere Nodo's nodig hebben om na zenden weer gereed voor ontvangst te staan. (Opstarttijd sommige 433RX modules is relatief lang)
+#define TRANSMITTER_STABLE_TIME            5                                    // Tijd die de RF zender nodig heeft om na inschakelen van de voedspanning een stabiele draaggolf te hebben.
 #define SIGNAL_TIMEOUT                     5                                    // na deze tijd in mSec. wordt een signaal als beeindigd beschouwd.
 #define SIGNAL_REPEAT_TIME               500                                    // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF/IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
 #define PULSE_DEBOUNCE_TIME               10                                    // pulsen kleiner dan deze waarde in milliseconden worden niet geteld. Bedoeld om verstoringen a.g.v. ruis of dender te voorkomen
@@ -37,9 +39,6 @@
 #define PASSWORD_MAX_RETRY                 5                                    // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
 #define PASSWORD_TIMEOUT                 300                                    // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
 #define TERMINAL_TIMEOUT                 600                                    // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
-#define DELAY_BETWEEN_TRANSMISSIONS      100                                    // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
-#define NODO_TX_TO_RX_SWITCH_TIME       1000                                    // Tijd die andere Nodo's nodig hebben om na zenden weer gereed voor ontvangst te staan. (Opstarttijd sommige 433RX modules is relatief lang)
-#define TRANSMITTER_STABLE_TIME           10                                    // Tijd die de RF zender nodig heeft om na inschakelen van de voedspanning een stabiele draaggolf te hebben.
 #define ETHERNET_MAC_0                  0xCC                                    // Dit is byte 0 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
 #define ETHERNET_MAC_1                  0xBB                                    // Dit is byte 1 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
 #define ETHERNET_MAC_2                  0xAA                                    // Dit is byte 2 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
@@ -308,7 +307,7 @@ prog_char PROGMEM Cmd_56[]="FileShow";
 prog_char PROGMEM Cmd_57[]="FileWrite";
 prog_char PROGMEM Cmd_58[]="FreeMem";
 prog_char PROGMEM Cmd_59[]="Gateway";
-prog_char PROGMEM Cmd_60[]="WaitFreeRX";
+prog_char PROGMEM Cmd_60[]="";
 prog_char PROGMEM Cmd_61[]="HTTP";
 prog_char PROGMEM Cmd_62[]="HTTPHost";
 prog_char PROGMEM Cmd_63[]="HWConfig";
@@ -668,7 +667,6 @@ struct SettingsStruct
   byte    WaitFreeNodo;
   byte    TransmitIR;
   byte    TransmitRF;
-  byte    WaitFree;
   byte    RawSignalReceive;
   byte    RawSignalSample;
   byte    UserVarGlobal[USER_VARIABLES_MAX];
@@ -996,7 +994,7 @@ void setup()
   TempEvent.Direction = VALUE_DIRECTION_OUTPUT;
   TempEvent.Par1      = Settings.Unit;
   TempEvent.Command   = EVENT_BOOT;
-  SendEvent(&TempEvent,false,true,Settings.WaitFree==VALUE_ON);                 // Zend boot event naar alle Nodo's.  
+  SendEvent(&TempEvent,false,true);                 // Zend boot event naar alle Nodo's.  
 
   #if CFG_I2C
   bitWrite(HW_Config,HW_I2C,false);                                             // Zet I2C weer uit. Wordt weer geactiveerd als er een I2C event op de bus verschijnt.

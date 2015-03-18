@@ -239,7 +239,7 @@ boolean Plugin_023(byte function, struct NodoEventStruct *event, char *string)
       TempEvent.Command   = PLUGIN_ID;
       TempEvent.Par1      = event->Par1;
       TempEvent.Par2      = event->Par2;
-      SendEvent(&TempEvent, false ,true, Settings.WaitFree==VALUE_ON);
+      SendEvent(&TempEvent, false ,true);
       success=true;
       break;
       }

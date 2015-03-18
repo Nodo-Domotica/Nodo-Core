@@ -125,7 +125,7 @@ boolean Plugin_001(byte function, struct NodoEventStruct *event, char *string)
         RawSignal.Pulses[4*KAKU_CodeLength+2]=KAKU_T/RawSignal.Multiply;
         }
 
-      SendEvent(event,true,true,Settings.WaitFree==VALUE_ON);
+      SendEvent(event,true,true);
       success=true;
       break;
       }

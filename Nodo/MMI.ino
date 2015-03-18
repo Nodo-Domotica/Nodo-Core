@@ -152,10 +152,11 @@ int ExecuteLine(char *Line, byte Port)
                 else
                   error=MESSAGE_INVALID_PARAMETER;
                 }
-              else
-                {
-                // Het EventlistWrite commando moet naar de Slave worden verzonden. In dit geval maken we er een systeem commando
-                // van omdat deze bijzondere behandeling aan de slave zijde nodig heeft.
+              else                                                              // Als SendTo WEL actief
+                {                                                               // Het EventlistWrite commando moet naar de Slave worden verzonden. 
+                                                                                // In dit geval maken we er een systeem commando
+                                                                                // van omdat deze bijzondere behandeling aan de slave zijde nodig heeft.
+
                 EventToExecute.Command=SYSTEM_COMMAND_QUEUE_EVENTLIST_WRITE;
                 EventToExecute.Type=NODO_TYPE_SYSTEM;
                 QueueAdd(&EventToExecute);
@@ -410,6 +411,7 @@ int ExecuteLine(char *Line, byte Port)
               // Loop de devices langs om te checken if er een hit is. Zo ja, dan de struct
               // met de juiste waarden gevuld. Is er geen hit, dan keert PluginCall() terug met een false.
               // in dat geval kijken of er een commando op SDCard staat
+
               if(!PluginCall(PLUGIN_MMI_IN,&EventToExecute,Command))
                 {
                 // Als het geen regulier commando was EN geen commando met afwijkende MMI en geen Plugin en geen alias, dan kijken of file op SDCard staat)
@@ -433,13 +435,9 @@ int ExecuteLine(char *Line, byte Port)
             }// switch(command...@2
           }            
 
+
         if(EventToExecute.Command && error==0)
           {            
-          // Er kunnen zich twee situaties voordoen:
-          //
-          // A: Event is voor deze Nodo en moet gewoon worden uitgevoerd;
-          // B: SendTo is actief. Event moet worden verzonden naar een andere Nodo. Hier wordt de Queue voor gebruikt.
-          
           if(State_EventlistWrite==0)// Gewoon uitvoeren
             {
             if(Transmission_SendToUnit==Settings.Unit || Transmission_SendToUnit==0)
@@ -489,6 +487,7 @@ int ExecuteLine(char *Line, byte Port)
       error=QueueSend(Transmission_SendtoFast);
       if(error)
         {
+        QueuePosition=0;                                                        // Als we de de queue niet konden verzenden, dan leeg maken. Anders wordt deze lokaal uitgevoerd.
         CommandPos=0;
         LinePos=0;
         }
@@ -1233,6 +1232,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
 
     case CMD_VARIABLE_GLOBAL:
       ResultEvent->Type=NODO_TYPE_COMMAND;
+        
       if(ResultEvent->Par1<1 || ResultEvent->Par1>USER_VARIABLES_MAX_NR || (ResultEvent->Par2!=VALUE_OFF && ResultEvent->Par2!=VALUE_ON))
         error=MESSAGE_INVALID_PARAMETER;
       break;
@@ -1427,7 +1427,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
     case CMD_VARIABLE_SAVE:
     case CMD_VARIABLE_LOG:
       ResultEvent->Type=NODO_TYPE_COMMAND;
-      if(ResultEvent->Par1>USER_VARIABLES_MAX_NR || ResultEvent->Par1<1 )
+      if(ResultEvent->Par1>USER_VARIABLES_MAX_NR)
         error=MESSAGE_INVALID_PARAMETER;
       break;
       

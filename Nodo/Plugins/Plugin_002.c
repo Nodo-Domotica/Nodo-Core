@@ -171,7 +171,7 @@ boolean Plugin_002(byte function, struct NodoEventStruct *event, char *string)
       RawSignal.Pulses[i++]=NewKAKU_1T/RawSignal.Multiply;                      //pulse van de stopbit
       RawSignal.Pulses[i]=0;                                                    //space van de stopbit
       RawSignal.Number=i;                                                       // aantal bits*2 die zich in het opgebouwde RawSignal bevinden
-      SendEvent(event,true,true,Settings.WaitFree==VALUE_ON);
+      SendEvent(event,true,true);
       success=true;
       break;
       }

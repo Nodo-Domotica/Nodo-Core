@@ -59,10 +59,18 @@ R788:
 - Nodo-Mega: variabele plaatsen opgehoogd naar 25
 - Nodo-Small: variabele plaatsen verlaagd naar 10
 - Event NewNodo verwijderd.
+- #define CFG_EVENTLIST toegevoegd. Maakt het mogelijk om een zeer uitgekleedde Nodo zonder Eventlist te maken voor maximale plugin ruimte.
+- Commando "WaitFreeRX" vervallen. Wordt in de toekomst anders opgelost.
+- VariableSave aangepast voor nieuwe globale variabelen. LET OP: alleen variabelen die een waarde toegekend hebben gekregen kunnen worden weggeschreven.  Zonder Par2 slaat alle variabelen op.
+- Iets 'lossere' timings met Sendto i.v.m. trage insteltijd Aurel 433 modules.
 
 Todo:
-- Check of na een Boot de andere Nodo's wel een ACK verzenden.
-- VariableSave herzien.
+- Na een Boot zenden de andere Nodo's geen ACK. Is dit een probleem?
+- Alle plugins langslopen:
+  * Komen ze nog door de compiler
+  * SendEvent aanpassing
+  * UserVar[] aanpassing.    
 - FlagSync pull i.p.v. push?
 - RawsignalCleanup
+
  

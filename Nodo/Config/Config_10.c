@@ -11,5 +11,3 @@
 #define CLOCK         true // true=code voor Real Time Clock mee compileren.
 #define NODO_MEGA     true // true = Nodo Mega, false=Nodo-Small
 
-#define PLUGIN_036
-#define PLUGIN_036_CORE

@@ -38,12 +38,12 @@
 #define PLUGIN_005_CORE
 
 // DTH-22 Vocht/Temperatuursensor
-#define PLUGIN_006
-#define PLUGIN_006_CORE 22
+// #define PLUGIN_006
+// #define PLUGIN_006_CORE 22
 
 // BMP085 Luchtdruk sensor
-#define PLUGIN_020
-#define PLUGIN_020_CORE 
+// #define PLUGIN_020
+// #define PLUGIN_020_CORE 
 
 // RGB-Led aansturing
 // #define PLUGIN_023

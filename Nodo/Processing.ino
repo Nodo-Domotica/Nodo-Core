@@ -22,7 +22,7 @@ void ProcessingStatus(boolean Processing)
         TempEvent.Type                  = NODO_TYPE_SYSTEM;                     // Event is niet voor de gebruiker bedoeld
         TempEvent.Command               = SYSTEM_COMMAND_CONFIRMED;
         TempEvent.Par1                  = RequestForConfirm;
-        SendEvent(&TempEvent, false,false,false);
+        SendEvent(&TempEvent, false,false);
         RequestForConfirm=false;
         }
       Serial.write(XON);
@@ -137,7 +137,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
       {
       TempEvent=*Event;
       TempEvent.Port=VALUE_SOURCE_HTTP;
-      SendEvent(&TempEvent,false,true,false);
+      SendEvent(&TempEvent,false,true);
       }
     #endif
     
@@ -500,9 +500,9 @@ byte QueueSend(boolean fast)
         Event.Port                = Port;
         Event.Type                = NODO_TYPE_SYSTEM;      
         Event.Command             = SYSTEM_COMMAND_QUEUE_SENDTO;      
-        Event.Par1                = SendQueuePosition;                            // Aantal te verzenden events in de queue. Wordt later gecheckt en teruggezonden in de confirm. +1 omdat DIT event ook in de queue komt.
+        Event.Par1                = SendQueuePosition;                          // Aantal te verzenden events in de queue. Wordt later gecheckt en teruggezonden in de confirm. +1 omdat DIT event ook in de queue komt.
         Event.Par2                = ID;
-        SendEvent(&Event,false,false,Settings.WaitFree==VALUE_ON);                // Alleen de eerste vooraf laten gaan door een WaitFree (indien setting zo staat ingesteld);
+        SendEvent(&Event,false,false);                                          // Alleen de eerste vooraf laten gaan door een WaitFree (indien setting zo staat ingesteld);
         }
           
       for(x=0;x<SendQueuePosition;x++)                                          // Verzend alle events uit de queue. Alleen de bestemmings Nodo zal deze events in de queue plaatsen
@@ -524,7 +524,7 @@ byte QueueSend(boolean fast)
         if(!fast)
           Event.Flags = Event.Flags | TRANSMISSION_SENDTO;
           
-        SendEvent(&Event,false,false,false);
+        SendEvent(&Event,false,false);
         }
         
       if(!fast)
@@ -536,7 +536,7 @@ byte QueueSend(boolean fast)
         Event.Command             = SYSTEM_COMMAND_CONFIRMED;
         Event.Type                = NODO_TYPE_SYSTEM;
     
-        if(Wait(5,false,&Event,false))        
+        if(Wait(3,false,&Event,false))        
           if(x==Event.Par1)                                                     // Verzonden events gelijk aan ontvangen events? 
             Success=true;
 
@@ -592,7 +592,7 @@ void QueueReceive(NodoEventStruct *Event)
   TempEvent.Command             = SYSTEM_COMMAND_CONFIRMED;      
   TempEvent.Par1                = Received;
 
-  SendEvent(&TempEvent,false, false, false);                                    // Stuur vervolgens de master ter bevestiging het aantal ontvangen events die zich nu in de queue bevinden.
+  SendEvent(&TempEvent,false, false);                                           // Stuur vervolgens de master ter bevestiging het aantal ontvangen events die zich nu in de queue bevinden.
     
   QueuePosition=0;                                                              // Omdat ProcessQueue de queue heeft leeggedraaid, kan de queue positie op 0 worden gezet.
   Settings.WaitFreeNodo=Org_WFN;                                                // Herstel de oorspronkelijke WaitFreeNodo setting.  
