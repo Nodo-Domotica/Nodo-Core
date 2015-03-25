@@ -110,7 +110,7 @@ boolean Plugin_016(byte function, struct NodoEventStruct *event, char *string)
     event->Port=VALUE_ALL; // Signaal mag naar alle door de gebruiker met [Output] ingestelde poorten worden verzonden.
     RawSignal.Repeats=5;   // vijf herhalingen.
     RawSignal.Delay=20; // Tussen iedere pulsenreeks enige tijd rust.
-    SendEvent(event,true,true,Settings.WaitFree==VALUE_ON);
+    SendEvent(event,true,true);
     success=true;
     break;
     }

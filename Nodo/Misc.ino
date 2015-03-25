@@ -462,7 +462,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
     Event->Par1=xPar1;
     Event->Par2=VALUE_ON;
     if(!UserVariableGlobal(xPar1,false,false))
-      Event->Command=0;                                                       // Geen device op deze positie
+      Event->Command=0;                                                         // Geen device op deze positie
     break;
     
   case CMD_VARIABLE_SET:
@@ -955,7 +955,7 @@ void Status(struct NodoEventStruct *Request)
         Par1_End=Request->Par2;
         }
 
-      for(byte y=Par1_Start;y<=Par1_End;y++)
+      for(int y=Par1_Start;y<=Par1_End;y++)
         {
         Result.Command=x;
         Result.Par1=y;
@@ -2727,7 +2727,7 @@ void UserVariableInit(void)
   {
   for(byte x=0;x<USER_VARIABLES_MAX;x++)
     {
-    UserVar[x]=0;
+    UserVarValue[x]=0;
     UserVarKey[x]=0;
     }
   }
@@ -2742,7 +2742,7 @@ boolean UserVariable(byte VarNr, float *Var)
   x=UserVariablePos(VarNr);
   if(x!=-1)
     {
-    *Var=UserVar[x];
+    *Var=UserVarValue[x];
     return true;
     }
 
@@ -2811,7 +2811,7 @@ boolean UserVariableSet(byte VarNr, float *Var, boolean Process)
     }
 
   UserVarKey[x]=VarNr;                                                          // Ken variabelenummer toe aan positie
-  UserVar[x]=*Var;
+  UserVarValue[x]=*Var;
   
   ClearEvent(&Event);
   Event.SourceUnit        = Settings.Unit;

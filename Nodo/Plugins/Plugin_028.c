@@ -1,3 +1,4 @@
+
 //#######################################################################################################
 //#################################### Plugin-028 4-voudige PulseCounter #################################
 //#######################################################################################################
@@ -9,7 +10,8 @@
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  * Support            : www.nodo-domotica.nl
  * Datum              : 10 Sep 2013
- * Versie             : 1.0
+ * Versie             : 1.1, 19-03-2015 Aanpassing verwijzing naar UserVar[][] t.b.v. nieuwe wijze gebruik variabelen gebruiker.  
+ * Versie             : 1.0, 13-09-2013 Eerste versie (Martinus van den Broek)
  * Nodo productnummer : 
  * Compatibiliteit    : 
  * Syntax             : Pulse <Counter Number>, <Basis Variabele>
@@ -79,7 +81,10 @@ boolean Plugin_028(byte function, struct NodoEventStruct *event, char *string)
   case PLUGIN_COMMAND:
     {
       // Store countervalue into uservar and reset internal counter
-      UserVar[event->Par2-1] = float(PulseCounter[event->Par1-1]);
+      TempFloat=float(PulseCounter[event->Par1-1]);
+      UserVariableSet(event->Par2,&TempFloat,false);
+
+
       PulseCounter[event->Par1-1]=0;
 
       // If actual time difference > last known pulstime, update pulstimer now.
@@ -87,7 +92,9 @@ boolean Plugin_028(byte function, struct NodoEventStruct *event, char *string)
         PulseTimer[event->Par1-1] = millis() - PulseTimerPrevious[event->Par1-1];
 
       if (PulseTimer[event->Par1-1] > 999999) PulseTimer[event->Par1-1] = 999999; // WebApp cannot handle larger values! (bug or by design?)
-      UserVar[event->Par2] = float(PulseTimer[event->Par1-1]);
+
+      TempFloat = float(PulseTimer[event->Par1-1]);
+      UserVariableSet(event->Par2+1,&TempFloat,true);
       success=true;
       break;
     }

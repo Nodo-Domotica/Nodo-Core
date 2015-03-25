@@ -16,8 +16,10 @@
  * 
  * Auteur             : Paul Tonkes, p.k.tonkes@gmail.com
  * Support            : www.nodo-domotica.nl
- * Datum              : 23-04-2013
- * Versie             : 1.0
+ * Datum              : 19-03-2015
+ * Versie             : 1.0, 24-03-2013 Eerste versie
+ *                      1.1, 19-03-2015 Aanpassing t.b.v. compatibilitiet Nodo release 3.8
+ * 
  * Nodo productnummer : Plugin-22 HC-SR04 Distance sensor (SWACDE-22-V10)
  * Compatibiliteit    : Nodo release 3.5.0
  * Syntax             : "HCSR04_Read <variabele>"
@@ -60,11 +62,7 @@ boolean Plugin_022(byte function, struct NodoEventStruct *event, char *string)
       interrupts();
       
       distance=distance/58;
-
-      event->Type         = NODO_TYPE_COMMAND;
-      event->Command      = CMD_VARIABLE_SET;                 // Commando "VariableSet"
-      event->Par2         = float2ul(distance);   // Waarde terugstoppen in de variabele
-      success=true;
+      UserVariableSet(event->Par1,&distance,true);
       break;
       }
       

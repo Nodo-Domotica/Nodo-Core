@@ -1202,7 +1202,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
             
     case CMD_TIMER_SET_VARIABLE:
       ResultEvent->Type=NODO_TYPE_COMMAND;
-      if(ResultEvent->Par1>TIMER_MAX || ResultEvent->Par2<1 || ResultEvent->Par2>USER_VARIABLES_MAX)
+      if(ResultEvent->Par1>TIMER_MAX || ResultEvent->Par2<1 || ResultEvent->Par2==0 || ResultEvent->Par2>USER_VARIABLES_MAX_NR)
         error=MESSAGE_INVALID_PARAMETER;
       break;
             
@@ -1248,15 +1248,15 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
     case CMD_BREAK_ON_VAR_MORE_VAR:
     case CMD_VARIABLE_VARIABLE:
       ResultEvent->Type=NODO_TYPE_COMMAND;
-      if(ResultEvent->Par1<1 || ResultEvent->Par1>USER_VARIABLES_MAX)
+      if(ResultEvent->Par1<1 || ResultEvent->Par1>USER_VARIABLES_MAX_NR)
         error=MESSAGE_INVALID_PARAMETER;
-      if(ResultEvent->Par2<1 || ResultEvent->Par2>USER_VARIABLES_MAX)
+      if(ResultEvent->Par2<1 || ResultEvent->Par2>USER_VARIABLES_MAX_NR)
         error=MESSAGE_INVALID_PARAMETER;
       break;
         
     case CMD_VARIABLE_SET_WIRED_ANALOG:
       ResultEvent->Type=NODO_TYPE_COMMAND;
-      if(ResultEvent->Par1<1 || ResultEvent->Par1>USER_VARIABLES_MAX)
+      if(ResultEvent->Par1<1 || ResultEvent->Par1>USER_VARIABLES_MAX_NR)
         error=MESSAGE_INVALID_PARAMETER;
       if(ResultEvent->Par2<1 || ResultEvent->Par2>WIRED_PORTS)
         error=MESSAGE_INVALID_PARAMETER;
@@ -1341,7 +1341,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
 
     case CMD_VARIABLE_SEND:
       ResultEvent->Type=NODO_TYPE_COMMAND;
-      if(ResultEvent->Par1>USER_VARIABLES_MAX)
+      if(ResultEvent->Par1>USER_VARIABLES_MAX_NR)
         error=MESSAGE_INVALID_PARAMETER;        
       switch(ResultEvent->Par2)
         {

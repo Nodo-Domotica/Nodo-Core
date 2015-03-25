@@ -64,9 +64,16 @@ R788:
 - VariableSave aangepast voor nieuwe globale variabelen. LET OP: alleen variabelen die een waarde toegekend hebben gekregen kunnen worden weggeschreven.  Zonder Par2 slaat alle variabelen op.
 - Iets 'lossere' timings met Sendto i.v.m. trage insteltijd Aurel 433 modules.
 
+Commit 25-03-2014:
+- Plugin 4 (DS18B20) aangepast naar nieuwe UserVariabelen.
+- Plugin 6 (DHT22) aangepast naar nieuwe UserVariabelen.
+- Plugin 20 (BMP085) aangepast naar nieuwe UserVariabelen.
+- Issue #902: NewKakuSend x,10 resulteerd in off
+- enkele kleine bugs en onder de motorkap aanpassingen opgelost.
+
 Todo:
 - Na een Boot zenden de andere Nodo's geen ACK. Is dit een probleem?
-- Alle plugins langslopen:
+- Plugins langslopen:
   * Komen ze nog door de compiler
   * SendEvent aanpassing
   * UserVar[] aanpassing.    

@@ -127,9 +127,8 @@ boolean Plugin_036(byte function, struct NodoEventStruct *event, char *string)
 
     case PLUGIN_ONCE_A_SECOND:
       {
-      PID_Setpoint=UserVar[VarSetpoint-1];
-      PID_Input=UserVar[VarInput-1];
-
+      UserVariable(VarSetpoint,&PID_Setpoint);
+      UserVariable(VarInput,&PID_Input);
       if(PID_Mode!=PID_MODE_MANUAL)
         {
         PID_Now = millis();
@@ -154,7 +153,7 @@ boolean Plugin_036(byte function, struct NodoEventStruct *event, char *string)
           break;
           
         case PID_MODE_ANALOG:
-          UserVar[VarOutput-1]=PID_Output;
+          UserVariable(VarOutput,&PID_Output);
           break;
           
         case PID_MODE_DIGITAL:
@@ -164,8 +163,8 @@ boolean Plugin_036(byte function, struct NodoEventStruct *event, char *string)
           else
             DigitalOutput=false;
           
-          UserVar[VarOutput-1]=(float)DigitalOutput;
-
+          TempFloat=(float)DigitalOutput;
+          UserVariable(VarOutput,&TempFloat);
           if(DigitalOutput!=DigitalOutputPrev)
             {
             event->SourceUnit   = Settings.Unit;

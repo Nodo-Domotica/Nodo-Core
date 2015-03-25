@@ -11,7 +11,7 @@
  *                      Hans Man, j.h.man@hccnet.nl 
  * Support            : www.nodo-domotica.nl
  * Datum              : Okt.2013
- * Versie             : 0.5 Nog ernstig in beta
+ * Versie             : 1.0 Eerste versie.
  * Nodo productnummer : ???
  * Compatibiliteit    : Vanaf Nodo build nummer 596
  * Syntax             : "P1Read <Par1:Variabele>, <Par2:Waarde>"
@@ -222,12 +222,8 @@ boolean Plugin_024(byte function, struct NodoEventStruct *event, char *string)
         
       if(Fetched)
         {  
-        ClearEvent(event);                             // Ga uit van een default schone event. Oude eventgegevens wissen.        
-        event->Type         = NODO_TYPE_COMMAND;
-        event->Command      = CMD_VARIABLE_SET;        // Commando "VariableSet"
-        event->Par1         = var;                     // Variabele die gevuld moet worden.
-        event->Par2         = float2ul(FetchedData);   // uitgelezen waarde 
-        success=true;
+        TempFloat=FetchedData;
+        UserVariableSet(var,&TempFloat,true);
         }
         
       else

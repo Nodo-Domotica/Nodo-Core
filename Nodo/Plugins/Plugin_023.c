@@ -10,6 +10,7 @@
  *                           
  * Auteur             : P.K.Tonkes
  * Support            : P.K.Tonkes@gmail.com
+ * Versie             : 19-03-2015, Versie 1,5, P.K.Tonkes: Aanpassing nieuwe uservariabelen structuur.
  * Versie             : 21-02-2015, Versie 1,4, P.K.Tonkes: Bug verwijderd: Issue 864:	Fade proces van plugin 23 wordt afgebroken
  *                    : 02-02-2014, Versie 1,2, P.K.Tonkes: Bug verwijderd: Leds schakelden soms ook op andere events. FadeOn,FadeOff,VarOn,Varoff toegevoegd
  *                    : 22-12-2013, Versie 1,1, P.K.Tonkes: Event en Send commando in 1 plugin ondergebracht.
@@ -106,9 +107,15 @@ boolean FadeLed(void)
 
   if(RGBVariables)
     {
-    UserVar[0]=OutputLevelR;
-    UserVar[1]=OutputLevelG;
-    UserVar[2]=OutputLevelB;
+    TempFloat=OutputLevelR;
+    UserVariableSet(1,&TempFloat,false);
+
+    TempFloat=OutputLevelG;
+    UserVariableSet(2,&TempFloat,false);
+
+    TempFloat=OutputLevelB;
+    UserVariableSet(3,&TempFloat,false);
+
     }
     
   if(InputLevelR==OutputLevelR && InputLevelG==OutputLevelG && InputLevelB==OutputLevelB)
@@ -158,17 +165,21 @@ boolean Plugin_023(byte function, struct NodoEventStruct *event, char *string)
         {
         if(RGBVariables && !RGBFade)
           {
-          if(UserVar[0]>255)UserVar[0]=255;
-          if(UserVar[1]>255)UserVar[1]=255;
-          if(UserVar[2]>255)UserVar[2]=255;
+          UserVariable(1,&TempFloat);
+          if(TempFloat>255)TempFloat=255;
+          if(TempFloat<0)TempFloat=0;
+          InputLevelR = TempFloat;
 
-          if(UserVar[0]<0)UserVar[0]=0;
-          if(UserVar[1]<0)UserVar[1]=0;
-          if(UserVar[2]<0)UserVar[2]=0;
+          UserVariable(2,&TempFloat);
+          if(TempFloat>255)TempFloat=255;
+          if(TempFloat<0)TempFloat=0;
+          InputLevelG = TempFloat;
 
-          InputLevelR = UserVar[0];
-          InputLevelG = UserVar[1];
-          InputLevelB = UserVar[2];
+          UserVariable(3,&TempFloat);
+          if(TempFloat>255)TempFloat=255;
+          if(TempFloat<0)TempFloat=0;
+          InputLevelB = TempFloat;
+
           Set=true;
           }
         }
@@ -210,7 +221,10 @@ boolean Plugin_023(byte function, struct NodoEventStruct *event, char *string)
           // Per minuut 60000/SCAN_HIGH_TIME keer een call naar Plugin_023_FLC
           // In een minuut max. 255 dimniveaus ==> (60000/(SCAN_HIGH_TIME * 255)) calls nodig voor 1 dimniveau verschil. 
           if(RGBVariables)
-            x=UserVar[3];
+            {
+            UserVariable(4,&TempFloat);
+            x=TempFloat;
+            }
           else
             x=3;
             

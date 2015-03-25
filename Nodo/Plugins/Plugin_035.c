@@ -8,7 +8,8 @@
  * Author             : Martinus van den Broek
  * Support            : None!
  * Date               : Dec 2014
- * Versie             : 0.2
+ * Versie             : 0.3, 19-03-2015 Aanpassing compatibiliteit Nodo release 3.9 (Paul Tonkes) 
+ *                      0.2, 01-12-2014 (Martinus van den Broek)
  * Compatibility      : R744
  * Syntax             : "Ping <result var>, <ip address>"
  * Sample             : Ping 10,8.8.8.8
@@ -50,7 +51,9 @@ boolean Plugin_035(byte function, struct NodoEventStruct *event, char *string)
         {
           Serial.println("Pinging...");
 
-          UserVar[event->Par1 - 1] = 0;
+          TempFloat=0;
+          UserVariableSet(event->Par1,&TempFloat,true);
+
 
           uint8_t IPaddress[4];
           IPaddress[0] = (event->Par2 >>24) & 0xff;
@@ -108,7 +111,9 @@ boolean Plugin_035(byte function, struct NodoEventStruct *event, char *string)
           if (octet_matched  == 4)
             {
               Serial.println("OK");
-              UserVar[event->Par1 - 1] = 1;
+
+              TempFloat=1;
+              UserVariableSet(event->Par1,&TempFloat,true);
             }
           else 
             Serial.println("Not OK");

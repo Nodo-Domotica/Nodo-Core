@@ -11,7 +11,7 @@
  * Auteur             : Paul Tonkes, p.k.tonkes@gmail.com
  * Support            : <website>
  * Datum              : Feb.2013
- * Versie             : 1.1
+ * Versie             : 1.2 (Aaanpassing UserVar)
  * Nodo productnummer : ???
  * Compatibiliteit    : Vanaf Nodo build nummer 508
  * Syntax             : "TempRead <Par1:Poortnummer>, <Par2:Variabele>"
@@ -32,6 +32,7 @@ uint8_t DallasPin;
 #define PLUGIN_ID 05
 
 #define PLUGIN_NAME "TempRead"
+#define PLUGIN_05_EVENT false                                             // bij een false wordt er geen event gegenereerd.
 
 void DS_write(uint8_t ByteToWrite); 
 uint8_t DS_read(void);
@@ -86,13 +87,8 @@ boolean Plugin_005(byte function, struct NodoEventStruct *event, char *string)
         interrupts();
       
         DSTemp = (ScratchPad[1] << 8) + ScratchPad[0];  
-    
-        event->Type         = NODO_TYPE_COMMAND;
-        event->Port         = VALUE_SOURCE_PLUGIN;
-        event->Command      = CMD_VARIABLE_SET;                 // Commando "VariableSet"
-        event->Par1         = var;                              // Variabele die gevuld moet worden.
-        event->Par2         = float2ul(float(DSTemp)*0.0625);   // DS18B20 variant. Waarde terugstoppen in de variabele
-        success=true;
+        TempFloat=float(DSTemp)*0.0625; // DS18B20 variant. Waarde terugstoppen in de variabele
+        success=UserVariableSet(var,&TempFloat,PLUGIN_05_EVENT);
         }
       break;
       }
@@ -109,7 +105,7 @@ boolean Plugin_005(byte function, struct NodoEventStruct *event, char *string)
           {
           // Par1 en Par2 hoeven niet te worden geparsed omdat deze default al door de MMI invoer van de Nodo 
           // worden gevuld indien het integer waarden zijn. Toetsen op bereiken moet nog wel plaats vinden.
-          if(event->Par1>0 && event->Par1<=WIRED_PORTS && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX)            
+          if(event->Par1>0 && event->Par1<=WIRED_PORTS && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX_NR)            
             {
             success=true;
             event->Type = NODO_TYPE_PLUGIN_COMMAND;

@@ -1,3 +1,4 @@
+
 //#######################################################################################################
 //#################################### Plugin-21: LCD I2C 1602 ##########################################
 //#######################################################################################################
@@ -8,13 +9,14 @@
 * Getest op een I2C/TWI LCD1602 van DFRobot en een Funduino I2C LCD2004
 * Auteur             : Martinus van den Broek
 * Support            : www.nodo-domotica.nl
-* Datum              : 27 Maart 2014
+* Datum              : 21 Maart 2015
 * Versie             : 12-2013 versie 1.2 Modificatie WireNodo library (Hans Man)
 *                      02-2014 versie 1.3 Support 4x20 display en uitbreiding functionaliteit met Par3/Par4 (Martinus)
 *                      02-2014 versie 1.4 Support PortInput, LCDWrite 0,0 clears screen (Martinus)
 *                      03-2014 versie 1.5 Support Backlight on/off (Martinus)
 *                      03-2014 versie 1.6 Fix buffer issue in progmem (Martinus)
 *                      03-2014 versie 1.7 Fix I2C Multimaster "conflict" (Martinus)
+*                      03-2014 versie 1.8 Compatibility 3.8 release (Paul Tonkes)
 * Nodo productnummer : 
 * Compatibiliteit    : Vanaf Nodo build nummer 707
 * Syntax             : "LCDWrite <row>, <column>, <command>, <option>
@@ -233,10 +235,14 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
              if (Par4 > 0 && Par4 <16)
                {
                  #if NODO_MEGA
-                   dtostrf(UserVar[Par4-1], 0, 2,TempString);
+                   UserVariable(Par4,&TempFloat);
+                   dtostrf(TempFloat, 0, 2,TempString);
                  #else
-                   int d1 = UserVar[Par4-1];            // Get the integer part
-                   float f2 = UserVar[Par4-1] - d1;     // Get fractional part
+                   UserVariable(Par4,&TempFloat);
+                   int d1 = TempFloat;            // Get the integer part
+
+                   UserVariable(Par4,&TempFloat);
+                   float f2 = TempFloat - d1;     // Get fractional part
                    int d2 = trunc(f2 * 10);   // Turn into integer
                    if (d2<0) d2=d2*-1;
                    sprintf(TempString,"%d.%01d", d1,d2);

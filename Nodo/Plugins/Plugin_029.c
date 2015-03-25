@@ -1,3 +1,4 @@
+
 //#######################################################################################################
 //#################################### Plugin-029: ExtWiredAnalog #######################################
 //#######################################################################################################
@@ -7,10 +8,10 @@
  * 
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  * Support            : www.nodo-domotica.nl
- * Datum              : 25 Jan 2014
- * Versie             : 1.1
+ * Versie             : 1.2, 19-03-2015 Aanpassing t.b.v. Nodo release 3.9 (Paul Tonkes)) 
+ *                      1.1, 25-01-2014 (Martinus van den Broek))
  * Nodo productnummer : 
- * Compatibiliteit    : Vanaf Nodo build nummer 691
+ * Compatibiliteit    : Vanaf Nodo versie 3.8
  * Syntax             : "ExtWiredAnalog <Par1:Poort>, <Par2:Variable>"
  *********************************************************************************************
  * Technische beschrijving:
@@ -57,8 +58,8 @@ boolean Plugin_029(byte function, struct NodoEventStruct *event, char *string)
       if(WireNodo.available())
       {
         WireNodo.read(); // Read older value first (stored in chip)
-        UserVar[event->Par2-1] = (float)WireNodo.read();// now read actual value and store into Nodo var
-        success=true;
+        TempFloat=(float)WireNodo.read();// now read actual value and store into Nodo var
+        UserVariableSet(event->Par2,&TempFloat,true);
       }
       break;
       }

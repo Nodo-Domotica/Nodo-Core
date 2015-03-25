@@ -32,16 +32,14 @@
  *  
  * De DHT sensor is een 3 pin sensor met een bidirectionele datapin. Deze verbind je met een WiredOut poort. 
  * Het principe is "onewire" maar dit protocol is NIET compatible met het bekende Dallas onewire protocol
- * Dit protocol gebruikt twee variabelen, 1 voor temperatuur en 1 voor luchtvochtigheid
+ * Dit protocol gebruikt twee variabelen, 1 voor temperatuur en 1 voor luchtvochtigheid.
+ * Na uitlezen wordt de opgegeven variabele gevuld met de meetwaarden, maar er worden geen events gegenereerd.
+ * Dit kan worden aangepast door de #define DHT_EVENT in true te veranderen.  
  \*********************************************************************************************/
 
-//Onderstaande regel is voor Nodo releases eerder dan 3.6.1.
-#ifndef VALUE_SOURCE_PLUGIN
-#define VALUE_SOURCE_PLUGIN VALUE_SOURCE_SYSTEM
-#endif
-
-#define PLUGIN_ID 06
+#define PLUGIN_ID 6
 #define PLUGIN_NAME "DHTRead"
+#define DHT_EVENT false                                                         // false=geen events genereren bij uitlezen, true genereert wel events.
 uint8_t DHT_Pin;
 
 #ifdef PLUGIN_006_CORE
@@ -55,11 +53,11 @@ byte read_dht_dat(void)
   noInterrupts();
   for(i=0; i< 8; i++)
     {
-    while(!digitalRead(DHT_Pin));  // wait for 50us
+    while(!digitalRead(DHT_Pin));                                               // wait for 50us
     delayMicroseconds(30);
     if(digitalRead(DHT_Pin)) 
       result |=(1<<(7-i));
-    while(digitalRead(DHT_Pin));  // wait '1' finish
+    while(digitalRead(DHT_Pin));                                                // wait '1' finish
     }
   interrupts();
   return result;
@@ -85,13 +83,12 @@ boolean Plugin_006(byte function, struct NodoEventStruct *event, char *string)
 
       do
         {  
-        pinMode(DHT_Pin,OUTPUT);
-        // DHT start condition, pull-down i/o pin for 18ms
-        digitalWrite(DHT_Pin,LOW);               // Pull low
+        pinMode(DHT_Pin,OUTPUT);                                                // DHT start condition, pull-down i/o pin for 18ms
+        digitalWrite(DHT_Pin,LOW);                                              // Pull low
         delay(18);
-        digitalWrite(DHT_Pin,HIGH);              // Pull high
+        digitalWrite(DHT_Pin,HIGH);                                             // Pull high
         delayMicroseconds(40);
-        pinMode(DHT_Pin,INPUT);                  // change pin to input
+        pinMode(DHT_Pin,INPUT);                                                 // change pin to input
         delayMicroseconds(40);
     
         dht_in = digitalRead(DHT_Pin);
@@ -101,27 +98,39 @@ boolean Plugin_006(byte function, struct NodoEventStruct *event, char *string)
           dht_in = digitalRead(DHT_Pin);
           if(dht_in)
             {
-            delayMicroseconds(40);                     // now ready for data reception
+            delayMicroseconds(40);                                              // now ready for data reception
             for (i=0; i<5; i++)
               dht_dat[i] = read_dht_dat();
               
-            // Checksum calculation is a Rollover Checksum by design!
-            byte dht_check_sum = dht_dat[0]+dht_dat[1]+dht_dat[2]+dht_dat[3];// check check_sum
+            byte dht_check_sum = dht_dat[0]+dht_dat[1]+dht_dat[2]+dht_dat[3];   // check check_sum. Checksum calculation is a Rollover Checksum by design.
 
             if(dht_dat[4]== dht_check_sum)
               {
 
-              #if PLUGIN_006_CORE==11
-              UserVar[event->Par2 -1] = float(dht_dat[2]); // Temperatuur
-              UserVar[event->Par2   ] = float(dht_dat[0]); // vochtigheid
+              #if PLUGIN_006_CORE==11                                           // Code door de DHT-11 variant
+
+              TempFloat=float(dht_dat[2]);                                      // Temperatuur
+              UserVariableSet(event->Par2  ,&TempFloat,DHT_EVENT);
+              
+              TempFloat=float(dht_dat[0]);                                      // Vochtigheid
+              UserVariableSet(event->Par2+1,&TempFloat,DHT_EVENT);
+              
               #endif
               
-              #if PLUGIN_006_CORE==22
-              if (dht_dat[2] & 0x80) // negative temperature
-                UserVar[event->Par2 -1] = -0.1 * word(dht_dat[2] & 0x7F, dht_dat[3]);
+              #if PLUGIN_006_CORE==22                                           // Code door de DHT-22 variant
+
+              if (dht_dat[2] & 0x80)                                            // negative temperature
+                {
+                TempFloat=-0.1 * word(dht_dat[2] & 0x7F, dht_dat[3]);
+                UserVariableSet(event->Par2,&TempFloat,DHT_EVENT);
+                }
               else
-                UserVar[event->Par2 -1] = 0.1 * word(dht_dat[2], dht_dat[3]);
-              UserVar[event->Par2] = word(dht_dat[0], dht_dat[1]) * 0.1; // vochtigheid
+                {
+                TempFloat=0.1 * word(dht_dat[2], dht_dat[3]);
+                UserVariableSet(event->Par2,&TempFloat,DHT_EVENT);
+                }
+              TempFloat=word(dht_dat[0], dht_dat[1]) * 0.1;                     // vochtigheid
+              UserVariableSet(event->Par2+1,&TempFloat,DHT_EVENT);
               #endif
 
               success=true;
@@ -149,7 +158,7 @@ boolean Plugin_006(byte function, struct NodoEventStruct *event, char *string)
           if(event->Par1>0 && event->Par1<WIRED_PORTS && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX-1)
             {
             event->Type = NODO_TYPE_PLUGIN_COMMAND;
-            event->Command = 6; // Plugin nummer  
+            event->Command = PLUGIN_ID;                                         // Plugin nummer  
             success=true;
             }
           }
@@ -160,7 +169,7 @@ boolean Plugin_006(byte function, struct NodoEventStruct *event, char *string)
   
     case PLUGIN_MMI_OUT:
       {
-      strcpy(string,PLUGIN_NAME);            // Eerste argument=het commando deel
+      strcpy(string,PLUGIN_NAME);                                               // Eerste argument=het commando deel
       strcat(string," ");
       strcat(string,int2str(event->Par1));
       strcat(string,",");

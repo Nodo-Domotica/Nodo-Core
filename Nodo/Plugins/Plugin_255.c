@@ -187,20 +187,30 @@ boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
       Serial.print(", Par2=");    Serial.println(event->Par2);
       
       // Als voorbeeld wordt hier variabele 5 gevuld met 123.45
-      byte Variable = 5;
-      float Value   = 123.45;
+      TempFloat=123.45;                                      // De TempFloat komt uit de Nodo-code en mag altijd voor dit doel worden gebruikt.
+                                                             // Let wel op dat deze variabele op meerdere plaatsen gebruikt wordt en het hier dus echt om een tijdelijk
+                                                             // hulpmiddel gaat om de 'call-by-reference' te kunnen maken. Let op het '&' teken! 
+      UserVariableSet(5,&TempFloat,true);
 
-      ClearEvent(event);                                      // Ga uit van een default schone event. Oude eventgegevens wissen.      
-      event->Type         = NODO_TYPE_COMMAND;                // Het event is een uit te voeren commando
-      event->Command      = CMD_VARIABLE_SET;                 // Commando "VariableSet"
-      event->Par1         = Variable;                         // Par1 draagt het variabelenummer
-      event->Par2         = float2ul(Value);                  // Par2 de waarde. float2ul() zet de waarde m naar een geschikt format.
+
+      // 1. Veranderen van UserVar[] mag uitsluitend plaats vinden met de volgende funktie:
+      //
+      //    boolean UserVariableSet(byte VarNr, float *Var, boolean Process);
+      //
+      //    VarNr        = Variabelenummer 1..USER_VARIABLES_MAX_NR
+      //    Var          = Inhoud van de variabele (call by reference !)
+      //    Process      = true | false (true leidt tot genereren van een event)
+      //    returnwaarde = true als waarde toegekend, false als geen geheugenplek meer vrij.
+      //
+      // 2. Opvragen van een variabele mag uitsluitend met de volgende funktie:
+      //
+      //    boolean UserVariable(byte VarNr, float *Var);
+      //
+      //    VarNr        = Variabelenummer 1..USER_VARIABLES_MAX_NR
+      //    Var          = Inhoud van de variabele (call by reference !)
+      //    returnwaarde = true als waarde bestond, false als variabele onbekend is. 
+
       
-      success=true;                                           // Als verlaten wordt met een true, en er is een nieuw event in de struct geplaatst
-                                                              // dan wordt deze automatisch uitgevoerd.
-                                                              // Een plugin kan geen andere plugin aanroepen.
-                                                              // verder is er geen beperking en kunnen alle events/commando's worden
-                                                              // opgegeven voor verdere verwerking.
       break;
       }      
 

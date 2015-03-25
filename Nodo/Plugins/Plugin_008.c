@@ -1,3 +1,41 @@
+// LET OP: Deze plugin moet nog worden aangepast voor het gebruik van globale variabelen en variabelenummers
+// hoger dan 15. Zolang deze plugin nog niet is aangepast moeten de onderstaande regels in worden opgenomen:
+
+#ifndef PLUGIN_37_COMPATIBILITY
+float UserVar[USER_VARIABLES_MAX];
+#define PLUGIN_37_COMPATIBILITY
+#endif
+
+// Deze regels maken dat deze plugin tijdelijk compatibel wordt met de Nodo release 3.8. Hiervoor zal
+// wat extra RAM en Programmageheugen nodig zijn. Om de plugin compatibel te maken met de 3.8 release
+// moet de volgende aanpassing worden gemaakt:
+//
+// 1. Veranderen van UserVar[] mag uitsluitend plaats vinden met de volgende funktie:
+//
+//    boolean UserVariableSet(byte VarNr, float *Var, boolean Process)
+//
+//    VarNr        = Variabelenummer 1..USER_VARIABLES_MAX_NR
+//    Var          = Inhoud van de variabele (call by reference !)
+//    Process      = true | false (true leidt tot genereren van een event)
+//    returnwaarde = true als waarde toegekend, false als geen geheugenplek meer vrij.
+//
+// 2. Opvragen van een variabele mag uitsluitend met de volgende funktie:
+//
+//    boolean UserVariable(byte VarNr, float *Var)
+//
+//    VarNr        = Variabelenummer 1..USER_VARIABLES_MAX_NR
+//    Var          = Inhoud van de variabele (call by reference !)
+//    returnwaarde = true als waarde bestond, false als variabele onbekend is. 
+// 
+// De reden van deze aanpassing is om de plugin code meer onafhankelijk te maken van de 
+// Nodo code door geen gebruik te maken van gedeelte variabelen. In de een opvolgende release na de 3.8 zal 
+// de compatibiliteits ondersteuning komen te vervallen. 
+// 
+// Voor vragen: Neem contact op met de auteur van deze plugin.
+// 
+
+
+
 //#######################################################################################################
 //##################################### Plugin-08 AlectoV1  #############################################
 //#######################################################################################################

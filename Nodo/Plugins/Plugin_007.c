@@ -22,7 +22,7 @@
 *
 * Oude Nodo versies maakten gebruik van een 32-bit signaal. UserEvents werden eveneens in dit format
 * verzonden. Vanaf de 3.6 versie is gekozen voor een technisch geavanceerdere opbouw van RF en IR codes 
-* Consequentie hiervan is dat het oude formaat niet meer werd herkend door de Nodo. Dit device zorgt er
+* Consequentie hiervan is dat het oude formaat niet meer werd herkend door de Nodo. Deze plugin zorgt er
 * voor dat de oude UserEvents nog kunnen worden ingelezen en verwerkt.
 * 
 * LET OP: In het oude format wordt geen gebruik gemaakt van het Home adres van

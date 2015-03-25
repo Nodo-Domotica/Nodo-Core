@@ -509,7 +509,7 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define MACRO_EXECUTION_DEPTH         10                                        // maximale nesting van macro's.
 #define XON                         0x11                                        // Seriale communicatie XON/XOFF handshaking
 #define XOFF                        0x13                                        // Seriale communicatie XON/XOFF handshaking
-#define USER_VARIABLES_MAX_NR        100                                        // Maximaal te gebruiken variabelenummer.
+#define USER_VARIABLES_MAX_NR        255                                        // Hoogste te gebruiken variabelenummer.
 #define USER_FLAGS_MAX                32                                        // Aantal beschikbare vlaggen voor de user. 1..32. Moet passen in de unsigned long. 
 
 // Hardware in gebruik: Bits worden geset in de variabele HW_Config, uit te lezen met [Status HWConfig]
@@ -765,7 +765,7 @@ byte ExecutionDepth=0;                                                          
 int ExecutionLine=0;                                                            // Regel in de eventlist die in uitvoer is.??? wordt deze nog gebruikt.
 void(*Reboot)(void)=0;                                                          // reset functie op adres 0.
 uint8_t RFbit,RFport,IRbit,IRport;                                              // t.b.v. verwerking IR/FR signalen.
-float UserVar[USER_VARIABLES_MAX];                                              // Gebruikers variabelen
+float UserVarValue[USER_VARIABLES_MAX];                                         // inhoudelijke waarde van de gebruikersvariabele.
 byte UserVarKey[USER_VARIABLES_MAX];                                            // Nummer/sleutel van de gebruikersvariabelen
 unsigned long UserFlag=0L;                                                      // User vlag. Dit is een globale boolean variabele voor de gebruiker //???
 unsigned long HW_Config=0;                                                      // Hardware configuratie zoals gedetecteerd door de Nodo. 
@@ -994,7 +994,7 @@ void setup()
   TempEvent.Direction = VALUE_DIRECTION_OUTPUT;
   TempEvent.Par1      = Settings.Unit;
   TempEvent.Command   = EVENT_BOOT;
-  SendEvent(&TempEvent,false,true);                 // Zend boot event naar alle Nodo's.  
+  SendEvent(&TempEvent,false,true);                                             // Zend 'boot' event naar alle Nodo's.  
 
   #if CFG_I2C
   bitWrite(HW_Config,HW_I2C,false);                                             // Zet I2C weer uit. Wordt weer geactiveerd als er een I2C event op de bus verschijnt.

@@ -38,7 +38,7 @@ void HWSendTestEvent(byte port)
   TempEvent.DestinationUnit       = 0;
   TempEvent.Port                  = port;
   TempEvent.Flags                 = TRANSMISSION_CONFIRM;
-  SendEvent(&TempEvent, false, true,Settings.WaitFree==VALUE_ON);
+  SendEvent(&TempEvent, false, true);
   }
 
 byte CheckWiredLines(void)
