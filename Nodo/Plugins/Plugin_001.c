@@ -11,10 +11,11 @@
  * 
  * Auteur             : Nodo-team (P.K.Tonkes) www.nodo-domotca.nl
  * Support            : www.nodo-domotica.nl
- * Versie             : 22-12-2013, Versie 1.1, P.K.Tonkes: Plugin 001 en Plugin 002 samengevoegd
+ * Versie             : 23-03-2015, Versie 1.2, P.K.Tonkes: SendEvent laat als weergave het event 'Kaku' zien, i.p.v. het commando ' KakuSend'.
+ *                      22-12-2013, Versie 1.1, P.K.Tonkes: Plugin 001 en Plugin 002 samengevoegd
  *                      18-01-2013, Versie 1.0, P.K.Tonkes: Eerste versie
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
- * Compatibiliteit    : Vanaf Nodo build nummer 507
+ * Compatibiliteit    : Vanaf Nodo release 3.6
  * Vereiste library   : - geen -
  *
  ***********************************************************************************************
@@ -125,7 +126,9 @@ boolean Plugin_001(byte function, struct NodoEventStruct *event, char *string)
         RawSignal.Pulses[4*KAKU_CodeLength+2]=KAKU_T/RawSignal.Multiply;
         }
 
+      event->Type=NODO_TYPE_PLUGIN_EVENT;                                       // Het commando SendEvent verstuurt een event.
       SendEvent(event,true,true);
+      event->Command=0;                                                         // Bij terugkeer niets meer verwerken.
       success=true;
       break;
       }

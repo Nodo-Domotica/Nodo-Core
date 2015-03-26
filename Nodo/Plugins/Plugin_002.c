@@ -9,10 +9,10 @@
  * 
  * Auteur             : Nodo-team (P.K.Tonkes) www.nodo-domotca.nl
  * Support            : www.nodo-domotica.nl
- * Datum              : Jan.2013
- * Versie             : 1.1
+ * Versie             : 1.1, 23-03-2015 (Paul Tonkes): Aanpassing dat bij NewKakuSend het Event wordt weergegeven i.p.v. het commando.
+ *                      1.0, 18-01-2013 (Paul Tonkes)
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
- * Compatibiliteit    : Vanaf Nodo build nummer 645
+ * Compatibiliteit    : Vanaf Nodo release 3.6
  ***********************************************************************************************
  *
  * Binnenkomend event: "NewKaku     <adres>,<On|Off|Dimlevel 1..15>
@@ -168,10 +168,12 @@ boolean Plugin_002(byte function, struct NodoEventStruct *event, char *string)
           }
         i+=4;
         }
-      RawSignal.Pulses[i++]=NewKAKU_1T/RawSignal.Multiply;                      //pulse van de stopbit
-      RawSignal.Pulses[i]=0;                                                    //space van de stopbit
+      RawSignal.Pulses[i++]=NewKAKU_1T/RawSignal.Multiply;                      // pulse van de stopbit
+      RawSignal.Pulses[i]=0;                                                    // space van de stopbit
       RawSignal.Number=i;                                                       // aantal bits*2 die zich in het opgebouwde RawSignal bevinden
+      event->Type = NODO_TYPE_PLUGIN_EVENT;
       SendEvent(event,true,true);
+      event->Command=0;
       success=true;
       break;
       }

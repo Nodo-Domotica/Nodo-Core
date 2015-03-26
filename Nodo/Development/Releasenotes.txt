@@ -71,11 +71,11 @@ Commit: 25-03-2014:
 - Issue #902: NewKakuSend x,10 resulteerd in off
 - enkele kleine bugs en onder de motorkap aanpassingen opgelost.
 
-Commit:
+Commit: 26-03-2015:
 - Commando's met flaggen weer verwijderd. Idee van globale vlaggen is met het globaal kunnen definieren van gewone variabelen niet meer interessant. 
 - Nodo-Mega: aantal variabele plaatsen 32
 - Nodo-Small: aantal variabele plaatsen 16
-
+- Aanpassen Plugin_22 (HC-SR04): Plugin returned an error melding opgelost.
 
 Todo:
 - Na een Boot zenden de andere Nodo's geen ACK. Is dit een probleem?
@@ -83,7 +83,6 @@ Todo:
   * Komen ze nog door de compiler
   * SendEvent aanpassing
   * UserVar[] aanpassing.    
-- FlagSync pull i.p.v. push?
 - RawsignalCleanup
 
  

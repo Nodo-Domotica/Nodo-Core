@@ -11,6 +11,8 @@
 #define CLOCK         true // true=code voor Real Time Clock mee compileren.
 #define NODO_MEGA     true // true = Nodo Mega, false=Nodo-Small
 
-#define PLUGIN_022                                                              // HC-SR04 Ultrasone afstandsmeter.
-#define PLUGIN_022_CORE
+#define PLUGIN_001                                                              // Kaku : Klik-Aan-Klik-Uit
+#define PLUGIN_001_CORE
 
+#define PLUGIN_002                                                              // NewKAKU : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno.
+#define PLUGIN_002_CORE
