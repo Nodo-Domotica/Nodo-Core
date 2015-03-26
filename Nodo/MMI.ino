@@ -818,21 +818,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         ParameterToView[0]=PAR2_INT_HEX;
         break;
 
-      // Par1 als int (0=All) en Par2 als int
-      case CMD_BREAK_ON_FLAG_EQU:
-          ParameterToView[0]=PAR1_INT_0ALL;
-          ParameterToView[1]=PAR2_INT;
-        break;
-
-      case CMD_FLAG_SET:
-      case EVENT_FLAG:
-        ParameterToView[0]=PAR1_INT_0ALL;
-        if(Event->Par2==VALUE_TOGGLE)
-          ParameterToView[1]=PAR2_TEXT;
-        else
-          ParameterToView[1]=PAR2_INT;
-        break;
-      
       // Par1 als int en Par2 als int
       case CMD_WIRED_SMITTTRIGGER:
       case CMD_WIRED_THRESHOLD:
@@ -904,6 +889,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_DELAY:
       case VALUE_SOURCE_PLUGIN:
       case CMD_VARIABLE_SAVE:
+      case CMD_VARIABLE_TOGGLE:
       case CMD_VARIABLE_LOG:
       case CMD_UNIT_SET:
       case CMD_VARIABLE_PULSE_TIME:
@@ -933,7 +919,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         break;
         
       // geen parameters.
-      case CMD_FLAG_SYNC:
       case CMD_SLEEP:
       case CMD_REBOOT:
       case CMD_CLOCK_SYNC:
@@ -1161,7 +1146,6 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
       break; 
 
     // altijd goed
-    case CMD_FLAG_SYNC:
     case CMD_SLEEP:
     case CMD_EVENTLIST_SHOW:
     case CMD_EVENTLIST_ERASE:
@@ -1223,6 +1207,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
         error=MESSAGE_INVALID_PARAMETER;
       break;
 
+
     case CMD_ANALYSE_SETTINGS:
       ResultEvent->Type=NODO_TYPE_COMMAND;
       if(ResultEvent->Par1<1 || ResultEvent->Par1>50)
@@ -1232,10 +1217,15 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
 
     case CMD_VARIABLE_GLOBAL:
       ResultEvent->Type=NODO_TYPE_COMMAND;
-        
-      if(ResultEvent->Par1<1 || ResultEvent->Par1>USER_VARIABLES_MAX_NR || (ResultEvent->Par2!=VALUE_OFF && ResultEvent->Par2!=VALUE_ON))
+      if(ResultEvent->Par1<1 || ResultEvent->Par1>USER_VARIABLES_MAX_NR)
         error=MESSAGE_INVALID_PARAMETER;
+
+      if(ResultEvent->Par2==0 || ResultEvent->Par2==VALUE_ON)
+        ResultEvent->Par2=VALUE_ON;
+      else
+        ResultEvent->Par2=VALUE_OFF;
       break;
+
 
     case CMD_VARIABLE_PULSE_TIME:
     case CMD_VARIABLE_PULSE_COUNT:
@@ -1424,6 +1414,12 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
       break;
 
 
+    case CMD_VARIABLE_TOGGLE:
+      ResultEvent->Type=NODO_TYPE_COMMAND;
+      if(ResultEvent->Par1<1 || ResultEvent->Par1>USER_VARIABLES_MAX_NR)
+        error=MESSAGE_INVALID_PARAMETER;
+      break;
+      
     case CMD_VARIABLE_SAVE:
     case CMD_VARIABLE_LOG:
       ResultEvent->Type=NODO_TYPE_COMMAND;
@@ -1431,24 +1427,6 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
         error=MESSAGE_INVALID_PARAMETER;
       break;
       
-    case EVENT_FLAG:
-    case CMD_BREAK_ON_FLAG_EQU:
-    case CMD_FLAG_SET:                                                          // FlagSet <vlagnummer|ALL>, <0,1>
-      if(ResultEvent->Command==CMD_BREAK_ON_FLAG_EQU || ResultEvent->Command==CMD_FLAG_SET)ResultEvent->Type=NODO_TYPE_COMMAND;        
-      if(ResultEvent->Command==EVENT_FLAG  )ResultEvent->Type=NODO_TYPE_EVENT;        
-
-      GetArgv(Command,TmpStr1,2);
-      if(str2cmd(TmpStr1)==VALUE_ALL)                                           // Alle waarden omzetten naar 0
-        ResultEvent->Par1=0;
-
-      if(ResultEvent->Par1>USER_FLAGS_MAX)
-        error=MESSAGE_INVALID_PARAMETER;
-
-      if(ResultEvent->Par2!=0 && ResultEvent->Par2!=1 && ResultEvent->Par2!=VALUE_TOGGLE)
-        error=MESSAGE_INVALID_PARAMETER;
-
-      break;
-
     case CMD_VARIABLE_SET:
       ResultEvent->Type=NODO_TYPE_COMMAND;        
       if(ResultEvent->Par1>USER_VARIABLES_MAX_NR || ResultEvent->Par1<1 )

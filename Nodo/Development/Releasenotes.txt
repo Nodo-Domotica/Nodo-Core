@@ -64,12 +64,18 @@ R788:
 - VariableSave aangepast voor nieuwe globale variabelen. LET OP: alleen variabelen die een waarde toegekend hebben gekregen kunnen worden weggeschreven.  Zonder Par2 slaat alle variabelen op.
 - Iets 'lossere' timings met Sendto i.v.m. trage insteltijd Aurel 433 modules.
 
-Commit 25-03-2014:
+Commit: 25-03-2014:
 - Plugin 4 (DS18B20) aangepast naar nieuwe UserVariabelen.
 - Plugin 6 (DHT22) aangepast naar nieuwe UserVariabelen.
 - Plugin 20 (BMP085) aangepast naar nieuwe UserVariabelen.
 - Issue #902: NewKakuSend x,10 resulteerd in off
 - enkele kleine bugs en onder de motorkap aanpassingen opgelost.
+
+Commit:
+- Commando's met flaggen weer verwijderd. Idee van globale vlaggen is met het globaal kunnen definieren van gewone variabelen niet meer interessant. 
+- Nodo-Mega: aantal variabele plaatsen 32
+- Nodo-Small: aantal variabele plaatsen 16
+
 
 Todo:
 - Na een Boot zenden de andere Nodo's geen ACK. Is dit een probleem?

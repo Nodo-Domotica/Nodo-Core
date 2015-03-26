@@ -60,20 +60,23 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
     #endif //CFG_WIRED
 
+    case CMD_VARIABLE_TOGGLE:
+      UserVariable(EventToExecute->Par1,&TempFloat);
+      TempFloat=TempFloat>0.5?0.0:1.0;
+      if(!UserVariableSet(EventToExecute->Par1,&TempFloat,true))
+        error=MESSAGE_VARIABLE_ERROR;
+      break;         
+
     case CMD_VARIABLE_INC:
-      TempFloat=0;
       UserVariable(EventToExecute->Par1,&TempFloat);
       TempFloat+=ul2float(EventToExecute->Par2);
-
       if(!UserVariableSet(EventToExecute->Par1,&TempFloat,true))
         error=MESSAGE_VARIABLE_ERROR;
       break;         
 
     case CMD_VARIABLE_DEC:
-      TempFloat=0;
       UserVariable(EventToExecute->Par1,&TempFloat);
       TempFloat-=ul2float(EventToExecute->Par2);
-
       if(!UserVariableSet(EventToExecute->Par1,&TempFloat,true))
         error=MESSAGE_VARIABLE_ERROR;
       break;         
@@ -100,7 +103,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       // Als er toch een reeks pulsen komt, dan wordt in FetchSignal() het tellen van pulsen gedisabled.
       bitWrite(HW_Config,HW_PULSE,true);
       attachInterrupt(PULSE_IRQ,PulseCounterISR,PULSE_TRANSITION); 
-
       TempFloat=PulseCount;
       if(!(UserVariableSet(EventToExecute->Par1,&TempFloat,true)))
         error=MESSAGE_VARIABLE_ERROR;
@@ -111,7 +113,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       // Als er toch een reeks pulsen komt, dan wordt in FetchSignal() het tellen van pulsen gedisabled.
       bitWrite(HW_Config,HW_PULSE,true);
       attachInterrupt(PULSE_IRQ,PulseCounterISR,PULSE_TRANSITION); 
-
       TempFloat=PulseTime;
       if(!(UserVariableSet(EventToExecute->Par1,&TempFloat,true)))
         error=MESSAGE_VARIABLE_ERROR;
@@ -120,29 +121,18 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
     case CMD_STOP:
       error=MESSAGE_EXECUTION_STOPPED;
       break;
-
-    case CMD_BREAK_ON_FLAG_EQU:
-      {
-      if(bitRead(UserFlag,EventToExecute->Par1-1)==(EventToExecute->Par2>0))
-        error=MESSAGE_BREAK;
-
-      break;
-      }
       
     case CMD_BREAK_ON_VAR_EQU:
-      {
       if(UserVariable(EventToExecute->Par1,&TempFloat))
         if((int)TempFloat==(int)ul2float(EventToExecute->Par2))
           error=MESSAGE_BREAK;
       break;
-      }
       
     case CMD_BREAK_ON_VAR_NEQU:
       if(UserVariable(EventToExecute->Par1,&TempFloat))
         if((int)TempFloat!=(int)ul2float(EventToExecute->Par2))
           error=MESSAGE_BREAK;
       break;
-
 
     case CMD_BREAK_ON_VAR_MORE:
       if(UserVariable(EventToExecute->Par1,&TempFloat))
@@ -154,7 +144,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       if(UserVariable(EventToExecute->Par1,&TempFloat))
         if((int)TempFloat<(int)ul2float(EventToExecute->Par2))
           error=MESSAGE_BREAK;
-
 
     case CMD_BREAK_ON_VAR_LESS_VAR:
       if(UserVariable(EventToExecute->Par1,&TempFloat))
@@ -516,85 +505,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         break;
         }
 
-    case CMD_FLAG_SYNC:
-      // Als het verzoek om de vlaggen te synchroniseren vanuit deze Nodo komt, dan
-      // de opdracht naar alle andere Nodo's sturen.
-      // Komt verzoek van buiten, dan de vlaggen aanpassen naar het ontvangen.
-      if(EventToExecute->SourceUnit==Settings.Unit)
-        {
-        TempEvent.Type=NODO_TYPE_COMMAND;
-        TempEvent.Command=CMD_FLAG_SYNC;
-        TempEvent.Port=VALUE_ALL;
-        TempEvent.Direction=VALUE_DIRECTION_OUTPUT;
-        TempEvent.Par1=EventToExecute->Par1;
-        TempEvent.Par2=UserFlag;
 
-        SendEvent(&TempEvent, false, true);
-        }
-      else
-        {
-        for(x=0;x<USER_FLAGS_MAX;x++)
-          {
-          y=bitRead(UserFlag,x);
-          z=bitRead(EventToExecute->Par2,x);
-          if(y!=z)              // Als de vlag niet correspondeert
-            {
-            bitWrite(UserFlag,x,z);                  // Zet de vlag.
-
-            // Veranderen van de vlag moet leiden tot een event die uitgevoerd moet worden
-            TempEvent.SourceUnit            = Settings.Unit;
-            TempEvent.Type                  = NODO_TYPE_EVENT;
-            TempEvent.Command               = EVENT_FLAG;
-            TempEvent.Port                  = VALUE_SOURCE_SYSTEM;
-            TempEvent.Direction             = VALUE_DIRECTION_INPUT;
-            TempEvent.Par1                  = x+1;
-            TempEvent.Par2                  = z;
-            ProcessEvent(&TempEvent);
-            }
-          }
-        }
-      break;         
-
-    case CMD_FLAG_SET:
-      if(EventToExecute->Par1==0)                                               // Alle vlaggen
-        {
-        if(EventToExecute->Par2==VALUE_ON)
-          UserFlag=0xffffffff;
-        else
-          UserFlag=0L;
-        }
-      else
-        {
-        x=false;
-        if(EventToExecute->Par2==VALUE_TOGGLE)x=(!bitRead(UserFlag,EventToExecute->Par1-1));
-        if(EventToExecute->Par2>0)x=true;
-        bitWrite(UserFlag,EventToExecute->Par1-1,x);                  // Zet de vlag.
-
-        // Veranderen van de vlag moet leiden tot een event die uitgevoerd moet worden
-        TempEvent.SourceUnit            = Settings.Unit;
-        TempEvent.Type                  = NODO_TYPE_EVENT;
-        TempEvent.Command               = EVENT_FLAG;
-        TempEvent.Port                  = VALUE_SOURCE_SYSTEM;
-        TempEvent.Direction             = VALUE_DIRECTION_INPUT;
-        TempEvent.Par1                  = EventToExecute->Par1;
-        TempEvent.Par2                  = bitRead(UserFlag,EventToExecute->Par1-1);
-        ProcessEvent(&TempEvent);
-        }
-  
-      // Veranderen van de vlag moet bekend gemaakt worden bij andere Nodo's als
-      // deze gewijzigd is vanuit deze Nodo. Alle vlagen worden hierdoor globaal
-      // in het Nodo landschap. 
-      if(EventToExecute->SourceUnit==Settings.Unit)
-        {
-        TempEvent.SourceUnit            = Settings.Unit;
-        TempEvent.Direction             = VALUE_DIRECTION_OUTPUT;
-        TempEvent.Type                  = NODO_TYPE_COMMAND;
-        TempEvent.Port                  = VALUE_ALL;
-        TempEvent.Command               = CMD_FLAG_SET;
-        SendEvent(&TempEvent, false, true);
-        }
-      break;
-          
     case CMD_REBOOT:
       Reboot();
       break;        

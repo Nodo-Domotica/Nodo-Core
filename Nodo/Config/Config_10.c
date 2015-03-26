@@ -11,3 +11,6 @@
 #define CLOCK         true // true=code voor Real Time Clock mee compileren.
 #define NODO_MEGA     true // true = Nodo Mega, false=Nodo-Small
 
+#define PLUGIN_022                                                              // HC-SR04 Ultrasone afstandsmeter.
+#define PLUGIN_022_CORE
+

@@ -62,7 +62,8 @@ boolean Plugin_022(byte function, struct NodoEventStruct *event, char *string)
       interrupts();
       
       distance=distance/58;
-      UserVariableSet(event->Par1,&distance,true);
+      UserVariableSet(event->Par1,&distance,false);
+      success=true;
       break;
       }
       
@@ -83,7 +84,7 @@ boolean Plugin_022(byte function, struct NodoEventStruct *event, char *string)
         {
         if(strcasecmp(TempStr,PLUGIN_NAME_22)==0)
           {
-          if(event->Par1>0 && event->Par1<=USER_VARIABLES_MAX)
+          if(event->Par1>0 && event->Par1<=USER_VARIABLES_MAX_NR)
             {
             success=true;
             event->Type = NODO_TYPE_PLUGIN_COMMAND;
@@ -100,8 +101,6 @@ boolean Plugin_022(byte function, struct NodoEventStruct *event, char *string)
       strcpy(string,PLUGIN_NAME_22);            // Eerste argument=het commando deel
       strcat(string," ");
       strcat(string,int2str(event->Par1));
-      strcat(string,",");
-      strcat(string,int2str(event->Par2));
       break;
       }
     #endif //CORE_22

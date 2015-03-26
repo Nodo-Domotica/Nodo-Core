@@ -475,11 +475,6 @@ boolean GetStatus(struct NodoEventStruct *Event)
       Event->Command=0;                                                           // Geen geldige optie. Als 0 wordt teruggegeven in command dan wordt niets weergegeven met de status.
     break;
 
-  case CMD_FLAG_SET:
-    Event->Par1=xPar1;
-    Event->Par2=bitRead(UserFlag,xPar1-1);
-    break;
-
   #if CFG_CLOCK
   case CMD_CLOCK_DATE:
     Event->Par2= ((unsigned long)Time.Year  %10)      | ((unsigned long)Time.Year  /10)%10<<4  | ((unsigned long)Time.Year/100)%10<<8 | ((unsigned long)Time.Year/1000)%10<<12 | 
@@ -921,12 +916,7 @@ void Status(struct NodoEventStruct *Request)
             Par1_Start=1;
             Par1_End=USER_VARIABLES_MAX_NR;
             break;
-
-          case CMD_FLAG_SET:
-            Par1_Start=1;
-            Par1_End=USER_FLAGS_MAX;
-            break;
-    
+  
           case CMD_TIMER_SET:
             Par1_Start=1;
             Par1_End=TIMER_MAX;
@@ -2722,7 +2712,6 @@ void wdsleep()
 #endif
 
 
-
 void UserVariableInit(void)
   {
   for(byte x=0;x<USER_VARIABLES_MAX;x++)
@@ -2746,6 +2735,7 @@ boolean UserVariable(byte VarNr, float *Var)
     return true;
     }
 
+  *Var=0;
   return false;  
   }
   
