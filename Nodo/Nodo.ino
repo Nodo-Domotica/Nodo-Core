@@ -1,3 +1,4 @@
+
 //??? *************** Checklist voor release uitbrengen ***********
 //??? Zoeken naar comments met drie vraagtekens.
 //??? DEBUG: Regels remarken
@@ -42,7 +43,7 @@
 // Geef het volledige pad op. Let op: Bij Linux/Unix zijn de namen case-sensitive.
 // ============================================================================================================================
 
-#define SKETCH_PATH  D:\User\Paul\GitHub\arduino-nodo\Nodo
+#define SKETCH_PATH  D:\User\Paul\Bureaublad\Nodo
 
 // ============================================================================================================================
 // We kennen twee type Nodo's:
@@ -81,6 +82,5 @@
    
 
 // ================================= Unit-15: Configuratie voor de Nodo-Small =================================================
-// #define NODO_MEGA                      false
 // #define CONFIG_FILE Config_15.c
 

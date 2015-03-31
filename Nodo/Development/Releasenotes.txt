@@ -5,7 +5,7 @@ R780:
 - Ondersteuning voor NRF plugin in de Core.
 - Bug: SendTo Fast werkte niet altijd correct.
 - Issue 789: Nesting van file executes afvangen
-- Issue 818: Alarm op WorkDays (WKD) en WeekendDays (WND) (Tevens toegepast op Time events in de eventlist).
+- Issue 818: Alarm op WorkDays (WRK) en WeekendDays (WND) (Tevens toegepast op Time events in de eventlist).
 - Issue 863: Nodo ziet geen RF units meer Build is R746.
 - Issue 864: Fade proces van plugin 23 wordt afgebroken.
 - Issue 870: TimerRandom.
@@ -77,6 +77,10 @@ Commit: 26-03-2015:
 - Nodo-Small: aantal variabele plaatsen 16
 - Aanpassen Plugin_22 (HC-SR04): Plugin returned an error melding opgelost.
 
+Commit:
+- PulseCount laat de Nodo in de IR-routine landen. Dit leidt tot missen events op rf.
+- NRF24L01 ondersteuning (incl. sleep mode en hardware SPI voor de Mega.)
+
 Todo:
 - Na een Boot zenden de andere Nodo's geen ACK. Is dit een probleem?
 - Plugins langslopen:
@@ -84,5 +88,8 @@ Todo:
   * SendEvent aanpassing
   * UserVar[] aanpassing.    
 - RawsignalCleanup
+- RGBLedSend <unitnummer> geeft event zonder unitnummer. Dit is probleem voor de WebApp. 
+- NewKakusend met optie 0 werkt niet.
+
 
  

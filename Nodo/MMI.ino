@@ -623,7 +623,9 @@ char* DateTimeString(void)
 /**********************************************************************************************\
  * Print de welkomsttekst van de Nodo.
  \*********************************************************************************************/
-prog_char PROGMEM Text_welcome[] = "Nodo-Mega V3.8, Product=SWACNC-MEGA-R%03d, Home=%d, ThisUnit=%d";
+prog_char PROGMEM Text_welcome1[] = "Nodo Domotica controller V3.8 (Mega)";
+prog_char PROGMEM Text_welcome2[] = "(c) Copyright 2015 P.K.Tonkes. Licensed under GNU General Public License.";
+prog_char PROGMEM Text_welcome3[] = "Product=SWACNC-MEGA-R%03d, ThisUnit=%d, HWConfig=";
 void PrintWelcome(void)
   {
   char *TempString=(char*)malloc(128);
@@ -631,18 +633,19 @@ void PrintWelcome(void)
   // Print Welkomsttekst
   PrintString("",VALUE_ALL);
   PrintString(ProgmemString(Text_22),VALUE_ALL);
-  PrintString(ProgmemString(Text_01),VALUE_ALL);
-  PrintString(ProgmemString(Text_02),VALUE_ALL);
+  PrintString(ProgmemString(Text_welcome1),VALUE_ALL);
+  PrintString(ProgmemString(Text_welcome2),VALUE_ALL);
 
   // print versienummer, unit en indien gevuld het ID
-  sprintf(TempString,ProgmemString(Text_welcome), NODO_BUILD, HOME_NODO, Settings.Unit);
+  sprintf(TempString,ProgmemString(Text_welcome3), NODO_BUILD, Settings.Unit);
+  strcat(TempString,int2strhex(HW_Config));  
   if(Settings.ID[0])
     {
     strcat(TempString,", ID=");
     strcat(TempString,Settings.ID);
     }
-
   PrintString(TempString,VALUE_ALL);
+
 
   #if CFG_CLOCK
  // Geef datum en tijd weer.
@@ -1636,7 +1639,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
   return error;
   }
 
-#else
+#else // NODO_MEGA
 
 /**********************************************************************************************\
  * Print de welkomsttekst van de Nodo. ATMega328 variant
@@ -1646,12 +1649,14 @@ void PrintWelcome(void)
   {
   // Print Welkomsttekst
   Serial.println(F("!******************************************************************************!"));
-  Serial.println(F("Nodo Domotica controller (c) Copyright 2014 P.K.Tonkes."));
-  Serial.println(F("Licensed under GNU General Public License."));
-  Serial.print(F("Nodo-Small V3.8, Product=SWACNC-SMALL-R"));
+  Serial.println(F("Nodo Domotica controller V3.8 (Small)"));
+  Serial.println(F("(c) Copyright 2014 P.K.Tonkes. Licensed under GNU General Public License."));
+  Serial.print(F("Product=SWACNC-SMALL-R"));
   Serial.print(NODO_BUILD);
   Serial.print(F(", ThisUnit="));
-  Serial.println(Settings.Unit);
+  Serial.print(Settings.Unit);
+  Serial.print(F(", HWConfig=0x"));
+  Serial.println(HW_Config,HEX);
   Serial.println(F("!******************************************************************************!"));
   }
 

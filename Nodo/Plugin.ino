@@ -895,7 +895,6 @@ byte PluginCall(byte Function, struct NodoEventStruct *Event, char *str)
     case PLUGIN_ONCE_A_SECOND:
     case PLUGIN_EVENT_IN:
     case PLUGIN_EVENT_OUT:
-    case PLUGIN_I2C_IN:
     case PLUGIN_INIT:
       for(x=0; x<PLUGIN_MAX; x++)
         if(Plugin_id[x]!=0)

@@ -1,9 +1,3 @@
-#define I2C_BUFFERSIZE                32                                        
-
-#if CFG_I2C
-int  I2C_Received=0;                                                            // Bevat aantal binnengomen bytes op I2C;
-byte I2C_ReceiveBuffer[I2C_BUFFERSIZE+1];
-#endif
 
 unsigned long RepeatingTimer=0L;
 unsigned long EventHashPrevious=0,SignalHash,SignalHashPrevious=0L;
@@ -17,47 +11,35 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
 
   while(Timer>millis() || RepeatingTimer>millis())
     {
-    #if CFG_I2C
-    if(Focus==0 || Focus==VALUE_SOURCE_I2C)
+
+    #if NODO_PORT_NRF24L01
+    if(Focus==0 || Focus==VALUE_SOURCE_NRF24L01)
       {
-      if(I2C_Received)                                                          // I2C: *************** kijk of er data is binnengekomen op de I2C-bus **********************
+      if(Port_NRF24L01_EventReceived(Event))
         {
-        if(I2C_Received==sizeof(struct NodoEventStruct))                        // Er is I2C data binnengekomen maar weten nog niet of het een NodoEventStruct betreft.
-          {                                                                     // Het is een NodoEventStruct
-          memcpy(Event, &I2C_ReceiveBuffer, sizeof(struct NodoEventStruct));
-          if(Checksum(Event))
-            {   
-            bitWrite(HW_Config,HW_I2C,true);
-            I2C_Received=0;
-            Fetched=VALUE_SOURCE_I2C;
-            Focus=Fetched;
-            }
-          }
-        else
-          {                                                                     // Het is geen NodoEventStruct. In dit geval verwerken als reguliere commandline string.
-          PluginCall(PLUGIN_I2C_IN,0,0);
-          #if NODO_MEGA
-          I2C_ReceiveBuffer[I2C_Received]=0;                                    // Sluit buffer af als een string.
-    
-          for(int q=0;q<I2C_Received;q++)                                       // In een commando bevinden zich geen bijzondere tekens. Is dit wel het geval, dan string leeg maken.
-           if(!isprint(I2C_ReceiveBuffer[q]))
-             I2C_ReceiveBuffer[0]=0;
-            
-          if(I2C_ReceiveBuffer[0]!=0)                                           // Is er een geldige string binnen, dan verwerken als commandline.
-            ExecuteLine((char*)&I2C_ReceiveBuffer[0],VALUE_SOURCE_I2C);  
-          #endif
-    
-          Fetched=0;
-          I2C_Received=0;
-          }
+        Fetched=VALUE_SOURCE_NRF24L01;
+        Focus=Fetched;
         }
       }
     #endif
+
+    #if NODO_PORT_I2C
+    if(Focus==0 || Focus==VALUE_SOURCE_I2C)
+      {
+      if(Port_I2C_EventReceived(Event))
+        {
+        Fetched=VALUE_SOURCE_I2C;
+        Focus=Fetched;
+        }
+      }
+    #endif
+
+
   
     #if CFG_RAWSIGNAL
     if(Focus==0 || Focus==VALUE_SOURCE_IR)
       {
-      if(FetchSignal(PIN_IR_RX_DATA,LOW))                                       // IR: *************** kijk of er data start **********************
+      if(!bitRead(HW_Config,HW_PULSE) && FetchSignal(PIN_IR_RX_DATA,LOW))       // IR: *************** kijk of er data start **********************
         {
         if(AnalyzeRawSignal(Event))
           {
@@ -82,24 +64,6 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       }
     #endif
   
-// mvdbro R761 17-12-2014 Experimental support for Sendto within plugins
-    #ifdef NODO_BETA_PLUGIN_SENDTO
-    static byte evtLoopCounter=0;
-    evtLoopCounter++;
-    if(Focus==0 || Focus==255)
-    if (evtLoopCounter == 255)
-      for(byte x=0; x<PLUGIN_MAX; x++)
-        if(Plugin_id[x]==80 || Plugin_id[x]==83 || Plugin_id[x]==33)
-          if(Plugin_ptr[x](PLUGIN_SCAN_EVENT,Event,0))
-            {
-            Fetched=VALUE_SOURCE_RF;
-            Focus=255;
-            #if CFG_RAWSIGNAL
-            RawSignal.RepeatChecksum=0;
-            #endif
-            }
-    #endif
-// endof mvdbro
 
     if(Fetched)
       {

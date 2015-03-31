@@ -2384,7 +2384,7 @@ int str2weekday(char *Input)
 
 /*******************************************************************************************************\
  * Houdt bij welke Nodo's binnen bereik zijn en via welke Poort.
- * Als Port ongelijk aan reeds bekende poort, dan wordt de lijst geactualiseerd.
+ * Als Port ongelijk aan reeds bekende poort, dan wordt de lijst geactualiseerd (snelste heeft voorkeur).
  * Als Port=0 dan wordt alleen de poort teruggegeven als de Nodo bekend is.
  \*******************************************************************************************************/
 byte NodoOnline(byte Unit, byte Port)
@@ -2407,11 +2407,13 @@ byte NodoOnline(byte Unit, byte Port)
     {
     // Werk tabel bij. Voorkeurspoort voor communicatie.
 
-    if(Port==VALUE_SOURCE_I2C)
+    if(Port==VALUE_SOURCE_I2C)                                                   
       NodoOnlinePort[Unit]=VALUE_SOURCE_I2C;
-    else if(Port==VALUE_SOURCE_IR && NodoOnlinePort[Unit]!=VALUE_SOURCE_I2C)
+    else if(Port==VALUE_SOURCE_NRF24L01 && NodoOnlinePort[Unit]!=VALUE_SOURCE_I2C)
+      NodoOnlinePort[Unit]=VALUE_SOURCE_NRF24L01;
+    else if(Port==VALUE_SOURCE_IR       && NodoOnlinePort[Unit]!=VALUE_SOURCE_NRF24L01 && NodoOnlinePort[Unit]!=VALUE_SOURCE_I2C)
       NodoOnlinePort[Unit]=VALUE_SOURCE_IR;
-    else if(Port==VALUE_SOURCE_RF && NodoOnlinePort[Unit]!=VALUE_SOURCE_IR && NodoOnlinePort[Unit]!=VALUE_SOURCE_I2C)
+    else if(Port==VALUE_SOURCE_RF      && NodoOnlinePort[Unit]!=VALUE_SOURCE_NRF24L01 && NodoOnlinePort[Unit]!=VALUE_SOURCE_IR && NodoOnlinePort[Unit]!=VALUE_SOURCE_I2C)
       NodoOnlinePort[Unit]=VALUE_SOURCE_RF;
     }    
   return NodoOnlinePort[Unit];
@@ -2679,6 +2681,9 @@ void GoodNightSleepTight(void)
   // Spaar energie door de LED uit te zetten en de spanning naar de ontvanger.
   Led(0);     
   digitalWrite(PIN_RF_RX_VCC,LOW);                                            // Spanning naar de RF ontvanger uit
+  #if NODO_PORT_NRF24L01
+  Port_NRF24L01_Online(false);
+  #endif
 
   // Zzzzz.....
   while(SleepTimer--)
@@ -2687,6 +2692,12 @@ void GoodNightSleepTight(void)
   // Spanning weer op de RF ontvanger anders is de Nodo doof.
   digitalWrite(PIN_RF_RX_VCC,HIGH);                                             // Spanning naar de RF ontvanger weer aan
   Led(RED);     
+
+  #if NODO_PORT_NRF24L01
+  Port_NRF24L01_Online(true);
+  #endif
+
+
   }
 
 void wdsleep()

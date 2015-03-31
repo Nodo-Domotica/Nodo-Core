@@ -33,13 +33,6 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
 
   // loop de plugins langs voor eventuele afhandeling van dit event.
 
-// mvdbro R755 02-12-2014 Experimental support for Sendto within plugins
-  #ifdef NODO_BETA_PLUGIN_SENDTO
-    if(!UseRawSignal) PluginCall(PLUGIN_EVENT_OUT, ES,0);
-  #else
-    PluginCall(PLUGIN_EVENT_OUT, ES,0);
-  #endif
-// endof mvdbro
 
   #if CFG_RAWSIGNAL
   // Stuur afhankelijk van de instellingen het event door naar I2C, RF, IR. Eerst wordt het event geprint,daarna een korte wachttijd om
@@ -62,6 +55,31 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     }
   #endif
 
+  #if NODO_PORT_NRF24L01
+  if(bitRead(HW_Config,HW_PORT_NRF24L01))
+    {
+    Port_NRF24L01_EventSend(ES);
+    #if NODO_MEGA
+    ES->Port=VALUE_SOURCE_NRF24L01;
+    if(Display)PrintEvent(ES,VALUE_ALL);
+    #endif
+    }
+  #endif
+  
+  #if NODO_PORT_I2C
+  if(bitRead(HW_Config,HW_PORT_I2C))
+    {
+    Port_I2C_EventSend(ES);
+    #if NODO_MEGA
+    ES->Port=VALUE_SOURCE_I2C;
+    if(Display)PrintEvent(ES,VALUE_ALL);
+    #endif
+    }
+  #endif
+  
+
+
+
   #ifdef ethernetserver_h
   // Verstuur signaal als HTTP-event.
   if(bitRead(HW_Config,HW_ETHERNET))// Als Ethernet shield aanwezig.
@@ -75,24 +93,6 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     }
   #endif 
 
-  // Verstuur event via I2C
-  // LET OP:  Voor I2C geldt een beperking: Als een device een signaal verzendt, dan mag dit commando alleen er toe leiden dat het
-  //          RawSignal wordt verzonden via RF/IR. Anders zal het commando worden verstuurd over I2C waarna de Nodo's op I2C het commando nogmaal
-  //          zullen uitvoeren. Zo zal er een ongewenste loop ontstaan.
-  
-  #if CFG_I2C
-  if(!UseRawSignal)
-    {
-    if((Port==VALUE_SOURCE_I2C || Port==VALUE_ALL) && bitRead(HW_Config,HW_I2C))
-      {
-      ES->Port=VALUE_SOURCE_I2C;
-      #if NODO_MEGA
-      if(Display)PrintEvent(ES,VALUE_ALL);
-      #endif
-      SendI2C(ES);
-      }
-    }
-  #endif
   
   #if CFG_RAWSIGNAL
   // Verstuur signaal als RF
@@ -111,67 +111,13 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   }
   
 #if NODO_MEGA
-#endif
-
-
-//#######################################################################################################
-//##################################### Transmission: I2C  ##############################################
-//#######################################################################################################
-
-
-// Deze routine wordt vanuit de Wire library aangeroepen zodra er data op de I2C bus verschijnt die voor deze nodo bestemd is.
-// er vindt geen verdere verwerking plaats, slechts opslaan van het data. 
-#if CFG_I2C
-void ReceiveI2C(int n)
-  {
-  I2C_Received=0;
-  byte b;
-  
-  while(WireNodo.available()) // Haal de bytes op
-    {
-    b=WireNodo.read();
-    if(I2C_Received<I2C_BUFFERSIZE)
-      I2C_ReceiveBuffer[I2C_Received++]=b; 
-    }
-  }
-
-/**********************************************************************************************\
- * Verstuur een Event naar de I2C bus. 
- \*********************************************************************************************/
-void SendI2C(struct NodoEventStruct *EventBlock)
-  {  
-  byte x;
-  byte *B=(byte*)EventBlock;  
-
-  Checksum(EventBlock);                                                         // bereken checksum: crc-8 uit alle bytes in de struct.
-
-  for(int y=1;y<=UNIT_MAX;y++)
-    {            
-    // We sturen de events naar bekende Nodo's die zich op de I2C bus bevinden. Als deze Nodo later op de bus wordt aangesloten,
-    // dan zal Boot event van deze Nodo de andere uitnodigen om een bekendmaking te sturen zodat de lijst compleet is.
-    // Daarom wordt het Boot en POLL event naar alle I2C adressen gestuurd waar zich een Nodo op kan bevinden.
-    if((EventBlock->Type==NODO_TYPE_EVENT  && (EventBlock->Command==EVENT_BOOT)) || 
-      (EventBlock->Type==NODO_TYPE_SYSTEM &&  EventBlock->Command==SYSTEM_COMMAND_QUEUE_POLL) || 
-      NodoOnline(y,0)==VALUE_SOURCE_I2C)
-      {
-      WireNodo.beginTransmission(I2C_START_ADDRESS+y-1);
-      for(x=0;x<sizeof(struct NodoEventStruct);x++)
-        WireNodo.write(*(B+x));
-      WireNodo.endTransmission(false);                                          // verzend de data, sluit af maar geef de bus NIET vrij
-      }
-    }
-  WireNodo.endTransmission(true);                                               // Geef de bus vrij
-  }
-#endif // CFG_I2C
-
-#define IP_BUFFER_SIZE            256
-
-#if NODO_MEGA
 
 //#######################################################################################################
 //##################################### Transmission: HTTP  #############################################
 //#######################################################################################################
 #ifdef ethernetserver_h
+
+#define IP_BUFFER_SIZE            256
 
 boolean IPSend(char* URL, int Port, char* Request) // Nog niet operationeel. Test.
   {
@@ -692,7 +638,7 @@ void ExecuteIP(void)
   boolean RequestEvent=false;
   boolean ExecuteEvent=false;
   int x;
-  unsigned long TimeoutTimer=millis() + 60000; //
+  unsigned long TimeoutTimer=millis() + 60000;
  
   char *InputBuffer_IP = (char*) malloc(IP_BUFFER_SIZE);
   char *Event          = (char*) malloc(INPUT_LINE_SIZE);
