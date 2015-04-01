@@ -99,18 +99,18 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;        
                                                                                        
     case CMD_VARIABLE_PULSE_COUNT:
-      // Tellen van pulsen actief: enable IRQ behorende bij PIN_IR_RX_DATA
-      // Als er toch een reeks pulsen komt, dan wordt in FetchSignal() het tellen van pulsen gedisabled.
+      // Tellen van pulsen actief: enable IRQ behorende bij PIN_IR_RX_DATA. Zodra dit commando wordt gebruikt, wordt ontvangst van IR uitgeschakeld.
       bitWrite(HW_Config,HW_PULSE,true);
       attachInterrupt(PULSE_IRQ,PulseCounterISR,PULSE_TRANSITION); 
       TempFloat=PulseCount;
       if(!(UserVariableSet(EventToExecute->Par1,&TempFloat,true)))
         error=MESSAGE_VARIABLE_ERROR;
+      else
+        PulseCount=0L;
       break;         
 
     case CMD_VARIABLE_PULSE_TIME:
-      // Tellen van pulsen actief: enable IRQ behorende bij PIN_IR_RX_DATA
-      // Als er toch een reeks pulsen komt, dan wordt in FetchSignal() het tellen van pulsen gedisabled.
+      // Tellen van pulsen actief: enable IRQ behorende bij PIN_IR_RX_DATA. Zodra dit commando wordt gebruikt, wordt ontvangst van IR uitgeschakeld.
       bitWrite(HW_Config,HW_PULSE,true);
       attachInterrupt(PULSE_IRQ,PulseCounterISR,PULSE_TRANSITION); 
       TempFloat=PulseTime;

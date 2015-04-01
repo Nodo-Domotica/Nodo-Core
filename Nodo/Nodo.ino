@@ -43,7 +43,7 @@
 // Geef het volledige pad op. Let op: Bij Linux/Unix zijn de namen case-sensitive.
 // ============================================================================================================================
 
-#define SKETCH_PATH  D:\User\Paul\Bureaublad\Nodo
+#define SKETCH_PATH  D:\User\Paul\GitHub\Nodo-Core\Nodo
 
 // ============================================================================================================================
 // We kennen twee type Nodo's:
