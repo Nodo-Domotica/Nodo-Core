@@ -119,7 +119,7 @@ void ShowTestResults(void)
   Serial.print(F("RF_TX         = "));if(bitRead(HW_Config,HW_RF_TX)){Serial.println("Ok");}else{Serial.println("-");}
   Serial.print(F("IR_RX         = "));if(bitRead(HW_Config,HW_IR_RX)){Serial.println("Ok");}else{Serial.println("-");}
   Serial.print(F("IR_TX         = "));if(bitRead(HW_Config,HW_IR_TX)){Serial.println("Ok");}else{Serial.println("-");}
-  Serial.print(F("I2C           = "));if(bitRead(HW_Config,HW_I2C)){Serial.println("Ok");}else{Serial.println("-");}
+  Serial.print(F("I2C           = "));if(bitRead(HW_Config,HW_PORT_I2C)){Serial.println("Ok");}else{Serial.println("-");}
   Serial.print(F("Pulsecount    = "));if(bitRead(HW_Config,HW_PULSE)){Serial.println("Ok");}else{Serial.println("-");}
   Serial.print(F("WebApp        = "));if(bitRead(HW_Config,HW_WEBAPP)){Serial.println("Ok");}else{Serial.println("-");}
   Serial.print(F("WiredIn       = "));if(bitRead(HW_Config,HW_WIRED_IN)){Serial.println("Ok");}else{Serial.println("-");}

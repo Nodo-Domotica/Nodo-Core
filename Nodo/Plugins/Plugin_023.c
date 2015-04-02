@@ -18,7 +18,7 @@
  *
  * Nodo productnummer : Plugin-23 PWM Led-dimmer (SWACDE-23-V14)
  * Compatibiliteit    : Vanaf Nodo build nummer 645
- * Syntax             : RGBLed <Red>,<Green>,<Blue>,<FadeOn|FadeOff|VarOn|VarrOff> ==> Stuurt de RGB-led aan
+ * Syntax             : RGBLed <Red>,<Green>,<Blue>,<FadeOn|FadeOff|VarOn|VarOff> ==> Stuurt de RGB-led aan
  *                      RGBLedSend <NodoUnit>,<Red>,<Green>,<Blue>,<FadeOn|FadeOff|VarOn|VarrOff> ==> Verzendt event en stuurt
  *                      de RGB-led van een andere Nodo aan
  *                      
@@ -108,13 +108,13 @@ boolean FadeLed(void)
   if(RGBVariables)
     {
     TempFloat=OutputLevelR;
-    UserVariableSet(1,&TempFloat,false);
+    UserVariableSet(1,TempFloat,false);
 
     TempFloat=OutputLevelG;
-    UserVariableSet(2,&TempFloat,false);
+    UserVariableSet(2,TempFloat,false);
 
     TempFloat=OutputLevelB;
-    UserVariableSet(3,&TempFloat,false);
+    UserVariableSet(3,TempFloat,false);
 
     }
     
@@ -247,12 +247,12 @@ boolean Plugin_023(byte function, struct NodoEventStruct *event, char *string)
     case PLUGIN_COMMAND:
       {
       ClearEvent(&TempEvent);
-      TempEvent.DestinationUnit=event->Par1; 
-      TempEvent.Port      = VALUE_ALL;
-      TempEvent.Type      = NODO_TYPE_PLUGIN_EVENT;
-      TempEvent.Command   = PLUGIN_ID;
-      TempEvent.Par1      = event->Par1;
-      TempEvent.Par2      = event->Par2;
+      TempEvent.DestinationUnit = event->Par1; 
+      TempEvent.Port            = VALUE_ALL;
+      TempEvent.Type            = NODO_TYPE_PLUGIN_EVENT;
+      TempEvent.Command         = PLUGIN_ID;
+      TempEvent.Par1            = event->Par1;
+      TempEvent.Par2            = event->Par2;
       SendEvent(&TempEvent, false ,true);
       success=true;
       break;

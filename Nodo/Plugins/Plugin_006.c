@@ -95,6 +95,10 @@ boolean Plugin_006(byte function, struct NodoEventStruct *event, char *string)
         if(!dht_in)
           {
           delayMicroseconds(80);
+
+          UserVariablePayload(event->Par2,  0x1000); // Temperature
+          UserVariablePayload(event->Par2+1,0x1005); // Relative humidity %
+
           dht_in = digitalRead(DHT_Pin);
           if(dht_in)
             {
@@ -110,10 +114,10 @@ boolean Plugin_006(byte function, struct NodoEventStruct *event, char *string)
               #if PLUGIN_006_CORE==11                                           // Code door de DHT-11 variant
 
               TempFloat=float(dht_dat[2]);                                      // Temperatuur
-              UserVariableSet(event->Par2  ,&TempFloat,DHT_EVENT);
+              UserVariableSet(event->Par2  ,TempFloat,DHT_EVENT);
               
               TempFloat=float(dht_dat[0]);                                      // Vochtigheid
-              UserVariableSet(event->Par2+1,&TempFloat,DHT_EVENT);
+              UserVariableSet(event->Par2+1,TempFloat,DHT_EVENT);
               
               #endif
               
@@ -122,15 +126,15 @@ boolean Plugin_006(byte function, struct NodoEventStruct *event, char *string)
               if (dht_dat[2] & 0x80)                                            // negative temperature
                 {
                 TempFloat=-0.1 * word(dht_dat[2] & 0x7F, dht_dat[3]);
-                UserVariableSet(event->Par2,&TempFloat,DHT_EVENT);
+                UserVariableSet(event->Par2,TempFloat,DHT_EVENT);
                 }
               else
                 {
                 TempFloat=0.1 * word(dht_dat[2], dht_dat[3]);
-                UserVariableSet(event->Par2,&TempFloat,DHT_EVENT);
+                UserVariableSet(event->Par2,TempFloat,DHT_EVENT);
                 }
               TempFloat=word(dht_dat[0], dht_dat[1]) * 0.1;                     // vochtigheid
-              UserVariableSet(event->Par2+1,&TempFloat,DHT_EVENT);
+              UserVariableSet(event->Par2+1,TempFloat,DHT_EVENT);
               #endif
 
               success=true;

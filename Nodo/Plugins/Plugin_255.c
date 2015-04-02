@@ -189,16 +189,16 @@ boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
       // Als voorbeeld wordt hier variabele 5 gevuld met 123.45
       TempFloat=123.45;                                      // De TempFloat komt uit de Nodo-code en mag altijd voor dit doel worden gebruikt.
                                                              // Let wel op dat deze variabele op meerdere plaatsen gebruikt wordt en het hier dus echt om een tijdelijk
-                                                             // hulpmiddel gaat om de 'call-by-reference' te kunnen maken. Let op het '&' teken! 
-      UserVariableSet(5,&TempFloat,true);
+                                                             // hulpmiddel die binnen deze funktie gebruikt kan worden. 
+      UserVariableSet(5,TempFloat,true);
 
 
       // 1. Veranderen van UserVar[] mag uitsluitend plaats vinden met de volgende funktie:
       //
-      //    boolean UserVariableSet(byte VarNr, float *Var, boolean Process);
+      //    boolean UserVariableSet(byte VarNr, float Var, boolean Process);
       //
       //    VarNr        = Variabelenummer 1..USER_VARIABLES_MAX_NR
-      //    Var          = Inhoud van de variabele (call by reference !)
+      //    Var          = Inhoud van de variabele.
       //    Process      = true | false (true leidt tot genereren van een event)
       //    returnwaarde = true als waarde toegekend, false als geen geheugenplek meer vrij.
       //
@@ -207,7 +207,7 @@ boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
       //    boolean UserVariable(byte VarNr, float *Var);
       //
       //    VarNr        = Variabelenummer 1..USER_VARIABLES_MAX_NR
-      //    Var          = Inhoud van de variabele (call by reference !)
+      //    Var          = Inhoud van de variabele (call by reference !, let op het '&'-teken.
       //    returnwaarde = true als waarde bestond, false als variabele onbekend is. 
 
       

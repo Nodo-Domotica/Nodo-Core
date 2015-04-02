@@ -82,7 +82,7 @@ boolean Plugin_028(byte function, struct NodoEventStruct *event, char *string)
     {
       // Store countervalue into uservar and reset internal counter
       TempFloat=float(PulseCounter[event->Par1-1]);
-      UserVariableSet(event->Par2,&TempFloat,false);
+      UserVariableSet(event->Par2,TempFloat,false);
 
 
       PulseCounter[event->Par1-1]=0;
@@ -94,7 +94,7 @@ boolean Plugin_028(byte function, struct NodoEventStruct *event, char *string)
       if (PulseTimer[event->Par1-1] > 999999) PulseTimer[event->Par1-1] = 999999; // WebApp cannot handle larger values! (bug or by design?)
 
       TempFloat = float(PulseTimer[event->Par1-1]);
-      UserVariableSet(event->Par2+1,&TempFloat,true);
+      UserVariableSet(event->Par2+1,TempFloat,false);
       success=true;
       break;
     }

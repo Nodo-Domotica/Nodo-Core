@@ -105,7 +105,8 @@ boolean Plugin_002(byte function, struct NodoEventStruct *event, char *string)
         if(i>140)                                                               // Commando en Dim deel
           event->Par1++;                                                        // Dim level. +1 omdat gebruiker dim level begint bij één.
         else
-          event->Par1=((bitstream>>4)&0x01)?VALUE_ON:VALUE_OFF;                 // On/Off bit omzetten naar een Nodo waarde. 
+          event->Par1=((bitstream>>4)&0x01)?VALUE_ON:VALUE_OFF;                 // On/Off bit omzetten naar een Nodo waarde.
+           
         event->SourceUnit    = 0;                                               // Komt niet van een Nodo unit af, dus unit op nul zetten
         RawSignal.Repeats    = true;                                            // het is een herhalend signaal. Bij ontvangst herhalingen onderdrukken.
         event->Type          = NODO_TYPE_PLUGIN_EVENT;
@@ -120,6 +121,8 @@ boolean Plugin_002(byte function, struct NodoEventStruct *event, char *string)
       unsigned long bitstream=0L;
       byte i=1;
       byte x;                                                                   // aantal posities voor pulsen/spaces in RawSignal
+
+      if(event->Par1==0)event->Par1=VALUE_OFF;
         
       // bouw het KAKU adres op. Er zijn twee mogelijkheden: Een adres door de gebruiker opgegeven binnen het bereik van 0..255 of een lange hex-waarde
       if(event->Par2<=255)
@@ -203,7 +206,7 @@ boolean Plugin_002(byte function, struct NodoEventStruct *event, char *string)
             event->Par2=str2int(str);    
             if(GetArgv(string,str,3))
               {
-              // Vul Par1 met het KAKU commando. Dit kan zijn: VALUE_ON, VALUE_OFF, 1..16. Andere waarden zijn ongeldig.
+              // Vul Par1 met het KAKU commando. Dit kan zijn: VALUE_ON, VALUE_OFF, 0..16. Andere waarden zijn ongeldig.
               
               // haal uit de tweede parameter een 'On' of een 'Off'.
               if(event->Par1=str2cmd(str))
@@ -213,7 +216,7 @@ boolean Plugin_002(byte function, struct NodoEventStruct *event, char *string)
               else
                 {
                 event->Par1=str2int(str);                                       // zet string om in integer waarde
-                if(event->Par1>=1 && event->Par1<=16)                           // geldig dim bereik 1..16 ?
+                if(event->Par1>=0 && event->Par1<=16)                           // geldig dim bereik 0..16 ?
                    success=true;
                 }
               event->Command = PLUGIN_ID;                                       // Plugin nummer  

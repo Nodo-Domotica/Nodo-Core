@@ -46,7 +46,7 @@ boolean Plugin_005(byte function, struct NodoEventStruct *event, char *string)
   switch(function)
     {
     #ifdef PLUGIN_005_CORE
-      
+
     case PLUGIN_COMMAND:
       {
       int DSTemp;                           // Temperature in 16-bit Dallas format.
@@ -54,6 +54,8 @@ boolean Plugin_005(byte function, struct NodoEventStruct *event, char *string)
       byte var=event->Par2;                 // Variabele die gevuld moet worden.
       byte RelativePort=event->Par1-1;
       
+      UserVariablePayload(var,0x1000);
+
       // De Dallas sensor kan worden aangesloten op iedere digitale poort van de Arduino. In ons geval kiezen we er voor
       // om de sensor aan te sluiten op de Wired-Out poorten van de Nodo. Met Par2 is de Wired poort aangegeven.
       // 1 = WiredOut poort 1.  
@@ -88,7 +90,7 @@ boolean Plugin_005(byte function, struct NodoEventStruct *event, char *string)
       
         DSTemp = (ScratchPad[1] << 8) + ScratchPad[0];  
         TempFloat=float(DSTemp)*0.0625; // DS18B20 variant. Waarde terugstoppen in de variabele
-        success=UserVariableSet(var,&TempFloat,PLUGIN_05_EVENT);
+        success=UserVariableSet(var,TempFloat,PLUGIN_05_EVENT);
         }
       break;
       }

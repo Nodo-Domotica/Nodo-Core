@@ -77,19 +77,23 @@ Commit: 26-03-2015:
 - Nodo-Small: aantal variabele plaatsen 16
 - Aanpassen Plugin_22 (HC-SR04): Plugin returned an error melding opgelost.
 
-Commit:
+Commit 795:
 - PulseCount laat de Nodo in de IR-routine landen. Dit leidt tot missen events op rf.
 - NRF24L01 ondersteuning (incl. sleep mode en hardware SPI voor de Mega.)
+- Aanpassing plugin_02. Dimwaarde 0 schakelt lamp uit.
+- Toevoeging Payload aan variabelen. (toekomstig gebruik WebApp)
 
 Todo:
-- Na een Boot zenden de andere Nodo's geen ACK. Is dit een probleem?
+- I2C testen (i.v.m. aanpassing aan checksum berekening)
 - Plugins langslopen:
-  * Komen ze nog door de compiler
-  * SendEvent aanpassing
-  * UserVar[] aanpassing.    
+  * Plugin_008 (Alecto)    => Geen direct gebruik meer van UserVar[] maar variabelen aanpassen via UserVariableSet();
+  * Plugin_009 (Alecto V3) => Geen direct gebruik meer van UserVar[] maar variabelen aanpassen via UserVariableSet();
+  * Plugin_010 (Alecto V3) => Geen direct gebruik meer van UserVar[] maar variabelen aanpassen via UserVariableSet();
+  * Plugin_011 (OpenTherm) => Geen direct gebruik meer van UserVar[] maar variabelen aanpassen via UserVariableSet(); Tevens Payload definities voor de belangrijkste OT grootheden. 
+  * Plugin_012 (Oregon V2) => Payload definities voor de belangrijkste OBIS-codes 
+  * Plugin_024 (P1)          
 - RawsignalCleanup
-- RGBLedSend <unitnummer> geeft event zonder unitnummer. Dit is probleem voor de WebApp. 
-- NewKakusend met optie 0 werkt niet.
+- RGBLedSend <unitnummer> geeft event zonder unitnummer. Dit is probleem voor de WebApp. Navraag bij Martin. 
 
 
  

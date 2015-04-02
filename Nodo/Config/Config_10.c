@@ -23,6 +23,5 @@
 #define PLUGIN_001_CORE
 
 // NewKAKU : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno.
-#define PLUGIN_002
-#define PLUGIN_002_CORE
-
+#define PLUGIN_023
+#define PLUGIN_023_CORE

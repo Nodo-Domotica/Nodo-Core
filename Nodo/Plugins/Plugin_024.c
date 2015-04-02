@@ -158,6 +158,12 @@ boolean Plugin_024(byte function, struct NodoEventStruct *event, char *string)
     {
     #ifdef PLUGIN_024_CORE
                       
+    case PLUGIN_INIT:
+      {
+      
+      return true;
+      }
+
     case PLUGIN_COMMAND:
       {
       if(!P24_Initialized)P24Init();

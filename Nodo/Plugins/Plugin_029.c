@@ -59,7 +59,7 @@ boolean Plugin_029(byte function, struct NodoEventStruct *event, char *string)
       {
         WireNodo.read(); // Read older value first (stored in chip)
         TempFloat=(float)WireNodo.read();// now read actual value and store into Nodo var
-        UserVariableSet(event->Par2,&TempFloat,true);
+        UserVariableSet(event->Par2,TempFloat,true);
       }
       break;
       }

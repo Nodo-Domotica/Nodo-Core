@@ -9,6 +9,12 @@
 * een plugin dat kan worden gebruikt als je zelf een plugin wilt toevoegen aan de Nodo. 
 \*************************************************************************************************************************/
 
+#if PLUGIN_37_COMPATIBILITY
+float UserVar[USER_VARIABLES_MAX];
+#endif
+
+
+
 #define PLUGINFILE2(a, b) stringify(a/Plugins/b)
 #define PLUGINFILE(a, b) PLUGINFILE2(a, b)
 
@@ -888,6 +894,19 @@ void PluginInit(void)
 byte PluginCall(byte Function, struct NodoEventStruct *Event, char *str)
   {
   int x;
+
+
+  #if PLUGIN_37_COMPATIBILITY
+  if(Function==PLUGIN_ONCE_A_SECOND)
+    {
+    for(byte x=0;x<USER_VARIABLES_MAX;x++)
+      {
+      if(UserVar[USER_VARIABLES_MAX]!=0.0);
+        UserVariableSet(x+1,TempFloat,false);
+      }
+    }
+  #endif
+
 
   switch(Function)
     {

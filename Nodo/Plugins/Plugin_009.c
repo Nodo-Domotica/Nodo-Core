@@ -1,10 +1,4 @@
 // LET OP: Deze plugin moet nog worden aangepast voor het gebruik van globale variabelen en variabelenummers
-// hoger dan 15. Zolang deze plugin nog niet is aangepast moeten de onderstaande regels in worden opgenomen:
-
-#ifndef PLUGIN_37_COMPATIBILITY
-float UserVar[USER_VARIABLES_MAX];
-#define PLUGIN_37_COMPATIBILITY
-#endif
 
 // Deze regels maken dat deze plugin tijdelijk compatibel wordt met de Nodo release 3.8. Hiervoor zal
 // wat extra RAM en Programmageheugen nodig zijn. Om de plugin compatibel te maken met de 3.8 release

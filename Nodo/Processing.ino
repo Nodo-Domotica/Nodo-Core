@@ -78,8 +78,8 @@ byte ProcessEvent(struct NodoEventStruct *Event)
 
   // Events die nu nog de TRANSMISSION_SENDTO vlag hebben staan hoorden oorspronkelijk tot een reeks die verzonden is
   // met een SendTo. Deze events hebben hier geen betekenis en dus volledig negeren.
-  if(Continue && (Event->Flags & TRANSMISSION_SENDTO))
-    Continue=false;
+//???  if(Continue && (Event->Flags & TRANSMISSION_SENDTO))
+//???    Continue=false;
 
   // Als in het event een verzoek zit om een bevestiging te verzenden...
   if(Event->Flags & TRANSMISSION_CONFIRM)
@@ -95,7 +95,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
 
   #if NODO_MEGA  
   // Alleen weergeven zonder event af te handelen
-  if(Continue && (Event->Flags & TRANSMISSION_VIEW_SPECIAL))
+  if(Continue && (Event->Flags & TRANSMISSION_VIEW))
     {
     Continue=false;
     }
@@ -322,7 +322,7 @@ boolean QueueAdd(struct NodoEventStruct *Event)
     Queue[QueuePosition].Par2    = Event->Par2;
     QueuePosition++;           
 
-    // Een EventlistShow staat welliswaar in de queue, maar die kunnen we als het de informatie compleet is gelijk weergeven
+    // Een EventlistShow staat welliswaar in de queue, maar die kunnen we als de informatie compleet is gelijk weergeven
     // en vervolgens weer uit de queue halen. Deze voorziening is er alleen voor de Mega omdag een Small geen MMI heeft.
     #if NODO_MEGA
     char *TempString=(char*)malloc(INPUT_COMMAND_SIZE);
@@ -522,8 +522,8 @@ byte QueueSend(boolean fast)
         else
           Event.Flags = TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT;
 
-        if(!fast)
-          Event.Flags = Event.Flags | TRANSMISSION_SENDTO;
+//???        if(!fast)
+//???           Event.Flags = Event.Flags | TRANSMISSION_SENDTO;
           
         SendEvent(&Event,false,false);
         }

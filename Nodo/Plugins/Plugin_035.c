@@ -52,7 +52,7 @@ boolean Plugin_035(byte function, struct NodoEventStruct *event, char *string)
           Serial.println("Pinging...");
 
           TempFloat=0;
-          UserVariableSet(event->Par1,&TempFloat,true);
+          UserVariableSet(event->Par1,TempFloat,true);
 
 
           uint8_t IPaddress[4];
@@ -113,7 +113,7 @@ boolean Plugin_035(byte function, struct NodoEventStruct *event, char *string)
               Serial.println("OK");
 
               TempFloat=1;
-              UserVariableSet(event->Par1,&TempFloat,true);
+              UserVariableSet(event->Par1,TempFloat,true);
             }
           else 
             Serial.println("Not OK");

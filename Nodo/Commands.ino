@@ -337,16 +337,15 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
             {
             SendEvent(EventToExecute,false,false);
 
-            TempEvent.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_BUSY;
+            TempEvent.Flags=TRANSMISSION_VIEW_EVENTLIST | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_BUSY;
             TempEvent.Port=z;
             TempEvent.DestinationUnit=w;
             SendEvent(&TempEvent,false,false);
     
-    
             if(x==y)                                                            // Als laatste regel uit de eventlist, dan de ether weer vrijgeven. 
-              TempEvent2.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE ; 
+              TempEvent2.Flags=TRANSMISSION_VIEW_EVENTLIST | TRANSMISSION_QUEUE ; 
             else
-              TempEvent2.Flags=TRANSMISSION_VIEW_SPECIAL | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_BUSY;
+              TempEvent2.Flags=TRANSMISSION_VIEW_EVENTLIST | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_BUSY;
 
             TempEvent2.Port=z;
             TempEvent2.DestinationUnit=w;

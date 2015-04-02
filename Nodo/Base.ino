@@ -7,6 +7,7 @@
 // bepaalde voorzieningen niet gebruikt. Dit biedt ruimte voor grotere plugins. Deze defines kunnen 
 // worden overruled in een config_xx.c bestand. Enkele settings werken NIET voor een ATMega2560 Nodo.
 
+#define PLUGIN_37_COMPATIBILITY         true                                    // Cmpatibiliteit met plugins die de variabelen tabel UserVar[] nog gebruiken.
 #define CFG_CLOCK                       true                                    // false=geen code voor Real Time Clock mee compileren. (Op Mega is meecompileren van Clock verplicht)
 #define CFG_SOUND                       true                                    // false=geen luidspreker in gebruik.
 #define CFG_WIRED                       true                                    // false=wired voorzieningen uitgeschakeld
@@ -20,7 +21,7 @@
 // Wijzigen van onderstaande includes vallen buiten de policy van het Nodo concept dat de gebruiker zelf de Nodo-code moet aanpassen.
 // Dus: Geen support en geen garantie dat de Nodo stabiel funktioneert!
 
-#define NODO_BUILD                       788                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       795                                    // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                15                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1                                    // Unit nummer van deze Nodo. Wijzigen heeft pas effect na commando 'Reset'.
@@ -623,15 +624,12 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 
 // In het transport deel van een Nodo event kunnen zich de volgende vlaggen bevinden:
 #define TRANSMISSION_BUSY                                1
-#define TRANSMISSION_RUBBERDUCK                        128
 #define TRANSMISSION_QUEUE                               2                      // Event maakt deel uit van een reeks die in de queue geplaatst moet worden
 #define TRANSMISSION_QUEUE_NEXT                          4                      // Event maakt deel uit van een reeks die in de queue geplaatst moet worden
-#define TRANSMISSION_SENDTO                              8                      // Aan deze vlag kunnen we herkennen dat een event deel uit maakt van een SendTo reeks. 
-#define TRANSMISSION_CONFIRM                            16                      // Verzoek aan master om bevestiging te sturen na ontvangst.
-#define TRANSMISSION_VIEW                               32                      // Uitsluitend het event weergeven, niet uitvoeren
-#define TRANSMISSION_VIEW_SPECIAL                       64                      // Uitsluitend het event weergeven, niet uitvoeren
+#define TRANSMISSION_CONFIRM                             8                      // Verzoek aan master om bevestiging te sturen na ontvangst.
+#define TRANSMISSION_VIEW                               16                      // Uitsluitend het event weergeven, niet uitvoeren
+#define TRANSMISSION_VIEW_EVENTLIST                     32                      // Uitsluitend het event weergeven, niet uitvoeren
 
-// Er zijn een aantal type Nodo events die op verschillende wijze worden behandeld:
 #define NODO_TYPE_EVENT                                  1
 #define NODO_TYPE_COMMAND                                2
 #define NODO_TYPE_SYSTEM                                 3               
@@ -641,12 +639,9 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 
 // De Nodo kent naast gebruikers commando's en events eveneens Nodo interne events
 #define SYSTEM_COMMAND_CONFIRMED                         1
-#define SYSTEM_COMMAND_RTS                               2
-#define SYSTEM_COMMAND_CTS                               3
-#define SYSTEM_COMMAND_QUEUE_SENDTO                      4                      // Dit is aankondiging reeks, dus niet het user comando "SendTo".
-#define SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW              5                      // Dit is aankondiging reeks, dus niet het user comando "EventlistShow".
-#define SYSTEM_COMMAND_QUEUE_EVENTLIST_WRITE             6                      // Dit is aankondiging reeks, dus niet het user comando "EventlistShow".
-#define SYSTEM_COMMAND_QUEUE_POLL                        7                      // Verzoek om een poll naar een andere Nodo die moet worden beantwoord.
+#define SYSTEM_COMMAND_QUEUE_SENDTO                      2                      // Dit is aankondiging reeks, dus niet het user comando "SendTo".
+#define SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW              3                      // Dit is aankondiging reeks, dus niet het user comando "EventlistShow".
+#define SYSTEM_COMMAND_QUEUE_EVENTLIST_WRITE             4                      // Dit is aankondiging reeks, dus niet het user comando "EventlistShow".
 
 
 //****************************************************************************************************************************************
