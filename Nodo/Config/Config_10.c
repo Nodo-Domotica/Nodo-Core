@@ -18,4 +18,11 @@
 #define CFG_RAWSIGNAL                   true                                    // false=Rawsignal niet meecompileren. LET OP: Zowel RF als IR communicatie alsmede diverse plugins gebruiken RawSignal voorzieningen. Alleen voor de Nodo-Small
 #define NODO_PORT_NRF24L01              true                                    // true=Ondersteuning voor tranciever module NRF24L01
 
+// Kaku : Klik-Aan-Klik-Uit
+#define PLUGIN_001
+#define PLUGIN_001_CORE
+
+// NewKAKU : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno.
+#define PLUGIN_002
+#define PLUGIN_002_CORE
 

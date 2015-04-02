@@ -108,13 +108,14 @@ byte ProcessEvent(struct NodoEventStruct *Event)
         RawSignalWrite(Event->Par2);
   #endif    
 
-  if(Event->Command==EVENT_VARIABLE && Event->Type==NODO_TYPE_EVENT && Event->SourceUnit!=Settings.Unit)            // Als er een Variabele event is binnengekomen
-    if(UserVariableGlobal(Event->Par1,false,false))                             // en op deze Nodo is het een globale variabele
-      {
-      TempFloat=ul2float(Event->Par2);
-      UserVariableSet(Event->Par1,&TempFloat,false);                            // Dan de variabele actualiseren
-      }
-
+  if(Event->Command==EVENT_VARIABLE && Event->Type==NODO_TYPE_EVENT && Event->SourceUnit!=Settings.Unit)            
+    {                                                                           // Als er een Variabele event is binnengekomen
+    x=UserVariable(Event->Par1,0);
+    if(x!=-1)
+      if(UserVarGlobal[x])                                                      // en op deze Nodo is het een globale variabele
+        UserVariableSet(Event->Par1,ul2float(Event->Par2),false);               // Dan de variabele actualiseren
+    }
+    
   if(Continue && error==0)
     {
     #if NODO_MEGA

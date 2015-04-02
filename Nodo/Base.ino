@@ -175,8 +175,8 @@ byte dummy=1;                                                                   
 #define CMD_TIMER_RANDOM                106
 #define CMD_TIMER_SET                   107
 #define CMD_TIMER_SET_VARIABLE          108
-#define VALUE_UNIT                      109
-#define CMD_UNIT_SET                    110
+#define CMD_109                         109                                     //??? Reserve
+#define CMD_VARIABLE_PAYLOAD            110
 #define CMD_VARIABLE_DEC                111
 #define CMD_VARIABLE_INC                112
 #define CMD_VARIABLE_PULSE_COUNT        113
@@ -214,8 +214,8 @@ byte dummy=1;                                                                   
 #define CMD_WAIT_FREE_NODO              145
 #define CMD_RES_146                     146                                     // ??? reserve
 #define VALUE_TOGGLE                    147
-#define FUTURE148                       148                                     // let op: Moet groter zijn dan 16 i.v.m. compatibiliteit enkele plugins
-#define FUTURE149                       149                                     // let op: Moet groter zijn dan 16 i.v.m. compatibiliteit enkele plugins
+#define VALUE_UNIT                      148                                     
+#define CMD_UNIT_SET                    149
 #define COMMAND_MAX                     149                                     // hoogste commando
 
 #define MESSAGE_OK                      0
@@ -357,8 +357,8 @@ prog_char PROGMEM Cmd_105[]="Timer";
 prog_char PROGMEM Cmd_106[]="TimerSetRandom";
 prog_char PROGMEM Cmd_107[]="TimerSet";
 prog_char PROGMEM Cmd_108[]="TimerSetVariable";
-prog_char PROGMEM Cmd_109[]="Unit";
-prog_char PROGMEM Cmd_110[]="UnitSet";
+prog_char PROGMEM Cmd_109[]="";
+prog_char PROGMEM Cmd_110[]="VariablePayload";
 prog_char PROGMEM Cmd_111[]="VariableDec";
 prog_char PROGMEM Cmd_112[]="VariableInc";
 prog_char PROGMEM Cmd_113[]="VariablePulseCount";
@@ -396,8 +396,8 @@ prog_char PROGMEM Cmd_144[]="Fast";
 prog_char PROGMEM Cmd_145[]="WaitFreeNodo"; 
 prog_char PROGMEM Cmd_146[]="";                                                 // Future
 prog_char PROGMEM Cmd_147[]="Toggle"; 
-prog_char PROGMEM Cmd_148[]=""; 
-prog_char PROGMEM Cmd_149[]="";
+prog_char PROGMEM Cmd_148[]="Unit"; 
+prog_char PROGMEM Cmd_149[]="UnitSet";
 
 
 // tabel die refereert aan de commando strings
@@ -449,6 +449,7 @@ PROGMEM const char *MessageText_tabel[]={Msg_0,Msg_1,Msg_2,Msg_3,Msg_4,Msg_5,Msg
 prog_char PROGMEM Text_03[] = "Enter your password: ";
 prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSatWrkWnd";
 prog_char PROGMEM Text_05[] = "0123456789abcdef";
+prog_char PROGMEM Text_06[] = "; Payload=";
 prog_char PROGMEM Text_07[] = "Waiting...";
 prog_char PROGMEM Text_08[] = "RAWSIGN";                                        // Directory op de SDCard voor opslag RawSignal
 prog_char PROGMEM Text_09[] = "(Last 100 KByte)";
@@ -529,7 +530,7 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define BIC_HWMESH_NES_V1X           1                                          // Nodo Ethernet Shield V1.x met Aurel tranceiver. Vereist speciale pulse op PIN_BSF_0 voor omschakelen tussen Rx en Tx.
 
 #if NODO_MEGA // Definities voor de Nodo-Mega variant.
-#define USER_VARIABLES_MAX          32                                        // aantal beschikbare gebruikersvariabelen voor de user.
+#define USER_VARIABLES_MAX          32                                          // aantal beschikbare gebruikersvariabelen voor de user.
 #define EVENT_QUEUE_MAX             16                                          // maximaal aantal plaatsen in de queue.
 #define INPUT_LINE_SIZE            128                                          // Buffer waar de karakters van de seriele/IP poort in worden opgeslagen.
 #define INPUT_COMMAND_SIZE          80                                          // Maximaal aantal tekens waar een commando uit kan bestaan.
@@ -651,20 +652,31 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 //****************************************************************************************************************************************
 
 
+#if CFG_RAWSIGNAL
+struct RawSignalStruct                                                          // Variabelen geplaatst in struct zodat deze later eenvoudig kunnen worden weggeschreven naar SDCard
+  {
+  byte Source;                                                                  // Bron waar het signaal op is binnengekomen.
+  int  Number;                                                                  // aantal bits, maal twee omdat iedere bit een mark en een space heeft.
+  byte Repeats;                                                                 // Aantal maal dat de pulsreeks verzonden moet worden bij een zendactie.
+  byte Delay;                                                                   // Pauze in ms. na verzenden van een enkele pulsenreeks
+  byte Multiply;                                                                // Pulses[] * Multiply is de echte tijd van een puls in microseconden
+  boolean RepeatChecksum;                                                       // Als deze vlag staat moet er eentweede signaal als checksum binnenkomen om een geldig event te zijn. 
+  unsigned long Time;                                                           // Tijdstempel wanneer signaal is binnengekomen (millis())
+  byte Pulses[RAW_BUFFER_SIZE+2];                                               // Tabel met de gemeten pulsen in microseconden gedeeld door RawSignal.Multiply. Dit scheelt helft aan RAM geheugen.
+                                                                                // Om legacy redenen zit de eerste puls in element 1. Element 0 wordt dus niet gebruikt.
+  }RawSignal={0,0,0,0,0,0,0L};
+#endif // CFG_RAWSIGNAL
+
 struct SettingsStruct
   {
-  byte    Unit; // Max 5 bits in gebruik = 1..31
+  byte    Unit;
   byte    WaitFreeNodo;
   byte    TransmitIR;
   byte    TransmitRF;
   byte    RawSignalReceive;
   byte    RawSignalSample;
-  byte    UserVarGlobal[USER_VARIABLES_MAX];
-  
-  #if CFG_WIRED
   int     WiredInputThreshold[WIRED_PORTS], WiredInputSmittTrigger[WIRED_PORTS];
   byte    WiredInputPullUp[WIRED_PORTS];
-  #endif
   
   #if NODO_MEGA
   unsigned long Alarm[ALARM_MAX];                                               // Instelbaar alarm
@@ -717,21 +729,35 @@ struct SettingsStruct
 struct NodoEventStruct
   {
   // Event deel
-  byte Type;
-  byte Command;
-  byte Par1;
+  uint8_t Type;
+  uint8_t Command;
+  uint8_t Par1;
   unsigned long Par2;
-
+  uint16_t Payload;
+    
   // Transmissie deel
-  byte SourceUnit;
-  byte DestinationUnit;
-  byte Flags;
-  byte Port;
-  byte Direction;
-  byte Version;
-  byte Checksum;
+  uint8_t SourceUnit;
+  uint8_t DestinationUnit;
+  uint8_t Flags;
+  uint8_t Port;
+  uint8_t Direction;
   };
 
+struct TransmissionStruct
+  {
+  // Event deel
+  uint8_t Type;
+  uint8_t Command;
+  uint8_t Par1;
+  unsigned long Par2;
+  uint16_t Payload;
+    
+  // Transmissie deel
+  uint8_t SourceUnit;
+  uint8_t DestinationUnit;
+  uint8_t Flags;
+  uint8_t Checksum;
+  };
 
 // Van alle devices die worden mee gecompileerd, worden in een tabel de adressen opgeslagen zodat
 // hier naar toe gesprongen kan worden
@@ -760,6 +786,8 @@ int EventlistMax=0;                                                             
 float TempFloat,TempFloat2;                                                     // globale floats die gebruikt mogen worden als een tijdelijke variabele
 float UserVarValue[USER_VARIABLES_MAX];                                         // inhoudelijke waarde van de gebruikersvariabele.
 byte UserVarKey[USER_VARIABLES_MAX];                                            // Nummer/sleutel van de gebruikersvariabelen
+boolean UserVarGlobal[USER_VARIABLES_MAX];
+uint16_t UserVarPayload[USER_VARIABLES_MAX];                                    // Extra payload informatie behorende bij een variabele.
 
 #if CFG_WIRED
 boolean WiredInputStatus[WIRED_PORTS];                                          // Status van de WiredIn worden hierin opgeslagen.
@@ -793,21 +821,6 @@ byte ClientIPAddress[4];                                                        
 byte IPClientIP[4];                                                             // IP adres van de Host
 #endif // NODO_MEGA
 #endif // WIRED
-
-#if CFG_RAWSIGNAL
-struct RawSignalStruct                                                          // Variabelen geplaatst in struct zodat deze later eenvoudig kunnen worden weggeschreven naar SDCard
-  {
-  byte Source;                                                                  // Bron waar het signaal op is binnengekomen.
-  int  Number;                                                                  // aantal bits, maal twee omdat iedere bit een mark en een space heeft.
-  byte Repeats;                                                                 // Aantal maal dat de pulsreeks verzonden moet worden bij een zendactie.
-  byte Delay;                                                                   // Pauze in ms. na verzenden van Ã©Ã©n enkele pulsenreeks
-  byte Multiply;                                                                // Pulses[] * Multiply is de echte tijd van een puls in microseconden
-  boolean RepeatChecksum;                                                       // Als deze vlag staat moet er eentweede signaal als checksum binnenkomen om een geldig event te zijn. 
-  unsigned long Time;                                                           // Tijdstempel wanneer signaal is binnengekomen (millis())
-  byte Pulses[RAW_BUFFER_SIZE+2];                                               // Tabel met de gemeten pulsen in microseconden gedeeld door RawSignal.Multiply. Dit scheelt helft aan RAM geheugen.
-                                                                                // Om legacy redenen zit de eerste puls in element 1. Element 0 wordt dus niet gebruikt.
-  }RawSignal={0,0,0,0,0,0,0L};
-#endif
 
 void setup() 
   {    

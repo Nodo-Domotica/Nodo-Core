@@ -54,8 +54,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;                  
 
     case CMD_VARIABLE_SET_WIRED_ANALOG:
-      TempFloat=analogRead(PIN_WIRED_IN_1+EventToExecute->Par2-1);
-      if(!(UserVariableSet(EventToExecute->Par1,&TempFloat,true)))
+      if(UserVariableSet(EventToExecute->Par1,analogRead(PIN_WIRED_IN_1+EventToExecute->Par2-1),true)==-1)
         error=MESSAGE_VARIABLE_ERROR;
       break;
     #endif //CFG_WIRED
@@ -63,38 +62,42 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
     case CMD_VARIABLE_TOGGLE:
       UserVariable(EventToExecute->Par1,&TempFloat);
       TempFloat=TempFloat>0.5?0.0:1.0;
-      if(!UserVariableSet(EventToExecute->Par1,&TempFloat,true))
+      if(UserVariableSet(EventToExecute->Par1,TempFloat,true)==-1)
         error=MESSAGE_VARIABLE_ERROR;
       break;         
 
     case CMD_VARIABLE_INC:
       UserVariable(EventToExecute->Par1,&TempFloat);
       TempFloat+=ul2float(EventToExecute->Par2);
-      if(!UserVariableSet(EventToExecute->Par1,&TempFloat,true))
+      if(UserVariableSet(EventToExecute->Par1,TempFloat,true)==-1)
         error=MESSAGE_VARIABLE_ERROR;
       break;         
 
     case CMD_VARIABLE_DEC:
       UserVariable(EventToExecute->Par1,&TempFloat);
       TempFloat-=ul2float(EventToExecute->Par2);
-      if(!UserVariableSet(EventToExecute->Par1,&TempFloat,true))
+      if(UserVariableSet(EventToExecute->Par1,TempFloat,true)==-1)
         error=MESSAGE_VARIABLE_ERROR;
       break;         
 
     case CMD_VARIABLE_SET:
-      TempFloat=ul2float(EventToExecute->Par2);
-      if(!UserVariableSet(EventToExecute->Par1,&TempFloat,true))
+      if(UserVariableSet(EventToExecute->Par1,ul2float(EventToExecute->Par2),true)==-1)
+        error=MESSAGE_VARIABLE_ERROR;
+      break;         
+
+    case CMD_VARIABLE_PAYLOAD:
+      if(!UserVariablePayload(EventToExecute->Par1,EventToExecute->Par2))
         error=MESSAGE_VARIABLE_ERROR;
       break;         
 
     case CMD_VARIABLE_VARIABLE:
       if(UserVariable(EventToExecute->Par2,&TempFloat))
-        if(!UserVariableSet(EventToExecute->Par1,&TempFloat,true))
+        if(UserVariableSet(EventToExecute->Par1,TempFloat,true)==-1)
           error=MESSAGE_VARIABLE_ERROR;
       break;        
 
     case CMD_VARIABLE_GLOBAL:
-      if(!UserVariableGlobal(EventToExecute->Par1,true,EventToExecute->Par2==VALUE_ON))
+      if(!UserVariableGlobal(EventToExecute->Par1,EventToExecute->Par2==VALUE_ON))
         error=MESSAGE_VARIABLE_ERROR;
       break;        
                                                                                        
@@ -102,8 +105,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       // Tellen van pulsen actief: enable IRQ behorende bij PIN_IR_RX_DATA. Zodra dit commando wordt gebruikt, wordt ontvangst van IR uitgeschakeld.
       bitWrite(HW_Config,HW_PULSE,true);
       attachInterrupt(PULSE_IRQ,PulseCounterISR,PULSE_TRANSITION); 
-      TempFloat=PulseCount;
-      if(!(UserVariableSet(EventToExecute->Par1,&TempFloat,true)))
+      if(UserVariableSet(EventToExecute->Par1,(float)PulseCount,true)==-1)
         error=MESSAGE_VARIABLE_ERROR;
       else
         PulseCount=0L;
@@ -113,8 +115,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       // Tellen van pulsen actief: enable IRQ behorende bij PIN_IR_RX_DATA. Zodra dit commando wordt gebruikt, wordt ontvangst van IR uitgeschakeld.
       bitWrite(HW_Config,HW_PULSE,true);
       attachInterrupt(PULSE_IRQ,PulseCounterISR,PULSE_TRANSITION); 
-      TempFloat=PulseTime;
-      if(!(UserVariableSet(EventToExecute->Par1,&TempFloat,true)))
+      if(UserVariableSet(EventToExecute->Par1,(float)PulseTime,true)==-1)
         error=MESSAGE_VARIABLE_ERROR;
       break;         
 
@@ -177,6 +178,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         TempEvent.Direction=VALUE_DIRECTION_OUTPUT;
         TempEvent.Par1=EventToExecute->Par1;
         TempEvent.Par2=float2ul(TempFloat);
+        TempEvent.Payload=a;
         SendEvent(&TempEvent, false, true);
         }
       else
@@ -603,23 +605,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
 
     case CMD_RAWSIGNAL_SEND:
-      if(RawSignal.Repeats==0)
-        RawSignal.Repeats=RAWSIGNAL_TX_REPEATS;
-      RawSignal.Delay=RAWSIGNAL_TX_DELAY;
-      RawSignal.Source=EventToExecute->Par1;
-
-      if(EventToExecute->Par2!=0)
-        error=FileExecute(ProgmemString(Text_08),int2strhex(EventToExecute->Par2)+2,"DAT", false, 0);
-      
-      if(!error)
-        {        
-        TempEvent.Port=EventToExecute->Par1;
-        TempEvent.Type=NODO_TYPE_RAWSIGNAL;
-        TempEvent.Command=EVENT_RAWSIGNAL;
-        TempEvent.Par1=EventToExecute->Par1;
-        TempEvent.Par2=EventToExecute->Par2;
-        SendEvent(&TempEvent, true ,true);
-        }
+      error=CommandRawSignalSend(EventToExecute->Par1,EventToExecute->Par2);
       break;
 
     case CMD_LOG: 

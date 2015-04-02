@@ -38,6 +38,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   // Stuur afhankelijk van de instellingen het event door naar I2C, RF, IR. Eerst wordt het event geprint,daarna een korte wachttijd om
   // te zorgen dat er een minimale wachttijd tussen de signlen zit. Tot slot wordt het signaal verzonden.
 
+
   if(!UseRawSignal)
     Nodo_2_RawSignal(ES);
 
@@ -780,24 +781,4 @@ void ExecuteIP(void)
 #endif //ethernetserver_h
 #endif //MEGA
 
-
-/*********************************************************************************************\
- * Deze funktie berekend de CRC-8 checksum uit van een NodoEventStruct. 
- * Als de Checksum al correct gevuld was wordt er een true teruggegeven. Was dit niet het geval
- * dan wordt NodoEventStruct.Checksum gevuld met de juiste waarde en een false teruggegeven.
- \*********************************************************************************************/
-
-boolean Checksum(NodoEventStruct *event)
-  {
-  byte OldChecksum=event->Checksum;
-  byte NewChecksum=NODO_VERSION_MAJOR;  // Verwerk versie in checksum om communicatie tussen verschillende versies te voorkomen
-
-  event->Checksum=0; // anders levert de beginsituatie een andere checksum op
-
-  for(int x=0;x<sizeof(struct NodoEventStruct);x++)
-    NewChecksum^(*((byte*)event+x)); 
-
-  event->Checksum=NewChecksum;
-  return(OldChecksum==NewChecksum);
-  }
 

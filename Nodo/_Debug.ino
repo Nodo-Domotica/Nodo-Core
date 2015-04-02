@@ -8,7 +8,6 @@ void PrintNodoEvent(char* str, struct NodoEventStruct *Event)
   Serial.print(F(", Command="));          Serial.print(Event->Command);
   Serial.print(F(", Par1="));             Serial.print(Event->Par1);
   Serial.print(F(", Par2=0x"));           Serial.print(Event->Par2,HEX);
-  Serial.print(F(", Version=0x"));        Serial.print(Event->Version);
   Serial.print(F(" => Port="));           Serial.print(Event->Port);
   Serial.print(F(", Direction="));        Serial.print(Event->Direction);
   Serial.print(F(", Flags="));            Serial.print(Event->Flags,BIN);

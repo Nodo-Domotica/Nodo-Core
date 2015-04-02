@@ -34,7 +34,6 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       }
     #endif
 
-
   
     #if CFG_RAWSIGNAL
     if(Focus==0 || Focus==VALUE_SOURCE_IR)
@@ -96,26 +95,10 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       // Serial.print(F("DEBUG: Fetched. SignalHash="));Serial.print(SignalHash,HEX);Serial.print(F(", RawSignal.Repeats="));Serial.print(RawSignal.Repeats);Serial.print(F(", RawSignal.RepeatChecksum="));Serial.print(RawSignal.RepeatChecksum);Serial.print(F(", RepeatingTimer>millis()="));Serial.print(RepeatingTimer>millis());Serial.print(F(", Fetched="));Serial.println(Fetched);
 
       SignalHashPrevious=SignalHash;
-      /// if (Fetched==3) RepeatingTimer=millis()+SIGNAL_REPEAT_TIME; // ??? Voorstel Martinus 14-03-2015 Testen.
       RepeatingTimer=millis()+SIGNAL_REPEAT_TIME; 
       
       if(Fetched)
         {
-        // Nodo event: Toets of de versienummers corresponderen. Is dit niet het geval, dan zullen er verwerkingsfouten optreden! Dan een waarschuwing tonen en geen verdere verwerking.
-        // Er is een uitzondering: De eerste commando/eventnummers zijn stabiel en mogen van oudere versienummers zijn.
-        if(Event->Version!=0 && Event->Version!=NODO_VERSION_MINOR && Event->Command>COMMAND_MAX_FIXED)
-          {
-          #if NODO_MEGA
-          Event->Command=CMD_DUMMY;
-          Event->Type=NODO_TYPE_EVENT;
-          Event->Par1=0;
-          Event->Par2=0;
-          PrintEvent(Event,VALUE_ALL);
-          RaiseMessage(MESSAGE_VERSION_ERROR,Event->Version);
-          #endif
-          return false;
-          }     
-    
         // als het informatie uitwisseling tussen Nodo's betreft...
         if(Event->Type==NODO_TYPE_EVENT || Event->Type==NODO_TYPE_COMMAND || Event->Type==NODO_TYPE_SYSTEM)
           {

@@ -568,8 +568,14 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
   Event2str(Event,TmpStr);
   if(Settings.Alias==VALUE_ON)
     Alias(TmpStr,false);
-
   strcat(StringToPrint, TmpStr);
+ 
+  // Payload
+  if(Event->Payload!=0)
+    {
+    strcat(StringToPrint, ProgmemString(Text_06));
+    strcat(StringToPrint, int2strhex(Event->Payload));
+    }
 
   // WEERGEVEN OP TERMINAL
   PrintString(StringToPrint,Port);   // stuur de regel naar Serial en/of naar Ethernet
@@ -726,20 +732,20 @@ void PrintString(char* LineToPrint, byte Port)
 #define PAR1_TEXT          3
 #define PAR1_MESSAGE       4
 #define PAR2_INT           5
-#define PAR2_TEXT          6
-#define PAR2_FLOAT         7
+#define PAR2_FLOAT         6
+#define PAR2_TEXT          7
 #define PAR2_INT_HEX       8
 #define PAR2_DIM           9
 #define PAR2_WDAY         10
-#define PAR2_TIME         11
-#define PAR2_DATE         12
-#define PAR2_ALARMENABLED 13
-#define PAR2_INT8         14
-#define PAR2_HASHCODE     15
-#define PAR3_INT          16
-#define PAR4_INT          17
-#define PAR5_INT          18
-#define PAR3_TEXT         19
+#define PAR2_DATE         11
+#define PAR2_ALARMENABLED 12
+#define PAR2_INT8         13
+#define PAR2_HASHCODE     14
+#define PAR3_INT          15
+#define PAR4_INT          16
+#define PAR5_INT          17
+#define PAR3_TEXT         18
+#define PAR2_TIME         19
 
 void Event2str(struct NodoEventStruct *Event, char* EventString)
   {
@@ -795,12 +801,17 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_BREAK_ON_VAR_LESS:
       case CMD_BREAK_ON_VAR_MORE:
       case CMD_BREAK_ON_VAR_NEQU:
-      case CMD_VARIABLE_SET:
       case CMD_VARIABLE_INC:
       case CMD_VARIABLE_DEC:
+      case CMD_VARIABLE_SET:
       case EVENT_VARIABLE:
         ParameterToView[0]=PAR1_INT;
         ParameterToView[1]=PAR2_FLOAT;
+        break;
+
+      case CMD_VARIABLE_PAYLOAD:
+        ParameterToView[0]=PAR1_INT;
+        ParameterToView[1]=PAR2_INT_HEX;
         break;
 
       // Par2 als hex waarde
@@ -1081,6 +1092,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
           break;
 
         case PAR2_FLOAT:
+
           // Een float en een unsigned long zijn beide 4bytes groot. We gebruiken ruimte van Par2 om een float in op te slaan
           float f;
           memcpy(&f, &Event->Par2, 4);
@@ -1090,7 +1102,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
           if((((int)(f*(1000))-((int)f)*(1000)))!=0)
             x=3;
             
-          dtostrf(f, 0, x,EventString+strlen(EventString)); // Kaboem... 2100 bytes programmacode extra ! Gelukkig alleen voor de mega.
+          dtostrf(f, 0, x,EventString+strlen(EventString)); // Kaboem... 2100 bytes programmacode extra ! Gelukkig voor een goed doel en alleen voor de mega.
           break;
 
         case PAR2_INT_HEX:
@@ -1346,6 +1358,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
         case VALUE_SOURCE_IR:
         case VALUE_SOURCE_RF:
         case VALUE_SOURCE_HTTP:
+        case VALUE_SOURCE_NRF24L01:
           break;
           
         default:
@@ -1430,11 +1443,19 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
         error=MESSAGE_INVALID_PARAMETER;
       break;
       
+    case CMD_VARIABLE_PAYLOAD:
+      ResultEvent->Type=NODO_TYPE_COMMAND;
+      if(ResultEvent->Par1<1 || ResultEvent->Par1>USER_VARIABLES_MAX_NR)
+        error=MESSAGE_INVALID_PARAMETER;
+      else if(GetArgv(Command,TmpStr1,3))
+        ResultEvent->Par2=str2int(TmpStr1);
+      break;
+      
     case CMD_VARIABLE_SET:
       ResultEvent->Type=NODO_TYPE_COMMAND;        
       if(ResultEvent->Par1>USER_VARIABLES_MAX_NR || ResultEvent->Par1<1 )
         error=MESSAGE_INVALID_PARAMETER;
-      else if(GetArgv(Command,TmpStr1,3))// waarde van de variabele
+      else if(GetArgv(Command,TmpStr1,3))                                       // waarde van de variabele
         ResultEvent->Par2=float2ul(atof(TmpStr1));
       else
         error=MESSAGE_INVALID_PARAMETER;
