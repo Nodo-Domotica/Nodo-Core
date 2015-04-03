@@ -10,7 +10,6 @@
 #define NODO_MEGA              true                                             // true = Nodo Mega, false=Nodo-Small
 #define UNIT_NODO                 1                                             // LET OP: Alleen na een [Reset] commando wordt dit het unitnummer van de Nodo, dus niet direct bij upload van deze code!
 
-
 #define PLUGIN_001                                                              // Kaku : Klik-Aan-Klik-Uit
 #define PLUGIN_001_CORE
 
@@ -24,7 +23,4 @@
 #define PLUGIN_020                                                              // Luchtdruksensor BPM085
 
 #define PLUGIN_023                                                              // RGB-Led aansturing
-#define PLUGIN_023_CORE
 
-#define PLUGIN_033                                                              // NRF24L01 Plugin
-#define PLUGIN_033_CORE

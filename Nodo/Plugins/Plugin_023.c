@@ -74,19 +74,19 @@
 #define PWM_B         11
 #endif
 
+#define RGBLED_MODE_SETRGB         1
+#define RGBLED_MODE_VARIABLES_ON   2
+#define RGBLED_MODE_VARIABLES_OFF  4
+#define RGBLED_MODE_FADE_ON        8
+#define RGBLED_MODE_FADE_OFF      16
+
+
 #ifdef PLUGIN_023_CORE
 byte InputLevelR=0, InputLevelG=0, InputLevelB=0;
 byte OutputLevelR=0, OutputLevelG=0, OutputLevelB=0;
 int CalledCounter=0, FadeTimeCounter=0;
 boolean RGBFade=false;
 boolean RGBVariables=false;
-
-
-#define RGBLED_MODE_SETRGB         1
-#define RGBLED_MODE_VARIABLES_ON   2
-#define RGBLED_MODE_VARIABLES_OFF  4
-#define RGBLED_MODE_FADE_ON        8
-#define RGBLED_MODE_FADE_OFF      16
 
 int StringFind(char *string, char *keyword);
 
