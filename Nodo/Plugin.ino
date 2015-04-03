@@ -895,16 +895,16 @@ byte PluginCall(byte Function, struct NodoEventStruct *Event, char *str)
   {
   int x;
 
-
   #if PLUGIN_37_COMPATIBILITY
-  if(Function==PLUGIN_ONCE_A_SECOND)
-    {
+  if(Function==PLUGIN_INIT)
     for(byte x=0;x<USER_VARIABLES_MAX;x++)
-      {
-      if(UserVar[USER_VARIABLES_MAX]!=0.0);
-        UserVariableSet(x+1,TempFloat,false);
-      }
-    }
+      UserVar[x]=999999.0;
+
+  if(Function==PLUGIN_ONCE_A_SECOND)
+    for(byte x=0;x<USER_VARIABLES_MAX;x++)
+      if(UserVar[x]!=999999.0)
+        UserVariableSet(x+1,UserVar[x],false);
+
   #endif
 
 

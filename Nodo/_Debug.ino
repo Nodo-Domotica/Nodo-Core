@@ -39,3 +39,19 @@ void PrintRawSignal(void)
   Serial.println();
   }
 #endif 
+
+/*
+void PrintTransmissionStruct(struct TransmissionStruct *T)//???
+  {
+  byte *b=(byte*)T;
+  
+  Serial.print(F("TransmissionStruct="));
+  for(int x=0;x<sizeof(struct TransmissionStruct); x++)
+    {
+    Serial.print( *b,DEC  );
+    Serial.print(',');
+    b++;
+    }
+  Serial.println();
+  }
+*/

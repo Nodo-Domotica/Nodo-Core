@@ -2407,7 +2407,7 @@ byte NodoOnline(byte Unit, byte Port)
     FirstTime=false;
     for(x=0;x<=UNIT_MAX;x++)
       NodoOnlinePort[x]=0;
-    NodoOnlinePort[Settings.Unit]=VALUE_SOURCE_SYSTEM;//Dit is deze unit.
+    NodoOnlinePort[Settings.Unit]=VALUE_SOURCE_SYSTEM;
     }
     
   if(Port && Port!=NodoOnlinePort[Unit])

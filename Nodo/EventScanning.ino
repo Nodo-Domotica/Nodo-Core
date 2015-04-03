@@ -102,14 +102,17 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
         // als het informatie uitwisseling tussen Nodo's betreft...
         if(Event->Type==NODO_TYPE_EVENT || Event->Type==NODO_TYPE_COMMAND || Event->Type==NODO_TYPE_SYSTEM)
           {
-          // registreer welke Nodo's op welke poort zitten en actualiseer tabel.
-          // Wordt gebruikt voor SendTo en I2C communicatie op de Mega.
-          // Hiermee kan later automatisch de juiste poort worden geselecteerd met de SendTo en kan in
-          // geval van I2C communicatie uitsluitend naar de I2C verbonden Nodo's worden gecommuniceerd.
-          NodoOnline(Event->SourceUnit,Event->Port);
-
-
           // PrintNodoEvent("DEBUG: Received event=", Event);
+
+
+          // registreer welke Nodo's op welke poort zitten en actualiseer tabel.
+          // Hiermee kan later automatisch bij verzenden van events de juiste poort worden geselecteerd.
+          // Het kan echter zijn dat een Nodo event binnenkomt op een andere poort dan
+          // de geregistreerde voorkeurspoort. In dit geval wordt het event NIET doorgelaten omdat anders mogelijk 
+          // het event vaker binnenkomt. Nodos communiceren onderling met de voorkeurspoort.
+          
+          if(NodoOnline(Event->SourceUnit,Event->Port)!=Event->Port)
+            return false;
 
           // Een Nodo kan aangeven dat hij Busy is.
           bitWrite(BusyNodo, Event->SourceUnit,(Event->Flags&TRANSMISSION_BUSY)>0);
