@@ -83,8 +83,13 @@ Commit 795:
 - Aanpassing plugin_02. Dimwaarde 0 schakelt lamp uit.
 - Toevoeging Payload aan variabelen. (toekomstig gebruik WebApp)
 
+Commit 800:
+- Delay >255 werd niet correct verwerkt.
+- WiredOut poorten kunnen nu ook met analoge waarde worden aangestuurd voor PWM output. Bereik van een WiredOut is nu 0..255, 'On', 'Off' (LED dimmer!))
+- Op een Small is nu ook WiredOut 5 te gebruiken voor pin D11 (PWM) LET OP: Op een standaard Nodo zit hier de IR led op, dus daar dit commando NIET gebruiken.
+- Nieuw commando 'WiredOutVariable <WiredPoort>, <VariableNr>'. Variabele moet bekend zijn, anders foutmelding.
+
 Todo:
-- I2C testen (i.v.m. aanpassing aan checksum berekening)
 - Plugins langslopen:
   * Plugin_008 (Alecto)    => Geen direct gebruik meer van UserVar[] maar variabelen aanpassen via UserVariableSet();
   * Plugin_009 (Alecto V3) => Geen direct gebruik meer van UserVar[] maar variabelen aanpassen via UserVariableSet();
@@ -94,8 +99,6 @@ Todo:
   * Plugin_024 (P1)          
 - RawsignalCleanup
 - RGBLedSend <unitnummer> geeft event zonder unitnummer. Dit is probleem voor de WebApp. Navraag bij Martin.
-- Delay >255 geeft geen goede delay-tijd.
-- Status all geeft bij opvragen Small te snel response
  
 
 

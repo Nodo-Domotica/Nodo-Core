@@ -31,16 +31,20 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         pinMode(A0+PIN_WIRED_IN_1+EventToExecute->Par1-1,INPUT);
       break;
                  
+
+    case CMD_WIRED_OUT_VARIABLE:
+      if(UserVariable(EventToExecute->Par2,&TempFloat)!=-1)
+        {
+        analogWrite(PIN_WIRED_OUT_1+EventToExecute->Par1-1,(byte)TempFloat);
+        WiredOutputStatus[EventToExecute->Par1-1]=(byte)TempFloat;
+        }
+      else
+        error=MESSAGE_VARIABLE_ERROR;
+      break;
+
     case CMD_WIRED_OUT:
-      digitalWrite(PIN_WIRED_OUT_1+EventToExecute->Par1-1,(EventToExecute->Par2==VALUE_ON));
-      WiredOutputStatus[EventToExecute->Par1-1]=(EventToExecute->Par2==VALUE_ON);
-      bitWrite(HW_Config,HW_WIRED_OUT,true);
-      #if NODO_MEGA
-      TempEvent.Par1=EventToExecute->Par1;
-      TempEvent.Port=VALUE_SOURCE_SYSTEM;
-      TempEvent.Direction=VALUE_DIRECTION_OUTPUT;
-      PrintEvent(&TempEvent,VALUE_ALL);
-      #endif
+      analogWrite(PIN_WIRED_OUT_1+EventToExecute->Par1-1,EventToExecute->Par2);
+      WiredOutputStatus[EventToExecute->Par1-1]=EventToExecute->Par2;
       break;
 
     case CMD_WIRED_SMITTTRIGGER:
@@ -204,7 +208,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
 
     case CMD_DELAY:
-      Wait(EventToExecute->Par1, false, 0, false);
+      Wait(EventToExecute->Par2, false, 0, false);
       break;        
 
     case CMD_SEND_EVENT:

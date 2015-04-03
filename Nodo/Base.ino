@@ -21,7 +21,7 @@
 // Wijzigen van onderstaande includes vallen buiten de policy van het Nodo concept dat de gebruiker zelf de Nodo-code moet aanpassen.
 // Dus: Geen support en geen garantie dat de Nodo stabiel funktioneert!
 
-#define NODO_BUILD                       799                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       800                                    // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                15                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1                                    // Unit nummer van deze Nodo. Wijzigen heeft pas effect na commando 'Reset'.
@@ -176,7 +176,7 @@ byte dummy=1;                                                                   
 #define CMD_TIMER_RANDOM                106
 #define CMD_TIMER_SET                   107
 #define CMD_TIMER_SET_VARIABLE          108
-#define CMD_109                         109                                     //??? Reserve
+#define CMD_WIRED_OUT_VARIABLE          109
 #define CMD_VARIABLE_PAYLOAD            110
 #define CMD_VARIABLE_DEC                111
 #define CMD_VARIABLE_INC                112
@@ -358,7 +358,7 @@ prog_char PROGMEM Cmd_105[]="Timer";
 prog_char PROGMEM Cmd_106[]="TimerSetRandom";
 prog_char PROGMEM Cmd_107[]="TimerSet";
 prog_char PROGMEM Cmd_108[]="TimerSetVariable";
-prog_char PROGMEM Cmd_109[]="";
+prog_char PROGMEM Cmd_109[]="WiredOutVariable";
 prog_char PROGMEM Cmd_110[]="VariablePayload";
 prog_char PROGMEM Cmd_111[]="VariableDec";
 prog_char PROGMEM Cmd_112[]="VariableInc";
@@ -518,13 +518,12 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define HW_RF_RX                      10
 #define HW_IR_RX                      11
 #define HW_PORT_I2C                   12
-#define HW_WIRED_IN                   13
-#define HW_WIRED_OUT                  14
-#define HW_RF_TX                      15
-#define HW_IR_TX                      16
-#define HW_WEBAPP                     17
-#define HW_PULSE                      18
-#define HW_PORT_NRF24L01              19
+#define HW_WIRED                      13
+#define HW_RF_TX                      14
+#define HW_IR_TX                      15
+#define HW_WEBAPP                     16
+#define HW_PULSE                      17
+#define HW_PORT_NRF24L01              18
 
 // Definitie van de speciale hardware uitvoeringen van de Nodo.
 #define BIC_DEFAULT                  0                                          // Standaard Nodo zonder specifike hardware aansturing
@@ -600,7 +599,7 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define TIMER_MAX                    8                                          // aantal beschikbare timers voor de user, gerekend vanaf 1
 #define PULSE_IRQ                    1                                          // IRQ-1 verbonden aan de IR_RX_DATA pen 3 van de ATMega328 (Uno/Nano/Duemillanove)
 #define EEPROM_SIZE               1024                                          // Groote van het EEPROM geheugen.
-#define WIRED_PORTS                  4                                          // aantal WiredIn/WiredOut poorten
+#define WIRED_PORTS                  5                                          // aantal WiredIn/WiredOut poorten
 #define PIN_LED_RGB_R               13                                          // RGB-Led, aansluiting rood
 #define PIN_LED_RGB_B               13                                          // RGB-Led, aansluiting blauw, maar voor de Nodo Small is dit de eveneens de rode led.
 #define PIN_WIRED_IN_1               0                                          // Wired-In 1 t/m 4 aangesloten op A0 t/m A3
@@ -614,10 +613,11 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define PIN_RF_TX_DATA               5                                          // data naar de zender
 #define PIN_RF_RX_DATA               2                                          // Op deze input komt het 433Mhz-RF signaal binnen. LOW bij geen signaal.
 #define PIN_RF_RX_VCC               12                                          // Spanning naar de ontvanger via deze pin.
-#define PIN_WIRED_OUT_1              7                                          // 4 digitale outputs D07 t/m D10 worden gebruikt voor WiredOut 1 tot en met 4
-#define PIN_WIRED_OUT_2              8                                          // 4 digitale outputs D07 t/m D10 worden gebruikt voor WiredOut 1 tot en met 4
+#define PIN_WIRED_OUT_1              7                                          // digitale outputs D07 t/m D10 worden gebruikt voor WiredOut 1 tot en met 4
+#define PIN_WIRED_OUT_2              8                                          // digitale outputs D07 t/m D10 worden gebruikt voor WiredOut 1 tot en met 4
 #define PIN_WIRED_OUT_3              9                                          // (pwm) 4 digitale outputs D07 t/m D10 worden gebruikt voor WiredOut 1 tot en met 4
 #define PIN_WIRED_OUT_4             10                                          // (pwm) 4 digitale outputs D07 t/m D10 worden gebruikt voor WiredOut 1 tot en met 4
+#define PIN_WIRED_OUT_5             11                                          // (pwm) Extra digitale output, op standaard Nodo is dit de IR-Led !!!
 #define PIN_I2C_SDA                 A4                                          // I2C communicatie lijn voor de o.a. de realtime clock.
 #define PIN_I2C_SLC                 A5                                          // I2C communicatie lijn voor de o.a. de realtime clock.
 #endif
@@ -784,7 +784,7 @@ uint16_t UserVarPayload[USER_VARIABLES_MAX];                                    
 
 #if CFG_WIRED
 boolean WiredInputStatus[WIRED_PORTS];                                          // Status van de WiredIn worden hierin opgeslagen.
-boolean WiredOutputStatus[WIRED_PORTS];                                         // Wired variabelen.
+byte WiredOutputStatus[WIRED_PORTS];                                            // Wired variabelen.
 #endif
 
 #if NODO_MEGA
@@ -901,8 +901,7 @@ void setup()
   if(Settings.Version!=NODO_VERSION_MINOR)ResetFactory();                       // De Nodo resetten als Versie van de settings zoals geladen vanuit EEPROM niet correct is.
   
   #if CFG_WIRED  
-  bitWrite(HW_Config,HW_WIRED_IN,1);
-  bitWrite(HW_Config,HW_WIRED_OUT,1);
+  bitWrite(HW_Config,HW_WIRED,1);
   for(x=0;x<WIRED_PORTS;x++)                                                    // initialiseer de Wired ingangen.
     {
     if(Settings.WiredInputPullUp[x]==VALUE_ON)
@@ -912,6 +911,7 @@ void setup()
 
     pinMode(PIN_WIRED_OUT_1+x,OUTPUT);                                          // definieer Arduino pin's voor Wired-Out
     WiredInputStatus[x]=true;                                                   // Status van de wired poort setten zodat er niet onterect bij start al events worden gegenereerd.
+    WiredOutputStatus[x]=0;
     }
   #endif
     
@@ -1239,7 +1239,6 @@ void loop()
   
           if(z)
             {
-            bitWrite(HW_Config,HW_WIRED_IN,true);
             ClearEvent(&ReceivedEvent);
             ReceivedEvent.Type             = NODO_TYPE_EVENT;
             ReceivedEvent.Command          = EVENT_WIRED_IN;

@@ -842,6 +842,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
 
 
       // Par2 als decimale int.
+      case CMD_DELAY:
       case VALUE_BUILD:
       case VALUE_FREEMEM:
       case CMD_PORT_INPUT:
@@ -852,7 +853,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       // Par1 als int en par2 als tekst
       case CMD_VARIABLE_SEND:
       case CMD_WIRED_PULLUP:
-      case CMD_WIRED_OUT:
       case VALUE_UNIT:
       case CMD_VARIABLE_GLOBAL:
       case EVENT_WIRED_IN:
@@ -860,7 +860,24 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         ParameterToView[1]=PAR2_TEXT;
         break;
 
-        // Par1 als tekst en par2 als tekst
+
+      case CMD_WIRED_OUT:
+        ParameterToView[0]=PAR1_INT;
+        ParameterToView[1]=PAR2_INT;
+        if(Event->Par2==0)
+          {
+          Event->Par1=VALUE_OFF;
+          ParameterToView[1]=PAR2_TEXT;
+          }
+        if(Event->Par2==255)
+          {
+          Event->Par1=VALUE_ON;
+          ParameterToView[1]=PAR2_TEXT;
+          }
+        break;
+        
+
+      // Par1 als tekst en par2 als tekst
       case CMD_OUTPUT:
       case CMD_RAWSIGNAL_RECEIVE:
         ParameterToView[0]=PAR1_TEXT;
@@ -900,7 +917,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case EVENT_TIMER:
       case EVENT_ALARM:
       case EVENT_BOOT:
-      case CMD_DELAY:
       case VALUE_SOURCE_PLUGIN:
       case CMD_VARIABLE_SAVE:
       case CMD_VARIABLE_TOGGLE:
@@ -1169,7 +1185,6 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
     case CMD_REBOOT:
     case CMD_SETTINGS_SAVE:
     case CMD_STATUS:
-    case CMD_DELAY:
     case CMD_SOUND: 
     case CMD_SEND_USEREVENT:
     case CMD_CLOCK_SYNC:
@@ -1202,6 +1217,12 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
     case CMD_TIMER_SET_VARIABLE:
       ResultEvent->Type=NODO_TYPE_COMMAND;
       if(ResultEvent->Par1>TIMER_MAX || ResultEvent->Par2<1 || ResultEvent->Par2==0 || ResultEvent->Par2>USER_VARIABLES_MAX_NR)
+        error=MESSAGE_INVALID_PARAMETER;
+      break;
+            
+    case CMD_WIRED_OUT_VARIABLE:
+      ResultEvent->Type=NODO_TYPE_COMMAND;
+      if(ResultEvent->Par1>WIRED_PORTS || ResultEvent->Par2<1 || ResultEvent->Par2>USER_VARIABLES_MAX_NR)
         error=MESSAGE_INVALID_PARAMETER;
       break;
             
@@ -1315,7 +1336,11 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
       ResultEvent->Type=NODO_TYPE_COMMAND;
       if(ResultEvent->Par1>WIRED_PORTS)
         error=MESSAGE_INVALID_PARAMETER;
-      if(ResultEvent->Par2!=VALUE_ON && ResultEvent->Par2!=VALUE_OFF)
+      if(StringFind(Command, cmd2str(VALUE_ON))!=-1)
+        ResultEvent->Par2=255;
+      if(StringFind(Command, cmd2str(VALUE_OFF))!=-1)
+        ResultEvent->Par2=0;
+      if(ResultEvent->Par2<0 || ResultEvent->Par2>255)
         error=MESSAGE_INVALID_PARAMETER;
       break;
 
@@ -1633,6 +1658,8 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
         ResultEvent->Par2=str2int(TmpStr1);            // Haal Par1 uit het commando. let op Par1 gebruiker is een 32-bit hex-getal die wordt opgeslagen in struct Par2.
       break;
 
+    // 1e ingevoerde parameter opslaan in Par2 (32-bit)
+    case CMD_DELAY:
     case CMD_RAWSIGNAL_SHOW:      
     case CMD_RAWSIGNAL_SAVE:      
       ResultEvent->Type=NODO_TYPE_COMMAND;

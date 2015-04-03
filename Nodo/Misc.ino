@@ -533,7 +533,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
 
   case CMD_WIRED_OUT:
     Event->Par1=xPar1;
-    Event->Par2=(WiredOutputStatus[xPar1-1])?VALUE_ON:VALUE_OFF;
+    Event->Par2=WiredOutputStatus[xPar1-1];
     break;
 
   #endif //CFG_WIRED
