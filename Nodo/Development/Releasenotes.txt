@@ -93,7 +93,10 @@ Todo:
   * Plugin_012 (Oregon V2) => Payload definities voor de belangrijkste OBIS-codes 
   * Plugin_024 (P1)          
 - RawsignalCleanup
-- RGBLedSend <unitnummer> geeft event zonder unitnummer. Dit is probleem voor de WebApp. Navraag bij Martin. 
+- RGBLedSend <unitnummer> geeft event zonder unitnummer. Dit is probleem voor de WebApp. Navraag bij Martin.
+- Delay >255 geeft geen goede delay-tijd.
+- Status all geeft bij opvragen Small te snel response
+ 
 
 
  

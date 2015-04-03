@@ -19,9 +19,9 @@
 #define NODO_PORT_NRF24L01              true                                    // true=Ondersteuning voor tranciever module NRF24L01
 
 // Kaku : Klik-Aan-Klik-Uit
-#define PLUGIN_001
-#define PLUGIN_001_CORE
+// #define PLUGIN_001
+// #define PLUGIN_001_CORE
 
 // NewKAKU : Klik-Aan-Klik-Uit ontvangst van signalen met automatische codering. Tevens bekend als Intertechno.
-#define PLUGIN_023
-#define PLUGIN_023_CORE
+// #define PLUGIN_023
+// #define PLUGIN_023_CORE

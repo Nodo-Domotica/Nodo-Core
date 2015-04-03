@@ -21,7 +21,7 @@
 // Wijzigen van onderstaande includes vallen buiten de policy van het Nodo concept dat de gebruiker zelf de Nodo-code moet aanpassen.
 // Dus: Geen support en geen garantie dat de Nodo stabiel funktioneert!
 
-#define NODO_BUILD                       796                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       799                                    // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                15                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1                                    // Unit nummer van deze Nodo. Wijzigen heeft pas effect na commando 'Reset'.
@@ -493,7 +493,7 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define RED                            1                                        // Led = Rood
 #define GREEN                          2                                        // Led = Groen
 #define BLUE                           3                                        // Led = Blauw
-#define UNIT_MAX                      31                                        // Hoogst mogelijke unit nummer van een Nodo
+#define UNIT_MAX                      32                                        // Hoogst mogelijke unit nummer van een Nodo
 #define SERIAL_TERMINATOR_1         0x0A                                        // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>
 #define SERIAL_TERMINATOR_2         0x00                                        // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
 #define SCAN_HIGH_TIME                50                                        // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
@@ -629,6 +629,7 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define TRANSMISSION_CONFIRM                             8                      // Verzoek aan master om bevestiging te sturen na ontvangst.
 #define TRANSMISSION_VIEW                               16                      // Uitsluitend het event weergeven, niet uitvoeren
 #define TRANSMISSION_VIEW_EVENTLIST                     32                      // Uitsluitend het event weergeven, niet uitvoeren
+#define TRANSMISSION_BROADCAST                          64                      // Als deze vlag staat dan wordt event naar alle Nodos gestuurd als een bekendmaking van deze Nodo.
 
 #define NODO_TYPE_EVENT                                  1
 #define NODO_TYPE_COMMAND                                2
@@ -974,18 +975,21 @@ void setup()
   PrintWelcome();                                                               // geef de welkomsttekst weer
   #endif
   
+
   ClearEvent(&TempEvent);
-  TempEvent.Port      = VALUE_ALL;
-  TempEvent.Type      = NODO_TYPE_EVENT;
-  TempEvent.Direction = VALUE_DIRECTION_OUTPUT;
   TempEvent.Par1      = Settings.Unit;
   TempEvent.Command   = EVENT_BOOT;
-  SendEvent(&TempEvent,false,true);                                             // Zend 'boot' event naar alle Nodo's.  
 
   TempEvent.Direction = VALUE_DIRECTION_INPUT;
   TempEvent.Port      = VALUE_SOURCE_SYSTEM;
   TempEvent.Type      = NODO_TYPE_EVENT;
-  ProcessEvent(&TempEvent);                                                     // Voer het boot event zelf ook uit.
+  ProcessEvent(&TempEvent);                                                     // Voer het boot event uit.
+
+  TempEvent.Direction = VALUE_DIRECTION_OUTPUT;
+  TempEvent.Port      = VALUE_ALL;
+  TempEvent.Type      = NODO_TYPE_EVENT;
+  TempEvent.Flags     = TRANSMISSION_BROADCAST;
+  SendEvent(&TempEvent,false,true);                                             // Zend 'boot' event naar alle Nodo's.  
   
   QueueProcess();
 

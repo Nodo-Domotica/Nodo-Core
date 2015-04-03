@@ -59,10 +59,11 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   #if NODO_PORT_NRF24L01
   if(bitRead(HW_Config,HW_PORT_NRF24L01))
     {
-    Port_NRF24L01_EventSend(ES);
     #if NODO_MEGA
     ES->Port=VALUE_SOURCE_NRF24L01;
-    if(Display)PrintEvent(ES,VALUE_ALL);
+    if(Port_NRF24L01_EventSend(ES) && Display)PrintEvent(ES,VALUE_ALL);         // Event alleen printen als verzending plaats heeft gevonden.
+    #else
+    Port_NRF24L01_EventSend(ES);
     #endif
     }
   #endif
@@ -70,10 +71,11 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   #if NODO_PORT_I2C
   if(bitRead(HW_Config,HW_PORT_I2C))
     {
-    Port_I2C_EventSend(ES);
     #if NODO_MEGA
     ES->Port=VALUE_SOURCE_I2C;
-    if(Display)PrintEvent(ES,VALUE_ALL);
+    if(Port_I2C_EventSend(ES) && Display)PrintEvent(ES,VALUE_ALL);              // Event alleen printen als verzending plaats heeft gevonden.
+    #else
+    Port_I2C_EventSend(ES);
     #endif
     }
   #endif
