@@ -90,6 +90,7 @@ Commit 800:
 - Nieuw commando 'WiredOutVariable <WiredPoort>, <VariableNr>'. Variabele moet bekend zijn, anders foutmelding.
 
 Todo:
+- status WiredOut wordt niet correct weergegeven als er nog geen waarde is geschreven naar de poort.
 - Plugins langslopen:
   * Plugin_008 (Alecto)    => Geen direct gebruik meer van UserVar[] maar variabelen aanpassen via UserVariableSet();
   * Plugin_009 (Alecto V3) => Geen direct gebruik meer van UserVar[] maar variabelen aanpassen via UserVariableSet();

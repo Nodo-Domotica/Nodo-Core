@@ -7,7 +7,7 @@
 // bepaalde voorzieningen niet gebruikt. Dit biedt ruimte voor grotere plugins. Deze defines kunnen 
 // worden overruled in een config_xx.c bestand. Enkele settings werken NIET voor een ATMega2560 Nodo.
 
-#define PLUGIN_37_COMPATIBILITY         true                                    // Cmpatibiliteit met plugins die de variabelen tabel UserVar[] nog gebruiken.
+#define PLUGIN_37_COMPATIBILITY        false                                    // Cmpatibiliteit met plugins die de variabelen tabel UserVar[] nog gebruiken.
 #define CFG_CLOCK                       true                                    // false=geen code voor Real Time Clock mee compileren. (Op Mega is meecompileren van Clock verplicht)
 #define CFG_SOUND                       true                                    // false=geen luidspreker in gebruik.
 #define CFG_WIRED                       true                                    // false=wired voorzieningen uitgeschakeld
@@ -21,7 +21,7 @@
 // Wijzigen van onderstaande includes vallen buiten de policy van het Nodo concept dat de gebruiker zelf de Nodo-code moet aanpassen.
 // Dus: Geen support en geen garantie dat de Nodo stabiel funktioneert!
 
-#define NODO_BUILD                       800                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       801                                    // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                15                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1                                    // Unit nummer van deze Nodo. Wijzigen heeft pas effect na commando 'Reset'.
@@ -924,6 +924,7 @@ void setup()
    
 
   #if CFG_CLOCK
+  WireNodo.begin();
   ClockRead();                                                                  //Lees de tijd uit de RTC en zorg ervoor dat er niet direct na een boot een CMD_CLOCK_DAYLIGHT event optreedt
   #endif CFG_CLOCK 
 
