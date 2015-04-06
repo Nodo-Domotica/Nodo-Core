@@ -95,7 +95,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;         
 
     case CMD_VARIABLE_VARIABLE:
-      if(UserVariable(EventToExecute->Par2,&TempFloat))
+      if(UserVariable(EventToExecute->Par2,&TempFloat)!=-1)
         if(UserVariableSet(EventToExecute->Par1,TempFloat,true)==-1)
           error=MESSAGE_VARIABLE_ERROR;
       break;        
@@ -117,9 +117,13 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
 
     case CMD_VARIABLE_PULSE_TIME:
       // Tellen van pulsen actief: enable IRQ behorende bij PIN_IR_RX_DATA. Zodra dit commando wordt gebruikt, wordt ontvangst van IR uitgeschakeld.
-      bitWrite(HW_Config,HW_PULSE,true);
-      attachInterrupt(PULSE_IRQ,PulseCounterISR,PULSE_TRANSITION); 
-      if(UserVariableSet(EventToExecute->Par1,(float)PulseTime,true)==-1)
+      if(UserVariableSet(EventToExecute->Par1,(float)PulseTime,true)!=-1)
+        {
+        bitWrite(HW_Config,HW_PULSE,true);
+        attachInterrupt(PULSE_IRQ,PulseCounterISR,PULSE_TRANSITION); 
+        UserVariablePayload(EventToExecute->Par1,0x0021); // milliseconds
+        }
+      else
         error=MESSAGE_VARIABLE_ERROR;
       break;         
 
@@ -128,38 +132,38 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
       
     case CMD_BREAK_ON_VAR_EQU:
-      if(UserVariable(EventToExecute->Par1,&TempFloat))
+      if(UserVariable(EventToExecute->Par1,&TempFloat)!=-1)
         if((int)TempFloat==(int)ul2float(EventToExecute->Par2))
           error=MESSAGE_BREAK;
       break;
       
     case CMD_BREAK_ON_VAR_NEQU:
-      if(UserVariable(EventToExecute->Par1,&TempFloat))
+      if(UserVariable(EventToExecute->Par1,&TempFloat)!=-1)
         if((int)TempFloat!=(int)ul2float(EventToExecute->Par2))
           error=MESSAGE_BREAK;
       break;
 
     case CMD_BREAK_ON_VAR_MORE:
-      if(UserVariable(EventToExecute->Par1,&TempFloat))
+      if(UserVariable(EventToExecute->Par1,&TempFloat)!=-1)
         if((int)TempFloat>(int)ul2float(EventToExecute->Par2))
           error=MESSAGE_BREAK;
       break;
 
     case CMD_BREAK_ON_VAR_LESS:
-      if(UserVariable(EventToExecute->Par1,&TempFloat))
+      if(UserVariable(EventToExecute->Par1,&TempFloat)!=-1)
         if((int)TempFloat<(int)ul2float(EventToExecute->Par2))
           error=MESSAGE_BREAK;
 
     case CMD_BREAK_ON_VAR_LESS_VAR:
-      if(UserVariable(EventToExecute->Par1,&TempFloat))
-        if(UserVariable(EventToExecute->Par2,&TempFloat2))
+      if(UserVariable(EventToExecute->Par1,&TempFloat)!=-1)
+        if(UserVariable(EventToExecute->Par2,&TempFloat2)!=-1)
           if(TempFloat<TempFloat2)
             error=MESSAGE_BREAK;
       break;
 
     case CMD_BREAK_ON_VAR_MORE_VAR:
-      if(UserVariable(EventToExecute->Par1,&TempFloat))
-        if(UserVariable(EventToExecute->Par2,&TempFloat2))
+      if(UserVariable(EventToExecute->Par1,&TempFloat)!=-1)
+        if(UserVariable(EventToExecute->Par2,&TempFloat2)!=-1)
           if(TempFloat>TempFloat2)
             error=MESSAGE_BREAK;
       break;
@@ -173,16 +177,17 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       SendEvent(&TempEvent, false, true);
       break;
 
-    case CMD_VARIABLE_SEND: //??? Kan deze weg als we de voorziening hebben voor globale variabelen
-      if(UserVariable(EventToExecute->Par1,&TempFloat))
+    case CMD_VARIABLE_SEND:
+      a=UserVariable(EventToExecute->Par1,&TempFloat);
+      if(a!=-1)
         {
-        TempEvent.Type=NODO_TYPE_EVENT;
-        TempEvent.Command=EVENT_VARIABLE;
-        TempEvent.Port=EventToExecute->Par2;
-        TempEvent.Direction=VALUE_DIRECTION_OUTPUT;
-        TempEvent.Par1=EventToExecute->Par1;
-        TempEvent.Par2=float2ul(TempFloat);
-        TempEvent.Payload=a;
+        TempEvent.Type          = NODO_TYPE_EVENT;
+        TempEvent.Command       = EVENT_VARIABLE;
+        TempEvent.Port          = EventToExecute->Par2;
+        TempEvent.Direction     = VALUE_DIRECTION_OUTPUT;
+        TempEvent.Par1          = EventToExecute->Par1;
+        TempEvent.Par2          = float2ul(TempFloat);
+        TempEvent.Payload       = UserVarPayload[a];
         SendEvent(&TempEvent, false, true);
         }
       else
@@ -197,7 +202,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
 
     case CMD_TIMER_SET_VARIABLE:
-      if(UserVariable(EventToExecute->Par2,&TempFloat))
+      if(UserVariable(EventToExecute->Par2,&TempFloat)!=-1)
         UserTimer[EventToExecute->Par1-1]=millis()+(unsigned long)(TempFloat)*1000L;
       else
         error=MESSAGE_VARIABLE_ERROR;
@@ -238,7 +243,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
 
           x=w>0?w:y;                                                            // Bestaande regel of laatste vrije plaats.
     
-          if(UserVariable(UserVarKey[z],&TempFloat))
+          if(UserVariable(UserVarKey[z],&TempFloat)!=-1)
             {
             TempEvent.Type      = NODO_TYPE_EVENT;
             TempEvent.Command   = EVENT_BOOT;
@@ -553,7 +558,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       for(w=x;w<=y;w++)
         {
         sprintf(TempString,ProgmemString(Text_16),Time.Date,Time.Month,Time.Year,Time.Hour,Time.Minutes,w);
-        if(UserVariable(w,&TempFloat))
+        if(UserVariable(w,&TempFloat)!=-1)
           {
           dtostrf(TempFloat, 0, 2,TempString+strlen(TempString));
           strcpy(TempString2,"VAR_");

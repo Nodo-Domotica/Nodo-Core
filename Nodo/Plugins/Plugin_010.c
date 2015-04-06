@@ -1,6 +1,8 @@
 // LET OP: Deze plugin moet nog worden aangepast voor het gebruik van globale variabelen en variabelenummers
+// hoger dan 15. Zolang deze plugin nog niet is aangepast moeten de onderstaande reges in het confif.xx.c bestand 
+// worden opgenomen
 
-
+#define PLUGIN_37_COMPATIBILITY
 
 // Deze regels maken dat deze plugin tijdelijk compatibel wordt met de Nodo release 3.8. Hiervoor zal
 // wat extra RAM en Programmageheugen nodig zijn. Om de plugin compatibel te maken met de 3.8 release
@@ -8,12 +10,12 @@
 //
 // 1. Veranderen van UserVar[] mag uitsluitend plaats vinden met de volgende funktie:
 //
-//    boolean UserVariableSet(byte VarNr, float *Var, boolean Process)
+//    int UserVariableSet(byte VarNr, float *Var, boolean Process)
 //
 //    VarNr        = Variabelenummer 1..USER_VARIABLES_MAX_NR
 //    Var          = Inhoud van de variabele (call by reference !)
 //    Process      = true | false (true leidt tot genereren van een event)
-//    returnwaarde = true als waarde toegekend, false als geen geheugenplek meer vrij.
+//    returnwaarde = -1 als geen geheugenplek meer vrij.
 //
 // 2. Opvragen van een variabele mag uitsluitend met de volgende funktie:
 //
@@ -21,7 +23,7 @@
 //
 //    VarNr        = Variabelenummer 1..USER_VARIABLES_MAX_NR
 //    Var          = Inhoud van de variabele (call by reference !)
-//    returnwaarde = true als waarde bestond, false als variabele onbekend is. 
+//    returnwaarde = -1 als variabele niet gevonden.
 // 
 // De reden van deze aanpassing is om de plugin code meer onafhankelijk te maken van de 
 // Nodo code door geen gebruik te maken van gedeelte variabelen. In de een opvolgende release na de 3.8 zal 

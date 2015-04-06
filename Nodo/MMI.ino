@@ -860,20 +860,15 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         ParameterToView[1]=PAR2_TEXT;
         break;
 
-
       case CMD_WIRED_OUT:
-        ParameterToView[0]=PAR1_INT;
-        ParameterToView[1]=PAR2_INT;
+        strcat(EventString,int2str(Event->Par1));
+        strcat(EventString,",");
         if(Event->Par2==0)
-          {
-          Event->Par1=VALUE_OFF;
-          ParameterToView[1]=PAR2_TEXT;
-          }
-        if(Event->Par2==255)
-          {
-          Event->Par1=VALUE_ON;
-          ParameterToView[1]=PAR2_TEXT;
-          }
+          strcat(EventString,cmd2str(VALUE_OFF));
+        else if(Event->Par2==255)
+          strcat(EventString,cmd2str(VALUE_ON));
+        else
+          strcat(EventString,int2str(Event->Par2));
         break;
         
 

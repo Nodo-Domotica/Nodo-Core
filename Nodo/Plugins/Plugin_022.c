@@ -61,7 +61,7 @@ boolean Plugin_022(byte function, struct NodoEventStruct *event, char *string)
       float distance=pulseIn(PIN_WIRED_OUT_1+1,HIGH);
       interrupts();
       
-      UserVariablePayload(event->Par1,0x101a);
+      UserVariablePayload(event->Par1,0x0032);
       distance=distance/58;
       UserVariableSet(event->Par1,distance,false);
       success=true;

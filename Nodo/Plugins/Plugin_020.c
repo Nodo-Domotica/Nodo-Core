@@ -71,11 +71,11 @@ boolean Plugin_020(byte function, struct NodoEventStruct *event, char *string)
 
   case PLUGIN_COMMAND:
     {
-    UserVariablePayload(event->Par1,0x1000);
+    UserVariablePayload(event->Par1,0x0011);
     TempFloat=bmp085_readTemperature();
     UserVariableSet(event->Par1,TempFloat,BMP_EVENT);
     
-    UserVariablePayload(event->Par1+1,0x1005);
+    UserVariablePayload(event->Par1+1,0x00a1);
     TempFloat=((float)bmp085_readPressure())/100;
     UserVariableSet(event->Par1+1,TempFloat,BMP_EVENT);
 

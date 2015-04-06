@@ -11,7 +11,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     
   if(Settings.WaitFreeNodo==VALUE_ON)
     {
-    if(BusyNodo!=0)                                                               // Als een Nodo heeft aangegeven busy te zijn, dan wachten.
+    if(BusyNodo!=0)                                                             // Als een Nodo heeft aangegeven busy te zijn, dan wachten.
       {
       if(!Wait(30,true,0,false))
         {

@@ -89,8 +89,15 @@ Commit 800:
 - Op een Small is nu ook WiredOut 5 te gebruiken voor pin D11 (PWM) LET OP: Op een standaard Nodo zit hier de IR led op, dus daar dit commando NIET gebruiken.
 - Nieuw commando 'WiredOutVariable <WiredPoort>, <VariableNr>'. Variabele moet bekend zijn, anders foutmelding.
 
-Todo:
+Build 802:
+- Aanpassing verzenden payload vanuit commando VariableSend.
+- Bug opgelost en afhandeling UserVar...() 
 - status WiredOut wordt niet correct weergegeven als er nog geen waarde is geschreven naar de poort.
+- Toegevoegd: Payload tabel (zie: Payload.txt in map Plugins)
+- Payload wordt niet verzonden vanaf een Small wanneer deze wordt gevuld door een variabele
+- Payload wordt meegegeven met VariablePulseTime
+
+Todo:
 - Plugins langslopen:
   * Plugin_008 (Alecto)    => Geen direct gebruik meer van UserVar[] maar variabelen aanpassen via UserVariableSet();
   * Plugin_009 (Alecto V3) => Geen direct gebruik meer van UserVar[] maar variabelen aanpassen via UserVariableSet();
@@ -100,6 +107,7 @@ Todo:
   * Plugin_024 (P1)          
 - RawsignalCleanup
 - RGBLedSend <unitnummer> geeft event zonder unitnummer. Dit is probleem voor de WebApp. Navraag bij Martin.
+
  
 
 

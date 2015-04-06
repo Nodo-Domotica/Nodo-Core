@@ -1,0 +1,109 @@
+Met een variabele payload worden meegestuurd. Doel hiervan is om aan te geven wat de 
+waarde die de variabele bevat weergeeft. Op basis van deze payload kunnen aan de 
+WebApp zijde objecten worden gekoppeld, zoals indicators of grafieken.
+
+
+In een plugin kan de payload worden ingesteld met de functie: 
+
+    'boolean UserVariablePayload(byte VarNr, uint16_t Payload);' 
+
+    VarNr    : Nummer van de gebruikervariabele waar de payload mee verbonden wordt.
+    Payload  : 16-bits waarde volgens onderstaande tabel.
+    resultaat: false als variabele (nog) onbekend was.
+
+Ook kan de payload worden ingegeven met een Nodo-commando:
+
+    'VariablePayload <VarNr>, <Payload>'
+
+    VarNr    : Nummer van de gebruikervariabele waar de payload mee verbonden wordt.
+    Payload  : 16-bits waarde volgens onderstaande tabel.
+
+Alle payload waarden groter dan 0xf000 zijn vrij te gebruiken voor eigen toepassingen.
+Een Payload bevat een code voor de grootheid en een code voor de eenheid warmee wordt gemeten.
+VarNr    : Nummer van de gebruikervariabele waar de payload mee verbonden wordt.
+Payload  : 16-bits waarde volgens onderstaande tabel.
+
+====================================================================================
+Grootheid:             Eenheid:               Payload:
+====================================================================================
+Temperatuur            Graden celcius         0x0011
+                       Kelvin                 0x0012
+                       Fahrenheit             0x0013
+                       
+Tijd                   Milliseconde           0x0021
+                       Seconde                0x0022
+                       Minuut                 0x0023
+                       Uur                    0x0024
+                       Dag                    0x0025   
+
+Afstand                Millimeter             0x0031
+                       Centimeter             0x0032
+                       Decimeter              0x0033
+                       Meter                  0x0034
+                       Hectometer             0x0035
+                       Kilometer              0x0036
+                       
+Gewicht                Gram                   0x0041
+                       Kilogram               0x0042        
+                       Ton                    0x0043
+                       
+Volume                 mm3                    0x0051   
+                       cm3                    0x0052
+                       dm3 (liter)            0x0053
+                       m3                     0x0054
+                       
+Electrische spanning   milli Volt             0x0061
+                       Volt                   0x0062
+                       Kilo Volt              0x0063
+
+Electrische stroom     milli Ampere           0x0071
+                       Ampere                 0x0072
+                       
+Electrische weerstand  Ohm                    0x0081
+
+Vermogen               Watt                   0x0091
+                       KiloWatt               0x0092
+                       PK                     0x0093
+
+Energie                Watt / uur             0x00a1
+                       Kilowatt / uur         0x00a2
+                       Joules                 0x00a3
+                       
+Lichtsterkte           Lux                    0x00b1                       
+                       Lumen                  0x00b2
+                       Relatief %             0x00b3
+
+Snelheid               Kilometer / uur        0x00c1
+                       Meter / seconde        0x00c2
+
+Relatieve vochtigheid  %                      0x00d1
+
+Druk                   mBar                   0x00e1
+                       Bar                    0x00e2
+                       HPa                    0x00e3
+                       PSI                    0x00e4
+                       
+                                
+========== Combinatie metingen / samengestelde sensoren ============================
+
+P1-Slimme meter        (nog nader bepalen)    0x800x
+
+OpenTherm              (nog nader bepalen)    0x801x
+
+Weerstation            Temperatuur Celcius    0x802x
+                       Neerslag mm            0x802x
+                       Windsnelheid Bft       0x802x
+                       Windsnelheid m/s       0x802x
+                       Windrichting           0x802x
+                       (nog nader bepalen)    0x802x
+
+========== Door gebruiker zelf te definieren =======================================
+Vrij                   Vrij                   0xfxxx
+
+
+
+
+
+
+
+ 

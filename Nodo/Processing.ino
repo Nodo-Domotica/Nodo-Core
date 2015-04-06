@@ -35,12 +35,14 @@ void ProcessingStatus(boolean Processing)
 byte ProcessEvent(struct NodoEventStruct *Event)
   {
   struct NodoEventStruct TempEvent;
-  int x;
   byte error=0;
   boolean Continue=true;
-
+  int x;
+  
   if(Event->Command==0)
     return error;
+
+  Led(RED);                                                                     // LED aan als er iets verwerkt wordt //??? Kan worden volstaan met eenmaal Led() aanroep?      
 
   #if NODO_MEGA
   if(FileWriteMode!=0)
@@ -57,7 +59,6 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     }
 
   PluginCall(PLUGIN_EVENT_IN, Event,0);                                         // loop de plugins langs voor eventuele afhandeling van dit event.
-
   
   if(Event->Type == NODO_TYPE_SYSTEM)
     {                       
@@ -78,8 +79,8 @@ byte ProcessEvent(struct NodoEventStruct *Event)
 
   // Events die nu nog de TRANSMISSION_SENDTO vlag hebben staan hoorden oorspronkelijk tot een reeks die verzonden is
   // met een SendTo. Deze events hebben hier geen betekenis en dus volledig negeren.
-//???  if(Continue && (Event->Flags & TRANSMISSION_SENDTO))
-//???    Continue=false;
+  if(Continue && (Event->Flags & TRANSMISSION_SENDTO))//???
+    Continue=false;
 
   // Als in het event een verzoek zit om een bevestiging te verzenden...
   if(Event->Flags & TRANSMISSION_CONFIRM)
@@ -96,9 +97,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
   #if NODO_MEGA  
   // Alleen weergeven zonder event af te handelen
   if(Continue && (Event->Flags & TRANSMISSION_VIEW))
-    {
     Continue=false;
-    }
   #endif
   
   #if NODO_MEGA
@@ -143,17 +142,12 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     #endif
     
     // ############# Verwerk event ################  
+
     if(Event->Type==NODO_TYPE_COMMAND)
-      {
-      Led(RED);                                                                 // LED aan als er iets verwerkt wordt      
       error=ExecuteCommand(Event);
-      }
 
     else if(Event->Type==NODO_TYPE_PLUGIN_COMMAND)
-      {
-      Led(RED);                                                                 // LED aan als er iets verwerkt wordt      
       PluginCall(PLUGIN_COMMAND,Event,0);
-      }
       
     else
       {
@@ -167,7 +161,6 @@ byte ProcessEvent(struct NodoEventStruct *Event)
         {      
         if(CheckEvent(Event,&EventlistEvent))                                   // Als er een match is tussen het binnengekomen event en de regel uit de eventlist.
           {        
-          Led(RED);                                                             // LED aan als er iets verwerkt wordt      
           ExecutionLine=x;
           error=ProcessEvent(&EventlistAction);
           }
@@ -176,6 +169,9 @@ byte ProcessEvent(struct NodoEventStruct *Event)
       if(error==MESSAGE_BREAK)                                                  // abort is geen fatale error maar een break. Deze dus niet verder behandelen als een error.
         error=0;
       #endif CFG_EVENTLIST
+
+      if(error)
+        RaiseMessage(error,EventlistAction.Par2);//??? deze opgenomen in de 3.8 code. Waarom was deze niet hier in de 3.7? Nu opgenomen omdat small tijdens uitvoer eventlist niet met error kwam
       }      
 
     #if NODO_MEGA
@@ -299,6 +295,7 @@ struct QueueStruct
   byte Command;
   byte Par1;
   unsigned long Par2;
+  uint16_t Payload;
   }Queue[EVENT_QUEUE_MAX];
 
 
@@ -320,6 +317,7 @@ boolean QueueAdd(struct NodoEventStruct *Event)
     Queue[QueuePosition].Command = Event->Command;
     Queue[QueuePosition].Par1    = Event->Par1;
     Queue[QueuePosition].Par2    = Event->Par2;
+    Queue[QueuePosition].Payload = Event->Payload;
     QueuePosition++;           
 
     // Een EventlistShow staat welliswaar in de queue, maar die kunnen we als de informatie compleet is gelijk weergeven
@@ -415,14 +413,14 @@ void QueueProcess(void)
       #if CFG_EVENTLIST
       if(Queue[0].Command==SYSTEM_COMMAND_QUEUE_EVENTLIST_WRITE && QueuePosition==3) // cmd
         {
-        E.Type=Queue[1].Type;
-        E.Command=Queue[1].Command;
-        E.Par1=Queue[1].Par1;
-        E.Par2=Queue[1].Par2;
-        A.Type=Queue[2].Type;
-        A.Command=Queue[2].Command;
-        A.Par1=Queue[2].Par1;
-        A.Par2=Queue[2].Par2;
+        E.Type        = Queue[1].Type;
+        E.Command     = Queue[1].Command;
+        E.Par1        = Queue[1].Par1;
+        E.Par2        = Queue[1].Par2;
+        A.Type        = Queue[2].Type;
+        A.Command     = Queue[2].Command;
+        A.Par1        = Queue[2].Par1;
+        A.Par2        = Queue[2].Par2;
         Eventlist_Write(Queue[0].Par1, &E, &A);
         QueuePosition=0;
         }
@@ -433,14 +431,15 @@ void QueueProcess(void)
       {
       for(x=0;x<QueuePosition;x++)
         {      
-        Event.SourceUnit=Queue[x].Unit;
-        Event.Type=Queue[x].Type;
-        Event.Command=Queue[x].Command;
-        Event.Par1=Queue[x].Par1;
-        Event.Par2=Queue[x].Par2;
-        Event.Direction=VALUE_DIRECTION_INPUT;
-        Event.Port=Queue[x].Port;
-        Event.Flags=Queue[x].Flags;
+        Event.SourceUnit = Queue[x].Unit;
+        Event.Type       = Queue[x].Type;
+        Event.Command    = Queue[x].Command;
+        Event.Par1       = Queue[x].Par1;
+        Event.Par2       = Queue[x].Par2;
+        Event.Payload    = Queue[x].Payload;
+        Event.Direction  = VALUE_DIRECTION_INPUT;
+        Event.Port       = Queue[x].Port;
+        Event.Flags      = Queue[x].Flags;
         ProcessEvent(&Event);                                                   // verwerk binnengekomen event.
         }
       }
@@ -522,8 +521,8 @@ byte QueueSend(boolean fast)
         else
           Event.Flags = TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT;
 
-//???        if(!fast)
-//???           Event.Flags = Event.Flags | TRANSMISSION_SENDTO;
+        if(!fast)
+          Event.Flags = Event.Flags | TRANSMISSION_SENDTO;
           
         SendEvent(&Event,false,false);
         }
@@ -549,7 +548,7 @@ byte QueueSend(boolean fast)
     }
   else
     error=MESSAGE_NODO_NOT_FOUND;
-    // RaiseMessage(MESSAGE_NODO_NOT_FOUND,0);
+    // RaiseMessage(MESSAGE_NODO_NOT_FOUND,0);//??? Waarom remarked? nog uitzoeken
 
   if(Retry==0)
     error=MESSAGE_SENDTO_ERROR;

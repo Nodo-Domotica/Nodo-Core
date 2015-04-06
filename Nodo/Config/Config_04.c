@@ -10,7 +10,6 @@
 
 
 #define UNIT_NODO                          4                                    // Na een reset wordt dit het unitnummer van de Nodo
-#define HOME_NODO                          1                                    // Home adres. Alleen Nodo's met hetzelde Home adres kunnen ondeling gegevens uitwisselen
 
 #define CFG_CLOCK                      false                                    // false=geen code voor Real Time Clock mee compileren. (Op Mega is meecompileren van Clock verplicht)
 #define CFG_SOUND                       true                                    // false=geen luidspreker in gebruik.

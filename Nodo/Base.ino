@@ -21,7 +21,7 @@
 // Wijzigen van onderstaande includes vallen buiten de policy van het Nodo concept dat de gebruiker zelf de Nodo-code moet aanpassen.
 // Dus: Geen support en geen garantie dat de Nodo stabiel funktioneert!
 
-#define NODO_BUILD                       801                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       802                                    // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                15                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1                                    // Unit nummer van deze Nodo. Wijzigen heeft pas effect na commando 'Reset'.
@@ -630,7 +630,7 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 #define TRANSMISSION_VIEW                               16                      // Uitsluitend het event weergeven, niet uitvoeren
 #define TRANSMISSION_VIEW_EVENTLIST                     32                      // Uitsluitend het event weergeven, niet uitvoeren
 #define TRANSMISSION_BROADCAST                          64                      // Als deze vlag staat dan wordt event naar alle Nodos gestuurd als een bekendmaking van deze Nodo.
-
+#define TRANSMISSION_SENDTO                            128                      // Geeft aan dat een event deel uit maakt van een SendTo verzending. Hierrmee wordt voorkomen dat een 'verdwaald' event wordt uitgevoerd.
 #define NODO_TYPE_EVENT                                  1
 #define NODO_TYPE_COMMAND                                2
 #define NODO_TYPE_SYSTEM                                 3               

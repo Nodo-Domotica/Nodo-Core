@@ -139,6 +139,7 @@ void RaiseMessage(byte MessageCode, unsigned long Option)
       }
   
     TempEvent.Port      = VALUE_ALL;
+    Serial.print(F("SendEvent(); MessageCode="));Serial.println(MessageCode);//???
     SendEvent(&TempEvent,false,true);
     }
   }

@@ -96,8 +96,8 @@ boolean Plugin_006(byte function, struct NodoEventStruct *event, char *string)
           {
           delayMicroseconds(80);
 
-          UserVariablePayload(event->Par2,  0x1000); // Temperature
-          UserVariablePayload(event->Par2+1,0x1005); // Relative humidity %
+          UserVariablePayload(event->Par2,  0x0011); // Temperature
+          UserVariablePayload(event->Par2+1,0x00d1); // Relative humidity %
 
           dht_in = digitalRead(DHT_Pin);
           if(dht_in)

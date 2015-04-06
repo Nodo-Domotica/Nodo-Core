@@ -190,7 +190,7 @@ boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
       TempFloat=123.45;                                      // De TempFloat komt uit de Nodo-code en mag altijd voor dit doel worden gebruikt.
                                                              // Let wel op dat deze variabele op meerdere plaatsen gebruikt wordt en het hier dus echt om een tijdelijk
                                                              // hulpmiddel die binnen deze funktie gebruikt kan worden. 
-      UserVariableSet(5,TempFloat,true);
+      UserVariableSet(5,TempFloat,true);                     // True betekent hier dat er een event wordt gegenereerd.
 
 
       // 1. Veranderen van UserVar[] mag uitsluitend plaats vinden met de volgende funktie:
@@ -200,7 +200,7 @@ boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
       //    VarNr        = Variabelenummer 1..USER_VARIABLES_MAX_NR
       //    Var          = Inhoud van de variabele.
       //    Process      = true | false (true leidt tot genereren van een event)
-      //    returnwaarde = true als waarde toegekend, false als geen geheugenplek meer vrij.
+      //    returnwaarde = -1 als geen geheugenplek meer vrij.
       //
       // 2. Opvragen van een variabele mag uitsluitend met de volgende funktie:
       //
@@ -208,7 +208,7 @@ boolean Plugin_255(byte function, struct NodoEventStruct *event, char *string)
       //
       //    VarNr        = Variabelenummer 1..USER_VARIABLES_MAX_NR
       //    Var          = Inhoud van de variabele (call by reference !, let op het '&'-teken.
-      //    returnwaarde = true als waarde bestond, false als variabele onbekend is. 
+      //    returnwaarde = -1 als variabele onbekend is. 
 
       
       break;
