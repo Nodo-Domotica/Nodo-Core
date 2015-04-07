@@ -1,4 +1,4 @@
-Met een variabele payload worden meegestuurd. Doel hiervan is om aan te geven wat de 
+Met een variabele kan extra payload info worden meegestuurd. Doel hiervan is om aan te geven wat de 
 waarde die de variabele bevat weergeeft. Op basis van deze payload kunnen aan de 
 WebApp zijde objecten worden gekoppeld, zoals indicators of grafieken.
 
@@ -91,10 +91,14 @@ P1-Slimme meter        (nog nader bepalen)    0x800x
 OpenTherm              (nog nader bepalen)    0x801x
 
 Weerstation            Temperatuur Celcius    0x802x
+                       Temperatuur max.       0x802x
+                       Temperatuur min.       0x802x
                        Neerslag mm            0x802x
                        Windsnelheid Bft       0x802x
                        Windsnelheid m/s       0x802x
                        Windrichting           0x802x
+                       Luchtdruk(mbar)        0x802x
+                       Relatieve vochtigheid% 0x802x
                        (nog nader bepalen)    0x802x
 
 ========== Door gebruiker zelf te definieren =======================================
