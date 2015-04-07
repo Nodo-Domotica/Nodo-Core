@@ -324,8 +324,13 @@ byte SendHTTPEvent(struct NodoEventStruct *Event)
   Event2str(Event,TempString);
   if(Settings.Alias==VALUE_ON)
     Alias(TempString,false);
-
   strcat(HttpRequest,TempString);
+
+  if(Event->Payload!=0)
+    {
+    strcat(HttpRequest,"&payload=");
+    strcat(HttpRequest, int2strhex(Event->Payload));
+    }
 
   free(TempString);
   x=SendHTTPRequest(HttpRequest);

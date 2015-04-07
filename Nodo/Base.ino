@@ -21,7 +21,7 @@
 // Wijzigen van onderstaande includes vallen buiten de policy van het Nodo concept dat de gebruiker zelf de Nodo-code moet aanpassen.
 // Dus: Geen support en geen garantie dat de Nodo stabiel funktioneert!
 
-#define NODO_BUILD                       802                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       803                                    // ??? Ophogen bij iedere Build / versiebeheer.
 #define NODO_VERSION_MINOR                15                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
 #define UNIT_NODO                          1                                    // Unit nummer van deze Nodo. Wijzigen heeft pas effect na commando 'Reset'.
