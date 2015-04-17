@@ -130,7 +130,7 @@ boolean Plugin_002(byte function, struct NodoEventStruct *event, char *string)
       else
         bitstream=event->Par2 & 0xFFFFFFCF;                                     // adres geheel over nemen behalve de twee bits 5 en 6 die het schakel commando bevatten.
     
-      event->Port=VALUE_ALL;                                                    // Signaal mag naar alle door de gebruiker met [Output] ingestelde poorten worden verzonden.
+      event->Port=VALUE_SOURCE_RF;                                              // Signaal naar RF
       RawSignal.Repeats=7;                                                      // Aantal herhalingen van het signaal.
       RawSignal.Delay=20;                                                       // Tussen iedere pulsenreeks enige tijd rust.
       RawSignal.Multiply=25;

@@ -77,7 +77,7 @@
 //   zend/ontvangst module van het type NRF24L01, gebruik dan het config-bestand
 //   'Config_20.c' 
 
-#define CONFIG_FILE Config_20.c
+#define CONFIG_FILE Config_01.c
 
 
 
@@ -100,7 +100,7 @@
 //         te besparen. Voor een Nodo-Mega is het gebruik van een SDCard verplicht.
 //         Wie een goede workaround voor dit probleem heeft krijgt van mij een taart!
 
-// #include <SD.h> 
+#include <SD.h> 
 
 
 

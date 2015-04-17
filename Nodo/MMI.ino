@@ -1218,6 +1218,14 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
         error=MESSAGE_INVALID_PARAMETER;
      break;
                   
+    case CMD_OUTPUT:
+      ResultEvent->Type=NODO_TYPE_COMMAND;
+      if(ResultEvent->Par1!=VALUE_SOURCE_HTTP)
+        error=MESSAGE_INVALID_PARAMETER;
+      if(ResultEvent->Par2!=VALUE_OFF && ResultEvent->Par2!=VALUE_ON && (ResultEvent->Par2!=VALUE_ALL && ResultEvent->Par1!=VALUE_SOURCE_HTTP))
+        error=MESSAGE_INVALID_PARAMETER;
+      break;
+
     case EVENT_MESSAGE:
       ResultEvent->Type=NODO_TYPE_EVENT; 
       if(ResultEvent->Par1 <1 || ResultEvent->Par1>MESSAGE_MAX)
@@ -1461,15 +1469,6 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
       break;
 
      
-    case CMD_OUTPUT:
-      ResultEvent->Type=NODO_TYPE_COMMAND;
-      if(ResultEvent->Par1!=VALUE_SOURCE_I2C && ResultEvent->Par1!=VALUE_SOURCE_IR && ResultEvent->Par1!=VALUE_SOURCE_RF && ResultEvent->Par1!=VALUE_SOURCE_HTTP)
-        error=MESSAGE_INVALID_PARAMETER;
-      if(ResultEvent->Par2!=VALUE_OFF && ResultEvent->Par2!=VALUE_ON && (ResultEvent->Par2!=VALUE_ALL && ResultEvent->Par1!=VALUE_SOURCE_HTTP))
-        error=MESSAGE_INVALID_PARAMETER;
-      break;
-
-
     case CMD_VARIABLE_TOGGLE:
       ResultEvent->Type=NODO_TYPE_COMMAND;
       if(ResultEvent->Par1<1 || ResultEvent->Par1>USER_VARIABLES_MAX_NR)

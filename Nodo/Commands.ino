@@ -489,24 +489,17 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       Save_Settings();
       break;
 
+    #if HARDWARE_ETHERNET                                                       // Zal verdwijnen zodra de WebSocket is geimplementeerd.
     case CMD_OUTPUT:
       switch(EventToExecute->Par1)
         {
-        case VALUE_SOURCE_IR:
-          Settings.TransmitIR=EventToExecute->Par2;
-          break;       
-        case VALUE_SOURCE_RF:
-          Settings.TransmitRF=EventToExecute->Par2;
-          break;       
-
-        #if HARDWARE_ETHERNET
         case VALUE_SOURCE_HTTP:
           Settings.TransmitHTTP=EventToExecute->Par2;        
           break;       
-        #endif
         }
-      
       break;
+    #endif
+      
       
     case CMD_STATUS:
       Status(EventToExecute);

@@ -412,32 +412,20 @@ boolean GetStatus(struct NodoEventStruct *Event)
     break;
   #endif
 
+  #if HARDWARE_ETHERNET
   case CMD_OUTPUT:
     Event->Par1=xPar1;
     switch(xPar1)
       {
-      #if HARDWARE_INFRARED
-      case VALUE_SOURCE_IR:
-        Event->Par2=Settings.TransmitIR;
-        break;
-      #endif
-      
-      #if HARDWARE_RF433
-      case VALUE_SOURCE_RF:
-        Event->Par2=Settings.TransmitRF;
-        break;
-      #endif
-  
-      #if NODO_MEGA
       case VALUE_SOURCE_HTTP:
         Event->Par2=Settings.TransmitHTTP;
         break;
-       #endif 
       default:
         Event->Command=0;                                                       // Geen geldige optie. Als 0 wordt teruggegeven in command dan wordt niets weergegeven met de status.
       }
     break;
-
+  #endif
+  
   case VALUE_SOURCE_PLUGIN:
     x=Plugin_id[xPar1];
     if(x)
@@ -653,8 +641,6 @@ void ResetFactory(void)
   // Herstel alle settings naar defaults
   Settings.Version                    = NODO_VERSION_MINOR;
   Settings.WaitFreeNodo               = VALUE_OFF;
-  Settings.TransmitIR                 = VALUE_OFF;
-  Settings.TransmitRF                 = VALUE_ON;
   Settings.Unit                       = UNIT_NODO;
   Settings.RawSignalReceive           = VALUE_OFF;
   Settings.RawSignalSample            = RAWSIGNAL_SAMPLE_DEFAULT;  
@@ -887,16 +873,18 @@ void Status(struct NodoEventStruct *Request)
         {
         switch(x)
           {
+          #if NODO_MEGA
+          case CMD_OUTPUT:                                                      // ??? vervalt na implementatie WebSocket
+            Par1_Start=0;
+            Par1_End=COMMAND_MAX;
+            break;
+          #endif
+
           case VALUE_SOURCE_PLUGIN:
             Par1_Start=0;
             Par1_End=PLUGIN_MAX-1;
             break;
 
-          case CMD_OUTPUT:
-            Par1_Start=0;
-            Par1_End=COMMAND_MAX;
-            break;
-          
           #if HARDWARE_WIRED_OUT_PORTS 
           case CMD_WIRED_OUT:
             Par1_Start=1;
@@ -2393,29 +2381,40 @@ int str2weekday(char *Input)
 
 /*******************************************************************************************************\
  * Houdt bij welke Nodo's binnen bereik zijn en via welke Poort.
- * Als Port ongelijk aan reeds bekende poort, dan wordt de lijst geactualiseerd (snelste heeft voorkeur).
- * Als Port=0 dan is de Nodo onbekend
+ * - Als Port ongelijk aan reeds bekende poort, dan wordt de lijst geactualiseerd (snelste heeft voorkeur).
+ * - Als Port=0 dan is de Nodo onbekend
+ * - Als Unit=0, dan wordt een true teruggegeven als er een Nodo op de opgegeven poort aanwezig is. 
  \*******************************************************************************************************/
 byte NodoOnline(byte Unit, byte Port, boolean change)
   {
   static byte NodoOnlinePort[UNIT_MAX+1];
-    
-  if(change && Port!=NodoOnlinePort[Unit])
+  
+  if(Unit)
+    {  
+    if(change && Port!=NodoOnlinePort[Unit])
+      {
+      NodoOnlinePort[Settings.Unit]=VALUE_SOURCE_SYSTEM;
+  
+      if(Port==VALUE_SOURCE_I2C)                                                   
+        NodoOnlinePort[Unit]=VALUE_SOURCE_I2C;
+      else if(Port==VALUE_SOURCE_NRF24L01 && NodoOnlinePort[Unit]!=VALUE_SOURCE_I2C)
+        NodoOnlinePort[Unit]=VALUE_SOURCE_NRF24L01;
+      else if(Port==VALUE_SOURCE_IR       && NodoOnlinePort[Unit]!=VALUE_SOURCE_NRF24L01 && NodoOnlinePort[Unit]!=VALUE_SOURCE_I2C)
+        NodoOnlinePort[Unit]=VALUE_SOURCE_IR;
+      else if(Port==VALUE_SOURCE_RF      && NodoOnlinePort[Unit]!=VALUE_SOURCE_NRF24L01 && NodoOnlinePort[Unit]!=VALUE_SOURCE_IR && NodoOnlinePort[Unit]!=VALUE_SOURCE_I2C)
+        NodoOnlinePort[Unit]=VALUE_SOURCE_RF;
+      else
+        NodoOnlinePort[Unit]=0;
+      }
+    return NodoOnlinePort[Unit];
+    }
+  else
     {
-    NodoOnlinePort[Settings.Unit]=VALUE_SOURCE_SYSTEM;
-
-    if(Port==VALUE_SOURCE_I2C)                                                   
-      NodoOnlinePort[Unit]=VALUE_SOURCE_I2C;
-    else if(Port==VALUE_SOURCE_NRF24L01 && NodoOnlinePort[Unit]!=VALUE_SOURCE_I2C)
-      NodoOnlinePort[Unit]=VALUE_SOURCE_NRF24L01;
-    else if(Port==VALUE_SOURCE_IR       && NodoOnlinePort[Unit]!=VALUE_SOURCE_NRF24L01 && NodoOnlinePort[Unit]!=VALUE_SOURCE_I2C)
-      NodoOnlinePort[Unit]=VALUE_SOURCE_IR;
-    else if(Port==VALUE_SOURCE_RF      && NodoOnlinePort[Unit]!=VALUE_SOURCE_NRF24L01 && NodoOnlinePort[Unit]!=VALUE_SOURCE_IR && NodoOnlinePort[Unit]!=VALUE_SOURCE_I2C)
-      NodoOnlinePort[Unit]=VALUE_SOURCE_RF;
-    else
-      NodoOnlinePort[Unit]=0;
-    }    
-  return NodoOnlinePort[Unit];
+    for(int x=0;x<=UNIT_MAX;x++)  
+      if(NodoOnlinePort[x]==Port)
+        return true;
+    }
+  return 0;
   }
   
  /********************************************************************************************\

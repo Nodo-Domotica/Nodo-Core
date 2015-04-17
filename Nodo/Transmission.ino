@@ -7,9 +7,14 @@
 boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Display)
   {    
   ES->Direction=VALUE_DIRECTION_OUTPUT;
-  byte Port=ES->Port;
-  byte x=0;
-      
+  byte x,Port=ES->Port;
+  boolean broadcast=((ES->Flags&TRANSMISSION_BROADCAST) != 0);
+
+  #if NODO_MEGA
+  if(broadcast)
+    Led(BLUE);
+  #endif
+  
   if(Settings.WaitFreeNodo==VALUE_ON)
     {
     if(BusyNodo!=0)                                                             // Als een Nodo heeft aangegeven busy te zijn, dan wachten.
@@ -36,17 +41,42 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   PluginCall(PLUGIN_EVENT_OUT, ES,0);                                           // loop de plugins langs voor eventuele afhandeling van dit event.
 
   #if HARDWARE_RAWSIGNAL || HARDWARE_RF433 || HARDWARE_INFRARED
-  if(!UseRawSignal)
-    Nodo_2_RawSignal(ES);
+  if(UseRawSignal)
+    {
+
+    #if HARDWARE_INFRARED
+    if(Port==VALUE_SOURCE_IR || Port==VALUE_ALL)
+      {
+      ES->Port=VALUE_SOURCE_IR;
+      #if NODO_MEGA
+      if(Display)PrintEvent(ES,VALUE_ALL);
+      #endif
+      RawSendIR();
+      }
+    #endif
+
+    #if HARDWARE_RF433
+    if(Port==VALUE_SOURCE_RF || Port==VALUE_ALL)
+      {
+      ES->Port=VALUE_SOURCE_RF;
+      #if NODO_MEGA
+      if(Display)PrintEvent(ES,VALUE_ALL);
+      #endif
+      RawSendRF();
+      }
+    #endif
+
+    }
   #endif
   
   while(millis()<HoldTransmission);                                             // Respecteer een minimale tijd tussen verzenden van events. Wachten alvorens event te verzenden.  
   HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS+millis();        
                                              
+
   #if HARDWARE_INFRARED
-  // Verstuur signaal als IR
-  if(Settings.TransmitIR==VALUE_ON && (Port==VALUE_SOURCE_IR || Port==VALUE_ALL))
-    { 
+  if(NodoOnline(0,VALUE_SOURCE_IR,0) || Port==VALUE_SOURCE_IR || broadcast)
+    {
+    Nodo_2_RawSignal(ES);
     ES->Port=VALUE_SOURCE_IR;
     #if NODO_MEGA
     if(Display)PrintEvent(ES,VALUE_ALL);
@@ -55,38 +85,11 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     }
   #endif
 
-  #if HARDWARE_NRF24L01
-  if(HW_Status(HW_NRF24L01))
-    {
-    ES->Port=VALUE_SOURCE_NRF24L01;
-
-    #if NODO_MEGA
-    if(Display)
-      PrintEvent(ES,VALUE_ALL);
-    #endif
-    
-    x=Port_NRF24L01_EventSend(ES);
-    if(x)
-      RaiseMessage(MESSAGE_NODO_NOT_FOUND,x);
-    }
-  #endif
-  
-  #if HARDWARE_I2C
-  if(HW_Status(HW_I2C))
-    {
-    #if NODO_MEGA
-    ES->Port=VALUE_SOURCE_I2C;
-    if(Port_I2C_EventSend(ES) && Display)PrintEvent(ES,VALUE_ALL);              // Event alleen printen als verzending plaats heeft gevonden.
-    #else
-    Port_I2C_EventSend(ES);
-    #endif
-    }
-  #endif
 
   #if HARDWARE_RF433
-  // Verstuur signaal als RF
-  if(Settings.TransmitRF==VALUE_ON && (Port==VALUE_SOURCE_RF || Port==VALUE_ALL))
+  if(NodoOnline(0,VALUE_SOURCE_RF,0) || Port==VALUE_SOURCE_RF || broadcast)
     {
+    Nodo_2_RawSignal(ES);
     ES->Port=VALUE_SOURCE_RF;
     #if NODO_MEGA
     if(Display)PrintEvent(ES,VALUE_ALL);
@@ -95,16 +98,39 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     }
   #endif
 
+
+  #if HARDWARE_NRF24L01
+  if(NodoOnline(0,VALUE_SOURCE_NRF24L01,0) || broadcast)
+    {
+    ES->Port=VALUE_SOURCE_NRF24L01;
+    #if NODO_MEGA
+    if(Display)PrintEvent(ES,VALUE_ALL);
+    #endif
+    if(x=Port_NRF24L01_EventSend(ES))
+      RaiseMessage(MESSAGE_NODO_NOT_FOUND,x);
+    }
+  #endif
+  
+
+  #if HARDWARE_I2C
+  if(NodoOnline(0,VALUE_SOURCE_I2C,0) || broadcast)
+    {
+    ES->Port=VALUE_SOURCE_I2C;
+    #if NODO_MEGA
+    if(Display)PrintEvent(ES,VALUE_ALL);
+    #endif
+    Port_I2C_EventSend(ES);
+    }
+  #endif
+  
+
   #if HARDWARE_ETHERNET
   // Verstuur signaal als HTTP-event.
-  if(HW_Status(HW_ETHERNET))
+  if(HW_Status(HW_ETHERNET) && (Port==VALUE_SOURCE_HTTP || Port==VALUE_ALL || broadcast) && Settings.PortOutput!=0)
     {
-    if((Settings.TransmitHTTP==VALUE_ALL || Settings.TransmitHTTP==VALUE_ON) && (Port==VALUE_SOURCE_HTTP || Port==VALUE_ALL) && Settings.PortOutput!=0 )
-      {
-      SendHTTPEvent(ES);
-      ES->Port=VALUE_SOURCE_HTTP;
-      if(Display)PrintEvent(ES,VALUE_ALL);
-      }
+    ES->Port=VALUE_SOURCE_HTTP;
+    if(Display)PrintEvent(ES,VALUE_ALL);
+    SendHTTPEvent(ES);
     }
   #endif 
   
@@ -566,7 +592,7 @@ boolean SendHTTPRequest(char* Request)
       State=0;
       delay(3000);                                                              // korte pause tussen de nieuwe pogingen om verbinding te maken.
       if(EthernetInit())
-        CookieTimer=1;                                                          // gelijk een nieuwe cookie versturen.
+        TimerCookie=1;                                                          // gelijk een nieuwe cookie versturen.
       }
     }
   while(State==0 && ++Try<3);

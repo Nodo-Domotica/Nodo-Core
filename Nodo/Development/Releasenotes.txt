@@ -101,8 +101,17 @@ Build 803:
 - Alleen gebruikte variabelen worden getoond.
 - Alleen gebruikte timers worden getoond.
 
+Build 806:
+- Commando "Output" vervallen. Nodo zend automatisch events via poort waar andere Nodo op bekend is.
+- Er wordt naar HTTP verzonden als de poort <> 0 is. Na reset default op 0.
+- Broadcast mechanisme toegevoegd voor onderhoud welke Nodo's online zijn. 
+
 
 Todo:
+- Is versnellen van Boot event mogelijk?
+- Verzoek Martin: Geen DNS resolven als Host IP adres ingevuld.
+- RawsignalCleanup
+- RGBLedSend <unitnummer> geeft event zonder unitnummer. Dit is probleem voor de WebApp. Navraag bij Martin.
 - Plugins langslopen:
   * Plugin_008 (Alecto)    => Geen direct gebruik meer van UserVar[] maar variabelen aanpassen via UserVariableSet();
   * Plugin_009 (Alecto V3) => Geen direct gebruik meer van UserVar[] maar variabelen aanpassen via UserVariableSet();
@@ -110,8 +119,6 @@ Todo:
   * Plugin_011 (OpenTherm) => Geen direct gebruik meer van UserVar[] maar variabelen aanpassen via UserVariableSet(); Tevens Payload definities voor de belangrijkste OT grootheden. 
   * Plugin_012 (Oregon V2) => Payload definities voor de belangrijkste OBIS-codes 
   * Plugin_024 (P1)          
-- RawsignalCleanup
-- RGBLedSend <unitnummer> geeft event zonder unitnummer. Dit is probleem voor de WebApp. Navraag bij Martin.
 
  
 

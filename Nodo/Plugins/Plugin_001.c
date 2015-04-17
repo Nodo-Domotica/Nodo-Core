@@ -93,7 +93,7 @@ boolean Plugin_001(byte function, struct NodoEventStruct *event, char *string)
       RawSignal.Repeats=7;                                                      // KAKU heeft minimaal vijf herhalingen nodig om te schakelen.
       RawSignal.Delay=20;                                                       // Tussen iedere pulsenreeks enige tijd rust.
       RawSignal.Number=KAKU_CodeLength*4+2;                                     // Lengte plus een stopbit
-      event->Port=VALUE_ALL;                                                    // Signaal mag naar alle door de gebruiker met [Output] ingestelde poorten worden verzonden.
+      event->Port=VALUE_SOURCE_RF;                                              // Signaal naar RF
      
       unsigned long Bitstream = event->Par2 | (0x600 | ((event->Par1&1 /*Commando*/) << 11)); // Stel een bitstream samen
       

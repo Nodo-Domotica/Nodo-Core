@@ -28,6 +28,7 @@ byte dummy;
 #define PASSWORD_MAX_RETRY                 5                                    // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
 #define PASSWORD_TIMEOUT                 300                                    // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
 #define TERMINAL_TIMEOUT                 600                                    // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
+#define BROADCAST_TIME                   600                                    // Aantal seconden tussen verzending van het broadcast systeemevent.
 
 #define PLUGIN_MMI_IN                      1
 #define PLUGIN_MMI_OUT                     2
@@ -48,7 +49,7 @@ byte dummy;
 #define SERIAL_TERMINATOR_2             0x00                                    // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
 #define SCAN_HIGH_TIME                    50                                    // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
 #define SCAN_LOW_TIME                   1000                                    // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
-#define PLUGIN_MAX                        32                                    // Maximaal aantal devices 
+#define PLUGIN_MAX                        24                                    // Maximaal aantal devices 
 #define MACRO_EXECUTION_DEPTH             10                                    // maximale nesting van macro's.
 #define XON                             0x11                                    // Seriale communicatie XON/XOFF handshaking
 #define XOFF                            0x13                                    // Seriale communicatie XON/XOFF handshaking
@@ -237,7 +238,7 @@ byte IPClientIP[4];                                                             
 #define VALUE_SOURCE_NRF24L01           73
 #define VALUE_OFF                       74
 #define VALUE_ON                        75
-#define CMD_OUTPUT                      76
+#define CMD_OUTPUT                      76                                      // ??? vervalt na implementatie WebSocket. 
 #define VALUE_DIRECTION_OUTPUT          77
 #define VALUE_RECEIVED_PAR1             78
 #define VALUE_RECEIVED_PAR2             79
@@ -418,7 +419,7 @@ prog_char PROGMEM Cmd_72[]="Message";
 prog_char PROGMEM Cmd_73[]="RF24";
 prog_char PROGMEM Cmd_74[]="Off";
 prog_char PROGMEM Cmd_75[]="On";
-prog_char PROGMEM Cmd_76[]="Output";
+prog_char PROGMEM Cmd_76[]="Output";                                                  // ??? Vervalt na implementatie WebSocket
 prog_char PROGMEM Cmd_77[]="Output";
 prog_char PROGMEM Cmd_78[]="Par1";
 prog_char PROGMEM Cmd_79[]="Par2";
@@ -599,6 +600,7 @@ char InputBuffer_Serial[INPUT_LINE_SIZE];                                       
 #define SYSTEM_COMMAND_QUEUE_SENDTO                      2                      // Dit is aankondiging reeks, dus niet het user comando "SendTo".
 #define SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW              3                      // Dit is aankondiging reeks, dus niet het user comando "EventlistShow".
 #define SYSTEM_COMMAND_QUEUE_EVENTLIST_WRITE             4                      // Dit is aankondiging reeks, dus niet het user comando "EventlistShow".
+#define SYSTEM_COMMAND_BROADCAST                         5                      // Wordt periodiek verzonden om NodoOnline actueel te houden.
 
 
 //****************************************************************************************************************************************
@@ -629,11 +631,9 @@ struct SettingsStruct
   {
   byte    Unit;
   byte    WaitFreeNodo;
-  byte    TransmitIR;
-  byte    TransmitRF;
   byte    RawSignalReceive;
   byte    RawSignalSample;
-  
+                                                                                                          
   #if HARDWARE_WIRED_IN_PORTS
   int     WiredInputThreshold[HARDWARE_WIRED_IN_PORTS];
   int     WiredInputSmittTrigger[HARDWARE_WIRED_IN_PORTS];
@@ -715,13 +715,13 @@ struct TransmissionStruct
   uint8_t SourceUnit;
   uint8_t DestinationUnit;
   uint8_t Flags;
+
   uint8_t Checksum;
   };
 
-// Van alle devices die worden mee gecompileerd, worden in een tabel de adressen opgeslagen zodat
-// hier naar toe gesprongen kan worden
+
 void PluginInit(void);
-boolean (*Plugin_ptr[PLUGIN_MAX])(byte, struct NodoEventStruct*, char*);
+boolean (*Plugin_ptr[PLUGIN_MAX])(byte, struct NodoEventStruct*, char*);        // Van alle devices die worden mee gecompileerd, worden in een tabel de adressen opgeslagen zodat hier naartoe gesprongen kan worden.
 void (*FastLoopCall_ptr)(void);
 byte Plugin_id[PLUGIN_MAX];
 unsigned long HW_config=0,HW_status=0;                                          // Hardware configuratie zoals gedetecteerd door de Nodo. 
@@ -740,12 +740,13 @@ uint8_t RFbit,RFport,IRbit,IRport;                                              
 struct NodoEventStruct LastReceived;                                            // Laatst ontvangen event
 byte RequestForConfirm=false;                                                   // Als true dan heeft deze Nodo een verzoek ontvangen om een systemevent 'Confirm' te verzenden. Waarde wordt in Par1 meegezonden.
 int EventlistMax=0;                                                             // beschikbaar aantal regels in de eventlist. Wordt tijdens setup berekend.
+int TimerBroadcast=0;                                                           // timer (in sec.) voor periodiek verzenden van een broadcast.
 float TempFloat,TempFloat2;                                                     // globale floats die gebruikt mogen worden als een tijdelijke variabele
 float UserVarValue[USER_VARIABLES_MAX];                                         // inhoudelijke waarde van de gebruikersvariabele.
 byte UserVarKey[USER_VARIABLES_MAX];                                            // Nummer/sleutel van de gebruikersvariabelen
-
-boolean UserVarGlobal[USER_VARIABLES_MAX];
+boolean UserVarGlobal[USER_VARIABLES_MAX];                                      // Tabel waarin wordt bijgehouden welke variabelen globaal zijn.
 uint16_t UserVarPayload[USER_VARIABLES_MAX];                                    // Extra payload informatie behorende bij een variabele.
+
 
 #if HARDWARE_WIRED_IN_PORTS
 boolean WiredInputStatus[HARDWARE_WIRED_IN_PORTS];                              // Status van de WiredIn worden hierin opgeslagen.
@@ -762,7 +763,7 @@ boolean Transmission_SendtoFast=false;                                          
 byte AlarmPrevious[ALARM_MAX];                                                  // Bevat laatste afgelopen alarm. Ter voorkoming dat alarmen herhaald aflopen.
 boolean WebApp=false;                                                           // ??? Deze vlag moet later onder Port_WebSocket worden ondergebracht
 uint8_t MD5HashCode[16];                                                        // tabel voor berekenen van MD5 hash codes.
-int CookieTimer;                                                                // Seconden teller die bijhoudt wanneer er weer een nieuw Cookie naar de WebApp verzonden moet worden.
+int TimerCookie;                                                                // Seconden teller die bijhoudt wanneer er weer een nieuw Cookie naar de WebApp verzonden moet worden.
 int TerminalConnected=0;                                                        // Vlag geeft aan of en hoe lang nog (seconden) er verbinding is met een Terminal.
 int TerminalLocked=1;                                                           // 0 als als gebruiker van een telnet terminalsessie juiste wachtwoord heeft ingetoetst
 char TempLogFile[13];                                                           // Naam van de Logfile waar (naast de standaard logging) de verwerking in gelogd moet worden.
@@ -1266,6 +1267,22 @@ void loop()
       PluginCall(PLUGIN_ONCE_A_SECOND,&ReceivedEvent,0);
 
 
+      // BROADCAST: **************** Stuur periodiek een broadcast event naar alle Nodos zodat ze weten dat deze Nodo online is ***********************
+      if(TimerBroadcast>0)
+        TimerBroadcast--;
+      else
+        {
+        TimerBroadcast=BROADCAST_TIME;
+        ClearEvent(&ReceivedEvent);
+        ReceivedEvent.Type             = NODO_TYPE_SYSTEM;
+        ReceivedEvent.Command          = SYSTEM_COMMAND_BROADCAST;
+        ReceivedEvent.Direction        = VALUE_DIRECTION_OUTPUT;
+        ReceivedEvent.Port             = VALUE_ALL;
+        ReceivedEvent.Flags            = TRANSMISSION_BROADCAST;
+        SendEvent(&ReceivedEvent,false,true);                                       // Zend broadcast-event naar alle Nodo's.  
+        }
+
+
       // TIMER: **************** Genereer event als 1 van de Timers voor de gebruiker afgelopen is ***********************    
       for(x=0;x<TIMER_MAX;x++)
         {
@@ -1360,11 +1377,11 @@ void loop()
       // Timer voor verzenden van Cookie naar de WebApp/Server
       if(Settings.Password[0]!=0 && Settings.TransmitHTTP!=VALUE_OFF)
         {
-        if(CookieTimer>0)
-          CookieTimer--;
+        if(TimerCookie>0)
+          TimerCookie--;
         else
           {
-          CookieTimer=COOKIE_REFRESH_TIME;
+          TimerCookie=COOKIE_REFRESH_TIME;
           SendHTTPCookie(); // Verzend een nieuw cookie
           }
         }
