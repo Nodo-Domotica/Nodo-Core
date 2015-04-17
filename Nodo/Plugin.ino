@@ -9,9 +9,11 @@
 * een plugin dat kan worden gebruikt als je zelf een plugin wilt toevoegen aan de Nodo. 
 \*************************************************************************************************************************/
 
+// Workaround voor plugins die nog niet zijn aangepast voor de 3.8 release
 #if PLUGIN_37_COMPATIBILITY
 float UserVar[USER_VARIABLES_MAX];
 #endif
+#define WIRED_PORTS HARDWARE_WIRED_OUT_PORTS
 
 
 
@@ -923,7 +925,9 @@ byte PluginCall(byte Function, struct NodoEventStruct *Event, char *str)
     
     // Alle plugins langslopen. Na de eerste hit direct terugkeren met returnwaarde true, geen messages genereren.
     case PLUGIN_MMI_IN:
+    #if HARDWARE_RAWSIGNAL || HARDWARE_RF433 || HARDWARE_INFRARED
     case PLUGIN_RAWSIGNAL_IN:
+    #endif
     case PLUGIN_SERIAL_IN:
     case PLUGIN_ETHERNET_IN:
       for(x=0; x<PLUGIN_MAX; x++)

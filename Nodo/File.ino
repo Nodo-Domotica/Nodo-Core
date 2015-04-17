@@ -1,22 +1,24 @@
 
-#if NODO_MEGA
-
 /*********************************************************************************************\
  * Op het Ethernetshield kunnen de W5100 chip en de SDCard niet gelijktijdig worden gebruikt
  * Deze funktie zorgt voor de juiste chipselect. Default wordt in de Nodo software uitgegaan dat
  * de ethernetchip W5100 is geselecteerd. Met deze routine kan de SDCard worden geselecteerd.
  * input: true = SD_Card geselecteerd.
  \*********************************************************************************************/
+#if HARDWARE_SDCARD
 void SelectSDCard(boolean sd)
   {
   digitalWrite(EthernetShield_CS_W5100, sd);
   digitalWrite(EthernetShield_CS_SDCard, !sd);
   }
+#endif
+
+#if HARDWARE_SDCARD && NODO_MEGA
 
 /**********************************************************************************************\
  * Wis een file
  \*********************************************************************************************/
-void SDCardInit(void)
+boolean SDCardInit(void)
   {
   SelectSDCard(true);
   if(SD.begin(EthernetShield_CS_SDCard))
@@ -24,9 +26,10 @@ void SDCardInit(void)
     SD.mkdir(ProgmemString(Text_08));// RAWSIGN
     SD.mkdir(ProgmemString(Text_11));// ALIAS_I 
     SD.mkdir(ProgmemString(Text_12));// ALIAS_O
-    bitWrite(HW_Config,HW_SDCARD,1);
+    return true;
     }
-  SelectSDCard(false);
+  else
+    return false;
   }
 
  /*********************************************************************************************\
@@ -232,7 +235,9 @@ byte FileExecute(char* Path, char* Filename, char* Extention, boolean ContinueOn
     }
   else
     {
+    #if HARDWARE_STATUS_LED || HARDWARE_STATUS_LED_RGB 
     Led(RED);
+    #endif
     
     SelectSDCard(true);
     File dataFile=SD.open(PathFile(Path, Filename, Extention));

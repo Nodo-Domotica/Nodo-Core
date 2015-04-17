@@ -1,23 +1,27 @@
-// ****************************************************************************************************************************************
-// Definities voor Nodo units : CONFIG.C
-// ****************************************************************************************************************************************
-// Deel 1: geef hier op welke devices er gebruikt worden.
-// Voor een volledige, en bijgewerkte lijst van alle beschikbare devices verwijzen we naar de Wiki:
-// http://www.nodo-domotica.nl/index.php/Device
-// ****************************************************************************************************************************************
+// *********************************************************************************************************************
+// Config bestand voor: Arduino Uno / Duemillanove / Nano en klonen op basis van een Atmel ATMega328 
+//                      chip compatibel met het Nodo-Uno shield.
+// 
+// Voor een volledige en bijgewerkte lijst van alle beschikbare plugins verwijzen we 
+// naar de Wiki. Een plugin wordt als volgt opgegeven:
+//
+// #define PLUGIN_nnn:       is nodig om de plugin bekend te maken aan de Nodo zodat events
+//                           kunnen worden weergegeven en eventlists geprogrammeerd kunnen
+//                           worden. Neem voor alle plugins die je gebruikt in ieder geval
+//                           in je centrale Nodo-Mega (die b.v. met de WebApp communiceert)
+//                           deze regel op.
+//
+// #define PLUGIN_nnn_CORE:  Deze regel is alleen nodig voor de Nodo waar daadwerkelijk de
+//                           plugin zijn werk moet doen, zoals bijvoorbeeld het meten van
+//                           waarden van sensoren. 
+//
+//
+// *********************************************************************************************************************
 
 
-
-#define UNIT_NODO                         15                                    // Na een reset wordt dit het unitnummer van de Nodo
-#define NODO_MEGA                      false                                    // true=Nodo software voor op een ATMega2560
-#define CFG_CLOCK                      false                                    // false=geen code voor Real Time Clock mee compileren. (Op Mega is meecompileren van Clock verplicht)
-#define CFG_SOUND                       true                                    // false=geen luidspreker in gebruik.
-#define CFG_WIRED                       true                                    // false=wired voorzieningen uitgeschakeld
-#define CFG_I2C                        false                                    // false=I2C communicatie niet mee compileren (I2C plugins en klok blijvel wel gebruik maken van I2C)
-#define CFG_SLEEP                       true                                    // false=Sleep mode mee compileren.
-#define CFG_SERIAL                      true                                    // false=Seriele communicatie niet mee compileren. LET OP: hierdoor geen enkele weergave of input via seriele poort meer mogelijk!!! Alleen voor de Nodo-Small 
-#define CFG_RAWSIGNAL                  false                                    // false=Rawsignal niet meecompileren. LET OP: Zowel RF als IR communicatie alsmede diverse plugins gebruiken RawSignal voorzieningen. Alleen voor de Nodo-Small
-#define NODO_PORT_NRF24L01              true                                    // true=Ondersteuning voor tranciever module NRF24L01
+#define UNIT_NODO                         15                                    // Na een reset-commando wordt dit het unitnummer van de Nodo
+#define HARDWARE_CONFIG                 1510                                    // Arduino Uno / Duemillanove / Nano en klonen op basis van een Atmel ATMega328 
+                                                                                // chip compatibel met het Nodo-Uno shield.  
 
 
 // Kaku: Klik-Aan-Klik-Uit
@@ -27,10 +31,6 @@
 // NewKAKU: Klik-Aan-Klik-Uit met automatische codering. Tevens bekend als Intertechno.
 // #define PLUGIN_002
 // #define PLUGIN_002_CORE
-
-// NRF24L01 Plugin
-// #define PLUGIN_033                                                              
-// #define PLUGIN_033_CORE
 
 // Temperatuursensor Dallas DS18B20
 // #define PLUGIN_005
@@ -48,4 +48,22 @@
 // #define PLUGIN_023
 // #define PLUGIN_023_CORE
 // #define PLUGIN_023_CORE_RGBLED
+
+
+
+
+
+//=======================================================================================================================
+// Eventueel mogen hardware opties worden uitgeschakeld door remarks '//' voor onderstaande regels weg te halen
+// bijvoorbeeld om niet gebruike opties uit te schakelen en geheugenruimte vrij te maken voor plugins.
+// Let echter wel op dan sommige voorzieningen van elkaar afhankelijk zijn of dat plugins hier gebruik van maken.
+//=======================================================================================================================
+// #define HARDWARE_WIRED_IN_PORTS      0
+// #define HARDWARE_WIRED_OUT_PORTS     0
+// #define HARDWARE_STATUS_LED      false    
+// #define HARDWARE_SPEAKER         false
+// #define HARDWARE_INFRARED        false
+// #define HARDWARE_SERIAL_1        false
+// #define HARDWARE_CLOCK           false
+// #define HARDWARE_I2C             false
 

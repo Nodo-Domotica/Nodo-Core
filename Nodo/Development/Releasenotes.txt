@@ -97,6 +97,11 @@ Build 802:
 - Payload wordt niet verzonden vanaf een Small wanneer deze wordt gevuld door een variabele
 - Payload wordt meegegeven met VariablePulseTime
 
+Build 803:
+- Alleen gebruikte variabelen worden getoond.
+- Alleen gebruikte timers worden getoond.
+
+
 Todo:
 - Plugins langslopen:
   * Plugin_008 (Alecto)    => Geen direct gebruik meer van UserVar[] maar variabelen aanpassen via UserVariableSet();

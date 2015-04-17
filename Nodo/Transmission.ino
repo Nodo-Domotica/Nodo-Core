@@ -8,7 +8,8 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   {    
   ES->Direction=VALUE_DIRECTION_OUTPUT;
   byte Port=ES->Port;
-    
+  byte x=0;
+      
   if(Settings.WaitFreeNodo==VALUE_ON)
     {
     if(BusyNodo!=0)                                                             // Als een Nodo heeft aangegeven busy te zijn, dan wachten.
@@ -29,22 +30,20 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
       RequestForConfirm=true;
       }
     }  
+  
   // PrintNodoEvent("DEBUG: SendEvent():", ES);
 
-  // loop de plugins langs voor eventuele afhandeling van dit event.
+  PluginCall(PLUGIN_EVENT_OUT, ES,0);                                           // loop de plugins langs voor eventuele afhandeling van dit event.
 
-
-  #if CFG_RAWSIGNAL
-  // Stuur afhankelijk van de instellingen het event door naar I2C, RF, IR. Eerst wordt het event geprint,daarna een korte wachttijd om
-  // te zorgen dat er een minimale wachttijd tussen de signlen zit. Tot slot wordt het signaal verzonden.
-
-
+  #if HARDWARE_RAWSIGNAL || HARDWARE_RF433 || HARDWARE_INFRARED
   if(!UseRawSignal)
     Nodo_2_RawSignal(ES);
-
-  // Respecteer een minimale tijd tussen verzenden van events. Wachten alvorens event te verzenden.
-  while(millis()<HoldTransmission);  
+  #endif
+  
+  while(millis()<HoldTransmission);                                             // Respecteer een minimale tijd tussen verzenden van events. Wachten alvorens event te verzenden.  
+  HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS+millis();        
                                              
+  #if HARDWARE_INFRARED
   // Verstuur signaal als IR
   if(Settings.TransmitIR==VALUE_ON && (Port==VALUE_SOURCE_IR || Port==VALUE_ALL))
     { 
@@ -56,20 +55,24 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     }
   #endif
 
-  #if NODO_PORT_NRF24L01
-  if(bitRead(HW_Config,HW_PORT_NRF24L01))
+  #if HARDWARE_NRF24L01
+  if(HW_Status(HW_NRF24L01))
     {
-    #if NODO_MEGA
     ES->Port=VALUE_SOURCE_NRF24L01;
-    if(Port_NRF24L01_EventSend(ES) && Display)PrintEvent(ES,VALUE_ALL);         // Event alleen printen als verzending plaats heeft gevonden.
-    #else
-    Port_NRF24L01_EventSend(ES);
+
+    #if NODO_MEGA
+    if(Display)
+      PrintEvent(ES,VALUE_ALL);
     #endif
+    
+    x=Port_NRF24L01_EventSend(ES);
+    if(x)
+      RaiseMessage(MESSAGE_NODO_NOT_FOUND,x);
     }
   #endif
   
-  #if NODO_PORT_I2C
-  if(bitRead(HW_Config,HW_PORT_I2C))
+  #if HARDWARE_I2C
+  if(HW_Status(HW_I2C))
     {
     #if NODO_MEGA
     ES->Port=VALUE_SOURCE_I2C;
@@ -79,25 +82,8 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     #endif
     }
   #endif
-  
 
-
-
-  #ifdef ethernetserver_h
-  // Verstuur signaal als HTTP-event.
-  if(bitRead(HW_Config,HW_ETHERNET))// Als Ethernet shield aanwezig.
-    {
-    if((Settings.TransmitHTTP==VALUE_ALL || Settings.TransmitHTTP==VALUE_ON) && (Port==VALUE_SOURCE_HTTP || Port==VALUE_ALL) && Settings.PortOutput!=0 )
-      {
-      SendHTTPEvent(ES);
-      ES->Port=VALUE_SOURCE_HTTP;
-      if(Display)PrintEvent(ES,VALUE_ALL);
-      }
-    }
-  #endif 
-
-  
-  #if CFG_RAWSIGNAL
+  #if HARDWARE_RF433
   // Verstuur signaal als RF
   if(Settings.TransmitRF==VALUE_ON && (Port==VALUE_SOURCE_RF || Port==VALUE_ALL))
     {
@@ -109,8 +95,19 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     }
   #endif
 
-  HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS+millis();        
-  // PrintNodoEvent("DEBUG: Event sent=", ES);//???
+  #if HARDWARE_ETHERNET
+  // Verstuur signaal als HTTP-event.
+  if(HW_Status(HW_ETHERNET))
+    {
+    if((Settings.TransmitHTTP==VALUE_ALL || Settings.TransmitHTTP==VALUE_ON) && (Port==VALUE_SOURCE_HTTP || Port==VALUE_ALL) && Settings.PortOutput!=0 )
+      {
+      SendHTTPEvent(ES);
+      ES->Port=VALUE_SOURCE_HTTP;
+      if(Display)PrintEvent(ES,VALUE_ALL);
+      }
+    }
+  #endif 
+  
   }
   
 #if NODO_MEGA
@@ -118,7 +115,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
 //#######################################################################################################
 //##################################### Transmission: HTTP  #############################################
 //#######################################################################################################
-#ifdef ethernetserver_h
+#if HARDWARE_ETHERNET
 
 #define IP_BUFFER_SIZE            256
 
@@ -175,9 +172,6 @@ boolean EthernetInit(void)
   boolean Ok=false;
   byte Ethernet_MAC_Address[6];                                // MAC adres van de NodO
 
-  if(!bitRead(HW_Config,HW_ETHERNET))
-    return false;
-    
   // Stel MAC adres in. Hiering zit het unitnummer van de Nodo verwerkt.
   Ethernet_MAC_Address[0]=ETHERNET_MAC_0;
   Ethernet_MAC_Address[1]=ETHERNET_MAC_1;
@@ -222,7 +216,7 @@ boolean EthernetInit(void)
         {
         IPClient.getRemoteIP(IPClientIP);
         Ok=true;
-        bitWrite(HW_Config,HW_WEBAPP,1);
+        WebApp=true;
         delay(10); //even wachten op response van de server.
         IPClient.flush(); // gooi alles weg, alleen IP adres was van belang.
         IPClient.stop();
@@ -233,7 +227,6 @@ boolean EthernetInit(void)
         IPClientIP[1]=0;
         IPClientIP[2]=0;
         IPClientIP[3]=0;
-        Serial.println(F("Error: No TCP/IP connection to host."));
         Ok=false;
         }
       free(TempString);    
@@ -322,8 +315,12 @@ byte SendHTTPEvent(struct NodoEventStruct *Event)
 
   strcat(HttpRequest,"&event=");
   Event2str(Event,TempString);
+
+  #if HARDWARE_SDCARD
   if(Settings.Alias==VALUE_ON)
     Alias(TempString,false);
+  #endif // HARDWARE_SDCARD
+
   strcat(HttpRequest,TempString);
 
   if(Event->Payload!=0)
@@ -379,11 +376,16 @@ boolean SendHTTPRequest(char* Request)
   byte State=0;
   char *IPBuffer=(char*)malloc(IP_BUFFER_SIZE);
   char *TempString=(char*)malloc(INPUT_LINE_SIZE);
+  
+  #if HARDWARE_SDCARD
   File BodyTextFile;
+  #endif
+  
   struct NodoEventStruct TempEvent;
   int ContentLength=0;
 
   filename[0]=0;
+  #if HARDWARE_SDCARD
   if(ParseHTTPRequest(Request,"file=", TempString,"&? "))                       // pluk de filename uit het http request als die er is.
     {
     TempString[8]=0;                                                            // voorkom dat filenaam meer dan acht posities heeft
@@ -392,6 +394,7 @@ boolean SendHTTPRequest(char* Request)
     FileErase("", filename,"DAT");
     SelectSDCard(false);
     }  
+  #endif // HARDWARE_SDCARD
 
   strcpy(IPBuffer,"GET ");
 
@@ -485,12 +488,14 @@ boolean SendHTTPRequest(char* Request)
               if(InByteCounter==0)
                 {
                 State=2;
+                #if HARDWARE_SDCARD
                 if(filename[0])                                                 // Openen nieuw bestand.
                   {
                   SelectSDCard(true);
                   BodyTextFile = SD.open(PathFile("",filename,"DAT"), FILE_WRITE);
                   SelectSDCard(false);
                   }
+                #endif
                 }
               else
                 {
@@ -524,6 +529,7 @@ boolean SendHTTPRequest(char* Request)
 
             else if(State==2)                                                   // State 2: In deze state komen de regels van de body-text voorbij
               {
+              #if HARDWARE_SDCARD
               if(BodyTextFile)                                                  // als bodytext moet worden opgeslagen in en bestand
                 {
                 SelectSDCard(true);
@@ -531,6 +537,7 @@ boolean SendHTTPRequest(char* Request)
                 BodyTextFile.write('\n');                                       // nieuwe regel
                 SelectSDCard(false);
                 }
+              #endif
               }
             InByteCounter=0;          
             }
@@ -542,12 +549,15 @@ boolean SendHTTPRequest(char* Request)
           }                
         }
 
+      #if HARDWARE_SDCARD
       if(BodyTextFile)                                                          // eventueel geopende bestand op SDCard afsluiten
         {
         SelectSDCard(true);
         BodyTextFile.close();
         SelectSDCard(false);
         }        
+      #endif
+      
       IPClient.flush();                                                         // Verwijder eventuele rommel in de buffer.
       IPClient.stop();
       }
@@ -746,13 +756,13 @@ void ExecuteIP(void)
               IPClient.println(F("Content-Type: text/html"));
               IPClient.print(F("Server: Nodo/Build="));
               IPClient.println(int2str(NODO_BUILD));             
-              #if CFG_CLOCK
-              if(bitRead(HW_Config,HW_CLOCK))
+              #if HARDWARE_CLOCK && HARDWARE_I2C
+              if(HW_Status(HW_CLOCK))
                 {
                 IPClient.print(F("Date: "));
                 IPClient.println(DateTimeString());             
                 }
-              #endif //CFG_CLOCK
+              #endif //HARDWARE_CLOCK
               
               IPClient.println(""); // HTTP Request wordt altijd afgesloten met een lege regel
 
@@ -785,7 +795,7 @@ void ExecuteIP(void)
   return;
   }  
 
-#endif //ethernetserver_h
+#endif //HARDWARE_ETHERNET
 #endif //MEGA
 
 

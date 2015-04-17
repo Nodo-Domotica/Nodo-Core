@@ -1,3 +1,4 @@
+
  /*********************************************************************************************\
  * Deze functie checkt of de code die ontvangen is een uitvoerbare opdracht is.
  * Als het een correct commando is wordt deze uitgevoerd en 
@@ -21,7 +22,22 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
   
   switch(EventToExecute->Command)
     {   
-    #if CFG_WIRED
+    #if HARDWARE_WIRED_IN_PORTS
+    case CMD_WIRED_SMITTTRIGGER:
+      if(EventToExecute->Par1>0 && EventToExecute->Par1<=HARDWARE_WIRED_IN_PORTS)
+        Settings.WiredInputSmittTrigger[EventToExecute->Par1-1]=EventToExecute->Par2;
+      break;                  
+
+    case CMD_WIRED_THRESHOLD:
+      if(EventToExecute->Par1>0 && EventToExecute->Par1<=HARDWARE_WIRED_IN_PORTS)
+        Settings.WiredInputThreshold[EventToExecute->Par1-1]=EventToExecute->Par2;
+      break;                  
+
+    case CMD_VARIABLE_SET_WIRED_ANALOG:
+      if(UserVariableSet(EventToExecute->Par1,analogRead(PIN_WIRED_IN_1+EventToExecute->Par2-1),true)==-1)
+        error=MESSAGE_VARIABLE_ERROR;
+      break;
+
     case CMD_WIRED_PULLUP:
       Settings.WiredInputPullUp[EventToExecute->Par1-1]=EventToExecute->Par2; // EventToExecute->Par1 is de poort[1..]
       
@@ -30,8 +46,10 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       else
         pinMode(A0+PIN_WIRED_IN_1+EventToExecute->Par1-1,INPUT);
       break;
+    #endif
                  
 
+    #if HARDWARE_WIRED_OUT_PORTS
     case CMD_WIRED_OUT_VARIABLE:
       if(UserVariable(EventToExecute->Par2,&TempFloat)!=-1)
         {
@@ -41,27 +59,12 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       else
         error=MESSAGE_VARIABLE_ERROR;
       break;
-
+    
     case CMD_WIRED_OUT:
       analogWrite(PIN_WIRED_OUT_1+EventToExecute->Par1-1,EventToExecute->Par2);
       WiredOutputStatus[EventToExecute->Par1-1]=EventToExecute->Par2;
       break;
-
-    case CMD_WIRED_SMITTTRIGGER:
-      if(EventToExecute->Par1>0 && EventToExecute->Par1<=WIRED_PORTS)
-        Settings.WiredInputSmittTrigger[EventToExecute->Par1-1]=EventToExecute->Par2;
-      break;                  
-
-    case CMD_WIRED_THRESHOLD:
-      if(EventToExecute->Par1>0 && EventToExecute->Par1<=WIRED_PORTS)
-        Settings.WiredInputThreshold[EventToExecute->Par1-1]=EventToExecute->Par2;
-      break;                  
-
-    case CMD_VARIABLE_SET_WIRED_ANALOG:
-      if(UserVariableSet(EventToExecute->Par1,analogRead(PIN_WIRED_IN_1+EventToExecute->Par2-1),true)==-1)
-        error=MESSAGE_VARIABLE_ERROR;
-      break;
-    #endif //CFG_WIRED
+    #endif
 
     case CMD_VARIABLE_TOGGLE:
       UserVariable(EventToExecute->Par1,&TempFloat);
@@ -105,9 +108,10 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         error=MESSAGE_VARIABLE_ERROR;
       break;        
                                                                                        
+    #if HARDWARE_PULSE
     case CMD_VARIABLE_PULSE_COUNT:
       // Tellen van pulsen actief: enable IRQ behorende bij PIN_IR_RX_DATA. Zodra dit commando wordt gebruikt, wordt ontvangst van IR uitgeschakeld.
-      bitWrite(HW_Config,HW_PULSE,true);
+      HW_SetStatus(HW_PULSE,true,true);
       attachInterrupt(PULSE_IRQ,PulseCounterISR,PULSE_TRANSITION); 
       if(UserVariableSet(EventToExecute->Par1,(float)PulseCount,true)==-1)
         error=MESSAGE_VARIABLE_ERROR;
@@ -119,13 +123,14 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       // Tellen van pulsen actief: enable IRQ behorende bij PIN_IR_RX_DATA. Zodra dit commando wordt gebruikt, wordt ontvangst van IR uitgeschakeld.
       if(UserVariableSet(EventToExecute->Par1,(float)PulseTime,true)!=-1)
         {
-        bitWrite(HW_Config,HW_PULSE,true);
+        HW_SetStatus(HW_PULSE,true,true);
         attachInterrupt(PULSE_IRQ,PulseCounterISR,PULSE_TRANSITION); 
         UserVariablePayload(EventToExecute->Par1,0x0021); // milliseconds
         }
       else
         error=MESSAGE_VARIABLE_ERROR;
       break;         
+    #endif // HARDWARE_PULSE
 
     case CMD_STOP:
       error=MESSAGE_EXECUTION_STOPPED;
@@ -222,7 +227,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       SendEvent(&TempEvent, TempEvent.Command==EVENT_RAWSIGNAL,true);
       break;        
 
-    #if CFG_EVENTLIST
     case CMD_VARIABLE_SAVE: 
       for(z=0;z<=USER_VARIABLES_MAX;z++)
         {
@@ -261,7 +265,10 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
 
     case CMD_EVENTLIST_ERASE:
+      #if HARDWARE_STATUS_LED || HARDWARE_STATUS_LED_RGB
       Led(BLUE);
+      #endif
+      
       if(EventToExecute->Par1==0)
         {
         x=1;                                          
@@ -366,9 +373,8 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         }        
         #endif
       break;
-    #endif CFG_EVENTLIST
 
-    #if CFG_CLOCK
+    #if HARDWARE_CLOCK && HARDWARE_I2C
     case CMD_BREAK_ON_DAYLIGHT:
       if(EventToExecute->Par1==VALUE_ON && (Time.Daylight==2 || Time.Daylight==3))
         error=MESSAGE_BREAK;
@@ -401,11 +407,11 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       ClockSet();
       break;
 
-    #endif CFG_CLOCK 
+    #endif // HARDWARE_CLOCK 
 
 
     #if NODO_MEGA
-    #if CFG_CLOCK
+    #if HARDWARE_CLOCK  && HARDWARE_I2C
     case CMD_ALARM_SET:
       if(EventToExecute->Par1>=1 && EventToExecute->Par1<=ALARM_MAX)              // niet buiten bereik array!
         {
@@ -423,10 +429,10 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
 
     case CMD_CLOCK_SYNC:
-      if(bitRead(HW_Config,HW_CLOCK)) // bitRead(HW_Config,HW_CLOCK)=true want dan is er een RTC aanwezig.
+      if(HW_Status(HW_CLOCK))
         {   
         // haal de tijd op van de Webserver. Dit vind plaats in de funktie: boolean SendHTTPRequest(char* Request)
-        if(bitRead(HW_Config,HW_WEBAPP))
+        if(WebApp)
           {
           ClockSyncHTTP=true;
           EventToExecute->Port=VALUE_SOURCE_HTTP;
@@ -460,20 +466,20 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         SendEvent(&TempEvent, false, true);        
         }
       break;
-    #endif CFG_CLOCK 
+    #endif //HARDWARE_CLOCK 
     #endif NODO_MEGA
           
 
     case CMD_SLEEP:
       #if !NODO_MEGA
-      #if CFG_SLEEP
+      #if HARDWARE_BATTERY
       GoodNightSleepTight();
       #endif
       #endif      
       break;
 
 
-    #if CFG_SOUND
+    #if HARDWARE_SPEAKER
     case CMD_SOUND: 
       Alarm(EventToExecute->Par1,EventToExecute->Par2);
       break;
@@ -493,7 +499,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
           Settings.TransmitRF=EventToExecute->Par2;
           break;       
 
-        #if NODO_MEGA
+        #if HARDWARE_ETHERNET
         case VALUE_SOURCE_HTTP:
           Settings.TransmitHTTP=EventToExecute->Par2;        
           break;       
@@ -542,7 +548,20 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
 
 #if NODO_MEGA // vanaf hier commando's die alleen de Mega kent.
 
-    case CMD_VARIABLE_LOG: //??? Herzien
+    #if HARDWARE_SDCARD
+    case CMD_LOG: 
+      Settings.Log=EventToExecute->Par1;
+      break;
+      
+    case CMD_FILE_EXECUTE:
+      error=FileExecute("",int2str(EventToExecute->Par2),"DAT", EventToExecute->Par1==VALUE_ON, VALUE_ALL);
+      break;      
+
+    case CMD_ALIAS_SHOW:
+      Settings.Alias=EventToExecute->Par1; 
+      break;
+
+    case CMD_VARIABLE_LOG:
       {
       if(EventToExecute->Par1==0)
         {
@@ -557,7 +576,12 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       
       for(w=x;w<=y;w++)
         {
+        #if HARDWARE_CLOCK && HARDWARE_I2C
         sprintf(TempString,ProgmemString(Text_16),Time.Date,Time.Month,Time.Year,Time.Hour,Time.Minutes,w);
+        #else
+        sprintf(TempString,ProgmemString(Text_13),w);
+        #endif
+                
         if(UserVariable(w,&TempFloat)!=-1)
           {
           dtostrf(TempFloat, 0, 2,TempString+strlen(TempString));
@@ -568,7 +592,8 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         }        
       break;
       }
-
+    #endif // HARDWARE_SDCARD
+    
     case CMD_PORT_INPUT:
       Settings.PortInput=EventToExecute->Par2;
       break;
@@ -578,20 +603,20 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
 
     case CMD_ECHO:
+      #if HARDWARE_ETHERNET
       if(EventToExecute->Port==VALUE_SOURCE_TELNET) 
         Settings.EchoTelnet=EventToExecute->Par1;
+      #endif
       if(EventToExecute->Port==VALUE_SOURCE_SERIAL) 
         Settings.EchoSerial=EventToExecute->Par1;        
       break;
 
-    case CMD_ALIAS_SHOW:
-      Settings.Alias=EventToExecute->Par1; 
-      break;
 
     case CMD_DEBUG: 
       Settings.Debug=EventToExecute->Par1;
       break;
 
+    #if (HARDWARE_RAWSIGNAL || HARDWARE_RF433 || HARDWARE_INFRARED) && HARDWARE_SDCARD
     case CMD_RAWSIGNAL_RECEIVE:
       Settings.RawSignalReceive=EventToExecute->Par1;
       if(EventToExecute->Par2==VALUE_ON || EventToExecute->Par2==VALUE_OFF)
@@ -615,16 +640,9 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
     case CMD_RAWSIGNAL_SEND:
       error=CommandRawSignalSend(EventToExecute->Par1,EventToExecute->Par2);
       break;
-
-    case CMD_LOG: 
-      Settings.Log=EventToExecute->Par1;
-      break;
-      
-    case CMD_FILE_EXECUTE:
-      error=FileExecute("",int2str(EventToExecute->Par2),"DAT", EventToExecute->Par1==VALUE_ON, VALUE_ALL);
-      break;      
+    #endif //HARDWARE_RAWSIGNAL && HARDWARE_SDCARD 
               
-    #endif    
+    #endif // NODO_MEGA    
     }
 
   #if NODO_MEGA

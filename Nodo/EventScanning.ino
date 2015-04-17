@@ -11,8 +11,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
 
   while(Timer>millis() || RepeatingTimer>millis())
     {
-
-    #if NODO_PORT_NRF24L01
+    #if HARDWARE_NRF24L01
     if(Focus==0 || Focus==VALUE_SOURCE_NRF24L01)
       {
       if(Port_NRF24L01_EventReceived(Event))
@@ -23,7 +22,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       }
     #endif
 
-    #if NODO_PORT_I2C
+    #if HARDWARE_I2C
     if(Focus==0 || Focus==VALUE_SOURCE_I2C)
       {
       if(Port_I2C_EventReceived(Event))
@@ -33,36 +32,34 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
         }
       }
     #endif
-
   
-    #if CFG_RAWSIGNAL
+    #if HARDWARE_INFRARED
     if(Focus==0 || Focus==VALUE_SOURCE_IR)
       {
-      if(!bitRead(HW_Config,HW_PULSE) && FetchSignal(PIN_IR_RX_DATA,LOW))       // IR: *************** kijk of er data start **********************
+      if(!HW_Status(HW_PULSE) && FetchSignal(PIN_IR_RX_DATA,LOW))       // IR: *************** kijk of er data start **********************
         {
         if(AnalyzeRawSignal(Event))
           {
-          bitWrite(HW_Config,HW_IR_RX,true);
           Fetched=VALUE_SOURCE_IR;
           Focus=Fetched;
           }
         }
       }
+  	#endif
       
+    #if HARDWARE_RF433
     if(Focus==0 || Focus==VALUE_SOURCE_RF)
       {
       if(FetchSignal(PIN_RF_RX_DATA,HIGH))                                      // RF: *************** kijk of er data start **********************
         {
         if(AnalyzeRawSignal(Event))
           {
-          bitWrite(HW_Config,HW_RF_RX,true);
           Fetched=VALUE_SOURCE_RF;
           Focus=Fetched;
           }
         }
       }
     #endif
-  
 
     if(Fetched)
       {
@@ -72,17 +69,17 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       Event->Direction=VALUE_DIRECTION_INPUT;
       Fetched=0;
       
-      #if CFG_RAWSIGNAL
+      #if HARDWARE_RAWSIGNAL || HARDWARE_RF433 || HARDWARE_INFRARED
       if(RawSignal.RepeatChecksum)RawSignal.Repeats=true;
       #endif      
       // Er zijn een aantal situaties die moeten leiden te een event. Echter er zijn er ook die (nog) niet mogen leiden 
       // tot een event en waar het binnengekomen signaal moet worden onderdrukt.
       
       // 1. Het is een (niet repeterend) Nodo signaal of is de herkomst I2C => Alle gevallen doorlaten
-      if(Event->Type==NODO_TYPE_EVENT || Event->Type==NODO_TYPE_COMMAND || Event->Type==NODO_TYPE_SYSTEM || Event->Port==VALUE_SOURCE_I2C)
+      if(Event->Type==NODO_TYPE_EVENT || Event->Type==NODO_TYPE_COMMAND || Event->Type==NODO_TYPE_SYSTEM || Event->Port==VALUE_SOURCE_I2C || Event->Port==VALUE_SOURCE_NRF24L01)
         Fetched=1;      
 
-      #if CFG_RAWSIGNAL
+      #if HARDWARE_RAWSIGNAL || HARDWARE_RF433 || HARDWARE_INFRARED
       // 2. Het (mogelijk repeterend) binnenkomende signaal is niet recent eerder binnengekomen, zoals plugin signalen als KAKU, NewKAKU, ... => Herhalingen onderdrukken  
       else if(!RawSignal.RepeatChecksum && (SignalHash!=SignalHashPrevious || RepeatingTimer<millis())) 
         Fetched=2;
@@ -92,8 +89,6 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
         Fetched=3;
       #endif
 
-      // Serial.print(F("DEBUG: Fetched. SignalHash="));Serial.print(SignalHash,HEX);Serial.print(F(", RawSignal.Repeats="));Serial.print(RawSignal.Repeats);Serial.print(F(", RawSignal.RepeatChecksum="));Serial.print(RawSignal.RepeatChecksum);Serial.print(F(", RepeatingTimer>millis()="));Serial.print(RepeatingTimer>millis());Serial.print(F(", Fetched="));Serial.println(Fetched);
-
       SignalHashPrevious=SignalHash;
       RepeatingTimer=millis()+SIGNAL_REPEAT_TIME; 
       
@@ -102,24 +97,18 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
         // als het informatie uitwisseling tussen Nodo's betreft...
         if(Event->Type==NODO_TYPE_EVENT || Event->Type==NODO_TYPE_COMMAND || Event->Type==NODO_TYPE_SYSTEM)
           {
-          // PrintNodoEvent("DEBUG: Received event=", Event);
-
-
           // registreer welke Nodo's op welke poort zitten en actualiseer tabel.
           // Hiermee kan later automatisch bij verzenden van events de juiste poort worden geselecteerd.
           // Het kan echter zijn dat een Nodo event binnenkomt op een andere poort dan
           // de geregistreerde voorkeurspoort. In dit geval wordt het event NIET doorgelaten omdat anders mogelijk 
           // het event vaker binnenkomt. Nodos communiceren onderling met de voorkeurspoort.
-          
-          if(NodoOnline(Event->SourceUnit,Event->Port)!=Event->Port)
+          if(NodoOnline(Event->SourceUnit,Event->Port,true)!=Event->Port)
             return false;
 
           // Een Nodo kan aangeven dat hij Busy is.
           bitWrite(BusyNodo, Event->SourceUnit,(Event->Flags&TRANSMISSION_BUSY)>0);
           }
                   
-        // Als het Nodo event voor deze unit bestemd is, dan klaar. Zo niet, dan terugkeren met een false
-        // zodat er geen verdere verwerking plaatsvindt.
         if(Event->DestinationUnit==0 || Event->DestinationUnit==Settings.Unit)
           {
           EventHashPrevious=SignalHash;
@@ -134,7 +123,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
   }
 
 #if NODO_MEGA
-#if CFG_CLOCK
+#if HARDWARE_CLOCK && HARDWARE_I2C
 boolean ScanAlarm(struct NodoEventStruct *Event)
   {
   unsigned long Mask;

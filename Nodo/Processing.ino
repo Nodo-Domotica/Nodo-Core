@@ -8,7 +8,10 @@ void ProcessingStatus(boolean Processing)
     if(Processing)
       {
       Serial.write(XOFF);
+
+      #if HARDWARE_STATUS_LED || HARDWARE_STATUS_LED_RGB
       Led(RED);
+      #endif
       }
     else
       {
@@ -26,7 +29,9 @@ void ProcessingStatus(boolean Processing)
         RequestForConfirm=false;
         }
       Serial.write(XON);
+      #if HARDWARE_STATUS_LED || HARDWARE_STATUS_LED_RGB
       Led(GREEN);
+      #endif
       }  
     }
   }
@@ -38,12 +43,15 @@ byte ProcessEvent(struct NodoEventStruct *Event)
   byte error=0;
   boolean Continue=true;
   int x;
-  
+
+
   if(Event->Command==0)
     return error;
 
-  Led(RED);                                                                     // LED aan als er iets verwerkt wordt //??? Kan worden volstaan met eenmaal Led() aanroep?      
-
+  #if HARDWARE_STATUS_LED || HARDWARE_STATUS_LED_RGB
+  Led(RED);
+  #endif
+  
   #if NODO_MEGA
   if(FileWriteMode!=0)
     return 0;
@@ -79,7 +87,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
 
   // Events die nu nog de TRANSMISSION_SENDTO vlag hebben staan hoorden oorspronkelijk tot een reeks die verzonden is
   // met een SendTo. Deze events hebben hier geen betekenis en dus volledig negeren.
-  if(Continue && (Event->Flags & TRANSMISSION_SENDTO))//???
+  if(Continue && (Event->Flags & TRANSMISSION_SENDTO))
     Continue=false;
 
   // Als in het event een verzoek zit om een bevestiging te verzenden...
@@ -100,8 +108,8 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     Continue=false;
   #endif
   
-  #if NODO_MEGA
-  if(Continue && bitRead(HW_Config,HW_SDCARD))
+  #if (HARDWARE_RAWSIGNAL || HARDWARE_RF433 || HARDWARE_INFRARED) && HARDWARE_SDCARD
+  if(Continue && HW_Status(HW_SDCARD))
     if(Event->Command==EVENT_RAWSIGNAL && Settings.RawSignalReceive==VALUE_ON)
       if(!RawSignalExist(Event->Par2))
         RawSignalWrite(Event->Par2);
@@ -118,7 +126,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
   if(Continue && error==0)
     {
     #if NODO_MEGA
-    PrintEvent(Event, VALUE_ALL);
+     PrintEvent(Event, VALUE_ALL);
     
     // Enkele commando's moet de WebApp terug ontvangen omdat anders statussen niet correct zijn.
     // Dit is een tijdelijke oplossing.  (???)
@@ -151,7 +159,6 @@ byte ProcessEvent(struct NodoEventStruct *Event)
       
     else
       {
-      #if CFG_EVENTLIST
       struct NodoEventStruct EventlistEvent, EventlistAction;                   // het is een ander soort event. Loop de gehele eventlist langs om te kijken of er een treffer is.   
       LastReceived=*Event;                                                      // sla event op voor later gebruik (o.a. SendEvent)
 
@@ -168,7 +175,6 @@ byte ProcessEvent(struct NodoEventStruct *Event)
       
       if(error==MESSAGE_BREAK)                                                  // abort is geen fatale error maar een break. Deze dus niet verder behandelen als een error.
         error=0;
-      #endif CFG_EVENTLIST
 
       if(error)
         RaiseMessage(error,EventlistAction.Par2);//??? deze opgenomen in de 3.8 code. Waarom was deze niet hier in de 3.7? Nu opgenomen omdat small tijdens uitvoer eventlist niet met error kwam
@@ -180,6 +186,9 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     }
   ExecutionDepth--;
 
+  #if HARDWARE_STATUS_LED || HARDWARE_STATUS_LED_RGB
+  Led(GREEN);
+  #endif
   return error;
   }
 
@@ -188,7 +197,6 @@ byte ProcessEvent(struct NodoEventStruct *Event)
  * geeft positie terug bij een match.
  \*********************************************************************************************/
 
-#if CFG_EVENTLIST
 byte CheckEventlist(struct NodoEventStruct *Event)
   {
   struct NodoEventStruct MacroEvent,MacroAction;
@@ -277,7 +285,6 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
      }
   return false;                                                                 // geen match gevonden
   }
-#endif CFG_EVENTLIST
 
 
 //#######################################################################################################
@@ -286,17 +293,7 @@ boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroE
 
 // De queue is een tijdelijke wachtrij voor ontvangen of te verzenden events. 
 // De queue bevat event gegevens behalve de transmissie gegevens. 
-struct QueueStruct
-  {
-  byte Flags;
-  byte Port;
-  byte Unit;
-  byte Type;
-  byte Command;
-  byte Par1;
-  unsigned long Par2;
-  uint16_t Payload;
-  }Queue[EVENT_QUEUE_MAX];
+struct NodoEventStruct Queue[EVENT_QUEUE_MAX];
 
 
  /**********************************************************************************************\
@@ -310,15 +307,7 @@ boolean QueueAdd(struct NodoEventStruct *Event)
 
     Event->Flags&=~TRANSMISSION_QUEUE;                                          //  Haal eventuele QUEUE vlag er af. Anders loopt de queue vol door recursiviteit;
     
-    Queue[QueuePosition].Flags   = Event->Flags; 
-    Queue[QueuePosition].Port    = Event->Port;
-    Queue[QueuePosition].Unit    = Event->SourceUnit;
-    Queue[QueuePosition].Type    = Event->Type;
-    Queue[QueuePosition].Command = Event->Command;
-    Queue[QueuePosition].Par1    = Event->Par1;
-    Queue[QueuePosition].Par2    = Event->Par2;
-    Queue[QueuePosition].Payload = Event->Payload;
-    QueuePosition++;           
+    Queue[QueuePosition++]=*Event; 
 
     // Een EventlistShow staat welliswaar in de queue, maar die kunnen we als de informatie compleet is gelijk weergeven
     // en vervolgens weer uit de queue halen. Deze voorziening is er alleen voor de Mega omdag een Small geen MMI heeft.
@@ -329,8 +318,12 @@ boolean QueueAdd(struct NodoEventStruct *Event)
     if(Event->Flags & TRANSMISSION_VIEW)                                        // Als alleen weergeven, dan direct doen en niet in de queue plaatsen.
       {
       Event2str(Event, TempString);  
+
+      #if HARDWARE_SDCARD
       if(Settings.Alias==VALUE_ON)
         Alias(TempString,false);
+      #endif // HARDWARE_SDCARD
+
       PrintString(TempString,VALUE_ALL);
       QueuePosition--;
       }
@@ -348,24 +341,27 @@ boolean QueueAdd(struct NodoEventStruct *Event)
         strcat(TempString2,": ");
 
         // geef het event weer
-        E.Type    = Queue[QueuePosition-2].Type;
-        E.Command = Queue[QueuePosition-2].Command;
-        E.Par1    = Queue[QueuePosition-2].Par1;
-        E.Par2    = Queue[QueuePosition-2].Par2;
+        E = Queue[QueuePosition-2];
         Event2str(&E, TempString);
+
+
+        #if HARDWARE_SDCARD
         if(Settings.Alias==VALUE_ON)
           Alias(TempString,false);
+        #endif // HARDWARE_SDCARD
+
         strcat(TempString2, TempString);
 
         // geef het action weer
-        A.Type    = Queue[QueuePosition-1].Type;
-        A.Command = Queue[QueuePosition-1].Command;
-        A.Par1    = Queue[QueuePosition-1].Par1;
-        A.Par2    = Queue[QueuePosition-1].Par2;
+        A = Queue[QueuePosition-1];
         strcat(TempString2,"; ");
         Event2str(&A, TempString);  
+
+        #if HARDWARE_SDCARD
         if(Settings.Alias==VALUE_ON)
           Alias(TempString,false);
+        #endif // HARDWARE_SDCARD
+
         strcat(TempString2,TempString);
         
         PrintString(TempString2,VALUE_ALL);
@@ -410,7 +406,6 @@ void QueueProcess(void)
       // in een nieuwe verzending zit. Op de eerste positie (=0) zit het systeem commando QUEUE_SEND, die moeten
       // we negeren. Op de tweede zit het systeemcommando EventlistWrite, daarna het Event en de Actie.    
   
-      #if CFG_EVENTLIST
       if(Queue[0].Command==SYSTEM_COMMAND_QUEUE_EVENTLIST_WRITE && QueuePosition==3) // cmd
         {
         E.Type        = Queue[1].Type;
@@ -424,22 +419,14 @@ void QueueProcess(void)
         Eventlist_Write(Queue[0].Par1, &E, &A);
         QueuePosition=0;
         }
-      #endif CFG_EVENTLIST
       }
 
     if(QueuePosition)
       {
       for(x=0;x<QueuePosition;x++)
         {      
-        Event.SourceUnit = Queue[x].Unit;
-        Event.Type       = Queue[x].Type;
-        Event.Command    = Queue[x].Command;
-        Event.Par1       = Queue[x].Par1;
-        Event.Par2       = Queue[x].Par2;
-        Event.Payload    = Queue[x].Payload;
+        Event=Queue[x];
         Event.Direction  = VALUE_DIRECTION_INPUT;
-        Event.Port       = Queue[x].Port;
-        Event.Flags      = Queue[x].Flags;
         ProcessEvent(&Event);                                                   // verwerk binnengekomen event.
         }
       }
@@ -455,13 +442,12 @@ byte QueueSend(boolean fast)
   {
   byte x,error=0, Retry=10,Success=false;
   unsigned long ID=millis();
-  struct NodoEventStruct Event;                                                 
-  struct QueueStruct SendQueue[EVENT_QUEUE_MAX];                                // We maken tijdelijk gebruik van een SendQueue zodat de reguliere queue zijn werk kan blijven doen.
+  struct NodoEventStruct Event, SendQueue[EVENT_QUEUE_MAX];                     // We maken tijdelijk gebruik van een SendQueue zodat de reguliere queue zijn werk kan blijven doen.
   byte Org_WFN=Settings.WaitFreeNodo;                                           // Stel de oorspronkelijke WaitFreeNodo setting veilig
   Settings.WaitFreeNodo=VALUE_OFF;                                              // Schakel WaitFreeNodo uit omdat dit het SendTo mechanisme doorkruist.
   byte SendQueuePosition=QueuePosition;
     
-  byte Port=NodoOnline(Transmission_SendToUnit,0);                              // Port waar SendTo naar toe moet halen we uit lijst met Nodo's onderhouden door NodoOnline();
+  byte Port=NodoOnline(Transmission_SendToUnit,0,false);                              // Port waar SendTo naar toe moet halen we uit lijst met Nodo's onderhouden door NodoOnline();
 
   if(fast && Port==0)                                                           // Als we de Nodo niet kennen en fast mode
     Port=VALUE_ALL;                                                             // dan event naar alle poorten sturen.
@@ -507,14 +493,11 @@ byte QueueSend(boolean fast)
           
       for(x=0;x<SendQueuePosition;x++)                                          // Verzend alle events uit de queue. Alleen de bestemmings Nodo zal deze events in de queue plaatsen
         {
-        ClearEvent(&Event);
+        Event=SendQueue[x];
+
         Event.DestinationUnit     = Transmission_SendToUnit;
         Event.SourceUnit          = Settings.Unit;
         Event.Port                = Port;
-        Event.Type                = SendQueue[x].Type;
-        Event.Command             = SendQueue[x].Command;
-        Event.Par1                = SendQueue[x].Par1;
-        Event.Par2                = SendQueue[x].Par2;
 
         if(x==(SendQueuePosition-1))
           Event.Flags = TRANSMISSION_QUEUE;                                     // Verzendvlaggen geven aan dat er nog events verzonden gaan worden en dat de ether tijdelijk gereserveerd is
@@ -578,7 +561,7 @@ void QueueReceive(NodoEventStruct *Event)
     for(x=0;x<QueuePosition;x++)                                                
       {
       Queue[x].Flags=0;                                                         // Haal de QUEUE vlag van de events af.
-      Queue[x].Unit=0;
+      //??? waarom wordt deze op nul gezet?        : Queue[x].Unit=0;
       }
     PreviousID=Event->Par2;
     QueueProcess();

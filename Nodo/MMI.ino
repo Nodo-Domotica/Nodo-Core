@@ -34,8 +34,11 @@ int ExecuteLine(char *Line, byte Port)
       TempLogFile[0]=0;
       PrintString(ProgmemString(Text_22),Port);
       }
+
+    #if HARDWARE_SDCARD
     if(TempLogFile[0]!=0)
       FileWriteLine("",TempLogFile,"DAT",Line, false);
+    #endif // HARDWARE_SDCARD
     }
   else
     {
@@ -61,7 +64,9 @@ int ExecuteLine(char *Line, byte Port)
         if(Substitute(Command)!=0)                                              // De Nodo kan berekeningen maken en variabelen vullen. Voer deze taak uit.
           error=MESSAGE_INVALID_PARAMETER;
 
+        #if HARDWARE_SDCARD
         Alias(Command,true);                                                    // check of ingevoerde commando een alias is. Is dit het geval, dan wordt Command vervangen door de alias.
+        #endif // HARDWARE_SDCARD
 
         error=Str2Event(Command, &EventToExecute);                              // Commando's in tekst format moeten worden omgezet naar een Nodo event.
         EventToExecute.Port=Port;
@@ -95,6 +100,7 @@ int ExecuteLine(char *Line, byte Port)
 
           switch(x)
             {
+            #if HARDWARE_SDCARD
             case CMD_FILE_EXECUTE:
               if(EventToExecute.Par2==VALUE_ON)
                 EventToExecute.Par1=VALUE_ON;
@@ -112,6 +118,88 @@ int ExecuteLine(char *Line, byte Port)
                 EventToExecute.Command=CMD_FILE_EXECUTE;
                 }
               break;                                                                             
+
+            case CMD_FILE_ERASE:      
+              if(GetArgv(Command,TmpStr1,2))
+                FileErase("",TmpStr1,"DAT");
+              break;
+
+            case CMD_FILE_SHOW:
+              EventToExecute.Type=NODO_TYPE_COMMAND;
+              if(GetArgv(Command,TmpStr1,2))
+                {
+                PrintString(ProgmemString(Text_22), Port);
+                error=FileShow("",TmpStr1,"DAT",Port);
+                PrintString(ProgmemString(Text_22), Port);
+                }
+              break;
+
+            case CMD_EVENTLIST_FILE:
+              EventToExecute.Type=NODO_TYPE_COMMAND;
+              if(GetArgv(Command,TmpStr1,2))
+                {
+                if(!SaveEventlistSDCard("",TmpStr1,"DAT"))
+                  {
+                  error=MESSAGE_SDCARD_ERROR;
+                  break;
+                  }
+                }
+              break;
+
+            case CMD_FILE_LIST:
+              FileList("",Port);
+              break;
+        
+            case CMD_FILE_WRITE:
+              if(GetArgv(Command,TmpStr1,2) && strlen(TmpStr1)<=8)
+                {
+                PrintString(ProgmemString(Text_22),Port);
+                TmpStr1[8]=0;//voor de zekerheid een te lange string afkappen
+                strcpy(TempLogFile,TmpStr1);
+                FileWriteMode=120;
+                }
+              else
+                error=MESSAGE_INVALID_PARAMETER;
+              break;
+            
+            case CMD_FILE_WRITE_LINE:
+              if(GetArgv(Command,TmpStr1,2) && strlen(TmpStr1)<=8)
+                {
+                if(Substitute(Line)!=0)
+                  error=MESSAGE_INVALID_PARAMETER;
+
+                x=StringFind(Line,TmpStr1)+strlen(TmpStr1);
+                while(Line[x]==32 || Line[x]==' ;')x++;
+
+
+                FileWriteLine("",TmpStr1, "DAT", Line+x, false);
+                LinePos=LineLength+1; // ga direct naar einde van de regel.
+                }
+              else
+                error=MESSAGE_INVALID_PARAMETER;
+              break;
+        
+            case CMD_ALIAS_WRITE:
+              x=StringFind(Line,cmd2str(CMD_ALIAS_WRITE))+strlen(cmd2str(CMD_ALIAS_WRITE));
+              while(Command[x]==' ')x++;             // eventuele spaties verwijderen
+              error=AliasWrite(Line+x);
+              break;
+        
+            case CMD_ALIAS_LIST:
+              x=StringFind(Line,cmd2str(CMD_ALIAS_LIST))+strlen(cmd2str(CMD_ALIAS_LIST));
+              while(Command[x]==' ')x++;             // eventuele spaties verwijderen
+              PrintString(ProgmemString(Text_22), Port);
+              AliasList(Line+x, Port);
+              PrintString(ProgmemString(Text_22), Port);
+              break;
+        
+            case CMD_ALIAS_ERASE:
+              x=StringFind(Line,cmd2str(CMD_ALIAS_ERASE))+strlen(cmd2str(CMD_ALIAS_ERASE));
+              while(Command[x]==' ')x++;             // eventuele spaties verwijderen
+              error=AliasErase(Line+x);
+              break;
+
+            #endif // HARDWARE_SDCARD
         
             case CMD_SENDTO:
               QueuePosition=0;                                                  //We gebruiken de Queue voor verwerking van de commando's die middels SendTo naar de Slave moeten  
@@ -196,15 +284,15 @@ int ExecuteLine(char *Line, byte Port)
               break;
               }  
             
-            case CMD_FILE_ERASE:      
-              if(GetArgv(Command,TmpStr1,2))
-                FileErase("",TmpStr1,"DAT");
-              break;
-        
+            #if (HARDWARE_RAWSIGNAL || HARDWARE_RF433 || HARDWARE_INFRARED) && HARDWARE_SDCARD
             case CMD_RAWSIGNAL_DELAY:
               RawSignal.Delay=EventToExecute.Par1;
               break;
         
+            case CMD_RAWSIGNAL_LIST:
+              FileList(ProgmemString(Text_08),Port);
+              break;
+
             case CMD_RAWSIGNAL_SAMPLE:
               if(EventToExecute.Par1==0)
                 Settings.RawSignalSample=RAWSIGNAL_SAMPLE_DEFAULT;
@@ -235,13 +323,16 @@ int ExecuteLine(char *Line, byte Port)
                 FileErase(ProgmemString(Text_08),TmpStr1+x,"DAT");              // +2 om zo de "0x" van de string te strippen.
                 }
               break;
+            #endif
                   
-            #ifdef ethernetserver_h
+            #if HARDWARE_ETHERNET
             case CMD_FILE_GET_HTTP:
               EventToExecute.Type=NODO_TYPE_COMMAND;
               if(GetArgv(Command,TmpStr1,2))
                 {
+                #if HARDWARE_STATUS_LED || HARDWARE_STATUS_LED_RGB
                 Led(BLUE);
+                #endif
                 GetHTTPFile(TmpStr1);
                 }
               else
@@ -249,14 +340,11 @@ int ExecuteLine(char *Line, byte Port)
               break;
             #endif 
               
-            case CMD_FILE_SHOW:
-              EventToExecute.Type=NODO_TYPE_COMMAND;
-              if(GetArgv(Command,TmpStr1,2))
-                {
-                PrintString(ProgmemString(Text_22), Port);
-                error=FileShow("",TmpStr1,"DAT",Port);
-                PrintString(ProgmemString(Text_22), Port);
-                }
+            case CMD_HTTP_REQUEST:
+              // zoek in de regel waar de string met het http request begint.
+              x=StringFind(Line,cmd2str(CMD_HTTP_REQUEST))+strlen(cmd2str(CMD_HTTP_REQUEST));
+              while(Line[x]==32)x++;
+              strcpy(Settings.HTTPRequest,&Line[0]+x);
               break;
                         
             case CMD_NODO_IP:
@@ -294,17 +382,6 @@ int ExecuteLine(char *Line, byte Port)
                   error=MESSAGE_INVALID_PARAMETER;
               break;
               
-            case CMD_EVENTLIST_FILE:
-              EventToExecute.Type=NODO_TYPE_COMMAND;
-              if(GetArgv(Command,TmpStr1,2))
-                {
-                if(!SaveEventlistSDCard("",TmpStr1,"DAT"))
-                  {
-                  error=MESSAGE_SDCARD_ERROR;
-                  break;
-                  }
-                }
-              break;
         
             case CMD_IF:
               EventToExecute.Type=NODO_TYPE_COMMAND;
@@ -340,70 +417,6 @@ int ExecuteLine(char *Line, byte Port)
               else
                 error=MESSAGE_INVALID_PARAMETER;
               break;
-        
-            case CMD_RAWSIGNAL_LIST:
-              FileList(ProgmemString(Text_08),Port);
-              break;
-        
-            case CMD_FILE_LIST:
-              FileList("",Port);
-              break;
-        
-            case CMD_FILE_WRITE:
-              if(GetArgv(Command,TmpStr1,2) && strlen(TmpStr1)<=8)
-                {
-                PrintString(ProgmemString(Text_22),Port);
-                TmpStr1[8]=0;//voor de zekerheid een te lange string afkappen
-                strcpy(TempLogFile,TmpStr1);
-                FileWriteMode=120;
-                }
-              else
-                error=MESSAGE_INVALID_PARAMETER;
-              break;
-            
-            case CMD_FILE_WRITE_LINE:
-              if(GetArgv(Command,TmpStr1,2) && strlen(TmpStr1)<=8)
-                {
-                if(Substitute(Line)!=0)
-                  error=MESSAGE_INVALID_PARAMETER;
-
-                x=StringFind(Line,TmpStr1)+strlen(TmpStr1);
-                while(Line[x]==32 || Line[x]==' ;')x++;
-
-
-                FileWriteLine("",TmpStr1, "DAT", Line+x, false);
-                LinePos=LineLength+1; // ga direct naar einde van de regel.
-                }
-              else
-                error=MESSAGE_INVALID_PARAMETER;
-              break;
-        
-            case CMD_ALIAS_WRITE:
-              x=StringFind(Line,cmd2str(CMD_ALIAS_WRITE))+strlen(cmd2str(CMD_ALIAS_WRITE));
-              while(Command[x]==' ')x++;             // eventuele spaties verwijderen
-              error=AliasWrite(Line+x);
-              break;
-        
-            case CMD_ALIAS_LIST:
-              x=StringFind(Line,cmd2str(CMD_ALIAS_LIST))+strlen(cmd2str(CMD_ALIAS_LIST));
-              while(Command[x]==' ')x++;             // eventuele spaties verwijderen
-              PrintString(ProgmemString(Text_22), Port);
-              AliasList(Line+x, Port);
-              PrintString(ProgmemString(Text_22), Port);
-              break;
-        
-            case CMD_ALIAS_ERASE:
-              x=StringFind(Line,cmd2str(CMD_ALIAS_ERASE))+strlen(cmd2str(CMD_ALIAS_ERASE));
-              while(Command[x]==' ')x++;             // eventuele spaties verwijderen
-              error=AliasErase(Line+x);
-              break;
-        
-            case CMD_HTTP_REQUEST:
-              // zoek in de regel waar de string met het http request begint.
-              x=StringFind(Line,cmd2str(CMD_HTTP_REQUEST))+strlen(cmd2str(CMD_HTTP_REQUEST));
-              while(Line[x]==32)x++;
-              strcpy(Settings.HTTPRequest,&Line[0]+x);
-              break;
 
             default:
               {                 
@@ -417,8 +430,11 @@ int ExecuteLine(char *Line, byte Port)
                 // Als het geen regulier commando was EN geen commando met afwijkende MMI en geen Plugin en geen alias, dan kijken of file op SDCard staat)
                 // Voer bestand uit en verwerking afbreken als er een foutmelding is.
                 error=MESSAGE_UNKNOWN_COMMAND;
+
+                #if HARDWARE_SDCARD
                 if(strlen(Command)<=8)
                   error=FileExecute("",Command,"DAT", false, VALUE_ALL);
+                #endif // HARDWARE_SDCARD
                   
                 // als script niet te openen, dan is het ingevoerde commando ongeldig.
   
@@ -514,7 +530,6 @@ int ExecuteLine(char *Line, byte Port)
  \*********************************************************************************************/
 void PrintEvent(struct NodoEventStruct *Event, byte Port)
   {
-
   // Systeem events niet weergeven.
   if(Event->Type==NODO_TYPE_SYSTEM || Event->Type==0)
     return;
@@ -533,7 +548,7 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
     // Poort
     strcat(StringToPrint, cmd2str(Event->Port));
     
-    #ifdef ethernetserver_h
+    #if HARDWARE_ETHERNET
     if(Event->Port==VALUE_SOURCE_HTTP || Event->Port==VALUE_SOURCE_TELNET)
       {
       strcat(StringToPrint, "(");
@@ -566,8 +581,12 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
   strcat(StringToPrint, "; ");
   strcat(StringToPrint, ProgmemString(Text_14));
   Event2str(Event,TmpStr);
+
+  #if HARDWARE_SDCARD
   if(Settings.Alias==VALUE_ON)
     Alias(TmpStr,false);
+  #endif // HARDWARE_SDCARD
+
   strcat(StringToPrint, TmpStr);
  
   // Payload
@@ -581,15 +600,15 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
   PrintString(StringToPrint,Port);   // stuur de regel naar Serial en/of naar Ethernet
 
   // LOG OP SDCARD
-  if(bitRead(HW_Config,HW_SDCARD) && Settings.Log==VALUE_ON) 
+  if(HW_Status(HW_SDCARD) && Settings.Log==VALUE_ON) 
     {
     TmpStr[0]='!';
     TmpStr[1]=' ';
     TmpStr[2]=0;
 
     // datum en tijd weergeven
-    #if CFG_CLOCK
-    if(bitRead(HW_Config,HW_CLOCK)) // alleen als er een RTC aanwezig is.
+    #if HARDWARE_CLOCK && HARDWARE_I2C
+    if(HW_Status(HW_CLOCK)) // alleen als er een RTC aanwezig is.
       {   
       strcat(TmpStr,DateTimeString());
       strcat(TmpStr,"; ");
@@ -597,9 +616,11 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
     #endif
 
     strcat(TmpStr,StringToPrint);
-    FileWriteLine("",ProgmemString(Text_23),"DAT", TmpStr, false);
-    }
 
+    #if HARDWARE_SDCARD
+    FileWriteLine("",ProgmemString(Text_23),"DAT", TmpStr, false);
+    #endif // HARDWARE_SDCARD
+    }
   free(TmpStr);
   free(StringToPrint);
   } 
@@ -608,7 +629,7 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
 /**********************************************************************************************\
  * Print actuele dag, datum, tijd.
  \*********************************************************************************************/
-#if CFG_CLOCK
+#if HARDWARE_CLOCK  && HARDWARE_I2C
 char* DateTimeString(void)
   {
   int x;
@@ -624,14 +645,14 @@ char* DateTimeString(void)
 
   return dt;
   }
-#endif //CFG_CLOCK
+#endif //HARDWARE_CLOCK
 
 /**********************************************************************************************\
  * Print de welkomsttekst van de Nodo.
  \*********************************************************************************************/
 prog_char PROGMEM Text_welcome1[] = "Nodo Domotica controller V3.8 (Mega)";
 prog_char PROGMEM Text_welcome2[] = "(c) Copyright 2015 P.K.Tonkes. Licensed under GNU General Public License.";
-prog_char PROGMEM Text_welcome3[] = "Product=SWACNC-MEGA-R%03d, ThisUnit=%d, HWConfig=";
+prog_char PROGMEM Text_welcome3[] = "Product=SWACNC-MEGA-R%03d, ThisUnit=%d";
 void PrintWelcome(void)
   {
   char *TempString=(char*)malloc(128);
@@ -644,7 +665,7 @@ void PrintWelcome(void)
 
   // print versienummer, unit en indien gevuld het ID
   sprintf(TempString,ProgmemString(Text_welcome3), NODO_BUILD, Settings.Unit);
-  strcat(TempString,int2strhex(HW_Config));  
+
   if(Settings.ID[0])
     {
     strcat(TempString,", ID=");
@@ -653,18 +674,18 @@ void PrintWelcome(void)
   PrintString(TempString,VALUE_ALL);
 
 
-  #if CFG_CLOCK
+  #if HARDWARE_CLOCK && HARDWARE_I2C
  // Geef datum en tijd weer.
-  if(bitRead(HW_Config,HW_CLOCK))
+  if(HW_Status(HW_CLOCK))
     {
     sprintf(TempString,"%s %s",DateTimeString(), cmd2str(Time.DaylightSaving?VALUE_DLS:0));
     PrintString(TempString,VALUE_ALL);
     }
-  #endif //CFG_CLOCK
+  #endif //HARDWARE_CLOCK
   
   // print IP adres van de Nodo
-  #ifdef ethernetserver_h
-  if(bitRead(HW_Config,HW_ETHERNET))
+  #if HARDWARE_ETHERNET
+  if(HW_Status(HW_ETHERNET))
     {
     sprintf(TempString,"IP=%u.%u.%u.%u, ", EthernetNodo.localIP()[0],EthernetNodo.localIP()[1],EthernetNodo.localIP()[2],EthernetNodo.localIP()[3]);
 
@@ -708,11 +729,11 @@ void PrintWelcome(void)
  \*********************************************************************************************/
 void PrintString(char* LineToPrint, byte Port)
   {  
-  if((Port==VALUE_SOURCE_SERIAL || Port==VALUE_ALL) && bitRead(HW_Config,HW_SERIAL))
+  if((Port==VALUE_SOURCE_SERIAL || Port==VALUE_ALL) && HW_Status(HW_SERIAL_1))
     Serial.println(LineToPrint);
 
-  #ifdef ethernetserver_h
-  if(bitRead(HW_Config,HW_ETHERNET))
+  #if HARDWARE_ETHERNET
+  if(HW_Status(HW_ETHERNET))
     {
     if((Port==VALUE_SOURCE_TELNET || Port==VALUE_ALL) && TerminalClient.connected() && TerminalConnected>0 && TerminalLocked==0)
       TerminalClient.println(LineToPrint);
@@ -827,6 +848,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
         break;
 
       // Par2 als hex, geen andere parameters.
+      case VALUE_HWSTATUS:
       case VALUE_HWCONFIG:
       case EVENT_RAWSIGNAL:
         ParameterToView[0]=PAR2_INT_HEX;
@@ -897,7 +919,6 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       case CMD_WAIT_FREE_NODO:
       case CMD_LOG:
       case CMD_ECHO:
-      case CMD_WAIT_FREE_RX:
       case CMD_ALIAS_SHOW:
       case CMD_BREAK_ON_DAYLIGHT:
         ParameterToView[0]=PAR1_TEXT;
@@ -1217,7 +1238,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
             
     case CMD_WIRED_OUT_VARIABLE:
       ResultEvent->Type=NODO_TYPE_COMMAND;
-      if(ResultEvent->Par1>WIRED_PORTS || ResultEvent->Par2<1 || ResultEvent->Par2>USER_VARIABLES_MAX_NR)
+      if(ResultEvent->Par1>HARDWARE_WIRED_OUT_PORTS || ResultEvent->Par2<1 || ResultEvent->Par2>USER_VARIABLES_MAX_NR)
         error=MESSAGE_INVALID_PARAMETER;
       break;
             
@@ -1279,7 +1300,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
       ResultEvent->Type=NODO_TYPE_COMMAND;
       if(ResultEvent->Par1<1 || ResultEvent->Par1>USER_VARIABLES_MAX_NR)
         error=MESSAGE_INVALID_PARAMETER;
-      if(ResultEvent->Par2<1 || ResultEvent->Par2>WIRED_PORTS)
+      if(ResultEvent->Par2<1 || ResultEvent->Par2>HARDWARE_WIRED_IN_PORTS)
         error=MESSAGE_INVALID_PARAMETER;
       break;
         
@@ -1321,7 +1342,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
     // test:ResultEvent->Par1 binnen bereik maximaal beschikbare wired poorten.
     case EVENT_WIRED_IN:
       ResultEvent->Type=NODO_TYPE_EVENT;
-      if(ResultEvent->Par1<1 || ResultEvent->Par1>WIRED_PORTS)
+      if(ResultEvent->Par1<1 || ResultEvent->Par1>HARDWARE_WIRED_IN_PORTS)
         error=MESSAGE_INVALID_PARAMETER;
       if(ResultEvent->Par2!=VALUE_ON && ResultEvent->Par2!=VALUE_OFF)
         error=MESSAGE_INVALID_PARAMETER;
@@ -1329,7 +1350,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
 
     case CMD_WIRED_OUT:
       ResultEvent->Type=NODO_TYPE_COMMAND;
-      if(ResultEvent->Par1>WIRED_PORTS)
+      if(ResultEvent->Par1>HARDWARE_WIRED_OUT_PORTS)
         error=MESSAGE_INVALID_PARAMETER;
       if(StringFind(Command, cmd2str(VALUE_ON))!=-1)
         ResultEvent->Par2=255;
@@ -1341,7 +1362,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
 
     case CMD_WIRED_PULLUP:
       ResultEvent->Type=NODO_TYPE_COMMAND;
-      if(ResultEvent->Par1<1 || ResultEvent->Par1>WIRED_PORTS)
+      if(ResultEvent->Par1<1 || ResultEvent->Par1>HARDWARE_WIRED_IN_PORTS)
         error=MESSAGE_INVALID_PARAMETER;
       if(ResultEvent->Par2!=VALUE_ON && ResultEvent->Par2!=VALUE_OFF)
         error=MESSAGE_INVALID_PARAMETER;
@@ -1434,7 +1455,6 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
      // par2 mag alles zijn
     case CMD_ALIAS_SHOW:
     case CMD_BREAK_ON_DAYLIGHT:
-    case CMD_WAIT_FREE_RX:
       ResultEvent->Type=NODO_TYPE_COMMAND;
       if(ResultEvent->Par1!=VALUE_OFF && ResultEvent->Par1!=VALUE_ON)
         error=MESSAGE_INVALID_PARAMETER;
@@ -1511,7 +1531,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
     case CMD_WIRED_THRESHOLD:
     case CMD_WIRED_SMITTTRIGGER:
       ResultEvent->Type=NODO_TYPE_COMMAND;
-      if(ResultEvent->Par1<1 || ResultEvent->Par1>WIRED_PORTS)
+      if(ResultEvent->Par1<1 || ResultEvent->Par1>HARDWARE_WIRED_IN_PORTS)
         error=MESSAGE_INVALID_PARAMETER;
       else if(GetArgv(Command,TmpStr1,3))
         ResultEvent->Par2=str2int(TmpStr1);
@@ -1699,7 +1719,9 @@ void PrintWelcome(void)
   Serial.print(F(", ThisUnit="));
   Serial.print(Settings.Unit);
   Serial.print(F(", HWConfig=0x"));
-  Serial.println(HW_Config,HEX);
+  Serial.print(HW_config,HEX);
+  Serial.print(F(", HWStatus=0x"));
+  Serial.println(HW_status,HEX);
   Serial.println(F("!******************************************************************************!"));
   }
 

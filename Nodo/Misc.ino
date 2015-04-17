@@ -1,25 +1,6 @@
-
-void DetectHardwareReset(void)
-  {
-  unsigned long ResetTime=millis()+10000;
-  boolean toggle=false;
-  Led(0);
-  do
-    {
-    toggle=!toggle;
-    digitalWrite(PIN_LED_RGB_R,toggle);
-    delay(100);
-    if(ResetTime<millis())
-      ResetFactory();
-    }while(digitalRead(PIN_IR_RX_DATA)==toggle);
-  }
-  
-  
 //#######################################################################################################
 //##################################### Misc: EEPROM / Eventlist  #######################################
 //#######################################################################################################
-
-#if CFG_EVENTLIST
 
 /**********************************************************************************************\
  * Schrijft een event in de Eventlist. Deze Eventlist bevindt zich in het EEPROM geheugen.
@@ -106,7 +87,6 @@ boolean Eventlist_Read(int address, struct NodoEventStruct *Event, struct NodoEv
   Action->Direction=VALUE_DIRECTION_INPUT;
   return true;
   }
-#endif CFG_EVENTLIST
 
 
 /*********************************************************************************************\
@@ -139,7 +119,6 @@ void RaiseMessage(byte MessageCode, unsigned long Option)
       }
   
     TempEvent.Port      = VALUE_ALL;
-    Serial.print(F("SendEvent(); MessageCode="));Serial.println(MessageCode);//???
     SendEvent(&TempEvent,false,true);
     }
   }
@@ -156,7 +135,7 @@ void RaiseMessage(byte MessageCode, unsigned long Option)
  * Routine wordt verlaten na beeindiging van de pieptoon.
  * Revision 01, 13-02-2009, P.K.Tonkes@gmail.com
  \*********************************************************************************************/
-#if CFG_SOUND
+#if HARDWARE_SPEAKER
 void Beep(int frequency, int duration)//Herz,millisec 
   {
   long halfperiod=500000L/frequency;
@@ -279,17 +258,20 @@ void Alarm(int Variant,int Option)
  * Rood = Nodo verwerkt event of commando.
  * Blauw = Bijzondere modus Nodo waarin Nodo niet in staat is om events te ontvangen of genereren.
  \*********************************************************************************************/
+#if HARDWARE_STATUS_LED || HARDWARE_STATUS_LED_RGB 
 void Led(byte Color)
   { 
-  #if NODO_MEGA
-  digitalWrite(PIN_LED_RGB_R,Color==RED);
-  digitalWrite(PIN_LED_RGB_B,Color==BLUE);
-  digitalWrite(PIN_LED_RGB_G,Color==GREEN);
-  #else
-  digitalWrite(PIN_LED_RGB_R,(Color==RED || Color==BLUE));
+  #if HARDWARE_STATUS_LED_RGB
+  digitalWrite(PIN_LED_R,Color==RED);
+  digitalWrite(PIN_LED_B,Color==BLUE);
+  digitalWrite(PIN_LED_G,Color==GREEN);
+  #endif
+  
+  #if HARDWARE_STATUS_LED
+  digitalWrite(PIN_LED,(Color==RED || Color==BLUE));
   #endif
   }
-
+#endif
 
 /*********************************************************************************************\
  * Wachtloop. Als <EventsInQueue>=true dan worden voorbijkomende events in de queue geplaatst
@@ -326,8 +308,6 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
       
     if(ScanEvent(&Event))
       {            
-      // PrintNodoEvent("DEBUG: Wait() Binnengekomen event",&Event);
-      
       TimeoutTimer=millis() + (unsigned long)(Timeout)*1000;                    // Zolang er event binnenkomen geen timeout.
       #if NODO_MEGA
       MessageTimer=millis() + 3000;
@@ -363,7 +343,9 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
           }
         }
       }
+    #if HARDWARE_STATUS_LED || HARDWARE_STATUS_LED_RGB 
     Led(RED);
+    #endif
     }   
     
   // Serial.println(F("DEBUG: Wait() verlaten."));
@@ -401,7 +383,6 @@ boolean GetStatus(struct NodoEventStruct *Event)
 
   switch (xCommand)
     {
-    #if CFG_EVENTLIST
     case VALUE_EVENTLIST_COUNT:
       x=0;
       struct NodoEventStruct dummy;
@@ -412,33 +393,40 @@ boolean GetStatus(struct NodoEventStruct *Event)
         }
       Event->Par2=x-Event->Par1-1;
       break;
-    #endif CFG_EVENTLIST
 
   case VALUE_BUILD:
     Event->Par2=NODO_BUILD;      
     break;        
 
   case VALUE_HWCONFIG: 
-    Event->Par2=HW_Config;      
+    Event->Par2=HW_config;      
     break;        
 
-  #if CFG_CLOCK 
+  case VALUE_HWSTATUS: 
+    Event->Par2=HW_status;      
+    break;        
+
+  #if HARDWARE_CLOCK && HARDWARE_I2C 
   case EVENT_CLOCK_DAYLIGHT:
     Event->Par1=Time.Daylight;
     break;
-  #endif CFG_CLOCK
+  #endif
 
   case CMD_OUTPUT:
     Event->Par1=xPar1;
     switch(xPar1)
       {
+      #if HARDWARE_INFRARED
       case VALUE_SOURCE_IR:
         Event->Par2=Settings.TransmitIR;
         break;
-  
+      #endif
+      
+      #if HARDWARE_RF433
       case VALUE_SOURCE_RF:
         Event->Par2=Settings.TransmitRF;
         break;
+      #endif
   
       #if NODO_MEGA
       case VALUE_SOURCE_HTTP:
@@ -486,7 +474,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
       Event->Command=0;                                                           // Geen geldige optie. Als 0 wordt teruggegeven in command dan wordt niets weergegeven met de status.
     break;
 
-  #if CFG_CLOCK
+  #if HARDWARE_CLOCK && HARDWARE_I2C
   case CMD_CLOCK_DATE:
     Event->Par2= ((unsigned long)Time.Year  %10)      | ((unsigned long)Time.Year  /10)%10<<4  | ((unsigned long)Time.Year/100)%10<<8 | ((unsigned long)Time.Year/1000)%10<<12 | 
                  ((unsigned long)Time.Month %10) <<16 | ((unsigned long)Time.Month /10)%10<<20 | 
@@ -496,17 +484,17 @@ boolean GetStatus(struct NodoEventStruct *Event)
   case CMD_CLOCK_TIME:
     Event->Par2=Time.Minutes%10 | Time.Minutes/10<<4 | Time.Hour%10<<8 | Time.Hour/10<<12;
     break;
-  #endif CFG_CLOCK
+  #endif
 
   case CMD_TIMER_SET:
     Event->Par1=xPar1;
     if(UserTimer[xPar1-1])
       Event->Par2=(UserTimer[xPar1-1]-millis())/1000;
     else
-      Event->Par2=0;
+      Event->Command=0;
     break;
 
-  #if CFG_WIRED
+  #if HARDWARE_WIRED_IN_PORTS
   case CMD_WIRED_PULLUP:
     Event->Par1=xPar1;
     Event->Par2=Settings.WiredInputPullUp[xPar1-1];
@@ -531,13 +519,14 @@ boolean GetStatus(struct NodoEventStruct *Event)
     Event->Par1=xPar1;
     Event->Par2=(WiredInputStatus[xPar1-1])?VALUE_ON:VALUE_OFF;
     break;
+  #endif
 
+  #if HARDWARE_WIRED_OUT_PORTS
   case CMD_WIRED_OUT:
     Event->Par1=xPar1;
     Event->Par2=WiredOutputStatus[xPar1-1];
     break;
-
-  #endif //CFG_WIRED
+  #endif
 
   case VALUE_FREEMEM:    
     Event->Par2=FreeMem();
@@ -563,7 +552,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
     break;
     
   case VALUE_UNIT:
-    x=NodoOnline(xPar1,0);
+    x=NodoOnline(xPar1,0,false);
     if(x!=0)
       {
       Event->Par1=xPar1;
@@ -651,17 +640,15 @@ void ResetFactory(void)
   {
   int x,y;
   
-  #if CFG_SOUND
+  #if HARDWARE_SPEAKER
   Beep(2000,2000);
   #endif
   // maak de eventlist leeg.
   struct NodoEventStruct dummy;
   ClearEvent(&dummy);
 
-  #if CFG_EVENTLIST
   x=1;
   while(Eventlist_Write(x++,&dummy,&dummy));
-  #endif CFG_EVENTLIST
 
   // Herstel alle settings naar defaults
   Settings.Version                    = NODO_VERSION_MINOR;
@@ -714,14 +701,14 @@ void ResetFactory(void)
 #endif
 
   // zet analoge poort  waarden op default
-  #if CFG_WIRED
-  for(x=0;x<WIRED_PORTS;x++)
+  #if HARDWARE_WIRED_IN_PORTS
+  for(x=0;x<HARDWARE_WIRED_IN_PORTS;x++)
     {
     Settings.WiredInputThreshold[x]=512; 
     Settings.WiredInputSmittTrigger[x]=10;
     Settings.WiredInputPullUp[x]=VALUE_ON;
     }
-  #endif //CFG_WIRED
+  #endif
 
   Save_Settings();
   Reboot();
@@ -752,6 +739,7 @@ void Status(struct NodoEventStruct *Request)
     // bronnen waar het resultaat aan teruggestuurd kan worden:
     case VALUE_SOURCE_IR:
     case VALUE_SOURCE_RF:
+    case VALUE_SOURCE_NRF24L01:
     case VALUE_SOURCE_I2C:
       Port=Request->Port;
       break;
@@ -784,7 +772,7 @@ void Status(struct NodoEventStruct *Request)
   Result.Command=Request->Par1;
   
   if(Request->Par2==VALUE_ALL)
-    Request->Par2==0;
+    Request->Par2=0;
 
   #if NODO_MEGA          
   if(DisplayLocal && (Request->Par1==0 || Request->Par1==VALUE_ALL))
@@ -908,16 +896,24 @@ void Status(struct NodoEventStruct *Request)
             Par1_Start=0;
             Par1_End=COMMAND_MAX;
             break;
-  
-          case VALUE_WIRED_ANALOG:
+          
+          #if HARDWARE_WIRED_OUT_PORTS 
           case CMD_WIRED_OUT:
+            Par1_Start=1;
+            Par1_End=HARDWARE_WIRED_OUT_PORTS;
+            break;
+          #endif      
+
+          #if HARDWARE_WIRED_IN_PORTS
+          case VALUE_WIRED_ANALOG:
           case CMD_WIRED_PULLUP:
           case CMD_WIRED_SMITTTRIGGER:
           case CMD_WIRED_THRESHOLD:
           case EVENT_WIRED_IN:
             Par1_Start=1;
-            Par1_End=WIRED_PORTS;
-            break;      
+            Par1_End=HARDWARE_WIRED_IN_PORTS;
+            break;
+          #endif      
   
           case CMD_VARIABLE_GLOBAL:
           case CMD_VARIABLE_PAYLOAD:
@@ -966,6 +962,7 @@ void Status(struct NodoEventStruct *Request)
           if(!DisplayLocal)
             {
             Result.Flags=TRANSMISSION_VIEW | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_BUSY;
+            Result.DestinationUnit=Request->SourceUnit;                         // Stuur resultaat alleen naar de Nodo waar het verzoek vandaan kwam.
             SendEvent(&Result,false,false);
             }            
   
@@ -1306,7 +1303,7 @@ unsigned long FreeMem(void)
   return (stackptr-heapptr);
   }
     
-
+#if HARDWARE_PULSE
 void PulseCounterISR()
   {
   static unsigned long PulseTimePrevious=0L;
@@ -1320,6 +1317,7 @@ void PulseCounterISR()
 
   PulseTimePrevious=millis();
   }     
+#endif // HARDWARE_PULSE
 
 
 #if NODO_MEGA
@@ -1797,7 +1795,7 @@ void ClearEvent(struct NodoEventStruct *Event)
 //#######################################################################################################
 //##################################### Clock            ################################################
 //#######################################################################################################
-#if CFG_CLOCK
+#if HARDWARE_CLOCK && HARDWARE_I2C
 
 #define DS1307_SEC       0
 #define DS1307_MIN       1
@@ -1882,10 +1880,10 @@ void ClockSet(void)
  * Leest de realtime clock en plaatst actuele waarden in de struct Time. 
  * Eveneens wordt de Event code terug gegeven
  \*********************************************************************************************/
-void ClockRead(void)
+boolean ClockRead(void)
   {
   DS1307_read();// lees de RTC chip uit
-  if (rtc[4] <= 0) return;
+  if (rtc[4] <= 0) return false;
 
   Time.Seconds                = (10*((rtc[DS1307_SEC] & DS1307_HI_SEC)>>4))+(rtc[DS1307_SEC] & DS1307_LO_BCD);
   Time.Minutes                = (10*((rtc[DS1307_MIN] & DS1307_HI_MIN)>>4))+(rtc[DS1307_MIN] & DS1307_LO_BCD);
@@ -1900,14 +1898,8 @@ void ClockRead(void)
 
   // Het kan zijn als de klok niet aangesloten is, dat er via I2C 'rommel' gelezen is. Doe eenvoudige check.
   if(Time.Minutes>60 || Time.Hour>23 || Time.Day>8 || Time.Month>12 || Time.Date>31)
-    {
     Time.Day=0; // De dag wordt gebruikt als checksum of de klok aanwezig is. Deze nooit op 0 als klok juist aangesloten
-    bitWrite(HW_Config,HW_CLOCK,0);
-    }
-  else
-    bitWrite(HW_Config,HW_CLOCK,1);
-
-
+    
   // Bereken of het volgens de datum van vandaag zomertijd of wintertijd is. Eventueel de klok verzetten.
   long x=(long)pgm_read_word_near(DLSDate+Time.Year-DLSBase);
   long y=(long)((long)(Time.Date*100L)+(long)(Time.Month*10000L)+(long)Time.Hour);
@@ -1927,6 +1919,7 @@ void ClockRead(void)
     Time.DaylightSaving=DLS;
     ClockSet();// verzet de RTC klok
     }
+  return Time.Day>0;
   }
 
 #if NODO_MEGA
@@ -1973,7 +1966,7 @@ void SetDaylight()
 }
 
 #endif
-#endif CFG_CLOCK 
+#endif // HARDWARE_CLOCK 
 
 //#######################################################################################################
 //##################################### Misc: Conversions     ###########################################
@@ -2258,15 +2251,23 @@ boolean EventlistEntry2str(int entry, byte d, char* Line, boolean Script)
   
       // geef het event weer
       Event2str(&Event, TempString);
+
+      #if HARDWARE_SDCARD
       if(Settings.Alias==VALUE_ON)
         Alias(TempString,false);
+      #endif // HARDWARE_SDCARD
+
       strcat(Line, TempString);
   
       // geef het action weer
       strcat(Line,"; ");
       Event2str(&Action, TempString);  
+
+      #if HARDWARE_SDCARD
       if(Settings.Alias==VALUE_ON)
         Alias(TempString,false);
+      #endif // HARDWARE_SDCARD
+
       strcat(Line,TempString);
       }
     else
@@ -2316,7 +2317,7 @@ char * floatToString(char * outstr, double val, byte precision, byte widthp){
       mult *= 10;
 
     val += 0.5/(float)mult;      // compute rounding factor
-
+                            
     strcat(outstr, ltoa(floor(val),temp,10));  //prints the integer part without rounding
     strcat(outstr, ".\0"); // print the decimal point
 
@@ -2393,27 +2394,15 @@ int str2weekday(char *Input)
 /*******************************************************************************************************\
  * Houdt bij welke Nodo's binnen bereik zijn en via welke Poort.
  * Als Port ongelijk aan reeds bekende poort, dan wordt de lijst geactualiseerd (snelste heeft voorkeur).
- * Als Port=0 dan wordt alleen de poort teruggegeven als de Nodo bekend is.
+ * Als Port=0 dan is de Nodo onbekend
  \*******************************************************************************************************/
-byte NodoOnline(byte Unit, byte Port)
+byte NodoOnline(byte Unit, byte Port, boolean change)
   {
   static byte NodoOnlinePort[UNIT_MAX+1];
-  static boolean FirstTime=true;
-  
-  int x;
-  
-  // Maak eerste keer de tabel leeg.
-  if(FirstTime)
-    {
-    FirstTime=false;
-    for(x=0;x<=UNIT_MAX;x++)
-      NodoOnlinePort[x]=0;
-    NodoOnlinePort[Settings.Unit]=VALUE_SOURCE_SYSTEM;
-    }
     
-  if(Port && Port!=NodoOnlinePort[Unit])
+  if(change && Port!=NodoOnlinePort[Unit])
     {
-    // Werk tabel bij. Voorkeurspoort voor communicatie.
+    NodoOnlinePort[Settings.Unit]=VALUE_SOURCE_SYSTEM;
 
     if(Port==VALUE_SOURCE_I2C)                                                   
       NodoOnlinePort[Unit]=VALUE_SOURCE_I2C;
@@ -2423,6 +2412,8 @@ byte NodoOnline(byte Unit, byte Port)
       NodoOnlinePort[Unit]=VALUE_SOURCE_IR;
     else if(Port==VALUE_SOURCE_RF      && NodoOnlinePort[Unit]!=VALUE_SOURCE_NRF24L01 && NodoOnlinePort[Unit]!=VALUE_SOURCE_IR && NodoOnlinePort[Unit]!=VALUE_SOURCE_I2C)
       NodoOnlinePort[Unit]=VALUE_SOURCE_RF;
+    else
+      NodoOnlinePort[Unit]=0;
     }    
   return NodoOnlinePort[Unit];
   }
@@ -2446,7 +2437,7 @@ float ul2float(unsigned long ul)
   return f;
   }
   
-#if NODO_MEGA    
+#if HARDWARE_SDCARD && NODO_MEGA     
  /********************************************************************************************\
  *
  *
@@ -2639,7 +2630,8 @@ void AliasList(char* Keyword, byte Port)
   }  
 
 
-#endif
+#endif // HARDWARE_SDCARD && NODO_MEGA     
+
 
 
 #if !NODO_MEGA
@@ -2649,7 +2641,7 @@ void AliasList(char* Keyword, byte Port)
  *  
  \********************************************************************************************/
 
-#if CFG_SLEEP
+#if HARDWARE_BATTERY
 #include <avr/sleep.h>
 #include <avr/wdt.h>
 
@@ -2687,8 +2679,15 @@ void GoodNightSleepTight(void)
       UserTimer[x]-=SleepTimer*WDT_TIME;                                        // dan min acht seconden
 
   // Spaar energie door de LED uit te zetten en de spanning naar de ontvanger.
-  Led(0);     
+
+  #if HARDWARE_STATUS_LED || HARDWARE_STATUS_LED_RGB 
+  Led(0);
+  #endif
+
+  #if HARDWARE_RF433
   digitalWrite(PIN_RF_RX_VCC,LOW);                                            // Spanning naar de RF ontvanger uit
+  #endif
+
   #if NODO_PORT_NRF24L01
   Port_NRF24L01_Online(false);
   #endif
@@ -2698,14 +2697,13 @@ void GoodNightSleepTight(void)
     wdsleep();
 
   // Spanning weer op de RF ontvanger anders is de Nodo doof.
+  #if HARDWARE_RF433
   digitalWrite(PIN_RF_RX_VCC,HIGH);                                             // Spanning naar de RF ontvanger weer aan
-  Led(RED);     
-
+  #endif
+  
   #if NODO_PORT_NRF24L01
   Port_NRF24L01_Online(true);
   #endif
-
-
   }
 
 void wdsleep()
@@ -2730,7 +2728,9 @@ void wdsleep()
 #endif
 #endif
 
-//======================================================================================================================
+//#######################################################################################################
+//#####################################    User Variabelen    ###########################################
+//#######################################################################################################
 
 void UserVariableInit(void)
   {
@@ -2827,4 +2827,226 @@ boolean UserVariablePayload(byte VarNr, uint16_t Payload)
     }
   return false;
   }
+
+//#######################################################################################################
+//#####################################            SPI            #######################################
+//#######################################################################################################
+
+#if HARDWARE_SPI_HARDWARE
+void SPI_begin()
+  {
+  SPI.begin();
+  SPI.setDataMode(SPI_MODE0);
+  SPI.setClockDivider(SPI_CLOCK_DIV16);
+
+  #ifdef PIN_SPI_CSN_0
+	digitalWrite(PIN_SPI_CSN_0,HIGH);                                             // eerst hoog zetten, daarna output,
+  pinMode(PIN_SPI_CSN_0,OUTPUT);
+  #endif
+  
+  #ifdef PIN_SPI_CSN_1
+	digitalWrite(PIN_SPI_CSN_1,HIGH);                                             // eerst hoog zetten, daarna output,
+  pinMode(PIN_SPI_CSN_1,OUTPUT);
+  #endif
+  
+  #ifdef PIN_SPI_CSN_2
+	digitalWrite(PIN_SPI_CSN_2,HIGH);                                             // eerst hoog zetten, daarna output,
+  pinMode(PIN_SPI_CSN_2,OUTPUT);
+  #endif
+  }
+
+unsigned char SPI_transfer(unsigned char Byte)
+  {
+  return SPI.transfer(Byte);
+  }
+
+void SPI_CSN(byte PinCS, boolean State)
+  {
+	digitalWrite(PinCS,State);
+
+  #if HARDWARE_ETHERNET
+  if(State)                                                                     // hoog=rust
+    digitalWrite(EthernetShield_CS_W5100, LOW);                                 // in rust staat de ethernet kaart geactiveerd.
+  else
+    digitalWrite(EthernetShield_CS_W5100, HIGH);
+  #endif
+
+  #if HARDWARE_SDCARD
+  if(State)                                                                     // hoog=rust
+    digitalWrite(EthernetShield_CS_SDCard, HIGH);
+  else
+    digitalWrite(EthernetShield_CS_SDCard, HIGH);
+  #endif
+  }
+#endif
+
+
+#if HARDWARE_SPI_SOFTWARE
+void SPI_begin()
+  {
+  pinMode(PIN_SPI_MISO,INPUT);
+  pinMode(PIN_SPI_MISO,INPUT_PULLUP);
+
+  pinMode(PIN_SPI_SCK,OUTPUT); 
+  digitalWrite(PIN_SPI_SCK,LOW);
+
+  pinMode(PIN_SPI_MOSI,OUTPUT);
+  digitalWrite(PIN_SPI_MOSI,HIGH);
+
+  #ifdef PIN_SPI_CSN_0
+	digitalWrite(PIN_SPI_CSN_0,HIGH);                                             // eerst hoog zetten, daarna output,
+  pinMode(PIN_SPI_CSN_0,OUTPUT);
+  #endif
+  }
+
+unsigned char SPI_transfer(unsigned char Byte)
+  {
+  uint8_t mosibit = digitalPinToBitMask(PIN_SPI_MOSI);
+  uint8_t mosiport = digitalPinToPort(PIN_SPI_MOSI);
+  uint8_t sckbit = digitalPinToBitMask(PIN_SPI_SCK);
+  uint8_t sckport = digitalPinToPort(PIN_SPI_SCK);
+  uint8_t misobit = digitalPinToBitMask(PIN_SPI_MISO);
+  uint8_t misoport = digitalPinToPort(PIN_SPI_MISO);
+  volatile uint8_t *mosiout = portOutputRegister(mosiport);
+  volatile uint8_t *sckout = portOutputRegister(sckport);
+  volatile uint8_t *misoin = portInputRegister(misoport);
+  uint8_t oldSREG = SREG;
+  
+  noInterrupts();
+  for(uint8_t i=0;i<8;i++)
+    {
+    if(Byte & 0x80)
+    	*mosiout |= mosibit;
+    else
+	    *mosiout &= ~mosibit;
+
+    *sckout |= sckbit;
+
+    Byte <<= 1;
+    if (*misoin & misobit)
+      Byte |= 1;
+
+    *sckout &= ~sckbit;
+    }
+  interrupts();
+  SREG = oldSREG;
+
+  return(Byte);                                                                                                   
+  }
+
+void SPI_CSN(byte PinCS, boolean State)
+  {
+	digitalWrite(PinCS,State);
+
+  #if HARDWARE_ETHERNET
+  if(State)                                                                     // hoog=rust
+    digitalWrite(EthernetShield_CS_W5100, LOW);                                 // in rust staat de ethernet kaart geactiveerd.
+  else
+    digitalWrite(EthernetShield_CS_W5100, HIGH);
+  #endif
+
+  #if HARDWARE_SDCARD
+  if(State)                                                                     // hoog=rust
+    digitalWrite(EthernetShield_CS_SDCard, HIGH);
+  else
+    digitalWrite(EthernetShield_CS_SDCard, HIGH);
+  #endif
+  }
+#endif
+
+
+//#######################################################################################################
+//#####################################  Hardware configuratie    #######################################
+//#######################################################################################################
+
+boolean HW_Status(byte HW)
+  {
+  return bitRead(HW_status,HW);
+  }
+
+void HW_SetStatus(byte HW, boolean Status, boolean Msg)
+  {
+  bitWrite(HW_status,HW,Status);
+
+  HW_config|=(1UL << HW);
+
+  #if NODO_MEGA && HARDWARE_SERIAL_1
+  if(Msg)
+    {
+    switch(HW)
+      {
+      case HW_WIRED_IN_PORTS:
+        Serial.print(F("WiredIn port:"));
+        break;
+      case HW_WIRED_OUT_PORTS:
+        Serial.print(F("WiredOut port:"));
+        break;
+      case HW_STATUS_LED_RGB:
+        Serial.print(F("RGB Status led:"));
+        break;
+      case HW_STATUS_LED:
+        Serial.print(F("Status led:"));
+        break;
+      case HW_SPEAKER:
+        Serial.print(F("Speaker:"));
+        break;
+      case HW_PULSE:
+        Serial.print(F("Pulsecounter:"));
+        break;
+      case HW_BATTERY:
+        Serial.print(F("Battery mode"));
+        break;
+      case HW_RAWSIGNAL:
+        Serial.print(F("RawSignal:"));
+        break;
+      case HW_INFRARED:
+        Serial.print(F("Infrared:"));
+        break;
+      case HW_RF433:
+        Serial.print(F("RF 433Mhz:"));
+        break;
+      case HW_SERIAL_1:
+        Serial.print(F("Serial-1 port:"));
+        break;
+      case HW_SERIAL_2_SW:
+      case HW_SERIAL_2_HW:
+        Serial.print(F("Serial-2 port:"));
+        break;
+      case HW_CLOCK:
+        Serial.print(F("Realtime clock:"));
+        break;
+      case HW_I2C:
+        Serial.print(F("I2C:"));
+        break;
+      case HW_SDCARD:
+        Serial.print(F("SDCard:"));
+        break;
+      case HW_ETHERNET:
+        // wordt eerder afgedrukt.
+        break;
+      case HW_SPI_SOFTWARE:
+        Serial.print(F("Software SPI:"));
+        break;
+      case HW_SPI_HARDWARE:
+        Serial.print(F("Hardware SPI"));
+        break;
+      case HW_NRF24L01:
+        Serial.print(F("RF 2.4Ghz:"));
+        break;
+      case HW_NODO_MEGA:
+        Serial.print(F("Nodo Mega:"));
+        break;
+      case HW_NODO_SMALL:
+        Serial.print(F("Nodo Small:"));
+        break;
+      }
+
+     if(Status)
+       Serial.println(F(" Ok."));
+     else
+       Serial.println(F(" Failed!"));
+     }
+  #endif 
+  }
+
 

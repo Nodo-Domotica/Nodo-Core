@@ -1,5 +1,5 @@
 //#######################################################################################################
-//##################################### Misc: Debugging    ##############################################
+//#####################################      Debugging     ##############################################
 //#######################################################################################################
 void PrintNodoEvent(char* str, struct NodoEventStruct *Event)
   {    
@@ -40,7 +40,6 @@ void PrintRawSignal(void)
   }
 #endif 
 
-/*
 void PrintTransmissionStruct(struct TransmissionStruct *T)//???
   {
   byte *b=(byte*)T;
@@ -54,4 +53,4 @@ void PrintTransmissionStruct(struct TransmissionStruct *T)//???
     }
   Serial.println();
   }
-*/
+

@@ -3,31 +3,14 @@
 #include <EEPROM.h>
 #include <WireNodo.h>
 
-// Onderstaande settings kunnen worden gebruikt om voor een ATMega328 geheugenruimte vrij te maken in een Nodo die
-// bepaalde voorzieningen niet gebruikt. Dit biedt ruimte voor grotere plugins. Deze defines kunnen 
-// worden overruled in een config_xx.c bestand. Enkele settings werken NIET voor een ATMega2560 Nodo.
+byte dummy;
 
-#define PLUGIN_37_COMPATIBILITY        false                                    // Cmpatibiliteit met plugins die de variabelen tabel UserVar[] nog gebruiken.
-#define CFG_CLOCK                       true                                    // false=geen code voor Real Time Clock mee compileren. (Op Mega is meecompileren van Clock verplicht)
-#define CFG_SOUND                       true                                    // false=geen luidspreker in gebruik.
-#define CFG_WIRED                       true                                    // false=wired voorzieningen uitgeschakeld
-#define CFG_SLEEP                      false                                    // false=Sleep mode mee compileren.
-#define CFG_SERIAL                      true                                    // false=Seriele communicatie niet mee compileren. LET OP: hierdoor geen enkele weergave of input via seriele poort meer mogelijk!!! Alleen voor de Nodo-Small 
-#define CFG_RAWSIGNAL                   true                                    // false=Rawsignal niet meecompileren. LET OP: Zowel RF als IR communicatie alsmede diverse plugins gebruiken RawSignal voorzieningen. Alleen voor de Nodo-Small
-#define CFG_EVENTLIST                   true                                    // false=geen gebruik maken van de eventlist in EEPROM (Alleen voor Small)
-#define NODO_PORT_NRF24L01             false                                    // true=Ondersteuning voor tranciever module NRF24L01
-#define NODO_PORT_I2C                   true                                    // true=I2C communicatie mee compileren (I2C plugins en klok blijven wel gebruik maken van I2C)
-
-// Wijzigen van onderstaande includes vallen buiten de policy van het Nodo concept dat de gebruiker zelf de Nodo-code moet aanpassen.
-// Dus: Geen support en geen garantie dat de Nodo stabiel funktioneert!
-
-#define NODO_BUILD                       803                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       805                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define PLUGIN_37_COMPATIBILITY        false                                    // Compatibiliteit met plugins die de variabelen tabel UserVar[] nog gebruiken.
 #define NODO_VERSION_MINOR                15                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
-#define UNIT_NODO                          1                                    // Unit nummer van deze Nodo. Wijzigen heeft pas effect na commando 'Reset'.
 #define HOME_NODO                          1                                    // Home adres van Nodo's die tot een groep behoren (1..7). Heeft je buurman ook een Nodo, kies hier dan een ander Home adres
 #define MIN_RAW_PULSES                    16                                    // =8 bits. Minimaal aantal ontvangen bits*2 alvorens cpu tijd wordt besteed aan decodering, etc. Zet zo hoog mogelijk om CPU-tijd te sparen en minder 'onzin' te ontvangen.
-#define RAW_BUFFER_SIZE                  256                                    // Maximaal aantal te ontvangen 128 bits is voldoende voor capture meeste signalen.
 #define RAWSIGNAL_TX_REPEATS               8                                    // Aantal keer dat een frame met pulsen herhaald wordt verzonden (RawSignalSend)
 #define RAWSIGNAL_TX_DELAY                20                                    // Tijd in mSec. tussen herhalingen frames bij zenden. (RawSignalSend)
 #define RAWSIGNAL_TOLERANCE              100                                    // Tolerantie die gehanteerd wordt bij decoderen van RF/IR signaal. T.b.v. uitrekenen HEX-code.
@@ -35,28 +18,139 @@
 #define WAIT_FREE_RX_WINDOW             1000                                    // minimale wachttijd wanneer wordt gewacht op een vrije RF of IR band.
 #define WAIT_FREE_RX_TIMEOUT            5000                                    // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
 #define MIN_PULSE_LENGTH                  50                                    // Pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
-#define DELAY_BETWEEN_TRANSMISSIONS      100                                    // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
+#define DELAY_BETWEEN_TRANSMISSIONS      150                                    // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
 #define NODO_TX_TO_RX_SWITCH_TIME        500                                    // Tijd die andere Nodo's nodig hebben om na zenden weer gereed voor ontvangst te staan. (Opstarttijd sommige 433RX modules is relatief lang)
 #define TRANSMITTER_STABLE_TIME            5                                    // Tijd die de RF zender nodig heeft om na inschakelen van de voedspanning een stabiele draaggolf te hebben.
 #define SIGNAL_TIMEOUT                     5                                    // na deze tijd in mSec. wordt een signaal als beeindigd beschouwd.
 #define SIGNAL_REPEAT_TIME               500                                    // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF/IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
 #define PULSE_DEBOUNCE_TIME               10                                    // pulsen kleiner dan deze waarde in milliseconden worden niet geteld. Bedoeld om verstoringen a.g.v. ruis of dender te voorkomen
 #define PULSE_TRANSITION             FALLING                                    // FALLING of RISING: Geeft aan op welke flank de PulseCounter start start met tellen. Default FALLING
-#define BAUD                           19200                                    // Baudrate voor seriele communicatie.
 #define PASSWORD_MAX_RETRY                 5                                    // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
 #define PASSWORD_TIMEOUT                 300                                    // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
 #define TERMINAL_TIMEOUT                 600                                    // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
-#define ETHERNET_MAC_0                  0xCC                                    // Dit is byte 0 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
-#define ETHERNET_MAC_1                  0xBB                                    // Dit is byte 1 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
-#define ETHERNET_MAC_2                  0xAA                                    // Dit is byte 2 van het MAC adres. In de bytes 3,4 en 5 zijn het Home en Unitnummer van de Nodo verwerkt.
 
-byte dummy=1;                                                                   // linker even op weg helpen. Bugje in Arduino.
+#define PLUGIN_MMI_IN                      1
+#define PLUGIN_MMI_OUT                     2
+#define PLUGIN_RAWSIGNAL_IN                3
+#define PLUGIN_COMMAND                     4       
+#define PLUGIN_INIT                        5
+#define PLUGIN_ONCE_A_SECOND               6
+#define PLUGIN_EVENT_IN                    7
+#define PLUGIN_EVENT_OUT                   8      
+#define PLUGIN_SERIAL_IN                   9
+#define PLUGIN_ETHERNET_IN                11
+
+#define RED                                1                                    // Led = Rood
+#define GREEN                              2                                    // Led = Groen
+#define BLUE                               3                                    // Led = Blauw
+#define UNIT_MAX                          32                                    // Hoogst mogelijke unit nummer van een Nodo
+#define SERIAL_TERMINATOR_1             0x0A                                    // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>
+#define SERIAL_TERMINATOR_2             0x00                                    // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
+#define SCAN_HIGH_TIME                    50                                    // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
+#define SCAN_LOW_TIME                   1000                                    // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
+#define PLUGIN_MAX                        32                                    // Maximaal aantal devices 
+#define MACRO_EXECUTION_DEPTH             10                                    // maximale nesting van macro's.
+#define XON                             0x11                                    // Seriale communicatie XON/XOFF handshaking
+#define XOFF                            0x13                                    // Seriale communicatie XON/XOFF handshaking
+#define USER_VARIABLES_MAX_NR            255                                    // Hoogste te gebruiken variabelenummer.
+#define INPUT_LINE_SIZE                  128                                    // Buffer waar de karakters van de seriele/IP poort in worden opgeslagen.
+#define INPUT_COMMAND_SIZE                80                                    // Maximaal aantal tekens waar een commando uit kan bestaan.
+#define FOCUS_TIME                       500                                    // Tijd in mSec. dat na ontvangen van een teken uitsluitend naar Serial als input wordt geluisterd. 
+
+
+// Default alle hardware voorzieningen op false. In de gekozen HW-xxxx.h bestend
+// worden de settings later correct ingesteld.
+#define HARDWARE_WIRED_IN_PORTS            false
+#define HARDWARE_WIRED_OUT_PORTS           false
+#define HARDWARE_STATUS_LED_RGB            false
+#define HARDWARE_STATUS_LED                false
+#define HARDWARE_SPEAKER                   false
+#define HARDWARE_PULSE                     false
+#define HARDWARE_BATTERY                   false
+#define HARDWARE_RAWSIGNAL                 false
+#define HARDWARE_INFRARED                  false
+#define HARDWARE_RF433                     false
+#define HARDWARE_SERIAL_1                  false
+#define HARDWARE_SERIAL_2_SW               false
+#define HARDWARE_SERIAL_2_HW               false
+#define HARDWARE_CLOCK                     false
+#define HARDWARE_I2C                       false
+#define HARDWARE_SDCARD                    false
+#define HARDWARE_ETHERNET                  false
+#define HARDWARE_SPI_SOFTWARE              false
+#define HARDWARE_SPI_HARDWARE              false
+#define HARDWARE_NRF24L01                  false
+#define HARDWARE_BUTTONS                   false
+
+#define HW_WIRED_IN_PORTS                      0
+#define HW_WIRED_OUT_PORTS                     1
+#define HW_STATUS_LED_RGB                      2
+#define HW_STATUS_LED                          3
+#define HW_SPEAKER                             4
+#define HW_PULSE                               5
+#define HW_BATTERY                             6
+#define HW_RAWSIGNAL                           7
+#define HW_INFRARED                            8
+#define HW_RF433                               9
+#define HW_SERIAL_1                           10
+#define HW_SERIAL_2_SW                        11
+#define HW_SERIAL_2_HW                        12
+#define HW_CLOCK                              13
+#define HW_I2C                                14
+#define HW_SDCARD                             15
+#define HW_ETHERNET                           16
+#define HW_SPI_SOFTWARE                       17
+#define HW_SPI_HARDWARE                       18
+#define HW_NRF24L01                           19
+#define HW_BUTTONS                            20
+#define HW_NODO_MEGA                          30
+#define HW_NODO_SMALL                         31
+
 
 // t.b.v. includen Config_xx.c files
-#define stringify(x) #x
-#define CONFIGFILE2(a, b) stringify(a/Config/b)
-#define CONFIGFILE(a, b) CONFIGFILE2(a, b)
+#define  stringify(x) #x
+#define  CONFIGFILE2(a, b) stringify(a\Config\b)
+#define  CONFIGFILE(a, b) CONFIGFILE2(a, b)
 #include CONFIGFILE(SKETCH_PATH,CONFIG_FILE)
+
+#define  stringify(x) #x
+#define  HARDWAREFILE2(a, b) stringify(a\Hardware\HW-b.h)
+#define  HARDWAREFILE(a, b) HARDWAREFILE2(a, b)
+#include HARDWAREFILE(SKETCH_PATH,HARDWARE_CONFIG)
+
+// Tweede maal includen zodat HARDWARE_xxxx overruled regels worden geset.
+#define  stringify(x) #x
+#define  CONFIGFILE2(a, b) stringify(a\Config\b)
+#define  CONFIGFILE(a, b) CONFIGFILE2(a, b)
+#include CONFIGFILE(SKETCH_PATH,CONFIG_FILE)
+
+#if HARDWARE_ETHERNET
+#define TERMINAL_PORT               23                                          // TelNet poort. Standaard 23
+#define COOKIE_REFRESH_TIME         60                                          // Tijd in sec. tussen automatisch verzenden van een nieuw Cookie als de beveiligde HTTP modus is inschakeld.
+#define  ETHERNET_LIB <EthernetNodo.h>
+#define  ETHERNETLIB(b) ETHERNET_LIB
+#include ETHERNETLIB(ETHERNET_LIB)
+EthernetServer IPServer(80);                                                    // Server class voor HTTP sessie. Poort wordt later goed gezet.
+EthernetClient IPClient;                                                        // Client calls voor HTTP sessie.
+EthernetServer TerminalServer(TERMINAL_PORT);                                   // Server class voor Terminal sessie.
+EthernetClient TerminalClient;                                                  // Client class voor Terminal sessie.
+byte ClientIPAddress[4];                                                        // IP adres van de client die verbinding probeert te maken c.q. verbonden is.
+byte IPClientIP[4];                                                             // IP adres van de Host
+#endif
+
+
+#if NODO_MEGA // Definities voor de Nodo-Mega variant.
+#define USER_VARIABLES_MAX          32                                          // aantal beschikbare gebruikersvariabelen voor de user.
+#define EVENT_QUEUE_MAX             16                                          // maximaal aantal plaatsen in de queue.
+#define TIMER_MAX                   15                                          // aantal beschikbare timers voor de user, gerekend vanaf 1
+#define ALARM_MAX                    8                                          // aantal alarmen voor de user
+
+#else // als het voor de Nodo-Small variant is
+#define USER_VARIABLES_MAX          16                                          // aantal beschikbare gebruikersvariabelen voor de user.
+#define EVENT_QUEUE_MAX              8                                          // maximaal aantal plaatsen in de queue
+#define TIMER_MAX                    8                                          // aantal beschikbare timers voor de user, gerekend vanaf 1
+#endif // NODO_MEGA
+
 
 // Onderstaande commando codes mogen worden gebruikt door andere devices dan een Nodo.
 // Uit compatibility overwegingen zullen deze commando codes niet worden aangepast bij 
@@ -127,10 +221,10 @@ byte dummy=1;                                                                   
 #define CMD_FILE_WRITE                  57
 #define VALUE_FREEMEM                   58
 #define CMD_GATEWAY                     59
-#define CMD_WAIT_FREE_RX                60 
-#define VALUE_SOURCE_HTTP               61
-#define CMD_HTTP_REQUEST                62
-#define VALUE_HWCONFIG                  63
+#define VALUE_HWCONFIG                  60 
+#define VALUE_HWSTATUS                  61
+#define VALUE_SOURCE_HTTP               62
+#define CMD_HTTP_REQUEST                63
 #define VALUE_SOURCE_I2C                64
 #define CMD_ID                          65
 #define CMD_IF                          66
@@ -238,13 +332,12 @@ byte dummy=1;                                                                   
 #define MESSAGE_BUSY_TIMEOUT            16
 #define MESSAGE_NODO_NOT_FOUND          17
 #define MESSAGE_VARIABLE_ERROR          18
-#define MESSAGE_FUTURE_19               19 //??? FUTURE
+#define MESSAGE_HARDWARE_ERROR          19
 #define MESSAGE_FUTURE_20               20 //??? FUTURE
 #define MESSAGE_MAX                     20                                      // laatste bericht tekst
 
 
 #if NODO_MEGA
-
 // Commando's die in de lijst een vaste positie hebben en houden
 prog_char PROGMEM Cmd_0[] ="-";
 prog_char PROGMEM Cmd_1[] ="Boot";
@@ -309,10 +402,10 @@ prog_char PROGMEM Cmd_56[]="FileShow";
 prog_char PROGMEM Cmd_57[]="FileWrite";
 prog_char PROGMEM Cmd_58[]="FreeMem";
 prog_char PROGMEM Cmd_59[]="Gateway";
-prog_char PROGMEM Cmd_60[]="";
-prog_char PROGMEM Cmd_61[]="HTTP";
-prog_char PROGMEM Cmd_62[]="HTTPHost";
-prog_char PROGMEM Cmd_63[]="HWConfig";
+prog_char PROGMEM Cmd_60[]="HWConfig";
+prog_char PROGMEM Cmd_61[]="HWStatus";
+prog_char PROGMEM Cmd_62[]="HTTP";
+prog_char PROGMEM Cmd_63[]="HTTPHost";
 prog_char PROGMEM Cmd_64[]="I2C";
 prog_char PROGMEM Cmd_65[]="ID";
 prog_char PROGMEM Cmd_66[]="if";
@@ -439,7 +532,7 @@ prog_char PROGMEM Msg_15[] = "Incompatibel Nodo event.";
 prog_char PROGMEM Msg_16[] = "Timeout on busy Nodo.";
 prog_char PROGMEM Msg_17[] = "Nodo not found.";
 prog_char PROGMEM Msg_18[] = "Variable error.";
-prog_char PROGMEM Msg_19[] = ""; //??? FUTURE
+prog_char PROGMEM Msg_19[] = "Hardware not found.";
 prog_char PROGMEM Msg_20[] = ""; //??? FUTURE
 
 // tabel die refereert aan de message strings
@@ -456,6 +549,7 @@ prog_char PROGMEM Text_08[] = "RAWSIGN";                                        
 prog_char PROGMEM Text_09[] = "(Last 100 KByte)";
 prog_char PROGMEM Text_11[] = "ALIAS_I";                                        // Directory op de SDCard voor opslag Input: Aliassen van gebruiker -> Nodo Keyword.
 prog_char PROGMEM Text_12[] = "ALIAS_O";                                        // Directory op de SDCard voor opslag Output: Nodo Keywords -> Alias van gebruiker.
+prog_char PROGMEM Text_13[] = "! Variable=%d, Value=";
 prog_char PROGMEM Text_14[] = "Event=";
 prog_char PROGMEM Text_16[] = "! Date=%02d-%02d-%d, Time=%02d:%02d, Variable=%d, Value=";
 prog_char PROGMEM Text_17[] = "Date=%02d-%02d-%d (%s); Time=%02d:%02d";
@@ -463,11 +557,10 @@ prog_char PROGMEM Text_18[] = "%s %u.%u.%u.%u";
 prog_char PROGMEM Text_22[] = "!******************************************************************************!";
 prog_char PROGMEM Text_23[] = "LOG";
 prog_char PROGMEM Text_30[] = "Terminal connection closed.";
-
-#endif
+#endif // MEGA
 
 // Tabel met zonsopgang en -ondergang momenten. afgeleid van KNMI gegevens midden Nederland.
-#if CFG_CLOCK
+#if HARDWARE_CLOCK
 PROGMEM prog_uint16_t Sunrise[]={528,525,516,503,487,467,446,424,401,378,355,333,313,295,279,268,261,259,263,271,283,297,312,329,345,367,377,394,411,428,446,464,481,498,512,522,528,527};
 PROGMEM prog_uint16_t Sunset[]={999,1010,1026,1044,1062,1081,1099,1117,1135,1152,1169,1186,1203,1219,1235,1248,1258,1263,1264,1259,1249,1235,1218,1198,1177,1154,1131,1107,1084,1062,1041,1023,1008,996,990,989,993,1004};
 
@@ -477,150 +570,13 @@ PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,31
 // RealTimeclock DS1307
 
 struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,DaylightSaving,DaylightSavingSetMonth,DaylightSavingSetDate; int Year;}Time; // Hier wordt datum & tijd in opgeslagen afkomstig van de RTC.
-#endif //CFG_CLOCK
+#endif // HARDWARE_CLOCK
 
-#define PLUGIN_MMI_IN                1
-#define PLUGIN_MMI_OUT               2
-#define PLUGIN_RAWSIGNAL_IN          3
-#define PLUGIN_COMMAND               4 
-#define PLUGIN_INIT                  5
-#define PLUGIN_ONCE_A_SECOND         6
-#define PLUGIN_EVENT_IN              7
-#define PLUGIN_EVENT_OUT             8
-#define PLUGIN_SERIAL_IN             9
-#define PLUGIN_ETHERNET_IN          11
 
-#define RED                            1                                        // Led = Rood
-#define GREEN                          2                                        // Led = Groen
-#define BLUE                           3                                        // Led = Blauw
-#define UNIT_MAX                      32                                        // Hoogst mogelijke unit nummer van een Nodo
-#define SERIAL_TERMINATOR_1         0x0A                                        // Met dit teken wordt een regel afgesloten. 0x0A is een linefeed <LF>
-#define SERIAL_TERMINATOR_2         0x00                                        // Met dit teken wordt een regel afgesloten. 0x0D is een Carriage Return <CR>, 0x00 = niet in gebruik.
-#define SCAN_HIGH_TIME                50                                        // tijdsinterval in ms. voor achtergrondtaken snelle verwerking
-#define SCAN_LOW_TIME               1000                                        // tijdsinterval in ms. voor achtergrondtaken langzame verwerking
-#define PLUGIN_MAX                    32                                        // Maximaal aantal devices 
-#define MACRO_EXECUTION_DEPTH         10                                        // maximale nesting van macro's.
-#define XON                         0x11                                        // Seriale communicatie XON/XOFF handshaking
-#define XOFF                        0x13                                        // Seriale communicatie XON/XOFF handshaking
-#define USER_VARIABLES_MAX_NR        255                                        // Hoogste te gebruiken variabelenummer.
-
-// Hardware in gebruik: Bits worden geset in de variabele HW_Config, uit te lezen met [Status HWConfig]
-#define HW_BIC_0                       0
-#define HW_BIC_1                       1
-#define HW_BIC_2                       2
-#define HW_BIC_3                       3
-#define HW_BOARD_UNO                   4
-#define HW_BOARD_MEGA                  5
-#define HW_ETHERNET                    6
-#define HW_SDCARD                      7
-#define HW_SERIAL                      8
-#define HW_CLOCK                       9
-#define HW_RF_RX                      10
-#define HW_IR_RX                      11
-#define HW_PORT_I2C                   12
-#define HW_WIRED                      13
-#define HW_RF_TX                      14
-#define HW_IR_TX                      15
-#define HW_WEBAPP                     16
-#define HW_PULSE                      17
-#define HW_PORT_NRF24L01              18
-
-// Definitie van de speciale hardware uitvoeringen van de Nodo.
-#define BIC_DEFAULT                  0                                          // Standaard Nodo zonder specifike hardware aansturing
-#define BIC_HWMESH_NES_V1X           1                                          // Nodo Ethernet Shield V1.x met Aurel tranceiver. Vereist speciale pulse op PIN_BSF_0 voor omschakelen tussen Rx en Tx.
-
-#if NODO_MEGA // Definities voor de Nodo-Mega variant.
-#define USER_VARIABLES_MAX          32                                          // aantal beschikbare gebruikersvariabelen voor de user.
-#define EVENT_QUEUE_MAX             16                                          // maximaal aantal plaatsen in de queue.
-#define INPUT_LINE_SIZE            128                                          // Buffer waar de karakters van de seriele/IP poort in worden opgeslagen.
-#define INPUT_COMMAND_SIZE          80                                          // Maximaal aantal tekens waar een commando uit kan bestaan.
-#define TIMER_MAX                   15                                          // aantal beschikbare timers voor de user, gerekend vanaf 1
-#define ALARM_MAX                    8                                          // aantal alarmen voor de user
-#define PULSE_IRQ                    5                                          // IRQ verbonden aan de IR_RX_DATA pen 18 van de Mega
-
-#define PIN_BIC_0                   26                                          // Board Identification Code: bit-0
-#define PIN_BIC_1                   27                                          // Board Identification Code: bit-1
-#define PIN_BIC_2                   28                                          // Board Identification Code: bit-2
-#define PIN_BIC_3                   29                                          // Board Identification Code: bit-3
-#define PIN_BSF_0                   22                                          // Board Specific Function lijn-0
-#define PIN_BSF_1                   23                                          // Board Specific Function lijn-1
-#define PIN_BSF_2                   24                                          // Board Specific Function lijn-2
-#define PIN_BSF_3                   25                                          // Board Specific Function lijn-3
-#define PIN_IO_1                    38                                          // future
-#define PIN_IO_2                    39                                          // future
-#define PIN_IO_3                    40                                          // future
-#define PIN_IO_4                    41                                          // future
-#define PIN_WIRED_IN_1               8                                          // Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_IN_2               9                                          // Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_IN_3              10                                          // Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_IN_4              11                                          // Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_IN_5              12                                          // Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_IN_6              13                                          // Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_IN_7              14                                          // Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_WIRED_IN_8              15                                          // Analoge inputs A8 t/m A15 worden gebruikt voor WiredIn 1 tot en met 8
-#define PIN_LED_RGB_R               47                                          // RGB-Led, aansluiting rood
-#define PIN_LED_RGB_G               48                                          // RGB-Led, aansluiting groen
-#define PIN_LED_RGB_B               49                                          // RGB-Led, aansluiting blauw
-#define PIN_SPEAKER                 42                                          // Luidspreker aansluiting
-#define PIN_IR_TX_DATA              17                                          // Zender IR-Led. (gebufferd via transistor i.v.m. hogere stroom die nodig is voor IR-led)
-#define PIN_IR_RX_DATA              18                                          // Op deze input komt het IR signaal binnen van de TSOP. Bij HIGH bij geen signaal.
-#define PIN_RF_TX_VCC               15                                          // +5 volt / Vcc spanning naar de zender.
-#define PIN_RF_TX_DATA              14                                          // Data naar de 433Mhz zender
-#define PIN_RF_RX_VCC               16                                          // Spanning naar de ontvanger via deze pin.
-#define PIN_RF_RX_DATA              19                                          // Op deze input komt het 433Mhz-RF signaal binnen. LOW bij geen signaal.
-#define PIN_WIRED_OUT_1             30                                          // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredOut 1 tot en met 8
-#define PIN_WIRED_OUT_2             31                                          // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredOut 1 tot en met 8
-#define PIN_WIRED_OUT_3             32                                          // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredOut 1 tot en met 8
-#define PIN_WIRED_OUT_4             33                                          // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredOut 1 tot en met 8
-#define PIN_WIRED_OUT_5             34                                          // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredOut 1 tot en met 8
-#define PIN_WIRED_OUT_6             35                                          // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredOut 1 tot en met 8
-#define PIN_WIRED_OUT_7             36                                          // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredOut 1 tot en met 8
-#define PIN_WIRED_OUT_8             37                                          // 8 digitale outputs D30 t/m D37 worden gebruikt voor WiredOut 1 tot en met 8
-#define SPI_MISO                    50                                          // MISO lijn van de SPI-Poort
-#define SPI_MOSI                    51                                          // MISO lijn van de SPI-Poort
-#define SPI_SCK                     52                                          // SCK-lijn van de de SPI-Poort (o.a. ethernet kaart)
-#define EthernetShield_CS_SDCardH   53                                          // Ethernet shield: Gereserveerd voor correct funktioneren van de SDCard: Hardware CS/SPI ChipSelect
-#define EthernetShield_CS_SDCard     4                                          // Ethernet shield: Chipselect van de SDCard. Niet gebruiken voor andere doeleinden
-#define EthernetShield_CS_W5100     10                                          // Ethernet shield: D10..D13  // gereserveerd voor Ethernet & SDCard
-#define PIN_SERIAL_RX                0                                          // RX-0 lijn o.a. verbonden met de UART-USB
-#define PIN_SERIAL_TX                1                                          // TX-0 lijn o.a. verbonden met de UART-USB
-#define PIN_I2C_SDA                 20                                          // I2C communicatie lijn voor de o.a. de realtime clock.
-#define PIN_I2C_SLC                 21                                          // I2C communicatie lijn voor de o.a. de realtime clock.
-
-#define TERMINAL_PORT               23                                          // TelNet poort. Standaard 23
-#define EEPROM_SIZE               4096                                          // Groote van het EEPROM geheugen.
-#define WIRED_PORTS                  8                                          // aAntal WiredIn/WiredOut poorten
-#define COOKIE_REFRESH_TIME         60                                          // Tijd in sec. tussen automatisch verzenden van een nieuw Cookie als de beveiligde HTTP modus is inschakeld.
-#define FOCUS_TIME                 500                                          // Tijd in mSec. dat na ontvangen van een teken uitsluitend naar Serial als input wordt geluisterd. 
-
-#else // als het voor de Nodo-Small variant is
-#define USER_VARIABLES_MAX          16                                          // aantal beschikbare gebruikersvariabelen voor de user.
-#define EVENT_QUEUE_MAX              8                                          // maximaal aantal plaatsen in de queue
-#define TIMER_MAX                    8                                          // aantal beschikbare timers voor de user, gerekend vanaf 1
-#define PULSE_IRQ                    1                                          // IRQ-1 verbonden aan de IR_RX_DATA pen 3 van de ATMega328 (Uno/Nano/Duemillanove)
-#define EEPROM_SIZE               1024                                          // Groote van het EEPROM geheugen.
-#define WIRED_PORTS                  5                                          // aantal WiredIn/WiredOut poorten
-#define PIN_LED_RGB_R               13                                          // RGB-Led, aansluiting rood
-#define PIN_LED_RGB_B               13                                          // RGB-Led, aansluiting blauw, maar voor de Nodo Small is dit de eveneens de rode led.
-#define PIN_WIRED_IN_1               0                                          // Wired-In 1 t/m 4 aangesloten op A0 t/m A3
-#define PIN_WIRED_IN_2               1                                          // Wired-In 1 t/m 4 aangesloten op A0 t/m A3
-#define PIN_WIRED_IN_3               2                                          // Wired-In 1 t/m 4 aangesloten op A0 t/m A3
-#define PIN_WIRED_IN_4               3                                          // Wired-In 1 t/m 4 aangesloten op A0 t/m A3
-#define PIN_SPEAKER                  6                                          // Luidspreker aansluiting
-#define PIN_IR_TX_DATA              11                                          // Zender IR-Led. (gebufferd via transistor i.v.m. hogere stroom die nodig is voor IR-led)
-#define PIN_IR_RX_DATA               3                                          // Op deze input komt het IR signaal binnen van de TSOP. Bij HIGH bij geen signaal.
-#define PIN_RF_TX_VCC                4                                          // +5 volt / Vcc spanning naar de zender.
-#define PIN_RF_TX_DATA               5                                          // data naar de zender
-#define PIN_RF_RX_DATA               2                                          // Op deze input komt het 433Mhz-RF signaal binnen. LOW bij geen signaal.
-#define PIN_RF_RX_VCC               12                                          // Spanning naar de ontvanger via deze pin.
-#define PIN_WIRED_OUT_1              7                                          // digitale outputs D07 t/m D10 worden gebruikt voor WiredOut 1 tot en met 4
-#define PIN_WIRED_OUT_2              8                                          // digitale outputs D07 t/m D10 worden gebruikt voor WiredOut 1 tot en met 4
-#define PIN_WIRED_OUT_3              9                                          // (pwm) 4 digitale outputs D07 t/m D10 worden gebruikt voor WiredOut 1 tot en met 4
-#define PIN_WIRED_OUT_4             10                                          // (pwm) 4 digitale outputs D07 t/m D10 worden gebruikt voor WiredOut 1 tot en met 4
-#define PIN_WIRED_OUT_5             11                                          // (pwm) Extra digitale output, op standaard Nodo is dit de IR-Led !!!
-#define PIN_I2C_SDA                 A4                                          // I2C communicatie lijn voor de o.a. de realtime clock.
-#define PIN_I2C_SLC                 A5                                          // I2C communicatie lijn voor de o.a. de realtime clock.
+#if HARDWARE_SERIAL_1 && NODO_MEGA
+char InputBuffer_Serial[INPUT_LINE_SIZE];                                       // Buffer voor input Seriele data
 #endif
+
 
 // In het transport deel van een Nodo event kunnen zich de volgende vlaggen bevinden:
 #define TRANSMISSION_BUSY                                1
@@ -647,8 +603,14 @@ struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,Daylight
 
 //****************************************************************************************************************************************
 
+#if HARDWARE_RAWSIGNAL || HARDWARE_RF433 || HARDWARE_INFRARED
 
-#if CFG_RAWSIGNAL
+#if NODO_MEGA
+#define RAW_BUFFER_SIZE            512                                          // Maximaal aantal te ontvangen bits = waarde/2
+#else
+#define RAW_BUFFER_SIZE            256                                          // Maximaal aantal te ontvangen bits = waarde/2
+#endif
+
 struct RawSignalStruct                                                          // Variabelen geplaatst in struct zodat deze later eenvoudig kunnen worden weggeschreven naar SDCard
   {
   byte Source;                                                                  // Bron waar het signaal op is binnengekomen.
@@ -661,7 +623,7 @@ struct RawSignalStruct                                                          
   byte Pulses[RAW_BUFFER_SIZE+2];                                               // Tabel met de gemeten pulsen in microseconden gedeeld door RawSignal.Multiply. Dit scheelt helft aan RAM geheugen.
                                                                                 // Om legacy redenen zit de eerste puls in element 1. Element 0 wordt dus niet gebruikt.
   }RawSignal={0,0,0,0,0,0,0L};
-#endif // CFG_RAWSIGNAL
+#endif // HARDWARE_RAWSIGNAL
 
 struct SettingsStruct
   {
@@ -671,8 +633,12 @@ struct SettingsStruct
   byte    TransmitRF;
   byte    RawSignalReceive;
   byte    RawSignalSample;
-  int     WiredInputThreshold[WIRED_PORTS], WiredInputSmittTrigger[WIRED_PORTS];
-  byte    WiredInputPullUp[WIRED_PORTS];
+  
+  #if HARDWARE_WIRED_IN_PORTS
+  int     WiredInputThreshold[HARDWARE_WIRED_IN_PORTS];
+  int     WiredInputSmittTrigger[HARDWARE_WIRED_IN_PORTS];
+  byte    WiredInputPullUp[HARDWARE_WIRED_IN_PORTS];
+  #endif
   
   #if NODO_MEGA
   unsigned long Alarm[ALARM_MAX];                                               // Instelbaar alarm
@@ -699,7 +665,7 @@ struct SettingsStruct
   byte    Res2;
   byte    Res3;
   byte    Res4;
-  #endif
+  #endif // NODO_MEGA
   int     Version;                                                              // Onjuiste versie in EEPROM zorgt voor een [Reset]
   }Settings;
 
@@ -758,8 +724,7 @@ void PluginInit(void);
 boolean (*Plugin_ptr[PLUGIN_MAX])(byte, struct NodoEventStruct*, char*);
 void (*FastLoopCall_ptr)(void);
 byte Plugin_id[PLUGIN_MAX];
-boolean ExecuteCommand(NodoEventStruct *EventToExecute);                        //protoype definieren.
-
+unsigned long HW_config=0,HW_status=0;                                          // Hardware configuratie zoals gedetecteerd door de Nodo. 
 volatile unsigned long PulseCount=0L;                                           // Pulsenteller van de IR puls. Iedere hoog naar laag transitie wordt deze teller met Ã©Ã©n verhoogd
 volatile unsigned long PulseTime=0L;                                            // Tijdsduur tussen twee pulsen teller in milliseconden: millis()-vorige meting.
 unsigned long HoldTransmission=0L;                                              // wachten op dit tijdstip in millis() alvorens event te verzenden.
@@ -769,22 +734,25 @@ byte QueuePosition=0;
 unsigned long UserTimer[TIMER_MAX];                                             // Timers voor de gebruiker.
 byte DaylightPrevious;                                                          // t.b.v. voorkomen herhaald genereren van events binnen de lopende minuut waar dit event zich voordoet.
 byte ExecutionDepth=0;                                                          // teller die bijhoudt hoe vaak er binnen een macro weer een macro wordt uitgevoerd. Voorkomt tevens vastlopers a.g.v. loops die door een gebruiker zijn gemaakt met macro's.
-int ExecutionLine=0;                                                            // Regel in de eventlist die in uitvoer is.??? wordt deze nog gebruikt.
+int ExecutionLine=0;                                                            // Regel in de eventlist die in uitvoer is. Wordt gebruikt voor weergave regelnummer bij uitvoer eventlist.
 void(*Reboot)(void)=0;                                                          // reset functie op adres 0.
 uint8_t RFbit,RFport,IRbit,IRport;                                              // t.b.v. verwerking IR/FR signalen.
-unsigned long HW_Config=0;                                                      // Hardware configuratie zoals gedetecteerd door de Nodo. 
 struct NodoEventStruct LastReceived;                                            // Laatst ontvangen event
 byte RequestForConfirm=false;                                                   // Als true dan heeft deze Nodo een verzoek ontvangen om een systemevent 'Confirm' te verzenden. Waarde wordt in Par1 meegezonden.
 int EventlistMax=0;                                                             // beschikbaar aantal regels in de eventlist. Wordt tijdens setup berekend.
 float TempFloat,TempFloat2;                                                     // globale floats die gebruikt mogen worden als een tijdelijke variabele
 float UserVarValue[USER_VARIABLES_MAX];                                         // inhoudelijke waarde van de gebruikersvariabele.
 byte UserVarKey[USER_VARIABLES_MAX];                                            // Nummer/sleutel van de gebruikersvariabelen
+
 boolean UserVarGlobal[USER_VARIABLES_MAX];
 uint16_t UserVarPayload[USER_VARIABLES_MAX];                                    // Extra payload informatie behorende bij een variabele.
 
-#if CFG_WIRED
-boolean WiredInputStatus[WIRED_PORTS];                                          // Status van de WiredIn worden hierin opgeslagen.
-byte WiredOutputStatus[WIRED_PORTS];                                            // Wired variabelen.
+#if HARDWARE_WIRED_IN_PORTS
+boolean WiredInputStatus[HARDWARE_WIRED_IN_PORTS];                              // Status van de WiredIn worden hierin opgeslagen.
+#endif
+
+#if HARDWARE_WIRED_OUT_PORTS
+byte WiredOutputStatus[HARDWARE_WIRED_OUT_PORTS];                               // Wired statussen bewaren zodat een verandering wordt gedetecteerd.
 #endif
 
 #if NODO_MEGA
@@ -792,7 +760,7 @@ byte  Transmission_SendToUnit=0;                                                
 byte  Transmission_SendToAll=0;                                                 // Waarde die aangeeft of het SendTo permanent staat ingeschakeld. 0=uit, in andere gevallen het unitnummer.
 boolean Transmission_SendtoFast=false;                                          // Vlag die aangeeft of de SendTo via de snelle modus (zonder handshaking) plaats moet vinden.
 byte AlarmPrevious[ALARM_MAX];                                                  // Bevat laatste afgelopen alarm. Ter voorkoming dat alarmen herhaald aflopen.
-byte BIC=0;                                                                     // Board Identification Code: identificeert de hardware uitvoering van de Nodo
+boolean WebApp=false;                                                           // ??? Deze vlag moet later onder Port_WebSocket worden ondergebracht
 uint8_t MD5HashCode[16];                                                        // tabel voor berekenen van MD5 hash codes.
 int CookieTimer;                                                                // Seconden teller die bijhoudt wanneer er weer een nieuw Cookie naar de WebApp verzonden moet worden.
 int TerminalConnected=0;                                                        // Vlag geeft aan of en hoe lang nog (seconden) er verbinding is met een Terminal.
@@ -800,42 +768,34 @@ int TerminalLocked=1;                                                           
 char TempLogFile[13];                                                           // Naam van de Logfile waar (naast de standaard logging) de verwerking in gelogd moet worden.
 char HTTPCookie[10];                                                            // Cookie voor uitwisselen van encrypted events via HTTP
 int FileWriteMode=0;                                                            // Het aantal seconden dat deze timer ingesteld staat zal er geen verwerking plaats vinden van TerminalInvoer. Iedere seconde --.
-char InputBuffer_Serial[INPUT_LINE_SIZE];                                       // Buffer voor input Seriele data
 char InputBuffer_Terminal[INPUT_LINE_SIZE];                                     // Buffer voor input terminal verbinding Telnet sessie
 boolean ClockSyncHTTP=false;
 
-// ethernet classes voor IP communicatie Telnet terminal en HTTP.
-#ifdef ethernetserver_h
-EthernetServer IPServer(80);                                                    // Server class voor HTTP sessie. Poort wordt later goed gezet.
-EthernetClient IPClient;                                                        // Client calls voor HTTP sessie.
-EthernetServer TerminalServer(TERMINAL_PORT);                                   // Server class voor Terminal sessie.
-EthernetClient TerminalClient;                                                  // Client class voor Terminal sessie.
-byte ClientIPAddress[4];                                                        // IP adres van de client die verbinding probeert te maken c.q. verbonden is.
-byte IPClientIP[4];                                                             // IP adres van de Host
+
 #endif // NODO_MEGA
-#endif // WIRED
+
 
 void setup() 
   {    
   int x;
   struct NodoEventStruct TempEvent;
 
-  #if CFG_SERIAL
+  #if HARDWARE_SERIAL_1
   Serial.begin(BAUD);                                                           // Initialiseer de seriele poort
+  HW_SetStatus(HW_SERIAL_1,true,true);
   #endif
-  
+
+  #if NODO_MEGA
+  HW_SetStatus(HW_NODO_MEGA,true,true);
+  #else
+  HW_SetStatus(HW_NODO_SMALL,true,true);
+  #endif
+
   x=(EEPROM_SIZE-sizeof(struct SettingsStruct))/sizeof(struct EventlistStruct); // bereken aantal beschikbare eventlistregels in het eeprom geheugen
   EventlistMax=x>255?255:x;
 
-  #if NODO_MEGA                                                                 // initialiseer BIC-lijnen en lees de BIC uit/
-  for(x=0;x<=3;x++)
-    {
-    pinMode(PIN_BIC_0+x,INPUT);
-    pinMode(PIN_BIC_0+x,INPUT_PULLUP);
-    HW_Config|=digitalRead(PIN_BIC_0+x)<<x;
-    }  
-
-  
+ 
+  #if NODO_MEGA
   for(x=0;x<ALARM_MAX;x++)                                                      // Zet alle alarmen op nog niet afgegaan.
     AlarmPrevious[x]=0xff;                                                      // Deze waarde kan niet bestaan en voldoet dus.
   #endif //NODO-MEGA
@@ -844,138 +804,164 @@ void setup()
   for(x=0;x<TIMER_MAX;x++)                                                      // Alle timers op nul zetten.
     UserTimer[x]=0L;
 
-  // Initialiseer in/output poorten.
-  #if CFG_SOUND
+  for(x=0;x<UNIT_MAX;x++)                                                       // Maak de tabel met Nodo's leeg.
+    NodoOnline(x,0,true);
+
+  #if HARDWARE_SPEAKER
     pinMode(PIN_SPEAKER,    OUTPUT);
+    HW_SetStatus(HW_SPEAKER,true,true);
   #endif
 
-  #if CFG_RAWSIGNAL
+
+  #if HARDWARE_PULSE
+  pinMode(PIN_PULSE, INPUT);
+  digitalWrite(PIN_PULSE,INPUT_PULLUP);                                    // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
+  HW_SetStatus(HW_PULSE,true,true);
+  #endif // HARDWARE_PULSE
+
+
+  #if HARDWARE_INFRARED
   pinMode(PIN_IR_RX_DATA, INPUT);
+  pinMode(PIN_IR_TX_DATA, OUTPUT);
+  digitalWrite(PIN_IR_TX_DATA,LOW);                                             // Zet de IR zenders initiÃ«el uit! Anders mogelijk overbelasting !
+  digitalWrite(PIN_IR_RX_DATA,INPUT_PULLUP);                                    // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
+  IRbit=digitalPinToBitMask(PIN_IR_RX_DATA);
+  IRport=digitalPinToPort(PIN_IR_RX_DATA);
+  HW_SetStatus(HW_INFRARED,true,true);
+  #endif
+
+
+  #if HARDWARE_RF433
   pinMode(PIN_RF_RX_DATA, INPUT);
   pinMode(PIN_RF_TX_DATA, OUTPUT);
   pinMode(PIN_RF_TX_VCC,  OUTPUT);
   pinMode(PIN_RF_RX_VCC,  OUTPUT);
-  pinMode(PIN_IR_TX_DATA, OUTPUT);
-  digitalWrite(PIN_IR_TX_DATA,LOW);                                             // Zet de IR zenders initiÃ«el uit! Anders mogelijk overbelasting !
   digitalWrite(PIN_RF_RX_VCC,HIGH);                                             // Spanning naar de RF ontvanger aan.
-  digitalWrite(PIN_IR_RX_DATA,INPUT_PULLUP);                                    // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
   digitalWrite(PIN_RF_RX_DATA,INPUT_PULLUP);                                    // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
-  #endif
-
-  pinMode(PIN_LED_RGB_R,  OUTPUT);
-  pinMode(PIN_LED_RGB_B,  OUTPUT);
-    
-  #if NODO_MEGA
-  pinMode(PIN_LED_RGB_G,  OUTPUT);
-  pinMode(EthernetShield_CS_SDCardH, OUTPUT);                                   // CS/SPI: nodig voor correct funktioneren van de SDCard!
-
-  switch(HW_Config&0xf)                                                         // Hardware specifieke initialisatie.
-    {    
-    case BIC_DEFAULT:                                                           // Standaard Nodo zonder specifike hardware aansturing
-      break;                 
-
-    case BIC_HWMESH_NES_V1X:                                                    // Nodo Ethernet Shield V1.x met Aurel tranceiver. Vereist speciale pulse op PIN_BSF_0 voor omschakelen tussen Rx en Tx.
-      pinMode(PIN_BSF_0,OUTPUT);
-      digitalWrite(PIN_BSF_0,HIGH);
-      break;
-    }
-  #endif
-
   RFbit=digitalPinToBitMask(PIN_RF_RX_DATA);
   RFport=digitalPinToPort(PIN_RF_RX_DATA);  
-  IRbit=digitalPinToBitMask(PIN_IR_RX_DATA);
-  IRport=digitalPinToPort(PIN_IR_RX_DATA);
+  HW_SetStatus(HW_RF433,true,true);
+  #endif
 
+
+  #if HARDWARE_STATUS_LED
+  pinMode(PIN_LED, OUTPUT);
   Led(RED);
+  HW_SetStatus(HW_STATUS_LED,true,true);
+  #endif
+  
+    
+  #if HARDWARE_STATUS_LED_RGB
+  pinMode(PIN_LED_R,  OUTPUT);
+  pinMode(PIN_LED_G,  OUTPUT);
+  pinMode(PIN_LED_B,  OUTPUT);
+  Led(BLUE);
+  HW_SetStatus(HW_STATUS_LED_RGB,true,true);
+  #endif
+  
+  
+  #if HARDWARE_AUREL_PULSE
+  pinMode(PIN_AUREL_PULSE,OUTPUT);
+  digitalWrite(PIN_AUREL_PULSE,HIGH);
+  #endif
 
   ClearEvent(&LastReceived);
-
-  #if NODO_MEGA
-  bitWrite(HW_Config,HW_BOARD_MEGA,1);
-  Serial.println(F("Booting..."));
-  #endif
 
   UserVariableInit();                                                           // Initialiseer de user variabelen
   LoadSettings();                                                               // laad alle settings zoals deze in de EEPROM zijn opgeslagen
 
   if(Settings.Version!=NODO_VERSION_MINOR)ResetFactory();                       // De Nodo resetten als Versie van de settings zoals geladen vanuit EEPROM niet correct is.
   
-  #if CFG_WIRED  
-  bitWrite(HW_Config,HW_WIRED,1);
-  for(x=0;x<WIRED_PORTS;x++)                                                    // initialiseer de Wired ingangen.
+  #if HARDWARE_WIRED_IN_PORTS  !=0
+  for(x=0;x<HARDWARE_WIRED_IN_PORTS;x++)                                        // initialiseer de Wired ingangen.
     {
     if(Settings.WiredInputPullUp[x]==VALUE_ON)
       pinMode(A0+PIN_WIRED_IN_1+x,INPUT_PULLUP);
     else
       pinMode(A0+PIN_WIRED_IN_1+x,INPUT);
 
+    WiredInputStatus[x]=true;                                                   // Status van de wired poort setten zodat er niet onterecht bij start al events worden gegenereerd.
+    }
+  HW_SetStatus(HW_WIRED_IN_PORTS,true,true);
+  #endif
+  
+
+  #if HARDWARE_WIRED_OUT_PORTS !=0
+  for(x=0;x<HARDWARE_WIRED_OUT_PORTS;x++)                                       // initialiseer de WiredOut uitgangen.
+    {
     pinMode(PIN_WIRED_OUT_1+x,OUTPUT);                                          // definieer Arduino pin's voor Wired-Out
-    WiredInputStatus[x]=true;                                                   // Status van de wired poort setten zodat er niet onterect bij start al events worden gegenereerd.
     WiredOutputStatus[x]=0;
     }
+  HW_SetStatus(HW_WIRED_OUT_PORTS,true,true);
   #endif
-    
-  DetectHardwareReset();                                                        // De Nodo resetten als lijnen LED_RED en IR_RX_DATA verbonden zijn.
-  
-  #if NODO_MEGA
-  SDCardInit();                                                                 // SDCard detecteren en evt. gereed maken voor gebruik in de Nodo
-  FileExecute("","config","dat",true,VALUE_ALL);                                // Voer bestand config uit als deze bestaat. die goeie oude MD-DOS tijd ;-)
+
+   
+  #if HARDWARE_SDCARD
+  pinMode(EthernetShield_CS_SDCardH, OUTPUT);                                   // CS/SPI: nodig voor correct funktioneren van de SDCard!
+  HW_SetStatus(HW_SDCARD,SDCardInit(),true);
+  if(HW_Status(HW_SDCARD))
+    FileExecute("","config","dat",true,VALUE_ALL);                              // Voer bestand config uit als deze bestaat. die goeie oude MD-DOS tijd ;-)
   #endif
    
-
-  #if CFG_CLOCK
-  WireNodo.begin();
-  ClockRead();                                                                  //Lees de tijd uit de RTC en zorg ervoor dat er niet direct na een boot een CMD_CLOCK_DAYLIGHT event optreedt
-  #endif CFG_CLOCK 
-
-  #if NODO_MEGA
-  #if CFG_CLOCK
-  SetDaylight();
-  DaylightPrevious=0xff;                                                        // vul de waarde met een niet bestaande daylight status zodat er na een boot altijd een event wordt gegenereerd.
-  #endif CFG_CLOCK 
-
   
-  #ifdef ethernetserver_h
-  // Detecteren of fysieke laag is aangesloten wordt niet ondersteund door de Ethernet Library van Arduino.
-  bitWrite(HW_Config,HW_ETHERNET,1); 
-  
-  if(bitRead(HW_Config,HW_ETHERNET))
-    {
-    Serial.println(F("Initialising ethernet connection..."));
-    if(EthernetInit())                                                          // Start Ethernet kaart en start de HTTP-Server en de Telnet-server
-      {
-      // als het verkrijgen van een ethernet adres gelukt is en de servers draaien, zet dan de vlag dat ethernet present is
-      // Als ethernet enabled en beveiligde modus, dan direct een Cookie sturen, ander worden eerste events niet opgepikt door de WebApp
-      if(Settings.Password[0]!=0 && Settings.TransmitHTTP!=VALUE_OFF && bitRead(HW_Config,HW_ETHERNET))
-        SendHTTPCookie(); // Verzend een nieuw cookie
-      }
-    else
-      {
-      bitWrite(HW_Config,HW_ETHERNET,0);
-      RaiseMessage(MESSAGE_TCPIP_FAILED,0);
-      }
-    }
-  #endif //ethernet
-  #endif // Mega
-
-  #if NODO_PORT_I2C
-  Port_I2C_Init();
+  #if HARDWARE_I2C
+  HW_SetStatus(HW_I2C,Port_I2C_Init(),true);
   #endif
 
-  #if NODO_PORT_NRF24L01
-  Port_NRF24L01_Init();
+
+  #if HARDWARE_CLOCK && HARDWARE_I2C
+  WireNodo.begin();
+  HW_SetStatus(HW_CLOCK,ClockRead(),true);                                      //Lees de tijd uit de RTC en zorg ervoor dat er niet direct na een boot een CMD_CLOCK_DAYLIGHT event optreedt
+  #endif
+  
+  
+  #if HARDWARE_CLOCK && NODO_MEGA
+  if(HW_Status(HW_CLOCK))
+    {
+    SetDaylight();
+    DaylightPrevious=0xff;                                                      // vul de waarde met een niet bestaande daylight status zodat er na een boot altijd een event wordt gegenereerd.
+    }
+  #endif 
+
+
+  #if HARDWARE_SPI_HARDWARE
+  SPI_begin();                                                                  // Initialiseer poorten voor SPI-communicatie.
+  HW_SetStatus(HW_SPI_HARDWARE,true,true);
+  #endif
+
+
+  #if HARDWARE_SPI_SOFTWARE
+  SPI_begin();                                                                  // Initialiseer poorten voor SPI-communicatie.
+  HW_SetStatus(HW_SPI_SOFTWARE,true,true);
+  #endif
+
+  
+  #if HARDWARE_NRF24L01
+  HW_SetStatus(HW_NRF24L01,Port_NRF24L01_Init(),true);
+  #endif
+
+
+  #if HARDWARE_ETHERNET
+  // Detecteren of fysieke laag is aangesloten wordt niet ondersteund door de Ethernet Library van Arduino.
+  Serial.print(F("Ethernet connection: "));
+  if(EthernetInit())                                                            // Start Ethernet kaart en start de HTTP-Server en de Telnet-server
+    {
+    HW_SetStatus(HW_ETHERNET,true,true);
+    if(Settings.Password[0]!=0 && Settings.TransmitHTTP!=VALUE_OFF)
+      SendHTTPCookie();                                                         // stuur gelijk cookie naar WebApp
+    }
+  else
+    {
+    HW_SetStatus(HW_ETHERNET,false,true);
+    RaiseMessage(MESSAGE_TCPIP_FAILED,0);
+    }
   #endif
 
   PluginInit();                                                                 // vul pointers naar de plugin nummers
 
-  #if NODO_MEGA
-  bitWrite(HW_Config,HW_SERIAL,1);                                              // Serial tijdelijk inschakelen.
-  #endif
-
-  #if CFG_SERIAL
+  #if HARDWARE_SERIAL_1
   PrintWelcome();                                                               // geef de welkomsttekst weer
   #endif
-  
 
   ClearEvent(&TempEvent);
   TempEvent.Par1      = Settings.Unit;
@@ -991,13 +977,20 @@ void setup()
   TempEvent.Type      = NODO_TYPE_EVENT;
   TempEvent.Flags     = TRANSMISSION_BROADCAST;
   SendEvent(&TempEvent,false,true);                                             // Zend 'boot' event naar alle Nodo's.  
-  
+
   QueueProcess();
 
-  #if NODO_MEGA
+  if(HW_config!=HW_status)
+    RaiseMessage(MESSAGE_HARDWARE_ERROR,0);
+
+  #if HARDWARE_SDCARD
+  if(HW_SDCARD)
+    FileExecute("", "autoexec", "dat",true,VALUE_ALL);                          // Voer bestand AutoExec uit als deze bestaat. die goeie oude MD-DOS tijd ;-)
+  #endif
+
+  #if HARDWARE_SERIAL_1 && NODO_MEGA
   Serial.println(F("\nReady. Nodo is waiting for serial input...\n"));
-  FileExecute("", "autoexec", "dat",true,VALUE_ALL);                            // Voer bestand AutoExec uit als deze bestaat. die goeie oude MD-DOS tijd ;-)
-  bitWrite(HW_Config,HW_SERIAL,Serial.available()?1:0);                         // Serial weer uitschakelen.
+  HW_SetStatus(HW_SERIAL_1,Serial.available()?1:0,false);
   #endif
   }
 
@@ -1016,8 +1009,11 @@ void loop()
   unsigned long FocusTimer;                                                     // Timer die er voor zorgt dat bij communicatie via een kanaal de focus hier ook enige tijd op blijft
   unsigned long PreviousTimeEvent=0L; 
 
-  #if NODO_MEGA
+  #if HARDWARE_SERIAL_1 && NODO_MEGA
   InputBuffer_Serial[0]=0;                                                      // serieel buffer string leeg maken
+  #endif
+
+  #if HARDWARE_SDCARD
   TempLogFile[0]=0;                                                             // geen extra logging
   #endif
 
@@ -1034,12 +1030,12 @@ void loop()
       }
 
     // SERIAL: *************** kijk of er data klaar staat op de seriele poort **********************
+    #if HARDWARE_SERIAL_1 && NODO_MEGA
     if(Serial.available())
       {
       PluginCall(PLUGIN_SERIAL_IN,0,0);
 
-      #if NODO_MEGA     
-      bitWrite(HW_Config,HW_SERIAL,1);                                          // Input op seriele poort ontvangen. Vanaf nu ook output naar Seriele poort want er is klaarblijkelijk een actieve verbinding
+      HW_SetStatus(HW_SERIAL_1,true,false);
       FocusTimer=millis()+FOCUS_TIME;
 
       while(FocusTimer>millis())                                                // blijf even paraat voor luisteren naar deze poort en voorkom dat andere input deze communicatie onderbreekt.
@@ -1070,9 +1066,9 @@ void loop()
           FocusTimer=millis()+FOCUS_TIME;                                             
           }
         }
-      #endif
       }// if(Serial.available())
-
+    #endif
+      
 
 
     // Een plugin mag tijdelijk een claim doen op de snelle aanroep vanuit de hoofdloop. 
@@ -1086,8 +1082,8 @@ void loop()
       case 0:
         {
         // IP Event: *************** kijk of er een Event van IP komt **********************    
-        #ifdef ethernetserver_h
-        if(bitRead(HW_Config,HW_ETHERNET))
+        #if HARDWARE_ETHERNET
+        if(HW_Status(HW_ETHERNET))
           if(IPServer.available())
             if(!PluginCall(PLUGIN_ETHERNET_IN,0,0))
               ExecuteIP();
@@ -1098,9 +1094,9 @@ void loop()
  
       case 1:
         {
-        #ifdef ethernetserver_h
+        #if HARDWARE_ETHERNET
         // IP Telnet verbinding : *************** kijk of er verzoek tot verbinding vanuit een terminal is **********************    
-        if(bitRead(HW_Config,HW_ETHERNET))
+        if(HW_Status(HW_ETHERNET))
           {
           while(TerminalServer.available())
             {          
@@ -1128,10 +1124,10 @@ void loop()
               else
                 {
                 TerminalLocked=0;
-                y=bitRead(HW_Config,HW_SERIAL);
-                bitWrite(HW_Config,HW_SERIAL,0);
+                y=HW_Status(HW_SERIAL_1);
+                HW_SetStatus(HW_SERIAL_1,false,false);
                 PrintWelcome();
-                bitWrite(HW_Config,HW_SERIAL,y);
+                HW_SetStatus(HW_SERIAL_1,y,false);
                 }                
               }
             
@@ -1178,10 +1174,10 @@ void loop()
                     if(strcmp(InputBuffer_Terminal,Settings.Password)==0)       // als wachtwoord goed is, dan slot er af
                       {
                       TerminalLocked=0;
-                      y=bitRead(HW_Config,HW_SERIAL);
-                      bitWrite(HW_Config,HW_SERIAL,0);
+                      y=HW_Status(HW_SERIAL_1);
+                      HW_SetStatus(HW_SERIAL_1,false,false);
                       PrintWelcome();
-                      bitWrite(HW_Config,HW_SERIAL,y);
+                      HW_SetStatus(HW_SERIAL_1,y,false);
                       }
                     else                                                        // als foutief wachtwoord, dan teller 
                       {
@@ -1217,10 +1213,10 @@ void loop()
       
       case 2:
         {
-        #if CFG_WIRED
+        #if HARDWARE_WIRED_IN_PORTS
         // WIRED: *************** kijk of statussen gewijzigd zijn op WIRED **********************  
         // als de huidige waarde groter dan threshold EN de vorige keer was dat nog niet zo DAN event genereren
-        for(x=0;x<WIRED_PORTS;x++)
+        for(x=0;x<HARDWARE_WIRED_IN_PORTS;x++)
           {
           // lees analoge waarde. Dit is een 10-bit waarde, unsigned 0..1023
           y=analogRead(PIN_WIRED_IN_1+x);
@@ -1290,14 +1286,13 @@ void loop()
           }
         }
 
-      #if CFG_CLOCK
-      if(bitRead(HW_Config,HW_CLOCK))                                           // Als de klok aanwezig
+      #if HARDWARE_CLOCK && HARDWARE_I2C
+      if(HW_Status(HW_CLOCK))                                                   // Als de klok aanwezig
         {
         ClockRead(); // Lees de Real Time Clock waarden in de struct Time       // Dan klok uitlezen
         if(Time.Minutes!=PreviousMinutes)                                       // eenmaal per minuut
           {
           PreviousMinutes=Time.Minutes;
-
 
           // CLOCK: **************** Check op Time-events  ***********************
           ClearEvent(&ReceivedEvent);
@@ -1340,12 +1335,12 @@ void loop()
           ProcessEvent(&ReceivedEvent);                                         // verwerk binnengekomen event.
         #endif  // NODO_MEGA
         }
-      #endif // CFG_CLOCK 
+      #endif 
     
 
       // Terminal onderhoudstaken
       // tel seconden terug nadat de gebruiker gedefinieerd maal foutief wachtwoord ingegeven
-      #ifdef ethernetserver_h
+      #if HARDWARE_ETHERNET
       if(TerminalLocked>PASSWORD_MAX_RETRY)
         if(--TerminalLocked==PASSWORD_MAX_RETRY)TerminalLocked=1;
 
@@ -1377,7 +1372,7 @@ void loop()
 
 
       // Timer voor blokkeren verwerking. teller verlagen
-      #if NODO_MEGA
+      #if HARDWARE_SDCARD
       if(FileWriteMode>0)
         {
         FileWriteMode--;
