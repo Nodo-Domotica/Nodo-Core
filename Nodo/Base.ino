@@ -5,7 +5,7 @@
 
 byte dummy;
 
-#define NODO_BUILD                       807                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       808                                    // ??? Ophogen bij iedere Build / versiebeheer.
 #define PLUGIN_37_COMPATIBILITY        false                                    // Compatibiliteit met plugins die de variabelen tabel UserVar[] nog gebruiken.
 #define NODO_VERSION_MINOR                15                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.

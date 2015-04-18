@@ -126,15 +126,24 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   
 
   #if HARDWARE_ETHERNET
-  // Verstuur signaal als HTTP-event.
-  if(HW_Status(HW_ETHERNET) && (Port==VALUE_SOURCE_HTTP || Port==VALUE_ALL) && Settings.PortOutput!=0 && !broadcast)
+  // Verstuur signaal als HTTP-event. Enkele soorten events moeten altijd naar de WebApp. ??? Zal aangepast worden zodra we de WebSocket hebben.
+  x=false;
+  switch(ES->Type)
+    {
+    case NODO_TYPE_PLUGIN_EVENT:
+    case NODO_TYPE_PLUGIN_COMMAND:
+    case NODO_TYPE_RAWSIGNAL:
+      x=true;
+      break;
+    }
+    
+  if(HW_Status(HW_ETHERNET) && (Port==VALUE_SOURCE_HTTP || Port==VALUE_ALL || x) && Settings.PortOutput!=0 && !broadcast)
     {
     ES->Port=VALUE_SOURCE_HTTP;
     if(Display)PrintEvent(ES,VALUE_ALL);
     SendHTTPEvent(ES);
     }
   #endif 
-  
   }
   
 #if NODO_MEGA

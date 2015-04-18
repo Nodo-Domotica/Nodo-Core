@@ -26,13 +26,12 @@
                                                                                 //
                                                                                 // Voor extra info: zie ../Hardware/Read_me.txt
 
-
 // weergeven en gebruiken
-// #define PLUGIN_001                                                              // Kaku : Klik-Aan-Klik-Uit
-// #define PLUGIN_001_CORE
+#define PLUGIN_001                                                              // Kaku : Klik-Aan-Klik-Uit
+#define PLUGIN_001_CORE
 
-// #define PLUGIN_002                                                              // NewKAKU : Klik-Aan-Klik-Uit automatische codering.
-// #define PLUGIN_002_CORE
+#define PLUGIN_002                                                              // NewKAKU : Klik-Aan-Klik-Uit automatische codering.
+#define PLUGIN_002_CORE
 
 
 // Alleen weergeven
