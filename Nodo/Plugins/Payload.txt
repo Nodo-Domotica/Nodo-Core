@@ -24,83 +24,93 @@ VarNr    : Nummer van de gebruikervariabele waar de payload mee verbonden wordt.
 Payload  : 16-bits waarde volgens onderstaande tabel.
 
 ====================================================================================
-Grootheid:             Eenheid:               Payload:
+Grootheid:             Eenheid:                   Payload:
 ====================================================================================
-Temperatuur            Graden celcius         0x0011
-                       Kelvin                 0x0012
-                       Fahrenheit             0x0013
+Temperatuur            Graden celcius             0x0011
+                       Kelvin                     0x0012
+                       Fahrenheit                 0x0013
                        
-Tijd                   Milliseconde           0x0021
-                       Seconde                0x0022
-                       Minuut                 0x0023
-                       Uur                    0x0024
-                       Dag                    0x0025   
+Tijd                   Milliseconde               0x0021
+                       Seconde                    0x0022
+                       Minuut                     0x0023
+                       Uur                        0x0024
+                       Dag                        0x0025   
 
-Afstand                Millimeter             0x0031
-                       Centimeter             0x0032
-                       Decimeter              0x0033
-                       Meter                  0x0034
-                       Hectometer             0x0035
-                       Kilometer              0x0036
+Afstand                Millimeter                 0x0031
+                       Centimeter                 0x0032
+                       Decimeter                  0x0033
+                       Meter                      0x0034
+                       Hectometer                 0x0035
+                       Kilometer                  0x0036
                        
-Gewicht                Gram                   0x0041
-                       Kilogram               0x0042        
-                       Ton                    0x0043
+Gewicht                Gram                       0x0041
+                       Kilogram                   0x0042        
+                       Ton                        0x0043
                        
-Volume                 mm3                    0x0051   
-                       cm3                    0x0052
-                       dm3 (liter)            0x0053
-                       m3                     0x0054
+Volume                 mm3                        0x0051   
+                       cm3                        0x0052
+                       dm3 (liter)                0x0053
+                       m3                         0x0054
                        
-Electrische spanning   milli Volt             0x0061
-                       Volt                   0x0062
-                       Kilo Volt              0x0063
+Electrische spanning   milli Volt                 0x0061
+                       Volt                       0x0062
+                       Kilo Volt                  0x0063
 
-Electrische stroom     milli Ampere           0x0071
-                       Ampere                 0x0072
+Electrische stroom     milli Ampere               0x0071
+                       Ampere                     0x0072
                        
-Electrische weerstand  Ohm                    0x0081
+Electrische weerstand  Ohm                        0x0081
 
-Vermogen               Watt                   0x0091
-                       KiloWatt               0x0092
-                       PK                     0x0093
+Vermogen               Watt                       0x0091
+                       KiloWatt                   0x0092
+                       PK                         0x0093
 
-Energie                Watt / uur             0x00a1
-                       Kilowatt / uur         0x00a2
-                       Joules                 0x00a3
+Energie                Watt / uur                 0x00a1
+                       Kilowatt / uur             0x00a2
+                       Joules                     0x00a3
                        
-Lichtsterkte           Lux                    0x00b1                       
-                       Lumen                  0x00b2
-                       Relatief %             0x00b3
+Lichtsterkte           Lux                        0x00b1                       
+                       Lumen                      0x00b2
+                       Relatief %                 0x00b3
 
-Snelheid               Kilometer / uur        0x00c1
-                       Meter / seconde        0x00c2
+Snelheid               Kilometer / uur            0x00c1
+                       Meter / seconde            0x00c2
 
-Relatieve vochtigheid  %                      0x00d1
+Relatieve vochtigheid  %                          0x00d1
 
-Druk                   mBar                   0x00e1
-                       Bar                    0x00e2
-                       HPa                    0x00e3
-                       PSI                    0x00e4
+Druk                   mBar                       0x00e1
+                       Bar                        0x00e2
+                       HPa                        0x00e3
+                       PSI                        0x00e4
                        
                                 
 ========== Combinatie metingen / samengestelde sensoren ============================
 
-P1-Slimme meter        (nog nader bepalen)    0x800x
+P1-Slimme meter       (nog nader bepalen)         0x800x
 
-OpenTherm              (nog nader bepalen)    0x801x
+OpenTherm             Gateway Setpoint            0x8010
+                      Room Temperature            0x8011
+                      Thermostat Set Point        0x8012
+                      Boiler Water Temperature    0x8013
+                      Relative Modulation         0x8014
+                      Boiler Water Pressure       0x8015
+                      Flame Status                0x8016
+                      DHW Mode                    0x8017
+                      Boiler Water Return Temp.   0x8018
 
-Weerstation            Temperatuur Celcius    0x802x
-                       Temperatuur max.       0x802x
-                       Temperatuur min.       0x802x
-                       Neerslag mm            0x802x
-                       Windsnelheid Bft       0x802x
-                       Windsnelheid m/s       0x802x
-                       Windrichting           0x802x
-                       Luchtdruk(mbar)        0x802x
-                       Relatieve vochtigheid% 0x802x
-                       (nog nader bepalen)    0x802x
 
+Weerstation           (nog nader bepalen)         0x802x
+                      Temperatuur Celcius         0x802x
+                      Temperatuur max.            0x802x
+                      Temperatuur min.            0x802x
+                      Neerslag mm                 0x802x
+                      Windsnelheid Bft            0x802x
+                      Windsnelheid m/s            0x802x
+                      Windrichting                0x802x
+                      Luchtdruk(mbar)             0x802x
+                      Relatieve vochtigheid%      0x802x
+                      (nog nader bepalen)         0x802x
+                     
 ========== Door gebruiker zelf te definieren =======================================
 Vrij                   Vrij                   0xfxxx
 

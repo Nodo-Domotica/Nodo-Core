@@ -25,7 +25,7 @@
 // **************************************************************************************************
 
 
-#define HARDWARE_CONFIG                 2502                                    // Nodo-Small met 2e generatie penbezetting! 
+#define HARDWARE_CONFIG                 2502                                    // Nodo-Small met 2e generatie penbezetting met NRF24L01 
 
 #define UNIT_NODO                         20                                    // Na een reset-commando wordt dit het unitnummer van de Nodo
 

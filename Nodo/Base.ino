@@ -5,7 +5,7 @@
 
 byte dummy;
 
-#define NODO_BUILD                       805                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       807                                    // ??? Ophogen bij iedere Build / versiebeheer.
 #define PLUGIN_37_COMPATIBILITY        false                                    // Compatibiliteit met plugins die de variabelen tabel UserVar[] nog gebruiken.
 #define NODO_VERSION_MINOR                15                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
@@ -28,7 +28,7 @@ byte dummy;
 #define PASSWORD_MAX_RETRY                 5                                    // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
 #define PASSWORD_TIMEOUT                 300                                    // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
 #define TERMINAL_TIMEOUT                 600                                    // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
-#define BROADCAST_TIME                   600                                    // Aantal seconden tussen verzending van het broadcast systeemevent.
+#define BROADCAST_TIME                   900                                    // Aantal seconden tussen verzending van het broadcast systeemevent.
 
 #define PLUGIN_MMI_IN                      1
 #define PLUGIN_MMI_OUT                     2
@@ -835,13 +835,15 @@ void setup()
   #if HARDWARE_RF433
   pinMode(PIN_RF_RX_DATA, INPUT);
   pinMode(PIN_RF_TX_DATA, OUTPUT);
-  pinMode(PIN_RF_TX_VCC,  OUTPUT);
-  pinMode(PIN_RF_RX_VCC,  OUTPUT);
-  digitalWrite(PIN_RF_RX_VCC,HIGH);                                             // Spanning naar de RF ontvanger aan.
+  pinMode(PIN_RF_TX_ENABLE,  OUTPUT);
   digitalWrite(PIN_RF_RX_DATA,INPUT_PULLUP);                                    // schakel pull-up weerstand in om te voorkomen dat er rommel binnenkomt als pin niet aangesloten.
   RFbit=digitalPinToBitMask(PIN_RF_RX_DATA);
   RFport=digitalPinToPort(PIN_RF_RX_DATA);  
   HW_SetStatus(HW_RF433,true,true);
+  #if PIN_RF_RX_ENABLE                                                          // Ondersteuning voor 1e generatie hardware
+  pinMode(PIN_RF_RX_ENABLE,  OUTPUT);
+  digitalWrite(PIN_RF_RX_ENABLE,HIGH);                                          // Spanning naar de RF ontvanger aan.
+  #endif
   #endif
 
 

@@ -1386,6 +1386,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
         case VALUE_SOURCE_I2C:
         case VALUE_SOURCE_IR:
         case VALUE_SOURCE_RF:
+        case VALUE_SOURCE_NRF24L01:
         case VALUE_SOURCE_HTTP:
           break;
         default:
@@ -1427,6 +1428,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
         case VALUE_SOURCE_I2C:
         case VALUE_SOURCE_IR:
         case VALUE_SOURCE_RF:
+        case VALUE_SOURCE_NRF24L01:
         case VALUE_SOURCE_SERIAL:
         case VALUE_SOURCE_HTTP:
         case VALUE_SOURCE_TELNET:

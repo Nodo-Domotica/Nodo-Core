@@ -87,10 +87,11 @@
 #define PIN_SERIAL_1_RX              0                                          // RX-0 lijn o.a. verbonden met de UART-USB
 #define PIN_SERIAL_1_TX              1                                          // TX-0 lijn o.a. verbonden met de UART-USB
 #define BAUD                     19200                                          // Baudrate voor seriele communicatie.
+#define HARDWARE_SERIAL_2         true                                          // Additionele seriele poort beschikbaar. Baudrate voor deze lijn wordt in plugin bepaald,
+#define HARDWARE_SERIAL_2_HW      true                                          // ...en de variant is hardware serial via TX3/RX3
+#define PIN_SERIAL_2_RX             15                                          // RX3 lijn.
+#define PIN_SERIAL_2_TX             14                                          // TX3 lijn.
 
-#define HARDWARE_SERIAL_2         true
-#define PIN_SERIAL_2_RX             15                                          // RX-3 lijn voor additionele seriele communicatie vanuit plugin
-#define PIN_SERIAL_2_TX             14                                          // TX-3 lijn voor additionele seriele communicatie vanuit plugin
 
 // Realtime clock DS1307: ===============================================================================================
 #define HARDWARE_CLOCK            true
@@ -125,9 +126,6 @@
 
 // NRF24L01: ============================================================================================================
 #define HARDWARE_NRF24L01         true
-#define NRF_CHANNEL                 36                                          // Kanaal op de 2.4Ghz band waarmee de Nodo's met elkaar communiceren.
-#define NRF_ADDRESS         B1,0xB2,0xB3,0xB4,0xB5                              // 5-byte NRF adres (1e byte wordt ingevuld met unitnummer)
-
                                                                                 // NRF24L01:         Arduino:
                                                                                 // ------------------------------------------------------------------------------
                                                                                 // VCC        =>     +3V3 (LET OP:de voedspanning van de NRF is NIET 5V tolerant!)

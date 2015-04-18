@@ -19,13 +19,10 @@
  ***********************************************************************************************
  * Technische beschrijving:
  *
- * Compiled size      : ??? bytes voor een Mega en ??? voor een Small.
- * Externe funkties   : float2ul(), 
- *
  * De sensor kan volgens de paracitaire mode worden aangesloten. De signaallijn tevens verbinden met een 4K7 naar de Vcc/+5
  * Deze fucntie kan worden gebruikt voor alle Wired poorten van de Nodo.
  * Er wordt gebruik gemaakt van de ROM-skip techniek, dus er worden geen adressering gebruikt.
- * Dit betekent max. Ã©Ã©n sensor per poort. Dit om (veel) geheugen te besparen.  *
+ * Dit betekent max. 1 sensor per poort. Dit om (veel) geheugen te besparen.  
  \*********************************************************************************************/
 
 uint8_t DallasPin;

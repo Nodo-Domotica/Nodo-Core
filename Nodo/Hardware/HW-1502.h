@@ -47,10 +47,10 @@
 
 // RF 433Mhz: ===========================================================================================================
 #define HARDWARE_RF433            true
-#define PIN_RF_TX_VCC                4                                          // +5 volt / Vcc spanning naar de zender.
+#define PIN_RF_TX_ENABLE             4                                          // +5 volt / Vcc spanning naar de zender.
 #define PIN_RF_TX_DATA               5                                          // data naar de zender
 #define PIN_RF_RX_DATA               2                                          // Op deze input komt het 433Mhz-RF signaal binnen. LOW bij geen signaal.
-#define PIN_RF_RX_VCC               12                                          // Spanning naar de ontvanger via deze pin.
+#define PIN_RF_RX_ENABLE            12                                          // Spanning naar de ontvanger via deze pin.
 
 // Serial: ============================================================================================================
 #define HARDWARE_SERIAL_1         true
@@ -76,9 +76,6 @@
 
 // NRF24L01: ============================================================================================================
 #define HARDWARE_NRF24L01         true
-#define NRF_CHANNEL                 36                                          // Kanaal op de 2.4Ghz band waarmee de Nodo's met elkaar communiceren.
-#define NRF_ADDRESS         B1,0xB2,0xB3,0xB4,0xB5                              // 5-byte NRF adres (1e byte wordt ingevuld met unitnummer)
-
                                                                                 // NRF24L01:         Arduino:
                                                                                 // ------------------------------------------------------------------------------
                                                                                 // VCC        =>     +3V3 (LET OP:de voedspanning van de NRF is NIET 5V tolerant!)

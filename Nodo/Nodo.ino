@@ -81,6 +81,7 @@
 
 
 
+
 // ################################### Stap-3 #####################################################
 // Optioneel: Geef in de config-file aan welke plugins je wilt gebruiken en 
 // selecteer indien nodig afwijkende settings. Ook kunnen andere hardware

@@ -104,8 +104,12 @@ Build 803:
 Build 806:
 - Commando "Output" vervallen. Nodo zend automatisch events via poort waar andere Nodo op bekend is.
 - Er wordt naar HTTP verzonden als de poort <> 0 is. Na reset default op 0.
-- Broadcast mechanisme toegevoegd voor onderhoud welke Nodo's online zijn. 
+- Broadcast mechanisme toegevoegd voor onderhoud welke Nodo's online zijn.
 
+Buiuld 807 
+- Aanpassing plugin_11 (OpenTherm) NOG TESTEN !!!
+- Aanpassingen hardware configuratie bestanden.
+- WildCard en EventSend hebben extra optie RF24 gekregen voor NRF24L01 events
 
 Todo:
 - Is versnellen van Boot event mogelijk?

@@ -10,7 +10,8 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   byte x,Port=ES->Port;
   boolean broadcast=((ES->Flags&TRANSMISSION_BROADCAST) != 0);
 
-  #if NODO_MEGA
+
+  #if HARDWARE_STATUS_LED || HARDWARE_STATUS_LED_RGB
   if(broadcast)
     Led(BLUE);
   #endif
@@ -126,7 +127,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
 
   #if HARDWARE_ETHERNET
   // Verstuur signaal als HTTP-event.
-  if(HW_Status(HW_ETHERNET) && (Port==VALUE_SOURCE_HTTP || Port==VALUE_ALL || broadcast) && Settings.PortOutput!=0)
+  if(HW_Status(HW_ETHERNET) && (Port==VALUE_SOURCE_HTTP || Port==VALUE_ALL) && Settings.PortOutput!=0 && !broadcast)
     {
     ES->Port=VALUE_SOURCE_HTTP;
     if(Display)PrintEvent(ES,VALUE_ALL);

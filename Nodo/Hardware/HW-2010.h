@@ -1,5 +1,5 @@
 
-// ############## Nodo Hardware configuratie file: HW-2000.h ######################
+// ############## Nodo Hardware configuratie file: HW-2010.h ######################
 // #                                                                              #
 // #                                                                              #
 // # Gebruik deze file alleen voor de geschikte hardware omdat anders mogelijk    #
@@ -70,9 +70,6 @@
 
 // NRF24L01: ============================================================================================================
 #define HARDWARE_NRF24L01         true
-#define NRF_CHANNEL                 36                                          // Kanaal op de 2.4Ghz band waarmee de Nodo's met elkaar communiceren.
-#define NRF_ADDRESS         B1,0xB2,0xB3,0xB4,0xB5                              // 5-byte NRF adres (1e byte wordt ingevuld met unitnummer)
-
                                                                                 // NRF24L01:         Arduino:
                                                                                 // ------------------------------------------------------------------------------
                                                                                 // VCC        =>     +3V3 (LET OP:de voedspanning van de NRF is NIET 5V tolerant!)

@@ -29,27 +29,20 @@
 #define HARDWARE_STATUS_LED       true    
 #define PIN_LED                     13
 
+// Speaker: ==============================================================================================================
+#define HARDWARE_SPEAKER          true
+#define PIN_SPEAKER                  7                                          // Luidspreker aansluiting
+
 // Pulse: ===================================================================================================================
 #define HARDWARE_PULSE            true
 #define PIN_PULSE                    2                                          // Input voor pulsen tellen
 #define PULSE_IRQ                    0                                          // Aan pin-2 zit de externe interrupt 0                                          
-
-// RF 433Mhz: ===========================================================================================================
-#define HARDWARE_RF433            true
-#define PIN_RF_RX_DATA               3                                          // Op deze input komt het 433Mhz-RF signaal binnen. LOW bij geen signaal. (Kan niet samen met NRF24L01 worden gebruikt)
-#define PIN_RF_RX_ENABLE             4                                          // +5 volt / Vcc spanning naar de zender / pulse bij een Aurel tranceiver (Kan niet samen met NRF24L01 worden gebruikt)
-#define PIN_RF_TX_ENABLE             5                                          // +5 volt / Vcc spanning naar de zender / pulse bij een Aurel tranceiver (Kan niet samen met NRF24L01 worden gebruikt)
-#define PIN_RF_TX_DATA               6                                          // Data naar de 433Mhz zender. (Kan niet samen met NRF24L01 worden gebruikt)
-#define RAW_BUFFER_SIZE            256                                          // Maximaal aantal te ontvangen bits = waarde/2
 
 // Serial: ============================================================================================================
 #define HARDWARE_SERIAL_1         true
 #define PIN_SERIAL_1_RX              0                                          // RX-0 lijn o.a. verbonden met de UART-USB of FTDI
 #define PIN_SERIAL_1_TX              1                                          // TX-0 lijn o.a. verbonden met de UART-USB of FTDI
 #define BAUD                     19200                                          // Baudrate voor seriele communicatie.
-#define HARDWARE_SERIAL_2_SW      true                                          // Baudrate voor deze lijn wordt in plugin bepaald
-#define PIN_SERIAL_2_TX              7                                          // TX lijn voor additionele seriele communicatie vanuit plugin (SoftSerial) Werkt niet samen met luidspreker.
-#define PIN_SERIAL_2_RX              8                                          // RX lijn voor additionele seriele communicatie vanuit plugin (SoftSerial)
 
 // Realtime clock DS1307: ===============================================================================================
 #define HARDWARE_CLOCK            true
@@ -60,3 +53,23 @@
 #define PIN_I2C_SDA                 A4                                          // I2C communicatie lijn voor de o.a. de realtime clock.
 #define PIN_I2C_SLC                 A5                                          // I2C communicatie lijn voor de o.a. de realtime clock.
 
+
+// SPI (Software): ======================================================================================================
+#define HARDWARE_SPI_SOFTWARE     true                                          // Simuleer op niet standaard SPI lijnen de SPI communicatie 
+#define PIN_SPI_MISO                 3                                          // MISO lijn van de SPI-Poort   (NRF werk niet samen met 433)
+#define PIN_SPI_CSN_0                4                                          // SPI Chipselect voor NRF24L01 (NRF werk niet samen met 433)  
+#define PIN_SPI_SCK                  5                                          // SCK-lijn van de de SPI-Poort (NRF werk niet samen met 433)
+#define PIN_SPI_MOSI                 6                                          // MISO lijn van de SPI-Poort   (NRF werk niet samen met 433)
+
+// NRF24L01: ============================================================================================================
+#define HARDWARE_NRF24L01         true
+                                                                                // NRF24L01:         Arduino:
+                                                                                // ------------------------------------------------------------------------------
+                                                                                // VCC        =>     +3V3 (LET OP:de voedspanning van de NRF is NIET 5V tolerant!)
+                                                                                // CSN        =>     PIN_SPI_CSN_0
+                                                                                // MOSI       =>     PIN_SPI_MOSI
+                                                                                // MISO       =>     PIN_SPI_MISO
+                                                                                // SCK        =>     PIN_SPI_SCK
+                                                                                // CE         =>     +5V
+                                                                                // GND        =>     GND
+                                                                                // IRQ                -                 

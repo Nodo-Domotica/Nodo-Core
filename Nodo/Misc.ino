@@ -2684,7 +2684,7 @@ void GoodNightSleepTight(void)
   #endif
 
   #if HARDWARE_RF433
-  digitalWrite(PIN_RF_RX_VCC,LOW);                                            // Spanning naar de RF ontvanger uit
+  digitalWrite(PIN_RF_RX_ENABLE,LOW);                                           // Spanning naar de RF ontvanger uit
   #endif
 
   #if NODO_PORT_NRF24L01
@@ -2697,7 +2697,7 @@ void GoodNightSleepTight(void)
 
   // Spanning weer op de RF ontvanger anders is de Nodo doof.
   #if HARDWARE_RF433
-  digitalWrite(PIN_RF_RX_VCC,HIGH);                                             // Spanning naar de RF ontvanger weer aan
+  digitalWrite(PIN_RF_RX_ENABLE,HIGH);                                          // Spanning naar de RF ontvanger weer aan
   #endif
   
   #if NODO_PORT_NRF24L01

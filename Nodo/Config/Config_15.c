@@ -20,7 +20,7 @@
 
 
 #define UNIT_NODO                         15                                    // Na een reset-commando wordt dit het unitnummer van de Nodo
-#define HARDWARE_CONFIG                 1510                                    // Arduino Uno / Duemillanove / Nano en klonen op basis van een Atmel ATMega328 
+#define HARDWARE_CONFIG                 1500                                    // Arduino Uno / Duemillanove / Nano en klonen op basis van een Atmel ATMega328 
                                                                                 // chip compatibel met het Nodo-Uno shield.  
 
 

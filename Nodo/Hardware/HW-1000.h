@@ -80,9 +80,9 @@
 
 // RF 433Mhz: ===========================================================================================================
 #define HARDWARE_RF433            true
-#define PIN_RF_TX_VCC               15                                          // +5 volt / Vcc spanning naar de zender.
+#define PIN_RF_TX_ENABLE            15                                          // +5 volt / Vcc spanning naar de zender.
 #define PIN_RF_TX_DATA              14                                          // Data naar de 433Mhz zender
-#define PIN_RF_RX_VCC               16                                          // Spanning naar de ontvanger via deze pin.
+#define PIN_RF_RX_ENABLE            16                                          // Spanning naar de ontvanger via deze pin.
 #define PIN_RF_RX_DATA              19                                          // Op deze input komt het 433Mhz-RF signaal binnen. LOW bij geen signaal.
 #define HARDWARE_AUREL_PULSE      true                                          // De Aurel tranceiver heeft een korte pult nodig om om te schakelen tussen TX en TX
 #define PIN_AUREL_PULSE             22                                          // Pin waar de puls op afgegeven wordt.
@@ -123,8 +123,6 @@
 
 // NRF24L01: ============================================================================================================
 #define HARDWARE_NRF24L01         true
-#define NRF_CHANNEL                 36                                          // Kanaal op de 2.4Ghz band waarmee de Nodo's met elkaar communiceren.
-#define NRF_ADDRESS         B1,0xB2,0xB3,0xB4,0xB5                              // 5-byte NRF adres (1e byte wordt ingevuld met unitnummer)
 
                                                                                 // NRF24L01:         Arduino:
                                                                                 // ------------------------------------------------------------------------------

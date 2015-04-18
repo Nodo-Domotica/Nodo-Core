@@ -39,7 +39,8 @@
 *    Let op dat je bij gebruik van functies uit de Nodo code je je eigen code gevoelig makt voor onderhoud
 *    bij uitbrengen van nieuwe releases.
 * -  Maak geen gebruik van interrupt driven routines, dit verstoort (mogelijk) de werking van de I2C, Serial en ethernet
-*    communicatie.
+*    communicatie !!!
+* -  Let op gebruik van pinnen die al een funktie in de Nodo hebben. Zie files in ../Hardware/..
 * -  Maak slechts in uitzonderlijke gevallen gebruik van Globals en pas geen waarden van globals uit de Nodo code aan.
 * -  Besteed uitgebreid aandacht aan de documentatie van het protocol. Indien mogelijk verwijzen naar originele
 *    specificatie.

@@ -41,10 +41,10 @@
 
 // RF 433Mhz: ===========================================================================================================
 #define HARDWARE_RF433            true
-#define PIN_RF_TX_VCC                4                                          // +5 volt / Vcc spanning naar de zender.
+#define PIN_RF_TX_ENABLE             4                                          // +5 volt / Vcc spanning naar de zender.
 #define PIN_RF_TX_DATA               5                                          // data naar de zender
 #define PIN_RF_RX_DATA               2                                          // Op deze input komt het 433Mhz-RF signaal binnen. LOW bij geen signaal.
-#define PIN_RF_RX_VCC               12                                          // Spanning naar de ontvanger via deze pin.
+#define PIN_RF_RX_ENABLE            12                                          // Spanning naar de ontvanger via deze pin.
 
 // Battery: ===========================================================================================================
 #define HARDWARE_BATTERY          true                                          // Batterijvoeding met sleep/wakeup-mode voor laag energieverbruik
