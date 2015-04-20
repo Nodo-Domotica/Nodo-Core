@@ -547,15 +547,17 @@ void PrintEvent(struct NodoEventStruct *Event, byte Port)
   
     // Poort
     strcat(StringToPrint, cmd2str(Event->Port));
-    
-    #if HARDWARE_ETHERNET
-    if(Event->Port==VALUE_SOURCE_HTTP || Event->Port==VALUE_SOURCE_TELNET)
-      {
-      strcat(StringToPrint, "(");
-      strcat(StringToPrint, ip2str(ClientIPAddress));
-      strcat(StringToPrint, ")");
-      }
-    #endif
+
+
+//??? verwijderd i.v.m. gebruik reguliere Ethernet library    
+//    #if HARDWARE_ETHERNET
+//    if(Event->Port==VALUE_SOURCE_HTTP || Event->Port==VALUE_SOURCE_TELNET)
+//      {
+//      strcat(StringToPrint, "(");
+//      strcat(StringToPrint, ip2str(ClientIPAddress));
+//      strcat(StringToPrint, ")");
+//      }
+//    #endif
       
     if(Event->Port==VALUE_SOURCE_EVENTLIST)
       {
@@ -650,9 +652,10 @@ char* DateTimeString(void)
 /**********************************************************************************************\
  * Print de welkomsttekst van de Nodo.
  \*********************************************************************************************/
-prog_char PROGMEM Text_welcome1[] = "Nodo Domotica controller V3.8 (Mega)";
-prog_char PROGMEM Text_welcome2[] = "(c) Copyright 2015 P.K.Tonkes. Licensed under GNU General Public License.";
-prog_char PROGMEM Text_welcome3[] = "Product=SWACNC-MEGA-R%03d, ThisUnit=%d";
+const char Text_welcome1[] PROGMEM = "Nodo Domotica controller V3.8 (Mega)";
+const char Text_welcome2[] PROGMEM = "(c) Copyright 2015 P.K.Tonkes. Licensed under GNU General Public License.";
+const char Text_welcome3[] PROGMEM = "Product=SWACNC-MEGA-R%03d, ThisUnit=%d";
+
 void PrintWelcome(void)
   {
   char *TempString=(char*)malloc(128);
@@ -687,7 +690,7 @@ void PrintWelcome(void)
   #if HARDWARE_ETHERNET
   if(HW_Status(HW_ETHERNET))
     {
-    sprintf(TempString,"IP=%u.%u.%u.%u, ", EthernetNodo.localIP()[0],EthernetNodo.localIP()[1],EthernetNodo.localIP()[2],EthernetNodo.localIP()[3]);
+    sprintf(TempString,"IP=%u.%u.%u.%u, ", Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
 
     strcat(TempString,cmd2str(CMD_PORT_OUTPUT));
     strcat(TempString,"=");        
@@ -707,12 +710,12 @@ void PrintWelcome(void)
       strcat(TempString,Settings.HTTPRequest);
       int x=StringFind(TempString,"/");
       TempString[x]=0;    
-      strcat(TempString,", HostIP=");        
-  
-      if((IPClientIP[0] + IPClientIP[1] + IPClientIP[2] + IPClientIP[3]) > 0)
-        strcat(TempString,ip2str(IPClientIP));
-      else
-        strcat(TempString,"?");        
+//???      strcat(TempString,", HostIP=");        
+//???  
+//???      if((IPClientIP[0] + IPClientIP[1] + IPClientIP[2] + IPClientIP[3]) > 0)
+//???        strcat(TempString,ip2str(IPClientIP));
+//???      else
+//???        strcat(TempString,"?");        
   
       PrintString(TempString,VALUE_ALL);
       }
@@ -729,8 +732,10 @@ void PrintWelcome(void)
  \*********************************************************************************************/
 void PrintString(char* LineToPrint, byte Port)
   {  
+  #if HARDWARE_SERIAL_1
   if((Port==VALUE_SOURCE_SERIAL || Port==VALUE_ALL) && HW_Status(HW_SERIAL_1))
     Serial.println(LineToPrint);
+  #endif
 
   #if HARDWARE_ETHERNET
   if(HW_Status(HW_ETHERNET))
@@ -916,6 +921,7 @@ void Event2str(struct NodoEventStruct *Event, char* EventString)
       // Par1 als tekst en par2 niet
       case CMD_SEND_EVENT:
       case CMD_DEBUG:
+      case CMD_BUSY:
       case CMD_WAIT_FREE_NODO:
       case CMD_LOG:
       case CMD_ECHO:
@@ -1211,6 +1217,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
     case CMD_LOG:
     case CMD_WAIT_FREE_NODO:
     case CMD_DEBUG:
+    case CMD_BUSY:
     case CMD_ECHO:
     case CMD_RAWSIGNAL_RECEIVE:
       ResultEvent->Type=NODO_TYPE_COMMAND;

@@ -569,7 +569,7 @@ boolean GetStatus(struct NodoEventStruct *Event)
     break;
 
   case CMD_WAIT_FREE_NODO:
-    Event->Par1=Settings.WaitFreeNodo;
+    Event->Par1=Settings.WaitBusyNodo;
     break;
 
   // pro-forma de commando's die geen fout op mogen leveren omdat deze elders in de statusafhandeling worden weergegeven
@@ -640,7 +640,7 @@ void ResetFactory(void)
 
   // Herstel alle settings naar defaults
   Settings.Version                    = NODO_VERSION_MINOR;
-  Settings.WaitFreeNodo               = VALUE_OFF;
+  Settings.WaitBusyNodo               = VALUE_OFF;
   Settings.Unit                       = UNIT_NODO;
   Settings.RawSignalReceive           = VALUE_OFF;
   Settings.RawSignalSample            = RAWSIGNAL_SAMPLE_DEFAULT;  
@@ -748,7 +748,7 @@ void Status(struct NodoEventStruct *Request)
       Port=VALUE_ALL;
       break;      
     }
-
+ 
   // Als de status informatie verzonden moet worden, dan komt deze terecht in de queue van de master waar het status verzoek
   // vandaan kwam. Hier een korte wachttijd omdat anders i.v.m. de omschakeltijd van de Master van zenden naar ontvangen
   // de eerste waarden die door deze slave worden verzonden niet aankomen.
@@ -779,7 +779,8 @@ void Status(struct NodoEventStruct *Request)
     CMD_Start=Request->Par1;
     CMD_End=Request->Par1;
     }
-
+  
+  
   for(x=CMD_Start; x<=CMD_End; x++)
     {
     s=false;
@@ -789,16 +790,23 @@ void Status(struct NodoEventStruct *Request)
       switch (x)
         {
         #if NODO_MEGA          
-        #ifdef ethernetserver_h
+        #if HARDWARE_ETHERNET
+
         case CMD_CLIENT_IP:
-          sprintf(TempString,ProgmemString(Text_18),cmd2str(CMD_CLIENT_IP),Settings.Client_IP[0],Settings.Client_IP[1],Settings.Client_IP[2],Settings.Client_IP[3]);
+          strcpy(TempString,cmd2str(CMD_CLIENT_IP));
+          strcat(TempString," ");
+          strcat(TempString,ip2str(Settings.Client_IP));
           PrintString(TempString, Port);
           break;
 
         case CMD_NODO_IP:
-          sprintf(TempString,ProgmemString(Text_18),cmd2str(CMD_NODO_IP), EthernetNodo.localIP()[0],EthernetNodo.localIP()[1],EthernetNodo.localIP()[2],EthernetNodo.localIP()[3]);
+          strcpy(TempString,cmd2str(CMD_NODO_IP));
+          strcat(TempString," ");
+          strcat(TempString,ip2str(Settings.Nodo_IP));
+
           if(dhcp)
             strcat(TempString,"(DHCP)");
+
           PrintString(TempString, Port);
           break;
   
@@ -806,7 +814,9 @@ void Status(struct NodoEventStruct *Request)
           // Gateway
           if(!dhcp)
             {
-            sprintf(TempString,ProgmemString(Text_18),cmd2str(CMD_GATEWAY),Settings.Gateway[0],Settings.Gateway[1],Settings.Gateway[2],Settings.Gateway[3]);
+            strcpy(TempString,cmd2str(CMD_GATEWAY));
+            strcat(TempString," ");
+            strcat(TempString,ip2str(Settings.Gateway));
             PrintString(TempString, Port);
             }
           break;
@@ -815,48 +825,62 @@ void Status(struct NodoEventStruct *Request)
           // Subnetmask
           if(!dhcp)
             {
-            sprintf(TempString,ProgmemString(Text_18),cmd2str(CMD_SUBNET),Settings.Subnet[0],Settings.Subnet[1],Settings.Subnet[2],Settings.Subnet[3]);
+            strcpy(TempString,cmd2str(CMD_SUBNET));
+            strcat(TempString," ");
+            strcat(TempString,ip2str(Settings.Subnet));
             PrintString(TempString, Port);
             }
           break;
-  
+
         case CMD_DNS_SERVER:
           if(!dhcp)
             {
-            // DnsServer
-            sprintf(TempString,ProgmemString(Text_18),cmd2str(CMD_DNS_SERVER),Settings.DnsServer[0],Settings.DnsServer[1],Settings.DnsServer[2],Settings.DnsServer[3]);
+            strcpy(TempString,cmd2str(CMD_DNS_SERVER));
+            strcat(TempString," ");
+            strcat(TempString,ip2str(Settings.DnsServer));
             PrintString(TempString, Port);
             }
           break;
   
         case CMD_PORT_INPUT:
-          sprintf(TempString,"%s %d",cmd2str(CMD_PORT_INPUT), Settings.PortInput);
+          strcpy(TempString,cmd2str(CMD_PORT_INPUT));
+          strcat(TempString," ");
+          strcat(TempString,int2str(Settings.PortInput));
           PrintString(TempString, Port);
           break;
   
         case CMD_PORT_OUTPUT:
-          sprintf(TempString,"%s %d",cmd2str(CMD_PORT_OUTPUT), Settings.PortOutput);
+          strcpy(TempString,cmd2str(CMD_PORT_OUTPUT));
+          strcat(TempString," ");
+          strcat(TempString,int2str(Settings.PortOutput));
           PrintString(TempString, Port);
           break;
   
         case CMD_HTTP_REQUEST:
-          sprintf(TempString,"%s %s",cmd2str(CMD_HTTP_REQUEST),Settings.HTTPRequest);
+          strcpy(TempString,cmd2str(CMD_HTTP_REQUEST));
+          strcat(TempString," ");
+          strcat(TempString,Settings.HTTPRequest);
           PrintString(TempString, Port);
           break;
+
   
-        #endif // ethernetserver_h
+        #endif // HARDWARE_ETHERNET
 
         case CMD_ID:
-          sprintf(TempString,"%s %s",cmd2str(CMD_ID), Settings.ID);
+          strcpy(TempString,cmd2str(CMD_ID));        
+          strcat(TempString," ");
+          strcat(TempString, Settings.ID);
           PrintString(TempString, Port);
           break;
-  
+
         case CMD_TEMP:
-          sprintf(TempString,"%s %s",cmd2str(CMD_TEMP), Settings.Temp);
+          strcpy(TempString,cmd2str(CMD_TEMP));        
+          strcat(TempString," ");
+          strcat(TempString, Settings.Temp);
           PrintString(TempString, Port);
           break;
-  
-  #endif
+
+     #endif
   
         default:
           s=false; 
@@ -972,27 +996,30 @@ void Status(struct NodoEventStruct *Request)
 
   free(TempString);
   #endif
+
+
+
+  //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+  //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+  //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   }
 
 
 
 #if NODO_MEGA
-/**********************************************************************************************\
+ /**********************************************************************************************\
  * Deze functie haalt een tekst op uit PROGMEM en geeft als string terug
  \*********************************************************************************************/
-char* ProgmemString(prog_char* text)
+char* ProgmemString(const char* pm)
   {
-  byte x=0;
   static char buffer[90]; 
+  int x=0;
 
-  buffer[0]=0;
-  do
-    {
-    buffer[x]=pgm_read_byte_near(text+x);
-    }while(buffer[x++]!=0);
-    
+  while( buffer[x] = pgm_read_byte_near(pm + x))x++;
+  
   return buffer;
   }
+
 
 /*********************************************************************************************\
  * Deze routine parsed string en geeft het opgegeven argument nummer Argc terug in Argv
@@ -1093,7 +1120,7 @@ void RandomCookie(char* Ck)
 //#######################################################################################################
 
 
-uint32_t md5_T[] PROGMEM = {
+const uint32_t md5_T[] PROGMEM = {
   0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee, 0xf57c0faf,
   0x4787c62a, 0xa8304613, 0xfd469501, 0x698098d8, 0x8b44f7af,
   0xffff5bb1, 0x895cd7be, 0x6b901122, 0xfd987193, 0xa679438e,
@@ -1266,7 +1293,7 @@ void md5(char* dest)
   md5_lastBlock(&ctx, src, length_b);
   md5_ctx2hash((md5_hash_t*)&MD5HashCode, &ctx);
 
-  strcpy(Str,PROGMEM2str(Text_05));              
+  strcpy(Str,ProgmemString(Text_05));              
   int y=0;
   for(int x=0; x<16; x++)
   {
@@ -1815,24 +1842,24 @@ uint8_t rtc[12];
 // update the data on the RTC from the bcd formatted data in the buffer
 void DS1307_save(void)
   {
-  WireNodo.beginTransmission(DS1307_CTRL_ID);
-  WireNodo.write((uint8_t)0x00); // reset register pointer
-  for(byte i=0; i<11; i++)WireNodo.write(rtc[i]);
-  WireNodo.endTransmission();
+  Wire.beginTransmission(DS1307_CTRL_ID);
+  Wire.write((uint8_t)0x00); // reset register pointer
+  for(byte i=0; i<11; i++)Wire.write(rtc[i]);
+  Wire.endTransmission();
   }
 
 // Aquire data from the RTC chip in BCD format, refresh the buffer
 
 void DS1307_read(void)
   {
-  WireNodo.beginTransmission(DS1307_CTRL_ID);  // reset the register pointer to zero
-  WireNodo.write((uint8_t)0x00);
-  if (WireNodo.endTransmission(false) == 0) // Try to become I2C Master, send data and collect bytes, keep master status for next request...
+  Wire.beginTransmission(DS1307_CTRL_ID);  // reset the register pointer to zero
+  Wire.write((uint8_t)0x00);
+  if (Wire.endTransmission(false) == 0) // Try to become I2C Master, send data and collect bytes, keep master status for next request...
     {
-      WireNodo.requestFrom(DS1307_CTRL_ID, 11);  // request the 9 bytes of data    (secs, min, hr, dow, date. mth, yr. ctrl, dls)
-      if(WireNodo.available() == 11) for(byte i=0; i<11; i++)rtc[i]=WireNodo.read();// store data in raw bcd format
+      Wire.requestFrom(DS1307_CTRL_ID, 11);  // request the 9 bytes of data    (secs, min, hr, dow, date. mth, yr. ctrl, dls)
+      if(Wire.available() == 11) for(byte i=0; i<11; i++)rtc[i]=Wire.read();// store data in raw bcd format
     }
-  WireNodo.endTransmission(true); // Release I2C Master status...
+  Wire.endTransmission(true); // Release I2C Master status...
   }
 
 
@@ -1962,7 +1989,7 @@ void SetDaylight()
 
 #if NODO_MEGA
 /*********************************************************************************************\
- * kopiëer de string van een commando naar een string[]
+ * kopieer de string van een commando naar een string[]
  \*********************************************************************************************/
 char* cmd2str(int i)
   {
@@ -2082,29 +2109,24 @@ unsigned long str2int(char *string)
   return(strtoul(string,NULL,0));  
 }
 
-/**********************************************************************************************\
- * geeft *char pointer terug die naar een PROGMEM string wijst.
- \*********************************************************************************************/
-char* PROGMEM2str(prog_char* text)
-{
-  byte x=0;
-  static char buffer[60];
 
-  do
-  {
-    buffer[x]=pgm_read_byte_near(text+x);
-  }
-  while(buffer[x++]!=0);
-  return buffer;  
-}
 
 /**********************************************************************************************\
  * Converteert een 4byte array IP adres naar een string.
  \*********************************************************************************************/
 char* ip2str(byte* IP)
-{
-  static char str[20];
-  sprintf(str,"%u.%u.%u.%u",IP[0],IP[1],IP[2],IP[3]);
+  {
+  static char str[22];
+  
+  strcpy(str,int2str(IP[0]));        
+  strcat(str,".");
+  strcat(str,int2str(IP[1]));        
+  strcat(str,".");
+  strcat(str,int2str(IP[2]));        
+  strcat(str,".");
+  strcat(str,int2str(IP[3]));        
+  strcat(str,".");
+  strcat(str,int2str(IP[4]));        
   return str;
 }
 

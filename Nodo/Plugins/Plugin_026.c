@@ -41,8 +41,8 @@ boolean Plugin_026(byte function, struct NodoEventStruct *event, char *string)
     {
       // get the current pin status
       uint8_t address = 0x20;
-      WireNodo.requestFrom(address, (uint8_t)0x1);
-      if(WireNodo.available()) portValue = WireNodo.read();
+      Wire.requestFrom(address, (uint8_t)0x1);
+      if(Wire.available()) portValue = Wire.read();
       break;
     }
     
@@ -52,10 +52,10 @@ boolean Plugin_026(byte function, struct NodoEventStruct *event, char *string)
       uint8_t address = 0x20;
 
       // get the current pin status
-      WireNodo.requestFrom(address, (uint8_t)0x1);
-      if(WireNodo.available())
+      Wire.requestFrom(address, (uint8_t)0x1);
+      if(Wire.available())
       {
-        tmpPortValue = WireNodo.read();
+        tmpPortValue = Wire.read();
         if (tmpPortValue != portValue)
           {
             for (byte x=0; x<8; x++)

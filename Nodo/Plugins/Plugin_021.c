@@ -10,7 +10,7 @@
 * Auteur             : Martinus van den Broek
 * Support            : www.nodo-domotica.nl
 * Datum              : 21 Maart 2015
-* Versie             : 12-2013 versie 1.2 Modificatie WireNodo library (Hans Man)
+* Versie             : 12-2013 versie 1.2 Modificatie Wire library (Hans Man)
 *                      02-2014 versie 1.3 Support 4x20 display en uitbreiding functionaliteit met Par3/Par4 (Martinus)
 *                      02-2014 versie 1.4 Support PortInput, LCDWrite 0,0 clears screen (Martinus)
 *                      03-2014 versie 1.5 Support Backlight on/off (Martinus)
@@ -276,7 +276,7 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
          if (Print)
            LCD_I2C_printline(event->Par1-1, Par2-1, TempString);
 
-         WireNodo.endTransmission(true);
+         Wire.endTransmission(true);
          success=true;
        }
 
@@ -413,9 +413,9 @@ void LCD_I2C_write4bits(uint8_t value) {
 /*********************************************************************/
 void LCD_I2C_expanderWrite(uint8_t _data){                                        
 /*********************************************************************/
- WireNodo.beginTransmission(LCD_I2C_ADDRESS);
- WireNodo.write((int)(_data) | _backlightval);
- WireNodo.endTransmission(false);   
+ Wire.beginTransmission(LCD_I2C_ADDRESS);
+ Wire.write((int)(_data) | _backlightval);
+ Wire.endTransmission(false);   
 }
 
 /*********************************************************************/

@@ -106,10 +106,17 @@ Build 806:
 - Er wordt naar HTTP verzonden als de poort <> 0 is. Na reset default op 0.
 - Broadcast mechanisme toegevoegd voor onderhoud welke Nodo's online zijn.
 
-Buiuld 807 
+Build 807: 
 - Aanpassing plugin_11 (OpenTherm) NOG TESTEN !!!
 - Aanpassingen hardware configuratie bestanden.
 - WildCard en EventSend hebben extra optie RF24 gekregen voor NRF24L01 events
+
+Build 809:
+- Code compliant voor Arduino IDE versie 1.6.1 gemaakt.
+- Geen gebruik meer van Nodo libraries. Deze kwamen niet meer door de nieuwe compiler. Gebruik gemaakt van standaard Arduino libraries.
+- Commando 'WaitFreeNodo' renamed naar 'WaitBusyNodo' tevens handshaking aanpassing.
+- Commando 'Busy <on/off>' toegevoegd. Laat alle Nodo's die WaitFreeNodo op 'on' hebben staan in de wachtstand. 
+- Aanpassing ethernet verbinding opzetten met WebApp
 
 Todo:
 - Is versnellen van Boot event mogelijk?

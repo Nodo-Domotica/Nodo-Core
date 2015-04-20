@@ -514,9 +514,16 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         break;
         }
 
-
     case CMD_REBOOT:
       Reboot();
+      break;        
+
+    case CMD_BUSY:
+      TempEvent.Port                  = VALUE_ALL;
+      TempEvent.Type                  = NODO_TYPE_SYSTEM;
+      TempEvent.Command               = SYSTEM_COMMAND_BUSY;
+      TempEvent.Flags                 = TRANSMISSION_BUSY & (EventToExecute->Par1==VALUE_ON);
+      SendEvent(&TempEvent, false,false);
       break;        
       
     case CMD_RESET:
@@ -524,18 +531,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
 
     case CMD_WAIT_FREE_NODO:
-      Settings.WaitFreeNodo=EventToExecute->Par1;
-
-      if(Settings.WaitFreeNodo!=VALUE_ON)
-        {
-        BusyNodo=0;
-        TempEvent.Port                  = VALUE_ALL;
-        TempEvent.Type                  = NODO_TYPE_COMMAND;
-        TempEvent.Command               = CMD_WAIT_FREE_NODO;
-        TempEvent.Par1                  = VALUE_OFF;
-        SendEvent(&TempEvent, false, true);
-        }
-
+      Settings.WaitBusyNodo=EventToExecute->Par1;
       break;                                                                      
 
 

@@ -1,11 +1,12 @@
+byte dummy=0;
 #include <SPI.h>
 #include <Arduino.h>
 #include <EEPROM.h>
-#include <WireNodo.h>
+#include <Ethernet.h>
+#include <Wire.h>
+#include <avr/pgmspace.h>
 
-byte dummy;
-
-#define NODO_BUILD                       808                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       809                                    // ??? Ophogen bij iedere Build / versiebeheer.
 #define PLUGIN_37_COMPATIBILITY        false                                    // Compatibiliteit met plugins die de variabelen tabel UserVar[] nog gebruiken.
 #define NODO_VERSION_MINOR                15                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
@@ -128,15 +129,15 @@ byte dummy;
 #if HARDWARE_ETHERNET
 #define TERMINAL_PORT               23                                          // TelNet poort. Standaard 23
 #define COOKIE_REFRESH_TIME         60                                          // Tijd in sec. tussen automatisch verzenden van een nieuw Cookie als de beveiligde HTTP modus is inschakeld.
-#define  ETHERNET_LIB <EthernetNodo.h>
+#define  ETHERNET_LIB <Ethernet.h>
 #define  ETHERNETLIB(b) ETHERNET_LIB
 #include ETHERNETLIB(ETHERNET_LIB)
 EthernetServer IPServer(80);                                                    // Server class voor HTTP sessie. Poort wordt later goed gezet.
 EthernetClient IPClient;                                                        // Client calls voor HTTP sessie.
 EthernetServer TerminalServer(TERMINAL_PORT);                                   // Server class voor Terminal sessie.
 EthernetClient TerminalClient;                                                  // Client class voor Terminal sessie.
-byte ClientIPAddress[4];                                                        // IP adres van de client die verbinding probeert te maken c.q. verbonden is.
-byte IPClientIP[4];                                                             // IP adres van de Host
+//???byte ClientIPAddress[4];                                                        // IP adres van de client die verbinding probeert te maken c.q. verbonden is.
+//???byte IPClientIP[4];                                                             // IP adres van de Host
 #endif
 
 
@@ -308,7 +309,7 @@ byte IPClientIP[4];                                                             
 #define CMD_SLEEP                       143   
 #define VALUE_FAST                      144
 #define CMD_WAIT_FREE_NODO              145
-#define CMD_RES_146                     146                                     // ??? reserve
+#define CMD_BUSY                        146                                
 #define VALUE_TOGGLE                    147
 #define VALUE_UNIT                      148                                     
 #define CMD_UNIT_SET                    149
@@ -337,166 +338,167 @@ byte IPClientIP[4];                                                             
 #define MESSAGE_FUTURE_20               20 //??? FUTURE
 #define MESSAGE_MAX                     20                                      // laatste bericht tekst
 
+// ??? const char phi_prompt_lcd_ch0[] PROGMEM ={ 4,14,
+// ??? prog_char PROGMEM Cmd_1[] ="Boot";
 
 #if NODO_MEGA
-// Commando's die in de lijst een vaste positie hebben en houden
-prog_char PROGMEM Cmd_0[] ="-";
-prog_char PROGMEM Cmd_1[] ="Boot";
-prog_char PROGMEM Cmd_2[] ="Sound";
-prog_char PROGMEM Cmd_3[] ="UserEvent";
-prog_char PROGMEM Cmd_4[] ="Variable";
-prog_char PROGMEM Cmd_5[] ="";
-prog_char PROGMEM Cmd_6[] ="";
-prog_char PROGMEM Cmd_7[] ="";
-prog_char PROGMEM Cmd_8[] ="";
-prog_char PROGMEM Cmd_9[] ="";
-prog_char PROGMEM Cmd_10[]="";
-prog_char PROGMEM Cmd_11[]="";
-prog_char PROGMEM Cmd_12[]="";
-prog_char PROGMEM Cmd_13[]="";
-prog_char PROGMEM Cmd_14[]="";
-prog_char PROGMEM Cmd_15[]="";
-// Einde vaste positie
-
-
-prog_char PROGMEM Cmd_16[]="Alarm";
-prog_char PROGMEM Cmd_17[]="AlarmSet";
-prog_char PROGMEM Cmd_18[]="All";
-prog_char PROGMEM Cmd_19[]="AnalyseSettings";
-prog_char PROGMEM Cmd_20[]="BreakOnDaylight";
-prog_char PROGMEM Cmd_21[]="BreakOnEarlier";
-prog_char PROGMEM Cmd_22[]="BreakOnLater";
-prog_char PROGMEM Cmd_23[]="BreakOnVarEqu";
-prog_char PROGMEM Cmd_24[]="BreakOnVarLess";
-prog_char PROGMEM Cmd_25[]="BreakOnVarLessVar";
-prog_char PROGMEM Cmd_26[]="BreakOnVarMore";
-prog_char PROGMEM Cmd_27[]="BreakOnVarMoreVar";
-prog_char PROGMEM Cmd_28[]="BreakOnVarNEqu";
-prog_char PROGMEM Cmd_29[]="";                                                  // ??? reserve
-prog_char PROGMEM Cmd_30[]="ClientIP";
-prog_char PROGMEM Cmd_31[]="Clock";
-prog_char PROGMEM Cmd_32[]="ClockDaylight";
-prog_char PROGMEM Cmd_33[]="ClockSetDate";
-prog_char PROGMEM Cmd_34[]="ClockSetTime";
-prog_char PROGMEM Cmd_35[]="ClockSync";
-prog_char PROGMEM Cmd_36[]="DaylightSaving";
-prog_char PROGMEM Cmd_37[]="Debug";
-prog_char PROGMEM Cmd_38[]="Delay";
-prog_char PROGMEM Cmd_39[]="Plugin";
-prog_char PROGMEM Cmd_40[]="DnsServer";
-prog_char PROGMEM Cmd_41[]="Echo";
-prog_char PROGMEM Cmd_42[]="Event";
-prog_char PROGMEM Cmd_43[]="EventList";                                         // VALUE_EVENTLIST
-prog_char PROGMEM Cmd_44[]="Eventlist";                                         // VALUE_SOURCE_EVENTLIST
-prog_char PROGMEM Cmd_45[]="EventlistCount";
-prog_char PROGMEM Cmd_46[]="EventlistErase";
-prog_char PROGMEM Cmd_47[]="EventlistFile";
-prog_char PROGMEM Cmd_48[]="EventlistShow";
-prog_char PROGMEM Cmd_49[]="EventlistWrite";
-prog_char PROGMEM Cmd_50[]="File";
-prog_char PROGMEM Cmd_51[]="FileErase";
-prog_char PROGMEM Cmd_52[]="FileExecute";
-prog_char PROGMEM Cmd_53[]="FileGetHTTP";
-prog_char PROGMEM Cmd_54[]="FileList";
-prog_char PROGMEM Cmd_55[]="";                                                  //??? reserve
-prog_char PROGMEM Cmd_56[]="FileShow";
-prog_char PROGMEM Cmd_57[]="FileWrite";
-prog_char PROGMEM Cmd_58[]="FreeMem";
-prog_char PROGMEM Cmd_59[]="Gateway";
-prog_char PROGMEM Cmd_60[]="HWConfig";
-prog_char PROGMEM Cmd_61[]="HWStatus";
-prog_char PROGMEM Cmd_62[]="HTTP";
-prog_char PROGMEM Cmd_63[]="HTTPHost";
-prog_char PROGMEM Cmd_64[]="I2C";
-prog_char PROGMEM Cmd_65[]="ID";
-prog_char PROGMEM Cmd_66[]="if";
-prog_char PROGMEM Cmd_67[]="Input";
-prog_char PROGMEM Cmd_68[]="IP";
-prog_char PROGMEM Cmd_69[]="IR";
-prog_char PROGMEM Cmd_70[]="WildCard";                                          
-prog_char PROGMEM Cmd_71[]="Log";
-prog_char PROGMEM Cmd_72[]="Message";
-prog_char PROGMEM Cmd_73[]="RF24";
-prog_char PROGMEM Cmd_74[]="Off";
-prog_char PROGMEM Cmd_75[]="On";
-prog_char PROGMEM Cmd_76[]="Output";                                                  // ??? Vervalt na implementatie WebSocket
-prog_char PROGMEM Cmd_77[]="Output";
-prog_char PROGMEM Cmd_78[]="Par1";
-prog_char PROGMEM Cmd_79[]="Par2";
-prog_char PROGMEM Cmd_80[]="Password";
-prog_char PROGMEM Cmd_81[]="PortInput";
-prog_char PROGMEM Cmd_82[]="PortOutput";
-prog_char PROGMEM Cmd_83[]="RawSignal";
-prog_char PROGMEM Cmd_84[]="RawSignalErase";
-prog_char PROGMEM Cmd_85[]="RawSignalList";
-prog_char PROGMEM Cmd_86[]="RawSignalReceive";
-prog_char PROGMEM Cmd_87[]="RawSignalWrite";
-prog_char PROGMEM Cmd_88[]="RawSignalSend";
-prog_char PROGMEM Cmd_89[]="Reboot";
-prog_char PROGMEM Cmd_90[]="ReceiveSettings";
-prog_char PROGMEM Cmd_91[]="Reset";
-prog_char PROGMEM Cmd_92[]="RF";
-prog_char PROGMEM Cmd_93[]="EventSend";
-prog_char PROGMEM Cmd_94[]="SendTo";
-prog_char PROGMEM Cmd_95[]="UserEventSend";
-prog_char PROGMEM Cmd_96[]="Serial";
-prog_char PROGMEM Cmd_97[]="SettingsSave";
-prog_char PROGMEM Cmd_98[]="Status";
-prog_char PROGMEM Cmd_99[]="VariableSave";
-prog_char PROGMEM Cmd_100[]="Subnet";
-prog_char PROGMEM Cmd_101[]="System";
-prog_char PROGMEM Cmd_102[]="Temp";
-prog_char PROGMEM Cmd_103[]="Terminal";
-prog_char PROGMEM Cmd_104[]="Time";
-prog_char PROGMEM Cmd_105[]="Timer";
-prog_char PROGMEM Cmd_106[]="TimerSetRandom";
-prog_char PROGMEM Cmd_107[]="TimerSet";
-prog_char PROGMEM Cmd_108[]="TimerSetVariable";
-prog_char PROGMEM Cmd_109[]="WiredOutVariable";
-prog_char PROGMEM Cmd_110[]="VariablePayload";
-prog_char PROGMEM Cmd_111[]="VariableDec";
-prog_char PROGMEM Cmd_112[]="VariableInc";
-prog_char PROGMEM Cmd_113[]="VariablePulseCount";
-prog_char PROGMEM Cmd_114[]="VariablePulseTime";
-prog_char PROGMEM Cmd_115[]="VariableSet";
-prog_char PROGMEM Cmd_116[]="VariableSend";
-prog_char PROGMEM Cmd_117[]="VariableSetVariable";
-prog_char PROGMEM Cmd_118[]="VariableWiredAnalog";
-prog_char PROGMEM Cmd_119[]="VariableLog";
-prog_char PROGMEM Cmd_120[]="VariableGlobal";
-prog_char PROGMEM Cmd_121[]="VariableToggle";
-prog_char PROGMEM Cmd_122[]="Wired";
-prog_char PROGMEM Cmd_123[]="WiredAnalog";
-prog_char PROGMEM Cmd_124[]="WiredIn";
-prog_char PROGMEM Cmd_125[]="WiredOut";
-prog_char PROGMEM Cmd_126[]="WiredPullup";
-prog_char PROGMEM Cmd_127[]="WiredSmittTrigger";
-prog_char PROGMEM Cmd_128[]="WiredThreshold";
-prog_char PROGMEM Cmd_129[]="FileWriteLine";
-prog_char PROGMEM Cmd_130[]="RawSignalSample";
-prog_char PROGMEM Cmd_131[]="RawSignalShow";
-prog_char PROGMEM Cmd_132[]="RawSignalRepeats";
-prog_char PROGMEM Cmd_133[]="RawSignalDelay";
-prog_char PROGMEM Cmd_134[]="RawSignalPulses";
-prog_char PROGMEM Cmd_135[]="RawSignalClean";
-prog_char PROGMEM Cmd_136[]="AliasWrite";
-prog_char PROGMEM Cmd_137[]="AliasErase";
-prog_char PROGMEM Cmd_138[]="AliasShow";
-prog_char PROGMEM Cmd_139[]="AliasList";
-prog_char PROGMEM Cmd_140[]="PowerSave";
-prog_char PROGMEM Cmd_141[]="Build";                                             
-prog_char PROGMEM Cmd_142[]="Stop";
-prog_char PROGMEM Cmd_143[]="Sleep";
-prog_char PROGMEM Cmd_144[]="Fast";
-prog_char PROGMEM Cmd_145[]="WaitFreeNodo"; 
-prog_char PROGMEM Cmd_146[]="";                                                 // Future
-prog_char PROGMEM Cmd_147[]="Toggle"; 
-prog_char PROGMEM Cmd_148[]="Unit"; 
-prog_char PROGMEM Cmd_149[]="UnitSet";
-
-
+const char Cmd_0[]   PROGMEM ="-";
+const char Cmd_1[]   PROGMEM ="Boot";
+const char Cmd_2[]   PROGMEM ="Sound";
+const char Cmd_3[]   PROGMEM ="UserEvent";
+const char Cmd_4[]   PROGMEM ="Variable";
+const char Cmd_5[]   PROGMEM ="";
+const char Cmd_6[]   PROGMEM ="";
+const char Cmd_7[]   PROGMEM ="";
+const char Cmd_8[]   PROGMEM ="";
+const char Cmd_9[]   PROGMEM ="";
+const char Cmd_10[]  PROGMEM ="";
+const char Cmd_11[]  PROGMEM ="";
+const char Cmd_12[]  PROGMEM ="";
+const char Cmd_13[]  PROGMEM ="";
+const char Cmd_14[]  PROGMEM ="";
+const char Cmd_15[]  PROGMEM ="";
+const char Cmd_16[]  PROGMEM ="Alarm";
+const char Cmd_17[]  PROGMEM ="AlarmSet";
+const char Cmd_18[]  PROGMEM ="All";
+const char Cmd_19[]  PROGMEM ="AnalyseSettings";
+const char Cmd_20[]  PROGMEM ="BreakOnDaylight";
+const char Cmd_21[]  PROGMEM ="BreakOnEarlier";
+const char Cmd_22[]  PROGMEM ="BreakOnLater";
+const char Cmd_23[]  PROGMEM ="BreakOnVarEqu";
+const char Cmd_24[]  PROGMEM ="BreakOnVarLess";
+const char Cmd_25[]  PROGMEM ="BreakOnVarLessVar";
+const char Cmd_26[]  PROGMEM ="BreakOnVarMore";
+const char Cmd_27[]  PROGMEM ="BreakOnVarMoreVar";
+const char Cmd_28[]  PROGMEM ="BreakOnVarNEqu";
+const char Cmd_29[]  PROGMEM ="";                                                  // ??? reserve
+const char Cmd_30[]  PROGMEM ="ClientIP";
+const char Cmd_31[]  PROGMEM ="Clock";
+const char Cmd_32[]  PROGMEM ="ClockDaylight";
+const char Cmd_33[]  PROGMEM ="ClockSetDate";
+const char Cmd_34[]  PROGMEM ="ClockSetTime";
+const char Cmd_35[]  PROGMEM ="ClockSync";
+const char Cmd_36[]  PROGMEM ="DaylightSaving";
+const char Cmd_37[]  PROGMEM ="Debug";
+const char Cmd_38[]  PROGMEM ="Delay";
+const char Cmd_39[]  PROGMEM ="Plugin";
+const char Cmd_40[]  PROGMEM ="DnsServer";
+const char Cmd_41[]  PROGMEM ="Echo";
+const char Cmd_42[]  PROGMEM ="Event";
+const char Cmd_43[]  PROGMEM ="EventList";                                         // VALUE_EVENTLIST
+const char Cmd_44[]  PROGMEM ="Eventlist";                                         // VALUE_SOURCE_EVENTLIST
+const char Cmd_45[]  PROGMEM ="EventlistCount";
+const char Cmd_46[]  PROGMEM ="EventlistErase";
+const char Cmd_47[]  PROGMEM ="EventlistFile";
+const char Cmd_48[]  PROGMEM ="EventlistShow";
+const char Cmd_49[]  PROGMEM ="EventlistWrite";
+const char Cmd_50[]  PROGMEM ="File";
+const char Cmd_51[]  PROGMEM ="FileErase";
+const char Cmd_52[]  PROGMEM ="FileExecute";
+const char Cmd_53[]  PROGMEM ="FileGetHTTP";
+const char Cmd_54[]  PROGMEM ="FileList";
+const char Cmd_55[]  PROGMEM ="";                                                  //??? reserve
+const char Cmd_56[]  PROGMEM ="FileShow";
+const char Cmd_57[]  PROGMEM ="FileWrite";
+const char Cmd_58[]  PROGMEM ="FreeMem";
+const char Cmd_59[]  PROGMEM ="Gateway";
+const char Cmd_60[]  PROGMEM ="HWConfig";
+const char Cmd_61[]  PROGMEM ="HWStatus";
+const char Cmd_62[]  PROGMEM ="HTTP";
+const char Cmd_63[]  PROGMEM ="HTTPHost";
+const char Cmd_64[]  PROGMEM ="I2C";
+const char Cmd_65[]  PROGMEM ="ID";
+const char Cmd_66[]  PROGMEM ="if";
+const char Cmd_67[]  PROGMEM ="Input";
+const char Cmd_68[]  PROGMEM ="IP";
+const char Cmd_69[]  PROGMEM ="IR";
+const char Cmd_70[]  PROGMEM ="WildCard";                                          
+const char Cmd_71[]  PROGMEM ="Log";
+const char Cmd_72[]  PROGMEM ="Message";
+const char Cmd_73[]  PROGMEM ="RF24";
+const char Cmd_74[]  PROGMEM ="Off";
+const char Cmd_75[]  PROGMEM ="On";
+const char Cmd_76[]  PROGMEM ="Output";                                                  // ??? Vervalt na implementatie WebSocket
+const char Cmd_77[]  PROGMEM ="Output";
+const char Cmd_78[]  PROGMEM ="Par1";
+const char Cmd_79[]  PROGMEM ="Par2";
+const char Cmd_80[]  PROGMEM ="Password";
+const char Cmd_81[]  PROGMEM ="PortInput";
+const char Cmd_82[]  PROGMEM ="PortOutput";
+const char Cmd_83[]  PROGMEM ="RawSignal";
+const char Cmd_84[]  PROGMEM ="RawSignalErase";
+const char Cmd_85[]  PROGMEM ="RawSignalList";
+const char Cmd_86[]  PROGMEM ="RawSignalReceive";
+const char Cmd_87[]  PROGMEM ="RawSignalWrite";
+const char Cmd_88[]  PROGMEM ="RawSignalSend";
+const char Cmd_89[]  PROGMEM ="Reboot";
+const char Cmd_90[]  PROGMEM ="ReceiveSettings";
+const char Cmd_91[]  PROGMEM ="Reset";
+const char Cmd_92[]  PROGMEM ="RF";
+const char Cmd_93[]  PROGMEM ="EventSend";
+const char Cmd_94[]  PROGMEM ="SendTo";
+const char Cmd_95[]  PROGMEM ="UserEventSend";
+const char Cmd_96[]  PROGMEM ="Serial";
+const char Cmd_97[]  PROGMEM ="SettingsSave";
+const char Cmd_98[]  PROGMEM ="Status";
+const char Cmd_99[]  PROGMEM ="VariableSave";
+const char Cmd_100[] PROGMEM ="Subnet";
+const char Cmd_101[] PROGMEM ="System";
+const char Cmd_102[] PROGMEM ="Temp";
+const char Cmd_103[] PROGMEM ="Terminal";
+const char Cmd_104[] PROGMEM ="Time";
+const char Cmd_105[] PROGMEM ="Timer";
+const char Cmd_106[] PROGMEM ="TimerSetRandom";
+const char Cmd_107[] PROGMEM ="TimerSet";
+const char Cmd_108[] PROGMEM ="TimerSetVariable";
+const char Cmd_109[] PROGMEM ="WiredOutVariable";
+const char Cmd_110[] PROGMEM ="VariablePayload";
+const char Cmd_111[] PROGMEM ="VariableDec";
+const char Cmd_112[] PROGMEM ="VariableInc";
+const char Cmd_113[] PROGMEM ="VariablePulseCount";
+const char Cmd_114[] PROGMEM ="VariablePulseTime";
+const char Cmd_115[] PROGMEM ="VariableSet";
+const char Cmd_116[] PROGMEM ="VariableSend";
+const char Cmd_117[] PROGMEM ="VariableSetVariable";
+const char Cmd_118[] PROGMEM ="VariableWiredAnalog";
+const char Cmd_119[] PROGMEM ="VariableLog";
+const char Cmd_120[] PROGMEM ="VariableGlobal";
+const char Cmd_121[] PROGMEM ="VariableToggle";
+const char Cmd_122[] PROGMEM ="Wired";
+const char Cmd_123[] PROGMEM ="WiredAnalog";
+const char Cmd_124[] PROGMEM ="WiredIn";
+const char Cmd_125[] PROGMEM ="WiredOut";
+const char Cmd_126[] PROGMEM ="WiredPullup";
+const char Cmd_127[] PROGMEM ="WiredSmittTrigger";
+const char Cmd_128[] PROGMEM ="WiredThreshold";
+const char Cmd_129[] PROGMEM ="FileWriteLine";
+const char Cmd_130[] PROGMEM ="RawSignalSample";
+const char Cmd_131[] PROGMEM ="RawSignalShow";
+const char Cmd_132[] PROGMEM ="RawSignalRepeats";
+const char Cmd_133[] PROGMEM ="RawSignalDelay";
+const char Cmd_134[] PROGMEM ="RawSignalPulses";
+const char Cmd_135[] PROGMEM ="RawSignalClean";
+const char Cmd_136[] PROGMEM ="AliasWrite";
+const char Cmd_137[] PROGMEM ="AliasErase";
+const char Cmd_138[] PROGMEM ="AliasShow";
+const char Cmd_139[] PROGMEM ="AliasList";
+const char Cmd_140[] PROGMEM ="PowerSave";
+const char Cmd_141[] PROGMEM ="Build";                                             
+const char Cmd_142[] PROGMEM ="Stop";
+const char Cmd_143[] PROGMEM ="Sleep";
+const char Cmd_144[] PROGMEM ="Fast";
+const char Cmd_145[] PROGMEM ="WaitBusyNodo"; 
+const char Cmd_146[] PROGMEM ="Busy";
+const char Cmd_147[] PROGMEM ="Toggle"; 
+const char Cmd_148[] PROGMEM ="Unit"; 
+const char Cmd_149[] PROGMEM ="UnitSet";
+                     
+                     
 // tabel die refereert aan de commando strings
-PROGMEM const char *CommandText_tabel[]={
+// PROGMEM const char *CommandText_tabel[]={ ???
+
+
+const char* const CommandText_tabel[] PROGMEM = {
 Cmd_0,Cmd_1,Cmd_2,Cmd_3,Cmd_4,Cmd_5,Cmd_6,Cmd_7,Cmd_8,Cmd_9,
 Cmd_10,Cmd_11,Cmd_12,Cmd_13,Cmd_14,Cmd_15,Cmd_16,Cmd_17,Cmd_18,Cmd_19,
 Cmd_20,Cmd_21,Cmd_22,Cmd_23,Cmd_24,Cmd_25,Cmd_26,Cmd_27,Cmd_28,Cmd_29,
@@ -514,61 +516,60 @@ Cmd_130,Cmd_131,Cmd_132,Cmd_133,Cmd_134,Cmd_135,Cmd_136,Cmd_137,Cmd_138,Cmd_139,
 Cmd_140,Cmd_141,Cmd_142,Cmd_143,Cmd_144,Cmd_145,Cmd_146,Cmd_147,Cmd_148,Cmd_149};
 
 // Message max. 40 pos.      "1234567890123456789012345678901234567890"
-prog_char PROGMEM Msg_0[]  = "Ok.";
-prog_char PROGMEM Msg_1[]  = "Unknown command.";
-prog_char PROGMEM Msg_2[]  = "Invalid parameter in command.";
-prog_char PROGMEM Msg_3[]  = "Unable to open.";
-prog_char PROGMEM Msg_4[]  = "Nesting error.";
-prog_char PROGMEM Msg_5[]  = "Reading/writing eventlist.";
-prog_char PROGMEM Msg_6[]  = "Unable to establish TCP/IP connection.";
-prog_char PROGMEM Msg_7[]  = "Execution stopped.";
-prog_char PROGMEM Msg_8[]  = "Access denied.";
-prog_char PROGMEM Msg_9[]  = "Communication error.";
-prog_char PROGMEM Msg_10[] = "SDCard error.";
-prog_char PROGMEM Msg_11[] = "Break.";
-prog_char PROGMEM Msg_12[] = "RawSignal saved.";
-prog_char PROGMEM Msg_13[] = "Unknown plugin.";
-prog_char PROGMEM Msg_14[] = "Plugin returned an error.";
-prog_char PROGMEM Msg_15[] = "Incompatibel Nodo event.";
-prog_char PROGMEM Msg_16[] = "Timeout on busy Nodo.";
-prog_char PROGMEM Msg_17[] = "Nodo not found.";
-prog_char PROGMEM Msg_18[] = "Variable error.";
-prog_char PROGMEM Msg_19[] = "Hardware not found.";
-prog_char PROGMEM Msg_20[] = ""; //??? FUTURE
+const char Msg_0[] PROGMEM = "Ok.";
+const char Msg_1[] PROGMEM = "Unknown command.";
+const char Msg_2[] PROGMEM = "Invalid parameter in command.";
+const char Msg_3[] PROGMEM = "Unable to open.";
+const char Msg_4[] PROGMEM = "Nesting error.";
+const char Msg_5[] PROGMEM = "Reading/writing eventlist.";
+const char Msg_6[] PROGMEM = "Unable to establish TCP/IP connection.";
+const char Msg_7[] PROGMEM = "Execution stopped.";
+const char Msg_8[] PROGMEM = "Access denied.";
+const char Msg_9[] PROGMEM = "Communication error.";
+const char Msg_10[]PROGMEM = "SDCard error.";
+const char Msg_11[]PROGMEM = "Break.";
+const char Msg_12[]PROGMEM = "RawSignal saved.";
+const char Msg_13[]PROGMEM = "Unknown plugin.";
+const char Msg_14[]PROGMEM = "Plugin returned an error.";
+const char Msg_15[]PROGMEM = "Incompatibel Nodo event.";
+const char Msg_16[]PROGMEM = "Timeout on busy Nodo.";
+const char Msg_17[]PROGMEM = "Nodo not found.";
+const char Msg_18[]PROGMEM = "Variable error.";
+const char Msg_19[]PROGMEM = "Hardware not found.";
+const char Msg_20[] = ""; //??? FUTURE
 
 // tabel die refereert aan de message strings
-PROGMEM const char *MessageText_tabel[]={Msg_0,Msg_1,Msg_2,Msg_3,Msg_4,Msg_5,Msg_6,Msg_7,Msg_8,Msg_9,Msg_10,Msg_11,Msg_12,Msg_13,Msg_14,Msg_15,Msg_16,Msg_17,Msg_18,Msg_19,Msg_20};
-
+const char* const MessageText_tabel[] PROGMEM ={Msg_0,Msg_1,Msg_2,Msg_3,Msg_4,Msg_5,Msg_6,Msg_7,Msg_8,Msg_9,Msg_10,Msg_11,Msg_12,Msg_13,Msg_14,Msg_15,Msg_16,Msg_17,Msg_18,Msg_19,Msg_20};
 
 // strings met vaste tekst naar PROGMEM om hiermee RAM-geheugen te sparen.
-prog_char PROGMEM Text_03[] = "Enter your password: ";
-prog_char PROGMEM Text_04[] = "SunMonTueWedThuFriSatWrkWnd";
-prog_char PROGMEM Text_05[] = "0123456789abcdef";
-prog_char PROGMEM Text_06[] = "; Payload=";
-prog_char PROGMEM Text_07[] = "Waiting...";
-prog_char PROGMEM Text_08[] = "RAWSIGN";                                        // Directory op de SDCard voor opslag RawSignal
-prog_char PROGMEM Text_09[] = "(Last 100 KByte)";
-prog_char PROGMEM Text_11[] = "ALIAS_I";                                        // Directory op de SDCard voor opslag Input: Aliassen van gebruiker -> Nodo Keyword.
-prog_char PROGMEM Text_12[] = "ALIAS_O";                                        // Directory op de SDCard voor opslag Output: Nodo Keywords -> Alias van gebruiker.
-prog_char PROGMEM Text_13[] = "! Variable=%d, Value=";
-prog_char PROGMEM Text_14[] = "Event=";
-prog_char PROGMEM Text_16[] = "! Date=%02d-%02d-%d, Time=%02d:%02d, Variable=%d, Value=";
-prog_char PROGMEM Text_17[] = "Date=%02d-%02d-%d (%s); Time=%02d:%02d";
-prog_char PROGMEM Text_18[] = "%s %u.%u.%u.%u";
-prog_char PROGMEM Text_22[] = "!******************************************************************************!";
-prog_char PROGMEM Text_23[] = "LOG";
-prog_char PROGMEM Text_30[] = "Terminal connection closed.";
+const char Text_03[] PROGMEM = "Enter your password: ";
+const char Text_04[] PROGMEM = "SunMonTueWedThuFriSatWrkWnd";
+const char Text_05[] PROGMEM = "0123456789abcdef";
+const char Text_06[] PROGMEM = "; Payload=";
+const char Text_07[] PROGMEM = "Waiting...";
+const char Text_08[] PROGMEM = "RAWSIGN";                                        // Directory op de SDCard voor opslag RawSignal
+const char Text_09[] PROGMEM = "(Last 100 KByte)";
+const char Text_10[] PROGMEM = "Busy Nodo: ";
+const char Text_11[] PROGMEM = "ALIAS_I";                                        // Directory op de SDCard voor opslag Input: Aliassen van gebruiker -> Nodo Keyword.
+const char Text_12[] PROGMEM = "ALIAS_O";                                        // Directory op de SDCard voor opslag Output: Nodo Keywords -> Alias van gebruiker.
+const char Text_13[] PROGMEM = "! Variable=%d, Value=";
+const char Text_14[] PROGMEM = "Event=";
+const char Text_16[] PROGMEM = "! Date=%02d-%02d-%d, Time=%02d:%02d, Variable=%d, Value=";
+const char Text_17[] PROGMEM = "Date=%02d-%02d-%d (%s); Time=%02d:%02d";
+const char Text_22[] PROGMEM = "!******************************************************************************!";
+const char Text_23[] PROGMEM = "LOG";
+const char Text_30[] PROGMEM = "Terminal connection closed.";
 #endif // MEGA
 
-// Tabel met zonsopgang en -ondergang momenten. afgeleid van KNMI gegevens midden Nederland.
+
 #if HARDWARE_CLOCK
-PROGMEM prog_uint16_t Sunrise[]={528,525,516,503,487,467,446,424,401,378,355,333,313,295,279,268,261,259,263,271,283,297,312,329,345,367,377,394,411,428,446,464,481,498,512,522,528,527};
-PROGMEM prog_uint16_t Sunset[]={999,1010,1026,1044,1062,1081,1099,1117,1135,1152,1169,1186,1203,1219,1235,1248,1258,1263,1264,1259,1249,1235,1218,1198,1177,1154,1131,1107,1084,1062,1041,1023,1008,996,990,989,993,1004};
+// Tabel met zonsopgang en -ondergang momenten. afgeleid van KNMI gegevens midden Nederland.
+const int Sunrise[] PROGMEM ={528,525,516,503,487,467,446,424,401,378,355,333,313,295,279,268,261,259,263,271,283,297,312,329,345,367,377,394,411,428,446,464,481,498,512,522,528,527};
+const int Sunset[] PROGMEM ={999,1010,1026,1044,1062,1081,1099,1117,1135,1152,1169,1186,1203,1219,1235,1248,1258,1263,1264,1259,1249,1235,1218,1198,1177,1154,1131,1107,1084,1062,1041,1023,1008,996,990,989,993,1004};
 
 // omschakeling zomertijd / wintertijd voor komende 10 jaar. Een int bevat de omschakeldatum van maart en oktober.
 #define DLSBase 2010 // jaar van eerste element uit de array
-PROGMEM prog_uint16_t DLSDate[]={2831,2730,2528,3127,3026,2925,2730,2629,2528,3127};
-// RealTimeclock DS1307
+const int DLSDate[] PROGMEM ={2831,2730,2528,3127,3026,2925,2730,2629,2528,3127};
 
 struct RealTimeClock {byte Hour,Minutes,Seconds,Date,Month,Day,Daylight,DaylightSaving,DaylightSavingSetMonth,DaylightSavingSetDate; int Year;}Time; // Hier wordt datum & tijd in opgeslagen afkomstig van de RTC.
 #endif // HARDWARE_CLOCK
@@ -601,7 +602,7 @@ char InputBuffer_Serial[INPUT_LINE_SIZE];                                       
 #define SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW              3                      // Dit is aankondiging reeks, dus niet het user comando "EventlistShow".
 #define SYSTEM_COMMAND_QUEUE_EVENTLIST_WRITE             4                      // Dit is aankondiging reeks, dus niet het user comando "EventlistShow".
 #define SYSTEM_COMMAND_BROADCAST                         5                      // Wordt periodiek verzonden om NodoOnline actueel te houden.
-
+#define SYSTEM_COMMAND_BUSY                              6                      // Hiermee wordt aangegeven dat de Nodo busy is (event drager voor de vlag TRANSMISSION_BUSY)
 
 //****************************************************************************************************************************************
 
@@ -630,7 +631,7 @@ struct RawSignalStruct                                                          
 struct SettingsStruct
   {
   byte    Unit;
-  byte    WaitFreeNodo;
+  byte    WaitBusyNodo;
   byte    RawSignalReceive;
   byte    RawSignalSample;
                                                                                                           
@@ -770,9 +771,8 @@ char TempLogFile[13];                                                           
 char HTTPCookie[10];                                                            // Cookie voor uitwisselen van encrypted events via HTTP
 int FileWriteMode=0;                                                            // Het aantal seconden dat deze timer ingesteld staat zal er geen verwerking plaats vinden van TerminalInvoer. Iedere seconde --.
 char InputBuffer_Terminal[INPUT_LINE_SIZE];                                     // Buffer voor input terminal verbinding Telnet sessie
+char StrTmp[40];                                                                // Kleine string voor gebruik binnen(!) funkties.                                  
 boolean ClockSyncHTTP=false;
-
-
 #endif // NODO_MEGA
 
 
@@ -785,6 +785,7 @@ void setup()
   Serial.begin(BAUD);                                                           // Initialiseer de seriele poort
   HW_SetStatus(HW_SERIAL_1,true,true);
   #endif
+
 
   #if NODO_MEGA
   HW_SetStatus(HW_NODO_MEGA,true,true);
@@ -913,7 +914,7 @@ void setup()
 
 
   #if HARDWARE_CLOCK && HARDWARE_I2C
-  WireNodo.begin();
+  Wire.begin();
   HW_SetStatus(HW_CLOCK,ClockRead(),true);                                      //Lees de tijd uit de RTC en zorg ervoor dat er niet direct na een boot een CMD_CLOCK_DAYLIGHT event optreedt
   #endif
   
@@ -1163,9 +1164,9 @@ void loop()
                 InputBuffer_Terminal[TerminalInbyteCounter]=0;
                 TerminalInbyteCounter=0;
               
-                if(TerminalLocked==0)                                           // als op niet op slot
+                if(TerminalLocked==0)                                           // als niet op slot
                   {
-                  TerminalClient.getRemoteIP(ClientIPAddress);
+//???                  TerminalClient.getRemoteIP(ClientIPAddress);
                   ExecutionDepth=0;
                   RaiseMessage(ExecuteLine(InputBuffer_Terminal,VALUE_SOURCE_TELNET),0);
                   TerminalClient.write('>');                                    // prompt

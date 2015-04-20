@@ -36,7 +36,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
     #if HARDWARE_INFRARED
     if(Focus==0 || Focus==VALUE_SOURCE_IR)
       {
-      if(!HW_Status(HW_PULSE) && FetchSignal(PIN_IR_RX_DATA,LOW))       // IR: *************** kijk of er data start **********************
+      if(!HW_Status(HW_PULSE) && FetchSignal(PIN_IR_RX_DATA,LOW))               // IR: *************** kijk of er data start **********************
         {
         if(AnalyzeRawSignal(Event))
           {
@@ -102,10 +102,10 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
           // Het kan echter zijn dat een Nodo event binnenkomt op een andere poort dan
           // de geregistreerde voorkeurspoort. In dit geval wordt het event NIET doorgelaten omdat anders mogelijk 
           // het event vaker binnenkomt. Nodos communiceren onderling met de voorkeurspoort.
+
           if(NodoOnline(Event->SourceUnit,Event->Port,true)!=Event->Port)
             return false;
-
-          // Een Nodo kan aangeven dat hij Busy is.
+  
           bitWrite(BusyNodo, Event->SourceUnit,(Event->Flags&TRANSMISSION_BUSY)>0);
           }
                   

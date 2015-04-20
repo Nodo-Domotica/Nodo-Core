@@ -48,18 +48,18 @@ boolean Plugin_025(byte function, struct NodoEventStruct *event, char *string)
       if (unit > 7) address = address + 0x10;
 
       // get the current pin status
-      WireNodo.requestFrom(address, (uint8_t)0x1);
-      if(WireNodo.available())
+      Wire.requestFrom(address, (uint8_t)0x1);
+      if(Wire.available())
       {
-        portvalue = WireNodo.read();
+        portvalue = Wire.read();
         if (event->Par2==VALUE_OFF)
           portvalue |= (1 << (port-1));
         else
           portvalue &= ~(1 << (port-1));
         
-        WireNodo.beginTransmission(address);
-        WireNodo.write(portvalue);
-        WireNodo.endTransmission();
+        Wire.beginTransmission(address);
+        Wire.write(portvalue);
+        Wire.endTransmission();
         success=true;
       }
       break;

@@ -1,5 +1,5 @@
 //#######################################################################################################
-//######################## PLUGIN-20 BMP0685 I2C Barometric Pressure Sensor  ############################
+//######################## PLUGIN-20 BMP085 I2C Barometric Pressure Sensor  ############################
 //#######################################################################################################
 
 /*********************************************************************************************\
@@ -236,14 +236,14 @@ uint8_t bmp085_read8(uint8_t a)
   {
   uint8_t ret;
 
-  WireNodo.beginTransmission(BMP085_I2CADDR);                                   // start transmission to device 
-  WireNodo.write(a);                                                            // sends register address to read from
-  WireNodo.endTransmission();                                                   // end transmission
+  Wire.beginTransmission(BMP085_I2CADDR);                                   // start transmission to device 
+  Wire.write(a);                                                            // sends register address to read from
+  Wire.endTransmission();                                                   // end transmission
   
-  WireNodo.beginTransmission(BMP085_I2CADDR);                                   // start transmission to device 
-  WireNodo.requestFrom(BMP085_I2CADDR, 1);                                      // send data n-bytes read
-  ret = WireNodo.read();                                                        // receive DATA
-  WireNodo.endTransmission();                                                   // end transmission
+  Wire.beginTransmission(BMP085_I2CADDR);                                   // start transmission to device 
+  Wire.requestFrom(BMP085_I2CADDR, 1);                                      // send data n-bytes read
+  ret = Wire.read();                                                        // receive DATA
+  Wire.endTransmission();                                                   // end transmission
 
   return ret;
   }
@@ -254,16 +254,16 @@ uint16_t bmp085_read16(uint8_t a)
   {
   uint16_t ret;
 
-  WireNodo.beginTransmission(BMP085_I2CADDR);                                   // start transmission to device 
-  WireNodo.write(a);                                                            // sends register address to read from
-  WireNodo.endTransmission();                                                   // end transmission
+  Wire.beginTransmission(BMP085_I2CADDR);                                   // start transmission to device 
+  Wire.write(a);                                                            // sends register address to read from
+  Wire.endTransmission();                                                   // end transmission
   
-  WireNodo.beginTransmission(BMP085_I2CADDR);                                   // start transmission to device 
-  WireNodo.requestFrom(BMP085_I2CADDR, 2);                                      // send data n-bytes read
-  ret = WireNodo.read();                                                        // receive DATA
+  Wire.beginTransmission(BMP085_I2CADDR);                                   // start transmission to device 
+  Wire.requestFrom(BMP085_I2CADDR, 2);                                      // send data n-bytes read
+  ret = Wire.read();                                                        // receive DATA
   ret <<= 8;
-  ret |= WireNodo.read();                                                       // receive DATA
-  WireNodo.endTransmission();                                                   // end transmission
+  ret |= Wire.read();                                                       // receive DATA
+  Wire.endTransmission();                                                   // end transmission
 
   return ret;
   }
@@ -272,9 +272,9 @@ uint16_t bmp085_read16(uint8_t a)
 void bmp085_write8(uint8_t a, uint8_t d)
 /*********************************************************************/
   {
-  WireNodo.beginTransmission(BMP085_I2CADDR);                                   // start transmission to device 
-  WireNodo.write(a);                                                            // sends register address to read from
-  WireNodo.write(d);                                                            // write data
-  WireNodo.endTransmission();                                                   // end transmission
+  Wire.beginTransmission(BMP085_I2CADDR);                                   // start transmission to device 
+  Wire.write(a);                                                            // sends register address to read from
+  Wire.write(d);                                                            // write data
+  Wire.endTransmission();                                                   // end transmission
   }
 #endif // CORE

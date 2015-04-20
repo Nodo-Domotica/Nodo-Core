@@ -50,15 +50,15 @@ boolean Plugin_029(byte function, struct NodoEventStruct *event, char *string)
       uint8_t address = 0x48 + unit;
 
       // get the current pin value
-      WireNodo.beginTransmission(address);
-      WireNodo.write(port-1);
-      WireNodo.endTransmission();
+      Wire.beginTransmission(address);
+      Wire.write(port-1);
+      Wire.endTransmission();
 
-      WireNodo.requestFrom(address, (uint8_t)0x2);
-      if(WireNodo.available())
+      Wire.requestFrom(address, (uint8_t)0x2);
+      if(Wire.available())
       {
-        WireNodo.read(); // Read older value first (stored in chip)
-        TempFloat=(float)WireNodo.read();// now read actual value and store into Nodo var
+        Wire.read(); // Read older value first (stored in chip)
+        TempFloat=(float)Wire.read();// now read actual value and store into Nodo var
         UserVariableSet(event->Par2,TempFloat,true);
       }
       break;

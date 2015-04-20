@@ -1,40 +1,3 @@
-void ProcessingStatus(boolean Processing)
-  {
-  static boolean PreviousProcessing=false;
-  
-  if(PreviousProcessing!=Processing)
-    {
-    PreviousProcessing=Processing;
-    if(Processing)
-      {
-      Serial.write(XOFF);
-
-      #if HARDWARE_STATUS_LED || HARDWARE_STATUS_LED_RGB
-      Led(RED);
-      #endif
-      }
-    else
-      {
-      QueueProcess();                                                           // Verwerk eventuele events die in de queue zijn geplaatst.    
-
-      if(RequestForConfirm)                                                     // Een event kan een verzoek bevatten om bevestiging. Doe dit dan pas na alle verwerking. 
-        {  
-        struct NodoEventStruct TempEvent;
-        ClearEvent(&TempEvent);    
-        TempEvent.Port                  = VALUE_ALL;
-        TempEvent.Type                  = NODO_TYPE_SYSTEM;                     // Event is niet voor de gebruiker bedoeld
-        TempEvent.Command               = SYSTEM_COMMAND_CONFIRMED;
-        TempEvent.Par1                  = RequestForConfirm;
-        SendEvent(&TempEvent, false,false);
-        RequestForConfirm=false;
-        }
-      Serial.write(XON);
-      #if HARDWARE_STATUS_LED || HARDWARE_STATUS_LED_RGB
-      Led(GREEN);
-      #endif
-      }  
-    }
-  }
     
 
 byte ProcessEvent(struct NodoEventStruct *Event)
@@ -44,20 +7,69 @@ byte ProcessEvent(struct NodoEventStruct *Event)
   boolean Continue=true;
   int x;
 
-
   if(Event->Command==0)
     return error;
-
-  #if HARDWARE_STATUS_LED || HARDWARE_STATUS_LED_RGB
-  Led(RED);
-  #endif
   
-  #if NODO_MEGA
+  if(Event->Type == NODO_TYPE_SYSTEM)
+    {                       
+    switch(Event->Command)
+      {
+      // Enkele systeem-commandos hoeven geheel niet te worden afgehandeld
+      case SYSTEM_COMMAND_BUSY:
+      case SYSTEM_COMMAND_CONFIRMED:
+        return error;
+        break;
+
+      case SYSTEM_COMMAND_QUEUE_SENDTO:
+        ProcessingStatus(true);
+        QueueReceive(Event);
+        break;
+
+      #if NODO_MEGA
+      case SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW:
+        ProcessingStatus(true);
+        Wait(5, false,0 , false);  
+        break;
+      #endif
+      }
+    Continue=false;
+    }
+
+
+  if(Settings.WaitBusyNodo==VALUE_ON)
+    {
+    if(BusyNodo!=0)                                                             // Als een Nodo heeft aangegeven busy te zijn, dan even wachten.
+      {
+      #if HARDWARE_SERIAL_1 && NODO_MEGA
+      for(x=1;x<=UNIT_MAX;x++)
+        if(BusyNodo&(1<<x))
+          {
+          strcpy(StrTmp, ProgmemString(Text_10));
+          strcat(StrTmp, int2str(x));
+          PrintString(StrTmp,VALUE_ALL);
+          }
+      #endif
+      
+      if(!Wait(30,true,0,false))
+        {
+        for(x=1;x<=UNIT_MAX;x++)
+          if(BusyNodo&(1<<x))
+            {
+            RaiseMessage(MESSAGE_BUSY_TIMEOUT,x);
+            bitWrite(BusyNodo, x,0);
+            }
+        BusyNodo=0;
+        }
+      }
+    }  
+
+
+  ProcessingStatus(true);
+
+  #if HARDWARE_SDCARD
   if(FileWriteMode!=0)
     return 0;
   #endif
-
-  ProcessingStatus(true);
 
   if(++ExecutionDepth>=MACRO_EXECUTION_DEPTH)
     {
@@ -66,26 +78,8 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     error=MESSAGE_NESTING_ERROR;                                                // bij geneste loops ervoor zorgen dat er niet meer dan MACRO_EXECUTION_DEPTH niveaus diep macro's uitgevoerd worden
     }
 
-  PluginCall(PLUGIN_EVENT_IN, Event,0);                                         // loop de plugins langs voor eventuele afhandeling van dit event.
-  
-  if(Event->Type == NODO_TYPE_SYSTEM)
-    {                       
-    switch(Event->Command)
-      {
-      case SYSTEM_COMMAND_QUEUE_SENDTO:
-        QueueReceive(Event);
-        break;
 
-      #if NODO_MEGA
-      case SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW:                                 // Normaal deel van een SendTo en dus al in de Wait afgevangen
-        Wait(5, false,0 , false);  
-        break;
-      #endif
-      }
-    Continue=false;
-    }
-
-  // Events die nu nog de TRANSMISSION_SENDTO vlag hebben staan hoorden oorspronkelijk tot een reeks die verzonden is
+  // Events die nu nog de TRANSMISSION_SENDTO vlag hebben staan, hoorden oorspronkelijk tot een reeks die verzonden is
   // met een SendTo. Deze events hebben hier geen betekenis en dus volledig negeren.
   if(Continue && (Event->Flags & TRANSMISSION_SENDTO))
     Continue=false;
@@ -107,6 +101,9 @@ byte ProcessEvent(struct NodoEventStruct *Event)
   if(Continue && (Event->Flags & TRANSMISSION_VIEW))
     Continue=false;
   #endif
+
+  PluginCall(PLUGIN_EVENT_IN, Event,0);                                         // loop de plugins langs voor eventuele afhandeling van dit event.
+
   
   #if (HARDWARE_RAWSIGNAL || HARDWARE_RF433 || HARDWARE_INFRARED) && HARDWARE_SDCARD
   if(Continue && HW_Status(HW_SDCARD))
@@ -177,7 +174,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
         error=0;
 
       if(error)
-        RaiseMessage(error,EventlistAction.Par2);//??? deze opgenomen in de 3.8 code. Waarom was deze niet hier in de 3.7? Nu opgenomen omdat small tijdens uitvoer eventlist niet met error kwam
+        RaiseMessage(error,EventlistAction.Par2);
       }      
 
     #if NODO_MEGA
@@ -217,6 +214,7 @@ byte CheckEventlist(struct NodoEventStruct *Event)
 boolean CheckEvent(struct NodoEventStruct *Event, struct NodoEventStruct *MacroEvent)
   {  
   // geen lege events verwerken
+  
   if(MacroEvent->Command==0 || Event->Command==0)
     return false;  
 
@@ -443,8 +441,8 @@ byte QueueSend(boolean fast)
   byte x,error=0, Retry=10,Success=false;
   unsigned long ID=millis();
   struct NodoEventStruct Event, SendQueue[EVENT_QUEUE_MAX];                     // We maken tijdelijk gebruik van een SendQueue zodat de reguliere queue zijn werk kan blijven doen.
-  byte Org_WFN=Settings.WaitFreeNodo;                                           // Stel de oorspronkelijke WaitFreeNodo setting veilig
-  Settings.WaitFreeNodo=VALUE_OFF;                                              // Schakel WaitFreeNodo uit omdat dit het SendTo mechanisme doorkruist.
+  byte Org_WFN=Settings.WaitBusyNodo;                                           // Stel de oorspronkelijke WaitFreeNodo setting veilig
+  Settings.WaitBusyNodo=VALUE_OFF;                                              // Schakel WaitFreeNodo uit omdat dit het SendTo mechanisme doorkruist.
   byte SendQueuePosition=QueuePosition;
     
   byte Port=NodoOnline(Transmission_SendToUnit,0,false);                              // Port waar SendTo naar toe moet halen we uit lijst met Nodo's onderhouden door NodoOnline();
@@ -536,7 +534,7 @@ byte QueueSend(boolean fast)
   if(Retry==0)
     error=MESSAGE_SENDTO_ERROR;
     
-  Settings.WaitFreeNodo=Org_WFN;                                                // Herstel de oorspronkelijke WaitFreeNodo setting.  
+  Settings.WaitBusyNodo=Org_WFN;                                                // Herstel de oorspronkelijke WaitFreeNodo setting.  
   return error;
   }
 #endif
@@ -548,8 +546,8 @@ void QueueReceive(NodoEventStruct *Event)
   struct NodoEventStruct TempEvent;
   byte x, Received;
 
-  byte Org_WFN=Settings.WaitFreeNodo;                                           // Stel de oorspronkelijke WaitFreeNodo setting veilig
-  Settings.WaitFreeNodo=VALUE_OFF;                                              // Schakel WaitFreeNodo uit omdat dit het SendTo mechanisme doorkruist.
+  byte Org_WFN=Settings.WaitBusyNodo;                                           // Stel de oorspronkelijke WaitFreeNodo setting veilig
+  Settings.WaitBusyNodo=VALUE_OFF;                                              // Schakel WaitFreeNodo uit omdat dit het SendTo mechanisme doorkruist.
   
   Transmission_NodoOnly=true;                                                   // Uitsluitend Nodo events. Andere signalen worden tijdelijk volledig genegeerd.
   Wait(5, false, 0, true);
@@ -559,10 +557,8 @@ void QueueReceive(NodoEventStruct *Event)
   if(PreviousID!=Event->Par2 && Received==Event->Par1)                          // Als aantal regels in de queue overeenkomt en queue is nog niet eerder binnen gekomen (ID)
     {
     for(x=0;x<QueuePosition;x++)                                                
-      {
       Queue[x].Flags=0;                                                         // Haal de QUEUE vlag van de events af.
-      //??? waarom wordt deze op nul gezet?        : Queue[x].Unit=0;
-      }
+
     PreviousID=Event->Par2;
     QueueProcess();
     }
@@ -578,5 +574,52 @@ void QueueReceive(NodoEventStruct *Event)
   SendEvent(&TempEvent,false, false);                                           // Stuur vervolgens de master ter bevestiging het aantal ontvangen events die zich nu in de queue bevinden.
     
   QueuePosition=0;                                                              // Omdat ProcessQueue de queue heeft leeggedraaid, kan de queue positie op 0 worden gezet.
-  Settings.WaitFreeNodo=Org_WFN;                                                // Herstel de oorspronkelijke WaitFreeNodo setting.  
+  Settings.WaitBusyNodo=Org_WFN;                                                // Herstel de oorspronkelijke WaitFreeNodo setting.  
   }
+  
+  
+void ProcessingStatus(boolean Processing)
+  {
+  static boolean PreviousProcessing=false;
+  
+  if(PreviousProcessing!=Processing)
+    {
+    PreviousProcessing=Processing;
+    if(Processing)
+      {
+      #if HARDWARE_SERIAL_1
+      Serial.write(XOFF);
+      #endif
+      
+      #if HARDWARE_STATUS_LED || HARDWARE_STATUS_LED_RGB
+      Led(RED);
+      #endif
+      }
+    else
+      {
+      QueueProcess();                                                           // Verwerk eventuele events die in de queue zijn geplaatst.    
+
+      if(RequestForConfirm)                                                     // Een event kan een verzoek bevatten om bevestiging. Doe dit dan pas na alle verwerking. 
+        {  
+        struct NodoEventStruct TempEvent;
+        ClearEvent(&TempEvent);    
+        TempEvent.Port                  = VALUE_ALL;
+        TempEvent.Type                  = NODO_TYPE_SYSTEM;
+        TempEvent.Command               = SYSTEM_COMMAND_CONFIRMED;
+        TempEvent.Par1                  = RequestForConfirm;
+        SendEvent(&TempEvent, false,false);
+        RequestForConfirm=false;
+        }
+
+      #if HARDWARE_STATUS_LED || HARDWARE_STATUS_LED_RGB
+      Led(GREEN);
+      #endif
+
+
+      #if HARDWARE_SERIAL_1
+      Serial.write(XON);
+      #endif
+      }  
+    }
+  }
+  

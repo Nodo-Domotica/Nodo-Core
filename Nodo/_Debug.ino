@@ -1,5 +1,5 @@
 //#######################################################################################################
-//#####################################      Debugging     ##############################################
+//#####################################      Debug routines     #########################################
 //#######################################################################################################
 void PrintNodoEvent(char* str, struct NodoEventStruct *Event)
   {    
@@ -52,5 +52,28 @@ void PrintTransmissionStruct(struct TransmissionStruct *T)//???
     b++;
     }
   Serial.println();
+  }
+  
+  
+void Trace(char* label, unsigned long value)
+  {
+  static unsigned long previous=0;
+  unsigned long now=millis();
+  
+  Serial.print(F("Trace: "));
+  Serial.print(label);
+  Serial.print(F(", Time="));
+  Serial.print(now-previous);
+  if(value<=0xffff)
+    {
+    Serial.print(F(", Value="));
+    Serial.println(value);
+    }
+  else
+    {
+    Serial.print(F(", Value=0x"));
+    Serial.println(value,HEX);
+    }
+  previous=millis();
   }
 
