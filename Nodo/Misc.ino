@@ -344,13 +344,11 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
         }
       }
     #if HARDWARE_STATUS_LED || HARDWARE_STATUS_LED_RGB 
-    Led(RED);
+    Led(BLUE);
     #endif
     }   
     
   // Serial.println(F("DEBUG: Wait() verlaten."));
-
-  HoldTransmission=NODO_TX_TO_RX_SWITCH_TIME+millis();                          // Hier ingelast om snel afwisselend events uitwisselen tussen twee i2c Nodo's te laten werken.         
 
   if(TimeoutTimer<=millis())                                                    // als timeout, dan error terug geven
     {
@@ -2415,8 +2413,6 @@ byte NodoOnline(byte Unit, byte Port, boolean change)
     {  
     if(change && Port!=NodoOnlinePort[Unit])
       {
-      NodoOnlinePort[Settings.Unit]=VALUE_SOURCE_SYSTEM;
-  
       if(Port==VALUE_SOURCE_I2C)                                                   
         NodoOnlinePort[Unit]=VALUE_SOURCE_I2C;
       else if(Port==VALUE_SOURCE_NRF24L01 && NodoOnlinePort[Unit]!=VALUE_SOURCE_I2C)
@@ -2427,6 +2423,7 @@ byte NodoOnline(byte Unit, byte Port, boolean change)
         NodoOnlinePort[Unit]=VALUE_SOURCE_RF;
       else
         NodoOnlinePort[Unit]=0;
+      NodoOnlinePort[Settings.Unit]=VALUE_SOURCE_SYSTEM;
       }
     return NodoOnlinePort[Unit];
     }

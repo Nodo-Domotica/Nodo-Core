@@ -1,4 +1,10 @@
-    
+//#######################################################################################################
+//#####################################     Event processing      #######################################
+//#######################################################################################################
+
+#ifndef NODO_DEBUG_QUEUE
+#define NODO_DEBUG_QUEUE                    false
+#endif
 
 byte ProcessEvent(struct NodoEventStruct *Event)
   {
@@ -28,42 +34,16 @@ byte ProcessEvent(struct NodoEventStruct *Event)
       #if NODO_MEGA
       case SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW:
         ProcessingStatus(true);
-        Wait(5, false,0 , false);  
+        Wait(5, false,0 , false);                                               // in de wait() routine worden de regels weergegeven  
         break;
       #endif
       }
     Continue=false;
     }
 
-
   if(Settings.WaitBusyNodo==VALUE_ON)
-    {
-    if(BusyNodo!=0)                                                             // Als een Nodo heeft aangegeven busy te zijn, dan even wachten.
-      {
-      #if HARDWARE_SERIAL_1 && NODO_MEGA
-      for(x=1;x<=UNIT_MAX;x++)
-        if(BusyNodo&(1<<x))
-          {
-          strcpy(StrTmp, ProgmemString(Text_10));
-          strcat(StrTmp, int2str(x));
-          PrintString(StrTmp,VALUE_ALL);
-          }
-      #endif
-      
-      if(!Wait(30,true,0,false))
-        {
-        for(x=1;x<=UNIT_MAX;x++)
-          if(BusyNodo&(1<<x))
-            {
-            RaiseMessage(MESSAGE_BUSY_TIMEOUT,x);
-            bitWrite(BusyNodo, x,0);
-            }
-        BusyNodo=0;
-        }
-      }
-    }  
-
-
+    NodoBusyWait(true);
+  
   ProcessingStatus(true);
 
   #if HARDWARE_SDCARD
@@ -441,100 +421,132 @@ byte QueueSend(boolean fast)
   byte x,error=0, Retry=10,Success=false;
   unsigned long ID=millis();
   struct NodoEventStruct Event, SendQueue[EVENT_QUEUE_MAX];                     // We maken tijdelijk gebruik van een SendQueue zodat de reguliere queue zijn werk kan blijven doen.
-  byte Org_WFN=Settings.WaitBusyNodo;                                           // Stel de oorspronkelijke WaitFreeNodo setting veilig
-  Settings.WaitBusyNodo=VALUE_OFF;                                              // Schakel WaitFreeNodo uit omdat dit het SendTo mechanisme doorkruist.
   byte SendQueuePosition=QueuePosition;
-    
-  byte Port=NodoOnline(Transmission_SendToUnit,0,false);                              // Port waar SendTo naar toe moet halen we uit lijst met Nodo's onderhouden door NodoOnline();
+  byte Port=NodoOnline(Transmission_SendToUnit,0,false);                        // Port waar SendTo naar toe moet halen we uit lijst met Nodo's onderhouden door NodoOnline();
 
   if(fast && Port==0)                                                           // Als we de Nodo niet kennen en fast mode
     Port=VALUE_ALL;                                                             // dan event naar alle poorten sturen.
 
-  if(Port!=0)
+
+  if(Port==0)
+    return MESSAGE_NODO_NOT_FOUND;
+
+
+  for(x=0;x<QueuePosition;x++)
     {
-    for(x=0;x<QueuePosition;x++)
+    SendQueue[x]=Queue[x];                                                      // Kopieer de inhoud van de queue omdat de queue wordt gebruikt door de Wait() funktie.
+    
+    if(Queue[x].Type==NODO_TYPE_COMMAND)                                        // Er zijn enkele commando's die geen reactie teruggeven. Zet in deze gevallen de fast mode aan.
       {
-      SendQueue[x]=Queue[x];                                                    // Kopieer de inhoud van de queue omdat de queue wordt gebruikt door de Wait() funktie.
-      
-      if(Queue[x].Type==NODO_TYPE_COMMAND)                                      // Er zijn enkele commando's die geen reactie teruggeven. Zet in deze gevallen de fast mode aan.
+      switch(Queue[x].Command)
         {
-        switch(Queue[x].Command)
-          {
-          case CMD_UNIT_SET:
-          case CMD_RESET:
-          case CMD_REBOOT:
-            fast=true;
-          }
+        case CMD_UNIT_SET:
+        case CMD_RESET:
+        case CMD_REBOOT:
+          fast=true;
         }
       }
-      
-    QueuePosition=0;
-
-    // Eerste fase: Zorg dat de inhoud van de queue correct aan komt op de slave. Activeer aan slave zijde de QueueReceive()
-    // Verzend in deze activering tevens het aantal events dat vanuit de queue verzonden zal worden naar de Slave. Eveneens wordt
-    // er een ID verzonden. Deze unieke waarde zorgt er voor dat bij een eventuele re-send de reeks niet nogmaals aankomt op de 
-    // slave.
-    do
-      {
-      if(!fast)
-        {
-        ClearEvent(&Event);
-        Event.DestinationUnit     = Transmission_SendToUnit;
-        Event.SourceUnit          = Settings.Unit;
-        Event.Port                = Port;
-        Event.Type                = NODO_TYPE_SYSTEM;      
-        Event.Command             = SYSTEM_COMMAND_QUEUE_SENDTO;      
-        Event.Par1                = SendQueuePosition;                          // Aantal te verzenden events in de queue. Wordt later gecheckt en teruggezonden in de confirm. +1 omdat DIT event ook in de queue komt.
-        Event.Par2                = ID;
-        SendEvent(&Event,false,false);                                          // Alleen de eerste vooraf laten gaan door een WaitFree (indien setting zo staat ingesteld);
-        }
-          
-      for(x=0;x<SendQueuePosition;x++)                                          // Verzend alle events uit de queue. Alleen de bestemmings Nodo zal deze events in de queue plaatsen
-        {
-        Event=SendQueue[x];
-
-        Event.DestinationUnit     = Transmission_SendToUnit;
-        Event.SourceUnit          = Settings.Unit;
-        Event.Port                = Port;
-
-        if(x==(SendQueuePosition-1))
-          Event.Flags = TRANSMISSION_QUEUE;                                     // Verzendvlaggen geven aan dat er nog events verzonden gaan worden en dat de ether tijdelijk gereserveerd is
-        else
-          Event.Flags = TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT;
-
-        if(!fast)
-          Event.Flags = Event.Flags | TRANSMISSION_SENDTO;
-          
-        SendEvent(&Event,false,false);
-        }
-        
-      if(!fast)
-        {
-        // De ontvangende Nodo verzendt als het goed is een bevestiging dat het is ontvangen en het aantal commando's. De slave haalt tevens de Lock
-        // van de Nodo's af zodat de ether weer door alle Nodo's gebruikt kunnen worden.
-        ClearEvent(&Event);
-        Event.SourceUnit          = Transmission_SendToUnit;
-        Event.Command             = SYSTEM_COMMAND_CONFIRMED;
-        Event.Type                = NODO_TYPE_SYSTEM;
-    
-        if(Wait(3,false,&Event,false))        
-          if(x==Event.Par1)                                                     // Verzonden events gelijk aan ontvangen events? 
-            Success=true;
-
-        }
-      else
-        Success=true;                                                           // Bij fast optie hoeven we niet te wachten op bevestiging van de slave
-        
-      }while((--Retry>0) && !Success);   
     }
-  else
-    error=MESSAGE_NODO_NOT_FOUND;
-    // RaiseMessage(MESSAGE_NODO_NOT_FOUND,0);//??? Waarom remarked? nog uitzoeken
+    
+  QueuePosition=0;
+
+  // Eerste fase: Zorg dat de inhoud van de queue correct aan komt op de slave. Activeer aan slave zijde de QueueReceive()
+  // Verzend in deze activering tevens het aantal events dat vanuit de queue verzonden zal worden naar de Slave. Eveneens wordt
+  // er een ID verzonden. Deze unieke waarde zorgt er voor dat bij een eventuele re-send de reeks niet nogmaals aankomt op de 
+  // slave.
+  do
+    {
+    if(!fast)
+      {
+      #if NODO_DEBUG_QUEUE
+      Trace("QueueSend(); Stuur Queue_SendTo commando.",0);//???
+      #endif
+            
+      ClearEvent(&Event);
+      Event.DestinationUnit     = Transmission_SendToUnit;
+      Event.SourceUnit          = Settings.Unit;
+      Event.Port                = Port;
+      Event.Flags               = TRANSMISSION_BUSY;
+      Event.Type                = NODO_TYPE_SYSTEM;      
+      Event.Command             = SYSTEM_COMMAND_QUEUE_SENDTO;      
+      Event.Par1                = SendQueuePosition;                            // Aantal te verzenden events in de queue. Wordt later gecheckt en teruggezonden in de confirm. +1 omdat DIT event ook in de queue komt.
+      Event.Par2                = ID;
+      
+      SendEvent(&Event,false,false);
+      #if NODO_DEBUG_QUEUE
+      Trace("QueueSend(); Queu_SendTo commando verzonden.",0);//???
+      #endif
+      }
+
+    for(x=0;x<SendQueuePosition;x++)                                            // Verzend alle events uit de queue. Alleen de bestemmings Nodo zal deze events in de queue plaatsen
+      {
+      #if NODO_DEBUG_QUEUE
+      Trace("QueueSend(); Verzenden events uit de queue:",x);//???
+      #endif
+      
+      Event=SendQueue[x];
+      Event.DestinationUnit     = Transmission_SendToUnit;
+      Event.SourceUnit          = Settings.Unit;
+      Event.Port                = Port;
+
+      if(x==(SendQueuePosition-1))
+        Event.Flags = TRANSMISSION_QUEUE;                                       // Verzendvlaggen geven aan dat er nog events verzonden gaan worden en dat de ether tijdelijk gereserveerd is
+      else
+        Event.Flags = TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT;
+
+      if(!fast)
+        Event.Flags = Event.Flags | TRANSMISSION_SENDTO;
+        
+      SendEvent(&Event,false,false);
+      }
+      
+    if(!fast)
+      {
+      // De ontvangende Nodo verzendt als het goed is direct een bevestiging dat de queue is ontvangen alsmede als check het aantal commando's.
+
+      #if NODO_DEBUG_QUEUE
+      Trace("QueueSend(); Wacht op bevestiging ontvangst",0);//???
+      #endif
+      
+      ClearEvent(&Event);
+      Event.SourceUnit          = Transmission_SendToUnit;
+      Event.Command             = SYSTEM_COMMAND_CONFIRMED;
+      Event.Type                = NODO_TYPE_SYSTEM;
+  
+      if(Wait(3,false,&Event,false))        
+        if(x==Event.Par1)                                                       // Verzonden events gelijk aan ontvangen events? 
+          {
+
+          #if NODO_DEBUG_QUEUE
+          Trace("QueueSend(); Bevestiging ontvangst ontvangen, verwerking start aan slave zijde.",0);//???
+          #endif
+          
+          // We weten nu dat de slave Nodo de events goed heeft ontvangen en aan het verwerken is.
+          // zodra de verwerking gereed is zal de slave Nodo wederom een bevestiging sturen die de 'busy' status
+          // opheft. Zodra deze van de slave is ontvangen mogen we weer verder met verwerking aan de master zijde.
+          
+          
+          #if NODO_DEBUG_QUEUE
+          Trace("QueueSend(); Wacht op busy Nodo's.",0);//???
+          #endif
+
+          NodoBusyWait(false);                                                      // wacht zolang er nog Nodo's bezig zijn. Het SendTo proces mag niet worden verstoord.
+
+          #if NODO_DEBUG_QUEUE
+          Trace("QueueSend(); Vrij!",0);//???
+          #endif
+
+          Success=true;
+          }
+      }
+    else
+      Success=true;                                                             // Bij fast optie hoeven we niet te wachten op bevestiging van de slave
+      
+    }while((--Retry>0) && !Success);   
 
   if(Retry==0)
     error=MESSAGE_SENDTO_ERROR;
     
-  Settings.WaitBusyNodo=Org_WFN;                                                // Herstel de oorspronkelijke WaitFreeNodo setting.  
   return error;
   }
 #endif
@@ -546,35 +558,59 @@ void QueueReceive(NodoEventStruct *Event)
   struct NodoEventStruct TempEvent;
   byte x, Received;
 
-  byte Org_WFN=Settings.WaitBusyNodo;                                           // Stel de oorspronkelijke WaitFreeNodo setting veilig
-  Settings.WaitBusyNodo=VALUE_OFF;                                              // Schakel WaitFreeNodo uit omdat dit het SendTo mechanisme doorkruist.
-  
   Transmission_NodoOnly=true;                                                   // Uitsluitend Nodo events. Andere signalen worden tijdelijk volledig genegeerd.
-  Wait(5, false, 0, true);
+  Wait(5, false, 0, true);                                                      // Last de Wait routine de queue vullen.
   Transmission_NodoOnly=false;
   Received=QueuePosition; 
-  
+
+  #if NODO_DEBUG_QUEUE
+  Trace("QueueReceiveroutine Wait() verlaten.",0);//???
+  #endif
+ 
   if(PreviousID!=Event->Par2 && Received==Event->Par1)                          // Als aantal regels in de queue overeenkomt en queue is nog niet eerder binnen gekomen (ID)
     {
     for(x=0;x<QueuePosition;x++)                                                
       Queue[x].Flags=0;                                                         // Haal de QUEUE vlag van de events af.
 
+    // Zend bevestiging dat de queue in goede orde is ontvangen.
+    ClearEvent(&TempEvent);
+    TempEvent.DestinationUnit     = Event->SourceUnit;
+    TempEvent.SourceUnit          = Settings.Unit;
+    TempEvent.Port                = Event->Port;
+    TempEvent.Type                = NODO_TYPE_SYSTEM; 
+    TempEvent.Command             = SYSTEM_COMMAND_CONFIRMED;      
+    TempEvent.Flags               = TRANSMISSION_BUSY;                          // Geef aan dat deze Nodo bezig is.
+    TempEvent.Par1                = Received;
+    SendEvent(&TempEvent,false, false);                                         // Stuur vervolgens de master ter bevestiging het aantal ontvangen events.
+
     PreviousID=Event->Par2;
+
+    #if NODO_DEBUG_QUEUE
+    Trace("QueueReceive(); leegdraaien",0);//???
+    #endif
+
     QueueProcess();
+    
+    #if NODO_DEBUG_QUEUE
+    Trace("QueueReceive(); leegdraaien gereed.",0);//???
+    #endif
+
+    // Zend bevestiging dat de queue verwerkt is
+    ClearEvent(&TempEvent);
+    TempEvent.DestinationUnit     = Event->SourceUnit;
+    TempEvent.SourceUnit          = Settings.Unit;
+    TempEvent.Port                = Event->Port;
+    TempEvent.Type                = NODO_TYPE_SYSTEM; 
+    TempEvent.Command             = SYSTEM_COMMAND_CONFIRMED;      
+    SendEvent(&TempEvent,false, false);                                         // Stuur vervolgens de master ter bevestiging het aantal ontvangen events.
+
+    #if NODO_DEBUG_QUEUE
+    Trace("QueueReceive(); bevestiging leeggedraaid verzonden.",0);//???
+    #endif
+
     }
 
-  ClearEvent(&TempEvent);
-  TempEvent.DestinationUnit     = Event->SourceUnit;
-  TempEvent.SourceUnit          = Settings.Unit;
-  TempEvent.Port                = Event->Port;
-  TempEvent.Type                = NODO_TYPE_SYSTEM; 
-  TempEvent.Command             = SYSTEM_COMMAND_CONFIRMED;      
-  TempEvent.Par1                = Received;
-
-  SendEvent(&TempEvent,false, false);                                           // Stuur vervolgens de master ter bevestiging het aantal ontvangen events die zich nu in de queue bevinden.
-    
   QueuePosition=0;                                                              // Omdat ProcessQueue de queue heeft leeggedraaid, kan de queue positie op 0 worden gezet.
-  Settings.WaitBusyNodo=Org_WFN;                                                // Herstel de oorspronkelijke WaitFreeNodo setting.  
   }
   
   
@@ -622,4 +658,43 @@ void ProcessingStatus(boolean Processing)
       }  
     }
   }
+
+//#######################################################################################################
+//#####################################  Busy Nodo afhandeling    #######################################
+//#######################################################################################################
+
+boolean NodoBusyWait(boolean Display)
+  {
+  byte x;
+  byte error=false;
+  
+  if(BusyNodo!=0)                                                               // Als een Nodo heeft aangegeven busy te zijn, dan even wachten.
+    {
+    #if HARDWARE_SERIAL_1 && NODO_MEGA
+    if(Display)
+      {
+      for(x=1;x<=UNIT_MAX;x++)
+        if(BusyNodo&(1<<x))
+          {
+          strcpy(StrTmp, ProgmemString(Text_10));
+          strcat(StrTmp, int2str(x));
+          PrintString(StrTmp,VALUE_ALL);
+          }
+      }
+    #endif
+    
+    if(!Wait(30,true,0,false))
+      {
+      for(x=1;x<=UNIT_MAX;x++)
+        if(BusyNodo&(1<<x))
+          RaiseMessage(MESSAGE_BUSY_TIMEOUT,x);
+      error=true;
+      BusyNodo=0;
+      }
+    }
+  return error;
+  }  
+
+  
+
   

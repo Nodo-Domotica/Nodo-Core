@@ -1,3 +1,5 @@
+#define NODO_DEBUG_QUEUE                        false
+#define NODO_DEBUG_NRF24L01                     false
 
 /****************************************************************************************************************************\
 * Arduino project "Nodo" © Copyright 2010..2015 Paul Tonkes

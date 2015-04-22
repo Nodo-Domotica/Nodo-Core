@@ -127,6 +127,7 @@ boolean Plugin_001(byte function, struct NodoEventStruct *event, char *string)
         }
 
       event->Type=NODO_TYPE_PLUGIN_EVENT;                                       // Het commando SendEvent verstuurt een event.
+      event->Port = VALUE_SOURCE_RF;
       SendEvent(event,true,true);
       event->Command=0;                                                         // Bij terugkeer niets meer verwerken.
       success=true;

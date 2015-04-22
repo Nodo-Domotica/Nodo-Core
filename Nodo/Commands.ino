@@ -312,7 +312,6 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         }
       else // Transmissie via I2C/RF/IR: dan de inhoud van de Eventlist versturen.
         {
-
       #endif
       
         if(EventToExecute->Par1==0)
@@ -340,29 +339,24 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
         
         while(x<=y && Eventlist_Read(x,&TempEvent,&TempEvent2))
           {
-          ClearEvent(EventToExecute);
-          EventToExecute->Par1=x;
-          EventToExecute->Command=SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW;
-          EventToExecute->Flags=TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_BUSY;
-          EventToExecute->Type=NODO_TYPE_SYSTEM;
-          EventToExecute->Port=z;
-          EventToExecute->SourceUnit=Settings.Unit;
-          EventToExecute->DestinationUnit=w;
-
           if(TempEvent.Command!=0)
             {
+            ClearEvent(EventToExecute);
+            EventToExecute->Par1=x;
+            EventToExecute->Command=SYSTEM_COMMAND_QUEUE_EVENTLIST_SHOW;
+            EventToExecute->Flags=TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_BUSY;
+            EventToExecute->Type=NODO_TYPE_SYSTEM;
+            EventToExecute->Port=z;
+            EventToExecute->SourceUnit=Settings.Unit;
+            EventToExecute->DestinationUnit=w;
             SendEvent(EventToExecute,false,false);
 
-            TempEvent.Flags=TRANSMISSION_VIEW_EVENTLIST | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_BUSY;
+            TempEvent.Flags=TRANSMISSION_VIEW_EVENTLIST | TRANSMISSION_QUEUE | TRANSMISSION_BUSY;
             TempEvent.Port=z;
             TempEvent.DestinationUnit=w;
             SendEvent(&TempEvent,false,false);
     
-            if(x==y)                                                            // Als laatste regel uit de eventlist, dan de ether weer vrijgeven. 
-              TempEvent2.Flags=TRANSMISSION_VIEW_EVENTLIST | TRANSMISSION_QUEUE ; 
-            else
-              TempEvent2.Flags=TRANSMISSION_VIEW_EVENTLIST | TRANSMISSION_QUEUE | TRANSMISSION_QUEUE_NEXT | TRANSMISSION_BUSY;
-
+            TempEvent2.Flags=TRANSMISSION_VIEW_EVENTLIST | TRANSMISSION_QUEUE | TRANSMISSION_BUSY | (x!=y?TRANSMISSION_QUEUE_NEXT:0); 
             TempEvent2.Port=z;
             TempEvent2.DestinationUnit=w;
             SendEvent(&TempEvent2,false,false);
@@ -522,7 +516,7 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       TempEvent.Port                  = VALUE_ALL;
       TempEvent.Type                  = NODO_TYPE_SYSTEM;
       TempEvent.Command               = SYSTEM_COMMAND_BUSY;
-      TempEvent.Flags                 = TRANSMISSION_BUSY & (EventToExecute->Par1==VALUE_ON);
+      TempEvent.Flags                 = (EventToExecute->Par1==VALUE_ON)?TRANSMISSION_BUSY:0;
       SendEvent(&TempEvent, false,false);
       break;        
       

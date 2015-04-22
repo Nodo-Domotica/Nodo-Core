@@ -72,6 +72,9 @@
 #define PIN_PULSE                   18
 #define PULSE_IRQ                    5
 
+// RawSignal: ===========================================================================================================
+#define HARDWARE_RAWSIGNAL        true
+#define RAW_BUFFER_SIZE            512                                          // Maximaal aantal te ontvangen bits = waarde/2
 
 // Infrarood: ===========================================================================================================
 #define HARDWARE_INFRARED         true

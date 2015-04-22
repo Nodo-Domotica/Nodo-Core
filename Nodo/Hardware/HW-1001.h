@@ -26,15 +26,11 @@
 #define PIN_USER_7                  D29                                         // Vrij voor gebruiker voor gebruik in plugins
 
 // WiredIn: =============================================================================================================
-#define HARDWARE_WIRED_IN_PORTS      8                                          // aAntal WiredIn/WiredOut poorten
+#define HARDWARE_WIRED_IN_PORTS      4                                          // Aantal WiredIn/WiredOut poorten
 #define PIN_WIRED_IN_1               8                                          // Analoge input A8 wordt gebruikt voor WiredIn 1
 #define PIN_WIRED_IN_2               9                                          // Analoge input A9 wordt gebruikt voor WiredIn 2
 #define PIN_WIRED_IN_3              10                                          // Analoge input A10 wordt gebruikt voor WiredIn 3
 #define PIN_WIRED_IN_4              11                                          // Analoge input A11 wordt gebruikt voor WiredIn 4
-#define PIN_WIRED_IN_5              12                                          // Analoge input A12 wordt gebruikt voor WiredIn 5
-#define PIN_WIRED_IN_6              13                                          // Analoge input A13 wordt gebruikt voor WiredIn 6
-#define PIN_WIRED_IN_7              14                                          // Analoge input A14 wordt gebruikt voor WiredIn 7
-#define PIN_WIRED_IN_8              15                                          // Analoge input A15 wordt gebruikt voor WiredIn 8
 
 // WiredOut: ============================================================================================================
 #define HARDWARE_WIRED_OUT_PORTS     8                                          // aAntal WiredIn/WiredOut poorten

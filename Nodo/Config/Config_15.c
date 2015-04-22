@@ -20,7 +20,7 @@
 
 
 #define UNIT_NODO                         15                                    // Na een reset-commando wordt dit het unitnummer van de Nodo
-#define HARDWARE_CONFIG                 1510                                    // Arduino Uno / Duemillanove / Nano en klonen op basis van een Atmel ATMega328 
+#define HARDWARE_CONFIG                 1500                                    // Arduino Uno / Duemillanove / Nano en klonen op basis van een Atmel ATMega328 
                                                                                 // chip compatibel met het Nodo-Uno shield.  
 
 
@@ -58,12 +58,12 @@
 // bijvoorbeeld om niet gebruike opties uit te schakelen en geheugenruimte vrij te maken voor plugins.
 // Let echter wel op dan sommige voorzieningen van elkaar afhankelijk zijn of dat plugins hier gebruik van maken.
 //=======================================================================================================================
-// #define HARDWARE_WIRED_IN_PORTS      0
-// #define HARDWARE_WIRED_OUT_PORTS     0
+#define HARDWARE_WIRED_IN_PORTS      0
+#define HARDWARE_WIRED_OUT_PORTS     0
 // #define HARDWARE_STATUS_LED      false    
 // #define HARDWARE_SPEAKER         false
 // #define HARDWARE_INFRARED        false
 // #define HARDWARE_SERIAL_1        false
-// #define HARDWARE_CLOCK           false
-// #define HARDWARE_I2C             false
+#define HARDWARE_CLOCK           false
+#define HARDWARE_I2C             false
 

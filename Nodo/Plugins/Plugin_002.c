@@ -175,6 +175,7 @@ boolean Plugin_002(byte function, struct NodoEventStruct *event, char *string)
       RawSignal.Pulses[i]=0;                                                    // space van de stopbit
       RawSignal.Number=i;                                                       // aantal bits*2 die zich in het opgebouwde RawSignal bevinden
       event->Type = NODO_TYPE_PLUGIN_EVENT;
+      event->Port = VALUE_SOURCE_RF;
       SendEvent(event,true,true);
       event->Command=0;
       success=true;

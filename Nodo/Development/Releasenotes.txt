@@ -118,8 +118,15 @@ Build 809:
 - Commando 'Busy <on/off>' toegevoegd. Laat alle Nodo's die WaitFreeNodo op 'on' hebben staan in de wachtstand. 
 - Aanpassing ethernet verbinding opzetten met WebApp
 
+Build 810:
+- Booten versneld (aanpassing timings broadcast event voor I2C port)
+- I2C poort handshaking ingebouwd.
+- SendTo handshake aanpassing t.n.v. robuustheid werking I2C en NRF.
+- Aanpassing: Alle units worden onterecht door NodoOnline() gevuld met poort NRF.
+
 Todo:
-- Is versnellen van Boot event mogelijk?
+- LET OP: SendTo voor 433 werkt NIET in deze build. Nog aanpassen.
+- LET OP: Originele Wire library van I2C zit weer onder de Nodo core. Nog niet duidelijk of deze wel stabiel genoeg is (m.n. bij niet afbreken bij timeouts)
 - Verzoek Martin: Geen DNS resolven als Host IP adres ingevuld.
 - RawsignalCleanup
 - RGBLedSend <unitnummer> geeft event zonder unitnummer. Dit is probleem voor de WebApp. Navraag bij Martin.

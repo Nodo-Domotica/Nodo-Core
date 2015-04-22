@@ -6,7 +6,7 @@ byte dummy=0;
 #include <Wire.h>
 #include <avr/pgmspace.h>
 
-#define NODO_BUILD                       809                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       810                                    // ??? Ophogen bij iedere Build / versiebeheer.
 #define PLUGIN_37_COMPATIBILITY        false                                    // Compatibiliteit met plugins die de variabelen tabel UserVar[] nog gebruiken.
 #define NODO_VERSION_MINOR                15                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
@@ -19,8 +19,8 @@ byte dummy=0;
 #define WAIT_FREE_RX_WINDOW             1000                                    // minimale wachttijd wanneer wordt gewacht op een vrije RF of IR band.
 #define WAIT_FREE_RX_TIMEOUT            5000                                    // tijd in ms. waarna het wachten wordt afgebroken als er geen ruimte in de vrije ether komt
 #define MIN_PULSE_LENGTH                  50                                    // Pulsen korter dan deze tijd uSec. worden als stoorpulsen beschouwd.
-#define DELAY_BETWEEN_TRANSMISSIONS      150                                    // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
-#define NODO_TX_TO_RX_SWITCH_TIME        500                                    // Tijd die andere Nodo's nodig hebben om na zenden weer gereed voor ontvangst te staan. (Opstarttijd sommige 433RX modules is relatief lang)
+#define DELAY_BETWEEN_TRANSMISSIONS       50                                    // Minimale tijd tussen verzenden van twee events. Geeft ontvangende apparaten (en Nodo's) verwerkingstijd.
+//#define NODO_TX_TO_RX_SWITCH_TIME        500                                    // Tijd die andere Nodo's nodig hebben om na zenden weer gereed voor ontvangst te staan. (Opstarttijd sommige 433RX modules is relatief lang)
 #define TRANSMITTER_STABLE_TIME            5                                    // Tijd die de RF zender nodig heeft om na inschakelen van de voedspanning een stabiele draaggolf te hebben.
 #define SIGNAL_TIMEOUT                     5                                    // na deze tijd in mSec. wordt een signaal als beeindigd beschouwd.
 #define SIGNAL_REPEAT_TIME               500                                    // Tijd in mSec. waarbinnen hetzelfde event niet nogmaals via RF/IR mag binnenkomen. Onderdrukt ongewenste herhalingen van signaal
@@ -29,7 +29,7 @@ byte dummy=0;
 #define PASSWORD_MAX_RETRY                 5                                    // aantal keren dat een gebruiker een foutief wachtwoord mag ingeven alvorens tijdslot in werking treedt
 #define PASSWORD_TIMEOUT                 300                                    // aantal seconden dat het terminal venster is geblokkeerd na foutive wachtwoord
 #define TERMINAL_TIMEOUT                 600                                    // Aantal seconden dat, na de laatst ontvangen regel, de terminalverbinding open mag staan.
-#define BROADCAST_TIME                   900                                    // Aantal seconden tussen verzending van het broadcast systeemevent.
+#define BROADCAST_TIME                   600                                    // Aantal seconden tussen verzending van het broadcast systeemevent.
 
 #define PLUGIN_MMI_IN                      1
 #define PLUGIN_MMI_OUT                     2
@@ -535,7 +535,7 @@ const char Msg_15[]PROGMEM = "Incompatibel Nodo event.";
 const char Msg_16[]PROGMEM = "Timeout on busy Nodo.";
 const char Msg_17[]PROGMEM = "Nodo not found.";
 const char Msg_18[]PROGMEM = "Variable error.";
-const char Msg_19[]PROGMEM = "Hardware not found.";
+const char Msg_19[]PROGMEM = "Hardware configuration error(s).";
 const char Msg_20[] = ""; //??? FUTURE
 
 // tabel die refereert aan de message strings
@@ -741,7 +741,7 @@ uint8_t RFbit,RFport,IRbit,IRport;                                              
 struct NodoEventStruct LastReceived;                                            // Laatst ontvangen event
 byte RequestForConfirm=false;                                                   // Als true dan heeft deze Nodo een verzoek ontvangen om een systemevent 'Confirm' te verzenden. Waarde wordt in Par1 meegezonden.
 int EventlistMax=0;                                                             // beschikbaar aantal regels in de eventlist. Wordt tijdens setup berekend.
-int TimerBroadcast=0;                                                           // timer (in sec.) voor periodiek verzenden van een broadcast.
+int TimerBroadcast=BROADCAST_TIME;                                              // timer (in sec.) voor periodiek verzenden van een broadcast.
 float TempFloat,TempFloat2;                                                     // globale floats die gebruikt mogen worden als een tijdelijke variabele
 float UserVarValue[USER_VARIABLES_MAX];                                         // inhoudelijke waarde van de gebruikersvariabele.
 byte UserVarKey[USER_VARIABLES_MAX];                                            // Nummer/sleutel van de gebruikersvariabelen
