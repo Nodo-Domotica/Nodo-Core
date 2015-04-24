@@ -27,18 +27,18 @@
                                                                                 // Voor extra info: zie ../Hardware/Read_me.txt
 
 // weergeven en gebruiken
-// #define PLUGIN_001                                                              // Kaku : Klik-Aan-Klik-Uit
-// #define PLUGIN_001_CORE
+#define PLUGIN_001                                                              // Kaku : Klik-Aan-Klik-Uit
+#define PLUGIN_001_CORE
 
-// #define PLUGIN_002                                                              // NewKAKU : Klik-Aan-Klik-Uit automatische codering.
-// #define PLUGIN_002_CORE
+#define PLUGIN_002                                                              // NewKAKU : Klik-Aan-Klik-Uit automatische codering.
+#define PLUGIN_002_CORE
 
 
 // Alleen weergeven
-// #define PLUGIN_006                                                              // Vochtigheid-/temperatuursensor DHT-22
-// #define PLUGIN_005                                                              // Temperatuursensor Dallas DS18B20
-// #define PLUGIN_020                                                              // Luchtdruksensor BPM085
-// #define PLUGIN_023                                                              // RGB-Led aansturing
+#define PLUGIN_006                                                              // Vochtigheid-/temperatuursensor DHT-22
+#define PLUGIN_005                                                              // Temperatuursensor Dallas DS18B20
+#define PLUGIN_020                                                              // Luchtdruksensor BPM085
+#define PLUGIN_023                                                              // RGB-Led aansturing
 
 
 //=======================================================================================================================

@@ -63,7 +63,6 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
 
     if(Fetched)
       {
-      HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS+millis();
       SignalHash=(Event->Command<<24 | Event->Type<<16 | Event->Par1<<8) ^ Event->Par2;
       Event->Port=Fetched;
       Event->Direction=VALUE_DIRECTION_INPUT;
@@ -71,7 +70,8 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       
       #if HARDWARE_RAWSIGNAL || HARDWARE_RF433 || HARDWARE_INFRARED
       if(RawSignal.RepeatChecksum)RawSignal.Repeats=true;
-      #endif      
+      #endif  
+          
       // Er zijn een aantal situaties die moeten leiden te een event. Echter er zijn er ook die (nog) niet mogen leiden 
       // tot een event en waar het binnengekomen signaal moet worden onderdrukt.
       
@@ -97,6 +97,8 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
         // als het informatie uitwisseling tussen Nodo's betreft...
         if(Event->Type==NODO_TYPE_EVENT || Event->Type==NODO_TYPE_COMMAND || Event->Type==NODO_TYPE_SYSTEM)
           {
+          bitWrite(BusyNodo, Event->SourceUnit,(Event->Flags&TRANSMISSION_BUSY)>0);
+
           // registreer welke Nodo's op welke poort zitten en actualiseer tabel.
           // Hiermee kan later automatisch bij verzenden van events de juiste poort worden geselecteerd.
           // Het kan echter zijn dat een Nodo event binnenkomt op een andere poort dan
@@ -105,13 +107,12 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
 
           if(NodoOnline(Event->SourceUnit,Event->Port,true)!=Event->Port)
             return false;
-  
-          bitWrite(BusyNodo, Event->SourceUnit,(Event->Flags&TRANSMISSION_BUSY)>0);
           }
                   
         if(Event->DestinationUnit==0 || Event->DestinationUnit==Settings.Unit)
           {
           EventHashPrevious=SignalHash;
+          // PrintNodoEvent("Ontvangen event:",Event);//???
           return true;
           }
         }

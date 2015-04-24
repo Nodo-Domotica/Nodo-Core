@@ -7,11 +7,14 @@
 boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Display)
   {    
   ES->Direction=VALUE_DIRECTION_OUTPUT;
+  static unsigned long HoldTransmission=0L;                                     // wachten op dit tijdstip in millis() alvorens event te verzenden.
+
+  
   // PrintNodoEvent("DEBUG: SendEvent():", ES);//???
   
   byte Port         = ES->Port;
   byte Source       = ES->SourceUnit;                                           // bewaar oorspronkelijke source voor de WebApp.Andere poorten: dan deze unit is source
-  ES->SourceUnit    = Settings.Unit;                                        // anderz zal in geval van een EventSend een event worden doorgestuurd via andere poorten
+  ES->SourceUnit    = Settings.Unit;                                            // anderz zal in geval van een EventSend een event worden doorgestuurd via andere poorten
                                                                                 // waarna ontvangende Nodo's een verkeerde vulling van de NodoOnline tabel krijgen.
                                                                                 
   boolean Nodo      = ES->Type==NODO_TYPE_EVENT || ES->Type==NODO_TYPE_COMMAND || ES->Type==NODO_TYPE_SYSTEM; 
@@ -24,15 +27,13 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   
   PluginCall(PLUGIN_EVENT_OUT, ES,0);                                           // loop de plugins langs voor eventuele afhandeling van dit event.
 
-  while(millis()<HoldTransmission);                                             // Respecteer een minimale tijd tussen verzenden van events. Wachten alvorens event te verzenden.  
-  HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS+millis();        
-
-
   #if HARDWARE_RAWSIGNAL
   if(!UseRawSignal)                                                             // Als het geen RawSignal betreft, dan een pulsenreeks opbouwen
     Nodo_2_RawSignal(ES);
   #endif
   
+  while(millis()<HoldTransmission);                                             // Respecteer een minimale tijd tussen verzenden van events. Wachten alvorens event te verzenden.  
+  HoldTransmission=DELAY_BETWEEN_TRANSMISSIONS+millis();        
                                              
   #if HARDWARE_INFRARED
   if(Broadcast || Port==VALUE_SOURCE_IR || (Port==VALUE_ALL && (!Nodo || NodoOnline(0,VALUE_SOURCE_IR,0))))
@@ -47,7 +48,8 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
 
 
   #if HARDWARE_RF433
-  if(Broadcast || Port==VALUE_SOURCE_RF || (Port==VALUE_ALL && (!Nodo || NodoOnline(0,VALUE_SOURCE_RF,0))))
+//???  if(Broadcast || Port==VALUE_SOURCE_RF || (Port==VALUE_ALL && (!Nodo || NodoOnline(0,VALUE_SOURCE_RF,0))))
+  if(1)
     {
     #if NODO_MEGA && HARDWARE_SERIAL_1
     ES->Port=VALUE_SOURCE_RF;

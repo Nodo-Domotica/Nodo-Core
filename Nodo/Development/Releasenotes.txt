@@ -124,6 +124,9 @@ Build 810:
 - SendTo handshake aanpassing t.n.v. robuustheid werking I2C en NRF.
 - Aanpassing: Alle units worden onterecht door NodoOnline() gevuld met poort NRF.
 
+Build 811:
+- Aanpassing Sendto en RF433 timings
+
 Todo:
 - LET OP: SendTo voor 433 werkt NIET in deze build. Nog aanpassen.
 - LET OP: Originele Wire library van I2C zit weer onder de Nodo core. Nog niet duidelijk of deze wel stabiel genoeg is (m.n. bij niet afbreken bij timeouts)

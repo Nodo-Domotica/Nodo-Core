@@ -2403,7 +2403,9 @@ int str2weekday(char *Input)
  * Houdt bij welke Nodo's binnen bereik zijn en via welke Poort.
  * - Als Port ongelijk aan reeds bekende poort, dan wordt de lijst geactualiseerd (snelste heeft voorkeur).
  * - Als Port=0 dan is de Nodo onbekend
- * - Als Unit=0, dan wordt een true teruggegeven als er een Nodo op de opgegeven poort aanwezig is. 
+ * 
+ * return: 
+ * - Als Unit=0, dan wordt een true teruggegeven als er een Nodo op de opgegeven poort aanwezig is.
  \*******************************************************************************************************/
 byte NodoOnline(byte Unit, byte Port, boolean change)
   {

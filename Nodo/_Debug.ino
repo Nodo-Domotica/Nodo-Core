@@ -8,6 +8,7 @@ void PrintNodoEvent(char* str, struct NodoEventStruct *Event)
   Serial.print(F(", Command="));          Serial.print(Event->Command);
   Serial.print(F(", Par1="));             Serial.print(Event->Par1);
   Serial.print(F(", Par2=0x"));           Serial.print(Event->Par2,HEX);
+  Serial.print(F(", Payload="));          Serial.print(Event->Payload);
   Serial.print(F(", Port="));             Serial.print(Event->Port);
   Serial.print(F(", Direction="));        Serial.print(Event->Direction);
   Serial.print(F(", Flags="));            Serial.print(Event->Flags,BIN);
@@ -15,7 +16,7 @@ void PrintNodoEvent(char* str, struct NodoEventStruct *Event)
   Serial.print(F(", SourceUnit="));       Serial.println(Event->SourceUnit);
   }
 
-#if CFG_RAWSIGNAL
+#if HARDWARE_RAWSIGNAL
 void PrintRawSignal(void)
   {    
   int x;
@@ -62,18 +63,18 @@ void Trace(char* label, unsigned long value)
   
   Serial.print(F("Trace: "));
   Serial.print(label);
-  Serial.print(F(", Time="));
-  Serial.print(now-previous);
   if(value<=0xffff)
     {
-    Serial.print(F(", Value="));
-    Serial.println(value);
+    Serial.print(value);
     }
   else
     {
-    Serial.print(F(", Value=0x"));
-    Serial.println(value,HEX);
+    Serial.print(F("0x"));
+    Serial.print(value,HEX);
     }
+  Serial.print(F(", (dTime="));
+  Serial.print(now-previous);
+  Serial.println(F(")"));
   previous=millis();
   }
 
