@@ -8,6 +8,9 @@
 // ####### Arduino project "Nodo" © Copyright 2010..2015 Paul Tonkes ############## 
 
 
+// Nodo algemeen: =======================================================================================================
+#define NODO_MEGA                false
+
 // ATMega specifiek: ====================================================================================================
 #define EEPROM_SIZE               1024                                          // Groote van het EEPROM geheugen.
 

@@ -128,7 +128,6 @@ Build 811:
 - Aanpassing Sendto en RF433 timings
 
 Todo:
-- LET OP: SendTo voor 433 werkt NIET in deze build. Nog aanpassen.
 - LET OP: Originele Wire library van I2C zit weer onder de Nodo core. Nog niet duidelijk of deze wel stabiel genoeg is (m.n. bij niet afbreken bij timeouts)
 - Verzoek Martin: Geen DNS resolven als Host IP adres ingevuld.
 - RawsignalCleanup

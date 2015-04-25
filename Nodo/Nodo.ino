@@ -39,7 +39,7 @@
 //              processor. (Nano, Duemillanove, Uno, etc.)
 //
 //
-// Bij gebruik van meerdere Nodo's kan voor iedere Nodo een eigen configutatie
+// Bij gebruik van meerdere Nodo's kan voor iedere Nodo een eigen configuratie
 // file worden aangemaakt. In deze configuratie files kan worden aangegeven welke
 // plugins worden gebruikt en kunnen eventueel speciale instellingen worden
 // opgegeven die mee gaan met het compileren van de code.
@@ -83,7 +83,7 @@
 // In de config-file wordt tevens opgegeven welke plugins in de Nodo geladen moeten worden.
 // Kijk voor verdere info in de config-files.
 
-#define CONFIG_FILE Config_01.c
+#define CONFIG_FILE Config_16.c
 
 
 
@@ -106,7 +106,7 @@
 //         regel worden voorafgegaan door de comment tekens '//' om zo geheugen
 //         te besparen. Voor een Nodo-Mega is het gebruik van een SDCard verplicht.
 
-#include <SD.h>
+// #include <SD.h>
 
 
 
@@ -116,3 +116,8 @@
 // het juiste Arduino board en de com-poort. Type vervolgens ctrl-u en de code wordt gecompileerd
 // en geupload naar de Arduino. Open vanuit het menu 'Extra' de seriele monitor
 // en er zal, als alles correct is verlopen, een Nodo welkomsttekst worden getoond.
+//
+
+
+
+

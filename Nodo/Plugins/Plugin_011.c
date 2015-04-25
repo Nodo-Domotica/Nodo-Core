@@ -1,3 +1,4 @@
+
 //#######################################################################################################
 //#################################### Plugin-011: OpenTherm GateWay plugin #############################
 //#######################################################################################################
@@ -7,7 +8,8 @@
  * 
  * Support            : www.nodo-domotica.nl
  *  
- * Versie             : Versie 0.7  16-04-2015, Paul Tonkes: Testversie voor Integratie in Nodo versie 3.8
+ * Versie             : Versie 0.8, 24-04-2015, Paul Tonkes: 
+ *                      Versie 0.7, 16-04-2015, Paul Tonkes: Testversie voor Integratie in Nodo versie 3.8
  *                      Versie 0.6, 10-03-2015, Martinus van den Broek: Versie 0.6 Proof of Concept 0.6
  *
  * Nodo productnummer : U N D E R  C O N S T R U C T I O N !
@@ -17,7 +19,7 @@
  *                      en geeft daardoor mogelijk conflicten met andere Pin Change Int plugins (019,028,030,???)!
  * 
  * Hardware           : De plugin maakt gebruik van de 2e generatie Nodo-penbezetting met extra lijnen voor
- *                      seriele communicatie. Gebruik bijvoorbeeld HW-2501.h als hardware-configuratiebestand.
+ *                      seriele communicatie. 
  *                      
  *                      LET OP: HW_25XX.H NIET GEBRUIKEN OP EEN NODO-UNO, NODO-DUE, NODO-MINI OF EEN NES.  
  *
@@ -33,7 +35,7 @@
  * Gebruik            : De belangrijkste OpenThem waarden worden in variabelen geplaatst te beginnen
  *                      vanaf basisvariabele zoals opgegeven bij de configuratie:     
  *
- *			                <basisvariabele>     wordt gebruikt om temperatuur setpoint in te stellen
+ *			                <basisvariabele> wordt gebruikt om temperatuur setpoint in te stellen
  *			                <basisvariabele> + 1 wordt gebruikt voor monitoring van Room Temperature
  *			                <basisvariabele> + 2 wordt gebruikt voor monitoring van Boiler Water Temperature
  *			                <basisvariabele> + 3 wordt gebruikt voor monitoring van Modulation
@@ -42,25 +44,120 @@
  *			                <basisvariabele> + 6 wordt gebruikt voor monitoring van Flame status
  *			                <basisvariabele> + 7 wordt gebruikt voor monitoring van Boiler Return Water Temperature
  *			                <basisvariabele> + 8 wordt gebruikt voor monitoring van Domestic Hot Water Mode
- *
+
+
+* gaat niet samen met Plugin_023 (RGBLed)
 \*********************************************************************************************/
 
-#define PLUGIN_ID   11
-#define PLUGIN_NAME "OTGW"
+#define PLUGIN_ID                        11
+#define PLUGIN_NAME                  "OTGW"
 
-#define PLUGIN_011_BUFFERSIZE   40
-
-#ifndef PLUGIN_011_DEBUG
-  #define PLUGIN_011_DEBUG false
-#endif
-
-char PLUGIN_011_buffer[PLUGIN_011_BUFFERSIZE+1];
+#define PLUGIN_011_BUFFERSIZE            40
+#define PLUGIN_011_INTERVAL_SLOW         20
+#define PLUGIN_011_INTERVAL_FAST          5
+#define PLUGIN_011_MAXVAR                 8
 
 // function prototypes for plugin
 boolean PLUGIN_011_softSerialSend(char *cmd, int intdelay);
-byte PLUGIN_011_SerialRead();
 byte PLUGIN_011_hextobyte(char *string, byte pos);
 char* PLUGIN_011_int2str(unsigned long x);
+boolean PLUGIN_011_VarChange(byte Variable, float Value, unsigned long Data);
+
+unsigned long OTGW_PreviousData[PLUGIN_011_MAXVAR];
+unsigned long OTGW_Data;
+char PLUGIN_011_buffer[PLUGIN_011_BUFFERSIZE+1];
+
+void Plugin_011_FLC(void)                                                       // wordt vanuit de hoofdloop van de Nodo-core zeer frequent aangeroepen.
+  {  
+  static byte count=0;
+  char received;
+
+  while(Serial_available())
+    {
+    received=Serial_read();
+    if(count<PLUGIN_011_BUFFERSIZE && isprint(received) && (isalpha(received) || isxdigit(received)))
+      PLUGIN_011_buffer[count++]=received;
+
+    if(received==0x0A)
+      {
+      PLUGIN_011_buffer[count]=0;
+
+      #ifdef PLUGIN_011_DEBUG
+   	  Serial.print(PLUGIN_011_buffer);
+      #endif
+        
+      byte source = PLUGIN_011_buffer[0];
+      byte b1     = PLUGIN_011_hextobyte(PLUGIN_011_buffer,1);
+      byte b2     = PLUGIN_011_hextobyte(PLUGIN_011_buffer,3);
+      byte b3     = PLUGIN_011_hextobyte(PLUGIN_011_buffer,5);
+      byte b4     = PLUGIN_011_hextobyte(PLUGIN_011_buffer,7);
+      
+      OTGW_Data=(b1<<24) + (b2<<16) + (b3<<8) + b4;
+      
+      if(source==0x54)                                                          // Source = Thermostat
+        {
+        if (b2 == 0x18)					                                                // +1 Room Temperature
+          {
+          TempFloat=b3+b4*((float)1/256);
+          PLUGIN_011_VarChange(1, TempFloat, OTGW_Data);
+          }
+
+        if (b2 == 0x10)					                                                // +5 Thermostat Set Point
+          {
+          TempFloat=b3+b4*((float)1/256);
+          PLUGIN_011_VarChange(5, TempFloat, OTGW_Data);
+          }
+        } // if(source==0x54)
+
+
+      if(source==0x42)                                                          // Source = Boiler
+        {
+      	if (b2 == 0x19)					                                                // +2 Boiler Water Temperature
+          {
+          TempFloat=b3+b4*((float)1/256);
+          PLUGIN_011_VarChange(2, TempFloat, OTGW_Data);
+          }
+
+        if (b2 == 0x11)					                                                // +3 Relative Modulation
+          {
+          TempFloat=b3+b4*((float)1/256);
+          PLUGIN_011_VarChange(3, TempFloat, OTGW_Data);
+          }
+
+        if (b2 == 0x12)					                                                // +4 Boiler Water Pressure
+          {
+          TempFloat=b3+b4*((float)1/256);
+          PLUGIN_011_VarChange(4, TempFloat, OTGW_Data);
+          }
+
+        if (b2 == 0x00)					                                                // Boiler Status
+          {
+          TempFloat=(float)((b4 & 0x8) >> 3);                                   // +6 Flame Status in bit 3
+          PLUGIN_011_VarChange(6, TempFloat, OTGW_Data);
+
+          TempFloat=(float)((b4 & 0x4) >> 2);	  		                            // +8 DHW Mode in bit 2
+          PLUGIN_011_VarChange(8, TempFloat, OTGW_Data);
+          }
+
+        if (b2 == 0x1C)					                                                // +7 Boiler Water Return Temperature
+          {
+          TempFloat=b3+b4*((float)1/256);
+          PLUGIN_011_VarChange(7, TempFloat, OTGW_Data);
+          }
+
+        }// if (source==0x42)
+        
+
+      #ifdef PLUGIN_011_DEBUG
+      Serial.println();
+      #endif
+
+      PLUGIN_011_buffer[0]=0;
+      count=0;      
+      } // if(received[x]==..)
+    }// while
+  }  
+
 
 boolean Plugin_011(byte function, struct NodoEventStruct *event, char *string)
   {
@@ -74,22 +171,29 @@ boolean Plugin_011(byte function, struct NodoEventStruct *event, char *string)
       {
       Serial_begin(9600,0);
 
-      // Zie Nodo-payload tabel
-      UserVariablePayload(PLUGIN_011_CORE  , 0x8010); // Gateway Setpoint            
-      UserVariablePayload(PLUGIN_011_CORE+1, 0x8011); // Room Temperature            
-      UserVariablePayload(PLUGIN_011_CORE+2, 0x8012); // Thermostat Set Point        
-      UserVariablePayload(PLUGIN_011_CORE+3, 0x8013); // Boiler Water Temperature    
-      UserVariablePayload(PLUGIN_011_CORE+4, 0x8014); // Relative Modulation         
-      UserVariablePayload(PLUGIN_011_CORE+5, 0x8015); // Boiler Water Pressure       
-      UserVariablePayload(PLUGIN_011_CORE+6, 0x8016); // Flame Status                
-      UserVariablePayload(PLUGIN_011_CORE+7, 0x8017); // DHW Mode                    
-      UserVariablePayload(PLUGIN_011_CORE+8, 0x8018); // Boiler Water Return Temp.   
+      FastLoopCall_ptr=&Plugin_011_FLC;                                         // Hiermee plaatsen we een in de hoofdloop van de Nodo een snelle scan-loop
 
+      UserVariablePayload(PLUGIN_011_CORE  , 0x8010);                           // Gateway Setpoint            
+      UserVariablePayload(PLUGIN_011_CORE+1, 0x8011);                           // Room Temperature            
+      UserVariablePayload(PLUGIN_011_CORE+2, 0x8012);                           // Boiler Water Temperature    
+      UserVariablePayload(PLUGIN_011_CORE+3, 0x8013);                           // Relative Modulation         
+      UserVariablePayload(PLUGIN_011_CORE+4, 0x8014);                           // Boiler Water Pressure 
+      UserVariablePayload(PLUGIN_011_CORE+5, 0x8015);                           // Thermostat Set Point        
+      UserVariablePayload(PLUGIN_011_CORE+6, 0x8016);                           // Flame Status                
+      UserVariablePayload(PLUGIN_011_CORE+7, 0x8017);                           // Boiler Water Return Temp.   
+      UserVariablePayload(PLUGIN_011_CORE+8, 0x8018);                           // DHW Mode                    
+
+  	  for(byte x=0;x<=PLUGIN_011_MAXVAR;x++)
+        {
+        OTGW_PreviousData[x]=0;
+    		UserVariableGlobal(PLUGIN_011_CORE+x,true);                             // Variabelen globaal, zodat de Nodo deze direct verzend.
+        }
+	  
       break;
       }
 
     case PLUGIN_COMMAND:
-      {
+      {		
       if (event->Par1 == CMD_VARIABLE_SET)
         {
         char *cmd=(char*)malloc(10);
@@ -112,89 +216,7 @@ boolean Plugin_011(byte function, struct NodoEventStruct *event, char *string)
 
   case PLUGIN_ONCE_A_SECOND:
     {
-    byte count = PLUGIN_011_SerialRead();
-    if (count > 0)
-      for (byte x=0; x <= count ; x++)
-        {
-        if (PLUGIN_011_buffer[x]==0x0D) // scan for EOL
-          {
-          char source = PLUGIN_011_buffer[x-9];
-          byte b1 = PLUGIN_011_hextobyte(PLUGIN_011_buffer,x-8);
-          byte b2 = PLUGIN_011_hextobyte(PLUGIN_011_buffer,x-6);
-          byte b3 = PLUGIN_011_hextobyte(PLUGIN_011_buffer,x-4);
-          byte b4 = PLUGIN_011_hextobyte(PLUGIN_011_buffer,x-2);
-
-          if (source=='T')
-            {
-            if (b2 == 0x18)					// Room Temperature
-              {
-              float roomtemp=b3+b4*((float)1/256);
-              Serial.print("RT ");
-              Serial.println(roomtemp);
-              UserVariableSet(PLUGIN_011_CORE+1,roomtemp,false);
-              }
-
-            if (b2 == 0x10)					// Thermostat Set Point
-              {
-              float setpoint=b3+b4*((float)1/256);
-              Serial.print("TC ");
-              Serial.println(setpoint);
-              UserVariableSet(PLUGIN_011_CORE+5,setpoint,false);
-              }
-            }
-
-           if (source=='B')
-             {
-             if (b2 == 0x19)					// Boiler Water Temperature
-               {
-               float boilertemp=b3+b4*((float)1/256);
-               Serial.print("BWT ");
-               Serial.println(boilertemp);
-               UserVariableSet(PLUGIN_011_CORE+2,boilertemp,false);
-               }
-  
-             if (b2 == 0x11)					// Relative Modulation
-               {
-               float modulation=b3+b4*((float)1/256);
-               Serial.print("MOD ");
-               Serial.println(modulation);
-               UserVariableSet(PLUGIN_011_CORE+3,modulation,false);
-               }
-  
-             if (b2 == 0x12)					// Boiler Water Pressure
-               {
-               float pressure=b3+b4*((float)1/256);
-               Serial.print("PR ");
-               Serial.println(pressure);
-               UserVariableSet(PLUGIN_011_CORE+4,pressure,false);
-               }
-  
-             if (b2 == 0x00)					// Boiler Status
-               {
-               byte status=(b4 & 0x8) >> 3;			// Flame Status in bit 3
-               Serial.print("FS ");
-               Serial.println(status);
-               TempFloat=(float)status;
-               UserVariableSet(PLUGIN_011_CORE+6,TempFloat,false);
-               status=(b4 & 0x4) >> 2;			// DHW Mode in bit 2
-               Serial.print("DHWM ");
-               Serial.println(status);
-               TempFloat=(float)status;
-               UserVariableSet(PLUGIN_011_CORE+7,TempFloat,false);
-               }
-  
-             if (b2 == 0x1C)					// Boiler Water Return Temperature
-               {
-               float boilerRtemp=b3+b4*((float)1/256);
-               Serial.print("BWRT ");
-               Serial.println(boilerRtemp);
-               UserVariableSet(PLUGIN_011_CORE+8,boilerRtemp,false);
-               }
-             }
-           } // eol
-         } // for
-        break;
-      } // case PLUGIN_ONCE_A_SECOND
+    } // case PLUGIN_ONCE_A_SECOND
 
     #endif // CORE
 
@@ -209,9 +231,9 @@ boolean Plugin_011(byte function, struct NodoEventStruct *event, char *string)
           {
           if(GetArgv(string,TempStr,2)) 
             {
-              event->Type = NODO_TYPE_PLUGIN_COMMAND;
-              event->Command = PLUGIN_ID; // Plugin nummer  
-              success=true;
+            event->Type = NODO_TYPE_PLUGIN_COMMAND;
+            event->Command = PLUGIN_ID; // Plugin nummer  
+            success=true;
             }
           }
         }
@@ -236,36 +258,20 @@ boolean Plugin_011(byte function, struct NodoEventStruct *event, char *string)
 
 #ifdef PLUGIN_011_CORE
 boolean PLUGIN_011_softSerialSend(char *cmd, int intdelay)
-{
+  {
   Serial_flush();
 
-  #if PLUGIN_011_DEBUG
+  #ifdef PLUGIN_011_DEBUG
     Serial.println(cmd);
   #endif
 
+  #ifdef PLUGIN_011_DEBUG
   Serial_println(cmd);
+  #endif
+  
   delay(intdelay);
-}
+  }
 
-byte PLUGIN_011_SerialRead()
-{
- char received;
- byte count=0;
- PLUGIN_011_buffer[0]=0;
- if (Serial_available())
-        {
-          while (Serial_available())
-          {
-            received=Serial_read();
-            if(count<PLUGIN_011_BUFFERSIZE)
-              PLUGIN_011_buffer[count++]=received;
-            Serial.print(received);
-          }
-          Serial.println();
-        }
-  PLUGIN_011_buffer[count]=0;
-  return count; 
-}
 
 byte PLUGIN_011_hextobyte(char *string, byte pos)
 {
@@ -298,5 +304,55 @@ char* PLUGIN_011_int2str(unsigned long x)
     }    
   return OutputLinePosPtr;
   }
+
+
+boolean PLUGIN_011_VarChange(byte Variable, float Value, unsigned long Data)
+  {
+  boolean Change=OTGW_PreviousData[Variable]!=Data;
+  UserVariableSet(PLUGIN_011_CORE+Variable, Value, Change);
+  OTGW_PreviousData[Variable]=Data;
+  
+  #ifdef PLUGIN_011_DEBUG
+  switch(Variable)
+    {
+    case 1:
+      Serial.print(F(" (Room Temperature="));Serial.print(TempFloat);Serial.print(")");
+      break;
+    
+    case 2:
+      Serial.print(F(" (Boiler Water Temperature="));Serial.print(TempFloat);Serial.print(")");
+      break;
+    
+    case 3:
+      Serial.print(F(" (Relative modulation:"));Serial.print(TempFloat);Serial.print(")");
+      break;
+    
+    case 4:
+      Serial.print(F(" (Boiler water pressure="));Serial.print(TempFloat);Serial.print(")");
+      break;
+    
+    case 5:
+      Serial.print(F(" (Thermostat Setpoint="));Serial.print(TempFloat);Serial.print(")");
+      break;
+    
+    case 6:
+      Serial.print(F(" (Flame status="));Serial.print(TempFloat);Serial.print(")");
+      break;
+    
+    case 7:
+      Serial.print(F(" (Boiler water return temp="));Serial.print(TempFloat);Serial.print(")");
+      break;
+    
+    case 8:
+      Serial.print(F(" (Domestic hot water mode="));Serial.print(TempFloat);Serial.print(")");
+      break;
+    }  
+
+  if(Change)
+    Serial.print(F(" *** Changed ***"));
+
+  #endif
+  } 
+
 
 #endif
