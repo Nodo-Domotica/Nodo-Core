@@ -218,6 +218,8 @@ boolean Plugin_011(byte function, struct NodoEventStruct *event, char *string)
             Serial.println(F(") *** Command ***"));
             }
           free(cmd);
+
+          UserVariableSet(PLUGIN_011_CORE+5, TempFloat, true);
           }
         }
       break;
