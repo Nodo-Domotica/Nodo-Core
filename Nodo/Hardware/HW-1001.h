@@ -73,6 +73,8 @@
 #define PIN_RF_TX_DATA              14                                          // Data naar de 433Mhz zender
 #define PIN_RF_RX_ENABLE            16                                          // Spanning naar de ontvanger via deze pin.
 #define PIN_RF_RX_DATA              19                                          // Op deze input komt het 433Mhz-RF signaal binnen. LOW bij geen signaal.
+#define HARDWARE_AUREL_PULSE      true                                          // De Aurel tranceiver heeft een korte pult nodig om om te schakelen tussen TX en TX
+#define PIN_AUREL_PULSE             22                                          // Pin waar de puls op afgegeven wordt.
 
 // Serial: ============================================================================================================
 #define HARDWARE_SERIAL_1         true

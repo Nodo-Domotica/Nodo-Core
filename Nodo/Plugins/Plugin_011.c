@@ -219,7 +219,9 @@ boolean Plugin_011(byte function, struct NodoEventStruct *event, char *string)
             }
           free(cmd);
 
-          UserVariableSet(PLUGIN_011_CORE+5, TempFloat, true);
+          UserVariableSet(PLUGIN_011_CORE+5, TempFloat, true);                  // We vullen direct de 'Thermostat Setpoint' omdat de PIC op de OTGW deze waarde pas
+                                                                                // na een minuut verwerkt waardoordespinbox van de WebApp gedurende dze tijd niet
+                                                                                // op de jiste waarde staat. 
           }
         }
       break;
