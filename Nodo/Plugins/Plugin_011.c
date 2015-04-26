@@ -24,7 +24,10 @@
  *                      LET OP: HW_25XX.H NIET GEBRUIKEN OP EEN NODO-UNO, NODO-DUE, NODO-MINI OF EEN NES.  
  *
  *                      Voor deze plugin wordt aangeraden een dedicated Arduino te gebruiken. Neem hierbij 
- *                      de penbezetting zoals gedefinieerd in HW-2501.h.  
+ *                      de penbezetting zoals gedefinieerd in HW-2501.h.
+ *                      
+ *                      De TX lijn van ATMega kan worden gebruikt als Watchdog. Deze geeft pulsen af op ieder 
+ *                      opentherm bericht dat wordt uitgewisseld tussen boiler en thermostaat.     
  *
  * Configuratie       : Zet de volgende regels in het config bestand:
  *
@@ -52,10 +55,10 @@
 #define PLUGIN_ID                        11
 #define PLUGIN_NAME                  "OTGW"
 
-#define PLUGIN_011_BUFFERSIZE            40
+#define PLUGIN_011_BUFFERSIZE            80//???
 #define PLUGIN_011_INTERVAL_SLOW         20
 #define PLUGIN_011_INTERVAL_FAST          5
-#define PLUGIN_011_MAXVAR                 8
+#define PLUGIN_011_MAXVAR                 9
 
 // function prototypes for plugin
 boolean PLUGIN_011_softSerialSend(char *cmd, int intdelay);
@@ -63,8 +66,8 @@ byte PLUGIN_011_hextobyte(char *string, byte pos);
 char* PLUGIN_011_int2str(unsigned long x);
 boolean PLUGIN_011_VarChange(byte Variable, float Value, unsigned long Data);
 
-unsigned long OTGW_PreviousData[PLUGIN_011_MAXVAR];
-unsigned long OTGW_Data;
+boolean PLUGIN_011_Debug=false;
+unsigned long OTGW_Data, OTGW_PreviousData[PLUGIN_011_MAXVAR];
 char PLUGIN_011_buffer[PLUGIN_011_BUFFERSIZE+1];
 
 void Plugin_011_FLC(void)                                                       // wordt vanuit de hoofdloop van de Nodo-core zeer frequent aangeroepen.
@@ -75,6 +78,7 @@ void Plugin_011_FLC(void)                                                       
   while(Serial_available())
     {
     received=Serial_read();
+
     if(count<PLUGIN_011_BUFFERSIZE && isprint(received) && (isalpha(received) || isxdigit(received)))
       PLUGIN_011_buffer[count++]=received;
 
@@ -82,17 +86,15 @@ void Plugin_011_FLC(void)                                                       
       {
       PLUGIN_011_buffer[count]=0;
 
-      #ifdef PLUGIN_011_DEBUG
-   	  Serial.print(PLUGIN_011_buffer);
-      #endif
-        
+      Serial.print(PLUGIN_011_buffer);
+              
       byte source = PLUGIN_011_buffer[0];
       byte b1     = PLUGIN_011_hextobyte(PLUGIN_011_buffer,1);
       byte b2     = PLUGIN_011_hextobyte(PLUGIN_011_buffer,3);
       byte b3     = PLUGIN_011_hextobyte(PLUGIN_011_buffer,5);
       byte b4     = PLUGIN_011_hextobyte(PLUGIN_011_buffer,7);
       
-      OTGW_Data=(b1<<24) + (b2<<16) + (b3<<8) + b4;
+      OTGW_Data=(((unsigned long)b1)<<24) + (((unsigned long)b2)<<16) + (((unsigned long)b3)<<8) + ((unsigned long)b4);
       
       if(source==0x54)                                                          // Source = Thermostat
         {
@@ -147,11 +149,7 @@ void Plugin_011_FLC(void)                                                       
 
         }// if (source==0x42)
         
-
-      #ifdef PLUGIN_011_DEBUG
       Serial.println();
-      #endif
-
       PLUGIN_011_buffer[0]=0;
       count=0;      
       } // if(received[x]==..)
@@ -169,7 +167,8 @@ boolean Plugin_011(byte function, struct NodoEventStruct *event, char *string)
 
     case PLUGIN_INIT:
       {
-      Serial_begin(9600,0);
+      Serial_begin(9600,0);                                                     // Communicatie tussen PIC en ATMega
+      Serial.begin(9600);                                                       // Communcatie ATMega via FTDI
 
       FastLoopCall_ptr=&Plugin_011_FLC;                                         // Hiermee plaatsen we een in de hoofdloop van de Nodo een snelle scan-loop
 
@@ -216,6 +215,9 @@ boolean Plugin_011(byte function, struct NodoEventStruct *event, char *string)
 
   case PLUGIN_ONCE_A_SECOND:
     {
+    if(Serial.available())
+      PLUGIN_011_Debug=true;
+
     } // case PLUGIN_ONCE_A_SECOND
 
     #endif // CORE
@@ -309,49 +311,50 @@ char* PLUGIN_011_int2str(unsigned long x)
 boolean PLUGIN_011_VarChange(byte Variable, float Value, unsigned long Data)
   {
   boolean Change=OTGW_PreviousData[Variable]!=Data;
+  
   UserVariableSet(PLUGIN_011_CORE+Variable, Value, Change);
   OTGW_PreviousData[Variable]=Data;
   
-  #ifdef PLUGIN_011_DEBUG
-  switch(Variable)
+  if(PLUGIN_011_Debug)
     {
-    case 1:
-      Serial.print(F(" (Room Temperature="));Serial.print(TempFloat);Serial.print(")");
-      break;
-    
-    case 2:
-      Serial.print(F(" (Boiler Water Temperature="));Serial.print(TempFloat);Serial.print(")");
-      break;
-    
-    case 3:
-      Serial.print(F(" (Relative modulation:"));Serial.print(TempFloat);Serial.print(")");
-      break;
-    
-    case 4:
-      Serial.print(F(" (Boiler water pressure="));Serial.print(TempFloat);Serial.print(")");
-      break;
-    
-    case 5:
-      Serial.print(F(" (Thermostat Setpoint="));Serial.print(TempFloat);Serial.print(")");
-      break;
-    
-    case 6:
-      Serial.print(F(" (Flame status="));Serial.print(TempFloat);Serial.print(")");
-      break;
-    
-    case 7:
-      Serial.print(F(" (Boiler water return temp="));Serial.print(TempFloat);Serial.print(")");
-      break;
-    
-    case 8:
-      Serial.print(F(" (Domestic hot water mode="));Serial.print(TempFloat);Serial.print(")");
-      break;
-    }  
-
-  if(Change)
-    Serial.print(F(" *** Changed ***"));
-
-  #endif
+    switch(Variable)
+      {
+      case 1:
+        Serial.print(F(" (Room Temperature="));Serial.print(TempFloat);Serial.print(")");
+        break;
+      
+      case 2:
+        Serial.print(F(" (Boiler Water Temperature="));Serial.print(TempFloat);Serial.print(")");
+        break;
+      
+      case 3:
+        Serial.print(F(" (Relative modulation:"));Serial.print(TempFloat);Serial.print(")");
+        break;
+      
+      case 4:
+        Serial.print(F(" (Boiler water pressure="));Serial.print(TempFloat);Serial.print(")");
+        break;
+      
+      case 5:
+        Serial.print(F(" (Thermostat Setpoint="));Serial.print(TempFloat);Serial.print(")");
+        break;
+      
+      case 6:
+        Serial.print(F(" (Flame status="));Serial.print(TempFloat);Serial.print(")");
+        break;
+      
+      case 7:
+        Serial.print(F(" (Boiler water return temp="));Serial.print(TempFloat);Serial.print(")");
+        break;
+      
+      case 8:
+        Serial.print(F(" (Domestic hot water mode="));Serial.print(TempFloat);Serial.print(")");
+        break;
+      }  
+  
+    if(Change)
+      Serial.print(F(" *** Changed ***"));
+    }
   } 
 
 
