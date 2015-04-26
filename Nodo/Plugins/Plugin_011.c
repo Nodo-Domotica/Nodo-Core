@@ -33,9 +33,9 @@
  *
  *                      #define HARDWARE_CONFIG 2501
  *                      #define PLUGIN_011
- *                      #define PLUGIN_011_CORE  1
+ *                      #define PLUGIN_011_CORE  <basisvariabele>
  *
- * Gebruik            : De belangrijkste OpenThem waarden worden in variabelen geplaatst te beginnen
+ * Gebruik            : De belangrijkste OpenTherm waarden worden in variabelen geplaatst te beginnen
  *                      vanaf basisvariabele zoals opgegeven bij de configuratie:     
  *
  *			                <basisvariabele> wordt gebruikt om temperatuur setpoint in te stellen
@@ -163,8 +163,6 @@ boolean Plugin_011(byte function, struct NodoEventStruct *event, char *string)
 
   switch(function)
     {    
-    #ifdef PLUGIN_011_CORE
-
     case PLUGIN_INIT:
       {
       Serial_begin(9600,0);                                                     // Communicatie tussen PIC en ATMega
@@ -191,101 +189,63 @@ boolean Plugin_011(byte function, struct NodoEventStruct *event, char *string)
       break;
       }
 
-    case PLUGIN_COMMAND:
-      {		
-      if (event->Par1 == CMD_VARIABLE_SET)
-        {
-        char *cmd=(char*)malloc(10);
-        cmd[0]=0;
-            
-        UserVariable(event->Par2, &TempFloat);
-        byte value=(byte)TempFloat;
-            
-        strcpy(cmd,"TT=");
-        strcat(cmd,PLUGIN_011_int2str(value));
-            
-        if ((TempFloat - value) > 0)
-          strcat(cmd,".5");
-        PLUGIN_011_softSerialSend(cmd,100);
-        free(cmd);
-        }
-      success = true;
-      break;
-      }
-
-  case PLUGIN_ONCE_A_SECOND:
-    {
-    if(Serial.available())
-      PLUGIN_011_Debug=true;
-
-    } // case PLUGIN_ONCE_A_SECOND
-
-    #endif // CORE
-
-    #if NODO_MEGA
-    case PLUGIN_MMI_IN:
+    case PLUGIN_EVENT_IN:
       {
-      char *TempStr=(char*)malloc(INPUT_COMMAND_SIZE);
-
-      if(GetArgv(string,TempStr,1))
+      if(event->Command==EVENT_VARIABLE && event->Type==NODO_TYPE_EVENT)        // Er is en variabele gewijzigd. 
         {
-        if(strcasecmp(TempStr,PLUGIN_NAME)==0)
+        if(event->Par1==PLUGIN_011_CORE)                                        // 1e variabele is voor de in te stellen temperatuur.
           {
-          if(GetArgv(string,TempStr,2)) 
+          char *cmd=(char*)malloc(10);
+          cmd[0]=0;
+              
+          UserVariable(PLUGIN_011_CORE, &TempFloat);
+          byte value=(byte)TempFloat;
+              
+          strcpy(cmd,"TT=");
+          strcat(cmd,PLUGIN_011_int2str(value));
+              
+          if ((TempFloat - value) > 0)
+            strcat(cmd,".5");
+
+          Serial_flush();
+          Serial_println(cmd);
+          delay(100);
+          
+          if(PLUGIN_011_Debug)
             {
-            event->Type = NODO_TYPE_PLUGIN_COMMAND;
-            event->Command = PLUGIN_ID; // Plugin nummer  
-            success=true;
+            Serial.print(F("("));
+            Serial.print(cmd);
+            Serial.println(F(") *** Command ***"));
             }
+          free(cmd);
           }
         }
-      free(TempStr);
       break;
       }
 
-    case PLUGIN_MMI_OUT:
+
+    case PLUGIN_ONCE_A_SECOND:
       {
-      strcpy(string,PLUGIN_NAME);
-      strcat(string," ");
-      strcat(string,cmd2str(event->Par1));
-      strcat(string,",");
-      strcat(string,int2str(event->Par2));
-      break;
-      }
-    #endif //MMI
-
-    }
-    return success;
-  }
-
-#ifdef PLUGIN_011_CORE
-boolean PLUGIN_011_softSerialSend(char *cmd, int intdelay)
-  {
-  Serial_flush();
-
-  #ifdef PLUGIN_011_DEBUG
-    Serial.println(cmd);
-  #endif
-
-  #ifdef PLUGIN_011_DEBUG
-  Serial_println(cmd);
-  #endif
+      if(Serial.available())
+        PLUGIN_011_Debug=true;
   
-  delay(intdelay);
+      } // case PLUGIN_ONCE_A_SECOND
+    }
+  return success;
   }
 
 
 byte PLUGIN_011_hextobyte(char *string, byte pos)
-{
+  {
   byte b1 = string[pos] - '0';
   byte b2 = string[pos+1] -'0';
   if (b1 > 16) b1=b1-7;
   if (b2 > 16) b2=b2-7;
   return b1*16 + b2;
-}
+  }
 
 char* PLUGIN_011_int2str(unsigned long x)
-{
+  {
   static char OutputLine[12];
   char* OutputLinePosPtr=&OutputLine[10];
   int y;
@@ -357,5 +317,3 @@ boolean PLUGIN_011_VarChange(byte Variable, float Value, unsigned long Data)
     }
   } 
 
-
-#endif
