@@ -39,7 +39,7 @@
 
 #define PLUGIN_ID 6
 #define PLUGIN_NAME "DHTRead"
-#define DHT_EVENT false                                                         // false=geen events genereren bij uitlezen, true genereert wel events.
+#define DHT_EVENT true                                                          // false=geen events genereren bij uitlezen, true genereert wel events.
 uint8_t DHT_Pin;
 
 #ifdef PLUGIN_006_CORE
@@ -50,6 +50,7 @@ byte read_dht_dat(void)
   {
   byte i = 0;
   byte result=0;
+
   noInterrupts();
   for(i=0; i< 8; i++)
     {
@@ -60,6 +61,7 @@ byte read_dht_dat(void)
     while(digitalRead(DHT_Pin));                                                // wait '1' finish
     }
   interrupts();
+
   return result;
   }
 #endif // CORE
@@ -73,6 +75,7 @@ boolean Plugin_006(byte function, struct NodoEventStruct *event, char *string)
     {
     #ifdef PLUGIN_006_CORE
   
+    
     case PLUGIN_COMMAND:
       {
       DHT_Pin=PIN_WIRED_OUT_1+event->Par1-1;
@@ -80,6 +83,9 @@ boolean Plugin_006(byte function, struct NodoEventStruct *event, char *string)
       byte dht_in;
       byte i;
       byte Retry=0;
+
+      UserVariablePayload(event->Par2,  0x0011); // Temperature
+      UserVariablePayload(event->Par2+1,0x00d1); // Relative humidity %
 
       do
         {  
@@ -90,26 +96,28 @@ boolean Plugin_006(byte function, struct NodoEventStruct *event, char *string)
         delayMicroseconds(40);
         pinMode(DHT_Pin,INPUT);                                                 // change pin to input
         delayMicroseconds(40);
-    
         dht_in = digitalRead(DHT_Pin);
+
         if(!dht_in)
           {
           delayMicroseconds(80);
-
-          UserVariablePayload(event->Par2,  0x0011); // Temperature
-          UserVariablePayload(event->Par2+1,0x00d1); // Relative humidity %
-
           dht_in = digitalRead(DHT_Pin);
+
           if(dht_in)
             {
             delayMicroseconds(40);                                              // now ready for data reception
             for (i=0; i<5; i++)
               dht_dat[i] = read_dht_dat();
               
-            byte dht_check_sum = dht_dat[0]+dht_dat[1]+dht_dat[2]+dht_dat[3];   // check check_sum. Checksum calculation is a Rollover Checksum by design.
+            byte dht_check_sum = dht_dat[0]+dht_dat[1]+dht_dat[2]+dht_dat[3];   // check checksum. Checksum calculation is a Rollover Checksum by design.
+
+Serial.println(F("Trace-1"));delay(500);///???
+delay(500);//???
 
             if(dht_dat[4]== dht_check_sum)
               {
+Serial.println(F("Trace-2"));delay(500);///???
+delay(500);//???
 
               #if PLUGIN_006_CORE==11                                           // Code door de DHT-11 variant
 
@@ -122,6 +130,8 @@ boolean Plugin_006(byte function, struct NodoEventStruct *event, char *string)
               #endif
               
               #if PLUGIN_006_CORE==22                                           // Code door de DHT-22 variant
+
+Serial.println(F("Trace-3"));//???
 
               if (dht_dat[2] & 0x80)                                            // negative temperature
                 {
@@ -136,16 +146,17 @@ boolean Plugin_006(byte function, struct NodoEventStruct *event, char *string)
               TempFloat=word(dht_dat[0], dht_dat[1]) * 0.1;                     // vochtigheid
               UserVariableSet(event->Par2+1,TempFloat,DHT_EVENT);
               #endif
+Serial.println(F("Trace-4"));//???
 
               success=true;
               }
             }
           }
         if(!success)
-          {
-          delay(2000);
-          }
+          delay(1000);
+
         }while(!success && ++Retry<3);        
+Serial.println(F("Trace-5"));//???
       break;
       }
     #endif // CORE
@@ -159,7 +170,7 @@ boolean Plugin_006(byte function, struct NodoEventStruct *event, char *string)
         {
         if(strcasecmp(TempStr,PLUGIN_NAME)==0)
           {
-          if(event->Par1>0 && event->Par1<WIRED_PORTS && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX-1)
+          if(event->Par1>0 && event->Par1<WIRED_PORTS && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX_NR-1)
             {
             event->Type = NODO_TYPE_PLUGIN_COMMAND;
             event->Command = PLUGIN_ID;                                         // Plugin nummer  

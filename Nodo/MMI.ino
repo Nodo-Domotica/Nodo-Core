@@ -354,13 +354,6 @@ int ExecuteLine(char *Line, byte Port)
                   error=MESSAGE_INVALID_PARAMETER;
               break;
               
-            case CMD_CLIENT_IP:
-              EventToExecute.Type=NODO_TYPE_COMMAND;
-              if(GetArgv(Command,TmpStr1,2))
-                if(!str2ip(TmpStr1,Settings.Client_IP))
-                  error=MESSAGE_INVALID_PARAMETER;
-              break;
-              
             case CMD_SUBNET:
               EventToExecute.Type=NODO_TYPE_COMMAND;
               if(GetArgv(Command,TmpStr1,2))
@@ -652,7 +645,7 @@ char* DateTimeString(void)
 /**********************************************************************************************\
  * Print de welkomsttekst van de Nodo.
  \*********************************************************************************************/
-const char Text_welcome1[] PROGMEM = "Nodo Domotica controller V3.8 (Mega)";
+const char Text_welcome1[] PROGMEM = "Nodo Domotica controller V3.8 BETA (Mega)";
 const char Text_welcome2[] PROGMEM = "(c) Copyright 2015 P.K.Tonkes. Licensed under GNU General Public License.";
 const char Text_welcome3[] PROGMEM = "Product=SWACNC-MEGA-R%03d, ThisUnit=%d";
 
@@ -1721,7 +1714,7 @@ void PrintWelcome(void)
   #if HARDWARE_SERIAL_1
   // Print Welkomsttekst
   Serial.println(F("!******************************************************************************!"));
-  Serial.println(F("Nodo Domotica controller V3.8 (Small)"));
+  Serial.println(F("Nodo Domotica controller V3.8 BETA (Small)"));
   Serial.println(F("(c) Copyright 2014 P.K.Tonkes. Licensed under GNU General Public License."));
   Serial.print(F("Product=SWACNC-SMALL-R"));
   Serial.print(NODO_BUILD);

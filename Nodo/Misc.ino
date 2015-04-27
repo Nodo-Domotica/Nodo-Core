@@ -647,10 +647,6 @@ void ResetFactory(void)
   Settings.TransmitHTTP               = VALUE_OFF;
   Settings.Debug                      = VALUE_OFF;
   Settings.HTTPRequest[0]             = 0; // string van het HTTP adres leeg maken
-  Settings.Client_IP[0]               = 0;
-  Settings.Client_IP[1]               = 0;
-  Settings.Client_IP[2]               = 0;
-  Settings.Client_IP[3]               = 0;
   Settings.Nodo_IP[0]                 = 0;
   Settings.Nodo_IP[1]                 = 0;
   Settings.Nodo_IP[2]                 = 0;
@@ -789,13 +785,6 @@ void Status(struct NodoEventStruct *Request)
         {
         #if NODO_MEGA          
         #if HARDWARE_ETHERNET
-
-        case CMD_CLIENT_IP:
-          strcpy(TempString,cmd2str(CMD_CLIENT_IP));
-          strcat(TempString," ");
-          strcat(TempString,ip2str(Settings.Client_IP));
-          PrintString(TempString, Port);
-          break;
 
         case CMD_NODO_IP:
           strcpy(TempString,cmd2str(CMD_NODO_IP));

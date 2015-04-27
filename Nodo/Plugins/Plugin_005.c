@@ -13,7 +13,7 @@
  * Datum              : Feb.2013
  * Versie             : 1.2 (Aaanpassing UserVar)
  * Nodo productnummer : ???
- * Compatibiliteit    : Vanaf Nodo build nummer 508
+ * Compatibiliteit    : Vanaf Nodo build nummer 815
  * Syntax             : "TempRead <Par1:Poortnummer>, <Par2:Variabele>"
  *
  ***********************************************************************************************
@@ -29,7 +29,7 @@ uint8_t DallasPin;
 #define PLUGIN_ID 05
 
 #define PLUGIN_NAME "TempRead"
-#define PLUGIN_05_EVENT false                                             // bij een false wordt er geen event gegenereerd.
+#define PLUGIN_05_EVENT true                                             // bij een false wordt er geen event gegenereerd.
 
 void DS_write(uint8_t ByteToWrite); 
 uint8_t DS_read(void);

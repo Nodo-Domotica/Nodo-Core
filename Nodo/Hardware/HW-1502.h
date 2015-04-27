@@ -36,36 +36,19 @@
 #define PULSE_IRQ                    1                                          // IRQ-1 verbonden aan de IR_RX_DATA pen 3 van de ATMega328 (Uno/Nano/Duemillanove)
 #define PIN_PULSE                    3
 
-// RawSignal: ===========================================================================================================
-#define HARDWARE_RAWSIGNAL        true
-#define RAW_BUFFER_SIZE            256                                          // Maximaal aantal te ontvangen bits = waarde/2
-
-// Infrarood: ===========================================================================================================
-#define HARDWARE_INFRARED         true
-#define PIN_IR_TX_DATA              11                                          // Zender IR-Led. (gebufferd via transistor i.v.m. hogere stroom die nodig is voor IR-led)
-#define PIN_IR_RX_DATA               3                                          // Op deze input komt het IR signaal binnen van de TSOP. Bij HIGH bij geen signaal.
-
-// RF 433Mhz: ===========================================================================================================
-#define HARDWARE_RF433            true
-#define PIN_RF_TX_ENABLE             4                                          // +5 volt / Vcc spanning naar de zender.
-#define PIN_RF_TX_DATA               5                                          // data naar de zender
-#define PIN_RF_RX_DATA               2                                          // Op deze input komt het 433Mhz-RF signaal binnen. LOW bij geen signaal.
-#define PIN_RF_RX_ENABLE            12                                          // Spanning naar de ontvanger via deze pin.
-
 // Serial: ============================================================================================================
 #define HARDWARE_SERIAL_1         true
 #define PIN_SERIAL_1_RX              0                                          // RX-0 lijn o.a. verbonden met de UART-USB of FTDI
 #define PIN_SERIAL_1_TX              1                                          // TX-0 lijn o.a. verbonden met de UART-USB of FTDI
 #define BAUD                     19200                                          // Baudrate voor seriele communicatie.
 
-// Realtime clock DS1307: ===============================================================================================
-#define HARDWARE_CLOCK            true
-#define HARDWARE_I2C              true
-
 // I2C: =================================================================================================================
 #define HARDWARE_I2C              true
 #define PIN_I2C_SDA                 A4                                          // I2C communicatie lijn voor de o.a. de realtime clock.
 #define PIN_I2C_SLC                 A5                                          // I2C communicatie lijn voor de o.a. de realtime clock.
+
+// Battery: ============================================================================================================
+#define HARDWARE_BATTERY          true                                          // Batterij-modus is mogelijk
 
 // SPI: ================================================================================================================
 #define HARDWARE_SPI_SOFTWARE     true

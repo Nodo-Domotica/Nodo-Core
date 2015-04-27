@@ -41,6 +41,9 @@
 #define PIN_SPI_SCK                  5                                          // SCK-lijn van de de SPI-Poort (NRF werk niet samen met 433)
 #define PIN_SPI_MOSI                 6                                          // MISO lijn van de SPI-Poort   (NRF werk niet samen met 433)
 
+// Battery: ============================================================================================================
+#define HARDWARE_BATTERY          true                                          // Batterij-modus is mogelijk
+
 // NRF24L01: ============================================================================================================
 #define HARDWARE_NRF24L01         true
                                                                                 // NRF24L01:         Arduino:

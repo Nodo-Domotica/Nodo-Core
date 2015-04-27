@@ -53,7 +53,6 @@
 #define PIN_I2C_SDA                 A4                                          // I2C communicatie lijn voor de o.a. de realtime clock.
 #define PIN_I2C_SLC                 A5                                          // I2C communicatie lijn voor de o.a. de realtime clock.
 
-
 // SPI (Software): ======================================================================================================
 #define HARDWARE_SPI_SOFTWARE     true                                          // Simuleer op niet standaard SPI lijnen de SPI communicatie 
 #define PIN_SPI_MISO                 3                                          // MISO lijn van de SPI-Poort   (NRF werk niet samen met 433)

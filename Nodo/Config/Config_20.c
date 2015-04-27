@@ -31,7 +31,7 @@
 // alleen nodig zijn op de slave en deel B. op de master. Een Nodo Small heeft geen MMI, dus geen PLUGIN_xxx_CORE definities. 
 // *********************************************************************************************************************
 
-#define HARDWARE_CONFIG                 2502                                    // Nodo-Small met 2e generatie penbezetting met NRF24L01 
+#define HARDWARE_CONFIG                 1502                                    // Nodo-Small met NRF24L01 op  
 
 #define UNIT_NODO                         20                                    // Na een reset-commando wordt dit het unitnummer van de Nodo
                                                                                 // chip compatibel met het Nodo-Uno shield.  
@@ -52,12 +52,8 @@
 // bijvoorbeeld om niet gebruike opties uit te schakelen en geheugenruimte vrij te maken voor plugins.
 // Let echter wel op dan sommige voorzieningen van elkaar afhankelijk zijn of dat plugins hier gebruik van maken.
 //=======================================================================================================================
-// #define HARDWARE_WIRED_IN_PORTS      0
-// #define HARDWARE_WIRED_OUT_PORTS     0
 // #define HARDWARE_STATUS_LED      false    
 // #define HARDWARE_SPEAKER         false
-// #define HARDWARE_INFRARED        false
 // #define HARDWARE_I2C             false
-#define HARDWARE_CLOCK           false
 
 

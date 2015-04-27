@@ -193,7 +193,7 @@ EthernetClient TerminalClient;                                                  
 #define CMD_BREAK_ON_VAR_MORE_VAR       27
 #define CMD_BREAK_ON_VAR_NEQU           28
 #define CMD_RES_29                      29                                      // ??? reserve
-#define CMD_CLIENT_IP                   30
+#define CMD_RES_30                      30
 #define VALUE_SOURCE_CLOCK              31
 #define EVENT_CLOCK_DAYLIGHT            32
 #define CMD_CLOCK_DATE                  33
@@ -650,7 +650,6 @@ struct SettingsStruct
   char    HTTPRequest[80];                                                      // HTTP request;
   char    Temp[26];                                                             // Tijdelijke variabele voor de gebruiker;
   byte    Nodo_IP[4];                                                           // IP adres van van de Nodo. als 0.0.0.0 ingevuld, dan IP toekenning o.b.v. DHCP
-  byte    Client_IP[4];                                                         // IP adres van van de Client die verbinding wil maken met de Nodo, 
   byte    Subnet[4];                                                            // Submask
   byte    Gateway[4];                                                           // Gateway
   byte    DnsServer[4];                                                         // DNS Server IP adres

@@ -127,6 +127,12 @@ Build 810:
 Build 811:
 - Aanpassing Sendto en RF433 timings
 
+
+Build 816:
+- Geen tekst strings meer als opdracht te versturen naar de Nodo. Op verzoek kan hiervoor een plugin worden gemaakt.
+- Commando ClientIP vervallen (was ook niet in de Wiki opgenomen)
+
+
 Todo:
 - LET OP: Originele Wire library van I2C zit weer onder de Nodo core. Nog niet duidelijk of deze wel stabiel genoeg is (m.n. bij niet afbreken bij timeouts)
 - Verzoek Martin: Geen DNS resolven als Host IP adres ingevuld.
