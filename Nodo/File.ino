@@ -39,8 +39,6 @@ void FileErase(char* Path, char* Filename, char* Extention)
   {
   SelectSDCard(true);
   
-  // Serial.print("FileErase(); = ");Serial.println(PathFile(Path, Filename, Extention));
-
   if(strcmp(Filename,"*")==0)// Alles wissen
     {
     File root;
@@ -96,8 +94,6 @@ char* PathFile(char* Path, char* File, char* Extention)
 byte FileWriteLine(char* Path, char* Filename, char* Extention, char *Line, boolean Delete)
   {
   byte error=0;
-
-  // Serial.print("FileWriteLine=");Serial.println(PathFile(Path,Filename,Extention));
 
   SelectSDCard(true);
 

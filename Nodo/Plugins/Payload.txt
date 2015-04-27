@@ -90,13 +90,13 @@ P1-Slimme meter       (nog nader bepalen)         0x800x
 
 OpenTherm             Gateway Setpoint            0x8010
                       Room Temperature            0x8011
-                      Thermostat Set Point        0x8012
-                      Boiler Water Temperature    0x8013
-                      Relative Modulation         0x8014
-                      Boiler Water Pressure       0x8015
+                      Boiler Water Temperature    0x8012
+                      Relative Modulation         0x8013
+                      Boiler Water Pressure       0x8014
+                      Thermostat Set Point        0x8015
                       Flame Status                0x8016
-                      DHW Mode                    0x8017
-                      Boiler Water Return Temp.   0x8018
+                      Boiler Water Return Temp.   0x8017
+                      DHW Mode                    0x8018
 
 
 Weerstation           (nog nader bepalen)         0x802x

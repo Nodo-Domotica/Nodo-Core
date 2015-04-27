@@ -20,8 +20,7 @@
 #define HARDWARE_CONFIG                 2511                                    // Nodo-Small met 2e generatie penbezetting met NRF24L01 en extra RX/TX
 #define UNIT_NODO                         16                                    // Na een reset-commando wordt dit het unitnummer van de Nodo
 
-#define PLUGIN_011                                                              // OpenTherm gateway otgw.                                                              
-#define PLUGIN_011_CORE                    1                                    // Basis variabele start bij 1
+#define PLUGIN_011_CORE                    1                                    // OpenTherm gateway otgw <basis variabele> = 1                                                              
                                          			                                  // <basis variabele> + 0 wordt gebruikt om temperatuur setpoint in te stellen
                                         			                                  // <basis variabele> + 1 wordt gebruikt voor monitoring van Room Temperature
                                         			                                  // <basis variabele> + 2 wordt gebruikt voor monitoring van Boiler Water Temperature

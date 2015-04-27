@@ -14,7 +14,13 @@
 //                           plugin zijn werk moet doen, zoals bijvoorbeeld het meten van
 //                           waarden van sensoren. 
 //
-//
+// Een plugin bestaat in de meeste gevallen uit twee delen:
+// A: Een deel dat verantwoordelijk is voor de feitelijke aansturing/verwerking (MMI)
+// B: Een deel dat alleen nodig is om Events/commando's te kunnen invoeren, doorsturen en weergeven alsmede
+//    eventlist van een andere Nodo programmeren.
+// 
+// Als een plugin zijn feitelijke werk doet op een andere (slave) Nodo dan de centrale (master) Nodo, dan zal deel A.
+// alleen nodig zijn op de slave en deel B. op de master. Er zijn echter ook plugins  
 // *********************************************************************************************************************
 
 
@@ -24,17 +30,18 @@
                                                                                 // Kies 1001 als je een NRF24L01 op de WiredIn lijnen hebt aangeloten 
                                                                                 // zoals die zich op de 26-polige stekker van de NES bevindt. 
                                                                                 //
-                                                                                // Voor extra info: zie ../Hardware/Read_me.txt
+                                                                                // Voor extra info over haqrdware en penbezetting: zie ../Hardware/Read_me.txt
 
-// weergeven en gebruiken
+
+
+// A: Feitelijke aansturing/verwerking
 #define PLUGIN_001                                                              // Kaku : Klik-Aan-Klik-Uit
-#define PLUGIN_001_CORE
-
 #define PLUGIN_002                                                              // NewKAKU : Klik-Aan-Klik-Uit automatische codering.
-#define PLUGIN_002_CORE
 
 
-// Alleen weergeven
+// B: Events/commando's invoeren, doorgeven en weergeven (MMI)
+#define PLUGIN_001_CORE                                                         // Kaku : Klik-Aan-Klik-Uit
+#define PLUGIN_002_CORE                                                         // NewKAKU : Klik-Aan-Klik-Uit automatische codering.
 #define PLUGIN_006                                                              // Vochtigheid-/temperatuursensor DHT-22
 #define PLUGIN_005                                                              // Temperatuursensor Dallas DS18B20
 #define PLUGIN_020                                                              // Luchtdruksensor BPM085
@@ -57,5 +64,5 @@
 // #define HARDWARE_CLOCK             false
 // #define HARDWARE_I2C               false
 // #define HARDWARE_SDCARD            false
-#define HARDWARE_ETHERNET          false
+// #define HARDWARE_ETHERNET          false
 // #define HARDWARE_NRF24L01          false        

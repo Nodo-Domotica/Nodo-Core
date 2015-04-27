@@ -1705,11 +1705,14 @@ boolean Substitute(char* Input)
   if(TmpStr[0]!=0)
   {
     strcpy(Input,Output);  
+
+    #if HARDWARE_SERIAL_1
     if(Settings.Debug==VALUE_ON)
     {
       Serial.print(F("Substituted: "));
       Serial.println(Input);
     }
+    #endif
   }
 
   if(Grab) // Als % niet correct afgesloten...
@@ -1766,15 +1769,19 @@ boolean Substitute(char* Input)
       error=true;     
 
     if(Res && !error)
-    {
-      strcpy(Input,Output);  
-      if(Settings.Debug==VALUE_ON)
       {
+      strcpy(Input,Output);  
+
+      #if HARDWARE_SERIAL_1
+      if(Settings.Debug==VALUE_ON)
+        {
         Serial.print(F("Calculated: "));
         Serial.println(Input);
-      }
+        }
+      #endif // HARDWARE_SERIAL_1
+
       strcpy(Input,Output);  
-    }
+      }
   }
   free(TmpStr2);
   free(TmpStr);

@@ -6,7 +6,7 @@ byte dummy=0;
 #include <Wire.h>
 #include <avr/pgmspace.h>
 
-#define NODO_BUILD                       813                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       815                                    // ??? Ophogen bij iedere Build / versiebeheer.
 #define PLUGIN_37_COMPATIBILITY        false                                    // Compatibiliteit met plugins die de variabelen tabel UserVar[] nog gebruiken.
 #define NODO_VERSION_MINOR                15                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
@@ -946,7 +946,11 @@ void setup()
 
   #if HARDWARE_ETHERNET
   // Detecteren of fysieke laag is aangesloten wordt niet ondersteund door de Ethernet Library van Arduino.
+
+  #if HARDWARE_SERIAL_1
   Serial.print(F("Ethernet connection: "));
+  #endif // HARDWARE_SERIAL_1
+
   if(EthernetInit())                                                            // Start Ethernet kaart en start de HTTP-Server en de Telnet-server
     {
     HW_SetStatus(HW_ETHERNET,true,true);
@@ -986,7 +990,8 @@ void setup()
   if(HW_config!=HW_status)
     RaiseMessage(MESSAGE_HARDWARE_ERROR,0);
 
-  #if HARDWARE_SDCARD
+  #if HARDWARE_SDCARD && HARDWARE_SERIAL_1
+
   if(HW_SDCARD)
     FileExecute("", "autoexec", "dat",true,VALUE_ALL);                          // Voer bestand AutoExec uit als deze bestaat. die goeie oude MD-DOS tijd ;-)
   #endif

@@ -7,16 +7,19 @@
  * Dit protocol zorgt voor communicatie met een OTGW Opentherm gateway
  * 
  * Support            : www.nodo-domotica.nl
+ *                      http://otgw.tclcode.com (OpenTherm Gateway OTGW informatie)
+  
  *  
- * Versie             : Versie 0.8, 24-04-2015, Paul Tonkes: 
+ * Versie             : Versie 0.8, 26-04-2015, Paul Tonkes: Testversie voor Nodo team
  *                      Versie 0.7, 16-04-2015, Paul Tonkes: Testversie voor Integratie in Nodo versie 3.8
  *                      Versie 0.6, 10-03-2015, Martinus van den Broek: Versie 0.6 Proof of Concept 0.6
  *
  * Nodo productnummer : U N D E R  C O N S T R U C T I O N !
  *   
- * Compatibiliteit    : Vanaf Nodo VERSIE 3.9 build nummer 807
- *			                De plugin gebruikt software serial voor communicatie met de otgw
+ * Compatibiliteit    : Vanaf Nodo VERSIE 3.8 build nummer 812
+ *			                De plugin gebruikt software serial voor communicatie met de OpenTherm Gateway.
  *                      en geeft daardoor mogelijk conflicten met andere Pin Change Int plugins (019,028,030,???)!
+ *                      Ook zal deze plugin niet samenwerken met Plugin_023 (RGB-Led) 
  * 
  * Hardware           : De plugin maakt gebruik van de 2e generatie Nodo-penbezetting met extra lijnen voor
  *                      seriele communicatie. 
@@ -26,8 +29,10 @@
  *                      Voor deze plugin wordt aangeraden een dedicated Arduino te gebruiken. Neem hierbij 
  *                      de penbezetting zoals gedefinieerd in HW-2501.h.
  *                      
- *                      De TX lijn van ATMega kan worden gebruikt als Watchdog. Deze geeft pulsen af op ieder 
- *                      opentherm bericht dat wordt uitgewisseld tussen boiler en thermostaat.     
+ *                      Maak je gebruik van de OTGW hardware zoals aangeboden op http://otgw.tclcode.com 
+ *                      sluit dan de TX lijn van de Arduino aan op de RX-lijn van de PIC16 op de OTGW alsmede
+ *                      de RX lijn van de Arduino op de TX lijn van de RX van de PIC16. De Max232 chip uit het 
+ *                      voetje halen.  
  *
  * Configuratie       : Zet de volgende regels in het config bestand:
  *
@@ -47,17 +52,17 @@
  *			                <basisvariabele> + 6 wordt gebruikt voor monitoring van Flame status
  *			                <basisvariabele> + 7 wordt gebruikt voor monitoring van Boiler Return Water Temperature
  *			                <basisvariabele> + 8 wordt gebruikt voor monitoring van Domestic Hot Water Mode
-
-
-* gaat niet samen met Plugin_023 (RGBLed)
-\*********************************************************************************************/
+ * 
+ *                      Zodra de OpenTherm data wordt ontvangen van de OTGW, zal de data worden verstuurd 
+ *                      als event. Er is geen Eventlist nodig om de data te verzenden en deze plugin kent geen 
+ *                      commando's.  
+ * 
+ \*********************************************************************************************/
 
 #define PLUGIN_ID                        11
 #define PLUGIN_NAME                  "OTGW"
 
-#define PLUGIN_011_BUFFERSIZE            80//???
-#define PLUGIN_011_INTERVAL_SLOW         20
-#define PLUGIN_011_INTERVAL_FAST          5
+#define PLUGIN_011_BUFFERSIZE            40
 #define PLUGIN_011_MAXVAR                 9
 
 // function prototypes for plugin
@@ -86,7 +91,9 @@ void Plugin_011_FLC(void)                                                       
       {
       PLUGIN_011_buffer[count]=0;
 
+      #if HARDWARE_SERIAL_1
       Serial.print(PLUGIN_011_buffer);
+      #endif // HARDWARE_SERIAL_1
               
       byte source = PLUGIN_011_buffer[0];
       byte b1     = PLUGIN_011_hextobyte(PLUGIN_011_buffer,1);
@@ -101,13 +108,13 @@ void Plugin_011_FLC(void)                                                       
         if (b2 == 0x18)					                                                // +1 Room Temperature
           {
           TempFloat=b3+b4*((float)1/256);
-          PLUGIN_011_VarChange(1, TempFloat, OTGW_Data);
+          PLUGIN_011_VarChange(PLUGIN_011_CORE + 1, TempFloat, OTGW_Data);
           }
 
         if (b2 == 0x10)					                                                // +5 Thermostat Set Point
           {
           TempFloat=b3+b4*((float)1/256);
-          PLUGIN_011_VarChange(5, TempFloat, OTGW_Data);
+          PLUGIN_011_VarChange(PLUGIN_011_CORE + 5, TempFloat, OTGW_Data);
           }
         } // if(source==0x54)
 
@@ -117,39 +124,42 @@ void Plugin_011_FLC(void)                                                       
       	if (b2 == 0x19)					                                                // +2 Boiler Water Temperature
           {
           TempFloat=b3+b4*((float)1/256);
-          PLUGIN_011_VarChange(2, TempFloat, OTGW_Data);
+          PLUGIN_011_VarChange(PLUGIN_011_CORE + 2, TempFloat, OTGW_Data);
           }
 
         if (b2 == 0x11)					                                                // +3 Relative Modulation
           {
           TempFloat=b3+b4*((float)1/256);
-          PLUGIN_011_VarChange(3, TempFloat, OTGW_Data);
+          PLUGIN_011_VarChange(PLUGIN_011_CORE + 3, TempFloat, OTGW_Data);
           }
 
         if (b2 == 0x12)					                                                // +4 Boiler Water Pressure
           {
           TempFloat=b3+b4*((float)1/256);
-          PLUGIN_011_VarChange(4, TempFloat, OTGW_Data);
+          PLUGIN_011_VarChange(PLUGIN_011_CORE + 4, TempFloat, OTGW_Data);
           }
 
         if (b2 == 0x00)					                                                // Boiler Status
           {
           TempFloat=(float)((b4 & 0x8) >> 3);                                   // +6 Flame Status in bit 3
-          PLUGIN_011_VarChange(6, TempFloat, OTGW_Data);
+          PLUGIN_011_VarChange(PLUGIN_011_CORE + 6, TempFloat, OTGW_Data);
 
           TempFloat=(float)((b4 & 0x4) >> 2);	  		                            // +8 DHW Mode in bit 2
-          PLUGIN_011_VarChange(8, TempFloat, OTGW_Data);
+          PLUGIN_011_VarChange(PLUGIN_011_CORE + 8, TempFloat, OTGW_Data);
           }
 
         if (b2 == 0x1C)					                                                // +7 Boiler Water Return Temperature
           {
           TempFloat=b3+b4*((float)1/256);
-          PLUGIN_011_VarChange(7, TempFloat, OTGW_Data);
+          PLUGIN_011_VarChange(PLUGIN_011_CORE + 7, TempFloat, OTGW_Data);
           }
 
         }// if (source==0x42)
         
+      #if HARDWARE_SERIAL_1
       Serial.println();
+      #endif
+
       PLUGIN_011_buffer[0]=0;
       count=0;      
       } // if(received[x]==..)
@@ -166,7 +176,10 @@ boolean Plugin_011(byte function, struct NodoEventStruct *event, char *string)
     case PLUGIN_INIT:
       {
       Serial_begin(9600,0);                                                     // Communicatie tussen PIC en ATMega
+
+      #if HARDWARE_SERIAL_1
       Serial.begin(9600);                                                       // Communcatie ATMega via FTDI
+      #endif
 
       FastLoopCall_ptr=&Plugin_011_FLC;                                         // Hiermee plaatsen we een in de hoofdloop van de Nodo een snelle scan-loop
 
@@ -211,17 +224,20 @@ boolean Plugin_011(byte function, struct NodoEventStruct *event, char *string)
           Serial_println(cmd);
           delay(100);
           
+          #if HARDWARE_SERIAL_1
           if(PLUGIN_011_Debug)
             {
             Serial.print(F("("));
             Serial.print(cmd);
             Serial.println(F(") *** Command ***"));
             }
+          #endif
+          
           free(cmd);
 
           UserVariableSet(PLUGIN_011_CORE+5, TempFloat, true);                  // We vullen direct de 'Thermostat Setpoint' omdat de PIC op de OTGW deze waarde pas
-                                                                                // na een minuut verwerkt waardoordespinbox van de WebApp gedurende dze tijd niet
-                                                                                // op de jiste waarde staat. 
+                                                                                // na een minuut verwerkt waardoor de spinbox van de WebApp gedurende lange tijd niet
+                                                                                // op de juiste waarde staat. 
           }
         }
       break;
@@ -279,6 +295,7 @@ boolean PLUGIN_011_VarChange(byte Variable, float Value, unsigned long Data)
   UserVariableSet(PLUGIN_011_CORE+Variable, Value, Change);
   OTGW_PreviousData[Variable]=Data;
   
+  #if HARDWARE_SERIAL_1
   if(PLUGIN_011_Debug)
     {
     switch(Variable)
@@ -319,5 +336,6 @@ boolean PLUGIN_011_VarChange(byte Variable, float Value, unsigned long Data)
     if(Change)
       Serial.print(F(" *** Changed ***"));
     }
+  #endif // HARDWARE_SERIAL_1
   } 
 

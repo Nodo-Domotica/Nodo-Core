@@ -28,10 +28,9 @@
  * 
  * LET OP: Een van de RGB-kleuren maakt gebruik van de IR_TX_DATA pen. Het continue
  *         aansturen van de IR-Leds zou de Leds/transistor kunnen overbelasten.   
- *         Als je deze plugin wilt gebruiken voor aansturing een RGB-LED en je hebt GEEN infrarood-LED's 
- *         aangesloten, dan in je config file de volgende regel opnemen:
  *         
- *         #define PLUGIN_023_CORE_RGBLED 
+ *         #define PLUGIN_023_CORE            // Nodig voor feitelijk aansturen van de RGB-Leds
+ *         #define PLUGIN_023                 // Nodig het commando RGBLedSend
  *          
  *         Zonder deze regel zal de plugin geen LED's aansturen en is alleen RGBLedSend beschikbaar.
  *         Dit is uit veiligheid om te voorkomen dat de Nodo beschadigd raakt omdat default Nodo's op deze 
@@ -133,7 +132,6 @@ void Plugin_023_FLC(void)
       FastLoopCall_ptr==0;
     }
   }
-  
 #endif  
 
 boolean Plugin_023(byte function, struct NodoEventStruct *event, char *string)
@@ -144,8 +142,7 @@ boolean Plugin_023(byte function, struct NodoEventStruct *event, char *string)
   
   switch(function)
     { 
-    #ifdef PLUGIN_023_CORE_RGBLED
-
+    #ifdef PLUGIN_023_CORE
     case PLUGIN_INIT:
       {
       analogWrite(PWM_R,255);
@@ -243,7 +240,8 @@ boolean Plugin_023(byte function, struct NodoEventStruct *event, char *string)
       }
     #endif    
 
-    #ifdef PLUGIN_023_CORE
+    #ifdef PLUGIN_023
+    #if NODO_MEGA
     case PLUGIN_COMMAND:
       {
       ClearEvent(&TempEvent);
@@ -257,9 +255,7 @@ boolean Plugin_023(byte function, struct NodoEventStruct *event, char *string)
       success=true;
       break;
       }
-    #endif // CORE
     
-    #if NODO_MEGA
     case PLUGIN_MMI_IN:
       {
       char *TempStr=(char*)malloc(INPUT_COMMAND_SIZE);
@@ -391,7 +387,9 @@ boolean Plugin_023(byte function, struct NodoEventStruct *event, char *string)
         
       break;
       }
-    #endif //MMI
+
+    #endif // NODO_MEGA
+    #endif // PLUGIN_023
     }      
   return success;
   }

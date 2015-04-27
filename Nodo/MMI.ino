@@ -1718,6 +1718,7 @@ boolean Str2Event(char *Command, struct NodoEventStruct *ResultEvent)
 
 void PrintWelcome(void)
   {
+  #if HARDWARE_SERIAL_1
   // Print Welkomsttekst
   Serial.println(F("!******************************************************************************!"));
   Serial.println(F("Nodo Domotica controller V3.8 (Small)"));
@@ -1731,6 +1732,7 @@ void PrintWelcome(void)
   Serial.print(F(", HWStatus=0x"));
   Serial.println(HW_status,HEX);
   Serial.println(F("!******************************************************************************!"));
+  #endif // HARDWARE_SERIAL_1
   }
 
 #endif
