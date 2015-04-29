@@ -697,21 +697,6 @@ void PrintWelcome(void)
 
     PrintString(TempString,VALUE_ALL);
     
-    if(Settings.HTTPRequest[0])
-      {
-      strcpy(TempString,"Host=");        
-      strcat(TempString,Settings.HTTPRequest);
-      int x=StringFind(TempString,"/");
-      TempString[x]=0;    
-//???      strcat(TempString,", HostIP=");        
-//???  
-//???      if((IPClientIP[0] + IPClientIP[1] + IPClientIP[2] + IPClientIP[3]) > 0)
-//???        strcat(TempString,ip2str(IPClientIP));
-//???      else
-//???        strcat(TempString,"?");        
-  
-      PrintString(TempString,VALUE_ALL);
-      }
     }
   #endif
     

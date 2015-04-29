@@ -132,10 +132,13 @@ Build 816:
 - Geen tekst strings meer als opdracht te versturen naar de Nodo. Op verzoek kan hiervoor een plugin worden gemaakt.
 - Commando ClientIP vervallen (was ook niet in de Wiki opgenomen)
 
+Build 817:
+- Wanneer als host een IP adres wordt opgegeven, zal er geen poging worden gedaan om hierop een DNS resolve op los te laten
+- Als via DNS een verbinding op basis van hostnaam tot stand is gekomen, zal volgende keer een verbinding direct naar IP adres plaats vinden/ 
+
 
 Todo:
 - LET OP: Originele Wire library van I2C zit weer onder de Nodo core. Nog niet duidelijk of deze wel stabiel genoeg is (m.n. bij niet afbreken bij timeouts)
-- Verzoek Martin: Geen DNS resolven als Host IP adres ingevuld.
 - RawsignalCleanup
 - RGBLedSend <unitnummer> geeft event zonder unitnummer. Dit is probleem voor de WebApp. Navraag bij Martin.
 - Plugins langslopen:

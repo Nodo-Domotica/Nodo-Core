@@ -6,7 +6,7 @@ byte dummy=0;
 #include <Wire.h>
 #include <avr/pgmspace.h>
 
-#define NODO_BUILD                       815                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       817                                    // ??? Ophogen bij iedere Build / versiebeheer.
 #define PLUGIN_37_COMPATIBILITY        false                                    // Compatibiliteit met plugins die de variabelen tabel UserVar[] nog gebruiken.
 #define NODO_VERSION_MINOR                15                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.
@@ -762,7 +762,7 @@ boolean Transmission_SendtoFast=false;                                          
 byte AlarmPrevious[ALARM_MAX];                                                  // Bevat laatste afgelopen alarm. Ter voorkoming dat alarmen herhaald aflopen.
 boolean WebApp=false;                                                           // ??? Deze vlag moet later onder Port_WebSocket worden ondergebracht
 uint8_t MD5HashCode[16];                                                        // tabel voor berekenen van MD5 hash codes.
-int TimerCookie;                                                                // Seconden teller die bijhoudt wanneer er weer een nieuw Cookie naar de WebApp verzonden moet worden.
+int TimerCookie=5;                                                              // Seconden teller die bijhoudt wanneer er weer een nieuw Cookie naar de WebApp verzonden moet worden.
 int TerminalConnected=0;                                                        // Vlag geeft aan of en hoe lang nog (seconden) er verbinding is met een Terminal.
 int TerminalLocked=1;                                                           // 0 als als gebruiker van een telnet terminalsessie juiste wachtwoord heeft ingetoetst
 char TempLogFile[13];                                                           // Naam van de Logfile waar (naast de standaard logging) de verwerking in gelogd moet worden.
@@ -944,7 +944,7 @@ void setup()
 
 
   #if HARDWARE_ETHERNET
-  // Detecteren of fysieke laag is aangesloten wordt niet ondersteund door de Ethernet Library van Arduino.
+  // Detecteren of fysieke laag is aangesloten wordt niet ondersteund door de Ethernet Library van Arduino :-(
 
   #if HARDWARE_SERIAL_1
   Serial.print(F("Ethernet connection: "));
@@ -954,12 +954,25 @@ void setup()
     {
     HW_SetStatus(HW_ETHERNET,true,true);
     if(Settings.Password[0]!=0 && Settings.TransmitHTTP!=VALUE_OFF)
-      SendHTTPCookie();                                                         // stuur gelijk cookie naar WebApp
+      {
+      #if HARDWARE_SERIAL_1
+      Serial.print(F("Host connection: "));Serial.print(Settings.HTTPRequest);
+      if(SendHTTPCookie())                                                     // Verzend een nieuw cookie
+        {
+        WebApp=true;
+        Serial.println(F(" Ok."));
+        }        
+      #endif // HARDWARE_SERIAL_1
+
+      #if HARDWARE_SERIAL_1
+      else
+        Serial.println(F(" Failed!"));
+      #endif // HARDWARE_SERIAL_1
+      }
     }
   else
     {
     HW_SetStatus(HW_ETHERNET,false,true);
-    RaiseMessage(MESSAGE_TCPIP_FAILED,0);
     }
   #endif
 
@@ -1381,7 +1394,7 @@ void loop()
         }
         
       // Timer voor verzenden van Cookie naar de WebApp/Server
-      if(Settings.Password[0]!=0 && Settings.TransmitHTTP!=VALUE_OFF)
+      if(WebApp)
         {
         if(TimerCookie>0)
           TimerCookie--;
@@ -1391,7 +1404,7 @@ void loop()
           SendHTTPCookie(); // Verzend een nieuw cookie
           }
         }
-      #endif // ethernetserver_h
+      #endif // HARDWARE_ETHERNET
 
 
       // Timer voor blokkeren verwerking. teller verlagen

@@ -92,12 +92,20 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   #if HARDWARE_ETHERNET
   if((Port==VALUE_SOURCE_HTTP || Port==VALUE_ALL || ES->Type==NODO_TYPE_PLUGIN_EVENT) && ES->Type!=NODO_TYPE_SYSTEM )
     {
-    ES->Port=VALUE_SOURCE_HTTP;
-    ES->SourceUnit=Source;                                                      // oorspronkelijke bron weergeven
-    if(Display)PrintEvent(ES,VALUE_ALL);
-    //Trace("SendEvent(): HTTP Start.",0);//???
-    SendHTTPEvent(ES);
-    //Trace("SendEvent(): HTTP End.",0);//???
+    if(WebApp)
+      {
+      ES->Port=VALUE_SOURCE_HTTP;
+      ES->SourceUnit=Source;                                                      // oorspronkelijke bron weergeven
+      if(Display)PrintEvent(ES,VALUE_ALL);
+      // Trace("SendEvent(): HTTP Start.",0);//???
+      if(!SendHTTPEvent(ES))
+        {
+        WebApp=false;
+        RaiseMessage(MESSAGE_TCPIP_FAILED,0);
+        WebApp=true;
+        }
+      // Trace("SendEvent(): HTTP End.",0);//???
+      }
     }
   #endif 
   }

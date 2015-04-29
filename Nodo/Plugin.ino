@@ -934,7 +934,10 @@ byte PluginCall(byte Function, struct NodoEventStruct *Event, char *str)
     case PLUGIN_SERIAL_IN:
     #endif
     
+    #if HARDWARE_ETHERNET
     case PLUGIN_ETHERNET_IN:
+    #endif
+    
       for(x=0; x<PLUGIN_MAX; x++)
         if(Plugin_id[x]!=0)
           if(Plugin_ptr[x](Function,Event,str))
