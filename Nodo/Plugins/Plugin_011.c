@@ -1,4 +1,4 @@
-
+                                              
 //#######################################################################################################
 //#################################### Plugin-011: OpenTherm GateWay plugin #############################
 //#######################################################################################################
@@ -33,6 +33,11 @@
  *                      sluit dan de TX lijn van de Arduino aan op de RX-lijn van de PIC16 op de OTGW alsmede
  *                      de RX lijn van de Arduino op de TX lijn van de RX van de PIC16. De Max232 chip uit het 
  *                      voetje halen.  
+ *                      
+ *                      Optioneel gebruiken:
+ *                       
+ *                      a) WiredOut-1 is hoog zolang er data wordt ontvangen van de OTGW.
+ *                      b) WiredOut-2 kan worden gebruikt voor een LED: Licht op zodra Nodo variabele ontvangen of verzonden.      
  *
  * Configuratie       : Zet de volgende regels in het config bestand:
  *
@@ -64,6 +69,9 @@
 
 #define PLUGIN_011_BUFFERSIZE            40
 #define PLUGIN_011_MAXVAR                 9
+#define PLUGIN_011_WATCHDOG_TIMEOUT   60000                                     // Als de plugin x milliseconden geen data meer ontvangt van de PIC16, dan wordt de WiredOut lijn LAAG.
+#define PLUGIN_011_LED_FLASH            500
+
 
 // function prototypes for plugin
 boolean PLUGIN_011_softSerialSend(char *cmd, int intdelay);
@@ -74,11 +82,18 @@ boolean PLUGIN_011_VarChange(byte Variable, float Value, unsigned long Data);
 boolean PLUGIN_011_Debug=false;
 unsigned long OTGW_Data, OTGW_PreviousData[PLUGIN_011_MAXVAR];
 char PLUGIN_011_buffer[PLUGIN_011_BUFFERSIZE+1];
+unsigned long PLUGIN_011_WatchDogTimer;
+unsigned long PLUGIN_011_LedTimer;
 
 void Plugin_011_FLC(void)                                                       // wordt vanuit de hoofdloop van de Nodo-core zeer frequent aangeroepen.
   {  
   static byte count=0;
   char received;
+
+  if(PLUGIN_011_LedTimer>millis())
+    digitalWrite(PIN_WIRED_OUT_2, HIGH);
+  else
+    digitalWrite(PIN_WIRED_OUT_2, LOW);
 
   while(Serial_available())
     {
@@ -90,6 +105,8 @@ void Plugin_011_FLC(void)                                                       
     if(received==0x0A)
       {
       PLUGIN_011_buffer[count]=0;
+
+      PLUGIN_011_WatchDogTimer=millis() + PLUGIN_011_WATCHDOG_TIMEOUT;
 
       #if HARDWARE_SERIAL_1
       Serial.print(PLUGIN_011_buffer);
@@ -177,6 +194,8 @@ boolean Plugin_011(byte function, struct NodoEventStruct *event, char *string)
       {
       Serial_begin(9600,0);                                                     // Communicatie tussen PIC en ATMega
 
+      PLUGIN_011_WatchDogTimer=millis() + PLUGIN_011_WATCHDOG_TIMEOUT;
+
       #if HARDWARE_SERIAL_1
       Serial.begin(9600);                                                       // Communcatie ATMega via FTDI
       #endif
@@ -238,6 +257,7 @@ boolean Plugin_011(byte function, struct NodoEventStruct *event, char *string)
           UserVariableSet(PLUGIN_011_CORE+5, TempFloat, true);                  // We vullen direct de 'Thermostat Setpoint' omdat de PIC op de OTGW deze waarde pas
                                                                                 // na een minuut verwerkt waardoor de spinbox van de WebApp gedurende lange tijd niet
                                                                                 // op de juiste waarde staat. 
+          PLUGIN_011_LedTimer=millis()+ PLUGIN_011_LED_FLASH;                   // Laat LED op WiredOut-2 oplichten.
           }
         }
       break;
@@ -248,6 +268,20 @@ boolean Plugin_011(byte function, struct NodoEventStruct *event, char *string)
       {
       if(Serial.available())
         PLUGIN_011_Debug=true;
+        
+      if(PLUGIN_011_WatchDogTimer<millis())
+        {
+        digitalWrite(PIN_WIRED_OUT_1, LOW);
+
+        #if HARDWARE_SERIAL_1
+        Serial.println(F("*** No data received from OTGW! ***"));//???
+        #endif
+        }
+      else
+        {
+        digitalWrite(PIN_WIRED_OUT_1, HIGH);
+        }
+        
   
       } // case PLUGIN_ONCE_A_SECOND
     }
@@ -294,11 +328,15 @@ boolean PLUGIN_011_VarChange(byte Variable, float Value, unsigned long Data)
   
   UserVariableSet(PLUGIN_011_CORE+Variable, Value, Change);
   OTGW_PreviousData[Variable]=Data;
+
+  if(Change)
+    PLUGIN_011_LedTimer=millis()+ PLUGIN_011_LED_FLASH;                         // Laat LED op WiredOut-2 oplichten.
+
   
   #if HARDWARE_SERIAL_1
   if(PLUGIN_011_Debug)
     {
-    switch(Variable)
+    switch(Variable-PLUGIN_011_CORE)
       {
       case 1:
         Serial.print(F(" (Room Temperature="));Serial.print(TempFloat);Serial.print(")");
@@ -337,5 +375,6 @@ boolean PLUGIN_011_VarChange(byte Variable, float Value, unsigned long Data)
       Serial.print(F(" *** Changed ***"));
     }
   #endif // HARDWARE_SERIAL_1
+  
   } 
 

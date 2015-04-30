@@ -14,8 +14,7 @@
 
 // ATMega specifiek: ====================================================================================================
 #define EEPROM_SIZE               1024                                          // Groote van het EEPROM geheugen.
-
-// WiredIn: =============================================================================================================
+                                                                                                      // WiredIn: =============================================================================================================
 #define HARDWARE_WIRED_IN_PORTS      4                                          // Aantal WiredIn/WiredOut poorten
 #define PIN_WIRED_IN_1               0                                          // Wired-In 1 t/m 4 aangesloten op A0 t/m A3
 #define PIN_WIRED_IN_2               1                                          // Wired-In 1 t/m 4 aangesloten op A0 t/m A3

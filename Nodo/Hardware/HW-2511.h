@@ -5,7 +5,7 @@
 // # beschadiging van hardware kan optreden als gevolg van andere pen-definities. #
 // #                                                                              #
 // #                                                                              #
-// ####### Arduino project "Nodo" © Copyright 2010..2015 Paul Tonkes ############## 
+// ####### Arduino project "Nodo" ? Copyright 2010..2015 Paul Tonkes ############## 
 
 
 // Nodo algemeen: =======================================================================================================
@@ -14,9 +14,14 @@
 // ATMega specifiek: ====================================================================================================
 #define EEPROM_SIZE               1024                                          // Groote van het EEPROM geheugen.
 
+// WiredOut: ============================================================================================================
+#define HARDWARE_WIRED_OUT_PORTS     2                                          // aantal WiredOut poorten
+#define PIN_WIRED_OUT_1              9                                          // WiredOut 1 (PWM)
+#define PIN_WIRED_OUT_2             10                                          // WiredOut 2 (PWM)
+
 // Status Led: ==============================================================================================================
-#define HARDWARE_STATUS_LED       true    
-#define PIN_LED                     13
+// #define HARDWARE_STATUS_LED       true    
+// #define PIN_LED                     13
 
 // Serial: ============================================================================================================
 #define HARDWARE_SERIAL_1         true
