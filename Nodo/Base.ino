@@ -111,18 +111,18 @@ byte dummy=0;
 
 // t.b.v. includen Config_xx.c files
 #define  stringify(x) #x
-#define  CONFIGFILE2(a, b) stringify(a/Config/b)
+#define  CONFIGFILE2(a, b) stringify(a\Config\b)
 #define  CONFIGFILE(a, b) CONFIGFILE2(a, b)
 #include CONFIGFILE(SKETCH_PATH,CONFIG_FILE)
 
 #define  stringify(x) #x
-#define  HARDWAREFILE2(a, b) stringify(a/Hardware/HW-b.h)
+#define  HARDWAREFILE2(a, b) stringify(a\Hardware\HW-b.h)
 #define  HARDWAREFILE(a, b) HARDWAREFILE2(a, b)
 #include HARDWAREFILE(SKETCH_PATH,HARDWARE_CONFIG)
 
 // Tweede maal includen zodat HARDWARE_xxxx overruled regels worden geset.
 #define  stringify(x) #x
-#define  CONFIGFILE2(a, b) stringify(a/Config/b)
+#define  CONFIGFILE2(a, b) stringify(a\Config\b)
 #define  CONFIGFILE(a, b) CONFIGFILE2(a, b)
 #include CONFIGFILE(SKETCH_PATH,CONFIG_FILE)
 

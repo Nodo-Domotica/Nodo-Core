@@ -58,7 +58,7 @@
 // compileren.Geef het volledige pad op.
 // Let op: Bij Linux/Unix zijn de namen case-sensitive.
 
-#define SKETCH_PATH  /Volumes/1 TB HDD/Dropbox/Arduino/Nodo-Core/Nodo/
+#define SKETCH_PATH  D:\User\Paul\GitHub\Nodo-Core\Nodo
 
 
 // ################################### Stap-2 #####################################################
@@ -80,7 +80,7 @@
 // In de config-file wordt tevens opgegeven welke plugins in de Nodo geladen moeten worden.
 // Kijk voor verdere info in de config-files.
 
-#define CONFIG_FILE Config_01.c
+#define CONFIG_FILE Config_16.c
 
 
 // ################################### Stap-3 #####################################################
@@ -101,8 +101,7 @@
 //         regel worden voorafgegaan door de comment tekens '//' om zo geheugen
 //         te besparen. Voor een Nodo-Mega is het gebruik van een SDCard verplicht.
 
- 
-#include <SD.h>
+// #include <SD.h>
 
 
 // ################################### Stap-4 #####################################################
