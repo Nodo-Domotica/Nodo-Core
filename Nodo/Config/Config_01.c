@@ -48,6 +48,31 @@
 #define PLUGIN_023                                                              // RGB-Led aansturing
 
 
+#define PLUGIN_021
+#define PLUGIN_021_CORE 2
+#define PLUGIN_021_LABEL_04	"Alarm On"
+#define PLUGIN_021_LABEL_05	"Alarm Off"
+#define PLUGIN_021_LABEL_06	"Alarm Pending..."
+#define PLUGIN_021_LABEL_07	"Intruder!"
+#define PLUGIN_021_LABEL_08	"Alert!"
+#define PLUGIN_021_LABEL_09	"Temp: "
+#define PLUGIN_021_LABEL_10	"Hum: "
+#define PLUGIN_021_LABEL_11	{0xDF, 0}
+#define PLUGIN_021_LABEL_12	"%"
+#define PLUGIN_021_LABEL_13	""
+#define PLUGIN_021_LABEL_14	""
+#define PLUGIN_021_LABEL_15	""
+#define PLUGIN_021_LABEL_16	""
+#define PLUGIN_021_LABEL_17	""
+#define PLUGIN_021_LABEL_18	""
+#define PLUGIN_021_LABEL_19	""
+#define PLUGIN_021_LABEL_20	""
+#define plugin_254		""
+#define plugin_254_CORE		""
+
+
+
+
 //=======================================================================================================================
 // Eventueel mogen hardware opties worden uitgeschakeld door remarks '//' voor onderstaande regels weg te halen
 // bijvoorbeeld om niet gebruike opties uit te schakelen en geheugenruimte vrij te maken voor plugins.
