@@ -46,30 +46,30 @@
 #define PLUGIN_ID 21
 #define PLUGIN_NAME "LCDWrite"
 
-prog_char PROGMEM LCD_01[] = "Nodo Domotica";
-prog_char PROGMEM LCD_02[] = "Mega R:%03d U:%d";
-prog_char PROGMEM LCD_03[] = "Small R:%03d U:%d";
-prog_char PROGMEM LCD_04[] = PLUGIN_021_LABEL_04;
-prog_char PROGMEM LCD_05[] = PLUGIN_021_LABEL_05;
-prog_char PROGMEM LCD_06[] = PLUGIN_021_LABEL_06;
-prog_char PROGMEM LCD_07[] = PLUGIN_021_LABEL_07;
-prog_char PROGMEM LCD_08[] = PLUGIN_021_LABEL_08;
-prog_char PROGMEM LCD_09[] = PLUGIN_021_LABEL_09;
-prog_char PROGMEM LCD_10[] = PLUGIN_021_LABEL_10;
-prog_char PROGMEM LCD_11[] = PLUGIN_021_LABEL_11;
-prog_char PROGMEM LCD_12[] = PLUGIN_021_LABEL_12;
-prog_char PROGMEM LCD_13[] = PLUGIN_021_LABEL_13;
-prog_char PROGMEM LCD_14[] = PLUGIN_021_LABEL_14;
-prog_char PROGMEM LCD_15[] = PLUGIN_021_LABEL_15;
-prog_char PROGMEM LCD_16[] = PLUGIN_021_LABEL_16;
-prog_char PROGMEM LCD_17[] = PLUGIN_021_LABEL_17;
-prog_char PROGMEM LCD_18[] = PLUGIN_021_LABEL_18;
-prog_char PROGMEM LCD_19[] = PLUGIN_021_LABEL_19;
-prog_char PROGMEM LCD_20[] = PLUGIN_021_LABEL_20;
+const char PROGMEM LCD_01[] = "Nodo Domotica";
+const char PROGMEM LCD_02[] = "Mega R:%03d U:%d";
+const char PROGMEM LCD_03[] = "Small R:%03d U:%d";
+const char PROGMEM LCD_04[] = PLUGIN_021_LABEL_04;
+const char PROGMEM LCD_05[] = PLUGIN_021_LABEL_05;
+const char PROGMEM LCD_06[] = PLUGIN_021_LABEL_06;
+const char PROGMEM LCD_07[] = PLUGIN_021_LABEL_07;
+const char PROGMEM LCD_08[] = PLUGIN_021_LABEL_08;
+const char PROGMEM LCD_09[] = PLUGIN_021_LABEL_09;
+const char PROGMEM LCD_10[] = PLUGIN_021_LABEL_10;
+const char PROGMEM LCD_11[] = PLUGIN_021_LABEL_11;
+const char PROGMEM LCD_12[] = PLUGIN_021_LABEL_12;
+const char PROGMEM LCD_13[] = PLUGIN_021_LABEL_13;
+const char PROGMEM LCD_14[] = PLUGIN_021_LABEL_14;
+const char PROGMEM LCD_15[] = PLUGIN_021_LABEL_15;
+const char PROGMEM LCD_16[] = PLUGIN_021_LABEL_16;
+const char PROGMEM LCD_17[] = PLUGIN_021_LABEL_17;
+const char PROGMEM LCD_18[] = PLUGIN_021_LABEL_18;
+const char PROGMEM LCD_19[] = PLUGIN_021_LABEL_19;
+const char PROGMEM LCD_20[] = PLUGIN_021_LABEL_20;
 
 #define LCDI2C_MSG_MAX        20
 
-PROGMEM const char *LCDText_tabel[]={LCD_01,LCD_02,LCD_03,LCD_04,LCD_05,LCD_06,LCD_07,LCD_08,LCD_09,LCD_10,LCD_11,LCD_12,LCD_13,LCD_14,LCD_15,LCD_16,LCD_17,LCD_18,LCD_19,LCD_20};
+PROGMEM const char  *const LCDText_tabel[]={LCD_01,LCD_02,LCD_03,LCD_04,LCD_05,LCD_06,LCD_07,LCD_08,LCD_09,LCD_10,LCD_11,LCD_12,LCD_13,LCD_14,LCD_15,LCD_16,LCD_17,LCD_18,LCD_19,LCD_20};
 
 #define LCD_I2C_ADDRESS 0x27
 
@@ -259,7 +259,7 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
            #if NODO_MEGA
            #ifdef ethernetserver_h
            case CMD_NODO_IP:	// Display IP on Mega
-           sprintf(TempString,"%u.%u.%u.%u", EthernetNodo.localIP()[0],EthernetNodo.localIP()[1],EthernetNodo.localIP()[2],EthernetNodo.localIP()[3]);
+           //sprintf(TempString,"%u.%u.%u.%u", EthernetNodo.localIP()[0],EthernetNodo.localIP()[1],EthernetNodo.localIP()[2],EthernetNodo.localIP()[3]);
            break;
 
            case CMD_PORT_INPUT:	// Display Port on Mega
