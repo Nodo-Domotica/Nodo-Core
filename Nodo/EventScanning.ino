@@ -11,6 +11,8 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
 
   while(Timer>millis() || RepeatingTimer>millis())
     {
+/* ???
+
     #if HARDWARE_NRF24L01
     if(Focus==0 || Focus==VALUE_SOURCE_NRF24L01)
       {
@@ -46,14 +48,16 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
         }
       }
   	#endif
-      
+*/      
     #if HARDWARE_RF433
     if(Focus==0 || Focus==VALUE_SOURCE_RF)
       {
       if(FetchSignal(PIN_RF_RX_DATA,HIGH))                                      // RF: *************** kijk of er data start **********************
         {
+Serial.println(F("DEBUG: 1"));//???
         if(AnalyzeRawSignal(Event))
           {
+Serial.println(F("DEBUG: 2"));//???
           Fetched=VALUE_SOURCE_RF;
           Focus=Fetched;
           }
@@ -63,6 +67,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
 
     if(Fetched)
       {
+Serial.println(F("DEBUG: 3"));//???
       SignalHash=(Event->Command<<24 | Event->Type<<16 | Event->Par1<<8) ^ Event->Par2;
       Event->Port=Fetched;
       Event->Direction=VALUE_DIRECTION_INPUT;
@@ -94,6 +99,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       
       if(Fetched)
         {
+Serial.println(F("DEBUG: 4"));//???
         // als het informatie uitwisseling tussen Nodo's betreft...
         if(Event->Type==NODO_TYPE_EVENT || Event->Type==NODO_TYPE_COMMAND || Event->Type==NODO_TYPE_SYSTEM)
           {
@@ -112,7 +118,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
         if(Event->DestinationUnit==0 || Event->DestinationUnit==Settings.Unit)
           {
           EventHashPrevious=SignalHash;
-          // PrintNodoEvent("Ontvangen event:",Event);//???
+          PrintNodoEvent("DEBUG: Ontvangen event:",Event);//???
           return true;
           }
         }

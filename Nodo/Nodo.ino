@@ -80,7 +80,7 @@
 // In de config-file wordt tevens opgegeven welke plugins in de Nodo geladen moeten worden.
 // Kijk voor verdere info in de config-files.
 
-#define CONFIG_FILE Config_16.c
+#define CONFIG_FILE Config_15.c
 
 
 // ################################### Stap-3 #####################################################

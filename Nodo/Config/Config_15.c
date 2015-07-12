@@ -35,8 +35,8 @@
 // #define PLUGIN_001_CORE                                                        // Kaku: Klik-Aan-Klik-Uit
 // #define PLUGIN_002_CORE                                                        // NewKAKU: Klik-Aan-Klik-Uit met automatische codering. Tevens bekend als Intertechno.
 // #define PLUGIN_005_CORE                                                        // Temperatuursensor Dallas DS18B20
-// #define PLUGIN_006_CORE 22                                                     // 22=DHT-22 sensor, 11=DHT-11 sensor
-// #define PLUGIN_020_CORE                                                        // BMP085 Luchtdruk sensor 
+#define PLUGIN_006_CORE 22                                                     // 22=DHT-22 sensor, 11=DHT-11 sensor
+#define PLUGIN_020_CORE                                                        // BMP085 Luchtdruk sensor 
 // #define PLUGIN_023_CORE                                                        // RGB-Led aansturing
 
 
