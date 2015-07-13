@@ -99,17 +99,17 @@ OpenTherm             Gateway Setpoint            0x8010
                       DHW Mode                    0x8018
 
 
-Weerstation           (nog nader bepalen)         0x802x
-                      Temperatuur Celcius         0x802x
-                      Temperatuur max.            0x802x
-                      Temperatuur min.            0x802x
-                      Neerslag mm                 0x802x
-                      Windsnelheid Bft            0x802x
-                      Windsnelheid m/s            0x802x
-                      Windrichting                0x802x
-                      Luchtdruk(mbar)             0x802x
-                      Relatieve vochtigheid%      0x802x
-                      (nog nader bepalen)         0x802x
+Weerstation           Rukwinden		              0x8020
+                      Temperatuur Celcius         0x8021
+                      Temperatuur max.            0x8022
+                      Temperatuur min.            0x8023
+                      Neerslag mm                 0x8024
+                      Windsnelheid Bft            0x8025
+                      Windsnelheid m/s            0x8026
+                      Windrichting                0x8027
+                      Luchtdruk(mbar)             0x8028
+                      Relatieve vochtigheid%      0x8029
+                      
                      
 ========== Door gebruiker zelf te definieren =======================================
 Vrij                   Vrij                   0xfxxx
