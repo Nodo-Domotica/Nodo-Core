@@ -20,11 +20,6 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   boolean Nodo      = ES->Type==NODO_TYPE_EVENT || ES->Type==NODO_TYPE_COMMAND || ES->Type==NODO_TYPE_SYSTEM; 
   boolean Broadcast = (ES->Flags&TRANSMISSION_BROADCAST)!=0;
 
-  #if HARDWARE_STATUS_LED_RGB
-  if(Broadcast)
-    Led(BLUE);
-  #endif
-  
   PluginCall(PLUGIN_EVENT_OUT, ES,0);                                           // loop de plugins langs voor eventuele afhandeling van dit event.
 
   #if HARDWARE_RAWSIGNAL

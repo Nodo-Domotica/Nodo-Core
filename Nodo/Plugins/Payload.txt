@@ -99,7 +99,7 @@ OpenTherm             Gateway Setpoint            0x8010
                       DHW Mode                    0x8018
 
 
-Weerstation           Rukwinden		              0x8020
+Weerstation           Rukwinden		          0x8020
                       Temperatuur Celcius         0x8021
                       Temperatuur max.            0x8022
                       Temperatuur min.            0x8023

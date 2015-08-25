@@ -136,6 +136,10 @@ Build 817:
 - Wanneer als host een IP adres wordt opgegeven, zal er geen poging worden gedaan om hierop een DNS resolve op los te laten
 - Als via DNS een verbinding op basis van hostnaam tot stand is gekomen, zal volgende keer een verbinding direct naar IP adres plaats vinden/ 
 
+Build 8xx
+- R818 Plugin 21 compile error #912
+
+
 
 Todo:
 - LET OP: Originele Wire library van I2C zit weer onder de Nodo core. Nog niet duidelijk of deze wel stabiel genoeg is (m.n. bij niet afbreken bij timeouts)

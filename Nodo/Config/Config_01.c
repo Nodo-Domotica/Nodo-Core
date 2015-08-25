@@ -35,13 +35,13 @@
 
 
 // A: Feitelijke aansturing/verwerking
-#define PLUGIN_001                                                              // Kaku : Klik-Aan-Klik-Uit
-#define PLUGIN_002                                                              // NewKAKU : Klik-Aan-Klik-Uit automatische codering.
+#define PLUGIN_001_CORE                                                         // Kaku : Klik-Aan-Klik-Uit
+#define PLUGIN_002_CORE                                                         // NewKAKU : Klik-Aan-Klik-Uit automatische codering.
 
 
 // B: Events/commando's invoeren, doorgeven en weergeven (MMI)
-#define PLUGIN_001_CORE                                                         // Kaku : Klik-Aan-Klik-Uit
-#define PLUGIN_002_CORE                                                         // NewKAKU : Klik-Aan-Klik-Uit automatische codering.
+#define PLUGIN_001                                                              // Kaku : Klik-Aan-Klik-Uit
+#define PLUGIN_002                                                              // NewKAKU : Klik-Aan-Klik-Uit automatische codering.
 #define PLUGIN_006                                                              // Vochtigheid-/temperatuursensor DHT-22
 #define PLUGIN_005                                                              // Temperatuursensor Dallas DS18B20
 #define PLUGIN_020                                                              // Luchtdruksensor BPM085
@@ -64,5 +64,5 @@
 // #define HARDWARE_CLOCK             false
 // #define HARDWARE_I2C               false
 // #define HARDWARE_SDCARD            false
-// #define HARDWARE_ETHERNET          false
+#define HARDWARE_ETHERNET          false
 // #define HARDWARE_NRF24L01          false        

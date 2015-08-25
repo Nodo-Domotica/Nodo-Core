@@ -259,7 +259,7 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
            #if NODO_MEGA
            #ifdef ethernetserver_h
            case CMD_NODO_IP:	// Display IP on Mega
-           sprintf(TempString,"%u.%u.%u.%u", EthernetNodo.localIP()[0],EthernetNodo.localIP()[1],EthernetNodo.localIP()[2],EthernetNodo.localIP()[3]);
+           sprintf(TempString,"%u.%u.%u.%u", Ethernet.localIP()[0],Ethernet.localIP()[1],Ethernet.localIP()[2],Ethernet.localIP()[3]);
            break;
 
            case CMD_PORT_INPUT:	// Display Port on Mega
