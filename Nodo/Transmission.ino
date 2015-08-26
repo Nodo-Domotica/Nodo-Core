@@ -43,8 +43,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
 
 
   #if HARDWARE_RF433
-//???  if(Broadcast || Port==VALUE_SOURCE_RF || (Port==VALUE_ALL && (!Nodo || NodoOnline(0,VALUE_SOURCE_RF,0))))
-  if(1)
+  if(Broadcast || Port==VALUE_SOURCE_RF || (Port==VALUE_ALL && (!Nodo || NodoOnline(0,VALUE_SOURCE_RF,0))))
     {
     #if NODO_MEGA && HARDWARE_SERIAL_1
     ES->Port=VALUE_SOURCE_RF;
@@ -62,10 +61,8 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     ES->Port=VALUE_SOURCE_NRF24L01;
     if(Display)PrintEvent(ES,VALUE_ALL);
     #endif
-    // Trace("SendEvent(): NRF24L01 Start.",0);//???
     if(byte x=Port_NRF24L01_EventSend(ES))
       RaiseMessage(MESSAGE_NODO_NOT_FOUND,x);
-    // Trace("SendEvent(): NRF24L01 Finish.",0);//???
     }
   #endif
   
@@ -77,9 +74,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
     #if NODO_MEGA
     if(Display)PrintEvent(ES,VALUE_ALL);
     #endif
-    //Trace("SendEvent(): I2C Start.",0);//???
     Port_I2C_EventSend(ES);
-    //Trace("SendEvent(): I2C Finish.",0);//???
     }
   #endif
   
@@ -92,14 +87,12 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
       ES->Port=VALUE_SOURCE_HTTP;
       ES->SourceUnit=Source;                                                      // oorspronkelijke bron weergeven
       if(Display)PrintEvent(ES,VALUE_ALL);
-      // Trace("SendEvent(): HTTP Start.",0);//???
       if(!SendHTTPEvent(ES))
         {
         WebApp=false;
         RaiseMessage(MESSAGE_TCPIP_FAILED,0);
         WebApp=true;
         }
-      // Trace("SendEvent(): HTTP End.",0);//???
       }
     }
   #endif 

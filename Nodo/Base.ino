@@ -6,7 +6,7 @@ byte dummy=0;
 #include <Wire.h>
 #include <avr/pgmspace.h>
 
-#define NODO_BUILD                       817                                    // ??? Ophogen bij iedere Build / versiebeheer.
+#define NODO_BUILD                       820                                    // ??? Ophogen bij iedere Build / versiebeheer.
 #define PLUGIN_37_COMPATIBILITY        false                                    // Compatibiliteit met plugins die de variabelen tabel UserVar[] nog gebruiken.
 #define NODO_VERSION_MINOR                15                                    // Ophogen bij gewijzigde settings struct of nummering events/commando's. 
 #define NODO_VERSION_MAJOR                 3                                    // Ophogen bij DataBlock en NodoEventStruct wijzigingen.

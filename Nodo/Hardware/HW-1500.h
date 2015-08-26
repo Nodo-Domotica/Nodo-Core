@@ -22,12 +22,12 @@
 #define PIN_WIRED_IN_4               3                                          // Wired-In 1 t/m 4 aangesloten op A0 t/m A3
 
 // WiredOut: ============================================================================================================
-#define HARDWARE_WIRED_OUT_PORTS     5                                          // aAntal WiredIn/WiredOut poorten
+#define HARDWARE_WIRED_OUT_PORTS     4                                          // Aantal WiredIn/WiredOut poorten
 #define PIN_WIRED_OUT_1              7                                          // digitale outputs D07 t/m D10 worden gebruikt voor WiredOut 1 tot en met 4
 #define PIN_WIRED_OUT_2              8                                          // digitale outputs D07 t/m D10 worden gebruikt voor WiredOut 1 tot en met 4
 #define PIN_WIRED_OUT_3              9                                          // (pwm) 4 digitale outputs D07 t/m D10 worden gebruikt voor WiredOut 1 tot en met 4
 #define PIN_WIRED_OUT_4             10                                          // (pwm) 4 digitale outputs D07 t/m D10 worden gebruikt voor WiredOut 1 tot en met 4
-#define PIN_WIRED_OUT_5             11                                          // (pwm) Extra digitale output, op standaard Nodo is dit de IR-Led !!!
+// #define PIN_WIRED_OUT_5             11                                          // (pwm) Extra digitale output, op standaard Nodo is dit de IR-Led !!!
 
 // Status Led: ==============================================================================================================
 #define HARDWARE_STATUS_LED       true    

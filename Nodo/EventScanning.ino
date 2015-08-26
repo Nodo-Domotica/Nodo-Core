@@ -1,4 +1,5 @@
 
+
 unsigned long RepeatingTimer=0L;
 unsigned long EventHashPrevious=0,SignalHash,SignalHashPrevious=0L;
 
@@ -52,6 +53,7 @@ boolean ScanEvent(struct NodoEventStruct *Event)                                
       {
       if(FetchSignal(PIN_RF_RX_DATA,HIGH))                                      // RF: *************** kijk of er data start **********************
         {
+        // PrintRawSignal(); //???
         if(AnalyzeRawSignal(Event))
           {
           Fetched=VALUE_SOURCE_RF;

@@ -111,13 +111,8 @@ boolean Plugin_006(byte function, struct NodoEventStruct *event, char *string)
               
             byte dht_check_sum = dht_dat[0]+dht_dat[1]+dht_dat[2]+dht_dat[3];   // check checksum. Checksum calculation is a Rollover Checksum by design.
 
-Serial.println(F("Trace-1"));delay(500);///???
-delay(500);//???
-
             if(dht_dat[4]== dht_check_sum)
               {
-Serial.println(F("Trace-2"));delay(500);///???
-delay(500);//???
 
               #if PLUGIN_006_CORE==11                                           // Code door de DHT-11 variant
 
@@ -130,8 +125,6 @@ delay(500);//???
               #endif
               
               #if PLUGIN_006_CORE==22                                           // Code door de DHT-22 variant
-
-Serial.println(F("Trace-3"));//???
 
               if (dht_dat[2] & 0x80)                                            // negative temperature
                 {
@@ -146,7 +139,6 @@ Serial.println(F("Trace-3"));//???
               TempFloat=word(dht_dat[0], dht_dat[1]) * 0.1;                     // vochtigheid
               UserVariableSet(event->Par2+1,TempFloat,DHT_EVENT);
               #endif
-Serial.println(F("Trace-4"));//???
 
               success=true;
               }
@@ -156,7 +148,6 @@ Serial.println(F("Trace-4"));//???
           delay(1000);
 
         }while(!success && ++Retry<3);        
-Serial.println(F("Trace-5"));//???
       break;
       }
     #endif // CORE
