@@ -250,7 +250,7 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
                }
              break;
 
-           #if CLOCK
+           #if HARDWARE_CLOCK
            case VALUE_SOURCE_CLOCK:	// Display date/time
              sprintf(TempString,"%02d-%02d-%04d %02d:%02d",Time.Date,Time.Month,Time.Year, Time.Hour, Time.Minutes);
              break;
