@@ -1044,9 +1044,10 @@ void loop()
     {
     if(ScanEvent(&ReceivedEvent))
       { 
+      ProcessingStatus(true);
       ProcessEvent(&ReceivedEvent);                                             // verwerk binnengekomen event.
-      ProcessingStatus(false);
       Slice_1=0;
+      ProcessingStatus(false);
       }
 
     // SERIAL: *************** kijk of er data klaar staat op de seriele poort **********************
@@ -1076,6 +1077,7 @@ void loop()
               
           if(SerialInByte=='\n')
             {
+            ProcessingStatus(true);
             InputBuffer_Serial[SerialInByteCounter]=0;                          // serieel ontvangen regel is compleet
             RaiseMessage(ExecuteLine(InputBuffer_Serial,VALUE_SOURCE_SERIAL),0);
             Serial.write('>');                                                  // Prompt
@@ -1184,7 +1186,9 @@ void loop()
                   {
 //???                  TerminalClient.getRemoteIP(ClientIPAddress);
                   ExecutionDepth=0;
+                  ProcessingStatus(true);
                   RaiseMessage(ExecuteLine(InputBuffer_Terminal,VALUE_SOURCE_TELNET),0);
+                  ProcessingStatus(false);
                   TerminalClient.write('>');                                    // prompt
                   }
                 else

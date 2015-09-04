@@ -10,7 +10,7 @@
 // 
 // Voor een volledige en bijgewerkte lijst van alle beschikbare plugins verwijzen we 
 // naar de Wiki. Een plugin wordt als volgt opgegeven:
-//
+//  D:\User\Paul\GitHub\Nodo-Core\Nodo\Port_Serial.ino
 // #define PLUGIN_nnn:       is nodig om de plugin bekend te maken aan de Nodo zodat events
 //                           kunnen worden weergegeven en eventlists geprogrammeerd kunnen
 //                           worden. Neem voor alle plugins die je gebruikt in ieder geval

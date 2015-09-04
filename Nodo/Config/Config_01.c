@@ -64,5 +64,5 @@
 // #define HARDWARE_CLOCK             false
 // #define HARDWARE_I2C               false
 // #define HARDWARE_SDCARD            false
-#define HARDWARE_ETHERNET          false
+// #define HARDWARE_ETHERNET          false
 // #define HARDWARE_NRF24L01          false        

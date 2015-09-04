@@ -94,7 +94,7 @@ boolean Eventlist_Read(int address, struct NodoEventStruct *Event, struct NodoEv
  * is opgetreden, zodat er geen foutcodes door de code heen getransporteerd hoeven te worden.
  * 
  \*********************************************************************************************/
-void RaiseMessage(byte MessageCode, unsigned long Option)
+boolean RaiseMessage(byte MessageCode, unsigned long Option)
   {
   if(MessageCode)
     {
@@ -115,12 +115,13 @@ void RaiseMessage(byte MessageCode, unsigned long Option)
       {
       case MESSAGE_BREAK:                                                       // normale break
       case MESSAGE_EXECUTION_STOPPED:                                           // Slechts een boodschap voor gebruiker. Onnodig om te versturen.
-        return;
+        return false;
       }
   
     TempEvent.Port      = VALUE_ALL;
     SendEvent(&TempEvent,false,true);
     }
+  return true;
   }
 
 
@@ -291,8 +292,6 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
   boolean WaitMessage=false;
   #endif
 
-  // Serial.println(F("DEBUG: Wait()"));
-  
   struct NodoEventStruct Event;
   ClearEvent(&Event);
 
@@ -348,13 +347,13 @@ boolean Wait(int Timeout, boolean WaitForFreeTransmission, struct NodoEventStruc
     #endif
     }   
     
-  // Serial.println(F("DEBUG: Wait() verlaten."));
+
+    #if HARDWARE_STATUS_LED || HARDWARE_STATUS_LED_RGB 
+    Led(RED);
+    #endif
 
   if(TimeoutTimer<=millis())                                                    // als timeout, dan error terug geven
-    {
-    // Serial.println(F("DEBUG: Wait() Timeout."));
     return false;
-    }
 
   else
     return true;
@@ -2811,6 +2810,9 @@ int UserVariable(byte VarNr, float *Var)
       return x;
       }
     }
+
+  if(Var!=0)
+    *Var=0;
   return -1;
   }  
   

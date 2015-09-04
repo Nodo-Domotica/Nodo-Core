@@ -10,11 +10,11 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   static unsigned long HoldTransmission=0L;                                     // wachten op dit tijdstip in millis() alvorens event te verzenden.
 
   
-  // PrintNodoEvent("DEBUG: SendEvent():", ES);//???
+  PrintNodoEvent("DEBUG: SendEvent():", ES);//???
   
   byte Port         = ES->Port;
   byte Source       = ES->SourceUnit;                                           // bewaar oorspronkelijke source voor de WebApp.Andere poorten: dan deze unit is source
-  ES->SourceUnit    = Settings.Unit;                                            // anderz zal in geval van een EventSend een event worden doorgestuurd via andere poorten
+  ES->SourceUnit    = Settings.Unit;                                            // anders zal in geval van een EventSend een event worden doorgestuurd via andere poorten
                                                                                 // waarna ontvangende Nodo's een verkeerde vulling van de NodoOnline tabel krijgen.
                                                                                 
   boolean Nodo      = ES->Type==NODO_TYPE_EVENT || ES->Type==NODO_TYPE_COMMAND || ES->Type==NODO_TYPE_SYSTEM; 

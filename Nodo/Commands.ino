@@ -5,7 +5,7 @@
  * true teruggegeven. Zo niet dan wordt er een 'false' retour gegeven.
  \*********************************************************************************************/
 
-boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
+byte ExecuteCommand(struct NodoEventStruct *EventToExecute)
   {
   unsigned long a;
   int w,x,y,z;
@@ -137,40 +137,40 @@ boolean ExecuteCommand(struct NodoEventStruct *EventToExecute)
       break;
       
     case CMD_BREAK_ON_VAR_EQU:
-      if(UserVariable(EventToExecute->Par1,&TempFloat)!=-1)
-        if((int)TempFloat==(int)ul2float(EventToExecute->Par2))
-          error=MESSAGE_BREAK;
+      UserVariable(EventToExecute->Par1,&TempFloat);
+      if((int)TempFloat==(int)ul2float(EventToExecute->Par2))
+        error=MESSAGE_BREAK;
       break;
       
     case CMD_BREAK_ON_VAR_NEQU:
-      if(UserVariable(EventToExecute->Par1,&TempFloat)!=-1)
-        if((int)TempFloat!=(int)ul2float(EventToExecute->Par2))
-          error=MESSAGE_BREAK;
+      UserVariable(EventToExecute->Par1,&TempFloat);
+      if((int)TempFloat!=(int)ul2float(EventToExecute->Par2))
+        error=MESSAGE_BREAK;
       break;
 
     case CMD_BREAK_ON_VAR_MORE:
-      if(UserVariable(EventToExecute->Par1,&TempFloat)!=-1)
-        if((int)TempFloat>(int)ul2float(EventToExecute->Par2))
-          error=MESSAGE_BREAK;
+      UserVariable(EventToExecute->Par1,&TempFloat);
+      if((int)TempFloat>(int)ul2float(EventToExecute->Par2))
+        error=MESSAGE_BREAK;
       break;
 
     case CMD_BREAK_ON_VAR_LESS:
-      if(UserVariable(EventToExecute->Par1,&TempFloat)!=-1)
-        if((int)TempFloat<(int)ul2float(EventToExecute->Par2))
-          error=MESSAGE_BREAK;
+      UserVariable(EventToExecute->Par1,&TempFloat);
+      if((int)TempFloat<(int)ul2float(EventToExecute->Par2))
+        error=MESSAGE_BREAK;
 
     case CMD_BREAK_ON_VAR_LESS_VAR:
-      if(UserVariable(EventToExecute->Par1,&TempFloat)!=-1)
-        if(UserVariable(EventToExecute->Par2,&TempFloat2)!=-1)
-          if(TempFloat<TempFloat2)
-            error=MESSAGE_BREAK;
+      UserVariable(EventToExecute->Par1,&TempFloat);
+      UserVariable(EventToExecute->Par2,&TempFloat2);
+      if(TempFloat<TempFloat2)
+          error=MESSAGE_BREAK;
       break;
 
     case CMD_BREAK_ON_VAR_MORE_VAR:
-      if(UserVariable(EventToExecute->Par1,&TempFloat)!=-1)
-        if(UserVariable(EventToExecute->Par2,&TempFloat2)!=-1)
-          if(TempFloat>TempFloat2)
-            error=MESSAGE_BREAK;
+      UserVariable(EventToExecute->Par1,&TempFloat);
+      UserVariable(EventToExecute->Par2,&TempFloat2);
+      if(TempFloat>TempFloat2)
+        error=MESSAGE_BREAK;
       break;
 
     case CMD_SEND_USEREVENT:

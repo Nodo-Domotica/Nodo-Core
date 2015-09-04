@@ -231,10 +231,6 @@ byte FileExecute(char* Path, char* Filename, char* Extention, boolean ContinueOn
     }
   else
     {
-    #if HARDWARE_STATUS_LED || HARDWARE_STATUS_LED_RGB 
-    Led(RED);
-    #endif
-    
     SelectSDCard(true);
     File dataFile=SD.open(PathFile(Path, Filename, Extention));
     

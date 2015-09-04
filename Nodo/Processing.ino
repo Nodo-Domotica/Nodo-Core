@@ -149,7 +149,7 @@ byte ProcessEvent(struct NodoEventStruct *Event)
           error=ProcessEvent(&EventlistAction);
           }
         }
-      
+
       if(error==MESSAGE_BREAK)                                                  // abort is geen fatale error maar een break. Deze dus niet verder behandelen als een error.
         error=0;
 
@@ -163,9 +163,6 @@ byte ProcessEvent(struct NodoEventStruct *Event)
     }
   ExecutionDepth--;
 
-  #if HARDWARE_STATUS_LED || HARDWARE_STATUS_LED_RGB
-  Led(GREEN);
-  #endif
   return error;
   }
 

@@ -138,8 +138,8 @@ Build 817:
 
 Build 8xx
 - R818 Plugin 21 compile error #912
-
-
+- VariableInc in een bestand geeft verkeerde waarde, aangeroepen door FileExecute #919
+- Nodo events worden alleen verstuurd via poort (RF, 433, IR, NRF24) als daar Nodo's gedetecteerd zijn. 
 
 Todo:
 - LET OP: Originele Wire library van I2C zit weer onder de Nodo core. Nog niet duidelijk of deze wel stabiel genoeg is (m.n. bij niet afbreken bij timeouts)
