@@ -222,6 +222,12 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
              Print=false;
              break;
 
+           #if NODO_MEGA
+           case CMD_TEMP:
+            strcpy(TempString,Settings.Temp); 
+            break;
+           #endif
+           
            case VALUE_OFF:
              _backlightval=LCD_NOBACKLIGHT;
              LCD_I2C_expanderWrite(0);
