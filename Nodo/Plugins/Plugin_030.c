@@ -26,7 +26,17 @@
  * Par1 bevat het nummer van de reader (1 of 2)
  * Par2 bevat het 26 bits serienummer
  * Dit device genereert een event, zodat actie kan worden ondernomen via de Nodo eventlist indien een bekende tag wordt gebruikt
- * In de config file dient te worden ingesteld of er 1 of 2 units worden ondersteund
+ * In de config file dient te worden ingesteld of er 1 of 2 units worden ondersteund: 
+ * 
+ * 
+ * LET OP: Zowel in deze plugin als in de library "SoftWareSerial.h" wordt gebruik gemaakt van Pin-change interrupts.
+ *         Daarom is het niet mogelijk deze plugin te gebruiken in combinatie met een extra (soft) seriele poort.
+ *         Zorg er voor dat de "SoftWareSerial.h" librarie niet wordt mee gecompileerd door de volgende aanpassing
+ *         in het bestand "Port_Serial.ino" te maken:
+ *         
+ *         Regel       : #include <SoftwareSerial.h>
+ *         Moet worden : // #include <SoftwareSerial.h>
+ * 
  \*********************************************************************************************/
 
 #define PLUGIN_NAME "RFIDWG"

@@ -6,6 +6,8 @@
 /*********************************************************************************************\
 * Dit protocol zorgt voor communicatie met een LCD Display dat wordt bestuurd via I2C/TWI
 * Er worden twee versies ondersteund, aangeduidt met 1602 (2 x 16 tekens) of 2004 (4 x 20 tekens)
+* Geef in je config_xx.c file in de regel '#define PLUGIN_021_CORE x' met de x aan of het hier gaat om een 2 of 4 regel display.
+* 
 * Getest op een I2C/TWI LCD1602 van DFRobot en een Funduino I2C LCD2004
 * Auteur             : Martinus van den Broek
 * Support            : www.nodo-domotica.nl
@@ -17,6 +19,7 @@
 *                      03-2014 versie 1.6 Fix buffer issue in progmem (Martinus)
 *                      03-2014 versie 1.7 Fix I2C Multimaster "conflict" (Martinus)
 *                      03-2014 versie 1.8 Compatibility 3.8 release (Paul Tonkes)
+
 * Nodo productnummer : 
 * Compatibiliteit    : Vanaf Nodo build nummer 707
 * Syntax             : "LCDWrite <row>, <column>, <command>, <option>
@@ -46,31 +49,30 @@
 #define PLUGIN_ID 21
 #define PLUGIN_NAME "LCDWrite"
 
-prog_char PROGMEM LCD_01[] = "Nodo Domotica";
-prog_char PROGMEM LCD_02[] = "Mega R:%03d U:%d";
-prog_char PROGMEM LCD_03[] = "Small R:%03d U:%d";
-prog_char PROGMEM LCD_04[] = PLUGIN_021_LABEL_04;
-prog_char PROGMEM LCD_05[] = PLUGIN_021_LABEL_05;
-prog_char PROGMEM LCD_06[] = PLUGIN_021_LABEL_06;
-prog_char PROGMEM LCD_07[] = PLUGIN_021_LABEL_07;
-prog_char PROGMEM LCD_08[] = PLUGIN_021_LABEL_08;
-prog_char PROGMEM LCD_09[] = PLUGIN_021_LABEL_09;
-prog_char PROGMEM LCD_10[] = PLUGIN_021_LABEL_10;
-prog_char PROGMEM LCD_11[] = PLUGIN_021_LABEL_11;
-prog_char PROGMEM LCD_12[] = PLUGIN_021_LABEL_12;
-prog_char PROGMEM LCD_13[] = PLUGIN_021_LABEL_13;
-prog_char PROGMEM LCD_14[] = PLUGIN_021_LABEL_14;
-prog_char PROGMEM LCD_15[] = PLUGIN_021_LABEL_15;
-prog_char PROGMEM LCD_16[] = PLUGIN_021_LABEL_16;
-prog_char PROGMEM LCD_17[] = PLUGIN_021_LABEL_17;
-prog_char PROGMEM LCD_18[] = PLUGIN_021_LABEL_18;
-prog_char PROGMEM LCD_19[] = PLUGIN_021_LABEL_19;
-prog_char PROGMEM LCD_20[] = PLUGIN_021_LABEL_20;
+PROGMEM const char LCD_01[] = "";
+PROGMEM const char LCD_02[] = "";
+PROGMEM const char LCD_03[] = "";
+PROGMEM const char LCD_04[] = "";
+PROGMEM const char LCD_05[] = "";
+PROGMEM const char LCD_06[] = "";
+PROGMEM const char LCD_07[] = "";
+PROGMEM const char LCD_08[] = "";
+PROGMEM const char LCD_09[] = "";
+PROGMEM const char LCD_10[] = "";
+PROGMEM const char LCD_11[] = "";
+PROGMEM const char LCD_12[] = "";
+PROGMEM const char LCD_13[] = "";
+PROGMEM const char LCD_14[] = "";
+PROGMEM const char LCD_15[] = "";
+PROGMEM const char LCD_16[] = "";
+PROGMEM const char LCD_17[] = "";
+PROGMEM const char LCD_18[] = "";
+PROGMEM const char LCD_19[] = "";
+PROGMEM const char LCD_20[] = "";
 
-#define LCDI2C_MSG_MAX        20
+#define LCDI2C_MSG_MAX 20
 
-PROGMEM const char *LCDText_tabel[]={LCD_01,LCD_02,LCD_03,LCD_04,LCD_05,LCD_06,LCD_07,LCD_08,LCD_09,LCD_10,LCD_11,LCD_12,LCD_13,LCD_14,LCD_15,LCD_16,LCD_17,LCD_18,LCD_19,LCD_20};
-
+const char* const LCDText_tabel[] PROGMEM={LCD_01,LCD_02,LCD_03,LCD_04,LCD_05,LCD_06,LCD_07,LCD_08,LCD_09,LCD_10,LCD_11,LCD_12,LCD_13,LCD_14,LCD_15,LCD_16,LCD_17,LCD_18,LCD_19,LCD_20};
 #define LCD_I2C_ADDRESS 0x27
 
 #if PLUGIN_021_CORE==2
@@ -232,22 +234,19 @@ boolean Plugin_021(byte function, struct NodoEventStruct *event, char *string)
              break;
 
            case EVENT_VARIABLE:
-             if (Par4 > 0 && Par4 <16)
-               {
-                 #if NODO_MEGA
-                   UserVariable(Par4,&TempFloat);
-                   dtostrf(TempFloat, 0, 2,TempString);
-                 #else
-                   UserVariable(Par4,&TempFloat);
-                   int d1 = TempFloat;            // Get the integer part
+             #if NODO_MEGA
+               UserVariable(Par4,&TempFloat);
+               dtostrf(TempFloat, 0, 2,TempString);
+             #else
+               UserVariable(Par4,&TempFloat);
+               int d1 = TempFloat;            // Get the integer part
 
-                   UserVariable(Par4,&TempFloat);
-                   float f2 = TempFloat - d1;     // Get fractional part
-                   int d2 = trunc(f2 * 10);   // Turn into integer
-                   if (d2<0) d2=d2*-1;
-                   sprintf(TempString,"%d.%01d", d1,d2);
-                 #endif
-               }
+               UserVariable(Par4,&TempFloat);
+               float f2 = TempFloat - d1;     // Get fractional part
+               int d2 = trunc(f2 * 10);   // Turn into integer
+               if (d2<0) d2=d2*-1;
+               sprintf(TempString,"%d.%01d", d1,d2);
+             #endif
              break;
 
            #if HARDWARE_CLOCK

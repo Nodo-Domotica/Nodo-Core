@@ -101,7 +101,7 @@
 //         regel worden voorafgegaan door de comment tekens '//' om zo geheugen
 //         te besparen. Voor een Nodo-Mega is het gebruik van een SDCard verplicht.
 
- #include <SD.h>
+#include <SD.h>
 
 
 // ################################### Stap-4 #####################################################

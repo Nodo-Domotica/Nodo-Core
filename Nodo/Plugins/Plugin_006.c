@@ -1,40 +1,55 @@
 //#######################################################################################################
-//######################## PLUGIN-06 Temperatuur en Luchtvochtigheid sensor DHT 11/22 ###################
+//################# PLUGIN-06 Temperatuur en Luchtvochtigheid sensor DHT 11 / 22 / 33 ###################
 //#######################################################################################################
 
 /*********************************************************************************************\
  * 
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  * Support            : www.nodo-domotica.nl
- * Datum              : 12 Aug 2013
- * Versie             : 1.3
+ * Datum              : 05 Sept 2015
+ * Versie             : 1.4
  *                      
  *                      Modificaties: 
+ *                      2015-09, V1.4  Paul Tonkes: Compatibiliteit met DHT-33 (comments only)
  *                      2013-11, V1.3, Paul Tonkes: Geen events meer genereren bij vullen variabelen
  *                      2013-11, V1.2, Paul Tonkes: Retry bij fout tijdens uitlezen en DHT-22 compatibel
  *                         
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
- * Compatibiliteit    : Vanaf Nodo build nummer 555
+ * Compatibiliteit    : Vanaf Nodo build nummer 820
  * Syntax             : "DHTRead <Par1:Poortnummer>, <Par2:Basis Variabele>"
  *********************************************************************************************
  * Configuratie:
  * 
- * Deze plugin is zowel geschikt voor een DHT-11 sensor alsmede de DHT-22 die een veel hogere
- * resolutie heeft. Deze laatste heeft dan ook de voorkeur. Geef in je config_nn.c file op welke sensor 
+ * Deze plugin is zowel geschikt voor een DHT-11 , DHT-22 en de DHT-33 sensor.
+ * Geef in je config_nn.c file op welke sensor 
  * je gebruikt met:
  * 
- * #define PLUGIN_006_CORE <DHT-type>
+ * #define PLUGIN_006_CORE <DHT-nummer 11,22 of 33>
  * 
- * Kies voor <DHT-type> 11 voor een DHT-11 sensor of 22 voor een DHT-22. Verkeerde definitie zal leiden 
- * tot geen of foutieve uitlezing.
- *    
+ * Verkeerde definitie zal leiden tot geen of foutieve uitlezing. Gebruik van de DHT-11 wordt afgeraden
+ * omdat deze een vrij grove resolutie heeft en dus minder nauwkeurige meetwaarden levert.
+ * 
+ * DHT-22 = AM2302 = RHT02
+ * DHT-33 = AM2303 = RHT04
+ * 
  * Technische informatie:
  *  
- * De DHT sensor is een 3 pin sensor met een bidirectionele datapin. Deze verbind je met een WiredOut poort. 
+ * De DHT sensor is een 3 pin sensor met een bidirectionele datapin. De datalijn verbind je met een WiredOut poort. 
  * Het principe is "onewire" maar dit protocol is NIET compatible met het bekende Dallas onewire protocol
+ *
  * Dit protocol gebruikt twee variabelen, 1 voor temperatuur en 1 voor luchtvochtigheid.
  * Na uitlezen wordt de opgegeven variabele gevuld met de meetwaarden, maar er worden geen events gegenereerd.
  * Dit kan worden aangepast door de #define DHT_EVENT in true te veranderen.  
+ *
+ * Voorbeeld:
+ * Als een DHT-33 wordt aangesloten op de WiredOut-1 (D30) van een Arduino Mega, dan zal onderstaand
+ * commande de temperatuur plaatsen in variabele-1 en de vochtigheid in variabele-2.:
+ * 
+ * > DHTRead 1,1
+ * Input=Serial; Unit=1; Event=DHTRead 1,1
+ * Input=System; Unit=1; Event=Variable 1,22.800; Payload=0x11
+ * Input=System; Unit=1; Event=Variable 2,48.300; Payload=0xD1
+ *
  \*********************************************************************************************/
 
 #define PLUGIN_ID 6
@@ -115,17 +130,14 @@ boolean Plugin_006(byte function, struct NodoEventStruct *event, char *string)
               {
 
               #if PLUGIN_006_CORE==11                                           // Code door de DHT-11 variant
-
               TempFloat=float(dht_dat[2]);                                      // Temperatuur
               UserVariableSet(event->Par2  ,TempFloat,DHT_EVENT);
-              
               TempFloat=float(dht_dat[0]);                                      // Vochtigheid
               UserVariableSet(event->Par2+1,TempFloat,DHT_EVENT);
-              
               #endif
               
-              #if PLUGIN_006_CORE==22                                           // Code door de DHT-22 variant
-
+              
+              #if PLUGIN_006_CORE==22 || PLUGIN_006_CORE==33                    // Code door de DHT-22 of DHT-33 variant
               if (dht_dat[2] & 0x80)                                            // negative temperature
                 {
                 TempFloat=-0.1 * word(dht_dat[2] & 0x7F, dht_dat[3]);

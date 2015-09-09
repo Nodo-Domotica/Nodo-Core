@@ -9,8 +9,7 @@ boolean SendEvent(struct NodoEventStruct *ES, boolean UseRawSignal, boolean Disp
   ES->Direction=VALUE_DIRECTION_OUTPUT;
   static unsigned long HoldTransmission=0L;                                     // wachten op dit tijdstip in millis() alvorens event te verzenden.
 
-  
-  PrintNodoEvent("DEBUG: SendEvent():", ES);//???
+  // PrintNodoEvent("DEBUG: SendEvent():", ES);//???
   
   byte Port         = ES->Port;
   byte Source       = ES->SourceUnit;                                           // bewaar oorspronkelijke source voor de WebApp.Andere poorten: dan deze unit is source
