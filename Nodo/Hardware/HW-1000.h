@@ -37,7 +37,7 @@
 #define PIN_WIRED_IN_8              15                                          // Analoge input A15 wordt gebruikt voor WiredIn 8
 
 // WiredOut: ============================================================================================================
-#define HARDWARE_WIRED_OUT_PORTS     8                                          // aAntal WiredIn/WiredOut poorten
+#define HARDWARE_WIRED_OUT_PORTS     8                                          // Aantal WiredIn/WiredOut poorten
 #define PIN_WIRED_OUT_1             30                                          // Digitale output D30 wordt gebruikt voor WiredOut 1
 #define PIN_WIRED_OUT_2             31                                          // Digitale output D31 wordt gebruikt voor WiredOut 2
 #define PIN_WIRED_OUT_3             32                                          // Digitale output D32 wordt gebruikt voor WiredOut 3

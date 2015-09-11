@@ -9,12 +9,14 @@
 * een plugin dat kan worden gebruikt als je zelf een plugin wilt toevoegen aan de Nodo. 
 \*************************************************************************************************************************/
 
+
+/*
 // Workaround voor plugins die nog niet zijn aangepast voor de 3.8 release
-#if PLUGIN_37_COMPATIBILITY
+#if PLUGIN_37_COMPATIBILITY //???
 float UserVar[USER_VARIABLES_MAX];
 #endif
 #define WIRED_PORTS HARDWARE_WIRED_OUT_PORTS
-
+*/
 
 
 #define PLUGINFILE2(a, b) stringify(a/Plugins/b)
@@ -897,6 +899,7 @@ byte PluginCall(byte Function, struct NodoEventStruct *Event, char *str)
   {
   int x;
 
+  /*
   #if PLUGIN_37_COMPATIBILITY
   if(Function==PLUGIN_INIT)
     for(byte x=0;x<USER_VARIABLES_MAX;x++)
@@ -908,7 +911,8 @@ byte PluginCall(byte Function, struct NodoEventStruct *Event, char *str)
         UserVariableSet(x+1,UserVar[x],false);
 
   #endif
-
+  */
+  
 
   switch(Function)
     {

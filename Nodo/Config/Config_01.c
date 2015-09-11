@@ -37,6 +37,7 @@
 #define PLUGIN_001_CORE                                                         // Kaku : Klik-Aan-Klik-Uit
 #define PLUGIN_002_CORE                                                         // NewKAKU : Klik-Aan-Klik-Uit automatische codering.
 #define PLUGIN_021_CORE 2                                                       // LCD Display
+#define PLUGIN_008_CORE
 
 
 // B: Events/commando's invoeren, doorgeven en weergeven (MMI)
@@ -47,6 +48,7 @@
 #define PLUGIN_020                                                              // Luchtdruksensor BPM085
 #define PLUGIN_023                                                              // RGB-Led aansturing
 #define PLUGIN_021                                                              // LCD Display
+#define PLUGIN_008
 
 
 //=======================================================================================================================

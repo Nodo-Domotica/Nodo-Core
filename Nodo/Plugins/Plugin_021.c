@@ -19,7 +19,7 @@
 *                      03-2014 versie 1.6 Fix buffer issue in progmem (Martinus)
 *                      03-2014 versie 1.7 Fix I2C Multimaster "conflict" (Martinus)
 *                      03-2014 versie 1.8 Compatibility 3.8 release (Paul Tonkes)
-
+*
 * Nodo productnummer : 
 * Compatibiliteit    : Vanaf Nodo build nummer 707
 * Syntax             : "LCDWrite <row>, <column>, <command>, <option>
@@ -49,9 +49,9 @@
 #define PLUGIN_ID 21
 #define PLUGIN_NAME "LCDWrite"
 
-PROGMEM const char LCD_01[] = "";
-PROGMEM const char LCD_02[] = "";
-PROGMEM const char LCD_03[] = "";
+PROGMEM const char LCD_01[] = "Nodo Domotica";
+PROGMEM const char LCD_02[] = "Mega R:%03d U:%d";
+PROGMEM const char LCD_03[] = "Small R:%03d U:%d";
 PROGMEM const char LCD_04[] = "";
 PROGMEM const char LCD_05[] = "";
 PROGMEM const char LCD_06[] = "";

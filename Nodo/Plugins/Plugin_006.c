@@ -173,7 +173,7 @@ boolean Plugin_006(byte function, struct NodoEventStruct *event, char *string)
         {
         if(strcasecmp(TempStr,PLUGIN_NAME)==0)
           {
-          if(event->Par1>0 && event->Par1<WIRED_PORTS && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX_NR-1)
+          if(event->Par1>0 && event->Par1<HARDWARE_WIRED_OUT_PORTS && event->Par2>0 && event->Par2<=USER_VARIABLES_MAX_NR-1)
             {
             event->Type = NODO_TYPE_PLUGIN_COMMAND;
             event->Command = PLUGIN_ID;                                         // Plugin nummer  

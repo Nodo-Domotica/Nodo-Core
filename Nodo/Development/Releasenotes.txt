@@ -144,6 +144,13 @@ Build 820:
 Build 821:
 - EXPERIMENTEEL: RAWSIGNAL_SAMPLE_DEFAULT waarde op 50 i.p.v. 25
 
+Build 822:
+- Compatibiliteit oude plugins uit code verwijderd. Dit was geen solide oplossing. de plugins moeten aangepast worden.
+- Aanpassing t.b.v. compatibiliteit 3.8 release Plugin_05
+- Aanpassing t.b.v. compatibiliteit 3.8 release Plugin_06
+- Aanpassing t.b.v. compatibiliteit 3.8 release Plugin_08
+
+
 Todo:
 - LET OP: Originele Wire library van I2C zit weer onder de Nodo core. Nog niet duidelijk of deze wel stabiel genoeg is (m.n. bij niet afbreken bij timeouts)
 - RawsignalCleanup

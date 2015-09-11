@@ -1,39 +1,3 @@
-// LET OP: Deze plugin moet nog worden aangepast voor het gebruik van globale variabelen en variabelenummers
-// hoger dan 15. Zolang deze plugin nog niet is aangepast moeten de onderstaande reges in het confif.xx.c bestand 
-// worden opgenomen
-
-#define PLUGIN_37_COMPATIBILITY
-
-// Deze regels maken dat deze plugin tijdelijk compatibel wordt met de Nodo release 3.8. Hiervoor zal
-// wat extra RAM en Programmageheugen nodig zijn. Om de plugin compatibel te maken met de 3.8 release
-// moet de volgende aanpassing worden gemaakt:
-//
-// 1. Veranderen van UserVar[] mag uitsluitend plaats vinden met de volgende funktie:
-//
-//    int UserVariableSet(byte VarNr, float *Var, boolean Process)
-//
-//    VarNr        = Variabelenummer 1..USER_VARIABLES_MAX_NR
-//    Var          = Inhoud van de variabele (call by reference !)
-//    Process      = true | false (true leidt tot genereren van een event)
-//    returnwaarde = -1 als geen geheugenplek meer vrij.
-//
-// 2. Opvragen van een variabele mag uitsluitend met de volgende funktie:
-//
-//    boolean UserVariable(byte VarNr, float *Var)
-//
-//    VarNr        = Variabelenummer 1..USER_VARIABLES_MAX_NR
-//    Var          = Inhoud van de variabele (call by reference !)
-//    returnwaarde = -1 als variabele niet gevonden.
-// 
-// De reden van deze aanpassing is om de plugin code meer onafhankelijk te maken van de 
-// Nodo code door geen gebruik te maken van gedeelte variabelen. In de een opvolgende release na de 3.8 zal 
-// de compatibiliteits ondersteuning komen te vervallen. 
-// 
-// Voor vragen: Neem contact op met de auteur van deze plugin.
-// 
-
-
-
 //#######################################################################################################
 //##################################### Plugin-08 AlectoV1  #############################################
 //#######################################################################################################
@@ -44,9 +8,10 @@
  * Auteur             : Nodo-team (Martinus van den Broek) www.nodo-domotica.nl
  * Support            : www.nodo-domotica.nl
  * Datum              : 25 Jan 2014
- * Versie             : 1.3
+ * Versie             : 1.3 Martinus van den Broek
+ *                      1.4 Paul Tonkes (compatibilitiet release 3.8)
  * Nodo productnummer : n.v.t. meegeleverd met Nodo code.
- * Compatibiliteit    : Vanaf Nodo build nummer 555
+ * Compatibiliteit    : Vanaf Nodo build nummer 820
  * Syntax             : "AlectoV1 <Par1:Sensor ID>, <Par2:Basis Variabele>"
  *********************************************************************************************
  * Technische informatie:
@@ -102,12 +67,12 @@ byte Plugin_008_ProtocolAlectoVar[5];
 unsigned int Plugin_008_ProtocolAlectoRainBase=0;
 
 boolean Plugin_008(byte function, struct NodoEventStruct *event, char *string)
-{
+  {
   boolean success=false;
 
   switch(function)
-  {
-#ifdef PLUGIN_008_CORE
+    {
+  #ifdef PLUGIN_008_CORE
   case PLUGIN_RAWSIGNAL_IN:
     {
       if (RawSignal.Number != WS3500_PULSECOUNT) return false;
@@ -182,60 +147,73 @@ boolean Plugin_008(byte function, struct NodoEventStruct *event, char *string)
 
       if (basevar == 0) return true;
 
-      if ((nibble2 & 0x6) != 6) {
-
+      if ((nibble2 & 0x6) != 6) 
+        {
         temperature = (bitstream >> 12) & 0xfff;
         //fix 12 bit signed number conversion
         if ((temperature & 0x800) == 0x800) temperature = temperature - 0x1000;
-        UserVar[basevar -1] = (float)temperature/10;
+        TempFloat = (float)temperature/10;
+        UserVariableSet(basevar ,TempFloat,false);
 
         humidity = (10 * nibble7) + nibble6;
-        UserVar[basevar +1 -1] = (float)humidity;
+        UserVariableSet(basevar+1,humidity,false);
+
         RawSignal.Number=0;
         return true;
-      }
+        }
       else
-      {
-        if (nibble3 == 3)
         {
+        if (nibble3 == 3)
+          {
           rain = ((bitstream >> 16) & 0xffff);
           // check if rain unit has been reset!
           if (rain < Plugin_008_ProtocolAlectoRainBase) Plugin_008_ProtocolAlectoRainBase=rain;
           if (Plugin_008_ProtocolAlectoRainBase > 0)
-          {
-            UserVar[basevar +2 -1] += ((float)rain - Plugin_008_ProtocolAlectoRainBase) * 0.25;
-          }
+            {
+            UserVariable(basevar+2,&TempFloat);
+            TempFloat += ((float)rain - Plugin_008_ProtocolAlectoRainBase) * 0.25;
+            UserVariableSet(basevar+2 ,TempFloat,false);
+            }
           Plugin_008_ProtocolAlectoRainBase = rain;
           return true;
-        }
+          }
 
         if (nibble3 == 1)
-        {
+          {
           windspeed = ((bitstream >> 24) & 0xff);
-          UserVar[basevar +3 -1] = (float)windspeed * 0.72;
+          TempFloat = (float)windspeed * 0.72;
+          UserVariableSet(basevar+3 ,TempFloat,false);
           RawSignal.Number=0;
           return true;
-        }
+          }
 
         if ((nibble3 & 0x7) == 7)
-        {
+          {
           winddirection = ((bitstream >> 15) & 0x1ff) / 45;
-          UserVar[basevar +4 -1] = (float)winddirection;
+          TempFloat = (float)winddirection;
+          UserVariableSet(basevar+4 ,TempFloat,false);
 
           windgust = ((bitstream >> 24) & 0xff);
-          UserVar[basevar +5 -1] = (float)windgust * 0.72;
+          TempFloat = (float)windgust * 0.72;
+          UserVariableSet(basevar+5 ,TempFloat,false);
 
           RawSignal.Number=0;
           return true;
+          }
         }
-      }
       success = true;
       break;
     }
+  
   case PLUGIN_COMMAND:
     {
     if ((event->Par2 > 0) && (Plugin_008_ProtocolAlectoCheckID(event->Par1) == 0))
       {
+      TempFloat=0;
+
+      for (byte x=0; x<5; x++)
+        UserVariableSet(event->Par2 + x ,TempFloat,false);
+
       for (byte x=0; x<5; x++)
         {
         if (Plugin_008_ProtocolAlectoValidID[x] == 0)
@@ -291,8 +269,12 @@ boolean Plugin_008(byte function, struct NodoEventStruct *event, char *string)
  * Check for valid sensor ID
  \*********************************************************************************************/
 byte Plugin_008_ProtocolAlectoCheckID(byte checkID)
-{
-  for (byte x=0; x<5; x++) if (Plugin_008_ProtocolAlectoValidID[x] == checkID) return Plugin_008_ProtocolAlectoVar[x];
+  {
+  for (byte x=0; x<5; x++) 
+    {
+    if (Plugin_008_ProtocolAlectoValidID[x] == checkID) 
+      return Plugin_008_ProtocolAlectoVar[x];
+    }
   return 0;
-}
+  }
 #endif //CORE
